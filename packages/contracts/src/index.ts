@@ -1088,8 +1088,17 @@ export interface ExecutionPlanWorkflowNodeResult {
 export type ExecutionPlanWorkflowStatus =
   | "completed"
   | "waiting"
+  | "paused"
   | "blocked"
   | "cancelled";
+
+export interface ExecutionPlanWorkflowBreakpoint {
+  nodeId: string;
+  breakpointIndex: number;
+  breakpointCount: number;
+  reachedEventSeq: number;
+  bindingContextSha256: string;
+}
 
 export interface ExecutionPlanWorkflowResult {
   kind: "napier.execution-plan-workflow-result";
@@ -1101,6 +1110,7 @@ export interface ExecutionPlanWorkflowResult {
   status: ExecutionPlanWorkflowStatus;
   resumed: boolean;
   nodeResults: ExecutionPlanWorkflowNodeResult[];
+  breakpoint?: ExecutionPlanWorkflowBreakpoint;
   output?: JsonValue;
   outputSha256?: string;
   resultSha256: string;
@@ -1110,14 +1120,18 @@ export type ExecuteExecutionPlanWorkflowRequest =
   | {
       manifest: ExecutionPlanWorkflowManifest;
       input: JsonValue;
+      breakBeforeNodeIds?: string[];
       planId?: never;
       retryBlocked?: never;
+      continueBreakpoint?: never;
     }
   | {
       manifest: ExecutionPlanWorkflowManifest;
       planId: string;
       retryBlocked?: boolean;
+      continueBreakpoint?: boolean;
       input?: never;
+      breakBeforeNodeIds?: never;
     };
 
 export interface AgentMessageExperimentToolEffects {

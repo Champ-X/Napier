@@ -21,6 +21,7 @@ import {
 export const CLI_VERSION = "0.1.0";
 const MAX_PROMPT_BYTES = 64 * 1_024;
 const MAX_WORKFLOW_INPUT_BYTES = 64 * 1_024;
+const MAX_WORKFLOW_BREAKPOINTS = 16;
 const MAX_TITLE_CHARS = 160;
 const MAX_BRANCH_TITLE_CHARS = 100;
 
@@ -95,6 +96,8 @@ export interface CliWorkflowOptions extends CliExecutionOptions {
   planId?: string;
   title?: string;
   retryBlocked: boolean;
+  breakBeforeNodeIds?: string[];
+  continueBreakpoint?: boolean;
   fromNodeId?: string;
   modelOverridesJson?: string;
   expectedPreviewSha256?: string;
@@ -202,9 +205,11 @@ const WORKFLOW_VALUE_OPTIONS = new Set([
   "--model-overrides-json",
   "--expected-preview",
   "--decision-note",
+  "--break-before",
 ]);
 const WORKFLOW_FLAG_OPTIONS = new Set([
   "--retry-blocked",
+  "--continue-breakpoint",
   "--preview-experiment",
   "--confirm-side-effects",
   "--approve",
@@ -572,6 +577,9 @@ function parseWorkflowOptions(
   const threadId = optionalResourceId(values, "--thread");
   const agentId = optionalResourceId(values, "--agent");
   const fromNodeId = optionalResourceId(values, "--from-node");
+  const breakBeforeNodeIds = workflowBreakpointNodeIds(
+    values.get("--break-before"),
+  );
   const inputJson = values.get("--input-json");
   const modelOverridesJson = values.get("--model-overrides-json");
   const expectedPreviewSha256 = values.get("--expected-preview")?.trim();
@@ -616,9 +624,14 @@ function parseWorkflowOptions(
     if (!planId || !threadId) {
       throw new Error("--from-node requires --thread and --plan");
     }
-    if (inputJson !== undefined || agentId) {
+    if (
+      inputJson !== undefined ||
+      agentId ||
+      breakBeforeNodeIds.length > 0 ||
+      flags.has("--continue-breakpoint")
+    ) {
       throw new Error(
-        "--input-json and --agent cannot be used with --from-node",
+        "Run and breakpoint options cannot be used with --from-node",
       );
     }
     if (flags.has("--retry-blocked")) {
@@ -647,7 +660,8 @@ function parseWorkflowOptions(
       modelOverridesJson !== undefined ||
       expectedPreviewSha256 !== undefined ||
       flags.has("--preview-experiment") ||
-      flags.has("--confirm-side-effects")
+      flags.has("--confirm-side-effects") ||
+      breakBeforeNodeIds.length > 0
     ) {
       throw new Error(
         "Experiment options cannot be used with a normal Workflow resume",
@@ -655,6 +669,19 @@ function parseWorkflowOptions(
     }
   } else if (inputJson === undefined) {
     throw new Error("--input-json is required for a new Workflow");
+  }
+  if (flags.has("--continue-breakpoint") && !planId) {
+    throw new Error("--continue-breakpoint requires --plan");
+  }
+  if (flags.has("--continue-breakpoint") && approval) {
+    throw new Error(
+      "--continue-breakpoint cannot be used with --approve or --reject",
+    );
+  }
+  if (flags.has("--continue-breakpoint") && flags.has("--retry-blocked")) {
+    throw new Error(
+      "--continue-breakpoint and --retry-blocked are mutually exclusive",
+    );
   }
   if (approval && !planId) {
     throw new Error("--approve and --reject require --plan");
@@ -690,6 +717,9 @@ function parseWorkflowOptions(
       timeoutMs: parseTimeout(values.get("--timeout-ms")),
       jsonl,
       retryBlocked: flags.has("--retry-blocked"),
+      ...(flags.has("--continue-breakpoint")
+        ? { continueBreakpoint: true }
+        : {}),
       ...(values.has("--data-root")
         ? { dataRoot: requiredValue(values, "--data-root") }
         : {}),
@@ -698,6 +728,7 @@ function parseWorkflowOptions(
       ...(threadId ? { threadId } : {}),
       ...(planId ? { planId } : {}),
       ...(title ? { title } : {}),
+      ...(breakBeforeNodeIds.length > 0 ? { breakBeforeNodeIds } : {}),
       ...(fromNodeId ? { fromNodeId } : {}),
       ...(modelOverridesJson !== undefined ? { modelOverridesJson } : {}),
       ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
@@ -773,6 +804,22 @@ function parseToolResultMode(
   }
   if (value === "reuse-source") return "reuse_source";
   throw new Error("--tool-results must be live or reuse-source");
+}
+
+function workflowBreakpointNodeIds(value: string | undefined): string[] {
+  if (value === undefined) return [];
+  const nodeIds = value.split(",").map((nodeId) => nodeId.trim());
+  if (
+    nodeIds.length < 1 ||
+    nodeIds.length > MAX_WORKFLOW_BREAKPOINTS ||
+    nodeIds.some((nodeId) => !/^[a-z][a-z0-9_-]{0,63}$/u.test(nodeId)) ||
+    new Set(nodeIds).size !== nodeIds.length
+  ) {
+    throw new Error(
+      `--break-before requires 1-${MAX_WORKFLOW_BREAKPOINTS} unique node IDs`,
+    );
+  }
+  return nodeIds;
 }
 
 export const CLI_HELP = `Napier CLI ${CLI_VERSION}
@@ -870,6 +917,8 @@ Workflow options:
   --title <text>         Title for a new target Thread
   --plan <plan-id>       Resume an existing Workflow Plan
   --retry-blocked        Explicitly reopen retryable blocked nodes
+  --break-before <ids>   Pause before comma-separated node IDs
+  --continue-breakpoint  Explicitly continue the open Workflow breakpoint
   --approve              Approve the open Workflow Approval node, then resume
   --reject               Reject the open Workflow Approval node, then resume
   --decision-note <text> Optional answer note used with --approve/--reject

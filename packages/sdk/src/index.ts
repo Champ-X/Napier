@@ -1,6 +1,7 @@
 import type {
   AgentMessageExperimentPreview,
   AgentMessageExperimentResult,
+  ExecutionPlanWorkflowBreakpoint,
   ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentResult,
   ExecutionPlanWorkflowManifest,
@@ -122,6 +123,7 @@ export interface RunNapierWorkflowOptions<
 > {
   workflow: NapierWorkflow<TInput, TOutput>;
   input: TInput;
+  breakBeforeNodeIds?: string[];
   threadId?: string;
   agentId?: string;
   title?: string;
@@ -137,6 +139,7 @@ export interface ResumeNapierWorkflowOptions<
   threadId: string;
   planId: string;
   retryBlocked?: boolean;
+  continueBreakpoint?: boolean;
   signal?: AbortSignal;
   onEvent?: (event: RunEvent) => Promise<void> | void;
 }
@@ -161,6 +164,7 @@ export interface NapierWorkflowExecution<TOutput extends JsonValue> {
   planId: string;
   status: ExecutionPlanWorkflowResult["status"];
   output?: TOutput;
+  breakpoint?: ExecutionPlanWorkflowBreakpoint;
   result: ExecutionPlanWorkflowResult;
   pendingDecision?: OperatorDecision;
 }
@@ -384,6 +388,9 @@ class LocalNapierClient implements NapierClient {
       this.services.embeddedWorkflows.run({
         manifest: options.workflow.manifest,
         input: options.input,
+        ...(options.breakBeforeNodeIds
+          ? { breakBeforeNodeIds: options.breakBeforeNodeIds }
+          : {}),
         ...(options.threadId ? { threadId: options.threadId } : {}),
         ...(options.agentId ? { agentId: options.agentId } : {}),
         ...(options.title ? { title: options.title } : {}),
@@ -407,6 +414,7 @@ class LocalNapierClient implements NapierClient {
         threadId: options.threadId,
         planId: options.planId,
         ...(options.retryBlocked ? { retryBlocked: true } : {}),
+        ...(options.continueBreakpoint ? { continueBreakpoint: true } : {}),
         signal: combinedSignal(options.signal, this.closeController.signal),
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       }),
@@ -543,6 +551,9 @@ function workflowExecution<TOutput extends JsonValue>(
     status: result.status,
     ...(result.output !== undefined
       ? { output: structuredClone(result.output) as TOutput }
+      : {}),
+    ...(result.breakpoint
+      ? { breakpoint: structuredClone(result.breakpoint) }
       : {}),
     result: structuredClone(result),
     ...(pendingDecision

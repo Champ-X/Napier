@@ -142,6 +142,57 @@ describe("Napier TypeScript SDK Workflows", () => {
     store.close();
   });
 
+  it("requires explicit SDK continuation for a persisted breakpoint", async () => {
+    const fixture = await createFixture("breakpoint");
+    const client = await createNapierClient({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("sdk-workflow-breakpoint"),
+    });
+    const workflow = await client.defineWorkflow<DraftRequest, DraftReport>(
+      draftWorkflowDefinition(),
+    );
+    const paused = await client.runWorkflow({
+      workflow,
+      input: { text: "SDK breakpoint output", publish: true },
+      breakBeforeNodeIds: ["publish"],
+    });
+
+    expect(paused).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        breakpoint: expect.objectContaining({ nodeId: "publish" }),
+        result: expect.objectContaining({
+          nodeResults: [
+            expect.objectContaining({
+              nodeId: "normalize",
+              status: "completed",
+            }),
+          ],
+        }),
+      }),
+    );
+    const repeated = await client.resumeWorkflow({
+      workflow,
+      threadId: paused.threadId,
+      planId: paused.planId,
+    });
+    expect(repeated.status).toBe("paused");
+    const completed = await client.resumeWorkflow({
+      workflow,
+      threadId: paused.threadId,
+      planId: paused.planId,
+      continueBreakpoint: true,
+    });
+    expect(completed).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { message: "SDK breakpoint output" },
+      }),
+    );
+    await client.close();
+  });
+
   it("rejects invalid definitions, inputs, and cancellation before mutation", async () => {
     const fixture = await createFixture("preflight");
     const client = await createNapierClient({

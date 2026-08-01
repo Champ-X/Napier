@@ -291,7 +291,8 @@ describe("Workflow HTTP path", () => {
       title: "HTTP Tool Workflow target",
       agentId: blueprintThread.agentId,
     });
-    const response = await createApp(services).request(
+    const app = createApp(services);
+    const pausedResponse = await app.request(
       `/api/threads/${targetThread.id}/workflows`,
       {
         method: "POST",
@@ -299,10 +300,39 @@ describe("Workflow HTTP path", () => {
         body: JSON.stringify({
           manifest,
           input: { request: "Inventory without a model." },
+          breakBeforeNodeIds: ["inventory"],
         }),
       },
     );
 
+    expect(pausedResponse.status).toBe(200);
+    expect(
+      pausedResponse.headers.get("x-napier-workflow-breakpoint-count"),
+    ).toBe("1");
+    const paused = validateExecutionPlanWorkflowResultFrame(
+      parseSseFrames(await pausedResponse.text()).at(-1),
+    );
+    expect(paused.result).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        breakpoint: expect.objectContaining({ nodeId: "inventory" }),
+        nodeResults: [],
+      }),
+    );
+    expect(services.store.listRuns(targetThread.id)).toEqual([]);
+
+    const response = await app.request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          planId: paused.planId,
+          continueBreakpoint: true,
+        }),
+      },
+    );
     expect(response.status).toBe(200);
     const frame = validateExecutionPlanWorkflowResultFrame(
       parseSseFrames(await response.text()).at(-1),

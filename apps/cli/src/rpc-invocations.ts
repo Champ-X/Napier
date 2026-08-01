@@ -394,6 +394,7 @@ function workflowOutcome(
       planId: result.planId,
       status: result.status,
       ...(result.output !== undefined ? { output: result.output } : {}),
+      ...(result.breakpoint ? { breakpoint: result.breakpoint } : {}),
       result,
       ...(pendingDecision ? { pendingDecision } : {}),
     },

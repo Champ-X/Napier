@@ -24,11 +24,14 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.loop.completed",
   "workflow.artifacts.settled",
   "workflow.artifacts.failed",
+  "workflow.breakpoint.reached",
+  "workflow.breakpoint.continued",
   "workflow.experiment.started",
   "workflow.experiment.compared",
   "workflow.experiment.failed",
   "workflow.completed",
   "workflow.waiting",
+  "workflow.paused",
   "workflow.blocked",
   "workflow.cancelled",
 ]);
@@ -151,6 +154,10 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       payload["maxConcurrency"] === undefined
         ? 1
         : boundedInteger(payload["maxConcurrency"], 1, 4);
+    const breakpointNodeIds =
+      payload["breakBeforeNodeIds"] === undefined
+        ? []
+        : nodeIds(payload["breakBeforeNodeIds"]);
     if (
       version === undefined ||
       nodeCount === undefined ||
@@ -158,6 +165,8 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       !inputSha256 ||
       !inputSchemaSha256 ||
       !outputSchemaSha256 ||
+      !breakpointNodeIds ||
+      breakpointNodeIds.length > 16 ||
       !nodeId(payload["outputNodeId"])
     ) {
       return undefined;
@@ -169,6 +178,9 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `input ${inputSha256.slice(0, 12)}`,
       `input-schema ${inputSchemaSha256.slice(0, 12)}`,
       `output-schema ${outputSchemaSha256.slice(0, 12)}`,
+      ...(breakpointNodeIds.length > 0
+        ? [`breakpoints ${String(breakpointNodeIds.length)}`]
+        : []),
     );
   } else if (event.type === "workflow.deterministic.completed") {
     const nodeIdValue = nodeId(payload["nodeId"]);
@@ -270,6 +282,43 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
         `plan-r${String(planRevision)}`,
         `set ${artifactSetSha256.slice(0, 12)}`,
       );
+    }
+  } else if (event.type.startsWith("workflow.breakpoint.")) {
+    const nodeIdValue = nodeId(payload["nodeId"]);
+    const breakpointIndex = boundedInteger(payload["breakpointIndex"], 0, 15);
+    const breakpointCount = boundedInteger(payload["breakpointCount"], 1, 16);
+    const bindingContextSha256 = hash(payload["bindingContextSha256"]);
+    const planRevision = boundedInteger(
+      payload["planRevision"],
+      1,
+      1_000_000_000,
+    );
+    if (
+      !nodeIdValue ||
+      breakpointIndex === undefined ||
+      breakpointCount === undefined ||
+      breakpointIndex >= breakpointCount ||
+      !bindingContextSha256 ||
+      planRevision === undefined
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `node ${nodeIdValue}`,
+      `breakpoint ${String(breakpointIndex + 1)}/${String(breakpointCount)}`,
+      `binding ${bindingContextSha256.slice(0, 12)}`,
+      `plan-r${String(planRevision)}`,
+    );
+    if (event.type === "workflow.breakpoint.continued") {
+      const reachedEventSeq = boundedInteger(
+        payload["reachedEventSeq"],
+        1,
+        Number.MAX_SAFE_INTEGER,
+      );
+      if (reachedEventSeq === undefined || reachedEventSeq >= event.seq) {
+        return undefined;
+      }
+      parts.push(`reached-seq ${String(reachedEventSeq)}`);
     }
   } else if (event.type.startsWith("workflow.loop.")) {
     const loopParts = workflowLoopEventTraceParts(event.type, payload);
@@ -531,6 +580,34 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     );
     const outputSha256 = hash(payload["outputSha256"]);
     if (outputSha256) parts.push(`output ${outputSha256.slice(0, 12)}`);
+    if (status === "paused") {
+      const nodeIdValue = nodeId(payload["breakpointNodeId"]);
+      const breakpointIndex = boundedInteger(payload["breakpointIndex"], 0, 15);
+      const breakpointCount = boundedInteger(payload["breakpointCount"], 1, 16);
+      const reachedEventSeq = boundedInteger(
+        payload["breakpointReachedEventSeq"],
+        1,
+        Number.MAX_SAFE_INTEGER,
+      );
+      const bindingContextSha256 = hash(
+        payload["breakpointBindingContextSha256"],
+      );
+      if (
+        !nodeIdValue ||
+        breakpointIndex === undefined ||
+        breakpointCount === undefined ||
+        breakpointIndex >= breakpointCount ||
+        reachedEventSeq === undefined ||
+        !bindingContextSha256
+      ) {
+        return undefined;
+      }
+      parts.push(
+        `before ${nodeIdValue}`,
+        `breakpoint ${String(breakpointIndex + 1)}/${String(breakpointCount)}`,
+        `binding ${bindingContextSha256.slice(0, 12)}`,
+      );
+    }
   }
   parts.push(`manifest ${manifestSha256.slice(0, 12)}`);
   return parts.join(" / ");
@@ -545,6 +622,7 @@ function safeDecisionId(value: unknown): string | undefined {
 function workflowStatus(value: unknown): string | undefined {
   return value === "completed" ||
     value === "waiting" ||
+    value === "paused" ||
     value === "blocked" ||
     value === "cancelled"
     ? value

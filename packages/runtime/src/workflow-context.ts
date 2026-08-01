@@ -16,6 +16,8 @@ export interface WorkflowExecutionContext {
   plan: ExecutionPlan;
   resumed: boolean;
   retryBlocked: boolean;
+  breakBeforeNodeIds: string[];
+  continueBreakpoint: boolean;
   onEvent?: EventSink;
   signal?: AbortSignal;
   outputs: Map<string, JsonValue>;

@@ -8,13 +8,16 @@ import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contract
 import type {
   ExecutionPlanWorkflowExperimentResultFrame,
   ExecutionPlanWorkflowResultFrame,
+  JsonValue,
   StreamFrame,
   WorkflowObjectSchema,
 } from "@napier/contracts";
 import {
+  canonicalJson,
   createExecutionPlanBlueprint,
   createLocalAgentRuntime,
   defineExecutionPlanWorkflow,
+  sha256,
   UnsupportedSandboxAdapter,
   validateExecutionPlanWorkflowExperimentResultFrame,
   validateExecutionPlanWorkflowResultFrame,
@@ -337,6 +340,125 @@ describe("Napier Workflow CLI", () => {
       ]),
     );
     expect(frames.at(-2)?.type).toBe("snapshot");
+  });
+
+  it("pauses and explicitly continues a Tool Workflow through JSONL", async () => {
+    const fixture = await createToolFixture();
+    const dependencies = {
+      createRuntime: (options: LocalAgentRuntimeOptions) =>
+        createLocalAgentRuntime({
+          ...options,
+          sandbox: new UnsupportedSandboxAdapter(
+            "workflow-breakpoint-cli-test",
+          ),
+        }),
+    };
+    const pausedStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--input-json",
+          '{"request":"Pause before inventory."}',
+          "--break-before",
+          "inventory",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, pausedStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const pausedFrames = parseFrames(pausedStdout.text());
+    const paused = validateExecutionPlanWorkflowResultFrame(
+      pausedFrames.at(-1),
+    );
+    expect(paused).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        result: expect.objectContaining({
+          breakpoint: expect.objectContaining({ nodeId: "inventory" }),
+          nodeResults: [],
+        }),
+      }),
+    );
+    const rebound = structuredClone(paused);
+    rebound.status = "waiting";
+    expect(() => validateExecutionPlanWorkflowResultFrame(rebound)).toThrow(
+      "binding",
+    );
+    const missingBreakpoint = structuredClone(paused);
+    delete missingBreakpoint.result.breakpoint;
+    expect(() =>
+      validateExecutionPlanWorkflowResultFrame(missingBreakpoint),
+    ).toThrow("breakpoint");
+    const impossibleSequence = structuredClone(paused);
+    impossibleSequence.result.breakpoint!.reachedEventSeq =
+      impossibleSequence.eventCount + 1;
+    const { resultSha256: _resultSha256, ...resultContent } =
+      impossibleSequence.result;
+    impossibleSequence.result.resultSha256 = sha256(
+      canonicalJson(resultContent as JsonValue),
+    );
+    const { contentSha256: _contentSha256, ...frameContent } =
+      impossibleSequence;
+    impossibleSequence.contentSha256 = sha256(
+      canonicalJson(frameContent as JsonValue),
+    );
+    expect(() =>
+      validateExecutionPlanWorkflowResultFrame(impossibleSequence),
+    ).toThrow("binding");
+    expect(
+      pausedFrames.some(
+        (frame) =>
+          frame.type === "event" && frame.event.type === "tool.started",
+      ),
+    ).toBe(false);
+
+    const resumedStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          paused.threadId,
+          "--plan",
+          paused.planId,
+          "--continue-breakpoint",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, resumedStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const resumedFrames = parseFrames(resumedStdout.text());
+    expect(
+      validateExecutionPlanWorkflowResultFrame(resumedFrames.at(-1)),
+    ).toEqual(expect.objectContaining({ status: "completed" }));
+    expect(
+      resumedFrames.some(
+        (frame) =>
+          frame.type === "event" &&
+          frame.event.type === "workflow.breakpoint.continued",
+      ),
+    ).toBe(true);
+    expect(
+      resumedFrames.some(
+        (frame) =>
+          frame.type === "event" && frame.event.type === "tool.completed",
+      ),
+    ).toBe(true);
   });
 
   it("streams concurrent Map item Runs through ordered JSONL", async () => {

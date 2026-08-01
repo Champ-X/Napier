@@ -6,6 +6,28 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added persistent pre-node breakpoints to executable Plan Workflows. New
+  executions may declare up to 16 unique Manifest node IDs; the Runtime
+  normalizes and freezes the set, then records `workflow.breakpoint.reached`
+  before condition evaluation, node Run creation, model/tool dispatch, or
+  workspace mutation. Results use a distinct `paused` state, ordinary resume
+  remains paused, and only explicit `continueBreakpoint` records a durable
+  `workflow.breakpoint.continued` transition before scheduling. Reach and
+  continuation bind Manifest, Plan revision, ordinal/count, current typed
+  dependency/input context, and reached event sequence. SQLite reopen
+  reconstructs open and consumed points; duplicate, stale, mismatched, or
+  forged evidence fails closed. CLI `--break-before` /
+  `--continue-breakpoint`, HTTP SSE, TypeScript SDK, local stdio RPC, strict
+  result frames, portable Replay, and privacy-bounded Web Trace share the same
+  Ledger state. Real write-before-pause, idempotent resume, restart,
+  cancellation, multiple-breakpoint, concurrent-Thread, tamper, Artifact
+  settlement, and entry-point tests cover the flow without granting new tool
+  or Sandbox capability. This is node-boundary pause/continue, not mid-node
+  suspension or complete controlled re-execution. Terminal result settlement
+  moved into a focused module, reducing the oversized Workflow Runtime from 938
+  to 874 lines. The complete gate passes 1,554 regular tests with 27 opt-in live
+  tests skipped; the 82-file Web dist remains 130.13 KiB at its main entry and
+  is bound to `3705d6104e7688da`, with release set `7481005e18509f56`.
 - Added terminal Artifact settlement to executable Plan Workflows. A Manifest
   may declare up to 16 workspace files or directories, and Workflow completion
   now waits until every completed/skipped node is followed by a real bounded

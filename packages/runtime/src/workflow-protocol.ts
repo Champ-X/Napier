@@ -7,6 +7,7 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { validateExecutionPlanWorkflowBreakpointNodeIds } from "./workflow-breakpoint-model.js";
 import {
   assertWorkflowValue,
   validateExecutionPlanWorkflowManifest,
@@ -31,7 +32,11 @@ export function validateExecuteExecutionPlanWorkflowRequest(
   const request = record(input, "Workflow execution request");
   const manifest = validateExecutionPlanWorkflowManifest(request["manifest"]);
   if (request["planId"] === undefined) {
-    assertExactKeys(request, ["manifest", "input"]);
+    assertExactKeys(
+      request,
+      ["manifest", "input", "breakBeforeNodeIds"],
+      new Set(["breakBeforeNodeIds"]),
+    );
     if (request["input"] === undefined) {
       throw new Error("Workflow execution input is required");
     }
@@ -40,21 +45,29 @@ export function validateExecuteExecutionPlanWorkflowRequest(
       request["input"],
       "Workflow input",
     );
+    const breakBeforeNodeIds = validateExecutionPlanWorkflowBreakpointNodeIds(
+      manifest,
+      request["breakBeforeNodeIds"],
+    );
     return {
       manifest,
       input: structuredClone(request["input"]) as JsonValue,
+      ...(breakBeforeNodeIds.length > 0 ? { breakBeforeNodeIds } : {}),
     };
   }
   assertExactKeys(
     request,
-    ["manifest", "planId", "retryBlocked"],
-    new Set(["retryBlocked"]),
+    ["manifest", "planId", "retryBlocked", "continueBreakpoint"],
+    new Set(["retryBlocked", "continueBreakpoint"]),
   );
   if (
     typeof request["planId"] !== "string" ||
     !PLAN_ID.test(request["planId"]) ||
     (request["retryBlocked"] !== undefined &&
-      typeof request["retryBlocked"] !== "boolean")
+      typeof request["retryBlocked"] !== "boolean") ||
+    (request["continueBreakpoint"] !== undefined &&
+      typeof request["continueBreakpoint"] !== "boolean") ||
+    (request["retryBlocked"] === true && request["continueBreakpoint"] === true)
   ) {
     throw new Error("Workflow resume request is invalid");
   }
@@ -62,6 +75,9 @@ export function validateExecuteExecutionPlanWorkflowRequest(
     manifest,
     planId: request["planId"],
     ...(request["retryBlocked"] === true ? { retryBlocked: true } : {}),
+    ...(request["continueBreakpoint"] === true
+      ? { continueBreakpoint: true }
+      : {}),
   };
 }
 
@@ -118,11 +134,12 @@ export function validateExecutionPlanWorkflowResult(
       "status",
       "resumed",
       "nodeResults",
+      "breakpoint",
       "output",
       "outputSha256",
       "resultSha256",
     ],
-    new Set(["output", "outputSha256"]),
+    new Set(["breakpoint", "output", "outputSha256"]),
   );
   if (
     result["kind"] !== "napier.execution-plan-workflow-result" ||
@@ -135,6 +152,7 @@ export function validateExecutionPlanWorkflowResult(
     !hash(result["blueprintSha256"]) ||
     (result["status"] !== "completed" &&
       result["status"] !== "waiting" &&
+      result["status"] !== "paused" &&
       result["status"] !== "blocked" &&
       result["status"] !== "cancelled") ||
     typeof result["resumed"] !== "boolean" ||
@@ -143,6 +161,37 @@ export function validateExecutionPlanWorkflowResult(
     !hash(result["resultSha256"])
   ) {
     throw new Error("Workflow result is invalid");
+  }
+  if (result["status"] === "paused") {
+    const breakpoint = record(
+      result["breakpoint"],
+      "Workflow result breakpoint",
+    );
+    assertExactKeys(breakpoint, [
+      "nodeId",
+      "breakpointIndex",
+      "breakpointCount",
+      "reachedEventSeq",
+      "bindingContextSha256",
+    ]);
+    if (
+      typeof breakpoint["nodeId"] !== "string" ||
+      !NODE_ID.test(breakpoint["nodeId"]) ||
+      !Number.isSafeInteger(breakpoint["breakpointIndex"]) ||
+      Number(breakpoint["breakpointIndex"]) < 0 ||
+      !Number.isSafeInteger(breakpoint["breakpointCount"]) ||
+      Number(breakpoint["breakpointCount"]) < 1 ||
+      Number(breakpoint["breakpointCount"]) > 16 ||
+      Number(breakpoint["breakpointIndex"]) >=
+        Number(breakpoint["breakpointCount"]) ||
+      !Number.isSafeInteger(breakpoint["reachedEventSeq"]) ||
+      Number(breakpoint["reachedEventSeq"]) < 1 ||
+      !hash(breakpoint["bindingContextSha256"])
+    ) {
+      throw new Error("Workflow result breakpoint is invalid");
+    }
+  } else if (result["breakpoint"] !== undefined) {
+    throw new Error("Only a paused Workflow can expose a breakpoint");
   }
   const nodeIds = new Set<string>();
   for (const [index, nodeInput] of result["nodeResults"].entries()) {
@@ -279,6 +328,7 @@ export function validateExecutionPlanWorkflowResultFrame(
     !PLAN_ID.test(frame["planId"]) ||
     (frame["status"] !== "completed" &&
       frame["status"] !== "waiting" &&
+      frame["status"] !== "paused" &&
       frame["status"] !== "blocked" &&
       frame["status"] !== "cancelled") ||
     !hash(frame["manifestSha256"]) ||
@@ -296,7 +346,9 @@ export function validateExecutionPlanWorkflowResultFrame(
     result.threadId !== frame["threadId"] ||
     result.planId !== frame["planId"] ||
     result.status !== frame["status"] ||
-    result.manifestSha256 !== frame["manifestSha256"]
+    result.manifestSha256 !== frame["manifestSha256"] ||
+    (result.breakpoint !== undefined &&
+      result.breakpoint.reachedEventSeq > Number(frame["eventCount"]))
   ) {
     throw new Error("Workflow result frame binding is invalid");
   }

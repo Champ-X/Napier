@@ -369,6 +369,7 @@ export function validateExecutionPlanWorkflowExperimentResultFrame(
     !PLAN_ID.test(frame["targetPlanId"]) ||
     (frame["status"] !== "completed" &&
       frame["status"] !== "waiting" &&
+      frame["status"] !== "paused" &&
       frame["status"] !== "blocked" &&
       frame["status"] !== "cancelled") ||
     !hash(frame["previewSha256"]) ||

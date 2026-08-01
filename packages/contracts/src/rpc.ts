@@ -6,6 +6,7 @@ import type {
   CreateExecutionPlanWorkflowExperimentRequest,
   CreateModelInvocationExperimentRequest,
   CreateToolInvocationExperimentRequest,
+  ExecutionPlanWorkflowBreakpoint,
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentResult,
@@ -97,6 +98,7 @@ export interface NapierRpcToolInvocationExperimentRunParams extends Omit<
 export interface NapierRpcWorkflowRunParams {
   manifest: ExecutionPlanWorkflowManifest;
   input: JsonValue;
+  breakBeforeNodeIds?: string[];
   threadId?: string;
   agentId?: string;
   title?: string;
@@ -107,6 +109,7 @@ export interface NapierRpcWorkflowResumeParams {
   threadId: string;
   planId: string;
   retryBlocked?: boolean;
+  continueBreakpoint?: boolean;
 }
 
 export interface NapierRpcWorkflowApprovalAnswerParams {
@@ -319,6 +322,7 @@ export interface NapierRpcWorkflowExecution {
   planId: string;
   status: ExecutionPlanWorkflowStatus;
   output?: JsonValue;
+  breakpoint?: ExecutionPlanWorkflowBreakpoint;
   result: ExecutionPlanWorkflowResult;
   pendingDecision?: OperatorDecision;
 }

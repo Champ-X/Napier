@@ -508,6 +508,84 @@ describe("Workflow event Trace projection", () => {
     ).toBeUndefined();
   });
 
+  it("summarizes persisted breakpoints without bound input bodies", () => {
+    const started = workflowEvent("workflow.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      workflowVersion: 1,
+      nodeCount: 2,
+      maxConcurrency: 1,
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      outputNodeId: "write",
+      breakBeforeNodeIds: ["write"],
+    });
+    const reached = {
+      ...workflowEvent("workflow.breakpoint.reached", {
+        schemaVersion: 1,
+        planId: "plan_abcdefghijklmnopqrst",
+        manifestSha256: "1".repeat(64),
+        nodeId: "write",
+        breakpointIndex: 0,
+        breakpointCount: 1,
+        bindingContextSha256: "5".repeat(64),
+        planRevision: 3,
+        input: "PRIVATE_BREAKPOINT_INPUT",
+      }),
+      seq: 10,
+    };
+    const continued = {
+      ...workflowEvent("workflow.breakpoint.continued", {
+        ...(reached.payload as Record<string, JsonValue>),
+        reachedEventSeq: 10,
+      }),
+      seq: 11,
+    };
+    const paused = {
+      ...workflowEvent("workflow.paused", {
+        schemaVersion: 1,
+        planId: "plan_abcdefghijklmnopqrst",
+        manifestSha256: "1".repeat(64),
+        status: "paused",
+        nodeResultCount: 1,
+        completedNodeCount: 1,
+        skippedNodeCount: 0,
+        resultSha256: "6".repeat(64),
+        breakpointNodeId: "write",
+        breakpointIndex: 0,
+        breakpointCount: 1,
+        breakpointReachedEventSeq: 10,
+        breakpointBindingContextSha256: "5".repeat(64),
+      }),
+      seq: 12,
+    };
+
+    expect(workflowEventTraceSummary(started)).toContain("breakpoints 1");
+    expect(workflowEventTraceSummary(reached)).toBe(
+      `workflow breakpoint reached / node write / breakpoint 1/1 / binding ${"5".repeat(12)} / plan-r3 / manifest ${"1".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(continued)).toBe(
+      `workflow breakpoint continued / node write / breakpoint 1/1 / binding ${"5".repeat(12)} / plan-r3 / reached-seq 10 / manifest ${"1".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(paused)).toBe(
+      `workflow paused / status paused / completed 1/1 / result ${"6".repeat(12)} / before write / breakpoint 1/1 / binding ${"5".repeat(12)} / manifest ${"1".repeat(12)}`,
+    );
+    expect(
+      `${workflowEventTraceSummary(reached)} ${workflowEventTraceSummary(continued)} ${workflowEventTraceSummary(paused)}`,
+    ).not.toContain("PRIVATE");
+    expect(
+      workflowEventTraceSummary({
+        ...continued,
+        payload: {
+          ...(continued.payload as Record<string, JsonValue>),
+          reachedEventSeq: 11,
+        },
+      }),
+    ).toBeUndefined();
+  });
+
   it("summarizes Artifact settlement without workspace paths or diagnostics", () => {
     const settled = workflowEvent("workflow.artifacts.settled", {
       schemaVersion: 1,

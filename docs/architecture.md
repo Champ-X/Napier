@@ -402,6 +402,12 @@ feedback, termination, checkpoint reconstruction, and fail-closed recovery.
 `workflow-artifact-settlement.ts` owns terminal file/directory inspection,
 Plan Artifact transitions, commit-gap repair, cancellation boundaries, and
 body-free aggregate evidence instead of adding that logic to Store or Server.
+`workflow-breakpoint-model.ts` owns the bounded canonical breakpoint set, and
+`workflow-breakpoints.ts` owns reach/continue evidence and open-breakpoint
+recovery without adding scheduler state to Store.
+`workflow-result.ts` owns result hashing, terminal-event settlement, and
+Thread-status projection, keeping those concerns out of the oversized
+scheduler.
 `workflow-condition-model.ts` validates and evaluates typed equality guards,
 while `workflow-condition-node.ts` owns the no-Run Plan skip transition.
 `workflow-ledger.ts` and `workflow-recovery.ts` own durable evidence
@@ -461,6 +467,27 @@ workspace scope, and freshness before `tool.started`. JavaScript/Python
 kernels, Node debugger, background Process Sessions, and preview-bound
 workspace file mutations stay Run-owned Agent tools because a one-shot node
 cannot honestly provide their persistent session lifecycle.
+
+New executions may declare up to 16 unique pre-node breakpoints. The request
+validator normalizes node IDs to Manifest order and `workflow.started` freezes
+the canonical set. Before each ready batch, the Runtime reconstructs prior
+breakpoint events, then persists `workflow.breakpoint.reached` before returning
+a distinct `paused` result. The event binds the selected node, ordinal/count,
+Manifest, Plan revision, and a hash of the node's current Workflow/dependency
+binding context. This check runs before condition evaluation, Run creation,
+model dispatch, Tool invocation, or workspace side effects.
+
+Ordinary resume does not consume an open breakpoint. An explicit
+`continueBreakpoint` first records `workflow.breakpoint.continued`, including
+the exact reached event sequence and binding, then permits scheduling.
+Continuation and blocked-node retry are mutually exclusive. A crash after the
+continued event therefore resumes execution without requesting duplicate
+consent; ordinary interrupted-node recovery still governs any side effect that
+may already have started. SQLite reopen reconstructs both open and consumed
+points from Ledger evidence, while duplicates, stale Plan revisions, changed
+bindings, and forged continuations fail closed. Web Trace keeps only safe node
+IDs, counts, revisions, event sequence, and hash prefixes. This is node-boundary
+pause/continue, not mid-node suspension or DAP stepping.
 
 Map nodes add dynamic cardinality without adding a second scheduler. A Map
 selects one required array capped at 16 items from its already constructed

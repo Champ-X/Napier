@@ -14,6 +14,7 @@ import {
 } from "@napier/contracts";
 import {
   sha256,
+  validateExecutionPlanWorkflowBreakpointNodeIds,
   validateExecutionPlanWorkflowManifest,
   validateRunEmbeddedWorkflowInput,
 } from "@napier/runtime";
@@ -178,12 +179,28 @@ export function parseWorkflowRunParams(
   input: Record<string, unknown> | undefined,
 ): RpcWorkflowRunParams {
   if (!input) invalidParams("Workflow run params are required");
-  exactKeys(input, ["manifest", "input", "threadId", "agentId", "title"]);
+  exactKeys(input, [
+    "manifest",
+    "input",
+    "breakBeforeNodeIds",
+    "threadId",
+    "agentId",
+    "title",
+  ]);
   if (!Object.hasOwn(input, "input")) {
     invalidParams("Workflow input is required");
   }
   const workflowInput = jsonValue(input["input"]);
   const manifest = workflowRunManifest(input["manifest"], workflowInput);
+  let breakBeforeNodeIds: string[];
+  try {
+    breakBeforeNodeIds = validateExecutionPlanWorkflowBreakpointNodeIds(
+      manifest,
+      input["breakBeforeNodeIds"],
+    );
+  } catch {
+    invalidParams("breakBeforeNodeIds is invalid");
+  }
   const threadId = optionalResourceId(input["threadId"], "threadId");
   const agentId = optionalResourceId(input["agentId"], "agentId");
   const title =
@@ -197,6 +214,7 @@ export function parseWorkflowRunParams(
   return {
     manifest,
     input: workflowInput,
+    ...(breakBeforeNodeIds.length > 0 ? { breakBeforeNodeIds } : {}),
     ...(threadId ? { threadId } : {}),
     ...(agentId ? { agentId } : {}),
     ...(title ? { title } : {}),
@@ -207,7 +225,13 @@ export function parseWorkflowResumeParams(
   input: Record<string, unknown> | undefined,
 ): RpcWorkflowResumeParams {
   if (!input) invalidParams("Workflow resume params are required");
-  exactKeys(input, ["manifest", "threadId", "planId", "retryBlocked"]);
+  exactKeys(input, [
+    "manifest",
+    "threadId",
+    "planId",
+    "retryBlocked",
+    "continueBreakpoint",
+  ]);
   const manifest = workflowManifest(input["manifest"]);
   const threadId = resourceId(input["threadId"], "threadId");
   const planId = resourceId(input["planId"], "planId");
@@ -217,11 +241,21 @@ export function parseWorkflowResumeParams(
       : typeof input["retryBlocked"] === "boolean"
         ? input["retryBlocked"]
         : invalidParams("retryBlocked is invalid");
+  const continueBreakpoint =
+    input["continueBreakpoint"] === undefined
+      ? undefined
+      : typeof input["continueBreakpoint"] === "boolean"
+        ? input["continueBreakpoint"]
+        : invalidParams("continueBreakpoint is invalid");
+  if (retryBlocked && continueBreakpoint) {
+    invalidParams("retryBlocked and continueBreakpoint are mutually exclusive");
+  }
   return {
     manifest,
     threadId,
     planId,
     ...(retryBlocked ? { retryBlocked: true } : {}),
+    ...(continueBreakpoint ? { continueBreakpoint: true } : {}),
   };
 }
 

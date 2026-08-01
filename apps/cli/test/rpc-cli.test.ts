@@ -351,6 +351,7 @@ describe("Napier RPC CLI", () => {
       params: {
         manifest,
         input: { text: "Evidence-native RPC Workflow" },
+        breakBeforeNodeIds: ["deliver"],
         title: "RPC Workflow subprocess",
       },
     });
@@ -359,9 +360,12 @@ describe("Napier RPC CLI", () => {
       expect.objectContaining({
         threadId: expect.stringMatching(/^thread_/u),
         planId: expect.stringMatching(/^plan_/u),
-        status: "completed",
-        output: { message: "Evidence-native RPC Workflow" },
-        result: expect.objectContaining({ resumed: false }),
+        status: "paused",
+        breakpoint: expect.objectContaining({ nodeId: "deliver" }),
+        result: expect.objectContaining({
+          resumed: false,
+          nodeResults: [],
+        }),
       }),
     );
     const threadId = String(first!["threadId"]);
@@ -380,9 +384,8 @@ describe("Napier RPC CLI", () => {
     ).toEqual(
       expect.arrayContaining([
         "workflow.started",
-        "workflow.node.started",
-        "workflow.node.completed",
-        "workflow.completed",
+        "workflow.breakpoint.reached",
+        "workflow.paused",
       ]),
     );
     for (const message of firstEvents) {
@@ -391,6 +394,29 @@ describe("Napier RPC CLI", () => {
         sha256(JSON.stringify(params["event"])),
       );
     }
+
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "workflow-continue",
+      method: "napier/workflow/resume",
+      params: {
+        manifest,
+        threadId,
+        planId,
+        continueBreakpoint: true,
+      },
+    });
+    expect(await rpc.waitForId("workflow-continue")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          threadId,
+          planId,
+          status: "completed",
+          output: { message: "Evidence-native RPC Workflow" },
+          result: expect.objectContaining({ resumed: true }),
+        }),
+      }),
+    );
 
     rpc.send({
       jsonrpc: "2.0",

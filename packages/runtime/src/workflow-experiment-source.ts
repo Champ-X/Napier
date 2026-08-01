@@ -172,8 +172,9 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
   const start = await ledger.recoverWorkflowStart(
     sourceThreadId,
     sourcePlan.id,
-    sourceManifestSha256,
+    manifest,
     manifest.maxConcurrency ?? 1,
+    sourceManifestSha256,
   );
   if (start.agentId !== sourceThread.agentId) {
     throw new Error("Workflow experiment source Agent does not match");

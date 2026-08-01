@@ -47,12 +47,12 @@ Version `0.1.0` includes:
   nodes, bounded read-only Agent Map fan-out, bounded sequential read-only
   Agent Loop refinement, and durable human Approval gates, strict JSON output,
   declared tool effects, policy/schema preflight, optional bounded parallel
-  waves, explicit retry, safe checkpoint reuse, restart reconstruction, and
-  shared CLI/HTTP/Web/Trace evidence. A Workflow with declared workspace file
-  or directory Artifacts completes only after Napier hashes current bytes and
-  records the existing `produced -> verified` Plan lifecycle; missing, drifted,
-  oversized, escaped, or symlink-backed delivery blocks instead of trusting
-  node output;
+  waves, persistent pre-node breakpoints, explicit retry, safe checkpoint
+  reuse, restart reconstruction, and shared CLI/HTTP/SDK/RPC/Web/Trace
+  evidence. A Workflow with declared workspace file or directory Artifacts
+  completes only after Napier hashes current bytes and records the existing
+  `produced -> verified` Plan lifecycle; missing, drifted, oversized, escaped,
+  or symlink-backed delivery blocks instead of trusting node output;
 - controlled Workflow checkpoint experiments with verified ancestor reuse,
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
@@ -730,6 +730,37 @@ npm run --silent napier -- workflow \
 
 The original input is recovered and hash-checked from the Work Ledger. A retry
 never reuses an unknown side effect automatically.
+
+Pause before one or more Manifest nodes on the initial execution:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --input-json '{"request":"Produce the verified report."}' \
+  --break-before verify,publish \
+  --jsonl
+```
+
+The result is `paused` before the selected ready node creates a Run or invokes
+a Tool. Repeating an ordinary resume remains paused. Continue the durable open
+breakpoint explicitly:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --thread thread_example \
+  --plan plan_example \
+  --continue-breakpoint \
+  --jsonl
+```
+
+Breakpoints are recovered from Ledger after restart. Continuation and
+`--retry-blocked` are mutually exclusive because they authorize different
+state transitions.
 
 An Approval node returns a successful `waiting` result without holding a
 process open. Answer and resume the exact Plan atomically from CLI:
@@ -3039,6 +3070,24 @@ persisted `workflowPlanId` derived from a package-internal capability, so only
 Runs for the same active Plan can coexist. `Thread.currentRunId` remains a
 compatibility pointer to one active Run; the Run list and Plan steps are the
 complete projection.
+
+New executions may declare up to 16 unique `breakBeforeNodeIds`. The Runtime
+normalizes them to Manifest order and records the set in `workflow.started`.
+When a selected node becomes ready, `workflow.breakpoint.reached` binds its
+Manifest identity, Plan revision, ordinal, and current dependency/input
+binding-context hash before the Runtime returns `paused`. No condition,
+node Run, model, Tool, or node side effect starts first. An ordinary resume
+returns the same durable breakpoint; only `continueBreakpoint=true` records
+`workflow.breakpoint.continued` and lets scheduling proceed.
+
+Reach and continuation reconstruct from the Ledger after SQLite reopen.
+Duplicate, stale, mismatched, or forged evidence fails closed, and a consumed
+continuation remains consumed if cancellation or process loss occurs before
+the node starts. This primitive pauses only at node boundaries; it does not
+claim mid-node suspension, DAP stepping, single-node mocks, or side-effect
+simulation. CLI JSONL, HTTP SSE, the TypeScript SDK, and local stdio RPC share
+the same contract, while Web Trace exposes only node IDs, counts, revisions,
+event sequence, and hash prefixes.
 
 Map nodes select one required, Schema-bounded array from their constructed
 input and run up to three item Agents concurrently, with at most 16 items.

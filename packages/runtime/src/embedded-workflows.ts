@@ -63,6 +63,7 @@ export interface EmbeddedWorkflowDefinition {
 export interface RunEmbeddedWorkflowOptions {
   manifest: ExecutionPlanWorkflowManifest;
   input: JsonValue;
+  breakBeforeNodeIds?: string[];
   threadId?: string;
   agentId?: string;
   title?: string;
@@ -75,6 +76,7 @@ export interface ResumeEmbeddedWorkflowOptions {
   threadId: string;
   planId: string;
   retryBlocked?: boolean;
+  continueBreakpoint?: boolean;
   signal?: AbortSignal;
   onEvent?: EventSink;
 }
@@ -173,6 +175,9 @@ export class EmbeddedWorkflowService {
       request: {
         manifest,
         input: options.input,
+        ...(options.breakBeforeNodeIds
+          ? { breakBeforeNodeIds: options.breakBeforeNodeIds }
+          : {}),
       },
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
@@ -191,6 +196,7 @@ export class EmbeddedWorkflowService {
         manifest,
         planId: options.planId,
         ...(options.retryBlocked ? { retryBlocked: true } : {}),
+        ...(options.continueBreakpoint ? { continueBreakpoint: true } : {}),
       },
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),

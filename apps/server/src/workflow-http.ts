@@ -89,6 +89,12 @@ export async function executeWorkflowHttp(
     "X-Napier-Workflow-Max-Concurrency",
     String(request.manifest.maxConcurrency ?? 1),
   );
+  if ("breakBeforeNodeIds" in request) {
+    context.header(
+      "X-Napier-Workflow-Breakpoint-Count",
+      String(request.breakBeforeNodeIds?.length ?? 0),
+    );
+  }
 
   return streamSSE(context, async (stream) => {
     const writeFrame = async (

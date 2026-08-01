@@ -1,5 +1,6 @@
 import type {
   ExecuteExecutionPlanWorkflowRequest,
+  ExecutionPlanWorkflowBreakpoint,
   ExecutionPlanWorkflowNode,
   ExecutionPlanWorkflowNodeResult,
   ExecutionPlanWorkflowResult,
@@ -28,15 +29,11 @@ import {
 import { recoverExecutionPlanWorkflowExperimentTarget } from "./workflow-experiment-recovery.js";
 import {
   ExecutionPlanWorkflowLedger,
-  WORKFLOW_BLOCKED_EVENT,
-  WORKFLOW_CANCELLED_EVENT,
-  WORKFLOW_COMPLETED_EVENT,
   WORKFLOW_EVENT_SCHEMA_VERSION,
   WORKFLOW_NODE_COMPLETED_EVENT,
   WORKFLOW_NODE_FAILED_EVENT,
   WORKFLOW_NODE_STARTED_EVENT,
   WORKFLOW_STARTED_EVENT,
-  WORKFLOW_WAITING_EVENT,
   workflowNodeEventMetadata,
 } from "./workflow-ledger.js";
 import { ExecutionPlanWorkflowRecovery } from "./workflow-recovery.js";
@@ -58,6 +55,8 @@ import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materia
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
 import { ExecutionPlanWorkflowArtifactSettlement } from "./workflow-artifact-settlement.js";
+import { validateExecutionPlanWorkflowBreakpointNodeIds } from "./workflow-breakpoint-model.js";
+import { ExecutionPlanWorkflowBreakpointRuntime } from "./workflow-breakpoints.js";
 import { ExecutionPlanWorkflowDeterministicNodeExecutor } from "./workflow-deterministic-node.js";
 import { ExecutionPlanWorkflowMapNodeExecutor } from "./workflow-map-node.js";
 import { ExecutionPlanWorkflowLoopNodeExecutor } from "./workflow-loop-node.js";
@@ -66,6 +65,7 @@ import {
   DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
   executeExecutionPlanWorkflowReadyBatch,
 } from "./workflow-parallel-scheduler.js";
+import { finishExecutionPlanWorkflow } from "./workflow-result.js";
 import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
 import { ExecutionPlanWorkflowToolNodeExecutor } from "./workflow-tool-node.js";
 
@@ -86,6 +86,7 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly activeThreads = new Set<string>();
   private readonly ledger: ExecutionPlanWorkflowLedger;
   private readonly artifactSettlement: ExecutionPlanWorkflowArtifactSettlement;
+  private readonly breakpointRuntime: ExecutionPlanWorkflowBreakpointRuntime;
   private readonly recovery: ExecutionPlanWorkflowRecovery;
   private readonly reuseMaterializer: ExecutionPlanWorkflowReuseMaterializer;
   private readonly approvalNodeExecutor: ExecutionPlanWorkflowApprovalNodeExecutor;
@@ -103,6 +104,10 @@ export class ExecutionPlanWorkflowRuntime {
     this.ledger = new ExecutionPlanWorkflowLedger(store);
     this.artifactSettlement = new ExecutionPlanWorkflowArtifactSettlement(
       store,
+    );
+    this.breakpointRuntime = new ExecutionPlanWorkflowBreakpointRuntime(
+      store,
+      this.ledger,
     );
     this.conditionNodeExecutor = new ExecutionPlanWorkflowConditionNodeExecutor(
       store,
@@ -192,6 +197,15 @@ export class ExecutionPlanWorkflowRuntime {
     const manifest = validateExecutionPlanWorkflowManifest(
       options.request.manifest,
     );
+    if (
+      "planId" in options.request &&
+      options.request.retryBlocked === true &&
+      options.request.continueBreakpoint === true
+    ) {
+      throw new Error(
+        "Workflow retry and breakpoint continuation are mutually exclusive",
+      );
+    }
     if (this.activeThreads.has(options.threadId)) {
       throw new Error("Thread already has an active Workflow execution");
     }
@@ -244,6 +258,10 @@ export class ExecutionPlanWorkflowRuntime {
       options.onEvent,
     );
     const input = structuredClone(options.request.input);
+    const breakBeforeNodeIds = validateExecutionPlanWorkflowBreakpointNodeIds(
+      manifest,
+      options.request.breakBeforeNodeIds,
+    );
     await this.ledger.append(
       {
         threadId: options.threadId,
@@ -268,6 +286,7 @@ export class ExecutionPlanWorkflowRuntime {
           maxConcurrency:
             manifest.maxConcurrency ??
             DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
+          ...(breakBeforeNodeIds.length > 0 ? { breakBeforeNodeIds } : {}),
         },
       },
       options.onEvent,
@@ -281,6 +300,8 @@ export class ExecutionPlanWorkflowRuntime {
       plan,
       resumed: false,
       retryBlocked: false,
+      breakBeforeNodeIds,
+      continueBreakpoint: false,
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       outputs: new Map(),
@@ -324,7 +345,7 @@ export class ExecutionPlanWorkflowRuntime {
     const started = await this.ledger.recoverWorkflowStart(
       options.threadId,
       plan.id,
-      manifest.contentSha256,
+      manifest,
       manifest.maxConcurrency ?? DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
     );
     const thread = this.store.getThread(options.threadId);
@@ -351,6 +372,8 @@ export class ExecutionPlanWorkflowRuntime {
       plan,
       resumed: true,
       retryBlocked: options.request.retryBlocked === true,
+      breakBeforeNodeIds: started.breakBeforeNodeIds,
+      continueBreakpoint: options.request.continueBreakpoint === true,
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       outputs: new Map(),
@@ -385,6 +408,13 @@ export class ExecutionPlanWorkflowRuntime {
         return this.finish(context, "cancelled");
       }
       context.plan = this.store.getPlan(context.plan.id);
+      const breakpoint = await this.breakpointRuntime.beforeReadyBatch(context);
+      if (breakpoint === "cancelled") {
+        return this.finish(context, "cancelled");
+      }
+      if (breakpoint) {
+        return this.finish(context, "paused", breakpoint);
+      }
       const batch = await executeExecutionPlanWorkflowReadyBatch(
         context,
         (nodeContext, node) => this.executeNode(nodeContext, node),
@@ -827,109 +857,15 @@ export class ExecutionPlanWorkflowRuntime {
   private async finish(
     context: WorkflowExecutionContext,
     status: ExecutionPlanWorkflowResult["status"],
+    breakpoint?: ExecutionPlanWorkflowBreakpoint,
   ): Promise<ExecutionPlanWorkflowResult> {
-    context.plan = this.store.getPlan(context.plan.id);
-    const output =
-      status === "completed"
-        ? context.outputs.get(context.manifest.outputNodeId)
-        : undefined;
-    if (status === "completed") {
-      if (output === undefined) {
-        throw new Error("Workflow output node result is unavailable");
-      }
-      assertWorkflowValue(
-        context.manifest.outputSchema,
-        output,
-        "Workflow output",
-      );
-    }
-    const nodeResults = context.manifest.nodes.flatMap((node) => {
-      const result = context.nodeResults.get(node.id);
-      return result ? [structuredClone(result)] : [];
-    });
-    const base = {
-      kind: "napier.execution-plan-workflow-result" as const,
-      schemaVersion: 1 as const,
-      threadId: context.threadId,
-      planId: context.plan.id,
-      manifestSha256: context.manifest.contentSha256,
-      blueprintSha256: context.manifest.blueprint.contentSha256,
+    return finishExecutionPlanWorkflow(
+      this.store,
+      this.ledger,
+      context,
       status,
-      resumed: context.resumed,
-      nodeResults,
-      ...(output !== undefined ? { output: structuredClone(output) } : {}),
-      ...(output !== undefined
-        ? { outputSha256: sha256(canonicalJson(output)) }
-        : {}),
-    };
-    const result: ExecutionPlanWorkflowResult = {
-      ...base,
-      resultSha256: sha256(canonicalJson(base)),
-    };
-    const eventType =
-      status === "completed"
-        ? WORKFLOW_COMPLETED_EVENT
-        : status === "waiting"
-          ? WORKFLOW_WAITING_EVENT
-          : status === "cancelled"
-            ? WORKFLOW_CANCELLED_EVENT
-            : WORKFLOW_BLOCKED_EVENT;
-    const completedNodeCount = nodeResults.filter(
-      (node) => node.status === "completed",
-    ).length;
-    const skippedNodeCount = nodeResults.filter(
-      (node) => node.status === "skipped",
-    ).length;
-    if (
-      !(await this.ledger.hasTerminalEvent({
-        threadId: context.threadId,
-        planId: context.plan.id,
-        eventType,
-        manifestSha256: context.manifest.contentSha256,
-        blueprintSha256: context.manifest.blueprint.contentSha256,
-        status,
-        planRevision: context.plan.revision,
-        nodeResultCount: nodeResults.length,
-        completedNodeCount,
-        skippedNodeCount,
-        ...(result.outputSha256 ? { outputSha256: result.outputSha256 } : {}),
-      }))
-    ) {
-      await this.ledger.append(
-        {
-          threadId: context.threadId,
-          runId: createId("runctl"),
-          type: eventType,
-          category: "plan",
-          visibility: "user",
-          payload: {
-            schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
-            planId: context.plan.id,
-            manifestSha256: context.manifest.contentSha256,
-            blueprintSha256: context.manifest.blueprint.contentSha256,
-            status,
-            planRevision: context.plan.revision,
-            nodeResultCount: nodeResults.length,
-            completedNodeCount,
-            skippedNodeCount,
-            ...(result.outputSha256
-              ? { outputSha256: result.outputSha256 }
-              : {}),
-            resultSha256: result.resultSha256,
-          },
-        },
-        context.onEvent,
-      );
-    }
-    await this.store.setThreadStatus(
-      context.threadId,
-      status === "waiting"
-        ? "waiting"
-        : status === "blocked"
-          ? "failed"
-          : "idle",
+      breakpoint,
     );
-    return result;
   }
 }
 

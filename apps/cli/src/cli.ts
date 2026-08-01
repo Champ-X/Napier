@@ -305,10 +305,16 @@ async function executeWorkflow(
                 manifest,
                 planId: options.planId,
                 ...(options.retryBlocked ? { retryBlocked: true } : {}),
+                ...(options.continueBreakpoint
+                  ? { continueBreakpoint: true }
+                  : {}),
               }
             : {
                 manifest,
                 input: parseJson(options.inputJson!, "Workflow input"),
+                ...(options.breakBeforeNodeIds
+                  ? { breakBeforeNodeIds: options.breakBeforeNodeIds }
+                  : {}),
               },
         );
     const experimentRequest = options.fromNodeId
@@ -470,6 +476,7 @@ async function executeWorkflow(
               planId: result.planId,
               status: result.status,
               resultSha256: result.resultSha256,
+              ...(result.breakpoint ? { breakpoint: result.breakpoint } : {}),
             })
           : canonicalJson(result.output),
       );
@@ -478,7 +485,11 @@ async function executeWorkflow(
         `Napier workflow ${result.planId} ${result.status} (thread ${threadId})`,
       );
     }
-    return result.status === "completed" || result.status === "waiting" ? 0 : 1;
+    return result.status === "completed" ||
+      result.status === "waiting" ||
+      result.status === "paused"
+      ? 0
+      : 1;
   } catch (error) {
     const frame = streamRunErrorFrame(threadId, error);
     if (options.jsonl) {

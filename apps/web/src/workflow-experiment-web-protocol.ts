@@ -374,10 +374,11 @@ function stringArray(input: unknown, maximum: number): input is string[] {
 
 function workflowStatus(
   input: unknown,
-): input is "completed" | "waiting" | "blocked" | "cancelled" {
+): input is "completed" | "waiting" | "paused" | "blocked" | "cancelled" {
   return (
     input === "completed" ||
     input === "waiting" ||
+    input === "paused" ||
     input === "blocked" ||
     input === "cancelled"
   );

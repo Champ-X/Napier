@@ -90,6 +90,8 @@ function forkWorkflowExecutionContext(
     plan: structuredClone(context.plan),
     resumed: context.resumed,
     retryBlocked: context.retryBlocked,
+    breakBeforeNodeIds: [...context.breakBeforeNodeIds],
+    continueBreakpoint: context.continueBreakpoint,
     signal,
     ...(context.onEvent ? { onEvent: context.onEvent } : {}),
     outputs: new Map(

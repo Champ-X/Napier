@@ -1,6 +1,7 @@
 import type {
   ExecutionPlan,
   ExecutionPlanWorkflowApprovalNode,
+  ExecutionPlanWorkflowBreakpoint,
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowNode,
   JsonValue,
@@ -12,6 +13,7 @@ import type { EventSink } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import type { LocalStore } from "./store.js";
+import { validateExecutionPlanWorkflowBreakpointNodeIds } from "./workflow-breakpoint-model.js";
 import { executionPlanWorkflowConditionSha256 } from "./workflow-condition-model.js";
 import {
   resolveWorkflowApproval,
@@ -56,6 +58,7 @@ export const WORKFLOW_NODE_FAILED_EVENT = "workflow.node.failed";
 export const WORKFLOW_APPROVAL_REQUESTED_EVENT = "workflow.approval.requested";
 export const WORKFLOW_COMPLETED_EVENT = "workflow.completed";
 export const WORKFLOW_WAITING_EVENT = "workflow.waiting";
+export const WORKFLOW_PAUSED_EVENT = "workflow.paused";
 export const WORKFLOW_BLOCKED_EVENT = "workflow.blocked";
 export const WORKFLOW_CANCELLED_EVENT = "workflow.cancelled";
 
@@ -70,6 +73,7 @@ export interface RecoveredWorkflowStart {
   input: JsonValue;
   agentId: string;
   agentRevision: number;
+  breakBeforeNodeIds: string[];
 }
 
 export class ExecutionPlanWorkflowLedger {
@@ -78,8 +82,9 @@ export class ExecutionPlanWorkflowLedger {
   async recoverWorkflowStart(
     threadId: string,
     planId: string,
-    manifestSha256: string,
+    manifest: ExecutionPlanWorkflowManifest,
     maxConcurrency = 1,
+    expectedManifestSha256 = manifest.contentSha256,
   ): Promise<RecoveredWorkflowStart> {
     const events = await this.store.listEvents(threadId);
     const started = events.find(
@@ -92,7 +97,7 @@ export class ExecutionPlanWorkflowLedger {
       !started ||
       !isWorkflowRecord(started.payload) ||
       started.payload["schemaVersion"] !== WORKFLOW_EVENT_SCHEMA_VERSION ||
-      started.payload["manifestSha256"] !== manifestSha256 ||
+      started.payload["manifestSha256"] !== expectedManifestSha256 ||
       started.payload["input"] === undefined ||
       typeof started.payload["inputSha256"] !== "string" ||
       (started.payload["maxConcurrency"] ?? 1) !== maxConcurrency ||
@@ -106,10 +111,15 @@ export class ExecutionPlanWorkflowLedger {
     if (sha256(canonicalJson(input)) !== started.payload["inputSha256"]) {
       throw new Error("Workflow input evidence hash mismatch");
     }
+    const breakBeforeNodeIds = validateExecutionPlanWorkflowBreakpointNodeIds(
+      manifest,
+      started.payload["breakBeforeNodeIds"],
+    );
     return {
       input,
       agentId: started.payload["agentId"],
       agentRevision: Number(started.payload["agentRevision"]),
+      breakBeforeNodeIds,
     };
   }
 
@@ -758,6 +768,7 @@ export class ExecutionPlanWorkflowLedger {
     nodeResultCount: number;
     completedNodeCount: number;
     skippedNodeCount: number;
+    breakpoint?: ExecutionPlanWorkflowBreakpoint;
     outputSha256?: string;
   }): Promise<boolean> {
     const terminals = (await this.store.listEvents(input.threadId)).filter(
@@ -862,6 +873,7 @@ function workflowTerminalEventMatches(
     nodeResultCount: number;
     completedNodeCount: number;
     skippedNodeCount: number;
+    breakpoint?: ExecutionPlanWorkflowBreakpoint;
     outputSha256?: string;
   },
   requirePlanRevision: boolean,
@@ -875,6 +887,13 @@ function workflowTerminalEventMatches(
     payload["nodeResultCount"] !== input.nodeResultCount ||
     payload["completedNodeCount"] !== input.completedNodeCount ||
     (payload["skippedNodeCount"] ?? 0) !== input.skippedNodeCount ||
+    payload["breakpointNodeId"] !== input.breakpoint?.nodeId ||
+    payload["breakpointIndex"] !== input.breakpoint?.breakpointIndex ||
+    payload["breakpointCount"] !== input.breakpoint?.breakpointCount ||
+    payload["breakpointReachedEventSeq"] !==
+      input.breakpoint?.reachedEventSeq ||
+    payload["breakpointBindingContextSha256"] !==
+      input.breakpoint?.bindingContextSha256 ||
     payload["outputSha256"] !== input.outputSha256 ||
     !hash(payload["resultSha256"])
   ) {
