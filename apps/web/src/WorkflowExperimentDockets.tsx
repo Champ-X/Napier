@@ -45,6 +45,18 @@ export function WorkflowExperimentPreviewDocket({
             <dt>{copy.rerun}</dt>
             <dd>{preview.rerunNodeIds.length}</dd>
           </div>
+          {preview.schemaVersion === 2 ? (
+            <>
+              <div>
+                <dt>{copy.executeNow}</dt>
+                <dd>{preview.executionNodeIds.length}</dd>
+              </div>
+              <div>
+                <dt>{copy.stopBefore}</dt>
+                <dd>{preview.stopBeforeNodeIds.length}</dd>
+              </div>
+            </>
+          ) : null}
         </dl>
       </header>
 

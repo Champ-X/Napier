@@ -178,6 +178,7 @@ export * from "./workflow-breakpoints.js";
 export * from "./workflow-blueprints.js";
 export * from "./workflow-experiment-comparison.js";
 export * from "./workflow-experiment-comparison-protocol.js";
+export * from "./workflow-experiment-mode.js";
 export * from "./workflow-experiment-protocol.js";
 export * from "./workflow-experiments.js";
 export * from "./workflow-manifests.js";

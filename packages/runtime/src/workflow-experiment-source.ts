@@ -20,6 +20,7 @@ import { executionPlanWorkflowDeterministicTemplateSha256 } from "./workflow-det
 import { workflowLoopNodeConfigurationSha256 } from "./workflow-loop-model.js";
 import { workflowMapNodeConfigurationSha256 } from "./workflow-map-model.js";
 import { workflowReduceConfigurationSha256 } from "./workflow-reduce-model.js";
+import { projectWorkflowExperimentExecution } from "./workflow-experiment-mode.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
 import {
   defineExecutionPlanWorkflow,
@@ -64,17 +65,20 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     throw new Error("Workflow experiment source Plan still has a running node");
   }
 
-  const rerunNodeIds = workflowExperimentRerunNodeIds(
+  const execution = projectWorkflowExperimentExecution(
     manifest,
     request.fromNodeId,
+    request.mode ?? "subgraph",
   );
+  const { rerunNodeIds, executionNodeIds, stopBeforeNodeIds } = execution;
   const rerunSet = new Set(rerunNodeIds);
+  const executionSet = new Set(executionNodeIds);
   const reusedNodeIds = manifest.nodes
     .map((node) => node.id)
     .filter((nodeId) => !rerunSet.has(nodeId));
   const modelOverrides = normalizedModelOverrides(
     manifest,
-    rerunSet,
+    executionSet,
     request.modelOverrides ?? {},
   );
   const candidateManifest = defineExecutionPlanWorkflow({
@@ -115,7 +119,7 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     }
     return snapshot;
   });
-  const toolEffects = rerunNodeIds.map((nodeId) =>
+  const toolEffects = executionNodeIds.map((nodeId) =>
     experimentNodeToolEffects(source.events, sourcePlan.id, nodeId),
   );
   const requiresSideEffectConfirmation = toolEffects.some(
@@ -124,9 +128,8 @@ export async function projectExecutionPlanWorkflowExperimentSource(
       effects.unknownCount > 0 ||
       effects.unresolvedCount > 0,
   );
-  const previewContent = {
+  const previewBase = {
     kind: "napier.execution-plan-workflow-experiment-preview" as const,
-    schemaVersion: 1 as const,
     sourceThreadId,
     sourcePlanId: sourcePlan.id,
     sourcePlanRevision: sourcePlan.revision,
@@ -141,6 +144,19 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     toolEffects,
     requiresSideEffectConfirmation,
   };
+  const previewContent =
+    execution.mode === "single_node"
+      ? {
+          ...previewBase,
+          schemaVersion: 2 as const,
+          mode: "single_node" as const,
+          executionNodeIds,
+          stopBeforeNodeIds,
+        }
+      : {
+          ...previewBase,
+          schemaVersion: 1 as const,
+        };
   return {
     sourcePlan,
     sourceInput: structuredClone(source.input),
@@ -357,32 +373,6 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
     events,
     completedNodes,
   };
-}
-
-export function workflowExperimentRerunNodeIds(
-  manifest: ExecutionPlanWorkflowManifest,
-  fromNodeId: string,
-): string[] {
-  if (!manifest.nodes.some((node) => node.id === fromNodeId)) {
-    throw new Error("Workflow experiment start node is not in the Manifest");
-  }
-  const rerun = new Set([fromNodeId]);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const step of manifest.blueprint.steps) {
-      if (
-        !rerun.has(step.id) &&
-        step.dependsOn?.some((dependency) => rerun.has(dependency))
-      ) {
-        rerun.add(step.id);
-        changed = true;
-      }
-    }
-  }
-  return manifest.nodes
-    .map((node) => node.id)
-    .filter((nodeId) => rerun.has(nodeId));
 }
 
 function normalizedModelOverrides(

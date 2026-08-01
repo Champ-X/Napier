@@ -55,4 +55,7 @@ export interface WorkflowExperimentLineage {
   rerunNodeIds: string[];
   previewSha256: string;
   sideEffectsConfirmed: boolean;
+  executionMode?: "single_node";
+  executionNodeIds?: string[];
+  stopBeforeNodeIds?: string[];
 }

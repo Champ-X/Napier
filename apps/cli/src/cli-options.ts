@@ -99,6 +99,7 @@ export interface CliWorkflowOptions extends CliExecutionOptions {
   breakBeforeNodeIds?: string[];
   continueBreakpoint?: boolean;
   fromNodeId?: string;
+  singleNode?: boolean;
   modelOverridesJson?: string;
   expectedPreviewSha256?: string;
   previewExperiment?: boolean;
@@ -212,6 +213,7 @@ const WORKFLOW_FLAG_OPTIONS = new Set([
   "--continue-breakpoint",
   "--preview-experiment",
   "--confirm-side-effects",
+  "--single-node",
   "--approve",
   "--reject",
 ]);
@@ -661,6 +663,7 @@ function parseWorkflowOptions(
       expectedPreviewSha256 !== undefined ||
       flags.has("--preview-experiment") ||
       flags.has("--confirm-side-effects") ||
+      flags.has("--single-node") ||
       breakBeforeNodeIds.length > 0
     ) {
       throw new Error(
@@ -705,7 +708,8 @@ function parseWorkflowOptions(
     (modelOverridesJson !== undefined ||
       expectedPreviewSha256 !== undefined ||
       flags.has("--preview-experiment") ||
-      flags.has("--confirm-side-effects"))
+      flags.has("--confirm-side-effects") ||
+      flags.has("--single-node"))
   ) {
     throw new Error("Workflow experiment options require --from-node");
   }
@@ -730,6 +734,7 @@ function parseWorkflowOptions(
       ...(title ? { title } : {}),
       ...(breakBeforeNodeIds.length > 0 ? { breakBeforeNodeIds } : {}),
       ...(fromNodeId ? { fromNodeId } : {}),
+      ...(flags.has("--single-node") ? { singleNode: true } : {}),
       ...(modelOverridesJson !== undefined ? { modelOverridesJson } : {}),
       ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
       ...(flags.has("--preview-experiment") ? { previewExperiment: true } : {}),
@@ -923,6 +928,7 @@ Workflow options:
   --reject               Reject the open Workflow Approval node, then resume
   --decision-note <text> Optional answer note used with --approve/--reject
   --from-node <node-id>  Fork an experiment from this Workflow node
+  --single-node          Execute selected checkpoint; hold direct successors
   --model-overrides-json Per-node ModelRef overrides for rerun nodes
   --preview-experiment   Preview a checkpoint experiment without mutation
   --confirm-side-effects Confirm the exact current side-effect preview

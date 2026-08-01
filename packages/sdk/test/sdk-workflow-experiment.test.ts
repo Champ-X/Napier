@@ -129,6 +129,80 @@ describe("Napier TypeScript SDK Workflow experiments", () => {
     store.close();
   });
 
+  it("runs one checkpoint and continues its durable descendant hold", async () => {
+    const fixture = await createFixture("single-node");
+    const client = await createNapierClient({
+      ...fixture,
+      sandbox: new UnsupportedSandboxAdapter("sdk-experiment-single-node"),
+    });
+    const workflow = await client.defineWorkflow<
+      ExperimentRequest,
+      ExperimentResult
+    >(experimentWorkflowDefinition());
+    const source = await client.runWorkflow({
+      workflow,
+      input: { text: "SDK single node result" },
+    });
+    const preview = await client.previewWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      fromNodeId: "prepare",
+      mode: "single_node",
+    });
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        mode: "single_node",
+        executionNodeIds: ["prepare"],
+        stopBeforeNodeIds: ["deliver"],
+      }),
+    );
+    const experiment = await client.runWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      fromNodeId: "prepare",
+      mode: "single_node",
+      expectedPreviewSha256: preview.previewSha256,
+    });
+    expect(experiment.result).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        breakpoint: expect.objectContaining({ nodeId: "deliver" }),
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "prepare",
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+
+    const candidate = loadNapierWorkflow<ExperimentRequest, ExperimentResult>(
+      experiment.candidateManifest,
+    );
+    const stillPaused = await client.resumeWorkflow({
+      workflow: candidate,
+      threadId: experiment.targetThreadId,
+      planId: experiment.result.planId,
+    });
+    expect(stillPaused.status).toBe("paused");
+    const continued = await client.resumeWorkflow({
+      workflow: candidate,
+      threadId: experiment.targetThreadId,
+      planId: experiment.result.planId,
+      continueBreakpoint: true,
+    });
+    expect(continued).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { message: "SDK single node result" },
+      }),
+    );
+    await client.close();
+  });
+
   it("recovers a cancelled target through normal Workflow resume", async () => {
     const fixture = await createFixture("recover");
     const client = await createNapierClient({

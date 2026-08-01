@@ -1456,9 +1456,10 @@ export interface ExecutionPlanWorkflowExperimentToolEffects {
   unknownToolNames: string[];
 }
 
-export interface ExecutionPlanWorkflowExperimentPreview {
+export type ExecutionPlanWorkflowExperimentMode = "subgraph" | "single_node";
+
+interface ExecutionPlanWorkflowExperimentPreviewBase {
   kind: "napier.execution-plan-workflow-experiment-preview";
-  schemaVersion: 1;
   sourceThreadId: string;
   sourcePlanId: string;
   sourcePlanRevision: number;
@@ -1474,6 +1475,21 @@ export interface ExecutionPlanWorkflowExperimentPreview {
   requiresSideEffectConfirmation: boolean;
   previewSha256: string;
 }
+
+export interface ExecutionPlanWorkflowExperimentPreviewV1 extends ExecutionPlanWorkflowExperimentPreviewBase {
+  schemaVersion: 1;
+}
+
+export interface ExecutionPlanWorkflowExperimentPreviewV2 extends ExecutionPlanWorkflowExperimentPreviewBase {
+  schemaVersion: 2;
+  mode: "single_node";
+  executionNodeIds: string[];
+  stopBeforeNodeIds: string[];
+}
+
+export type ExecutionPlanWorkflowExperimentPreview =
+  | ExecutionPlanWorkflowExperimentPreviewV1
+  | ExecutionPlanWorkflowExperimentPreviewV2;
 
 export interface ExecutionPlanWorkflowExperimentMetricSet {
   runCount: number;
@@ -1575,6 +1591,7 @@ export interface CreateExecutionPlanWorkflowExperimentRequest {
   manifest: ExecutionPlanWorkflowManifest;
   planId: string;
   fromNodeId: string;
+  mode?: ExecutionPlanWorkflowExperimentMode;
   title?: string;
   modelOverrides?: Record<string, ModelRef>;
   confirmSideEffects?: boolean;

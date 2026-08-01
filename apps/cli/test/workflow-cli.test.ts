@@ -172,6 +172,7 @@ describe("Napier Workflow CLI", () => {
         "plan_abcdefghijklmnopqrst",
         "--from-node",
         "report",
+        "--single-node",
         "--preview-experiment",
         "--jsonl",
       ]),
@@ -183,12 +184,25 @@ describe("Napier Workflow CLI", () => {
         threadId: "thread_abcdefghijklmnopqrst",
         planId: "plan_abcdefghijklmnopqrst",
         fromNodeId: "report",
+        singleNode: true,
         previewExperiment: true,
         timeoutMs: 600_000,
         jsonl: true,
         retryBlocked: false,
       },
     });
+    expect(() =>
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--input-json",
+        "{}",
+        "--single-node",
+      ]),
+    ).toThrow("experiment options require --from-node");
   });
 
   it("streams one typed Workflow through the shared Runtime and resumes from Ledger", async () => {
@@ -873,6 +887,95 @@ describe("Napier Workflow CLI", () => {
     ).toBe(0);
     const source = validateExecutionPlanWorkflowResultFrame(
       parseFrames(sourceStdout.text()).at(-1),
+    );
+
+    provider.setResponses([
+      fauxAssistantMessage('{"summary":"CLI single node","count":1}'),
+    ]);
+    const singleNodeStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "inspect",
+          "--single-node",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, singleNodeStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const singleNode = validateExecutionPlanWorkflowExperimentResultFrame(
+      parseFrames(singleNodeStdout.text()).at(-1),
+    );
+    expect(singleNode).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        experiment: expect.objectContaining({
+          preview: expect.objectContaining({
+            schemaVersion: 2,
+            mode: "single_node",
+            executionNodeIds: ["inspect"],
+            stopBeforeNodeIds: ["report"],
+          }),
+          result: expect.objectContaining({
+            breakpoint: expect.objectContaining({ nodeId: "report" }),
+          }),
+        }),
+      }),
+    );
+    provider.setResponses([
+      fauxAssistantMessage(
+        '{"report":"CLI continued single node","approved":true}',
+      ),
+    ]);
+    const continuedStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          singleNode.targetThreadId,
+          "--plan",
+          singleNode.targetPlanId,
+          "--continue-breakpoint",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, continuedStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    expect(
+      validateExecutionPlanWorkflowResultFrame(
+        parseFrames(continuedStdout.text()).at(-1),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: {
+            report: "CLI continued single node",
+            approved: true,
+          },
+        }),
+      }),
     );
 
     const previewStdout = new CaptureWritable();

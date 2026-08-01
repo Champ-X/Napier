@@ -58,8 +58,11 @@ Version `0.1.0` includes:
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
   retry, latency, usage, cost, tool, output, Evaluation, and Artifact
-  comparison, plus SDK, local RPC, CLI, HTTP, and a lazy Plan Workbench desk
-  for the complete preview-confirm-execute-inspect flow;
+  comparison. A schema-2 single-node mode executes only the selected
+  checkpoint, pauses durably before its direct successors, and requires an
+  explicit breakpoint continuation before the remaining subgraph can run.
+  SDK, local RPC, CLI, HTTP, and a lazy Plan Workbench desk share the complete
+  preview-confirm-execute-inspect flow;
 - controlled Agent message experiments that select a terminal historical
   `message.user`, freeze its Agent revision, Prompt Variables, Skill catalog,
   reviewed Memory context, complete model-message history, and current
@@ -813,14 +816,49 @@ target-minus-source metrics. Human mode prints the aggregate duration, token,
 tool-call, and cost delta; output bodies, prompts, tool arguments, Evaluation
 prose, and Artifact paths remain outside the comparison.
 
+Add `--single-node` to preview or execute only the selected checkpoint:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --thread thread_source \
+  --plan plan_source \
+  --from-node report \
+  --single-node \
+  --preview-experiment \
+  --jsonl
+```
+
+The compatible default subgraph preview remains schema 1. Single-node previews
+use schema 2 and bind three distinct sets: `rerunNodeIds` is the complete
+descendant subgraph that cannot be reused, `executionNodeIds` contains only
+the selected checkpoint, and `stopBeforeNodeIds` contains its direct
+successors. Tool-effect projection and side-effect confirmation cover only
+`executionNodeIds`; historical write evidence from a successor that will not
+run cannot authorize or block the selected-node test.
+
+Execution uses the normal Workflow scheduler. When direct successors exist, it
+returns `paused` after the selected node settles and before any successor
+creates a Run; a terminal checkpoint completes normally. Ordinary resume
+remains at the same durable breakpoint across SQLite reopen. Continue with the
+normal `--continue-breakpoint` request and the target Thread/Plan from the
+result to advance the remaining subgraph. Multiple direct successors retain
+independent holds and are continued one at a time in Manifest order. This mode
+reuses real source evidence and executes a real node; it does not mock node
+output, replace arbitrary input, simulate side effects, or provide mid-node
+stepping.
+
 The same path is available in **Plan -> Workflow experiment desk**. Load the
 exact versioned Manifest used by the source run, select its durable source Plan
 and checkpoint node, optionally replace that node with the currently selected
-configured model, and preview before execution. The desk renders historical
-read/write/unknown effects and requires an explicit checkbox for a preview that
-needs side-effect confirmation. A successful isolated fork shows aggregate and
-per-node target-minus-source deltas, can open the target Thread, and downloads
-the complete local result as
+configured model, select full-subgraph or single-node execution, and preview
+before execution. The desk renders historical read/write/unknown effects,
+`rerun`/`execute now`/`stop before` counts, and requires an explicit checkbox
+for a preview that needs side-effect confirmation. A successful isolated fork
+shows aggregate and per-node target-minus-source deltas, can open the target
+Thread, and downloads the complete local result as
 `napier-workflow-experiment-<plan>-<hash>.json`. The browser revalidates the
 Manifest, Preview, SSE event hashes/order, final Snapshot, comparison, result
 frame, source/target identities, and no-store response contract; changing
@@ -3224,6 +3262,22 @@ reuse materialization are internal Runtime capabilities, not fields accepted
 by ordinary Workflow execution requests. Cancellation or restart before reuse
 completes reconstructs remaining reused nodes from source Ledger evidence
 instead of executing them as Agent nodes. Source drift fails closed.
+
+The default full-subgraph request preserves the schema-1 preview and its
+existing hash semantics. `mode=single_node` produces schema 2: the complete
+selected-node descendant set remains `rerunNodeIds`, the actual scheduling
+allowlist is `executionNodeIds=[fromNodeId]`, and direct successors become the
+bounded `stopBeforeNodeIds` persisted in `workflow.started`. Tool-effect
+confirmation is derived only from the execution allowlist. Once the selected
+node settles, the ordinary breakpoint machinery records
+`workflow.breakpoint.reached` and returns `paused` when a direct successor
+exists; selecting a terminal node completes normally. Normal resume remains
+paused, while explicit continuation consumes one open direct-successor hold in
+Manifest order; all descendants still run through the same scheduler. Recovery
+recomputes all three sets from the source Manifest and compares them with
+experiment lineage and the target's frozen breakpoint set. Unknown
+checkpoints, more than 16 direct successors, drift, partial lineage, or
+self-consistently rehashed stop-set changes fail closed.
 
 After target settlement, the Runtime aligns every source and target node by
 Manifest order and derives a hash-bound comparison from actual Plan, Run,

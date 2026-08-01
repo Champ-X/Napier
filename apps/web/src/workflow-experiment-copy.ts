@@ -9,6 +9,13 @@ export const workflowExperimentCopy = {
   manifestLimit: "Maximum manifest size is 1 MiB.",
   sourcePlan: "Source plan",
   checkpoint: "Checkpoint node",
+  executionMode: "Execution scope",
+  subgraphMode: "Checkpoint and descendants",
+  singleNodeMode: "Selected checkpoint only",
+  subgraphHint:
+    "Rerun the selected checkpoint and its complete descendant subgraph.",
+  singleNodeHint:
+    "Execute the selected checkpoint and hold any direct descendants.",
   selectedModel: "Selected model",
   overrideModel: "Replace checkpoint model",
   overrideHint:
@@ -32,6 +39,8 @@ export const workflowExperimentCopy = {
   candidateManifest: "Candidate",
   reused: "Reused",
   rerun: "Rerun",
+  executeNow: "Execute now",
+  stopBefore: "Stop before",
   attempts: "Attempts",
   calls: "Calls",
   readOnly: "Read",
@@ -81,6 +90,8 @@ export const workflowExperimentCopy = {
     pending: "Pending",
     ready: "Ready",
     running: "Running",
+    waiting: "Waiting",
+    paused: "Paused",
     skipped: "Skipped",
   },
   changes: {

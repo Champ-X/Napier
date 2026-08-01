@@ -258,12 +258,14 @@ describe("Napier JSON-RPC protocol", () => {
           manifest,
           planId: "plan_abcdefgh",
           fromNodeId: "deliver",
+          mode: "single_node",
         }),
       ).toEqual({
         sourceThreadId: "thread_example",
         manifest,
         planId: "plan_abcdefgh",
         fromNodeId: "deliver",
+        mode: "single_node",
       });
       expect(
         parseWorkflowExperimentRunParams({
@@ -330,6 +332,15 @@ describe("Napier JSON-RPC protocol", () => {
           fromNodeId: "deliver",
         }),
       ).toThrow("requires expectedPreviewSha256");
+      expect(() =>
+        parseWorkflowExperimentPreviewParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
+          fromNodeId: "deliver",
+          mode: "unknown",
+        }),
+      ).toThrow("params are invalid");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

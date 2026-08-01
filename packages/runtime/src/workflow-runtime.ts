@@ -362,6 +362,7 @@ export class ExecutionPlanWorkflowRuntime {
       started.input,
       started.agentId,
       started.agentRevision,
+      started.breakBeforeNodeIds,
     );
     return {
       threadId: options.threadId,

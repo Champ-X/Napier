@@ -2,6 +2,7 @@ import type {
   CreateExecutionPlanWorkflowExperimentRequest,
   ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentResultFrame,
+  RunEvent,
   StreamFrame,
 } from "@napier/contracts";
 
@@ -9,6 +10,7 @@ import { validateStreamFrameRecord } from "./api";
 import { throwNapierApiError } from "./api-error";
 import { readSseJsonRecords } from "./sse-json";
 import { canonicalJson, sha256Text } from "./stable-digest";
+import { workflowExperimentPreviewMatchesMode } from "./workflow-experiment-mode-view";
 import {
   validateWorkflowExperimentPreview,
   validateWorkflowExperimentResultFrame,
@@ -67,6 +69,12 @@ export async function previewWorkflowExperiment(
     preview.sourcePlanId !== planId ||
     preview.sourceManifestSha256 !== body.manifest.contentSha256 ||
     preview.fromNodeId !== body.fromNodeId ||
+    !workflowExperimentPreviewMatchesMode(
+      preview,
+      body.manifest,
+      body.fromNodeId,
+      body.mode ?? "subgraph",
+    ) ||
     canonicalJson(preview.modelOverrides) !==
       canonicalJson(body.modelOverrides ?? {})
   ) {
@@ -247,6 +255,21 @@ async function assertExperimentResultBinding(input: {
   streamedEventHashes: ReadonlyMap<number, string>;
 }): Promise<void> {
   const { result, snapshot } = input;
+  const snapshotPlan = snapshot.detail.plans.find(
+    (plan) => plan.id === result.targetPlanId,
+  );
+  const expectedPlanStatus =
+    result.status === "completed"
+      ? "completed"
+      : result.status === "blocked"
+        ? "blocked"
+        : "active";
+  const expectedThreadStatus =
+    result.status === "waiting" || result.status === "paused"
+      ? "waiting"
+      : result.status === "blocked"
+        ? "failed"
+        : "idle";
   if (
     result.sourceThreadId !== input.sourceThreadId ||
     result.sourcePlanId !== input.sourcePlanId ||
@@ -257,9 +280,22 @@ async function assertExperimentResultBinding(input: {
     result.snapshotBytes !== snapshot.detailBytes ||
     result.eventCount !== snapshot.detail.thread.eventCount ||
     result.eventBytes !== snapshot.eventBytes ||
-    !snapshot.detail.plans.some((plan) => plan.id === result.targetPlanId)
+    snapshotPlan?.status !== expectedPlanStatus ||
+    snapshot.detail.thread.status !== expectedThreadStatus
   ) {
     throw new Error("Workflow experiment terminal binding is invalid");
+  }
+  if (
+    result.status === "paused" &&
+    !isExpectedReachedBreakpoint(
+      snapshot.detail.events.find(
+        (event) =>
+          event.seq === result.experiment.result.breakpoint?.reachedEventSeq,
+      ),
+      result,
+    )
+  ) {
+    throw new Error("Workflow experiment paused evidence is invalid");
   }
   const snapshotEvents = new Map(
     snapshot.detail.events.map((event) => [event.seq, event]),
@@ -279,6 +315,28 @@ async function assertExperimentResultBinding(input: {
   if (result.eventStreamSha256 !== eventStreamSha256) {
     throw new Error("Workflow experiment event stream hash is invalid");
   }
+}
+
+function isExpectedReachedBreakpoint(
+  event: RunEvent | undefined,
+  result: ExecutionPlanWorkflowExperimentResultFrame,
+): boolean {
+  const breakpoint = result.experiment.result.breakpoint;
+  if (!event || !breakpoint || event.type !== "workflow.breakpoint.reached") {
+    return false;
+  }
+  const payload = record(event.payload) ? event.payload : undefined;
+  return (
+    event.category === "plan" &&
+    event.visibility === "user" &&
+    payload?.["schemaVersion"] === 1 &&
+    payload["planId"] === result.targetPlanId &&
+    payload["manifestSha256"] === result.candidateManifestSha256 &&
+    payload["nodeId"] === breakpoint.nodeId &&
+    payload["breakpointIndex"] === breakpoint.breakpointIndex &&
+    payload["breakpointCount"] === breakpoint.breakpointCount &&
+    payload["bindingContextSha256"] === breakpoint.bindingContextSha256
+  );
 }
 
 function experimentPath(

@@ -11,10 +11,8 @@ import type {
   WorkflowExperimentLineage,
   WorkflowReusedNode,
 } from "./workflow-context.js";
-import {
-  projectExecutionPlanWorkflowSourceEvidence,
-  workflowExperimentRerunNodeIds,
-} from "./workflow-experiment-source.js";
+import { projectExecutionPlanWorkflowSourceEvidence } from "./workflow-experiment-source.js";
+import { projectWorkflowExperimentExecution } from "./workflow-experiment-mode.js";
 import { isWorkflowRecord } from "./workflow-ledger.js";
 
 const HASH = /^[a-f0-9]{64}$/u;
@@ -35,6 +33,7 @@ export async function recoverExecutionPlanWorkflowExperimentTarget(
   targetInput: JsonValue,
   targetAgentId: string,
   targetAgentRevision: number,
+  targetBreakBeforeNodeIds: string[],
 ): Promise<RecoveredWorkflowExperimentTarget> {
   const events = await store.listEvents(targetThreadId);
   const matches = events.filter(
@@ -51,6 +50,7 @@ export async function recoverExecutionPlanWorkflowExperimentTarget(
     matches[0]!,
     targetPlan,
     candidateManifest,
+    targetBreakBeforeNodeIds,
   );
   const incompleteNodeIds = lineage.reusedNodeIds.filter(
     (nodeId) =>
@@ -104,10 +104,14 @@ function validateExperimentLineage(
   event: RunEvent,
   targetPlan: ExecutionPlan,
   candidateManifest: ExecutionPlanWorkflowManifest,
+  targetBreakBeforeNodeIds: string[],
 ): WorkflowExperimentLineage {
   const payload = isWorkflowRecord(event.payload) ? event.payload : undefined;
   const reusedNodeIds = nodeIds(payload?.["reusedNodeIds"]);
   const rerunNodeIds = nodeIds(payload?.["rerunNodeIds"]);
+  const executionNodeIds = nodeIds(payload?.["executionNodeIds"]);
+  const stopBeforeNodeIds = nodeIds(payload?.["stopBeforeNodeIds"]);
+  const executionMode = payload?.["executionMode"];
   const fromNodeId = payload?.["fromNodeId"];
   if (
     payload?.["schemaVersion"] !== 1 ||
@@ -126,20 +130,32 @@ function validateExperimentLineage(
     !rerunNodeIds ||
     typeof payload["previewSha256"] !== "string" ||
     !HASH.test(payload["previewSha256"]) ||
-    typeof payload["sideEffectsConfirmed"] !== "boolean"
+    typeof payload["sideEffectsConfirmed"] !== "boolean" ||
+    (executionMode !== undefined && executionMode !== "single_node") ||
+    (executionMode === "single_node"
+      ? executionNodeIds === undefined || stopBeforeNodeIds === undefined
+      : executionNodeIds !== undefined || stopBeforeNodeIds !== undefined)
   ) {
     throw new Error("Workflow experiment target evidence is invalid");
   }
-  const expectedRerunNodeIds = workflowExperimentRerunNodeIds(
+  const execution = projectWorkflowExperimentExecution(
     candidateManifest,
     fromNodeId,
+    executionMode === "single_node" ? executionMode : "subgraph",
   );
   const expectedReusedNodeIds = candidateManifest.nodes
     .map((node) => node.id)
-    .filter((nodeId) => !expectedRerunNodeIds.includes(nodeId));
+    .filter((nodeId) => !execution.rerunNodeIds.includes(nodeId));
   if (
     canonicalJson(reusedNodeIds) !== canonicalJson(expectedReusedNodeIds) ||
-    canonicalJson(rerunNodeIds) !== canonicalJson(expectedRerunNodeIds)
+    canonicalJson(rerunNodeIds) !== canonicalJson(execution.rerunNodeIds) ||
+    canonicalJson(targetBreakBeforeNodeIds) !==
+      canonicalJson(execution.stopBeforeNodeIds) ||
+    (executionMode === "single_node" &&
+      (canonicalJson(executionNodeIds) !==
+        canonicalJson(execution.executionNodeIds) ||
+        canonicalJson(stopBeforeNodeIds) !==
+          canonicalJson(execution.stopBeforeNodeIds)))
   ) {
     throw new Error("Workflow experiment target node sets are invalid");
   }
@@ -153,6 +169,13 @@ function validateExperimentLineage(
     rerunNodeIds,
     previewSha256: payload["previewSha256"],
     sideEffectsConfirmed: payload["sideEffectsConfirmed"],
+    ...(executionMode === "single_node"
+      ? {
+          executionMode,
+          executionNodeIds: executionNodeIds!,
+          stopBeforeNodeIds: stopBeforeNodeIds!,
+        }
+      : {}),
   };
 }
 

@@ -24,6 +24,7 @@ import {
   MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES,
   validateExecutionPlanWorkflowManifest,
 } from "./workflow-manifests.js";
+import { projectWorkflowExperimentExecution } from "./workflow-experiment-mode.js";
 
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const THREAD_ID = /^thread_[a-z0-9]{8,80}$/u;
@@ -54,6 +55,7 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
       "manifest",
       "planId",
       "fromNodeId",
+      "mode",
       "title",
       "modelOverrides",
       "confirmSideEffects",
@@ -61,6 +63,7 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
     ],
     new Set([
       "title",
+      "mode",
       "modelOverrides",
       "confirmSideEffects",
       "expectedPreviewSha256",
@@ -79,6 +82,10 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
     request["title"] === undefined
       ? undefined
       : normalizeTitle(request["title"]);
+  const mode = request["mode"];
+  if (mode !== undefined && mode !== "subgraph" && mode !== "single_node") {
+    throw new Error("Workflow experiment mode is invalid");
+  }
   const modelOverrides =
     request["modelOverrides"] === undefined
       ? undefined
@@ -102,6 +109,7 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
     manifest,
     planId: request["planId"],
     fromNodeId: request["fromNodeId"],
+    ...(mode === "single_node" ? { mode } : {}),
     ...(title ? { title } : {}),
     ...(modelOverrides ? { modelOverrides } : {}),
     ...(request["confirmSideEffects"] === true
@@ -120,6 +128,8 @@ export function validateExecutionPlanWorkflowExperimentPreview(
     "Workflow experiment preview",
   );
   const preview = record(input, "Workflow experiment preview");
+  const schemaVersion = preview["schemaVersion"];
+  const singleNode = schemaVersion === 2;
   assertExactKeys(preview, [
     "kind",
     "schemaVersion",
@@ -137,10 +147,11 @@ export function validateExecutionPlanWorkflowExperimentPreview(
     "toolEffects",
     "requiresSideEffectConfirmation",
     "previewSha256",
+    ...(singleNode ? ["mode", "executionNodeIds", "stopBeforeNodeIds"] : []),
   ]);
   if (
     preview["kind"] !== "napier.execution-plan-workflow-experiment-preview" ||
-    preview["schemaVersion"] !== 1 ||
+    (schemaVersion !== 1 && schemaVersion !== 2) ||
     typeof preview["sourceThreadId"] !== "string" ||
     !THREAD_ID.test(preview["sourceThreadId"]) ||
     typeof preview["sourcePlanId"] !== "string" ||
@@ -160,16 +171,31 @@ export function validateExecutionPlanWorkflowExperimentPreview(
   }
   const reusedNodeIds = nodeIdList(preview["reusedNodeIds"], "reused");
   const rerunNodeIds = nodeIdList(preview["rerunNodeIds"], "rerun");
+  const executionNodeIds = singleNode
+    ? nodeIdList(preview["executionNodeIds"], "execution")
+    : rerunNodeIds;
+  const stopBeforeNodeIds = singleNode
+    ? nodeIdList(preview["stopBeforeNodeIds"], "stop-before")
+    : [];
   if (
     rerunNodeIds.length < 1 ||
     !rerunNodeIds.includes(preview["fromNodeId"]) ||
-    reusedNodeIds.some((nodeId) => rerunNodeIds.includes(nodeId))
+    reusedNodeIds.some((nodeId) => rerunNodeIds.includes(nodeId)) ||
+    (singleNode &&
+      (preview["mode"] !== "single_node" ||
+        canonicalJson(executionNodeIds) !==
+          canonicalJson([preview["fromNodeId"]]) ||
+        stopBeforeNodeIds.length > 16 ||
+        stopBeforeNodeIds.includes(preview["fromNodeId"]) ||
+        stopBeforeNodeIds.some((nodeId) => !rerunNodeIds.includes(nodeId))))
   ) {
     throw new Error("Workflow experiment node sets are invalid");
   }
   const modelOverrides = validateModelOverrides(preview["modelOverrides"]);
   if (
-    Object.keys(modelOverrides).some((nodeId) => !rerunNodeIds.includes(nodeId))
+    Object.keys(modelOverrides).some(
+      (nodeId) => !executionNodeIds.includes(nodeId),
+    )
   ) {
     throw new Error("Workflow experiment model overrides are invalid");
   }
@@ -181,7 +207,7 @@ export function validateExecutionPlanWorkflowExperimentPreview(
   );
   if (
     canonicalJson(toolEffects.map((effects) => effects.nodeId)) !==
-      canonicalJson(rerunNodeIds) ||
+      canonicalJson(executionNodeIds) ||
     Boolean(preview["requiresSideEffectConfirmation"]) !==
       toolEffects.some(
         (effects) =>
@@ -271,6 +297,14 @@ export function validateExecutionPlanWorkflowExperimentResult(
       : {}),
     generatedAt: sourceManifest.generatedAt,
   });
+  const execution = projectWorkflowExperimentExecution(
+    sourceManifest,
+    preview.fromNodeId,
+    preview.schemaVersion === 2 ? preview.mode : "subgraph",
+  );
+  const expectedReusedNodeIds = sourceManifest.nodes
+    .map((node) => node.id)
+    .filter((nodeId) => !execution.rerunNodeIds.includes(nodeId));
   if (
     sourceManifest.contentSha256 !== preview.sourceManifestSha256 ||
     candidateManifest.contentSha256 !== preview.candidateManifestSha256 ||
@@ -278,6 +312,15 @@ export function validateExecutionPlanWorkflowExperimentResult(
       expectedCandidateManifest.contentSha256 ||
     result.threadId !== experiment["targetThreadId"] ||
     result.manifestSha256 !== candidateManifest.contentSha256 ||
+    canonicalJson(preview.reusedNodeIds) !==
+      canonicalJson(expectedReusedNodeIds) ||
+    canonicalJson(preview.rerunNodeIds) !==
+      canonicalJson(execution.rerunNodeIds) ||
+    (preview.schemaVersion === 2 &&
+      (canonicalJson(preview.executionNodeIds) !==
+        canonicalJson(execution.executionNodeIds) ||
+        canonicalJson(preview.stopBeforeNodeIds) !==
+          canonicalJson(execution.stopBeforeNodeIds))) ||
     canonicalJson(
       [...preview.reusedNodeIds, ...preview.rerunNodeIds].sort(),
     ) !== canonicalJson([...manifestNodeIds].sort())

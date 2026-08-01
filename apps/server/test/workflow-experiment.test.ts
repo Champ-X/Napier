@@ -20,6 +20,8 @@ import {
   executeWorkflowExperiment,
   previewWorkflowExperiment,
 } from "../../web/src/workflow-experiment-api.js";
+import { continueWorkflowBreakpoint } from "../../web/src/workflow-api.js";
+import { projectWorkflowBreakpoint } from "../../web/src/workflow-breakpoint-view-model.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
@@ -170,6 +172,101 @@ describe("Workflow experiment HTTP path", () => {
     );
     expect(frames.at(-2)).toBe("snapshot");
     expect(frames.at(-1)).toBe("workflow_experiment_result");
+  }, 20_000);
+
+  it("runs one node through the Web client and explicitly continues its hold", async () => {
+    const fixture = await createFixture();
+    const app = createApp(fixture.services);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL | Request, init?: RequestInit) => {
+        const requestPath =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        return app.request(requestPath, init);
+      }),
+    );
+    const request = {
+      manifest: fixture.manifest,
+      fromNodeId: "inspect",
+      mode: "single_node" as const,
+    };
+    const preview = await previewWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      request,
+    );
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        mode: "single_node",
+        executionNodeIds: ["inspect"],
+        stopBeforeNodeIds: ["report"],
+      }),
+    );
+
+    fixture.primary.setResponses([
+      fauxAssistantMessage('{"summary":"Web single node","count":1}'),
+    ]);
+    const result = await executeWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+      preview,
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        experiment: expect.objectContaining({
+          result: expect.objectContaining({
+            breakpoint: expect.objectContaining({ nodeId: "report" }),
+          }),
+        }),
+      }),
+    );
+    const detail = await fixture.services.store.getDetail(
+      result.targetThreadId,
+    );
+    const projection = projectWorkflowBreakpoint(detail.plans, detail.events);
+    expect(projection.status).toBe("open");
+    if (projection.status !== "open") {
+      throw new Error("Expected the single-node descendant hold");
+    }
+    expect(
+      detail.events.some(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "report",
+      ),
+    ).toBe(false);
+
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Web continued single node","approved":true}',
+      ),
+    ]);
+    const continued = await continueWorkflowBreakpoint(
+      result.targetThreadId,
+      result.experiment.candidateManifest,
+      projection.breakpoint,
+    );
+    expect(continued).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: {
+            report: "Web continued single node",
+            approved: true,
+          },
+        }),
+      }),
+    );
   }, 20_000);
 
   it("returns a no-mutation conflict until write-effect evidence is confirmed", async () => {
@@ -415,4 +512,10 @@ function parseSseFrames(text: string): unknown[] {
     .split("\n")
     .filter((line) => line.startsWith("data: "))
     .map((line) => JSON.parse(line.slice("data: ".length)) as unknown);
+}
+
+function record(input: unknown): Record<string, unknown> | undefined {
+  return input && typeof input === "object" && !Array.isArray(input)
+    ? (input as Record<string, unknown>)
+    : undefined;
 }

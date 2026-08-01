@@ -322,6 +322,7 @@ async function executeWorkflow(
           manifest,
           planId: options.planId,
           fromNodeId: options.fromNodeId,
+          ...(options.singleNode ? { mode: "single_node" as const } : {}),
           ...(options.title ? { title: options.title } : {}),
           ...(options.modelOverridesJson
             ? {
@@ -424,7 +425,8 @@ async function executeWorkflow(
         }
       }
       return experiment.result.status === "completed" ||
-        experiment.result.status === "waiting"
+        experiment.result.status === "waiting" ||
+        experiment.result.status === "paused"
         ? 0
         : 1;
     }

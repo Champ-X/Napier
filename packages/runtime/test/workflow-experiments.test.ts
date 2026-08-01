@@ -293,6 +293,337 @@ describe("Execution Plan Workflow experiments", () => {
     fixture.store.close();
   }, 20_000);
 
+  it("runs one checkpoint and preserves its descendant hold across Store reopen", async () => {
+    const fixture = await createFixture();
+    const sourceReportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
+    await fixture.store.appendEvent({
+      threadId: fixture.sourceThreadId,
+      runId: sourceReportRunId,
+      type: "tool.started",
+      category: "tool",
+      visibility: "user",
+      payload: {
+        callId: "call_descendant_write",
+        toolName: "apply_patch",
+        status: "started",
+        effect: "write",
+      },
+    });
+    await fixture.store.appendEvent({
+      threadId: fixture.sourceThreadId,
+      runId: sourceReportRunId,
+      type: "tool.completed",
+      category: "tool",
+      visibility: "user",
+      payload: {
+        callId: "call_descendant_write",
+        toolName: "apply_patch",
+        status: "completed",
+        effect: "write",
+      },
+    });
+    const subgraphPreview = await fixture.experiments.preview(
+      fixture.sourceThreadId,
+      {
+        ...experimentRequest(fixture),
+        fromNodeId: "inspect",
+      },
+    );
+    expect(subgraphPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 1,
+        requiresSideEffectConfirmation: true,
+        toolEffects: [
+          expect.objectContaining({ nodeId: "inspect", writeCount: 0 }),
+          expect.objectContaining({ nodeId: "report", writeCount: 1 }),
+        ],
+      }),
+    );
+    fixture.primary.setResponses([
+      fauxAssistantMessage('{"summary":"Single node inspection","count":1}'),
+    ]);
+    const request = {
+      ...experimentRequest(fixture),
+      fromNodeId: "inspect",
+      mode: "single_node" as const,
+    };
+    const preview = await fixture.experiments.preview(
+      fixture.sourceThreadId,
+      request,
+    );
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        mode: "single_node",
+        reusedNodeIds: [],
+        rerunNodeIds: ["inspect", "report"],
+        executionNodeIds: ["inspect"],
+        stopBeforeNodeIds: ["report"],
+        requiresSideEffectConfirmation: false,
+        toolEffects: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            toolCallCount: 0,
+          }),
+        ],
+      }),
+    );
+
+    const experiment = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request,
+    });
+    expect(experiment.result).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        breakpoint: expect.objectContaining({
+          nodeId: "report",
+          breakpointIndex: 0,
+          breakpointCount: 1,
+        }),
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "completed",
+            output: { summary: "Single node inspection", count: 1 },
+          }),
+        ],
+      }),
+    );
+    expect(experiment.comparison).toEqual(
+      expect.objectContaining({
+        targetStatus: "paused",
+        reusedNodeCount: 0,
+        rerunNodeCount: 2,
+      }),
+    );
+    expect(experiment.comparison?.nodes[1]).toEqual(
+      expect.objectContaining({
+        nodeId: "report",
+        target: expect.objectContaining({
+          status: "ready",
+          runIds: [],
+        }),
+      }),
+    );
+    const forged = structuredClone(experiment);
+    if (forged.preview.schemaVersion !== 2) {
+      throw new Error("Expected a single-node preview");
+    }
+    const { previewSha256: _previewSha256, ...forgedPreviewContent } =
+      forged.preview;
+    forgedPreviewContent.stopBeforeNodeIds = [];
+    forged.preview = {
+      ...forgedPreviewContent,
+      previewSha256: sha256(canonicalJson(forgedPreviewContent)),
+    };
+    expect(() => validateExecutionPlanWorkflowExperimentResult(forged)).toThrow(
+      "result binding",
+    );
+    const beforeReopen = await fixture.store.listEvents(
+      experiment.targetThreadId,
+    );
+    expect(
+      beforeReopen.filter(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "inspect",
+      ),
+    ).toHaveLength(1);
+    expect(
+      beforeReopen.some(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "report",
+      ),
+    ).toBe(false);
+
+    fixture.store.close();
+    const reopened = new LocalStore({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+    });
+    await reopened.initialize();
+    const models = new ModelRegistry();
+    models.registerProvider(fixture.primary.provider);
+    const workflows = new ExecutionPlanWorkflowRuntime(
+      reopened,
+      new AgentRuntime(reopened, models),
+    );
+    const stillPaused = await workflows.run({
+      threadId: experiment.targetThreadId,
+      request: {
+        manifest: experiment.candidateManifest,
+        planId: experiment.result.planId,
+      },
+    });
+    expect(stillPaused).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        breakpoint: experiment.result.breakpoint,
+      }),
+    );
+
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Continued after single node","approved":true}',
+      ),
+    ]);
+    const continued = await workflows.run({
+      threadId: experiment.targetThreadId,
+      request: {
+        manifest: experiment.candidateManifest,
+        planId: experiment.result.planId,
+        continueBreakpoint: true,
+      },
+    });
+    expect(continued).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Continued after single node",
+          approved: true,
+        },
+      }),
+    );
+    const events = await reopened.listEvents(experiment.targetThreadId);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "inspect",
+      ),
+    ).toHaveLength(1);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "report",
+      ),
+    ).toHaveLength(1);
+    expect(
+      events.filter((event) => event.type === "workflow.breakpoint.continued"),
+    ).toHaveLength(1);
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(reopened, experiment.targetThreadId),
+      ).status,
+    ).toBe("valid");
+    reopened.close();
+  });
+
+  it("contains single-node failure and cancellation before any descendant work", async () => {
+    const failedFixture = await createFixture();
+    failedFixture.primary.setResponses([fauxAssistantMessage("not json")]);
+    const failed = await failedFixture.experiments.run({
+      sourceThreadId: failedFixture.sourceThreadId,
+      request: {
+        ...experimentRequest(failedFixture),
+        fromNodeId: "inspect",
+        mode: "single_node",
+      },
+    });
+    expect(failed.result).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "blocked",
+          }),
+        ],
+      }),
+    );
+    expect(
+      (await failedFixture.store.listEvents(failed.targetThreadId)).some(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "report",
+      ),
+    ).toBe(false);
+    failedFixture.store.close();
+
+    const cancelledFixture = await createFixture();
+    cancelledFixture.primary.setResponses([
+      fauxAssistantMessage('{"summary":"Cancelled inspection","count":1}'),
+    ]);
+    const controller = new AbortController();
+    const cancelled = await cancelledFixture.experiments.run({
+      sourceThreadId: cancelledFixture.sourceThreadId,
+      request: {
+        ...experimentRequest(cancelledFixture),
+        fromNodeId: "inspect",
+        mode: "single_node",
+      },
+      signal: controller.signal,
+      onEvent: (event) => {
+        if (
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "inspect"
+        ) {
+          controller.abort();
+        }
+      },
+    });
+    expect(cancelled.result.status).toBe("cancelled");
+    const cancelledEvents = await cancelledFixture.store.listEvents(
+      cancelled.targetThreadId,
+    );
+    expect(
+      cancelledEvents.some(
+        (event) => event.type === "workflow.breakpoint.reached",
+      ),
+    ).toBe(false);
+    expect(
+      cancelledEvents.some(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "report",
+      ),
+    ).toBe(false);
+    cancelledFixture.store.close();
+  });
+
+  it("isolates concurrent single-node target holds", async () => {
+    const fixture = await createFixture({ deterministicInspect: true });
+    const request = {
+      ...experimentRequest(fixture),
+      fromNodeId: "inspect",
+      mode: "single_node" as const,
+    };
+    const [left, right] = await Promise.all([
+      fixture.experiments.run({
+        sourceThreadId: fixture.sourceThreadId,
+        request,
+      }),
+      fixture.experiments.run({
+        sourceThreadId: fixture.sourceThreadId,
+        request,
+      }),
+    ]);
+    expect(left.targetThreadId).not.toBe(right.targetThreadId);
+    for (const experiment of [left, right]) {
+      expect(experiment.result).toEqual(
+        expect.objectContaining({
+          status: "paused",
+          breakpoint: expect.objectContaining({ nodeId: "report" }),
+        }),
+      );
+      const events = await fixture.store.listEvents(experiment.targetThreadId);
+      expect(
+        events.filter((event) => event.type === "workflow.breakpoint.reached"),
+      ).toHaveLength(1);
+      expect(
+        events.filter(
+          (event) =>
+            event.type === "workflow.deterministic.completed" &&
+            record(event.payload)?.["nodeId"] === "inspect",
+        ),
+      ).toHaveLength(1);
+    }
+    fixture.store.close();
+  });
+
   it("requires a current preview hash before rerunning write-effect evidence", async () => {
     const fixture = await createFixture();
     const reportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
@@ -1214,6 +1545,8 @@ describe("Execution Plan Workflow experiments", () => {
 
 interface Fixture {
   store: LocalStore;
+  workspaceRoot: string;
+  dataRoot: string;
   sourceThreadId: string;
   manifest: ExecutionPlanWorkflowManifest;
   sourceResult: Awaited<ReturnType<ExecutionPlanWorkflowRuntime["run"]>>;
@@ -1236,10 +1569,11 @@ async function createFixture(
   );
   temporaryRoots.push(root);
   const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
   await mkdir(workspaceRoot, { recursive: true });
   const store = new LocalStore({
     workspaceRoot,
-    dataRoot: path.join(root, "data"),
+    dataRoot,
   });
   await store.initialize();
   const blueprintThread = store.listThreads()[0]!;
@@ -1490,6 +1824,8 @@ async function createFixture(
   }
   return {
     store,
+    workspaceRoot,
+    dataRoot,
     sourceThreadId: sourceThread.id,
     manifest,
     sourceResult,

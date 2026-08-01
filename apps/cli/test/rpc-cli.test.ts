@@ -518,6 +518,75 @@ describe("Napier RPC CLI", () => {
 
     rpc.send({
       jsonrpc: "2.0",
+      id: "experiment-single-preview",
+      method: "napier/workflow/experiment/preview",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "prepare",
+        mode: "single_node",
+      },
+    });
+    const singlePreview = record(
+      (await rpc.waitForId("experiment-single-preview"))["result"],
+    )!;
+    expect(singlePreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        mode: "single_node",
+        executionNodeIds: ["prepare"],
+        stopBeforeNodeIds: ["deliver"],
+      }),
+    );
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "experiment-single-run",
+      method: "napier/workflow/experiment/run",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "prepare",
+        mode: "single_node",
+        expectedPreviewSha256: singlePreview["previewSha256"],
+      },
+    });
+    const singleExperiment = record(
+      (await rpc.waitForId("experiment-single-run"))["result"],
+    )!;
+    expect(singleExperiment).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        experiment: expect.objectContaining({
+          result: expect.objectContaining({
+            breakpoint: expect.objectContaining({ nodeId: "deliver" }),
+          }),
+        }),
+      }),
+    );
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "experiment-single-continue",
+      method: "napier/workflow/resume",
+      params: {
+        manifest: experimentManifest,
+        threadId: singleExperiment["targetThreadId"],
+        planId: singleExperiment["targetPlanId"],
+        continueBreakpoint: true,
+      },
+    });
+    expect(await rpc.waitForId("experiment-single-continue")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          status: "completed",
+          output: { message: "Evidence-native RPC experiment" },
+        }),
+      }),
+    );
+
+    rpc.send({
+      jsonrpc: "2.0",
       id: "experiment-stale",
       method: "napier/workflow/experiment/run",
       params: {

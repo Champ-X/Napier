@@ -6,6 +6,36 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added real single-node checkpoint tests to controlled Workflow experiments.
+  The compatible default continues to emit schema-1 previews and rerun the
+  selected descendant subgraph. `mode=single_node` emits schema 2 and binds the
+  complete non-reusable `rerunNodeIds`, selected-only `executionNodeIds`, and
+  direct-successor `stopBeforeNodeIds` separately. Historical Tool effects and
+  side-effect confirmation cover only the node that will execute. The target
+  reuses verified ancestors, executes the selected checkpoint through the
+  ordinary Workflow scheduler, freezes direct successors as existing
+  persistent breakpoints, and returns `paused` when any exist; a terminal
+  checkpoint completes normally. Ordinary resume stays paused across SQLite
+  reopen, while explicit continuation consumes each direct-successor hold in
+  Manifest order before the remaining descendants execute. Recovery recomputes
+  all three sets from source evidence and rejects partial lineage, breakpoint
+  drift, source drift, and self-consistently rehashed stop-set tampering. CLI
+  `--single-node`, HTTP SSE,
+  the TypeScript SDK, local stdio RPC, the lazy Plan Workbench desk, strict
+  browser protocol validation, and privacy-bounded Trace share this same
+  Runtime path. Real tests cover success, selected-node failure and
+  cancellation, restart recovery, concurrent target isolation, stale or forged
+  evidence, descendant write-effect isolation, and normal continuation.
+  Production-browser dogfood previewed `rerun=2 / execute-now=1 /
+stop-before=1`, executed only `prepare`, observed `deliver` still ready at
+  the durable pause, then continued the exact Manifest to completion. Preview,
+  experiment, and continuation POSTs returned 200 with zero console or page
+  errors. This is real selected-node execution, not arbitrary mocks,
+  side-effect simulation, or mid-node stepping. The complete gate passes 1,571
+  regular tests with 27 opt-in live tests skipped, 253 OpenAPI routes, 244/244
+  compatibility operations, and the product performance budget. The 31.46 kB
+  lazy desk keeps the 90-file Web dist main entry at 130.24 KiB, bound to
+  `1086f77f1a78c9ed`, with release set `18ad27c74bb95720`.
 - Added a Manifest-bound Workflow breakpoint control to the Plan Workbench.
   The browser derives one open point from the active Plan and exact
   `workflow.started`/reached/continued Ledger chain, renders only safe

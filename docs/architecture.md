@@ -405,6 +405,9 @@ body-free aggregate evidence instead of adding that logic to Store or Server.
 `workflow-breakpoint-model.ts` owns the bounded canonical breakpoint set, and
 `workflow-breakpoints.ts` owns reach/continue evidence and open-breakpoint
 recovery without adding scheduler state to Store.
+`workflow-experiment-mode.ts` independently projects the experiment rerun,
+immediate execution, and stop-before sets from one source Manifest, keeping
+single-node scheduling policy out of source-evidence reconstruction.
 `workflow-result.ts` owns result hashing, terminal-event settlement, and
 Thread-status projection, keeping those concerns out of the oversized
 scheduler.
@@ -669,13 +672,15 @@ scheduler:
 source Thread + Plan + source Manifest
   -> verify completed source Run/node evidence
   -> derive selected-node descendant rerun subgraph
+  -> choose full-subgraph execution or selected-node-only execution
   -> summarize historical read/write/unknown tool effects
   -> bind candidate model replacements and preview hash
   -> require exact preview confirmation for write/unknown effects
   -> create independent target Thread and normal ExecutionPlan
   -> materialize verified completed ancestors as source=workflow_reuse Runs
      and preserve verified skipped ancestors as zero-Run skipped outputs
-  -> execute selected Agent/Deterministic/Tool/Approval node and descendants through Workflow Runtime
+  -> execute the selected node, or it plus descendants, through Workflow Runtime
+  -> for single-node mode, pause before every direct successor
   -> align source/target node evidence and derive target-minus-source metrics
   -> append privacy-bounded workflow.experiment.compared evidence
   -> emit target snapshot + workflow_experiment_result
@@ -687,6 +692,38 @@ including read-only reruns, so automation cannot silently execute a different
 source projection than it previewed. RPC emits only target Ledger events under
 the owning request ID and returns the candidate Manifest plus target
 Thread/Plan required for normal Workflow retry or Approval recovery.
+
+The omitted/default mode preserves the schema-1 preview and full-descendant
+execution contract. `single_node` emits schema 2 with three independently
+validated node sets:
+
+- `rerunNodeIds` is the selected node plus every descendant whose source
+  output cannot be reused in the target;
+- `executionNodeIds` is exactly the selected node for this request;
+- `stopBeforeNodeIds` is the selected node's direct successors in Manifest
+  order.
+
+Historical Tool effects and confirmation requirements are projected only for
+`executionNodeIds`, so an unexecuted successor cannot expand the current
+authorization decision. At most 16 direct successors are accepted because the
+mode deliberately reuses the existing persistent breakpoint bound. The target
+freezes the stop set in `workflow.started`, records mode and all three sets in
+`workflow.experiment.started`, executes the selected node through the ordinary
+scheduler, then returns `paused` after `workflow.breakpoint.reached` and
+`workflow.paused` when at least one direct successor exists. A selected
+terminal node has an empty stop set and completes normally. No successor Run,
+condition, model, Tool, or side effect can start before a hold.
+
+Ordinary resume reconstructs and returns the same open point after SQLite
+reopen. Explicit breakpoint continuation consumes one open direct-successor
+hold in Manifest order; multiple successors therefore remain independently
+reviewable before the normal scheduler executes the remaining descendants.
+Experiment recovery recomputes all three sets from the exact source Manifest
+and compares them with both the lineage event and the target's frozen
+break-before set. Unknown checkpoints, partial lineage, source drift,
+impossible stop sets, and self-consistently rehashed result tampering fail
+closed. This is real selected-node execution, not arbitrary input/output
+mocking, side-effect simulation, or a second Workflow state machine.
 
 The source Plan is read-only. Reused outputs are accepted only when source
 Plan/Run ownership, frozen Agent revision, model, node input/output/schema
@@ -711,9 +748,13 @@ and is excluded from generic Workflow node retry, manual Run recovery, and
 automatic recovery.
 
 Preview and execution are available through CLI JSONL and dedicated HTTP
-preview/SSE routes. Web Trace projects only node IDs, counts, confirmation
-state, and hash prefixes. Source/output bodies, tool arguments, diagnostics,
-and paths are not copied into experiment-specific Trace summaries.
+preview/SSE routes, the TypeScript SDK, and local stdio RPC. The lazy
+Workbench desk independently recomputes the rerun/reused/direct-successor sets,
+validates schema-1/schema-2 preview hashes, binds terminal SSE to Snapshot
+Plan/Thread state, and requires a matching reached event for a paused result.
+Web Trace projects only mode, node IDs, counts, confirmation state, and hash
+prefixes. Source/output bodies, tool arguments, diagnostics, and paths are not
+copied into experiment-specific Trace summaries.
 
 Terminal experiment comparison reads each Thread event stream once, groups
 events by actual Run, and reuses the same pure Run-metric derivation as
@@ -5891,8 +5932,8 @@ deferred until the local P0-P9 product loop is stable.
   test discovery, coding outcome benchmarks, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, multi-way switch, write-capable Map/Loop, compensation,
-  single-node tests and breakpoints, external Agent adapters, artifact
-  settlement, and a visual builder;
+  arbitrary input/output mocks, interactive multi-step controls, external
+  Agent adapters, and a visual builder;
 - extend controlled Workflow, user-message, model-call, and stateless read-only
   tool-call re-execution with stateful/write checkpoints and result simulation,
   Prompt/Skill/Memory/environment replacement, batch experiments, interactive

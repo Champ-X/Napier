@@ -1,71 +1,12 @@
-import type {
-  ExecutionPlanWorkflowExperimentPreview,
-  ExecutionPlanWorkflowExperimentResultFrame,
-} from "@napier/contracts";
+import type { ExecutionPlanWorkflowExperimentResultFrame } from "@napier/contracts";
 
 import { canonicalJson, sha256Text } from "./stable-digest";
+import { validateWorkflowExperimentPreview } from "./workflow-experiment-preview-web-protocol";
 import { validateWorkflowManifest } from "./workflow-experiment-view-model";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 
-export async function validateWorkflowExperimentPreview(
-  input: unknown,
-): Promise<ExecutionPlanWorkflowExperimentPreview> {
-  if (!record(input)) throw new Error("Workflow experiment preview is invalid");
-  const required = [
-    "kind",
-    "schemaVersion",
-    "sourceThreadId",
-    "sourcePlanId",
-    "sourcePlanRevision",
-    "sourceManifestSha256",
-    "candidateManifestSha256",
-    "sourceAgentId",
-    "sourceAgentRevision",
-    "fromNodeId",
-    "reusedNodeIds",
-    "rerunNodeIds",
-    "modelOverrides",
-    "toolEffects",
-    "requiresSideEffectConfirmation",
-    "previewSha256",
-  ];
-  if (
-    !exactKeys(input, required) ||
-    input["kind"] !== "napier.execution-plan-workflow-experiment-preview" ||
-    input["schemaVersion"] !== 1 ||
-    typeof input["sourceThreadId"] !== "string" ||
-    typeof input["sourcePlanId"] !== "string" ||
-    !positiveInteger(input["sourcePlanRevision"]) ||
-    !hash(input["sourceManifestSha256"]) ||
-    !hash(input["candidateManifestSha256"]) ||
-    typeof input["sourceAgentId"] !== "string" ||
-    !positiveInteger(input["sourceAgentRevision"]) ||
-    typeof input["fromNodeId"] !== "string" ||
-    !stringArray(input["reusedNodeIds"], 30) ||
-    !stringArray(input["rerunNodeIds"], 30) ||
-    input["rerunNodeIds"].length < 1 ||
-    !input["rerunNodeIds"].includes(input["fromNodeId"]) ||
-    !record(input["modelOverrides"]) ||
-    !Array.isArray(input["toolEffects"]) ||
-    typeof input["requiresSideEffectConfirmation"] !== "boolean" ||
-    !hash(input["previewSha256"])
-  ) {
-    throw new Error("Workflow experiment preview is invalid");
-  }
-  for (const effects of input["toolEffects"]) {
-    if (!validToolEffects(effects)) {
-      throw new Error("Workflow experiment tool effects are invalid");
-    }
-  }
-  const { previewSha256: _previewSha256, ...content } = input;
-  if ((await sha256Text(canonicalJson(content))) !== input["previewSha256"]) {
-    throw new Error("Workflow experiment preview hash is invalid");
-  }
-  return structuredClone(
-    input,
-  ) as unknown as ExecutionPlanWorkflowExperimentPreview;
-}
+export { validateWorkflowExperimentPreview } from "./workflow-experiment-preview-web-protocol";
 
 export async function validateWorkflowExperimentResultFrame(
   input: unknown,
@@ -147,6 +88,17 @@ export async function validateWorkflowExperimentResultFrame(
   ) {
     throw new Error("Workflow experiment Workflow result is invalid");
   }
+  if (
+    result["status"] === "paused"
+      ? !validWorkflowBreakpoint(
+          result["breakpoint"],
+          Number(input["eventCount"]),
+          candidateManifest.nodes.map((node) => node.id),
+        )
+      : result["breakpoint"] !== undefined
+  ) {
+    throw new Error("Workflow experiment breakpoint is invalid");
+  }
   const { resultSha256: _resultSha256, ...resultContent } = result;
   if (
     (await sha256Text(canonicalJson(resultContent))) !== result["resultSha256"]
@@ -183,6 +135,32 @@ export async function validateWorkflowExperimentResultFrame(
   return structuredClone(
     input,
   ) as unknown as ExecutionPlanWorkflowExperimentResultFrame;
+}
+
+function validWorkflowBreakpoint(
+  input: unknown,
+  eventCount: number,
+  manifestNodeIds: string[],
+): boolean {
+  if (!record(input)) return false;
+  return (
+    exactKeys(input, [
+      "nodeId",
+      "breakpointIndex",
+      "breakpointCount",
+      "reachedEventSeq",
+      "bindingContextSha256",
+    ]) &&
+    typeof input["nodeId"] === "string" &&
+    manifestNodeIds.includes(input["nodeId"]) &&
+    nonNegativeInteger(input["breakpointIndex"]) &&
+    positiveInteger(input["breakpointCount"]) &&
+    Number(input["breakpointCount"]) <= 16 &&
+    Number(input["breakpointIndex"]) < Number(input["breakpointCount"]) &&
+    positiveInteger(input["reachedEventSeq"]) &&
+    Number(input["reachedEventSeq"]) <= eventCount &&
+    hash(input["bindingContextSha256"])
+  );
 }
 
 async function validateComparison(
@@ -322,21 +300,6 @@ function modelArray(input: unknown, maximum: number): boolean {
         typeof model["provider"] === "string" &&
         typeof model["id"] === "string",
     )
-  );
-}
-
-function validToolEffects(input: unknown): boolean {
-  if (!record(input)) return false;
-  return (
-    typeof input["nodeId"] === "string" &&
-    nonNegativeInteger(input["attemptCount"]) &&
-    nonNegativeInteger(input["toolCallCount"]) &&
-    nonNegativeInteger(input["readOnlyCount"]) &&
-    nonNegativeInteger(input["writeCount"]) &&
-    nonNegativeInteger(input["unknownCount"]) &&
-    nonNegativeInteger(input["unresolvedCount"]) &&
-    stringArray(input["writeToolNames"], 128) &&
-    stringArray(input["unknownToolNames"], 128)
   );
 }
 

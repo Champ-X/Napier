@@ -21,14 +21,19 @@ import {
 } from "./workflow-experiment-api";
 import { workflowExperimentCopy as copy } from "./workflow-experiment-copy";
 import {
+  defaultWorkflowExperimentSourcePlanId,
+  downloadWorkflowExperimentResult,
+  shortWorkflowExperimentId,
+} from "./workflow-experiment-desk-helpers";
+import {
   WorkflowExperimentComparisonDocket,
   WorkflowExperimentPreviewDocket,
 } from "./WorkflowExperimentDockets";
+import { WorkflowExperimentModeField } from "./WorkflowExperimentModeField";
 import {
   parseWorkflowManifestText,
   parseWorkflowModelKey,
   projectWorkflowExperimentComparison,
-  workflowExperimentResultFilename,
 } from "./workflow-experiment-view-model";
 import "./workflow-experiment.css";
 
@@ -57,8 +62,11 @@ export default function WorkflowExperimentDesk({
 }) {
   const [manifest, setManifest] = useState<ExecutionPlanWorkflowManifest>();
   const [manifestFilename, setManifestFilename] = useState("");
-  const [sourcePlanId, setSourcePlanId] = useState(defaultSourcePlanId(plans));
+  const [sourcePlanId, setSourcePlanId] = useState(
+    defaultWorkflowExperimentSourcePlanId(plans),
+  );
   const [fromNodeId, setFromNodeId] = useState("");
+  const [singleNode, setSingleNode] = useState(false);
   const [replaceModel, setReplaceModel] = useState(false);
   const [previewState, setPreviewState] = useState<PreviewState>();
   const [confirmed, setConfirmed] = useState(false);
@@ -87,8 +95,9 @@ export default function WorkflowExperimentDesk({
     operationGeneration.current += 1;
     setManifest(undefined);
     setManifestFilename("");
-    setSourcePlanId(defaultSourcePlanId(plans));
+    setSourcePlanId(defaultWorkflowExperimentSourcePlanId(plans));
     setFromNodeId("");
+    setSingleNode(false);
     setReplaceModel(false);
     setPreviewState(undefined);
     setConfirmed(false);
@@ -105,7 +114,7 @@ export default function WorkflowExperimentDesk({
 
   useEffect(() => {
     if (!plans.some((plan) => plan.id === sourcePlanId)) {
-      setSourcePlanId(defaultSourcePlanId(plans));
+      setSourcePlanId(defaultWorkflowExperimentSourcePlanId(plans));
       invalidatePreview();
     }
   }, [plans, sourcePlanId]);
@@ -197,6 +206,7 @@ export default function WorkflowExperimentDesk({
     return {
       manifest,
       fromNodeId,
+      ...(singleNode ? { mode: "single_node" as const } : {}),
       ...(replaceModel && canReplaceModel
         ? {
             modelOverrides: {
@@ -291,13 +301,14 @@ export default function WorkflowExperimentDesk({
     setManifest(undefined);
     setManifestFilename("");
     setFromNodeId("");
+    setSingleNode(false);
     setReplaceModel(false);
     setError(undefined);
   };
 
   const download = (): void => {
     if (!result) return;
-    downloadJson(result, workflowExperimentResultFilename(result));
+    downloadWorkflowExperimentResult(result);
   };
 
   return (
@@ -356,7 +367,8 @@ export default function WorkflowExperimentDesk({
           >
             {plans.map((plan) => (
               <option key={plan.id} value={plan.id}>
-                {shortId(plan.id)} / {plan.status} / {plan.objective}
+                {shortWorkflowExperimentId(plan.id)} / {plan.status} /{" "}
+                {plan.objective}
               </option>
             ))}
           </select>
@@ -385,6 +397,15 @@ export default function WorkflowExperimentDesk({
             ))}
           </select>
         </label>
+
+        <WorkflowExperimentModeField
+          singleNode={singleNode}
+          disabled={!manifest || Boolean(busy)}
+          onChange={(next) => {
+            setSingleNode(next);
+            invalidatePreview();
+          }}
+        />
 
         <label className="workflow-experiment-model">
           <input
@@ -473,31 +494,4 @@ export default function WorkflowExperimentDesk({
       ) : null}
     </article>
   );
-}
-
-function defaultSourcePlanId(plans: ExecutionPlan[]): string {
-  return (
-    plans.findLast((plan) => plan.status === "completed")?.id ??
-    plans.findLast((plan) => plan.status === "blocked")?.id ??
-    plans.at(-1)?.id ??
-    ""
-  );
-}
-
-function shortId(value: string): string {
-  return value.length > 18
-    ? `${value.slice(0, 10)}...${value.slice(-6)}`
-    : value;
-}
-
-function downloadJson(value: unknown, filename: string): void {
-  const blob = new Blob([JSON.stringify(value, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
 }

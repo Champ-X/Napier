@@ -123,6 +123,10 @@ export class ExecutionPlanWorkflowExperimentRuntime {
         request: {
           manifest: source.candidateManifest,
           input: source.sourceInput,
+          ...(preview.schemaVersion === 2 &&
+          preview.stopBeforeNodeIds.length > 0
+            ? { breakBeforeNodeIds: preview.stopBeforeNodeIds }
+            : {}),
         },
         [WORKFLOW_EXPERIMENT_EXECUTION]: {
           agentRevision: source.sourceAgentRevision,
@@ -139,6 +143,13 @@ export class ExecutionPlanWorkflowExperimentRuntime {
             sideEffectsConfirmed:
               preview.requiresSideEffectConfirmation &&
               request.confirmSideEffects === true,
+            ...(preview.schemaVersion === 2
+              ? {
+                  executionMode: preview.mode,
+                  executionNodeIds: preview.executionNodeIds,
+                  stopBeforeNodeIds: preview.stopBeforeNodeIds,
+                }
+              : {}),
           },
         },
         ...(options.signal ? { signal: options.signal } : {}),

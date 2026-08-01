@@ -53,13 +53,24 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     const fromNodeId = nodeId(payload["fromNodeId"]);
     const reusedNodeIds = nodeIds(payload["reusedNodeIds"]);
     const rerunNodeIds = nodeIds(payload["rerunNodeIds"]);
+    const executionMode = payload["executionMode"];
+    const executionNodeIds = nodeIds(payload["executionNodeIds"]);
+    const stopBeforeNodeIds = nodeIds(payload["stopBeforeNodeIds"]);
     const previewSha256 = hash(payload["previewSha256"]);
     if (
       !fromNodeId ||
       !reusedNodeIds ||
       !rerunNodeIds ||
       !previewSha256 ||
-      typeof payload["sideEffectsConfirmed"] !== "boolean"
+      typeof payload["sideEffectsConfirmed"] !== "boolean" ||
+      (executionMode !== undefined && executionMode !== "single_node") ||
+      (executionMode === "single_node"
+        ? !executionNodeIds ||
+          !stopBeforeNodeIds ||
+          executionNodeIds.length !== 1 ||
+          executionNodeIds[0] !== fromNodeId ||
+          stopBeforeNodeIds.length > 16
+        : executionNodeIds !== undefined || stopBeforeNodeIds !== undefined)
     ) {
       return undefined;
     }
@@ -67,6 +78,13 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `from ${fromNodeId}`,
       `reused ${String(reusedNodeIds.length)}`,
       `rerun ${String(rerunNodeIds.length)}`,
+      ...(executionMode === "single_node"
+        ? [
+            "mode single-node",
+            `execute ${String(executionNodeIds!.length)}`,
+            `stop-before ${String(stopBeforeNodeIds!.length)}`,
+          ]
+        : []),
       `preview ${previewSha256.slice(0, 12)}`,
       payload["sideEffectsConfirmed"] ? "side-effects confirmed" : "read-only",
     );

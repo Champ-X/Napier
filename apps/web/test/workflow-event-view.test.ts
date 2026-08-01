@@ -292,6 +292,29 @@ describe("Workflow event Trace projection", () => {
     expect(
       `${workflowEventTraceSummary(started)} ${workflowEventTraceSummary(reused)} ${workflowEventTraceSummary(compared)}`,
     ).not.toContain("PRIVATE");
+    const singleNode = workflowEvent("workflow.experiment.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      sourceThreadId: "thread_source_private",
+      sourcePlanId: "plan_source_private",
+      sourcePlanRevision: 4,
+      sourceManifestSha256: "2".repeat(64),
+      fromNodeId: "inspect",
+      reusedNodeIds: [],
+      rerunNodeIds: ["inspect", "report"],
+      executionMode: "single_node",
+      executionNodeIds: ["inspect"],
+      stopBeforeNodeIds: ["report"],
+      previewSha256: "7".repeat(64),
+      sideEffectsConfirmed: false,
+    });
+    expect(workflowEventTraceSummary(singleNode)).toContain(
+      "mode single-node / execute 1 / stop-before 1",
+    );
+    const malformed = structuredClone(singleNode);
+    delete (malformed.payload as Record<string, unknown>)["stopBeforeNodeIds"];
+    expect(workflowEventTraceSummary(malformed)).toBeUndefined();
   });
 
   it("summarizes Map coordination and item evidence without data bodies", () => {

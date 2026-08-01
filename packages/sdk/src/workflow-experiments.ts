@@ -1,4 +1,5 @@
 import type {
+  ExecutionPlanWorkflowExperimentMode,
   ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentResult,
   JsonValue,
@@ -17,6 +18,7 @@ export interface PreviewNapierWorkflowExperimentOptions<
   sourceThreadId: string;
   sourcePlanId: string;
   fromNodeId: string;
+  mode?: ExecutionPlanWorkflowExperimentMode;
   title?: string;
   modelOverrides?: Record<string, ModelRef>;
   signal?: AbortSignal;
@@ -83,6 +85,7 @@ function workflowExperimentRequest<
     manifest: options.workflow.manifest,
     planId: options.sourcePlanId,
     fromNodeId: options.fromNodeId,
+    ...(options.mode !== undefined ? { mode: options.mode } : {}),
     ...(options.title !== undefined ? { title: options.title } : {}),
     ...(options.modelOverrides !== undefined
       ? { modelOverrides: options.modelOverrides }
