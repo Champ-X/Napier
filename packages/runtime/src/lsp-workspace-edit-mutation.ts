@@ -38,6 +38,7 @@ export interface LspWorkspaceEditDiagnosticsAdapter<
 }
 
 export interface LspWorkspaceEditMutationOptions<
+  Source extends LspWorkspaceEditPreviewSource,
   State,
   Observation extends { details: object; summary: string },
 > {
@@ -50,6 +51,7 @@ export interface LspWorkspaceEditMutationOptions<
   now?: () => Date;
   commit?: typeof commitLspRename;
   commitOptions?: Pick<CommitLspRenameOptions, "renameFile" | "linkFile">;
+  preflight?: (source: Source, signal?: AbortSignal) => Promise<void>;
 }
 
 export interface LspWorkspaceEditMutationExecution<
@@ -105,6 +107,7 @@ export class LspWorkspaceEditMutationCoordinator<
 
   constructor(
     private readonly options: LspWorkspaceEditMutationOptions<
+      Source,
       State,
       Observation
     >,
@@ -162,11 +165,15 @@ export class LspWorkspaceEditMutationCoordinator<
     this.consumePreviewGroup(previewId, preview.source.exclusiveGroupId);
     this.prune();
     assertNotAborted(signal, this.options.label);
+    await this.options.preflight?.(preview.source, signal);
+    assertNotAborted(signal, this.options.label);
     const testBefore = await this.captureTestsBefore(preview.source, signal);
     const diagnostics = await this.options.diagnostics.observeBefore(
       preview.source.files,
       signal,
     );
+    assertNotAborted(signal, this.options.label);
+    await this.options.preflight?.(preview.source, signal);
     assertNotAborted(signal, this.options.label);
     const outcome = await this.commit({
       workspaceRoot: this.options.workspaceRoot,

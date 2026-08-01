@@ -159,6 +159,27 @@ describe("Agent profile updates", () => {
     ).toEqual(PROFILE);
   });
 
+  it("requires explicit write and diagnostic capabilities for coder Subagents", () => {
+    expect(() =>
+      updateAgentProfile(PROFILE, {
+        enabledSubagents: ["coder"],
+      }),
+    ).toThrow(
+      "Coder Subagents require workspace policy plus apply_patch and lsp_diagnostics",
+    );
+    const updated = updateAgentProfile(PROFILE, {
+      toolPolicy: "workspace",
+      enabledTools: ["read_file", "apply_patch", "lsp_diagnostics"],
+      enabledSubagents: ["coder"],
+    });
+    expect(updated.enabledSubagents).toEqual(["coder"]);
+    expect(updated.enabledTools).toEqual([
+      "apply_patch",
+      "lsp_diagnostics",
+      "read_file",
+    ]);
+  });
+
   it("does not audit equivalent capability-set reordering", () => {
     const unsorted: AgentProfile = {
       ...PROFILE,

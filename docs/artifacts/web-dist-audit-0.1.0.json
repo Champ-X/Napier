@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 92,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-Bqh_pjf0.js",
+    "path": "apps/web/dist/assets/index-7t799GjO.js",
     "sizeBytes": 133444,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "abb77d087f0bb38c944d313a7c4765880ab8ff31d9acf9aa426b7d5f0d36b2e0"
+    "sha256": "b24abb335326d750e9d2323bd3f02725fbe073f0898b100310777e265872c2de"
   },
-  "distContentSha256": "abb77d087f0bb38c944d313a7c4765880ab8ff31d9acf9aa426b7d5f0d36b2e0",
+  "distContentSha256": "b24abb335326d750e9d2323bd3f02725fbe073f0898b100310777e265872c2de",
   "errors": []
 }

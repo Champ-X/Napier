@@ -151,6 +151,7 @@ export const contextCopy = {
     researcher: "Researcher",
     reviewer: "Reviewer",
     general: "Generalist",
+    coder: "Coder",
   },
   runBudget: "Run budget",
   runMaxTurns: "Model turns",

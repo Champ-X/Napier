@@ -44,6 +44,7 @@ const SUBAGENT_ROLES = new Set<SubagentRole>([
   "researcher",
   "reviewer",
   "general",
+  "coder",
 ]);
 const EXECUTION_MODES = new Set<RunExecutionMode>([
   "standard",
@@ -308,7 +309,7 @@ export function validateRunConfigurationFingerprint(
   const enabledSubagents = assertCanonicalStringArray(
     record["enabledSubagents"],
     "enabledSubagents",
-    3,
+    4,
   ).map((role) => {
     if (!SUBAGENT_ROLES.has(role as SubagentRole)) {
       throw new Error(

@@ -35,7 +35,9 @@ describe("Subagent event trace view", () => {
       messageIndex: 3,
       text: "TOP_SECRET_ASSISTANT_TEXT",
       textSha256: "a".repeat(64),
-      toolCalls: [{ name: "read_file", arguments: { path: "TOP_SECRET_PATH" } }],
+      toolCalls: [
+        { name: "read_file", arguments: { path: "TOP_SECRET_PATH" } },
+      ],
     });
     const tool = subagentEvent("subagent.step", {
       taskId: "task_abcdef123456",
@@ -94,6 +96,43 @@ describe("Subagent event trace view", () => {
     });
     expect(subagentEventTraceSummary(event)).toBe(
       `subagent / completed / id cdef123456 / role review / status completed / stop completed / turns 2 / steps 5 / items 2 / evidence 3 / unknown 1 / outcome ${"b".repeat(12)} / items ${"c".repeat(12)} / evidence ${"d".repeat(12)}`,
+    );
+    expect(subagentEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
+  it("projects isolated coder worktree state without paths or preview IDs", () => {
+    const event = subagentEvent("subagent.completed", {
+      taskId: "task_abcdef123456",
+      role: "coder",
+      status: "completed",
+      workspaceMode: "isolated_write",
+      mergePreviewAvailable: true,
+      sourceFileCount: 120,
+      sourceBytes: 4096,
+      writeScopeCount: 2,
+      changedFileCount: 1,
+      sourceSnapshotSha256: "2".repeat(64),
+      writeScopeSetSha256: "3".repeat(64),
+      changedFileSetSha256: "4".repeat(64),
+      previewId: "TOP_SECRET_PREVIEW",
+      changedPaths: ["TOP_SECRET_PATH"],
+    });
+
+    expect(subagentEventTraceView(event)).toEqual(
+      expect.objectContaining({
+        action: "completed",
+        role: "coder",
+        workspaceMode: "isolated_write",
+        mergePreviewAvailable: true,
+        sourceFileCount: 120,
+        sourceBytes: 4096,
+        writeScopeCount: 2,
+        changedFileCount: 1,
+        changedFileSetSha256: "4".repeat(64),
+      }),
+    );
+    expect(subagentEventTraceSummary(event)).toContain(
+      `workspace isolated_write / merge-preview / source-files 120 / write-scopes 2 / changed-files 1 / change-set ${"4".repeat(12)}`,
     );
     expect(subagentEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

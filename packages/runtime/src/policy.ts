@@ -31,6 +31,7 @@ const WORKSPACE_FILE_APPLY_TOOLS = new Set(["workspace_file_apply"]);
 const LSP_WORKSPACE_EDIT_APPLY_TOOLS = new Set([
   "lsp_rename_apply",
   "lsp_code_action_apply",
+  "subagent_worktree_apply",
 ]);
 const VERIFICATION_TOOLS = new Set(["verify_workspace"]);
 const LSP_TOOLS = new Set([
@@ -204,7 +205,9 @@ export function assessToolCall(
       reason:
         toolName === "lsp_rename_apply"
           ? "fresh preview-bound coordinated LSP rename"
-          : "fresh preview-bound coordinated LSP Code Action",
+          : toolName === "lsp_code_action_apply"
+            ? "fresh preview-bound coordinated LSP Code Action"
+            : "fresh preview-bound coordinated Subagent worktree merge",
     };
   }
 

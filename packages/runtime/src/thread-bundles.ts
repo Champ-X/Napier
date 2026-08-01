@@ -75,10 +75,8 @@ import {
   TOOL_LOOP_GUARD_TRIGGERED_EVENT,
   validateToolLoopGuardTriggerEvidence,
 } from "./tool-loop-guard.js";
-import {
-  assertSubagentOutcomeBinding,
-  subagentRoleInstructions,
-} from "./subagent-outcomes.js";
+import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
+import { subagentRoleInstructions } from "./subagent-role-instructions.js";
 import {
   subagentOutcomeRepairInstructions,
   validateSubagentOutcomeRepairOutcome,
@@ -173,7 +171,7 @@ const SUBAGENT_STATUSES = new Set([
   "cancelled",
   "timed_out",
 ]);
-const SUBAGENT_ROLES = new Set(["researcher", "reviewer", "general"]);
+const SUBAGENT_ROLES = new Set(["researcher", "reviewer", "general", "coder"]);
 const AGENT_TOOLS: ReadonlySet<string> = new Set(AGENT_TOOL_NAMES);
 const SUBAGENT_STOP_REASONS = new Set([
   "completed",

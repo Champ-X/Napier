@@ -6,6 +6,42 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added opt-in isolated coder Subagent worktrees. A parent Agent can delegate a
+  change over 1-8 declared existing UTF-8 files; Napier snapshots at most 2,000
+  files / 32 MiB into a 0600/0700 private Runtime-owner root, gives the child
+  only private read/AST/path-limited patch tools, grounds its typed outcome
+  against actual candidate bytes, returns a control-safe live-only per-file
+  change window capped at 32 KiB with explicit truncation, removes the private
+  tree, and returns a five-minute one-use preview without changing the parent
+  workspace. Explicit `subagent_worktree_apply` consumes that capability,
+  rejects complete admitted-source drift observed before and after
+  diagnostics/test selection, and reuses the existing multi-file lock,
+  stage/fsync/hard-link backup/reverse rollback transaction before fresh LSP
+  diagnostics and optional monorepo-aware write-linked tests. Concurrent
+  candidates are first-writer-wins; previews are intentionally same-Run and
+  memory-only, while PID owner manifests preserve another live local Runtime
+  and clean dead-worker directories. The coder has no shell, Process, network,
+  Browser, Extension, persistent Session, or nested delegation authority, and
+  this slice does not support candidate creation/deletion/rename/mode changes,
+  binary files, child-side process verification, or cross-Run preview recovery.
+  Agent, HTTP/SSE, Web Trace, and portable Replay retain bounded
+  role/status/count/hash evidence while redacting write grants, patch
+  arguments/results, candidate bodies, and preview IDs. Focused tests cover
+  policy/profile admission, path and scan limits, symlinks, source drift,
+  one-use/restart behavior, concurrent candidates, stale owner cleanup,
+  cancellation, outcome repair, HTTP/SSE, strict Web projection, Replay, and
+  privacy. Opt-in real Napier-workspace Dogfood kept the parent unchanged until
+  explicit apply, then passed clean LSP diagnostics and one exact real Vitest
+  target with full cleanup in 16.97 seconds. The former 986-line coordinator
+  and 969-line outcome module are split into focused modules below 500 lines.
+  The complete gate passes 1,677 regular tests with 30 opt-in live tests
+  skipped, 255 OpenAPI routes, and 244/244 compatibility operations. Product
+  performance remains within budget at 733.1 ms to first CLI event, 879.0 ms
+  to first token, 1,176.5 ms to completion, 0.4 ms read p95, 7.4 ms for a
+  1,000-event projection, and 749.568 closed SQLite bytes/event. The 92-file
+  Web dist main entry remains 130.32 KiB under its 150 KiB limit, bound to
+  `b24abb335326d750`; the seven-artifact release set is bound to
+  `362f881c9c8c5310`.
 - Added monorepo-aware write-linked test verification. Existing nearest-package
   relative-import selection remains compatible, while a bounded root workspace
   graph can now resolve unique declared package names/subpaths and safe

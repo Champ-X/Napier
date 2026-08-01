@@ -2801,7 +2801,88 @@ cannot turn a local filesystem into distributed consensus. Parent-directory
 creation is limited to `create` with an explicit opt-in and uses the same
 workspace, protected-segment, and symlink checks; file deletion, arbitrary
 directory operations, and permission changes remain outside this tool.
-Subagents call the read-only tool factory and never receive `apply_patch`.
+Researcher, reviewer, and general Subagents call the read-only tool factory and
+never receive `apply_patch`. The opt-in coder role receives only the separate
+private-worktree tools below.
+
+## Isolated Coder Subagent Worktree Flow
+
+Coder delegation is a two-authority protocol. The child can edit only a
+private snapshot; only the parent Run can consume the resulting merge
+capability:
+
+```text
+parent delegate_task(role=coder, writePaths)
+  -> require workspace policy, apply_patch, lsp_diagnostics, and 1-8 unique
+     existing regular UTF-8 write paths
+  -> create dataRoot/subagent-worktrees/<workerId>/<taskId> with 0700 parents
+  -> scan the canonical workspace twice and require one stable snapshot
+  -> copy <=2,000 files, <=32 MiB total, <=1 MiB each with O_NOFOLLOW,
+     inode/device rechecks, 0600 files, and no protected/generated roots
+child Pi Agent
+  -> expose private list/read/search/symbol/data/AST tools
+  -> wrap apply_patch so create, undeclared paths, and missing expected hashes
+     fail before private mutation
+  -> provide no shell, Process, network, Browser, Extension, Session, or
+     nested-delegation capability
+candidate finalization
+  -> rescan source and private tree
+  -> reject source drift, no change, undeclared change, add/remove, binary,
+     symlink, special-file, or resource-limit violations
+  -> ground the typed outcome against candidate bytes
+  -> derive a <=32 KiB live-only per-file change window with before/after
+     hashes, control escaping, explicit untrusted-data labeling, and truncation
+  -> remove the private tree before publishing a five-minute one-use preview
+parent subagent_worktree_apply(previewId)
+  -> consume the preview before preflight
+  -> verify task, outcome, source snapshot, write scope, and changed-file hashes
+  -> rescan the complete admitted source before and after diagnostics/test
+     selection; reject observed drift
+  -> run fresh before diagnostics and optional write-linked test selection
+  -> reuse the shared multi-file lock, staging, fsync, hard-link backup,
+     ordered commit, reverse rollback, and postcondition transaction
+  -> run fresh after diagnostics and selected tests
+  -> append one hash/count/status-only tool result to the ordinary Work Ledger
+```
+
+The conservative complete-source preflight gives concurrent candidates
+first-writer-wins behavior: after one merge, every sibling from the prior
+snapshot is stale. Preview state is intentionally memory-only and same-Run;
+restart makes apply return not found without changing the workspace.
+`owner.json` binds each private root to a Runtime PID. A new worker preserves a
+live owner's directories, removes dead or legacy owner directories, and rejects
+malformed or symlinked owner metadata.
+
+An external process does not honor Napier's path locks and can race after the
+last complete-source recheck. The transaction still revalidates each actual
+target under its lock before commit, preventing silent overwrite of candidate
+files; unrelated-file atomicity would require a stronger execution backend.
+
+`subagent-worktree-files.ts` owns bounded fork/finalize/freshness operations;
+`subagent-worktree-storage.ts` owns private owner roots and stale cleanup;
+`subagent-worktree-review.ts` owns the bounded parent-visible change window;
+`subagent-worktree-mutation.ts` owns child tool adaptation, preview storage,
+and the parent merge adapter. It composes
+`LspWorkspaceEditMutationCoordinator` and `commitLspRename()` rather than
+creating a second write transaction. `subagent-task-runner.ts` owns the child
+Agent loop and candidate outcome grounding, while
+`subagent-task-evidence.ts` owns durable projection and live result formatting.
+The former monolithic coordinator and outcome implementation are split across
+these modules plus focused role, parser, verifier, and repair modules; each new
+core logic file remains below 500 lines.
+
+Write paths, candidate patch arguments/results, candidate bodies, preview IDs,
+and raw errors remain live-only. Durable Agent/HTTP/Replay evidence retains
+role, state, bounded counts, transaction/diagnostic/test status, and hashes for
+the task, outcome, source snapshot, write scope, changed file set, plan, files,
+and result. Web independently parses that bounded schema and never trusts
+Runtime-reported paths or candidate content. Existing typed-outcome path
+citations keep the ordinary grounded Subagent evidence semantics.
+
+This slice supports only existing regular text files. Candidate file creation,
+deletion, rename, permission changes, symlinks, arbitrary binary changes,
+child-side process verification, cross-Run preview recovery, and Git worktree
+semantics remain unavailable.
 
 SQLite analysis remains outside the oversized workspace-tool module.
 `sqlite-database-file.ts` owns canonical file admission, sidecar denial,

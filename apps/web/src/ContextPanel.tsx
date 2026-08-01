@@ -1114,7 +1114,12 @@ export default function ContextPanel({
     agentSkills.length > 0;
   const canSignPromptPackage =
     promptPublisher.trim().length > 0 && promptTrustAnchorId.length > 0;
-  const subagentOptions: SubagentRole[] = ["researcher", "reviewer", "general"];
+  const subagentOptions: SubagentRole[] = [
+    "researcher",
+    "reviewer",
+    "general",
+    "coder",
+  ];
   const toolOptions = AGENT_TOOL_NAMES;
 
   return (

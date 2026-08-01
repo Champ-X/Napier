@@ -63,7 +63,8 @@ export function builtInToolEffect(
     toolName === "create_plan" ||
     toolName === "update_plan_step" ||
     toolName === "update_plan_artifact" ||
-    toolName === "delegate_task"
+    toolName === "delegate_task" ||
+    toolName === "subagent_worktree_apply"
   ) {
     return "write";
   }

@@ -536,6 +536,8 @@ export class AgentRuntime {
               model,
               run,
               profile: agentProfile,
+              sandbox: this.verificationSandbox,
+              worktreeOwnerId: this.workerId,
               parentSignal: abortController.signal,
               ...(options.onEvent ? { onEvent: options.onEvent } : {}),
             })
@@ -1386,7 +1388,7 @@ export class AgentRuntime {
       !advisorCorrection &&
       subagents?.hasEnabledRoles()
     ) {
-      tools.push(subagents.createTool());
+      tools.push(...subagents.createTools());
     }
     const toolResultLifecycle = new AgentToolResultLifecycle({
       store: this.store,

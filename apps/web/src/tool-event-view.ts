@@ -54,6 +54,11 @@ import {
   writeLinkedTestSummaryParts,
   type WriteLinkedTestEventTraceView,
 } from "./write-linked-test-event-view";
+import {
+  subagentWorktreeEventEvidence,
+  subagentWorktreeSummaryParts,
+  type SubagentWorktreeToolEventTraceView,
+} from "./subagent-worktree-event-view";
 
 export interface ToolEventTraceView
   extends
@@ -66,6 +71,7 @@ export interface ToolEventTraceView
     SqliteQueryToolEventTraceView,
     NodeDebuggerToolEventTraceView,
     TypescriptAstToolEventTraceView,
+    SubagentWorktreeToolEventTraceView,
     WriteLinkedTestEventTraceView {
   toolName: string;
   status: string;
@@ -299,6 +305,10 @@ export function toolEventTraceView(
     toolName === "apply_patch"
       ? applyPatchEvidence(event.payload["details"])
       : undefined;
+  const subagentWorktreeEvidence =
+    toolName === "subagent_worktree_apply"
+      ? subagentWorktreeEventEvidence(event.payload["details"])
+      : undefined;
   const fileMutationEvidence =
     toolName === "workspace_file_preview" || toolName === "workspace_file_apply"
       ? workspaceFileMutationEvidence(event.payload["details"])
@@ -333,6 +343,7 @@ export function toolEventTraceView(
     ...(nodeDebuggerEvidence ? nodeDebuggerEvidence : {}),
     ...(typescriptAstEvidence ? typescriptAstEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
+    ...(subagentWorktreeEvidence ? subagentWorktreeEvidence : {}),
     ...(fileMutationEvidence ? fileMutationEvidence : {}),
     ...(listEvidence ? listEvidence : {}),
     ...(readEvidence ? readEvidence : {}),
@@ -537,6 +548,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...pythonKernelSummaryParts(view),
     ...nodeDebuggerSummaryParts(view),
     ...typescriptAstSummaryParts(view),
+    ...subagentWorktreeSummaryParts(view),
     ...(view.patchOperation ? [`patch ${view.patchOperation}`] : []),
     ...(view.patchEditCount !== undefined
       ? [`edits ${view.patchEditCount}`]

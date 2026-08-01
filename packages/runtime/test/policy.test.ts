@@ -155,6 +155,28 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "observe",
+        "subagent_worktree_apply",
+        { previewId: "subworkpreview_12345678" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "subagent_worktree_apply",
+        { previewId: "subworkpreview_12345678" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "fresh preview-bound coordinated Subagent worktree merge",
+      }),
+    );
+    expect(
+      assessToolCall(
         "workspace",
         "workspace_file_preview",
         {

@@ -231,8 +231,12 @@ Version `0.1.0` includes:
   evidence, immutable correction supersession, atomic multi-source
   consolidation, bounded injection, and audit events;
 - isolated researcher, reviewer, and general subagents with read-only tools,
-  bounded run budgets, cancellation, strict typed outcomes, hash-bound
-  delegation receipts, and a compaction-immune durable task projection;
+  plus an opt-in `coder` role that edits up to eight declared existing text
+  files in a bounded private workspace snapshot and returns a bounded live
+  change review plus a one-use candidate for explicit parent merge. All roles
+  retain bounded run budgets,
+  cancellation, strict typed outcomes, hash-bound delegation receipts, and a
+  compaction-immune durable task projection;
 - reviewed Streamable HTTP MCP connections with provenance, capability and
   per-tool effect approval, local routing hints, deferred schema search, Agent
   enablement, no-store extension state headers, and last-moment policy checks;
@@ -2804,7 +2808,10 @@ same-directory temporary file, recheck the precondition, and commit with an
 atomic link or rename. Trace records the operation, path, byte counts,
 before/after hashes, and a path SHA-256 receipt;
 Workbench summaries show only the operation, byte/edit counts, path hash, and
-content hashes. Researcher, reviewer, and general subagents remain read-only.
+content hashes. Researcher, reviewer, and general subagents remain read-only;
+an explicitly enabled coder receives a separate private-worktree tool set
+described below and never applies its candidate directly to the parent
+workspace.
 
 ## Reversible Workspace File Lifecycle
 
@@ -2853,6 +2860,55 @@ Run the complete Agent-to-filesystem smoke:
 
 ```bash
 npm run test:live-files
+```
+
+## Isolated Coder Subagent Worktrees
+
+The opt-in `coder` role lets a parent Coding Agent delegate a bounded change
+without granting the child direct access to parent workspace writes:
+
+```text
+delegate_task(role=coder, writePaths=[1..8 existing files])
+  -> snapshot at most 2,000 files / 32 MiB into a private Runtime-owner root
+  -> reject symlinks, special files, protected/generated roots, and source drift
+  -> run a Pi child with private read/AST tools and path-limited apply_patch
+  -> ground its typed outcome against candidate bytes and actual changed files
+  -> derive a control-safe live-only change window capped at 32 KiB
+  -> delete the private tree and return a five-minute one-use merge preview
+subagent_worktree_apply(previewId)
+  -> consume the capability and recheck the complete source snapshot
+  -> acquire the shared multi-file locks and stage/fsync/commit atomically
+  -> reverse rollback on partial failure and verify postconditions
+  -> run fresh LSP diagnostics and enabled write-linked tests
+```
+
+The parent workspace is unchanged until the second tool call. A source change
+observed during candidate finalization or either apply preflight makes the
+candidate stale; when concurrent candidates share a source snapshot, the first
+successful merge therefore makes the others stale. An external process can
+still race after the last full-source scan because it does not honor Napier's
+locks; lock-local target CAS prevents silent overwrite of the candidate files.
+The live parent result includes per-file before/after hashes and one
+common-prefix/suffix change window, labels file content as untrusted, escapes
+terminal/bidirectional controls, and reports truncation instead of claiming
+complete review. The preview is deliberately memory-only and valid in the same
+Run, so Runtime restart invalidates it without mutation. PID-bound owner
+manifests preserve worktrees owned by another live local Runtime and allow a
+later worker to clean directories left by a dead process.
+
+This is a filesystem worktree, not a Git branch, shell checkout, container, or
+process sandbox. The child has no shell, Process, network, Browser, Extension,
+persistent Session, or nested-delegation capability. Candidate creation,
+deletion, rename, mode changes, symlinks, binary files, child-side test
+execution, and cross-Run preview recovery are not supported. Ledger, SSE,
+Replay, and Web Trace retain bounded role/status/count/hash evidence while
+redacting write grants, patch arguments/results, candidate bodies, and preview
+IDs.
+
+Run the opt-in real Agent-to-private-worktree smoke:
+
+```bash
+npm run test:live-coder
 ```
 
 New delegations must return a bounded

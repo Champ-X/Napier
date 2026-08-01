@@ -10,7 +10,7 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   subagentOutcomeContractInstructions,
   subagentRoleInstructions,
-} from "./subagent-outcomes.js";
+} from "./subagent-role-instructions.js";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
@@ -398,7 +398,12 @@ function optionalDigest(value: unknown, label: string): string | undefined {
 }
 
 function isRole(value: unknown): value is SubagentRole {
-  return value === "researcher" || value === "reviewer" || value === "general";
+  return (
+    value === "researcher" ||
+    value === "reviewer" ||
+    value === "general" ||
+    value === "coder"
+  );
 }
 
 function isRepairStatus(value: unknown): value is SubagentOutcomeRepairStatus {

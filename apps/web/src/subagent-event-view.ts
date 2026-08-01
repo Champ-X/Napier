@@ -23,6 +23,15 @@ export interface SubagentEventTraceView {
   evidenceSetSha256?: string;
   requestSha256?: string;
   contentSha256?: string;
+  workspaceMode?: "read_only" | "isolated_write";
+  mergePreviewAvailable?: boolean;
+  sourceFileCount?: number;
+  sourceBytes?: number;
+  writeScopeCount?: number;
+  changedFileCount?: number;
+  sourceSnapshotSha256?: string;
+  writeScopeSetSha256?: string;
+  changedFileSetSha256?: string;
 }
 
 const SUBAGENT_EVENT_PATTERN =
@@ -58,7 +67,9 @@ export function subagentEventTraceView(
   const itemCount = nonNegativeInteger(event.payload["itemCount"]);
   const evidenceCount = nonNegativeInteger(event.payload["evidenceCount"]);
   const unknownCount = nonNegativeInteger(event.payload["unknownCount"]);
-  const outcome = record(event.payload["outcome"]) ? event.payload["outcome"] : {};
+  const outcome = record(event.payload["outcome"])
+    ? event.payload["outcome"]
+    : {};
   const textSha256 = sha256(event.payload["textSha256"]);
   const resultSha256 = sha256(event.payload["resultSha256"]);
   const diagnosticSha256 = sha256(event.payload["diagnosticSha256"]);
@@ -71,7 +82,36 @@ export function subagentEventTraceView(
     sha256(outcome["evidenceSetSha256"]);
   const requestSha256 = sha256(event.payload["requestSha256"]);
   const contentSha256 = sha256(event.payload["contentSha256"]);
-  const outcomeItemCount = itemCount ?? nonNegativeInteger(outcome["itemCount"]);
+  const workspaceMode =
+    event.payload["workspaceMode"] === "read_only" ||
+    event.payload["workspaceMode"] === "isolated_write"
+      ? event.payload["workspaceMode"]
+      : undefined;
+  const sourceFileCount = boundedInteger(
+    event.payload["sourceFileCount"],
+    1,
+    2_000,
+  );
+  const sourceBytes = boundedInteger(
+    event.payload["sourceBytes"],
+    0,
+    32 * 1024 * 1024,
+  );
+  const writeScopeCount = boundedInteger(
+    event.payload["writeScopeCount"],
+    1,
+    8,
+  );
+  const changedFileCount = boundedInteger(
+    event.payload["changedFileCount"],
+    1,
+    8,
+  );
+  const sourceSnapshotSha256 = sha256(event.payload["sourceSnapshotSha256"]);
+  const writeScopeSetSha256 = sha256(event.payload["writeScopeSetSha256"]);
+  const changedFileSetSha256 = sha256(event.payload["changedFileSetSha256"]);
+  const outcomeItemCount =
+    itemCount ?? nonNegativeInteger(outcome["itemCount"]);
   const outcomeEvidenceCount =
     evidenceCount ?? nonNegativeInteger(outcome["evidenceCount"]);
   const outcomeUnknownCount =
@@ -103,12 +143,21 @@ export function subagentEventTraceView(
     ...(evidenceSetSha256 ? { evidenceSetSha256 } : {}),
     ...(requestSha256 ? { requestSha256 } : {}),
     ...(contentSha256 ? { contentSha256 } : {}),
+    ...(workspaceMode ? { workspaceMode } : {}),
+    ...(event.payload["mergePreviewAvailable"] === true
+      ? { mergePreviewAvailable: true }
+      : {}),
+    ...(sourceFileCount !== undefined ? { sourceFileCount } : {}),
+    ...(sourceBytes !== undefined ? { sourceBytes } : {}),
+    ...(writeScopeCount !== undefined ? { writeScopeCount } : {}),
+    ...(changedFileCount !== undefined ? { changedFileCount } : {}),
+    ...(sourceSnapshotSha256 ? { sourceSnapshotSha256 } : {}),
+    ...(writeScopeSetSha256 ? { writeScopeSetSha256 } : {}),
+    ...(changedFileSetSha256 ? { changedFileSetSha256 } : {}),
   };
 }
 
-export function subagentEventTraceSummary(
-  event: RunEvent,
-): string | undefined {
+export function subagentEventTraceSummary(event: RunEvent): string | undefined {
   if (!SUBAGENT_EVENT_PATTERN.test(event.type)) return undefined;
   const view = subagentEventTraceView(event);
   if (!view) return SUBAGENT_RECEIPT_SUMMARY;
@@ -119,16 +168,22 @@ export function subagentEventTraceSummary(
     ...(view.status ? [`status ${view.status}`] : []),
     ...(view.kind ? [`kind ${view.kind}`] : []),
     ...(view.stopReason ? [`stop ${view.stopReason}`] : []),
-    ...(view.messageIndex !== undefined ? [`message ${view.messageIndex}`] : []),
+    ...(view.messageIndex !== undefined
+      ? [`message ${view.messageIndex}`]
+      : []),
     ...(view.attempt !== undefined ? [`attempt ${view.attempt}`] : []),
     ...(view.turnCount !== undefined ? [`turns ${view.turnCount}`] : []),
     ...(view.stepCount !== undefined ? [`steps ${view.stepCount}`] : []),
-    ...(view.toolCallCount !== undefined ? [`tools ${view.toolCallCount}`] : []),
+    ...(view.toolCallCount !== undefined
+      ? [`tools ${view.toolCallCount}`]
+      : []),
     ...(view.itemCount !== undefined ? [`items ${view.itemCount}`] : []),
     ...(view.evidenceCount !== undefined
       ? [`evidence ${view.evidenceCount}`]
       : []),
-    ...(view.unknownCount !== undefined ? [`unknown ${view.unknownCount}`] : []),
+    ...(view.unknownCount !== undefined
+      ? [`unknown ${view.unknownCount}`]
+      : []),
     ...(view.textSha256 ? [`text ${view.textSha256.slice(0, 12)}`] : []),
     ...(view.resultSha256 ? [`result ${view.resultSha256.slice(0, 12)}`] : []),
     ...(view.diagnosticSha256
@@ -147,6 +202,20 @@ export function subagentEventTraceSummary(
     ...(view.contentSha256
       ? [`receipt ${view.contentSha256.slice(0, 12)}`]
       : []),
+    ...(view.workspaceMode ? [`workspace ${view.workspaceMode}`] : []),
+    ...(view.mergePreviewAvailable ? ["merge-preview"] : []),
+    ...(view.sourceFileCount !== undefined
+      ? [`source-files ${view.sourceFileCount}`]
+      : []),
+    ...(view.writeScopeCount !== undefined
+      ? [`write-scopes ${view.writeScopeCount}`]
+      : []),
+    ...(view.changedFileCount !== undefined
+      ? [`changed-files ${view.changedFileCount}`]
+      : []),
+    ...(view.changedFileSetSha256
+      ? [`change-set ${view.changedFileSetSha256.slice(0, 12)}`]
+      : []),
   ].join(" / ");
 }
 
@@ -155,7 +224,9 @@ function taskIdValue(value: unknown): string | undefined {
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {
@@ -164,6 +235,19 @@ function sha256(value: unknown): string | undefined {
 
 function nonNegativeInteger(value: unknown): number | undefined {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : undefined;
+}
+
+function boundedInteger(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+): number | undefined {
+  return typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= minimum &&
+    value <= maximum
     ? value
     : undefined;
 }

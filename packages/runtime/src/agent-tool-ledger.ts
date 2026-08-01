@@ -96,6 +96,16 @@ import {
   workspacePatchToolInputLedgerProjection,
   workspacePatchToolOutputLedgerProjection,
 } from "./workspace-patch-tool.js";
+import {
+  delegateTaskCallArgumentsLedgerProjection,
+  delegateTaskInputLedgerProjection,
+  delegateTaskOutputLedgerProjection,
+} from "./subagents.js";
+import {
+  subagentWorktreeToolCallArgumentsLedgerProjection,
+  subagentWorktreeToolInputLedgerProjection,
+  subagentWorktreeToolOutputLedgerProjection,
+} from "./subagent-worktree-mutation.js";
 
 const PRIVATE_WORKSPACE_READ_TOOLS = new Set([
   "list_files",
@@ -161,6 +171,12 @@ export function agentToolCallArgumentsLedgerProjection(
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolCallArgumentsLedgerProjection(args);
+  }
+  if (toolName === "delegate_task") {
+    return delegateTaskCallArgumentsLedgerProjection(args);
+  }
+  if (toolName === "subagent_worktree_apply") {
+    return subagentWorktreeToolCallArgumentsLedgerProjection(args);
   }
   if (toolName === "workspace_process") {
     return workspaceProcessToolCallArgumentsLedgerProjection(args);
@@ -231,6 +247,12 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolInputLedgerProjection(args);
+  }
+  if (toolName === "delegate_task") {
+    return delegateTaskInputLedgerProjection(args);
+  }
+  if (toolName === "subagent_worktree_apply") {
+    return subagentWorktreeToolInputLedgerProjection(args);
   }
   if (toolName === "workspace_process") {
     return workspaceProcessToolInputLedgerProjection(args);
@@ -306,6 +328,12 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "delegate_task") {
+    return delegateTaskOutputLedgerProjection(output, result);
+  }
+  if (toolName === "subagent_worktree_apply") {
+    return subagentWorktreeToolOutputLedgerProjection(output, result);
   }
   if (toolName === "workspace_process") {
     return workspaceProcessToolOutputLedgerProjection(output, result);

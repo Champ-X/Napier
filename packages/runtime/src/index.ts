@@ -136,6 +136,8 @@ export * from "./subagents.js";
 export * from "./subagent-outcome-review.js";
 export * from "./subagent-outcome-repair.js";
 export * from "./subagent-outcomes.js";
+export * from "./subagent-worktree-files.js";
+export * from "./subagent-worktree-mutation.js";
 export * from "./thread-branches.js";
 export * from "./thread-bundles.js";
 export * from "./token-accounting.js";

@@ -2573,7 +2573,7 @@ export interface SetCredentialReferenceStatusRequest {
 
 export type ToolPolicyMode = "observe" | "workspace" | "unrestricted";
 
-export type SubagentRole = "researcher" | "reviewer" | "general";
+export type SubagentRole = "researcher" | "reviewer" | "general" | "coder";
 export type SubagentTaskStatus =
   | "pending"
   | "running"
@@ -4132,6 +4132,21 @@ export interface LspRenameApplyDetails {
   diagnostics?: LspRenameApplyDiagnosticsDetails;
   tests?: WriteLinkedTestVerificationDetails;
   resultSha256: string;
+}
+
+export interface SubagentWorktreeApplyDetails extends Omit<
+  LspRenameApplyDetails,
+  "kind"
+> {
+  kind: "napier.subagent-worktree-apply";
+  taskId: string;
+  outcomeSha256: string;
+  sourceSnapshotSha256: string;
+  sourceFileCount: number;
+  sourceBytes: number;
+  writeScopeCount: number;
+  writeScopeSetSha256: string;
+  changedFileSetSha256: string;
 }
 
 export interface LspCodeActionApplyDiagnosticsDetails extends Omit<

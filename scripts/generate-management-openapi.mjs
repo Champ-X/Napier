@@ -738,7 +738,7 @@ export async function generateManagementOpenApi(options = {}) {
             },
             role: {
               type: "string",
-              enum: ["researcher", "reviewer", "general"],
+              enum: ["researcher", "reviewer", "general", "coder"],
             },
             outcomeSha256: { $ref: "#/components/schemas/Sha256Hex" },
             workerModel: { $ref: "#/components/schemas/ModelRef" },

@@ -35,7 +35,7 @@ const TOOL_POLICIES = new Set<AgentProfile["toolPolicy"]>([
   "workspace",
   "unrestricted",
 ]);
-const SUBAGENT_ROLES = new Set(["researcher", "reviewer", "general"]);
+const SUBAGENT_ROLES = new Set(["researcher", "reviewer", "general", "coder"]);
 const MODEL_ADVISOR_MODES = new Set<ModelAdvisorPolicy["mode"]>([
   "observe",
   "enforce",
@@ -193,6 +193,7 @@ export function updateAgentProfile(
       : {}),
   };
   assertIndependentAdvisorModel(updated);
+  assertCoderSubagentCapabilities(updated);
   if (configSignature(updated) === configSignature(current)) {
     return structuredClone(current);
   }
@@ -422,6 +423,7 @@ function assertAgentProfileSnapshot(profile: AgentProfile): void {
     throw new Error("Agent profile tool loop guard is not canonical");
   }
   assertIndependentAdvisorModel(profile);
+  assertCoderSubagentCapabilities(profile);
 }
 
 function normalizeAdvisorReviewModel(
@@ -630,6 +632,19 @@ function normalizeSubagents(
     throw new Error(`Unsupported subagent role: ${unsupported}`);
   }
   return normalized.sort();
+}
+
+function assertCoderSubagentCapabilities(profile: AgentProfile): void {
+  if (
+    profile.enabledSubagents?.includes("coder") &&
+    (profile.toolPolicy === "observe" ||
+      !profile.enabledTools.includes("apply_patch") ||
+      !profile.enabledTools.includes("lsp_diagnostics"))
+  ) {
+    throw new Error(
+      "Coder Subagents require workspace policy plus apply_patch and lsp_diagnostics",
+    );
+  }
 }
 
 function preserveEquivalentSet<T extends string>(

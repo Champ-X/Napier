@@ -11512,8 +11512,8 @@ function parseAgentNameArray(
 function parseEnabledSubagents(
   input: unknown,
 ): NonNullable<UpdateAgentProfileRequest["enabledSubagents"]> | undefined {
-  if (!Array.isArray(input) || input.length > 3) return undefined;
-  const allowed = new Set(["researcher", "reviewer", "general"]);
+  if (!Array.isArray(input) || input.length > 4) return undefined;
+  const allowed = new Set(["researcher", "reviewer", "general", "coder"]);
   if (input.some((value) => typeof value !== "string" || !allowed.has(value))) {
     return undefined;
   }

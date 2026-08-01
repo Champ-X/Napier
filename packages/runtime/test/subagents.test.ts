@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -8,7 +9,7 @@ import {
   fauxToolCall,
 } from "@earendil-works/pi-ai";
 import type { AgentProfile, SubagentLimits } from "@napier/contracts";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
@@ -24,7 +25,10 @@ afterEach(async () => {
   );
 });
 
-async function createHarness(limits: Partial<SubagentLimits> = {}) {
+async function createHarness(
+  limits: Partial<SubagentLimits> = {},
+  profileOverrides: Partial<AgentProfile> = {},
+) {
   const root = await mkdtemp(path.join(tmpdir(), "napier-subagent-"));
   temporaryRoots.push(root);
   const workspaceRoot = path.join(root, "workspace");
@@ -45,6 +49,7 @@ async function createHarness(limits: Partial<SubagentLimits> = {}) {
       timeoutMs: 5_000,
       ...limits,
     },
+    ...profileOverrides,
   };
   const thread = await store.createThread({
     title: "Subagent harness",
@@ -69,6 +74,8 @@ async function createHarness(limits: Partial<SubagentLimits> = {}) {
     model,
     run,
     profile,
+    sandbox: { id: "unused", launch: vi.fn() },
+    worktreeOwnerId: "worker_test_subagents",
     parentSignal: parentAbort.signal,
   });
   return {
@@ -98,6 +105,10 @@ function typedResult(summary: string): string {
   });
 }
 
+function sha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
 describe("SubagentCoordinator", () => {
   it("uses the validated profile limits without a second silent clamp", async () => {
     const { coordinator } = await createHarness({
@@ -109,6 +120,115 @@ describe("SubagentCoordinator", () => {
 
     expect(coordinator.createTool().description).toContain(
       "at most 12 total and 6 concurrent",
+    );
+  });
+
+  it("runs a coder in a private worktree and applies only its reviewed preview", async () => {
+    const { coordinator, faux, store, thread } = await createHarness(
+      {},
+      {
+        enabledSubagents: ["coder"],
+        enabledTools: ["apply_patch", "lsp_diagnostics"],
+        toolPolicy: "workspace",
+      },
+    );
+    await mkdir(path.join(store.workspaceRoot, "src"), { recursive: true });
+    const source = "value=1\n";
+    await writeFile(path.join(store.workspaceRoot, "src/value.txt"), source);
+    faux.setResponses([
+      (context) => {
+        expect(context.systemPrompt).toContain("isolated coding subagent");
+        expect(context.tools?.map((tool) => tool.name)).toEqual([
+          "list_files",
+          "read_file",
+          "search_files",
+          "list_symbols",
+          "inspect_data",
+          "inspect_code",
+          "read_symbol",
+          "ast_query",
+          "ast_edit_preview",
+          "apply_patch",
+        ]);
+        return fauxAssistantMessage(
+          fauxToolCall("apply_patch", {
+            operation: "replace",
+            path: "src/value.txt",
+            expectedSha256: sha256(source),
+            edits: [{ oldText: "value=1", newText: "value=2" }],
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage(
+        JSON.stringify({
+          summary: "Updated the authorized value.",
+          items: [
+            {
+              kind: "finding",
+              severity: "info",
+              title: "Candidate updated",
+              detail: "The private candidate contains the requested value.",
+              evidence: [{ path: "src/value.txt", lineStart: 1, lineEnd: 1 }],
+            },
+          ],
+          unknowns: [],
+        }),
+      ),
+    ]);
+    const [delegate, apply] = coordinator.createTools();
+
+    const delegated = await delegate!.execute("delegate-coder", {
+      role: "coder",
+      description: "Update the private value",
+      task: "Change value from 1 to 2 and cite the candidate.",
+      writePaths: ["src/value.txt"],
+    });
+
+    expect(delegated.details).toEqual(
+      expect.objectContaining({
+        role: "coder",
+        status: "completed",
+        changedFileCount: 1,
+        changedFileSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        sourceSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        worktreePreviewId: expect.stringMatching(/^subworkpreview_/u),
+      }),
+    );
+    const liveResult = delegated.content.find((item) => item.type === "text");
+    expect(liveResult?.text).toContain(
+      "Candidate review (live-only untrusted data)",
+    );
+    expect(liveResult?.text).toContain("- value=1");
+    expect(liveResult?.text).toContain("+ value=2");
+    expect(
+      await readFile(path.join(store.workspaceRoot, "src/value.txt"), "utf8"),
+    ).toBe(source);
+    const applied = await apply!.execute("apply-coder", {
+      previewId: delegated.details.worktreePreviewId!,
+    });
+    expect(applied.details).toEqual(
+      expect.objectContaining({
+        kind: "napier.subagent-worktree-apply",
+        status: "applied",
+        taskId: delegated.details.taskId,
+      }),
+    );
+    expect(
+      await readFile(path.join(store.workspaceRoot, "src/value.txt"), "utf8"),
+    ).toBe("value=2\n");
+    const events = await store.listEvents(thread.id);
+    const durable = JSON.stringify(events);
+    expect(durable).not.toContain("value=2");
+    expect(durable).not.toContain(delegated.details.worktreePreviewId);
+    expect(
+      events.find((event) => event.type === "subagent.completed")?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        workspaceMode: "isolated_write",
+        mergePreviewAvailable: true,
+        changedFileCount: 1,
+      }),
     );
   });
 
@@ -208,6 +328,8 @@ describe("SubagentCoordinator", () => {
       model,
       run,
       profile,
+      sandbox: { id: "unused", launch: vi.fn() },
+      worktreeOwnerId: "worker_test_subagents",
       parentSignal: parentAbort.signal,
     });
 
