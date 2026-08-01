@@ -371,6 +371,95 @@ describe("Napier TypeScript SDK Workflow experiments", () => {
     await client.close();
   });
 
+  it("replaces the typed top-level input and reruns every node", async () => {
+    const fixture = await createFixture("replace-workflow-input");
+    const client = await createNapierClient({
+      ...fixture,
+      sandbox: new UnsupportedSandboxAdapter(
+        "sdk-experiment-replace-workflow-input",
+      ),
+    });
+    const workflow = await client.defineWorkflow<
+      ExperimentRequest,
+      ExperimentResult
+    >(experimentWorkflowDefinition());
+    const source = await client.runWorkflow({
+      workflow,
+      input: { text: "Source SDK Workflow input" },
+    });
+    const replacementWorkflowInput = {
+      text: "Replacement SDK Workflow input",
+    };
+    const preview = await client.previewWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      mode: "replace_workflow_input",
+      replacementWorkflowInput,
+    });
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 6,
+        mode: "replace_workflow_input",
+        reusedNodeIds: [],
+        rerunNodeIds: ["prepare", "deliver"],
+        executionNodeIds: ["prepare", "deliver"],
+      }),
+    );
+    expect("fromNodeId" in preview).toBe(false);
+    const eventTypes: string[] = [];
+    const experiment = await client.runWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      mode: "replace_workflow_input",
+      replacementWorkflowInput,
+      expectedPreviewSha256: preview.previewSha256,
+      onEvent: (event) => {
+        eventTypes.push(event.type);
+      },
+    });
+    expect(experiment.result.output).toEqual({
+      message: replacementWorkflowInput.text,
+    });
+    expect(experiment.comparison).toEqual(
+      expect.objectContaining({
+        inputChange: "changed",
+        reusedNodeCount: 0,
+        rerunNodeCount: 2,
+        changedNodeIds: ["deliver", "prepare"],
+      }),
+    );
+    expect(experiment.comparison?.nodes).toEqual([
+      expect.objectContaining({
+        nodeId: "prepare",
+        execution: "rerun",
+        inputChange: "changed",
+      }),
+      expect.objectContaining({
+        nodeId: "deliver",
+        execution: "rerun",
+        inputChange: "changed",
+      }),
+    ]);
+    expect(eventTypes).toContain("workflow.experiment.started");
+    expect(
+      eventTypes.filter((type) => type === "workflow.node.started"),
+    ).toHaveLength(2);
+    await client.close();
+
+    const store = await openStore(fixture);
+    expect(
+      store.listRuns(experiment.targetThreadId).map((run) => run.source),
+    ).toEqual(["workflow", "workflow"]);
+    expect(
+      (await store.listEvents(experiment.targetThreadId)).some(
+        (event) => event.type === "workflow.node.reused",
+      ),
+    ).toBe(false);
+    store.close();
+  });
+
   it("recovers a cancelled target through normal Workflow resume", async () => {
     const fixture = await createFixture("recover");
     const client = await createNapierClient({

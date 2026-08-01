@@ -61,9 +61,14 @@ export function WorkflowExperimentPreviewDocket({
                   <dt>{copy.simulated}</dt>
                   <dd>1</dd>
                 </div>
-              ) : (
+              ) : preview.schemaVersion === 4 ? (
                 <div>
                   <dt>{copy.inputReplaced}</dt>
+                  <dd>1</dd>
+                </div>
+              ) : (
+                <div>
+                  <dt>{copy.workflowInputReplaced}</dt>
                   <dd>1</dd>
                 </div>
               )}
@@ -96,6 +101,15 @@ export function WorkflowExperimentPreviewDocket({
             <code>
               {preview.replacementInputSha256.slice(0, 12)} /{" "}
               {preview.replacementInputBytes} {copy.bytes}
+            </code>
+          </span>
+        ) : null}
+        {preview.schemaVersion === 6 ? (
+          <span>
+            {copy.replacementWorkflowInput}
+            <code>
+              {preview.replacementWorkflowInputSha256.slice(0, 12)} /{" "}
+              {preview.replacementWorkflowInputBytes} {copy.bytes}
             </code>
           </span>
         ) : null}

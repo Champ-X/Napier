@@ -64,11 +64,13 @@ export async function previewWorkflowExperiment(
     throw new Error("Workflow experiment preview response is invalid");
   }
   const preview = await validateWorkflowExperimentPreview(input);
+  const previewFromNodeId =
+    "fromNodeId" in preview ? preview.fromNodeId : undefined;
   if (
     preview.sourceThreadId !== threadId ||
     preview.sourcePlanId !== planId ||
     preview.sourceManifestSha256 !== body.manifest.contentSha256 ||
-    preview.fromNodeId !== body.fromNodeId ||
+    previewFromNodeId !== body.fromNodeId ||
     !workflowExperimentPreviewMatchesMode(
       preview,
       body.manifest,
@@ -416,14 +418,33 @@ async function workflowExperimentValuesMatchRequest(
     const encoded = canonicalJson(body.replacementInput);
     return (
       body.simulatedOutput === undefined &&
+      body.replacementWorkflowInput === undefined &&
       preview.replacementInputBytes ===
         new TextEncoder().encode(encoded).length &&
       preview.replacementInputSha256 === (await sha256Text(encoded))
     );
   }
+  if (preview.schemaVersion === 6) {
+    if (
+      body.mode !== "replace_workflow_input" ||
+      body.replacementWorkflowInput === undefined
+    ) {
+      return false;
+    }
+    const encoded = canonicalJson(body.replacementWorkflowInput);
+    return (
+      body.simulatedOutput === undefined &&
+      body.replacementInput === undefined &&
+      preview.replacementWorkflowInputBytes ===
+        new TextEncoder().encode(encoded).length &&
+      preview.replacementWorkflowInputSha256 === (await sha256Text(encoded))
+    );
+  }
   if (preview.schemaVersion !== 3) {
     return (
-      body.simulatedOutput === undefined && body.replacementInput === undefined
+      body.simulatedOutput === undefined &&
+      body.replacementInput === undefined &&
+      body.replacementWorkflowInput === undefined
     );
   }
   if (body.mode !== "simulate_node" || body.simulatedOutput === undefined) {
@@ -432,6 +453,7 @@ async function workflowExperimentValuesMatchRequest(
   const encoded = canonicalJson(body.simulatedOutput);
   return (
     body.replacementInput === undefined &&
+    body.replacementWorkflowInput === undefined &&
     preview.simulatedOutputBytes === new TextEncoder().encode(encoded).length &&
     preview.simulatedOutputSha256 === (await sha256Text(encoded))
   );

@@ -254,6 +254,8 @@ export function assertExecutionPlanWorkflowExperimentComparisonBinding(
     validated.targetStatus !== result.status ||
     validated.reusedNodeCount !== preview.reusedNodeIds.length ||
     validated.rerunNodeCount !== preview.rerunNodeIds.length ||
+    (preview.schemaVersion === 6 &&
+      validated.targetInputSha256 !== preview.replacementWorkflowInputSha256) ||
     validated.nodes.length !== candidateManifest.nodeCount ||
     canonicalJson(validated.nodes.map((node) => node.nodeId)) !==
       canonicalJson(candidateManifest.nodes.map((node) => node.id)) ||

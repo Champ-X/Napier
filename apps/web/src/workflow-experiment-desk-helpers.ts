@@ -47,33 +47,31 @@ export function downloadWorkflowExperimentResult(
 }
 
 export function parseWorkflowSimulatedOutput(value: string): JsonValue {
-  if (new TextEncoder().encode(value).length > 32 * 1024) {
-    throw new Error("Workflow simulated output exceeds 32 KiB");
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value) as unknown;
-  } catch {
-    throw new Error("Workflow simulated output must be valid JSON");
-  }
-  if (parsed === undefined) {
-    throw new Error("Workflow simulated output is invalid");
-  }
-  return parsed as JsonValue;
+  return parseWorkflowExperimentJson(value, "simulated output");
 }
 
 export function parseWorkflowReplacementInput(value: string): JsonValue {
+  return parseWorkflowExperimentJson(value, "replacement input");
+}
+
+export function parseWorkflowReplacementWorkflowInput(
+  value: string,
+): JsonValue {
+  return parseWorkflowExperimentJson(value, "replacement Workflow input");
+}
+
+function parseWorkflowExperimentJson(value: string, label: string): JsonValue {
   if (new TextEncoder().encode(value).length > 32 * 1024) {
-    throw new Error("Workflow replacement input exceeds 32 KiB");
+    throw new Error(`Workflow ${label} exceeds 32 KiB`);
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(value) as unknown;
   } catch {
-    throw new Error("Workflow replacement input must be valid JSON");
+    throw new Error(`Workflow ${label} must be valid JSON`);
   }
   if (parsed === undefined) {
-    throw new Error("Workflow replacement input is invalid");
+    throw new Error(`Workflow ${label} is invalid`);
   }
   return parsed as JsonValue;
 }
@@ -93,13 +91,16 @@ export function buildWorkflowExperimentRequest(input: {
   mode: ExecutionPlanWorkflowExperimentMode;
   simulatedOutput: string;
   replacementInput: string;
+  replacementWorkflowInput: string;
   replaceModel: boolean;
   canReplaceModel: boolean;
   selectedModelKey: string;
 }): WorkflowExperimentWebRequest {
   return {
     manifest: input.manifest,
-    fromNodeId: input.fromNodeId,
+    ...(input.mode !== "replace_workflow_input"
+      ? { fromNodeId: input.fromNodeId }
+      : {}),
     ...(input.mode !== "subgraph" ? { mode: input.mode } : {}),
     ...(input.mode === "simulate_node"
       ? {
@@ -113,7 +114,16 @@ export function buildWorkflowExperimentRequest(input: {
           ),
         }
       : {}),
-    ...(input.replaceModel && input.canReplaceModel
+    ...(input.mode === "replace_workflow_input"
+      ? {
+          replacementWorkflowInput: parseWorkflowReplacementWorkflowInput(
+            input.replacementWorkflowInput,
+          ),
+        }
+      : {}),
+    ...(input.mode !== "replace_workflow_input" &&
+    input.replaceModel &&
+    input.canReplaceModel
       ? {
           modelOverrides: {
             [input.fromNodeId]: parseWorkflowModelKey(input.selectedModelKey),

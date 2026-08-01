@@ -6,18 +6,22 @@ export function WorkflowExperimentModeField({
   mode,
   simulatedOutput,
   replacementInput,
+  replacementWorkflowInput,
   disabled,
   onModeChange,
   onSimulatedOutputChange,
   onReplacementInputChange,
+  onReplacementWorkflowInputChange,
 }: {
   mode: ExecutionPlanWorkflowExperimentMode;
   simulatedOutput: string;
   replacementInput: string;
+  replacementWorkflowInput: string;
   disabled: boolean;
   onModeChange: (mode: ExecutionPlanWorkflowExperimentMode) => void;
   onSimulatedOutputChange: (value: string) => void;
   onReplacementInputChange: (value: string) => void;
+  onReplacementWorkflowInputChange: (value: string) => void;
 }) {
   const hint =
     mode === "single_node"
@@ -28,7 +32,9 @@ export function WorkflowExperimentModeField({
           ? copy.simulateNodeHint
           : mode === "replace_input"
             ? copy.replaceInputHint
-            : copy.subgraphHint;
+            : mode === "replace_workflow_input"
+              ? copy.replaceWorkflowInputHint
+              : copy.subgraphHint;
   return (
     <>
       <label className="workflow-experiment-model">
@@ -49,6 +55,9 @@ export function WorkflowExperimentModeField({
           <option value="step_nodes">{copy.stepNodesMode}</option>
           <option value="simulate_node">{copy.simulateNodeMode}</option>
           <option value="replace_input">{copy.replaceInputMode}</option>
+          <option value="replace_workflow_input">
+            {copy.replaceWorkflowInputMode}
+          </option>
         </select>
       </label>
       <p className="workflow-experiment-model-hint">{hint}</p>
@@ -83,6 +92,25 @@ export function WorkflowExperimentModeField({
           </label>
           <p className="workflow-experiment-model-hint">
             {copy.replacementInputHint}
+          </p>
+        </>
+      ) : null}
+      {mode === "replace_workflow_input" ? (
+        <>
+          <label>
+            <span>{copy.replacementWorkflowInput}</span>
+            <textarea
+              rows={5}
+              value={replacementWorkflowInput}
+              disabled={disabled}
+              spellCheck={false}
+              onChange={(event) =>
+                onReplacementWorkflowInputChange(event.target.value)
+              }
+            />
+          </label>
+          <p className="workflow-experiment-model-hint">
+            {copy.replacementWorkflowInputHint}
           </p>
         </>
       ) : null}

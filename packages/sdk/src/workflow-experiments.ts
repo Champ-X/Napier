@@ -17,10 +17,11 @@ export interface PreviewNapierWorkflowExperimentOptions<
   workflow: NapierWorkflow<TInput, TOutput>;
   sourceThreadId: string;
   sourcePlanId: string;
-  fromNodeId: string;
+  fromNodeId?: string;
   mode?: ExecutionPlanWorkflowExperimentMode;
   simulatedOutput?: JsonValue;
   replacementInput?: JsonValue;
+  replacementWorkflowInput?: TInput;
   title?: string;
   modelOverrides?: Record<string, ModelRef>;
   signal?: AbortSignal;
@@ -86,13 +87,18 @@ function workflowExperimentRequest<
   return {
     manifest: options.workflow.manifest,
     planId: options.sourcePlanId,
-    fromNodeId: options.fromNodeId,
+    ...(options.fromNodeId !== undefined
+      ? { fromNodeId: options.fromNodeId }
+      : {}),
     ...(options.mode !== undefined ? { mode: options.mode } : {}),
     ...(options.simulatedOutput !== undefined
       ? { simulatedOutput: options.simulatedOutput }
       : {}),
     ...(options.replacementInput !== undefined
       ? { replacementInput: options.replacementInput }
+      : {}),
+    ...(options.replacementWorkflowInput !== undefined
+      ? { replacementWorkflowInput: options.replacementWorkflowInput }
       : {}),
     ...(options.title !== undefined ? { title: options.title } : {}),
     ...(options.modelOverrides !== undefined

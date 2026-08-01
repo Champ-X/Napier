@@ -36,6 +36,7 @@ import {
   assertWorkflowJsonValue,
   MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
 } from "./workflow-schemas.js";
+import { validateWorkflowExperimentReplacementWorkflowInput } from "./workflow-top-level-input-override.js";
 
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const THREAD_ID = /^thread_[a-z0-9]{8,80}$/u;
@@ -69,16 +70,19 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
       "mode",
       "simulatedOutput",
       "replacementInput",
+      "replacementWorkflowInput",
       "title",
       "modelOverrides",
       "confirmSideEffects",
       "expectedPreviewSha256",
     ],
     new Set([
+      "fromNodeId",
       "title",
       "mode",
       "simulatedOutput",
       "replacementInput",
+      "replacementWorkflowInput",
       "modelOverrides",
       "confirmSideEffects",
       "expectedPreviewSha256",
@@ -87,9 +91,7 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
   const manifest = validateExecutionPlanWorkflowManifest(request["manifest"]);
   if (
     typeof request["planId"] !== "string" ||
-    !PLAN_ID.test(request["planId"]) ||
-    typeof request["fromNodeId"] !== "string" ||
-    !RESOURCE_ID.test(request["fromNodeId"])
+    !PLAN_ID.test(request["planId"])
   ) {
     throw new Error("Workflow experiment source is invalid");
   }
@@ -104,9 +106,18 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
     mode !== "single_node" &&
     mode !== "step_nodes" &&
     mode !== "simulate_node" &&
-    mode !== "replace_input"
+    mode !== "replace_input" &&
+    mode !== "replace_workflow_input"
   ) {
     throw new Error("Workflow experiment mode is invalid");
+  }
+  const fromNodeId = request["fromNodeId"];
+  if (
+    mode === "replace_workflow_input"
+      ? fromNodeId !== undefined
+      : typeof fromNodeId !== "string" || !RESOURCE_ID.test(fromNodeId)
+  ) {
+    throw new Error("Workflow experiment source is invalid");
   }
   const simulatedOutput = request["simulatedOutput"];
   if (
@@ -121,6 +132,11 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
     mode,
     request["replacementInput"],
   );
+  const replacementWorkflowInput =
+    validateWorkflowExperimentReplacementWorkflowInput(
+      mode,
+      request["replacementWorkflowInput"],
+    );
   if (simulatedOutput !== undefined) {
     assertWorkflowJsonValue(
       simulatedOutput,
@@ -150,17 +166,21 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
   return {
     manifest,
     planId: request["planId"],
-    fromNodeId: request["fromNodeId"],
+    ...(typeof fromNodeId === "string" ? { fromNodeId } : {}),
     ...(mode === "single_node" ||
     mode === "step_nodes" ||
     mode === "simulate_node" ||
-    mode === "replace_input"
+    mode === "replace_input" ||
+    mode === "replace_workflow_input"
       ? { mode }
       : {}),
     ...(simulatedOutput !== undefined
       ? { simulatedOutput: structuredClone(simulatedOutput) }
       : {}),
     ...(replacementInput !== undefined ? { replacementInput } : {}),
+    ...(replacementWorkflowInput !== undefined
+      ? { replacementWorkflowInput }
+      : {}),
     ...(title ? { title } : {}),
     ...(modelOverrides ? { modelOverrides } : {}),
     ...(request["confirmSideEffects"] === true
@@ -180,25 +200,29 @@ export function validateExecutionPlanWorkflowExperimentPreview(
   );
   const preview = record(input, "Workflow experiment preview");
   const schemaVersion = preview["schemaVersion"];
-  assertExactKeys(preview, [
-    "kind",
-    "schemaVersion",
-    "sourceThreadId",
-    "sourcePlanId",
-    "sourcePlanRevision",
-    "sourceManifestSha256",
-    "candidateManifestSha256",
-    "sourceAgentId",
-    "sourceAgentRevision",
-    "fromNodeId",
-    "reusedNodeIds",
-    "rerunNodeIds",
-    "modelOverrides",
-    "toolEffects",
-    "requiresSideEffectConfirmation",
-    "previewSha256",
-    ...workflowExperimentPreviewModeKeys(schemaVersion),
-  ]);
+  assertExactKeys(
+    preview,
+    [
+      "kind",
+      "schemaVersion",
+      "sourceThreadId",
+      "sourcePlanId",
+      "sourcePlanRevision",
+      "sourceManifestSha256",
+      "candidateManifestSha256",
+      "sourceAgentId",
+      "sourceAgentRevision",
+      "fromNodeId",
+      "reusedNodeIds",
+      "rerunNodeIds",
+      "modelOverrides",
+      "toolEffects",
+      "requiresSideEffectConfirmation",
+      "previewSha256",
+      ...workflowExperimentPreviewModeKeys(schemaVersion),
+    ],
+    schemaVersion === 6 ? new Set(["fromNodeId"]) : undefined,
+  );
   if (
     preview["kind"] !== "napier.execution-plan-workflow-experiment-preview" ||
     !validWorkflowExperimentPreviewSchemaVersion(schemaVersion) ||
@@ -212,8 +236,10 @@ export function validateExecutionPlanWorkflowExperimentPreview(
     typeof preview["sourceAgentId"] !== "string" ||
     !/^agent_[a-z0-9_]{2,80}$/u.test(preview["sourceAgentId"]) ||
     !positiveInteger(preview["sourceAgentRevision"]) ||
-    typeof preview["fromNodeId"] !== "string" ||
-    !RESOURCE_ID.test(preview["fromNodeId"]) ||
+    (schemaVersion === 6
+      ? preview["fromNodeId"] !== undefined
+      : typeof preview["fromNodeId"] !== "string" ||
+        !RESOURCE_ID.test(preview["fromNodeId"])) ||
     typeof preview["requiresSideEffectConfirmation"] !== "boolean" ||
     !hash(preview["previewSha256"])
   ) {
@@ -231,7 +257,9 @@ export function validateExecutionPlanWorkflowExperimentPreview(
     validateWorkflowExperimentPreviewMode(preview, rerunNodeIds);
   if (
     rerunNodeIds.length < 1 ||
-    !rerunNodeIds.includes(preview["fromNodeId"]) ||
+    (schemaVersion !== 6 &&
+      (typeof preview["fromNodeId"] !== "string" ||
+        !rerunNodeIds.includes(preview["fromNodeId"]))) ||
     reusedNodeIds.some((nodeId) => rerunNodeIds.includes(nodeId))
   ) {
     throw new Error("Workflow experiment node sets are invalid");
@@ -344,8 +372,12 @@ export function validateExecutionPlanWorkflowExperimentResult(
   });
   const execution = projectWorkflowExperimentExecution(
     sourceManifest,
-    preview.fromNodeId,
-    preview.schemaVersion === 1 ? "subgraph" : preview.mode,
+    preview.schemaVersion === 6 ? undefined : preview.fromNodeId,
+    preview.schemaVersion === 1
+      ? "subgraph"
+      : preview.schemaVersion === 6
+        ? "replace_workflow_input"
+        : preview.mode,
   );
   const expectedReusedNodeIds = sourceManifest.nodes
     .map((node) => node.id)
@@ -371,6 +403,13 @@ export function validateExecutionPlanWorkflowExperimentResult(
       preview.simulatedNodeId !== preview.fromNodeId) ||
     (preview.schemaVersion === 4 &&
       preview.replacedInputNodeId !== preview.fromNodeId) ||
+    (preview.schemaVersion === 6 &&
+      (preview.reusedNodeIds.length !== 0 ||
+        canonicalJson(preview.executionNodeIds) !==
+          canonicalJson(manifestNodeIds) ||
+        !comparison ||
+        comparison.targetInputSha256 !==
+          preview.replacementWorkflowInputSha256)) ||
     canonicalJson(
       [...preview.reusedNodeIds, ...preview.rerunNodeIds].sort(),
     ) !== canonicalJson([...manifestNodeIds].sort())

@@ -6,6 +6,31 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added selector-free top-level Workflow input replacement. Schema-v6
+  `replace_workflow_input` validates one complete replacement against the
+  Manifest input Schema, rejects `fromNodeId`, binds every Manifest node as
+  rerun/executable with zero source reuse, projects historical Tool effects
+  across the whole graph, and executes the replacement as the target's real
+  `workflow.started` input through the ordinary scheduler. Recovery revalidates
+  the target input Schema/hash/bytes and complete lineage; result comparison
+  binds the observed target input digest and reports actual top-level/per-node
+  changes. CLI JSONL (`--replace-workflow-input-json`), TypeScript SDK, local
+  stdio RPC, HTTP/SSE, the Plan Workflow experiment desk, independent Web
+  protocol validation, privacy-bounded Trace, cancellation, concurrency,
+  SQLite restart, portable Replay, stale confirmation, and tamper paths share
+  the same Runtime. No fake checkpoint, hidden node override, alternate state
+  store, or expanded capability is introduced. The touched CLI option parser,
+  Workflow experiment controls, request construction, and Trace projection
+  were split into focused modules; the desk is 491 lines and every new
+  production module remains below 500 lines. The Web main entry remains
+  130.32 KiB under its 150 KiB budget. Environment, OpenAPI, build, performance,
+  Web, release, formatting, and secret gates pass; performance measured
+  670.3 ms to first CLI event, 817.2 ms to first token, 1,119.4 ms to
+  completion, 0.3 ms read p95, and 6.9 ms for a 1,000-event projection. The
+  1,753 regular-test set passes across workspace runs and isolated reruns, with
+  32 opt-in tests skipped. The exact concurrent wrapper encountered unrelated
+  122-second enterprise Defender/Storage stalls; every timed-out file passed
+  unchanged with one worker, so no timeout was widened.
 - Added sandboxed JavaScript Workflow Session nodes. A typed `javascript` node
   executes 1–8 bounded Manifest cells in one fresh existing JavaScript Kernel
   context, exposes the complete constructed input through a fixed `input`

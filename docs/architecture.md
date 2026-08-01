@@ -691,11 +691,14 @@ source Thread + Plan + source Manifest
   -> verify completed source Run/node evidence
   -> derive selected-node descendant rerun subgraph
   -> choose full-subgraph, selected-node-only, node-by-node step control,
-     selected-output simulation, or selected constructed-input replacement
+     selected-output simulation, selected constructed-input replacement,
+     or selector-free top-level Workflow input replacement
   -> for simulation, validate the explicit output against the node Schema
      and bind its canonical hash and byte count
   -> for input replacement, validate the complete constructed input against
      the selected node Schema and bind its canonical hash and byte count
+  -> for top-level replacement, validate the complete Workflow input, bind
+     every Manifest node as rerun/executable, and prohibit source reuse
   -> summarize historical read/write/unknown tool effects
   -> bind candidate model replacements and preview hash
   -> require exact preview confirmation for write/unknown effects
@@ -705,6 +708,8 @@ source Thread + Plan + source Manifest
   -> materialize a simulated selected node as source=workflow_simulation,
      execute the selected node, or execute it plus descendants with an optional
      selected-node input override
+  -> for top-level replacement, use the replacement as the ordinary target
+     workflow.started input and execute the complete graph
   -> execute every non-simulated node through the normal Workflow Runtime
   -> for single-node mode, pause before every direct successor
   -> for step-control mode, pause before every remaining rerun node
@@ -831,6 +836,34 @@ import preserves `payload.input` as opaque user JSON rather than remapping
 strings that happen to equal resource IDs; actual lineage fields still remap.
 Missing, duplicate, drifted, or tampered evidence fails closed.
 
+`replace_workflow_input` emits schema 6 and deliberately has no
+`fromNodeId`. `reusedNodeIds` is empty; `rerunNodeIds` and
+`executionNodeIds` are every Manifest node in order. The complete replacement
+is limited to 32 KiB, validated against the top-level Workflow input Schema,
+and bound by canonical SHA-256 plus byte count. Tool effects are projected
+from every source node, so any historical write, unknown, or unresolved effect
+requires the exact current preview plus explicit confirmation before a target
+Thread exists.
+
+The replacement is passed directly to the normal Workflow Runtime and becomes
+the target's existing `workflow.started` input. There is no synthetic
+checkpoint, hidden node-override event, reused Run, alternate scheduler, or
+second input store. Every constructed node input is therefore rebuilt from the
+new top-level value and real upstream target outputs. Model overrides remain
+limited to rerun Agent/Map/Loop nodes and do not expand model, Tool, policy,
+Sandbox, filesystem, network, or environment authority.
+
+Experiment lineage stores only the replacement hash and byte count beside the
+complete node sets, source revision, preview hash, and side-effect decision.
+Recovery obtains the body from ordinary Workflow start evidence, revalidates
+the top-level Schema, hash, bytes, candidate Manifest, and node sets, and never
+falls back to the source input. Result validation binds the same replacement
+digest to the comparison's observed target input digest. Public preview and
+Trace remain body-free, while the ordinary local Workflow input retains its
+existing recovery semantics. Cancellation, retry, restart, portable Replay,
+comparison, and ordered event delivery stay on the shared paths used by
+schemas 1-5.
+
 The source Plan is read-only. Reused outputs are accepted only when source
 Plan/Run ownership, frozen Agent revision, model, node input/output/schema
 hashes, and unique start/completion evidence agree. Each target reuse binds the
@@ -857,8 +890,9 @@ Preview and execution are available through CLI JSONL and dedicated HTTP
 preview/SSE routes, the TypeScript SDK, and local stdio RPC. The lazy
 Workbench desk independently recomputes the
 rerun/reused/execution/stop/simulation/input-replacement sets, validates
-schema-1/schema-2/schema-3/schema-4/schema-5 preview hashes, binds terminal SSE
-to Snapshot Plan/Thread state, and requires a matching reached event for a
+schema-1 through schema-6 preview hashes, binds schema-6 replacement
+hash/bytes to the submitted value and observed comparison input, binds terminal
+SSE to Snapshot Plan/Thread state, and requires a matching reached event for a
 paused result. Web Trace projects only mode, node IDs, counts, confirmation
 state, and hash prefixes. Source/output/input-replacement bodies, tool
 arguments, diagnostics, and paths are not copied into experiment-specific
@@ -6468,6 +6502,11 @@ The current boundary has sixty-nine parts:
     explicit-only retry after interruption, body-free completion evidence,
     checkpoint reuse/rerun, complete CLI/SDK/HTTP event reconciliation, and no
     production direct-process fallback.
+72. Selector-free top-level Workflow input replacement using schema-v6
+    controlled re-execution, with complete Schema validation, zero source-node
+    reuse, whole-Manifest Tool-effect confirmation, ordinary scheduler input,
+    lineage-bound recovery and comparison, CLI/SDK/RPC/HTTP/Web delivery, and
+    body-free experiment Trace.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally

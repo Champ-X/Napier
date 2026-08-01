@@ -624,6 +624,80 @@ describe("Napier RPC CLI", () => {
 
     rpc.send({
       jsonrpc: "2.0",
+      id: "experiment-workflow-input-preview",
+      method: "napier/workflow/experiment/preview",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        mode: "replace_workflow_input",
+        replacementWorkflowInput: {
+          text: "RPC top-level replacement input",
+        },
+      },
+    });
+    const workflowInputPreview = record(
+      (await rpc.waitForId("experiment-workflow-input-preview"))["result"],
+    )!;
+    expect(workflowInputPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 6,
+        mode: "replace_workflow_input",
+        reusedNodeIds: [],
+        rerunNodeIds: ["prepare", "deliver"],
+        executionNodeIds: ["prepare", "deliver"],
+      }),
+    );
+    expect("fromNodeId" in workflowInputPreview).toBe(false);
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "experiment-workflow-input-run",
+      method: "napier/workflow/experiment/run",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        mode: "replace_workflow_input",
+        replacementWorkflowInput: {
+          text: "RPC top-level replacement input",
+        },
+        expectedPreviewSha256: workflowInputPreview["previewSha256"],
+      },
+    });
+    expect(await rpc.waitForId("experiment-workflow-input-run")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          status: "completed",
+          experiment: expect.objectContaining({
+            result: expect.objectContaining({
+              output: { message: "RPC top-level replacement input" },
+            }),
+            comparison: expect.objectContaining({
+              inputChange: "changed",
+              reusedNodeCount: 0,
+              rerunNodeCount: 2,
+            }),
+          }),
+        }),
+      }),
+    );
+    expect(
+      rpc
+        .messages()
+        .filter(
+          (candidate) =>
+            candidate["method"] === "napier/event" &&
+            record(candidate["params"])?.["requestId"] ===
+              "experiment-workflow-input-run",
+        )
+        .map(
+          (message) => record(record(message["params"])?.["event"])?.["type"],
+        )
+        .filter((type) => type === "workflow.node.started"),
+    ).toHaveLength(2);
+
+    rpc.send({
+      jsonrpc: "2.0",
       id: "experiment-single-preview",
       method: "napier/workflow/experiment/preview",
       params: {

@@ -115,7 +115,10 @@ export class ExecutionPlanWorkflowExperimentRuntime {
     const target = await this.store.createThread({
       title:
         request.title ??
-        defaultExperimentTitle(sourceThread.title, request.fromNodeId),
+        defaultExperimentTitle(
+          sourceThread.title,
+          request.fromNodeId ?? "workflow-input",
+        ),
       agentId: source.sourceAgentId,
     });
     try {
@@ -124,7 +127,7 @@ export class ExecutionPlanWorkflowExperimentRuntime {
         threadId: target.id,
         request: {
           manifest: source.candidateManifest,
-          input: source.sourceInput,
+          input: source.targetInput,
           ...((preview.schemaVersion === 2 || preview.schemaVersion === 5) &&
           preview.stopBeforeNodeIds.length > 0
             ? { breakBeforeNodeIds: preview.stopBeforeNodeIds }
@@ -140,7 +143,7 @@ export class ExecutionPlanWorkflowExperimentRuntime {
             sourcePlanId: source.sourcePlan.id,
             sourcePlanRevision: source.sourcePlan.revision,
             sourceManifestSha256: request.manifest.contentSha256,
-            fromNodeId: request.fromNodeId,
+            ...(request.fromNodeId ? { fromNodeId: request.fromNodeId } : {}),
             reusedNodeIds: preview.reusedNodeIds,
             rerunNodeIds: preview.rerunNodeIds,
             previewSha256: preview.previewSha256,
@@ -169,7 +172,16 @@ export class ExecutionPlanWorkflowExperimentRuntime {
                       replacementInputSha256: preview.replacementInputSha256,
                       replacementInputBytes: preview.replacementInputBytes,
                     }
-                  : {}),
+                  : preview.schemaVersion === 6
+                    ? {
+                        executionMode: preview.mode,
+                        executionNodeIds: preview.executionNodeIds,
+                        replacementWorkflowInputSha256:
+                          preview.replacementWorkflowInputSha256,
+                        replacementWorkflowInputBytes:
+                          preview.replacementWorkflowInputBytes,
+                      }
+                    : {}),
           },
         },
         ...(options.signal ? { signal: options.signal } : {}),

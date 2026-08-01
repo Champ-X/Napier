@@ -13,6 +13,7 @@ export async function validateWorkflowExperimentPreview(
   const simulatedNode = schemaVersion === 3;
   const replacedInput = schemaVersion === 4;
   const stepNodes = schemaVersion === 5;
+  const replacedWorkflowInput = schemaVersion === 6;
   const required = [
     "kind",
     "schemaVersion",
@@ -23,7 +24,7 @@ export async function validateWorkflowExperimentPreview(
     "candidateManifestSha256",
     "sourceAgentId",
     "sourceAgentRevision",
-    "fromNodeId",
+    ...(replacedWorkflowInput ? [] : ["fromNodeId"]),
     "reusedNodeIds",
     "rerunNodeIds",
     "modelOverrides",
@@ -51,6 +52,14 @@ export async function validateWorkflowExperimentPreview(
           "replacementInputBytes",
         ]
       : []),
+    ...(replacedWorkflowInput
+      ? [
+          "mode",
+          "executionNodeIds",
+          "replacementWorkflowInputSha256",
+          "replacementWorkflowInputBytes",
+        ]
+      : []),
   ];
   if (
     !exactKeys(input, required) ||
@@ -59,7 +68,8 @@ export async function validateWorkflowExperimentPreview(
       schemaVersion !== 2 &&
       schemaVersion !== 3 &&
       schemaVersion !== 4 &&
-      schemaVersion !== 5) ||
+      schemaVersion !== 5 &&
+      schemaVersion !== 6) ||
     typeof input["sourceThreadId"] !== "string" ||
     typeof input["sourcePlanId"] !== "string" ||
     !positiveInteger(input["sourcePlanRevision"]) ||
@@ -67,15 +77,20 @@ export async function validateWorkflowExperimentPreview(
     !hash(input["candidateManifestSha256"]) ||
     typeof input["sourceAgentId"] !== "string" ||
     !positiveInteger(input["sourceAgentRevision"]) ||
-    typeof input["fromNodeId"] !== "string" ||
+    (replacedWorkflowInput
+      ? input["fromNodeId"] !== undefined
+      : typeof input["fromNodeId"] !== "string") ||
     !stringArray(input["reusedNodeIds"], 30) ||
     !stringArray(input["rerunNodeIds"], 30) ||
     input["rerunNodeIds"].length < 1 ||
-    !input["rerunNodeIds"].includes(input["fromNodeId"]) ||
+    (!replacedWorkflowInput &&
+      !input["rerunNodeIds"].includes(input["fromNodeId"] as string)) ||
     (singleNode &&
       (input["mode"] !== "single_node" ||
         !stringArray(input["executionNodeIds"], 30) ||
-        !sameStrings(input["executionNodeIds"], [input["fromNodeId"]]) ||
+        !sameStrings(input["executionNodeIds"], [
+          input["fromNodeId"] as string,
+        ]) ||
         !stringArray(input["stopBeforeNodeIds"], 16) ||
         input["stopBeforeNodeIds"].some(
           (nodeId) =>
@@ -85,7 +100,9 @@ export async function validateWorkflowExperimentPreview(
     (stepNodes &&
       (input["mode"] !== "step_nodes" ||
         !stringArray(input["executionNodeIds"], 30) ||
-        !sameStrings(input["executionNodeIds"], [input["fromNodeId"]]) ||
+        !sameStrings(input["executionNodeIds"], [
+          input["fromNodeId"] as string,
+        ]) ||
         !stringArray(input["stopBeforeNodeIds"], 16) ||
         !sameStrings(
           input["stopBeforeNodeIds"],
@@ -97,7 +114,7 @@ export async function validateWorkflowExperimentPreview(
       (input["mode"] !== "simulate_node" ||
         !stringArray(input["executionNodeIds"], 30) ||
         input["simulatedNodeId"] !== input["fromNodeId"] ||
-        input["executionNodeIds"].includes(input["fromNodeId"]) ||
+        input["executionNodeIds"].includes(input["fromNodeId"] as string) ||
         input["executionNodeIds"].some(
           (nodeId) => !(input["rerunNodeIds"] as string[]).includes(nodeId),
         ) ||
@@ -115,6 +132,17 @@ export async function validateWorkflowExperimentPreview(
         !hash(input["replacementInputSha256"]) ||
         !positiveInteger(input["replacementInputBytes"]) ||
         Number(input["replacementInputBytes"]) > 32 * 1024)) ||
+    (replacedWorkflowInput &&
+      (input["mode"] !== "replace_workflow_input" ||
+        input["reusedNodeIds"].length !== 0 ||
+        !stringArray(input["executionNodeIds"], 30) ||
+        !sameStrings(
+          input["executionNodeIds"],
+          input["rerunNodeIds"] as string[],
+        ) ||
+        !hash(input["replacementWorkflowInputSha256"]) ||
+        !positiveInteger(input["replacementWorkflowInputBytes"]) ||
+        Number(input["replacementWorkflowInputBytes"]) > 32 * 1024)) ||
     !record(input["modelOverrides"]) ||
     !Array.isArray(input["toolEffects"]) ||
     typeof input["requiresSideEffectConfirmation"] !== "boolean" ||
@@ -125,7 +153,11 @@ export async function validateWorkflowExperimentPreview(
   const reusedNodeIds = input["reusedNodeIds"] as string[];
   const rerunNodeIds = input["rerunNodeIds"] as string[];
   const executionNodeIds =
-    singleNode || simulatedNode || replacedInput || stepNodes
+    singleNode ||
+    simulatedNode ||
+    replacedInput ||
+    stepNodes ||
+    replacedWorkflowInput
       ? (input["executionNodeIds"] as string[])
       : rerunNodeIds;
   const toolEffectNodeIds = stepNodes ? rerunNodeIds : executionNodeIds;

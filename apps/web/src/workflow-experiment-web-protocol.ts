@@ -126,6 +126,9 @@ export async function validateWorkflowExperimentResultFrame(
     comparison.targetThreadId !== input["targetThreadId"] ||
     comparison.targetPlanId !== input["targetPlanId"] ||
     comparison.targetStatus !== input["status"] ||
+    (preview.schemaVersion === 6 &&
+      comparison.targetInputSha256 !==
+        preview.replacementWorkflowInputSha256) ||
     !workflowResultComparisonNodesMatch(
       result["nodeResults"],
       comparison["nodes"],

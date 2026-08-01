@@ -15,6 +15,7 @@ export const workflowExperimentCopy = {
   stepNodesMode: "Step through rerun nodes",
   simulateNodeMode: "Simulated checkpoint output",
   replaceInputMode: "Replacement checkpoint input",
+  replaceWorkflowInputMode: "Replacement Workflow input",
   subgraphHint:
     "Rerun the selected checkpoint and its complete descendant subgraph.",
   singleNodeHint:
@@ -25,18 +26,25 @@ export const workflowExperimentCopy = {
     "Skip the selected checkpoint, bind a typed simulated output, and execute its descendants.",
   replaceInputHint:
     "Replace the selected checkpoint's constructed input, then execute it and its descendants.",
+  replaceWorkflowInputHint:
+    "Replace the complete top-level input and rerun every Workflow node without checkpoint reuse.",
   simulatedOutput: "Simulated output JSON",
   simulatedOutputHint:
     "The exact value is stored as hidden local recovery evidence; public Trace exposes only its hash and byte count.",
   replacementInput: "Replacement input JSON",
   replacementInputHint:
     "The value must satisfy the selected node input Schema. Public Trace exposes only its hash and byte count.",
+  replacementWorkflowInput: "Replacement Workflow input JSON",
+  replacementWorkflowInputHint:
+    "The value must satisfy the Workflow input Schema. Every node reruns; public Trace exposes only its hash and byte count.",
   selectedModel: "Selected model",
   overrideModel: "Replace checkpoint model",
   overrideHint:
     "Only the selected checkpoint is replaced. Descendants keep their manifest models.",
   toolModelUnavailable:
     "Deterministic, Tool, and Approval checkpoints have no replaceable model.",
+  workflowInputModelUnavailable:
+    "Top-level input replacement reruns manifest models without a checkpoint-specific override.",
   preview: "Preview experiment",
   previewing: "Projecting evidence...",
   execute: "Run isolated fork",
@@ -58,6 +66,7 @@ export const workflowExperimentCopy = {
   stopBefore: "Stop before",
   simulated: "Simulated",
   inputReplaced: "Input replaced",
+  workflowInputReplaced: "Workflow input replaced",
   bytes: "Bytes",
   attempts: "Attempts",
   calls: "Calls",

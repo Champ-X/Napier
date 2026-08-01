@@ -1,5 +1,6 @@
 import type { RunEvent } from "@napier/contracts";
 
+import { workflowExperimentEventTraceParts } from "./workflow-experiment-event-view";
 import { workflowJavascriptEventTraceParts } from "./workflow-javascript-event-view";
 import { workflowLoopEventTraceParts } from "./workflow-loop-event-view";
 import { workflowReduceEventTraceParts } from "./workflow-reduce-event-view";
@@ -53,116 +54,9 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
   }
   const parts = [event.type.replaceAll(".", " ")];
   if (event.type === "workflow.experiment.started") {
-    const fromNodeId = nodeId(payload["fromNodeId"]);
-    const reusedNodeIds = nodeIds(payload["reusedNodeIds"]);
-    const rerunNodeIds = nodeIds(payload["rerunNodeIds"]);
-    const executionMode = payload["executionMode"];
-    const executionNodeIds = nodeIds(payload["executionNodeIds"]);
-    const stopBeforeNodeIds = nodeIds(payload["stopBeforeNodeIds"]);
-    const simulationNodeId = nodeId(payload["simulationNodeId"]);
-    const simulatedOutputSha256 = hash(payload["simulatedOutputSha256"]);
-    const simulatedOutputBytes = boundedInteger(
-      payload["simulatedOutputBytes"],
-      1,
-      32 * 1024,
-    );
-    const replacedInputNodeId = nodeId(payload["replacedInputNodeId"]);
-    const replacementInputSha256 = hash(payload["replacementInputSha256"]);
-    const replacementInputBytes = boundedInteger(
-      payload["replacementInputBytes"],
-      1,
-      32 * 1024,
-    );
-    const previewSha256 = hash(payload["previewSha256"]);
-    if (
-      !fromNodeId ||
-      !reusedNodeIds ||
-      !rerunNodeIds ||
-      !previewSha256 ||
-      typeof payload["sideEffectsConfirmed"] !== "boolean" ||
-      (executionMode !== undefined &&
-        executionMode !== "single_node" &&
-        executionMode !== "step_nodes" &&
-        executionMode !== "simulate_node" &&
-        executionMode !== "replace_input") ||
-      (executionMode === "single_node" || executionMode === "step_nodes"
-        ? !executionNodeIds ||
-          !stopBeforeNodeIds ||
-          executionNodeIds.length !== 1 ||
-          executionNodeIds[0] !== fromNodeId ||
-          stopBeforeNodeIds.length > 16 ||
-          (executionMode === "step_nodes" &&
-            !sameStrings(
-              stopBeforeNodeIds,
-              rerunNodeIds.filter((nodeId) => nodeId !== fromNodeId),
-            )) ||
-          simulationNodeId !== undefined ||
-          simulatedOutputSha256 !== undefined ||
-          simulatedOutputBytes !== undefined ||
-          replacedInputNodeId !== undefined ||
-          replacementInputSha256 !== undefined ||
-          replacementInputBytes !== undefined
-        : executionMode === "simulate_node"
-          ? !executionNodeIds ||
-            stopBeforeNodeIds !== undefined ||
-            simulationNodeId !== fromNodeId ||
-            !simulatedOutputSha256 ||
-            simulatedOutputBytes === undefined ||
-            replacedInputNodeId !== undefined ||
-            replacementInputSha256 !== undefined ||
-            replacementInputBytes !== undefined
-          : executionMode === "replace_input"
-            ? !executionNodeIds ||
-              stopBeforeNodeIds !== undefined ||
-              replacedInputNodeId !== fromNodeId ||
-              !replacementInputSha256 ||
-              replacementInputBytes === undefined ||
-              simulationNodeId !== undefined ||
-              simulatedOutputSha256 !== undefined ||
-              simulatedOutputBytes !== undefined
-            : executionNodeIds !== undefined ||
-              stopBeforeNodeIds !== undefined ||
-              simulationNodeId !== undefined ||
-              simulatedOutputSha256 !== undefined ||
-              simulatedOutputBytes !== undefined ||
-              replacedInputNodeId !== undefined ||
-              replacementInputSha256 !== undefined ||
-              replacementInputBytes !== undefined)
-    ) {
-      return undefined;
-    }
-    parts.push(
-      `from ${fromNodeId}`,
-      `reused ${String(reusedNodeIds.length)}`,
-      `rerun ${String(rerunNodeIds.length)}`,
-      ...(executionMode === "single_node" || executionMode === "step_nodes"
-        ? [
-            executionMode === "single_node"
-              ? "mode single-node"
-              : "mode step-nodes",
-            `execute ${String(executionNodeIds!.length)}`,
-            `stop-before ${String(stopBeforeNodeIds!.length)}`,
-          ]
-        : executionMode === "simulate_node"
-          ? [
-              "mode simulate-node",
-              `execute ${String(executionNodeIds!.length)}`,
-              `simulated ${simulationNodeId}`,
-              `simulation ${simulatedOutputSha256!.slice(0, 12)}`,
-              `bytes ${String(simulatedOutputBytes)}`,
-            ]
-          : executionMode === "replace_input"
-            ? [
-                "mode replace-input",
-                `execute ${String(executionNodeIds!.length)}`,
-                `input-replaced ${replacedInputNodeId}`,
-                `replacement ${replacementInputSha256!.slice(0, 12)}`,
-                `bytes ${String(replacementInputBytes)}`,
-              ]
-            : []),
-      `preview ${previewSha256.slice(0, 12)}`,
-      payload["sideEffectsConfirmed"] ? "side-effects confirmed" : "read-only",
-    );
+    const experimentParts = workflowExperimentEventTraceParts(payload);
+    if (!experimentParts) return undefined;
+    parts.push(...experimentParts);
   } else if (event.type === "workflow.node.reused") {
     const nodeIdValue = nodeId(payload["nodeId"]);
     const inputSha256 = hash(payload["inputSha256"]);
@@ -860,13 +754,6 @@ function hash(value: unknown): string | undefined {
   return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
     ? value
     : undefined;
-}
-
-function sameStrings(left: string[], right: string[]): boolean {
-  return (
-    left.length === right.length &&
-    left.every((value, index) => value === right[index])
-  );
 }
 
 function record(value: unknown): value is Record<string, unknown> {

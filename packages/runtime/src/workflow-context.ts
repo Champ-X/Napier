@@ -66,7 +66,7 @@ export interface WorkflowExperimentLineage {
   sourcePlanId: string;
   sourcePlanRevision: number;
   sourceManifestSha256: string;
-  fromNodeId: string;
+  fromNodeId?: string;
   reusedNodeIds: string[];
   rerunNodeIds: string[];
   previewSha256: string;
@@ -75,7 +75,8 @@ export interface WorkflowExperimentLineage {
     | "single_node"
     | "step_nodes"
     | "simulate_node"
-    | "replace_input";
+    | "replace_input"
+    | "replace_workflow_input";
   executionNodeIds?: string[];
   stopBeforeNodeIds?: string[];
   simulationNodeId?: string;
@@ -84,4 +85,6 @@ export interface WorkflowExperimentLineage {
   replacedInputNodeId?: string;
   replacementInputSha256?: string;
   replacementInputBytes?: number;
+  replacementWorkflowInputSha256?: string;
+  replacementWorkflowInputBytes?: number;
 }

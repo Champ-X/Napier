@@ -206,6 +206,73 @@ describe("Workflow experiment Web API", () => {
     ).rejects.toThrow("preview binding");
   });
 
+  it("binds a schema-v6 preview to the exact top-level Workflow input", async () => {
+    const fixture = experimentFixture();
+    const replacementWorkflowInput = {
+      request: "Browser top-level replacement",
+    };
+    const {
+      schemaVersion: _schemaVersion,
+      fromNodeId: _fromNodeId,
+      previewSha256: _previewSha256,
+      ...previewBase
+    } = fixture.preview as Extract<
+      ExecutionPlanWorkflowExperimentPreview,
+      { schemaVersion: 1 }
+    >;
+    const encoded = canonicalJson(replacementWorkflowInput);
+    const content = {
+      ...previewBase,
+      schemaVersion: 6 as const,
+      mode: "replace_workflow_input" as const,
+      executionNodeIds: ["report"],
+      replacementWorkflowInputSha256: sha256(encoded),
+      replacementWorkflowInputBytes: new TextEncoder().encode(encoded).length,
+    };
+    const preview = {
+      ...content,
+      previewSha256: sha256(canonicalJson(content)),
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse(preview, {
+          headers: {
+            "Cache-Control": "no-store",
+            "X-Napier-Content-SHA256": preview.previewSha256,
+            "X-Napier-Content-SHA256-Mode": "stable",
+            "X-Napier-Workflow-Experiment-Preview-SHA256":
+              preview.previewSha256,
+          },
+        }),
+      ),
+    );
+    await expect(
+      previewWorkflowExperiment(fixture.sourceThreadId, fixture.sourcePlanId, {
+        manifest: fixture.manifest,
+        mode: "replace_workflow_input",
+        replacementWorkflowInput,
+      }),
+    ).resolves.toEqual(preview);
+    await expect(
+      previewWorkflowExperiment(fixture.sourceThreadId, fixture.sourcePlanId, {
+        manifest: fixture.manifest,
+        mode: "replace_workflow_input",
+        replacementWorkflowInput: {
+          request: "Rehashed top-level replacement",
+        },
+      }),
+    ).rejects.toThrow("preview binding");
+    await expect(
+      previewWorkflowExperiment(fixture.sourceThreadId, fixture.sourcePlanId, {
+        manifest: fixture.manifest,
+        fromNodeId: "report",
+        mode: "replace_workflow_input",
+        replacementWorkflowInput,
+      }),
+    ).rejects.toThrow("preview binding");
+  });
+
   it("binds a schema-v5 preview to the exact step-control set", async () => {
     const fixture = experimentFixture();
     const {

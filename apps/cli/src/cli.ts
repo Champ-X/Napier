@@ -20,7 +20,6 @@ import {
   streamRunDoneFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
-  validateCreateExecutionPlanWorkflowExperimentRequest,
   validateExecuteExecutionPlanWorkflowRequest,
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
@@ -37,6 +36,7 @@ import {
   type CliRunOptions,
   type CliWorkflowOptions,
 } from "./cli-options.js";
+import { createCliWorkflowExperimentRequest } from "./cli-workflow-experiment.js";
 import { executeAgentMessageExperimentCli } from "./agent-message-experiment-cli.js";
 import { executeModelInvocationExperimentCli } from "./model-invocation-experiment-cli.js";
 import { executeToolInvocationExperimentCli } from "./tool-invocation-experiment-cli.js";
@@ -300,7 +300,10 @@ async function executeWorkflow(
       },
     );
     const manifest = parseJson(manifestFile.source, "Workflow manifest");
-    const request = options.fromNodeId
+    const workflowExperiment =
+      options.fromNodeId !== undefined ||
+      options.replaceWorkflowInputJson !== undefined;
+    const request = workflowExperiment
       ? undefined
       : validateExecuteExecutionPlanWorkflowRequest(
           options.planId
@@ -320,46 +323,8 @@ async function executeWorkflow(
                   : {}),
               },
         );
-    const experimentRequest = options.fromNodeId
-      ? validateCreateExecutionPlanWorkflowExperimentRequest({
-          manifest,
-          planId: options.planId,
-          fromNodeId: options.fromNodeId,
-          ...(options.singleNode
-            ? { mode: "single_node" as const }
-            : options.stepNodes
-              ? { mode: "step_nodes" as const }
-              : options.simulateOutputJson !== undefined
-                ? {
-                    mode: "simulate_node" as const,
-                    simulatedOutput: parseJson(
-                      options.simulateOutputJson,
-                      "Workflow simulated output",
-                    ),
-                  }
-                : options.replaceInputJson !== undefined
-                  ? {
-                      mode: "replace_input" as const,
-                      replacementInput: parseJson(
-                        options.replaceInputJson,
-                        "Workflow replacement input",
-                      ),
-                    }
-                  : {}),
-          ...(options.title ? { title: options.title } : {}),
-          ...(options.modelOverridesJson
-            ? {
-                modelOverrides: parseJson(
-                  options.modelOverridesJson,
-                  "Workflow model overrides",
-                ),
-              }
-            : {}),
-          ...(options.confirmSideEffects ? { confirmSideEffects: true } : {}),
-          ...(options.expectedPreviewSha256
-            ? { expectedPreviewSha256: options.expectedPreviewSha256 }
-            : {}),
-        })
+    const experimentRequest = workflowExperiment
+      ? createCliWorkflowExperimentRequest(manifest, options)
       : undefined;
     const dataRoot = path.resolve(
       io.cwd,

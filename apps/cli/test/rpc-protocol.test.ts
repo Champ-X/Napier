@@ -321,6 +321,25 @@ describe("Napier JSON-RPC protocol", () => {
         },
       });
       expect(
+        parseWorkflowExperimentPreviewParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
+          mode: "replace_workflow_input",
+          replacementWorkflowInput: {
+            text: "RPC top-level replacement",
+          },
+        }),
+      ).toEqual({
+        sourceThreadId: "thread_example",
+        manifest,
+        planId: "plan_abcdefgh",
+        mode: "replace_workflow_input",
+        replacementWorkflowInput: {
+          text: "RPC top-level replacement",
+        },
+      });
+      expect(
         parseWorkflowExperimentRunParams({
           sourceThreadId: "thread_example",
           manifest,
@@ -334,6 +353,27 @@ describe("Napier JSON-RPC protocol", () => {
         planId: "plan_abcdefgh",
         fromNodeId: "deliver",
         expectedPreviewSha256: "b".repeat(64),
+      });
+      expect(
+        parseWorkflowExperimentRunParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
+          mode: "replace_workflow_input",
+          replacementWorkflowInput: {
+            text: "RPC top-level replacement",
+          },
+          expectedPreviewSha256: "c".repeat(64),
+        }),
+      ).toEqual({
+        sourceThreadId: "thread_example",
+        manifest,
+        planId: "plan_abcdefgh",
+        mode: "replace_workflow_input",
+        replacementWorkflowInput: {
+          text: "RPC top-level replacement",
+        },
+        expectedPreviewSha256: "c".repeat(64),
       });
       expect(() =>
         parseWorkflowRunParams({

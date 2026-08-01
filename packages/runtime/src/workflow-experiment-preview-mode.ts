@@ -1,6 +1,7 @@
 import { canonicalJson } from "./ed25519.js";
 import { assertWorkflowInputReplacementPreview } from "./workflow-input-override.js";
 import { MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES } from "./workflow-schemas.js";
+import { assertWorkflowTopLevelInputReplacementPreview } from "./workflow-top-level-input-override.js";
 
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 
@@ -28,6 +29,13 @@ export function workflowExperimentPreviewModeKeys(
       ];
     case 5:
       return ["mode", "executionNodeIds", "stopBeforeNodeIds"];
+    case 6:
+      return [
+        "mode",
+        "executionNodeIds",
+        "replacementWorkflowInputSha256",
+        "replacementWorkflowInputBytes",
+      ];
     default:
       return [];
   }
@@ -35,9 +43,14 @@ export function workflowExperimentPreviewModeKeys(
 
 export function validWorkflowExperimentPreviewSchemaVersion(
   value: unknown,
-): value is 1 | 2 | 3 | 4 | 5 {
+): value is 1 | 2 | 3 | 4 | 5 | 6 {
   return (
-    value === 1 || value === 2 || value === 3 || value === 4 || value === 5
+    value === 1 ||
+    value === 2 ||
+    value === 3 ||
+    value === 4 ||
+    value === 5 ||
+    value === 6
   );
 }
 
@@ -110,6 +123,11 @@ export function validateWorkflowExperimentPreviewMode(
     throw new Error("Workflow experiment node sets are invalid");
   }
   assertWorkflowInputReplacementPreview(
+    preview,
+    executionNodeIds,
+    rerunNodeIds,
+  );
+  assertWorkflowTopLevelInputReplacementPreview(
     preview,
     executionNodeIds,
     rerunNodeIds,

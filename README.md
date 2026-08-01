@@ -69,7 +69,10 @@ Version `0.1.0` includes:
   descendant through that same scheduler. A schema-5 step-control mode executes
   the selected checkpoint, holds every remaining rerun node, and releases
   exactly one ready node per durable Continue even across parallel branches or
-  restart. SDK, local RPC, CLI, HTTP, and a lazy Plan Workbench desk share the complete
+  restart. A selector-free schema-6 top-level input replacement validates one
+  complete Workflow input, reruns every node through the ordinary scheduler,
+  and compares the resulting graph without a hidden node override. SDK, local
+  RPC, CLI, HTTP, and a lazy Plan Workbench desk share the complete
   preview-confirm-execute-inspect flow;
 - controlled Agent message experiments that select a terminal historical
   `message.user`, freeze its Agent revision, Prompt Variables, Skill catalog,
@@ -985,12 +988,47 @@ outputs, and it does not simulate write/session effects or external Session
 state. `--replace-input-json`, `--single-node`, `--step-nodes`, and
 `--simulate-output-json` are mutually exclusive.
 
+Use `--replace-workflow-input-json` without `--from-node` to compare the whole
+Workflow against a new top-level input:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --thread thread_source \
+  --plan plan_source \
+  --replace-workflow-input-json '{"request":"Re-evaluate the full report"}' \
+  --preview-experiment \
+  --jsonl
+```
+
+Schema-6 previews bind `reusedNodeIds=[]` and put every Manifest node, in
+order, in both `rerunNodeIds` and `executionNodeIds`. The value is limited to
+32 KiB and must satisfy the top-level Workflow input Schema. Execution requires
+the exact preview hash; write, unknown, or unresolved historical effects from
+any source node additionally require explicit confirmation. The replacement
+becomes the target's real `workflow.started` input, so every constructed node
+input is rebuilt and every node runs through its ordinary model, Tool,
+Approval, condition, Sandbox, timeout, retry, cancellation, and recovery path.
+No fake checkpoint, `workflow_reuse` Run, hidden node input override, or second
+Workflow state is created.
+
+Public preview and Trace expose only the canonical replacement hash and byte
+count. Recovery reads the ordinary target Workflow input and recomputes its
+Schema, hash, bytes, complete node sets, source revision, and lineage binding.
+The existing comparison reports the top-level input change plus actual
+per-node input/output, model, metric, Evaluation, Artifact, and Tool-set
+changes. CLI JSONL, TypeScript SDK, stdio RPC, HTTP/SSE, and the Plan Workbench
+all call this same Runtime mode; checkpoint schemas 1-5 remain compatible.
+
 The same path is available in **Plan -> Workflow experiment desk**. Load the
 exact versioned Manifest used by the source run, select its durable source Plan
 and checkpoint node, optionally replace that node with the currently selected
 configured model, select full-subgraph, single-node, typed-output simulation,
-step control, or typed-input replacement, and preview before execution. The desk renders
-historical read/write/unknown effects and
+step control, typed checkpoint-input replacement, or selector-free top-level
+input replacement, and preview before execution. The desk renders historical
+read/write/unknown effects and
 `rerun`/`execute now`/`stop before`/`simulated`/`input replaced` counts, and
 requires an explicit checkbox for a preview that needs side-effect
 confirmation. A successful isolated fork shows aggregate and per-node
@@ -3956,10 +3994,11 @@ captured results for that same subset. Workflow experiments can also substitute
 one typed checkpoint output before normally executing descendants, or replace
 one selected checkpoint's complete typed constructed input before executing
 that node and its descendants. Schema-v5 step control executes one real node
-per durable Continue across the remaining rerun subgraph. Top-level Workflow input replacement,
-stateful/write tool stepping or side-effect simulation, Prompt/Skill/Memory
-replacement, batch experiments, an interactive root-cause timeline, and
-Evaluation promotion remain open. The opt-in DeepSeek
+per durable Continue across the remaining rerun subgraph. Schema-v6 replaces
+the complete top-level Workflow input and reruns the whole graph. Stateful/write
+tool stepping or side-effect simulation, Prompt/Skill/Memory replacement,
+batch experiments, an interactive root-cause timeline, and Evaluation
+promotion remain open. The opt-in DeepSeek
 CLI smoke executes and checkpoint-reruns one
 real typed node when `DEEPSEEK_API_KEY` is available; default tests use
 deterministic providers and perform no network call. The Map-specific live

@@ -11,6 +11,7 @@ import type {
   WorkflowSimulatedNode,
 } from "./workflow-context.js";
 import type { WorkflowExperimentExecutionProjection } from "./workflow-experiment-mode.js";
+import type { WorkflowTopLevelInputReplacement } from "./workflow-top-level-input-override.js";
 import {
   assertWorkflowValue,
   MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
@@ -18,8 +19,10 @@ import {
 
 type WorkflowExperimentPreviewBase = Omit<
   ExecutionPlanWorkflowExperimentPreviewV1,
-  "schemaVersion" | "previewSha256"
->;
+  "schemaVersion" | "previewSha256" | "fromNodeId"
+> & {
+  fromNodeId?: string;
+};
 
 export function projectWorkflowExperimentSimulation(
   manifest: ExecutionPlanWorkflowManifest,
@@ -55,6 +58,7 @@ export function createWorkflowExperimentPreview(input: {
   execution: WorkflowExperimentExecutionProjection;
   simulatedNodes: WorkflowSimulatedNode[];
   inputOverrides: WorkflowNodeInputOverride[];
+  topLevelInputReplacement?: WorkflowTopLevelInputReplacement;
 }): ExecutionPlanWorkflowExperimentPreview {
   if (
     (input.execution.mode === "simulate_node" &&
@@ -72,10 +76,31 @@ export function createWorkflowExperimentPreview(input: {
   ) {
     throw new Error("Workflow experiment input override projection is invalid");
   }
+  if (
+    (input.execution.mode === "replace_workflow_input" &&
+      input.topLevelInputReplacement === undefined) ||
+    (input.execution.mode !== "replace_workflow_input" &&
+      input.topLevelInputReplacement !== undefined)
+  ) {
+    throw new Error(
+      "Workflow experiment top-level input projection is invalid",
+    );
+  }
+  if (
+    input.execution.mode === "replace_workflow_input"
+      ? input.base.fromNodeId !== undefined
+      : typeof input.base.fromNodeId !== "string"
+  ) {
+    throw new Error("Workflow experiment checkpoint projection is invalid");
+  }
+  const nodeBase = {
+    ...input.base,
+    fromNodeId: input.base.fromNodeId!,
+  };
   const content =
     input.execution.mode === "single_node"
       ? {
-          ...input.base,
+          ...nodeBase,
           schemaVersion: 2 as const,
           mode: "single_node" as const,
           executionNodeIds: input.execution.executionNodeIds,
@@ -83,7 +108,7 @@ export function createWorkflowExperimentPreview(input: {
         }
       : input.execution.mode === "step_nodes"
         ? {
-            ...input.base,
+            ...nodeBase,
             schemaVersion: 5 as const,
             mode: "step_nodes" as const,
             executionNodeIds: input.execution.executionNodeIds,
@@ -91,7 +116,7 @@ export function createWorkflowExperimentPreview(input: {
           }
         : input.execution.mode === "simulate_node"
           ? {
-              ...input.base,
+              ...nodeBase,
               schemaVersion: 3 as const,
               mode: "simulate_node" as const,
               executionNodeIds: input.execution.executionNodeIds,
@@ -101,7 +126,7 @@ export function createWorkflowExperimentPreview(input: {
             }
           : input.execution.mode === "replace_input"
             ? {
-                ...input.base,
+                ...nodeBase,
                 schemaVersion: 4 as const,
                 mode: "replace_input" as const,
                 executionNodeIds: input.execution.executionNodeIds,
@@ -109,10 +134,21 @@ export function createWorkflowExperimentPreview(input: {
                 replacementInputSha256: input.inputOverrides[0]!.inputSha256,
                 replacementInputBytes: input.inputOverrides[0]!.inputBytes,
               }
-            : {
-                ...input.base,
-                schemaVersion: 1 as const,
-              };
+            : input.execution.mode === "replace_workflow_input"
+              ? {
+                  ...input.base,
+                  schemaVersion: 6 as const,
+                  mode: "replace_workflow_input" as const,
+                  executionNodeIds: input.execution.executionNodeIds,
+                  replacementWorkflowInputSha256:
+                    input.topLevelInputReplacement!.inputSha256,
+                  replacementWorkflowInputBytes:
+                    input.topLevelInputReplacement!.inputBytes,
+                }
+              : {
+                  ...nodeBase,
+                  schemaVersion: 1 as const,
+                };
   return {
     ...content,
     previewSha256: sha256(canonicalJson(content)),

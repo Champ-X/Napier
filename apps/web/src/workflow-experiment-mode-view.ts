@@ -7,9 +7,21 @@ import type {
 export function workflowExperimentPreviewMatchesMode(
   preview: ExecutionPlanWorkflowExperimentPreview,
   manifest: ExecutionPlanWorkflowManifest,
-  fromNodeId: string,
+  fromNodeId: string | undefined,
   mode: ExecutionPlanWorkflowExperimentMode,
 ): boolean {
+  if (mode === "replace_workflow_input") {
+    const nodeIds = manifest.nodes.map((node) => node.id);
+    return (
+      fromNodeId === undefined &&
+      preview.schemaVersion === 6 &&
+      preview.mode === "replace_workflow_input" &&
+      preview.reusedNodeIds.length === 0 &&
+      sameStrings(preview.rerunNodeIds, nodeIds) &&
+      sameStrings(preview.executionNodeIds, nodeIds)
+    );
+  }
+  if (!fromNodeId) return false;
   const rerunNodeIds = rerunNodeIdsFrom(manifest, fromNodeId);
   if (!rerunNodeIds) return false;
   const rerun = new Set(rerunNodeIds);

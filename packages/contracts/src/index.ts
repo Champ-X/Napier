@@ -1489,7 +1489,8 @@ export type ExecutionPlanWorkflowExperimentMode =
   | "single_node"
   | "step_nodes"
   | "simulate_node"
-  | "replace_input";
+  | "replace_input"
+  | "replace_workflow_input";
 
 interface ExecutionPlanWorkflowExperimentPreviewBase {
   kind: "napier.execution-plan-workflow-experiment-preview";
@@ -1545,12 +1546,24 @@ export interface ExecutionPlanWorkflowExperimentPreviewV5 extends ExecutionPlanW
   stopBeforeNodeIds: string[];
 }
 
+export interface ExecutionPlanWorkflowExperimentPreviewV6 extends Omit<
+  ExecutionPlanWorkflowExperimentPreviewBase,
+  "fromNodeId"
+> {
+  schemaVersion: 6;
+  mode: "replace_workflow_input";
+  executionNodeIds: string[];
+  replacementWorkflowInputSha256: string;
+  replacementWorkflowInputBytes: number;
+}
+
 export type ExecutionPlanWorkflowExperimentPreview =
   | ExecutionPlanWorkflowExperimentPreviewV1
   | ExecutionPlanWorkflowExperimentPreviewV2
   | ExecutionPlanWorkflowExperimentPreviewV3
   | ExecutionPlanWorkflowExperimentPreviewV4
-  | ExecutionPlanWorkflowExperimentPreviewV5;
+  | ExecutionPlanWorkflowExperimentPreviewV5
+  | ExecutionPlanWorkflowExperimentPreviewV6;
 
 export interface ExecutionPlanWorkflowExperimentMetricSet {
   runCount: number;
@@ -1651,10 +1664,11 @@ export interface ExecutionPlanWorkflowExperimentComparison {
 export interface CreateExecutionPlanWorkflowExperimentRequest {
   manifest: ExecutionPlanWorkflowManifest;
   planId: string;
-  fromNodeId: string;
+  fromNodeId?: string;
   mode?: ExecutionPlanWorkflowExperimentMode;
   simulatedOutput?: JsonValue;
   replacementInput?: JsonValue;
+  replacementWorkflowInput?: JsonValue;
   title?: string;
   modelOverrides?: Record<string, ModelRef>;
   confirmSideEffects?: boolean;

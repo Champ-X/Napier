@@ -6,7 +6,7 @@ benchmarks.
 
 ## Baseline
 
-Audit date: 2026-08-01
+Audit date: 2026-08-02
 
 - The Work Ledger, replay artifacts, Plans, evaluation, recovery, and
   extension governance are substantially ahead of the execution surface.
@@ -23,13 +23,101 @@ Audit date: 2026-08-01
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, and explicitly preauthorized failed-write compensation now exist. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, a guardian, proved orphan cleanup, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; directory lifecycle, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output simulation/input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Persistent Python/package Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, top-level Workflow input replacement, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain.                            |
-| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, and schema-5 executes the selected checkpoint then durably releases exactly one remaining rerun node per Continue across parallel branches and restart. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, top-level Workflow input replacement, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                                        |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, and schema-5 full-subgraph node step control through the same Ledger state; the browser independently verifies mode, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, full-screen TUI, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output/input replacement, selector-free complete top-level input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Persistent Python/package Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain.                         |
+| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, schema-5 durably releases exactly one remaining rerun node per Continue, and selector-free schema-6 replaces the complete top-level Workflow input and reruns every node through the ordinary scheduler with zero source reuse. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                      |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, full-screen TUI, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                    |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | P9 outcome benchmark              | Started        | Three fixed CLI Coding cases now cover single-file repair, a multi-file LSP-guided API migration, and debugger-qualified JavaScript repair with repeated trials, Sandbox assertions, capability-completion qualification, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+## Implemented Slice: Top-Level Workflow Input Replacement
+
+User scenario: an operator has one completed Workflow and wants to compare its
+behavior against a different complete top-level input. The experiment should
+rerun the whole typed graph in an isolated Thread without selecting a fake
+checkpoint, while preserving the original Run and producing a normal
+source/target comparison.
+
+Acceptance:
+
+- add compatible preview schema v6 and mode `replace_workflow_input`.
+  Checkpoint modes continue to require `fromNodeId`; top-level replacement
+  explicitly rejects it;
+- validate the replacement value against the Manifest top-level input Schema
+  and the existing 32 KiB value limit before creating a target;
+- bind `reusedNodeIds=[]`, `rerunNodeIds` and `executionNodeIds` to every
+  Manifest node in order. Model overrides may target any rerun Agent/Map/Loop
+  node;
+- derive Tool-effect confirmation from every source node that can execute.
+  Missing/stale preview confirmation or any source/Manifest drift must create
+  no target side effect;
+- run the target through the ordinary Workflow scheduler with the replacement
+  as its real `workflow.started` input. Do not create a hidden node override or
+  a second input state;
+- bind replacement hash/bytes, complete node sets, candidate Manifest, source
+  revision, side-effect decision, and target input through the normal
+  experiment lineage. Recovery must recompute these bindings and never fall
+  back to the source input;
+- expose preview/run through CLI JSONL, stdio RPC, TypeScript SDK, HTTP/SSE,
+  and the Plan Workbench, with independent browser validation;
+- compare top-level and per-node input changes, metrics, outputs, evaluations,
+  Artifacts, and Tool sets through the existing comparison;
+- preserve schemas 1-5, checkpoint replacement, simulation, node stepping,
+  cancellation, retry, Replay, and ordered event delivery.
+
+Threat boundary:
+
+- a top-level replacement is deliberate user input, not a way to mutate the
+  Manifest, Agent revision, source Plan, Memory, environment, or historical
+  node outputs;
+- the mode cannot reuse source nodes because every constructed node input may
+  change. It cannot accept `fromNodeId`, node `replacementInput`, or simulated
+  output;
+- write/unknown source effects require the exact current preview and explicit
+  confirmation before target creation. Replacement input never expands tool,
+  policy, Sandbox, network, filesystem, or model authority;
+- public preview/Trace exposes only replacement hash and byte count. The
+  target's ordinary Workflow input follows the existing Ledger contract; no
+  duplicate hidden body is created;
+- this slice does not add batch experiments, Prompt/Skill/Memory/environment
+  replacement, write-result simulation, compensation, or graph mutation.
+
+Observed result:
+
+- schema-v6 `replace_workflow_input` validates the complete top-level input,
+  rejects `fromNodeId` and node-level substitutions, binds every Manifest node
+  as rerun/executable, projects Tool effects from the complete source graph,
+  and executes the replacement as the ordinary target `workflow.started`
+  input with zero `workflow_reuse` Runs;
+- lineage recovery revalidates the real target input Schema/hash/bytes and
+  complete node sets. Tests reject selector injection, reused/incomplete sets,
+  replacement hash/byte drift, target input drift, stale confirmation, invalid
+  Schema input, cancellation, concurrent targets, and portable-result
+  tampering;
+- CLI JSONL adds `--replace-workflow-input-json`; the generic TypeScript SDK,
+  local stdio RPC, HTTP/SSE, and Plan Workbench use the same Runtime. The
+  browser independently validates selector absence, whole-graph sets,
+  replacement hash/bytes, comparison input binding, and privacy-bounded Trace;
+- Runtime tests execute a real two-node target, restart from SQLite without
+  rerun, preserve a valid portable Replay, and compare changed top-level and
+  per-node inputs. Independent built-CLI Dogfood forked source Plan
+  `plan_69bc29b352b5456c97f2` into `plan_f993e47c535949aa84a7`, delivered the
+  replacement value, observed two real `workflow.node.started` events and no
+  reused node, and verified a valid portable Replay;
+- touched large entry modules were split by domain: CLI option parsing fell
+  from 1,026 to 717 lines, `cli.ts` to 706, the Workflow experiment desk to
+  491, and the Workflow Trace aggregator to 761. New CLI, Web, and Runtime
+  modules remain below 500 lines. The Web main entry is 130.32 KiB, below the
+  150 KiB budget;
+- environment, OpenAPI, build, performance, Web/release receipt, formatting,
+  and secret gates pass. Product performance is 670.3 ms to first CLI event,
+  817.2 ms to first token, 1,119.4 ms to completion, 0.3 ms read p95, and
+  6.9 ms per 1,000-event projection. The 1,753 regular-test set passes across
+  workspace runs and isolated reruns, with 32 opt-in tests skipped. The exact
+  concurrent wrapper hit unrelated 122-second enterprise Defender/Storage
+  stalls; every timed-out file passed unchanged with one worker and no timeout
+  was widened.
 
 ## Implemented Slice: Sandboxed JavaScript Workflow Session
 

@@ -78,6 +78,36 @@ describe("Napier Workflow CLI", () => {
         "thread_abcdefghijklmnopqrst",
         "--plan",
         "plan_abcdefghijklmnopqrst",
+        "--replace-workflow-input-json",
+        '{"request":"replacement Workflow input"}',
+        "--preview-experiment",
+        "--jsonl",
+      ]),
+    ).toEqual({
+      kind: "workflow",
+      options: {
+        workspace: ".",
+        manifestPath: "workflow.json",
+        threadId: "thread_abcdefghijklmnopqrst",
+        planId: "plan_abcdefghijklmnopqrst",
+        replaceWorkflowInputJson: '{"request":"replacement Workflow input"}',
+        previewExperiment: true,
+        timeoutMs: 600_000,
+        jsonl: true,
+        retryBlocked: false,
+      },
+    });
+    expect(
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
         "--from-node",
         "inspect",
         "--replace-input-json",
@@ -237,6 +267,39 @@ describe("Napier Workflow CLI", () => {
         "--preview-experiment",
       ]),
     ).toThrow("mutually exclusive");
+    expect(() =>
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--from-node",
+        "inspect",
+        "--replace-workflow-input-json",
+        '{"request":"invalid mixed selectors"}',
+        "--preview-experiment",
+      ]),
+    ).toThrow("cannot be used");
+    expect(() =>
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--replace-workflow-input-json",
+        '{"request":"fresh input"}',
+      ]),
+    ).toThrow("requires --expected-preview");
     expect(() =>
       parseCliArgs([
         "workflow",
@@ -1307,6 +1370,112 @@ describe("Napier Workflow CLI", () => {
         }),
       }),
     );
+
+    const replacementWorkflowInput = JSON.stringify({
+      request: "CLI top-level replacement workflow",
+    });
+    const workflowInputPreviewStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--replace-workflow-input-json",
+          replacementWorkflowInput,
+          "--preview-experiment",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, workflowInputPreviewStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const workflowInputPreview = JSON.parse(
+      workflowInputPreviewStdout.text(),
+    ) as ExecutionPlanWorkflowExperimentPreview;
+    expect(workflowInputPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 6,
+        mode: "replace_workflow_input",
+        reusedNodeIds: [],
+        rerunNodeIds: ["inspect", "report"],
+        executionNodeIds: ["inspect", "report"],
+      }),
+    );
+    expect("fromNodeId" in workflowInputPreview).toBe(false);
+    provider.setResponses([
+      fauxAssistantMessage('{"summary":"CLI top-level inspection","count":2}'),
+      fauxAssistantMessage(
+        '{"report":"CLI top-level replacement report","approved":true}',
+      ),
+    ]);
+    const workflowInputStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--replace-workflow-input-json",
+          replacementWorkflowInput,
+          "--expected-preview",
+          workflowInputPreview.previewSha256,
+          "--jsonl",
+        ],
+        cliIo(fixture.root, workflowInputStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const workflowInputExperiment =
+      validateExecutionPlanWorkflowExperimentResultFrame(
+        parseFrames(workflowInputStdout.text()).at(-1),
+      );
+    expect(workflowInputExperiment).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        experiment: expect.objectContaining({
+          preview: expect.objectContaining({
+            schemaVersion: 6,
+            reusedNodeIds: [],
+          }),
+          result: expect.objectContaining({
+            output: {
+              report: "CLI top-level replacement report",
+              approved: true,
+            },
+          }),
+          comparison: expect.objectContaining({
+            inputChange: "changed",
+            reusedNodeCount: 0,
+            rerunNodeCount: 2,
+            changedNodeIds: ["inspect", "report"],
+          }),
+        }),
+      }),
+    );
+    expect(
+      parseFrames(workflowInputStdout.text()).filter(
+        (frame) =>
+          frame.type === "event" &&
+          frame.event.type === "workflow.node.started",
+      ),
+    ).toHaveLength(2);
 
     const singleNodePreviewStdout = new CaptureWritable();
     expect(

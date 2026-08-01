@@ -31,10 +31,14 @@ import {
 } from "./workflow-manifests.js";
 import { assertWorkflowPlanMatchesManifest } from "./workflow-runtime-model.js";
 import { buildExecutionPlanWorkflowNodeInput } from "./workflow-schemas.js";
+import {
+  projectWorkflowExperimentTopLevelInputReplacement,
+  type WorkflowTopLevelInputReplacement,
+} from "./workflow-top-level-input-override.js";
 
 export interface ExecutionPlanWorkflowExperimentSource {
   sourcePlan: ExecutionPlan;
-  sourceInput: JsonValue;
+  targetInput: JsonValue;
   sourceAgentId: string;
   sourceAgentRevision: number;
   candidateManifest: ExecutionPlanWorkflowManifest;
@@ -42,6 +46,7 @@ export interface ExecutionPlanWorkflowExperimentSource {
   reusedNodes: WorkflowReusedNode[];
   simulatedNodes: ReturnType<typeof projectWorkflowExperimentSimulation>;
   inputOverrides: ReturnType<typeof projectWorkflowExperimentInputOverrides>;
+  topLevelInputReplacement?: WorkflowTopLevelInputReplacement;
 }
 
 export interface ExecutionPlanWorkflowSourceEvidence {
@@ -80,6 +85,8 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     manifest,
     request,
   );
+  const topLevelInputReplacement =
+    projectWorkflowExperimentTopLevelInputReplacement(manifest, request);
   const reusedNodeIds = manifest.nodes
     .map((node) => node.id)
     .filter((nodeId) => !rerunSet.has(nodeId));
@@ -146,7 +153,7 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     candidateManifestSha256: candidateManifest.contentSha256,
     sourceAgentId: source.agentId,
     sourceAgentRevision: source.agentRevision,
-    fromNodeId: request.fromNodeId,
+    ...(request.fromNodeId ? { fromNodeId: request.fromNodeId } : {}),
     reusedNodeIds,
     rerunNodeIds,
     modelOverrides,
@@ -155,7 +162,9 @@ export async function projectExecutionPlanWorkflowExperimentSource(
   };
   return {
     sourcePlan,
-    sourceInput: structuredClone(source.input),
+    targetInput: structuredClone(
+      topLevelInputReplacement?.input ?? source.input,
+    ),
     sourceAgentId: source.agentId,
     sourceAgentRevision: source.agentRevision,
     candidateManifest,
@@ -164,10 +173,12 @@ export async function projectExecutionPlanWorkflowExperimentSource(
       execution,
       simulatedNodes,
       inputOverrides,
+      ...(topLevelInputReplacement ? { topLevelInputReplacement } : {}),
     }),
     reusedNodes,
     simulatedNodes,
     inputOverrides,
+    ...(topLevelInputReplacement ? { topLevelInputReplacement } : {}),
   };
 }
 

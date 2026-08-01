@@ -14,9 +14,21 @@ export interface WorkflowExperimentExecutionProjection {
 
 export function projectWorkflowExperimentExecution(
   manifest: ExecutionPlanWorkflowManifest,
-  fromNodeId: string,
+  fromNodeId: string | undefined,
   mode: ExecutionPlanWorkflowExperimentMode,
 ): WorkflowExperimentExecutionProjection {
+  if (mode === "replace_workflow_input") {
+    const rerunNodeIds = manifest.nodes.map((node) => node.id);
+    return {
+      mode,
+      rerunNodeIds,
+      executionNodeIds: [...rerunNodeIds],
+      stopBeforeNodeIds: [],
+    };
+  }
+  if (!fromNodeId) {
+    throw new Error("Workflow experiment start node is required");
+  }
   const rerunNodeIds = workflowExperimentRerunNodeIds(manifest, fromNodeId);
   if (mode === "subgraph" || mode === "replace_input") {
     return {

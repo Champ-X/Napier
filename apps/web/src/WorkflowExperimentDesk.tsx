@@ -1,10 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  FlaskConical,
-  GitCompareArrows,
-  RotateCcw,
-  Upload,
-} from "lucide-react";
+import { FlaskConical, GitCompareArrows, RotateCcw } from "lucide-react";
 
 import type {
   ExecutionPlan,
@@ -32,6 +27,11 @@ import {
   WorkflowExperimentComparisonDocket,
   WorkflowExperimentPreviewDocket,
 } from "./WorkflowExperimentDockets";
+import {
+  WorkflowExperimentCheckpointField,
+  WorkflowExperimentManifestField,
+  WorkflowExperimentModelField,
+} from "./WorkflowExperimentFields";
 import { WorkflowExperimentModeField } from "./WorkflowExperimentModeField";
 import { projectWorkflowExperimentComparison } from "./workflow-experiment-view-model";
 import "./workflow-experiment.css";
@@ -67,6 +67,7 @@ export default function WorkflowExperimentDesk({
     useState<ExecutionPlanWorkflowExperimentMode>("subgraph");
   const [simulatedOutput, setSimulatedOutput] = useState("");
   const [replacementInput, setReplacementInput] = useState("");
+  const [replacementWorkflowInput, setReplacementWorkflowInput] = useState("");
   const [replaceModel, setReplaceModel] = useState(false);
   const [previewState, setPreviewState] = useState<PreviewState>();
   const [confirmed, setConfirmed] = useState(false);
@@ -80,6 +81,7 @@ export default function WorkflowExperimentDesk({
   const selectedNode = manifest?.nodes.find((node) => node.id === fromNodeId);
   const canReplaceModel =
     mode !== "simulate_node" &&
+    mode !== "replace_workflow_input" &&
     (selectedNode?.type === "agent" || selectedNode?.type === "map");
 
   const comparison = useMemo(
@@ -101,6 +103,7 @@ export default function WorkflowExperimentDesk({
     setMode("subgraph");
     setSimulatedOutput("");
     setReplacementInput("");
+    setReplacementWorkflowInput("");
     setReplaceModel(false);
     setPreviewState(undefined);
     setConfirmed(false);
@@ -185,6 +188,7 @@ export default function WorkflowExperimentDesk({
       setFromNodeId(parsed.outputNodeId);
       setSimulatedOutput("");
       setReplacementInput("");
+      setReplacementWorkflowInput("");
     } catch (loadError) {
       if (!isCurrentOperation(operation.controller, operation.generation)) {
         return;
@@ -215,6 +219,7 @@ export default function WorkflowExperimentDesk({
         mode,
         simulatedOutput,
         replacementInput,
+        replacementWorkflowInput,
         replaceModel,
         canReplaceModel,
         selectedModelKey,
@@ -298,6 +303,7 @@ export default function WorkflowExperimentDesk({
     setMode("subgraph");
     setSimulatedOutput("");
     setReplacementInput("");
+    setReplacementWorkflowInput("");
     setReplaceModel(false);
     setError(undefined);
   };
@@ -328,28 +334,12 @@ export default function WorkflowExperimentDesk({
       </header>
 
       <div className="workflow-experiment-controls">
-        <label className="workflow-experiment-file">
-          <input
-            type="file"
-            accept="application/json,.json"
-            disabled={Boolean(busy)}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (file) void loadManifest(file);
-            }}
-          />
-          <Upload size={13} aria-hidden="true" />
-          <span>
-            <small>{copy.manifest}</small>
-            <strong>
-              {busy === "manifest"
-                ? copy.previewing
-                : manifestFilename ||
-                  (manifest ? copy.manifestReady : copy.loadManifest)}
-            </strong>
-          </span>
-        </label>
+        <WorkflowExperimentManifestField
+          busy={Boolean(busy)}
+          filename={manifestFilename}
+          manifestAvailable={Boolean(manifest)}
+          onFile={(file) => void loadManifest(file)}
+        />
 
         <label>
           <span>{copy.sourcePlan}</span>
@@ -370,40 +360,37 @@ export default function WorkflowExperimentDesk({
           </select>
         </label>
 
-        <label>
-          <span>{copy.checkpoint}</span>
-          <select
-            value={fromNodeId}
-            disabled={!manifest || Boolean(busy)}
-            onChange={(event) => {
-              setFromNodeId(event.target.value);
-              const node = manifest?.nodes.find(
-                (candidate) => candidate.id === event.target.value,
-              );
-              if (node?.type !== "agent" && node?.type !== "map") {
-                setReplaceModel(false);
-              }
-              setSimulatedOutput("");
-              setReplacementInput("");
-              invalidatePreview();
-            }}
-          >
-            {(manifest?.nodes ?? []).map((node) => (
-              <option key={node.id} value={node.id}>
-                {node.id} / {node.type === "tool" ? node.tool : node.type}
-              </option>
-            ))}
-          </select>
-        </label>
+        <WorkflowExperimentCheckpointField
+          manifest={manifest}
+          mode={mode}
+          value={fromNodeId}
+          busy={Boolean(busy)}
+          onChange={(nodeId) => {
+            setFromNodeId(nodeId);
+            const node = manifest?.nodes.find(
+              (candidate) => candidate.id === nodeId,
+            );
+            if (node?.type !== "agent" && node?.type !== "map") {
+              setReplaceModel(false);
+            }
+            setSimulatedOutput("");
+            setReplacementInput("");
+            setReplacementWorkflowInput("");
+            invalidatePreview();
+          }}
+        />
 
         <WorkflowExperimentModeField
           mode={mode}
           simulatedOutput={simulatedOutput}
           replacementInput={replacementInput}
+          replacementWorkflowInput={replacementWorkflowInput}
           disabled={!manifest || Boolean(busy)}
           onModeChange={(next) => {
             setMode(next);
-            if (next === "simulate_node") setReplaceModel(false);
+            if (next === "simulate_node" || next === "replace_workflow_input") {
+              setReplaceModel(false);
+            }
             invalidatePreview();
           }}
           onSimulatedOutputChange={(next) => {
@@ -414,35 +401,25 @@ export default function WorkflowExperimentDesk({
             setReplacementInput(next);
             invalidatePreview();
           }}
+          onReplacementWorkflowInputChange={(next) => {
+            setReplacementWorkflowInput(next);
+            invalidatePreview();
+          }}
         />
 
-        <label className="workflow-experiment-model">
-          <input
-            type="checkbox"
-            checked={replaceModel && canReplaceModel}
-            disabled={
-              !manifest ||
-              !canReplaceModel ||
-              !selectedModelConfigured ||
-              Boolean(busy)
-            }
-            onChange={(event) => {
-              setReplaceModel(event.target.checked);
-              invalidatePreview();
-            }}
-          />
-          <span>
-            <small>{copy.overrideModel}</small>
-            <strong>{selectedModelKey}</strong>
-          </span>
-        </label>
-        <p className="workflow-experiment-model-hint">
-          {!canReplaceModel
-            ? copy.toolModelUnavailable
-            : selectedModelConfigured
-              ? copy.overrideHint
-              : copy.unavailableModel}
-        </p>
+        <WorkflowExperimentModelField
+          mode={mode}
+          manifestAvailable={Boolean(manifest)}
+          canReplaceModel={canReplaceModel}
+          selectedModelConfigured={selectedModelConfigured}
+          selectedModelKey={selectedModelKey}
+          checked={replaceModel}
+          busy={Boolean(busy)}
+          onChange={(checked) => {
+            setReplaceModel(checked);
+            invalidatePreview();
+          }}
+        />
 
         <div className="workflow-experiment-actions">
           <button
@@ -450,9 +427,11 @@ export default function WorkflowExperimentDesk({
             disabled={
               !manifest ||
               !sourcePlanId ||
-              !fromNodeId ||
+              (mode !== "replace_workflow_input" && !fromNodeId) ||
               (mode === "simulate_node" && simulatedOutput.trim() === "") ||
               (mode === "replace_input" && replacementInput.trim() === "") ||
+              (mode === "replace_workflow_input" &&
+                replacementWorkflowInput.trim() === "") ||
               running ||
               Boolean(busy)
             }

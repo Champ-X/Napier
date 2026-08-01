@@ -394,6 +394,38 @@ describe("Workflow event Trace projection", () => {
       "mode replace-input / execute 2 / input-replaced inspect",
     );
     expect(workflowEventTraceSummary(replacement)).not.toContain("PRIVATE");
+    const workflowInputReplacement = workflowEvent(
+      "workflow.experiment.started",
+      {
+        schemaVersion: 1,
+        planId: "plan_abcdefghijklmnopqrst",
+        manifestSha256: "1".repeat(64),
+        sourceThreadId: "thread_source_private",
+        sourcePlanId: "plan_source_private",
+        sourcePlanRevision: 4,
+        sourceManifestSha256: "2".repeat(64),
+        reusedNodeIds: [],
+        rerunNodeIds: ["inspect", "report"],
+        executionMode: "replace_workflow_input",
+        executionNodeIds: ["inspect", "report"],
+        replacementWorkflowInputSha256: "a".repeat(64),
+        replacementWorkflowInputBytes: 48,
+        previewSha256: "7".repeat(64),
+        sideEffectsConfirmed: false,
+        replacementWorkflowInput: "PRIVATE_WORKFLOW_INPUT",
+      },
+    );
+    expect(workflowEventTraceSummary(workflowInputReplacement)).toContain(
+      "from Workflow input / reused 0 / rerun 2 / mode replace-workflow-input / execute 2",
+    );
+    expect(workflowEventTraceSummary(workflowInputReplacement)).not.toContain(
+      "PRIVATE",
+    );
+    const incompleteWorkflowInput = structuredClone(workflowInputReplacement);
+    (incompleteWorkflowInput.payload as Record<string, unknown>)[
+      "executionNodeIds"
+    ] = ["report"];
+    expect(workflowEventTraceSummary(incompleteWorkflowInput)).toBeUndefined();
     expect(
       workflowEventTraceSummary(
         workflowEvent("workflow.node.simulated", {

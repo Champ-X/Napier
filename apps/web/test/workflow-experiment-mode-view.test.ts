@@ -4,6 +4,7 @@ import type {
 } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
+import { buildWorkflowExperimentRequest } from "../src/workflow-experiment-desk-helpers";
 import { workflowExperimentPreviewMatchesMode } from "../src/workflow-experiment-mode-view";
 
 describe("Workflow experiment execution mode projection", () => {
@@ -155,6 +156,64 @@ describe("Workflow experiment execution mode projection", () => {
         "replace_input",
       ),
     ).toBe(false);
+  });
+
+  it("binds top-level replacement to selector-free whole-graph execution", () => {
+    const preview = {
+      schemaVersion: 6,
+      mode: "replace_workflow_input",
+      reusedNodeIds: [],
+      rerunNodeIds: ["prepare", "report", "publish"],
+      executionNodeIds: ["prepare", "report", "publish"],
+    } as unknown as ExecutionPlanWorkflowExperimentPreview;
+    expect(
+      workflowExperimentPreviewMatchesMode(
+        preview,
+        workflowManifest(),
+        undefined,
+        "replace_workflow_input",
+      ),
+    ).toBe(true);
+    expect(
+      workflowExperimentPreviewMatchesMode(
+        preview,
+        workflowManifest(),
+        "prepare",
+        "replace_workflow_input",
+      ),
+    ).toBe(false);
+    expect(
+      workflowExperimentPreviewMatchesMode(
+        {
+          ...preview,
+          executionNodeIds: ["report", "publish"],
+        } as ExecutionPlanWorkflowExperimentPreview,
+        workflowManifest(),
+        undefined,
+        "replace_workflow_input",
+      ),
+    ).toBe(false);
+  });
+
+  it("builds a selector-free top-level replacement request", () => {
+    const request = buildWorkflowExperimentRequest({
+      manifest: workflowManifest(),
+      fromNodeId: "prepare",
+      mode: "replace_workflow_input",
+      simulatedOutput: "",
+      replacementInput: "",
+      replacementWorkflowInput: '{"request":"replacement"}',
+      replaceModel: true,
+      canReplaceModel: true,
+      selectedModelKey: "faux/model",
+    });
+    expect(request).toEqual({
+      manifest: workflowManifest(),
+      mode: "replace_workflow_input",
+      replacementWorkflowInput: { request: "replacement" },
+    });
+    expect("fromNodeId" in request).toBe(false);
+    expect("modelOverrides" in request).toBe(false);
   });
 });
 
