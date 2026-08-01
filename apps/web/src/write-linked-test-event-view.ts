@@ -15,6 +15,11 @@ export interface WriteLinkedTestEventTraceView {
   writeLinkedChangedSymbolCount?: number;
   writeLinkedChangedSymbolsTruncated?: boolean;
   writeLinkedScannedFileCount?: number;
+  writeLinkedConfigurationFileCount?: number;
+  writeLinkedWorkspacePackageCount?: number;
+  writeLinkedPathAliasCount?: number;
+  writeLinkedWorkspacePackageEdgeCount?: number;
+  writeLinkedPathAliasEdgeCount?: number;
   writeLinkedCandidateTestCount?: number;
   writeLinkedSelectedTestCount?: number;
   writeLinkedOmittedTestCount?: number;
@@ -41,10 +46,29 @@ export function writeLinkedTestEventEvidence(
   value: unknown,
 ): WriteLinkedTestEventTraceView | undefined {
   if (!record(value)) return undefined;
+  const schemaVersion = value["schemaVersion"];
   const status = writeLinkedStatus(value["status"]);
   const changedFileCount = integer(value["changedFileCount"], 1, 32);
   const changedSymbolCount = integer(value["changedSymbolCount"], 0, 16_384);
   const scannedFileCount = integer(value["scannedFileCount"], 0, 1_000);
+  const configurationFileCount =
+    schemaVersion === 2
+      ? integer(value["configurationFileCount"], 0, 128)
+      : undefined;
+  const workspacePackageCount =
+    schemaVersion === 2
+      ? integer(value["workspacePackageCount"], 0, 64)
+      : undefined;
+  const pathAliasCount =
+    schemaVersion === 2 ? integer(value["pathAliasCount"], 0, 128) : undefined;
+  const workspacePackageEdgeCount =
+    schemaVersion === 2
+      ? integer(value["workspacePackageEdgeCount"], 0, 5_000)
+      : undefined;
+  const pathAliasEdgeCount =
+    schemaVersion === 2
+      ? integer(value["pathAliasEdgeCount"], 0, 5_000)
+      : undefined;
   const candidateTestCount = integer(value["candidateTestCount"], 0, 1_000);
   const selectedTestCount = integer(value["selectedTestCount"], 0, 8);
   const omittedTestCount = integer(value["omittedTestCount"], 0, 1_000);
@@ -56,7 +80,7 @@ export function writeLinkedTestEventEvidence(
   const durationMs = integer(value["durationMs"], 0, 180_000);
   if (
     value["kind"] !== "napier.write-linked-test-verification" ||
-    value["schemaVersion"] !== 1 ||
+    (schemaVersion !== 1 && schemaVersion !== 2) ||
     !status ||
     changedFileCount === undefined ||
     changedSymbolCount === undefined ||
@@ -65,6 +89,13 @@ export function writeLinkedTestEventEvidence(
     selectedTestCount === undefined ||
     omittedTestCount === undefined ||
     unresolvedImportCount === undefined ||
+    (schemaVersion === 2 &&
+      (configurationFileCount === undefined ||
+        workspacePackageCount === undefined ||
+        pathAliasCount === undefined ||
+        workspacePackageEdgeCount === undefined ||
+        pathAliasEdgeCount === undefined ||
+        workspacePackageEdgeCount + pathAliasEdgeCount > 5_000)) ||
     durationMs === undefined ||
     typeof value["graphTruncated"] !== "boolean" ||
     typeof value["changedSymbolsTruncated"] !== "boolean" ||
@@ -108,6 +139,21 @@ export function writeLinkedTestEventEvidence(
     writeLinkedChangedSymbolCount: changedSymbolCount,
     writeLinkedChangedSymbolsTruncated: value["changedSymbolsTruncated"],
     writeLinkedScannedFileCount: scannedFileCount,
+    ...(configurationFileCount !== undefined
+      ? { writeLinkedConfigurationFileCount: configurationFileCount }
+      : {}),
+    ...(workspacePackageCount !== undefined
+      ? { writeLinkedWorkspacePackageCount: workspacePackageCount }
+      : {}),
+    ...(pathAliasCount !== undefined
+      ? { writeLinkedPathAliasCount: pathAliasCount }
+      : {}),
+    ...(workspacePackageEdgeCount !== undefined
+      ? { writeLinkedWorkspacePackageEdgeCount: workspacePackageEdgeCount }
+      : {}),
+    ...(pathAliasEdgeCount !== undefined
+      ? { writeLinkedPathAliasEdgeCount: pathAliasEdgeCount }
+      : {}),
     writeLinkedCandidateTestCount: candidateTestCount,
     writeLinkedSelectedTestCount: selectedTestCount,
     writeLinkedOmittedTestCount: omittedTestCount,
@@ -146,6 +192,15 @@ export function writeLinkedTestSummaryParts(
       : []),
     ...(view.writeLinkedScannedFileCount !== undefined
       ? [`scanned-files ${view.writeLinkedScannedFileCount}`]
+      : []),
+    ...(view.writeLinkedWorkspacePackageEdgeCount
+      ? [`workspace-package-edges ${view.writeLinkedWorkspacePackageEdgeCount}`]
+      : []),
+    ...(view.writeLinkedPathAliasEdgeCount
+      ? [`path-alias-edges ${view.writeLinkedPathAliasEdgeCount}`]
+      : []),
+    ...(view.writeLinkedConfigurationFileCount !== undefined
+      ? [`resolution-configs ${view.writeLinkedConfigurationFileCount}`]
       : []),
     ...(view.writeLinkedGraphTruncated ? ["test-selection-incomplete"] : []),
     ...(view.writeLinkedDurationMs !== undefined

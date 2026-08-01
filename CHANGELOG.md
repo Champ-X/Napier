@@ -6,6 +6,45 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added monorepo-aware write-linked test verification. Existing nearest-package
+  relative-import selection remains compatible, while a bounded root workspace
+  graph can now resolve unique declared package names/subpaths and safe
+  `tsconfig.paths` aliases across packages. Resolution reads only canonical,
+  non-symlinked UTF-8 `package.json` and `tsconfig.json` plus relative JSON
+  `extends`: at most 64 packages, 128 alias applications, and 128
+  loaded-or-missing config path bindings, with 4 MiB total loaded bytes and
+  1 MiB per file. Inherited aliases retain their child-project applicability
+  while targets remain relative to the declaring config; exact and
+  more-specific patterns win. Unsupported globs, duplicate names, JS/package
+  config inheritance, missing/cyclic or combined child `extends` + `paths`
+  inheritance, absolute or escaping aliases, protected targets, unsafe files,
+  and resource exhaustion make selection incomplete. Relative, package, and
+  alias edges remain inside the existing 1,000-file/32 MiB/5,000-edge graph;
+  unresolved imports and parse errors invalidate only a reverse-reachable
+  branch, so unrelated broken packages no longer poison proved coverage.
+  Manifests, tsconfigs, and probed missing config paths enter the same pre/post
+  selection snapshot, making a passing test `drifted` if resolution config
+  changes or appears. Schema-v2 nested write evidence adds only
+  config/package/alias/edge counts while package names, specifiers,
+  config/test/source paths and bodies, symbols, and output remain live-only;
+  Web still accepts schema v1. Real built-Runtime Dogfood changed a
+  temporary core package in the actual Napier monorepo, scanned 858 sources and
+  16 configs across eight packages, resolved 628 package edges, selected one
+  app test, and passed real Vitest in 3.65 seconds with complete cleanup.
+  Agent and HTTP/SSE paths execute the same cross-package selection and retain
+  valid Replay/privacy boundaries. The opt-in macOS smoke reaches the exact
+  target but remains fail-closed at `sandbox-exec` exit 71 in this nested IDE;
+  no host fallback is used. Config file binding, workspace discovery, config
+  interpretation, and module resolution are isolated in 158-, 141-, 414-, and
+  257-line modules; Store, Server, and Agent Runtime gain no new state or
+  route. The complete gate passes 1,659
+  regular tests with 29 opt-in live tests skipped, 255 OpenAPI routes, and
+  244/244 compatibility operations. Product performance remains within budget
+  at 657.4 ms to first CLI event, 804.3 ms to first token, 1,111.7 ms to
+  completion, 0.3 ms read p95, 6.9 ms for a 1,000-event projection, and
+  753.664 closed SQLite bytes/event. The 92-file Web dist main entry remains
+  130.32 KiB under its 150 KiB limit, bound to `abb77d087f0bb38c`; the
+  seven-artifact release set is bound to `790056a9f0e80195`.
 - Added external source-map debugging to the existing Run-owned Node DAP
   session. `node_debugger` keeps direct JavaScript and Node-executable
   TypeScript launches compatible, while compiled TypeScript can now bind an

@@ -43,23 +43,32 @@ describeLive("live write-linked test smoke", () => {
       `.write-linked-live-${suffix}`,
     );
     workspaceFixtures.push(fixtureRoot);
+    const coreRoot = path.join(fixtureRoot, "core");
+    const appRoot = path.join(fixtureRoot, "app");
     const sourcePath = path
-      .relative(workspaceRoot, path.join(fixtureRoot, "value.ts"))
+      .relative(workspaceRoot, path.join(coreRoot, "src/value.ts"))
       .split(path.sep)
       .join("/");
     const testPath = path
-      .relative(workspaceRoot, path.join(fixtureRoot, "value.test.ts"))
+      .relative(workspaceRoot, path.join(appRoot, "test/value.test.ts"))
       .split(path.sep)
       .join("/");
     const source = "export const liveLinkedValue = 2 + 2;\n";
-    await mkdir(fixtureRoot, { recursive: true });
     await Promise.all([
-      writeFile(path.join(fixtureRoot, "value.ts"), source),
+      mkdir(path.join(coreRoot, "src"), { recursive: true }),
+      mkdir(path.join(appRoot, "test"), { recursive: true }),
+    ]);
+    await Promise.all([
       writeFile(
-        path.join(fixtureRoot, "value.test.ts"),
+        path.join(coreRoot, "package.json"),
+        JSON.stringify({ name: `@napier-live/core-${suffix}` }),
+      ),
+      writeFile(path.join(coreRoot, "src/value.ts"), source),
+      writeFile(
+        path.join(appRoot, "test/value.test.ts"),
         [
           'import { expect, test } from "vitest";',
-          'import { liveLinkedValue } from "./value.js";',
+          'import { liveLinkedValue } from "../../core/src/value.js";',
           'test("live linked value", () => expect(liveLinkedValue).toBe(4));',
           "",
         ].join("\n"),

@@ -244,7 +244,9 @@ export function resolveWriteLinkedWorkspaceModule(
     path.posix.join(path.posix.dirname(importer), specifier),
   );
   if (base === ".." || base.startsWith("../")) return undefined;
-  return moduleCandidates(base).find((candidate) => byPath.has(candidate));
+  return writeLinkedModuleCandidates(base).find((candidate) =>
+    byPath.has(candidate),
+  );
 }
 
 export function unresolvedWriteLinkedCodeImport(
@@ -339,7 +341,7 @@ export class WriteLinkedTestSourceDriftError extends Error {
   }
 }
 
-function moduleCandidates(base: string): string[] {
+export function writeLinkedModuleCandidates(base: string): string[] {
   const extension = path.posix.extname(base).toLowerCase();
   const candidates = new Set<string>();
   if (SOURCE_EXTENSION_SET.has(extension)) {

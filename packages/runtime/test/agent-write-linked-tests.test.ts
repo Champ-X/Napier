@@ -39,24 +39,41 @@ describe("Agent write-linked test verification", () => {
     );
     temporaryRoots.push(root);
     const workspaceRoot = path.join(root, "workspace");
-    const sourcePath = "src/private-calculator.ts";
-    const testPath = "test/private-calculator.test.ts";
+    const sourcePath = "packages/core/src/index.ts";
+    const testPath = "packages/app/test/private-calculator.test.ts";
     const source = "export const privateTotal = 2 + 2;\n";
     const updated = "export const privateTotal = 2 + 3;\n";
     await Promise.all([
-      mkdir(path.join(workspaceRoot, "src"), { recursive: true }),
-      mkdir(path.join(workspaceRoot, "test"), { recursive: true }),
+      mkdir(path.join(workspaceRoot, "packages/core/src"), { recursive: true }),
+      mkdir(path.join(workspaceRoot, "packages/app/src"), { recursive: true }),
+      mkdir(path.join(workspaceRoot, "packages/app/test"), { recursive: true }),
       mkdir(path.join(workspaceRoot, "node_modules/vitest"), {
         recursive: true,
       }),
     ]);
     await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "package.json"),
+        JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      ),
+      writeFile(
+        path.join(workspaceRoot, "packages/core/package.json"),
+        JSON.stringify({ name: "@fixture/core" }),
+      ),
+      writeFile(
+        path.join(workspaceRoot, "packages/app/package.json"),
+        JSON.stringify({ name: "@fixture/app" }),
+      ),
       writeFile(path.join(workspaceRoot, sourcePath), source),
+      writeFile(
+        path.join(workspaceRoot, "packages/app/src/calculator.ts"),
+        'import { privateTotal } from "@fixture/core"; export const observedPrivateTotal = privateTotal;\n',
+      ),
       writeFile(
         path.join(workspaceRoot, testPath),
         [
-          'import { privateTotal } from "../src/private-calculator.js";',
-          "export const observedPrivateTotal = privateTotal;",
+          'import { observedPrivateTotal } from "../src/calculator.js";',
+          "export const testedPrivateTotal = observedPrivateTotal;",
           "",
         ].join("\n"),
       ),
@@ -94,6 +111,7 @@ describe("Agent write-linked test verification", () => {
         expect(messages).toContain("Write-linked tests: passed");
         expect(messages).toContain(testPath);
         expect(messages).toContain("privateTotal");
+        expect(messages).toContain("Workspace package edges: 1");
         return fauxAssistantMessage("The relevant tests passed.");
       },
       fauxAssistantMessage('{"facts":[]}'),
@@ -129,10 +147,15 @@ describe("Agent write-linked test verification", () => {
         details: expect.objectContaining({
           tests: expect.objectContaining({
             kind: "napier.write-linked-test-verification",
+            schemaVersion: 2,
             status: "passed",
             changedFileCount: 1,
             changedSymbolCount: 1,
             selectedTestCount: 1,
+            configurationFileCount: 3,
+            workspacePackageCount: 2,
+            workspacePackageEdgeCount: 1,
+            pathAliasEdgeCount: 0,
             graphTruncated: false,
             resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
           }),

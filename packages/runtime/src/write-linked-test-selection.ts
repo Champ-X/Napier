@@ -1,14 +1,17 @@
-import { realpath, stat } from "node:fs/promises";
+import { realpath } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  createWriteLinkedModuleResolution,
+  observeWriteLinkedResolutionConfigurations,
+} from "./write-linked-module-resolution.js";
 import {
   isWriteLinkedTestFile,
   MAX_WRITE_LINKED_IMPORT_EDGES,
   MAX_WRITE_LINKED_TESTS,
   normalizeWriteLinkedPath,
   readWriteLinkedSource,
-  resolveWriteLinkedWorkspaceModule,
   scanWriteLinkedSources,
   supportsWriteLinkedTests,
   unresolvedWriteLinkedCodeImport,
@@ -51,6 +54,12 @@ export interface WriteLinkedTestSelection {
   changedSymbolsTruncated: boolean;
   selectedTests: string[];
   scanRootPaths: string[];
+  configurationPaths: string[];
+  configurationFileCount: number;
+  workspacePackageCount: number;
+  pathAliasCount: number;
+  workspacePackageEdgeCount: number;
+  pathAliasEdgeCount: number;
   scannedFileCount: number;
   candidateTestCount: number;
   omittedTestCount: number;
@@ -96,11 +105,16 @@ export async function selectWriteLinkedTests(input: {
   validateChangedFiles(input.changedFiles);
   const ts = await import("typescript");
   const workspaceRoot = await realpath(path.resolve(input.workspaceRoot));
-  const scanRoots = await resolveScanRoots(workspaceRoot, input.changedFiles);
+  const resolution = await createWriteLinkedModuleResolution(
+    ts,
+    workspaceRoot,
+    input.changedFiles.map((file) => normalizeWriteLinkedPath(file.path)),
+  );
+  const scanRoots = resolution.scanRoots;
   const scan = await scanWriteLinkedSources(ts, workspaceRoot, scanRoots);
   const byPath = new Map(scan.sources.map((source) => [source.path, source]));
   const changedSources: WriteLinkedScannedSource[] = [];
-  let graphTruncated = scan.truncated;
+  let graphTruncated = scan.truncated || resolution.truncated;
   for (const changed of input.changedFiles) {
     let source = byPath.get(normalizeWriteLinkedPath(changed.path));
     if (!source) {
@@ -121,9 +135,14 @@ export async function selectWriteLinkedTests(input: {
     changedSources.push(source);
   }
 
-  const edges: Array<{ importer: string; imported: string }> = [];
+  const edges: Array<{
+    importer: string;
+    imported: string;
+    kind: "relative" | "workspace_package" | "path_alias";
+  }> = [];
   const reverseDependencies = new Map<string, Set<string>>();
-  let unresolvedImportCount = 0;
+  const unresolvedByImporter = new Map<string, number>();
+  const parseInvalidPaths = new Set<string>();
   edgeLoop: for (const source of scan.sources) {
     const sourceFile = ts.createSourceFile(
       source.path,
@@ -133,36 +152,51 @@ export async function selectWriteLinkedTests(input: {
       source.scriptKind,
     );
     if (writeLinkedParseDiagnosticCount(sourceFile) > 0) {
-      graphTruncated = true;
+      parseInvalidPaths.add(source.path);
     }
     for (const specifier of writeLinkedModuleSpecifiers(ts, sourceFile)) {
-      const imported = resolveWriteLinkedWorkspaceModule(
-        source.path,
-        specifier,
-        byPath,
-      );
+      const imported = resolution.resolve(source.path, specifier, byPath);
       if (!imported) {
-        if (unresolvedWriteLinkedCodeImport(source.path, specifier)) {
-          unresolvedImportCount += 1;
+        if (
+          unresolvedWriteLinkedCodeImport(source.path, specifier) ||
+          resolution.recognizesWorkspaceSpecifier(source.path, specifier)
+        ) {
+          unresolvedByImporter.set(
+            source.path,
+            (unresolvedByImporter.get(source.path) ?? 0) + 1,
+          );
         }
         continue;
       }
-      edges.push({ importer: source.path, imported });
-      const importers = reverseDependencies.get(imported) ?? new Set<string>();
+      edges.push({
+        importer: source.path,
+        imported: imported.path,
+        kind: imported.kind,
+      });
+      const importers =
+        reverseDependencies.get(imported.path) ?? new Set<string>();
       importers.add(source.path);
-      reverseDependencies.set(imported, importers);
+      reverseDependencies.set(imported.path, importers);
       if (edges.length >= MAX_WRITE_LINKED_IMPORT_EDGES) {
         graphTruncated = true;
         break edgeLoop;
       }
     }
   }
-  if (unresolvedImportCount > 0) graphTruncated = true;
-
   const reachable = reverseReachable(
     changedSources.map((source) => source.path),
     reverseDependencies,
   );
+  const unresolvedImportCount = [...reachable].reduce(
+    (count, candidate) => count + (unresolvedByImporter.get(candidate) ?? 0),
+    0,
+  );
+  if (
+    unresolvedImportCount > 0 ||
+    [...reachable].some((candidate) => parseInvalidPaths.has(candidate))
+  ) {
+    graphTruncated = true;
+  }
   const relevantTests = [...reachable]
     .filter(isWriteLinkedTestFile)
     .sort((left, right) => left.localeCompare(right));
@@ -189,6 +223,7 @@ export async function selectWriteLinkedTests(input: {
     .map((edge) => ({
       importerPathSha256: sha256(edge.importer),
       importedPathSha256: sha256(edge.imported),
+      resolutionKind: edge.kind,
     }))
     .sort((left, right) =>
       canonicalJson(left).localeCompare(canonicalJson(right)),
@@ -197,6 +232,20 @@ export async function selectWriteLinkedTests(input: {
     pathSha256: sha256(testPath),
     fileSha256: byPath.get(testPath)!.fileSha256,
   }));
+  const configurationByPath = new Map(
+    resolution.configurationFiles.map((configuration) => [
+      configuration.path,
+      configuration,
+    ]),
+  );
+  const configurationReceipts = resolution.configurationPaths.map(
+    (configurationPath) => ({
+      pathSha256: sha256(configurationPath),
+      fileSha256:
+        configurationByPath.get(configurationPath)?.fileSha256 ??
+        sha256("missing"),
+    }),
+  );
   return {
     complete: !graphTruncated,
     changedFiles,
@@ -206,6 +255,15 @@ export async function selectWriteLinkedTests(input: {
     scanRootPaths: scanRoots.map((root) =>
       normalizeWriteLinkedPath(path.relative(workspaceRoot, root) || "."),
     ),
+    configurationPaths: resolution.configurationPaths,
+    configurationFileCount: resolution.configurationFiles.length,
+    workspacePackageCount: resolution.workspacePackageCount,
+    pathAliasCount: resolution.pathAliasCount,
+    workspacePackageEdgeCount: edges.filter(
+      (edge) => edge.kind === "workspace_package",
+    ).length,
+    pathAliasEdgeCount: edges.filter((edge) => edge.kind === "path_alias")
+      .length,
     scannedFileCount: scan.sources.length,
     candidateTestCount: scan.sources.filter((source) =>
       isWriteLinkedTestFile(source.path),
@@ -233,7 +291,11 @@ export async function selectWriteLinkedTests(input: {
     dependencyGraphSha256: sha256(canonicalJson(edgeReceipts)),
     selectedTestSetSha256: sha256(canonicalJson(selectedReceipts)),
     selectionSnapshotSha256: sha256(
-      canonicalJson({ truncated: scan.truncated, files: fileReceipts }),
+      canonicalJson({
+        truncated: scan.truncated,
+        files: fileReceipts,
+        configurations: configurationReceipts,
+      }),
     ),
   };
 }
@@ -241,6 +303,7 @@ export async function selectWriteLinkedTests(input: {
 export async function observeWriteLinkedSelectionSnapshot(
   workspaceRootInput: string,
   scanRootPaths: string[],
+  configurationPaths: string[],
 ): Promise<string> {
   const ts = await import("typescript");
   const workspaceRoot = await realpath(path.resolve(workspaceRootInput));
@@ -249,6 +312,10 @@ export async function observeWriteLinkedSelectionSnapshot(
     workspaceRoot,
     scanRootPaths.map((root) => path.resolve(workspaceRoot, root)),
   );
+  const configurations = await observeWriteLinkedResolutionConfigurations(
+    workspaceRoot,
+    configurationPaths,
+  );
   return sha256(
     canonicalJson({
       truncated: scan.truncated,
@@ -256,56 +323,12 @@ export async function observeWriteLinkedSelectionSnapshot(
         pathSha256: sha256(source.path),
         fileSha256: source.fileSha256,
       })),
+      configurations: configurations.map((configuration) => ({
+        pathSha256: sha256(configuration.path),
+        fileSha256: configuration.fileSha256,
+      })),
     }),
   );
-}
-
-async function resolveScanRoots(
-  workspaceRoot: string,
-  changedFiles: WriteLinkedChangedFile[],
-): Promise<string[]> {
-  const roots = [];
-  for (const file of changedFiles) {
-    let current = path.dirname(
-      path.resolve(workspaceRoot, normalizeWriteLinkedPath(file.path)),
-    );
-    while (
-      current === workspaceRoot ||
-      current.startsWith(`${workspaceRoot}${path.sep}`)
-    ) {
-      if (await isRegularFile(path.join(current, "package.json"))) {
-        roots.push(current);
-        break;
-      }
-      if (current === workspaceRoot) {
-        roots.push(workspaceRoot);
-        break;
-      }
-      current = path.dirname(current);
-    }
-  }
-  return [...new Set(roots)].filter(
-    (candidate, index, all) =>
-      !all.some(
-        (other, otherIndex) =>
-          otherIndex !== index && candidate.startsWith(`${other}${path.sep}`),
-      ),
-  );
-}
-
-async function isRegularFile(candidate: string): Promise<boolean> {
-  try {
-    return (await stat(candidate)).isFile();
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      "code" in error &&
-      String(error.code) === "ENOENT"
-    ) {
-      return false;
-    }
-    throw error;
-  }
 }
 
 export class WriteLinkedTestSelectionDriftError extends Error {

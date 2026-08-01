@@ -21,7 +21,7 @@ Audit date: 2026-08-01
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0 architecture and baseline      | In progress    | A checked local product-path budget now covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Split Server and Store by domain; extend budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, and explicitly preauthorized failed-write compensation now exist. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, a guardian, proved orphan cleanup, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics/relevant tests, nearest-package write-linked test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step plus external single-source v3 maps for compiled TypeScript exist; broader Code Action kinds, DAP attach/multi-thread UX, inline or bundled source maps, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                                                                                                                                                                                                                                                                                                                      |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests across relative/workspace-package/path-alias imports with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step plus external single-source v3 maps for compiled TypeScript exist; broader Code Action kinds, DAP attach/multi-thread UX, inline or bundled source maps, broader AST transforms and build configurations, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                                                                                                                                                                                                                                                                                                          |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint-only tests with durable successor holds, typed checkpoint output simulation, typed selected-checkpoint constructed-input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript definition/execution SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, graph-level branch pruning, write-capable Map/Loop, compensation, top-level Workflow input replacement, write/session side-effect simulation, richer interactive step controls, external adapters, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 single-node execution runs one selected checkpoint and durably pauses direct successors, schema-3 simulation Schema-validates and materializes one typed selected-node output before the ordinary scheduler executes descendants, and schema-4 replacement Schema-validates one complete constructed checkpoint input before ordinary selected-node and descendant execution. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools also support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target output comparison. Stateful or write tool checkpoints/result simulation, top-level Workflow input replacement, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                             |
@@ -30,6 +30,104 @@ Audit date: 2026-08-01
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+## Implemented Slice: Monorepo-Aware Write-Linked Tests
+
+User scenario: a Coding Agent changes a library package and Napier
+automatically follows a declared workspace package import or safe
+`tsconfig.paths` alias into another package, selects the real reverse-dependent
+test, and executes only that target instead of incorrectly returning
+`no_match`.
+
+Acceptance:
+
+- preserve nearest-`package.json` scanning for ordinary projects, but when the
+  canonical root manifest declares supported workspaces, scan one bounded root
+  graph that can cross package boundaries;
+- discover at most 64 canonical workspace packages from exact segments and
+  single-segment `*` patterns; reject `**`, negation, symlinked directories,
+  duplicate package names, malformed manifests, and over-limit discovery;
+- bind canonical `package.json`, root/package `tsconfig.json`, and relative
+  JSON `extends` chains under 128 loaded-or-missing path bindings, 1 MiB per
+  loaded file, and 4 MiB total loaded bytes; reject JavaScript/package config
+  inheritance, cycles, symlinks, invalid UTF-8, absolute/escaping `baseUrl`,
+  combined child `extends` + `paths` overrides, protected targets, and more
+  than 128 alias applications;
+- resolve relative imports as before, plus unique workspace package
+  names/subpaths and one-wildcard `compilerOptions.paths` only to source files
+  already admitted by the bounded workspace scan; inherited aliases retain the
+  child-project applicability root while targets remain relative to their
+  declaring config, and exact or more-specific patterns win;
+- distinguish relative, workspace-package, and path-alias edges in the
+  dependency graph; count unresolved imports and parse failures only for the
+  reverse-reachable changed branch, so unrelated broken packages do not poison
+  proved evidence;
+- retain the existing 1,000-file, 32 MiB, 5,000-edge, 512-symbol/file,
+  eight-test, 60-second, two-worker, read-only/offline Vitest limits;
+- include exact resolution configuration hashes and probed missing paths in
+  the pre/post selection snapshot, so a passing test becomes `drifted` if a
+  manifest or tsconfig changes or appears during execution;
+- project schema-v2 config/package/alias/edge counts through the existing
+  nested write receipt, Agent, HTTP/SSE, Replay, Model Advisor, and strict Web
+  Trace while retaining schema-v1 browser compatibility and no new route or
+  write state.
+
+Threat boundary:
+
+- manifests and tsconfigs are untrusted data, not executable configuration.
+  Napier never runs package scripts, loads JS config, imports modules to build
+  the graph, follows `node_modules`, or resolves outside the canonical
+  workspace;
+- a supported alias grants only a static edge to an already scanned source
+  file. It grants no file read beyond existing scan limits, package install,
+  command, network, test expansion, or workspace write authority;
+- missing optional configs may be absent, but unsafe configs are distinct from
+  missing. Symlink, oversize, invalid text, unsupported inheritance, glob or
+  alias ambiguity, admission exhaustion, config drift, unresolved reachable
+  import, parse failure, or omitted test makes coverage incomplete and
+  suppresses execution;
+- `passed` still proves only the selected bounded reverse-dependent tests, not
+  a full typecheck or suite. Cancellation, Sandbox unavailability, timeout,
+  output cap, non-zero exit, or source/config drift remain fail-visible after
+  the write.
+
+Observed result:
+
+- independent built-Runtime Dogfood created two temporary packages inside the
+  real Napier workspace, used a standard workspace symlink for
+  `@dogfood/core`, changed the core source, scanned 858 admitted files and 16
+  resolution configs across eight packages, resolved 628 package-name edges,
+  selected exactly one app test, and passed real Vitest in 3.65 seconds; all
+  temporary files were removed;
+- deterministic Agent and public HTTP/SSE tests now patch a core package,
+  follow `@fixture/core`, expose the selected app test live-only, retain
+  schema-v2 counts and valid portable Replay, and persist no package name,
+  config/test/source path, symbol, patch, or output body;
+- focused selection tests cover workspace package names, inherited path
+  aliases from nested base configs, overlapping-pattern specificity, unrelated
+  broken packages, escaping aliases, unsupported globs, symlinked configs,
+  missing/cyclic inheritance, changed source, declaration truncation, broad
+  test sets, loaded-plus-missing config admission, and nearest-package
+  compatibility. Independent config tests enforce missing/unsafe
+  classification plus the shared 128-path/4 MiB admission; verification tests
+  prove source drift, existing-config drift, missing-config appearance,
+  cancellation, unavailable Sandbox, failure, timeout, and output cap;
+- the opt-in real macOS Sandbox smoke reaches the correct 858-file
+  cross-package selection and one real Vitest target, then remains
+  `unavailable` under this nested IDE's existing `sandbox-exec` exit 71. No
+  host fallback exists;
+- configuration file binding, workspace discovery, config interpretation, and
+  module resolution live in focused 158-, 141-, 414-, and 257-line modules.
+  Existing Store, Server, Agent Runtime, and write transaction modules gain no
+  state machine, route, or execution loop.
+- complete `npm run check` passes 1,659 regular tests with 29 opt-in live tests
+  skipped, 255 OpenAPI routes, 244/244 compatibility operations, and every
+  TypeScript/Web build. Product performance remains within budget at 657.4 ms
+  to first CLI event, 804.3 ms to first token, 1,111.7 ms to completion,
+  0.3 ms read p95, 6.9 ms for a 1,000-event projection, and 753.664 closed
+  SQLite bytes/event. The 92-file Web dist main entry remains 130.32 KiB under
+  its 150 KiB limit, bound to `abb77d087f0bb38c`; the seven-artifact release
+  set is bound to `790056a9f0e80195`.
 
 ## Implemented Slice: External Source-Map Node Debugging
 
@@ -2051,10 +2149,11 @@ Acceptance:
 
 Threat boundary:
 
-- static selection covers relative TS/JS imports inside the nearest package
-  scope. Package aliases, project references, runtime-generated imports, root
-  integration tests, and semantic behavior not represented by that graph
-  require explicit broader verification;
+- this original slice covered relative TS/JS imports inside the nearest package
+  scope. The later monorepo-aware slice adds declared workspace package names
+  and safe `tsconfig.paths`; project references beyond those mappings,
+  runtime-generated imports, and semantic behavior not represented by the
+  graph still require explicit broader verification;
 - `no_match` means no test was reachable in the complete bounded graph, not
   that the project is tested. Any unresolved relative code import, parse error,
   cap, or omitted test is `selection_incomplete` and does not execute;

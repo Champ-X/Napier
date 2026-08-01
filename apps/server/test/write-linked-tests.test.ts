@@ -37,21 +37,38 @@ describe("write-linked tests HTTP Agent path", () => {
     );
     temporaryRoots.push(root);
     const workspaceRoot = path.join(root, "workspace");
-    const sourcePath = "src/private-price.ts";
-    const testPath = "test/private-price.test.ts";
+    const sourcePath = "packages/core/src/index.ts";
+    const testPath = "packages/app/test/private-price.test.ts";
     const source = "export const privatePrice = 10;\n";
     await Promise.all([
-      mkdir(path.join(workspaceRoot, "src"), { recursive: true }),
-      mkdir(path.join(workspaceRoot, "test"), { recursive: true }),
+      mkdir(path.join(workspaceRoot, "packages/core/src"), { recursive: true }),
+      mkdir(path.join(workspaceRoot, "packages/app/src"), { recursive: true }),
+      mkdir(path.join(workspaceRoot, "packages/app/test"), { recursive: true }),
       mkdir(path.join(workspaceRoot, "node_modules/vitest"), {
         recursive: true,
       }),
     ]);
     await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "package.json"),
+        JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      ),
+      writeFile(
+        path.join(workspaceRoot, "packages/core/package.json"),
+        JSON.stringify({ name: "@fixture/core" }),
+      ),
+      writeFile(
+        path.join(workspaceRoot, "packages/app/package.json"),
+        JSON.stringify({ name: "@fixture/app" }),
+      ),
       writeFile(path.join(workspaceRoot, sourcePath), source),
       writeFile(
+        path.join(workspaceRoot, "packages/app/src/price.ts"),
+        'import { privatePrice } from "@fixture/core"; export const observedPrivatePrice = privatePrice;\n',
+      ),
+      writeFile(
         path.join(workspaceRoot, testPath),
-        'import { privatePrice } from "../src/private-price.js"; export const observed = privatePrice;\n',
+        'import { observedPrivatePrice } from "../src/price.js"; export const privatePriceTest = observedPrivatePrice;\n',
       ),
       writeFile(
         path.join(workspaceRoot, "node_modules/vitest/vitest.mjs"),
@@ -137,9 +154,13 @@ describe("write-linked tests HTTP Agent path", () => {
     );
     expect(record(record(patch?.payload)?.["details"])?.["tests"]).toEqual(
       expect.objectContaining({
+        schemaVersion: 2,
         status: "passed",
         selectedTestCount: 1,
         changedSymbolCount: 1,
+        workspacePackageCount: 2,
+        workspacePackageEdgeCount: 1,
+        pathAliasEdgeCount: 0,
       }),
     );
     const durable = JSON.stringify(events);

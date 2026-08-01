@@ -95,6 +95,7 @@ export class WriteLinkedTestVerificationRunner {
       const observedSnapshotSha256 = await observeWriteLinkedSelectionSnapshot(
         this.options.workspaceRoot,
         selection.scanRootPaths,
+        selection.configurationPaths,
       );
       const status: WriteLinkedTestVerificationStatus =
         observedSnapshotSha256 !== selection.selectionSnapshotSha256
@@ -105,7 +106,7 @@ export class WriteLinkedTestVerificationRunner {
       const base = {
         ...selectionDetails(selection),
         kind: "napier.write-linked-test-verification" as const,
-        schemaVersion: 1 as const,
+        schemaVersion: 2 as const,
         status,
         observedSnapshotSha256,
         verifierSha256: execution.verifierSha256,
@@ -157,7 +158,7 @@ function selectionOnlyResult(
   const base = {
     ...selectionDetails(selection),
     kind: "napier.write-linked-test-verification" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     status,
     durationMs: Math.max(0, Date.now() - startedAt),
   };
@@ -180,7 +181,7 @@ function failedObservation(
 ): WriteLinkedTestVerification {
   const base = {
     kind: "napier.write-linked-test-verification" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     status,
     ...(selection
       ? selectionDetails(selection)
@@ -230,6 +231,11 @@ function selectionDetails(
     changedSymbolCount: selection.changedSymbols.length,
     changedSymbolsTruncated: selection.changedSymbolsTruncated,
     scannedFileCount: selection.scannedFileCount,
+    configurationFileCount: selection.configurationFileCount,
+    workspacePackageCount: selection.workspacePackageCount,
+    pathAliasCount: selection.pathAliasCount,
+    workspacePackageEdgeCount: selection.workspacePackageEdgeCount,
+    pathAliasEdgeCount: selection.pathAliasEdgeCount,
     candidateTestCount: selection.candidateTestCount,
     selectedTestCount: selection.selectedTests.length,
     omittedTestCount: selection.omittedTestCount,
@@ -251,6 +257,11 @@ function emptySelectionDetails(
     changedSymbolCount: 0,
     changedSymbolsTruncated: true,
     scannedFileCount: 0,
+    configurationFileCount: 0,
+    workspacePackageCount: 0,
+    pathAliasCount: 0,
+    workspacePackageEdgeCount: 0,
+    pathAliasEdgeCount: 0,
     candidateTestCount: 0,
     selectedTestCount: 0,
     omittedTestCount: 0,
@@ -283,6 +294,11 @@ function formatWriteLinkedTestVerification(
     `Changed symbols: ${details.changedSymbolCount}`,
     `Changed symbols truncated: ${String(details.changedSymbolsTruncated)}`,
     `Scanned files: ${details.scannedFileCount}`,
+    `Resolution configs: ${details.configurationFileCount}`,
+    `Workspace packages: ${details.workspacePackageCount}`,
+    `Path aliases: ${details.pathAliasCount}`,
+    `Workspace package edges: ${details.workspacePackageEdgeCount}`,
+    `Path alias edges: ${details.pathAliasEdgeCount}`,
     `Candidate tests: ${details.candidateTestCount}`,
     `Selected tests: ${details.selectedTestCount}`,
     ...(selection.selectedTests.length > 0

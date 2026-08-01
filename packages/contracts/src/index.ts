@@ -4252,12 +4252,17 @@ export type WriteLinkedTestVerificationStatus =
 
 export interface WriteLinkedTestVerificationDetails {
   kind: "napier.write-linked-test-verification";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   status: WriteLinkedTestVerificationStatus;
   changedFileCount: number;
   changedSymbolCount: number;
   changedSymbolsTruncated: boolean;
   scannedFileCount: number;
+  configurationFileCount?: number;
+  workspacePackageCount?: number;
+  pathAliasCount?: number;
+  workspacePackageEdgeCount?: number;
+  pathAliasEdgeCount?: number;
   candidateTestCount: number;
   selectedTestCount: number;
   omittedTestCount: number;

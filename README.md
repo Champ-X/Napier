@@ -162,11 +162,12 @@ Version `0.1.0` includes:
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
 - automatic write-linked TypeScript/JavaScript test verification for
-  `apply_patch` and verified `lsp_rename_apply` writes when
-  `verify_workspace` is explicitly enabled: Napier scans the nearest package,
-  binds changed declarations and a bounded static relative-import graph,
-  executes up to eight reverse-dependent Vitest files in the same read-only,
-  offline Sandbox, and rejects stale post-run evidence;
+  `apply_patch` and verified LSP rename/quick-fix writes when
+  `verify_workspace` is explicitly enabled: Napier scans the nearest package
+  or declared monorepo workspace, binds changed declarations and a bounded
+  static relative/workspace-package/path-alias graph, executes up to eight
+  reverse-dependent Vitest files in the same read-only, offline Sandbox, and
+  rejects stale source or resolution-config evidence;
 - `lsp_diagnostics`, semantic `lsp_symbols`, `lsp_definition`,
   `lsp_references`, preview-bound `lsp_rename` / `lsp_rename_apply`, and
   quick-fix-only `lsp_code_actions` / `lsp_code_action_apply` tools that drive
@@ -2638,21 +2639,40 @@ behavior and launch no hidden process.
 
 When the same non-observe Agent also explicitly enables `verify_workspace`,
 `apply_patch` and a successfully committed, postcondition-verified
-`lsp_rename_apply` automatically select related TypeScript/JavaScript tests.
-Napier scans at most 1,000 files and 32 MiB under each changed file's nearest
-`package.json`, builds a bounded static graph from relative imports, associates
-before/after declaration hashes, and runs at most eight reverse-dependent
-`.test`/`.spec` files through the fixed workspace-local Vitest entrypoint.
-Declaration association is capped and reports truncation rather than silently
-claiming completeness. The Sandbox remains read-only and offline with a
-60-second timeout and bounded output.
+`lsp_rename_apply` or `lsp_code_action_apply` automatically select related
+TypeScript/JavaScript tests.
+For an ordinary package Napier retains the nearest-`package.json` scope. When
+the canonical root manifest declares bounded workspace patterns, it scans the
+root graph and resolves relative imports, unique declared workspace package
+names/subpaths, and safe `compilerOptions.paths` from root/package
+`tsconfig.json` files plus relative JSON `extends` chains. It never loads a
+JavaScript config, package script, external config package, or dependency code
+to build the graph.
 
-Only a complete selection, a zero Vitest exit, and an unchanged post-run source
-snapshot produce `passed`. Unresolved relative imports, parse/scan/edge limits,
-or omitted tests produce `selection_incomplete` and do not execute. `no_match`
-means only that the complete bounded relative-import graph found no dependent
-test; it is not project-wide verification. Cancellation, verifier
-unavailability, output limits, test failure, and external source drift remain
+The scan remains capped at 1,000 files, 32 MiB, 5,000 edges, 64 workspace
+packages, 128 path-alias applications, and 128 loaded-or-missing resolution
+path bindings. Loaded configuration is capped at 4 MiB total and 1 MiB per
+file. Each loaded manifest or tsconfig is canonical, no-follow, non-symlinked,
+valid UTF-8, and included in the same pre/post selection snapshot; probed
+missing paths are bound as missing so later creation is drift. Inherited path
+aliases apply to the child project while their targets remain relative to the
+declaring config, and exact or more-specific patterns win. Unsupported
+`**`/negated workspace globs, duplicate package names, absolute or escaping
+aliases, non-relative config inheritance, combined child `extends` + `paths`
+overrides, cycles, symlinks, config/source drift, or resource exhaustion make
+selection incomplete. Napier associates before/after declaration hashes and
+runs at most eight reverse-dependent `.test`/`.spec` files through the fixed
+workspace-local Vitest entrypoint. The Sandbox remains read-only and offline
+with a 60-second timeout and bounded output.
+
+Only a complete selection, a zero Vitest exit, and unchanged post-run
+source/config snapshots produce `passed`. Unresolved reachable workspace code
+imports, parse/scan/config/edge limits, or omitted tests produce
+`selection_incomplete` and do not execute. Unrelated packages' broken imports
+do not poison a proved reverse-reachable subgraph. `no_match` means only that
+the complete supported bounded graph found no dependent test; it is not
+project-wide verification. Cancellation, verifier unavailability, output
+limits, test failure, and external source/config drift remain
 distinct. Test paths, symbol names, output, and errors are live-only; Ledger,
 Replay, SSE, and Trace retain statuses, counts, latency, exit state, and
 hash-bound file/symbol/graph/test/snapshot evidence.

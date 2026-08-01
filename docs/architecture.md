@@ -3234,40 +3234,63 @@ Relevant-test verification extends the existing patch and coordinated-rename
 receipts; it is not a second write or event system:
 
 ```text
-frozen Agent enables apply_patch or lsp_rename_apply + verify_workspace
+frozen Agent enables apply_patch / lsp_*_apply + verify_workspace
   -> capture declaration hashes from the source bytes bound to the write
   -> commit through the existing single-file CAS or coordinated rename path
-  -> choose each changed file's nearest package.json scope
-  -> scan at most 1,000 TS/JS files and 32 MiB, excluding protected/generated roots
-  -> parse static relative imports and bind the bounded reverse-dependency graph
+  -> choose nearest package scope or a declared root workspace graph
+  -> bind canonical package.json + tsconfig.json / relative extends inputs
+  -> scan at most 1,000 TS/JS files and 32 MiB outside protected/generated roots
+  -> resolve relative, workspace-package, and safe tsconfig.paths imports
+  -> bind the bounded typed reverse-dependency graph
   -> associate up to 512 declarations per file by before/after content hash
      and mark declaration evidence truncated above that bound
   -> select at most eight reverse-reachable .test/.spec files
   -> require a complete graph before execution
   -> run exact targets through fixed workspace-local Vitest with
      process.spawn + workspace.read only
-  -> rescan the same package scopes after execution
-  -> accept passed only when selection and observed source snapshots match
+  -> rescan the same scopes and rehash resolution configs after execution
+  -> accept passed only when selection, source, and config snapshots match
   -> attach one privacy-bounded nested receipt to the existing write event
 ```
 
-The scan caps at 5,000 import edges and 1 MiB per source file. Parse failure,
-an unresolved relative code import, scan/byte/edge truncation, or more than
-eight related tests becomes `selection_incomplete`; tests do not run and the
-write remains visible. A complete graph with no reachable test becomes
-`no_match`, which is not a project-wide verification claim. Executed outcomes
-remain `passed`, `failed`, `timed_out`, or `output_capped`; cancellation,
-source drift, and unavailable Sandbox/verifier state remain distinct.
+`write-linked-resolution-files.ts` owns no-follow UTF-8 config reads plus the
+shared 128 loaded-or-missing path / 4 MiB loaded-byte admission budget.
+`write-linked-workspace-discovery.ts` discovers at most 64 packages from exact
+segments and single-segment `*` workspace patterns and rejects symlinks or
+unsupported globs.
+`write-linked-resolution-config.ts` rejects duplicate names,
+non-relative/cyclic inheritance or ambiguous child `extends` + `paths`
+overrides, and instantiates at most 128 bounded path aliases. Inherited aliases
+retain the child project's applicability root while targets remain relative to
+the config that declares them.
+`write-linked-module-resolution.ts` maps package names/subpaths and aliases to
+files already admitted by the source scan, preferring exact and
+more-specific path patterns; it never invokes TypeScript module loading,
+package scripts, JavaScript config, or Node resolution outside the workspace.
+
+The source scan additionally caps at 5,000 import edges and 1 MiB per source
+file. Parse failure or unresolved supported imports count only when their
+importer is reverse-reachable from a changed file, so an unrelated broken
+package does not poison a proved branch. A reachable unresolved import,
+unsupported/unsafe config, scan/byte/config/edge truncation, or more than eight
+related tests becomes `selection_incomplete`; tests do not run and the write
+remains visible. A complete graph with no reachable test becomes `no_match`,
+which is not a project-wide verification claim. Executed outcomes remain
+`passed`, `failed`, `timed_out`, or `output_capped`; cancellation,
+source/config drift, and unavailable Sandbox/verifier state remain distinct.
 
 The child process receives fixed Vitest arguments, a 60-second timeout, two
 workers, no network, no workspace writes, and no inherited environment. This
 capability exists only when the write and `verify_workspace` tools are both
 enabled under a non-observe, non-restricted execution policy. The live Agent
 sees selected paths, changed symbol identities, and bounded test output.
-Durable Ledger, Replay, SSE, and Trace evidence contains only statuses, counts,
-exit state, truncation, latency, and hashes of the changed file/symbol sets,
-dependency graph, selected test set, verifier, output, errors, and pre/post
-snapshots.
+Durable Ledger, Replay, SSE, and Trace schema-v2 evidence contains only
+statuses, package/alias/config/edge counts, exit state, truncation, latency,
+and hashes of the changed file/symbol sets, typed dependency graph, selected
+test set, verifier, output, errors, and pre/post snapshots. Package names,
+manifest/config paths and bodies, import specifiers, test paths, and output
+remain live-only. Web retains schema-v1 compatibility and independently
+requires all schema-v2 resolution counts.
 
 ## Workspace File Lifecycle Flow
 
@@ -6043,10 +6066,10 @@ The current boundary has sixty-four parts:
     same-filesystem staging/backups, verified rollback, bounded before/after
     diagnostics, explicit indeterminate outcomes, and body-free Trace evidence.
 47. Write-linked TypeScript/JavaScript relevant-test verification with
-    nearest-package bounded static dependency graphs, changed-declaration
-    association, exact read-only/offline Vitest targets, post-run source
-    freshness, Agent/HTTP/Replay/Trace integration, and path/output-free durable
-    evidence.
+    nearest-package or declared-workspace bounded static dependency graphs,
+    changed-declaration association, exact read-only/offline Vitest targets,
+    post-run source/config freshness, Agent/HTTP/Replay/Trace integration, and
+    path/output-free durable evidence.
 48. A versioned local stdio JSON-RPC Agent and typed Workflow entry with strict
     bounded framing, request-bound Ledger notifications, hash-bound Approval
     answer-and-resume, preview-bound Workflow checkpoint experiments, shared
@@ -6137,6 +6160,12 @@ The current boundary has sixty-four parts:
     inside the private adapter, original-coordinate breakpoints and stack/step
     frames, complete three-file freshness, schema-v2 Agent/HTTP/Web/Replay
     evidence, and no compiler, network, Inspector TCP, or write authority.
+66. Monorepo-aware write-linked test selection over declared workspace package
+    names and safe TypeScript path aliases, with bounded no-follow
+    loaded-or-missing config discovery, inherited project applicability,
+    typed reverse edges, reachable-only incompleteness, exact config freshness,
+    real cross-package Vitest execution, and path/body-free Agent/HTTP/Web/
+    Replay evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6183,8 +6212,8 @@ deferred until the local P0-P9 product loop is stable.
 
 - broader Code Action kinds, Node attach/multi-thread DAP, inline or bundled
   source-map coverage and debugger UX, broader multi-node AST transforms,
-  cross-package/path-alias test discovery, coding outcome benchmarks, and
-  isolated subagent worktrees;
+  richer cross-package build/test configuration, coding outcome benchmarks,
+  and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, graph-level branch pruning, write-capable Map/Loop,
   compensation, top-level Workflow input replacement, write/session

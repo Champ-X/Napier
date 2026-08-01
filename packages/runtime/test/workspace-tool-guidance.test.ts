@@ -84,6 +84,7 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain(
       "automatically select up to eight reverse-dependent tests",
     );
+    expect(guidance).toContain("declared workspace package names");
     expect(guidance).toContain("selection_incomplete as unknown coverage");
     expect(guidance).toContain("Use verify_workspace for broader typecheck");
   });

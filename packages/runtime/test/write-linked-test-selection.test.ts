@@ -1,5 +1,12 @@
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -11,6 +18,7 @@ import {
   MAX_WRITE_LINKED_TESTS,
   selectWriteLinkedTests,
 } from "../src/write-linked-test-selection.js";
+import { MAX_WRITE_LINKED_RESOLUTION_CONFIGS } from "../src/write-linked-module-resolution.js";
 
 const temporaryRoots: string[] = [];
 
@@ -266,6 +274,313 @@ describe("write-linked test selection", () => {
         selectedTests: ["packages/feature/test/value.test.ts"],
         unresolvedImportCount: 0,
       }),
+    );
+  });
+
+  it("selects tests in a reverse-dependent workspace package", async () => {
+    const workspaceRoot = await createWorkspace();
+    const coreRoot = path.join(workspaceRoot, "packages/core");
+    const appRoot = path.join(workspaceRoot, "packages/app");
+    await Promise.all([
+      mkdir(path.join(coreRoot, "src"), { recursive: true }),
+      mkdir(path.join(appRoot, "src"), { recursive: true }),
+      mkdir(path.join(appRoot, "test"), { recursive: true }),
+    ]);
+    const source = "export const workspacePrice = 10;\n";
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "package.json"),
+        JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      ),
+      writeFile(
+        path.join(coreRoot, "package.json"),
+        JSON.stringify({ name: "@fixture/core" }),
+      ),
+      writeFile(
+        path.join(appRoot, "package.json"),
+        JSON.stringify({ name: "@fixture/app" }),
+      ),
+      writeFile(path.join(coreRoot, "src/index.ts"), source),
+      writeFile(
+        path.join(appRoot, "src/service.ts"),
+        'import { workspacePrice } from "@fixture/core"; export const total = workspacePrice + 2;\n',
+      ),
+      writeFile(
+        path.join(appRoot, "test/service.test.ts"),
+        'import { total } from "../src/service.js"; export const observed = total;\n',
+      ),
+      writeFile(
+        path.join(workspaceRoot, "src/unrelated.ts"),
+        'import "./missing.js";\n',
+      ),
+    ]);
+
+    const selection = await selectWriteLinkedTests({
+      workspaceRoot,
+      changedFiles: [
+        {
+          path: "packages/core/src/index.ts",
+          expectedSha256: sha256(source),
+        },
+      ],
+    });
+
+    expect(selection).toEqual(
+      expect.objectContaining({
+        complete: true,
+        scanRootPaths: ["."],
+        configurationFileCount: 3,
+        workspacePackageCount: 2,
+        workspacePackageEdgeCount: 1,
+        pathAliasEdgeCount: 0,
+        selectedTests: ["packages/app/test/service.test.ts"],
+        unresolvedImportCount: 0,
+      }),
+    );
+  });
+
+  it("resolves the most specific inherited path alias from a nested base config", async () => {
+    const workspaceRoot = await createWorkspace();
+    const sharedRoot = path.join(workspaceRoot, "packages/shared");
+    const appRoot = path.join(workspaceRoot, "packages/app");
+    await Promise.all([
+      mkdir(path.join(workspaceRoot, "config"), { recursive: true }),
+      mkdir(path.join(sharedRoot, "src"), { recursive: true }),
+      mkdir(path.join(appRoot, "src"), { recursive: true }),
+      mkdir(path.join(appRoot, "test"), { recursive: true }),
+    ]);
+    const source = "export const aliasedValue = 4;\n";
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "package.json"),
+        JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      ),
+      writeFile(
+        path.join(workspaceRoot, "config/tsconfig.base.json"),
+        JSON.stringify({
+          compilerOptions: {
+            baseUrl: "..",
+            paths: {
+              "@shared/*": ["src/*"],
+              "@shared/value": ["packages/shared/src/value"],
+            },
+          },
+        }),
+      ),
+      writeFile(
+        path.join(sharedRoot, "package.json"),
+        JSON.stringify({ name: "@fixture/shared" }),
+      ),
+      writeFile(
+        path.join(appRoot, "package.json"),
+        JSON.stringify({ name: "@fixture/app" }),
+      ),
+      writeFile(
+        path.join(appRoot, "tsconfig.json"),
+        JSON.stringify({ extends: "../../config/tsconfig.base.json" }),
+      ),
+      writeFile(
+        path.join(workspaceRoot, "src/value.ts"),
+        "export const aliasedValue = -1;\n",
+      ),
+      writeFile(path.join(sharedRoot, "src/value.ts"), source),
+      writeFile(
+        path.join(appRoot, "src/service.ts"),
+        'import { aliasedValue } from "@shared/value"; export const total = aliasedValue + 1;\n',
+      ),
+      writeFile(
+        path.join(appRoot, "test/service.test.ts"),
+        'import { total } from "../src/service.js"; export const observed = total;\n',
+      ),
+    ]);
+
+    const selection = await selectWriteLinkedTests({
+      workspaceRoot,
+      changedFiles: [
+        {
+          path: "packages/shared/src/value.ts",
+          expectedSha256: sha256(source),
+        },
+      ],
+    });
+
+    expect(selection).toEqual(
+      expect.objectContaining({
+        complete: true,
+        configurationFileCount: 5,
+        pathAliasCount: 2,
+        workspacePackageEdgeCount: 0,
+        pathAliasEdgeCount: 1,
+        selectedTests: ["packages/app/test/service.test.ts"],
+      }),
+    );
+  });
+
+  it("fails closed for an escaping path alias", async () => {
+    const workspaceRoot = await createWorkspace();
+    const source = "export const value = 1;\n";
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        JSON.stringify({
+          compilerOptions: {
+            baseUrl: ".",
+            paths: { "@outside/*": ["../outside/*"] },
+          },
+        }),
+      ),
+      writeFile(
+        path.join(workspaceRoot, "src/value.ts"),
+        `${source}import "@outside/private";\n`,
+      ),
+    ]);
+    const changed = `${source}import "@outside/private";\n`;
+
+    const selection = await selectWriteLinkedTests({
+      workspaceRoot,
+      changedFiles: [{ path: "src/value.ts", expectedSha256: sha256(changed) }],
+    });
+
+    expect(selection).toEqual(
+      expect.objectContaining({
+        complete: false,
+        graphTruncated: true,
+        selectedTests: [],
+      }),
+    );
+  });
+
+  it("fails closed for unsupported workspace globs or symlinked configs", async () => {
+    const unsupportedRoot = await createWorkspace();
+    const source = "export const value = 1;\n";
+    await Promise.all([
+      writeFile(
+        path.join(unsupportedRoot, "package.json"),
+        JSON.stringify({ private: true, workspaces: ["packages/**"] }),
+      ),
+      writeFile(path.join(unsupportedRoot, "src/value.ts"), source),
+    ]);
+    const unsupported = await selectWriteLinkedTests({
+      workspaceRoot: unsupportedRoot,
+      changedFiles: [{ path: "src/value.ts", expectedSha256: sha256(source) }],
+    });
+    expect(unsupported).toEqual(
+      expect.objectContaining({
+        complete: false,
+        graphTruncated: true,
+      }),
+    );
+
+    const symlinkRoot = await createWorkspace();
+    await Promise.all([
+      writeFile(path.join(symlinkRoot, "src/value.ts"), source),
+      writeFile(
+        path.join(symlinkRoot, "tsconfig.actual.json"),
+        JSON.stringify({ compilerOptions: { baseUrl: "." } }),
+      ),
+    ]);
+    await symlink(
+      "tsconfig.actual.json",
+      path.join(symlinkRoot, "tsconfig.json"),
+    );
+    const linked = await selectWriteLinkedTests({
+      workspaceRoot: symlinkRoot,
+      changedFiles: [{ path: "src/value.ts", expectedSha256: sha256(source) }],
+    });
+    expect(linked).toEqual(
+      expect.objectContaining({
+        complete: false,
+        graphTruncated: true,
+      }),
+    );
+
+    const cycleRoot = await createWorkspace();
+    await Promise.all([
+      writeFile(path.join(cycleRoot, "src/value.ts"), source),
+      writeFile(
+        path.join(cycleRoot, "tsconfig.json"),
+        JSON.stringify({ extends: "./tsconfig.other.json" }),
+      ),
+      writeFile(
+        path.join(cycleRoot, "tsconfig.other.json"),
+        JSON.stringify({ extends: "./tsconfig.json" }),
+      ),
+    ]);
+    const cyclic = await selectWriteLinkedTests({
+      workspaceRoot: cycleRoot,
+      changedFiles: [{ path: "src/value.ts", expectedSha256: sha256(source) }],
+    });
+    expect(cyclic).toEqual(
+      expect.objectContaining({
+        complete: false,
+        graphTruncated: true,
+      }),
+    );
+
+    const missingExtendsRoot = await createWorkspace();
+    await Promise.all([
+      writeFile(path.join(missingExtendsRoot, "src/value.ts"), source),
+      writeFile(
+        path.join(missingExtendsRoot, "tsconfig.json"),
+        JSON.stringify({ extends: "./missing-base.json" }),
+      ),
+    ]);
+    const missingExtends = await selectWriteLinkedTests({
+      workspaceRoot: missingExtendsRoot,
+      changedFiles: [{ path: "src/value.ts", expectedSha256: sha256(source) }],
+    });
+    expect(missingExtends).toEqual(
+      expect.objectContaining({
+        complete: false,
+        graphTruncated: true,
+      }),
+    );
+  });
+
+  it("bounds loaded and missing resolution configuration paths together", async () => {
+    const workspaceRoot = await createWorkspace();
+    const packageRoots = Array.from({ length: 64 }, (_, index) =>
+      path.join(workspaceRoot, "packages", `package-${String(index)}`),
+    );
+    await Promise.all(
+      packageRoots.map((packageRoot) =>
+        mkdir(path.join(packageRoot, "src"), { recursive: true }),
+      ),
+    );
+    await writeFile(
+      path.join(workspaceRoot, "package.json"),
+      JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+    );
+    await Promise.all(
+      packageRoots.map((packageRoot, index) =>
+        writeFile(
+          path.join(packageRoot, "package.json"),
+          JSON.stringify({ name: `@fixture/package-${String(index)}` }),
+        ),
+      ),
+    );
+    const source = "export const boundedValue = 1;\n";
+    await writeFile(path.join(packageRoots[0]!, "src/value.ts"), source);
+
+    const selection = await selectWriteLinkedTests({
+      workspaceRoot,
+      changedFiles: [
+        {
+          path: "packages/package-0/src/value.ts",
+          expectedSha256: sha256(source),
+        },
+      ],
+    });
+
+    expect(selection).toEqual(
+      expect.objectContaining({
+        complete: false,
+        graphTruncated: true,
+        workspacePackageCount: 64,
+      }),
+    );
+    expect(selection.configurationPaths).toHaveLength(
+      MAX_WRITE_LINKED_RESOLUTION_CONFIGS,
     );
   });
 

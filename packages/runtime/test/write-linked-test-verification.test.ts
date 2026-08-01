@@ -48,9 +48,14 @@ describe("write-linked test verification", () => {
     expect(result.details).toEqual(
       expect.objectContaining({
         kind: "napier.write-linked-test-verification",
-        schemaVersion: 1,
+        schemaVersion: 2,
         status: "passed",
         changedFileCount: 1,
+        configurationFileCount: 0,
+        workspacePackageCount: 0,
+        pathAliasCount: 0,
+        workspacePackageEdgeCount: 0,
+        pathAliasEdgeCount: 0,
         selectedTestCount: 1,
         graphTruncated: false,
         verifierSha256: "1".repeat(64),
@@ -111,6 +116,79 @@ describe("write-linked test verification", () => {
     expect(drifted.details).toEqual(
       expect.objectContaining({
         status: "drifted",
+        observedSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(drifted.details.observedSnapshotSha256).not.toBe(
+      drifted.details.selectionSnapshotSha256,
+    );
+
+    const missingRoot = await createWorkspace();
+    await Promise.all([
+      writeFile(path.join(missingRoot, "src/value.ts"), source),
+      writeFile(
+        path.join(missingRoot, "test/value.test.ts"),
+        'import "../src/value.js";\n',
+      ),
+    ]);
+    const appeared = await new WriteLinkedTestVerificationRunner({
+      workspaceRoot: missingRoot,
+      sandbox: { id: "unused", launch: vi.fn() },
+      verificationRunner: {
+        async runSelectedTests() {
+          await writeFile(
+            path.join(missingRoot, "tsconfig.json"),
+            JSON.stringify({ compilerOptions: { baseUrl: "." } }),
+          );
+          return executionResult("passed");
+        },
+      },
+    }).run([{ path: "src/value.ts", expectedSha256: sha256(source) }]);
+    expect(appeared.details).toEqual(
+      expect.objectContaining({
+        status: "drifted",
+        configurationFileCount: 0,
+      }),
+    );
+  });
+
+  it("rejects a passing test when module-resolution config drifts", async () => {
+    const workspaceRoot = await createWorkspace();
+    const source = "export const value = 1;\n";
+    await Promise.all([
+      writeFile(path.join(workspaceRoot, "src/value.ts"), source),
+      writeFile(
+        path.join(workspaceRoot, "test/value.test.ts"),
+        'import "../src/value.js";\n',
+      ),
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        JSON.stringify({ compilerOptions: { baseUrl: "." } }),
+      ),
+    ]);
+    const runner = new WriteLinkedTestVerificationRunner({
+      workspaceRoot,
+      sandbox: { id: "unused", launch: vi.fn() },
+      verificationRunner: {
+        async runSelectedTests() {
+          await writeFile(
+            path.join(workspaceRoot, "tsconfig.json"),
+            JSON.stringify({ compilerOptions: { baseUrl: "./src" } }),
+          );
+          return executionResult("passed");
+        },
+      },
+    });
+
+    const drifted = await runner.run([
+      { path: "src/value.ts", expectedSha256: sha256(source) },
+    ]);
+
+    expect(drifted.details).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        status: "drifted",
+        configurationFileCount: 1,
         observedSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );

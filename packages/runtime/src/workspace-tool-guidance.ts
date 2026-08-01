@@ -170,8 +170,8 @@ export function formatWorkspaceToolGuidance(
   }
   if (hasPatch && hasVerification) {
     lines.push(
-      "TypeScript and JavaScript apply_patch calls automatically select up to eight reverse-dependent tests from a bounded static relative-import graph and run them through the read-only Sandbox. Treat no_match as no statically related test, selection_incomplete as unknown coverage, and unavailable, drifted, failed, timed-out, or capped results as unverified behavior.",
-      "Use verify_workspace for broader typecheck, format, full-suite, non-relative import, or unsupported-language evidence before making claims beyond the automatically selected tests.",
+      "TypeScript and JavaScript apply_patch calls automatically select up to eight reverse-dependent tests from a bounded static graph covering relative imports, declared workspace package names, and safe tsconfig.paths aliases, then run them through the read-only Sandbox. Treat no_match as no statically related test, selection_incomplete as unknown coverage, and unavailable, drifted, failed, timed-out, or capped results as unverified behavior.",
+      "Use verify_workspace for broader typecheck, format, full-suite, undeclared package import, or unsupported-language evidence before making claims beyond the automatically selected tests.",
     );
   } else if (hasVerification) {
     lines.push(
