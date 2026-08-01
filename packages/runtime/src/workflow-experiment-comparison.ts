@@ -92,9 +92,12 @@ export async function createExecutionPlanWorkflowExperimentComparison(
         options.preview.schemaVersion === 3 &&
           sourceNode.id === options.preview.simulatedNodeId
           ? "simulated"
-          : rerun.has(sourceNode.id)
-            ? "rerun"
-            : "reused",
+          : options.preview.schemaVersion === 4 &&
+              sourceNode.id === options.preview.replacedInputNodeId
+            ? "input_replaced"
+            : rerun.has(sourceNode.id)
+              ? "rerun"
+              : "reused",
         sourceNode.type === "agent" ||
           sourceNode.type === "map" ||
           sourceNode.type === "loop"

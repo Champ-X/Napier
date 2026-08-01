@@ -24,7 +24,14 @@ import {
   MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES,
   validateExecutionPlanWorkflowManifest,
 } from "./workflow-manifests.js";
+import { validateWorkflowExperimentReplacementInput } from "./workflow-input-override.js";
 import { projectWorkflowExperimentExecution } from "./workflow-experiment-mode.js";
+import {
+  validWorkflowExperimentPreviewSchemaVersion,
+  validateWorkflowExperimentPreviewMode,
+  workflowExperimentNodeIdList,
+  workflowExperimentPreviewModeKeys,
+} from "./workflow-experiment-preview-mode.js";
 import {
   assertWorkflowJsonValue,
   MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
@@ -61,6 +68,7 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
       "fromNodeId",
       "mode",
       "simulatedOutput",
+      "replacementInput",
       "title",
       "modelOverrides",
       "confirmSideEffects",
@@ -70,6 +78,7 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
       "title",
       "mode",
       "simulatedOutput",
+      "replacementInput",
       "modelOverrides",
       "confirmSideEffects",
       "expectedPreviewSha256",
@@ -93,7 +102,8 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
     mode !== undefined &&
     mode !== "subgraph" &&
     mode !== "single_node" &&
-    mode !== "simulate_node"
+    mode !== "simulate_node" &&
+    mode !== "replace_input"
   ) {
     throw new Error("Workflow experiment mode is invalid");
   }
@@ -106,6 +116,10 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
       "Workflow experiment simulated output requires simulate-node mode",
     );
   }
+  const replacementInput = validateWorkflowExperimentReplacementInput(
+    mode,
+    request["replacementInput"],
+  );
   if (simulatedOutput !== undefined) {
     assertWorkflowJsonValue(
       simulatedOutput,
@@ -136,10 +150,15 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
     manifest,
     planId: request["planId"],
     fromNodeId: request["fromNodeId"],
-    ...(mode === "single_node" || mode === "simulate_node" ? { mode } : {}),
+    ...(mode === "single_node" ||
+    mode === "simulate_node" ||
+    mode === "replace_input"
+      ? { mode }
+      : {}),
     ...(simulatedOutput !== undefined
       ? { simulatedOutput: structuredClone(simulatedOutput) }
       : {}),
+    ...(replacementInput !== undefined ? { replacementInput } : {}),
     ...(title ? { title } : {}),
     ...(modelOverrides ? { modelOverrides } : {}),
     ...(request["confirmSideEffects"] === true
@@ -159,8 +178,6 @@ export function validateExecutionPlanWorkflowExperimentPreview(
   );
   const preview = record(input, "Workflow experiment preview");
   const schemaVersion = preview["schemaVersion"];
-  const singleNode = schemaVersion === 2;
-  const simulatedNode = schemaVersion === 3;
   assertExactKeys(preview, [
     "kind",
     "schemaVersion",
@@ -178,20 +195,11 @@ export function validateExecutionPlanWorkflowExperimentPreview(
     "toolEffects",
     "requiresSideEffectConfirmation",
     "previewSha256",
-    ...(singleNode ? ["mode", "executionNodeIds", "stopBeforeNodeIds"] : []),
-    ...(simulatedNode
-      ? [
-          "mode",
-          "executionNodeIds",
-          "simulatedNodeId",
-          "simulatedOutputSha256",
-          "simulatedOutputBytes",
-        ]
-      : []),
+    ...workflowExperimentPreviewModeKeys(schemaVersion),
   ]);
   if (
     preview["kind"] !== "napier.execution-plan-workflow-experiment-preview" ||
-    (schemaVersion !== 1 && schemaVersion !== 2 && schemaVersion !== 3) ||
+    !validWorkflowExperimentPreviewSchemaVersion(schemaVersion) ||
     typeof preview["sourceThreadId"] !== "string" ||
     !THREAD_ID.test(preview["sourceThreadId"]) ||
     typeof preview["sourcePlanId"] !== "string" ||
@@ -209,35 +217,22 @@ export function validateExecutionPlanWorkflowExperimentPreview(
   ) {
     throw new Error("Workflow experiment preview is invalid");
   }
-  const reusedNodeIds = nodeIdList(preview["reusedNodeIds"], "reused");
-  const rerunNodeIds = nodeIdList(preview["rerunNodeIds"], "rerun");
-  const executionNodeIds =
-    singleNode || simulatedNode
-      ? nodeIdList(preview["executionNodeIds"], "execution")
-      : rerunNodeIds;
-  const stopBeforeNodeIds = singleNode
-    ? nodeIdList(preview["stopBeforeNodeIds"], "stop-before")
-    : [];
+  const reusedNodeIds = workflowExperimentNodeIdList(
+    preview["reusedNodeIds"],
+    "reused",
+  );
+  const rerunNodeIds = workflowExperimentNodeIdList(
+    preview["rerunNodeIds"],
+    "rerun",
+  );
+  const { executionNodeIds } = validateWorkflowExperimentPreviewMode(
+    preview,
+    rerunNodeIds,
+  );
   if (
     rerunNodeIds.length < 1 ||
     !rerunNodeIds.includes(preview["fromNodeId"]) ||
-    reusedNodeIds.some((nodeId) => rerunNodeIds.includes(nodeId)) ||
-    (singleNode &&
-      (preview["mode"] !== "single_node" ||
-        canonicalJson(executionNodeIds) !==
-          canonicalJson([preview["fromNodeId"]]) ||
-        stopBeforeNodeIds.length > 16 ||
-        stopBeforeNodeIds.includes(preview["fromNodeId"]) ||
-        stopBeforeNodeIds.some((nodeId) => !rerunNodeIds.includes(nodeId)))) ||
-    (simulatedNode &&
-      (preview["mode"] !== "simulate_node" ||
-        preview["simulatedNodeId"] !== preview["fromNodeId"] ||
-        executionNodeIds.includes(preview["fromNodeId"]) ||
-        executionNodeIds.some((nodeId) => !rerunNodeIds.includes(nodeId)) ||
-        !hash(preview["simulatedOutputSha256"]) ||
-        !positiveInteger(preview["simulatedOutputBytes"]) ||
-        Number(preview["simulatedOutputBytes"]) >
-          MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES))
+    reusedNodeIds.some((nodeId) => rerunNodeIds.includes(nodeId))
   ) {
     throw new Error("Workflow experiment node sets are invalid");
   }
@@ -374,6 +369,8 @@ export function validateExecutionPlanWorkflowExperimentResult(
         canonicalJson(execution.stopBeforeNodeIds)) ||
     (preview.schemaVersion === 3 &&
       preview.simulatedNodeId !== preview.fromNodeId) ||
+    (preview.schemaVersion === 4 &&
+      preview.replacedInputNodeId !== preview.fromNodeId) ||
     canonicalJson(
       [...preview.reusedNodeIds, ...preview.rerunNodeIds].sort(),
     ) !== canonicalJson([...manifestNodeIds].sort())
@@ -583,20 +580,6 @@ function validateModelOverrides(input: unknown): Record<string, ModelRef> {
     output[nodeId] = { provider: model["provider"], id: model["id"] };
   }
   return output;
-}
-
-function nodeIdList(input: unknown, label: string): string[] {
-  if (
-    !Array.isArray(input) ||
-    input.length > 30 ||
-    input.some(
-      (value) => typeof value !== "string" || !RESOURCE_ID.test(value),
-    ) ||
-    new Set(input).size !== input.length
-  ) {
-    throw new Error(`Workflow experiment ${label} node IDs are invalid`);
-  }
-  return [...input] as string[];
 }
 
 function toolNameList(input: unknown): string[] {

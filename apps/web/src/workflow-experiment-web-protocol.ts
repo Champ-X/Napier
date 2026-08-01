@@ -209,7 +209,8 @@ function validComparisonNode(input: unknown): boolean {
     typeof input["nodeId"] === "string" &&
     (input["execution"] === "reused" ||
       input["execution"] === "rerun" ||
-      input["execution"] === "simulated") &&
+      input["execution"] === "simulated" ||
+      input["execution"] === "input_replaced") &&
     typeof input["statusChanged"] === "boolean" &&
     typeof input["modelChanged"] === "boolean" &&
     typeof input["configurationChanged"] === "boolean" &&

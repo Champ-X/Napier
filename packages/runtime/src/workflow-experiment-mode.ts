@@ -18,7 +18,7 @@ export function projectWorkflowExperimentExecution(
   mode: ExecutionPlanWorkflowExperimentMode,
 ): WorkflowExperimentExecutionProjection {
   const rerunNodeIds = workflowExperimentRerunNodeIds(manifest, fromNodeId);
-  if (mode === "subgraph") {
+  if (mode === "subgraph" || mode === "replace_input") {
     return {
       mode,
       rerunNodeIds,

@@ -66,6 +66,7 @@ export default function WorkflowExperimentDesk({
   const [mode, setMode] =
     useState<ExecutionPlanWorkflowExperimentMode>("subgraph");
   const [simulatedOutput, setSimulatedOutput] = useState("");
+  const [replacementInput, setReplacementInput] = useState("");
   const [replaceModel, setReplaceModel] = useState(false);
   const [previewState, setPreviewState] = useState<PreviewState>();
   const [confirmed, setConfirmed] = useState(false);
@@ -99,6 +100,7 @@ export default function WorkflowExperimentDesk({
     setFromNodeId("");
     setMode("subgraph");
     setSimulatedOutput("");
+    setReplacementInput("");
     setReplaceModel(false);
     setPreviewState(undefined);
     setConfirmed(false);
@@ -182,6 +184,7 @@ export default function WorkflowExperimentDesk({
       setManifestFilename(file.name);
       setFromNodeId(parsed.outputNodeId);
       setSimulatedOutput("");
+      setReplacementInput("");
     } catch (loadError) {
       if (!isCurrentOperation(operation.controller, operation.generation)) {
         return;
@@ -211,6 +214,7 @@ export default function WorkflowExperimentDesk({
         fromNodeId,
         mode,
         simulatedOutput,
+        replacementInput,
         replaceModel,
         canReplaceModel,
         selectedModelKey,
@@ -293,6 +297,7 @@ export default function WorkflowExperimentDesk({
     setFromNodeId("");
     setMode("subgraph");
     setSimulatedOutput("");
+    setReplacementInput("");
     setReplaceModel(false);
     setError(undefined);
   };
@@ -379,6 +384,7 @@ export default function WorkflowExperimentDesk({
                 setReplaceModel(false);
               }
               setSimulatedOutput("");
+              setReplacementInput("");
               invalidatePreview();
             }}
           >
@@ -393,6 +399,7 @@ export default function WorkflowExperimentDesk({
         <WorkflowExperimentModeField
           mode={mode}
           simulatedOutput={simulatedOutput}
+          replacementInput={replacementInput}
           disabled={!manifest || Boolean(busy)}
           onModeChange={(next) => {
             setMode(next);
@@ -401,6 +408,10 @@ export default function WorkflowExperimentDesk({
           }}
           onSimulatedOutputChange={(next) => {
             setSimulatedOutput(next);
+            invalidatePreview();
+          }}
+          onReplacementInputChange={(next) => {
+            setReplacementInput(next);
             invalidatePreview();
           }}
         />
@@ -441,6 +452,7 @@ export default function WorkflowExperimentDesk({
               !sourcePlanId ||
               !fromNodeId ||
               (mode === "simulate_node" && simulatedOutput.trim() === "") ||
+              (mode === "replace_input" && replacementInput.trim() === "") ||
               running ||
               Boolean(busy)
             }

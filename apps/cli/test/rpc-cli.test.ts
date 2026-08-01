@@ -569,6 +569,61 @@ describe("Napier RPC CLI", () => {
 
     rpc.send({
       jsonrpc: "2.0",
+      id: "experiment-replacement-preview",
+      method: "napier/workflow/experiment/preview",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "deliver",
+        mode: "replace_input",
+        replacementInput: {
+          prepared: { normalized: "RPC replacement input" },
+        },
+      },
+    });
+    const replacementPreview = record(
+      (await rpc.waitForId("experiment-replacement-preview"))["result"],
+    )!;
+    expect(replacementPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 4,
+        mode: "replace_input",
+        executionNodeIds: ["deliver"],
+        replacedInputNodeId: "deliver",
+      }),
+    );
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "experiment-replacement-run",
+      method: "napier/workflow/experiment/run",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "deliver",
+        mode: "replace_input",
+        replacementInput: {
+          prepared: { normalized: "RPC replacement input" },
+        },
+        expectedPreviewSha256: replacementPreview["previewSha256"],
+      },
+    });
+    expect(await rpc.waitForId("experiment-replacement-run")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          status: "completed",
+          experiment: expect.objectContaining({
+            result: expect.objectContaining({
+              output: { message: "RPC replacement input" },
+            }),
+          }),
+        }),
+      }),
+    );
+
+    rpc.send({
+      jsonrpc: "2.0",
       id: "experiment-single-preview",
       method: "napier/workflow/experiment/preview",
       params: {

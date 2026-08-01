@@ -672,9 +672,12 @@ scheduler:
 source Thread + Plan + source Manifest
   -> verify completed source Run/node evidence
   -> derive selected-node descendant rerun subgraph
-  -> choose full-subgraph, selected-node-only, or selected-output simulation
+  -> choose full-subgraph, selected-node-only, selected-output simulation,
+     or selected constructed-input replacement
   -> for simulation, validate the explicit output against the node Schema
      and bind its canonical hash and byte count
+  -> for input replacement, validate the complete constructed input against
+     the selected node Schema and bind its canonical hash and byte count
   -> summarize historical read/write/unknown tool effects
   -> bind candidate model replacements and preview hash
   -> require exact preview confirmation for write/unknown effects
@@ -682,7 +685,8 @@ source Thread + Plan + source Manifest
   -> materialize verified completed ancestors as source=workflow_reuse Runs
      and preserve verified skipped ancestors as zero-Run skipped outputs
   -> materialize a simulated selected node as source=workflow_simulation,
-     or execute the selected node, or it plus descendants
+     execute the selected node, or execute it plus descendants with an optional
+     selected-node input override
   -> execute every non-simulated node through the normal Workflow Runtime
   -> for single-node mode, pause before every direct successor
   -> align source/target node evidence and derive target-minus-source metrics
@@ -759,6 +763,36 @@ Completed simulation Runs recover through normal node output reconstruction;
 interrupted simulation materialization is handled by its dedicated
 materializer and cannot enter generic Run retry.
 
+`replace_input` emits schema 4. `rerunNodeIds` and `executionNodeIds` both
+contain the selected node plus its complete descendant subgraph;
+`replacedInputNodeId` identifies the selected checkpoint. The replacement is
+the node's complete constructed input, not top-level Workflow input or a
+mutation of historical dependency output. It is limited to 32 KiB, validated
+against the selected node input Schema, and bound by canonical SHA-256 plus
+byte count. Schema-4 execution always requires the exact current preview hash.
+Historical Tool effects and confirmation cover the complete execution set.
+
+Verified ancestors are still materialized through `workflow_reuse`. The
+selected node and every descendant execute through the ordinary scheduler and
+retain their normal model, Tool, Approval, condition, Sandbox, timeout, retry,
+cancellation, and recovery behavior. A shared effective-input helper is used
+by execution, condition recovery, Approval recovery, breakpoint binding,
+simulation materialization, and completed-node reconstruction. Without an
+override it preserves the existing binding hash exactly; with an override the
+binding context also commits to the replacement input hash. Comparison labels
+the selected node `input_replaced` and verifies its observed input change while
+its Run source remains `workflow`.
+
+The exact replacement is stored once as hidden
+`workflow.node.input_replacement.requested` evidence. Public experiment
+lineage and Web Trace expose only the selected node, hash, and byte count; the
+standard `workflow.node.started` input hash proves which bytes entered normal
+execution. SQLite reopen requires exactly one request and recomputes the
+Schema, hash, bytes, Manifest, Plan, and node bindings. Portable full-Thread
+import preserves `payload.input` as opaque user JSON rather than remapping
+strings that happen to equal resource IDs; actual lineage fields still remap.
+Missing, duplicate, drifted, or tampered evidence fails closed.
+
 The source Plan is read-only. Reused outputs are accepted only when source
 Plan/Run ownership, frozen Agent revision, model, node input/output/schema
 hashes, and unique start/completion evidence agree. Each target reuse binds the
@@ -784,12 +818,13 @@ automatic recovery.
 Preview and execution are available through CLI JSONL and dedicated HTTP
 preview/SSE routes, the TypeScript SDK, and local stdio RPC. The lazy
 Workbench desk independently recomputes the
-rerun/reused/execution/direct-successor/simulation sets, validates
-schema-1/schema-2/schema-3 preview hashes, binds terminal SSE to Snapshot
-Plan/Thread state, and requires a matching reached event for a paused result.
-Web Trace projects only mode, node IDs, counts, confirmation state, and hash
-prefixes. Source/output bodies, tool arguments, diagnostics, and paths are not
-copied into experiment-specific Trace summaries.
+rerun/reused/execution/direct-successor/simulation/input-replacement sets,
+validates schema-1/schema-2/schema-3/schema-4 preview hashes, binds terminal
+SSE to Snapshot Plan/Thread state, and requires a matching reached event for a
+paused result. Web Trace projects only mode, node IDs, counts, confirmation
+state, and hash prefixes. Source/output/input-replacement bodies, tool
+arguments, diagnostics, and paths are not copied into experiment-specific
+Trace summaries.
 
 Terminal experiment comparison reads each Thread event stream once, groups
 events by actual Run, and reuses the same pure Run-metric derivation as
@@ -1015,13 +1050,13 @@ explicit CAS-named local result download.
 The Plan Workbench adds a lazy Workflow Experiment Desk over the same HTTP
 boundary. It accepts a browser-local, content-verified Manifest, lets the user
 select a source Plan/checkpoint, execution mode, optional selected-model
-override, or explicit typed simulation value, then requires preview before
-execution. Preview responses are rebound to the exact Thread, Plan, Manifest,
-node, model overrides, simulated-output hash/bytes, response hash, and
-no-store headers. Execution reuses the existing isolated Runtime; the browser
-validates multi-Run event hashes/order, one final Snapshot, the complete
-experiment result/comparison hash chain, and source/target identities before
-rendering.
+override, explicit typed simulation value, or complete typed checkpoint input,
+then requires preview before execution. Preview responses are rebound to the
+exact Thread, Plan, Manifest, node, model overrides, simulated-output or
+replacement-input hash/bytes, response hash, and no-store headers. Execution
+reuses the existing isolated Runtime; the browser validates multi-Run event
+hashes/order, one final Snapshot, the complete experiment result/comparison
+hash chain, and source/target identities before rendering.
 Navigation aborts the current fetch and operation-generation checks prevent an
 old response from repopulating a newly selected Thread.
 
@@ -5927,6 +5962,11 @@ The current boundary has fifty-six parts:
     zero-model/zero-tool materialization, SQLite recovery, exact-preview
     freshness, source/target comparison, CLI/HTTP/SDK/RPC/Web delivery, and
     hash-only public simulation evidence.
+58. Preview-bound Workflow checkpoint constructed-input replacement with
+    runtime Schema validation, verified ancestor reuse, normal selected-node
+    and descendant scheduling, exact hidden recovery evidence, opaque portable
+    import, honest per-node comparison, CLI/HTTP/SDK/RPC/Web delivery, and
+    hash-only public input evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5974,7 +6014,7 @@ deferred until the local P0-P9 product loop is stable.
   test discovery, coding outcome benchmarks, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, multi-way switch, write-capable Map/Loop, compensation,
-  arbitrary Workflow input replacement, write/session side-effect simulation,
+  top-level Workflow input replacement, write/session side-effect simulation,
   interactive multi-step controls, external Agent adapters, and a visual
   builder;
 - extend controlled Workflow, user-message, model-call, and stateless read-only

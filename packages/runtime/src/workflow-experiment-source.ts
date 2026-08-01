@@ -19,6 +19,7 @@ import { executionPlanWorkflowDeterministicTemplateSha256 } from "./workflow-det
 import { workflowLoopNodeConfigurationSha256 } from "./workflow-loop-model.js";
 import { workflowMapNodeConfigurationSha256 } from "./workflow-map-model.js";
 import { workflowReduceConfigurationSha256 } from "./workflow-reduce-model.js";
+import { projectWorkflowExperimentInputOverrides } from "./workflow-input-override.js";
 import { projectWorkflowExperimentExecution } from "./workflow-experiment-mode.js";
 import {
   createWorkflowExperimentPreview,
@@ -44,6 +45,7 @@ export interface ExecutionPlanWorkflowExperimentSource {
   preview: ReturnType<typeof createWorkflowExperimentPreview>;
   reusedNodes: WorkflowReusedNode[];
   simulatedNodes: ReturnType<typeof projectWorkflowExperimentSimulation>;
+  inputOverrides: ReturnType<typeof projectWorkflowExperimentInputOverrides>;
 }
 
 export interface ExecutionPlanWorkflowSourceEvidence {
@@ -78,6 +80,10 @@ export async function projectExecutionPlanWorkflowExperimentSource(
   const rerunSet = new Set(rerunNodeIds);
   const executionSet = new Set(executionNodeIds);
   const simulatedNodes = projectWorkflowExperimentSimulation(manifest, request);
+  const inputOverrides = projectWorkflowExperimentInputOverrides(
+    manifest,
+    request,
+  );
   const reusedNodeIds = manifest.nodes
     .map((node) => node.id)
     .filter((nodeId) => !rerunSet.has(nodeId));
@@ -159,9 +165,11 @@ export async function projectExecutionPlanWorkflowExperimentSource(
       base: previewBase,
       execution,
       simulatedNodes,
+      inputOverrides,
     }),
     reusedNodes,
     simulatedNodes,
+    inputOverrides,
   };
 }
 

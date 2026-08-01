@@ -75,7 +75,7 @@ export async function previewWorkflowExperiment(
       body.fromNodeId,
       body.mode ?? "subgraph",
     ) ||
-    !(await workflowExperimentSimulationMatchesRequest(preview, body)) ||
+    !(await workflowExperimentValuesMatchRequest(preview, body)) ||
     canonicalJson(preview.modelOverrides) !==
       canonicalJson(body.modelOverrides ?? {})
   ) {
@@ -114,7 +114,7 @@ export async function executeWorkflowExperiment(
       body.fromNodeId,
       body.mode ?? "subgraph",
     ) ||
-    !(await workflowExperimentSimulationMatchesRequest(expectedPreview, body))
+    !(await workflowExperimentValuesMatchRequest(expectedPreview, body))
   ) {
     throw new Error("Workflow experiment execution preview is stale");
   }
@@ -405,18 +405,33 @@ function record(input: unknown): input is Record<string, unknown> {
   return Boolean(input) && typeof input === "object" && !Array.isArray(input);
 }
 
-async function workflowExperimentSimulationMatchesRequest(
+async function workflowExperimentValuesMatchRequest(
   preview: ExecutionPlanWorkflowExperimentPreview,
   body: WorkflowExperimentWebRequest,
 ): Promise<boolean> {
+  if (preview.schemaVersion === 4) {
+    if (body.mode !== "replace_input" || body.replacementInput === undefined) {
+      return false;
+    }
+    const encoded = canonicalJson(body.replacementInput);
+    return (
+      body.simulatedOutput === undefined &&
+      preview.replacementInputBytes ===
+        new TextEncoder().encode(encoded).length &&
+      preview.replacementInputSha256 === (await sha256Text(encoded))
+    );
+  }
   if (preview.schemaVersion !== 3) {
-    return body.simulatedOutput === undefined;
+    return (
+      body.simulatedOutput === undefined && body.replacementInput === undefined
+    );
   }
   if (body.mode !== "simulate_node" || body.simulatedOutput === undefined) {
     return false;
   }
   const encoded = canonicalJson(body.simulatedOutput);
   return (
+    body.replacementInput === undefined &&
     preview.simulatedOutputBytes === new TextEncoder().encode(encoded).length &&
     preview.simulatedOutputSha256 === (await sha256Text(encoded))
   );

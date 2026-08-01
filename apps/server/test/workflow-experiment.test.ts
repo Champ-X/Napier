@@ -376,6 +376,89 @@ describe("Workflow experiment HTTP path", () => {
     ).toBe(false);
   }, 20_000);
 
+  it("replaces one checkpoint input through the real Web client", async () => {
+    const fixture = await createFixture();
+    const app = createApp(fixture.services);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL | Request, init?: RequestInit) => {
+        const requestPath =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        return app.request(requestPath, init);
+      }),
+    );
+    const request = {
+      manifest: fixture.manifest,
+      fromNodeId: "report",
+      mode: "replace_input" as const,
+      replacementInput: {
+        workflow: { request: "HTTP replacement workflow" },
+        inspection: { summary: "HTTP replacement input", count: 8 },
+      },
+    };
+    const preview = await previewWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      request,
+    );
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 4,
+        mode: "replace_input",
+        executionNodeIds: ["report"],
+        replacedInputNodeId: "report",
+      }),
+    );
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"HTTP report from replacement","approved":true}',
+      ),
+    ]);
+    const result = await executeWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+      preview,
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        experiment: expect.objectContaining({
+          result: expect.objectContaining({
+            output: {
+              report: "HTTP report from replacement",
+              approved: true,
+            },
+          }),
+          comparison: expect.objectContaining({
+            nodes: expect.arrayContaining([
+              expect.objectContaining({
+                nodeId: "report",
+                execution: "input_replaced",
+                inputChange: "changed",
+              }),
+            ]),
+          }),
+        }),
+      }),
+    );
+    const requested = (
+      await fixture.services.store.listEvents(result.targetThreadId)
+    ).filter(
+      (event) => event.type === "workflow.node.input_replacement.requested",
+    );
+    expect(requested).toEqual([
+      expect.objectContaining({ visibility: "hidden" }),
+    ]);
+  }, 20_000);
+
   it("returns a no-mutation conflict until write-effect evidence is confirmed", async () => {
     const fixture = await createFixture();
     const reportRunId = fixture.sourceRunIds[1]!;

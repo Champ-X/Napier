@@ -62,6 +62,22 @@ export function parseWorkflowSimulatedOutput(value: string): JsonValue {
   return parsed as JsonValue;
 }
 
+export function parseWorkflowReplacementInput(value: string): JsonValue {
+  if (new TextEncoder().encode(value).length > 32 * 1024) {
+    throw new Error("Workflow replacement input exceeds 32 KiB");
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value) as unknown;
+  } catch {
+    throw new Error("Workflow replacement input must be valid JSON");
+  }
+  if (parsed === undefined) {
+    throw new Error("Workflow replacement input is invalid");
+  }
+  return parsed as JsonValue;
+}
+
 export async function loadWorkflowExperimentManifest(
   file: File,
 ): Promise<ExecutionPlanWorkflowManifest> {
@@ -76,6 +92,7 @@ export function buildWorkflowExperimentRequest(input: {
   fromNodeId: string;
   mode: ExecutionPlanWorkflowExperimentMode;
   simulatedOutput: string;
+  replacementInput: string;
   replaceModel: boolean;
   canReplaceModel: boolean;
   selectedModelKey: string;
@@ -87,6 +104,13 @@ export function buildWorkflowExperimentRequest(input: {
     ...(input.mode === "simulate_node"
       ? {
           simulatedOutput: parseWorkflowSimulatedOutput(input.simulatedOutput),
+        }
+      : {}),
+    ...(input.mode === "replace_input"
+      ? {
+          replacementInput: parseWorkflowReplacementInput(
+            input.replacementInput,
+          ),
         }
       : {}),
     ...(input.replaceModel && input.canReplaceModel

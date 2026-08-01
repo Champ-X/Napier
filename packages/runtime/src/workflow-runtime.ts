@@ -27,6 +27,7 @@ import {
   type WorkflowExperimentExecution,
 } from "./workflow-experiment-execution.js";
 import { recoverExecutionPlanWorkflowExperimentTarget } from "./workflow-experiment-recovery.js";
+import { workflowInputReplacementRequestEvents } from "./workflow-input-override.js";
 import {
   ExecutionPlanWorkflowLedger,
   WORKFLOW_EVENT_SCHEMA_VERSION,
@@ -39,12 +40,14 @@ import {
 import { ExecutionPlanWorkflowRecovery } from "./workflow-recovery.js";
 import {
   assertWorkflowValue,
-  buildExecutionPlanWorkflowNodeInput,
   parseExecutionPlanWorkflowNodeOutput,
   validateExecutionPlanWorkflowManifest,
-  workflowNodeBindingContextSha256,
   workflowSchemaSha256,
 } from "./workflow-manifests.js";
+import {
+  buildWorkflowExecutionNodeInput,
+  workflowExecutionNodeBindingContextSha256,
+} from "./workflow-node-input.js";
 import {
   assertWorkflowPlanMatchesManifest,
   completedWorkflowNodeResult,
@@ -53,10 +56,7 @@ import {
 } from "./workflow-runtime-model.js";
 import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materializer.js";
 import { ExecutionPlanWorkflowSimulationMaterializer } from "./workflow-simulation-materializer.js";
-import {
-  WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT,
-  workflowSimulationRequestPayload,
-} from "./workflow-simulation-evidence.js";
+import { workflowSimulationRequestEvents } from "./workflow-simulation-evidence.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
 import { ExecutionPlanWorkflowArtifactSettlement } from "./workflow-artifact-settlement.js";
@@ -321,6 +321,10 @@ export class ExecutionPlanWorkflowRuntime {
         experiment?.reusedNodes.map((node) => structuredClone(node)) ?? [],
       simulatedNodes:
         experiment?.simulatedNodes.map((node) => structuredClone(node)) ?? [],
+      inputOverrides:
+        experiment?.inputOverrides.map((override) =>
+          structuredClone(override),
+        ) ?? [],
     };
     if (experiment) {
       await this.ledger.append(
@@ -339,29 +343,30 @@ export class ExecutionPlanWorkflowRuntime {
         },
         options.onEvent,
       );
-      for (const simulated of experiment.simulatedNodes) {
-        const node = manifest.nodes.find(
-          (candidate) => candidate.id === simulated.nodeId,
-        );
-        if (!node) {
-          throw new Error("Workflow simulation node is not in the Manifest");
-        }
+      for (const event of workflowSimulationRequestEvents(
+        manifest,
+        plan.id,
+        experiment.simulatedNodes,
+      )) {
         await this.ledger.append(
           {
             threadId: options.threadId,
             runId: createId("runctl"),
-            type: WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT,
-            category: "plan",
-            visibility: "hidden",
-            payload: workflowSimulationRequestPayload({
-              planId: plan.id,
-              manifestSha256: manifest.contentSha256,
-              nodeId: simulated.nodeId,
-              output: simulated.output,
-              outputSha256: simulated.outputSha256,
-              outputBytes: simulated.outputBytes,
-              outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
-            }),
+            ...event,
+          },
+          options.onEvent,
+        );
+      }
+      for (const event of workflowInputReplacementRequestEvents(
+        manifest,
+        plan.id,
+        experiment.inputOverrides,
+      )) {
+        await this.ledger.append(
+          {
+            threadId: options.threadId,
+            runId: createId("runctl"),
+            ...event,
           },
           options.onEvent,
         );
@@ -421,6 +426,7 @@ export class ExecutionPlanWorkflowRuntime {
       nodeResults: new Map(),
       reusedNodes: experiment.reusedNodes,
       simulatedNodes: experiment.simulatedNodes,
+      inputOverrides: experiment.inputOverrides,
     };
   }
 
@@ -521,19 +527,11 @@ export class ExecutionPlanWorkflowRuntime {
     );
     let input: JsonValue;
     try {
-      input = buildExecutionPlanWorkflowNodeInput(
-        node,
-        context.input,
-        context.outputs,
-      );
+      input = buildWorkflowExecutionNodeInput(context, node);
     } catch (error) {
       return {
         result: await this.blockNode(context, node, {
-          inputSha256: workflowNodeBindingContextSha256(
-            node,
-            context.input,
-            context.outputs,
-          ),
+          inputSha256: workflowExecutionNodeBindingContextSha256(context, node),
           attempt: Math.min(attempt, node.maxAttempts),
           errorCode:
             attempt > node.maxAttempts ? "attempt_limit" : "input_invalid",

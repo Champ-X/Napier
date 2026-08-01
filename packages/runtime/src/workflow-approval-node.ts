@@ -29,9 +29,9 @@ import {
   workflowNodeEventMetadata,
 } from "./workflow-ledger.js";
 import { completedWorkflowNodeResult } from "./workflow-runtime-model.js";
+import { buildWorkflowExecutionNodeInput } from "./workflow-node-input.js";
 import {
   assertWorkflowValue,
-  buildExecutionPlanWorkflowNodeInput,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
 
@@ -204,11 +204,7 @@ export class ExecutionPlanWorkflowApprovalNodeExecutor {
       if (!step.runId) {
         throw new Error("Workflow approval Plan step has no Run binding");
       }
-      const input = buildExecutionPlanWorkflowNodeInput(
-        node,
-        context.input,
-        context.outputs,
-      );
+      const input = buildWorkflowExecutionNodeInput(context, node);
       const inputSha256 = sha256(canonicalJson(input));
       const run = this.store
         .listRuns(context.threadId)

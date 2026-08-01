@@ -21,6 +21,14 @@ describe("Workflow experiment execution mode", () => {
       stopBeforeNodeIds: [],
     });
     expect(
+      projectWorkflowExperimentExecution(manifest, "prepare", "replace_input"),
+    ).toEqual({
+      mode: "replace_input",
+      rerunNodeIds: ["prepare", "left", "right", "join"],
+      executionNodeIds: ["prepare", "left", "right", "join"],
+      stopBeforeNodeIds: [],
+    });
+    expect(
       projectWorkflowExperimentExecution(manifest, "prepare", "single_node"),
     ).toEqual({
       mode: "single_node",

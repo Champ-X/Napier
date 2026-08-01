@@ -14,9 +14,9 @@ import {
   workflowNodeEventMetadata,
 } from "./workflow-ledger.js";
 import { completedWorkflowNodeResult } from "./workflow-runtime-model.js";
+import { buildWorkflowExecutionNodeInput } from "./workflow-node-input.js";
 import {
   assertWorkflowValue,
-  buildExecutionPlanWorkflowNodeInput,
   MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
@@ -110,11 +110,7 @@ export class ExecutionPlanWorkflowSimulationMaterializer {
         throw new Error("Workflow experiment simulation node is unknown");
       }
       assertSimulationOutput(node.outputSchema, simulated);
-      const input = buildExecutionPlanWorkflowNodeInput(
-        node,
-        context.input,
-        context.outputs,
-      );
+      const input = buildWorkflowExecutionNodeInput(context, node);
       const inputSha256 = sha256(canonicalJson(input));
       await this.verifyRequested(
         context,

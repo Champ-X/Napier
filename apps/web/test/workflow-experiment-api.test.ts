@@ -148,6 +148,64 @@ describe("Workflow experiment Web API", () => {
     ).rejects.toThrow("preview binding");
   });
 
+  it("binds a schema-v4 preview to the exact replacement input", async () => {
+    const fixture = experimentFixture();
+    const replacementInput = {
+      workflow: { request: "Browser replacement" },
+    };
+    const {
+      schemaVersion: _schemaVersion,
+      previewSha256: _previewSha256,
+      ...previewBase
+    } = fixture.preview;
+    const encoded = canonicalJson(replacementInput);
+    const content = {
+      ...previewBase,
+      schemaVersion: 4 as const,
+      mode: "replace_input" as const,
+      executionNodeIds: ["report"],
+      replacedInputNodeId: "report",
+      replacementInputSha256: sha256(encoded),
+      replacementInputBytes: new TextEncoder().encode(encoded).length,
+    };
+    const preview = {
+      ...content,
+      previewSha256: sha256(canonicalJson(content)),
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse(preview, {
+          headers: {
+            "Cache-Control": "no-store",
+            "X-Napier-Content-SHA256": preview.previewSha256,
+            "X-Napier-Content-SHA256-Mode": "stable",
+            "X-Napier-Workflow-Experiment-Preview-SHA256":
+              preview.previewSha256,
+          },
+        }),
+      ),
+    );
+    await expect(
+      previewWorkflowExperiment(fixture.sourceThreadId, fixture.sourcePlanId, {
+        manifest: fixture.manifest,
+        fromNodeId: "report",
+        mode: "replace_input",
+        replacementInput,
+      }),
+    ).resolves.toEqual(preview);
+    await expect(
+      previewWorkflowExperiment(fixture.sourceThreadId, fixture.sourcePlanId, {
+        manifest: fixture.manifest,
+        fromNodeId: "report",
+        mode: "replace_input",
+        replacementInput: {
+          workflow: { request: "Rehashed replacement" },
+        },
+      }),
+    ).rejects.toThrow("preview binding");
+  });
+
   it("accepts a snapshot-bound experiment result and exposes progress frames", async () => {
     const fixture = experimentFixture();
     const frames: unknown[] = [];

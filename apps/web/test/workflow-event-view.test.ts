@@ -339,6 +339,30 @@ describe("Workflow event Trace projection", () => {
       "mode simulate-node / execute 1 / simulated inspect",
     );
     expect(workflowEventTraceSummary(simulation)).not.toContain("PRIVATE");
+    const replacement = workflowEvent("workflow.experiment.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      sourceThreadId: "thread_source_private",
+      sourcePlanId: "plan_source_private",
+      sourcePlanRevision: 4,
+      sourceManifestSha256: "2".repeat(64),
+      fromNodeId: "inspect",
+      reusedNodeIds: [],
+      rerunNodeIds: ["inspect", "report"],
+      executionMode: "replace_input",
+      executionNodeIds: ["inspect", "report"],
+      replacedInputNodeId: "inspect",
+      replacementInputSha256: "9".repeat(64),
+      replacementInputBytes: 37,
+      previewSha256: "7".repeat(64),
+      sideEffectsConfirmed: false,
+      replacementInput: "PRIVATE_REPLACEMENT_INPUT",
+    });
+    expect(workflowEventTraceSummary(replacement)).toContain(
+      "mode replace-input / execute 2 / input-replaced inspect",
+    );
+    expect(workflowEventTraceSummary(replacement)).not.toContain("PRIVATE");
     expect(
       workflowEventTraceSummary(
         workflowEvent("workflow.node.simulated", {

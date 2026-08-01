@@ -6,6 +6,44 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added typed constructed-input replacement to controlled Workflow checkpoint
+  experiments. `mode=replace_input` emits a backward-compatible schema-4
+  preview that binds the complete selected-node descendant execution set,
+  selected node, and canonical replacement hash/bytes. The exact JSON is
+  limited to 32 KiB and must satisfy the selected node input Schema. Execution
+  requires the exact current preview, reuses verified ancestors, and runs the
+  selected node plus every descendant through the ordinary Workflow scheduler;
+  there is no replacement-only runner or second state machine. Historical
+  write/unknown effects across that complete execution set retain explicit
+  confirmation. Execution, conditions, Approval recovery, breakpoints, retry,
+  and SQLite reconstruction share one effective-input projection while
+  preserving legacy binding hashes when no override exists. The exact input is
+  unique hidden `workflow.node.input_replacement.requested` evidence; public
+  experiment lineage, node events, the desk, and Web Trace expose only safe
+  IDs, hashes, and bytes. Full portable Thread import preserves the input as
+  opaque user JSON while remapping actual resource lineage. Missing, duplicate,
+  stale, drifted, or tampered evidence fails closed. Per-node comparison labels
+  the selected checkpoint `input_replaced` and verifies its changed input while
+  the real Run source remains `workflow`. CLI `--replace-input-json`, HTTP SSE,
+  TypeScript SDK, local stdio RPC, the lazy Plan Workbench desk, strict browser
+  validation, and privacy-bounded Trace share the same Runtime. Real tests
+  cover Schema denial, exact-preview freshness, success, cancellation, SQLite
+  recovery, concurrent isolation, duplicate evidence, opaque import, and
+  portable Replay. Production-browser dogfood replaced `deliver` input in a
+  deterministic `prepare -> deliver` Workflow, reused `prepare`, executed
+  `deliver` normally, produced `DOGFOOD_REPLACED_INPUT`, and verified a
+  22-event Ledger with zero console or page errors. This replaces one complete
+  constructed node input, not top-level Workflow input, historical dependency
+  output, write/session side effects, or external Session state. Focused suites
+  pass 43 Runtime, 23 CLI/parser/built-RPC, 24 SDK, 6 Server, and 31 Web tests.
+  The 36.78 kB lazy experiment desk keeps the production Web main entry at
+  130.24 KiB under the 150 KiB budget. The complete gate passes 1,584 regular
+  tests with 27 opt-in live tests skipped, 253 OpenAPI routes, and 244/244
+  compatibility operations. Product performance remains within budget at
+  598.3 ms to first CLI event, 746.9 ms to first token, 1,060.1 ms to
+  completion, 0.3 ms read p95, and 6.7 ms for a 1,000-event projection. Web
+  dist is bound to `154829d2f5c64b48`; the seven-artifact release set is bound
+  to `337e52bc5f13d6fb`.
 - Added typed output simulation to controlled Workflow checkpoint experiments.
   `mode=simulate_node` emits a backward-compatible schema-3 preview that binds
   the complete non-reusable subgraph, descendant-only execution set, selected

@@ -1,5 +1,6 @@
 import type {
   WorkflowExperimentLineage,
+  WorkflowNodeInputOverride,
   WorkflowReusedNode,
   WorkflowSimulatedNode,
 } from "./workflow-context.js";
@@ -13,4 +14,5 @@ export interface WorkflowExperimentExecution {
   lineage: WorkflowExperimentLineage;
   reusedNodes: WorkflowReusedNode[];
   simulatedNodes: WorkflowSimulatedNode[];
+  inputOverrides: WorkflowNodeInputOverride[];
 }

@@ -78,6 +78,39 @@ describe("Napier Workflow CLI", () => {
         "thread_abcdefghijklmnopqrst",
         "--plan",
         "plan_abcdefghijklmnopqrst",
+        "--from-node",
+        "inspect",
+        "--replace-input-json",
+        '{"workflow":{"request":"replacement"}}',
+        "--preview-experiment",
+        "--jsonl",
+      ]),
+    ).toEqual({
+      kind: "workflow",
+      options: {
+        workspace: ".",
+        manifestPath: "workflow.json",
+        threadId: "thread_abcdefghijklmnopqrst",
+        planId: "plan_abcdefghijklmnopqrst",
+        fromNodeId: "inspect",
+        replaceInputJson: '{"workflow":{"request":"replacement"}}',
+        previewExperiment: true,
+        timeoutMs: 600_000,
+        jsonl: true,
+        retryBlocked: false,
+      },
+    });
+    expect(
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
         "--retry-blocked",
       ]),
     ).toEqual({
@@ -1063,6 +1096,105 @@ describe("Napier Workflow CLI", () => {
               expect.objectContaining({
                 nodeId: "inspect",
                 execution: "simulated",
+              }),
+            ]),
+          }),
+        }),
+      }),
+    );
+
+    const replacementInput = JSON.stringify({
+      workflow: { request: "CLI replacement workflow" },
+      inspection: { summary: "CLI replacement input", count: 9 },
+    });
+    const replacementPreviewStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "report",
+          "--replace-input-json",
+          replacementInput,
+          "--preview-experiment",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, replacementPreviewStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const replacementPreview = JSON.parse(
+      replacementPreviewStdout.text(),
+    ) as ExecutionPlanWorkflowExperimentPreview;
+    expect(replacementPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 4,
+        mode: "replace_input",
+        executionNodeIds: ["report"],
+        replacedInputNodeId: "report",
+      }),
+    );
+    provider.setResponses([
+      fauxAssistantMessage(
+        '{"report":"CLI report from replacement","approved":true}',
+      ),
+    ]);
+    const replacementStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "report",
+          "--replace-input-json",
+          replacementInput,
+          "--expected-preview",
+          replacementPreview.previewSha256,
+          "--jsonl",
+        ],
+        cliIo(fixture.root, replacementStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const replacement = validateExecutionPlanWorkflowExperimentResultFrame(
+      parseFrames(replacementStdout.text()).at(-1),
+    );
+    expect(replacement).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        experiment: expect.objectContaining({
+          result: expect.objectContaining({
+            output: {
+              report: "CLI report from replacement",
+              approved: true,
+            },
+          }),
+          comparison: expect.objectContaining({
+            nodes: expect.arrayContaining([
+              expect.objectContaining({
+                nodeId: "report",
+                execution: "input_replaced",
+                inputChange: "changed",
               }),
             ]),
           }),

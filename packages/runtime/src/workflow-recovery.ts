@@ -23,10 +23,10 @@ import {
   skippedWorkflowNodeResult,
 } from "./workflow-runtime-model.js";
 import {
-  buildExecutionPlanWorkflowNodeInput,
-  workflowNodeBindingContextSha256,
-  workflowSchemaSha256,
-} from "./workflow-schemas.js";
+  buildWorkflowExecutionNodeInput,
+  workflowExecutionNodeBindingContextSha256,
+} from "./workflow-node-input.js";
+import { workflowSchemaSha256 } from "./workflow-schemas.js";
 
 export interface WorkflowRecoveryOperations {
   blockNode(
@@ -83,11 +83,7 @@ export class ExecutionPlanWorkflowRecovery {
               "Workflow Plan contains an unauthorized skipped node",
             );
           }
-          const input = buildExecutionPlanWorkflowNodeInput(
-            node,
-            context.input,
-            context.outputs,
-          );
+          const input = buildWorkflowExecutionNodeInput(context, node);
           const inputSha256 = sha256(canonicalJson(input));
           const evaluation = evaluateExecutionPlanWorkflowCondition(
             node.when,
@@ -148,11 +144,7 @@ export class ExecutionPlanWorkflowRecovery {
         ) {
           continue;
         }
-        const input = buildExecutionPlanWorkflowNodeInput(
-          node,
-          context.input,
-          context.outputs,
-        );
+        const input = buildWorkflowExecutionNodeInput(context, node);
         const inputSha256 = sha256(canonicalJson(input));
         if (
           node.when &&
@@ -446,17 +438,12 @@ export class ExecutionPlanWorkflowRecovery {
       }
       let expectedInputSha256: string;
       try {
-        const nodeInput = buildExecutionPlanWorkflowNodeInput(
-          node,
-          context.input,
-          context.outputs,
-        );
+        const nodeInput = buildWorkflowExecutionNodeInput(context, node);
         expectedInputSha256 = sha256(canonicalJson(nodeInput));
       } catch {
-        expectedInputSha256 = workflowNodeBindingContextSha256(
+        expectedInputSha256 = workflowExecutionNodeBindingContextSha256(
+          context,
           node,
-          context.input,
-          context.outputs,
         );
       }
       const failed = [...events]

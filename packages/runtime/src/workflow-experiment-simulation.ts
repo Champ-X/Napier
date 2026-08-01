@@ -6,7 +6,10 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import type { WorkflowSimulatedNode } from "./workflow-context.js";
+import type {
+  WorkflowNodeInputOverride,
+  WorkflowSimulatedNode,
+} from "./workflow-context.js";
 import type { WorkflowExperimentExecutionProjection } from "./workflow-experiment-mode.js";
 import {
   assertWorkflowValue,
@@ -51,6 +54,7 @@ export function createWorkflowExperimentPreview(input: {
   base: WorkflowExperimentPreviewBase;
   execution: WorkflowExperimentExecutionProjection;
   simulatedNodes: WorkflowSimulatedNode[];
+  inputOverrides: WorkflowNodeInputOverride[];
 }): ExecutionPlanWorkflowExperimentPreview {
   if (
     (input.execution.mode === "simulate_node" &&
@@ -59,6 +63,14 @@ export function createWorkflowExperimentPreview(input: {
       input.simulatedNodes.length !== 0)
   ) {
     throw new Error("Workflow experiment simulation projection is invalid");
+  }
+  if (
+    (input.execution.mode === "replace_input" &&
+      input.inputOverrides.length !== 1) ||
+    (input.execution.mode !== "replace_input" &&
+      input.inputOverrides.length !== 0)
+  ) {
+    throw new Error("Workflow experiment input override projection is invalid");
   }
   const content =
     input.execution.mode === "single_node"
@@ -79,10 +91,20 @@ export function createWorkflowExperimentPreview(input: {
             simulatedOutputSha256: input.simulatedNodes[0]!.outputSha256,
             simulatedOutputBytes: input.simulatedNodes[0]!.outputBytes,
           }
-        : {
-            ...input.base,
-            schemaVersion: 1 as const,
-          };
+        : input.execution.mode === "replace_input"
+          ? {
+              ...input.base,
+              schemaVersion: 4 as const,
+              mode: "replace_input" as const,
+              executionNodeIds: input.execution.executionNodeIds,
+              replacedInputNodeId: input.inputOverrides[0]!.nodeId,
+              replacementInputSha256: input.inputOverrides[0]!.inputSha256,
+              replacementInputBytes: input.inputOverrides[0]!.inputBytes,
+            }
+          : {
+              ...input.base,
+              schemaVersion: 1 as const,
+            };
   return {
     ...content,
     previewSha256: sha256(canonicalJson(content)),

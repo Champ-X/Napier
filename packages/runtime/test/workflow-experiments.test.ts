@@ -728,6 +728,324 @@ describe("Execution Plan Workflow experiments", () => {
     reopened.close();
   });
 
+  it("replaces one typed checkpoint input and executes the real descendant subgraph", async () => {
+    const fixture = await createFixture({ deterministicInspect: true });
+    const sourceAgentId = fixture.store.getThread(
+      fixture.sourceThreadId,
+    ).agentId;
+    const sourceReportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
+    for (const type of ["tool.started", "tool.completed"] as const) {
+      await fixture.store.appendEvent({
+        threadId: fixture.sourceThreadId,
+        runId: sourceReportRunId,
+        type,
+        category: "tool",
+        visibility: "user",
+        payload: {
+          callId: "call_replacement_descendant_write",
+          toolName: "apply_patch",
+          status: type === "tool.started" ? "started" : "completed",
+          effect: "write",
+        },
+      });
+    }
+    const replacementInput = {
+      workflow: { request: sourceAgentId },
+    };
+    const encodedInput = canonicalJson(replacementInput);
+    const request = {
+      ...experimentRequest(fixture),
+      fromNodeId: "inspect",
+      mode: "replace_input" as const,
+      replacementInput,
+    };
+    const preview = await fixture.experiments.preview(
+      fixture.sourceThreadId,
+      request,
+    );
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 4,
+        mode: "replace_input",
+        reusedNodeIds: [],
+        rerunNodeIds: ["inspect", "report"],
+        executionNodeIds: ["inspect", "report"],
+        replacedInputNodeId: "inspect",
+        replacementInputSha256: sha256(encodedInput),
+        replacementInputBytes: Buffer.byteLength(encodedInput, "utf8"),
+        requiresSideEffectConfirmation: true,
+        toolEffects: [
+          expect.objectContaining({ nodeId: "inspect", writeCount: 0 }),
+          expect.objectContaining({ nodeId: "report", writeCount: 1 }),
+        ],
+      }),
+    );
+    await expect(
+      fixture.experiments.run({
+        sourceThreadId: fixture.sourceThreadId,
+        request,
+      }),
+    ).rejects.toThrow("preview changed");
+    await expect(
+      fixture.experiments.run({
+        sourceThreadId: fixture.sourceThreadId,
+        request: {
+          ...request,
+          expectedPreviewSha256: preview.previewSha256,
+        },
+      }),
+    ).rejects.toThrow("requires explicit confirmation");
+
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Report from replaced input","approved":true}',
+      ),
+    ]);
+    const experiment = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: {
+        ...request,
+        confirmSideEffects: true,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+    });
+    expect(experiment.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Report from replaced input",
+          approved: true,
+        },
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "completed",
+            output: { summary: sourceAgentId, count: 1 },
+          }),
+          expect.objectContaining({
+            nodeId: "report",
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+    expect(
+      fixture.store
+        .listRuns(experiment.targetThreadId)
+        .map((run) => run.source),
+    ).toEqual(["workflow", "workflow"]);
+    expect(experiment.comparison?.nodes[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        execution: "input_replaced",
+        inputChange: "changed",
+      }),
+    );
+    const events = await fixture.store.listEvents(experiment.targetThreadId);
+    const requested = events.filter(
+      (event) => event.type === "workflow.node.input_replacement.requested",
+    );
+    expect(requested).toEqual([
+      expect.objectContaining({
+        visibility: "hidden",
+        payload: expect.objectContaining({
+          input: replacementInput,
+          inputSha256: sha256(encodedInput),
+        }),
+      }),
+    ]);
+    expect(
+      events.find(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "inspect",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          inputSha256: sha256(encodedInput),
+        }),
+      }),
+    );
+
+    const bundle = await exportThreadReplayBundle(
+      fixture.store,
+      experiment.targetThreadId,
+    );
+    expect(verifyThreadReplayBundle(bundle).status).toBe("valid");
+    const imported = await fixture.store.importThreadReplayBundle(bundle);
+    const importedRequest = (
+      await fixture.store.listEvents(imported.thread.id)
+    ).find(
+      (event) => event.type === "workflow.node.input_replacement.requested",
+    );
+    expect(record(importedRequest?.payload)?.["input"]).toEqual(
+      replacementInput,
+    );
+    await expect(
+      fixture.workflows.run({
+        threadId: imported.thread.id,
+        request: {
+          manifest: experiment.candidateManifest,
+          planId: imported.plans[0]!.id,
+        },
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({ output: experiment.result.output }),
+    );
+
+    fixture.store.close();
+    const reopened = new LocalStore({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+    });
+    await reopened.initialize();
+    const models = new ModelRegistry();
+    models.registerProvider(fixture.primary.provider);
+    const workflows = new ExecutionPlanWorkflowRuntime(
+      reopened,
+      new AgentRuntime(reopened, models),
+    );
+    await expect(
+      workflows.run({
+        threadId: experiment.targetThreadId,
+        request: {
+          manifest: experiment.candidateManifest,
+          planId: experiment.result.planId,
+        },
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({ output: experiment.result.output }),
+    );
+    reopened.close();
+  });
+
+  it("fails invalid replacement input, contains cancellation, and isolates concurrent targets", async () => {
+    const invalidFixture = await createFixture({ deterministicInspect: true });
+    await expect(
+      invalidFixture.experiments.preview(invalidFixture.sourceThreadId, {
+        ...experimentRequest(invalidFixture),
+        fromNodeId: "inspect",
+        mode: "replace_input",
+        replacementInput: { workflow: { request: "" } },
+      }),
+    ).rejects.toThrow("replacement input");
+    expect(invalidFixture.store.listThreads()).toHaveLength(2);
+    invalidFixture.store.close();
+
+    const cancelledFixture = await createFixture({
+      deterministicInspect: true,
+    });
+    const cancelledRequest = {
+      ...experimentRequest(cancelledFixture),
+      fromNodeId: "inspect",
+      mode: "replace_input" as const,
+      replacementInput: {
+        workflow: { request: "Cancel replacement execution" },
+      },
+    };
+    const cancelledPreview = await cancelledFixture.experiments.preview(
+      cancelledFixture.sourceThreadId,
+      cancelledRequest,
+    );
+    const controller = new AbortController();
+    const cancelled = await cancelledFixture.experiments.run({
+      sourceThreadId: cancelledFixture.sourceThreadId,
+      request: {
+        ...cancelledRequest,
+        expectedPreviewSha256: cancelledPreview.previewSha256,
+      },
+      signal: controller.signal,
+      onEvent: (event) => {
+        if (
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "inspect"
+        ) {
+          controller.abort();
+        }
+      },
+    });
+    expect(cancelled.result.status).toBe("cancelled");
+    expect(
+      (await cancelledFixture.store.listEvents(cancelled.targetThreadId)).some(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "report",
+      ),
+    ).toBe(false);
+    cancelledFixture.store.close();
+
+    const concurrentFixture = await createFixture({
+      deterministicInspect: true,
+    });
+    const concurrentRequest = {
+      ...experimentRequest(concurrentFixture),
+      fromNodeId: "inspect",
+      mode: "replace_input" as const,
+      replacementInput: {
+        workflow: { request: "Concurrent replacement input" },
+      },
+    };
+    const concurrentPreview = await concurrentFixture.experiments.preview(
+      concurrentFixture.sourceThreadId,
+      concurrentRequest,
+    );
+    concurrentFixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Concurrent replacement report","approved":true}',
+      ),
+      fauxAssistantMessage(
+        '{"report":"Concurrent replacement report","approved":true}',
+      ),
+    ]);
+    const [left, right] = await Promise.all([
+      concurrentFixture.experiments.run({
+        sourceThreadId: concurrentFixture.sourceThreadId,
+        request: {
+          ...concurrentRequest,
+          expectedPreviewSha256: concurrentPreview.previewSha256,
+        },
+      }),
+      concurrentFixture.experiments.run({
+        sourceThreadId: concurrentFixture.sourceThreadId,
+        request: {
+          ...concurrentRequest,
+          expectedPreviewSha256: concurrentPreview.previewSha256,
+        },
+      }),
+    ]);
+    expect(left.targetThreadId).not.toBe(right.targetThreadId);
+    for (const experiment of [left, right]) {
+      expect(experiment.result.output).toEqual({
+        report: "Concurrent replacement report",
+        approved: true,
+      });
+    }
+    const duplicate = (
+      await concurrentFixture.store.listEvents(left.targetThreadId)
+    ).find(
+      (event) => event.type === "workflow.node.input_replacement.requested",
+    )!;
+    await concurrentFixture.store.appendEvent({
+      threadId: left.targetThreadId,
+      runId: "runctl_duplicate_input_replacement",
+      type: duplicate.type,
+      category: duplicate.category,
+      visibility: duplicate.visibility,
+      payload: structuredClone(duplicate.payload),
+    });
+    await expect(
+      concurrentFixture.workflows.run({
+        threadId: left.targetThreadId,
+        request: {
+          manifest: left.candidateManifest,
+          planId: left.result.planId,
+        },
+      }),
+    ).rejects.toThrow("replacement input recovery evidence");
+    concurrentFixture.store.close();
+  });
+
   it("fails invalid simulation, contains cancellation, and isolates concurrent targets", async () => {
     const invalidFixture = await createFixture();
     await expect(

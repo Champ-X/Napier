@@ -12,7 +12,7 @@ import {
   isWorkflowRecord,
 } from "./workflow-ledger.js";
 import type { WorkflowExecutionContext } from "./workflow-context.js";
-import { workflowNodeBindingContextSha256 } from "./workflow-schemas.js";
+import { workflowExecutionNodeBindingContextSha256 } from "./workflow-node-input.js";
 
 export const WORKFLOW_BREAKPOINT_REACHED_EVENT = "workflow.breakpoint.reached";
 export const WORKFLOW_BREAKPOINT_CONTINUED_EVENT =
@@ -173,7 +173,7 @@ export class ExecutionPlanWorkflowBreakpointRuntime {
       (candidate) => candidate.id === nodeId,
     );
     const expectedBindingSha256 = node
-      ? workflowNodeBindingContextSha256(node, context.input, context.outputs)
+      ? workflowExecutionNodeBindingContextSha256(context, node)
       : undefined;
     if (
       event.category !== "plan" ||
@@ -206,10 +206,9 @@ export class ExecutionPlanWorkflowBreakpointRuntime {
     const node = context.manifest.nodes.find(
       (candidate) => candidate.id === nodeId,
     )!;
-    const bindingContextSha256 = workflowNodeBindingContextSha256(
+    const bindingContextSha256 = workflowExecutionNodeBindingContextSha256(
+      context,
       node,
-      context.input,
-      context.outputs,
     );
     const event = await this.ledger.append(
       {

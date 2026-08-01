@@ -108,5 +108,8 @@ function forkWorkflowExecutionContext(
     ),
     reusedNodes: context.reusedNodes.map((node) => structuredClone(node)),
     simulatedNodes: context.simulatedNodes.map((node) => structuredClone(node)),
+    inputOverrides: context.inputOverrides.map((override) =>
+      structuredClone(override),
+    ),
   };
 }

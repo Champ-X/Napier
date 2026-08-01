@@ -269,6 +269,61 @@ describe("Napier TypeScript SDK Workflow experiments", () => {
     store.close();
   });
 
+  it("replaces one typed checkpoint input and executes it normally", async () => {
+    const fixture = await createFixture("replace-input");
+    const client = await createNapierClient({
+      ...fixture,
+      sandbox: new UnsupportedSandboxAdapter("sdk-experiment-replace-input"),
+    });
+    const workflow = await client.defineWorkflow<
+      ExperimentRequest,
+      ExperimentResult
+    >(experimentWorkflowDefinition());
+    const source = await client.runWorkflow({
+      workflow,
+      input: { text: "Source SDK input" },
+    });
+    const replacementInput = {
+      prepared: { normalized: "Replacement SDK input" },
+    };
+    const preview = await client.previewWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      fromNodeId: "deliver",
+      mode: "replace_input",
+      replacementInput,
+    });
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 4,
+        mode: "replace_input",
+        executionNodeIds: ["deliver"],
+        replacedInputNodeId: "deliver",
+      }),
+    );
+    const experiment = await client.runWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      fromNodeId: "deliver",
+      mode: "replace_input",
+      replacementInput,
+      expectedPreviewSha256: preview.previewSha256,
+    });
+    expect(experiment.result.output).toEqual({
+      message: "Replacement SDK input",
+    });
+    expect(experiment.comparison?.nodes[1]).toEqual(
+      expect.objectContaining({
+        nodeId: "deliver",
+        execution: "input_replaced",
+        inputChange: "changed",
+      }),
+    );
+    await client.close();
+  });
+
   it("recovers a cancelled target through normal Workflow resume", async () => {
     const fixture = await createFixture("recover");
     const client = await createNapierClient({

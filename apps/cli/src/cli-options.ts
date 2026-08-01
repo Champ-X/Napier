@@ -101,6 +101,7 @@ export interface CliWorkflowOptions extends CliExecutionOptions {
   fromNodeId?: string;
   singleNode?: boolean;
   simulateOutputJson?: string;
+  replaceInputJson?: string;
   modelOverridesJson?: string;
   expectedPreviewSha256?: string;
   previewExperiment?: boolean;
@@ -205,6 +206,7 @@ const WORKFLOW_VALUE_OPTIONS = new Set([
   "--timeout-ms",
   "--from-node",
   "--simulate-output-json",
+  "--replace-input-json",
   "--model-overrides-json",
   "--expected-preview",
   "--decision-note",
@@ -586,6 +588,7 @@ function parseWorkflowOptions(
   );
   const inputJson = values.get("--input-json");
   const simulateOutputJson = values.get("--simulate-output-json");
+  const replaceInputJson = values.get("--replace-input-json");
   const modelOverridesJson = values.get("--model-overrides-json");
   const expectedPreviewSha256 = values.get("--expected-preview")?.trim();
   const decisionNote = values.get("--decision-note")?.trim();
@@ -606,6 +609,14 @@ function parseWorkflowOptions(
   ) {
     throw new Error(
       `--simulate-output-json exceeds ${MAX_WORKFLOW_INPUT_BYTES} UTF-8 bytes`,
+    );
+  }
+  if (
+    replaceInputJson !== undefined &&
+    Buffer.byteLength(replaceInputJson, "utf8") > MAX_WORKFLOW_INPUT_BYTES
+  ) {
+    throw new Error(
+      `--replace-input-json exceeds ${MAX_WORKFLOW_INPUT_BYTES} UTF-8 bytes`,
     );
   }
   if (
@@ -664,13 +675,18 @@ function parseWorkflowOptions(
     if (approval) {
       throw new Error("--approve and --reject cannot be used with experiments");
     }
-    if (flags.has("--single-node") && simulateOutputJson !== undefined) {
-      throw new Error(
-        "--single-node and --simulate-output-json are mutually exclusive",
-      );
+    if (
+      Number(flags.has("--single-node")) +
+        Number(simulateOutputJson !== undefined) +
+        Number(replaceInputJson !== undefined) >
+      1
+    ) {
+      throw new Error("Checkpoint experiment modes are mutually exclusive");
     }
     if (
-      (flags.has("--single-node") || simulateOutputJson !== undefined) &&
+      (flags.has("--single-node") ||
+        simulateOutputJson !== undefined ||
+        replaceInputJson !== undefined) &&
       !flags.has("--preview-experiment") &&
       !expectedPreviewSha256
     ) {
@@ -685,6 +701,7 @@ function parseWorkflowOptions(
       agentId ||
       title ||
       simulateOutputJson !== undefined ||
+      replaceInputJson !== undefined ||
       modelOverridesJson !== undefined ||
       expectedPreviewSha256 !== undefined ||
       flags.has("--preview-experiment") ||
@@ -733,6 +750,7 @@ function parseWorkflowOptions(
     !fromNodeId &&
     (modelOverridesJson !== undefined ||
       simulateOutputJson !== undefined ||
+      replaceInputJson !== undefined ||
       expectedPreviewSha256 !== undefined ||
       flags.has("--preview-experiment") ||
       flags.has("--confirm-side-effects") ||
@@ -763,6 +781,7 @@ function parseWorkflowOptions(
       ...(fromNodeId ? { fromNodeId } : {}),
       ...(flags.has("--single-node") ? { singleNode: true } : {}),
       ...(simulateOutputJson !== undefined ? { simulateOutputJson } : {}),
+      ...(replaceInputJson !== undefined ? { replaceInputJson } : {}),
       ...(modelOverridesJson !== undefined ? { modelOverridesJson } : {}),
       ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
       ...(flags.has("--preview-experiment") ? { previewExperiment: true } : {}),
@@ -958,6 +977,7 @@ Workflow options:
   --from-node <node-id>  Fork an experiment from this Workflow node
   --single-node          Execute selected checkpoint; hold direct successors
   --simulate-output-json Simulate checkpoint output, then execute descendants
+  --replace-input-json  Replace checkpoint input, then execute its subgraph
   --model-overrides-json Per-node ModelRef overrides for rerun nodes
   --preview-experiment   Preview a checkpoint experiment without mutation
   --confirm-side-effects Confirm the exact current side-effect preview

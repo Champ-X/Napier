@@ -9,16 +9,19 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import type {
   WorkflowExperimentLineage,
+  WorkflowNodeInputOverride,
   WorkflowReusedNode,
   WorkflowSimulatedNode,
 } from "./workflow-context.js";
 import { projectExecutionPlanWorkflowSourceEvidence } from "./workflow-experiment-source.js";
 import { projectWorkflowExperimentExecution } from "./workflow-experiment-mode.js";
+import { WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT } from "./workflow-input-override.js";
 import { isWorkflowRecord } from "./workflow-ledger.js";
 import { WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT } from "./workflow-simulation-evidence.js";
 import {
   assertWorkflowValue,
   MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
+  MAX_EXECUTION_PLAN_WORKFLOW_VALUE_BYTES,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
 
@@ -31,6 +34,7 @@ export interface RecoveredWorkflowExperimentTarget {
   lineage?: WorkflowExperimentLineage;
   reusedNodes: WorkflowReusedNode[];
   simulatedNodes: WorkflowSimulatedNode[];
+  inputOverrides: WorkflowNodeInputOverride[];
 }
 
 export async function recoverExecutionPlanWorkflowExperimentTarget(
@@ -51,7 +55,7 @@ export async function recoverExecutionPlanWorkflowExperimentTarget(
       event.payload["planId"] === targetPlan.id,
   );
   if (matches.length === 0) {
-    return { reusedNodes: [], simulatedNodes: [] };
+    return { reusedNodes: [], simulatedNodes: [], inputOverrides: [] };
   }
   if (matches.length !== 1) {
     throw new Error("Workflow experiment target evidence is ambiguous");
@@ -68,13 +72,19 @@ export async function recoverExecutionPlanWorkflowExperimentTarget(
     candidateManifest,
     targetPlan.id,
   );
+  const inputOverrides = recoverInputOverrides(
+    events,
+    lineage,
+    candidateManifest,
+    targetPlan.id,
+  );
   const incompleteNodeIds = lineage.reusedNodeIds.filter(
     (nodeId) =>
       targetPlan.steps.find((step) => step.id === nodeId)?.status !==
       "completed",
   );
   if (incompleteNodeIds.length === 0) {
-    return { lineage, reusedNodes: [], simulatedNodes };
+    return { lineage, reusedNodes: [], simulatedNodes, inputOverrides };
   }
 
   const sourcePlan = store.getPlan(lineage.sourcePlanId);
@@ -105,6 +115,7 @@ export async function recoverExecutionPlanWorkflowExperimentTarget(
   return {
     lineage,
     simulatedNodes,
+    inputOverrides,
     reusedNodes: incompleteNodeIds.map((nodeId) => {
       const node = source.completedNodes.get(nodeId);
       if (!node) {
@@ -132,6 +143,9 @@ function validateExperimentLineage(
   const simulationNodeId = payload?.["simulationNodeId"];
   const simulatedOutputSha256 = payload?.["simulatedOutputSha256"];
   const simulatedOutputBytes = payload?.["simulatedOutputBytes"];
+  const replacedInputNodeId = payload?.["replacedInputNodeId"];
+  const replacementInputSha256 = payload?.["replacementInputSha256"];
+  const replacementInputBytes = payload?.["replacementInputBytes"];
   const fromNodeId = payload?.["fromNodeId"];
   if (
     payload?.["schemaVersion"] !== 1 ||
@@ -153,7 +167,8 @@ function validateExperimentLineage(
     typeof payload["sideEffectsConfirmed"] !== "boolean" ||
     (executionMode !== undefined &&
       executionMode !== "single_node" &&
-      executionMode !== "simulate_node") ||
+      executionMode !== "simulate_node" &&
+      executionMode !== "replace_input") ||
     (executionMode === "single_node"
       ? executionNodeIds === undefined || stopBeforeNodeIds === undefined
       : executionMode === "simulate_node"
@@ -163,18 +178,30 @@ function validateExperimentLineage(
           typeof simulatedOutputSha256 !== "string" ||
           !HASH.test(simulatedOutputSha256) ||
           !positiveInteger(simulatedOutputBytes)
-        : executionNodeIds !== undefined ||
-          stopBeforeNodeIds !== undefined ||
-          simulationNodeId !== undefined ||
-          simulatedOutputSha256 !== undefined ||
-          simulatedOutputBytes !== undefined)
+        : executionMode === "replace_input"
+          ? executionNodeIds === undefined ||
+            stopBeforeNodeIds !== undefined ||
+            replacedInputNodeId !== fromNodeId ||
+            typeof replacementInputSha256 !== "string" ||
+            !HASH.test(replacementInputSha256) ||
+            !positiveInteger(replacementInputBytes)
+          : executionNodeIds !== undefined ||
+            stopBeforeNodeIds !== undefined ||
+            simulationNodeId !== undefined ||
+            simulatedOutputSha256 !== undefined ||
+            simulatedOutputBytes !== undefined ||
+            replacedInputNodeId !== undefined ||
+            replacementInputSha256 !== undefined ||
+            replacementInputBytes !== undefined)
   ) {
     throw new Error("Workflow experiment target evidence is invalid");
   }
   const execution = projectWorkflowExperimentExecution(
     candidateManifest,
     fromNodeId,
-    executionMode === "single_node" || executionMode === "simulate_node"
+    executionMode === "single_node" ||
+      executionMode === "simulate_node" ||
+      executionMode === "replace_input"
       ? executionMode
       : "subgraph",
   );
@@ -186,7 +213,9 @@ function validateExperimentLineage(
     canonicalJson(rerunNodeIds) !== canonicalJson(execution.rerunNodeIds) ||
     canonicalJson(targetBreakBeforeNodeIds) !==
       canonicalJson(execution.stopBeforeNodeIds) ||
-    ((executionMode === "single_node" || executionMode === "simulate_node") &&
+    ((executionMode === "single_node" ||
+      executionMode === "simulate_node" ||
+      executionMode === "replace_input") &&
       canonicalJson(executionNodeIds) !==
         canonicalJson(execution.executionNodeIds)) ||
     (executionMode === "single_node" &&
@@ -219,7 +248,15 @@ function validateExperimentLineage(
             simulatedOutputSha256: simulatedOutputSha256 as string,
             simulatedOutputBytes: Number(simulatedOutputBytes),
           }
-        : {}),
+        : executionMode === "replace_input"
+          ? {
+              executionMode,
+              executionNodeIds: executionNodeIds!,
+              replacedInputNodeId: replacedInputNodeId as string,
+              replacementInputSha256: replacementInputSha256 as string,
+              replacementInputBytes: Number(replacementInputBytes),
+            }
+          : {}),
   };
 }
 
@@ -277,6 +314,64 @@ function recoverSimulatedNodes(
       output,
       outputSha256: lineage.simulatedOutputSha256,
       outputBytes: lineage.simulatedOutputBytes,
+    },
+  ];
+}
+
+function recoverInputOverrides(
+  events: RunEvent[],
+  lineage: WorkflowExperimentLineage,
+  manifest: ExecutionPlanWorkflowManifest,
+  planId: string,
+): WorkflowNodeInputOverride[] {
+  if (lineage.executionMode !== "replace_input") return [];
+  const node = manifest.nodes.find(
+    (candidate) => candidate.id === lineage.replacedInputNodeId,
+  );
+  const matches = events.filter(
+    (event) =>
+      event.type === WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT &&
+      isWorkflowRecord(event.payload) &&
+      event.payload["planId"] === planId,
+  );
+  const event = matches.length === 1 ? matches[0] : undefined;
+  const payload =
+    event && isWorkflowRecord(event.payload) ? event.payload : undefined;
+  if (
+    !node ||
+    !event ||
+    event.visibility !== "hidden" ||
+    !payload ||
+    payload["schemaVersion"] !== 1 ||
+    payload["manifestSha256"] !== manifest.contentSha256 ||
+    payload["nodeId"] !== node.id ||
+    payload["inputSha256"] !== lineage.replacementInputSha256 ||
+    payload["inputBytes"] !== lineage.replacementInputBytes ||
+    payload["inputSchemaSha256"] !== workflowSchemaSha256(node.inputSchema) ||
+    payload["input"] === undefined
+  ) {
+    throw new Error("Workflow replacement input recovery evidence is invalid");
+  }
+  assertWorkflowValue(
+    node.inputSchema,
+    payload["input"],
+    `Workflow replacement input ${node.id}`,
+    MAX_EXECUTION_PLAN_WORKFLOW_VALUE_BYTES,
+  );
+  const input = structuredClone(payload["input"]);
+  const encoded = canonicalJson(input);
+  if (
+    sha256(encoded) !== lineage.replacementInputSha256 ||
+    Buffer.byteLength(encoded, "utf8") !== lineage.replacementInputBytes
+  ) {
+    throw new Error("Workflow replacement input recovery value is invalid");
+  }
+  return [
+    {
+      nodeId: node.id,
+      input,
+      inputSha256: lineage.replacementInputSha256,
+      inputBytes: lineage.replacementInputBytes,
     },
   ];
 }

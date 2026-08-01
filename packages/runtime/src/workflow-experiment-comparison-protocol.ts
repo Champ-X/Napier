@@ -261,9 +261,12 @@ export function assertExecutionPlanWorkflowExperimentComparisonBinding(
       const expectedExecution =
         preview.schemaVersion === 3 && node.nodeId === preview.simulatedNodeId
           ? "simulated"
-          : preview.rerunNodeIds.includes(node.nodeId)
-            ? "rerun"
-            : "reused";
+          : preview.schemaVersion === 4 &&
+              node.nodeId === preview.replacedInputNodeId
+            ? "input_replaced"
+            : preview.rerunNodeIds.includes(node.nodeId)
+              ? "rerun"
+              : "reused";
       return node.execution !== expectedExecution;
     }) ||
     validated.sourceOutputSha256 !==
@@ -356,7 +359,8 @@ function validateNodeComparison(
     !resourceId(node["nodeId"], NODE_ID) ||
     (node["execution"] !== "reused" &&
       node["execution"] !== "rerun" &&
-      node["execution"] !== "simulated") ||
+      node["execution"] !== "simulated" &&
+      node["execution"] !== "input_replaced") ||
     typeof node["statusChanged"] !== "boolean" ||
     typeof node["modelChanged"] !== "boolean" ||
     typeof node["configurationChanged"] !== "boolean" ||

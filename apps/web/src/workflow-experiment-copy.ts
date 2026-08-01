@@ -13,15 +13,21 @@ export const workflowExperimentCopy = {
   subgraphMode: "Checkpoint and descendants",
   singleNodeMode: "Selected checkpoint only",
   simulateNodeMode: "Simulated checkpoint output",
+  replaceInputMode: "Replacement checkpoint input",
   subgraphHint:
     "Rerun the selected checkpoint and its complete descendant subgraph.",
   singleNodeHint:
     "Execute the selected checkpoint and hold any direct descendants.",
   simulateNodeHint:
     "Skip the selected checkpoint, bind a typed simulated output, and execute its descendants.",
+  replaceInputHint:
+    "Replace the selected checkpoint's constructed input, then execute it and its descendants.",
   simulatedOutput: "Simulated output JSON",
   simulatedOutputHint:
     "The exact value is stored as hidden local recovery evidence; public Trace exposes only its hash and byte count.",
+  replacementInput: "Replacement input JSON",
+  replacementInputHint:
+    "The value must satisfy the selected node input Schema. Public Trace exposes only its hash and byte count.",
   selectedModel: "Selected model",
   overrideModel: "Replace checkpoint model",
   overrideHint:
@@ -48,6 +54,7 @@ export const workflowExperimentCopy = {
   executeNow: "Execute now",
   stopBefore: "Stop before",
   simulated: "Simulated",
+  inputReplaced: "Input replaced",
   bytes: "Bytes",
   attempts: "Attempts",
   calls: "Calls",

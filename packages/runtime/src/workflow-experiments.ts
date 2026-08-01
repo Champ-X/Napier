@@ -134,6 +134,7 @@ export class ExecutionPlanWorkflowExperimentRuntime {
           agentRevision: source.sourceAgentRevision,
           reusedNodes: source.reusedNodes,
           simulatedNodes: source.simulatedNodes,
+          inputOverrides: source.inputOverrides,
           lineage: {
             sourceThreadId: options.sourceThreadId,
             sourcePlanId: source.sourcePlan.id,
@@ -160,7 +161,15 @@ export class ExecutionPlanWorkflowExperimentRuntime {
                     simulatedOutputSha256: preview.simulatedOutputSha256,
                     simulatedOutputBytes: preview.simulatedOutputBytes,
                   }
-                : {}),
+                : preview.schemaVersion === 4
+                  ? {
+                      executionMode: preview.mode,
+                      executionNodeIds: preview.executionNodeIds,
+                      replacedInputNodeId: preview.replacedInputNodeId,
+                      replacementInputSha256: preview.replacementInputSha256,
+                      replacementInputBytes: preview.replacementInputBytes,
+                    }
+                  : {}),
           },
         },
         ...(options.signal ? { signal: options.signal } : {}),

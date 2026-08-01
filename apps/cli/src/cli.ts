@@ -332,7 +332,15 @@ async function executeWorkflow(
                     "Workflow simulated output",
                   ),
                 }
-              : {}),
+              : options.replaceInputJson !== undefined
+                ? {
+                    mode: "replace_input" as const,
+                    replacementInput: parseJson(
+                      options.replaceInputJson,
+                      "Workflow replacement input",
+                    ),
+                  }
+                : {}),
           ...(options.title ? { title: options.title } : {}),
           ...(options.modelOverridesJson
             ? {

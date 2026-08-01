@@ -63,8 +63,11 @@ Version `0.1.0` includes:
   explicit breakpoint continuation before the remaining subgraph can run. A
   schema-3 simulation mode instead Schema-validates one explicit selected-node
   output, materializes it as a zero-model/zero-tool `workflow_simulation` Run,
-  and executes only its descendants through the normal scheduler. SDK, local
-  RPC, CLI, HTTP, and a lazy Plan Workbench desk share the complete
+  and executes only its descendants through the normal scheduler. A schema-4
+  input-replacement mode Schema-validates one complete constructed checkpoint
+  input, reuses verified ancestors, then executes the selected node and every
+  descendant through that same scheduler. SDK, local RPC, CLI, HTTP, and a
+  lazy Plan Workbench desk share the complete
   preview-confirm-execute-inspect flow;
 - controlled Agent message experiments that select a terminal historical
   `message.user`, freeze its Agent revision, Prompt Variables, Skill catalog,
@@ -891,13 +894,51 @@ rather than implying a real rerun. This mode does not replace arbitrary
 Workflow input, simulate write/session side effects, or capture external
 Session state.
 
+Use `--replace-input-json` to replace the complete constructed input of one
+selected checkpoint and execute that checkpoint plus its descendants normally:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --thread thread_source \
+  --plan plan_source \
+  --from-node report \
+  --replace-input-json '{"prepared":{"summary":"Reviewed fixture"}}' \
+  --preview-experiment \
+  --jsonl
+```
+
+Schema-4 previews require the exact current preview hash for execution.
+`rerunNodeIds` and `executionNodeIds` both contain the selected checkpoint plus
+all descendants, while `replacedInputNodeId`, the canonical input SHA-256, and
+the byte count bind the override. The JSON value is limited to 32 KiB and must
+satisfy the selected node's input Schema. Verified ancestors remain
+`workflow_reuse` Runs; the selected node and descendants use the ordinary
+Workflow scheduler, policy, Sandbox, timeout, retry, cancellation, and
+side-effect confirmation paths. The selected comparison row is labeled
+`input_replaced` and reports the actual input change rather than implying
+simulation.
+
+The exact override is unique hidden
+`workflow.node.input_replacement.requested` recovery evidence. Public
+experiment and node events, Web Trace, and the rendered desk expose only safe
+IDs, Schema/input hashes, and bytes. Portable full-Thread import preserves the
+override as opaque user JSON while remapping actual resource lineage. This
+mode replaces neither top-level Workflow input nor historical dependency
+outputs, and it does not simulate write/session effects or external Session
+state. `--replace-input-json`, `--single-node`, and
+`--simulate-output-json` are mutually exclusive.
+
 The same path is available in **Plan -> Workflow experiment desk**. Load the
 exact versioned Manifest used by the source run, select its durable source Plan
 and checkpoint node, optionally replace that node with the currently selected
-configured model, select full-subgraph, single-node, or typed-output
-simulation, and preview before execution. The desk renders historical
-read/write/unknown effects and `rerun`/`execute now`/`stop before`/`simulated`
-counts, and requires an explicit checkbox for a preview that needs side-effect
+configured model, select full-subgraph, single-node, typed-output simulation,
+or typed-input replacement, and preview before execution. The desk renders
+historical read/write/unknown effects and
+`rerun`/`execute now`/`stop before`/`simulated`/`input replaced` counts, and
+requires an explicit checkbox for a preview that needs side-effect
 confirmation. A successful isolated fork shows aggregate and per-node
 target-minus-source deltas, can open the target Thread, and downloads the
 complete local result as
@@ -3321,6 +3362,18 @@ experiment lineage and the target's frozen breakpoint set. Unknown
 checkpoints, more than 16 direct successors, drift, partial lineage, or
 self-consistently rehashed stop-set changes fail closed.
 
+`mode=simulate_node` emits schema 3 and substitutes one Schema-valid selected
+output without entering its model or Tool path. `mode=replace_input` emits
+schema 4 and substitutes the selected node's complete constructed input before
+ordinary execution. Its `executionNodeIds` equals the complete selected-node
+descendant set, so effect projection and exact-preview confirmation cover
+everything that can execute. Runtime execution, conditions, breakpoints,
+Approval recovery, retry, and SQLite reconstruction all consume the same
+effective-input helper. Recovery accepts exactly one hidden replacement
+request whose node, Plan, Manifest, Schema, canonical hash, and byte count
+match the public experiment lineage; missing, duplicate, drifted, or tampered
+evidence fails closed.
+
 After target settlement, the Runtime aligns every source and target node by
 Manifest order and derives a hash-bound comparison from actual Plan, Run,
 Ledger, Evaluation, and Artifact evidence. It distinguishes reused from rerun
@@ -3471,10 +3524,12 @@ runtimes, and a visual builder remain open. Checkpoint experiments now provide
 single-call execution for an explicit
 stateless read-only built-in subset, while message experiments can freeze
 captured results for that same subset. Workflow experiments can also substitute
-one typed checkpoint output before normally executing descendants. Arbitrary
-input replacement, stateful/write tool stepping or side-effect simulation,
-Prompt/Skill/Memory replacement, batch experiments, an interactive root-cause
-timeline, and Evaluation promotion remain open. The opt-in DeepSeek
+one typed checkpoint output before normally executing descendants, or replace
+one selected checkpoint's complete typed constructed input before executing
+that node and its descendants. Top-level Workflow input replacement,
+stateful/write tool stepping or side-effect simulation, Prompt/Skill/Memory
+replacement, batch experiments, an interactive root-cause timeline, and
+Evaluation promotion remain open. The opt-in DeepSeek
 CLI smoke executes and checkpoint-reruns one
 real typed node when `DEEPSEEK_API_KEY` is available; default tests use
 deterministic providers and perform no network call. The Map-specific live

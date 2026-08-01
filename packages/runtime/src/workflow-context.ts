@@ -24,6 +24,7 @@ export interface WorkflowExecutionContext {
   nodeResults: Map<string, ExecutionPlanWorkflowNodeResult>;
   reusedNodes: WorkflowReusedNode[];
   simulatedNodes: WorkflowSimulatedNode[];
+  inputOverrides: WorkflowNodeInputOverride[];
 }
 
 export interface WorkflowNodeFailure {
@@ -53,6 +54,13 @@ export interface WorkflowSimulatedNode {
   outputBytes: number;
 }
 
+export interface WorkflowNodeInputOverride {
+  nodeId: string;
+  input: JsonValue;
+  inputSha256: string;
+  inputBytes: number;
+}
+
 export interface WorkflowExperimentLineage {
   sourceThreadId: string;
   sourcePlanId: string;
@@ -63,10 +71,13 @@ export interface WorkflowExperimentLineage {
   rerunNodeIds: string[];
   previewSha256: string;
   sideEffectsConfirmed: boolean;
-  executionMode?: "single_node" | "simulate_node";
+  executionMode?: "single_node" | "simulate_node" | "replace_input";
   executionNodeIds?: string[];
   stopBeforeNodeIds?: string[];
   simulationNodeId?: string;
   simulatedOutputSha256?: string;
   simulatedOutputBytes?: number;
+  replacedInputNodeId?: string;
+  replacementInputSha256?: string;
+  replacementInputBytes?: number;
 }

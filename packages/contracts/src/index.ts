@@ -1460,7 +1460,8 @@ export interface ExecutionPlanWorkflowExperimentToolEffects {
 export type ExecutionPlanWorkflowExperimentMode =
   | "subgraph"
   | "single_node"
-  | "simulate_node";
+  | "simulate_node"
+  | "replace_input";
 
 interface ExecutionPlanWorkflowExperimentPreviewBase {
   kind: "napier.execution-plan-workflow-experiment-preview";
@@ -1500,10 +1501,20 @@ export interface ExecutionPlanWorkflowExperimentPreviewV3 extends ExecutionPlanW
   simulatedOutputBytes: number;
 }
 
+export interface ExecutionPlanWorkflowExperimentPreviewV4 extends ExecutionPlanWorkflowExperimentPreviewBase {
+  schemaVersion: 4;
+  mode: "replace_input";
+  executionNodeIds: string[];
+  replacedInputNodeId: string;
+  replacementInputSha256: string;
+  replacementInputBytes: number;
+}
+
 export type ExecutionPlanWorkflowExperimentPreview =
   | ExecutionPlanWorkflowExperimentPreviewV1
   | ExecutionPlanWorkflowExperimentPreviewV2
-  | ExecutionPlanWorkflowExperimentPreviewV3;
+  | ExecutionPlanWorkflowExperimentPreviewV3
+  | ExecutionPlanWorkflowExperimentPreviewV4;
 
 export interface ExecutionPlanWorkflowExperimentMetricSet {
   runCount: number;
@@ -1559,7 +1570,7 @@ export interface ExecutionPlanWorkflowExperimentNodeObservation {
 
 export interface ExecutionPlanWorkflowExperimentNodeComparison {
   nodeId: string;
-  execution: "reused" | "rerun" | "simulated";
+  execution: "reused" | "rerun" | "simulated" | "input_replaced";
   source: ExecutionPlanWorkflowExperimentNodeObservation;
   target: ExecutionPlanWorkflowExperimentNodeObservation;
   statusChanged: boolean;
@@ -1607,6 +1618,7 @@ export interface CreateExecutionPlanWorkflowExperimentRequest {
   fromNodeId: string;
   mode?: ExecutionPlanWorkflowExperimentMode;
   simulatedOutput?: JsonValue;
+  replacementInput?: JsonValue;
   title?: string;
   modelOverrides?: Record<string, ModelRef>;
   confirmSideEffects?: boolean;

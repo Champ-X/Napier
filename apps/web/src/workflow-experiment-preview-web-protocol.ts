@@ -11,6 +11,7 @@ export async function validateWorkflowExperimentPreview(
   const schemaVersion = input["schemaVersion"];
   const singleNode = schemaVersion === 2;
   const simulatedNode = schemaVersion === 3;
+  const replacedInput = schemaVersion === 4;
   const required = [
     "kind",
     "schemaVersion",
@@ -38,11 +39,23 @@ export async function validateWorkflowExperimentPreview(
           "simulatedOutputBytes",
         ]
       : []),
+    ...(replacedInput
+      ? [
+          "mode",
+          "executionNodeIds",
+          "replacedInputNodeId",
+          "replacementInputSha256",
+          "replacementInputBytes",
+        ]
+      : []),
   ];
   if (
     !exactKeys(input, required) ||
     input["kind"] !== "napier.execution-plan-workflow-experiment-preview" ||
-    (schemaVersion !== 1 && schemaVersion !== 2 && schemaVersion !== 3) ||
+    (schemaVersion !== 1 &&
+      schemaVersion !== 2 &&
+      schemaVersion !== 3 &&
+      schemaVersion !== 4) ||
     typeof input["sourceThreadId"] !== "string" ||
     typeof input["sourcePlanId"] !== "string" ||
     !positiveInteger(input["sourcePlanRevision"]) ||
@@ -76,6 +89,17 @@ export async function validateWorkflowExperimentPreview(
         !hash(input["simulatedOutputSha256"]) ||
         !positiveInteger(input["simulatedOutputBytes"]) ||
         Number(input["simulatedOutputBytes"]) > 32 * 1024)) ||
+    (replacedInput &&
+      (input["mode"] !== "replace_input" ||
+        !stringArray(input["executionNodeIds"], 30) ||
+        input["replacedInputNodeId"] !== input["fromNodeId"] ||
+        !sameStrings(
+          input["executionNodeIds"],
+          input["rerunNodeIds"] as string[],
+        ) ||
+        !hash(input["replacementInputSha256"]) ||
+        !positiveInteger(input["replacementInputBytes"]) ||
+        Number(input["replacementInputBytes"]) > 32 * 1024)) ||
     !record(input["modelOverrides"]) ||
     !Array.isArray(input["toolEffects"]) ||
     typeof input["requiresSideEffectConfirmation"] !== "boolean" ||
@@ -86,7 +110,7 @@ export async function validateWorkflowExperimentPreview(
   const reusedNodeIds = input["reusedNodeIds"] as string[];
   const rerunNodeIds = input["rerunNodeIds"] as string[];
   const executionNodeIds =
-    singleNode || simulatedNode
+    singleNode || simulatedNode || replacedInput
       ? (input["executionNodeIds"] as string[])
       : rerunNodeIds;
   const modelOverrides = input["modelOverrides"] as Record<string, unknown>;

@@ -64,6 +64,13 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       1,
       32 * 1024,
     );
+    const replacedInputNodeId = nodeId(payload["replacedInputNodeId"]);
+    const replacementInputSha256 = hash(payload["replacementInputSha256"]);
+    const replacementInputBytes = boundedInteger(
+      payload["replacementInputBytes"],
+      1,
+      32 * 1024,
+    );
     const previewSha256 = hash(payload["previewSha256"]);
     if (
       !fromNodeId ||
@@ -73,7 +80,8 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       typeof payload["sideEffectsConfirmed"] !== "boolean" ||
       (executionMode !== undefined &&
         executionMode !== "single_node" &&
-        executionMode !== "simulate_node") ||
+        executionMode !== "simulate_node" &&
+        executionMode !== "replace_input") ||
       (executionMode === "single_node"
         ? !executionNodeIds ||
           !stopBeforeNodeIds ||
@@ -82,18 +90,36 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
           stopBeforeNodeIds.length > 16 ||
           simulationNodeId !== undefined ||
           simulatedOutputSha256 !== undefined ||
-          simulatedOutputBytes !== undefined
+          simulatedOutputBytes !== undefined ||
+          replacedInputNodeId !== undefined ||
+          replacementInputSha256 !== undefined ||
+          replacementInputBytes !== undefined
         : executionMode === "simulate_node"
           ? !executionNodeIds ||
             stopBeforeNodeIds !== undefined ||
             simulationNodeId !== fromNodeId ||
             !simulatedOutputSha256 ||
-            simulatedOutputBytes === undefined
-          : executionNodeIds !== undefined ||
-            stopBeforeNodeIds !== undefined ||
-            simulationNodeId !== undefined ||
-            simulatedOutputSha256 !== undefined ||
-            simulatedOutputBytes !== undefined)
+            simulatedOutputBytes === undefined ||
+            replacedInputNodeId !== undefined ||
+            replacementInputSha256 !== undefined ||
+            replacementInputBytes !== undefined
+          : executionMode === "replace_input"
+            ? !executionNodeIds ||
+              stopBeforeNodeIds !== undefined ||
+              replacedInputNodeId !== fromNodeId ||
+              !replacementInputSha256 ||
+              replacementInputBytes === undefined ||
+              simulationNodeId !== undefined ||
+              simulatedOutputSha256 !== undefined ||
+              simulatedOutputBytes !== undefined
+            : executionNodeIds !== undefined ||
+              stopBeforeNodeIds !== undefined ||
+              simulationNodeId !== undefined ||
+              simulatedOutputSha256 !== undefined ||
+              simulatedOutputBytes !== undefined ||
+              replacedInputNodeId !== undefined ||
+              replacementInputSha256 !== undefined ||
+              replacementInputBytes !== undefined)
     ) {
       return undefined;
     }
@@ -115,7 +141,15 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
               `simulation ${simulatedOutputSha256!.slice(0, 12)}`,
               `bytes ${String(simulatedOutputBytes)}`,
             ]
-          : []),
+          : executionMode === "replace_input"
+            ? [
+                "mode replace-input",
+                `execute ${String(executionNodeIds!.length)}`,
+                `input-replaced ${replacedInputNodeId}`,
+                `replacement ${replacementInputSha256!.slice(0, 12)}`,
+                `bytes ${String(replacementInputBytes)}`,
+              ]
+            : []),
       `preview ${previewSha256.slice(0, 12)}`,
       payload["sideEffectsConfirmed"] ? "side-effects confirmed" : "read-only",
     );

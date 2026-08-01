@@ -542,6 +542,7 @@ import {
   WORKFLOW_NODE_EXECUTION,
   type WorkflowNodeExecution,
 } from "./workflow-node-execution.js";
+import { WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT } from "./workflow-input-override.js";
 import {
   WORKFLOW_SIMULATION_EXECUTION,
   type WorkflowSimulationExecution,
@@ -12724,6 +12725,12 @@ function remapImportedEventPayload(
     Object.prototype.hasOwnProperty.call(payload, "output")
       ? structuredClone(payload["output"])
       : undefined;
+  const replacementInput =
+    type === WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT &&
+    isRecord(payload) &&
+    Object.prototype.hasOwnProperty.call(payload, "input")
+      ? structuredClone(payload["input"])
+      : undefined;
   const remapped = remapJsonValue(payload, idMap);
   if (
     simulationOutput !== undefined &&
@@ -12731,6 +12738,13 @@ function remapImportedEventPayload(
     Object.prototype.hasOwnProperty.call(remapped, "output")
   ) {
     remapped["output"] = simulationOutput;
+  }
+  if (
+    replacementInput !== undefined &&
+    isRecord(remapped) &&
+    Object.prototype.hasOwnProperty.call(remapped, "input")
+  ) {
+    remapped["input"] = replacementInput;
   }
   return remapped;
 }

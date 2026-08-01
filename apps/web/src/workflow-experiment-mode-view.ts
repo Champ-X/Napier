@@ -34,6 +34,14 @@ export function workflowExperimentPreviewMatchesMode(
       )
     );
   }
+  if (mode === "replace_input") {
+    return (
+      preview.schemaVersion === 4 &&
+      preview.mode === "replace_input" &&
+      preview.replacedInputNodeId === fromNodeId &&
+      sameStrings(preview.executionNodeIds, rerunNodeIds)
+    );
+  }
   if (preview.schemaVersion !== 2 || preview.mode !== "single_node") {
     return false;
   }

@@ -97,6 +97,7 @@ export function workflowNodeBindingContextSha256(
   node: ExecutionPlanWorkflowNode,
   workflowInput: JsonValue,
   nodeOutputs: ReadonlyMap<string, JsonValue>,
+  inputOverride?: JsonValue,
 ): string {
   const dependencyOutputHashes = [
     ...new Set(
@@ -113,11 +114,19 @@ export function workflowNodeBindingContextSha256(
         outputSha256: output === undefined ? "" : sha256(canonicalJson(output)),
       };
     });
+  const content = {
+    workflowInputSha256: sha256(canonicalJson(workflowInput)),
+    dependencyOutputHashes,
+  };
   return sha256(
-    canonicalJson({
-      workflowInputSha256: sha256(canonicalJson(workflowInput)),
-      dependencyOutputHashes,
-    }),
+    canonicalJson(
+      inputOverride === undefined
+        ? content
+        : {
+            ...content,
+            inputOverrideSha256: sha256(canonicalJson(inputOverride)),
+          },
+    ),
   );
 }
 

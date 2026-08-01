@@ -94,6 +94,37 @@ describe("Workflow experiment execution mode projection", () => {
       ),
     ).toBe(false);
   });
+
+  it("binds input replacement to the selected node and full rerun subgraph", () => {
+    const preview = {
+      schemaVersion: 4,
+      mode: "replace_input",
+      fromNodeId: "prepare",
+      reusedNodeIds: [],
+      rerunNodeIds: ["prepare", "report", "publish"],
+      executionNodeIds: ["prepare", "report", "publish"],
+      replacedInputNodeId: "prepare",
+    } as unknown as ExecutionPlanWorkflowExperimentPreview;
+    expect(
+      workflowExperimentPreviewMatchesMode(
+        preview,
+        workflowManifest(),
+        "prepare",
+        "replace_input",
+      ),
+    ).toBe(true);
+    expect(
+      workflowExperimentPreviewMatchesMode(
+        {
+          ...preview,
+          executionNodeIds: ["report", "publish"],
+        } as ExecutionPlanWorkflowExperimentPreview,
+        workflowManifest(),
+        "prepare",
+        "replace_input",
+      ),
+    ).toBe(false);
+  });
 });
 
 function workflowManifest(): ExecutionPlanWorkflowManifest {
