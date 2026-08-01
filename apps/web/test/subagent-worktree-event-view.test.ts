@@ -26,6 +26,9 @@ describe("Subagent worktree event view", () => {
         subagentWorktreeWriteScopeCount: 2,
         subagentWorktreeChangedFileCount: 2,
         subagentWorktreeDiagnosticsStatus: "clean",
+        writeLinkedTestStatus: "passed",
+        writeLinkedChangedFileCount: 2,
+        writeLinkedSelectedTestCount: 1,
         subagentWorktreeCandidateAddedFileCount: 1,
         subagentWorktreeCandidateModifiedFileCount: 0,
         subagentWorktreeCandidateDeletedFileCount: 1,
@@ -79,6 +82,7 @@ describe("Subagent worktree event view", () => {
     expect(toolEventTraceSummary(event)).toContain(
       "worktree applied / postcondition verified / candidate-files 2",
     );
+    expect(toolEventTraceSummary(event)).toContain("linked-tests passed");
   });
 
   it("rejects partial schema-v1 details and never projects live paths", () => {
@@ -108,6 +112,7 @@ describe("Subagent worktree event view", () => {
     rolledBack["rollbackAttempted"] = true;
     rolledBack["rollbackVerified"] = true;
     delete rolledBack["diagnostics"];
+    delete rolledBack["tests"];
 
     expect(subagentWorktreeEventEvidence(rolledBack)).toEqual(
       expect.objectContaining({
@@ -199,6 +204,39 @@ function worktreeDetails(): Record<string, unknown> {
       afterResultSetSha256: digest,
       deltaSetSha256: digest,
       durationMs: 1,
+      resultSha256: digest,
+    },
+    tests: {
+      kind: "napier.write-linked-test-verification",
+      schemaVersion: 2,
+      status: "passed",
+      changedFileCount: 2,
+      changedSymbolCount: 2,
+      changedSymbolsTruncated: false,
+      scannedFileCount: 4,
+      configurationFileCount: 0,
+      workspacePackageCount: 0,
+      pathAliasCount: 0,
+      workspacePackageEdgeCount: 0,
+      pathAliasEdgeCount: 0,
+      candidateTestCount: 1,
+      selectedTestCount: 1,
+      omittedTestCount: 0,
+      unresolvedImportCount: 0,
+      graphTruncated: false,
+      changedFileSetSha256: digest,
+      changedSymbolSetSha256: digest,
+      dependencyGraphSha256: digest,
+      selectedTestSetSha256: digest,
+      selectionSnapshotSha256: digest,
+      observedSnapshotSha256: digest,
+      verifierSha256: digest,
+      durationMs: 2,
+      exitCode: 0,
+      stdoutSha256: digest,
+      stderrSha256: digest,
+      stdoutTruncated: false,
+      stderrTruncated: false,
       resultSha256: digest,
     },
     resultSha256: digest,

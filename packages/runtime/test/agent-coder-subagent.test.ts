@@ -17,6 +17,7 @@ import { exportThreadReplayBundle } from "../src/replay.js";
 import type { OsSandboxAdapter } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
+import { controlledLspRenameSandbox } from "./lsp-rename-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 
@@ -35,18 +36,24 @@ describe("Agent coder Subagent", () => {
     const workspaceRoot = path.join(root, "workspace");
     await Promise.all([
       mkdir(path.join(workspaceRoot, "src"), { recursive: true }),
+      mkdir(path.join(workspaceRoot, "test"), { recursive: true }),
       mkdir(path.join(workspaceRoot, "node_modules/vitest"), {
         recursive: true,
       }),
     ]);
-    const source = "value=1\n";
-    const deleted = "delete-me\n";
-    const moved = "move-me\n";
-    const added = "added\n";
+    const source = "export const value = 1;\n";
+    const deleted = "export const deleted = true;\n";
+    const moved = "export const moved = true;\n";
+    const added = "export const added = true;\n";
+    const testPath = "test/add.test.ts";
     await Promise.all([
-      writeFile(path.join(workspaceRoot, "src/value.txt"), source),
-      writeFile(path.join(workspaceRoot, "src/delete.txt"), deleted),
-      writeFile(path.join(workspaceRoot, "src/move.txt"), moved),
+      writeFile(path.join(workspaceRoot, "src/value.ts"), source),
+      writeFile(path.join(workspaceRoot, "src/delete.ts"), deleted),
+      writeFile(path.join(workspaceRoot, "src/move.ts"), moved),
+      writeFile(
+        path.join(workspaceRoot, testPath),
+        'import { added } from "../src/add.js"; export const observed = added;\n',
+      ),
       writeFile(
         path.join(workspaceRoot, "node_modules/vitest/vitest.mjs"),
         "// fixed verifier fixture\n",
@@ -78,13 +85,13 @@ describe("Agent coder Subagent", () => {
           fauxToolCall("delegate_task", {
             role: "coder",
             description: "Apply an isolated file lifecycle change",
-            task: "Modify value.txt, create add.txt, delete delete.txt, and rename move.txt to renamed.txt.",
+            task: "Modify value.ts, create add.ts, delete delete.ts, and rename move.ts to renamed.ts.",
             writePaths: [
-              "src/add.txt",
-              "src/delete.txt",
-              "src/move.txt",
-              "src/renamed.txt",
-              "src/value.txt",
+              "src/add.ts",
+              "src/delete.ts",
+              "src/move.ts",
+              "src/renamed.ts",
+              "src/value.ts",
             ],
           }),
           { stopReason: "toolUse" },
@@ -98,9 +105,9 @@ describe("Agent coder Subagent", () => {
         return fauxAssistantMessage(
           fauxToolCall("apply_patch", {
             operation: "replace",
-            path: "src/value.txt",
+            path: "src/value.ts",
             expectedSha256: sha256(source),
-            edits: [{ oldText: "value=1", newText: "value=2" }],
+            edits: [{ oldText: "value = 1", newText: "value = 2" }],
           }),
           { stopReason: "toolUse" },
         );
@@ -112,7 +119,7 @@ describe("Agent coder Subagent", () => {
         return fauxAssistantMessage(
           fauxToolCall("apply_patch", {
             operation: "create",
-            path: "src/add.txt",
+            path: "src/add.ts",
             expectedSha256: null,
             content: added,
           }),
@@ -122,7 +129,7 @@ describe("Agent coder Subagent", () => {
       fauxAssistantMessage(
         fauxToolCall("candidate_file", {
           operation: "delete",
-          path: "src/delete.txt",
+          path: "src/delete.ts",
           expectedSha256: sha256(deleted),
         }),
         { stopReason: "toolUse" },
@@ -130,8 +137,8 @@ describe("Agent coder Subagent", () => {
       fauxAssistantMessage(
         fauxToolCall("candidate_file", {
           operation: "move",
-          sourcePath: "src/move.txt",
-          destinationPath: "src/renamed.txt",
+          sourcePath: "src/move.ts",
+          destinationPath: "src/renamed.ts",
           expectedSourceSha256: sha256(moved),
           expectedDestinationSha256: null,
         }),
@@ -144,7 +151,7 @@ describe("Agent coder Subagent", () => {
         return fauxAssistantMessage(
           fauxToolCall("verify_workspace", {
             kind: "test",
-            target: "src/add.txt",
+            target: testPath,
           }),
           { stopReason: "toolUse" },
         );
@@ -158,7 +165,7 @@ describe("Agent coder Subagent", () => {
               severity: "info",
               title: "Lifecycle completed",
               detail: "The isolated candidate contains the added file.",
-              evidence: [{ path: "src/add.txt", lineStart: 1, lineEnd: 1 }],
+              evidence: [{ path: "src/add.ts", lineStart: 1, lineEnd: 1 }],
             },
           ],
           unknowns: [],
@@ -169,7 +176,7 @@ describe("Agent coder Subagent", () => {
         previewId =
           serialized.match(/subworkpreview_[a-z0-9]{8,80}/u)?.[0] ?? "";
         expect(previewId).toMatch(/^subworkpreview_/u);
-        expect(serialized).toContain("src/value.txt");
+        expect(serialized).toContain("src/value.ts");
         expect(serialized).toContain(
           "Lifecycle: 2 added / 1 modified / 2 deleted / 1 renamed",
         );
@@ -191,12 +198,7 @@ describe("Agent coder Subagent", () => {
     ]);
     const models = new ModelRegistry();
     models.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(
-      store,
-      models,
-      undefined,
-      passingSandbox(),
-    );
+    const runtime = new AgentRuntime(store, models, undefined, coderSandbox());
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -208,20 +210,21 @@ describe("Agent coder Subagent", () => {
     expect(parentAfterApply, parentAfterApply).toContain(
       "Subagent worktree apply: applied",
     );
+    expect(parentAfterApply).toContain(testPath);
     expect(
-      await readFile(path.join(workspaceRoot, "src/value.txt"), "utf8"),
-    ).toBe("value=2\n");
+      await readFile(path.join(workspaceRoot, "src/value.ts"), "utf8"),
+    ).toBe("export const value = 2;\n");
     await expect(
-      readFile(path.join(workspaceRoot, "src/add.txt"), "utf8"),
+      readFile(path.join(workspaceRoot, "src/add.ts"), "utf8"),
     ).resolves.toBe(added);
     await expect(
-      readFile(path.join(workspaceRoot, "src/renamed.txt"), "utf8"),
+      readFile(path.join(workspaceRoot, "src/renamed.ts"), "utf8"),
     ).resolves.toBe(moved);
     await expect(
-      readFile(path.join(workspaceRoot, "src/delete.txt")),
+      readFile(path.join(workspaceRoot, "src/delete.ts")),
     ).rejects.toMatchObject({ code: "ENOENT" });
     await expect(
-      readFile(path.join(workspaceRoot, "src/move.txt")),
+      readFile(path.join(workspaceRoot, "src/move.ts")),
     ).rejects.toMatchObject({ code: "ENOENT" });
     const events = await store.listEvents(thread.id);
     const merge = events.find(
@@ -244,15 +247,25 @@ describe("Agent coder Subagent", () => {
         candidateVerificationPassedCount: 1,
         candidateVerificationFailedCount: 0,
         candidateVerificationStaleCount: 0,
+        diagnostics: expect.objectContaining({
+          status: "clean",
+          fileCount: 5,
+        }),
+        tests: expect.objectContaining({
+          status: "passed",
+          changedFileCount: 5,
+          selectedTestCount: 1,
+        }),
         resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
     const durable = JSON.stringify(events);
     expect(durable).not.toContain(previewId);
-    expect(durable).not.toContain("value=2");
-    expect(durable).toContain("src/add.txt");
-    expect(durable).not.toContain("src/renamed.txt");
-    expect(durable).not.toContain("src/delete.txt");
+    expect(durable).not.toContain("value = 2");
+    expect(durable).toContain("src/add.ts");
+    expect(durable).not.toContain("src/renamed.ts");
+    expect(durable).not.toContain("src/delete.ts");
+    expect(durable).not.toContain(testPath);
     expect(durable).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
     expect(
       events.find(
@@ -275,9 +288,22 @@ function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function passingSandbox(): OsSandboxAdapter {
+function coderSandbox(): OsSandboxAdapter {
+  const lsp = controlledLspRenameSandbox({}).sandbox;
+  const verifier = passingVerifierSandbox();
   return {
     id: "candidate-agent-sandbox",
+    launch(request) {
+      return request.args.includes("--stdio")
+        ? lsp.launch(request)
+        : verifier.launch(request);
+    },
+  };
+}
+
+function passingVerifierSandbox(): OsSandboxAdapter {
+  return {
+    id: "candidate-agent-verifier",
     async launch() {
       const stdin = new PassThrough();
       const stdout = new PassThrough();

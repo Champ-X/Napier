@@ -176,6 +176,7 @@ export * from "./workspace-patch-tool.js";
 export * from "./workspace-snapshot.js";
 export * from "./workspace-source.js";
 export * from "./workspace-write-lock.js";
+export * from "./write-linked-test-lifecycle.js";
 export * from "./write-linked-test-selection.js";
 export * from "./write-linked-test-verification.js";
 export * from "./write-linked-workspace-patch.js";

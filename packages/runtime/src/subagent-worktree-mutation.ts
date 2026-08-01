@@ -5,11 +5,9 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import {
-  LspRenameApplyDiagnostics,
-  type LspRenameDiagnosticsObservation,
-  type LspRenameDiagnosticsState,
-  unavailableLspRenameDiagnostics,
+import type {
+  LspRenameDiagnosticsObservation,
+  LspRenameDiagnosticsState,
 } from "./lsp-rename-apply-diagnostics.js";
 import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
 import type { LspRenameFile } from "./lsp-rename-workspace-edit.js";
@@ -20,6 +18,10 @@ import {
   type LspWorkspaceEditPreviewSource,
 } from "./lsp-workspace-edit-mutation.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
+import {
+  createSubagentWorktreeApplyVerification,
+  type SubagentWorktreeApplyVerificationState,
+} from "./subagent-worktree-apply-verification.js";
 import { commitSubagentWorktreeChanges } from "./subagent-worktree-commit.js";
 import { createSubagentWorktreeFileTool } from "./subagent-worktree-file-tool.js";
 import {
@@ -33,6 +35,10 @@ import {
   subagentWorktreeModifiedLspFiles,
   type SubagentWorktreeChange,
 } from "./subagent-worktree-diff.js";
+import {
+  SubagentWorktreeLifecycleDiagnostics,
+  type SubagentWorktreeLifecycleDiagnosticsAdapter,
+} from "./subagent-worktree-lifecycle-diagnostics.js";
 import { createSubagentWorktreeReview } from "./subagent-worktree-review.js";
 import {
   assertSubagentWorktreeToolchainStable,
@@ -122,9 +128,14 @@ export interface SubagentWorktreeMutationManagerOptions {
     LspRenameDiagnosticsState,
     LspRenameDiagnosticsObservation
   >;
+  lifecycleDiagnostics?: SubagentWorktreeLifecycleDiagnosticsAdapter;
   tests?: Pick<
     WriteLinkedTestVerificationRunner,
-    "captureBefore" | "run" | "supports"
+    | "captureBefore"
+    | "run"
+    | "supports"
+    | "captureLifecycleBefore"
+    | "runLifecycle"
   >;
   now?: () => Date;
   commitChanges?: typeof commitWorkspaceChanges;
@@ -145,18 +156,28 @@ export class SubagentWorktreeMutationManager {
   private readonly coordinator: LspWorkspaceEditMutationCoordinator<
     WorktreePreviewSource,
     LspRenameDiagnosticsState,
-    LspRenameDiagnosticsObservation
+    LspRenameDiagnosticsObservation,
+    SubagentWorktreeApplyVerificationState
   >;
 
   constructor(
     private readonly options: SubagentWorktreeMutationManagerOptions,
   ) {
-    const diagnostics =
-      options.diagnostics ??
+    const lifecycleDiagnostics =
+      options.lifecycleDiagnostics ??
       (options.sandbox
-        ? defaultDiagnostics(options.workspaceRoot, options.sandbox)
+        ? new SubagentWorktreeLifecycleDiagnostics({
+            workspaceRoot: options.workspaceRoot,
+            sandbox: options.sandbox,
+          })
         : undefined);
-    if (!diagnostics) {
+    const sourceVerification = lifecycleDiagnostics
+      ? createSubagentWorktreeApplyVerification<WorktreePreviewSource>({
+          diagnostics: lifecycleDiagnostics,
+          ...(options.tests ? { tests: options.tests } : {}),
+        })
+      : undefined;
+    if (!sourceVerification && !options.diagnostics) {
       throw new Error("Subagent worktree merge diagnostics are required");
     }
     this.coordinator = new LspWorkspaceEditMutationCoordinator({
@@ -164,7 +185,9 @@ export class SubagentWorktreeMutationManager {
       dataRoot: options.dataRoot,
       label: "Subagent worktree apply",
       previewPrefix: "subworkpreview",
-      diagnostics,
+      ...(sourceVerification
+        ? { sourceVerification }
+        : { diagnostics: options.diagnostics! }),
       preflight: (source, signal) =>
         observeSubagentWorktreeSource(source, signal),
       changeCount: (source) => source.changes.length,
@@ -181,7 +204,7 @@ export class SubagentWorktreeMutationManager {
             ? { commitOptions: options.commitOptions }
             : {}),
         }),
-      ...(options.tests ? { tests: options.tests } : {}),
+      ...(!sourceVerification && options.tests ? { tests: options.tests } : {}),
       ...(options.now ? { now: options.now } : {}),
     });
   }
@@ -283,7 +306,7 @@ export class SubagentWorktreeMutationManager {
     outcomeSha256: string,
     signal?: AbortSignal,
   ): Promise<SubagentWorktreePreview> {
-    if (!hash(outcomeSha256)) {
+    if (!/^[a-f0-9]{64}$/u.test(outcomeSha256)) {
       throw new Error("Subagent worktree outcome hash is invalid");
     }
     const context = this.contexts.get(session);
@@ -456,25 +479,6 @@ export class SubagentWorktreeMutationManager {
   }
 }
 
-function defaultDiagnostics(
-  workspaceRoot: string,
-  sandbox: OsSandboxAdapter,
-): LspWorkspaceEditDiagnosticsAdapter<
-  LspRenameDiagnosticsState,
-  LspRenameDiagnosticsObservation
-> {
-  const diagnostics = new LspRenameApplyDiagnostics({
-    workspaceRoot,
-    sandbox,
-  });
-  return {
-    observeBefore: (files, signal) => diagnostics.observeBefore(files, signal),
-    observeAfter: (state, files, signal) =>
-      diagnostics.observeAfter(state, files, signal),
-    unavailable: unavailableLspRenameDiagnostics,
-  };
-}
-
 function assertAuthorizedPatch(
   session: SubagentWorktreeSession,
   input: WorkspacePatchInput,
@@ -487,10 +491,6 @@ function assertAuthorizedPatch(
       "Coder Subagent apply_patch is limited to declared file paths with existing parent directories",
     );
   }
-}
-
-function hash(value: unknown): value is string {
-  return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value);
 }
 
 export type SubagentWorktreeDiagnosticsDetails =

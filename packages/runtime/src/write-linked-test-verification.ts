@@ -16,6 +16,12 @@ import {
   type WriteLinkedTestSelection,
   WriteLinkedTestSelectionDriftError,
 } from "./write-linked-test-selection.js";
+import {
+  captureWriteLinkedLifecycleBeforeState,
+  runWriteLinkedLifecycleTests,
+  type WriteLinkedLifecycleBeforeState,
+  type WriteLinkedLifecycleFile,
+} from "./write-linked-test-lifecycle.js";
 
 export const WRITE_LINKED_TEST_TIMEOUT_MS = 60_000;
 
@@ -60,6 +66,32 @@ export class WriteLinkedTestVerificationRunner {
       this.options.workspaceRoot,
       changedFiles,
     );
+  }
+
+  captureLifecycleBefore(
+    files: WriteLinkedLifecycleFile[],
+  ): Promise<WriteLinkedLifecycleBeforeState> {
+    return captureWriteLinkedLifecycleBeforeState({
+      workspaceRoot: this.options.workspaceRoot,
+      files,
+    });
+  }
+
+  runLifecycle(
+    files: WriteLinkedLifecycleFile[],
+    before: WriteLinkedLifecycleBeforeState,
+    signal?: AbortSignal,
+  ): Promise<WriteLinkedTestVerification> {
+    return runWriteLinkedLifecycleTests({
+      workspaceRoot: this.options.workspaceRoot,
+      files,
+      before,
+      runSelectedTests: this.verification.runSelectedTests.bind(
+        this.verification,
+      ),
+      timeoutMs: this.timeoutMs,
+      ...(signal ? { signal } : {}),
+    });
   }
 
   async run(

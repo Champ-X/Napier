@@ -37,16 +37,39 @@ export interface LspWorkspaceEditDiagnosticsAdapter<
   unavailable(state: State, error: unknown): Observation;
 }
 
+export interface LspWorkspaceEditSourceVerificationAdapter<
+  Source,
+  State,
+  Observation extends { details: object; summary: string },
+> {
+  observeBefore(source: Source, signal?: AbortSignal): Promise<State>;
+  observeAfter(
+    state: State,
+    source: Source,
+    outcome: LspRenameCommitOutcome,
+    signal?: AbortSignal,
+  ): Promise<{
+    diagnostics?: Observation;
+    tests?: Awaited<ReturnType<WriteLinkedTestVerificationRunner["run"]>>;
+  }>;
+}
+
 export interface LspWorkspaceEditMutationOptions<
   Source extends LspWorkspaceEditPreviewSource,
   State,
   Observation extends { details: object; summary: string },
+  SourceVerificationState = never,
 > {
   workspaceRoot: string;
   dataRoot: string;
   label: string;
   previewPrefix: string;
-  diagnostics: LspWorkspaceEditDiagnosticsAdapter<State, Observation>;
+  diagnostics?: LspWorkspaceEditDiagnosticsAdapter<State, Observation>;
+  sourceVerification?: LspWorkspaceEditSourceVerificationAdapter<
+    Source,
+    SourceVerificationState,
+    Observation
+  >;
   tests?: Pick<WriteLinkedTestVerificationRunner, "captureBefore" | "run"> &
     Partial<Pick<WriteLinkedTestVerificationRunner, "supports">>;
   now?: () => Date;
@@ -105,6 +128,7 @@ export class LspWorkspaceEditMutationCoordinator<
   Source extends LspWorkspaceEditPreviewSource,
   State,
   Observation extends { details: object; summary: string },
+  SourceVerificationState = never,
 > {
   private readonly previews = new Map<string, StoredPreview<Source>>();
   private readonly currentTime: () => Date;
@@ -115,7 +139,8 @@ export class LspWorkspaceEditMutationCoordinator<
     private readonly options: LspWorkspaceEditMutationOptions<
       Source,
       State,
-      Observation
+      Observation,
+      SourceVerificationState
     >,
   ) {
     if (!/^[a-z][a-z0-9_]{1,15}$/u.test(options.previewPrefix)) {
@@ -123,6 +148,16 @@ export class LspWorkspaceEditMutationCoordinator<
     }
     this.currentTime = options.now ?? (() => new Date());
     this.commit = options.commit ?? commitLspRename;
+    if (!options.diagnostics && !options.sourceVerification) {
+      throw new Error(
+        "LSP WorkspaceEdit diagnostics or source verification is required",
+      );
+    }
+    if (options.diagnostics && options.sourceVerification) {
+      throw new Error(
+        "LSP WorkspaceEdit verification adapters are mutually exclusive",
+      );
+    }
     this.idPattern = new RegExp(
       `^${options.previewPrefix}_[a-z0-9]{8,80}$`,
       "u",
@@ -175,14 +210,26 @@ export class LspWorkspaceEditMutationCoordinator<
     assertNotAborted(signal, this.options.label);
     await this.options.preflight?.(preview.source, signal);
     assertNotAborted(signal, this.options.label);
-    const testsEnabled = this.testsEnabled(preview.source);
+    const sourceVerification = this.options.sourceVerification
+      ? {
+          adapter: this.options.sourceVerification,
+          state: await this.options.sourceVerification.observeBefore(
+            preview.source,
+            signal,
+          ),
+        }
+      : undefined;
+    const testsEnabled =
+      sourceVerification === undefined && this.testsEnabled(preview.source);
     const testBefore = testsEnabled
       ? await this.captureTestsBefore(preview.source, signal)
       : undefined;
-    const diagnostics = await this.options.diagnostics.observeBefore(
-      preview.source.files,
-      signal,
-    );
+    const diagnostics = sourceVerification
+      ? undefined
+      : await this.options.diagnostics!.observeBefore(
+          preview.source.files,
+          signal,
+        );
     assertNotAborted(signal, this.options.label);
     await this.options.preflight?.(preview.source, signal);
     assertNotAborted(signal, this.options.label);
@@ -196,12 +243,23 @@ export class LspWorkspaceEditMutationCoordinator<
           ...(signal ? { signal } : {}),
           ...this.options.commitOptions,
         });
-    const diagnosticObservation =
-      outcome.status === "applied"
-        ? await this.observeAfter(diagnostics, outcome.expectedFiles, signal)
+    const sourceObservation =
+      outcome.status === "applied" && sourceVerification
+        ? await sourceVerification.adapter.observeAfter(
+            sourceVerification.state,
+            preview.source,
+            outcome,
+            signal,
+          )
         : undefined;
+    const diagnosticObservation =
+      sourceObservation?.diagnostics ??
+      (outcome.status === "applied" && diagnostics
+        ? await this.observeAfter(diagnostics, outcome.expectedFiles, signal)
+        : undefined);
     const testObservation =
-      outcome.status === "applied" &&
+      sourceObservation?.tests ??
+      (outcome.status === "applied" &&
       outcome.postcondition === "verified" &&
       testsEnabled &&
       this.options.tests
@@ -213,7 +271,7 @@ export class LspWorkspaceEditMutationCoordinator<
             testBefore,
             signal,
           )
-        : undefined;
+        : undefined);
     return {
       source: structuredClone(preview.source),
       outcome,
@@ -265,14 +323,14 @@ export class LspWorkspaceEditMutationCoordinator<
     expectedFiles: LspRenameCommitExpectedFile[],
     signal?: AbortSignal,
   ): Promise<Observation> {
+    const diagnostics = this.options.diagnostics;
+    if (!diagnostics) {
+      throw new Error("LSP WorkspaceEdit diagnostics are unavailable");
+    }
     try {
-      return await this.options.diagnostics.observeAfter(
-        state,
-        expectedFiles,
-        signal,
-      );
+      return await diagnostics.observeAfter(state, expectedFiles, signal);
     } catch (error) {
-      return this.options.diagnostics.unavailable(state, error);
+      return diagnostics.unavailable(state, error);
     }
   }
 

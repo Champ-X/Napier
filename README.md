@@ -236,9 +236,11 @@ Version `0.1.0` includes:
   snapshot, runs real LSP and optional fixed Sandbox verification against
   candidate bytes, and returns a bounded live change review plus
   snapshot-fresh pass/fail/stale evidence and a one-use candidate for explicit
-  parent merge. All roles retain bounded run budgets, cancellation, strict
-  typed outcomes, hash-bound delegation receipts, and a compaction-immune
-  durable task projection;
+  parent merge. Parent apply automatically compares supported lifecycle paths
+  with fresh LSP and, when enabled, runs tests selected from both the old and
+  new dependency graphs. All roles retain bounded run budgets, cancellation,
+  strict typed outcomes, hash-bound delegation receipts, and a
+  compaction-immune durable task projection;
 - reviewed Streamable HTTP MCP connections with provenance, capability and
   per-tool effect approval, local routing hints, deferred schema search, Agent
   enablement, no-store extension state headers, and last-moment policy checks;
@@ -2884,11 +2886,15 @@ delegate_task(role=coder, writePaths=[1..8 file paths])
   -> delete the private tree and return a five-minute one-use merge preview
 subagent_worktree_apply(previewId)
   -> consume the capability and recheck the complete source snapshot
+  -> inspect before-present TypeScript/JavaScript paths and, when enabled,
+     select old-graph tests
+  -> recheck the complete source after those read-only observations
   -> acquire shared multi-file locks and recheck hash + inode + mode state
   -> install additions by no-overwrite hard link, replace staged files by rename,
      and move deletions to same-directory verified tombstones
   -> reverse rollback on partial failure, fsync, and verify nullable postconditions
-  -> run fresh LSP diagnostics and enabled write-linked tests for modified paths
+  -> inspect after-present paths and, when enabled, select new-graph tests
+  -> run the complete stable old/new test union once through fixed Vitest
 ```
 
 The parent workspace is unchanged until the second tool call. A source change
@@ -2911,6 +2917,20 @@ A concurrent coder fork fails closed while a recognized
 `.napier-change-*` stage, backup, or tombstone is present, so transaction
 recovery bytes are never copied into another candidate.
 
+Parent apply treats the lifecycle as nullable before/after file states.
+Before commit, one-shot LSP observes modify/delete paths and related-test
+selection, when the parent enables `verify_workspace`, follows the old
+dependency graph. Napier then repeats the complete workspace preflight. After a
+verified commit, LSP observes add/modify paths and enabled test selection
+follows the new graph; a rename therefore contributes its physical source
+deletion and destination addition. Napier executes the sorted union once,
+dropping test paths intentionally removed by the lifecycle.
+Incomplete graphs, unresolved reachable imports, more than eight selected
+tests, missing retained tests, verifier failure, cancellation, and
+workspace/configuration drift remain explicit non-passing evidence. A
+post-merge diagnostic or test failure does not silently roll back a transaction
+that already settled.
+
 Candidate LSP always uses a fresh one-shot language server. When the parent
 profile also enables `verify_workspace`, the child receives the existing fixed
 TypeScript/Vitest/Prettier dispatcher against its private root. Napier binds the
@@ -2932,9 +2952,10 @@ current attempts are split into `passed` and `failed`. A failed or absent check
 does not silently block preview creation because the parent may need to review
 an expected failure; the live result makes that state explicit before the
 separate merge call. Durable delegation, merge, SSE, Replay, and Web evidence
-retain only bounded counts plus verification-set/toolchain hashes. Verifier
-stdout/stderr, diagnostics, paths, candidate bodies, write grants, and preview
-IDs remain live-only.
+retain only bounded counts plus verification-set/toolchain, old/new graph,
+selected-test, diagnostic, and result hashes. Verifier stdout/stderr,
+diagnostics, test names, paths, candidate bodies, write grants, and preview IDs
+remain live-only.
 
 This is a filesystem worktree, not a Git branch, shell checkout, container, or
 process sandbox. The child has no shell, Process, network, Browser, Extension,
@@ -2945,6 +2966,9 @@ files with duplicate content, arbitrary child-side commands/package scripts,
 and cross-Run preview recovery remain unsupported. Pure additions use mode
 `0644`; a byte-identical rename preserves the observed source mode. The fixed
 verifier remains read-only and offline; it is not a general process capability.
+Automatic lifecycle LSP and dependency-graph tests currently cover
+TypeScript/JavaScript source extensions; other text formats are explicitly
+omitted rather than reported as verified.
 
 Run the opt-in real Agent-to-private-worktree smoke:
 

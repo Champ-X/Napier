@@ -224,9 +224,16 @@ describe("coder Subagent HTTP Agent path", () => {
         candidateVerificationPassedCount: 1,
         candidateVerificationFailedCount: 0,
         candidateVerificationStaleCount: 0,
+        diagnostics: expect.objectContaining({
+          status: "clean",
+          fileCount: 0,
+        }),
         resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
+    expect(
+      record(record(merge?.payload)?.["details"])?.["tests"],
+    ).toBeUndefined();
     const durable = JSON.stringify(events);
     expect(durable).not.toContain(previewId);
     expect(durable).not.toContain("value=2");

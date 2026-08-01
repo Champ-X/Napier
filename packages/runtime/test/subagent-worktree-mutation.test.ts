@@ -19,6 +19,7 @@ import type {
   LspRenameDiagnosticsState,
 } from "../src/lsp-rename-apply-diagnostics.js";
 import type { LspWorkspaceEditDiagnosticsAdapter } from "../src/lsp-workspace-edit-mutation.js";
+import type { SubagentWorktreeLifecycleDiagnosticsAdapter } from "../src/subagent-worktree-lifecycle-diagnostics.js";
 import { SubagentWorktreeMutationManager } from "../src/subagent-worktree-mutation.js";
 
 const temporaryRoots: string[] = [];
@@ -254,18 +255,21 @@ describe("Subagent worktree mutation manager", () => {
 
   it("rechecks complete source freshness after diagnostics and before commit", async () => {
     const harness = await createHarness();
-    const diagnostics = diagnosticsAdapter();
-    diagnostics.observeBefore = async () => {
+    const diagnostics = lifecycleDiagnosticsAdapter();
+    diagnostics.observeBefore = async (changes) => {
       await writeFile(
         path.join(harness.workspaceRoot, "unrelated.txt"),
         "drift during diagnostics\n",
       );
-      return { entries: [], omittedFileCount: 0 };
+      return {
+        entries: changes.map((change) => ({ change })),
+        omittedFileCount: 0,
+      };
     };
     const manager = new SubagentWorktreeMutationManager({
       ...harness,
       ownerId: "worker_freshness_test",
-      diagnostics,
+      lifecycleDiagnostics: diagnostics,
     });
     const source = "export const value = 1;\n";
     await writeFile(path.join(harness.workspaceRoot, "src/value.ts"), source);
@@ -296,7 +300,7 @@ describe("Subagent worktree mutation manager", () => {
     const manager = new SubagentWorktreeMutationManager({
       ...harness,
       ownerId: "worker_rollback_test",
-      diagnostics: diagnosticsAdapter(),
+      lifecycleDiagnostics: lifecycleDiagnosticsAdapter(),
       commitOptions: {
         async renameFile() {
           throw new Error("injected commit failure");
@@ -402,6 +406,26 @@ function diagnosticsAdapter(): LspWorkspaceEditDiagnosticsAdapter<
   return {
     async observeBefore() {
       return { entries: [], omittedFileCount: 0 };
+    },
+    async observeAfter() {
+      return { details: diagnosticsDetails(), summary: "Diagnostics: clean" };
+    },
+    unavailable() {
+      return {
+        details: { ...diagnosticsDetails(), status: "unavailable" },
+        summary: "Diagnostics: unavailable",
+      };
+    },
+  };
+}
+
+function lifecycleDiagnosticsAdapter(): SubagentWorktreeLifecycleDiagnosticsAdapter {
+  return {
+    async observeBefore(changes) {
+      return {
+        entries: changes.map((change) => ({ change })),
+        omittedFileCount: 0,
+      };
     },
     async observeAfter() {
       return { details: diagnosticsDetails(), summary: "Diagnostics: clean" };

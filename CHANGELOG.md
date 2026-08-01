@@ -6,6 +6,36 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added lifecycle-aware parent verification for isolated coder candidates.
+  Coder apply now uses an optional typed source-aware adapter in the existing
+  one-use WorkspaceEdit coordinator; ordinary Rename and Code Action behavior
+  is unchanged. Before commit, one-shot LSP observes every supported
+  modify/delete path and, when the parent enables `verify_workspace`, related
+  tests are selected from the old dependency graph, followed by another
+  complete-source freshness check. After a verified nullable-state transaction,
+  LSP observes add/modify paths, tests are selected from the enabled new graph,
+  and the stable old/new union runs once through the fixed read-only Vitest
+  Sandbox. Physical delete/add rename pairs cover both sides; test paths
+  intentionally removed by the lifecycle are discarded, while missing retained
+  tests, incomplete or over-eight unions, unresolved reachable imports,
+  failure, cancellation, and workspace/configuration drift remain explicit
+  non-passing evidence. Agent, HTTP/SSE, Replay, and strict Web reuse the
+  existing diagnostics/test contract and retain only bounded counts, statuses,
+  and hashes; test names, diagnostics, output, grants, candidate bytes,
+  lifecycle paths, and preview IDs stay live-only. Tests cover union selection,
+  test rename, limits, failure, cancellation, drift, rollback, concurrent
+  freshness, privacy, and legacy LSP compatibility. Real Dogfood performed only
+  add/delete/rename across four TypeScript paths with no modified-file trigger;
+  candidate and parent LSP plus real selected Vitest passed in 27.78 seconds.
+  The Runtime suite passes 977 regular tests with 25 opt-in tests skipped, and
+  every new core logic module remains below 500 lines. The complete gate passes
+  1,701 regular tests with 30 opt-in live tests skipped, 255 OpenAPI routes,
+  and 244/244 compatibility operations. Product performance remains within
+  budget at 649.4 ms to first CLI event, 798.4 ms to first token, 1,100.9 ms to
+  completion, 0.5 ms read p95, 7.3 ms for a 1,000-event projection, and
+  749.568 closed SQLite bytes/event. The 92-file Web dist main entry remains
+  130.32 KiB under its 150 KiB limit, bound to `9a4dc8f5ab7f92ce`; the
+  seven-artifact release set remains bound to `8280e6926d8d4dc0`.
 - Added complete regular-file lifecycle for isolated coder candidates. The
   existing 1–8 `writePaths` now authorize absent or existing create/modify/
   delete paths and both sides of a rename. `apply_patch` handles private

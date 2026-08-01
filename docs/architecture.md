@@ -2850,8 +2850,8 @@ parent subagent_worktree_apply(previewId)
   -> verify task, outcome, source snapshot, write scope, and changed-file hashes
   -> rescan the complete admitted source before and after diagnostics/test
      selection; reject observed drift
-  -> run fresh before diagnostics and optional write-linked test selection for
-     modified TypeScript/JavaScript paths
+  -> run fresh before diagnostics for modify/delete TypeScript/JavaScript paths
+     and, when enabled, select related tests from the old dependency graph
   -> reuse one generic nullable-state transaction:
      - stage/fsync add/modify bytes beside each target
      - hard-link backups for every existing target
@@ -2859,7 +2859,8 @@ parent subagent_worktree_apply(previewId)
      - replace modifications by rename
      - rename deletions to verified same-directory tombstones
      - reverse rollback and verify all absent/present postconditions
-  -> run fresh after diagnostics and selected tests for modified paths
+  -> run fresh after diagnostics for add/modify paths and, when enabled, select
+     tests from the new graph and execute the stable old/new union once
   -> append one hash/count/status-only tool result to the ordinary Work Ledger
 ```
 
@@ -2883,6 +2884,22 @@ backend.
 A concurrent coder fork rejects recognized `.napier-change-*` stage, backup,
 or tombstone files instead of copying transaction recovery bytes into a new
 private candidate.
+
+The shared WorkspaceEdit coordinator accepts exactly one verification mode.
+Ordinary Rename and Code Action applications retain their modify-only
+diagnostics/test adapter. Coder apply uses a typed source-aware adapter over the
+complete lifecycle. It observes before-present source hashes and the old
+dependency graph when the parent profile enables `verify_workspace`, then the
+ordinary complete-source preflight runs again before the transaction. After a
+verified commit, it observes after-present source hashes and the enabled new
+graph. Physical delete/add pairs represent rename, so both old dependants and
+new dependants participate. The fixed Vitest runner executes the sorted union
+once; intentionally removed test paths are discarded, while a missing retained
+target remains unavailable evidence. Either incomplete graph, an over-eight
+union, unresolved reachable imports, cancellation, failure, or post-selection
+workspace/configuration drift prevents a passing receipt. Post-merge
+verification cannot rewrite or silently roll back the already settled
+transaction.
 
 The dependency overlay grants no new write authority. It rejects unsafe names,
 special entries, top-level links escaping both the admitted workspace and its
@@ -2916,6 +2933,11 @@ disambiguation, and modified-file LSP adaptation;
 `subagent-worktree-verification.ts` owns serialization and snapshot-bound
 attempt evidence; `subagent-worktree-mutation.ts` owns child tool adaptation,
 preview storage, and the parent merge adapter.
+`subagent-worktree-apply-verification.ts` owns source-aware before/after
+coordination; `subagent-worktree-lifecycle-diagnostics.ts` owns nullable LSP
+aggregation. `write-linked-test-lifecycle-selection.ts` owns old/new graph
+selection and receipts, while `write-linked-test-lifecycle.ts` owns one-shot
+union execution and freshness settlement.
 `workspace-change-model.ts`, `workspace-change-files.ts`, and
 `workspace-change-commit.ts` own the shared nullable-state transaction;
 `commitLspRename()` is now a modify-only adapter over that same transaction.
@@ -2931,10 +2953,11 @@ verifier output, and raw errors remain live-only. Durable Agent/HTTP/Replay
 evidence retains role, state, add/modify/delete/rename counts,
 transaction/diagnostic/test status, and hashes for the task, outcome, source
 snapshot, write scope, changed file set, candidate verification
-set/toolchain, plan, files, and result. Web independently validates count
-relationships and never trusts Runtime-reported paths or candidate content.
-Existing typed-outcome path citations keep the ordinary grounded Subagent
-evidence semantics.
+set/toolchain, old/new dependency graph, selected tests, plan, files, and
+result. Test names, diagnostics, output, and lifecycle paths stay live-only.
+Web independently validates count relationships and never trusts
+Runtime-reported paths or candidate content. Existing typed-outcome path
+citations keep the ordinary grounded Subagent evidence semantics.
 
 This slice supports file lifecycle within existing parent directories. Empty
 directories, directory move/delete, permission edits, symlinks, arbitrary
@@ -2943,6 +2966,9 @@ child-side commands/package scripts, cross-Run preview recovery, and Git
 worktree semantics remain unavailable. Pure additions use `0644`; a detected
 rename preserves the source mode. Candidate LSP and the optional fixed verifier
 remain read-only and offline; they are not general Process authority.
+Automatic lifecycle diagnostics and related-test selection currently cover
+TypeScript/JavaScript source extensions. Unsupported text formats are omitted,
+not labeled verified.
 
 SQLite analysis remains outside the oversized workspace-tool module.
 `sqlite-database-file.ts` owns canonical file admission, sidecar denial,
