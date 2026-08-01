@@ -190,6 +190,8 @@ export * from "./workflow-experiment-comparison-protocol.js";
 export * from "./workflow-experiment-mode.js";
 export * from "./workflow-experiment-protocol.js";
 export * from "./workflow-experiments.js";
+export * from "./workflow-javascript-evidence.js";
+export * from "./workflow-javascript-model.js";
 export * from "./workflow-manifests.js";
 export * from "./workflow-protocol.js";
 export * from "./workflow-reduce-evidence.js";

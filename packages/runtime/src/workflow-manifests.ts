@@ -19,6 +19,7 @@ import {
   validateExecutionPlanWorkflowCondition,
 } from "./workflow-condition-model.js";
 import { validateExecutionPlanWorkflowDeterministicTemplateContract } from "./workflow-deterministic-model.js";
+import { validateWorkflowJavascriptContract } from "./workflow-javascript-model.js";
 import {
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_CONCURRENCY,
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS,
@@ -380,6 +381,25 @@ function validateWorkflowNode(
         "when",
         "skipOutput",
         "template",
+        "timeoutMs",
+        "maxAttempts",
+      ],
+      label,
+      new Set(["when", "skipOutput"]),
+    );
+  } else if (type === "javascript") {
+    assertExactKeys(
+      node,
+      [
+        "id",
+        "type",
+        "inputBindings",
+        "inputSchema",
+        "outputSchema",
+        "when",
+        "skipOutput",
+        "cells",
+        "evaluationTimeoutMs",
         "timeoutMs",
         "maxAttempts",
       ],
@@ -776,6 +796,26 @@ function validateWorkflowNode(
         node["template"],
         inputSchema,
         `${label} template`,
+      ),
+      timeoutMs,
+      maxAttempts,
+    };
+  }
+  if (type === "javascript") {
+    return {
+      id,
+      type,
+      inputBindings,
+      inputSchema: inputSchema as WorkflowObjectSchema,
+      outputSchema,
+      ...(conditional ? conditional : {}),
+      ...validateWorkflowJavascriptContract(
+        {
+          cells: node["cells"],
+          evaluationTimeoutMs: node["evaluationTimeoutMs"],
+          timeoutMs,
+        },
+        label,
       ),
       timeoutMs,
       maxAttempts,

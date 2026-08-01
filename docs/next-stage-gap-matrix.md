@@ -23,13 +23,109 @@ Audit date: 2026-08-01
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, and explicitly preauthorized failed-write compensation now exist. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, a guardian, proved orphan cleanup, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; directory lifecycle, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output simulation/input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, graph-level branch pruning, write-capable Map/Loop, compensation, top-level Workflow input replacement, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain.                                                                                                                          |
+| P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output simulation/input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Persistent Python/package Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, top-level Workflow input replacement, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain.                            |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, and schema-5 executes the selected checkpoint then durably releases exactly one remaining rerun node per Continue across parallel branches and restart. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, top-level Workflow input replacement, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                                        |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, and schema-5 full-subgraph node step control through the same Ledger state; the browser independently verifies mode, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, full-screen TUI, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | P9 outcome benchmark              | Started        | Three fixed CLI Coding cases now cover single-file repair, a multi-file LSP-guided API migration, and debugger-qualified JavaScript repair with repeated trials, Sandbox assertions, capability-completion qualification, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+## Implemented Slice: Sandboxed JavaScript Workflow Session
+
+User scenario: a Workflow author needs bounded model-free data transformation
+that is more expressive than deterministic templates. One typed node receives
+its constructed JSON input, executes a short sequence of JavaScript cells in a
+single persistent context, and returns the final JSON-compatible value to
+downstream nodes. State may flow between cells in that node, but never between
+nodes, Runs, Threads, or restarts.
+
+Acceptance:
+
+- add one compatible `javascript` Workflow node with 1-8 ordered UTF-8 cells,
+  a bounded per-cell timeout, ordinary typed input/output Schemas, conditions,
+  attempts, and a content-hashed Manifest configuration;
+- inject up to 8 KiB of complete constructed node input as a fixed `input`
+  binding in a fresh existing JavaScript Kernel Session. Bound each cell to 16
+  KiB, all cells to 32 KiB, each evaluation to 2 seconds, and the node to 120
+  seconds. Execute every cell in order and require the final non-truncated
+  4,096-character preview to be valid JSON that passes the declared output
+  Schema and the existing 32 KiB node-output limit;
+- create the ordinary leased Workflow Run and Plan transitions. Require the
+  frozen Agent revision to enable `javascript_kernel`, pass the existing
+  process policy, and provide the managed Workspace Process/Sandbox backend;
+- cancel and settle the Kernel before completing the node. Cancellation,
+  timeout, cell error, non-JSON or oversized output, policy denial, Sandbox
+  unavailability, lease loss, cleanup failure, and process loss must block the
+  node with bounded evidence;
+- bind node configuration, worker identity, input, ordered evaluation-result
+  set, output, Schema, attempt, and Run through the Work Ledger without
+  persisting source cells, constructed input/output bodies, console text,
+  private protocol frames, or diagnostics in public Trace. Existing bounded
+  Workspace Process lifecycle evidence retains its safe Session identity;
+- recover a terminal output only from one exact completion receipt plus hidden
+  typed output. A started but unsettled stateful Session is never silently
+  recreated; only explicit `retryBlocked` may start a new attempt;
+- make ordinary CLI JSONL, local stdio RPC, TypeScript SDK, HTTP/SSE,
+  checkpoint reuse/rerun, comparison, portable Replay, and Web Trace consume
+  the same Manifest and Ledger path without entry-specific execution logic;
+- add normal, policy-denied, invalid output, timeout, cancellation, explicit
+  retry, restart recovery, parallel isolation, tamper, and privacy tests, plus
+  an opt-in production-Sandbox live smoke.
+
+Threat boundary:
+
+- Workflow JavaScript is untrusted code. It receives no host `process`,
+  `require`, dynamic import, string code generation, inherited environment,
+  network, workspace write, package, timer, async, or Napier-tool capability;
+- execution must use the existing authenticated private protocol inside the
+  read-only, offline OS Sandbox. Unsupported or unavailable Sandbox backends
+  fail closed; there is no direct-process production fallback;
+- Manifest upload and execution do not bypass the frozen Agent's enabled tool
+  set or `observe` policy. Code, input values, result bodies, console output,
+  and private protocol frames remain live-only;
+- a completed receipt proves one bounded Session execution and typed result,
+  not determinism. Checkpoint reuse may reuse the proved result; rerun creates a
+  fresh Session and may differ. This slice does not add Python packages,
+  filesystem APIs, cross-node Session handles, write/session simulation,
+  compensation, or arbitrary host JavaScript.
+
+Observed result:
+
+- one- and two-cell nodes execute real Node workers through the existing
+  Workspace Process private protocol, preserve cell state, bind typed JSON
+  output, and settle only after the Session is cancelled with an unchanged
+  workspace. Parallel nodes use independent contexts;
+- missing capability, `observe` policy, invalid/non-JSON output, node timeout,
+  caller cancellation, transient Sandbox failure, cleanup uncertainty, and
+  explicit retry have distinct fail-closed behavior. SQLite reopen recovers one
+  proved output without another Process, while tampered Replay is invalid;
+- checkpoint experiments reuse proved JavaScript ancestors or rerun a selected
+  node in a fresh Session. Model overrides remain rejected for this non-Agent
+  node;
+- CLI JSONL, TypeScript SDK callbacks, and HTTP SSE execute the same Manifest.
+  Shared terminal reconciliation now fills indirect Process events from the
+  authoritative Ledger before Snapshot/result delivery, preserving contiguous
+  sequence across all three entries. Existing stdio RPC continues to consume
+  the same generic Workflow request and result contracts;
+- Web Trace independently validates generic node metadata and the dedicated
+  body-free completion receipt. Source, input/output bodies, console text,
+  diagnostics, and private protocol frames do not render;
+- extracting the original Agent node executor and shared node metadata reduced
+  `workflow-runtime.ts` from 928 to 782 lines, `workflow-ledger.ts` from 1,131
+  to 1,069, and source evidence from 281 to 218. Every new production module
+  remains below 500 lines;
+- the opt-in production-Sandbox smoke remains strict. This nested macOS host
+  blocked the platform adapter and the Workflow settled `javascript_failed`;
+  no host-process fallback was attempted. Direct-adapter integration tests
+  still execute the real worker/private protocol for deterministic product
+  regression coverage;
+- `npm run check` passed 1,745 regular tests with 32 opt-in tests skipped:
+  Runtime 1,009, CLI 102, Server 106, Web 443, SDK 26, and root scripts 59.
+  Product performance remained within budget at 614.0 ms to first CLI event,
+  759.1 ms to first token, 1,056.0 ms to completion, 0.7 ms read p95, 7.2 ms
+  for a 1,000-event projection, and 753.664 closed SQLite bytes/event. The Web
+  main entry remained 130.32 KiB.
 
 ## Implemented Slice: Workflow Node Step Control
 

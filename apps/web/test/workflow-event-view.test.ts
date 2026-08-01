@@ -624,6 +624,63 @@ describe("Workflow event Trace projection", () => {
     ).toBeUndefined();
   });
 
+  it("summarizes JavaScript Session evidence without code or values", () => {
+    const nodeStarted = workflowEvent("workflow.node.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "calculate",
+      nodeType: "javascript",
+      javascriptConfigurationSha256: "8".repeat(64),
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      planRevisionBefore: 1,
+      planRevisionAfter: 2,
+      recovered: false,
+      code: "PRIVATE_JAVASCRIPT_SOURCE",
+    });
+    const completed = workflowEvent("workflow.javascript.completed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "calculate",
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      javascriptConfigurationSha256: "8".repeat(64),
+      workerSha256: "9".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputBindingRequestSha256: "a".repeat(64),
+      inputBindingResultSha256: "b".repeat(64),
+      cellCount: 2,
+      cellRequestSetSha256: "c".repeat(64),
+      cellResultSetSha256: "d".repeat(64),
+      durationMs: 17,
+      outputSha256: "5".repeat(64),
+      outputBytes: 19,
+      outputSchemaSha256: "4".repeat(64),
+      output: "PRIVATE_JAVASCRIPT_OUTPUT",
+    });
+
+    expect(workflowEventTraceSummary(nodeStarted)).toContain(
+      `javascript ${"8".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(completed)).toContain(
+      `cells 2 / duration 17ms / input ${"2".repeat(12)} / output ${"5".repeat(12)} / bytes 19`,
+    );
+    expect(
+      `${workflowEventTraceSummary(nodeStarted)} ${workflowEventTraceSummary(completed)}`,
+    ).not.toContain("PRIVATE_JAVASCRIPT");
+    expect(
+      workflowEventTraceSummary(
+        workflowEvent("workflow.javascript.completed", {
+          ...(completed.payload as Record<string, JsonValue>),
+          cellResultSetSha256: undefined,
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
   it("summarizes persisted breakpoints without bound input bodies", () => {
     const started = workflowEvent("workflow.started", {
       schemaVersion: 1,

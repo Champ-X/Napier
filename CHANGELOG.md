@@ -6,6 +6,34 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added sandboxed JavaScript Workflow Session nodes. A typed `javascript` node
+  executes 1–8 bounded Manifest cells in one fresh existing JavaScript Kernel
+  context, exposes the complete constructed input through a fixed `input`
+  binding, and accepts only a non-truncated JSON final value that passes the
+  declared output Schema. The frozen Agent must enable `javascript_kernel`,
+  the normal process policy must allow execution, and the managed private
+  protocol must settle as a cancelled, unchanged read-only/offline OS Sandbox
+  Session before the node completes. Source, input/output bodies, console text,
+  private frames, and diagnostics remain outside public Workflow Trace; the
+  completion receipt binds only configuration, worker, request/result set,
+  input/output, Schema, duration, attempt, and Run evidence. Interrupted
+  Sessions require explicit retry, while one exact terminal receipt plus hidden
+  typed output repairs commit gaps. CLI JSONL, TypeScript SDK callbacks, and
+  HTTP SSE now reconcile indirect Process events from the authoritative Ledger
+  before terminal frames, matching the existing ordered CLI guarantee.
+  Checkpoint reuse/rerun, comparison, portable Replay, Web Trace, parallel
+  isolation, cancellation, timeout, policy denial, invalid output, restart,
+  tamper, and privacy paths are covered. The original Agent node executor and
+  shared node metadata validation were extracted: `workflow-runtime.ts` fell
+  from 928 to 782 lines, `workflow-ledger.ts` from 1,131 to 1,069, and source
+  evidence from 281 to 218; every new production module remains below 500
+  lines. The production-Sandbox smoke remains strict and has no host-process
+  fallback; this nested macOS host blocked the platform adapter and the
+  Workflow settled `javascript_failed`. The full gate passed 1,745 regular
+  tests with 32 opt-in tests skipped. Product performance stayed within
+  baseline at 614.0 ms to first CLI event, 759.1 ms to first token, 1,056.0 ms
+  to completion, 0.7 ms read p95, 7.2 ms for a 1,000-event projection, and
+  753.664 closed SQLite bytes/event. The Web main entry remained 130.32 KiB.
 - Added Workflow node step control. Schema-v5 `step_nodes` experiments execute
   the selected checkpoint, freeze every remaining rerun node in Manifest order,
   and reuse the ordinary persistent breakpoint scheduler so each Continue

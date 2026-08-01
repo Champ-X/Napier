@@ -1,5 +1,6 @@
 import type { RunEvent } from "@napier/contracts";
 
+import { workflowJavascriptEventTraceParts } from "./workflow-javascript-event-view";
 import { workflowLoopEventTraceParts } from "./workflow-loop-event-view";
 import { workflowReduceEventTraceParts } from "./workflow-reduce-event-view";
 
@@ -13,6 +14,7 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.node.simulated",
   "workflow.approval.requested",
   "workflow.deterministic.completed",
+  "workflow.javascript.completed",
   "workflow.reduce.completed",
   "workflow.map.item.started",
   "workflow.map.item.completed",
@@ -348,6 +350,10 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     const reduceParts = workflowReduceEventTraceParts(payload);
     if (!reduceParts) return undefined;
     parts.push(...reduceParts);
+  } else if (event.type === "workflow.javascript.completed") {
+    const javascriptParts = workflowJavascriptEventTraceParts(payload);
+    if (!javascriptParts) return undefined;
+    parts.push(...javascriptParts);
   } else if (event.type.startsWith("workflow.artifacts.")) {
     const artifactCount = boundedInteger(payload["artifactCount"], 1, 16);
     const artifactSetSha256 = hash(payload["artifactSetSha256"]);
@@ -630,6 +636,12 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       );
       if (!reduceConfigurationSha256) return undefined;
       parts.push(`reduce ${reduceConfigurationSha256.slice(0, 12)}`);
+    } else if (payload["nodeType"] === "javascript") {
+      const javascriptConfigurationSha256 = hash(
+        payload["javascriptConfigurationSha256"],
+      );
+      if (!javascriptConfigurationSha256) return undefined;
+      parts.push(`javascript ${javascriptConfigurationSha256.slice(0, 12)}`);
     } else if (
       payload["nodeType"] !== undefined &&
       payload["nodeType"] !== "agent"

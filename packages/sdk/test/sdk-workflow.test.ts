@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -9,6 +9,7 @@ import type { WorkflowObjectSchema } from "@napier/contracts";
 import {
   exportThreadReplayBundle,
   LocalStore,
+  type OsSandboxAdapter,
   UnsupportedSandboxAdapter,
   verifyThreadReplayBundle,
 } from "@napier/runtime";
@@ -53,6 +54,14 @@ type SwitchRequest = {
 
 type SwitchReport = {
   message: string;
+};
+
+type JavascriptRequest = {
+  values: number[];
+};
+
+type JavascriptReport = {
+  total: number;
 };
 
 afterEach(async () => {
@@ -493,6 +502,59 @@ describe("Napier TypeScript SDK Workflows", () => {
     expect(JSON.stringify(switchPayload)).not.toContain("SDK Switch output");
     await client.close();
   });
+
+  it("executes a stateful JavaScript node through the SDK", async () => {
+    const fixture = await createFixture("javascript");
+    const store = await openStore(fixture);
+    const agent = store.listAgents()[0]!;
+    await store.updateAgent(agent.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["javascript_kernel"],
+    });
+    store.close();
+    const client = await createNapierClient({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      sandbox: directSandbox(),
+    });
+    const workflow = await client.defineWorkflow<
+      JavascriptRequest,
+      JavascriptReport
+    >(javascriptWorkflowDefinition());
+    const eventTypes: string[] = [];
+    const eventSeqs: number[] = [];
+    const execution = await client.runWorkflow({
+      workflow,
+      input: { values: [4, 6, 8] },
+      onEvent: (event) => {
+        eventTypes.push(event.type);
+        eventSeqs.push(event.seq);
+      },
+    });
+    expect(execution).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { total: 18 },
+      }),
+    );
+    expect(execution.result.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "calculate",
+        status: "completed",
+        attempt: 1,
+      }),
+    ]);
+    expect(eventTypes).toEqual(
+      expect.arrayContaining([
+        "workspace.process.started",
+        "workspace.process.input",
+        "workspace.process.settled",
+        "workflow.javascript.completed",
+      ]),
+    );
+    expect(eventSeqs).toEqual(eventSeqs.map((_, index) => index + 1));
+    await client.close();
+  }, 20_000);
 });
 
 function draftWorkflowDefinition(): DefineNapierWorkflowInput<
@@ -764,6 +826,53 @@ function switchWorkflowDefinition(): DefineNapierWorkflowInput<
   };
 }
 
+function javascriptWorkflowDefinition(): DefineNapierWorkflowInput<
+  JavascriptRequest,
+  JavascriptReport
+> {
+  const inputSchema = objectSchema({
+    values: {
+      type: "array",
+      items: { type: "integer", minimum: 0, maximum: 100 },
+      minItems: 1,
+      maxItems: 8,
+    },
+  });
+  const outputSchema = objectSchema({
+    total: { type: "integer", minimum: 0, maximum: 800 },
+  });
+  return {
+    name: "SDK JavaScript calculation",
+    version: 1,
+    description: "Execute stateful JavaScript cells in a typed Workflow.",
+    plan: {
+      objective: "Calculate one typed total.",
+      steps: [planStep("calculate", "Calculate values")],
+    },
+    inputSchema,
+    outputSchema,
+    outputNodeId: "calculate",
+    nodes: [
+      {
+        id: "calculate",
+        type: "javascript",
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: objectSchema({ workflow: inputSchema }),
+        outputSchema,
+        cells: [
+          "const PRIVATE_SDK_VALUES = input.workflow.values.slice(); PRIVATE_SDK_VALUES.length",
+          "({ total: PRIVATE_SDK_VALUES.reduce((sum, value) => sum + value, 0) })",
+        ],
+        evaluationTimeoutMs: 1_000,
+        timeoutMs: 10_000,
+        maxAttempts: 1,
+      },
+    ],
+  };
+}
+
 function planStep(id: string, title: string) {
   return {
     id,
@@ -834,4 +943,43 @@ async function openStore(fixture: {
   const store = new LocalStore(fixture);
   await store.initialize();
   return store;
+}
+
+function directSandbox(): OsSandboxAdapter {
+  return {
+    id: "direct-sdk-workflow-javascript-test",
+    async launch(request) {
+      const child = spawn(request.command, request.args, {
+        cwd: request.cwd,
+        env: { ...request.env },
+        detached: true,
+        shell: false,
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      const exit = new Promise<{
+        code: number | null;
+        signal: NodeJS.Signals | null;
+      }>((resolve) =>
+        child.once("exit", (code, signal) => resolve({ code, signal })),
+      );
+      return {
+        stdin: child.stdin,
+        stdout: child.stdout,
+        stderr: child.stderr,
+        exit,
+        async terminate() {
+          if (child.exitCode === null && child.signalCode === null) {
+            if (child.pid !== undefined) {
+              try {
+                process.kill(-child.pid, "SIGTERM");
+              } catch {
+                child.kill("SIGTERM");
+              }
+            }
+          }
+          await exit;
+        },
+      };
+    },
+  };
 }

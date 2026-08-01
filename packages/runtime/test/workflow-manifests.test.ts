@@ -14,6 +14,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createExecutionPlanBlueprint } from "../src/workflow-blueprints.js";
 import { executeExecutionPlanWorkflowDeterministicTemplate } from "../src/workflow-deterministic-model.js";
 import {
+  MAX_EXECUTION_PLAN_WORKFLOW_JAVASCRIPT_CELLS,
+  workflowJavascriptConfigurationSha256,
+} from "../src/workflow-javascript-model.js";
+import {
   assertWorkflowValue,
   buildExecutionPlanWorkflowNodeInput,
   defineExecutionPlanWorkflow,
@@ -565,6 +569,95 @@ describe("Execution Plan Workflow manifests", () => {
         ] as typeof definition.nodes,
       }),
     ).toThrow("kind is unsupported");
+  });
+
+  it("binds bounded stateful JavaScript cells into the Manifest", async () => {
+    const blueprint = await createBlueprint([
+      {
+        id: "calculate",
+        title: "Calculate",
+        description:
+          "Transform typed input in one isolated JavaScript Session.",
+        verification: "Return one typed summary.",
+      },
+    ]);
+    const outputSchema = inspectionSchema();
+    const node = {
+      id: "calculate",
+      type: "javascript" as const,
+      inputBindings: {
+        workflow: { source: "workflow" as const },
+      },
+      inputSchema: {
+        type: "object" as const,
+        properties: { workflow: requestSchema() },
+        required: ["workflow"],
+        additionalProperties: false as const,
+      },
+      outputSchema,
+      cells: [
+        "const words = input.workflow.request.split(/\\s+/u); words.length",
+        "({ summary: input.workflow.request, count: words.length })",
+      ],
+      evaluationTimeoutMs: 1_000,
+      timeoutMs: 10_000,
+      maxAttempts: 2,
+    };
+    const definition = {
+      name: "JavaScript calculation",
+      version: 1,
+      description: "Run a bounded stateful JavaScript transformation.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema,
+      outputNodeId: "calculate",
+      nodes: [node],
+    };
+    const manifest = defineExecutionPlanWorkflow(definition);
+    expect(validateExecutionPlanWorkflowManifest(manifest)).toEqual(manifest);
+    const validated = manifest.nodes[0]!;
+    expect(validated.type).toBe("javascript");
+    if (validated.type !== "javascript") {
+      throw new Error("Unexpected node type");
+    }
+    expect(workflowJavascriptConfigurationSha256(validated)).toMatch(
+      /^[a-f0-9]{64}$/u,
+    );
+
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...node,
+            cells: Array.from(
+              {
+                length: MAX_EXECUTION_PLAN_WORKFLOW_JAVASCRIPT_CELLS + 1,
+              },
+              () => "1",
+            ),
+          },
+        ],
+      }),
+    ).toThrow("cells must contain");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [{ ...node, evaluationTimeoutMs: 2_001 }],
+      }),
+    ).toThrow("evaluationTimeoutMs");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [{ ...node, timeoutMs: 120_001 }],
+      }),
+    ).toThrow("JavaScript timeoutMs");
+    expect(() =>
+      validateExecutionPlanWorkflowManifest({
+        ...manifest,
+        nodes: [{ ...validated, code: "hostEscape()" }],
+      }),
+    ).toThrow("fields are invalid");
   });
 
   it("binds Approval copy, timeout, and its fixed output schema", async () => {

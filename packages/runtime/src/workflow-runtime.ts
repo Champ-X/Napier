@@ -5,14 +5,9 @@ import type {
   ExecutionPlanWorkflowNodeResult,
   ExecutionPlanWorkflowResult,
   JsonValue,
-  RunRecord,
 } from "@napier/contracts";
 
-import type {
-  AgentRuntime,
-  EventSink,
-  RunPromptOptions,
-} from "./agent-runtime.js";
+import type { AgentRuntime, EventSink } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import type { LocalStore } from "./store.js";
@@ -31,16 +26,13 @@ import { workflowInputReplacementRequestEvents } from "./workflow-input-override
 import {
   ExecutionPlanWorkflowLedger,
   WORKFLOW_EVENT_SCHEMA_VERSION,
-  WORKFLOW_NODE_COMPLETED_EVENT,
   WORKFLOW_NODE_FAILED_EVENT,
-  WORKFLOW_NODE_STARTED_EVENT,
   WORKFLOW_STARTED_EVENT,
   workflowNodeEventMetadata,
 } from "./workflow-ledger.js";
 import { ExecutionPlanWorkflowRecovery } from "./workflow-recovery.js";
 import {
   assertWorkflowValue,
-  parseExecutionPlanWorkflowNodeOutput,
   validateExecutionPlanWorkflowManifest,
   workflowSchemaSha256,
 } from "./workflow-manifests.js";
@@ -50,14 +42,13 @@ import {
 } from "./workflow-node-input.js";
 import {
   assertWorkflowPlanMatchesManifest,
-  completedWorkflowNodeResult,
-  workflowNodePrompt,
   workflowPlanCreatedPayload,
 } from "./workflow-runtime-model.js";
 import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materializer.js";
 import { ExecutionPlanWorkflowSimulationMaterializer } from "./workflow-simulation-materializer.js";
 import { workflowSimulationRequestEvents } from "./workflow-simulation-evidence.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
+import { ExecutionPlanWorkflowAgentNodeExecutor } from "./workflow-agent-node.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
 import { ExecutionPlanWorkflowArtifactSettlement } from "./workflow-artifact-settlement.js";
 import { validateExecutionPlanWorkflowBreakpointNodeIds } from "./workflow-breakpoint-model.js";
@@ -66,12 +57,12 @@ import { ExecutionPlanWorkflowDeterministicNodeExecutor } from "./workflow-deter
 import { ExecutionPlanWorkflowMapNodeExecutor } from "./workflow-map-node.js";
 import { ExecutionPlanWorkflowLoopNodeExecutor } from "./workflow-loop-node.js";
 import { ExecutionPlanWorkflowReduceNodeExecutor } from "./workflow-reduce-node.js";
+import { ExecutionPlanWorkflowJavascriptNodeExecutor } from "./workflow-javascript-node.js";
 import {
   DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
   executeExecutionPlanWorkflowReadyBatch,
 } from "./workflow-parallel-scheduler.js";
 import { finishExecutionPlanWorkflow } from "./workflow-result.js";
-import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
 import { ExecutionPlanWorkflowToolNodeExecutor } from "./workflow-tool-node.js";
 
 export interface RunExecutionPlanWorkflowOptions {
@@ -95,17 +86,19 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly recovery: ExecutionPlanWorkflowRecovery;
   private readonly reuseMaterializer: ExecutionPlanWorkflowReuseMaterializer;
   private readonly simulationMaterializer: ExecutionPlanWorkflowSimulationMaterializer;
+  private readonly agentNodeExecutor: ExecutionPlanWorkflowAgentNodeExecutor;
   private readonly approvalNodeExecutor: ExecutionPlanWorkflowApprovalNodeExecutor;
   private readonly conditionNodeExecutor: ExecutionPlanWorkflowConditionNodeExecutor;
   private readonly deterministicNodeExecutor: ExecutionPlanWorkflowDeterministicNodeExecutor;
   private readonly mapNodeExecutor: ExecutionPlanWorkflowMapNodeExecutor;
   private readonly loopNodeExecutor: ExecutionPlanWorkflowLoopNodeExecutor;
   private readonly reduceNodeExecutor: ExecutionPlanWorkflowReduceNodeExecutor;
+  private readonly javascriptNodeExecutor: ExecutionPlanWorkflowJavascriptNodeExecutor;
   private readonly toolNodeExecutor: ExecutionPlanWorkflowToolNodeExecutor;
 
   constructor(
     private readonly store: LocalStore,
-    private readonly agentRuntime: AgentRuntime,
+    agentRuntime: AgentRuntime,
   ) {
     this.ledger = new ExecutionPlanWorkflowLedger(store);
     this.artifactSettlement = new ExecutionPlanWorkflowArtifactSettlement(
@@ -118,6 +111,17 @@ export class ExecutionPlanWorkflowRuntime {
     this.conditionNodeExecutor = new ExecutionPlanWorkflowConditionNodeExecutor(
       store,
       this.ledger,
+    );
+    this.agentNodeExecutor = new ExecutionPlanWorkflowAgentNodeExecutor(
+      store,
+      agentRuntime,
+      this.ledger,
+      {
+        blockNode: (context, node, failure) =>
+          this.blockNode(context, node, failure),
+        completePlanStep: (context, nodeId, runId, outputSha256) =>
+          this.completePlanStep(context, nodeId, runId, outputSha256),
+      },
     );
     this.approvalNodeExecutor = new ExecutionPlanWorkflowApprovalNodeExecutor(
       store,
@@ -168,6 +172,18 @@ export class ExecutionPlanWorkflowRuntime {
           this.completePlanStep(context, nodeId, runId, outputSha256),
       },
     );
+    this.javascriptNodeExecutor =
+      new ExecutionPlanWorkflowJavascriptNodeExecutor(
+        store,
+        agentRuntime,
+        this.ledger,
+        {
+          blockNode: (context, node, failure) =>
+            this.blockNode(context, node, failure),
+          completePlanStep: (context, nodeId, runId, outputSha256) =>
+            this.completePlanStep(context, nodeId, runId, outputSha256),
+        },
+      );
     this.toolNodeExecutor = new ExecutionPlanWorkflowToolNodeExecutor(
       store,
       agentRuntime,
@@ -623,6 +639,15 @@ export class ExecutionPlanWorkflowRuntime {
         attempt,
       );
     }
+    if (node.type === "javascript") {
+      return this.javascriptNodeExecutor.execute(
+        context,
+        node,
+        input,
+        inputSha256,
+        attempt,
+      );
+    }
     if (node.type === "approval") {
       return this.approvalNodeExecutor.execute(
         context,
@@ -641,184 +666,13 @@ export class ExecutionPlanWorkflowRuntime {
         attempt,
       );
     }
-
-    const controller = new AbortController();
-    let timedOut = false;
-    const forwardAbort = (): void => controller.abort();
-    context.signal?.addEventListener("abort", forwardAbort, { once: true });
-    if (context.signal?.aborted) controller.abort();
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, node.timeoutMs);
-    let run: RunRecord | undefined;
-    try {
-      const prompt = workflowNodePrompt(context.manifest, node, input);
-      const runOptions: RunPromptOptions = {
-        threadId: context.threadId,
-        text: prompt,
-        source: "workflow",
-        [WORKFLOW_NODE_EXECUTION]: { planId: context.plan.id },
-        agentRevision: context.agentRevision,
-        signal: controller.signal,
-        ...(node.model ? { model: node.model } : {}),
-        onRunCreated: async (createdRun) => {
-          run = createdRun;
-          const before = this.store.getPlan(context.plan.id);
-          const started = await this.store.transitionPlanStep(
-            context.plan.id,
-            node.id,
-            { action: "start", runId: createdRun.id },
-          );
-          context.plan = started;
-          await this.ledger.appendPlanStepEvent(
-            context,
-            started,
-            node.id,
-            "started",
-            createdRun.id,
-          );
-          await this.ledger.append(
-            {
-              threadId: context.threadId,
-              runId: createdRun.id,
-              type: WORKFLOW_NODE_STARTED_EVENT,
-              category: "plan",
-              visibility: "user",
-              payload: {
-                schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
-                planId: started.id,
-                nodeId: node.id,
-                ...workflowNodeEventMetadata(node),
-                attempt,
-                manifestSha256: context.manifest.contentSha256,
-                inputSha256,
-                inputSchemaSha256: workflowSchemaSha256(node.inputSchema),
-                outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
-                planRevisionBefore: before.revision,
-                planRevisionAfter: started.revision,
-                recovered: false,
-              },
-            },
-            context.onEvent,
-          );
-        },
-        ...(context.onEvent ? { onEvent: context.onEvent } : {}),
-      };
-      run = await this.agentRuntime.runPrompt(runOptions);
-    } catch (error) {
-      const cancelled = context.signal?.aborted === true;
-      const errorCode = cancelled
-        ? "cancelled"
-        : timedOut
-          ? "timeout"
-          : "run_start_failed";
-      return {
-        result: await this.blockNode(context, node, {
-          ...(run ? { runId: run.id } : {}),
-          inputSha256,
-          attempt,
-          errorCode,
-          diagnosticSha256: sha256(errorMessage(error)),
-        }),
-        cancelled,
-      };
-    } finally {
-      clearTimeout(timeout);
-      context.signal?.removeEventListener("abort", forwardAbort);
-    }
-
-    if (!run) throw new Error("Workflow node Run was not created");
-    if (context.signal?.aborted) {
-      return {
-        result: await this.blockNode(context, node, {
-          runId: run.id,
-          inputSha256,
-          attempt,
-          errorCode: "cancelled",
-          diagnosticSha256: sha256(run.error ?? "cancelled"),
-        }),
-        cancelled: true,
-      };
-    }
-    if (timedOut) {
-      return {
-        result: await this.blockNode(context, node, {
-          runId: run.id,
-          inputSha256,
-          attempt,
-          errorCode: "timeout",
-          diagnosticSha256: sha256(run.error ?? "timeout"),
-        }),
-        cancelled: false,
-      };
-    }
-    if (run.status !== "completed") {
-      return {
-        result: await this.blockNode(context, node, {
-          runId: run.id,
-          inputSha256,
-          attempt,
-          errorCode: `run_${run.status}`,
-          diagnosticSha256: sha256(run.error ?? run.status),
-        }),
-        cancelled: false,
-      };
-    }
-
-    let output: JsonValue;
-    try {
-      output = parseExecutionPlanWorkflowNodeOutput(
-        await this.ledger.nodeAssistantOutput(context.threadId, run.id),
-        node.outputSchema,
-      );
-    } catch (error) {
-      return {
-        result: await this.blockNode(context, node, {
-          runId: run.id,
-          inputSha256,
-          attempt,
-          errorCode: "output_invalid",
-          diagnosticSha256: sha256(errorMessage(error)),
-        }),
-        cancelled: false,
-      };
-    }
-    const outputSha256 = sha256(canonicalJson(output));
-    await this.completePlanStep(context, node.id, run.id, outputSha256);
-    await this.ledger.append(
-      {
-        threadId: context.threadId,
-        runId: run.id,
-        type: WORKFLOW_NODE_COMPLETED_EVENT,
-        category: "plan",
-        visibility: "user",
-        payload: {
-          schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
-          planId: context.plan.id,
-          nodeId: node.id,
-          ...workflowNodeEventMetadata(node),
-          attempt,
-          manifestSha256: context.manifest.contentSha256,
-          inputSha256,
-          outputSha256,
-          inputSchemaSha256: workflowSchemaSha256(node.inputSchema),
-          outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
-          recovered: false,
-        },
-      },
-      context.onEvent,
+    return this.agentNodeExecutor.execute(
+      context,
+      node,
+      input,
+      inputSha256,
+      attempt,
     );
-    return {
-      result: completedWorkflowNodeResult(
-        node,
-        attempt,
-        run.id,
-        inputSha256,
-        output,
-      ),
-      cancelled: false,
-    };
   }
 
   private async completePlanStep(

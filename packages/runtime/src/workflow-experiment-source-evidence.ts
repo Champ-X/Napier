@@ -5,12 +5,7 @@ import type {
 } from "@napier/contracts";
 
 import { collectRunToolEffectObservations } from "./automatic-recovery.js";
-import { canonicalJson, sha256 } from "./ed25519.js";
-import { executionPlanWorkflowConditionSha256 } from "./workflow-condition-model.js";
-import { executionPlanWorkflowDeterministicTemplateSha256 } from "./workflow-deterministic-model.js";
-import { workflowLoopNodeConfigurationSha256 } from "./workflow-loop-model.js";
-import { workflowMapNodeConfigurationSha256 } from "./workflow-map-model.js";
-import { workflowReduceConfigurationSha256 } from "./workflow-reduce-model.js";
+import { workflowNodeEventMetadataMatches } from "./workflow-node-evidence.js";
 import { workflowSchemaSha256 } from "./workflow-schemas.js";
 
 export function experimentNodeToolEffects(
@@ -118,7 +113,7 @@ export function validateSourceStartedEvent(
     payload["inputSha256"] !== inputSha256 ||
     payload["inputSchemaSha256"] !== workflowSchemaSha256(node.inputSchema) ||
     payload["outputSchemaSha256"] !== workflowSchemaSha256(node.outputSchema) ||
-    !sourceNodeMetadataMatches(node, payload) ||
+    !workflowNodeEventMetadataMatches(node, payload) ||
     !Number.isSafeInteger(attempt) ||
     Number(attempt) < 1 ||
     Number(attempt) > node.maxAttempts ||
@@ -147,7 +142,7 @@ export function validateSourceCompletedEvent(
     payload["outputSha256"] !== outputSha256 ||
     payload["inputSchemaSha256"] !== workflowSchemaSha256(node.inputSchema) ||
     payload["outputSchemaSha256"] !== workflowSchemaSha256(node.outputSchema) ||
-    !sourceNodeMetadataMatches(node, payload) ||
+    !workflowNodeEventMetadataMatches(node, payload) ||
     typeof payload["recovered"] !== "boolean" ||
     Boolean(payload["reused"]) !== reused
   ) {
@@ -208,64 +203,6 @@ export function validateSourceSkippedReuseEvent(
   ) {
     throw new Error("Workflow experiment source skipped reuse mismatch");
   }
-}
-
-function sourceNodeMetadataMatches(
-  node: ExecutionPlanWorkflowManifest["nodes"][number],
-  payload: Record<string, unknown>,
-): boolean {
-  if (
-    node.when
-      ? payload["conditionSha256"] !==
-          executionPlanWorkflowConditionSha256(node.when) ||
-        payload["skipOutputSha256"] !== sha256(canonicalJson(node.skipOutput!))
-      : payload["conditionSha256"] !== undefined ||
-        payload["skipOutputSha256"] !== undefined
-  ) {
-    return false;
-  }
-  if (node.type === "tool") {
-    return (
-      payload["nodeType"] === "tool" &&
-      payload["toolName"] === node.tool &&
-      payload["effect"] === node.effect
-    );
-  }
-  if (node.type === "approval") {
-    return (
-      payload["nodeType"] === "approval" &&
-      payload["questionSha256"] === sha256(node.question)
-    );
-  }
-  if (node.type === "deterministic") {
-    return (
-      payload["nodeType"] === "deterministic" &&
-      payload["templateSha256"] ===
-        executionPlanWorkflowDeterministicTemplateSha256(node.template)
-    );
-  }
-  if (node.type === "map") {
-    return (
-      payload["nodeType"] === "map" &&
-      payload["mapConfigurationSha256"] ===
-        workflowMapNodeConfigurationSha256(node)
-    );
-  }
-  if (node.type === "loop") {
-    return (
-      payload["nodeType"] === "loop" &&
-      payload["loopConfigurationSha256"] ===
-        workflowLoopNodeConfigurationSha256(node)
-    );
-  }
-  if (node.type === "reduce") {
-    return (
-      payload["nodeType"] === "reduce" &&
-      payload["reduceConfigurationSha256"] ===
-        workflowReduceConfigurationSha256(node)
-    );
-  }
-  return payload["nodeType"] === undefined || payload["nodeType"] === "agent";
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {

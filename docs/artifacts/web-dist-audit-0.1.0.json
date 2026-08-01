@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 92,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-Dy13Kltt.js",
+    "path": "apps/web/dist/assets/index-yd2zObsP.js",
     "sizeBytes": 133444,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "202c52b88d366e28f9bce457f14ea5c42bb44dc93baf13c82a3187204f69338e"
+    "sha256": "f2ce4345789f9ec6c776430a88aea1682aba5bdae23f15d38aee77a618ac02b4"
   },
-  "distContentSha256": "202c52b88d366e28f9bce457f14ea5c42bb44dc93baf13c82a3187204f69338e",
+  "distContentSha256": "f2ce4345789f9ec6c776430a88aea1682aba5bdae23f15d38aee77a618ac02b4",
   "errors": []
 }

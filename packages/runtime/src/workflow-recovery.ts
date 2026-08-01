@@ -128,6 +128,7 @@ export class ExecutionPlanWorkflowRecovery {
             step.status === "blocked" &&
             (node.type === "tool" ||
               node.type === "deterministic" ||
+              node.type === "javascript" ||
               node.type === "map" ||
               node.type === "loop" ||
               node.type === "reduce") &&
@@ -170,6 +171,7 @@ export class ExecutionPlanWorkflowRecovery {
         if (
           (node.type === "tool" ||
             node.type === "deterministic" ||
+            node.type === "javascript" ||
             node.type === "map" ||
             node.type === "loop" ||
             node.type === "reduce") &&
@@ -187,23 +189,29 @@ export class ExecutionPlanWorkflowRecovery {
                   node,
                   run.id,
                 )
-              : node.type === "map"
-                ? await this.ledger.hasNodeMapCompletionEvent(
+              : node.type === "javascript"
+                ? await this.ledger.hasNodeJavascriptCompletionEvent(
                     context,
                     node,
                     run.id,
                   )
-                : node.type === "loop"
-                  ? await this.ledger.hasNodeLoopCompletionEvent(
+                : node.type === "map"
+                  ? await this.ledger.hasNodeMapCompletionEvent(
                       context,
                       node,
                       run.id,
                     )
-                  : await this.ledger.hasNodeReduceCompletionEvent(
-                      context,
-                      node,
-                      run.id,
-                    ))
+                  : node.type === "loop"
+                    ? await this.ledger.hasNodeLoopCompletionEvent(
+                        context,
+                        node,
+                        run.id,
+                      )
+                    : await this.ledger.hasNodeReduceCompletionEvent(
+                        context,
+                        node,
+                        run.id,
+                      ))
         ) {
           knownRecoverableOutput = await this.ledger.nodeOutput(
             context,

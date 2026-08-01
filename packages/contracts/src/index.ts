@@ -896,6 +896,20 @@ export interface ExecutionPlanWorkflowDeterministicNode {
   maxAttempts: number;
 }
 
+export interface ExecutionPlanWorkflowJavascriptNode {
+  id: string;
+  type: "javascript";
+  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
+  inputSchema: WorkflowObjectSchema;
+  outputSchema: WorkflowValueSchema;
+  when?: ExecutionPlanWorkflowCondition;
+  skipOutput?: JsonValue;
+  cells: string[];
+  evaluationTimeoutMs: number;
+  timeoutMs: number;
+  maxAttempts: number;
+}
+
 export interface ExecutionPlanWorkflowMapNode {
   id: string;
   type: "map";
@@ -1042,6 +1056,7 @@ export const EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA = {
 export type ExecutionPlanWorkflowNode =
   | ExecutionPlanWorkflowAgentNode
   | ExecutionPlanWorkflowDeterministicNode
+  | ExecutionPlanWorkflowJavascriptNode
   | ExecutionPlanWorkflowMapNode
   | ExecutionPlanWorkflowLoopNode
   | ExecutionPlanWorkflowReduceNode

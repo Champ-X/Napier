@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -11,6 +12,7 @@ import type {
 import {
   createExecutionPlanBlueprint,
   defineExecutionPlanWorkflow,
+  type OsSandboxAdapter,
   UnsupportedSandboxAdapter,
   validateExecutionPlanWorkflowResultFrame,
 } from "@napier/runtime";
@@ -1048,6 +1050,125 @@ describe("Workflow HTTP path", () => {
     });
     expect(services.store.listPlans(thread.id)).toEqual([]);
   });
+
+  it("streams a stateful JavaScript node through HTTP SSE", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-workflow-javascript-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: directSandbox(),
+    });
+    openServices.push(services);
+    const sourceThread = services.store.listThreads()[0]!;
+    await services.store.updateAgent(sourceThread.agentId, {
+      toolPolicy: "workspace",
+      enabledTools: ["javascript_kernel"],
+    });
+    const sourcePlan = await services.store.createPlan(sourceThread.id, {
+      objective: "Execute a JavaScript Session through HTTP.",
+      steps: [
+        {
+          id: "calculate",
+          title: "Calculate",
+          description: "Calculate one typed result.",
+          verification: "Return typed inspection JSON.",
+        },
+      ],
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      services.store,
+      sourceThread.id,
+      sourcePlan.id,
+    );
+    const targetThread = await services.store.createThread({
+      title: "HTTP JavaScript Workflow target",
+      agentId: sourceThread.agentId,
+    });
+    const manifest = defineExecutionPlanWorkflow({
+      name: "HTTP JavaScript calculation",
+      version: 1,
+      description: "Execute stateful JavaScript cells through HTTP SSE.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: inspectionSchema(),
+      outputNodeId: "calculate",
+      nodes: [
+        {
+          id: "calculate",
+          type: "javascript",
+          inputBindings: {
+            workflow: { source: "workflow" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: { workflow: requestSchema() },
+            required: ["workflow"],
+            additionalProperties: false,
+          },
+          outputSchema: inspectionSchema(),
+          cells: [
+            "const PRIVATE_HTTP_WORDS = input.workflow.request.split(/\\s+/u); PRIVATE_HTTP_WORDS.length",
+            "({ summary: input.workflow.request, count: PRIVATE_HTTP_WORDS.length })",
+          ],
+          evaluationTimeoutMs: 1_000,
+          timeoutMs: 10_000,
+          maxAttempts: 1,
+        },
+      ],
+    });
+    const response = await createApp(services).request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          input: { request: "HTTP stateful cells" },
+        }),
+      },
+    );
+    expect(response.status).toBe(200);
+    const frames = parseSseFrames(await response.text());
+    const frameTypes = frames.map((frame) => {
+      const value = record(frame);
+      return value?.["type"] === "event"
+        ? record(value["event"])?.["type"]
+        : value?.["type"];
+    });
+    expect(frameTypes).toContain("workflow_result");
+    const terminal = validateExecutionPlanWorkflowResultFrame(
+      frames.find((frame) => record(frame)?.["type"] === "workflow_result"),
+    );
+    expect(terminal).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: { summary: "HTTP stateful cells", count: 3 },
+        }),
+      }),
+    );
+    const events = frames.flatMap((frame) => {
+      const event = record(record(frame)?.["event"]);
+      return event ? [event] : [];
+    });
+    expect(events.map((event) => event["type"])).toEqual(
+      expect.arrayContaining([
+        "workspace.process.started",
+        "workspace.process.input",
+        "workspace.process.settled",
+        "workflow.javascript.completed",
+      ]),
+    );
+    expect(events.map((event) => event["seq"])).toEqual(
+      events.map((_, index) => index + 1),
+    );
+    expect(JSON.stringify(frames)).not.toContain("PRIVATE_HTTP_WORDS");
+  }, 20_000);
 });
 
 function requestSchema(): WorkflowObjectSchema {
@@ -1121,4 +1242,43 @@ function parseSseFrames(text: string): unknown[] {
     .split("\n")
     .filter((line) => line.startsWith("data: "))
     .map((line) => JSON.parse(line.slice("data: ".length)) as unknown);
+}
+
+function directSandbox(): OsSandboxAdapter {
+  return {
+    id: "direct-server-workflow-javascript-test",
+    async launch(request) {
+      const child = spawn(request.command, request.args, {
+        cwd: request.cwd,
+        env: { ...request.env },
+        detached: true,
+        shell: false,
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      const exit = new Promise<{
+        code: number | null;
+        signal: NodeJS.Signals | null;
+      }>((resolve) =>
+        child.once("exit", (code, signal) => resolve({ code, signal })),
+      );
+      return {
+        stdin: child.stdin,
+        stdout: child.stdout,
+        stderr: child.stderr,
+        exit,
+        async terminate() {
+          if (child.exitCode === null && child.signalCode === null) {
+            if (child.pid !== undefined) {
+              try {
+                process.kill(-child.pid, "SIGTERM");
+              } catch {
+                child.kill("SIGTERM");
+              }
+            }
+          }
+          await exit;
+        },
+      };
+    },
+  };
 }

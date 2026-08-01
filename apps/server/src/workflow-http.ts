@@ -120,6 +120,7 @@ export async function executeWorkflowHttp(
         onEvent: async (event) => eventWriter.write(event),
       });
       const detail = await services.store.getDetail(threadId);
+      await eventWriter.reconcile(detail.events);
       await eventWriter.finish(detail.thread.eventCount);
       const snapshot = streamSnapshotFrame(detail);
       const resultFrame = createExecutionPlanWorkflowResultFrame(

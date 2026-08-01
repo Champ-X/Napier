@@ -3573,10 +3573,32 @@ and exposes no JavaScript, JSONPath, interpolation, or expression engine.
 Tool nodes invoke one allowlisted stateless built-in directly, with no model
 call, after enabled-tool, TypeBox argument, declared `read`/`write` effect,
 Agent policy, workspace scope, and freshness checks. Their schema-validated
-structured details become the typed node output. Stateful JavaScript/Python
-kernels, Node debugger, background Process Sessions, and preview-bound
-workspace file mutations remain Run-owned Agent tools rather than pretending
-to persist across one-shot nodes.
+structured details become the typed node output.
+
+JavaScript nodes provide bounded model-free state inside one Workflow node.
+They accept 1–8 ordered cells, at most 16 KiB per cell and 32 KiB total, with
+at most 2 seconds per evaluation and 120 seconds for the complete node. The
+constructed node input is limited to 8 KiB and injected as the fixed `input`
+binding in a fresh existing JavaScript Kernel context. Cells share that
+context; the final non-truncated 4,096-character preview must parse as JSON,
+fit the ordinary 32 KiB output limit, and pass the declared output Schema.
+Each node receives a separate Session, so state never crosses a node, Run,
+Thread, retry, or restart.
+
+The frozen Agent revision must explicitly enable `javascript_kernel` and pass
+the existing process policy. Execution uses the authenticated private protocol
+inside the read-only, network-denied OS Sandbox, then requires a cancelled,
+unchanged Session before the Plan step can complete. `process`, `require`,
+dynamic import, string code generation, packages, files, environment,
+networking, async work, timers, workspace writes, and Napier callbacks remain
+unavailable. Public Ledger and Trace evidence retains configuration/worker/
+request/result/input/output hashes, counts, duration, and Schemas, never cell
+source, constructed input/output bodies, console text, diagnostics, or private
+frames. A terminal receipt plus hidden typed output can repair a commit gap;
+an interrupted Session is never recreated without explicit `retryBlocked`.
+Persistent Python, package-backed kernels, cross-node Session handles, Node
+debugger, background Process Sessions, and preview-bound file mutations remain
+Run-owned Agent tools rather than gaining implicit Workflow authority.
 
 Manifests may opt into `maxConcurrency` from `1` to `4`; omission preserves
 legacy sequential execution. The scheduler starts only dependency-ready
@@ -3920,13 +3942,14 @@ a leased Workflow Run, retry/timeout/cancellation behavior, restart recovery,
 checkpoint experiment reuse, and hash-only public Trace evidence.
 
 Version 1 intentionally supports Agent, bounded Deterministic including root
-multi-way Switch templates, stateless built-in Tool, bounded read-only Agent
-Map, bounded read-only Agent Loop, typed deterministic Reduce, and durable
-Approval nodes with bounded parallel dependency-ready DAG scheduling, typed
-equality guards, and terminal workspace file/directory Artifact settlement.
-Stateful session Tool nodes, write-capable Map/Loop, graph-level branch
-pruning, compensation, mid-node suspension, adapter runtimes, and a visual
-builder remain open. Checkpoint experiments now provide
+multi-way Switch templates, bounded stateful JavaScript Session, stateless
+built-in Tool, bounded read-only Agent Map, bounded read-only Agent Loop, typed
+deterministic Reduce, and durable Approval nodes with bounded parallel
+dependency-ready DAG scheduling, typed equality guards, and terminal workspace
+file/directory Artifact settlement. Persistent Python/package Sessions,
+cross-node Session handles, write-capable Map/Loop, graph-level branch pruning,
+compensation, mid-node suspension, adapter runtimes, and a visual builder
+remain open. Checkpoint experiments now provide
 single-call execution for an explicit
 stateless read-only built-in subset, while message experiments can freeze
 captured results for that same subset. Workflow experiments can also substitute
@@ -3943,11 +3966,13 @@ deterministic providers and perform no network call. The Map-specific live
 smoke executes two real concurrent item calls, deterministically reduces their
 typed lengths, and verifies zero Reduce model/tool activity plus Replay. The
 Loop smoke feeds one typed result into a second real model turn and verifies
-the restricted child-Run chain:
+the restricted child-Run chain. The JavaScript smoke uses the production OS
+Sandbox and has no direct-process fallback:
 
 ```bash
 npm run test:live-map
 npm run test:live-loop
+npm run test:live-workflow-javascript
 ```
 
 ## Portable Replay Fixtures

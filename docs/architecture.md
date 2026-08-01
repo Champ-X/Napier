@@ -1122,15 +1122,37 @@ Checkpoint experiments can reuse or rerun Reduce like other proved nodes.
 Independent Reduce nodes remain eligible for the normal bounded outer parallel
 wave.
 
+JavaScript Workflow nodes reuse the existing `JavascriptKernelManager` and
+`WorkspaceProcessManager` rather than adding a code-evaluation backend. One
+leased Workflow Run starts one fresh read-only, network-denied private-protocol
+Session, injects at most 8 KiB of constructed JSON as the fixed `input`
+binding, and evaluates 1–8 content-hashed cells in order. Cells are limited to
+16 KiB each, 32 KiB total, and 2 seconds apiece; the node and Session are
+limited to 120 seconds. The final non-truncated 4,096-character preview must
+parse as JSON and pass the ordinary output Schema and 32 KiB output bound.
+
+The frozen Agent revision must enable `javascript_kernel`, and the normal
+process policy must admit it. Completion is impossible until the private
+Session is cancelled with an unchanged workspace delta. A body-free
+`workflow.javascript.completed` receipt binds Manifest configuration, worker,
+input binding, ordered request/result sets, output, duration, Schema, Run, and
+attempt hashes. Source cells, inputs, outputs, console text, diagnostics, and
+private frames do not enter public Workflow Trace. Recovery accepts one exact
+receipt plus hidden typed output after a commit gap, but a started Session
+without terminal evidence remains blocked until explicit retry. Every node and
+retry gets a fresh context; this is not a cross-node or restart-persistent
+Notebook.
+
 Schema version 1 is intentionally narrow: Agent nodes, bounded Deterministic
-nodes with root multi-way Switch templates, stateless built-in Tool nodes,
-bounded read-only Agent Map and Loop nodes, typed deterministic Reduce nodes,
-durable binary Approval gates, literal/field-path typed bindings, bounded
-parallel dependency-ready DAG scheduling, typed equality guards with
-schema-valid fallback, cancellation, timeout, explicit retry, restart
-recovery, and terminal workspace file/directory Artifact settlement. It does
-not yet implement general graph-level branch pruning, stateful session Tool
-nodes, write-capable Map/Loop, compensation, mid-node suspension, or external
+nodes with root multi-way Switch templates, bounded stateful JavaScript
+Session nodes, stateless built-in Tool nodes, bounded read-only Agent Map and
+Loop nodes, typed deterministic Reduce nodes, durable binary Approval gates,
+literal/field-path typed bindings, bounded parallel dependency-ready DAG
+scheduling, typed equality guards with schema-valid fallback, cancellation,
+timeout, explicit retry, restart recovery, and terminal workspace file/
+directory Artifact settlement. It does not yet implement persistent Python or
+package Sessions, cross-node Session handles, general graph-level branch
+pruning, write-capable Map/Loop, compensation, mid-node suspension, or external
 Agent adapters.
 
 ### Coding Outcome Benchmark
@@ -6439,6 +6461,13 @@ The current boundary has sixty-nine parts:
     parallel-ready branches, continued-but-unsettled restart recovery,
     CLI/HTTP/SDK/RPC/Web delivery, independent browser validation, portable
     Replay, and real built-CLI four-node Dogfood.
+71. Sandboxed JavaScript Workflow Session nodes using the existing managed
+    Process/Kernel private protocol, with 1–8 content-hashed cells sharing
+    state only inside one leased Run, typed input/output bounds, frozen Agent
+    capability and policy checks, cancelled-and-unchanged settlement,
+    explicit-only retry after interruption, body-free completion evidence,
+    checkpoint reuse/rerun, complete CLI/SDK/HTTP event reconciliation, and no
+    production direct-process fallback.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6488,10 +6517,11 @@ deferred until the local P0-P9 product loop is stable.
   richer cross-package build/test configuration, coding outcome benchmarks,
   coder directory lifecycle, and child package-script/Python/persistent
   execution;
-- extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
-  session nodes, graph-level branch pruning, write-capable Map/Loop,
-  compensation, top-level Workflow input replacement, write/session
-  side-effect simulation, external Agent adapters, and a visual builder;
+- extend typed Agent/Deterministic/JavaScript/Tool/Approval DAG execution with
+  persistent Python/package Sessions, cross-node handles, graph-level branch
+  pruning, write-capable Map/Loop, compensation, top-level Workflow input
+  replacement, write/session side-effect simulation, external Agent adapters,
+  and a visual builder;
 - extend controlled Workflow, user-message, model-call, and stateless read-only
   tool-call re-execution with stateful/write checkpoints and result simulation,
   Prompt/Skill/Memory/environment replacement, batch experiments, interactive

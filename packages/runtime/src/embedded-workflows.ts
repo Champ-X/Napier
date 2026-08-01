@@ -20,6 +20,7 @@ import {
   hashExecutionPlanArchiveContent,
   type ExecutionPlanArchiveContent,
 } from "./plan-archives.js";
+import { OrderedRunEventWriter } from "./ordered-run-event-writer.js";
 import { hashEventStream } from "./replay.js";
 import type { LocalStore } from "./store.js";
 import {
@@ -170,6 +171,13 @@ export class EmbeddedWorkflowService {
         throw new Error("Embedded Workflow Thread Agent does not match");
       }
     }
+    const eventWriter = options.onEvent
+      ? new OrderedRunEventWriter(
+          threadId,
+          this.store.getThread(threadId).eventCount + 1,
+          async (event) => options.onEvent!(event),
+        )
+      : undefined;
     const result = await this.workflows.run({
       threadId,
       request: {
@@ -180,8 +188,14 @@ export class EmbeddedWorkflowService {
           : {}),
       },
       ...(options.signal ? { signal: options.signal } : {}),
-      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+      ...(eventWriter
+        ? {
+            onEvent: async (event: Parameters<EventSink>[0]) =>
+              eventWriter.write(event),
+          }
+        : {}),
     });
+    if (eventWriter) await this.finishEventWriter(threadId, eventWriter);
     return this.approvals.execution(threadId, manifest, result);
   }
 
@@ -190,6 +204,13 @@ export class EmbeddedWorkflowService {
   ): Promise<EmbeddedWorkflowExecution> {
     options.signal?.throwIfAborted();
     const manifest = validateExecutionPlanWorkflowManifest(options.manifest);
+    const eventWriter = options.onEvent
+      ? new OrderedRunEventWriter(
+          options.threadId,
+          this.store.getThread(options.threadId).eventCount + 1,
+          async (event) => options.onEvent!(event),
+        )
+      : undefined;
     const result = await this.workflows.run({
       threadId: options.threadId,
       request: {
@@ -199,8 +220,16 @@ export class EmbeddedWorkflowService {
         ...(options.continueBreakpoint ? { continueBreakpoint: true } : {}),
       },
       ...(options.signal ? { signal: options.signal } : {}),
-      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+      ...(eventWriter
+        ? {
+            onEvent: async (event: Parameters<EventSink>[0]) =>
+              eventWriter.write(event),
+          }
+        : {}),
     });
+    if (eventWriter) {
+      await this.finishEventWriter(options.threadId, eventWriter);
+    }
     return this.approvals.execution(options.threadId, manifest, result);
   }
 
@@ -222,6 +251,15 @@ export class EmbeddedWorkflowService {
       : this.store.listAgents()[0];
     if (!agent) throw new Error("No Agent profile is available");
     return agent;
+  }
+
+  private async finishEventWriter(
+    threadId: string,
+    writer: OrderedRunEventWriter,
+  ): Promise<void> {
+    const detail = await this.store.getDetail(threadId);
+    await writer.reconcile(detail.events);
+    await writer.finish(detail.thread.eventCount);
   }
 }
 
