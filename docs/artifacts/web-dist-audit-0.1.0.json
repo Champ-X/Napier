@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 92,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DTIXT6-v.js",
+    "path": "apps/web/dist/assets/index-DM_T46YB.js",
     "sizeBytes": 133444,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "c5da6b4aba0ae89eca4973a8acb879ec2a4a66570e83fbd169da220920b6b892"
+    "sha256": "bc91c86abc8ea16cda5c83a382f86796adaa3bddd5161b5c379f160c083757ad"
   },
-  "distContentSha256": "c5da6b4aba0ae89eca4973a8acb879ec2a4a66570e83fbd169da220920b6b892",
+  "distContentSha256": "bc91c86abc8ea16cda5c83a382f86796adaa3bddd5161b5c379f160c083757ad",
   "errors": []
 }

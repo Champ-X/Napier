@@ -1177,17 +1177,39 @@ without terminal evidence remains blocked until explicit retry. Every node and
 retry gets a fresh context; this is not a cross-node or restart-persistent
 Notebook.
 
+Python Workflow nodes reuse the existing `PythonKernelManager`, fixed runtime
+identity, AST restriction layer, and managed private Process protocol. The
+trusted worker decodes one canonical JSON binding before user code runs and
+freezes arrays/objects as tuples/mapping proxies. Intermediate Workflow cells
+return compact status-only protocol records; the final cell may return one
+exact canonical JSON value up to the ordinary 32 KiB node bound. The private
+Session records a 96 KiB cumulative protocol budget so Base64 framing can carry
+that value, while ordinary Process/PTY output remains capped at 32K. Unsupported
+objects, cycles, non-string keys, non-finite numbers, and excessive shape are
+rejected without parsing `repr`.
+
+The frozen Agent revision must enable `python_kernel`, and the same process
+policy, read-only workspace, denied network, timeout, cancellation, and
+unchanged-settlement rules apply. `workflow.python.completed` contains no code,
+input/output body, console, path, stderr, or frame. It binds the configuration,
+worker and Python runtime identities, input request, ordered cell request/result
+sets, exact JSON/output hash and byte equality, Schema, duration, memory, Run,
+and attempt. Recovery accepts one exact receipt plus hidden typed output for a
+commit gap; otherwise a stateful attempt requires explicit retry. Scheduler,
+checkpoint experiment, Replay, CLI, SDK, RPC, HTTP, and Web paths have no
+Python-specific loop.
+
 Schema version 1 is intentionally narrow: Agent nodes, bounded Deterministic
-nodes with root multi-way Switch templates, bounded stateful JavaScript
-Session nodes, stateless built-in Tool nodes, bounded read-only Agent Map and
-Loop nodes, typed deterministic Reduce nodes, durable binary Approval gates,
-literal/field-path typed bindings, bounded parallel dependency-ready DAG
-scheduling, typed equality guards with schema-valid fallback, cancellation,
-timeout, explicit retry, restart recovery, and terminal workspace file/
-directory Artifact settlement. It does not yet implement persistent Python or
-package Sessions, cross-node Session handles, general graph-level branch
-pruning, write-capable Map/Loop, compensation, mid-node suspension, or external
-Agent adapters.
+nodes with root multi-way Switch templates, bounded stateful JavaScript and
+restricted Python Session nodes, stateless built-in Tool nodes, bounded
+read-only Agent Map and Loop nodes, typed deterministic Reduce nodes, durable
+binary Approval gates, literal/field-path typed bindings, bounded parallel
+dependency-ready DAG scheduling, typed equality guards with schema-valid
+fallback, cancellation, timeout, explicit retry, restart recovery, and
+terminal workspace file/directory Artifact settlement. It does not yet
+implement package-backed Python/Notebook Sessions, cross-node Session handles,
+general graph-level branch pruning, write-capable Map/Loop, compensation,
+mid-node suspension, or external Agent adapters.
 
 ### Coding Outcome Benchmark
 
@@ -3961,6 +3983,8 @@ Agent selects start
 Agent selects evaluate + Process ID + Python
   -> require the same live Thread/Run registration and Python Process Session
   -> validate 1-16 KiB UTF-8 code and a 1-2,000 ms wall budget
+  -> optionally decode one canonical JSON input in the trusted worker and
+     freeze arrays/objects before any user AST executes
   -> append one hash-only workspace.process.input receipt
   -> parse Python AST and reject imports, class/async/yield/generator syntax,
      decorators, private/dunder names, and frame/traceback attributes
@@ -3969,6 +3993,7 @@ Agent selects evaluate + Process ID + Python
   -> capture bounded print output and render built-in values without user repr
   -> terminate the process from a trusted trace hook above 32 MiB Python heap
   -> return canonical request-ID-bound UTF-16LE base64 result text live-only
+     and, when requested, one exact bounded canonical JSON projection
   -> retain status/type/version/count/time/memory plus runtime/result hashes
 Agent selects cancel, or evaluation becomes uncertain
   -> terminate the complete Process Session and discard the registration
@@ -3996,8 +4021,12 @@ bounded ASCII argv items; the uncompressed bytes are bound by
 The worker independently validates exact request keys, request ID, encoding,
 UTF-8, code bytes, and timeout. Result frames have exact keys, canonical
 UTF-16LE base64, bounded console entries, Python version, traced-memory
-peak/limit, and a cumulative 30 KiB protocol budget with a reserved terminal
-response. The worker's trusted 1-2,000 ms timer remains the code-execution
+peak/limit, and a cumulative 96 KiB trusted-private protocol budget with a
+reserved terminal response. Ordinary Process output remains capped at 32K.
+Exact JSON is limited to 32 KiB, finite numbers, string keys, bounded
+depth/nodes, supported containers, and no cycles. Workflow intermediate/final
+result modes omit presentation bodies when they are not consumed. The worker's
+trusted 1-2,000 ms timer remains the code-execution
 deadline. The parent permits a separate bounded five-second scheduling and
 protocol-result grace so host contention before worker dispatch cannot turn a
 valid evaluation into an uncertain timeout.
@@ -6507,6 +6536,13 @@ The current boundary has sixty-nine parts:
     reuse, whole-Manifest Tool-effect confirmation, ordinary scheduler input,
     lineage-bound recovery and comparison, CLI/SDK/RPC/HTTP/Web delivery, and
     body-free experiment Trace.
+73. Sandboxed restricted Python Workflow Session nodes using the existing
+    fixed Python Kernel and managed Process protocol, with immutable canonical
+    JSON input, exact 32 KiB JSON result projection independent of `repr`,
+    compact intermediate records, private-only 96 KiB protocol output,
+    runtime/configuration/memory-bound body-free evidence, commit-gap recovery,
+    explicit-only stateful retry, checkpoint reuse/rerun, CLI/SDK/RPC/HTTP/Web
+    delivery, and no package, file, network, subprocess, or host fallback.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6556,11 +6592,11 @@ deferred until the local P0-P9 product loop is stable.
   richer cross-package build/test configuration, coding outcome benchmarks,
   coder directory lifecycle, and child package-script/Python/persistent
   execution;
-- extend typed Agent/Deterministic/JavaScript/Tool/Approval DAG execution with
-  persistent Python/package Sessions, cross-node handles, graph-level branch
-  pruning, write-capable Map/Loop, compensation, top-level Workflow input
-  replacement, write/session side-effect simulation, external Agent adapters,
-  and a visual builder;
+- extend typed Agent/Deterministic/JavaScript/Python/Tool/Approval DAG execution
+  with package-backed Python/Notebook Sessions, cross-node handles,
+  graph-level branch pruning, write-capable Map/Loop, compensation,
+  write/session side-effect simulation, external Agent adapters, and a visual
+  builder;
 - extend controlled Workflow, user-message, model-call, and stateless read-only
   tool-call re-execution with stateful/write checkpoints and result simulation,
   Prompt/Skill/Memory/environment replacement, batch experiments, interactive

@@ -1169,6 +1169,130 @@ describe("Workflow HTTP path", () => {
     );
     expect(JSON.stringify(frames)).not.toContain("PRIVATE_HTTP_WORDS");
   }, 20_000);
+
+  it("streams an exact stateful Python node through HTTP SSE", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-workflow-python-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: directSandbox(),
+    });
+    openServices.push(services);
+    const sourceThread = services.store.listThreads()[0]!;
+    await services.store.updateAgent(sourceThread.agentId, {
+      toolPolicy: "workspace",
+      enabledTools: ["python_kernel"],
+    });
+    const sourcePlan = await services.store.createPlan(sourceThread.id, {
+      objective: "Execute a Python Session through HTTP.",
+      steps: [
+        {
+          id: "calculate",
+          title: "Calculate",
+          description: "Calculate one exact typed result.",
+          verification: "Return typed inspection JSON.",
+        },
+      ],
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      services.store,
+      sourceThread.id,
+      sourcePlan.id,
+    );
+    const targetThread = await services.store.createThread({
+      title: "HTTP Python Workflow target",
+      agentId: sourceThread.agentId,
+    });
+    const manifest = defineExecutionPlanWorkflow({
+      name: "HTTP Python calculation",
+      version: 1,
+      description: "Execute stateful Python cells through HTTP SSE.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: inspectionSchema(),
+      outputNodeId: "calculate",
+      nodes: [
+        {
+          id: "calculate",
+          type: "python",
+          inputBindings: {
+            workflow: { source: "workflow" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: { workflow: requestSchema() },
+            required: ["workflow"],
+            additionalProperties: false,
+          },
+          outputSchema: inspectionSchema(),
+          cells: [
+            'PRIVATE_HTTP_PYTHON_WORDS = tuple(input["workflow"]["request"].split())\nlen(PRIVATE_HTTP_PYTHON_WORDS)',
+            '{"summary": input["workflow"]["request"], "count": len(PRIVATE_HTTP_PYTHON_WORDS)}',
+          ],
+          evaluationTimeoutMs: 1_000,
+          timeoutMs: 10_000,
+          maxAttempts: 1,
+        },
+      ],
+    });
+    const response = await createApp(services).request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          input: { request: "HTTP Python cells" },
+        }),
+      },
+    );
+    expect(response.status).toBe(200);
+    const frames = parseSseFrames(await response.text());
+    const terminal = validateExecutionPlanWorkflowResultFrame(
+      frames.find((frame) => record(frame)?.["type"] === "workflow_result"),
+    );
+    expect(terminal).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: { summary: "HTTP Python cells", count: 3 },
+        }),
+      }),
+    );
+    const events = frames.flatMap((frame) => {
+      const event = record(record(frame)?.["event"]);
+      return event ? [event] : [];
+    });
+    expect(events.map((event) => event["type"])).toEqual(
+      expect.arrayContaining([
+        "workspace.process.started",
+        "workspace.process.input",
+        "workspace.process.settled",
+        "workflow.python.completed",
+      ]),
+    );
+    const completion = events.find(
+      (event) => event["type"] === "workflow.python.completed",
+    );
+    expect(record(completion?.["payload"])).toEqual(
+      expect.objectContaining({
+        jsonValueSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(record(completion?.["payload"])).not.toEqual(
+      expect.objectContaining({ output: expect.anything() }),
+    );
+    expect(events.map((event) => event["seq"])).toEqual(
+      events.map((_, index) => index + 1),
+    );
+    expect(JSON.stringify(frames)).not.toContain("PRIVATE_HTTP_PYTHON_WORDS");
+  }, 20_000);
 });
 
 function requestSchema(): WorkflowObjectSchema {

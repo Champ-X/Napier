@@ -1,3 +1,6 @@
+import type { JsonValue } from "@napier/contracts";
+
+import { MAX_PYTHON_KERNEL_JSON_VALUE_BYTES } from "./python-kernel-json-worker.js";
 import {
   MAX_PYTHON_KERNEL_CONSOLE_CHARS,
   MAX_PYTHON_KERNEL_CONSOLE_ENTRIES,
@@ -48,6 +51,7 @@ export interface PythonKernelProtocolResult {
   terminal: boolean;
   valueType: PythonKernelValueType;
   preview: string;
+  jsonValue?: JsonValue;
   previewTruncated: boolean;
   console: string[];
   consoleTruncated: boolean;
@@ -77,6 +81,7 @@ export function parsePythonKernelResult(
     MAX_PYTHON_KERNEL_PREVIEW_CHARS,
   );
   const previewTruncated = value["previewTruncated"];
+  const jsonValue = decodeJsonValue(value["jsonValueUtf8Base64"]);
   const consoleEntries = decodePythonKernelConsole(value["consoleUtf16Base64"]);
   const consoleTruncated = value["consoleTruncated"];
   const durationMs = value["durationMs"];
@@ -91,6 +96,7 @@ export function parsePythonKernelResult(
     typeof terminal !== "boolean" ||
     !pythonKernelValueType(valueType) ||
     preview === undefined ||
+    jsonValue.valid !== true ||
     typeof previewTruncated !== "boolean" ||
     consoleEntries === undefined ||
     typeof consoleTruncated !== "boolean" ||
@@ -121,6 +127,7 @@ export function parsePythonKernelResult(
     terminal,
     valueType,
     preview,
+    ...(jsonValue.available ? { jsonValue: jsonValue.value! } : {}),
     previewTruncated,
     console: consoleEntries.slice(),
     consoleTruncated,
@@ -140,6 +147,7 @@ function hasOnlyProtocolKeys(value: Record<string, unknown>): boolean {
     "terminal",
     "valueType",
     "previewUtf16Base64",
+    "jsonValueUtf8Base64",
     "previewTruncated",
     "consoleUtf16Base64",
     "consoleTruncated",
@@ -149,6 +157,69 @@ function hasOnlyProtocolKeys(value: Record<string, unknown>): boolean {
     "memoryLimitBytes",
   ]);
   return Object.keys(value).every((key) => allowed.has(key));
+}
+
+function decodeJsonValue(value: unknown): {
+  valid: boolean;
+  available: boolean;
+  value?: JsonValue;
+} {
+  if (value === null) return { valid: true, available: false };
+  if (typeof value !== "string") return { valid: false, available: false };
+  const bytes = Buffer.from(value, "base64");
+  if (
+    bytes.byteLength < 1 ||
+    bytes.byteLength > MAX_PYTHON_KERNEL_JSON_VALUE_BYTES ||
+    bytes.toString("base64") !== value
+  ) {
+    return { valid: false, available: false };
+  }
+  const text = bytes.toString("utf8");
+  if (Buffer.from(text, "utf8").compare(bytes) !== 0) {
+    return { valid: false, available: false };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text) as unknown;
+  } catch {
+    return { valid: false, available: false };
+  }
+  if (!jsonValue(parsed, 0, { nodes: 0 })) {
+    return { valid: false, available: false };
+  }
+  return {
+    valid: true,
+    available: true,
+    value: parsed as JsonValue,
+  };
+}
+
+function jsonValue(
+  value: unknown,
+  depth: number,
+  state: { nodes: number },
+): value is JsonValue {
+  state.nodes += 1;
+  if (state.nodes > 4_096 || depth > 16) return false;
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean"
+  ) {
+    return true;
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) && Number.isSafeInteger(value)
+      ? true
+      : Number.isFinite(value);
+  }
+  if (Array.isArray(value)) {
+    return value.every((item) => jsonValue(item, depth + 1, state));
+  }
+  if (!record(value)) return false;
+  return Object.values(value).every((item) =>
+    jsonValue(item, depth + 1, state),
+  );
 }
 
 function pythonKernelValueType(value: unknown): value is PythonKernelValueType {

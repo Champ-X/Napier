@@ -31,9 +31,9 @@ import {
   readWorkflowLoopOutputEvidence,
 } from "./workflow-loop-evidence.js";
 import {
-  hasWorkflowJavascriptCompletionEvent,
-  readWorkflowJavascriptOutputEvidence,
-} from "./workflow-javascript-evidence.js";
+  hasWorkflowKernelCompletionEvent,
+  readWorkflowKernelOutputEvidence,
+} from "./workflow-kernel-evidence.js";
 import {
   hasWorkflowReduceCompletionEvent,
   readWorkflowReduceOutputEvidence,
@@ -292,14 +292,14 @@ export class ExecutionPlanWorkflowLedger {
         ),
       });
     }
-    if (node.type === "javascript") {
+    if (node.type === "javascript" || node.type === "python") {
       const attempt = await this.attemptForRun(
         context.threadId,
         context.plan.id,
         node.id,
         runId,
       );
-      return readWorkflowJavascriptOutputEvidence({
+      return readWorkflowKernelOutputEvidence({
         events: await this.store.listEvents(context.threadId),
         node,
         runId,
@@ -561,16 +561,16 @@ export class ExecutionPlanWorkflowLedger {
     );
   }
 
-  async hasNodeJavascriptCompletionEvent(
+  async hasNodeKernelCompletionEvent(
     context: WorkflowLedgerContext,
     node: ExecutionPlanWorkflowNode,
     runId: string,
   ): Promise<boolean> {
-    if (node.type !== "javascript") return false;
-    return hasWorkflowJavascriptCompletionEvent(
+    if (node.type !== "javascript" && node.type !== "python") return false;
+    return hasWorkflowKernelCompletionEvent(
       await this.store.listEvents(context.threadId),
+      node,
       context.plan.id,
-      node.id,
       runId,
     );
   }

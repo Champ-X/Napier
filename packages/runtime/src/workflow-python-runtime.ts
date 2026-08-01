@@ -1,5 +1,5 @@
 import type {
-  ExecutionPlanWorkflowJavascriptNode,
+  ExecutionPlanWorkflowPythonNode,
   JsonValue,
   RunRecord,
 } from "@napier/contracts";
@@ -7,39 +7,38 @@ import type {
 import type { EventSink } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
-  JavascriptKernelManager,
-  MAX_JAVASCRIPT_KERNEL_SESSION_TIMEOUT_MS,
-  MIN_JAVASCRIPT_KERNEL_SESSION_TIMEOUT_MS,
-  type JavascriptKernelEvaluation,
-} from "./javascript-kernel.js";
-import { JAVASCRIPT_KERNEL_WORKER_SHA256 } from "./javascript-kernel-worker.js";
+  MAX_PYTHON_KERNEL_SESSION_TIMEOUT_MS,
+  MIN_PYTHON_KERNEL_SESSION_TIMEOUT_MS,
+  PythonKernelManager,
+  type PythonKernelEvaluation,
+} from "./python-kernel.js";
+import { PYTHON_KERNEL_WORKER_SHA256 } from "./python-kernel-worker.js";
 import type { LocalStore } from "./store.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
-import { WORKFLOW_JAVASCRIPT_COMPLETED_EVENT } from "./workflow-javascript-evidence.js";
-import {
-  parseWorkflowJavascriptOutput,
-  workflowJavascriptConfigurationSha256,
-  workflowJavascriptInputBindingCode,
-} from "./workflow-javascript-model.js";
 import {
   ExecutionPlanWorkflowKernelError,
   ExecutionPlanWorkflowKernelRun,
 } from "./workflow-kernel-run.js";
 import type { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
+import { WORKFLOW_PYTHON_COMPLETED_EVENT } from "./workflow-python-evidence.js";
+import {
+  MAX_EXECUTION_PLAN_WORKFLOW_PYTHON_INPUT_BYTES,
+  MAX_EXECUTION_PLAN_WORKFLOW_PYTHON_OUTPUT_BYTES,
+  workflowPythonConfigurationSha256,
+} from "./workflow-python-model.js";
 import {
   assertWorkflowEncodedBytes,
   assertWorkflowValue,
-  MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
 
-export interface ExecuteExecutionPlanWorkflowJavascriptOptions {
+export interface ExecuteExecutionPlanWorkflowPythonOptions {
   threadId: string;
   planId: string;
   manifestSha256: string;
   agentId: string;
   agentRevision: number;
-  node: ExecutionPlanWorkflowJavascriptNode;
+  node: ExecutionPlanWorkflowPythonNode;
   input: JsonValue;
   inputSha256: string;
   attempt: number;
@@ -49,13 +48,13 @@ export interface ExecuteExecutionPlanWorkflowJavascriptOptions {
   onRunCreated(run: RunRecord): Promise<void>;
 }
 
-export interface ExecutionPlanWorkflowJavascriptOutcome {
+export interface ExecutionPlanWorkflowPythonOutcome {
   run: RunRecord;
   output: JsonValue;
 }
 
-export class ExecutionPlanWorkflowJavascriptRuntime {
-  private readonly kernels: JavascriptKernelManager | undefined;
+export class ExecutionPlanWorkflowPythonRuntime {
+  private readonly kernels: PythonKernelManager | undefined;
   private readonly run: ExecutionPlanWorkflowKernelRun;
 
   constructor(
@@ -63,26 +62,24 @@ export class ExecutionPlanWorkflowJavascriptRuntime {
     ledger: ExecutionPlanWorkflowLedger,
     processes?: WorkspaceProcessManager,
   ) {
-    this.kernels = processes
-      ? new JavascriptKernelManager(processes)
-      : undefined;
-    this.run = new ExecutionPlanWorkflowKernelRun(store, ledger, "workflowjs");
+    this.kernels = processes ? new PythonKernelManager(processes) : undefined;
+    this.run = new ExecutionPlanWorkflowKernelRun(store, ledger, "workflowpy");
   }
 
   async execute(
-    options: ExecuteExecutionPlanWorkflowJavascriptOptions,
-  ): Promise<ExecutionPlanWorkflowJavascriptOutcome> {
+    options: ExecuteExecutionPlanWorkflowPythonOptions,
+  ): Promise<ExecutionPlanWorkflowPythonOutcome> {
     return this.run.execute({
       threadId: options.threadId,
       planId: options.planId,
       agentId: options.agentId,
       agentRevision: options.agentRevision,
       nodeId: options.node.id,
-      nodeType: "javascript",
-      language: "JavaScript",
-      toolName: "javascript_kernel",
-      modelId: "napier/workflow-javascript",
-      fallbackErrorCode: "javascript_failed",
+      nodeType: "python",
+      language: "Python",
+      toolName: "python_kernel",
+      modelId: "napier/workflow-python",
+      fallbackErrorCode: "python_failed",
       input: options.input,
       signal: options.signal,
       ...(options.wasTimedOut ? { wasTimedOut: options.wasTimedOut } : {}),
@@ -100,7 +97,7 @@ export class ExecutionPlanWorkflowJavascriptRuntime {
   }
 
   private async executeSession(
-    options: ExecuteExecutionPlanWorkflowJavascriptOptions,
+    options: ExecuteExecutionPlanWorkflowPythonOptions,
     run: RunRecord,
     signal: AbortSignal,
   ): Promise<{
@@ -111,17 +108,20 @@ export class ExecutionPlanWorkflowJavascriptRuntime {
     if (!this.kernels) {
       throw new ExecutionPlanWorkflowKernelError(
         "sandbox_unavailable",
-        "Workflow JavaScript Kernel Sandbox is unavailable",
+        "Workflow Python Kernel Sandbox is unavailable",
         run,
       );
     }
-    let inputBindingCode: string;
     try {
-      inputBindingCode = workflowJavascriptInputBindingCode(options.input);
+      assertWorkflowEncodedBytes(
+        options.input,
+        MAX_EXECUTION_PLAN_WORKFLOW_PYTHON_INPUT_BYTES,
+        `Workflow Python input ${options.node.id}`,
+      );
     } catch {
       throw new ExecutionPlanWorkflowKernelError(
         "input_invalid",
-        "Workflow JavaScript input cannot be bound to the Kernel",
+        "Workflow Python input cannot be bound to the Kernel",
         run,
       );
     }
@@ -129,11 +129,8 @@ export class ExecutionPlanWorkflowJavascriptRuntime {
       threadId: options.threadId,
       runId: run.id,
       timeoutMs: Math.min(
-        MAX_JAVASCRIPT_KERNEL_SESSION_TIMEOUT_MS,
-        Math.max(
-          MIN_JAVASCRIPT_KERNEL_SESSION_TIMEOUT_MS,
-          options.node.timeoutMs,
-        ),
+        MAX_PYTHON_KERNEL_SESSION_TIMEOUT_MS,
+        Math.max(MIN_PYTHON_KERNEL_SESSION_TIMEOUT_MS, options.node.timeoutMs),
       ),
       signal,
     });
@@ -141,19 +138,25 @@ export class ExecutionPlanWorkflowJavascriptRuntime {
       threadId: options.threadId,
       runId: run.id,
       processId: session.id,
-      code: inputBindingCode,
+      code: "None",
+      input: options.input,
+      resultMode: "workflow_intermediate",
       timeoutMs: options.node.evaluationTimeoutMs,
       signal,
     });
     requireEvaluation(binding, "input_binding_failed", run);
-    const evaluations: JavascriptKernelEvaluation[] = [];
-    for (const cell of options.node.cells) {
+    const evaluations: PythonKernelEvaluation[] = [];
+    for (const [index, cell] of options.node.cells.entries()) {
       signal.throwIfAborted();
       const evaluation = await this.kernels.evaluate({
         threadId: options.threadId,
         runId: run.id,
         processId: session.id,
         code: cell,
+        resultMode:
+          index === options.node.cells.length - 1
+            ? "workflow_final"
+            : "workflow_intermediate",
         timeoutMs: options.node.evaluationTimeoutMs,
         signal,
       });
@@ -163,24 +166,25 @@ export class ExecutionPlanWorkflowJavascriptRuntime {
     const finalEvaluation = evaluations.at(-1)!;
     let output: JsonValue;
     try {
-      output = parseWorkflowJavascriptOutput(
-        finalEvaluation.preview,
-        finalEvaluation.previewTruncated,
-      );
+      if (finalEvaluation.jsonValue === undefined) {
+        throw new Error("Python result is not exact JSON");
+      }
+      output = structuredClone(finalEvaluation.jsonValue);
       assertWorkflowEncodedBytes(
         output,
-        MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
-        `Workflow JavaScript output ${options.node.id}`,
+        MAX_EXECUTION_PLAN_WORKFLOW_PYTHON_OUTPUT_BYTES,
+        `Workflow Python output ${options.node.id}`,
       );
       assertWorkflowValue(
         options.node.outputSchema,
         output,
-        `Workflow JavaScript output ${options.node.id}`,
+        `Workflow Python output ${options.node.id}`,
+        MAX_EXECUTION_PLAN_WORKFLOW_PYTHON_OUTPUT_BYTES,
       );
     } catch {
       throw new ExecutionPlanWorkflowKernelError(
         "output_invalid",
-        "Workflow JavaScript output does not match its schema",
+        "Workflow Python output does not match its schema",
         run,
       );
     }
@@ -196,20 +200,24 @@ export class ExecutionPlanWorkflowJavascriptRuntime {
     ) {
       throw new ExecutionPlanWorkflowKernelError(
         "cleanup_failed",
-        "Workflow JavaScript Kernel did not settle unchanged",
+        "Workflow Python Kernel did not settle unchanged",
         run,
       );
     }
+    const serializedOutput = canonicalJson(output);
     return {
       output,
-      completionEventType: WORKFLOW_JAVASCRIPT_COMPLETED_EVENT,
+      completionEventType: WORKFLOW_PYTHON_COMPLETED_EVENT,
       completionPayload: {
         attempt: options.attempt,
         manifestSha256: options.manifestSha256,
-        javascriptConfigurationSha256: workflowJavascriptConfigurationSha256(
+        pythonConfigurationSha256: workflowPythonConfigurationSha256(
           options.node,
         ),
-        workerSha256: JAVASCRIPT_KERNEL_WORKER_SHA256,
+        workerSha256: PYTHON_KERNEL_WORKER_SHA256,
+        runtimeExecutableSha256: binding.runtimeExecutableSha256,
+        runtimeCommandSha256: binding.runtimeCommandSha256,
+        pythonVersion: finalEvaluation.pythonVersion,
         inputSha256: options.inputSha256,
         inputBindingRequestSha256: binding.requestSha256,
         inputBindingResultSha256: binding.resultSha256,
@@ -230,14 +238,22 @@ export class ExecutionPlanWorkflowJavascriptRuntime {
             (total, evaluation) => total + evaluation.durationMs,
             0,
           ),
+        memoryPeakBytes: Math.max(
+          binding.memoryPeakBytes,
+          ...evaluations.map((evaluation) => evaluation.memoryPeakBytes),
+        ),
+        memoryLimitBytes: finalEvaluation.memoryLimitBytes,
+        jsonValueSha256: finalEvaluation.jsonValueSha256!,
+        jsonValueBytes: finalEvaluation.jsonValueBytes!,
         outputSchemaSha256: workflowSchemaSha256(options.node.outputSchema),
+        outputCanonicalSha256: sha256(serializedOutput),
       },
     };
   }
 }
 
 function requireEvaluation(
-  evaluation: JavascriptKernelEvaluation,
+  evaluation: PythonKernelEvaluation,
   code: string,
   run: RunRecord,
 ): void {
@@ -248,7 +264,7 @@ function requireEvaluation(
   ) {
     throw new ExecutionPlanWorkflowKernelError(
       code,
-      "Workflow JavaScript evaluation failed",
+      "Workflow Python evaluation failed",
       run,
     );
   }

@@ -129,6 +129,7 @@ export class ExecutionPlanWorkflowRecovery {
             (node.type === "tool" ||
               node.type === "deterministic" ||
               node.type === "javascript" ||
+              node.type === "python" ||
               node.type === "map" ||
               node.type === "loop" ||
               node.type === "reduce") &&
@@ -172,6 +173,7 @@ export class ExecutionPlanWorkflowRecovery {
           (node.type === "tool" ||
             node.type === "deterministic" ||
             node.type === "javascript" ||
+            node.type === "python" ||
             node.type === "map" ||
             node.type === "loop" ||
             node.type === "reduce") &&
@@ -189,8 +191,8 @@ export class ExecutionPlanWorkflowRecovery {
                   node,
                   run.id,
                 )
-              : node.type === "javascript"
-                ? await this.ledger.hasNodeJavascriptCompletionEvent(
+              : node.type === "javascript" || node.type === "python"
+                ? await this.ledger.hasNodeKernelCompletionEvent(
                     context,
                     node,
                     run.id,

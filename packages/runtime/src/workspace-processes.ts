@@ -15,10 +15,9 @@ import type {
   WorkspaceProcessWritePreview,
 } from "@napier/contracts";
 
-import {
-  MAX_COMMAND_OUTPUT_CHARS,
-  type CommandRunnerOptions,
-  type PreparedCommandExecution,
+import type {
+  CommandRunnerOptions,
+  PreparedCommandExecution,
 } from "./command-execution.js";
 import { nowIso } from "./ids.js";
 import type { SandboxedProcess } from "./sandbox.js";
@@ -53,6 +52,7 @@ import {
 } from "./workspace-process-rollback-ledger.js";
 import {
   launchWorkspaceProcess,
+  type PrivateProtocolWorkspaceProcessLaunchRequest,
   type WorkspaceProcessLaunchRequest,
 } from "./workspace-process-launch.js";
 import {
@@ -223,7 +223,7 @@ export class WorkspaceProcessManager {
   }
 
   async startPrivateProtocol(
-    request: StartWorkspaceProcessRequest,
+    request: PrivateProtocolWorkspaceProcessLaunchRequest,
   ): Promise<WorkspaceProcessSession> {
     return this.startProcess(request, true);
   }
@@ -286,7 +286,9 @@ export class WorkspaceProcessManager {
   }
 
   private async startProcess(
-    request: StartWorkspaceProcessRequest,
+    request:
+      | StartWorkspaceProcessRequest
+      | PrivateProtocolWorkspaceProcessLaunchRequest,
     privateProtocol: boolean,
     writePreviewId?: string,
   ): Promise<WorkspaceProcessSession> {
@@ -621,7 +623,7 @@ export class WorkspaceProcessManager {
     text: string,
   ): void {
     if (collector.truncated || entry.session.status !== "running") return;
-    const remaining = MAX_COMMAND_OUTPUT_CHARS - collector.chars;
+    const remaining = entry.session.outputLimitChars - collector.chars;
     if (
       remaining <= 0 ||
       entry.chunks.length >= MAX_WORKSPACE_PROCESS_OUTPUT_CHUNKS

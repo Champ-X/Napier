@@ -6,6 +6,51 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added sandboxed restricted Python Workflow Session nodes. A typed `python`
+  node executes 1-8 bounded cells in one fresh existing Python Kernel,
+  receives its complete constructed JSON through a trusted immutable `input`
+  binding, and returns one exact JSON value independent of `repr`. The worker
+  accepts only finite, cycle-free, depth/node-bounded JSON with string object
+  keys; the full 32 KiB Workflow result boundary is covered. Compact
+  intermediate/final response modes and a private-only 96 KiB Process output
+  budget carry exact Base64 results without expanding ordinary Process/PTY
+  output beyond 32K. Public attempts to select that elevated budget fail
+  before launch.
+
+  The frozen Agent must enable `python_kernel`, normal process policy still
+  applies, and completion requires a cancelled, unchanged read-only/offline
+  Session. `workflow.python.completed` binds Manifest configuration, worker and
+  Python runtime identities, immutable input, ordered request/result sets,
+  exact JSON/output equality, Schema, duration, memory, attempt, and Run while
+  excluding source, values, console, stderr, paths, and frames. One exact
+  receipt plus hidden typed output repairs a commit gap; interrupted stateful
+  attempts require explicit retry. Checkpoint reuse/rerun, comparison, portable
+  Replay, CLI JSONL, local stdio RPC, TypeScript SDK, HTTP SSE, and independently
+  validated Web Trace all use the ordinary Workflow scheduler and Ledger.
+
+  Tests cover 32 KiB exact output, state, input immutability, non-JSON and
+  Schema failures, capability/policy denial, timeout, cancellation, explicit
+  retry, parallel isolation, SQLite recovery, receipt tamper, privacy, and a
+  fail-closed production-Sandbox smoke. Built CLI Dogfood returned
+  `{ ordered: [2, 4, 7, 9], sum: 22 }` with one receipt, unchanged workspace,
+  no public source, and valid Replay. The shared Kernel Run lifecycle was
+  extracted, and `workflow-runtime.ts` fell from 804 to 414 lines with a
+  255-line context factory and 162-line node dispatcher; every new production
+  module remains below 500 lines.
+
+  The Web main entry remains 130.32 KiB under its 150 KiB budget. Product
+  performance passed at 730.5 ms to first CLI event, 882.4 ms to first token,
+  1,231.0 ms to completion, 0.7 ms read p95, 7.1 ms for a 1,000-event
+  projection, and 753.664 closed SQLite bytes/event. The 1,765 regular-test set
+  passes across workspace runs and isolated reruns, with 33 opt-in tests
+  skipped. The concurrent Runtime wrapper hit unrelated 123-136 second
+  enterprise Defender/Storage stalls in four old tests; every timed-out test
+  passed unchanged in single-file/single-worker reruns, so no timeout was
+  widened. The nested macOS production Sandbox rejected the live Python launch
+  and settled `python_failed` without host fallback. The Web dist is bound to
+  `bc91c86abc8ea16c` and the seven-artifact release set to
+  `52ee5d8d5cfda1b6`.
+
 - Added selector-free top-level Workflow input replacement. Schema-v6
   `replace_workflow_input` validates one complete replacement against the
   Manifest input Schema, rejects `fromNodeId`, binds every Manifest node as

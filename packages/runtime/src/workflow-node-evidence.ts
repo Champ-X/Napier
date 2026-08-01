@@ -10,6 +10,10 @@ import {
   workflowJavascriptNodeMetadata,
   workflowJavascriptNodeMetadataMatches,
 } from "./workflow-javascript-evidence.js";
+import {
+  workflowPythonNodeMetadata,
+  workflowPythonNodeMetadataMatches,
+} from "./workflow-python-evidence.js";
 import { workflowLoopNodeConfigurationSha256 } from "./workflow-loop-model.js";
 import {
   workflowMapNodeMetadata,
@@ -69,6 +73,12 @@ export function workflowNodeEventMetadataMatches(
       payload as Record<string, JsonValue>,
     );
   }
+  if (node.type === "python") {
+    return workflowPythonNodeMetadataMatches(
+      node,
+      payload as Record<string, JsonValue>,
+    );
+  }
   return payload["nodeType"] === undefined || payload["nodeType"] === "agent";
 }
 
@@ -109,6 +119,9 @@ export function workflowNodeEventMetadata(
   }
   if (node.type === "javascript") {
     return { ...workflowJavascriptNodeMetadata(node), ...condition };
+  }
+  if (node.type === "python") {
+    return { ...workflowPythonNodeMetadata(node), ...condition };
   }
   return { nodeType: "agent", ...condition };
 }

@@ -20,6 +20,7 @@ import {
 } from "./workflow-condition-model.js";
 import { validateExecutionPlanWorkflowDeterministicTemplateContract } from "./workflow-deterministic-model.js";
 import { validateWorkflowJavascriptContract } from "./workflow-javascript-model.js";
+import { validateWorkflowPythonContract } from "./workflow-python-model.js";
 import {
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_CONCURRENCY,
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS,
@@ -387,7 +388,7 @@ function validateWorkflowNode(
       label,
       new Set(["when", "skipOutput"]),
     );
-  } else if (type === "javascript") {
+  } else if (type === "javascript" || type === "python") {
     assertExactKeys(
       node,
       [
@@ -801,7 +802,25 @@ function validateWorkflowNode(
       maxAttempts,
     };
   }
-  if (type === "javascript") {
+  if (type === "javascript" || type === "python") {
+    const kernelContract =
+      type === "javascript"
+        ? validateWorkflowJavascriptContract(
+            {
+              cells: node["cells"],
+              evaluationTimeoutMs: node["evaluationTimeoutMs"],
+              timeoutMs,
+            },
+            label,
+          )
+        : validateWorkflowPythonContract(
+            {
+              cells: node["cells"],
+              evaluationTimeoutMs: node["evaluationTimeoutMs"],
+              timeoutMs,
+            },
+            label,
+          );
     return {
       id,
       type,
@@ -809,14 +828,7 @@ function validateWorkflowNode(
       inputSchema: inputSchema as WorkflowObjectSchema,
       outputSchema,
       ...(conditional ? conditional : {}),
-      ...validateWorkflowJavascriptContract(
-        {
-          cells: node["cells"],
-          evaluationTimeoutMs: node["evaluationTimeoutMs"],
-          timeoutMs,
-        },
-        label,
-      ),
+      ...kernelContract,
       timeoutMs,
       maxAttempts,
     };

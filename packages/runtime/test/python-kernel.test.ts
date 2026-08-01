@@ -8,12 +8,14 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   LocalStore,
   parsePythonKernelResult,
+  MAX_PYTHON_KERNEL_PROTOCOL_TOTAL_CHARS,
   PYTHON_KERNEL_MEMORY_LIMIT_MARKER,
   PYTHON_KERNEL_TIMEOUT_MARKER,
   PythonKernelManager,
   type OsSandboxAdapter,
   WorkspaceProcessManager,
 } from "../src/index.js";
+import { MAX_PYTHON_KERNEL_JSON_VALUE_BYTES } from "../src/python-kernel-json-worker.js";
 
 const temporaryRoots: string[] = [];
 const openProcesses: WorkspaceProcessManager[] = [];
@@ -95,6 +97,7 @@ describe("persistent Python kernel", () => {
         processStatus: "running",
         valueType: "list",
         preview: "[2, 4, 6]",
+        jsonValue: [2, 4, 6],
         pythonVersion: expect.stringMatching(/^\d+\.\d+\.\d+$/u),
       }),
     );
@@ -117,6 +120,7 @@ describe("persistent Python kernel", () => {
       expect.objectContaining({
         status: "ok",
         preview: "12",
+        jsonValue: 12,
         console: ["PRIVATE_PYTHON_CONSOLE"],
       }),
     );
@@ -127,6 +131,73 @@ describe("persistent Python kernel", () => {
     expect(durable).not.toContain("values =");
     expect(durable).not.toContain("PRIVATE_PYTHON_CONSOLE");
     expect(durable).not.toContain("[2, 4, 6]");
+  }, 20_000);
+
+  it("binds one frozen JSON input and returns exact JSON values", async () => {
+    const fixture = await createFixture();
+    const kernel = await fixture.kernels.start({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      timeoutMs: 20_000,
+    });
+    const input = {
+      values: [3, 5, 7],
+      label: "PRIVATE_PYTHON_INPUT",
+    };
+    const bound = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: "input",
+      input,
+    });
+    const assignment = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: "input = {'values': [1]}",
+    });
+    const mutation = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: "input['values'][0] = 99",
+    });
+    const rebound = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: "input",
+      input: { values: [1], label: "REBOUND" },
+    });
+    const projected = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: "{'total': sum(input['values']), 'values': input['values']}",
+    });
+
+    expect(bound).toEqual(
+      expect.objectContaining({
+        status: "ok",
+        jsonValue: input,
+        jsonValueSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(assignment.preview).toContain("input binding is read-only");
+    expect(mutation.preview).toContain("TypeError");
+    expect(rebound.preview).toContain("input is already bound");
+    expect(projected).toEqual(
+      expect.objectContaining({
+        status: "ok",
+        jsonValue: { total: 15, values: [3, 5, 7] },
+      }),
+    );
+    const durable = JSON.stringify(
+      await fixture.store.listEvents(fixture.threadId),
+    );
+    expect(durable).not.toContain("PRIVATE_PYTHON_INPUT");
+    expect(durable).not.toContain("REBOUND");
   }, 20_000);
 
   it("terminates the complete kernel on evaluation timeout", async () => {
@@ -222,30 +293,31 @@ describe("persistent Python kernel", () => {
       processId: kernel.id,
       code: "for index in range(20):\n    print(index)\nNone",
     });
-    const first = await fixture.kernels.evaluate({
-      threadId: fixture.threadId,
-      runId: fixture.runId,
-      processId: kernel.id,
-      code: 'raise ValueError("x" * 5000)',
-    });
-    const second = await fixture.kernels.evaluate({
-      threadId: fixture.threadId,
-      runId: fixture.runId,
-      processId: kernel.id,
-      code: 'raise ValueError("y" * 5000)',
-    });
-    const exhausted = await fixture.kernels.evaluate({
-      threadId: fixture.threadId,
-      runId: fixture.runId,
-      processId: kernel.id,
-      code: 'raise ValueError("z" * 5000)',
-    });
+    const largeResults = [];
+    for (let index = 0; index < 16; index += 1) {
+      const result = await fixture.kernels.evaluate({
+        threadId: fixture.threadId,
+        runId: fixture.runId,
+        processId: kernel.id,
+        code: `raise ValueError("${String(index)}" * 5000)`,
+      });
+      largeResults.push(result);
+      if (result.terminal) break;
+    }
+    const first = largeResults[0]!;
+    const second = largeResults[1]!;
+    const exhausted = largeResults.at(-1)!;
 
     expect(consoleResult.console).toHaveLength(12);
     expect(consoleResult.consoleTruncated).toBe(true);
     expect(first.preview).toHaveLength(4_096);
     expect(first.previewTruncated).toBe(true);
     expect(second.previewTruncated).toBe(true);
+    expect(
+      (await fixture.processes.list(fixture.threadId)).find(
+        (session) => session.id === kernel.id,
+      )?.outputLimitChars,
+    ).toBe(MAX_PYTHON_KERNEL_PROTOCOL_TOTAL_CHARS);
     expect(exhausted).toEqual(
       expect.objectContaining({
         status: "error",
@@ -254,6 +326,48 @@ describe("persistent Python kernel", () => {
         preview: "Python kernel output budget exhausted",
       }),
     );
+  }, 20_000);
+
+  it("returns exact JSON through the complete 32 KiB boundary", async () => {
+    const fixture = await createFixture();
+    const kernel = await fixture.kernels.start({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      timeoutMs: 20_000,
+    });
+    const exactLength = MAX_PYTHON_KERNEL_JSON_VALUE_BYTES - 2;
+    const exact = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: `"x" * ${String(exactLength)}`,
+      resultMode: "workflow_final",
+    });
+    const oversized = await fixture.kernels.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: kernel.id,
+      code: `"x" * ${String(exactLength + 1)}`,
+      resultMode: "workflow_final",
+    });
+
+    expect(exact).toEqual(
+      expect.objectContaining({
+        status: "ok",
+        jsonValue: "x".repeat(exactLength),
+        jsonValueBytes: MAX_PYTHON_KERNEL_JSON_VALUE_BYTES,
+        preview: "",
+        console: [],
+      }),
+    );
+    expect(oversized).toEqual(
+      expect.objectContaining({
+        status: "ok",
+        preview: "",
+        console: [],
+      }),
+    );
+    expect(oversized.jsonValue).toBeUndefined();
   }, 20_000);
 
   it("rejects oversized input before write and cancels an active evaluation", async () => {
@@ -346,6 +460,7 @@ describe("persistent Python kernel", () => {
       terminal: false,
       valueType: "integer",
       previewUtf16Base64: Buffer.from("42", "utf16le").toString("base64"),
+      jsonValueUtf8Base64: Buffer.from("42", "utf8").toString("base64"),
       previewTruncated: false,
       consoleUtf16Base64: [],
       consoleTruncated: false,
@@ -357,7 +472,13 @@ describe("persistent Python kernel", () => {
 
     expect(
       parsePythonKernelResult(`NAPIER_PY_RESULT ${valid}`, requestId),
-    ).toEqual(expect.objectContaining({ preview: "42", valueType: "integer" }));
+    ).toEqual(
+      expect.objectContaining({
+        preview: "42",
+        valueType: "integer",
+        jsonValue: 42,
+      }),
+    );
     expect(
       parsePythonKernelResult(`NAPIER_PY_RESULT ${valid}`, `${requestId}x`),
     ).toBeUndefined();
@@ -366,6 +487,15 @@ describe("persistent Python kernel", () => {
         `NAPIER_PY_RESULT ${JSON.stringify({
           ...JSON.parse(valid),
           previewUtf16Base64: "not canonical",
+        })}`,
+        requestId,
+      ),
+    ).toBeUndefined();
+    expect(
+      parsePythonKernelResult(
+        `NAPIER_PY_RESULT ${JSON.stringify({
+          ...JSON.parse(valid),
+          jsonValueUtf8Base64: "not canonical",
         })}`,
         requestId,
       ),

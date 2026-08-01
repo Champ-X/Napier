@@ -64,6 +64,14 @@ type JavascriptReport = {
   total: number;
 };
 
+type PythonRequest = {
+  values: number[];
+};
+
+type PythonReport = {
+  total: number;
+};
+
 afterEach(async () => {
   await Promise.all(
     temporaryRoots
@@ -555,6 +563,55 @@ describe("Napier TypeScript SDK Workflows", () => {
     expect(eventSeqs).toEqual(eventSeqs.map((_, index) => index + 1));
     await client.close();
   }, 20_000);
+
+  it("executes an exact stateful Python node through the SDK", async () => {
+    const fixture = await createFixture("python");
+    const store = await openStore(fixture);
+    const agent = store.listAgents()[0]!;
+    await store.updateAgent(agent.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["python_kernel"],
+    });
+    store.close();
+    const client = await createNapierClient({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      sandbox: directSandbox(),
+    });
+    const workflow = await client.defineWorkflow<PythonRequest, PythonReport>(
+      pythonWorkflowDefinition(),
+    );
+    let completionPayload: unknown;
+    const execution = await client.runWorkflow({
+      workflow,
+      input: { values: [4, 6, 8] },
+      onEvent: (event) => {
+        if (event.type === "workflow.python.completed") {
+          completionPayload = event.payload;
+        }
+      },
+    });
+    expect(execution).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { total: 18 },
+      }),
+    );
+    expect(completionPayload).toEqual(
+      expect.objectContaining({
+        cellCount: 2,
+        jsonValueSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(JSON.stringify(completionPayload)).not.toContain(
+      "PRIVATE_SDK_PYTHON_VALUES",
+    );
+    expect(completionPayload).not.toEqual(
+      expect.objectContaining({ output: expect.anything() }),
+    );
+    await client.close();
+  }, 20_000);
 });
 
 function draftWorkflowDefinition(): DefineNapierWorkflowInput<
@@ -864,6 +921,53 @@ function javascriptWorkflowDefinition(): DefineNapierWorkflowInput<
         cells: [
           "const PRIVATE_SDK_VALUES = input.workflow.values.slice(); PRIVATE_SDK_VALUES.length",
           "({ total: PRIVATE_SDK_VALUES.reduce((sum, value) => sum + value, 0) })",
+        ],
+        evaluationTimeoutMs: 1_000,
+        timeoutMs: 10_000,
+        maxAttempts: 1,
+      },
+    ],
+  };
+}
+
+function pythonWorkflowDefinition(): DefineNapierWorkflowInput<
+  PythonRequest,
+  PythonReport
+> {
+  const inputSchema = objectSchema({
+    values: {
+      type: "array",
+      items: { type: "integer", minimum: 0, maximum: 100 },
+      minItems: 1,
+      maxItems: 8,
+    },
+  });
+  const outputSchema = objectSchema({
+    total: { type: "integer", minimum: 0, maximum: 800 },
+  });
+  return {
+    name: "SDK Python calculation",
+    version: 1,
+    description: "Execute stateful Python cells in a typed Workflow.",
+    plan: {
+      objective: "Calculate one exact typed total.",
+      steps: [planStep("calculate", "Calculate Python values")],
+    },
+    inputSchema,
+    outputSchema,
+    outputNodeId: "calculate",
+    nodes: [
+      {
+        id: "calculate",
+        type: "python",
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: objectSchema({ workflow: inputSchema }),
+        outputSchema,
+        cells: [
+          'PRIVATE_SDK_PYTHON_VALUES = tuple(input["workflow"]["values"])\nlen(PRIVATE_SDK_PYTHON_VALUES)',
+          '{"total": sum(PRIVATE_SDK_PYTHON_VALUES)}',
         ],
         evaluationTimeoutMs: 1_000,
         timeoutMs: 10_000,

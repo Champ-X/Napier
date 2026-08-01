@@ -713,6 +713,78 @@ describe("Workflow event Trace projection", () => {
     ).toBeUndefined();
   });
 
+  it("strictly summarizes Python Session identities without values", () => {
+    const nodeStarted = workflowEvent("workflow.node.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "calculate",
+      nodeType: "python",
+      pythonConfigurationSha256: "8".repeat(64),
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      planRevisionBefore: 1,
+      planRevisionAfter: 2,
+      recovered: false,
+      code: "PRIVATE_PYTHON_SOURCE",
+    });
+    const completed = workflowEvent("workflow.python.completed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "calculate",
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      pythonConfigurationSha256: "8".repeat(64),
+      workerSha256: "9".repeat(64),
+      runtimeExecutableSha256: "a".repeat(64),
+      runtimeCommandSha256: "b".repeat(64),
+      pythonVersion: "3.12.4",
+      inputSha256: "2".repeat(64),
+      inputBindingRequestSha256: "c".repeat(64),
+      inputBindingResultSha256: "d".repeat(64),
+      cellCount: 2,
+      cellRequestSetSha256: "e".repeat(64),
+      cellResultSetSha256: "f".repeat(64),
+      durationMs: 17,
+      memoryPeakBytes: 2_048,
+      memoryLimitBytes: 32 * 1024 * 1024,
+      jsonValueSha256: "5".repeat(64),
+      jsonValueBytes: 19,
+      outputSha256: "5".repeat(64),
+      outputCanonicalSha256: "5".repeat(64),
+      outputBytes: 19,
+      outputSchemaSha256: "4".repeat(64),
+    });
+
+    expect(workflowEventTraceSummary(nodeStarted)).toContain(
+      `python ${"8".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(completed)).toContain(
+      `cells 2 / duration 17ms / python 3.12.4 / memory 2048/33554432 / input ${"2".repeat(12)} / output ${"5".repeat(12)} / bytes 19`,
+    );
+    expect(
+      `${workflowEventTraceSummary(nodeStarted)} ${workflowEventTraceSummary(completed)}`,
+    ).not.toContain("PRIVATE_PYTHON");
+    expect(
+      workflowEventTraceSummary(
+        workflowEvent("workflow.python.completed", {
+          ...(completed.payload as Record<string, JsonValue>),
+          jsonValueSha256: "6".repeat(64),
+        }),
+      ),
+    ).toBeUndefined();
+    expect(
+      workflowEventTraceSummary(
+        workflowEvent("workflow.python.completed", {
+          ...(completed.payload as Record<string, JsonValue>),
+          output: "PRIVATE_PYTHON_OUTPUT",
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
   it("summarizes persisted breakpoints without bound input bodies", () => {
     const started = workflowEvent("workflow.started", {
       schemaVersion: 1,

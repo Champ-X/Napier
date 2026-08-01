@@ -1,4 +1,5 @@
 import { sha256 } from "./ed25519.js";
+import { PYTHON_KERNEL_JSON_WORKER_SOURCE } from "./python-kernel-json-worker.js";
 import { deflateSync } from "node:zlib";
 
 export const PYTHON_KERNEL_PROTOCOL_PREFIX = "NAPIER_PY_RESULT ";
@@ -9,7 +10,7 @@ export const MAX_PYTHON_KERNEL_PREVIEW_CHARS = 4_096;
 export const MAX_PYTHON_KERNEL_CONSOLE_ENTRIES = 12;
 export const MAX_PYTHON_KERNEL_CONSOLE_CHARS = 256;
 export const MAX_PYTHON_KERNEL_WORKER_ARGUMENT_CHARS = 2_048;
-export const MAX_PYTHON_KERNEL_PROTOCOL_TOTAL_CHARS = 30 * 1024;
+export const MAX_PYTHON_KERNEL_PROTOCOL_TOTAL_CHARS = 96 * 1024;
 export const MAX_PYTHON_KERNEL_TRACED_MEMORY_BYTES = 32 * 1024 * 1024;
 export const PYTHON_KERNEL_OUTPUT_BUDGET_EXHAUSTED =
   "Python kernel output budget exhausted";
@@ -29,6 +30,8 @@ import threading
 import time
 import tracemalloc
 import types
+
+${PYTHON_KERNEL_JSON_WORKER_SOURCE}
 
 PREFIX = ${JSON.stringify(PYTHON_KERNEL_PROTOCOL_PREFIX)}
 MAX_CODE_BYTES = ${MAX_PYTHON_KERNEL_CODE_BYTES}
@@ -65,6 +68,7 @@ SAFE_BUILTINS = {
     )
 }
 STATE = {"__builtins__": SAFE_BUILTINS}
+INPUT_BOUND = False
 PROTOCOL_STDOUT = sys.stdout
 PROTOCOL_STDERR = sys.stderr
 OUTPUT_CHARS = 0
@@ -135,6 +139,13 @@ def validate_tree(tree):
             )
         if isinstance(node, ast.Name) and node.id.startswith("_"):
             raise ValueError("Python kernel private names are unavailable")
+        if (
+            INPUT_BOUND
+            and isinstance(node, ast.Name)
+            and node.id == "input"
+            and isinstance(node.ctx, (ast.Store, ast.Del))
+        ):
+            raise ValueError("Python kernel input binding is read-only")
         if isinstance(node, ast.Attribute) and node.attr.startswith("_"):
             raise ValueError("Python kernel private attributes are unavailable")
         if isinstance(node, ast.Attribute) and node.attr in FORBIDDEN_ATTRIBUTES:
@@ -289,6 +300,7 @@ def write_response(payload):
             "previewUtf16Base64": encode_utf16(
                 ${JSON.stringify(PYTHON_KERNEL_OUTPUT_BUDGET_EXHAUSTED)}
             ),
+            "jsonValueUtf8Base64": None,
             "previewTruncated": False,
             "consoleUtf16Base64": [],
             "consoleTruncated": False,
@@ -303,13 +315,18 @@ def write_response(payload):
     PROTOCOL_STDOUT.flush()
 
 def handle(line):
+    global INPUT_BOUND
     try:
         request = json.loads(line)
+        request_keys = set(request) if isinstance(request, dict) else set()
+        base_keys = {
+            "kind", "schemaVersion", "id", "codeBase64", "timeoutMs"
+        }
+        optional_keys = {"inputJsonBase64", "resultMode"}
         if (
             not isinstance(request, dict)
-            or set(request) != {
-                "kind", "schemaVersion", "id", "codeBase64", "timeoutMs"
-            }
+            or not base_keys.issubset(request_keys)
+            or not request_keys.issubset(base_keys | optional_keys)
             or request["kind"] != "napier.python-kernel-request"
             or request["schemaVersion"] != 1
             or not isinstance(request["id"], str)
@@ -320,6 +337,12 @@ def handle(line):
             or isinstance(request["timeoutMs"], bool)
             or request["timeoutMs"] < 1
             or request["timeoutMs"] > MAX_TIMEOUT_MS
+            or (
+                "inputJsonBase64" in request
+                and not isinstance(request["inputJsonBase64"], str)
+            )
+            or request.get("resultMode", "standard")
+            not in ("standard", "workflow_intermediate", "workflow_final")
         ):
             return
         code_bytes = base64.b64decode(request["codeBase64"], validate=True)
@@ -347,6 +370,11 @@ def handle(line):
         sys.settrace(memory_guard)
         signal.signal(signal.SIGALRM, timeout_guard)
         signal.setitimer(signal.ITIMER_REAL, request["timeoutMs"] / 1000)
+        if "inputJsonBase64" in request:
+            if INPUT_BOUND:
+                raise ValueError("Python kernel input is already bound")
+            STATE["input"] = decode_json_input(request["inputJsonBase64"])
+            INPUT_BOUND = True
         value = execute_source(source)
     except BaseException as error:
         status = "error"
@@ -376,7 +404,18 @@ def handle(line):
         terminal = True
         value = "Python kernel background threads are unavailable"
 
-    preview = value if status == "error" else render(value)
+    result_mode = request.get("resultMode", "standard")
+    include_presentation = result_mode == "standard" or status == "error"
+    preview = (
+        value
+        if status == "error"
+        else render(value) if include_presentation else ""
+    )
+    json_value_base64 = (
+        encode_json_value(value)
+        if status == "ok" and result_mode != "workflow_intermediate"
+        else None
+    )
     if not isinstance(preview, str):
         preview = str(preview)
     preview_truncated = len(preview) > MAX_PREVIEW_CHARS
@@ -390,11 +429,16 @@ def handle(line):
         "terminal": terminal,
         "valueType": "error" if status == "error" else value_type(value),
         "previewUtf16Base64": encode_utf16(preview),
+        "jsonValueUtf8Base64": json_value_base64,
         "previewTruncated": preview_truncated,
         "consoleUtf16Base64": [
-            encode_utf16(entry) for entry in capture.entries
+            encode_utf16(entry) for entry in (
+                capture.entries if include_presentation else []
+            )
         ],
-        "consoleTruncated": capture.truncated,
+        "consoleTruncated": (
+            capture.truncated if include_presentation else False
+        ),
         "durationMs": duration_ms,
         "pythonVersion": "{}.{}.{}".format(*sys.version_info[:3]),
         "memoryPeakBytes": memory_peak_bytes,

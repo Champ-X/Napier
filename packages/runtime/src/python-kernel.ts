@@ -1,10 +1,12 @@
 import type {
+  JsonValue,
   WorkspaceProcessSession,
   WorkspaceProcessStatus,
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
+import { MAX_PYTHON_KERNEL_INPUT_BYTES } from "./python-kernel-json-worker.js";
 import {
   parsePythonKernelResult,
   type PythonKernelProtocolResult,
@@ -14,6 +16,7 @@ import {
   DEFAULT_PYTHON_KERNEL_EVALUATION_TIMEOUT_MS,
   MAX_PYTHON_KERNEL_CODE_BYTES,
   MAX_PYTHON_KERNEL_EVALUATION_TIMEOUT_MS,
+  MAX_PYTHON_KERNEL_PROTOCOL_TOTAL_CHARS,
   PYTHON_KERNEL_MEMORY_LIMIT_MARKER,
   PYTHON_KERNEL_TIMEOUT_MARKER,
   PYTHON_KERNEL_WORKER_ARGUMENTS,
@@ -29,7 +32,7 @@ export const MIN_PYTHON_KERNEL_SESSION_TIMEOUT_MS = 10_000;
 export const MAX_PYTHON_KERNEL_SESSION_TIMEOUT_MS = 120_000;
 export const PYTHON_KERNEL_PROTOCOL_RESULT_GRACE_MS = 5_000;
 
-const MAX_PYTHON_KERNEL_PROTOCOL_CHARS = 24 * 1024;
+const MAX_PYTHON_KERNEL_PROTOCOL_CHARS = MAX_PYTHON_KERNEL_PROTOCOL_TOTAL_CHARS;
 const MAX_PYTHON_KERNEL_STDERR_MARKER_CHARS =
   Math.max(
     PYTHON_KERNEL_MEMORY_LIMIT_MARKER.length,
@@ -37,6 +40,10 @@ const MAX_PYTHON_KERNEL_STDERR_MARKER_CHARS =
   ) * 2;
 
 export type { PythonKernelValueType } from "./python-kernel-protocol.js";
+export type PythonKernelResultMode =
+  | "standard"
+  | "workflow_intermediate"
+  | "workflow_final";
 
 export interface PythonKernelEvaluation {
   processId: string;
@@ -46,6 +53,9 @@ export interface PythonKernelEvaluation {
   processStatus: WorkspaceProcessStatus;
   valueType: PythonKernelValueType;
   preview: string;
+  jsonValue?: JsonValue;
+  jsonValueSha256?: string;
+  jsonValueBytes?: number;
   previewTruncated: boolean;
   console: string[];
   consoleTruncated: boolean;
@@ -92,6 +102,7 @@ export class PythonKernelManager {
         timeoutMs,
       },
       interactive: true,
+      outputLimitChars: MAX_PYTHON_KERNEL_PROTOCOL_TOTAL_CHARS,
       ...(request.signal ? { signal: request.signal } : {}),
     });
     this.registrations.set(session.id, {
@@ -108,12 +119,15 @@ export class PythonKernelManager {
     runId: string;
     processId: string;
     code: string;
+    input?: JsonValue;
+    resultMode?: PythonKernelResultMode;
     timeoutMs?: number;
     signal?: AbortSignal;
   }): Promise<PythonKernelEvaluation> {
     const timeoutMs =
       request.timeoutMs ?? DEFAULT_PYTHON_KERNEL_EVALUATION_TIMEOUT_MS;
-    validateEvaluation(request.code, timeoutMs);
+    const resultMode = request.resultMode ?? "standard";
+    validateEvaluation(request.code, request.input, resultMode, timeoutMs);
     const registration = this.requireRegistration(request);
     const session = (await this.processes.list(request.threadId)).find(
       (candidate) => candidate.id === request.processId,
@@ -134,6 +148,15 @@ export class PythonKernelManager {
       id: requestId,
       codeBase64: Buffer.from(request.code, "utf8").toString("base64"),
       timeoutMs,
+      ...(request.input !== undefined
+        ? {
+            inputJsonBase64: Buffer.from(
+              canonicalJson(request.input),
+              "utf8",
+            ).toString("base64"),
+          }
+        : {}),
+      ...(resultMode !== "standard" ? { resultMode } : {}),
     };
     const requestSha256 = sha256(canonicalJson(input));
     let written = false;
@@ -171,6 +194,15 @@ export class PythonKernelManager {
         processStatus,
         valueType: result.valueType,
         previewSha256: sha256(result.preview),
+        ...(result.jsonValue !== undefined
+          ? {
+              jsonValueSha256: sha256(canonicalJson(result.jsonValue)),
+              jsonValueBytes: Buffer.byteLength(
+                canonicalJson(result.jsonValue),
+                "utf8",
+              ),
+            }
+          : {}),
         previewTruncated: result.previewTruncated,
         consoleCount: result.console.length,
         consoleSetSha256: sha256(canonicalJson(result.console)),
@@ -192,6 +224,16 @@ export class PythonKernelManager {
         processStatus,
         valueType: result.valueType,
         preview: result.preview,
+        ...(result.jsonValue !== undefined
+          ? {
+              jsonValue: structuredClone(result.jsonValue),
+              jsonValueSha256: sha256(canonicalJson(result.jsonValue)),
+              jsonValueBytes: Buffer.byteLength(
+                canonicalJson(result.jsonValue),
+                "utf8",
+              ),
+            }
+          : {}),
         previewTruncated: result.previewTruncated,
         console: result.console,
         consoleTruncated: result.consoleTruncated,
@@ -336,7 +378,12 @@ export class PythonKernelManager {
   }
 }
 
-function validateEvaluation(code: string, timeoutMs: number): void {
+function validateEvaluation(
+  code: string,
+  input: JsonValue | undefined,
+  resultMode: PythonKernelResultMode,
+  timeoutMs: number,
+): void {
   if (
     typeof code !== "string" ||
     code.length === 0 ||
@@ -346,6 +393,22 @@ function validateEvaluation(code: string, timeoutMs: number): void {
     throw new Error(
       `Python kernel code must be 1-${MAX_PYTHON_KERNEL_CODE_BYTES} UTF-8 bytes`,
     );
+  }
+  if (
+    input !== undefined &&
+    Buffer.byteLength(canonicalJson(input), "utf8") >
+      MAX_PYTHON_KERNEL_INPUT_BYTES
+  ) {
+    throw new Error(
+      `Python kernel input exceeds ${MAX_PYTHON_KERNEL_INPUT_BYTES} UTF-8 bytes`,
+    );
+  }
+  if (
+    resultMode !== "standard" &&
+    resultMode !== "workflow_intermediate" &&
+    resultMode !== "workflow_final"
+  ) {
+    throw new Error("Python kernel resultMode is invalid");
   }
   if (
     !Number.isSafeInteger(timeoutMs) ||

@@ -910,6 +910,20 @@ export interface ExecutionPlanWorkflowJavascriptNode {
   maxAttempts: number;
 }
 
+export interface ExecutionPlanWorkflowPythonNode {
+  id: string;
+  type: "python";
+  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
+  inputSchema: WorkflowObjectSchema;
+  outputSchema: WorkflowValueSchema;
+  when?: ExecutionPlanWorkflowCondition;
+  skipOutput?: JsonValue;
+  cells: string[];
+  evaluationTimeoutMs: number;
+  timeoutMs: number;
+  maxAttempts: number;
+}
+
 export interface ExecutionPlanWorkflowMapNode {
   id: string;
   type: "map";
@@ -1057,6 +1071,7 @@ export type ExecutionPlanWorkflowNode =
   | ExecutionPlanWorkflowAgentNode
   | ExecutionPlanWorkflowDeterministicNode
   | ExecutionPlanWorkflowJavascriptNode
+  | ExecutionPlanWorkflowPythonNode
   | ExecutionPlanWorkflowMapNode
   | ExecutionPlanWorkflowLoopNode
   | ExecutionPlanWorkflowReduceNode

@@ -343,6 +343,63 @@ describe("Workspace Process Manager", () => {
     harness.store.close();
   });
 
+  it("limits elevated output budgets to trusted private protocols", async () => {
+    const harness = await createHarness();
+    const privateSession = await harness.manager.startPrivateProtocol({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: {
+        runtime: "node",
+        args: ["-e", "setInterval(() => {}, 1000)"],
+        timeoutMs: 30_000,
+      },
+      interactive: true,
+      outputLimitChars: 64 * 1024,
+    });
+    expect(privateSession).toEqual(
+      expect.objectContaining({
+        outputAvailable: false,
+        outputLimitChars: 64 * 1024,
+      }),
+    );
+    harness.controlled.processes[0]!.stdout.write("x".repeat(40 * 1024));
+    await vi.waitFor(async () => {
+      expect(
+        (
+          await harness.manager.outputPrivateProtocol(
+            harness.thread.id,
+            privateSession.id,
+          )
+        ).chunks,
+      ).toHaveLength(1);
+    });
+    expect(
+      (
+        await harness.manager.outputPrivateProtocol(
+          harness.thread.id,
+          privateSession.id,
+        )
+      ).status,
+    ).toBe("running");
+
+    const unauthorized = {
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: {
+        runtime: "node" as const,
+        args: ["-e", "void 0"],
+      },
+      outputLimitChars: 64 * 1024,
+    } as unknown as Parameters<typeof harness.manager.start>[0];
+    await expect(harness.manager.start(unauthorized)).rejects.toThrow(
+      "Private Process output limit is invalid",
+    );
+    expect(harness.controlled.processes).toHaveLength(1);
+    await harness.manager.cancel(harness.thread.id, privateSession.id);
+    await harness.manager.shutdown();
+    harness.store.close();
+  });
+
   it("previews and executes one scoped workspace write with verified Delta", async () => {
     const harness = await createHarness();
     const generated = path.join(harness.workspaceRoot, "generated");

@@ -39,6 +39,10 @@ export interface WorkspaceProcessLaunchRequest {
   signal?: AbortSignal;
 }
 
+export interface PrivateProtocolWorkspaceProcessLaunchRequest extends WorkspaceProcessLaunchRequest {
+  outputLimitChars?: number;
+}
+
 export interface PrivateWorkspaceProcessLaunchRequest extends WorkspaceProcessLaunchRequest {
   privateWorkspace: {
     workspaceRoot: string;
@@ -56,7 +60,10 @@ export interface LaunchedWorkspaceProcess {
 }
 
 export async function launchWorkspaceProcess(input: {
-  request: WorkspaceProcessLaunchRequest | PrivateWorkspaceProcessLaunchRequest;
+  request:
+    | WorkspaceProcessLaunchRequest
+    | PrivateProtocolWorkspaceProcessLaunchRequest
+    | PrivateWorkspaceProcessLaunchRequest;
   privateProtocol: boolean;
   writePreviewId?: string;
   options: CommandRunnerOptions & { dataRoot?: string };
@@ -151,7 +158,9 @@ export async function launchWorkspaceProcess(input: {
 
 function createRunningSession(input: {
   processId: string;
-  request: WorkspaceProcessLaunchRequest;
+  request:
+    | WorkspaceProcessLaunchRequest
+    | PrivateProtocolWorkspaceProcessLaunchRequest;
   prepared: PreparedCommandExecution;
   beforeSnapshot: WorkspacePathSnapshot;
   io: ReturnType<typeof bindWorkspaceProcessIo>;
@@ -175,7 +184,11 @@ function createRunningSession(input: {
     resourceLimitsSha256: input.io.resourceLimitsSha256,
     cwdPathSha256: input.prepared.receipt.cwdPathSha256,
     timeoutMs: input.prepared.timeoutMs,
-    outputLimitChars: MAX_COMMAND_OUTPUT_CHARS,
+    outputLimitChars:
+      "outputLimitChars" in input.request &&
+      input.request.outputLimitChars !== undefined
+        ? input.request.outputLimitChars
+        : MAX_COMMAND_OUTPUT_CHARS,
     ...input.io.session,
     ...(input.request.interactive === true
       ? { stdinMode: "interactive" as const, stdinOpen: true }
@@ -206,7 +219,10 @@ function createRunningSession(input: {
 }
 
 function assertLaunchRequest(
-  request: WorkspaceProcessLaunchRequest | PrivateWorkspaceProcessLaunchRequest,
+  request:
+    | WorkspaceProcessLaunchRequest
+    | PrivateProtocolWorkspaceProcessLaunchRequest
+    | PrivateWorkspaceProcessLaunchRequest,
   privateProtocol: boolean,
   shuttingDown: boolean,
 ): void {
@@ -229,11 +245,24 @@ function assertLaunchRequest(
       "Private Process workspace scope requires the private protocol path",
     );
   }
+  if (
+    "outputLimitChars" in request &&
+    request.outputLimitChars !== undefined &&
+    (!privateProtocol ||
+      !Number.isSafeInteger(request.outputLimitChars) ||
+      request.outputLimitChars < 1 ||
+      request.outputLimitChars > 128 * 1024)
+  ) {
+    throw new Error("Private Process output limit is invalid");
+  }
   validateWorkspaceProcessTerminalSize(request.terminal);
 }
 
 function processCommandOptions(
-  request: WorkspaceProcessLaunchRequest | PrivateWorkspaceProcessLaunchRequest,
+  request:
+    | WorkspaceProcessLaunchRequest
+    | PrivateProtocolWorkspaceProcessLaunchRequest
+    | PrivateWorkspaceProcessLaunchRequest,
   options: CommandRunnerOptions & { dataRoot?: string },
 ): CommandRunnerOptions & { dataRoot?: string } {
   if (!("privateWorkspace" in request)) return options;

@@ -1,6 +1,6 @@
 import type {
-  ExecutionPlanWorkflowJavascriptNode,
   ExecutionPlanWorkflowNodeResult,
+  ExecutionPlanWorkflowPythonNode,
   JsonValue,
 } from "@napier/contracts";
 
@@ -11,7 +11,6 @@ import type {
   WorkflowExecutionContext,
   WorkflowNodeFailure,
 } from "./workflow-context.js";
-import { ExecutionPlanWorkflowJavascriptRuntime } from "./workflow-javascript-runtime.js";
 import { ExecutionPlanWorkflowKernelError } from "./workflow-kernel-run.js";
 import {
   ExecutionPlanWorkflowLedger,
@@ -20,15 +19,16 @@ import {
   WORKFLOW_NODE_STARTED_EVENT,
   workflowNodeEventMetadata,
 } from "./workflow-ledger.js";
+import { ExecutionPlanWorkflowPythonRuntime } from "./workflow-python-runtime.js";
 import { completedWorkflowNodeResult } from "./workflow-runtime-model.js";
 import { workflowSchemaSha256 } from "./workflow-schemas.js";
 
-export interface WorkflowJavascriptNodeOutcome {
+export interface WorkflowPythonNodeOutcome {
   result: ExecutionPlanWorkflowNodeResult;
   cancelled: boolean;
 }
 
-export interface WorkflowJavascriptNodeOperations {
+export interface WorkflowPythonNodeOperations {
   completePlanStep(
     context: WorkflowExecutionContext,
     nodeId: string,
@@ -37,21 +37,21 @@ export interface WorkflowJavascriptNodeOperations {
   ): Promise<void>;
   blockNode(
     context: WorkflowExecutionContext,
-    node: ExecutionPlanWorkflowJavascriptNode,
+    node: ExecutionPlanWorkflowPythonNode,
     failure: WorkflowNodeFailure,
   ): Promise<ExecutionPlanWorkflowNodeResult>;
 }
 
-export class ExecutionPlanWorkflowJavascriptNodeExecutor {
-  private readonly runtime: ExecutionPlanWorkflowJavascriptRuntime;
+export class ExecutionPlanWorkflowPythonNodeExecutor {
+  private readonly runtime: ExecutionPlanWorkflowPythonRuntime;
 
   constructor(
     private readonly store: LocalStore,
     agentRuntime: AgentRuntime,
     private readonly ledger: ExecutionPlanWorkflowLedger,
-    private readonly operations: WorkflowJavascriptNodeOperations,
+    private readonly operations: WorkflowPythonNodeOperations,
   ) {
-    this.runtime = new ExecutionPlanWorkflowJavascriptRuntime(
+    this.runtime = new ExecutionPlanWorkflowPythonRuntime(
       store,
       ledger,
       agentRuntime.workspaceProcesses,
@@ -60,11 +60,11 @@ export class ExecutionPlanWorkflowJavascriptNodeExecutor {
 
   async execute(
     context: WorkflowExecutionContext,
-    node: ExecutionPlanWorkflowJavascriptNode,
+    node: ExecutionPlanWorkflowPythonNode,
     input: JsonValue,
     inputSha256: string,
     attempt: number,
-  ): Promise<WorkflowJavascriptNodeOutcome> {
+  ): Promise<WorkflowPythonNodeOutcome> {
     const controller = new AbortController();
     let timedOut = false;
     let runId: string | undefined;
@@ -179,7 +179,7 @@ export class ExecutionPlanWorkflowJavascriptNodeExecutor {
           ? "timeout"
           : error instanceof ExecutionPlanWorkflowKernelError
             ? error.code
-            : "javascript_failed";
+            : "python_failed";
       return {
         result: await this.operations.blockNode(context, node, {
           ...(error instanceof ExecutionPlanWorkflowKernelError && error.run

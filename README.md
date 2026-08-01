@@ -2279,10 +2279,17 @@ host/image runtime identity is defined.
 
 Each snippet is limited to 16 KiB and 1-2,000 ms; the whole kernel lasts
 10-120 seconds. Live previews are capped at 4,096 characters, console capture
-at 12 entries of 256 characters, cumulative private protocol output at 30 KiB,
-and complete Agent output at 32 KiB. Code requests use canonical base64 and the
-fixed worker uses zlib plus canonical base64 to stay inside the unchanged
-16 KiB explicit-argv budget. Result strings use canonical UTF-16LE base64.
+at 12 entries of 256 characters, cumulative private protocol output at 96 KiB,
+and complete Agent output at 32 KiB. The elevated output budget is available
+only to trusted private protocols and is recorded on the Process Session;
+ordinary shell and PTY Sessions remain capped at 32K characters. Code requests
+use canonical base64 and the fixed worker uses zlib plus canonical base64 to
+stay inside the unchanged 16 KiB explicit-argv budget. Result strings use
+canonical UTF-16LE base64. Trusted requests may also bind one canonical JSON
+input and receive one exact JSON result up to 32 KiB. Lists and objects are
+frozen into tuples and mapping proxies, and result projection rejects cycles,
+non-string keys, unsupported objects, non-finite numbers, and excessive
+depth/node counts. Python `repr` is never used as a data protocol.
 The worker's trusted timer remains the execution deadline; the parent allows a
 separate bounded five-second scheduling and protocol-delivery grace so a
 loaded host cannot cancel a valid result before the worker starts processing.
@@ -3979,15 +3986,35 @@ language, coercion, custom comparator, tool, or side effect. It still receives
 a leased Workflow Run, retry/timeout/cancellation behavior, restart recovery,
 checkpoint experiment reuse, and hash-only public Trace evidence.
 
+Restricted Python Workflow nodes reuse that managed Kernel and private Process
+protocol. A typed `python` node evaluates 1-8 ordered cells in one fresh
+read-only, offline Session, receives at most 8 KiB of complete constructed JSON
+through immutable `input`, and returns only the final exact JSON value after it
+passes the declared output Schema and 32 KiB Workflow bound. Intermediate
+Workflow responses suppress presentation bodies so the exact result remains
+within the bounded private protocol. The frozen Agent revision must enable
+`python_kernel`, and normal process policy still applies.
+
+Completion cancels and settles the Session with an unchanged workspace before
+publishing body-free `workflow.python.completed` evidence. The receipt binds
+Python runtime/worker identity, configuration, input binding, ordered
+request/result sets, exact JSON/output equivalence, Schema, duration, memory,
+Run, and attempt. Source, input/output values, console, stderr, paths, and
+private frames remain outside public Trace. One terminal receipt plus hidden
+typed output can repair a commit gap; a started stateful attempt without that
+receipt stays blocked until explicit retry. Checkpoint reuse/rerun, Replay,
+CLI JSONL, stdio RPC, SDK, HTTP SSE, and Web Trace all use the ordinary
+Workflow Runtime.
+
 Version 1 intentionally supports Agent, bounded Deterministic including root
-multi-way Switch templates, bounded stateful JavaScript Session, stateless
-built-in Tool, bounded read-only Agent Map, bounded read-only Agent Loop, typed
-deterministic Reduce, and durable Approval nodes with bounded parallel
-dependency-ready DAG scheduling, typed equality guards, and terminal workspace
-file/directory Artifact settlement. Persistent Python/package Sessions,
-cross-node Session handles, write-capable Map/Loop, graph-level branch pruning,
-compensation, mid-node suspension, adapter runtimes, and a visual builder
-remain open. Checkpoint experiments now provide
+multi-way Switch templates, bounded stateful JavaScript and restricted Python
+Sessions, stateless built-in Tool, bounded read-only Agent Map, bounded
+read-only Agent Loop, typed deterministic Reduce, and durable Approval nodes
+with bounded parallel dependency-ready DAG scheduling, typed equality guards,
+and terminal workspace file/directory Artifact settlement. Package-backed
+Python/Notebook Sessions, cross-node Session handles, write-capable Map/Loop,
+graph-level branch pruning, compensation, mid-node suspension, adapter
+runtimes, and a visual builder remain open. Checkpoint experiments now provide
 single-call execution for an explicit
 stateless read-only built-in subset, while message experiments can freeze
 captured results for that same subset. Workflow experiments can also substitute
@@ -4006,12 +4033,14 @@ smoke executes two real concurrent item calls, deterministically reduces their
 typed lengths, and verifies zero Reduce model/tool activity plus Replay. The
 Loop smoke feeds one typed result into a second real model turn and verifies
 the restricted child-Run chain. The JavaScript smoke uses the production OS
-Sandbox and has no direct-process fallback:
+Sandbox and has no direct-process fallback. The Python smoke applies the same
+fail-closed rule to an exact typed result:
 
 ```bash
 npm run test:live-map
 npm run test:live-loop
 npm run test:live-workflow-javascript
+npm run test:live-workflow-python
 ```
 
 ## Portable Replay Fixtures

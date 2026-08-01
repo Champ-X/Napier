@@ -3,6 +3,7 @@ import type { RunEvent } from "@napier/contracts";
 import { workflowExperimentEventTraceParts } from "./workflow-experiment-event-view";
 import { workflowJavascriptEventTraceParts } from "./workflow-javascript-event-view";
 import { workflowLoopEventTraceParts } from "./workflow-loop-event-view";
+import { workflowPythonEventTraceParts } from "./workflow-python-event-view";
 import { workflowReduceEventTraceParts } from "./workflow-reduce-event-view";
 
 const WORKFLOW_EVENTS = new Set([
@@ -16,6 +17,7 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.approval.requested",
   "workflow.deterministic.completed",
   "workflow.javascript.completed",
+  "workflow.python.completed",
   "workflow.reduce.completed",
   "workflow.map.item.started",
   "workflow.map.item.completed",
@@ -248,6 +250,10 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     const javascriptParts = workflowJavascriptEventTraceParts(payload);
     if (!javascriptParts) return undefined;
     parts.push(...javascriptParts);
+  } else if (event.type === "workflow.python.completed") {
+    const pythonParts = workflowPythonEventTraceParts(payload);
+    if (!pythonParts) return undefined;
+    parts.push(...pythonParts);
   } else if (event.type.startsWith("workflow.artifacts.")) {
     const artifactCount = boundedInteger(payload["artifactCount"], 1, 16);
     const artifactSetSha256 = hash(payload["artifactSetSha256"]);
@@ -536,6 +542,12 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       );
       if (!javascriptConfigurationSha256) return undefined;
       parts.push(`javascript ${javascriptConfigurationSha256.slice(0, 12)}`);
+    } else if (payload["nodeType"] === "python") {
+      const pythonConfigurationSha256 = hash(
+        payload["pythonConfigurationSha256"],
+      );
+      if (!pythonConfigurationSha256) return undefined;
+      parts.push(`python ${pythonConfigurationSha256.slice(0, 12)}`);
     } else if (
       payload["nodeType"] !== undefined &&
       payload["nodeType"] !== "agent"

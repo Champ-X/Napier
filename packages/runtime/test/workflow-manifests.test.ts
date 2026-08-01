@@ -18,6 +18,10 @@ import {
   workflowJavascriptConfigurationSha256,
 } from "../src/workflow-javascript-model.js";
 import {
+  MAX_EXECUTION_PLAN_WORKFLOW_PYTHON_CELLS,
+  workflowPythonConfigurationSha256,
+} from "../src/workflow-python-model.js";
+import {
   assertWorkflowValue,
   buildExecutionPlanWorkflowNodeInput,
   defineExecutionPlanWorkflow,
@@ -656,6 +660,92 @@ describe("Execution Plan Workflow manifests", () => {
       validateExecutionPlanWorkflowManifest({
         ...manifest,
         nodes: [{ ...validated, code: "hostEscape()" }],
+      }),
+    ).toThrow("fields are invalid");
+  });
+
+  it("binds bounded stateful Python cells into the Manifest", async () => {
+    const blueprint = await createBlueprint([
+      {
+        id: "calculate",
+        title: "Calculate",
+        description: "Transform typed input in one isolated Python Session.",
+        verification: "Return one exact typed summary.",
+      },
+    ]);
+    const outputSchema = inspectionSchema();
+    const node = {
+      id: "calculate",
+      type: "python" as const,
+      inputBindings: {
+        workflow: { source: "workflow" as const },
+      },
+      inputSchema: {
+        type: "object" as const,
+        properties: { workflow: requestSchema() },
+        required: ["workflow"],
+        additionalProperties: false as const,
+      },
+      outputSchema,
+      cells: [
+        'words = tuple(input["workflow"]["request"].split())\nlen(words)',
+        '{"summary": input["workflow"]["request"], "count": len(words)}',
+      ],
+      evaluationTimeoutMs: 1_000,
+      timeoutMs: 10_000,
+      maxAttempts: 2,
+    };
+    const definition = {
+      name: "Python calculation",
+      version: 1,
+      description: "Run a bounded stateful Python transformation.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema,
+      outputNodeId: "calculate",
+      nodes: [node],
+    };
+    const manifest = defineExecutionPlanWorkflow(definition);
+    expect(validateExecutionPlanWorkflowManifest(manifest)).toEqual(manifest);
+    const validated = manifest.nodes[0]!;
+    expect(validated.type).toBe("python");
+    if (validated.type !== "python") {
+      throw new Error("Unexpected node type");
+    }
+    expect(workflowPythonConfigurationSha256(validated)).toMatch(
+      /^[a-f0-9]{64}$/u,
+    );
+
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...node,
+            cells: Array.from(
+              { length: MAX_EXECUTION_PLAN_WORKFLOW_PYTHON_CELLS + 1 },
+              () => "1",
+            ),
+          },
+        ],
+      }),
+    ).toThrow("cells must contain");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [{ ...node, evaluationTimeoutMs: 2_001 }],
+      }),
+    ).toThrow("evaluationTimeoutMs");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [{ ...node, timeoutMs: 120_001 }],
+      }),
+    ).toThrow("Python timeoutMs");
+    expect(() =>
+      validateExecutionPlanWorkflowManifest({
+        ...manifest,
+        nodes: [{ ...validated, packages: ["pandas"] }],
       }),
     ).toThrow("fields are invalid");
   });
