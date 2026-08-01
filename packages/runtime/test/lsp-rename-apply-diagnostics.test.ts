@@ -9,6 +9,10 @@ import {
   LspRenameApplyDiagnostics,
   MAX_LSP_RENAME_DIAGNOSTIC_FILES,
 } from "../src/lsp-rename-apply-diagnostics.js";
+import type {
+  LspProtocolExecutor,
+  LspProtocolSessionResult,
+} from "../src/lsp-protocol-session.js";
 import type { LspRenameFile } from "../src/lsp-rename-workspace-edit.js";
 import { controlledLspRenameSandbox } from "./lsp-rename-test-fixture.js";
 
@@ -42,9 +46,19 @@ describe("LSP rename apply diagnostics", () => {
         edits: [],
       });
     }
+    let persistentCalls = 0;
+    const session: LspProtocolExecutor = {
+      async execute<T>(): Promise<LspProtocolSessionResult<T>> {
+        persistentCalls += 1;
+        throw new Error(
+          "persistent Session must not observe coordinated writes",
+        );
+      },
+    };
     const diagnostics = new LspRenameApplyDiagnostics({
       workspaceRoot,
       sandbox: controlledLspRenameSandbox({}).sandbox,
+      session,
     });
 
     const before = await diagnostics.observeBefore(files);
@@ -59,6 +73,7 @@ describe("LSP rename apply diagnostics", () => {
     );
 
     expect(before.entries).toHaveLength(MAX_LSP_RENAME_DIAGNOSTIC_FILES);
+    expect(persistentCalls).toBe(0);
     expect(before.omittedFileCount).toBe(1);
     expect(after.details).toEqual(
       expect.objectContaining({

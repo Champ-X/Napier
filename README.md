@@ -169,12 +169,14 @@ Version `0.1.0` includes:
   offline Sandbox, and rejects stale post-run evidence;
 - `lsp_diagnostics`, semantic `lsp_symbols`, `lsp_definition`,
   `lsp_references`, preview-bound `lsp_rename` / `lsp_rename_apply`, and
-  quick-fix-only `lsp_code_actions` tools that drive the standard TypeScript
-  language server against TypeScript or JavaScript workspace files through the
-  same read-only, offline OS sandbox, reuse one Run-owned Session while the
-  bounded workspace remains unchanged, resolve advertised data-backed actions
-  for text edits only, deny every returned command, and retain bounded live
-  compiler/edit evidence with hash-only durable projections;
+  quick-fix-only `lsp_code_actions` / `lsp_code_action_apply` tools that drive
+  the standard TypeScript language server against TypeScript or JavaScript
+  workspace files through the same read-only, offline OS sandbox, reuse one
+  Run-owned Session while the bounded workspace remains unchanged, resolve
+  advertised data-backed actions for text edits only, deny every returned
+  command, and optionally commit exactly one selected alternative through the
+  shared coordinated WorkspaceEdit transaction with hash-only durable
+  projections;
 - a `run_command` tool for foreground Node diagnostics with
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
@@ -2556,10 +2558,31 @@ ranges.
 The live Agent sees bounded titles, paths, file hashes, ranges, old text, and
 replacement text as untrusted evidence. Ledger, Replay, Trace, and Server SSE
 retain only completeness/truncation, counts, preview bytes, versions, latency,
-and diagnostic/action/target/result hashes. The Agent must choose one
-alternative, re-read every selected file SHA, apply it through `apply_patch`,
-then run diagnostics and relevant behavior checks. Napier does not
-automatically combine mutually exclusive alternatives.
+and diagnostic/action/target/result hashes. Without the direct apply tool, the
+Agent must choose one alternative, re-read every selected file SHA, apply it
+through `apply_patch`, then run diagnostics and relevant behavior checks.
+Napier does not automatically combine mutually exclusive alternatives.
+
+When the Agent profile enables both `lsp_code_actions` and
+`lsp_code_action_apply`, every returned alternative also receives a separate
+same-Run preview ID that expires after five minutes. Applying one ID consumes
+it once and invalidates every sibling alternative from that response before
+preflight. The apply call accepts no path, title, command, data, or edit body.
+It revalidates the selected action and every current file hash, acquires all
+target locks, stages and fsyncs every output, creates same-filesystem backups,
+and commits through the same reverse-rollback transaction as
+`lsp_rename_apply`. Stale state fails before overwrite; partial commit is
+reported as rolled back only after the original file set is verified, otherwise
+the result is indeterminate.
+
+Coordinated rename and Code Action writes diagnose up to eight supported files
+before and after commit using fresh one-shot language-server Sessions, not the
+Run's pre-write persistent semantic state. Diagnostics wait for a 300 ms quiet
+window so a fast empty syntax batch cannot mask a later semantic error batch.
+When `verify_workspace` is enabled, verified commits also run the existing
+bounded reverse-dependent test selection. Code Action commands remain
+`deny_all` throughout; applying the text edits never invokes
+`workspace/executeCommand` or accepts `workspace/applyEdit`.
 
 Within one Agent Run, all seven LSP tools and write-linked diagnostics share one
 serialized language-server Session while a bounded workspace snapshot remains
@@ -2580,9 +2603,9 @@ Ledger, Replay, SSE, and Trace bind only Session mode, reuse state, operation
 number, and Session/workspace/limit hashes. The random Session identity,
 paths, source, diagnostics, edits, preview capability, and stderr remain
 absent. This is Run-owned process reuse, not a cross-Run editor,
-language-server write access, portable atomic multi-file visibility, Code
-Action command execution, complete project/dependency synchronization, or test
-selection.
+language-server write access, portable filesystem atomicity, Code Action
+command execution, complete project/dependency synchronization, or persistent
+preview recovery.
 
 When an Agent profile enables both `apply_patch` and `lsp_diagnostics`,
 TypeScript and JavaScript writes automatically run LSP diagnostics before and
@@ -2636,7 +2659,9 @@ example, and `examples/lsp-references/` as a multi-file impact example. The
 live suite diagnoses and fixes the first example, resolves
 `usage.ts:3:22` to `definition.ts`, and finds six declaration-inclusive
 references to `normalizeTitle`; it also creates a temporary missing-import
-fixture and previews the preferred import quick fix without writing it.
+fixture, selects the preferred import quick fix, commits it through
+`lsp_code_action_apply`, and verifies improved diagnostics without executing
+the returned command.
 macOS rejects nested `sandbox-exec`, so launching the live smoke from an IDE
 process that is itself sandboxed fails closed rather than falling back to an
 unsandboxed language server.
@@ -4622,8 +4647,10 @@ navigation, and **LSP rename preview** supplies a complete bounded
 WorkspaceEdit that must still pass through Atomic patch. **LSP quick fixes**
 supplies bounded diagnostic-driven text-edit alternatives, including
 server-advertised data-backed actions resolved for edits only; opaque data
-never leaves the live LSP Session and every command is denied. None grants
-language-server workspace writes, command execution, or network access.
+never leaves the live LSP Session and every command is denied. An explicitly
+enabled **LSP quick-fix apply** tool can commit exactly one mutually exclusive
+text-edit alternative through Napier's shared coordinated transaction. None
+grants language-server workspace writes, command execution, or network access.
 Authorization is checked again immediately before every call.
 
 Selecting `unrestricted` may additionally expose an explicitly enabled

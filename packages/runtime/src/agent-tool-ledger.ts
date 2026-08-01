@@ -32,6 +32,11 @@ import {
   nodeDebuggerToolOutputLedgerProjection,
 } from "./node-debugger-tool.js";
 import {
+  lspCodeActionApplyToolCallArgumentsLedgerProjection,
+  lspCodeActionApplyToolInputLedgerProjection,
+  lspCodeActionApplyToolOutputLedgerProjection,
+} from "./lsp-code-action-apply-tool.js";
+import {
   lspCodeActionsToolCallArgumentsLedgerProjection,
   lspCodeActionsToolInputLedgerProjection,
   lspCodeActionsToolOutputLedgerProjection,
@@ -151,6 +156,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "lsp_code_actions") {
     return lspCodeActionsToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "lsp_code_action_apply") {
+    return lspCodeActionApplyToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "apply_patch") {
     return workspacePatchToolCallArgumentsLedgerProjection(args);
   }
@@ -217,6 +225,9 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "lsp_code_actions") {
     return lspCodeActionsToolInputLedgerProjection(args);
+  }
+  if (toolName === "lsp_code_action_apply") {
+    return lspCodeActionApplyToolInputLedgerProjection(args);
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolInputLedgerProjection(args);
@@ -289,6 +300,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "lsp_code_actions") {
     return lspCodeActionsToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "lsp_code_action_apply") {
+    return lspCodeActionApplyToolOutputLedgerProjection(output, result);
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolOutputLedgerProjection(output, result);

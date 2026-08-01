@@ -133,6 +133,28 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "observe",
+        "lsp_code_action_apply",
+        { previewId: "actionpreview_12345678" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "lsp_code_action_apply",
+        { previewId: "actionpreview_12345678" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "fresh preview-bound coordinated LSP Code Action",
+      }),
+    );
+    expect(
+      assessToolCall(
         "workspace",
         "workspace_file_preview",
         {

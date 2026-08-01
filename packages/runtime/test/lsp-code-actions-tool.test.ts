@@ -11,6 +11,7 @@ import {
   lspCodeActionsToolOutputLedgerProjection,
   MAX_LSP_RENAME_TOOL_OUTPUT_BYTES,
 } from "../src/index.js";
+import type { LspCodeActionMutationManager } from "../src/lsp-code-action-mutation-manager.js";
 import {
   controlledLspCodeActionsSandbox,
   diagnostic,
@@ -112,10 +113,29 @@ describe("LSP Code Actions Agent tool boundary", () => {
         },
       ],
     });
-    const tool = createLspCodeActionsTool({
-      workspaceRoot: root,
-      sandbox: sandbox.sandbox,
-    });
+    let discarded = 0;
+    const tool = createLspCodeActionsTool(
+      {
+        workspaceRoot: root,
+        sandbox: sandbox.sandbox,
+      },
+      {
+        storePreviews() {
+          return [
+            {
+              id: "actionpreview_private1234",
+              expiresAt: "2026-08-01T00:05:00.000Z",
+              actionIndex: 0,
+              actionSha256: "a".repeat(64),
+            },
+          ];
+        },
+        discardPreviews(previews) {
+          expect(previews).toHaveLength(1);
+          discarded += 1;
+        },
+      } as LspCodeActionMutationManager,
+    );
 
     await expect(
       tool.execute("code-action-output-limit", {
@@ -126,6 +146,7 @@ describe("LSP Code Actions Agent tool boundary", () => {
     ).rejects.toThrow(
       `LSP code action tool output exceeds ${MAX_LSP_RENAME_TOOL_OUTPUT_BYTES}`,
     );
+    expect(discarded).toBe(1);
   });
 
   it("projects call arguments and live output as hashes only", () => {

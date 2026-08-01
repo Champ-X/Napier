@@ -18,8 +18,8 @@ export const MAX_LSP_DIAGNOSTICS = 64;
 export const MAX_LSP_DIAGNOSTIC_MESSAGE_CHARS = 1_000;
 export const MAX_LSP_PROTOCOL_BYTES = 2 * 1024 * 1024;
 export const MAX_LSP_STDERR_CHARS = 16_000;
+export const LSP_DIAGNOSTICS_QUIET_MS = 300;
 
-const DIAGNOSTICS_QUIET_MS = 100;
 const SHUTDOWN_GRACE_MS = 1_000;
 const LSP_SERVER_CAPABILITIES = new WeakMap<
   MessageConnection,
@@ -377,14 +377,17 @@ function diagnosticsNotification(
       diagnostics: [],
       truncated: false,
     };
-    connection.onNotification(
+    const subscription = connection.onNotification(
       "textDocument/publishDiagnostics",
       (params: unknown) => {
         const published = parsePublishedDiagnostics(params, expectedUri);
         if (!published) return;
         latest = published;
         if (quietTimer) clearTimeout(quietTimer);
-        quietTimer = setTimeout(() => resolve(latest), DIAGNOSTICS_QUIET_MS);
+        quietTimer = setTimeout(() => {
+          subscription.dispose();
+          resolve(latest);
+        }, LSP_DIAGNOSTICS_QUIET_MS);
       },
     );
   });

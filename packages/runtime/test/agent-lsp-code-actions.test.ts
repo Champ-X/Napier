@@ -22,7 +22,6 @@ import {
   exportThreadReplayBundle,
   LocalStore,
   ModelRegistry,
-  sha256,
   verifyThreadReplayBundle,
 } from "../src/index.js";
 import {
@@ -86,7 +85,11 @@ describe("Agent LSP Code Actions integration", () => {
     await store.initialize();
     const agent = await store.updateAgent(store.listAgents()[0]!.id, {
       toolPolicy: "workspace",
-      enabledTools: ["lsp_code_actions", "apply_patch", "lsp_diagnostics"],
+      enabledTools: [
+        "lsp_code_actions",
+        "lsp_code_action_apply",
+        "lsp_diagnostics",
+      ],
     });
     const thread = await store.createThread({
       title: "Agent LSP Code Actions",
@@ -109,7 +112,7 @@ describe("Agent LSP Code Actions integration", () => {
       },
       data: { fixId: "PRIVATE_RESOLVE_DATA" },
     };
-    const sandbox = controlledLspCodeActionsSandbox({
+    const controlled = controlledLspCodeActionsSandbox({
       diagnostics: (_uri, source) =>
         source.includes(insertion)
           ? []
@@ -123,7 +126,9 @@ describe("Agent LSP Code Actions integration", () => {
           },
         },
       }),
-    }).sandbox;
+    });
+    const sandbox = controlled.sandbox;
+    let applyPreviewId = "";
     const provider = fauxProvider({ provider: "faux-lsp-code-actions" });
     provider.setResponses([
       fauxAssistantMessage(
@@ -147,21 +152,23 @@ describe("Agent LSP Code Actions integration", () => {
         expect(messages).not.toContain("PRIVATE_COMMAND");
         expect(messages).not.toContain("PRIVATE_ARGUMENT");
         expect(messages).not.toContain("PRIVATE_DIAGNOSTIC");
+        const previewId = messages.match(
+          /Apply preview ID: (actionpreview_[a-z0-9]+)/u,
+        )?.[1];
+        expect(previewId).toMatch(/^actionpreview_/u);
+        applyPreviewId = previewId ?? "";
         return fauxAssistantMessage(
-          fauxToolCall("apply_patch", {
-            operation: "replace",
-            path: targetPath,
-            expectedSha256: sha256(sourceBefore),
-            edits: [{ oldText: sourceBefore, newText: sourceAfter }],
-          }),
+          fauxToolCall("lsp_code_action_apply", { previewId }),
           { stopReason: "toolUse" },
         );
       },
       (context) => {
         const messages = JSON.stringify(context.messages);
-        expect(messages).toContain("Patch diagnostics: improved");
+        expect(messages).toContain("LSP Code Action apply: applied");
+        expect(messages).toContain("Postcondition: verified");
+        expect(messages).toContain("Code Action diagnostics: improved");
         expect(messages).toContain("Diagnostics: 1 -> 0");
-        expect(messages).toContain(sha256(sourceAfter));
+        expect(messages).toContain("command remained denied");
         return fauxAssistantMessage(
           fauxToolCall("lsp_diagnostics", { path: targetPath }),
           { stopReason: "toolUse" },
@@ -188,6 +195,7 @@ describe("Agent LSP Code Actions integration", () => {
     });
 
     expect(run.status).toBe("completed");
+    expect(controlled.executeCommandCount()).toBe(0);
     expect(await readFile(absoluteTarget, "utf8")).toBe(sourceAfter);
     const events = await store.listEvents(thread.id);
     expect(
@@ -201,7 +209,7 @@ describe("Agent LSP Code Actions integration", () => {
         })),
     ).toEqual([
       { toolName: "lsp_code_actions", effect: "read" },
-      { toolName: "apply_patch", effect: "write" },
+      { toolName: "lsp_code_action_apply", effect: "write" },
       { toolName: "lsp_diagnostics", effect: "read" },
     ]);
     const codeActionsEvent = events.find(
@@ -226,6 +234,29 @@ describe("Agent LSP Code Actions integration", () => {
         }),
       }),
     );
+    const applyEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        record(event.payload)?.["toolName"] === "lsp_code_action_apply",
+    );
+    expect(record(applyEvent?.payload)?.["details"]).toEqual(
+      expect.objectContaining({
+        kind: "napier.lsp-code-action-apply",
+        status: "applied",
+        postcondition: "verified",
+        fileCount: 1,
+        editCount: 1,
+        sourceResolved: true,
+        sourceCommandIgnored: true,
+        commandPolicy: "deny_all",
+        diagnostics: expect.objectContaining({
+          kind: "napier.lsp-code-action-apply-diagnostics",
+          status: "improved",
+          beforeDiagnosticCount: 1,
+          afterDiagnosticCount: 0,
+        }),
+      }),
+    );
     const durable = JSON.stringify(
       events.filter(
         (event) =>
@@ -242,6 +273,7 @@ describe("Agent LSP Code Actions integration", () => {
       "PRIVATE_ARGUMENT",
       "PRIVATE_DIAGNOSTIC",
       "PRIVATE_RESOLVE_DATA",
+      applyPreviewId,
     ]) {
       expect(durable).not.toContain(secret);
     }

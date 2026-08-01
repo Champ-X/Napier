@@ -166,6 +166,149 @@ describe("LSP Code Actions HTTP Agent path", () => {
       source,
     );
   }, 30_000);
+
+  it("applies one real resolved Fix All alternative through public SSE", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-code-action-apply-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const targetPath = "usage.ts";
+    const source = [
+      "interface User { name: string; }",
+      "const first: User = {};",
+      "const second: User = {};",
+      "",
+    ].join("\n");
+    await mkdir(workspaceRoot, { recursive: true });
+    await Promise.all([
+      writeFile(path.join(workspaceRoot, targetPath), source),
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        JSON.stringify({ compilerOptions: { strict: true, noEmit: true } }),
+      ),
+    ]);
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: directSandbox(),
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const agentId = services.store.listAgents()[0]!.id;
+    expect(
+      (
+        await app.request(`/api/agents/${agentId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toolPolicy: "workspace",
+            enabledTools: ["lsp_code_actions", "lsp_code_action_apply"],
+          }),
+        })
+      ).status,
+    ).toBe(200);
+    const thread = await services.store.createThread({
+      title: "Server LSP Code Action apply",
+      agentId,
+    });
+    let applyPreviewId = "";
+    const provider = fauxProvider({
+      provider: "faux-server-lsp-code-action-apply",
+    });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_code_actions", {
+          path: targetPath,
+          line: 2,
+          character: 7,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        const previewId = messages.match(
+          /Add all missing properties.*?Apply preview ID: (actionpreview_[a-z0-9]+)/u,
+        )?.[1];
+        expect(previewId).toMatch(/^actionpreview_/u);
+        applyPreviewId = previewId ?? "";
+        return fauxAssistantMessage(
+          fauxToolCall("lsp_code_action_apply", { previewId }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("LSP Code Action apply: applied");
+        expect(messages).toContain("Code Action diagnostics: improved");
+        expect(messages).toContain("command remained denied");
+        return fauxAssistantMessage(
+          "The selected Fix All action was committed and diagnostics improved.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    services.models.registerProvider(provider.provider);
+
+    const response = await app.request(`/api/threads/${thread.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "Apply the real TypeScript Fix All quick fix.",
+        model: {
+          provider: "faux-server-lsp-code-action-apply",
+          id: "faux-1",
+        },
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("event: done");
+    expect(stream).toContain('"status":"completed"');
+    const events = await services.store.listEvents(thread.id);
+    const completed = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "lsp_code_action_apply",
+    );
+    expect(completed?.payload["details"]).toEqual(
+      expect.objectContaining({
+        kind: "napier.lsp-code-action-apply",
+        status: "applied",
+        postcondition: "verified",
+        sourceResolved: true,
+        sourceCommandIgnored: true,
+        commandPolicy: "deny_all",
+        fileCount: 1,
+        editCount: 2,
+        diagnostics: expect.objectContaining({
+          kind: "napier.lsp-code-action-apply-diagnostics",
+          status: "improved",
+          beforeErrorCount: 2,
+          afterErrorCount: 0,
+        }),
+      }),
+    );
+    const updated = await readFile(
+      path.join(workspaceRoot, targetPath),
+      "utf8",
+    );
+    expect(updated).not.toBe(source);
+    expect(updated.match(/name:\s*""/gu)).toHaveLength(2);
+    const durable = JSON.stringify(events);
+    for (const secret of [
+      targetPath,
+      source,
+      "Add all missing properties",
+      applyPreviewId,
+    ]) {
+      expect(durable).not.toContain(secret);
+    }
+  }, 30_000);
 });
 
 function directSandbox(): OsSandboxAdapter {

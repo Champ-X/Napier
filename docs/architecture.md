@@ -3093,8 +3093,10 @@ Agent selects lsp_code_actions + source path + diagnostic position
   -> return titles, paths, hashes, ranges, old text, and replacements live-only
   -> persist counts, completeness/truncation, command-ignored count, latency,
      and diagnostic/action/target/result hashes
-  -> perform no write; the Agent chooses one action, uses hash-bound
-     apply_patch, then reruns diagnostics and behavior verification
+  -> when direct apply is disabled, perform no write; the Agent chooses one
+     action, uses hash-bound apply_patch, then reruns verification
+  -> when lsp_code_action_apply is enabled, bind one five-minute one-use ID to
+     each action; all IDs from the response form one mutually exclusive group
 ```
 
 The Web projection follows the same module boundary:
@@ -3106,9 +3108,12 @@ modules. Rename and Code Action WorkspaceEdit parsing share
 `lsp-code-action-diagnostics.ts`, `lsp-code-action-resolution.ts`,
 `lsp-code-action-edits.ts`, and `lsp-code-actions.ts` separately own diagnostic
 selection, capability-bound resolve, confined edit materialization, and
-session/receipt assembly. Web symbol and quick-fix projections never read
-symbol names/details/signatures, action titles, paths, diagnostic messages,
-commands, opaque data, or edit bodies.
+session/receipt assembly. `lsp-workspace-edit-mutation.ts` owns the shared
+ephemeral preview, diagnostics/test, commit, and sibling-consumption lifecycle;
+rename and Code Action managers only adapt source-specific evidence and live
+guidance. Web symbol and quick-fix projections never read symbol
+names/details/signatures, action titles, paths, diagnostic messages, commands,
+opaque data, or edit bodies.
 
 The Sandbox launch contract supports at most eight explicit absolute
 non-root `runtimeReadPaths`. macOS adds read-only profile rules, Bubblewrap
@@ -3125,15 +3130,15 @@ Symbol names/details/signatures and definition/reference URIs/previews receive
 the same treatment and cannot expand read/write scope. Flat symbol results must
 target the opened URI; hierarchical children cannot escape parent/source
 ranges. Rename and quick-fix WorkspaceEdits originate as previews only; the
-optional rename apply coordinator runs outside the language-server process and
-accepts only a Run-local preview capability. Code Action commands, resolve
-results without stable identity, and `workspace/applyEdit` remain unavailable.
+optional apply coordinator runs outside the language-server process and accepts
+only a Run-local preview capability. Code Action commands, resolve results
+without stable identity, and `workspace/applyEdit` remain unavailable.
 Opaque Code Action data is bounded and may only round-trip to the same server
 for an advertised edit-only resolve; it never enters Agent or durable evidence.
 The implementation does not expose external dependency navigation or
 project-wide indexing.
 
-## Coordinated LSP Rename Apply Flow
+## Coordinated LSP WorkspaceEdit Apply Flow
 
 The language server never receives workspace-write capability:
 
@@ -3153,6 +3158,17 @@ lsp_rename_apply (write effect)
   -> on failure, restore committed files in reverse order and verify hashes
   -> run post-write diagnostics from a fresh LSP Session
   -> emit one privacy-bounded write receipt
+
+lsp_code_actions (read effect)
+  -> materialize up to sixteen mutually exclusive text-edit alternatives
+  -> store one same-Run preview ID per action in a single exclusive group
+  -> return each ID beside only its own live action
+lsp_code_action_apply (write effect)
+  -> accept one ID and synchronously invalidate every sibling ID
+  -> bind the source Code Action result, exact action hash, resolved state,
+     ignored-command state, and commandPolicy=deny_all
+  -> execute the same diagnostics, lock, staging, backup, commit, rollback,
+     postcondition, and relevant-test path as lsp_rename_apply
 ```
 
 The commit is coordinated, not portable multi-file atomic visibility. External
@@ -3170,6 +3186,10 @@ state: the coordinator settles the complete commit or rollback, marks
 failure similarly cannot turn a committed write into a generic tool failure;
 it becomes an `unavailable` diagnostic receipt. Paths, symbol names, preview
 IDs, old/new text, diagnostics, and recovery filenames remain live-only.
+Write-linked diagnostics explicitly discard the Run's persistent pre-write LSP
+executor and use fresh one-shot Sessions before and after mutation. Diagnostics
+and Code Action discovery wait for a 300 ms quiet window; this prevents an
+initial empty syntax publication from settling before a later semantic batch.
 
 ## Write-linked Diagnostics Flow
 
@@ -5833,7 +5853,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has sixty-three parts:
+The current boundary has sixty-four parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -6091,16 +6111,22 @@ The current boundary has sixty-three parts:
     identity, deny-all command policy, opaque-data confinement, real
     TypeScript Fix All execution, and hash/count-only Agent/HTTP/Web/Replay
     evidence.
+64. Preview-bound coordinated Code Action application with one mutually
+    exclusive same-Run capability per alternative, sibling invalidation,
+    shared CAS/staging/fsync/rollback transaction, fresh before/after
+    diagnostics, linked tests, command denial, and body-free Agent/HTTP/Web/
+    Replay evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
 verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
-rename/quick-fix previews, preview-bound coordinated rename application,
-explicit-argv command execution, persistent synchronous JavaScript and
-restricted Python calculations, Run-owned Node launch debugging, and bounded
-background Process Session lifecycle control plus preview-bound writes to
-explicit existing scopes and optional same-scope failure compensation.
+rename/quick-fix previews, preview-bound coordinated rename or selected
+quick-fix application, explicit-argv command execution, persistent synchronous
+JavaScript and restricted Python calculations, Run-owned Node launch debugging,
+and bounded background Process Session lifecycle control plus preview-bound
+writes to explicit existing scopes and optional same-scope failure
+compensation.
 `unrestricted` additionally permits an explicitly enabled controlled Browser
 Session and Research Source citations derived from its active page. It does
 not expose a shell, arbitrary host networking, an existing user browser
@@ -6134,10 +6160,9 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 2: Coding and workflow
 
-- broader Code Action kinds and application UX, Node
-  attach/source-map/multi-thread DAP and debugger UX, broader multi-node AST
-  transforms, cross-package/path-alias test discovery, coding outcome
-  benchmarks, and isolated subagent worktrees;
+- broader Code Action kinds, Node attach/source-map/multi-thread DAP and
+  debugger UX, broader multi-node AST transforms, cross-package/path-alias test
+  discovery, coding outcome benchmarks, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, graph-level branch pruning, write-capable Map/Loop,
   compensation, top-level Workflow input replacement, write/session

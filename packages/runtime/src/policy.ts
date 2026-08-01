@@ -28,7 +28,10 @@ const READ_ONLY_TOOLS = new Set([
 const WRITE_TOOLS = new Set(["apply_patch"]);
 const WORKSPACE_FILE_PREVIEW_TOOLS = new Set(["workspace_file_preview"]);
 const WORKSPACE_FILE_APPLY_TOOLS = new Set(["workspace_file_apply"]);
-const LSP_RENAME_APPLY_TOOLS = new Set(["lsp_rename_apply"]);
+const LSP_WORKSPACE_EDIT_APPLY_TOOLS = new Set([
+  "lsp_rename_apply",
+  "lsp_code_action_apply",
+]);
 const VERIFICATION_TOOLS = new Set(["verify_workspace"]);
 const LSP_TOOLS = new Set([
   "lsp_diagnostics",
@@ -187,7 +190,7 @@ export function assessToolCall(
     };
   }
 
-  if (LSP_RENAME_APPLY_TOOLS.has(toolName)) {
+  if (LSP_WORKSPACE_EDIT_APPLY_TOOLS.has(toolName)) {
     if (mode === "observe") {
       return {
         allowed: false,
@@ -198,7 +201,10 @@ export function assessToolCall(
     return {
       allowed: true,
       risk: "medium",
-      reason: "fresh preview-bound coordinated LSP rename",
+      reason:
+        toolName === "lsp_rename_apply"
+          ? "fresh preview-bound coordinated LSP rename"
+          : "fresh preview-bound coordinated LSP Code Action",
     };
   }
 

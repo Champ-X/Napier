@@ -9,6 +9,7 @@ import {
   type LspRenameToolEventTraceView,
 } from "./lsp-rename-event-view";
 import {
+  lspCodeActionApplyEventEvidence,
   lspRenameApplyEventEvidence,
   lspRenameApplySummaryParts,
   type LspRenameApplyToolEventTraceView,
@@ -88,6 +89,8 @@ export function lspToolEventEvidence(
   if (toolName === "lsp_rename") return lspRenameEventEvidence(value);
   if (toolName === "lsp_rename_apply")
     return lspRenameApplyEventEvidence(value);
+  if (toolName === "lsp_code_action_apply")
+    return lspCodeActionApplyEventEvidence(value);
   if (toolName === "lsp_code_actions")
     return lspCodeActionsEventEvidence(value);
   return undefined;

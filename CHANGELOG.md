@@ -6,6 +6,28 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added preview-bound coordinated application for one selected LSP Code Action.
+  `lsp_code_actions` now returns a separate five-minute one-use ID beside each
+  live alternative when `lsp_code_action_apply` is enabled. All alternatives
+  from one response form an exclusive group: selecting one synchronously
+  invalidates every sibling before preflight. Apply accepts only that ID and
+  reuses the existing multi-file lock, hash validation, staging, fsync, hard
+  link backup, ordered commit, reverse rollback, postcondition, diagnostics,
+  and linked-test transaction. The selected action hash, resolved and
+  command-ignored state, and `commandPolicy=deny_all` are durable; titles,
+  paths, source, data, commands, arguments, edits, and preview IDs remain
+  live-only. Real TypeScript Fix All Dogfood committed two edits, changed two
+  errors to zero, and passed `tsc --noEmit`; Agent and HTTP/SSE paths complete
+  the same flow and Web renders only strict bounded Trace evidence. The shared
+  coordinator also exposed and fixed a diagnostic settlement race by using a
+  receipt-bound 300 ms quiet window and fresh one-shot write observations, so
+  an early empty syntax batch cannot mask later semantic errors. The complete
+  gate passes 1,645 regular tests with 29 opt-in live tests skipped, 255 OpenAPI
+  routes, 244/244 compatibility operations, and the product performance budget
+  at 750.3 ms to first CLI event, 897.0 ms to first token, 1,200.1 ms to
+  completion, 0.4 ms read p95, and 6.7 ms for a 1,000-event projection. The
+  92-file Web dist main entry remains 130.32 KiB, bound to
+  `3a0adacdd2857709`; the release set is bound to `423c13a09f00a0c8`.
 - Added capability-bound `codeAction/resolve` for data-backed TypeScript and
   JavaScript quick fixes. The LSP client advertises data support and only the
   resolvable `edit` property; Napier sends at most 16 sequential requests only

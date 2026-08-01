@@ -74,6 +74,7 @@ export function isWorkspaceWriteCompletion(event: RunEvent): boolean {
   return (
     event.payload["toolName"] === "apply_patch" ||
     event.payload["toolName"] === "lsp_rename_apply" ||
+    event.payload["toolName"] === "lsp_code_action_apply" ||
     event.payload["toolName"] === "workspace_file_apply"
   );
 }
@@ -359,7 +360,8 @@ export function isWriteLinkedTestCompletion(event: RunEvent): boolean {
     event.type !== "tool.completed" ||
     !isRecord(event.payload) ||
     (event.payload["toolName"] !== "apply_patch" &&
-      event.payload["toolName"] !== "lsp_rename_apply")
+      event.payload["toolName"] !== "lsp_rename_apply" &&
+      event.payload["toolName"] !== "lsp_code_action_apply")
   ) {
     return false;
   }

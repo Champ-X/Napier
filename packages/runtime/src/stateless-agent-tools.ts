@@ -2,6 +2,9 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { AgentProfile } from "@napier/contracts";
 
 import { createCommandTool } from "./command-execution.js";
+import { LspCodeActionApplyDiagnostics } from "./lsp-code-action-apply-diagnostics.js";
+import { createLspCodeActionApplyTool } from "./lsp-code-action-apply-tool.js";
+import { LspCodeActionMutationManager } from "./lsp-code-action-mutation-manager.js";
 import { createLspCodeActionsTool } from "./lsp-code-actions-tool.js";
 import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
 import { createLspDefinitionTool } from "./lsp-definition-tool.js";
@@ -73,6 +76,16 @@ export function createStatelessAgentTools(
           ...(writeLinkedTests ? { tests: writeLinkedTests } : {}),
         })
       : undefined;
+  const coordinatedLspWriteTests =
+    processAllowed &&
+    profile.enabledTools.includes("verify_workspace") &&
+    (profile.enabledTools.includes("lsp_rename_apply") ||
+      profile.enabledTools.includes("lsp_code_action_apply"))
+      ? new WriteLinkedTestVerificationRunner({
+          workspaceRoot: options.store.workspaceRoot,
+          sandbox: options.sandbox,
+        })
+      : undefined;
   const renameMutationManager =
     processAllowed &&
     profile.enabledTools.includes("lsp_rename") &&
@@ -81,13 +94,21 @@ export function createStatelessAgentTools(
           workspaceRoot: options.store.workspaceRoot,
           dataRoot: options.store.dataRoot,
           diagnostics: new LspRenameApplyDiagnostics(lspOptions),
-          ...(profile.enabledTools.includes("verify_workspace")
-            ? {
-                tests: new WriteLinkedTestVerificationRunner({
-                  workspaceRoot: options.store.workspaceRoot,
-                  sandbox: options.sandbox,
-                }),
-              }
+          ...(coordinatedLspWriteTests
+            ? { tests: coordinatedLspWriteTests }
+            : {}),
+        })
+      : undefined;
+  const codeActionMutationManager =
+    processAllowed &&
+    profile.enabledTools.includes("lsp_code_actions") &&
+    profile.enabledTools.includes("lsp_code_action_apply")
+      ? new LspCodeActionMutationManager({
+          workspaceRoot: options.store.workspaceRoot,
+          dataRoot: options.store.dataRoot,
+          diagnostics: new LspCodeActionApplyDiagnostics(lspOptions),
+          ...(coordinatedLspWriteTests
+            ? { tests: coordinatedLspWriteTests }
             : {}),
         })
       : undefined;
@@ -159,7 +180,14 @@ export function createStatelessAgentTools(
     tools.push(createLspRenameApplyTool(renameMutationManager));
   }
   if (processAllowed && profile.enabledTools.includes("lsp_code_actions")) {
-    tools.push(createLspCodeActionsTool(lspOptions));
+    tools.push(createLspCodeActionsTool(lspOptions, codeActionMutationManager));
+  }
+  if (
+    processAllowed &&
+    profile.enabledTools.includes("lsp_code_action_apply") &&
+    codeActionMutationManager
+  ) {
+    tools.push(createLspCodeActionApplyTool(codeActionMutationManager));
   }
   if (processAllowed && profile.enabledTools.includes("run_command")) {
     tools.push(

@@ -95,6 +95,35 @@ describe("LSP diagnostics runner", () => {
     }
   }, 20_000);
 
+  it("waits for later semantic diagnostics after an initial empty batch", async () => {
+    const root = await createWorkspace();
+    await writeFile(path.join(root, "target.ts"), "const value = 1;\n");
+    const controlled = controlledSandbox({
+      mode: "diagnostics",
+      diagnosticBatches: [
+        { delayMs: 0, diagnostics: [] },
+        {
+          delayMs: 150,
+          diagnostics: [diagnostic("PRIVATE_SEMANTIC_DIAGNOSTIC", 0, 0, 0, 5)],
+        },
+      ],
+    });
+
+    const result = await new LspDiagnosticsRunner({
+      workspaceRoot: root,
+      sandbox: controlled.sandbox,
+    }).run({ path: "target.ts" });
+
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        status: "diagnostics",
+        diagnosticCount: 1,
+        errorCount: 1,
+      }),
+    );
+    expect(result.diagnostics[0]?.message).toBe("PRIVATE_SEMANTIC_DIAGNOSTIC");
+  });
+
   it("rejects escapes, symlinks, unsupported files, invalid UTF-8, and oversized input", async () => {
     const root = await createWorkspace();
     const outside = path.join(path.dirname(root), "outside.ts");
@@ -405,6 +434,7 @@ function controlledSandbox(options: {
   mode: "hang" | "overflow" | "malformed" | "stderr-overflow" | "diagnostics";
   beforePublish?: () => Promise<void>;
   diagnostics?: unknown[];
+  diagnosticBatches?: Array<{ delayMs: number; diagnostics: unknown[] }>;
   rejectTermination?: boolean;
 }): {
   sandbox: OsSandboxAdapter;
@@ -468,10 +498,20 @@ function controlledSandbox(options: {
                 typeof params["textDocument"]["uri"] === "string"
                   ? params["textDocument"]["uri"]
                   : "";
-              await connection.sendNotification(
-                "textDocument/publishDiagnostics",
-                { uri, diagnostics: options.diagnostics ?? [] },
-              );
+              const batches = options.diagnosticBatches ?? [
+                { delayMs: 0, diagnostics: options.diagnostics ?? [] },
+              ];
+              for (const batch of batches) {
+                if (batch.delayMs > 0) {
+                  await new Promise<void>((resolve) =>
+                    setTimeout(resolve, batch.delayMs),
+                  );
+                }
+                await connection.sendNotification(
+                  "textDocument/publishDiagnostics",
+                  { uri, diagnostics: batch.diagnostics },
+                );
+              }
             },
           );
           connection.onRequest("shutdown", () => null);
@@ -540,4 +580,22 @@ async function createFakeAssets(root: string): Promise<{
 
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function diagnostic(
+  message: string,
+  startLine: number,
+  startCharacter: number,
+  endLine: number,
+  endCharacter: number,
+): unknown {
+  return {
+    range: {
+      start: { line: startLine, character: startCharacter },
+      end: { line: endLine, character: endCharacter },
+    },
+    severity: 1,
+    source: "test",
+    message,
+  };
 }

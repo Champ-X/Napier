@@ -3,6 +3,7 @@ import type { LspDiagnosticsDetails } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   type LspDiagnostic,
+  LSP_DIAGNOSTICS_QUIET_MS,
   lspSessionEvidence,
   MAX_LSP_DIAGNOSTICS,
   MAX_LSP_DIAGNOSTIC_MESSAGE_CHARS,
@@ -20,6 +21,7 @@ import {
 
 export {
   type LspDiagnostic,
+  LSP_DIAGNOSTICS_QUIET_MS,
   MAX_LSP_DIAGNOSTICS,
   MAX_LSP_DIAGNOSTIC_MESSAGE_CHARS,
   MAX_LSP_PROTOCOL_BYTES,
@@ -102,6 +104,7 @@ export class LspDiagnosticsRunner {
           maxFileBytes: MAX_LSP_DIAGNOSTIC_FILE_BYTES,
           maxDiagnostics: MAX_LSP_DIAGNOSTICS,
           maxDiagnosticMessageChars: MAX_LSP_DIAGNOSTIC_MESSAGE_CHARS,
+          diagnosticsQuietMs: LSP_DIAGNOSTICS_QUIET_MS,
           maxProtocolBytes: MAX_LSP_PROTOCOL_BYTES,
           maxStderrChars: MAX_LSP_STDERR_CHARS,
           processGroupTermination: true,

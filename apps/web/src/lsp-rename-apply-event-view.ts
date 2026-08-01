@@ -16,6 +16,7 @@ type DiagnosticStatus =
   | "drifted";
 
 export interface LspRenameApplyToolEventTraceView extends WriteLinkedTestEventTraceView {
+  lspWorkspaceEditApplyOperation?: "rename" | "code_action";
   lspRenameApplyStatus?: ApplyStatus;
   lspRenameApplyPostcondition?: Postcondition;
   lspRenameApplyFileCount?: number;
@@ -40,10 +41,27 @@ export interface LspRenameApplyToolEventTraceView extends WriteLinkedTestEventTr
   lspRenameApplyResourceLimitsSha256?: string;
   lspRenameApplyDiagnosticsResultSha256?: string;
   lspRenameApplyResultSha256?: string;
+  lspCodeActionApplySourceActionSha256?: string;
+  lspCodeActionApplySourceResolved?: boolean;
+  lspCodeActionApplySourceCommandIgnored?: boolean;
+  lspCodeActionApplyCommandPolicy?: "deny_all";
 }
 
 export function lspRenameApplyEventEvidence(
   value: unknown,
+): LspRenameApplyToolEventTraceView | undefined {
+  return lspWorkspaceEditApplyEventEvidence(value, "rename");
+}
+
+export function lspCodeActionApplyEventEvidence(
+  value: unknown,
+): LspRenameApplyToolEventTraceView | undefined {
+  return lspWorkspaceEditApplyEventEvidence(value, "code_action");
+}
+
+function lspWorkspaceEditApplyEventEvidence(
+  value: unknown,
+  operation: "rename" | "code_action",
 ): LspRenameApplyToolEventTraceView | undefined {
   if (!record(value)) return undefined;
   const status = applyStatus(value["status"]);
@@ -54,7 +72,10 @@ export function lspRenameApplyEventEvidence(
   const restored = integer(value["restoredFileCount"], 0, 32);
   const recoveryArtifacts = integer(value["recoveryArtifactCount"], 0, 32);
   if (
-    value["kind"] !== "napier.lsp-rename-apply" ||
+    value["kind"] !==
+      (operation === "rename"
+        ? "napier.lsp-rename-apply"
+        : "napier.lsp-code-action-apply") ||
     value["schemaVersion"] !== 1 ||
     !status ||
     !postcondition ||
@@ -102,11 +123,28 @@ export function lspRenameApplyEventEvidence(
   ) {
     return undefined;
   }
-  const diagnostics = renameDiagnostics(value["diagnostics"]);
+  const sourceActionSha256 =
+    operation === "code_action" ? hash(value["sourceActionSha256"]) : undefined;
+  if (
+    (operation === "rename" &&
+      (value["sourceActionSha256"] !== undefined ||
+        value["sourceResolved"] !== undefined ||
+        value["sourceCommandIgnored"] !== undefined ||
+        value["commandPolicy"] !== undefined)) ||
+    (operation === "code_action" &&
+      (!sourceActionSha256 ||
+        typeof value["sourceResolved"] !== "boolean" ||
+        typeof value["sourceCommandIgnored"] !== "boolean" ||
+        value["commandPolicy"] !== "deny_all"))
+  ) {
+    return undefined;
+  }
+  const diagnostics = renameDiagnostics(value["diagnostics"], operation);
   if (value["diagnostics"] !== undefined && !diagnostics) return undefined;
   const tests = writeLinkedTestEventEvidence(value["tests"]);
   if (value["tests"] !== undefined && !tests) return undefined;
   return {
+    lspWorkspaceEditApplyOperation: operation,
     lspRenameApplyStatus: status,
     lspRenameApplyPostcondition: postcondition,
     lspRenameApplyFileCount: fileCount,
@@ -119,6 +157,18 @@ export function lspRenameApplyEventEvidence(
     lspRenameApplyDurable: value["durable"],
     lspRenameApplyCancellationObserved: value["cancellationObserved"],
     ...hashes,
+    ...(sourceActionSha256
+      ? { lspCodeActionApplySourceActionSha256: sourceActionSha256 }
+      : {}),
+    ...(operation === "code_action"
+      ? {
+          lspCodeActionApplySourceResolved: value["sourceResolved"] as boolean,
+          lspCodeActionApplySourceCommandIgnored: value[
+            "sourceCommandIgnored"
+          ] as boolean,
+          lspCodeActionApplyCommandPolicy: "deny_all" as const,
+        }
+      : {}),
     ...(diagnostics ? diagnostics : {}),
     ...(tests ? tests : {}),
   };
@@ -127,49 +177,73 @@ export function lspRenameApplyEventEvidence(
 export function lspRenameApplySummaryParts(
   view: LspRenameApplyToolEventTraceView,
 ): string[] {
+  const prefix =
+    view.lspWorkspaceEditApplyOperation === "code_action"
+      ? "quick-fix"
+      : "rename";
   return [
     ...(view.lspRenameApplyStatus
-      ? [`rename-apply ${view.lspRenameApplyStatus}`]
+      ? [`${prefix}-apply ${view.lspRenameApplyStatus}`]
       : []),
     ...(view.lspRenameApplyPostcondition
-      ? [`rename-postcondition ${view.lspRenameApplyPostcondition}`]
+      ? [`${prefix}-postcondition ${view.lspRenameApplyPostcondition}`]
       : []),
     ...(view.lspRenameApplyFileCount !== undefined
-      ? [`rename-files ${view.lspRenameApplyFileCount}`]
+      ? [`${prefix}-files ${view.lspRenameApplyFileCount}`]
       : []),
     ...(view.lspRenameApplyEditCount !== undefined
-      ? [`rename-edits ${view.lspRenameApplyEditCount}`]
+      ? [`${prefix}-edits ${view.lspRenameApplyEditCount}`]
       : []),
     ...(view.lspRenameApplyCommittedFileCount !== undefined
-      ? [`rename-committed ${view.lspRenameApplyCommittedFileCount}`]
+      ? [`${prefix}-committed ${view.lspRenameApplyCommittedFileCount}`]
       : []),
     ...(view.lspRenameApplyRestoredFileCount !== undefined
-      ? [`rename-restored ${view.lspRenameApplyRestoredFileCount}`]
+      ? [`${prefix}-restored ${view.lspRenameApplyRestoredFileCount}`]
       : []),
     ...(view.lspRenameApplyRecoveryArtifactCount !== undefined
       ? [
-          `rename-recovery-artifacts ${view.lspRenameApplyRecoveryArtifactCount}`,
+          `${prefix}-recovery-artifacts ${view.lspRenameApplyRecoveryArtifactCount}`,
         ]
       : []),
     ...(view.lspRenameApplyRollbackVerified
-      ? ["rename-rollback-verified"]
+      ? [`${prefix}-rollback-verified`]
       : []),
-    ...(view.lspRenameApplyDurable ? ["rename-durable"] : []),
+    ...(view.lspRenameApplyDurable ? [`${prefix}-durable`] : []),
     ...(view.lspRenameApplyCancellationObserved
-      ? ["rename-cancellation-observed"]
+      ? [`${prefix}-cancellation-observed`]
       : []),
     ...(view.lspRenameApplyDiagnosticStatus
-      ? [`rename-diagnostics ${view.lspRenameApplyDiagnosticStatus}`]
+      ? [`${prefix}-diagnostics ${view.lspRenameApplyDiagnosticStatus}`]
       : []),
-    ...hashSummary("rename-plan", view.lspRenameApplyPlanSha256),
-    ...hashSummary("rename-expected", view.lspRenameApplyExpectedFileSetSha256),
-    ...hashSummary("rename-observed", view.lspRenameApplyObservedFileSetSha256),
-    ...hashSummary("rename-apply-result", view.lspRenameApplyResultSha256),
+    ...(view.lspCodeActionApplySourceResolved
+      ? ["quick-fix-source-resolved"]
+      : []),
+    ...(view.lspCodeActionApplySourceCommandIgnored
+      ? ["quick-fix-source-command-ignored"]
+      : []),
+    ...(view.lspCodeActionApplyCommandPolicy
+      ? [`quick-fix-command-policy ${view.lspCodeActionApplyCommandPolicy}`]
+      : []),
+    ...hashSummary(
+      `${prefix}-action`,
+      view.lspCodeActionApplySourceActionSha256,
+    ),
+    ...hashSummary(`${prefix}-plan`, view.lspRenameApplyPlanSha256),
+    ...hashSummary(
+      `${prefix}-expected`,
+      view.lspRenameApplyExpectedFileSetSha256,
+    ),
+    ...hashSummary(
+      `${prefix}-observed`,
+      view.lspRenameApplyObservedFileSetSha256,
+    ),
+    ...hashSummary(`${prefix}-apply-result`, view.lspRenameApplyResultSha256),
   ];
 }
 
 function renameDiagnostics(
   value: unknown,
+  operation: "rename" | "code_action",
 ): LspRenameApplyToolEventTraceView | undefined {
   if (!record(value)) return undefined;
   const status = diagnosticStatus(value["status"]);
@@ -196,7 +270,10 @@ function renameDiagnostics(
   const errorSha256 = hash(value["errorSha256"]);
   const result = hash(value["resultSha256"]);
   if (
-    value["kind"] !== "napier.lsp-rename-apply-diagnostics" ||
+    value["kind"] !==
+      (operation === "rename"
+        ? "napier.lsp-rename-apply-diagnostics"
+        : "napier.lsp-code-action-apply-diagnostics") ||
     value["schemaVersion"] !== 1 ||
     !status ||
     fileCount === undefined ||

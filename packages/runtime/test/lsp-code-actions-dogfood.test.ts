@@ -9,6 +9,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   applyWorkspacePatch,
+  LspCodeActionApplyDiagnostics,
+  LspCodeActionMutationManager,
   LspCodeActionsRunner,
   sha256,
 } from "../src/index.js";
@@ -62,9 +64,10 @@ describe("LSP Code Actions dogfood", () => {
       ),
       writeFile(target, source),
     ]);
+    const sandbox = directLspSandbox();
     const preview = await new LspCodeActionsRunner({
       workspaceRoot,
-      sandbox: directLspSandbox(),
+      sandbox,
     }).run({
       path: targetPath,
       line: 1,
@@ -144,9 +147,10 @@ describe("LSP Code Actions dogfood", () => {
       ),
       writeFile(target, source),
     ]);
+    const sandbox = directLspSandbox();
     const preview = await new LspCodeActionsRunner({
       workspaceRoot,
-      sandbox: directLspSandbox(),
+      sandbox,
     }).run({
       path: targetPath,
       line: 2,
@@ -158,15 +162,18 @@ describe("LSP Code Actions dogfood", () => {
     if (!fixAll || !fixAll.resolved) {
       throw new Error("Real TypeScript did not return a resolved fix-all edit");
     }
-    const edits = fixAll.files.flatMap((file) => file.edits);
-    const updated = applyPreviewEdits(source, edits);
-
-    const patch = await applyWorkspacePatch(workspaceRoot, dataRoot, {
-      operation: "replace",
-      path: targetPath,
-      expectedSha256: sha256(source),
-      edits: [{ oldText: source, newText: updated }],
+    const manager = new LspCodeActionMutationManager({
+      workspaceRoot,
+      dataRoot,
+      diagnostics: new LspCodeActionApplyDiagnostics({
+        workspaceRoot,
+        sandbox,
+      }),
     });
+    const previews = manager.storePreviews(preview);
+    const fixIndex = preview.actions.indexOf(fixAll);
+    const apply = await manager.apply(previews[fixIndex]!.id);
+    const updated = await readFile(target, "utf8");
     const typecheck = await execFileAsync(
       process.execPath,
       [
@@ -178,66 +185,28 @@ describe("LSP Code Actions dogfood", () => {
       { cwd: workspaceRoot, encoding: "utf8" },
     );
 
-    expect(preview.details).toEqual(
+    expect(apply.details).toEqual(
       expect.objectContaining({
-        resolveSupported: true,
-        resolveRequestCount: 1,
-        resolvedActionCount: 1,
+        kind: "napier.lsp-code-action-apply",
+        status: "applied",
+        postcondition: "verified",
+        sourceActionSha256: fixAll.actionSha256,
+        sourceResolved: true,
+        sourceCommandIgnored: true,
         commandPolicy: "deny_all",
+        fileCount: 1,
+        editCount: 2,
+        diagnostics: expect.objectContaining({
+          kind: "napier.lsp-code-action-apply-diagnostics",
+          status: "improved",
+          beforeErrorCount: 2,
+          afterErrorCount: 0,
+        }),
       }),
     );
-    expect(edits).toHaveLength(2);
-    expect(patch.afterSha256).toBe(sha256(updated));
+    expect(preview.details.resolveRequestCount).toBe(1);
+    expect(preview.details.resolvedActionCount).toBe(1);
+    expect(updated).not.toBe(source);
     expect(typecheck.stderr).toBe("");
-    expect(await readFile(target, "utf8")).toBe(updated);
   }, 20_000);
 });
-
-function applyPreviewEdits(
-  source: string,
-  edits: Array<{
-    startLine: number;
-    startCharacter: number;
-    endLine: number;
-    endCharacter: number;
-    oldText: string;
-    newText: string;
-  }>,
-): string {
-  const positioned = edits.map((edit) => ({
-    edit,
-    start: sourceOffset(source, edit.startLine, edit.startCharacter),
-    end: sourceOffset(source, edit.endLine, edit.endCharacter),
-  }));
-  let updated = source;
-  for (const { edit, start, end } of positioned.sort(
-    (left, right) => right.start - left.start || right.end - left.end,
-  )) {
-    if (source.slice(start, end) !== edit.oldText) {
-      throw new Error("Resolved Code Action old text does not match source");
-    }
-    updated = `${updated.slice(0, start)}${edit.newText}${updated.slice(end)}`;
-  }
-  return updated;
-}
-
-function sourceOffset(source: string, line: number, character: number): number {
-  const lines = source.split("\n");
-  if (
-    !Number.isSafeInteger(line) ||
-    !Number.isSafeInteger(character) ||
-    line < 1 ||
-    line > lines.length ||
-    character < 1 ||
-    character > lines[line - 1]!.length + 1
-  ) {
-    throw new Error("Resolved Code Action range is invalid");
-  }
-  return (
-    lines
-      .slice(0, line - 1)
-      .reduce((total, value) => total + value.length + 1, 0) +
-    character -
-    1
-  );
-}

@@ -35,7 +35,8 @@ export class LspRenameApplyDiagnostics {
   private readonly runner: LspDiagnosticsRunner;
 
   constructor(options: LspDiagnosticsRunnerOptions) {
-    this.runner = new LspDiagnosticsRunner(options);
+    const { session: _persistentSession, ...oneShotOptions } = options;
+    this.runner = new LspDiagnosticsRunner(oneShotOptions);
   }
 
   async observeBefore(

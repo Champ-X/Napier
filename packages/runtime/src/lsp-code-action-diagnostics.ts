@@ -6,6 +6,7 @@ import {
   type ResolvedLspCodeActions,
 } from "./lsp-code-action-resolution.js";
 import { parseLspRange, type LspRange } from "./lsp-locations.js";
+import { LSP_DIAGNOSTICS_QUIET_MS } from "./lsp-protocol-session.js";
 
 export const MAX_LSP_CODE_ACTION_DIAGNOSTICS = 64;
 
@@ -132,7 +133,7 @@ function waitForCodeActionDiagnostics(
   return new Promise((resolve) => {
     let quietTimer: ReturnType<typeof setTimeout> | undefined;
     let latest: unknown[] = [];
-    connection.onNotification(
+    const subscription = connection.onNotification(
       "textDocument/publishDiagnostics",
       (params: unknown) => {
         if (
@@ -144,7 +145,10 @@ function waitForCodeActionDiagnostics(
         }
         latest = params["diagnostics"];
         if (quietTimer) clearTimeout(quietTimer);
-        quietTimer = setTimeout(() => resolve(latest), 100);
+        quietTimer = setTimeout(() => {
+          subscription.dispose();
+          resolve(latest);
+        }, LSP_DIAGNOSTICS_QUIET_MS);
       },
     );
   });

@@ -3521,6 +3521,7 @@ export const AGENT_TOOL_NAMES = [
   "lsp_rename",
   "lsp_rename_apply",
   "lsp_code_actions",
+  "lsp_code_action_apply",
   "apply_patch",
   "workspace_file_preview",
   "workspace_file_apply",
@@ -4131,6 +4132,25 @@ export interface LspRenameApplyDetails {
   diagnostics?: LspRenameApplyDiagnosticsDetails;
   tests?: WriteLinkedTestVerificationDetails;
   resultSha256: string;
+}
+
+export interface LspCodeActionApplyDiagnosticsDetails extends Omit<
+  LspRenameApplyDiagnosticsDetails,
+  "kind"
+> {
+  kind: "napier.lsp-code-action-apply-diagnostics";
+}
+
+export interface LspCodeActionApplyDetails extends Omit<
+  LspRenameApplyDetails,
+  "kind" | "diagnostics"
+> {
+  kind: "napier.lsp-code-action-apply";
+  sourceActionSha256: string;
+  sourceResolved: boolean;
+  sourceCommandIgnored: boolean;
+  commandPolicy: "deny_all";
+  diagnostics?: LspCodeActionApplyDiagnosticsDetails;
 }
 
 export interface LspCodeActionsDetails extends LspSessionEvidenceDetails {

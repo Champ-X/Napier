@@ -647,7 +647,7 @@ describeLive("live LSP diagnostics smoke", () => {
     store.close();
   }, 60_000);
 
-  it("previews a real missing-import quick fix through the Agent sandbox", async () => {
+  it("applies a real missing-import quick fix through the Agent sandbox", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "napier-live-lsp-code-actions-workspace-"),
     );
@@ -680,7 +680,7 @@ describeLive("live LSP diagnostics smoke", () => {
     await store.initialize();
     const agent = await store.updateAgent(store.listAgents()[0]!.id, {
       toolPolicy: "workspace",
-      enabledTools: ["lsp_code_actions"],
+      enabledTools: ["lsp_code_actions", "lsp_code_action_apply"],
     });
     const thread = await store.createThread({
       title: "Live LSP Code Actions smoke",
@@ -689,6 +689,7 @@ describeLive("live LSP diagnostics smoke", () => {
     const provider = fauxProvider({
       provider: "live-lsp-code-actions-smoke",
     });
+    let applyPreviewId = "";
     provider.setResponses([
       fauxAssistantMessage(
         fauxToolCall("lsp_code_actions", {
@@ -703,8 +704,22 @@ describeLive("live LSP diagnostics smoke", () => {
         expect(messages).toContain("Preferred: true");
         expect(messages).toContain("private-definition");
         expect(messages).toContain("formatTitle");
+        const previewId = messages.match(
+          /Add import from.*?Apply preview ID: (actionpreview_[a-z0-9]+)/u,
+        )?.[1];
+        expect(previewId).toMatch(/^actionpreview_/u);
+        applyPreviewId = previewId ?? "";
         return fauxAssistantMessage(
-          "The real language server returned the preferred import fix.",
+          fauxToolCall("lsp_code_action_apply", { previewId }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("LSP Code Action apply: applied");
+        expect(messages).toContain("Code Action diagnostics: improved");
+        return fauxAssistantMessage(
+          "The preferred import fix was committed and diagnostics improved.",
         );
       },
       fauxAssistantMessage('{"facts":[]}'),
@@ -720,7 +735,7 @@ describeLive("live LSP diagnostics smoke", () => {
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
-      text: "Preview the missing-import quick fix through standard LSP.",
+      text: "Apply the missing-import quick fix through standard LSP.",
       model: { provider: "live-lsp-code-actions-smoke", id: "faux-1" },
     });
 
@@ -732,17 +747,20 @@ describeLive("live LSP diagnostics smoke", () => {
         event.payload &&
         !Array.isArray(event.payload) &&
         typeof event.payload === "object" &&
-        event.payload["toolName"] === "lsp_code_actions",
+        event.payload["toolName"] === "lsp_code_action_apply",
     );
     expect(completed?.payload["details"]).toEqual(
       expect.objectContaining({
-        status: "found",
-        diagnosticCount: 1,
-        actionCount: 2,
-        preferredActionCount: 1,
-        sandbox: "macos-sandbox-exec",
-        languageServerVersion: "5.3.0",
-        typescriptVersion: "5.9.3",
+        kind: "napier.lsp-code-action-apply",
+        status: "applied",
+        postcondition: "verified",
+        sourceCommandIgnored: true,
+        commandPolicy: "deny_all",
+        diagnostics: expect.objectContaining({
+          status: "improved",
+          beforeErrorCount: 1,
+          afterErrorCount: 0,
+        }),
       }),
     );
     const durable = JSON.stringify(events);
@@ -750,9 +768,15 @@ describeLive("live LSP diagnostics smoke", () => {
     expect(durable).not.toContain("private-definition");
     expect(durable).not.toContain("formatTitle");
     expect(durable).not.toContain("_typescript.applyCodeActionCommand");
-    expect(await readFile(path.join(workspaceRoot, targetPath), "utf8")).toBe(
-      source,
+    expect(durable).not.toContain(applyPreviewId);
+    const updated = await readFile(
+      path.join(workspaceRoot, targetPath),
+      "utf8",
     );
+    expect(updated).toContain(
+      'import { formatTitle } from "./private-definition',
+    );
+    expect(updated).toContain(source);
     store.close();
   }, 30_000);
 

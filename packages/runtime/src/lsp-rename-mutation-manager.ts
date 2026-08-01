@@ -1,24 +1,34 @@
-import type { LspRenameApplyDetails } from "@napier/contracts";
+import type {
+  LspRenameApplyDetails,
+  LspRenameDetails,
+} from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  LspRenameApplyDiagnostics,
+  type LspRenameDiagnosticsObservation,
+  type LspRenameDiagnosticsState,
+  unavailableLspRenameDiagnostics,
+} from "./lsp-rename-apply-diagnostics.js";
 import {
   commitLspRename,
   type CommitLspRenameOptions,
 } from "./lsp-rename-commit.js";
-import {
-  LspRenameApplyDiagnostics,
-  type LspRenameDiagnosticsState,
-  unavailableLspRenameDiagnostics,
-} from "./lsp-rename-apply-diagnostics.js";
 import type { LspRenameResult } from "./lsp-rename.js";
-import { createId } from "./ids.js";
-import type { WriteLinkedTestBeforeState } from "./write-linked-test-selection.js";
+import type { LspRenameFile } from "./lsp-rename-workspace-edit.js";
+import {
+  formatLspWorkspaceEditApplySummary,
+  LSP_WORKSPACE_EDIT_APPLY_PREVIEW_TTL_MS,
+  LspWorkspaceEditMutationCoordinator,
+  MAX_LSP_WORKSPACE_EDIT_APPLY_PREVIEWS,
+  type LspWorkspaceEditPreviewSource,
+} from "./lsp-workspace-edit-mutation.js";
 import type { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
 
-export const MAX_LSP_RENAME_APPLY_PREVIEWS = 32;
-export const LSP_RENAME_APPLY_PREVIEW_TTL_MS = 5 * 60_000;
-
-const PREVIEW_ID = /^renamepreview_[a-z0-9]{8,80}$/u;
+export const MAX_LSP_RENAME_APPLY_PREVIEWS =
+  MAX_LSP_WORKSPACE_EDIT_APPLY_PREVIEWS;
+export const LSP_RENAME_APPLY_PREVIEW_TTL_MS =
+  LSP_WORKSPACE_EDIT_APPLY_PREVIEW_TTL_MS;
 
 export interface LspRenameApplyPreview {
   id: string;
@@ -44,99 +54,75 @@ export interface LspRenameMutationManagerOptions {
   commitOptions?: Pick<CommitLspRenameOptions, "renameFile" | "linkFile">;
 }
 
-interface StoredPreview {
-  result: LspRenameResult;
-  expiresAt: string;
-  createdAtMs: number;
+interface LspRenamePreviewSource extends LspWorkspaceEditPreviewSource {
+  relativePath: string;
+  details: LspRenameDetails;
+  files: LspRenameFile[];
 }
 
 export class LspRenameMutationManager {
-  private readonly previews = new Map<string, StoredPreview>();
-  private readonly currentTime: () => Date;
-  private readonly commit: typeof commitLspRename;
+  private readonly coordinator: LspWorkspaceEditMutationCoordinator<
+    LspRenamePreviewSource,
+    LspRenameDiagnosticsState,
+    LspRenameDiagnosticsObservation
+  >;
 
-  constructor(private readonly options: LspRenameMutationManagerOptions) {
-    this.currentTime = options.now ?? (() => new Date());
-    this.commit = options.commit ?? commitLspRename;
+  constructor(options: LspRenameMutationManagerOptions) {
+    this.coordinator = new LspWorkspaceEditMutationCoordinator({
+      workspaceRoot: options.workspaceRoot,
+      dataRoot: options.dataRoot,
+      label: "LSP rename apply",
+      previewPrefix: "renamepreview",
+      diagnostics: {
+        observeBefore: (files, signal) =>
+          options.diagnostics.observeBefore(files, signal),
+        observeAfter: (state, expectedFiles, signal) =>
+          options.diagnostics.observeAfter(state, expectedFiles, signal),
+        unavailable: unavailableLspRenameDiagnostics,
+      },
+      ...(options.tests ? { tests: options.tests } : {}),
+      ...(options.now ? { now: options.now } : {}),
+      ...(options.commit ? { commit: options.commit } : {}),
+      ...(options.commitOptions
+        ? { commitOptions: options.commitOptions }
+        : {}),
+    });
   }
 
   storePreview(result: LspRenameResult): LspRenameApplyPreview | undefined {
     if (result.details.status !== "found" || result.files.length === 0) {
       return undefined;
     }
-    this.prune();
-    const now = this.validNow();
-    const id = createId("renamepreview");
-    const expiresAt = new Date(
-      now.getTime() + LSP_RENAME_APPLY_PREVIEW_TTL_MS,
-    ).toISOString();
-    this.previews.set(id, {
-      result: structuredClone(result),
-      expiresAt,
-      createdAtMs: now.getTime(),
+    const preview = this.coordinator.storePreview({
+      sourcePreviewResultSha256: result.details.resultSha256,
+      relativePath: result.relativePath,
+      details: result.details,
+      files: result.files,
     });
-    this.prune();
-    return { id, expiresAt, result: structuredClone(result) };
+    return preview
+      ? {
+          id: preview.id,
+          expiresAt: preview.expiresAt,
+          result: sourceResult(preview.source),
+        }
+      : undefined;
   }
 
   async apply(
     previewId: string,
     signal?: AbortSignal,
   ): Promise<LspRenameApplyResult> {
-    if (!PREVIEW_ID.test(previewId)) {
-      throw new Error("LSP rename apply preview ID is invalid");
-    }
-    const preview = this.previews.get(previewId);
-    if (!preview) {
-      throw new Error("LSP rename apply preview not found");
-    }
-    if (Date.parse(preview.expiresAt) <= this.validNow().getTime()) {
-      this.previews.delete(previewId);
-      throw new Error("LSP rename apply preview expired");
-    }
-    this.previews.delete(previewId);
-    this.prune();
-    signal?.throwIfAborted();
-    const testBefore = await this.captureTestsBefore(preview.result, signal);
-    const diagnostics = await this.options.diagnostics.observeBefore(
-      preview.result.files,
-      signal,
-    );
-    signal?.throwIfAborted();
-    const outcome = await this.commit({
-      workspaceRoot: this.options.workspaceRoot,
-      dataRoot: this.options.dataRoot,
-      sourcePreviewResultSha256: preview.result.details.resultSha256,
-      files: preview.result.files,
-      ...(signal ? { signal } : {}),
-      ...this.options.commitOptions,
-    });
-    const diagnosticObservation =
-      outcome.status === "applied"
-        ? await this.observeAfter(diagnostics, outcome.expectedFiles, signal)
-        : undefined;
-    const testObservation =
-      outcome.status === "applied" &&
-      outcome.postcondition === "verified" &&
-      this.options.tests
-        ? await this.options.tests.run(
-            outcome.expectedFiles.map((file) => ({
-              path: file.path,
-              expectedSha256: file.expectedSha256,
-            })),
-            testBefore,
-            signal,
-          )
-        : undefined;
-    const { expectedFiles: _expectedFiles, ...durableOutcome } = outcome;
+    const execution = await this.coordinator.apply(previewId, signal);
+    const { expectedFiles: _expectedFiles, ...durableOutcome } =
+      execution.outcome;
     const base = {
       kind: "napier.lsp-rename-apply" as const,
       schemaVersion: 1 as const,
       ...durableOutcome,
-      ...(diagnosticObservation
-        ? { diagnostics: diagnosticObservation.details }
+      ...(execution.diagnostics
+        ? { diagnostics: execution.diagnostics.details }
         : {}),
-      ...(testObservation ? { tests: testObservation.details } : {}),
+      ...(execution.tests ? { tests: execution.tests.details } : {}),
     };
     const details: LspRenameApplyDetails = {
       ...base,
@@ -144,84 +130,28 @@ export class LspRenameMutationManager {
     };
     return {
       details,
-      summary: [
-        `LSP rename apply: ${details.status}`,
-        `Postcondition: ${details.postcondition}`,
-        `Files: ${details.fileCount}`,
-        `Edits: ${details.editCount}`,
-        `Committed files: ${details.committedFileCount}`,
-        `Restored files: ${details.restoredFileCount}`,
-        `Recovery artifacts: ${details.recoveryArtifactCount}`,
-        `Rollback verified: ${String(details.rollbackVerified)}`,
-        `Durable: ${String(details.durable)}`,
-        `Expected file set SHA-256: ${details.expectedFileSetSha256}`,
-        ...(details.observedFileSetSha256
-          ? [`Observed file set SHA-256: ${details.observedFileSetSha256}`]
-          : []),
-        ...(details.errorSha256
-          ? [`Error SHA-256: ${details.errorSha256}`]
-          : []),
-        ...(diagnosticObservation ? ["", diagnosticObservation.summary] : []),
-        ...(testObservation ? ["", testObservation.summary] : []),
-        "",
-        details.status === "applied" && details.postcondition === "verified"
-          ? "The coordinated rename is committed. Run relevant behavior verification before claiming completion."
-          : details.status === "rolled_back"
-            ? "The coordinated commit failed and the original file set was restored. Preview again before retrying."
-            : "Workspace state is indeterminate. Inspect every target before any retry.",
-      ].join("\n"),
+      summary: formatLspWorkspaceEditApplySummary({
+        label: "LSP rename apply",
+        details,
+        ...(execution.diagnostics
+          ? { diagnosticsSummary: execution.diagnostics.summary }
+          : {}),
+        ...(execution.tests ? { testsSummary: execution.tests.summary } : {}),
+        appliedMessage:
+          "The coordinated rename is committed. Run relevant behavior verification before claiming completion.",
+        rolledBackMessage:
+          "The coordinated commit failed and the original file set was restored. Preview again before retrying.",
+        indeterminateMessage:
+          "Workspace state is indeterminate. Inspect every target before any retry.",
+      }),
     };
   }
+}
 
-  private async captureTestsBefore(
-    preview: LspRenameResult,
-    signal?: AbortSignal,
-  ): Promise<WriteLinkedTestBeforeState | undefined> {
-    if (!this.options.tests) return undefined;
-    signal?.throwIfAborted();
-    return this.options.tests.captureBefore(
-      preview.files.map((file) => ({
-        path: file.path,
-        expectedSha256: file.fileSha256,
-      })),
-    );
-  }
-
-  private async observeAfter(
-    state: LspRenameDiagnosticsState,
-    expectedFiles: Parameters<LspRenameApplyDiagnostics["observeAfter"]>[1],
-    signal?: AbortSignal,
-  ) {
-    try {
-      return await this.options.diagnostics.observeAfter(
-        state,
-        expectedFiles,
-        signal,
-      );
-    } catch (error) {
-      return unavailableLspRenameDiagnostics(state, error);
-    }
-  }
-
-  private prune(): void {
-    const now = this.validNow().getTime();
-    for (const [id, preview] of this.previews) {
-      if (Date.parse(preview.expiresAt) <= now) this.previews.delete(id);
-    }
-    const retained = [...this.previews.entries()].sort(
-      (left, right) => left[1].createdAtMs - right[1].createdAtMs,
-    );
-    while (retained.length > MAX_LSP_RENAME_APPLY_PREVIEWS) {
-      const oldest = retained.shift();
-      if (oldest) this.previews.delete(oldest[0]);
-    }
-  }
-
-  private validNow(): Date {
-    const value = this.currentTime();
-    if (!Number.isFinite(value.getTime())) {
-      throw new Error("LSP rename apply time is invalid");
-    }
-    return value;
-  }
+function sourceResult(source: LspRenamePreviewSource): LspRenameResult {
+  return {
+    relativePath: source.relativePath,
+    details: structuredClone(source.details),
+    files: structuredClone(source.files),
+  };
 }

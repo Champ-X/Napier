@@ -1476,6 +1476,86 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(malformed)).not.toContain("PRIVATE_RENAME");
   });
 
+  it("summarizes one coordinated Code Action application without edit bodies", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "lsp_code_action_apply",
+      status: "completed",
+      effect: "write",
+      details: {
+        kind: "napier.lsp-code-action-apply",
+        schemaVersion: 1,
+        status: "applied",
+        postcondition: "verified",
+        sourcePreviewResultSha256: "1".repeat(64),
+        sourceActionSha256: "2".repeat(64),
+        sourceResolved: true,
+        sourceCommandIgnored: true,
+        commandPolicy: "deny_all",
+        planSha256: "3".repeat(64),
+        fileCount: 1,
+        editCount: 2,
+        committedFileCount: 1,
+        restoredFileCount: 0,
+        recoveryArtifactCount: 0,
+        rollbackAttempted: false,
+        rollbackVerified: false,
+        durable: true,
+        cancellationObserved: false,
+        beforeFileSetSha256: "4".repeat(64),
+        expectedFileSetSha256: "5".repeat(64),
+        observedFileSetSha256: "5".repeat(64),
+        resourceLimitsSha256: "6".repeat(64),
+        diagnostics: {
+          kind: "napier.lsp-code-action-apply-diagnostics",
+          schemaVersion: 1,
+          status: "improved",
+          fileCount: 1,
+          omittedFileCount: 0,
+          beforeDiagnosticCount: 2,
+          afterDiagnosticCount: 0,
+          beforeErrorCount: 2,
+          afterErrorCount: 0,
+          beforeWarningCount: 0,
+          afterWarningCount: 0,
+          introducedCount: 0,
+          resolvedCount: 2,
+          unchangedCount: 0,
+          truncated: false,
+          beforeResultSetSha256: "7".repeat(64),
+          afterResultSetSha256: "8".repeat(64),
+          deltaSetSha256: "9".repeat(64),
+          durationMs: 140,
+          resultSha256: "a".repeat(64),
+        },
+        resultSha256: "b".repeat(64),
+        title: "PRIVATE_ACTION_TITLE",
+        edits: "PRIVATE_ACTION_EDITS",
+        command: "PRIVATE_ACTION_COMMAND",
+      },
+    });
+
+    const summary = toolEventTraceSummary(event);
+    expect(summary).toContain(
+      `quick-fix-apply applied / quick-fix-postcondition verified / quick-fix-files 1 / quick-fix-edits 2 / quick-fix-committed 1 / quick-fix-restored 0 / quick-fix-recovery-artifacts 0 / quick-fix-durable / quick-fix-diagnostics improved / quick-fix-source-resolved / quick-fix-source-command-ignored / quick-fix-command-policy deny_all / quick-fix-action ${"2".repeat(12)} / quick-fix-plan ${"3".repeat(12)} / quick-fix-expected ${"5".repeat(12)} / quick-fix-observed ${"5".repeat(12)} / quick-fix-apply-result ${"b".repeat(12)}`,
+    );
+    expect(summary).not.toContain("PRIVATE_ACTION");
+    expect(summary).not.toContain("rename-apply");
+
+    const malformed = structuredClone(event);
+    if (
+      malformed.payload &&
+      !Array.isArray(malformed.payload) &&
+      typeof malformed.payload === "object" &&
+      malformed.payload["details"] &&
+      !Array.isArray(malformed.payload["details"]) &&
+      typeof malformed.payload["details"] === "object"
+    ) {
+      malformed.payload["details"]["commandPolicy"] = "execute";
+    }
+    expect(toolEventTraceSummary(malformed)).not.toContain("quick-fix-apply");
+    expect(toolEventTraceSummary(malformed)).not.toContain("PRIVATE_ACTION");
+  });
+
   it("fails closed to a fixed summary for malformed tool receipts", () => {
     const event = toolEvent("tool.failed", {
       toolName: "bad tool name",

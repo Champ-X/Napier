@@ -58,6 +58,23 @@ describe("workspace tool guidance", () => {
     );
   });
 
+  it("binds one Code Action alternative to coordinated apply", () => {
+    const guidance = formatWorkspaceToolGuidance([
+      { name: "lsp_code_actions" } as AgentTool,
+      { name: "lsp_code_action_apply" } as AgentTool,
+      { name: "verify_workspace" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain(
+      "pass only the chosen action's fresh one-use preview ID",
+    );
+    expect(guidance).toContain("invalidates every sibling alternative");
+    expect(guidance).toContain("denies every language-server command");
+    expect(guidance).toContain(
+      "selects and runs bounded reverse-dependent TypeScript",
+    );
+  });
+
   it("describes automatic write-linked tests without overstating coverage", () => {
     const guidance = formatWorkspaceToolGuidance([
       { name: "apply_patch" } as AgentTool,

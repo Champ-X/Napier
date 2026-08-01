@@ -31,6 +31,7 @@ import {
   validateLspSourcePosition,
 } from "./lsp-locations.js";
 import {
+  LSP_DIAGNOSTICS_QUIET_MS,
   lspSessionEvidence,
   MAX_LSP_PROTOCOL_BYTES,
   MAX_LSP_STDERR_CHARS,
@@ -148,6 +149,7 @@ export class LspCodeActionsRunner {
           maxSourceFileBytes: MAX_LSP_DIAGNOSTIC_FILE_BYTES,
           maxTargetFileBytes: MAX_LSP_DIAGNOSTIC_FILE_BYTES,
           maxDiagnostics: MAX_LSP_CODE_ACTION_DIAGNOSTICS,
+          diagnosticsQuietMs: LSP_DIAGNOSTICS_QUIET_MS,
           maxResponseActions: MAX_LSP_CODE_ACTION_RESPONSE_ACTIONS,
           maxActions: MAX_LSP_CODE_ACTIONS,
           maxTitleChars: MAX_LSP_CODE_ACTION_TITLE_CHARS,
