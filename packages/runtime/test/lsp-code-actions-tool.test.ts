@@ -77,6 +77,10 @@ describe("LSP Code Actions Agent tool boundary", () => {
 
     expect(output).toContain('ACTION 1 "Add import"');
     expect(output).toContain("Preferred: true");
+    expect(output).toContain("Resolved: false");
+    expect(output).toContain("Resolve supported: false");
+    expect(output).toContain("Resolve requests: 0");
+    expect(output).toContain("Command policy: deny_all");
     expect(output).toContain("Command ignored: true");
     expect(output).toContain("No command ran and no file changed.");
     expect(output).not.toContain("PRIVATE_DIAGNOSTIC");

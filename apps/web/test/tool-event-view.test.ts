@@ -818,7 +818,7 @@ describe("Tool event trace view", () => {
       output: "TOP_SECRET_QUICK_FIX_EDIT",
       details: {
         kind: "napier.lsp-code-actions",
-        schemaVersion: 1,
+        schemaVersion: 2,
         status: "found",
         complete: false,
         truncated: true,
@@ -828,6 +828,11 @@ describe("Tool event trace view", () => {
         omittedActionCount: 2,
         preferredActionCount: 1,
         commandIgnoredCount: 3,
+        resolveSupported: true,
+        resolveRequestCount: 4,
+        resolvedActionCount: 3,
+        resolveOmittedCount: 1,
+        commandPolicy: "deny_all",
         fileCount: 3,
         editCount: 6,
         previewBytes: 256,
@@ -858,6 +863,11 @@ describe("Tool event trace view", () => {
       lspCodeActionsOmittedActionCount: 2,
       lspCodeActionsPreferredActionCount: 1,
       lspCodeActionsCommandIgnoredCount: 3,
+      lspCodeActionsResolveSupported: true,
+      lspCodeActionsResolveRequestCount: 4,
+      lspCodeActionsResolvedActionCount: 3,
+      lspCodeActionsResolveOmittedCount: 1,
+      lspCodeActionsCommandPolicy: "deny_all",
       lspCodeActionsFileCount: 3,
       lspCodeActionsEditCount: 6,
       lspCodeActionsPreviewBytes: 256,
@@ -871,7 +881,7 @@ describe("Tool event trace view", () => {
       lspCodeActionsResultSha256: "6".repeat(64),
     });
     expect(toolEventTraceSummary(event)).toBe(
-      `tool / lsp_code_actions / completed / effect read / quick-fixes found / quick-fix-language typescript / quick-fixes-truncated / quick-fix-diagnostics 2 / quick-fix-actions 16 / quick-fix-omitted 2 / quick-fix-preferred 1 / quick-fix-commands-ignored 3 / quick-fix-files 3 / quick-fix-edits 6 / quick-fix-preview-bytes 256 / quick-fix-ms 940 / quick-fix-protocol 3800 / quick-fix-source-path ${"1".repeat(12)} / quick-fix-source-file ${"2".repeat(12)} / quick-fix-diagnostic-set ${"3".repeat(12)} / quick-fix-action-set ${"4".repeat(12)} / quick-fix-target-files ${"5".repeat(12)} / quick-fix-result ${"6".repeat(12)}`,
+      `tool / lsp_code_actions / completed / effect read / quick-fixes found / quick-fix-language typescript / quick-fixes-truncated / quick-fix-diagnostics 2 / quick-fix-actions 16 / quick-fix-omitted 2 / quick-fix-preferred 1 / quick-fix-commands-ignored 3 / quick-fix-resolve-supported / quick-fix-resolve-requests 4 / quick-fix-resolved 3 / quick-fix-resolve-omitted 1 / quick-fix-command-policy deny_all / quick-fix-files 3 / quick-fix-edits 6 / quick-fix-preview-bytes 256 / quick-fix-ms 940 / quick-fix-protocol 3800 / quick-fix-source-path ${"1".repeat(12)} / quick-fix-source-file ${"2".repeat(12)} / quick-fix-diagnostic-set ${"3".repeat(12)} / quick-fix-action-set ${"4".repeat(12)} / quick-fix-target-files ${"5".repeat(12)} / quick-fix-result ${"6".repeat(12)}`,
     );
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
@@ -904,6 +914,74 @@ describe("Tool event trace view", () => {
       status: "completed",
       effect: "read",
     });
+
+    const impossibleResolve = toolEvent("tool.completed", {
+      toolName: "lsp_code_actions",
+      status: "completed",
+      effect: "read",
+      details: {
+        kind: "napier.lsp-code-actions",
+        schemaVersion: 2,
+        status: "not_found",
+        complete: false,
+        truncated: false,
+        language: "typescript",
+        diagnosticCount: 1,
+        actionCount: 0,
+        omittedActionCount: 1,
+        preferredActionCount: 0,
+        commandIgnoredCount: 0,
+        resolveSupported: false,
+        resolveRequestCount: 1,
+        resolvedActionCount: 0,
+        resolveOmittedCount: 1,
+        commandPolicy: "deny_all",
+        fileCount: 0,
+        editCount: 0,
+        previewBytes: 0,
+      },
+    });
+    expect(toolEventTraceView(impossibleResolve)).toEqual({
+      toolName: "lsp_code_actions",
+      status: "completed",
+      effect: "read",
+    });
+
+    const exhaustedResolve = toolEvent("tool.completed", {
+      toolName: "lsp_code_actions",
+      status: "completed",
+      effect: "read",
+      details: {
+        kind: "napier.lsp-code-actions",
+        schemaVersion: 2,
+        status: "not_found",
+        complete: false,
+        truncated: true,
+        language: "typescript",
+        diagnosticCount: 1,
+        actionCount: 0,
+        omittedActionCount: 17,
+        preferredActionCount: 0,
+        commandIgnoredCount: 0,
+        resolveSupported: true,
+        resolveRequestCount: 16,
+        resolvedActionCount: 0,
+        resolveOmittedCount: 17,
+        commandPolicy: "deny_all",
+        fileCount: 0,
+        editCount: 0,
+        previewBytes: 0,
+      },
+    });
+    expect(toolEventTraceView(exhaustedResolve)).toEqual(
+      expect.objectContaining({
+        lspCodeActionsStatus: "not_found",
+        lspCodeActionsTruncated: true,
+        lspCodeActionsResolveRequestCount: 16,
+        lspCodeActionsResolvedActionCount: 0,
+        lspCodeActionsResolveOmittedCount: 17,
+      }),
+    );
   });
 
   it("summarizes search_files hash evidence without match text", () => {

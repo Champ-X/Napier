@@ -6,6 +6,29 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added capability-bound `codeAction/resolve` for data-backed TypeScript and
+  JavaScript quick fixes. The LSP client advertises data support and only the
+  resolvable `edit` property; Napier sends at most 16 sequential requests only
+  when the initialized server declares `resolveProvider=true`. Opaque action
+  data is strict bounded JSON retained only in the same live Session, and each
+  resolved action must preserve its title, kind, preference, and canonical
+  data identity before the existing text-only WorkspaceEdit boundary accepts
+  its edits. Commands use an explicit `deny_all` policy: direct and resolved
+  commands are counted but never executed, exposed, persisted, or passed to
+  `workspace/applyEdit`. Schema-v2 Agent/HTTP/Web/Replay evidence records only
+  capability, request/success/omission counts, policy, existing counts, and
+  hashes. Tests cover real TypeScript Fix All resolution, supported and
+  unsupported servers, malformed/oversized data, identity drift, limits,
+  timeout, cancellation, concurrency, workspace drift, privacy, Agent apply,
+  HTTP SSE, and Web compatibility. Independent built-Runtime dogfood resolved
+  `Add all missing properties`, applied two edits through a CAS-bound patch,
+  and passed real `tsc --noEmit`. The complete gate passes 1,637 regular tests
+  with 29 opt-in live tests skipped, 255 OpenAPI routes, 244/244 compatibility
+  operations, and the product performance budget at 669.1 ms to first CLI
+  event, 816.2 ms to first token, 1,134.9 ms to completion, 0.3 ms read p95,
+  and 6.7 ms for a 1,000-event projection. The 92-file Web dist main entry
+  remains 130.32 KiB, bound to `551671abd2a2eb4d`; the release set is bound to
+  `241d407fb2b8299e`.
 - Added typed root multi-way Switch templates to existing Deterministic
   Workflow nodes. A Switch selects one required typed input path across 2–16
   unique canonical, schema-valid cases and an optional default, then evaluates

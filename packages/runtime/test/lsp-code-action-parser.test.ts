@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   MAX_LSP_CODE_ACTION_RESPONSE_ACTIONS,
+  MAX_LSP_CODE_ACTION_RESOLVE_INPUT_BYTES,
   MAX_LSP_CODE_ACTIONS,
   parseLspCodeActionResponse,
+  parseLspCodeActionResponseEntries,
+  parseResolvedLspCodeActionResponse,
 } from "../src/lsp-code-action-parser.js";
 import { range, textEdit } from "./lsp-rename-test-fixture.js";
 
@@ -51,6 +54,7 @@ describe("LSP Code Action response contract", () => {
           kind: "quickfix",
           isPreferred: true,
           commandIgnored: true,
+          resolved: false,
           edits: [
             {
               uri: "file:///workspace/usage.ts",
@@ -65,6 +69,109 @@ describe("LSP Code Action response contract", () => {
       truncated: false,
     });
     expect(JSON.stringify(parsed)).not.toContain("PRIVATE_");
+  });
+
+  it("retains bounded data-backed actions only for standard resolution", () => {
+    const unresolved = {
+      title: "Resolve import",
+      kind: "quickfix",
+      isPreferred: true,
+      command: {
+        title: "PRIVATE_COMMAND_TITLE",
+        command: "_typescript.PRIVATE_COMMAND",
+        arguments: ["PRIVATE_ARGUMENT"],
+      },
+      data: { token: "PRIVATE_DATA" },
+    };
+    const parsed = parseLspCodeActionResponseEntries([unresolved]);
+    const entry = parsed.entries[0];
+    expect(entry && "resolve" in entry ? entry.resolve : undefined).toEqual(
+      expect.objectContaining({
+        title: "Resolve import",
+        kind: "quickfix",
+        isPreferred: true,
+        commandIgnored: true,
+        dataSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    const resolution =
+      entry && "resolve" in entry
+        ? parseResolvedLspCodeActionResponse(
+            {
+              ...unresolved,
+              edit: {
+                changes: {
+                  "file:///workspace/usage.ts": [
+                    textEdit("import {};\n", 0, 0, 0, 0),
+                  ],
+                },
+              },
+            },
+            entry.resolve,
+            entry.responseIndex,
+          )
+        : undefined;
+    expect(resolution).toEqual(
+      expect.objectContaining({
+        title: "Resolve import",
+        resolved: true,
+        commandIgnored: true,
+        edits: [expect.objectContaining({ newText: "import {};\n" })],
+      }),
+    );
+    expect(JSON.stringify(resolution)).not.toContain("PRIVATE_");
+    expect(parseLspCodeActionResponse([unresolved])).toEqual({
+      actions: [],
+      omittedActionCount: 1,
+      truncated: false,
+    });
+  });
+
+  it("rejects oversized resolve data and resolved identity drift", () => {
+    expect(() =>
+      parseLspCodeActionResponseEntries([
+        {
+          title: "Oversized",
+          kind: "quickfix",
+          data: { value: "x".repeat(MAX_LSP_CODE_ACTION_RESOLVE_INPUT_BYTES) },
+        },
+      ]),
+    ).toThrow("invalid resolve data");
+    expect(() =>
+      parseLspCodeActionResponseEntries([
+        {
+          title: "Special prototype",
+          kind: "quickfix",
+          data: new Date("2026-08-01T00:00:00.000Z"),
+        },
+      ]),
+    ).toThrow("invalid resolve data");
+
+    const parsed = parseLspCodeActionResponseEntries([
+      {
+        title: "Stable",
+        kind: "quickfix",
+        data: { id: 1 },
+      },
+    ]);
+    const entry = parsed.entries[0]!;
+    if (!("resolve" in entry)) throw new Error("resolve candidate missing");
+    expect(() =>
+      parseResolvedLspCodeActionResponse(
+        {
+          title: "Changed",
+          kind: "quickfix",
+          data: { id: 1 },
+          edit: {
+            changes: {
+              "file:///workspace/usage.ts": [textEdit("next", 0, 0, 0, 0)],
+            },
+          },
+        },
+        entry.resolve,
+        entry.responseIndex,
+      ),
+    ).toThrow("changed its identity");
   });
 
   it("omits command-only, disabled, and edit-free alternatives", () => {

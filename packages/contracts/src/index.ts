@@ -4135,7 +4135,7 @@ export interface LspRenameApplyDetails {
 
 export interface LspCodeActionsDetails extends LspSessionEvidenceDetails {
   kind: "napier.lsp-code-actions";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   status: "found" | "not_found";
   complete: boolean;
   truncated: boolean;
@@ -4153,6 +4153,11 @@ export interface LspCodeActionsDetails extends LspSessionEvidenceDetails {
   omittedActionCount: number;
   preferredActionCount: number;
   commandIgnoredCount: number;
+  resolveSupported?: boolean;
+  resolveRequestCount?: number;
+  resolvedActionCount?: number;
+  resolveOmittedCount?: number;
+  commandPolicy?: "deny_all";
   fileCount: number;
   editCount: number;
   previewBytes: number;

@@ -26,6 +26,7 @@ export interface LspCodeAction {
   kind: string;
   isPreferred: boolean;
   commandIgnored: boolean;
+  resolved: boolean;
   files: LspWorkspaceTextEditFile[];
 }
 
@@ -179,6 +180,7 @@ async function materializeCodeAction(
     kind: action.kind,
     isPreferred: action.isPreferred,
     commandIgnored: action.commandIgnored,
+    resolved: action.resolved,
     edits: canonicalEdits.map(lspWorkspaceTextEditReceipt),
   };
   return {
@@ -187,6 +189,7 @@ async function materializeCodeAction(
     kind: action.kind,
     isPreferred: action.isPreferred,
     commandIgnored: action.commandIgnored,
+    resolved: action.resolved,
     files,
   };
 }
@@ -263,6 +266,7 @@ function codeActionReceipt(action: LspCodeAction): unknown {
     kind: action.kind,
     isPreferred: action.isPreferred,
     commandIgnored: action.commandIgnored,
+    resolved: action.resolved,
     edits: action.files.flatMap((file) =>
       file.edits.map(lspWorkspaceTextEditReceipt),
     ),

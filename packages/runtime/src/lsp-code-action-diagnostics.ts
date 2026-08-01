@@ -1,13 +1,17 @@
 import type { MessageConnection } from "vscode-jsonrpc/node.js";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  resolveLspCodeActionResponse,
+  type ResolvedLspCodeActions,
+} from "./lsp-code-action-resolution.js";
 import { parseLspRange, type LspRange } from "./lsp-locations.js";
 
 export const MAX_LSP_CODE_ACTION_DIAGNOSTICS = 64;
 
 export interface ProtocolCodeActionResult {
   diagnostics: unknown[];
-  actions: unknown;
+  codeActions: ResolvedLspCodeActions;
 }
 
 export interface CodeActionDiagnostic {
@@ -25,6 +29,7 @@ export interface CodeActionDiagnostic {
 export function prepareLspCodeActionOperation(request: {
   line: number;
   character: number;
+  signal?: AbortSignal;
 }): (
   connection: MessageConnection,
   targetUri: string,
@@ -43,7 +48,14 @@ export function prepareLspCodeActionOperation(request: {
         }),
       );
       if (selected.length === 0) {
-        return { diagnostics: [], actions: [] };
+        return {
+          diagnostics: [],
+          codeActions: await resolveLspCodeActionResponse(
+            connection,
+            [],
+            request.signal,
+          ),
+        };
       }
       const actions = await connection.sendRequest("textDocument/codeAction", {
         textDocument: { uri: targetUri },
@@ -56,7 +68,11 @@ export function prepareLspCodeActionOperation(request: {
       });
       return {
         diagnostics: selected.map((item) => item.raw),
-        actions,
+        codeActions: await resolveLspCodeActionResponse(
+          connection,
+          actions,
+          request.signal,
+        ),
       };
     };
   };

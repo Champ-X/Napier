@@ -50,7 +50,7 @@ export function createLspCodeActionsTool(
     name: "lsp_code_actions",
     label: "LSP quick fixes",
     description:
-      "Preview bounded TypeScript or JavaScript quick-fix Code Actions for a current diagnostic through the real language server in a read-only, offline OS sandbox. Commands are never executed or exposed; only text edits are returned. Choose one action, apply its files through hash-bound apply_patch, and verify the result.",
+      "Preview bounded TypeScript or JavaScript quick-fix Code Actions for a current diagnostic through the real language server in a read-only, offline OS sandbox. Data-backed actions are resolved only when the server advertises standard codeAction/resolve support. Commands are always denied and never exposed; only text edits are returned. Choose one action, apply its files through hash-bound apply_patch, and verify the result.",
     parameters: lspCodeActionsSchema,
     async execute(_toolCallId, input, signal) {
       const result = await runner.run({
@@ -136,6 +136,11 @@ function formatLspCodeActions(result: LspCodeActionsResult): string {
     `Omitted: ${result.details.omittedActionCount}`,
     `Complete response: ${String(result.details.complete)}`,
     `Truncated response: ${String(result.details.truncated)}`,
+    `Resolve supported: ${String(result.details.resolveSupported ?? false)}`,
+    `Resolve requests: ${result.details.resolveRequestCount ?? 0}`,
+    `Resolved actions: ${result.details.resolvedActionCount ?? 0}`,
+    `Resolve omitted: ${result.details.resolveOmittedCount ?? 0}`,
+    `Command policy: ${result.details.commandPolicy ?? "deny_all"}`,
     `Preview bytes: ${result.details.previewBytes}`,
     `Result SHA-256: ${result.details.resultSha256}`,
   ];
@@ -153,6 +158,7 @@ function formatLspCodeActions(result: LspCodeActionsResult): string {
         `Action SHA-256: ${action.actionSha256}`,
         `Kind: ${action.kind}`,
         `Preferred: ${String(action.isPreferred)}`,
+        `Resolved: ${String(action.resolved)}`,
         `Command ignored: ${String(action.commandIgnored)}`,
       );
       for (const file of action.files) {

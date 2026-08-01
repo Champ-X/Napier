@@ -93,6 +93,65 @@ describe("LSP Code Actions runner", () => {
     expect(await readFile(path.join(root, "usage.ts"), "utf8")).toBe(usage);
   }, 20_000);
 
+  it("resolves a real TypeScript fix-all action without writing", async () => {
+    const root = await createLspRenameWorkspace(temporaryRoots);
+    const usage = [
+      "interface User { name: string; }",
+      "const first: User = {};",
+      "const second: User = {};",
+      "",
+    ].join("\n");
+    await Promise.all([
+      writeFile(
+        path.join(root, "tsconfig.json"),
+        JSON.stringify({ compilerOptions: { strict: true, noEmit: true } }),
+      ),
+      writeFile(path.join(root, "usage.ts"), usage),
+    ]);
+
+    const result = await new LspCodeActionsRunner({
+      workspaceRoot: root,
+      sandbox: directLspSandbox(),
+    }).run({
+      path: "usage.ts",
+      line: 2,
+      character: 7,
+    });
+
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        status: "found",
+        actionCount: 2,
+        resolveSupported: true,
+        resolveRequestCount: 1,
+        resolvedActionCount: 1,
+        resolveOmittedCount: 0,
+        commandPolicy: "deny_all",
+      }),
+    );
+    expect(
+      result.actions.find(
+        (action) => action.title === "Add all missing properties",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        resolved: true,
+        commandIgnored: true,
+        files: [
+          expect.objectContaining({
+            path: "usage.ts",
+            edits: expect.arrayContaining([
+              expect.objectContaining({ startLine: 2 }),
+              expect.objectContaining({ startLine: 3 }),
+            ]),
+          }),
+        ],
+      }),
+    );
+    expect(await readFile(path.join(root, "usage.ts"), "utf8")).toBe(usage);
+  }, 20_000);
+
   it("returns bounded text edits while dropping command and diagnostic bodies", async () => {
     const root = await createWorkspace();
     const source = path.join(root, "usage.ts");
@@ -165,6 +224,141 @@ describe("LSP Code Actions runner", () => {
     expect(await readFile(source, "utf8")).toBe(
       'export const title = formatTitle(" value ");\n',
     );
+  });
+
+  it("resolves an advertised data-backed quick fix while denying its command", async () => {
+    const root = await createWorkspace();
+    const source = path.join(root, "usage.ts");
+    const sourceUri = pathToFileURL(await realpath(source)).href;
+    const insertion = 'import { formatTitle } from "./definition.js";\n\n';
+    const unresolved = {
+      title: "Resolve missing import",
+      kind: "quickfix",
+      isPreferred: true,
+      command: {
+        title: "PRIVATE_COMMAND_TITLE",
+        command: "_typescript.PRIVATE_COMMAND",
+        arguments: ["PRIVATE_ARGUMENT"],
+      },
+      data: { fixId: "PRIVATE_RESOLVE_DATA" },
+    };
+    const sandbox = controlledLspCodeActionsSandbox({
+      initialize: (params) => {
+        const capabilities =
+          record(params) && record(params["capabilities"])
+            ? params["capabilities"]
+            : {};
+        const textDocument = record(capabilities["textDocument"])
+          ? capabilities["textDocument"]
+          : {};
+        const codeAction = record(textDocument["codeAction"])
+          ? textDocument["codeAction"]
+          : {};
+        expect(codeAction["dataSupport"]).toBe(true);
+        expect(codeAction["resolveSupport"]).toEqual({
+          properties: ["edit"],
+        });
+      },
+      diagnostics: [diagnostic("PRIVATE_DIAGNOSTIC", 0, 21, 0, 32)],
+      codeActions: () => [unresolved],
+      codeActionResolve: async (action, connection) => {
+        expect(JSON.stringify(action)).toContain("PRIVATE_RESOLVE_DATA");
+        expect(
+          await connection.sendRequest<unknown>("workspace/applyEdit", {
+            label: "PRIVATE_APPLY_EDIT",
+            edit: {
+              changes: {
+                [sourceUri]: [textEdit("MALICIOUS_WRITE", 0, 0, 0, 0)],
+              },
+            },
+          }),
+        ).toEqual({ applied: false });
+        return {
+          ...unresolved,
+          edit: {
+            changes: {
+              [sourceUri]: [textEdit(insertion, 0, 0, 0, 0)],
+            },
+          },
+        };
+      },
+    });
+
+    const result = await runner(root, sandbox.sandbox).run({
+      path: "usage.ts",
+      line: 1,
+      character: 22,
+    });
+
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        status: "found",
+        complete: true,
+        resolveSupported: true,
+        resolveRequestCount: 1,
+        resolvedActionCount: 1,
+        resolveOmittedCount: 0,
+        commandIgnoredCount: 1,
+        commandPolicy: "deny_all",
+      }),
+    );
+    expect(result.actions).toEqual([
+      expect.objectContaining({
+        title: "Resolve missing import",
+        resolved: true,
+        commandIgnored: true,
+        files: [
+          expect.objectContaining({
+            path: "usage.ts",
+            edits: [expect.objectContaining({ newText: insertion })],
+          }),
+        ],
+      }),
+    ]);
+    expect(sandbox.codeActionCount()).toBe(1);
+    expect(sandbox.resolveCount()).toBe(1);
+    expect(sandbox.executeCommandCount()).toBe(0);
+    expect(JSON.stringify(result)).not.toContain("PRIVATE_");
+    expect(await readFile(source, "utf8")).toBe(
+      'export const title = formatTitle(" value ");\n',
+    );
+  });
+
+  it("does not resolve data-backed actions without advertised capability", async () => {
+    const root = await createWorkspace();
+    const sandbox = controlledLspCodeActionsSandbox({
+      diagnostics: [diagnostic("missing", 0, 21, 0, 32)],
+      codeActions: () => [
+        {
+          title: "Unresolved fix",
+          kind: "quickfix",
+          data: { fixId: "PRIVATE_RESOLVE_DATA" },
+        },
+      ],
+    });
+
+    const result = await runner(root, sandbox.sandbox).run({
+      path: "usage.ts",
+      line: 1,
+      character: 22,
+    });
+
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        status: "not_found",
+        complete: false,
+        actionCount: 0,
+        omittedActionCount: 1,
+        resolveSupported: false,
+        resolveRequestCount: 0,
+        resolvedActionCount: 0,
+        resolveOmittedCount: 1,
+        commandPolicy: "deny_all",
+      }),
+    );
+    expect(sandbox.resolveCount()).toBe(0);
+    expect(JSON.stringify(result)).not.toContain("PRIVATE_RESOLVE_DATA");
   });
 
   it("does not request actions outside the diagnostic half-open range", async () => {
@@ -327,6 +521,51 @@ describe("LSP Code Actions runner", () => {
     setTimeout(() => controller.abort(), 10);
     await expect(pending).rejects.toThrow("LSP code action was aborted");
     expect(cancelled.terminateCount()).toBeGreaterThan(0);
+
+    const resolveTimeout = controlledLspCodeActionsSandbox({
+      diagnostics: [diagnostic("missing", 0, 21, 0, 32)],
+      codeActions: () => [
+        { title: "Resolve timeout", kind: "quickfix", data: { id: 1 } },
+      ],
+      codeActionResolve: () => new Promise(() => undefined),
+    });
+    await expect(
+      runner(root, resolveTimeout.sandbox).run({
+        path: "usage.ts",
+        line: 1,
+        character: 22,
+        timeoutMs: 1_000,
+      }),
+    ).rejects.toThrow("LSP code action timed out");
+    expect(resolveTimeout.resolveCount()).toBe(1);
+    expect(resolveTimeout.terminateCount()).toBeGreaterThan(0);
+
+    let markResolveEntered: (() => void) | undefined;
+    const resolveEntered = new Promise<void>((resolve) => {
+      markResolveEntered = resolve;
+    });
+    const resolveCancelled = controlledLspCodeActionsSandbox({
+      diagnostics: [diagnostic("missing", 0, 21, 0, 32)],
+      codeActions: () => [
+        { title: "Resolve cancel", kind: "quickfix", data: { id: 1 } },
+      ],
+      codeActionResolve: () => {
+        markResolveEntered?.();
+        return new Promise(() => undefined);
+      },
+    });
+    const resolveController = new AbortController();
+    const resolving = runner(root, resolveCancelled.sandbox).run({
+      path: "usage.ts",
+      line: 1,
+      character: 22,
+      signal: resolveController.signal,
+    });
+    await resolveEntered;
+    resolveController.abort();
+    await expect(resolving).rejects.toThrow("LSP code action was aborted");
+    expect(resolveCancelled.resolveCount()).toBe(1);
+    expect(resolveCancelled.terminateCount()).toBeGreaterThan(0);
   });
 
   it("isolates concurrent language-server sessions", async () => {

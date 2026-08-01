@@ -172,8 +172,9 @@ Version `0.1.0` includes:
   quick-fix-only `lsp_code_actions` tools that drive the standard TypeScript
   language server against TypeScript or JavaScript workspace files through the
   same read-only, offline OS sandbox, reuse one Run-owned Session while the
-  bounded workspace remains unchanged, and retain bounded live compiler/edit
-  evidence with hash-only durable projections;
+  bounded workspace remains unchanged, resolve advertised data-backed actions
+  for text edits only, deny every returned command, and retain bounded live
+  compiler/edit evidence with hash-only durable projections;
 - a `run_command` tool for foreground Node diagnostics with
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
@@ -2521,12 +2522,23 @@ before claiming task completion.
 only diagnostics intersecting the requested 1-based UTF-16 position, and
 issues standard `textDocument/codeAction` with `only: ["quickfix"]`. It accepts
 at most 64 returned entries and exposes at most 16 text-edit alternatives.
-Command-only, disabled, and edit-free entries are counted as omitted; a
-truncated or omitted response is marked incomplete. A text-edit action may
-carry an LSP command, but Napier drops the command and opaque data, marks the
-action `commandIgnored`, and never executes, returns, or persists either.
-`complete` therefore describes alternative exposure only and is not a claim
-that an ignored command side effect occurred.
+Disabled entries and commands without an edit or bounded resolve data are
+counted as omitted. When the server explicitly advertises
+`codeActionProvider.resolveProvider=true`, Napier can send at most 16
+sequential `codeAction/resolve` requests for data-backed quick fixes. The
+client advertises only the resolvable `edit` property; the returned action must
+preserve title, kind, preference, and exact data identity before its text edits
+are accepted. Unsupported, unproductive, over-limit, truncated, or omitted
+responses remain explicitly incomplete.
+
+Opaque resolve data is strict JSON, at most 64 KiB with the surrounding action,
+and is returned only to the same live language-server Session. It never enters
+Agent output, Ledger, Replay, SSE, or Trace. The command policy is always
+`deny_all`: direct and resolved actions may carry a command, but Napier marks
+it `commandIgnored` and never executes, returns, or persists the command or its
+arguments. `workspace/applyEdit` remains rejected. `complete` therefore
+describes alternative exposure only and is not a claim that an ignored command
+side effect occurred.
 
 Each alternative reuses the strict WorkspaceEdit boundary, with zero-length
 insertion ranges explicitly allowed. Across all alternatives, Napier caps
@@ -2569,8 +2581,8 @@ number, and Session/workspace/limit hashes. The random Session identity,
 paths, source, diagnostics, edits, preview capability, and stderr remain
 absent. This is Run-owned process reuse, not a cross-Run editor,
 language-server write access, portable atomic multi-file visibility, Code
-Action resolve/command execution, complete project/dependency synchronization,
-or test selection.
+Action command execution, complete project/dependency synchronization, or test
+selection.
 
 When an Agent profile enables both `apply_patch` and `lsp_diagnostics`,
 TypeScript and JavaScript writes automatically run LSP diagnostics before and
@@ -4608,9 +4620,10 @@ verification.
 hierarchy, **LSP definition** and **LSP references** add workspace-confined
 navigation, and **LSP rename preview** supplies a complete bounded
 WorkspaceEdit that must still pass through Atomic patch. **LSP quick fixes**
-supplies bounded diagnostic-driven text-edit alternatives while dropping every
-returned command and opaque data. None grants language-server workspace
-writes, command execution, or network access.
+supplies bounded diagnostic-driven text-edit alternatives, including
+server-advertised data-backed actions resolved for edits only; opaque data
+never leaves the live LSP Session and every command is denied. None grants
+language-server workspace writes, command execution, or network access.
 Authorization is checked again immediately before every call.
 
 Selecting `unrestricted` may additionally expose an explicitly enabled

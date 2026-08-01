@@ -19,6 +19,11 @@ export interface LspCodeActionsToolEventTraceView extends LspSessionToolEventTra
   lspCodeActionsOmittedActionCount?: number;
   lspCodeActionsPreferredActionCount?: number;
   lspCodeActionsCommandIgnoredCount?: number;
+  lspCodeActionsResolveSupported?: boolean;
+  lspCodeActionsResolveRequestCount?: number;
+  lspCodeActionsResolvedActionCount?: number;
+  lspCodeActionsResolveOmittedCount?: number;
+  lspCodeActionsCommandPolicy?: "deny_all";
   lspCodeActionsFileCount?: number;
   lspCodeActionsEditCount?: number;
   lspCodeActionsPreviewBytes?: number;
@@ -42,7 +47,7 @@ export function lspCodeActionsEventEvidence(
   const language = value["language"];
   if (
     value["kind"] !== "napier.lsp-code-actions" ||
-    value["schemaVersion"] !== 1 ||
+    (value["schemaVersion"] !== 1 && value["schemaVersion"] !== 2) ||
     (status !== "found" && status !== "not_found") ||
     typeof value["complete"] !== "boolean" ||
     typeof value["truncated"] !== "boolean" ||
@@ -66,6 +71,29 @@ export function lspCodeActionsEventEvidence(
   const fileCount = integerInRange(value["fileCount"], 0, 32);
   const editCount = integerInRange(value["editCount"], 0, 256);
   const previewBytes = integerInRange(value["previewBytes"], 0, 32 * 1024);
+  const resolveSupported =
+    value["schemaVersion"] === 2 &&
+    typeof value["resolveSupported"] === "boolean"
+      ? value["resolveSupported"]
+      : undefined;
+  const resolveRequestCount =
+    value["schemaVersion"] === 2
+      ? integerInRange(value["resolveRequestCount"], 0, 16)
+      : undefined;
+  const resolvedActionCount =
+    value["schemaVersion"] === 2
+      ? integerInRange(value["resolvedActionCount"], 0, 16)
+      : undefined;
+  const resolveOmittedCount =
+    value["schemaVersion"] === 2
+      ? integerInRange(value["resolveOmittedCount"], 0, 64)
+      : undefined;
+  const resolutionBudgetTruncated =
+    value["schemaVersion"] === 2 &&
+    resolveSupported === true &&
+    resolveRequestCount === 16 &&
+    resolveOmittedCount !== undefined &&
+    resolveOmittedCount > 0;
   if (
     diagnosticCount === undefined ||
     actionCount === undefined ||
@@ -79,10 +107,29 @@ export function lspCodeActionsEventEvidence(
     preferredActionCount > actionCount ||
     commandIgnoredCount > actionCount ||
     editCount < fileCount ||
+    (value["schemaVersion"] === 1 &&
+      (value["resolveSupported"] !== undefined ||
+        value["resolveRequestCount"] !== undefined ||
+        value["resolvedActionCount"] !== undefined ||
+        value["resolveOmittedCount"] !== undefined ||
+        value["commandPolicy"] !== undefined)) ||
+    (value["schemaVersion"] === 2 &&
+      (resolveSupported === undefined ||
+        resolveRequestCount === undefined ||
+        resolvedActionCount === undefined ||
+        resolveOmittedCount === undefined ||
+        value["commandPolicy"] !== "deny_all" ||
+        resolvedActionCount > actionCount ||
+        resolvedActionCount > resolveRequestCount ||
+        resolveOmittedCount > omittedActionCount ||
+        resolveRequestCount > resolvedActionCount + resolveOmittedCount ||
+        (!resolveSupported &&
+          (resolveRequestCount !== 0 || resolvedActionCount !== 0)))) ||
     value["complete"] !==
       (omittedActionCount === 0 && value["truncated"] === false) ||
     (value["truncated"] === true &&
-      (actionCount !== 16 || omittedActionCount === 0)) ||
+      ((actionCount !== 16 && !resolutionBudgetTruncated) ||
+        omittedActionCount === 0)) ||
     (status === "found"
       ? actionCount === 0 || fileCount === 0 || editCount === 0
       : actionCount !== 0 ||
@@ -109,6 +156,21 @@ export function lspCodeActionsEventEvidence(
     lspCodeActionsOmittedActionCount: omittedActionCount,
     lspCodeActionsPreferredActionCount: preferredActionCount,
     lspCodeActionsCommandIgnoredCount: commandIgnoredCount,
+    ...(resolveSupported !== undefined
+      ? { lspCodeActionsResolveSupported: resolveSupported }
+      : {}),
+    ...(resolveRequestCount !== undefined
+      ? { lspCodeActionsResolveRequestCount: resolveRequestCount }
+      : {}),
+    ...(resolvedActionCount !== undefined
+      ? { lspCodeActionsResolvedActionCount: resolvedActionCount }
+      : {}),
+    ...(resolveOmittedCount !== undefined
+      ? { lspCodeActionsResolveOmittedCount: resolveOmittedCount }
+      : {}),
+    ...(value["commandPolicy"] === "deny_all"
+      ? { lspCodeActionsCommandPolicy: "deny_all" as const }
+      : {}),
     lspCodeActionsFileCount: fileCount,
     lspCodeActionsEditCount: editCount,
     lspCodeActionsPreviewBytes: previewBytes,
@@ -158,6 +220,24 @@ export function lspCodeActionsSummaryParts(
       "quick-fix-commands-ignored",
       view.lspCodeActionsCommandIgnoredCount,
     ),
+    ...(view.lspCodeActionsResolveSupported
+      ? ["quick-fix-resolve-supported"]
+      : []),
+    ...numberSummary(
+      "quick-fix-resolve-requests",
+      view.lspCodeActionsResolveRequestCount,
+    ),
+    ...numberSummary(
+      "quick-fix-resolved",
+      view.lspCodeActionsResolvedActionCount,
+    ),
+    ...numberSummary(
+      "quick-fix-resolve-omitted",
+      view.lspCodeActionsResolveOmittedCount,
+    ),
+    ...(view.lspCodeActionsCommandPolicy
+      ? [`quick-fix-command-policy ${view.lspCodeActionsCommandPolicy}`]
+      : []),
     ...numberSummary("quick-fix-files", view.lspCodeActionsFileCount),
     ...numberSummary("quick-fix-edits", view.lspCodeActionsEditCount),
     ...numberSummary(

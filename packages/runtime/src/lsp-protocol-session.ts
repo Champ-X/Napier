@@ -21,6 +21,10 @@ export const MAX_LSP_STDERR_CHARS = 16_000;
 
 const DIAGNOSTICS_QUIET_MS = 100;
 const SHUTDOWN_GRACE_MS = 1_000;
+const LSP_SERVER_CAPABILITIES = new WeakMap<
+  MessageConnection,
+  { codeActionResolve: boolean }
+>();
 
 export interface LspDiagnostic {
   startLine: number;
@@ -248,7 +252,7 @@ export async function initializeLspConnection(
     "workspaceRoot" | "typescriptServerPath"
   >,
 ): Promise<void> {
-  await connection.sendRequest("initialize", {
+  const initialized = await connection.sendRequest<unknown>("initialize", {
     processId: null,
     clientInfo: { name: "napier", version: "0.1.0" },
     rootUri: pathToFileURL(request.workspaceRoot).href,
@@ -259,9 +263,10 @@ export async function initializeLspConnection(
           codeActionLiteralSupport: {
             codeActionKind: { valueSet: ["quickfix"] },
           },
-          dataSupport: false,
+          dataSupport: true,
           disabledSupport: true,
           isPreferredSupport: true,
+          resolveSupport: { properties: ["edit"] },
         },
         definition: { linkSupport: true },
         documentSymbol: {
@@ -293,7 +298,16 @@ export async function initializeLspConnection(
     ],
     trace: "off",
   });
+  LSP_SERVER_CAPABILITIES.set(connection, {
+    codeActionResolve: serverSupportsCodeActionResolve(initialized),
+  });
   await connection.sendNotification("initialized", {});
+}
+
+export function lspConnectionSupportsCodeActionResolve(
+  connection: MessageConnection,
+): boolean {
+  return LSP_SERVER_CAPABILITIES.get(connection)?.codeActionResolve === true;
 }
 
 export async function syncLspDocument(
@@ -456,4 +470,10 @@ function nonNegativeInteger(value: unknown): value is number {
 
 function hash(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value);
+}
+
+function serverSupportsCodeActionResolve(value: unknown): boolean {
+  if (!record(value) || !record(value["capabilities"])) return false;
+  const provider = value["capabilities"]["codeActionProvider"];
+  return record(provider) && provider["resolveProvider"] === true;
 }

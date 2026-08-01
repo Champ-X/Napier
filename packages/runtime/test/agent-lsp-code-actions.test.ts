@@ -93,33 +93,36 @@ describe("Agent LSP Code Actions integration", () => {
       agentId: agent.id,
     });
     const targetUri = pathToFileURL(await realpath(absoluteTarget)).href;
+    const unresolved = {
+      title: 'Add import from "./private-definition.js"',
+      kind: "quickfix",
+      isPreferred: true,
+      command: {
+        title: "",
+        command: "_typescript.PRIVATE_COMMAND",
+        arguments: [
+          absoluteTarget,
+          "PRIVATE_ARGUMENT",
+          sourceBefore,
+          "PRIVATE_DIAGNOSTIC",
+        ],
+      },
+      data: { fixId: "PRIVATE_RESOLVE_DATA" },
+    };
     const sandbox = controlledLspCodeActionsSandbox({
       diagnostics: (_uri, source) =>
         source.includes(insertion)
           ? []
           : [diagnostic("PRIVATE_DIAGNOSTIC", 0, 21, 0, 32)],
-      codeActions: () => [
-        {
-          title: 'Add import from "./private-definition.js"',
-          kind: "quickfix",
-          isPreferred: true,
-          edit: {
-            changes: {
-              [targetUri]: [textEdit(insertion, 0, 0, 0, 0)],
-            },
-          },
-          command: {
-            title: "",
-            command: "_typescript.PRIVATE_COMMAND",
-            arguments: [
-              absoluteTarget,
-              "PRIVATE_ARGUMENT",
-              sourceBefore,
-              "PRIVATE_DIAGNOSTIC",
-            ],
+      codeActions: () => [unresolved],
+      codeActionResolve: () => ({
+        ...unresolved,
+        edit: {
+          changes: {
+            [targetUri]: [textEdit(insertion, 0, 0, 0, 0)],
           },
         },
-      ],
+      }),
     }).sandbox;
     const provider = fauxProvider({ provider: "faux-lsp-code-actions" });
     provider.setResponses([
@@ -134,6 +137,9 @@ describe("Agent LSP Code Actions integration", () => {
       (context) => {
         const messages = JSON.stringify(context.messages);
         expect(messages).toContain("Preferred: true");
+        expect(messages).toContain("Resolved: true");
+        expect(messages).toContain("Resolve requests: 1");
+        expect(messages).toContain("Command policy: deny_all");
         expect(messages).toContain("Command ignored: true");
         expect(messages).toContain(targetPath);
         expect(messages).toContain("formatTitle");
@@ -212,6 +218,11 @@ describe("Agent LSP Code Actions integration", () => {
           actionCount: 1,
           preferredActionCount: 1,
           commandIgnoredCount: 1,
+          resolveSupported: true,
+          resolveRequestCount: 1,
+          resolvedActionCount: 1,
+          resolveOmittedCount: 0,
+          commandPolicy: "deny_all",
         }),
       }),
     );
@@ -230,6 +241,7 @@ describe("Agent LSP Code Actions integration", () => {
       "PRIVATE_COMMAND",
       "PRIVATE_ARGUMENT",
       "PRIVATE_DIAGNOSTIC",
+      "PRIVATE_RESOLVE_DATA",
     ]) {
       expect(durable).not.toContain(secret);
     }

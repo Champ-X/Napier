@@ -138,10 +138,16 @@ describe("LSP Code Actions HTTP Agent path", () => {
     expect(completed?.payload["details"]).toEqual(
       expect.objectContaining({
         kind: "napier.lsp-code-actions",
+        schemaVersion: 2,
         status: "found",
         diagnosticCount: 1,
         actionCount: 2,
         preferredActionCount: 1,
+        resolveSupported: expect.any(Boolean),
+        resolveRequestCount: 0,
+        resolvedActionCount: 0,
+        resolveOmittedCount: 0,
+        commandPolicy: "deny_all",
         fileCount: 1,
         editCount: 2,
       }),

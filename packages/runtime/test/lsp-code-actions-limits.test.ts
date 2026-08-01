@@ -1,6 +1,7 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -100,6 +101,81 @@ describe("LSP Code Actions aggregate limits", () => {
       `exceed ${MAX_LSP_RENAME_FILES} total files`,
     );
   });
+
+  it("bounds sequential Code Action resolve requests and marks truncation", async () => {
+    const root = await createWorkspace();
+    const targetUri = pathToFileURL(
+      await realpath(path.join(root, "usage.ts")),
+    ).href;
+    const sandbox = controlledLspCodeActionsSandbox({
+      diagnostics: [diagnostic("missing", 0, 21, 0, 32)],
+      codeActions: () =>
+        Array.from({ length: MAX_LSP_CODE_ACTIONS + 1 }, (_, index) => ({
+          title: `Resolve ${String(index)}`,
+          kind: "quickfix",
+          data: { index },
+        })),
+      codeActionResolve: (action) => {
+        const index =
+          record(action) &&
+          record(action["data"]) &&
+          Number.isSafeInteger(action["data"]["index"])
+            ? Number(action["data"]["index"])
+            : -1;
+        return {
+          ...(record(action) ? action : {}),
+          edit: {
+            changes: {
+              [targetUri]: [textEdit(`fix${String(index)}`, 0, 0, 0, 0)],
+            },
+          },
+        };
+      },
+    });
+
+    const result = await run(root, sandbox.sandbox);
+
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        actionCount: MAX_LSP_CODE_ACTIONS,
+        omittedActionCount: 1,
+        truncated: true,
+        resolveRequestCount: MAX_LSP_CODE_ACTIONS,
+        resolvedActionCount: MAX_LSP_CODE_ACTIONS,
+        resolveOmittedCount: 1,
+      }),
+    );
+    expect(sandbox.resolveCount()).toBe(MAX_LSP_CODE_ACTIONS);
+  });
+
+  it("marks an exhausted resolve budget even when no action becomes usable", async () => {
+    const root = await createWorkspace();
+    const sandbox = controlledLspCodeActionsSandbox({
+      diagnostics: [diagnostic("missing", 0, 21, 0, 32)],
+      codeActions: () =>
+        Array.from({ length: MAX_LSP_CODE_ACTIONS + 1 }, (_, index) => ({
+          title: `Unproductive ${String(index)}`,
+          kind: "quickfix",
+          data: { index },
+        })),
+      codeActionResolve: (action) => action,
+    });
+
+    const result = await run(root, sandbox.sandbox);
+
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        status: "not_found",
+        actionCount: 0,
+        omittedActionCount: MAX_LSP_CODE_ACTIONS + 1,
+        truncated: true,
+        resolveRequestCount: MAX_LSP_CODE_ACTIONS,
+        resolvedActionCount: 0,
+        resolveOmittedCount: MAX_LSP_CODE_ACTIONS + 1,
+      }),
+    );
+    expect(sandbox.resolveCount()).toBe(MAX_LSP_CODE_ACTIONS);
+  });
 });
 
 async function createWorkspace(): Promise<string> {
@@ -119,7 +195,7 @@ async function createWorkspace(): Promise<string> {
 async function run(
   root: string,
   sandbox: ReturnType<typeof controlledLspCodeActionsSandbox>["sandbox"],
-): Promise<unknown> {
+): Promise<Awaited<ReturnType<LspCodeActionsRunner["run"]>>> {
   return new LspCodeActionsRunner({
     workspaceRoot: root,
     sandbox,
@@ -128,4 +204,8 @@ async function run(
     line: 1,
     character: 22,
   });
+}
+
+function record(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

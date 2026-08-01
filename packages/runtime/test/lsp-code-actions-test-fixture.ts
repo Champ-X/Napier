@@ -9,10 +9,16 @@ import {
 import type { OsSandboxAdapter, SandboxedProcess } from "../src/index.js";
 
 export interface ControlledCodeActionsOptions {
+  initialize?: (params: unknown) => void;
   diagnostics?:
     | unknown[]
     | ((uri: string, text: string) => unknown[] | Promise<unknown[]>);
   codeActions?: (params: unknown) => unknown | Promise<unknown>;
+  resolveProvider?: boolean;
+  codeActionResolve?: (
+    action: unknown,
+    connection: MessageConnection,
+  ) => unknown | Promise<unknown>;
 }
 
 export function controlledLspCodeActionsSandbox(
@@ -20,12 +26,18 @@ export function controlledLspCodeActionsSandbox(
 ): {
   sandbox: OsSandboxAdapter;
   codeActionCount(): number;
+  resolveCount(): number;
+  executeCommandCount(): number;
   terminateCount(): number;
 } {
   let codeActions = 0;
+  let resolves = 0;
+  let executeCommands = 0;
   let terminations = 0;
   return {
     codeActionCount: () => codeActions,
+    resolveCount: () => resolves,
+    executeCommandCount: () => executeCommands,
     terminateCount: () => terminations,
     sandbox: {
       id: "controlled-code-actions-test",
@@ -60,9 +72,18 @@ export function controlledLspCodeActionsSandbox(
           new StreamMessageReader(stdin),
           new StreamMessageWriter(stdout),
         );
-        connection.onRequest("initialize", () => ({
-          capabilities: { codeActionProvider: true },
-        }));
+        connection.onRequest("initialize", (params) => {
+          options.initialize?.(params);
+          return {
+            capabilities: {
+              codeActionProvider:
+                options.resolveProvider === true ||
+                options.codeActionResolve !== undefined
+                  ? { resolveProvider: true }
+                  : true,
+            },
+          };
+        });
         connection.onNotification(
           "textDocument/didOpen",
           async (params: unknown) => {
@@ -92,6 +113,16 @@ export function controlledLspCodeActionsSandbox(
           codeActions += 1;
           return options.codeActions?.(params) ?? [];
         });
+        connection.onRequest("workspace/executeCommand", () => {
+          executeCommands += 1;
+          return null;
+        });
+        if (options.codeActionResolve) {
+          connection.onRequest("codeAction/resolve", async (action) => {
+            resolves += 1;
+            return options.codeActionResolve?.(action, connection);
+          });
+        }
         connection.onRequest("shutdown", () => null);
         connection.onNotification("exit", () => {
           connection.dispose();

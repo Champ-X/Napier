@@ -11,9 +11,12 @@ import {
 import {
   MAX_LSP_CODE_ACTIONS,
   MAX_LSP_CODE_ACTION_RESPONSE_ACTIONS,
+  MAX_LSP_CODE_ACTION_RESOLVE_CONTAINER_ENTRIES,
+  MAX_LSP_CODE_ACTION_RESOLVE_INPUT_BYTES,
+  MAX_LSP_CODE_ACTION_RESOLVE_JSON_DEPTH,
   MAX_LSP_CODE_ACTION_TITLE_CHARS,
-  parseLspCodeActionResponse,
 } from "./lsp-code-action-parser.js";
+import { MAX_LSP_CODE_ACTION_RESOLVE_REQUESTS } from "./lsp-code-action-resolution.js";
 import {
   MAX_LSP_CODE_ACTION_DIAGNOSTICS,
   parseCodeActionDiagnostics,
@@ -75,7 +78,7 @@ export class LspCodeActionsRunner {
     );
     const { prepared, execution, durationMs } = bound;
     const diagnostics = parseCodeActionDiagnostics(execution.value.diagnostics);
-    const parsed = parseLspCodeActionResponse(execution.value.actions);
+    const parsed = execution.value.codeActions;
     const { actions, allEdits, targetFiles, previewBytes, actionReceipts } =
       await materializeLspCodeActions(
         {
@@ -102,7 +105,7 @@ export class LspCodeActionsRunner {
       parsed.omittedActionCount === 0 && parsed.truncated === false;
     const base = {
       kind: "napier.lsp-code-actions" as const,
-      schemaVersion: 1 as const,
+      schemaVersion: 2 as const,
       status: actions.length > 0 ? ("found" as const) : ("not_found" as const),
       complete,
       truncated: parsed.truncated,
@@ -122,6 +125,11 @@ export class LspCodeActionsRunner {
       omittedActionCount: parsed.omittedActionCount,
       preferredActionCount,
       commandIgnoredCount,
+      resolveSupported: parsed.resolveSupported,
+      resolveRequestCount: parsed.resolveRequestCount,
+      resolvedActionCount: parsed.resolvedActionCount,
+      resolveOmittedCount: parsed.resolveOmittedCount,
+      commandPolicy: "deny_all" as const,
       fileCount: targetFiles.length,
       editCount: allEdits.length,
       previewBytes,
@@ -155,7 +163,17 @@ export class LspCodeActionsRunner {
           targetHashRevalidation: true,
           workspaceEditPreference: "documentChanges",
           quickFixOnly: true,
-          codeActionResolve: false,
+          codeActionResolve: true,
+          dataSupport: true,
+          resolveCapabilityRequired: true,
+          maxResolveRequests: MAX_LSP_CODE_ACTION_RESOLVE_REQUESTS,
+          maxResolveInputBytes: MAX_LSP_CODE_ACTION_RESOLVE_INPUT_BYTES,
+          maxResolveJsonDepth: MAX_LSP_CODE_ACTION_RESOLVE_JSON_DEPTH,
+          maxResolveContainerEntries:
+            MAX_LSP_CODE_ACTION_RESOLVE_CONTAINER_ENTRIES,
+          resolveProperties: ["edit"],
+          resolvedIdentity: ["title", "kind", "isPreferred", "data"],
+          commandPolicy: "deny_all",
           commandsExecuted: false,
           workspaceApplyEdit: false,
           resourceOperations: false,

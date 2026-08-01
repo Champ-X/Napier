@@ -3071,10 +3071,15 @@ Agent selects lsp_code_actions + source path + diagnostic position
   -> collect at most 64 current diagnostics for the opened source
   -> select only half-open ranges intersecting the requested UTF-16 position
   -> issue textDocument/codeAction with only=["quickfix"]
-  -> omit command-only, disabled, and edit-free entries; expose at most
-     16 text-edit alternatives and report omission/truncation explicitly
-  -> discard every returned command and opaque data without execution,
-     live output, or persistence; mark edit actions that carried a command
+  -> inspect only codeActionProvider.resolveProvider from initialize
+  -> retain direct text edits plus bounded strict-JSON data-backed candidates
+     inside the same live Session; expose at most 16 alternatives
+  -> when resolve is advertised, issue at most 16 sequential
+     codeAction/resolve requests for the edit property only
+  -> require resolved title/kind/preference/data identity to match the original
+     action; report unsupported, unproductive, omitted, or capped resolution
+  -> apply commandPolicy=deny_all to direct and resolved actions; mark an
+     ignored command but never execute or expose command/data bodies
   -> parse each WorkspaceEdit with exact keys, text edits only, no resource
      operations or annotations, while allowing zero-length insertions
   -> cap all alternatives together at 32 target files, 256 edits, 32 KiB
@@ -3098,11 +3103,12 @@ and LSP receipt views, while generic `tool-event-view.ts` only dispatches by
 tool name. Symbol, rename, and Code Action views live in separate lazy Trace
 modules. Rename and Code Action WorkspaceEdit parsing share
 `lsp-rename-workspace-edit.ts`.
-`lsp-code-action-diagnostics.ts`, `lsp-code-action-edits.ts`, and
-`lsp-code-actions.ts` separately own diagnostic selection, confined edit
-materialization, and session/receipt assembly. Web symbol and quick-fix
-projections never read symbol names/details/signatures, action titles, paths,
-diagnostic messages, commands, or edit bodies.
+`lsp-code-action-diagnostics.ts`, `lsp-code-action-resolution.ts`,
+`lsp-code-action-edits.ts`, and `lsp-code-actions.ts` separately own diagnostic
+selection, capability-bound resolve, confined edit materialization, and
+session/receipt assembly. Web symbol and quick-fix projections never read
+symbol names/details/signatures, action titles, paths, diagnostic messages,
+commands, opaque data, or edit bodies.
 
 The Sandbox launch contract supports at most eight explicit absolute
 non-root `runtimeReadPaths`. macOS adds read-only profile rules, Bubblewrap
@@ -3121,8 +3127,11 @@ target the opened URI; hierarchical children cannot escape parent/source
 ranges. Rename and quick-fix WorkspaceEdits originate as previews only; the
 optional rename apply coordinator runs outside the language-server process and
 accepts only a Run-local preview capability. Code Action commands, resolve
-requests, and opaque data remain unavailable. The implementation does not
-expose external dependency navigation or project-wide indexing.
+results without stable identity, and `workspace/applyEdit` remain unavailable.
+Opaque Code Action data is bounded and may only round-trip to the same server
+for an advertised edit-only resolve; it never enters Agent or durable evidence.
+The implementation does not expose external dependency navigation or
+project-wide indexing.
 
 ## Coordinated LSP Rename Apply Flow
 
@@ -5824,7 +5833,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has sixty-two parts:
+The current boundary has sixty-three parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -6077,6 +6086,11 @@ The current boundary has sixty-two parts:
     model/tool-free execution, explicit unmatched blocking, concurrent
     isolation, cancellation, exact decision/output recovery, SDK/CLI delivery,
     independent Web Manifest validation, and selector/output-body-free Trace.
+63. Capability-bound LSP Code Action resolve for bounded data-backed quick
+    fixes, with edit-only client support, 16-request admission, stable action
+    identity, deny-all command policy, opaque-data confinement, real
+    TypeScript Fix All execution, and hash/count-only Agent/HTTP/Web/Replay
+    evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6120,9 +6134,10 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 2: Coding and workflow
 
-- Code Action resolve/command policy, Node attach/source-map/multi-thread DAP
-  and debugger UX, broader multi-node AST transforms, cross-package/path-alias
-  test discovery, coding outcome benchmarks, and isolated subagent worktrees;
+- broader Code Action kinds and application UX, Node
+  attach/source-map/multi-thread DAP and debugger UX, broader multi-node AST
+  transforms, cross-package/path-alias test discovery, coding outcome
+  benchmarks, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, graph-level branch pruning, write-capable Map/Loop,
   compensation, top-level Workflow input replacement, write/session
