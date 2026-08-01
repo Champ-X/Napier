@@ -137,6 +137,8 @@ export class SubagentCoordinator {
         dataRoot: options.store.dataRoot,
         ownerId: options.worktreeOwnerId,
         sandbox: options.sandbox,
+        enableCandidateVerification:
+          options.profile.enabledTools.includes("verify_workspace"),
         ...(tests ? { tests } : {}),
       });
     }

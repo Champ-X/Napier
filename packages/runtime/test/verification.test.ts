@@ -222,6 +222,117 @@ describe("sandboxed workspace verification", () => {
     expect(JSON.stringify(request)).not.toContain("workspace.write");
   });
 
+  it("runs a private candidate against an external read-only toolchain", async () => {
+    const { root, workspaceRoot: toolchainRoot } = await createWorkspace();
+    const candidateRoot = path.join(root, "candidate");
+    await mkdir(path.join(candidateRoot, "packages/example"), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(candidateRoot, "packages/example/tsconfig.json"),
+      "{}\n",
+    );
+    const fake = createFakeSandbox({ stdout: "candidate passed\n" });
+    const runner = new VerificationRunner({
+      workspaceRoot: candidateRoot,
+      toolchainRoot,
+      sandbox: fake.sandbox,
+    });
+
+    const result = await runner.run({
+      kind: "typecheck",
+      cwd: "packages/example",
+    });
+
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        status: "passed",
+        toolchainExternal: true,
+        toolchainSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    const request = fake.launchRequests[0]!;
+    expect(request.workspaceRoot).toBe(await realpath(candidateRoot));
+    expect(request.cwd).toBe(
+      await realpath(path.join(candidateRoot, "packages/example")),
+    );
+    expect(request.args[0]).toBe(
+      await realpath(
+        path.join(toolchainRoot, "node_modules/typescript/bin/tsc"),
+      ),
+    );
+    expect(request.runtimeReadPaths).toEqual([
+      await realpath(path.join(toolchainRoot, "node_modules")),
+    ]);
+  });
+
+  it("fails when an external verifier changes during candidate execution", async () => {
+    const { root, workspaceRoot: toolchainRoot } = await createWorkspace();
+    const candidateRoot = path.join(root, "candidate");
+    await mkdir(path.join(candidateRoot, "packages/example"), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(candidateRoot, "packages/example/tsconfig.json"),
+      "{}\n",
+    );
+    let markLaunched: (() => void) | undefined;
+    let releaseExit:
+      | ((value: {
+          code: number | null;
+          signal: NodeJS.Signals | null;
+        }) => void)
+      | undefined;
+    const launched = new Promise<void>((resolve) => {
+      markLaunched = resolve;
+    });
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    const sandbox: OsSandboxAdapter = {
+      id: "drifting-verification-sandbox",
+      async launch() {
+        const exit = new Promise<{
+          code: number | null;
+          signal: NodeJS.Signals | null;
+        }>((resolve) => {
+          releaseExit = resolve;
+        });
+        markLaunched?.();
+        return {
+          stdin: new PassThrough(),
+          stdout,
+          stderr,
+          exit,
+          async terminate() {
+            stdout.end();
+            stderr.end();
+            releaseExit?.({ code: null, signal: "SIGTERM" });
+            await exit;
+          },
+        };
+      },
+    };
+    const running = new VerificationRunner({
+      workspaceRoot: candidateRoot,
+      toolchainRoot,
+      sandbox,
+    }).run({ kind: "typecheck", cwd: "packages/example" });
+
+    await launched;
+    await writeFile(
+      path.join(toolchainRoot, "node_modules/typescript/bin/tsc"),
+      "// drifted verifier\n",
+    );
+    stdout.end("candidate passed\n");
+    stderr.end();
+    releaseExit?.({ code: 0, signal: null });
+
+    await expect(running).rejects.toThrow(
+      "verification toolchain changed during execution",
+    );
+  });
+
   it("returns non-zero verification as structured failure evidence", async () => {
     const { workspaceRoot } = await createWorkspace();
     const fake = createFakeSandbox({

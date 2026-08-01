@@ -149,6 +149,7 @@ describe("SubagentCoordinator", () => {
           "ast_query",
           "ast_edit_preview",
           "apply_patch",
+          "lsp_diagnostics",
         ]);
         return fauxAssistantMessage(
           fauxToolCall("apply_patch", {

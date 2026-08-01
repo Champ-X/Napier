@@ -26,6 +26,11 @@ describe("Subagent worktree event view", () => {
         subagentWorktreeWriteScopeCount: 2,
         subagentWorktreeChangedFileCount: 2,
         subagentWorktreeDiagnosticsStatus: "clean",
+        subagentWorktreeCandidateVerificationFreshCount: 2,
+        subagentWorktreeCandidateVerificationPassedCount: 1,
+        subagentWorktreeCandidateVerificationFailedCount: 1,
+        subagentWorktreeCandidateVerificationStaleCount: 1,
+        subagentWorktreeCandidateVerificationSetSha256: digest,
         subagentWorktreeOutcomeSha256: digest,
         subagentWorktreeResultSha256: digest,
       }),
@@ -37,6 +42,7 @@ describe("Subagent worktree event view", () => {
         "candidate-files 2",
         "write-scopes 2",
         "diagnostics clean",
+        "candidate-verification 2 fresh / 1 passed / 1 failed / 1 stale",
       ]),
     );
 
@@ -115,6 +121,12 @@ describe("Subagent worktree event view", () => {
     expect(
       subagentWorktreeEventEvidence(appliedWithoutDiagnostics),
     ).toBeUndefined();
+
+    const impossibleVerification = worktreeDetails();
+    impossibleVerification["candidateVerificationPassedCount"] = 3;
+    expect(
+      subagentWorktreeEventEvidence(impossibleVerification),
+    ).toBeUndefined();
   });
 });
 
@@ -132,6 +144,13 @@ function worktreeDetails(): Record<string, unknown> {
     writeScopeCount: 2,
     writeScopeSetSha256: digest,
     changedFileSetSha256: digest,
+    candidateVerificationAttemptCount: 3,
+    candidateVerificationFreshCount: 2,
+    candidateVerificationPassedCount: 1,
+    candidateVerificationFailedCount: 1,
+    candidateVerificationStaleCount: 1,
+    candidateVerificationSetSha256: digest,
+    candidateToolchainSha256: digest,
     sourcePreviewResultSha256: digest,
     planSha256: digest,
     fileCount: 2,

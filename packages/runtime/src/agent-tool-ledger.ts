@@ -105,7 +105,12 @@ import {
   subagentWorktreeToolCallArgumentsLedgerProjection,
   subagentWorktreeToolInputLedgerProjection,
   subagentWorktreeToolOutputLedgerProjection,
-} from "./subagent-worktree-mutation.js";
+} from "./subagent-worktree-tool.js";
+import {
+  verificationToolCallArgumentsLedgerProjection,
+  verificationToolInputLedgerProjection,
+  verificationToolOutputLedgerProjection,
+} from "./verification-ledger.js";
 
 const PRIVATE_WORKSPACE_READ_TOOLS = new Set([
   "list_files",
@@ -141,6 +146,9 @@ export function agentToolCallArgumentsLedgerProjection(
   }
   if (toolName === "node_debugger") {
     return nodeDebuggerToolCallArgumentsLedgerProjection(args);
+  }
+  if (toolName === "verify_workspace") {
+    return verificationToolCallArgumentsLedgerProjection(args);
   }
   if (toolName === "ast_query" || toolName === "ast_edit_preview") {
     return typescriptAstToolCallArgumentsLedgerProjection(toolName, args);
@@ -217,6 +225,9 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "node_debugger") {
     return nodeDebuggerToolInputLedgerProjection(args);
+  }
+  if (toolName === "verify_workspace") {
+    return verificationToolInputLedgerProjection(args);
   }
   if (toolName === "ast_query" || toolName === "ast_edit_preview") {
     return typescriptAstToolInputLedgerProjection(toolName, args);
@@ -298,6 +309,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "node_debugger") {
     return nodeDebuggerToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "verify_workspace") {
+    return verificationToolOutputLedgerProjection(output, result);
   }
   if (toolName === "ast_query" || toolName === "ast_edit_preview") {
     return typescriptAstToolOutputLedgerProjection(output, result);

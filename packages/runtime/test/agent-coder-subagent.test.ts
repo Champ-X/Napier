@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { PassThrough } from "node:stream";
 
 import {
   fauxAssistantMessage,
@@ -13,6 +14,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { ModelRegistry } from "../src/models.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
+import type { OsSandboxAdapter } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 
@@ -31,9 +33,20 @@ describe("Agent coder Subagent", () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-agent-coder-"));
     temporaryRoots.push(root);
     const workspaceRoot = path.join(root, "workspace");
-    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    await Promise.all([
+      mkdir(path.join(workspaceRoot, "src"), { recursive: true }),
+      mkdir(path.join(workspaceRoot, "node_modules/vitest"), {
+        recursive: true,
+      }),
+    ]);
     const source = "value=1\n";
-    await writeFile(path.join(workspaceRoot, "src/value.txt"), source);
+    await Promise.all([
+      writeFile(path.join(workspaceRoot, "src/value.txt"), source),
+      writeFile(
+        path.join(workspaceRoot, "node_modules/vitest/vitest.mjs"),
+        "// fixed verifier fixture\n",
+      ),
+    ]);
     const store = new LocalStore({
       dataRoot: path.join(root, "data"),
       workspaceRoot,
@@ -41,7 +54,7 @@ describe("Agent coder Subagent", () => {
     await store.initialize();
     const agent = await store.updateAgent(store.listAgents()[0]!.id, {
       toolPolicy: "workspace",
-      enabledTools: ["apply_patch", "lsp_diagnostics"],
+      enabledTools: ["apply_patch", "lsp_diagnostics", "verify_workspace"],
       enabledSubagents: ["coder"],
     });
     const thread = await store.createThread({
@@ -50,6 +63,7 @@ describe("Agent coder Subagent", () => {
     });
     const faux = fauxProvider({ provider: "faux-coder-worktree" });
     let previewId = "";
+    let parentAfterApply = "";
     faux.setResponses([
       (context) => {
         expect(context.tools?.map((tool) => tool.name)).toEqual(
@@ -80,6 +94,18 @@ describe("Agent coder Subagent", () => {
           { stopReason: "toolUse" },
         );
       },
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toContain(
+          "verify_workspace",
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("verify_workspace", {
+            kind: "test",
+            target: "src/value.txt",
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
       fauxAssistantMessage(
         JSON.stringify({
           summary: "Prepared the requested candidate.",
@@ -101,15 +127,16 @@ describe("Agent coder Subagent", () => {
           serialized.match(/subworkpreview_[a-z0-9]{8,80}/u)?.[0] ?? "";
         expect(previewId).toMatch(/^subworkpreview_/u);
         expect(serialized).toContain("src/value.txt");
+        expect(serialized).toContain(
+          "Candidate verification: 1 fresh / 1 passed / 0 failed / 0 stale",
+        );
         return fauxAssistantMessage(
           fauxToolCall("subagent_worktree_apply", { previewId }),
           { stopReason: "toolUse" },
         );
       },
       (context) => {
-        expect(JSON.stringify(context.messages)).toContain(
-          "Subagent worktree apply: applied",
-        );
+        parentAfterApply = JSON.stringify(context.messages);
         return fauxAssistantMessage(
           "The isolated coder candidate was reviewed and merged.",
         );
@@ -118,7 +145,12 @@ describe("Agent coder Subagent", () => {
     ]);
     const models = new ModelRegistry();
     models.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, models);
+    const runtime = new AgentRuntime(
+      store,
+      models,
+      undefined,
+      passingSandbox(),
+    );
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -127,6 +159,9 @@ describe("Agent coder Subagent", () => {
     });
 
     expect(run.status).toBe("completed");
+    expect(parentAfterApply, parentAfterApply).toContain(
+      "Subagent worktree apply: applied",
+    );
     expect(
       await readFile(path.join(workspaceRoot, "src/value.txt"), "utf8"),
     ).toBe("value=2\n");
@@ -142,12 +177,18 @@ describe("Agent coder Subagent", () => {
         status: "applied",
         fileCount: 1,
         taskId: expect.stringMatching(/^task_/u),
+        candidateVerificationAttemptCount: 1,
+        candidateVerificationFreshCount: 1,
+        candidateVerificationPassedCount: 1,
+        candidateVerificationFailedCount: 0,
+        candidateVerificationStaleCount: 0,
         resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
     const durable = JSON.stringify(events);
     expect(durable).not.toContain(previewId);
     expect(durable).not.toContain("value=2");
+    expect(durable).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
     expect(
       events.find(
         (event) =>
@@ -167,4 +208,36 @@ describe("Agent coder Subagent", () => {
 
 function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function passingSandbox(): OsSandboxAdapter {
+  return {
+    id: "candidate-agent-sandbox",
+    async launch() {
+      const stdin = new PassThrough();
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      const exit = new Promise<{
+        code: number | null;
+        signal: NodeJS.Signals | null;
+      }>((resolve) => {
+        setTimeout(() => {
+          stdout.end("TOP_SECRET_CANDIDATE_STDOUT");
+          stderr.end();
+          resolve({ code: 0, signal: null });
+        }, 0);
+      });
+      return {
+        stdin,
+        stdout,
+        stderr,
+        exit,
+        async terminate() {
+          stdout.end();
+          stderr.end();
+          await exit;
+        },
+      };
+    },
+  };
 }

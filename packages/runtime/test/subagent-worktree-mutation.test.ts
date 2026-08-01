@@ -83,6 +83,13 @@ describe("Subagent worktree mutation manager", () => {
         changedFileSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         review: expect.stringContaining("- export const first = 1;"),
         reviewTruncated: false,
+        candidateVerification: expect.objectContaining({
+          attemptCount: 0,
+          freshCount: 0,
+          passedCount: 0,
+          failedCount: 0,
+          staleCount: 0,
+        }),
       }),
     );
     expect(preview.review).toContain("+ export const first = 10;");
@@ -99,6 +106,11 @@ describe("Subagent worktree mutation manager", () => {
         postcondition: "verified",
         taskId: "task_manager12",
         fileCount: 2,
+        candidateVerificationAttemptCount: 0,
+        candidateVerificationFreshCount: 0,
+        candidateVerificationPassedCount: 0,
+        candidateVerificationFailedCount: 0,
+        candidateVerificationStaleCount: 0,
         changedFileSetSha256: preview.changedFileSetSha256,
         diagnostics: expect.objectContaining({ status: "clean" }),
         resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),

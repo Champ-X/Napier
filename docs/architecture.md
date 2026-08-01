@@ -2821,8 +2821,15 @@ parent delegate_task(role=coder, writePaths)
      inode/device rechecks, 0600 files, and no protected/generated roots
 child Pi Agent
   -> expose private list/read/search/symbol/data/AST tools
+  -> install <=512 protected dependency links across <=64 package scopes:
+     external packages remain under the parent read-only node_modules while
+     workspace-package links resolve to the corresponding private directories
   -> wrap apply_patch so create, undeclared paths, and missing expected hashes
      fail before private mutation
+  -> serialize private patches, one-shot LSP diagnostics, and optional fixed
+     Sandbox verification through one candidate operation queue
+  -> bind each of <=16 verification attempts to the complete candidate snapshot
+     observed after that operation
   -> provide no shell, Process, network, Browser, Extension, Session, or
      nested-delegation capability
 candidate finalization
@@ -2832,6 +2839,8 @@ candidate finalization
   -> ground the typed outcome against candidate bytes
   -> derive a <=32 KiB live-only per-file change window with before/after
      hashes, control escaping, explicit untrusted-data labeling, and truncation
+  -> classify candidate verification as fresh/pass/fail/stale against the final
+     complete candidate snapshot
   -> remove the private tree before publishing a five-minute one-use preview
 parent subagent_worktree_apply(previewId)
   -> consume the preview before preflight
@@ -2858,11 +2867,35 @@ last complete-source recheck. The transaction still revalidates each actual
 target under its lock before commit, preventing silent overwrite of candidate
 files; unrelated-file atomicity would require a stronger execution backend.
 
+The dependency overlay grants no new write authority. It rejects unsafe names,
+special entries, top-level links escaping both the admitted workspace and its
+canonical `node_modules`, missing workspace-package targets, link replacement,
+and target drift. A workspace-package link is redirected into the private tree
+so LSP and Vitest resolve candidate bytes. Ordinary dependencies and the fixed
+verifier remain in the parent toolchain, mounted as a read-only Sandbox runtime
+path. The verifier binding covers its relative path and bytes plus root
+`package.json` / `package-lock.json` when present and is revalidated after
+execution. It does not recursively hash every transitive dependency byte; the
+installed local dependency tree remains a trusted host boundary until an
+immutable container or remote toolchain backend supplies a stronger identity.
+
+The operation coordinator records no raw verifier output. Each attempt binds
+tool kind/status, pass classification, canonical input/result hashes, and the
+complete candidate snapshot hash. Finalization recomputes freshness, so a
+later private patch moves earlier evidence to `stale`; a current failure or
+cancellation remains a fresh failed attempt rather than disappearing. Preview
+creation deliberately does not require a pass because expected failures can be
+useful review evidence, but the parent sees the full bounded attempt list
+before explicit apply. Durable task, merge, SSE, Replay, and Web projections
+retain only aggregate counts plus verification-set/toolchain hashes.
+
 `subagent-worktree-files.ts` owns bounded fork/finalize/freshness operations;
 `subagent-worktree-storage.ts` owns private owner roots and stale cleanup;
 `subagent-worktree-review.ts` owns the bounded parent-visible change window;
-`subagent-worktree-mutation.ts` owns child tool adaptation, preview storage,
-and the parent merge adapter. It composes
+`subagent-worktree-toolchain.ts` owns the dependency overlay;
+`subagent-worktree-verification.ts` owns serialization and snapshot-bound
+attempt evidence; `subagent-worktree-mutation.ts` owns child tool adaptation,
+preview storage, and the parent merge adapter. It composes
 `LspWorkspaceEditMutationCoordinator` and `commitLspRename()` rather than
 creating a second write transaction. `subagent-task-runner.ts` owns the child
 Agent loop and candidate outcome grounding, while
@@ -2872,17 +2905,20 @@ these modules plus focused role, parser, verifier, and repair modules; each new
 core logic file remains below 500 lines.
 
 Write paths, candidate patch arguments/results, candidate bodies, preview IDs,
-and raw errors remain live-only. Durable Agent/HTTP/Replay evidence retains
-role, state, bounded counts, transaction/diagnostic/test status, and hashes for
-the task, outcome, source snapshot, write scope, changed file set, plan, files,
-and result. Web independently parses that bounded schema and never trusts
-Runtime-reported paths or candidate content. Existing typed-outcome path
-citations keep the ordinary grounded Subagent evidence semantics.
+verifier output, and raw errors remain live-only. Durable Agent/HTTP/Replay
+evidence retains role, state, bounded counts, transaction/diagnostic/test
+status, and hashes for the task, outcome, source snapshot, write scope, changed
+file set, candidate verification set/toolchain, plan, files, and result. Web
+independently parses that bounded schema and never trusts Runtime-reported
+paths or candidate content. Existing typed-outcome path citations keep the
+ordinary grounded Subagent evidence semantics.
 
 This slice supports only existing regular text files. Candidate file creation,
 deletion, rename, permission changes, symlinks, arbitrary binary changes,
-child-side process verification, cross-Run preview recovery, and Git worktree
-semantics remain unavailable.
+arbitrary child-side commands/package scripts, cross-Run preview recovery, and
+Git worktree semantics remain unavailable. Candidate LSP and the optional
+fixed verifier remain read-only and offline; they are not general Process
+authority.
 
 SQLite analysis remains outside the oversized workspace-tool module.
 `sqlite-database-file.ts` owns canonical file admission, sidecar denial,
@@ -3926,14 +3962,18 @@ Napier does not expose a general shell for build validation. The
 model requests typecheck / test / format
   -> require non-observe policy + enabled verify_workspace tool
   -> validate a workspace-relative cwd, optional target, and 1-120 second budget
-  -> canonicalize cwd, target, current Node, and the fixed workspace-local CLI
-  -> hash cwd/target paths, verifier bytes, and a bounded cwd snapshot
+  -> canonicalize cwd, target, current Node, and the fixed local or explicitly
+     bound external CLI
+  -> hash cwd/target paths, verifier/toolchain bytes, and a bounded cwd snapshot
   -> construct Napier-owned arguments without consulting package scripts
   -> launch with process.spawn + workspace.read only
-  -> keep the workspace read-only and networking disabled in the OS sandbox
+  -> keep the candidate workspace and external runtime path read-only while
+     networking remains disabled in the OS sandbox
   -> cap stdout and stderr independently at 32,000 characters
   -> terminate the isolated process group on timeout, cancellation, or output cap
-  -> append structured status, scope receipt, and output digests to tool.completed
+  -> revalidate the bound toolchain after execution
+  -> append redacted status, scope/toolchain/result receipts, and output digests
+     to tool.completed
 ```
 
 The fixed entrypoints are TypeScript's `tsc`, Vitest's `vitest.mjs`, and
@@ -3944,17 +3984,26 @@ uses `--check`. The child environment is exactly `CI=1`, `FORCE_COLOR=0`, and
 successful check or a hidden transport exception. `timed_out` and
 `output_capped` remain separately queryable outcomes.
 
+For an isolated coder, `workspaceRoot` is the private candidate while
+`toolchainRoot` is the original workspace. Only the canonical parent
+`node_modules` becomes an additional read-only runtime path. The binding
+rehashes the fixed entrypoint and optional root package manifests after the
+process settles; drift rejects the result. This is still the closed verifier
+dispatcher, not a child shell or package-script capability.
+
 The result records kind, sandbox, workspace-relative cwd and target, duration,
 exit code, signal, character counts, truncation flags, independent
 stdout/stderr SHA-256 digests, and a `scopeSha256` over the verifier kind,
-cwd/target path hashes, workspace-local verifier file hash, target snapshot,
-and bounded cwd snapshot. The snapshot excludes `.git`, `.napier`, and
+cwd/target path hashes, verifier/toolchain identity, target snapshot, and
+bounded cwd snapshot. The snapshot excludes `.git`, `.napier`, and
 `node_modules`, caps at 2,000 files or 16 MiB, and marks truncated evidence
-explicitly. Full bounded output is returned to the Agent; the structured
-details are retained in Trace. Workbench summaries expose only kind/status,
-exit code, scope/snapshot hashes, counts, output hashes, and truncation flags;
-output text, cwd/target paths, and sandbox labels stay out of the bounded
-summary. Subagents remain read-only and never receive the verifier.
+explicitly. Full bounded output is returned only to the live Agent. Dedicated
+Ledger adapters project kind/status, exit state, scope/snapshot/toolchain/result
+hashes, counts, output digests, and truncation flags; output text, cwd/target
+paths, and sandbox labels do not enter Ledger, Replay, SSE, or Trace.
+Researcher, reviewer, and general Subagents remain read-only without a
+verifier. The coder receives this fixed dispatcher only when its parent profile
+explicitly enables `verify_workspace`.
 
 ## Background Automation And Channel Flow
 

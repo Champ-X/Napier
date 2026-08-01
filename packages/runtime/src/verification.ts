@@ -1,13 +1,35 @@
-import { readFile, realpath, stat } from "node:fs/promises";
+import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import type { OsSandboxAdapter } from "./sandbox.js";
 import { runSandboxedProcess } from "./sandboxed-process.js";
+import {
+  assertVerificationToolchainStable,
+  resolveVerificationToolchain,
+} from "./verification-toolchain.js";
+import type {
+  SelectedTestExecutionResult,
+  VerificationDetails,
+  VerificationKind,
+  VerificationRequest,
+  VerificationResult,
+  VerificationRunnerOptions,
+  VerificationStatus,
+} from "./verification-types.js";
 import { createWorkspacePathSnapshot as createPathSnapshot } from "./workspace-snapshot.js";
+
+export type {
+  SelectedTestExecutionResult,
+  VerificationDetails,
+  VerificationKind,
+  VerificationRequest,
+  VerificationResult,
+  VerificationRunnerOptions,
+  VerificationStatus,
+} from "./verification-types.js";
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MIN_TIMEOUT_MS = 1_000;
@@ -17,7 +39,7 @@ const VERIFICATION_CLIS = {
   typecheck: "node_modules/typescript/bin/tsc",
   test: "node_modules/vitest/vitest.mjs",
   format: "node_modules/prettier/bin/prettier.cjs",
-} as const;
+} as const satisfies Record<VerificationKind, string>;
 
 const verifyWorkspaceSchema = Type.Object(
   {
@@ -53,79 +75,6 @@ const verifyWorkspaceSchema = Type.Object(
   { additionalProperties: false },
 );
 
-export type VerificationKind = keyof typeof VERIFICATION_CLIS;
-
-export interface VerificationRequest {
-  kind: VerificationKind;
-  cwd?: string;
-  target?: string;
-  timeoutMs?: number;
-}
-
-export type VerificationStatus =
-  | "passed"
-  | "failed"
-  | "timed_out"
-  | "output_capped";
-
-export interface VerificationDetails {
-  kind: VerificationKind;
-  status: VerificationStatus;
-  sandbox: string;
-  cwd: string;
-  target?: string;
-  scopeSha256: string;
-  cwdPathSha256: string;
-  targetPathSha256?: string;
-  targetKind?: "file" | "directory";
-  targetSnapshotSha256?: string;
-  targetSnapshotFileCount?: number;
-  targetSnapshotBytes?: number;
-  targetSnapshotTruncated?: boolean;
-  verifierPathSha256: string;
-  verifierSha256: string;
-  workspaceSnapshotSha256: string;
-  workspaceSnapshotFileCount: number;
-  workspaceSnapshotBytes: number;
-  workspaceSnapshotTruncated: boolean;
-  durationMs: number;
-  exitCode: number | null;
-  signal: NodeJS.Signals | null;
-  stdoutChars: number;
-  stderrChars: number;
-  stdoutSha256: string;
-  stderrSha256: string;
-  stdoutTruncated: boolean;
-  stderrTruncated: boolean;
-}
-
-export interface VerificationResult {
-  details: VerificationDetails;
-  stdout: string;
-  stderr: string;
-}
-
-export interface SelectedTestExecutionResult {
-  status: VerificationStatus;
-  sandbox: string;
-  verifierSha256: string;
-  durationMs: number;
-  exitCode: number | null;
-  signal: NodeJS.Signals | null;
-  stdout: string;
-  stderr: string;
-  stdoutSha256: string;
-  stderrSha256: string;
-  stdoutTruncated: boolean;
-  stderrTruncated: boolean;
-}
-
-export interface VerificationRunnerOptions {
-  workspaceRoot: string;
-  sandbox: OsSandboxAdapter;
-  nodeExecutable?: string;
-}
-
 export class VerificationRunner {
   private readonly workspaceRoot: string;
 
@@ -147,14 +96,13 @@ export class VerificationRunner {
     if (!(await stat(cwd)).isDirectory()) {
       throw new Error("verification cwd must be a directory");
     }
-    const cli = await resolveExistingPath(
+    const toolchain = await resolveVerificationToolchain({
       workspaceRoot,
-      VERIFICATION_CLIS[input.kind],
-      `${input.kind} verifier`,
-    );
-    if (!(await stat(cli)).isFile()) {
-      throw new Error(`${input.kind} verifier must be a file`);
-    }
+      ...(this.options.toolchainRoot
+        ? { toolchainRoot: this.options.toolchainRoot }
+        : {}),
+      verifierRelativePath: VERIFICATION_CLIS[input.kind],
+    });
     const nodeExecutable = await realpath(
       path.resolve(this.options.nodeExecutable ?? process.execPath),
     );
@@ -163,12 +111,10 @@ export class VerificationRunner {
     const targetPath = target
       ? path.relative(workspaceRoot, target) || "."
       : undefined;
-    const verifierPath = path.relative(workspaceRoot, cli) || ".";
     const workspaceSnapshot = await createPathSnapshot(workspaceRoot, cwd);
     const targetSnapshot = target
       ? await createPathSnapshot(workspaceRoot, target)
       : undefined;
-    const verifierSha256 = sha256(await readFile(cli));
     const scopeReceipt = {
       kind: input.kind,
       cwdPathSha256: sha256(cwdPath),
@@ -182,8 +128,10 @@ export class VerificationRunner {
             targetSnapshotTruncated: targetSnapshot.truncated,
           }
         : {}),
-      verifierPathSha256: sha256(verifierPath),
-      verifierSha256,
+      verifierPathSha256: toolchain.verifierPathSha256,
+      verifierSha256: toolchain.verifierSha256,
+      toolchainExternal: toolchain.external,
+      toolchainSha256: toolchain.contentSha256,
       workspaceSnapshotSha256: workspaceSnapshot.sha256,
       workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
       workspaceSnapshotBytes: workspaceSnapshot.bytes,
@@ -193,7 +141,7 @@ export class VerificationRunner {
       sandbox: this.options.sandbox,
       launch: {
         command: nodeExecutable,
-        args: verificationArgs(input.kind, cli, target),
+        args: verificationArgs(input.kind, toolchain.verifierPath, target),
         cwd,
         env: {
           CI: "1",
@@ -202,6 +150,9 @@ export class VerificationRunner {
         },
         workspaceRoot,
         approvedCapabilities: ["process.spawn", "workspace.read"],
+        ...(toolchain.runtimeReadPaths.length > 0
+          ? { runtimeReadPaths: toolchain.runtimeReadPaths }
+          : {}),
       },
       timeoutMs: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       maxOutputChars: MAX_OUTPUT_CHARS,
@@ -214,42 +165,49 @@ export class VerificationRunner {
           ? "passed"
           : "failed"
         : execution.status;
+    await assertVerificationToolchainStable(toolchain);
+    const detailsBase = {
+      kind: input.kind,
+      status,
+      sandbox: this.options.sandbox.id,
+      cwd: cwdPath,
+      ...(targetPath ? { target: targetPath } : {}),
+      scopeSha256: sha256(canonicalJson(scopeReceipt)),
+      cwdPathSha256: scopeReceipt.cwdPathSha256,
+      ...(scopeReceipt.targetPathSha256
+        ? { targetPathSha256: scopeReceipt.targetPathSha256 }
+        : {}),
+      ...(targetSnapshot
+        ? {
+            targetKind: targetSnapshot.kind,
+            targetSnapshotSha256: targetSnapshot.sha256,
+            targetSnapshotFileCount: targetSnapshot.fileCount,
+            targetSnapshotBytes: targetSnapshot.bytes,
+            targetSnapshotTruncated: targetSnapshot.truncated,
+          }
+        : {}),
+      verifierPathSha256: scopeReceipt.verifierPathSha256,
+      verifierSha256: toolchain.verifierSha256,
+      toolchainExternal: toolchain.external,
+      toolchainSha256: toolchain.contentSha256,
+      workspaceSnapshotSha256: workspaceSnapshot.sha256,
+      workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
+      workspaceSnapshotBytes: workspaceSnapshot.bytes,
+      workspaceSnapshotTruncated: workspaceSnapshot.truncated,
+      durationMs: execution.durationMs,
+      exitCode: execution.exitCode,
+      signal: execution.signal,
+      stdoutChars: execution.stdout.length,
+      stderrChars: execution.stderr.length,
+      stdoutSha256: sha256(execution.stdout),
+      stderrSha256: sha256(execution.stderr),
+      stdoutTruncated: execution.stdoutTruncated,
+      stderrTruncated: execution.stderrTruncated,
+    };
     return {
       details: {
-        kind: input.kind,
-        status,
-        sandbox: this.options.sandbox.id,
-        cwd: cwdPath,
-        ...(targetPath ? { target: targetPath } : {}),
-        scopeSha256: sha256(canonicalJson(scopeReceipt)),
-        cwdPathSha256: scopeReceipt.cwdPathSha256,
-        ...(scopeReceipt.targetPathSha256
-          ? { targetPathSha256: scopeReceipt.targetPathSha256 }
-          : {}),
-        ...(targetSnapshot
-          ? {
-              targetKind: targetSnapshot.kind,
-              targetSnapshotSha256: targetSnapshot.sha256,
-              targetSnapshotFileCount: targetSnapshot.fileCount,
-              targetSnapshotBytes: targetSnapshot.bytes,
-              targetSnapshotTruncated: targetSnapshot.truncated,
-            }
-          : {}),
-        verifierPathSha256: scopeReceipt.verifierPathSha256,
-        verifierSha256,
-        workspaceSnapshotSha256: workspaceSnapshot.sha256,
-        workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
-        workspaceSnapshotBytes: workspaceSnapshot.bytes,
-        workspaceSnapshotTruncated: workspaceSnapshot.truncated,
-        durationMs: execution.durationMs,
-        exitCode: execution.exitCode,
-        signal: execution.signal,
-        stdoutChars: execution.stdout.length,
-        stderrChars: execution.stderr.length,
-        stdoutSha256: sha256(execution.stdout),
-        stderrSha256: sha256(execution.stderr),
-        stdoutTruncated: execution.stdoutTruncated,
-        stderrTruncated: execution.stderrTruncated,
+        ...detailsBase,
+        resultSha256: sha256(canonicalJson(detailsBase)),
       },
       stdout: execution.stdout,
       stderr: execution.stderr,
@@ -279,14 +237,13 @@ export class VerificationRunner {
       throw new Error("Selected test verification request is invalid");
     }
     const workspaceRoot = await realpath(this.workspaceRoot);
-    const cli = await resolveExistingPath(
+    const toolchain = await resolveVerificationToolchain({
       workspaceRoot,
-      VERIFICATION_CLIS.test,
-      "test verifier",
-    );
-    if (!(await stat(cli)).isFile()) {
-      throw new Error("test verifier must be a file");
-    }
+      ...(this.options.toolchainRoot
+        ? { toolchainRoot: this.options.toolchainRoot }
+        : {}),
+      verifierRelativePath: VERIFICATION_CLIS.test,
+    });
     const resolvedTargets = [];
     for (const target of targets) {
       const resolved = await resolveExistingPath(
@@ -302,13 +259,12 @@ export class VerificationRunner {
     const nodeExecutable = await realpath(
       path.resolve(this.options.nodeExecutable ?? process.execPath),
     );
-    const verifierSha256 = sha256(await readFile(cli));
     const execution = await runSandboxedProcess({
       sandbox: this.options.sandbox,
       launch: {
         command: nodeExecutable,
         args: [
-          cli,
+          toolchain.verifierPath,
           "run",
           "--pool=threads",
           "--maxWorkers=2",
@@ -322,6 +278,9 @@ export class VerificationRunner {
         },
         workspaceRoot,
         approvedCapabilities: ["process.spawn", "workspace.read"],
+        ...(toolchain.runtimeReadPaths.length > 0
+          ? { runtimeReadPaths: toolchain.runtimeReadPaths }
+          : {}),
       },
       timeoutMs,
       maxOutputChars: MAX_OUTPUT_CHARS,
@@ -334,10 +293,12 @@ export class VerificationRunner {
           ? "passed"
           : "failed"
         : execution.status;
+    await assertVerificationToolchainStable(toolchain);
     return {
       status,
       sandbox: this.options.sandbox.id,
-      verifierSha256,
+      verifierSha256: toolchain.verifierSha256,
+      toolchainSha256: toolchain.contentSha256,
       durationMs: execution.durationMs,
       exitCode: execution.exitCode,
       signal: execution.signal,
@@ -491,6 +452,8 @@ function formatVerificationResult(result: VerificationResult): string {
         ]
       : []),
     `Verifier SHA-256: ${details.verifierSha256}`,
+    `Toolchain: ${details.toolchainExternal ? "external-read-only" : "workspace-local"}`,
+    `Toolchain SHA-256: ${details.toolchainSha256}`,
     `Workspace snapshot SHA-256: ${details.workspaceSnapshotSha256}`,
     `Workspace snapshot: ${details.workspaceSnapshotFileCount} files / ${details.workspaceSnapshotBytes} bytes${
       details.workspaceSnapshotTruncated ? " / truncated" : ""
@@ -499,6 +462,7 @@ function formatVerificationResult(result: VerificationResult): string {
     `Duration: ${details.durationMs} ms`,
     `stdout SHA-256: ${details.stdoutSha256}`,
     `stderr SHA-256: ${details.stderrSha256}`,
+    `Result SHA-256: ${details.resultSha256}`,
     "",
     "STDOUT",
     result.stdout || "(empty)",

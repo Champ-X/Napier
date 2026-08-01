@@ -66,6 +66,7 @@ describeLive("live coder Subagent smoke", () => {
       dataRoot,
       ownerId: `worker_live_${suffix}`,
       sandbox,
+      enableCandidateVerification: true,
       tests: new WriteLinkedTestVerificationRunner({
         workspaceRoot,
         sandbox,
@@ -74,16 +75,44 @@ describeLive("live coder Subagent smoke", () => {
     const worktree = await manager.createWorktree("task_livecoder1", [
       sourcePath,
     ]);
-    const patch = manager
-      .createCoderTools(worktree)
-      .find((tool) => tool.name === "apply_patch")!;
+    const tools = manager.createCoderTools(worktree);
+    const patch = tools.find((tool) => tool.name === "apply_patch")!;
+    const lsp = tools.find((tool) => tool.name === "lsp_diagnostics")!;
+    const verify = tools.find((tool) => tool.name === "verify_workspace")!;
     await patch.execute("live-coder-patch", {
       operation: "replace",
       path: sourcePath,
       expectedSha256: sha256(source),
       edits: [{ oldText: "= 1", newText: "= 2" }],
     });
+    const candidateDiagnostics = await lsp.execute("live-coder-lsp", {
+      path: sourcePath,
+      timeoutMs: 30_000,
+    });
+    expect(candidateDiagnostics.details).toEqual(
+      expect.objectContaining({ status: "clean", errorCount: 0 }),
+    );
+    const candidateTests = await verify.execute("live-coder-test", {
+      kind: "test",
+      target: testPath,
+      timeoutMs: 60_000,
+    });
+    expect(candidateTests.details).toEqual(
+      expect.objectContaining({
+        status: "passed",
+        toolchainExternal: true,
+      }),
+    );
     const preview = await manager.storePreview(worktree, "f".repeat(64));
+    expect(preview.candidateVerification).toEqual(
+      expect.objectContaining({
+        attemptCount: 2,
+        freshCount: 2,
+        passedCount: 2,
+        failedCount: 0,
+        staleCount: 0,
+      }),
+    );
 
     expect(await readFile(path.join(workspaceRoot, sourcePath), "utf8")).toBe(
       source,
@@ -100,6 +129,11 @@ describeLive("live coder Subagent smoke", () => {
           status: "passed",
           selectedTestCount: 1,
         }),
+        candidateVerificationAttemptCount: 2,
+        candidateVerificationFreshCount: 2,
+        candidateVerificationPassedCount: 2,
+        candidateVerificationFailedCount: 0,
+        candidateVerificationStaleCount: 0,
       }),
     );
     expect(applied.summary).toContain(testPath);

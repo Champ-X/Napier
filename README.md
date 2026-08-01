@@ -160,7 +160,7 @@ Version `0.1.0` includes:
   outputs;
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
-  fixed local CLI entrypoints;
+  fixed local or explicitly bound external CLI entrypoints;
 - automatic write-linked TypeScript/JavaScript test verification for
   `apply_patch` and verified LSP rename/quick-fix writes when
   `verify_workspace` is explicitly enabled: Napier scans the nearest package
@@ -232,9 +232,10 @@ Version `0.1.0` includes:
   consolidation, bounded injection, and audit events;
 - isolated researcher, reviewer, and general subagents with read-only tools,
   plus an opt-in `coder` role that edits up to eight declared existing text
-  files in a bounded private workspace snapshot and returns a bounded live
-  change review plus a one-use candidate for explicit parent merge. All roles
-  retain bounded run budgets,
+  files in a bounded private workspace snapshot, runs real LSP and optional
+  fixed Sandbox verification against candidate bytes, and returns a bounded
+  live change review plus snapshot-fresh pass/fail/stale evidence and a one-use
+  candidate for explicit parent merge. All roles retain bounded run budgets,
   cancellation, strict typed outcomes, hash-bound delegation receipts, and a
   compaction-immune durable task projection;
 - reviewed Streamable HTTP MCP connections with provenance, capability and
@@ -2871,9 +2872,12 @@ without granting the child direct access to parent workspace writes:
 delegate_task(role=coder, writePaths=[1..8 existing files])
   -> snapshot at most 2,000 files / 32 MiB into a private Runtime-owner root
   -> reject symlinks, special files, protected/generated roots, and source drift
+  -> overlay read-only parent dependencies, redirect workspace packages to the candidate
   -> run a Pi child with private read/AST tools and path-limited apply_patch
+  -> serialize patch, real LSP, and optional fixed verify_workspace operations
+  -> bind each verification result to the complete private candidate snapshot
   -> ground its typed outcome against candidate bytes and actual changed files
-  -> derive a control-safe live-only change window capped at 32 KiB
+  -> derive a control-safe live-only change window and fresh/pass/fail/stale evidence
   -> delete the private tree and return a five-minute one-use merge preview
 subagent_worktree_apply(previewId)
   -> consume the capability and recheck the complete source snapshot
@@ -2896,14 +2900,38 @@ Run, so Runtime restart invalidates it without mutation. PID-bound owner
 manifests preserve worktrees owned by another live local Runtime and allow a
 later worker to clean directories left by a dead process.
 
+Candidate LSP always uses a fresh one-shot language server. When the parent
+profile also enables `verify_workspace`, the child receives the existing fixed
+TypeScript/Vitest/Prettier dispatcher against its private root. Napier binds the
+external verifier bytes and root package manifests, grants the Sandbox one
+read-only runtime path to the parent `node_modules`, and constructs at most 512
+dependency links across 64 scopes. Ordinary dependencies remain external and
+read-only; workspace-package links are redirected to corresponding candidate
+directories so monorepo tests observe private edits rather than parent bytes.
+Unsafe, escaping, missing, replaced, or drifted overlay targets fail closed.
+The toolchain receipt binds the fixed entrypoint and package-manager metadata;
+it does not recursively hash every transitive dependency byte, so the local
+installed dependency tree remains part of the trusted host boundary.
+
+Patch and verification calls share one serial queue with at most 16
+verification attempts. Each attempt records a result hash and the complete
+candidate snapshot hash observed after the read-only operation. Finalization
+recomputes that snapshot: later edits make prior attempts `stale`, while
+current attempts are split into `passed` and `failed`. A failed or absent check
+does not silently block preview creation because the parent may need to review
+an expected failure; the live result makes that state explicit before the
+separate merge call. Durable delegation, merge, SSE, Replay, and Web evidence
+retain only bounded counts plus verification-set/toolchain hashes. Verifier
+stdout/stderr, diagnostics, paths, candidate bodies, write grants, and preview
+IDs remain live-only.
+
 This is a filesystem worktree, not a Git branch, shell checkout, container, or
 process sandbox. The child has no shell, Process, network, Browser, Extension,
 persistent Session, or nested-delegation capability. Candidate creation,
-deletion, rename, mode changes, symlinks, binary files, child-side test
-execution, and cross-Run preview recovery are not supported. Ledger, SSE,
-Replay, and Web Trace retain bounded role/status/count/hash evidence while
-redacting write grants, patch arguments/results, candidate bodies, and preview
-IDs.
+deletion, rename, mode changes, symlinks, binary files, arbitrary child-side
+commands/package scripts, and cross-Run preview recovery are not supported.
+The fixed verifier remains read-only and offline; it is not a general process
+capability.
 
 Run the opt-in real Agent-to-private-worktree smoke:
 
@@ -2980,22 +3008,25 @@ command, or model-provided executable.
 
 Each verifier receives only `process.spawn` and `workspace.read`. The OS
 sandbox mounts or authorizes the workspace read-only and leaves networking
-disabled. The working directory and optional target must resolve inside the
+disabled. Ordinary Agent runs use workspace-local entrypoints. A private coder
+candidate may instead bind the original workspace as an external toolchain:
+the fixed CLI and package metadata are hashed, `node_modules` is mounted
+read-only as a runtime path, and stability is rechecked after execution. The
+working directory and optional target still resolve only inside the candidate
 workspace. Runs default to 60 seconds, cannot exceed 120 seconds, and retain at
-most 32,000 characters from each output stream. Timeout, cancellation, or
-output exhaustion terminates the isolated process group so descendants cannot
-outlive the check.
+most 32,000 characters from each output stream. Timeout, cancellation, output
+exhaustion, or toolchain drift terminates or rejects the check without a host
+fallback.
 
 `passed`, `failed`, `timed_out`, and `output_capped` are distinct results. A
 non-zero exit is preserved as failed verification evidence rather than a tool
-transport error. Trace records the sandbox, target, duration, exit status,
-signal, output sizes, truncation flags, and independent stdout/stderr SHA-256
-digests. Each result also carries a `scopeSha256` receipt over the verifier
-kind, cwd/target path hashes, workspace-local verifier file hash, and a bounded
-cwd snapshot hash that excludes `.git`, `.napier`, and `node_modules`.
-Workbench summaries expose only verifier kind/status, exit code, scope and
-snapshot hashes, counts, output hashes, and truncation flags; output text, cwd,
-target paths, and sandbox labels remain outside the bounded summary.
+transport error. The live Agent result contains bounded stdout/stderr; Work
+Ledger, Replay, SSE, and Trace retain only verifier kind/status, exit state,
+scope/snapshot/toolchain/result hashes, counts, output hashes, and truncation
+flags. Raw output, cwd, target paths, and sandbox labels remain outside durable
+evidence. Each result's `scopeSha256` binds the verifier kind, cwd/target path
+hashes, verifier/toolchain identity, and a bounded cwd snapshot that excludes
+`.git`, `.napier`, and `node_modules`.
 
 ## Durable Plan Archives
 

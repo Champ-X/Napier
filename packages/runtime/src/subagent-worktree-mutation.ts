@@ -1,10 +1,8 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
-  JsonValue,
   LspRenameApplyDiagnosticsDetails,
   SubagentWorktreeApplyDetails,
 } from "@napier/contracts";
-import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -13,6 +11,7 @@ import {
   type LspRenameDiagnosticsState,
   unavailableLspRenameDiagnostics,
 } from "./lsp-rename-apply-diagnostics.js";
+import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
 import {
   commitLspRename,
   type CommitLspRenameOptions,
@@ -33,6 +32,15 @@ import {
   type SubagentWorktreeSession,
 } from "./subagent-worktree-files.js";
 import { createSubagentWorktreeReview } from "./subagent-worktree-review.js";
+import {
+  assertSubagentWorktreeToolchainStable,
+  prepareSubagentWorktreeToolchain,
+  type SubagentWorktreeToolchain,
+} from "./subagent-worktree-toolchain.js";
+import {
+  type SubagentCandidateVerificationSummary,
+  SubagentWorktreeOperationCoordinator,
+} from "./subagent-worktree-verification.js";
 import { createTypescriptAstTools } from "./typescript-ast-tool.js";
 import {
   applyWorkspacePatch,
@@ -40,19 +48,15 @@ import {
   type WorkspacePatchInput,
 } from "./tools.js";
 import { createWorkspacePatchTool } from "./workspace-patch-tool.js";
+import { createVerificationTool } from "./verification.js";
 import type { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
 
-const applySchema = Type.Object(
-  {
-    previewId: Type.String({
-      minLength: 1,
-      maxLength: 120,
-      description:
-        "Opaque one-use preview ID returned by a completed coder delegation.",
-    }),
-  },
-  { additionalProperties: false },
-);
+export {
+  createSubagentWorktreeApplyTool,
+  subagentWorktreeToolCallArgumentsLedgerProjection,
+  subagentWorktreeToolInputLedgerProjection,
+  subagentWorktreeToolOutputLedgerProjection,
+} from "./subagent-worktree-tool.js";
 
 interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
   taskId: string;
@@ -64,6 +68,13 @@ interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
   writeScopeCount: number;
   writeScopeSetSha256: string;
   changedFileSetSha256: string;
+  candidateVerificationAttemptCount: number;
+  candidateVerificationFreshCount: number;
+  candidateVerificationPassedCount: number;
+  candidateVerificationFailedCount: number;
+  candidateVerificationStaleCount: number;
+  candidateVerificationSetSha256: string;
+  candidateToolchainSha256?: string;
   files: LspRenameFile[];
 }
 
@@ -77,6 +88,8 @@ export interface SubagentWorktreePreview {
   sourceSnapshotSha256: string;
   review: string;
   reviewTruncated: boolean;
+  candidateVerification: SubagentCandidateVerificationSummary;
+  candidateToolchainSha256?: string;
 }
 
 export interface SubagentWorktreeApplyResult {
@@ -89,17 +102,28 @@ export interface SubagentWorktreeMutationManagerOptions {
   dataRoot: string;
   ownerId: string;
   sandbox?: OsSandboxAdapter;
+  enableCandidateVerification?: boolean;
   diagnostics?: LspWorkspaceEditDiagnosticsAdapter<
     LspRenameDiagnosticsState,
     LspRenameDiagnosticsObservation
   >;
-  tests?: Pick<WriteLinkedTestVerificationRunner, "captureBefore" | "run">;
+  tests?: Pick<
+    WriteLinkedTestVerificationRunner,
+    "captureBefore" | "run" | "supports"
+  >;
   now?: () => Date;
   commit?: typeof commitLspRename;
   commitOptions?: Pick<CommitLspRenameOptions, "renameFile" | "linkFile">;
 }
 
 export class SubagentWorktreeMutationManager {
+  private readonly contexts = new WeakMap<
+    SubagentWorktreeSession,
+    {
+      operations: SubagentWorktreeOperationCoordinator;
+      toolchain?: SubagentWorktreeToolchain;
+    }
+  >();
   private readonly coordinator: LspWorkspaceEditMutationCoordinator<
     WorktreePreviewSource,
     LspRenameDiagnosticsState,
@@ -134,12 +158,12 @@ export class SubagentWorktreeMutationManager {
     });
   }
 
-  createWorktree(
+  async createWorktree(
     taskId: string,
     writePaths: string[],
     signal?: AbortSignal,
   ): Promise<SubagentWorktreeSession> {
-    return createSubagentWorktree({
+    const session = await createSubagentWorktree({
       workspaceRoot: this.options.workspaceRoot,
       dataRoot: this.options.dataRoot,
       ownerId: this.options.ownerId,
@@ -147,9 +171,28 @@ export class SubagentWorktreeMutationManager {
       writePaths,
       ...(signal ? { signal } : {}),
     });
+    try {
+      const toolchain = await prepareSubagentWorktreeToolchain({
+        sourceRoot: session.sourceRoot,
+        candidateRoot: session.root,
+        ...(signal ? { signal } : {}),
+      });
+      this.contexts.set(session, {
+        operations: new SubagentWorktreeOperationCoordinator(),
+        ...(toolchain ? { toolchain } : {}),
+      });
+      return session;
+    } catch (error) {
+      await removeSubagentWorktree(session.root);
+      throw error;
+    }
   }
 
   createCoderTools(session: SubagentWorktreeSession): AgentTool[] {
+    const context = this.contexts.get(session);
+    if (!context) {
+      throw new Error("Coder Subagent worktree context is unavailable");
+    }
     const tools = [
       ...createWorkspaceTools(session.root),
       ...createTypescriptAstTools(session.root),
@@ -159,11 +202,45 @@ export class SubagentWorktreeMutationManager {
         workspaceRoot: session.root,
         dataRoot: this.options.dataRoot,
         applyPatch: async (workspaceRoot, dataRoot, input) => {
-          assertAuthorizedPatch(session, input);
-          return applyWorkspacePatch(workspaceRoot, dataRoot, input);
+          return context.operations.runMutation(async () => {
+            assertAuthorizedPatch(session, input);
+            return applyWorkspacePatch(workspaceRoot, dataRoot, input);
+          });
         },
       }),
     );
+    if (this.options.sandbox) {
+      const verifyToolchain = context.toolchain
+        ? () => assertSubagentWorktreeToolchainStable(context.toolchain!)
+        : undefined;
+      const runtimeReadPaths = context.toolchain
+        ? [context.toolchain.sourceNodeModulesRoot]
+        : [];
+      tools.push(
+        context.operations.wrapVerificationTool(
+          createLspDiagnosticsTool({
+            workspaceRoot: session.root,
+            sandbox: this.options.sandbox,
+            ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
+          }),
+          session,
+          verifyToolchain,
+        ),
+      );
+      if (this.options.enableCandidateVerification && context.toolchain) {
+        tools.push(
+          context.operations.wrapVerificationTool(
+            createVerificationTool({
+              workspaceRoot: session.root,
+              toolchainRoot: session.sourceRoot,
+              sandbox: this.options.sandbox,
+            }),
+            session,
+            verifyToolchain,
+          ),
+        );
+      }
+    }
     return tools;
   }
 
@@ -175,8 +252,19 @@ export class SubagentWorktreeMutationManager {
     if (!hash(outcomeSha256)) {
       throw new Error("Subagent worktree outcome hash is invalid");
     }
+    const context = this.contexts.get(session);
+    if (!context) {
+      throw new Error("Coder Subagent worktree context is unavailable");
+    }
+    await context.operations.settle();
+    if (context.toolchain) {
+      await assertSubagentWorktreeToolchainStable(context.toolchain);
+    }
     const candidate = await finalizeSubagentWorktree(session, signal);
     const review = createSubagentWorktreeReview(candidate.files);
+    const candidateVerification = context.operations.summarize(
+      candidate.candidateSnapshotSha256,
+    );
     const receipt = {
       taskId: session.taskId,
       outcomeSha256,
@@ -187,8 +275,18 @@ export class SubagentWorktreeMutationManager {
       writeScopeSetSha256: session.writeScopeSetSha256,
       changedFileCount: candidate.files.length,
       changedFileSetSha256: candidate.changedFileSetSha256,
+      candidateVerificationAttemptCount: candidateVerification.attemptCount,
+      candidateVerificationFreshCount: candidateVerification.freshCount,
+      candidateVerificationPassedCount: candidateVerification.passedCount,
+      candidateVerificationFailedCount: candidateVerification.failedCount,
+      candidateVerificationStaleCount: candidateVerification.staleCount,
+      candidateVerificationSetSha256: candidateVerification.setSha256,
+      ...(context.toolchain
+        ? { candidateToolchainSha256: context.toolchain.contentSha256 }
+        : {}),
     };
     await removeSubagentWorktree(session.root);
+    this.contexts.delete(session);
     const stored = this.coordinator.storePreview({
       sourcePreviewResultSha256: sha256(canonicalJson(receipt)),
       taskId: session.taskId,
@@ -200,6 +298,15 @@ export class SubagentWorktreeMutationManager {
       writeScopeCount: session.writePaths.length,
       writeScopeSetSha256: session.writeScopeSetSha256,
       changedFileSetSha256: candidate.changedFileSetSha256,
+      candidateVerificationAttemptCount: candidateVerification.attemptCount,
+      candidateVerificationFreshCount: candidateVerification.freshCount,
+      candidateVerificationPassedCount: candidateVerification.passedCount,
+      candidateVerificationFailedCount: candidateVerification.failedCount,
+      candidateVerificationStaleCount: candidateVerification.staleCount,
+      candidateVerificationSetSha256: candidateVerification.setSha256,
+      ...(context.toolchain
+        ? { candidateToolchainSha256: context.toolchain.contentSha256 }
+        : {}),
       files: candidate.files,
     });
     if (!stored) {
@@ -215,10 +322,15 @@ export class SubagentWorktreeMutationManager {
       sourceSnapshotSha256: session.sourceSnapshotSha256,
       review: review.text,
       reviewTruncated: review.truncated,
+      candidateVerification,
+      ...(context.toolchain
+        ? { candidateToolchainSha256: context.toolchain.contentSha256 }
+        : {}),
     };
   }
 
   cleanup(session: SubagentWorktreeSession): Promise<void> {
+    this.contexts.delete(session);
     return removeSubagentWorktree(session.root);
   }
 
@@ -241,6 +353,23 @@ export class SubagentWorktreeMutationManager {
       writeScopeCount: execution.source.writeScopeCount,
       writeScopeSetSha256: execution.source.writeScopeSetSha256,
       changedFileSetSha256: execution.source.changedFileSetSha256,
+      candidateVerificationAttemptCount:
+        execution.source.candidateVerificationAttemptCount,
+      candidateVerificationFreshCount:
+        execution.source.candidateVerificationFreshCount,
+      candidateVerificationPassedCount:
+        execution.source.candidateVerificationPassedCount,
+      candidateVerificationFailedCount:
+        execution.source.candidateVerificationFailedCount,
+      candidateVerificationStaleCount:
+        execution.source.candidateVerificationStaleCount,
+      candidateVerificationSetSha256:
+        execution.source.candidateVerificationSetSha256,
+      ...(execution.source.candidateToolchainSha256
+        ? {
+            candidateToolchainSha256: execution.source.candidateToolchainSha256,
+          }
+        : {}),
       ...(execution.diagnostics
         ? { diagnostics: execution.diagnostics.details }
         : {}),
@@ -268,63 +397,6 @@ export class SubagentWorktreeMutationManager {
       }),
     };
   }
-}
-
-export function createSubagentWorktreeApplyTool(
-  manager: SubagentWorktreeMutationManager,
-): AgentTool<typeof applySchema, SubagentWorktreeApplyDetails> {
-  return {
-    name: "subagent_worktree_apply",
-    label: "Apply coder worktree",
-    description:
-      "Apply one reviewed coder Subagent worktree through its opaque one-use preview. The source workspace must still match the complete fork snapshot; multi-file commit, rollback, diagnostics, and enabled related tests are coordinated by Napier.",
-    parameters: applySchema,
-    async execute(_toolCallId, input, signal) {
-      const applied = await manager.apply(input.previewId, signal);
-      return {
-        content: [{ type: "text", text: applied.summary }],
-        details: applied.details,
-      };
-    },
-  };
-}
-
-export function subagentWorktreeToolCallArgumentsLedgerProjection(
-  args: unknown,
-): JsonValue {
-  return {
-    kind: "napier.redacted-tool-arguments",
-    schemaVersion: 1,
-    redacted: true,
-    inputSha256: sha256(
-      canonicalJson({ toolName: "subagent_worktree_apply", args }),
-    ),
-  };
-}
-
-export function subagentWorktreeToolInputLedgerProjection(
-  args: unknown,
-): Record<string, JsonValue> {
-  return {
-    inputSha256: sha256(canonicalJson(args)),
-    inputRedacted: true,
-  };
-}
-
-export function subagentWorktreeToolOutputLedgerProjection(
-  output: string,
-  result: unknown,
-): Record<string, JsonValue> {
-  const value = record(result);
-  const details = record(value?.["details"]);
-  return {
-    outputSha256: sha256(output),
-    outputBytes: Buffer.byteLength(output, "utf8"),
-    outputRedacted: true,
-    ...(details && hash(details["resultSha256"])
-      ? { resultSha256: details["resultSha256"] }
-      : {}),
-  };
 }
 
 function defaultDiagnostics(
@@ -359,12 +431,6 @@ function assertAuthorizedPatch(
       "Coder Subagent apply_patch is limited to declared existing write paths",
     );
   }
-}
-
-function record(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
 }
 
 function hash(value: unknown): value is string {

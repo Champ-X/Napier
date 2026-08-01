@@ -3523,7 +3523,9 @@ describe("AgentRuntime demo path", () => {
         details: expect.objectContaining({
           kind: "typecheck",
           status: "passed",
-          sandbox: "fake-edit-verifier",
+          sandboxSha256: createHash("sha256")
+            .update("fake-edit-verifier")
+            .digest("hex"),
           verifierSha256: createHash("sha256")
             .update("// fixture verifier\n")
             .digest("hex"),
@@ -3531,7 +3533,9 @@ describe("AgentRuntime demo path", () => {
             .update("Found 0 type errors.\n")
             .digest("hex"),
           workspaceSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         }),
+        outputRedacted: true,
       }),
     );
     expect(patchEvent?.seq).toEqual(expect.any(Number));
@@ -4140,7 +4144,9 @@ describe("AgentRuntime demo path", () => {
         details: expect.objectContaining({
           kind: "typecheck",
           status: "passed",
-          sandbox: "fake-agent-verifier",
+          sandboxSha256: createHash("sha256")
+            .update("fake-agent-verifier")
+            .digest("hex"),
           exitCode: 0,
           scopeSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
           workspaceSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -4152,9 +4158,14 @@ describe("AgentRuntime demo path", () => {
           stdoutSha256: createHash("sha256")
             .update("Found 0 type errors.\n")
             .digest("hex"),
+          resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         }),
+        outputRedacted: true,
       }),
     );
+    const durable = JSON.stringify(await store.listEvents(thread.id));
+    expect(durable).not.toContain("Found 0 type errors.");
+    expect(durable).not.toContain("fake-agent-verifier");
   });
 
   it("runs a bounded command without persisting argv or output text", async () => {

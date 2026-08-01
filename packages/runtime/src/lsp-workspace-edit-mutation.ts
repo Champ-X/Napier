@@ -47,7 +47,8 @@ export interface LspWorkspaceEditMutationOptions<
   label: string;
   previewPrefix: string;
   diagnostics: LspWorkspaceEditDiagnosticsAdapter<State, Observation>;
-  tests?: Pick<WriteLinkedTestVerificationRunner, "captureBefore" | "run">;
+  tests?: Pick<WriteLinkedTestVerificationRunner, "captureBefore" | "run"> &
+    Partial<Pick<WriteLinkedTestVerificationRunner, "supports">>;
   now?: () => Date;
   commit?: typeof commitLspRename;
   commitOptions?: Pick<CommitLspRenameOptions, "renameFile" | "linkFile">;
@@ -167,7 +168,10 @@ export class LspWorkspaceEditMutationCoordinator<
     assertNotAborted(signal, this.options.label);
     await this.options.preflight?.(preview.source, signal);
     assertNotAborted(signal, this.options.label);
-    const testBefore = await this.captureTestsBefore(preview.source, signal);
+    const testsEnabled = this.testsEnabled(preview.source);
+    const testBefore = testsEnabled
+      ? await this.captureTestsBefore(preview.source, signal)
+      : undefined;
     const diagnostics = await this.options.diagnostics.observeBefore(
       preview.source.files,
       signal,
@@ -190,6 +194,7 @@ export class LspWorkspaceEditMutationCoordinator<
     const testObservation =
       outcome.status === "applied" &&
       outcome.postcondition === "verified" &&
+      testsEnabled &&
       this.options.tests
         ? await this.options.tests.run(
             outcome.expectedFiles.map((file) => ({
@@ -234,6 +239,14 @@ export class LspWorkspaceEditMutationCoordinator<
         path: file.path,
         expectedSha256: file.fileSha256,
       })),
+    );
+  }
+
+  private testsEnabled(source: Source): boolean {
+    return Boolean(
+      this.options.tests &&
+      (!this.options.tests.supports ||
+        source.files.every((file) => this.options.tests!.supports!(file.path))),
     );
   }
 

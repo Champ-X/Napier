@@ -32,6 +32,13 @@ export interface SubagentEventTraceView {
   sourceSnapshotSha256?: string;
   writeScopeSetSha256?: string;
   changedFileSetSha256?: string;
+  candidateVerificationAttemptCount?: number;
+  candidateVerificationFreshCount?: number;
+  candidateVerificationPassedCount?: number;
+  candidateVerificationFailedCount?: number;
+  candidateVerificationStaleCount?: number;
+  candidateVerificationSetSha256?: string;
+  candidateToolchainSha256?: string;
 }
 
 const SUBAGENT_EVENT_PATTERN =
@@ -110,6 +117,48 @@ export function subagentEventTraceView(
   const sourceSnapshotSha256 = sha256(event.payload["sourceSnapshotSha256"]);
   const writeScopeSetSha256 = sha256(event.payload["writeScopeSetSha256"]);
   const changedFileSetSha256 = sha256(event.payload["changedFileSetSha256"]);
+  const candidateVerificationAttemptCount = boundedInteger(
+    event.payload["candidateVerificationAttemptCount"],
+    0,
+    16,
+  );
+  const candidateVerificationFreshCount = boundedInteger(
+    event.payload["candidateVerificationFreshCount"],
+    0,
+    16,
+  );
+  const candidateVerificationPassedCount = boundedInteger(
+    event.payload["candidateVerificationPassedCount"],
+    0,
+    16,
+  );
+  const candidateVerificationFailedCount = boundedInteger(
+    event.payload["candidateVerificationFailedCount"],
+    0,
+    16,
+  );
+  const candidateVerificationStaleCount = boundedInteger(
+    event.payload["candidateVerificationStaleCount"],
+    0,
+    16,
+  );
+  const candidateVerificationSetSha256 = sha256(
+    event.payload["candidateVerificationSetSha256"],
+  );
+  const candidateToolchainSha256 = sha256(
+    event.payload["candidateToolchainSha256"],
+  );
+  const validCandidateVerification =
+    candidateVerificationAttemptCount !== undefined &&
+    candidateVerificationFreshCount !== undefined &&
+    candidateVerificationPassedCount !== undefined &&
+    candidateVerificationFailedCount !== undefined &&
+    candidateVerificationStaleCount !== undefined &&
+    candidateVerificationSetSha256 !== undefined &&
+    candidateVerificationPassedCount + candidateVerificationFailedCount ===
+      candidateVerificationFreshCount &&
+    candidateVerificationFreshCount + candidateVerificationStaleCount ===
+      candidateVerificationAttemptCount;
   const outcomeItemCount =
     itemCount ?? nonNegativeInteger(outcome["itemCount"]);
   const outcomeEvidenceCount =
@@ -154,6 +203,17 @@ export function subagentEventTraceView(
     ...(sourceSnapshotSha256 ? { sourceSnapshotSha256 } : {}),
     ...(writeScopeSetSha256 ? { writeScopeSetSha256 } : {}),
     ...(changedFileSetSha256 ? { changedFileSetSha256 } : {}),
+    ...(validCandidateVerification
+      ? {
+          candidateVerificationAttemptCount,
+          candidateVerificationFreshCount,
+          candidateVerificationPassedCount,
+          candidateVerificationFailedCount,
+          candidateVerificationStaleCount,
+          candidateVerificationSetSha256,
+        }
+      : {}),
+    ...(candidateToolchainSha256 ? { candidateToolchainSha256 } : {}),
   };
 }
 
@@ -215,6 +275,16 @@ export function subagentEventTraceSummary(event: RunEvent): string | undefined {
       : []),
     ...(view.changedFileSetSha256
       ? [`change-set ${view.changedFileSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.candidateVerificationFreshCount !== undefined
+      ? [
+          `candidate-verification ${view.candidateVerificationFreshCount} fresh / ${view.candidateVerificationPassedCount ?? 0} passed / ${view.candidateVerificationFailedCount ?? 0} failed / ${view.candidateVerificationStaleCount ?? 0} stale`,
+        ]
+      : []),
+    ...(view.candidateVerificationSetSha256
+      ? [
+          `candidate-verification-set ${view.candidateVerificationSetSha256.slice(0, 12)}`,
+        ]
       : []),
   ].join(" / ");
 }

@@ -6,6 +6,41 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added pre-merge verification for isolated coder candidates. A coder now
+  receives real one-shot TypeScript/JavaScript LSP diagnostics and, when the
+  parent profile explicitly enables it, the existing fixed
+  `verify_workspace` dispatcher against private candidate bytes. Private
+  patches and checks share one serial queue; each of at most 16 attempts binds
+  tool/status/result hashes to the complete post-check candidate snapshot, so
+  later edits turn prior evidence stale and the parent receives explicit
+  fresh/pass/fail/stale evidence before its separate one-use merge. A bounded
+  protected `node_modules` overlay keeps ordinary dependencies in the parent
+  read-only toolchain while redirecting workspace-package links into the
+  private candidate; unsafe/escaping/missing/replaced targets fail closed.
+  `VerificationRunner` now supports a separate external toolchain root, binds
+  the fixed verifier and root package manifests, authorizes only canonical
+  `node_modules` as an additional read-only Sandbox runtime path, and
+  revalidates the binding after execution. Generic verifier Ledger projection
+  now excludes raw stdout/stderr, cwd/target paths, and Sandbox labels; coder
+  delegation, merge, HTTP/SSE, portable Replay, and strict Web projection
+  retain only bounded counts and verification-set/toolchain/result hashes.
+  Tests cover serialization, later-edit staleness, failure/cancellation
+  privacy, verifier and overlay drift, workspace-package redirection, escape
+  rejection, Agent/HTTP/Replay/Web behavior, and non-TypeScript candidates.
+  Real built-Runtime Dogfood completed private patch, clean LSP, exact Vitest,
+  explicit merge, fresh post-merge checks, and cleanup in 17.92 seconds.
+  Verifier types/toolchain/redaction, candidate coordination/overlay/apply
+  adaptation, LSP runtime paths, and Web parsing are split into focused
+  modules; `subagent-worktree-mutation.ts`, `verification.ts`, and
+  `lsp-source-session.ts` remain below 500 lines, while the existing Web tool
+  event module shrinks by 185 lines. The complete gate passes 1,684 regular
+  tests with 30 opt-in live tests skipped, 255 OpenAPI routes, and 244/244
+  compatibility operations. Product performance remains within budget at
+  687.3 ms to first CLI event, 835.7 ms to first token, 1,148.1 ms to
+  completion, 0.7 ms read p95, 7.0 ms for a 1,000-event projection, and
+  749.568 closed SQLite bytes/event. The 92-file Web dist main entry remains
+  130.32 KiB under its 150 KiB limit, bound to `9603ee68e8e27da7`; the
+  seven-artifact release set is bound to `6b404b7752268baf`.
 - Added opt-in isolated coder Subagent worktrees. A parent Agent can delegate a
   change over 1-8 declared existing UTF-8 files; Napier snapshots at most 2,000
   files / 32 MiB into a 0600/0700 private Runtime-owner root, gives the child

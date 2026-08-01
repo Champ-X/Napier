@@ -13,6 +13,7 @@ import {
   type PrepareLspProtocolOperation,
   runLspProtocolSession,
 } from "./lsp-protocol-session.js";
+import { resolveLspRuntimeReadPaths } from "./lsp-runtime-read-paths.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 
@@ -54,6 +55,7 @@ export interface LspDiagnosticsRunnerOptions {
   nodeExecutable?: string;
   languageServerPath?: string;
   typescriptServerPath?: string;
+  runtimeReadPaths?: string[];
   session?: LspProtocolExecutor;
 }
 
@@ -121,6 +123,11 @@ export async function runBoundLspSourceSession<T>(
   }
   const prepared = await prepareLspSource(options, request, labels.label);
   validatePrepared?.(prepared);
+  if (options.session && (options.runtimeReadPaths?.length ?? 0) > 0) {
+    throw new Error(
+      `${labels.label} cannot add runtime paths to a persistent LSP Session`,
+    );
+  }
   if (options.sandbox.id === "oci-container") {
     throw new Error(
       `${labels.label} requires a local OS sandbox until container runtime asset identity binding is available`,
@@ -139,6 +146,7 @@ export async function runBoundLspSourceSession<T>(
         prepared,
         protocolRequest,
         prepareOperation,
+        options.runtimeReadPaths,
         request.signal,
       );
   await assertLspTargetStable(
@@ -260,8 +268,13 @@ async function runOneShotSession<T>(
   prepared: PreparedLspSource,
   request: LspProtocolSessionRequest,
   prepareOperation: PrepareLspProtocolOperation<T>,
+  additionalRuntimeReadPaths: string[] | undefined,
   signal?: AbortSignal,
 ): Promise<LspProtocolSessionResult<T>> {
+  const runtimeReadPaths = await resolveLspRuntimeReadPaths(
+    [prepared.assets.languageServerRoot, prepared.assets.typescriptRoot],
+    additionalRuntimeReadPaths,
+  );
   const child = await sandbox.launch({
     command: prepared.assets.nodeExecutable,
     args: [prepared.assets.languageServerPath, "--stdio", "--log-level", "1"],
@@ -269,10 +282,7 @@ async function runOneShotSession<T>(
     env: { ...LSP_FIXED_ENVIRONMENT },
     workspaceRoot: prepared.workspaceRoot,
     approvedCapabilities: ["process.spawn", "workspace.read"],
-    runtimeReadPaths: [
-      prepared.assets.languageServerRoot,
-      prepared.assets.typescriptRoot,
-    ],
+    runtimeReadPaths,
   });
   return runLspProtocolSession(child, request, prepareOperation, signal);
 }

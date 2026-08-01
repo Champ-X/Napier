@@ -4147,6 +4147,13 @@ export interface SubagentWorktreeApplyDetails extends Omit<
   writeScopeCount: number;
   writeScopeSetSha256: string;
   changedFileSetSha256: string;
+  candidateVerificationAttemptCount?: number;
+  candidateVerificationFreshCount?: number;
+  candidateVerificationPassedCount?: number;
+  candidateVerificationFailedCount?: number;
+  candidateVerificationStaleCount?: number;
+  candidateVerificationSetSha256?: string;
+  candidateToolchainSha256?: string;
 }
 
 export interface LspCodeActionApplyDiagnosticsDetails extends Omit<

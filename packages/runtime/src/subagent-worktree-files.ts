@@ -33,7 +33,7 @@ interface WorktreeFile {
   buffer: Buffer;
 }
 
-interface WorktreeSnapshot {
+export interface SubagentWorktreeSnapshot {
   files: WorktreeFile[];
   fileCount: number;
   bytes: number;
@@ -56,6 +56,7 @@ export interface SubagentWorktreeCandidate {
   files: LspRenameFile[];
   changedPaths: string[];
   changedFileSetSha256: string;
+  candidateSnapshotSha256: string;
 }
 
 export async function createSubagentWorktree(input: {
@@ -182,6 +183,7 @@ export async function finalizeSubagentWorktree(
   return {
     files,
     changedPaths,
+    candidateSnapshotSha256: candidate.contentSha256,
     changedFileSetSha256: sha256(
       canonicalJson(
         files.map((file) => ({
@@ -192,6 +194,13 @@ export async function finalizeSubagentWorktree(
       ),
     ),
   };
+}
+
+export async function observeSubagentWorktreeCandidate(
+  session: Pick<SubagentWorktreeSession, "root">,
+  signal?: AbortSignal,
+): Promise<SubagentWorktreeSnapshot> {
+  return readWorktreeSnapshot(session.root, signal);
 }
 
 export async function observeSubagentWorktreeSource(
@@ -264,7 +273,7 @@ function normalizeRelativePath(value: string): string {
 async function readWorktreeSnapshot(
   root: string,
   signal?: AbortSignal,
-): Promise<WorktreeSnapshot> {
+): Promise<SubagentWorktreeSnapshot> {
   const files: WorktreeFile[] = [];
   let bytes = 0;
   const visit = async (directory: string): Promise<void> => {
@@ -358,7 +367,7 @@ async function readCanonicalFile(target: string): Promise<Buffer> {
 
 async function copySnapshot(
   root: string,
-  snapshot: WorktreeSnapshot,
+  snapshot: SubagentWorktreeSnapshot,
   signal?: AbortSignal,
 ): Promise<void> {
   for (const file of snapshot.files) {

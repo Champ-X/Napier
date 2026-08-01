@@ -18,6 +18,13 @@ export interface SubagentWorktreeToolEventTraceView {
   subagentWorktreeRollbackVerified?: boolean;
   subagentWorktreeDurable?: boolean;
   subagentWorktreeDiagnosticsStatus?: string;
+  subagentWorktreeCandidateVerificationAttemptCount?: number;
+  subagentWorktreeCandidateVerificationFreshCount?: number;
+  subagentWorktreeCandidateVerificationPassedCount?: number;
+  subagentWorktreeCandidateVerificationFailedCount?: number;
+  subagentWorktreeCandidateVerificationStaleCount?: number;
+  subagentWorktreeCandidateVerificationSetSha256?: string;
+  subagentWorktreeCandidateToolchainSha256?: string;
   subagentWorktreeOutcomeSha256?: string;
   subagentWorktreeSourceSnapshotSha256?: string;
   subagentWorktreeWriteScopeSetSha256?: string;
@@ -64,6 +71,7 @@ export function subagentWorktreeEventEvidence(
       : undefined;
   const diagnosticsResultSha256 = hash(diagnostics?.["resultSha256"]);
   const tests = writeLinkedTestEventEvidence(input["tests"]);
+  const candidateVerification = candidateVerificationEvidence(input);
   const requiredHashes = {
     sourceSnapshot: hash(input["sourceSnapshotSha256"]),
     outcome: hash(input["outcomeSha256"]),
@@ -99,7 +107,8 @@ export function subagentWorktreeEventEvidence(
     ((status === "applied" || diagnosticsPresent) &&
       (!diagnosticsStatus || !diagnosticsResultSha256)) ||
     Object.values(requiredHashes).some((candidate) => !candidate) ||
-    (input["tests"] !== undefined && !tests)
+    (input["tests"] !== undefined && !tests) ||
+    !candidateVerification
   ) {
     return undefined;
   }
@@ -133,6 +142,7 @@ export function subagentWorktreeEventEvidence(
       ? { subagentWorktreeObservedFileSetSha256: observedFileSetSha256 }
       : {}),
     subagentWorktreeResultSha256: requiredHashes.result!,
+    ...candidateVerification,
     ...(tests ?? {}),
   };
 }
@@ -156,6 +166,16 @@ export function subagentWorktreeSummaryParts(
     ...(view.subagentWorktreeDiagnosticsStatus
       ? [`diagnostics ${view.subagentWorktreeDiagnosticsStatus}`]
       : []),
+    ...(view.subagentWorktreeCandidateVerificationFreshCount !== undefined
+      ? [
+          `candidate-verification ${view.subagentWorktreeCandidateVerificationFreshCount} fresh / ${view.subagentWorktreeCandidateVerificationPassedCount ?? 0} passed / ${view.subagentWorktreeCandidateVerificationFailedCount ?? 0} failed / ${view.subagentWorktreeCandidateVerificationStaleCount ?? 0} stale`,
+        ]
+      : []),
+    ...(view.subagentWorktreeCandidateVerificationSetSha256
+      ? [
+          `candidate-verification-set ${view.subagentWorktreeCandidateVerificationSetSha256.slice(0, 12)}`,
+        ]
+      : []),
     ...(view.subagentWorktreeRollbackAttempted ? ["rollback-attempted"] : []),
     ...(view.subagentWorktreeRollbackVerified ? ["rollback-verified"] : []),
     ...(view.subagentWorktreeResultSha256
@@ -165,6 +185,62 @@ export function subagentWorktreeSummaryParts(
       ? [`outcome ${view.subagentWorktreeOutcomeSha256.slice(0, 12)}`]
       : []),
   ];
+}
+
+function candidateVerificationEvidence(
+  input: Record<string, unknown>,
+): Pick<
+  SubagentWorktreeToolEventTraceView,
+  | "subagentWorktreeCandidateVerificationAttemptCount"
+  | "subagentWorktreeCandidateVerificationFreshCount"
+  | "subagentWorktreeCandidateVerificationPassedCount"
+  | "subagentWorktreeCandidateVerificationFailedCount"
+  | "subagentWorktreeCandidateVerificationStaleCount"
+  | "subagentWorktreeCandidateVerificationSetSha256"
+  | "subagentWorktreeCandidateToolchainSha256"
+> | null {
+  const fields = [
+    input["candidateVerificationAttemptCount"],
+    input["candidateVerificationFreshCount"],
+    input["candidateVerificationPassedCount"],
+    input["candidateVerificationFailedCount"],
+    input["candidateVerificationStaleCount"],
+    input["candidateVerificationSetSha256"],
+  ];
+  if (fields.every((value) => value === undefined)) {
+    return input["candidateToolchainSha256"] === undefined ? {} : null;
+  }
+  const attemptCount = integer(fields[0], 0, 16);
+  const freshCount = integer(fields[1], 0, 16);
+  const passedCount = integer(fields[2], 0, 16);
+  const failedCount = integer(fields[3], 0, 16);
+  const staleCount = integer(fields[4], 0, 16);
+  const setSha256 = hash(fields[5]);
+  const toolchainSha256 = hash(input["candidateToolchainSha256"]);
+  if (
+    attemptCount === undefined ||
+    freshCount === undefined ||
+    passedCount === undefined ||
+    failedCount === undefined ||
+    staleCount === undefined ||
+    !setSha256 ||
+    passedCount + failedCount !== freshCount ||
+    freshCount + staleCount !== attemptCount ||
+    (input["candidateToolchainSha256"] !== undefined && !toolchainSha256)
+  ) {
+    return null;
+  }
+  return {
+    subagentWorktreeCandidateVerificationAttemptCount: attemptCount,
+    subagentWorktreeCandidateVerificationFreshCount: freshCount,
+    subagentWorktreeCandidateVerificationPassedCount: passedCount,
+    subagentWorktreeCandidateVerificationFailedCount: failedCount,
+    subagentWorktreeCandidateVerificationStaleCount: staleCount,
+    subagentWorktreeCandidateVerificationSetSha256: setSha256,
+    ...(toolchainSha256
+      ? { subagentWorktreeCandidateToolchainSha256: toolchainSha256 }
+      : {}),
+  };
 }
 
 function applyStatus(

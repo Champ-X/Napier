@@ -114,6 +114,13 @@ describe("Subagent event trace view", () => {
       sourceSnapshotSha256: "2".repeat(64),
       writeScopeSetSha256: "3".repeat(64),
       changedFileSetSha256: "4".repeat(64),
+      candidateVerificationAttemptCount: 3,
+      candidateVerificationFreshCount: 2,
+      candidateVerificationPassedCount: 1,
+      candidateVerificationFailedCount: 1,
+      candidateVerificationStaleCount: 1,
+      candidateVerificationSetSha256: "5".repeat(64),
+      candidateToolchainSha256: "6".repeat(64),
       previewId: "TOP_SECRET_PREVIEW",
       changedPaths: ["TOP_SECRET_PATH"],
     });
@@ -129,10 +136,15 @@ describe("Subagent event trace view", () => {
         writeScopeCount: 2,
         changedFileCount: 1,
         changedFileSetSha256: "4".repeat(64),
+        candidateVerificationFreshCount: 2,
+        candidateVerificationPassedCount: 1,
+        candidateVerificationFailedCount: 1,
+        candidateVerificationStaleCount: 1,
+        candidateVerificationSetSha256: "5".repeat(64),
       }),
     );
     expect(subagentEventTraceSummary(event)).toContain(
-      `workspace isolated_write / merge-preview / source-files 120 / write-scopes 2 / changed-files 1 / change-set ${"4".repeat(12)}`,
+      `workspace isolated_write / merge-preview / source-files 120 / write-scopes 2 / changed-files 1 / change-set ${"4".repeat(12)} / candidate-verification 2 fresh / 1 passed / 1 failed / 1 stale / candidate-verification-set ${"5".repeat(12)}`,
     );
     expect(subagentEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

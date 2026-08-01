@@ -1315,6 +1315,8 @@ describe("Tool event trace view", () => {
         targetSnapshotSha256: "f".repeat(64),
         targetSnapshotTruncated: true,
         verifierSha256: "1".repeat(64),
+        toolchainExternal: true,
+        toolchainSha256: "3".repeat(64),
         workspaceSnapshotSha256: "2".repeat(64),
         workspaceSnapshotFileCount: 7,
         workspaceSnapshotBytes: 4096,
@@ -1323,6 +1325,7 @@ describe("Tool event trace view", () => {
         stderrSha256: "e".repeat(64),
         stdoutTruncated: true,
         stderrTruncated: false,
+        resultSha256: "4".repeat(64),
       },
     });
 
@@ -1338,6 +1341,8 @@ describe("Tool event trace view", () => {
       verificationTargetSnapshotSha256: "f".repeat(64),
       verificationTargetSnapshotTruncated: true,
       verificationVerifierSha256: "1".repeat(64),
+      verificationToolchainExternal: true,
+      verificationToolchainSha256: "3".repeat(64),
       verificationWorkspaceSnapshotSha256: "2".repeat(64),
       verificationWorkspaceSnapshotFileCount: 7,
       verificationWorkspaceSnapshotBytes: 4096,
@@ -1345,9 +1350,10 @@ describe("Tool event trace view", () => {
       verificationStdoutSha256: "d".repeat(64),
       verificationStderrSha256: "e".repeat(64),
       verificationStdoutTruncated: true,
+      verificationResultSha256: "4".repeat(64),
     });
     expect(toolEventTraceSummary(event)).toBe(
-      `tool / verify_workspace / completed / verification typecheck failed / exit 2 / scope ${"a".repeat(12)} / cwd ${"b".repeat(12)} / target ${"c".repeat(12)} / target-snapshot ${"f".repeat(12)} / target-snapshot-truncated / verifier ${"1".repeat(12)} / snapshot-files 7 / snapshot-bytes 4096 / snapshot-truncated / workspace-snapshot ${"2".repeat(12)} / stdout ${"d".repeat(12)} / stderr ${"e".repeat(12)} / stdout-truncated`,
+      `tool / verify_workspace / completed / verification typecheck failed / exit 2 / scope ${"a".repeat(12)} / cwd ${"b".repeat(12)} / target ${"c".repeat(12)} / target-snapshot ${"f".repeat(12)} / target-snapshot-truncated / verifier ${"1".repeat(12)} / external-toolchain / toolchain ${"3".repeat(12)} / snapshot-files 7 / snapshot-bytes 4096 / snapshot-truncated / workspace-snapshot ${"2".repeat(12)} / stdout ${"d".repeat(12)} / stderr ${"e".repeat(12)} / stdout-truncated / verification-result ${"4".repeat(12)}`,
     );
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

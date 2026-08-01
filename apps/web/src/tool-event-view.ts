@@ -59,6 +59,11 @@ import {
   subagentWorktreeSummaryParts,
   type SubagentWorktreeToolEventTraceView,
 } from "./subagent-worktree-event-view";
+import {
+  verificationEventEvidence,
+  verificationSummaryParts,
+  type VerificationToolEventTraceView,
+} from "./verification-event-view";
 
 export interface ToolEventTraceView
   extends
@@ -72,6 +77,7 @@ export interface ToolEventTraceView
     NodeDebuggerToolEventTraceView,
     TypescriptAstToolEventTraceView,
     SubagentWorktreeToolEventTraceView,
+    VerificationToolEventTraceView,
     WriteLinkedTestEventTraceView {
   toolName: string;
   status: string;
@@ -130,23 +136,6 @@ export interface ToolEventTraceView
   symbolSourceSignatureSha256?: string;
   symbolSourceRangeSha256?: string;
   symbolSourceLineAnchorSetSha256?: string;
-  verificationKind?: "typecheck" | "test" | "format";
-  verificationStatus?: "passed" | "failed" | "timed_out" | "output_capped";
-  verificationExitCode?: number;
-  verificationScopeSha256?: string;
-  verificationCwdPathSha256?: string;
-  verificationTargetPathSha256?: string;
-  verificationTargetSnapshotSha256?: string;
-  verificationTargetSnapshotTruncated?: boolean;
-  verificationVerifierSha256?: string;
-  verificationWorkspaceSnapshotSha256?: string;
-  verificationWorkspaceSnapshotFileCount?: number;
-  verificationWorkspaceSnapshotBytes?: number;
-  verificationWorkspaceSnapshotTruncated?: boolean;
-  verificationStdoutSha256?: string;
-  verificationStderrSha256?: string;
-  verificationStdoutTruncated?: boolean;
-  verificationStderrTruncated?: boolean;
   patchOperation?:
     | "create"
     | "replace"
@@ -267,7 +256,7 @@ export function toolEventTraceView(
   const lspEvidence = lspToolEventEvidence(toolName, event.payload["details"]);
   const verificationEvidence =
     toolName === "verify_workspace"
-      ? verificationEvidenceView(event.payload["details"])
+      ? verificationEventEvidence(event.payload["details"])
       : undefined;
   const commandEvidence =
     toolName === "run_command"
@@ -492,54 +481,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       ? [`symbol-anchors ${view.symbolSourceLineAnchorSetSha256.slice(0, 12)}`]
       : []),
     ...lspToolEventSummaryParts(view),
-    ...(view.verificationKind && view.verificationStatus
-      ? [`verification ${view.verificationKind} ${view.verificationStatus}`]
-      : []),
-    ...(view.verificationExitCode !== undefined
-      ? [`exit ${view.verificationExitCode}`]
-      : []),
-    ...(view.verificationScopeSha256
-      ? [`scope ${view.verificationScopeSha256.slice(0, 12)}`]
-      : []),
-    ...(view.verificationCwdPathSha256
-      ? [`cwd ${view.verificationCwdPathSha256.slice(0, 12)}`]
-      : []),
-    ...(view.verificationTargetPathSha256
-      ? [`target ${view.verificationTargetPathSha256.slice(0, 12)}`]
-      : []),
-    ...(view.verificationTargetSnapshotSha256
-      ? [
-          `target-snapshot ${view.verificationTargetSnapshotSha256.slice(0, 12)}`,
-        ]
-      : []),
-    ...(view.verificationTargetSnapshotTruncated
-      ? ["target-snapshot-truncated"]
-      : []),
-    ...(view.verificationVerifierSha256
-      ? [`verifier ${view.verificationVerifierSha256.slice(0, 12)}`]
-      : []),
-    ...(view.verificationWorkspaceSnapshotFileCount !== undefined
-      ? [`snapshot-files ${view.verificationWorkspaceSnapshotFileCount}`]
-      : []),
-    ...(view.verificationWorkspaceSnapshotBytes !== undefined
-      ? [`snapshot-bytes ${view.verificationWorkspaceSnapshotBytes}`]
-      : []),
-    ...(view.verificationWorkspaceSnapshotTruncated
-      ? ["snapshot-truncated"]
-      : []),
-    ...(view.verificationWorkspaceSnapshotSha256
-      ? [
-          `workspace-snapshot ${view.verificationWorkspaceSnapshotSha256.slice(0, 12)}`,
-        ]
-      : []),
-    ...(view.verificationStdoutSha256
-      ? [`stdout ${view.verificationStdoutSha256.slice(0, 12)}`]
-      : []),
-    ...(view.verificationStderrSha256
-      ? [`stderr ${view.verificationStderrSha256.slice(0, 12)}`]
-      : []),
-    ...(view.verificationStdoutTruncated ? ["stdout-truncated"] : []),
-    ...(view.verificationStderrTruncated ? ["stderr-truncated"] : []),
+    ...verificationSummaryParts(view),
     ...commandToolEventSummaryParts(view),
     ...browserSummaryParts(view),
     ...researchSourceSummaryParts(view),
@@ -1015,111 +957,6 @@ function codeLanguage(
     value === "python" ||
     value === "go" ||
     value === "unknown"
-    ? value
-    : undefined;
-}
-
-function verificationEvidenceView(value: unknown):
-  | {
-      verificationKind: "typecheck" | "test" | "format";
-      verificationStatus: "passed" | "failed" | "timed_out" | "output_capped";
-      verificationExitCode?: number;
-      verificationScopeSha256?: string;
-      verificationCwdPathSha256?: string;
-      verificationTargetPathSha256?: string;
-      verificationTargetSnapshotSha256?: string;
-      verificationTargetSnapshotTruncated?: boolean;
-      verificationVerifierSha256?: string;
-      verificationWorkspaceSnapshotSha256?: string;
-      verificationWorkspaceSnapshotFileCount?: number;
-      verificationWorkspaceSnapshotBytes?: number;
-      verificationWorkspaceSnapshotTruncated?: boolean;
-      verificationStdoutSha256?: string;
-      verificationStderrSha256?: string;
-      verificationStdoutTruncated?: boolean;
-      verificationStderrTruncated?: boolean;
-    }
-  | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const record = value as Record<string, unknown>;
-  const kind = verificationKind(record["kind"]);
-  const status = verificationStatus(record["status"]);
-  if (!kind || !status) return undefined;
-  const exitCode = integerInRange(record["exitCode"], -1, 255);
-  const workspaceSnapshotFileCount = integerInRange(
-    record["workspaceSnapshotFileCount"],
-    0,
-    2_001,
-  );
-  const workspaceSnapshotBytes = integerInRange(
-    record["workspaceSnapshotBytes"],
-    0,
-    16 * 1024 * 1024,
-  );
-  const scopeSha256 = sha256(record["scopeSha256"]);
-  const cwdPathSha256 = sha256(record["cwdPathSha256"]);
-  const targetPathSha256 = sha256(record["targetPathSha256"]);
-  const targetSnapshotSha256 = sha256(record["targetSnapshotSha256"]);
-  const verifierSha256 = sha256(record["verifierSha256"]);
-  const workspaceSnapshotSha256 = sha256(record["workspaceSnapshotSha256"]);
-  const stdoutSha256 = sha256(record["stdoutSha256"]);
-  const stderrSha256 = sha256(record["stderrSha256"]);
-  return {
-    verificationKind: kind,
-    verificationStatus: status,
-    ...(exitCode !== undefined ? { verificationExitCode: exitCode } : {}),
-    ...(scopeSha256 ? { verificationScopeSha256: scopeSha256 } : {}),
-    ...(cwdPathSha256 ? { verificationCwdPathSha256: cwdPathSha256 } : {}),
-    ...(targetPathSha256
-      ? { verificationTargetPathSha256: targetPathSha256 }
-      : {}),
-    ...(targetSnapshotSha256
-      ? { verificationTargetSnapshotSha256: targetSnapshotSha256 }
-      : {}),
-    ...(record["targetSnapshotTruncated"] === true
-      ? { verificationTargetSnapshotTruncated: true }
-      : {}),
-    ...(verifierSha256 ? { verificationVerifierSha256: verifierSha256 } : {}),
-    ...(workspaceSnapshotSha256
-      ? { verificationWorkspaceSnapshotSha256: workspaceSnapshotSha256 }
-      : {}),
-    ...(workspaceSnapshotFileCount !== undefined
-      ? { verificationWorkspaceSnapshotFileCount: workspaceSnapshotFileCount }
-      : {}),
-    ...(workspaceSnapshotBytes !== undefined
-      ? { verificationWorkspaceSnapshotBytes: workspaceSnapshotBytes }
-      : {}),
-    ...(record["workspaceSnapshotTruncated"] === true
-      ? { verificationWorkspaceSnapshotTruncated: true }
-      : {}),
-    ...(stdoutSha256 ? { verificationStdoutSha256: stdoutSha256 } : {}),
-    ...(stderrSha256 ? { verificationStderrSha256: stderrSha256 } : {}),
-    ...(record["stdoutTruncated"] === true
-      ? { verificationStdoutTruncated: true }
-      : {}),
-    ...(record["stderrTruncated"] === true
-      ? { verificationStderrTruncated: true }
-      : {}),
-  };
-}
-
-function verificationKind(
-  value: unknown,
-): "typecheck" | "test" | "format" | undefined {
-  return value === "typecheck" || value === "test" || value === "format"
-    ? value
-    : undefined;
-}
-
-function verificationStatus(
-  value: unknown,
-): "passed" | "failed" | "timed_out" | "output_capped" | undefined {
-  return value === "passed" ||
-    value === "failed" ||
-    value === "timed_out" ||
-    value === "output_capped"
     ? value
     : undefined;
 }

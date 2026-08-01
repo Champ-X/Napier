@@ -9,6 +9,7 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { SubagentWorktreePreview } from "./subagent-worktree-mutation.js";
+import { formatSubagentCandidateVerification } from "./subagent-worktree-verification.js";
 
 export const MAX_SUBAGENT_STEP_CHARS = 8_192;
 export const MAX_SUBAGENT_RESULT_CHARS = 12_000;
@@ -28,6 +29,13 @@ export interface DelegationDetails {
   changedFileCount?: number;
   changedFileSetSha256?: string;
   sourceSnapshotSha256?: string;
+  candidateVerificationAttemptCount?: number;
+  candidateVerificationFreshCount?: number;
+  candidateVerificationPassedCount?: number;
+  candidateVerificationFailedCount?: number;
+  candidateVerificationStaleCount?: number;
+  candidateVerificationSetSha256?: string;
+  candidateToolchainSha256?: string;
 }
 
 export function subagentTaskPayload(
@@ -53,6 +61,21 @@ export function subagentTaskPayload(
           sourceSnapshotSha256: preview.sourceSnapshotSha256,
           changedFileCount: preview.changedFileCount,
           changedFileSetSha256: preview.changedFileSetSha256,
+          candidateVerificationAttemptCount:
+            preview.candidateVerification.attemptCount,
+          candidateVerificationFreshCount:
+            preview.candidateVerification.freshCount,
+          candidateVerificationPassedCount:
+            preview.candidateVerification.passedCount,
+          candidateVerificationFailedCount:
+            preview.candidateVerification.failedCount,
+          candidateVerificationStaleCount:
+            preview.candidateVerification.staleCount,
+          candidateVerificationSetSha256:
+            preview.candidateVerification.setSha256,
+          ...(preview.candidateToolchainSha256
+            ? { candidateToolchainSha256: preview.candidateToolchainSha256 }
+            : {}),
         }
       : {}),
   };
@@ -83,6 +106,21 @@ export function subagentTaskDetails(
           changedFileCount: preview.changedFileCount,
           changedFileSetSha256: preview.changedFileSetSha256,
           sourceSnapshotSha256: preview.sourceSnapshotSha256,
+          candidateVerificationAttemptCount:
+            preview.candidateVerification.attemptCount,
+          candidateVerificationFreshCount:
+            preview.candidateVerification.freshCount,
+          candidateVerificationPassedCount:
+            preview.candidateVerification.passedCount,
+          candidateVerificationFailedCount:
+            preview.candidateVerification.failedCount,
+          candidateVerificationStaleCount:
+            preview.candidateVerification.staleCount,
+          candidateVerificationSetSha256:
+            preview.candidateVerification.setSha256,
+          ...(preview.candidateToolchainSha256
+            ? { candidateToolchainSha256: preview.candidateToolchainSha256 }
+            : {}),
         }
       : {}),
   };
@@ -112,6 +150,8 @@ export function formatDelegationResult(
                 "Candidate review is truncated. Treat unshown changes as unresolved before applying.",
               ]
             : []),
+          "",
+          ...formatSubagentCandidateVerification(preview.candidateVerification),
           "Review the candidate evidence, then call subagent_worktree_apply with this preview ID.",
         ]
       : []),
@@ -220,6 +260,19 @@ export function delegateTaskOutputLedgerProjection(
             changedFileCount: details["changedFileCount"],
             changedFileSetSha256: details["changedFileSetSha256"],
             sourceSnapshotSha256: details["sourceSnapshotSha256"],
+            candidateVerificationAttemptCount:
+              details["candidateVerificationAttemptCount"],
+            candidateVerificationFreshCount:
+              details["candidateVerificationFreshCount"],
+            candidateVerificationPassedCount:
+              details["candidateVerificationPassedCount"],
+            candidateVerificationFailedCount:
+              details["candidateVerificationFailedCount"],
+            candidateVerificationStaleCount:
+              details["candidateVerificationStaleCount"],
+            candidateVerificationSetSha256:
+              details["candidateVerificationSetSha256"],
+            candidateToolchainSha256: details["candidateToolchainSha256"],
             mergePreviewAvailable:
               typeof details["worktreePreviewId"] === "string",
           }),

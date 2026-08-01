@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { PassThrough } from "node:stream";
 
 import {
   fauxAssistantMessage,
@@ -10,6 +11,7 @@ import {
 } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { OsSandboxAdapter } from "@napier/runtime";
 import { createApp, createServices } from "../src/app.js";
 
 const temporaryRoots: string[] = [];
@@ -33,13 +35,25 @@ describe("coder Subagent HTTP Agent path", () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-server-coder-"));
     temporaryRoots.push(root);
     const workspaceRoot = path.join(root, "workspace");
-    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    await Promise.all([
+      mkdir(path.join(workspaceRoot, "src"), { recursive: true }),
+      mkdir(path.join(workspaceRoot, "node_modules/vitest"), {
+        recursive: true,
+      }),
+    ]);
     const sourcePath = "src/private-value.txt";
     const source = "value=1\n";
-    await writeFile(path.join(workspaceRoot, sourcePath), source);
+    await Promise.all([
+      writeFile(path.join(workspaceRoot, sourcePath), source),
+      writeFile(
+        path.join(workspaceRoot, "node_modules/vitest/vitest.mjs"),
+        "// fixed verifier fixture\n",
+      ),
+    ]);
     const services = await createServices({
       workspaceRoot,
       dataRoot: path.join(root, "data"),
+      sandbox: passingSandbox(),
     });
     openServices.push(services);
     const app = createApp(services);
@@ -49,7 +63,7 @@ describe("coder Subagent HTTP Agent path", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         toolPolicy: "workspace",
-        enabledTools: ["apply_patch", "lsp_diagnostics"],
+        enabledTools: ["apply_patch", "lsp_diagnostics", "verify_workspace"],
         enabledSubagents: ["coder"],
       }),
     });
@@ -80,6 +94,13 @@ describe("coder Subagent HTTP Agent path", () => {
         { stopReason: "toolUse" },
       ),
       fauxAssistantMessage(
+        fauxToolCall("verify_workspace", {
+          kind: "test",
+          target: sourcePath,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
         JSON.stringify({
           summary: "Prepared the isolated candidate.",
           items: [],
@@ -92,6 +113,9 @@ describe("coder Subagent HTTP Agent path", () => {
             /subworkpreview_[a-z0-9]{8,80}/u,
           )?.[0] ?? "";
         expect(previewId).toMatch(/^subworkpreview_/u);
+        expect(JSON.stringify(context.messages)).toContain(
+          "Candidate verification: 1 fresh / 1 passed / 0 failed / 0 stale",
+        );
         return fauxAssistantMessage(
           fauxToolCall("subagent_worktree_apply", { previewId }),
           { stopReason: "toolUse" },
@@ -119,6 +143,7 @@ describe("coder Subagent HTTP Agent path", () => {
     expect(stream).not.toContain(previewId);
     expect(stream).not.toContain(sourcePath);
     expect(stream).not.toContain("value=2");
+    expect(stream).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
     expect(await readFile(path.join(workspaceRoot, sourcePath), "utf8")).toBe(
       "value=2\n",
     );
@@ -133,12 +158,18 @@ describe("coder Subagent HTTP Agent path", () => {
         kind: "napier.subagent-worktree-apply",
         status: "applied",
         fileCount: 1,
+        candidateVerificationAttemptCount: 1,
+        candidateVerificationFreshCount: 1,
+        candidateVerificationPassedCount: 1,
+        candidateVerificationFailedCount: 0,
+        candidateVerificationStaleCount: 0,
         resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
     const durable = JSON.stringify(events);
     expect(durable).not.toContain(previewId);
     expect(durable).not.toContain("value=2");
+    expect(durable).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
   });
 });
 
@@ -150,4 +181,36 @@ function record(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
+}
+
+function passingSandbox(): OsSandboxAdapter {
+  return {
+    id: "candidate-server-sandbox",
+    async launch() {
+      const stdin = new PassThrough();
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      const exit = new Promise<{
+        code: number | null;
+        signal: NodeJS.Signals | null;
+      }>((resolve) => {
+        setTimeout(() => {
+          stdout.end("TOP_SECRET_CANDIDATE_STDOUT");
+          stderr.end();
+          resolve({ code: 0, signal: null });
+        }, 0);
+      });
+      return {
+        stdin,
+        stdout,
+        stderr,
+        exit,
+        async terminate() {
+          stdout.end();
+          stderr.end();
+          await exit;
+        },
+      };
+    },
+  };
 }
