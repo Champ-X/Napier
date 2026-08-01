@@ -1,0 +1,30 @@
+export const workflowBreakpointCopy = {
+  eyebrow: "Execution hold",
+  title: "Workflow breakpoint",
+  body: "The Ledger stopped before this node. Load the exact Manifest, inspect the bound evidence, then continue deliberately.",
+  manifest: "Bound Manifest",
+  loadManifest: "Load workflow JSON",
+  loadingManifest: "Checking Manifest...",
+  manifestReady: "Manifest verified",
+  continuing: "Continuing...",
+  continue: "Continue from breakpoint",
+  node: "Before node",
+  ordinal: "Breakpoint",
+  planRevision: "Plan revision",
+  reachedSequence: "Reached sequence",
+  binding: "Input binding",
+  manifestHash: "Manifest",
+  waiting: "No model, Tool, or node side effect has started beyond this hold.",
+  settled: "Continuation settled",
+  nextPause: "The Workflow reached its next breakpoint.",
+  refreshHint: "The authoritative Thread was refreshed after settlement.",
+  errors: {
+    manifestTooLarge: "Workflow Manifest exceeds the 1 MiB browser limit.",
+    manifestInvalid: "Workflow Manifest is invalid.",
+    manifestMismatch:
+      "Workflow Manifest does not match this Ledger breakpoint.",
+    evidenceInvalid:
+      "Breakpoint evidence is inconsistent. Continue is disabled.",
+    running: "Wait for the active Thread operation to settle.",
+  },
+} as const;

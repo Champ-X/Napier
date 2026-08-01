@@ -489,6 +489,26 @@ bindings, and forged continuations fail closed. Web Trace keeps only safe node
 IDs, counts, revisions, event sequence, and hash prefixes. This is node-boundary
 pause/continue, not mid-node suspension or DAP stepping.
 
+The Plan Workbench derives its breakpoint control from the same
+`workflow.started`, reached, and continued events rather than storing UI state.
+`WorkflowWorkbenchSlot.tsx` keeps this control and the existing experiment desk
+outside the oversized Plan panel. An open point lazy-loads
+`WorkflowBreakpointDesk.tsx`; the operator must supply a Manifest that passes
+the existing independent browser parser and matches the frozen Manifest hash,
+breakpoint set order, and node ID. The Manifest remains ephemeral browser
+memory.
+
+`workflow-api.ts` sends the existing resume request and accepts no Web-only
+authorization. It independently verifies response headers, the exact
+continuation event, contiguous SSE, Snapshot hashes, typed result and frame
+hashes, terminal Plan/Thread state, paused reached-event evidence,
+Manifest/Blueprint/node binding, and the complete event-stream hash before the
+Workbench refreshes Thread detail. Multiple active Plans, a start event ordered
+after its hold, a second client consuming the point, malformed Ledger
+projection, Plan revision drift, or self-consistently rehashed impossible
+result is visible as a failure. Runtime policy, Sandbox, and side-effect
+recovery remain authoritative beneath the adapter.
+
 Map nodes add dynamic cardinality without adding a second scheduler. A Map
 selects one required array capped at 16 items from its already constructed
 typed input. One coordinator `source=workflow` Run binds the Plan step and

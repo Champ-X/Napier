@@ -47,12 +47,13 @@ Version `0.1.0` includes:
   nodes, bounded read-only Agent Map fan-out, bounded sequential read-only
   Agent Loop refinement, and durable human Approval gates, strict JSON output,
   declared tool effects, policy/schema preflight, optional bounded parallel
-  waves, persistent pre-node breakpoints, explicit retry, safe checkpoint
-  reuse, restart reconstruction, and shared CLI/HTTP/SDK/RPC/Web/Trace
-  evidence. A Workflow with declared workspace file or directory Artifacts
-  completes only after Napier hashes current bytes and records the existing
-  `produced -> verified` Plan lifecycle; missing, drifted, oversized, escaped,
-  or symlink-backed delivery blocks instead of trusting node output;
+  waves, persistent pre-node breakpoints with Manifest-bound Plan Workbench
+  continuation, explicit retry, safe checkpoint reuse, restart reconstruction,
+  and shared CLI/HTTP/SDK/RPC/Web/Trace evidence. A Workflow with declared
+  workspace file or directory Artifacts completes only after Napier hashes
+  current bytes and records the existing `produced -> verified` Plan lifecycle;
+  missing, drifted, oversized, escaped, or symlink-backed delivery blocks
+  instead of trusting node output;
 - controlled Workflow checkpoint experiments with verified ancestor reuse,
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
@@ -3088,6 +3089,19 @@ claim mid-node suspension, DAP stepping, single-node mocks, or side-effect
 simulation. CLI JSONL, HTTP SSE, the TypeScript SDK, and local stdio RPC share
 the same contract, while Web Trace exposes only node IDs, counts, revisions,
 event sequence, and hash prefixes.
+
+The Plan Workbench projects an open breakpoint directly from
+`workflow.started` plus reached/continued Ledger evidence. It displays the safe
+node, ordinal, Plan revision, event sequence, and binding/Manifest hash
+prefixes. Continue remains disabled until the operator loads the exact
+content-bound Manifest; the file stays in browser memory and is never added to
+the Ledger. The browser then posts the ordinary Workflow continuation request
+and independently validates the unique continuation event, ordered SSE,
+Snapshot, typed result, Manifest/Blueprint binding, and complete event-stream
+hash before refreshing the authoritative Thread. Malformed evidence, stale
+Plan state, a mismatched Manifest, concurrent consumption, or a rehashed
+impossible result fails visible. This is a real continuation control, not a
+visual Workflow editor or a browser-side scheduler.
 
 Map nodes select one required, Schema-bounded array from their constructed
 input and run up to three item Agents concurrently, with at most 16 items.

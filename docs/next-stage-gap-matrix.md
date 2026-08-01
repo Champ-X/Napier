@@ -25,11 +25,77 @@ Audit date: 2026-08-01
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                              |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript definition/execution SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, write-capable Map/Loop, compensation, single-node mock execution and step controls, external adapters, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools also support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target output comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                                                                                           |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, and RPC can create and explicitly continue persistent Workflow breakpoints through the same Ledger state, while Web Trace projects their bounded evidence. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, full-screen TUI, ACP, Desktop, seamless Web Manifest-backed Workflow controls, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                           |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and a Manifest-bound Plan Workbench control can explicitly continue persistent Workflow breakpoints through the same Ledger state; the browser independently verifies continuation, Snapshot, result, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, full-screen TUI, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                 |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+
+## Implemented Slice: Web Workflow Breakpoint Control
+
+User scenario: inspect an open Workflow breakpoint in the Plan Workbench, load
+the exact reviewed Manifest, and explicitly continue the durable Plan without
+switching to CLI or creating browser-only execution state.
+
+Acceptance:
+
+- derive open, consumed, ambiguous, and drifted breakpoint state from the
+  active Plan plus `workflow.started`, reached, and continued Ledger events;
+- show only safe node, ordinal/count, Plan revision, reached sequence, and
+  binding/Manifest hash prefixes;
+- keep continue disabled until an independently validated Manifest matches the
+  frozen content hash, canonical breakpoint order, and selected node;
+- keep the uploaded Manifest in component memory only. Do not persist it,
+  cache it, add it to Trace, or create a second Manifest registry;
+- send the existing `continueBreakpoint` request through the public Workflow
+  SSE route and refresh authoritative Thread detail after settlement;
+- independently validate response headers, the unique continuation event,
+  contiguous events, Snapshot/event hashes, typed result/frame hashes,
+  terminal Plan/Thread state, paused reached-event evidence,
+  Manifest/Blueprint/node binding, and the complete event-stream hash;
+- keep the desk and its CSS lazy, and move the existing experiment loader into
+  a focused Workbench slot so the 4,940-line Plan panel does not grow.
+
+Threat boundary:
+
+- the Web adapter grants no new capability. Runtime Manifest, Agent policy,
+  Sandbox, tool freshness, and breakpoint evidence checks remain authoritative;
+- malformed, missing-plan, duplicate, forged, already consumed, out-of-order,
+  multi-active-Plan, or stale Plan evidence fails visible before the button is
+  enabled;
+- a self-consistently rehashed browser response cannot move a breakpoint
+  sequence beyond the Snapshot, substitute another Blueprint/node, omit the
+  continuation, or change a streamed event;
+- another entry may consume the point first. The resulting conflict refreshes
+  the Thread rather than retrying or manufacturing consent;
+- requiring a local Manifest upload is deliberate fail-closed behavior, not a
+  claim of zero-configuration Manifest persistence or a visual Workflow
+  builder.
+
+Observed result:
+
+- pure browser tests project an open point, reject Plan drift, missing plan IDs,
+  forged binding evidence, reordered/mismatched Manifests, missing continuation,
+  and self-consistently rehashed impossible result frames;
+- a real Hono/SQLite/Web-client integration continued a model-free Tool
+  Workflow through the same production SSE route and validated its terminal
+  Snapshot and event stream;
+- production-browser dogfood opened the waiting Thread, displayed the
+  breakpoint desk, kept continue disabled before upload, accepted the exact
+  Manifest, continued once, refreshed to an idle/completed Plan, and removed
+  the consumed desk with zero console or page errors;
+- the same run recorded exactly one reached, paused, continued, Tool started,
+  Tool completed, Artifact produced, Artifact verified, and Workflow completed
+  event. The declared Manifest file ended `verified`;
+- `npm run check` passes 1,562 regular tests with 27 opt-in live tests skipped,
+  253 OpenAPI routes, and 244/244 compatibility operations. Product-path
+  performance remains within budget at 596.1 ms to first CLI event, 743.4 ms
+  to first token, 1,050.9 ms to completion, 0.4 ms read p95, and 8.1 ms for a
+  1,000-event projection;
+- the breakpoint desk is a 14.33 KiB lazy chunk, while `PlanPanel.tsx` shrank
+  from 4,940 to 4,939 lines. The 90-file Web dist keeps its main entry at
+  130.24 KiB under 150 KiB and is bound to `7c0c61947a5f042b`; the
+  seven-artifact release set is bound to `740676f09e99bc94`.
 
 ## Implemented Slice: Persistent Workflow Breakpoints
 

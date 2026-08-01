@@ -536,6 +536,7 @@ export function App() {
               <LazyPlanPanel
                 threadId={vm.detail?.thread.id}
                 plans={vm.detail?.plans ?? []}
+                events={vm.detail?.events ?? []}
                 running={vm.isRunning}
                 selectedModelKey={vm.selectedModelKey}
                 selectedModelConfigured={activeModel.configured}

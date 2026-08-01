@@ -6,6 +6,29 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a Manifest-bound Workflow breakpoint control to the Plan Workbench.
+  The browser derives one open point from the active Plan and exact
+  `workflow.started`/reached/continued Ledger chain, renders only safe
+  node/count/revision/sequence/hash evidence, and keeps continue disabled until
+  an uploaded Manifest independently validates and matches the frozen hash,
+  breakpoint order, and node. The Manifest remains ephemeral browser memory.
+  Continuation uses the existing public Workflow SSE route and independently
+  verifies response headers, the unique continuation event, contiguous stream,
+  Snapshot, typed result/frame hashes, terminal Plan/Thread state, paused
+  reached-event evidence, Manifest/Blueprint/node binding, and complete
+  event-stream hash before refreshing the authoritative Thread. Malformed or
+  missing-plan evidence, multiple active Plans, out-of-order starts, Plan
+  drift, Manifest mismatch, concurrent consumption, omitted continuation, and
+  self-consistently rehashed impossible frames fail visible. A focused lazy
+  Workbench slot keeps this control and the experiment loader outside the
+  oversized Plan panel, reducing that file by one line. Real
+  Hono/SQLite/Web-client integration and production-browser dogfood continued
+  one Tool Workflow, verified its declared Manifest Artifact, observed exactly
+  one continuation and Tool execution, and reported zero console/page errors.
+  The complete gate passes 1,562 regular tests with 27 opt-in live tests
+  skipped. The 14.33 KiB lazy desk keeps the 90-file Web dist main entry at
+  130.24 KiB, bound to `7c0c61947a5f042b`, with release set
+  `740676f09e99bc94`.
 - Added persistent pre-node breakpoints to executable Plan Workflows. New
   executions may declare up to 16 unique Manifest node IDs; the Runtime
   normalizes and freezes the set, then records `workflow.breakpoint.reached`

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Brain,
   ChevronRight,
@@ -22,6 +22,7 @@ import type {
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
   ReceiptTrustAnchor,
+  RunEvent,
 } from "@napier/contracts";
 
 import {
@@ -149,6 +150,7 @@ import {
   projectReplanRecoveryProgress,
   projectReplanStepRoles,
 } from "./replan-draft-view-model";
+import WorkflowWorkbenchSlot from "./WorkflowWorkbenchSlot";
 
 const MAX_PLAN_ARCHIVE_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_FILE_BYTES = 2 * 1024 * 1024;
@@ -156,9 +158,6 @@ const MAX_PLAN_BLUEPRINT_REPLAY_HISTORY_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_REPLAY_OUTCOMES_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_POLICY_OVERRIDE_RETIREMENT_HISTORY_FILE_BYTES =
   2 * 1024 * 1024;
-const LazyWorkflowExperimentDesk = lazy(
-  () => import("./WorkflowExperimentDesk"),
-);
 
 type PlanArchiveReceipt =
   | {
@@ -268,6 +267,7 @@ type PlanBlueprintLibraryReceipt =
 export default function PlanPanel({
   threadId,
   plans,
+  events,
   running,
   selectedModelKey,
   selectedModelConfigured,
@@ -277,6 +277,7 @@ export default function PlanPanel({
 }: {
   threadId: string | undefined;
   plans: ExecutionPlan[];
+  events: RunEvent[];
   running: boolean;
   selectedModelKey: string;
   selectedModelConfigured: boolean;
@@ -1611,18 +1612,16 @@ export default function PlanPanel({
           {plans.length} {planCopy.count}
         </span>
       </div>
-      {threadId && plans.length > 0 ? (
-        <Suspense fallback={null}>
-          <LazyWorkflowExperimentDesk
-            threadId={threadId}
-            plans={plans}
-            running={running}
-            selectedModelKey={selectedModelKey}
-            selectedModelConfigured={selectedModelConfigured}
-            onOpenThread={onOpenThread}
-          />
-        </Suspense>
-      ) : null}
+      <WorkflowWorkbenchSlot
+        threadId={threadId}
+        plans={plans}
+        events={events}
+        running={running}
+        selectedModelKey={selectedModelKey}
+        selectedModelConfigured={selectedModelConfigured}
+        onWorkflowSettled={onDraftApplied}
+        onOpenThread={onOpenThread}
+      />
       {!plan ? (
         <p className="empty-panel">{planCopy.empty}</p>
       ) : (

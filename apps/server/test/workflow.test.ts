@@ -14,14 +14,17 @@ import {
   UnsupportedSandboxAdapter,
   validateExecutionPlanWorkflowResultFrame,
 } from "@napier/runtime";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createApp, createServices } from "../src/app.js";
+import { continueWorkflowBreakpoint } from "../../web/src/workflow-api.js";
+import { projectWorkflowBreakpoint } from "../../web/src/workflow-breakpoint-view-model.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   for (const services of openServices.splice(0)) {
     await services.shutdownLocalRuntime();
   }
@@ -321,21 +324,35 @@ describe("Workflow HTTP path", () => {
     );
     expect(services.store.listRuns(targetThread.id)).toEqual([]);
 
-    const response = await app.request(
-      `/api/threads/${targetThread.id}/workflows`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          manifest,
-          planId: paused.planId,
-          continueBreakpoint: true,
-        }),
-      },
+    const projection = projectWorkflowBreakpoint(
+      [services.store.getPlan(paused.planId)],
+      await services.store.listEvents(targetThread.id),
     );
-    expect(response.status).toBe(200);
-    const frame = validateExecutionPlanWorkflowResultFrame(
-      parseSseFrames(await response.text()).at(-1),
+    expect(projection.status).toBe("open");
+    if (projection.status !== "open") {
+      throw new Error("Expected an open Workflow breakpoint");
+    }
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL | Request, init?: RequestInit) => {
+        const requestPath =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        return app.request(requestPath, init);
+      }),
+    );
+    const webFrames: string[] = [];
+    const frame = await continueWorkflowBreakpoint(
+      targetThread.id,
+      manifest,
+      projection.breakpoint,
+      (streamFrame) => webFrames.push(streamFrame.type),
+    );
+    expect(webFrames).toEqual(
+      expect.arrayContaining(["event", "snapshot", "workflow_result"]),
     );
     expect(frame.result).toEqual(
       expect.objectContaining({

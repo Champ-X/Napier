@@ -1,0 +1,290 @@
+.workflow-breakpoint-desk {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 13px 27px 13px 13px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  background:
+    linear-gradient(rgb(250 246 236 / 94%), rgb(250 246 236 / 94%)),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 22px,
+      rgb(83 75 60 / 8%) 23px
+    );
+  border: 1px solid var(--rule-strong);
+  border-top: 3px double var(--vermilion);
+  box-shadow:
+    3px 4px 0 rgb(71 63 48 / 6%),
+    inset 4px 0 0 rgb(164 75 56 / 78%);
+  animation: entry-rise 220ms ease-out both;
+}
+
+.workflow-breakpoint-desk::after {
+  position: absolute;
+  top: 0;
+  right: 17px;
+  bottom: 0;
+  width: 1px;
+  pointer-events: none;
+  content: "";
+  background: repeating-linear-gradient(
+    0deg,
+    rgb(164 75 56 / 24%) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+.workflow-breakpoint-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: start;
+}
+
+.workflow-breakpoint-seal {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  color: var(--vermilion);
+  background: rgb(164 75 56 / 10%);
+  border: 1px solid rgb(164 75 56 / 42%);
+  border-radius: 50%;
+  transform: rotate(-5deg);
+}
+
+.workflow-breakpoint-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.workflow-breakpoint-heading > div > span,
+.workflow-breakpoint-heading > strong,
+.workflow-breakpoint-heading small,
+.workflow-breakpoint-evidence dt,
+.workflow-breakpoint-file small,
+.workflow-breakpoint-stream,
+.workflow-breakpoint-result span,
+.workflow-breakpoint-result small {
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.workflow-breakpoint-heading > div > span {
+  color: var(--vermilion);
+}
+
+.workflow-breakpoint-heading h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.workflow-breakpoint-heading p {
+  max-width: 43em;
+  margin: 2px 0 0;
+  font-family: var(--serif);
+  font-size: 8px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.workflow-breakpoint-heading > strong {
+  display: flex;
+  align-items: baseline;
+  padding: 4px 5px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--vermilion);
+  border: 1px solid rgb(164 75 56 / 35%);
+  transform: rotate(2deg);
+}
+
+.workflow-breakpoint-heading > strong small {
+  color: inherit;
+}
+
+.workflow-breakpoint-evidence {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.workflow-breakpoint-evidence > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  padding: 7px;
+  background: rgb(255 255 255 / 56%);
+}
+
+.workflow-breakpoint-evidence dd {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 7px;
+  font-weight: 600;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflow-breakpoint-note {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 7px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.workflow-breakpoint-file {
+  position: relative;
+  display: flex;
+  min-height: 39px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  cursor: pointer;
+  background: rgb(255 255 255 / 46%);
+  border: 1px dashed rgb(164 75 56 / 42%);
+}
+
+.workflow-breakpoint-file:has(input:focus-visible) {
+  border-color: var(--vermilion);
+  outline: 2px solid rgb(164 75 56 / 16%);
+  outline-offset: 1px;
+}
+
+.workflow-breakpoint-file input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.workflow-breakpoint-file svg {
+  flex: 0 0 auto;
+  color: var(--vermilion);
+}
+
+.workflow-breakpoint-file > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.workflow-breakpoint-file strong {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 7px;
+  font-weight: 500;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflow-breakpoint-continue {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 7px;
+  font-weight: 600;
+  color: #f7f3e8;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  background: var(--ledger);
+  border: 1px solid #244b3d;
+  border-radius: 2px;
+  box-shadow: 2px 2px 0 rgb(45 85 71 / 16%);
+}
+
+.workflow-breakpoint-continue:hover:not(:disabled) {
+  background: #244b3d;
+  transform: translateY(-1px);
+}
+
+.workflow-breakpoint-continue:focus-visible {
+  outline: 2px solid rgb(45 85 71 / 28%);
+  outline-offset: 2px;
+}
+
+.workflow-breakpoint-continue:disabled,
+.workflow-breakpoint-file:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.workflow-breakpoint-stream {
+  justify-self: end;
+  margin-top: -5px;
+}
+
+.workflow-breakpoint-result {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  align-items: baseline;
+  padding: 8px 9px;
+  background: rgb(220 229 221 / 54%);
+  border: 1px solid #a9c0b1;
+  border-left: 3px solid var(--ledger);
+}
+
+.workflow-breakpoint-result strong {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ledger);
+  text-transform: uppercase;
+}
+
+.workflow-breakpoint-result small {
+  grid-column: 1 / -1;
+}
+
+.workflow-breakpoint-result.state-blocked,
+.workflow-breakpoint-result.state-cancelled {
+  background: rgb(164 75 56 / 8%);
+  border-color: rgb(164 75 56 / 32%);
+  border-left-color: var(--vermilion);
+}
+
+.workflow-breakpoint-result.state-blocked strong,
+.workflow-breakpoint-result.state-cancelled strong {
+  color: var(--vermilion);
+}
+
+.workflow-breakpoint-error {
+  margin: 0;
+  padding: 7px 8px;
+  font-family: var(--mono);
+  font-size: 7px;
+  line-height: 1.45;
+  color: #7d3025;
+  background: rgb(164 75 56 / 8%);
+  border-left: 2px solid var(--vermilion);
+}
+
+@media (max-width: 760px) {
+  .workflow-breakpoint-evidence {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workflow-breakpoint-evidence > div:first-child {
+    grid-column: 1 / -1;
+  }
+}
