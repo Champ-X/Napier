@@ -68,6 +68,95 @@ describe("workspace snapshots", () => {
     expect(JSON.stringify(before)).not.toContain("linked.txt");
   });
 
+  it("optionally tracks empty directory creation and removal without changing default snapshots", async () => {
+    const root = await createWorkspace();
+    const defaultBefore = await createWorkspacePathSnapshot(root, root);
+    const directoryBefore = await createWorkspacePathSnapshot(root, root, {
+      includeDirectories: true,
+    });
+    const emptyDirectory = path.join(root, "generated", "empty");
+    await mkdir(emptyDirectory, { recursive: true });
+
+    const defaultAfter = await createWorkspacePathSnapshot(root, root);
+    const directoryAfter = await createWorkspacePathSnapshot(root, root, {
+      includeDirectories: true,
+    });
+    expect(defaultAfter.sha256).toBe(defaultBefore.sha256);
+    expect(diffWorkspaceSnapshots(defaultBefore, defaultAfter).status).toBe(
+      "unchanged",
+    );
+    expect(diffWorkspaceSnapshots(directoryBefore, directoryAfter)).toEqual(
+      expect.objectContaining({
+        status: "changed",
+        changedFileCount: 2,
+        entries: [
+          expect.objectContaining({
+            kind: "added",
+            path: "generated",
+            entryKind: "directory",
+          }),
+          expect.objectContaining({
+            kind: "added",
+            path: "generated/empty",
+            entryKind: "directory",
+          }),
+        ],
+      }),
+    );
+
+    await rm(emptyDirectory, { recursive: true });
+    const directoryRemoved = await createWorkspacePathSnapshot(root, root, {
+      includeDirectories: true,
+    });
+    expect(diffWorkspaceSnapshots(directoryAfter, directoryRemoved)).toEqual(
+      expect.objectContaining({
+        status: "changed",
+        changedFileCount: 1,
+        entries: [
+          expect.objectContaining({
+            kind: "removed",
+            path: "generated/empty",
+            entryKind: "directory",
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("tracks symlink identity without following or exposing its target", async () => {
+    const root = await createWorkspace();
+    const outside = await createWorkspace();
+    const secret = path.join(outside, "private.txt");
+    await writeFile(secret, "PRIVATE_TARGET_BODY");
+    const defaultBefore = await createWorkspacePathSnapshot(root, root);
+    const scopedBefore = await createWorkspacePathSnapshot(root, root, {
+      includeDirectories: true,
+    });
+    await symlink(secret, path.join(root, "linked.txt"));
+
+    const defaultAfter = await createWorkspacePathSnapshot(root, root);
+    const scopedAfter = await createWorkspacePathSnapshot(root, root, {
+      includeDirectories: true,
+    });
+    expect(defaultAfter.sha256).toBe(defaultBefore.sha256);
+    expect(diffWorkspaceSnapshots(scopedBefore, scopedAfter)).toEqual(
+      expect.objectContaining({
+        status: "changed",
+        changedFileCount: 1,
+        entries: [
+          expect.objectContaining({
+            kind: "added",
+            path: "linked.txt",
+            entryKind: "symlink",
+            afterSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          }),
+        ],
+      }),
+    );
+    expect(JSON.stringify(scopedAfter)).not.toContain(outside);
+    expect(JSON.stringify(scopedAfter)).not.toContain("PRIVATE_TARGET_BODY");
+  });
+
   it("reports unchanged complete snapshots and indeterminate truncated snapshots", async () => {
     const root = await createWorkspace();
     await Promise.all([

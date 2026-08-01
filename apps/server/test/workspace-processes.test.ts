@@ -222,6 +222,90 @@ describe("Workspace Process HTTP API", () => {
     expect(JSON.stringify(detail.events)).not.toContain("HTTP_SECRET_INPUT");
     expect(JSON.stringify(detail.events)).not.toContain("http-drift.txt");
   });
+
+  it("inspects a settled scoped write without exposing its path in Ledger evidence", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-server-write-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const generated = path.join(workspaceRoot, "generated");
+    await mkdir(generated, { recursive: true });
+    const services = await createServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+      sandbox: scopedWriteSandbox(),
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const agent = services.store.listAgents()[0]!;
+    const thread = await services.store.createThread({
+      title: "Scoped Process API",
+      agentId: agent.id,
+    });
+    const run = await services.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const preview = await services.workspaceProcesses.previewWrite({
+      threadId: thread.id,
+      runId: run.id,
+      command: {
+        runtime: "node",
+        args: ["-e", "write generated/api-result.txt"],
+      },
+      writePaths: ["generated"],
+    });
+    const started = await services.workspaceProcesses.startWrite({
+      threadId: thread.id,
+      runId: run.id,
+      previewId: preview.id,
+    });
+    const settled = await services.workspaceProcesses.waitForSettlement(
+      thread.id,
+      started.id,
+    );
+    expect(settled).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        workspaceAccess: "scoped_write",
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+
+    const listResponse = await app.request(
+      `/api/threads/${thread.id}/processes`,
+    );
+    expect(listResponse.status).toBe(200);
+    expect((await listResponse.json()) as WorkspaceProcessSession[]).toEqual([
+      expect.objectContaining({
+        id: started.id,
+        workspaceAccess: "scoped_write",
+        writeScopeCount: 1,
+        writeScopeSetSha256: preview.writeScopeSetSha256,
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    ]);
+    const deltaResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${started.id}/delta`,
+    );
+    expect(deltaResponse.status).toBe(200);
+    expect((await deltaResponse.json()) as WorkspaceProcessDelta).toEqual(
+      expect.objectContaining({
+        status: "changed",
+        writeScopeStatus: "within_scope",
+        entries: [
+          expect.objectContaining({
+            kind: "added",
+            path: "generated/api-result.txt",
+          }),
+        ],
+      }),
+    );
+    const detail = (await (
+      await app.request(`/api/threads/${thread.id}`)
+    ).json()) as ThreadDetail;
+    expect(JSON.stringify(detail.events)).not.toContain("api-result.txt");
+    expect(JSON.stringify(detail.events)).not.toContain("SCOPED_HTTP_RESULT");
+  });
 });
 
 function createControlledSandbox() {
@@ -260,4 +344,30 @@ function createControlledSandbox() {
     },
   };
   return { sandbox, stdin, stdout, terminate };
+}
+
+function scopedWriteSandbox(): OsSandboxAdapter {
+  return {
+    id: "server-process-write-sandbox",
+    async launch(request) {
+      const generated = path.join(request.workspaceRoot, "generated");
+      expect(request.workspaceWritePaths).toEqual([generated]);
+      await writeFile(
+        path.join(generated, "api-result.txt"),
+        "SCOPED_HTTP_RESULT",
+      );
+      const stdin = new PassThrough();
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      stdout.end("SCOPED_HTTP_COMPLETE");
+      stderr.end();
+      return {
+        stdin,
+        stdout,
+        stderr,
+        exit: Promise.resolve({ code: 0, signal: null }),
+        terminate: async () => undefined,
+      } satisfies SandboxedProcess;
+    },
+  };
 }

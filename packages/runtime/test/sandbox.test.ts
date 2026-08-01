@@ -64,6 +64,24 @@ describe("OS sandbox adapters", () => {
     expect(workspaceNetwork).toContain(
       '(allow file-write* (subpath "/workspace"))',
     );
+    const scopedWrite = buildMacOsSandboxProfile(
+      {
+        ...BASE_REQUEST,
+        workspaceWritePaths: ["/workspace/generated"],
+        approvedCapabilities: [
+          "process.spawn",
+          "workspace.read",
+          "workspace.write",
+        ],
+      },
+      "/tmp/napier-sandbox",
+    );
+    expect(scopedWrite).toContain(
+      '(allow file-write* (subpath "/workspace/generated"))',
+    );
+    expect(scopedWrite).not.toContain(
+      '(allow file-write* (subpath "/workspace"))',
+    );
     const runtimeAssets = buildMacOsSandboxProfile(
       {
         ...BASE_REQUEST,
@@ -231,6 +249,22 @@ describe("OS sandbox adapters", () => {
     expect(writableNetwork.join("\0")).toContain(
       "--bind\0/workspace\0/workspace",
     );
+    const scopedWrite = buildLinuxBubblewrapArgs(
+      {
+        ...BASE_REQUEST,
+        workspaceWritePaths: ["/workspace/generated"],
+        approvedCapabilities: [
+          "process.spawn",
+          "workspace.read",
+          "workspace.write",
+        ],
+      },
+      "/tmp/napier-sandbox",
+    ).join("\0");
+    expect(scopedWrite).toContain("--ro-bind\0/workspace\0/workspace");
+    expect(scopedWrite).toContain(
+      "--bind\0/workspace/generated\0/workspace/generated",
+    );
   });
 
   it("derives OCI container arguments without leaking env values", () => {
@@ -282,6 +316,25 @@ describe("OS sandbox adapters", () => {
     );
     expect(writableNetwork).not.toContain(
       "--mount\0type=bind,source=/workspace,target=/workspace,readonly",
+    );
+    const scopedWrite = buildOciContainerArgs(
+      {
+        ...BASE_REQUEST,
+        workspaceWritePaths: ["/workspace/generated"],
+        approvedCapabilities: [
+          "process.spawn",
+          "workspace.read",
+          "workspace.write",
+        ],
+      },
+      "/tmp/napier-sandbox",
+      "ghcr.io/example/napier-sandbox:node22",
+    ).join("\0");
+    expect(scopedWrite).toContain(
+      "--mount\0type=bind,source=/workspace,target=/workspace,readonly",
+    );
+    expect(scopedWrite).toContain(
+      "--mount\0type=bind,source=/workspace/generated,target=/workspace/generated",
     );
     const runtimeAssets = buildOciContainerArgs(
       {
@@ -345,6 +398,47 @@ describe("OS sandbox adapters", () => {
         "/tmp/napier-sandbox",
       ),
     ).toThrow("cwd must stay inside the workspace");
+    expect(() =>
+      buildLinuxBubblewrapArgs(
+        {
+          ...BASE_REQUEST,
+          workspaceWritePaths: ["/workspace/generated"],
+          approvedCapabilities: ["process.spawn", "workspace.read"],
+        },
+        "/tmp/napier-sandbox",
+      ),
+    ).toThrow("require workspace.write");
+    expect(() =>
+      buildLinuxBubblewrapArgs(
+        {
+          ...BASE_REQUEST,
+          workspaceWritePaths: ["/workspace"],
+          approvedCapabilities: [
+            "process.spawn",
+            "workspace.read",
+            "workspace.write",
+          ],
+        },
+        "/tmp/napier-sandbox",
+      ),
+    ).toThrow("non-root workspace paths");
+    expect(() =>
+      buildLinuxBubblewrapArgs(
+        {
+          ...BASE_REQUEST,
+          workspaceWritePaths: [
+            "/workspace/generated",
+            "/workspace/generated/nested",
+          ],
+          approvedCapabilities: [
+            "process.spawn",
+            "workspace.read",
+            "workspace.write",
+          ],
+        },
+        "/tmp/napier-sandbox",
+      ),
+    ).toThrow("cannot overlap");
     expect(() =>
       buildOciContainerArgs(
         {

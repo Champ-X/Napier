@@ -118,7 +118,7 @@ export async function resizeWorkspaceProcessTerminal(input: {
   });
   if (
     input.session.status !== "running" ||
-    input.session.schemaVersion !== 4 ||
+    input.session.schemaVersion < 4 ||
     input.session.ioMode !== "pty" ||
     !input.child.resize
   ) {
@@ -139,7 +139,7 @@ export async function resizeWorkspaceProcessTerminal(input: {
   } = input.session;
   const session = createWorkspaceProcessSession({
     ...sessionInput,
-    schemaVersion: 4,
+    schemaVersion: input.session.schemaVersion,
     terminalColumns: input.columns,
     terminalRows: input.rows,
     terminalResizeCount: sequence,

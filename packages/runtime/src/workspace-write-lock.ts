@@ -17,6 +17,23 @@ export async function withWorkspacePathLocks<T>(
   label: string,
   operation: () => Promise<T>,
 ): Promise<T> {
+  const lease = await acquireWorkspacePathLocks(dataRoot, targets, label);
+  try {
+    return await operation();
+  } finally {
+    await lease.release();
+  }
+}
+
+export interface WorkspacePathLockLease {
+  release(): Promise<void>;
+}
+
+export async function acquireWorkspacePathLocks(
+  dataRoot: string,
+  targets: readonly string[],
+  label: string,
+): Promise<WorkspacePathLockLease> {
   const lockIdentities = [
     ...new Set(
       targets.map((target) => {
@@ -45,13 +62,24 @@ export async function withWorkspacePathLocks<T>(
       const handle = await acquireLock(lockPath, label);
       acquired.push({ handle, path: lockPath });
     }
-    return await operation();
-  } finally {
+  } catch (error) {
     for (const lock of acquired.reverse()) {
       await lock.handle.close().catch(() => undefined);
       await unlink(lock.path).catch(() => undefined);
     }
+    throw error;
   }
+  let released = false;
+  return {
+    async release() {
+      if (released) return;
+      released = true;
+      for (const lock of acquired.reverse()) {
+        await lock.handle.close().catch(() => undefined);
+        await unlink(lock.path).catch(() => undefined);
+      }
+    },
+  };
 }
 
 async function acquireLock(

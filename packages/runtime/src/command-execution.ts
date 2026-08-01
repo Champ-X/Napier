@@ -207,8 +207,11 @@ export interface PreparedCommandExecution {
     cwd: string;
     env: Record<string, string>;
     workspaceRoot: string;
-    approvedCapabilities: ["process.spawn", "workspace.read"];
+    approvedCapabilities:
+      | ["process.spawn", "workspace.read"]
+      | ["process.spawn", "workspace.read", "workspace.write"];
     runtimeReadPaths?: string[];
+    workspaceWritePaths?: string[];
   };
   receipt: {
     runtime: CommandRuntime;

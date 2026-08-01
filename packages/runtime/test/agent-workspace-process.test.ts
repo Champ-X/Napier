@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -161,6 +161,151 @@ describe("Agent Workspace Process integration", () => {
     await processes.shutdown();
     store.close();
   });
+
+  it("previews and runs a real scoped write through the Agent loop", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-agent-process-write-test-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "data");
+    await mkdir(path.join(workspaceRoot, "generated"), { recursive: true });
+    const store = new LocalStore({ workspaceRoot, dataRoot });
+    await store.initialize();
+    const sandbox = scopedWriteSandbox(workspaceRoot);
+    const processes = new WorkspaceProcessManager({
+      store,
+      workspaceRoot,
+      dataRoot,
+      sandbox,
+    });
+    await processes.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["workspace_process"],
+    });
+    const thread = await store.createThread({
+      title: "Agent scoped process write",
+      agentId: agent.id,
+    });
+    const source =
+      "require('node:fs').writeFileSync('generated/result.txt','SCOPED_RESULT')";
+    const provider = fauxProvider({ provider: "faux-process-write" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("workspace_process", {
+          action: "preview_write",
+          runtime: "node",
+          args: ["-e", source],
+          writePaths: ["generated"],
+          timeoutMs: 10_000,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const previewId = JSON.stringify(context.messages).match(
+          /processpreview_[a-z0-9]{20}/u,
+        )?.[0];
+        expect(previewId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "start_write",
+            previewId,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const processId = JSON.stringify(context.messages).match(
+          /process_[a-z0-9]{20}/u,
+        )?.[0];
+        expect(processId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "poll",
+            processId,
+            afterCursor: 0,
+            waitMs: 1_000,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const processId = JSON.stringify(context.messages).match(
+          /process_[a-z0-9]{20}/u,
+        )?.[0];
+        expect(processId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "poll",
+            processId,
+            afterCursor: 1,
+            waitMs: 1_000,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          "Write scope verification: within_scope",
+        );
+        return fauxAssistantMessage(
+          "The scoped process write completed inside its approved output directory.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      sandbox,
+      processes,
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Generate the result through a preview-bound background write.",
+      model: { provider: "faux-process-write", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(
+      await readFile(
+        path.join(workspaceRoot, "generated", "result.txt"),
+        "utf8",
+      ),
+    ).toBe("SCOPED_RESULT");
+    const [session] = await processes.list(thread.id);
+    expect(session).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        status: "succeeded",
+        workspaceAccess: "scoped_write",
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+    const events = await store.listEvents(thread.id);
+    expect(
+      events
+        .filter(
+          (event) =>
+            event.type === "tool.started" &&
+            event.payload &&
+            !Array.isArray(event.payload) &&
+            typeof event.payload === "object" &&
+            event.payload["toolName"] === "workspace_process",
+        )
+        .map((event) => event.payload["effect"]),
+    ).toEqual(["read", "write", "read", "read"]);
+    expect(JSON.stringify(events)).not.toContain(source);
+    expect(JSON.stringify(events)).not.toContain("generated/result.txt");
+    expect(JSON.stringify(events)).not.toContain("SCOPED_RESULT");
+    await processes.shutdown();
+    store.close();
+  });
 });
 
 function inputSettlingSandbox(output: string): OsSandboxAdapter {
@@ -204,6 +349,39 @@ function inputSettlingSandbox(output: string): OsSandboxAdapter {
         stderr,
         exit,
         terminate: async () => settle(null, "SIGTERM"),
+      } satisfies SandboxedProcess;
+    },
+  };
+}
+
+function scopedWriteSandbox(workspaceRoot: string): OsSandboxAdapter {
+  return {
+    id: "agent-process-write-sandbox",
+    async launch(request) {
+      expect(request.approvedCapabilities).toEqual([
+        "process.spawn",
+        "workspace.read",
+        "workspace.write",
+      ]);
+      expect(request.workspaceWritePaths).toEqual([
+        path.join(request.workspaceRoot, "generated"),
+      ]);
+      await writeFile(
+        path.join(workspaceRoot, "generated", "result.txt"),
+        "SCOPED_RESULT",
+      );
+      const stdin = new PassThrough();
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      stdout.write("SCOPED_WRITE_COMPLETE\n");
+      stdout.end();
+      stderr.end();
+      return {
+        stdin,
+        stdout,
+        stderr,
+        exit: Promise.resolve({ code: 0, signal: null }),
+        terminate: async () => undefined,
       } satisfies SandboxedProcess;
     },
   };

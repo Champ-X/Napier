@@ -17,6 +17,7 @@ const CONTAINER_EXEC = "/usr/bin/docker";
 const CONTAINER_IMAGE_ENV = "NAPIER_CONTAINER_SANDBOX_IMAGE";
 const PROCESS_STOP_GRACE_MS = 2_000;
 const MAX_RUNTIME_READ_PATHS = 8;
+const MAX_WORKSPACE_WRITE_PATHS = 8;
 const LINUX_RUNTIME_READ_PATHS = [
   "/lib",
   "/lib64",
@@ -36,6 +37,7 @@ export interface SandboxLaunchRequest {
   workspaceRoot: string;
   approvedCapabilities: ExtensionCapability[];
   runtimeReadPaths?: string[];
+  workspaceWritePaths?: string[];
   terminal?: {
     columns: number;
     rows: number;
@@ -365,6 +367,7 @@ export function buildMacOsSandboxProfile(
 ): string {
   validateLaunchRequest(request);
   const capabilities = new Set(request.approvedCapabilities);
+  const writePaths = scopedWorkspaceWritePaths(request);
   const metadataPaths = destinationDirectories([
     path.dirname(request.command),
     request.workspaceRoot,
@@ -406,9 +409,11 @@ export function buildMacOsSandboxProfile(
     rules.push(`(allow file-read* (subpath ${sandboxLiteral(runtimePath)}))`);
   }
   if (capabilities.has("workspace.write")) {
-    rules.push(
-      `(allow file-write* (subpath ${sandboxLiteral(request.workspaceRoot)}))`,
-    );
+    for (const writePath of writePaths.length > 0
+      ? writePaths
+      : [request.workspaceRoot]) {
+      rules.push(`(allow file-write* (subpath ${sandboxLiteral(writePath)}))`);
+    }
   }
   if (capabilities.has("network.connect")) {
     rules.push("(allow network-outbound)");
@@ -425,6 +430,7 @@ export function buildLinuxBubblewrapArgs(
     throw new Error("Linux sandbox home must be absolute");
   }
   const capabilities = new Set(request.approvedCapabilities);
+  const writePaths = scopedWorkspaceWritePaths(request);
   const workspaceMounted =
     capabilities.has("workspace.read") || capabilities.has("workspace.write");
   const directories = destinationDirectories([
@@ -452,10 +458,15 @@ export function buildLinuxBubblewrapArgs(
   }
   if (workspaceMounted) {
     args.push(
-      capabilities.has("workspace.write") ? "--bind" : "--ro-bind",
+      capabilities.has("workspace.write") && writePaths.length === 0
+        ? "--bind"
+        : "--ro-bind",
       request.workspaceRoot,
       request.workspaceRoot,
     );
+    for (const writePath of writePaths) {
+      args.push("--bind", writePath, writePath);
+    }
   }
   for (const runtimePath of request.runtimeReadPaths ?? []) {
     args.push("--ro-bind", runtimePath, runtimePath);
@@ -484,6 +495,7 @@ export function buildOciContainerArgs(
   }
   validateContainerImage(image);
   const capabilities = new Set(request.approvedCapabilities);
+  const writePaths = scopedWorkspaceWritePaths(request);
   const workspaceMounted =
     capabilities.has("workspace.read") || capabilities.has("workspace.write");
   const args = [
@@ -524,9 +536,12 @@ export function buildOciContainerArgs(
       bindMount(
         request.workspaceRoot,
         request.workspaceRoot,
-        !capabilities.has("workspace.write"),
+        !capabilities.has("workspace.write") || writePaths.length > 0,
       ),
     );
+    for (const writePath of writePaths) {
+      args.push("--mount", bindMount(writePath, writePath, false));
+    }
   }
   for (const runtimePath of request.runtimeReadPaths ?? []) {
     args.push("--mount", bindMount(runtimePath, runtimePath, true));
@@ -557,6 +572,7 @@ function validateLaunchRequest(request: SandboxLaunchRequest): void {
   ) {
     throw new Error("workspace.write requires workspace.read");
   }
+  scopedWorkspaceWritePaths(request);
   if (
     request.runtimeReadPaths !== undefined &&
     (request.runtimeReadPaths.length > MAX_RUNTIME_READ_PATHS ||
@@ -572,6 +588,44 @@ function validateLaunchRequest(request: SandboxLaunchRequest): void {
     );
   }
   validateTerminalDimensions(request.terminal);
+}
+
+function scopedWorkspaceWritePaths(request: SandboxLaunchRequest): string[] {
+  const paths = request.workspaceWritePaths ?? [];
+  if (
+    paths.length > 0 &&
+    !request.approvedCapabilities.includes("workspace.write")
+  ) {
+    throw new Error("Sandbox workspace write paths require workspace.write");
+  }
+  if (
+    paths.length > MAX_WORKSPACE_WRITE_PATHS ||
+    paths.some(
+      (writePath) =>
+        !path.isAbsolute(writePath) ||
+        path.resolve(writePath) === path.resolve(request.workspaceRoot) ||
+        !isPathInside(writePath, request.workspaceRoot) ||
+        /[\u0000-\u001f\u007f]/u.test(writePath),
+    ) ||
+    new Set(paths.map((writePath) => path.resolve(writePath))).size !==
+      paths.length
+  ) {
+    throw new Error(
+      `Sandbox workspace write paths must contain at most ${MAX_WORKSPACE_WRITE_PATHS} distinct absolute non-root workspace paths`,
+    );
+  }
+  const resolved = paths.map((writePath) => path.resolve(writePath)).sort();
+  if (
+    resolved.some((candidate, index) =>
+      resolved.some(
+        (other, otherIndex) =>
+          index !== otherIndex && isPathInside(candidate, other),
+      ),
+    )
+  ) {
+    throw new Error("Sandbox workspace write paths cannot overlap");
+  }
+  return resolved;
 }
 
 function validateContainerImage(image: string): void {

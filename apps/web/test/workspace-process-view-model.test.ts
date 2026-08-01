@@ -120,6 +120,40 @@ describe("Workspace Process view model", () => {
     );
   });
 
+  it("projects scoped writes and distinguishes verified from unknown scope", () => {
+    const scoped = {
+      ...fixture(),
+      schemaVersion: 5 as const,
+      workspaceAccess: "scoped_write" as const,
+      writePreviewSha256: "5".repeat(64),
+      writeScopeCount: 2,
+      writeScopeSetSha256: "6".repeat(64),
+      workspaceWriteScopeStatus: "within_scope" as const,
+      workspaceDeltaStatus: "changed" as const,
+      workspaceChangedFileCount: 2,
+      ioMode: "pipe" as const,
+      stdinMode: "closed" as const,
+      stdinOpen: false,
+      stdinWriteCount: 0,
+      stdinBytes: 0,
+      stdinSha256:
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    };
+    expect(workspaceProcessCardView(scoped)).toEqual(
+      expect.objectContaining({
+        scopeLabel:
+          "Workspace scoped write · 2 scopes · 666666666666 · Network denied",
+        workspaceDeltaLabel: "2 paths changed within approved scope",
+      }),
+    );
+    expect(
+      workspaceProcessCardView({
+        ...scoped,
+        workspaceWriteScopeStatus: "outside_scope",
+      }).workspaceDeltaLabel,
+    ).toBe("2 observed path changes include unverified scope");
+  });
+
   it("distinguishes observed drift, indeterminate comparison, and unavailable legacy evidence", () => {
     expect(
       workspaceProcessCardView({

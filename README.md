@@ -181,7 +181,8 @@ Version `0.1.0` includes:
 - a `workspace_process` tool and lazy Processes Workbench for bounded
   background Node sessions with cursor-based stdout/stderr observation,
   explicit interactive stdin, cancellation, lifecycle settlement, graceful
-  shutdown, and fail-closed restart reconciliation;
+  shutdown, fail-closed restart reconciliation, and one-use preview-bound
+  writes to explicit existing scopes with directory-aware Delta containment;
 - a `javascript_kernel` tool for persistent synchronous JavaScript calculations
   within one Agent Run, reusing the same read-only/offline Process Session
   boundary with bounded evaluations, live-only values, cancellation, and
@@ -1931,20 +1932,33 @@ macOS rejects nested `sandbox-exec`, so the smoke fails closed when launched
 from an IDE process that is itself sandboxed. OCI command execution is also
 fail-closed until runtime executable identity can be bound across the host and
 image. Foreground `run_command` remains pipe-only; terminal-aware work uses the
-separately managed `workspace_process` PTY below. Hard per-command CPU/memory
-quotas and write-capable sessions remain explicit next-stage work. Python and
-Git are not advertised by this slice because their macOS Developer Tools shims
-require a broader managed Runtime boundary than the Node smoke.
+separately managed `workspace_process` PTY below. Foreground commands remain
+read-only; Process Sessions add only the preview-bound scoped write mode
+described below. Hard per-command CPU/memory quotas remain explicit next-stage
+work. Python and Git are not advertised by this slice because their macOS
+Developer Tools shims require a broader managed Runtime boundary than the Node
+smoke.
 
 ## Workspace Process Sessions
 
 An Agent can separately opt into `workspace_process` to start, send input to,
-poll, or cancel a longer Node diagnostic. Starts reuse the same explicit-argv
-preparation, fixed environment, executable binding, canonical cwd, read-only
-workspace, and denied-network OS Sandbox as `run_command`; there is still no
-command string, shell, inherited provider credential, or user-selected
-executable. Stdin closes at launch unless the start explicitly opts into
-interactive mode.
+poll, or cancel a longer Node diagnostic. Ordinary starts reuse the same
+explicit-argv preparation, fixed environment, executable binding, canonical
+cwd, read-only workspace, and denied-network OS Sandbox as `run_command`;
+there is still no command string, shell, inherited provider credential, or
+user-selected executable. Stdin closes at launch unless the start explicitly
+opts into interactive mode.
+
+A write session requires a separate `preview_write` followed by
+`start_write(previewId)`. The preview binds the exact command, environment,
+limits, complete workspace baseline, owning Thread and Run, five-minute
+expiry, and one to eight explicit existing workspace-relative file or
+directory scopes. Workspace root, overlap, symlinks, `.git`, `.napier`, and
+`node_modules` are rejected. The preview is one-use and fails stale when the
+workspace, scope tree, executable, or Runtime assets change. The OS Sandbox
+keeps workspace root read-only and remounts only those scopes writable;
+network remains denied. Cross-Manager data-root locks serialize scoped writers
+for the same workspace.
 
 An alternative explicit `terminal` start allocates a real pseudo-terminal with
 bounded initial columns and rows. `node-pty` launches only the existing
@@ -1984,26 +1998,33 @@ synchronous adapter acceptance rather than target consumption, so an unknown
 outcome must still be inspected instead of retried.
 
 Each new session also captures a deterministic workspace snapshot before
-launch and another after settlement. Complete snapshots classify the observed
-execution window as `unchanged` or `changed`; a snapshot that exceeds 2,000
-files or 16 MiB, or cannot be completed, is `indeterminate`. This comparison
-does not claim the read-only session wrote a changed file: another local
-process may have changed the workspace concurrently.
+launch and another after settlement. Ordinary read-only sessions retain the
+compatible 2,000-file/16 MiB window. Scoped writes use a directory-aware,
+10,000-entry/64 MiB complete baseline so empty-directory creation or removal
+cannot disappear from the Delta. Symlink identity is hashed without following
+or exposing its target. Truncation or an unavailable snapshot is
+`indeterminate`. A scoped Delta is `within_scope` only when every observed path
+is inside an approved scope; any outside path is `outside_scope`. External
+processes do not honor Napier's lock, so outside-scope drift has unknown
+attribution rather than being falsely assigned to the child.
 
 Input and output text plus argv never enter the Ledger, Trace, Replay, or
 exported fixtures. Durable `workspace.process.started`, `.input`, `.resized`,
 `.settled`, and `.interrupted` events bind the Napier Process ID, owning Thread
 and Run, status, executable, command/environment/limit hashes, input
 sequence/counts and cumulative digest, output hashes/counts, cursor, truncation
-state, I/O mode, terminal dimensions, and resize sequence. They also bind
-pre/post workspace digests, comparison status, changed-file count, and a
+state, I/O mode, terminal dimensions, and resize sequence. Schema-v5 scoped
+write events additionally bind the preview hash, scope count/set hash, and
+`within_scope`, `outside_scope`, or `indeterminate` settlement. They also bind
+pre/post workspace digests, comparison status, changed-entry count, and a
 changed-path-set digest without storing paths.
 Relative paths and before/after file metadata are bounded to 256 entries and
 available only from the current local Runtime through the owning Thread's
 Processes panel. After restart, an unclosed session becomes `interrupted` with
 unknown outcome and no output or path details; Napier does not silently rerun
-it or claim the old host process was reattached. Existing schema v1-v3 Process
-receipts remain readable, while new pipe and PTY sessions use schema v4.
+it or claim the old host process was reattached. Existing schema v1-v4 Process
+receipts remain readable, ordinary pipe and PTY sessions use schema v4, and
+scoped writes use schema v5.
 
 Run the complete Agent-to-Sandbox smoke from a non-sandboxed Terminal:
 
@@ -2016,12 +2037,14 @@ host or Runtime loss can leave a macOS sandbox wrapper outcome unknown because
 `sandbox-exec` has no parent-death guarantee; deliberately detached descendants
 also require a stronger guardian boundary for proved cleanup. Proved orphan
 cleanup, cross-restart reattachment, hard CPU/memory/process quotas, and
-write-capable sessions require a managed guardian or OCI backend and are not
-claimed by this implementation. Pipe interaction remains distinct from PTY;
-the PTY provides terminal sizing and control bytes but not shell access,
-cross-restart attach, a durable screen buffer, or Napier job-control commands.
-The separate JavaScript kernel below builds on this Process Session boundary.
-The restricted Python kernel below shares the same Process service; full
+remote write backends require a managed guardian or OCI boundary and are not
+claimed by this implementation. Scoped settlement proves observed path
+containment, not which external process wrote each byte, and it does not
+provide rollback. Pipe interaction remains distinct from PTY; the PTY provides
+terminal sizing and control bytes but not shell access, cross-restart attach, a
+durable screen buffer, or Napier job-control commands. The separate JavaScript
+kernel below builds on the read-only Process Session boundary. The restricted
+Python kernel below shares the same read-only Process service; full
 package-backed Python and Notebook execution remain future work.
 
 ## Persistent JavaScript Kernel
@@ -2698,11 +2721,13 @@ workspace_file_apply
 
 Supported operations are `create_directory`, `move`, `trash`, and `restore`.
 Permanent purge, destination overwrite requests, permission changes, root
-moves, symlink lifecycle, and Process Session workspace writes are not exposed. Napier
-rejects a destination observed as occupied during preview or the final
-precondition check. An external process can still race after that check because
-it does not honor Napier's host-local lock; postcondition loss is reported as
-`indeterminate` rather than an invitation to retry blindly.
+moves, symlink lifecycle, and arbitrary/root-wide Process Session writes are
+not exposed. The separate scoped Process protocol can write only to its
+preview-bound existing scopes. Napier rejects a destination observed as
+occupied during preview or the final precondition check. An external process
+can still race after that check because it does not honor Napier's host-local
+lock; postcondition loss is reported as `indeterminate` rather than an
+invitation to retry blindly.
 
 Trash manifests retain the original relative path only under the protected
 local data root. Agent tool evidence, Trace, Replay, and exports retain path
@@ -4516,7 +4541,9 @@ Selecting `workspace` exposes only individually enabled structured tools:
 anchors, **Sandbox verify** is read-only, offline, and command-closed, and
 **Sandbox command** is an explicit-argv, read-only/offline Node runner with no
 shell or inherited environment. **Background process** adds bounded
-start/input/poll/cancel lifecycle control over the same sandbox boundary.
+start/input/poll/cancel lifecycle control over the same sandbox boundary plus
+one-use preview-bound writes to explicit existing scopes; ordinary starts
+remain read-only.
 **JavaScript kernel** adds persistent synchronous state within one Agent Run,
 with bounded live-only values and fail-closed terminal outcomes.
 **Python kernel** adds persistent restricted pure-computation state with fixed
@@ -4553,11 +4580,13 @@ exceptions: macOS uses `/usr/bin/sandbox-exec`; Linux requires
 explicitly containerized deployments can opt into an OCI adapter by configuring
 `NAPIER_CONTAINER_SANDBOX_IMAGE`; it uses an absolute Docker-compatible
 executable, read-only root filesystem, capability-derived workspace mounts,
-and `--network none` unless networking is approved. These adapters launch only
-an explicitly selected absolute executable, avoid shell invocation, and derive
-network and workspace access from reviewed capabilities. Missing sandbox
-prerequisites and unsupported platforms fail closed; a container or VM remains
-the recommended outer boundary for production third-party code.
+and `--network none` unless networking is approved. Scoped Process writes keep
+the workspace root read-only and add only the preview-bound writable mounts.
+These adapters launch only an explicitly selected absolute executable, avoid
+shell invocation, and derive network and workspace access from reviewed
+capabilities. Missing sandbox prerequisites and unsupported platforms fail
+closed; a container or VM remains the recommended outer boundary for
+production third-party code.
 
 ## License
 

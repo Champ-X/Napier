@@ -3,6 +3,7 @@ import {
   mkdir,
   mkdtemp,
   rm,
+  symlink,
   truncate,
   unlink,
   writeFile,
@@ -126,6 +127,7 @@ async function createHarness(options?: {
   const manager = new WorkspaceProcessManager({
     store,
     workspaceRoot,
+    dataRoot,
     sandbox: options?.sandbox ?? controlled.sandbox,
   });
   await manager.initialize();
@@ -200,7 +202,8 @@ describe("Workspace Process Manager", () => {
       }),
     );
     expect(harness.controlled.processes[0]?.stdin.writableEnded).toBe(true);
-    expect(harness.controlled.processes[0]?.request).toEqual(
+    const launchRequest = harness.controlled.processes[0]!.request;
+    expect(launchRequest).toEqual(
       expect.objectContaining({
         command: process.execPath,
         approvedCapabilities: ["process.spawn", "workspace.read"],
@@ -276,6 +279,430 @@ describe("Workspace Process Manager", () => {
     expect(JSON.stringify(processEvents)).not.toContain("first");
     expect(JSON.stringify(processEvents)).not.toContain("warning");
     harness.store.close();
+  });
+
+  it("previews and executes one scoped workspace write with verified Delta", async () => {
+    const harness = await createHarness();
+    const generated = path.join(harness.workspaceRoot, "generated");
+    await mkdir(generated);
+    const preview = await harness.manager.previewWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: {
+        runtime: "node",
+        args: [
+          "-e",
+          "require('node:fs').writeFileSync('generated/result.txt','done')",
+        ],
+      },
+      writePaths: ["generated"],
+    });
+    expect(preview).toEqual(
+      expect.objectContaining({
+        kind: "napier.workspace-process-write-preview",
+        schemaVersion: 1,
+        writeScopeCount: 1,
+        ioMode: "pipe",
+        workspaceBeforeFileCount: 0,
+      }),
+    );
+    expect(
+      (await harness.store.listEvents(harness.thread.id)).some((event) =>
+        event.type.startsWith("workspace.process."),
+      ),
+    ).toBe(false);
+
+    const session = await harness.manager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: preview.id,
+    });
+    expect(session).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        status: "running",
+        workspaceAccess: "scoped_write",
+        writePreviewSha256: preview.contentSha256,
+        writeScopeCount: 1,
+        writeScopeSetSha256: preview.writeScopeSetSha256,
+      }),
+    );
+    const scopedLaunchRequest = harness.controlled.processes[0]!.request;
+    expect(scopedLaunchRequest).toEqual(
+      expect.objectContaining({
+        approvedCapabilities: [
+          "process.spawn",
+          "workspace.read",
+          "workspace.write",
+        ],
+        workspaceWritePaths: [
+          path.join(scopedLaunchRequest.workspaceRoot, "generated"),
+        ],
+      }),
+    );
+    await writeFile(path.join(generated, "result.txt"), "done");
+    harness.controlled.processes[0]!.settle(0);
+    const settled = await harness.manager.waitForSettlement(
+      harness.thread.id,
+      session.id,
+    );
+    expect(settled).toEqual(
+      expect.objectContaining({
+        status: "succeeded",
+        workspaceDeltaStatus: "changed",
+        workspaceChangedFileCount: 1,
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+    expect(await harness.manager.delta(harness.thread.id, session.id)).toEqual(
+      expect.objectContaining({
+        status: "changed",
+        writeScopeStatus: "within_scope",
+        entries: [
+          expect.objectContaining({
+            kind: "added",
+            path: "generated/result.txt",
+          }),
+        ],
+      }),
+    );
+    await expect(
+      harness.manager.startWrite({
+        threadId: harness.thread.id,
+        runId: harness.run.id,
+        previewId: preview.id,
+      }),
+    ).rejects.toThrow("preview not found");
+    const events = await harness.store.listEvents(harness.thread.id);
+    expect(JSON.stringify(events)).not.toContain("generated/result.txt");
+    expect(projectWorkspaceProcessSessions(events)[0]).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(harness.store, harness.thread.id),
+      ).status,
+    ).toBe("valid");
+    harness.store.close();
+  });
+
+  it("attributes empty directory creation and removal to the approved write scope", async () => {
+    const harness = await createHarness();
+    const generated = path.join(harness.workspaceRoot, "generated");
+    const emptyDirectory = path.join(generated, "empty");
+    await mkdir(generated);
+    const creationPreview = await harness.manager.previewWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: {
+        runtime: "node",
+        args: ["-e", "require('node:fs').mkdirSync('generated/empty')"],
+      },
+      writePaths: ["generated"],
+    });
+    const creation = await harness.manager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: creationPreview.id,
+    });
+    await mkdir(emptyDirectory);
+    harness.controlled.processes[0]!.settle(0);
+    expect(
+      await harness.manager.waitForSettlement(harness.thread.id, creation.id),
+    ).toEqual(
+      expect.objectContaining({
+        workspaceDeltaStatus: "changed",
+        workspaceChangedFileCount: 1,
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+    expect(await harness.manager.delta(harness.thread.id, creation.id)).toEqual(
+      expect.objectContaining({
+        status: "changed",
+        writeScopeStatus: "within_scope",
+        entries: [
+          expect.objectContaining({
+            kind: "added",
+            path: "generated/empty",
+            entryKind: "directory",
+          }),
+        ],
+      }),
+    );
+
+    const removalPreview = await harness.manager.previewWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: {
+        runtime: "node",
+        args: ["-e", "require('node:fs').rmdirSync('generated/empty')"],
+      },
+      writePaths: ["generated"],
+    });
+    const removal = await harness.manager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: removalPreview.id,
+    });
+    await rm(emptyDirectory, { recursive: true });
+    harness.controlled.processes[1]!.settle(0);
+    expect(
+      await harness.manager.waitForSettlement(harness.thread.id, removal.id),
+    ).toEqual(
+      expect.objectContaining({
+        workspaceDeltaStatus: "changed",
+        workspaceChangedFileCount: 1,
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+    expect(await harness.manager.delta(harness.thread.id, removal.id)).toEqual(
+      expect.objectContaining({
+        entries: [
+          expect.objectContaining({
+            kind: "removed",
+            path: "generated/empty",
+            entryKind: "directory",
+          }),
+        ],
+      }),
+    );
+    harness.store.close();
+  });
+
+  it("observes a scoped symlink without following or persisting its target", async () => {
+    const harness = await createHarness();
+    const generated = path.join(harness.workspaceRoot, "generated");
+    const outside = path.join(harness.workspaceRoot, "outside");
+    await Promise.all([mkdir(generated), mkdir(outside)]);
+    const preview = await harness.manager.previewWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: {
+        runtime: "node",
+        args: [
+          "-e",
+          "require('node:fs').symlinkSync('../outside','generated/linked')",
+        ],
+      },
+      writePaths: ["generated"],
+    });
+    const session = await harness.manager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: preview.id,
+    });
+    await symlink("../outside", path.join(generated, "linked"));
+    harness.controlled.processes[0]!.settle(0);
+    expect(
+      await harness.manager.waitForSettlement(harness.thread.id, session.id),
+    ).toEqual(
+      expect.objectContaining({
+        workspaceDeltaStatus: "changed",
+        workspaceChangedFileCount: 1,
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+    expect(await harness.manager.delta(harness.thread.id, session.id)).toEqual(
+      expect.objectContaining({
+        entries: [
+          expect.objectContaining({
+            kind: "added",
+            path: "generated/linked",
+            entryKind: "symlink",
+          }),
+        ],
+      }),
+    );
+    const events = JSON.stringify(
+      await harness.store.listEvents(harness.thread.id),
+    );
+    expect(events).not.toContain("generated/linked");
+    expect(events).not.toContain("../outside");
+    harness.store.close();
+  });
+
+  it("rejects stale, protected, symlinked, root, and overlapping write previews", async () => {
+    const harness = await createHarness();
+    await Promise.all([
+      mkdir(path.join(harness.workspaceRoot, "generated")),
+      mkdir(path.join(harness.workspaceRoot, "other")),
+      mkdir(path.join(harness.workspaceRoot, ".git")),
+    ]);
+    await mkdir(path.join(harness.workspaceRoot, "generated", "nested"));
+    await symlink(
+      path.join(harness.workspaceRoot, "other"),
+      path.join(harness.workspaceRoot, "linked"),
+    );
+    const base = {
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: { runtime: "node" as const, args: ["-e", "void 0"] },
+    };
+    await expect(
+      harness.manager.previewWrite({ ...base, writePaths: ["."] }),
+    ).rejects.toThrow("escapes");
+    await expect(
+      harness.manager.previewWrite({ ...base, writePaths: [".git"] }),
+    ).rejects.toThrow("protected");
+    await expect(
+      harness.manager.previewWrite({ ...base, writePaths: ["linked"] }),
+    ).rejects.toThrow("non-symlink");
+    await expect(
+      harness.manager.previewWrite({
+        ...base,
+        writePaths: ["generated", "generated/nested"],
+      }),
+    ).rejects.toThrow();
+
+    const preview = await harness.manager.previewWrite({
+      ...base,
+      writePaths: ["generated"],
+    });
+    await writeFile(path.join(harness.workspaceRoot, "freshness.txt"), "drift");
+    await expect(
+      harness.manager.startWrite({
+        threadId: harness.thread.id,
+        runId: harness.run.id,
+        previewId: preview.id,
+      }),
+    ).rejects.toThrow("preview is stale");
+    expect(harness.controlled.processes).toHaveLength(0);
+    expect(
+      (await harness.store.listEvents(harness.thread.id)).some((event) =>
+        event.type.startsWith("workspace.process."),
+      ),
+    ).toBe(false);
+    harness.store.close();
+  });
+
+  it("serializes scoped writers across Managers and reports outside-scope drift", async () => {
+    const harness = await createHarness();
+    const generated = path.join(harness.workspaceRoot, "generated");
+    await mkdir(generated);
+    const secondControlled = createControlledSandbox();
+    const secondManager = new WorkspaceProcessManager({
+      store: harness.store,
+      workspaceRoot: harness.workspaceRoot,
+      dataRoot: harness.dataRoot,
+      sandbox: secondControlled.sandbox,
+    });
+    await secondManager.initialize();
+    const request = {
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: { runtime: "node" as const, args: ["-e", "void 0"] },
+      writePaths: ["generated"],
+    };
+    const [firstPreview, secondPreview] = await Promise.all([
+      harness.manager.previewWrite(request),
+      secondManager.previewWrite(request),
+    ]);
+    const first = await harness.manager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: firstPreview.id,
+    });
+    await expect(
+      secondManager.startWrite({
+        threadId: harness.thread.id,
+        runId: harness.run.id,
+        previewId: secondPreview.id,
+      }),
+    ).rejects.toThrow("already being edited");
+    await Promise.all([
+      writeFile(path.join(generated, "inside.txt"), "inside"),
+      writeFile(path.join(harness.workspaceRoot, "outside.txt"), "outside"),
+    ]);
+    harness.controlled.processes[0]!.settle(0);
+    expect(
+      await harness.manager.waitForSettlement(harness.thread.id, first.id),
+    ).toEqual(
+      expect.objectContaining({
+        status: "succeeded",
+        workspaceWriteScopeStatus: "outside_scope",
+        interruptionReason: expect.stringContaining("attribution is unknown"),
+      }),
+    );
+    const freshSecondPreview = await secondManager.previewWrite(request);
+    const second = await secondManager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: freshSecondPreview.id,
+    });
+    secondControlled.processes[0]!.settle(0);
+    await secondManager.waitForSettlement(harness.thread.id, second.id);
+    await secondManager.shutdown();
+    harness.store.close();
+  });
+
+  it("preserves scoped-write evidence across cancellation and timeout", async () => {
+    const cancelledHarness = await createHarness();
+    await mkdir(path.join(cancelledHarness.workspaceRoot, "generated"));
+    const cancelledPreview = await cancelledHarness.manager.previewWrite({
+      threadId: cancelledHarness.thread.id,
+      runId: cancelledHarness.run.id,
+      command: {
+        runtime: "node",
+        args: ["-e", "setInterval(() => {}, 1000)"],
+      },
+      writePaths: ["generated"],
+    });
+    const cancelled = await cancelledHarness.manager.startWrite({
+      threadId: cancelledHarness.thread.id,
+      runId: cancelledHarness.run.id,
+      previewId: cancelledPreview.id,
+    });
+    expect(
+      await cancelledHarness.manager.cancel(
+        cancelledHarness.thread.id,
+        cancelled.id,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        status: "cancelled",
+        workspaceAccess: "scoped_write",
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+    cancelledHarness.store.close();
+
+    vi.useFakeTimers();
+    const timeoutHarness = await createHarness();
+    await mkdir(path.join(timeoutHarness.workspaceRoot, "generated"));
+    const timeoutPreview = await timeoutHarness.manager.previewWrite({
+      threadId: timeoutHarness.thread.id,
+      runId: timeoutHarness.run.id,
+      command: {
+        runtime: "node",
+        args: ["-e", "setInterval(() => {}, 1000)"],
+        timeoutMs: 1_000,
+      },
+      writePaths: ["generated"],
+    });
+    const timed = await timeoutHarness.manager.startWrite({
+      threadId: timeoutHarness.thread.id,
+      runId: timeoutHarness.run.id,
+      previewId: timeoutPreview.id,
+    });
+    await vi.advanceTimersByTimeAsync(1_001);
+    expect(
+      await timeoutHarness.manager.waitForSettlement(
+        timeoutHarness.thread.id,
+        timed.id,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        status: "timed_out",
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+    timeoutHarness.store.close();
+    vi.useRealTimers();
   });
 
   it("serializes bounded interactive input and persists only hash receipts", async () => {
@@ -1264,6 +1691,71 @@ describe("Workspace Process Manager", () => {
     expect(interrupted.interruptionReason).toContain("outcome is unknown");
     expect(interrupted.workspaceDeltaAvailable).toBe(false);
     expect(JSON.stringify(interrupted)).not.toContain("TOP_SECRET");
+    harness.store.close();
+  });
+
+  it("releases the cross-Manager write lock after settlement evidence fails", async () => {
+    const harness = await createHarness();
+    await mkdir(path.join(harness.workspaceRoot, "generated"));
+    const secondControlled = createControlledSandbox();
+    const secondManager = new WorkspaceProcessManager({
+      store: harness.store,
+      workspaceRoot: harness.workspaceRoot,
+      dataRoot: harness.dataRoot,
+      sandbox: secondControlled.sandbox,
+    });
+    await secondManager.initialize();
+    const request = {
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: { runtime: "node" as const, args: ["-e", "void 0"] },
+      writePaths: ["generated"],
+    };
+    const preview = await harness.manager.previewWrite(request);
+    const session = await harness.manager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: preview.id,
+    });
+    const appendEvent = harness.store.appendEvent.bind(harness.store);
+    const appendSpy = vi
+      .spyOn(harness.store, "appendEvent")
+      .mockImplementation(async (input) => {
+        if (input.type === "workspace.process.settled") {
+          throw new Error("TOP_SECRET_SCOPED_SETTLEMENT_FAILURE");
+        }
+        return appendEvent(input);
+      });
+    harness.controlled.processes[0]!.settle(0);
+    expect(
+      await harness.manager.waitForSettlement(harness.thread.id, session.id),
+    ).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        status: "interrupted",
+        workspaceAccess: "scoped_write",
+        interruptionReason: expect.stringContaining("outcome is unknown"),
+      }),
+    );
+    appendSpy.mockRestore();
+
+    const nextPreview = await secondManager.previewWrite(request);
+    const next = await secondManager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: nextPreview.id,
+    });
+    secondControlled.processes[0]!.settle(0);
+    expect(
+      await secondManager.waitForSettlement(harness.thread.id, next.id),
+    ).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        status: "succeeded",
+        workspaceWriteScopeStatus: "within_scope",
+      }),
+    );
+    await secondManager.shutdown();
     harness.store.close();
   });
 

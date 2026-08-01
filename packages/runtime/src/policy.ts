@@ -367,6 +367,34 @@ export function assessToolCall(
   }
 
   if (PROCESS_TOOLS.has(toolName)) {
+    const processAction = getStringField(input, "action");
+    if (toolName === "workspace_process" && processAction === "preview_write") {
+      const writePaths =
+        input &&
+        typeof input === "object" &&
+        !Array.isArray(input) &&
+        Array.isArray((input as Record<string, unknown>)["writePaths"])
+          ? ((input as Record<string, unknown>)["writePaths"] as unknown[])
+          : [];
+      if (writePaths.length < 1) {
+        return {
+          allowed: false,
+          risk: "high",
+          reason: "scoped Process writes require explicit write paths",
+        };
+      }
+      for (const writePath of writePaths) {
+        if (typeof writePath !== "string") {
+          return {
+            allowed: false,
+            risk: "high",
+            reason: "scoped Process write path is invalid",
+          };
+        }
+        const denial = workspaceWritePathDenial(writePath, workspaceRoot);
+        if (denial) return denial;
+      }
+    }
     if (
       toolName === "node_debugger" &&
       getStringField(input, "action") === "launch"
@@ -410,7 +438,11 @@ export function assessToolCall(
           : "medium",
       reason:
         toolName === "workspace_process"
-          ? "bounded background Process Session lifecycle"
+          ? processAction === "start_write"
+            ? "fresh preview-bound scoped workspace Process write"
+            : processAction === "preview_write"
+              ? "read-only scoped workspace Process write preview"
+              : "bounded background Process Session lifecycle"
           : toolName === "javascript_kernel"
             ? "persistent sandboxed JavaScript state lifecycle"
             : toolName === "python_kernel"

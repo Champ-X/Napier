@@ -617,11 +617,28 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                       <p>{copy.indeterminateDelta}</p>
                     ) : (
                       <>
-                        <p>{copy.deltaAttribution}</p>
+                        <p>
+                          {session.workspaceAccess === "scoped_write"
+                            ? delta.writeScopeStatus === "within_scope"
+                              ? copy.scopedDeltaAttribution
+                              : copy.outsideScopeDelta
+                            : copy.deltaAttribution}
+                        </p>
                         <ol>
                           {delta.entries.map((entry) => (
                             <li key={`${entry.kind}:${entry.path}`}>
-                              <span>{entry.kind}</span>
+                              <span>
+                                {entry.kind}
+                                {entry.entryKind
+                                  ? ` ${
+                                      entry.entryKind === "directory"
+                                        ? copy.deltaDirectory
+                                        : entry.entryKind === "symlink"
+                                          ? copy.deltaSymlink
+                                          : copy.deltaFile
+                                    }`
+                                  : ""}
+                              </span>
                               <code>{entry.path}</code>
                               <small>{formatDeltaMetadata(entry, copy)}</small>
                             </li>

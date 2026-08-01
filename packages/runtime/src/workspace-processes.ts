@@ -10,6 +10,7 @@ import type {
   WorkspaceProcessResizeReceipt,
   WorkspaceProcessSession,
   WorkspaceProcessStatus,
+  WorkspaceProcessWritePreview,
 } from "@napier/contracts";
 
 import {
@@ -35,6 +36,7 @@ import {
   workspaceProcessInputReceiptPayload,
   workspaceProcessSessionPayload,
   workspaceProcessSessionWithRuntimeState,
+  workspaceProcessStableSessionInput as stableSessionInput,
 } from "./workspace-process-events.js";
 import {
   type ResizeWorkspaceProcessRequest,
@@ -42,19 +44,31 @@ import {
   WorkspaceProcessControl,
   type WriteWorkspaceProcessInputRequest,
 } from "./workspace-process-control.js";
+import { reserveWorkspaceProcessStart } from "./workspace-process-admission.js";
+import {
+  projectWorkspaceProcessDelta,
+  projectWorkspaceProcessOutput,
+} from "./workspace-process-observation.js";
 import {
   createWorkspacePathSnapshot,
-  diffWorkspaceSnapshots,
   type WorkspacePathSnapshot,
   type WorkspaceSnapshotDelta,
-  unavailableWorkspacePathSnapshot,
 } from "./workspace-snapshot.js";
+import { settleWorkspaceProcessWorkspace } from "./workspace-process-settlement.js";
 import {
   bindWorkspaceProcessIo,
   type WorkspaceProcessTerminalSize,
   validateWorkspaceProcessTerminalSize,
 } from "./workspace-process-terminal.js";
 import { workspaceProcessResizeReceiptPayload } from "./workspace-process-resize-events.js";
+import {
+  type PreviewWorkspaceProcessWriteRequest,
+  type PreparedWorkspaceProcessWrite,
+  type StartWorkspaceProcessWriteRequest,
+  type WorkspaceProcessWriteRuntimeState,
+  WorkspaceProcessWritePreviewManager,
+  workspaceProcessWriteRuntimeState,
+} from "./workspace-process-write-preview.js";
 
 export const MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD = 4;
 export const MAX_ACTIVE_WORKSPACE_PROCESSES = 8;
@@ -82,7 +96,8 @@ interface StreamCollector {
   truncated: boolean;
 }
 
-interface ActiveWorkspaceProcess extends WorkspaceProcessControlEntry {
+interface ActiveWorkspaceProcess
+  extends WorkspaceProcessControlEntry, WorkspaceProcessWriteRuntimeState {
   prepared: PreparedCommandExecution;
   beforeSnapshot: WorkspacePathSnapshot;
   workspaceDelta?: WorkspaceSnapshotDelta;
@@ -103,6 +118,7 @@ interface ActiveWorkspaceProcess extends WorkspaceProcessControlEntry {
 
 export interface WorkspaceProcessManagerOptions extends CommandRunnerOptions {
   store: LocalStore;
+  dataRoot?: string;
 }
 
 export interface StartWorkspaceProcessRequest {
@@ -128,10 +144,12 @@ export class WorkspaceProcessManager {
   >();
   private readonly startingByThread = new Map<string, number>();
   private readonly control: WorkspaceProcessControl<ActiveWorkspaceProcess>;
+  private readonly writePreviews: WorkspaceProcessWritePreviewManager;
   private initialized = false;
   private shuttingDown = false;
 
   constructor(private readonly options: WorkspaceProcessManagerOptions) {
+    this.writePreviews = new WorkspaceProcessWritePreviewManager(options);
     this.control = new WorkspaceProcessControl({
       requireSession: (threadId, processId) =>
         this.requireSession(threadId, processId),
@@ -194,9 +212,28 @@ export class WorkspaceProcessManager {
     return this.startProcess(request, true);
   }
 
+  async previewWrite(
+    request: PreviewWorkspaceProcessWriteRequest,
+  ): Promise<WorkspaceProcessWritePreview> {
+    this.assertReady();
+    this.assertRunOwnership(request.threadId, request.runId);
+    return this.writePreviews.preview(request);
+  }
+
+  async startWrite(
+    request: StartWorkspaceProcessWriteRequest,
+  ): Promise<WorkspaceProcessSession> {
+    return this.startProcess(
+      this.writePreviews.startRequest(request),
+      false,
+      request.previewId,
+    );
+  }
+
   private async startProcess(
     request: StartWorkspaceProcessRequest,
     privateProtocol: boolean,
+    writePreviewId?: string,
   ): Promise<WorkspaceProcessSession> {
     this.assertReady();
     if (this.shuttingDown) {
@@ -214,55 +251,47 @@ export class WorkspaceProcessManager {
       throw new Error("Private Process protocols cannot use PTY mode");
     }
     validateWorkspaceProcessTerminalSize(request.terminal);
-    this.options.store.getThread(request.threadId);
-    if (
-      !this.options.store
-        .listRuns(request.threadId)
-        .some((run) => run.id === request.runId)
-    ) {
-      throw new Error("Workspace Process Run does not belong to the Thread");
-    }
-    const activeCount = [...this.entries.values()].filter(
-      (entry) =>
-        entry.session.threadId === request.threadId &&
-        entry.session.status === "running",
-    ).length;
-    const startingCount = this.startingByThread.get(request.threadId) ?? 0;
-    const activeGlobalCount = [...this.entries.values()].filter(
-      (entry) => entry.session.status === "running",
-    ).length;
-    const startingGlobalCount = [...this.startingByThread.values()].reduce(
-      (total, count) => total + count,
-      0,
-    );
-    if (
-      activeGlobalCount + startingGlobalCount >=
-      MAX_ACTIVE_WORKSPACE_PROCESSES
-    ) {
-      throw new Error(
-        `Runtime already has ${MAX_ACTIVE_WORKSPACE_PROCESSES} active Process Sessions`,
-      );
-    }
-    if (
-      activeCount + startingCount >=
-      MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD
-    ) {
-      throw new Error(
-        `Thread already has ${MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD} active Process Sessions`,
-      );
-    }
-    this.startingByThread.set(request.threadId, startingCount + 1);
+    this.assertRunOwnership(request.threadId, request.runId);
+    const releaseAdmission = reserveWorkspaceProcessStart({
+      sessions: [...this.entries.values()].map((entry) => entry.session),
+      startingByThread: this.startingByThread,
+      threadId: request.threadId,
+      maximumGlobal: MAX_ACTIVE_WORKSPACE_PROCESSES,
+      maximumPerThread: MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD,
+    });
     let prepared: PreparedCommandExecution;
     let beforeSnapshot: WorkspacePathSnapshot;
     let child: SandboxedProcess;
     let io: ReturnType<typeof bindWorkspaceProcessIo>;
+    let write: PreparedWorkspaceProcessWrite | undefined;
+    let writeLock: WorkspaceProcessWriteRuntimeState["writeLock"];
     try {
-      prepared = await prepareCommandExecution(this.options, request.command);
-      io = bindWorkspaceProcessIo(prepared, request.terminal);
-      beforeSnapshot = await createWorkspacePathSnapshot(
-        prepared.workspaceRoot,
-        prepared.workspaceRoot,
-      );
+      if (writePreviewId) {
+        if (privateProtocol || !this.options.dataRoot) {
+          throw new Error(
+            "Workspace Process scoped writes require the managed local Runtime",
+          );
+        }
+        ({ write, writeLock } = await this.writePreviews.acquire(
+          {
+            threadId: request.threadId,
+            runId: request.runId,
+            previewId: writePreviewId,
+            ...(request.signal ? { signal: request.signal } : {}),
+          },
+          this.options.dataRoot,
+        ));
+        prepared = write.prepared;
+        io = write.io;
+        beforeSnapshot = write.beforeSnapshot;
+      } else {
+        prepared = await prepareCommandExecution(this.options, request.command);
+        io = bindWorkspaceProcessIo(prepared, request.terminal);
+        beforeSnapshot = await createWorkspacePathSnapshot(
+          prepared.workspaceRoot,
+          prepared.workspaceRoot,
+        );
+      }
       if (this.shuttingDown) {
         throw new Error("Workspace Process Manager is shutting down");
       }
@@ -270,34 +299,34 @@ export class WorkspaceProcessManager {
         throw new Error("workspace process start was aborted");
       }
       child = await this.options.sandbox.launch(io.launch);
+    } catch (error) {
+      await writeLock?.release();
+      throw error;
     } finally {
-      const remaining = (this.startingByThread.get(request.threadId) ?? 1) - 1;
-      if (remaining > 0) {
-        this.startingByThread.set(request.threadId, remaining);
-      } else {
-        this.startingByThread.delete(request.threadId);
-      }
+      releaseAdmission();
     }
     if (this.shuttingDown) {
       await child.terminate().catch(() => undefined);
+      await writeLock?.release();
       throw new Error("Workspace Process Manager is shutting down");
     }
     if (request.terminal && !child.resize) {
       await child.terminate().catch(() => undefined);
+      await writeLock?.release();
       throw new Error("The selected Sandbox does not support PTY resize");
     }
     if (request.interactive !== true && !request.terminal) child.stdin.end();
     const processId = createId("process");
     const startedAt = nowIso();
     const session = createWorkspaceProcessSession({
-      schemaVersion: 4,
+      schemaVersion: write ? 5 : 4,
       id: processId,
       threadId: request.threadId,
       runId: request.runId,
       runtime: prepared.runtime,
       status: "running",
       sandbox: prepared.sandboxId,
-      workspaceAccess: "read_only",
+      workspaceAccess: write ? "scoped_write" : "read_only",
       networkAccess: "denied",
       argumentCount: prepared.receipt.argumentCount,
       commandSha256: io.commandSha256,
@@ -316,6 +345,13 @@ export class WorkspaceProcessManager {
       stdinSha256: sha256(""),
       workspaceBeforeSha256: beforeSnapshot.sha256,
       workspaceBeforeTruncated: beforeSnapshot.truncated,
+      ...(write
+        ? {
+            writePreviewSha256: write.preview.contentSha256,
+            writeScopeCount: write.preview.writeScopeCount,
+            writeScopeSetSha256: write.preview.writeScopeSetSha256,
+          }
+        : {}),
       startedAt,
       stdoutChars: 0,
       stderrChars: 0,
@@ -330,6 +366,8 @@ export class WorkspaceProcessManager {
       child,
       privateProtocol,
       request.signal,
+      write,
+      writeLock,
     );
     this.entries.set(processId, entry);
     try {
@@ -337,6 +375,7 @@ export class WorkspaceProcessManager {
     } catch (error) {
       this.entries.delete(processId);
       await child.terminate().catch(() => undefined);
+      await writeLock?.release();
       throw error;
     }
     entry.timeout = setTimeout(() => {
@@ -352,6 +391,7 @@ export class WorkspaceProcessManager {
         entry.session,
         WORKSPACE_PROCESS_INTERRUPTED_EVENT,
       ).catch(() => undefined);
+      await entry.writeLock?.release();
     });
     return this.runtimeSession(entry);
   }
@@ -413,30 +453,6 @@ export class WorkspaceProcessManager {
     }
     const session = await this.requireSession(threadId, processId);
     const entry = this.entries.get(processId);
-    if (entry && entry.privateProtocol !== privateProtocolAccess) {
-      if (privateProtocolAccess) {
-        throw new Error(
-          "Workspace Process Session is not a private protocol session",
-        );
-      }
-      const current = this.runtimeSession(entry);
-      if (afterCursor > current.nextCursor) {
-        throw new Error(
-          "Workspace Process output cursor is ahead of the session",
-        );
-      }
-      return {
-        kind: "napier.workspace-process-output",
-        schemaVersion: 1,
-        processId,
-        status: current.status,
-        afterCursor,
-        nextCursor: current.nextCursor,
-        hasMore: false,
-        outputAvailable: false,
-        chunks: [],
-      };
-    }
     if (
       entry &&
       entry.session.threadId === threadId &&
@@ -452,34 +468,13 @@ export class WorkspaceProcessManager {
         "Workspace Process output cursor is ahead of the session",
       );
     }
-    if (!entry || entry.session.threadId !== threadId) {
-      return {
-        kind: "napier.workspace-process-output",
-        schemaVersion: 1,
-        processId,
-        status: current.status,
-        afterCursor,
-        nextCursor: current.nextCursor,
-        hasMore: false,
-        outputAvailable: false,
-        chunks: [],
-      };
-    }
-    const available = entry.chunks.filter(
-      (chunk) => chunk.cursor > afterCursor,
-    );
-    const chunks = available.slice(0, MAX_WORKSPACE_PROCESS_POLL_CHUNKS);
-    return {
-      kind: "napier.workspace-process-output",
-      schemaVersion: 1,
-      processId,
-      status: entry.session.status,
+    return projectWorkspaceProcessOutput({
+      session: current,
+      ...(entry?.session.threadId === threadId ? { entry } : {}),
+      privateProtocolAccess,
       afterCursor,
-      nextCursor: chunks.at(-1)?.cursor ?? afterCursor,
-      hasMore: available.length > chunks.length,
-      outputAvailable: true,
-      chunks: structuredClone(chunks),
-    };
+      maximumChunks: MAX_WORKSPACE_PROCESS_POLL_CHUNKS,
+    });
   }
 
   async delta(
@@ -489,32 +484,10 @@ export class WorkspaceProcessManager {
     this.assertReady();
     const session = await this.requireSession(threadId, processId);
     const entry = this.entries.get(processId);
-    if (
-      !entry ||
-      entry.session.threadId !== threadId ||
-      !entry.workspaceDelta
-    ) {
-      return {
-        kind: "napier.workspace-process-delta",
-        schemaVersion: 1,
-        processId,
-        ...(session.workspaceDeltaStatus
-          ? { status: session.workspaceDeltaStatus }
-          : {}),
-        available: false,
-        entriesTruncated: false,
-        entries: [],
-      };
-    }
-    return {
-      kind: "napier.workspace-process-delta",
-      schemaVersion: 1,
-      processId,
-      status: entry.workspaceDelta.status,
-      available: true,
-      entriesTruncated: entry.workspaceDelta.entriesTruncated,
-      entries: structuredClone(entry.workspaceDelta.entries),
-    };
+    return projectWorkspaceProcessDelta(
+      entry?.session.threadId === threadId ? entry.session : session,
+      entry?.session.threadId === threadId ? entry.workspaceDelta : undefined,
+    );
   }
 
   async writeInput(
@@ -593,6 +566,8 @@ export class WorkspaceProcessManager {
     child: SandboxedProcess,
     privateProtocol: boolean,
     parentSignal?: AbortSignal,
+    write?: PreparedWorkspaceProcessWrite,
+    writeLock?: WorkspaceProcessWriteRuntimeState["writeLock"],
   ): ActiveWorkspaceProcess {
     const entry: ActiveWorkspaceProcess = {
       session,
@@ -611,6 +586,7 @@ export class WorkspaceProcessManager {
       stdinHash: createHash("sha256"),
       controlTail: Promise.resolve(),
       ...(parentSignal ? { parentSignal } : {}),
+      ...workspaceProcessWriteRuntimeState(write, writeLock),
     };
     child.stdin.on("error", () => undefined);
     entry.stdout = this.collect(entry, "stdout", child.stdout);
@@ -725,20 +701,28 @@ export class WorkspaceProcessManager {
       interruptionReason =
         "The bound command runtime changed during execution.";
     }
-    const afterSnapshot = await createWorkspacePathSnapshot(
-      entry.prepared.workspaceRoot,
-      entry.prepared.workspaceRoot,
-    ).catch(() => unavailableWorkspacePathSnapshot(entry.beforeSnapshot.kind));
-    const workspaceDelta = diffWorkspaceSnapshots(
-      entry.beforeSnapshot,
-      afterSnapshot,
-    );
+    const { afterSnapshot, workspaceDelta, writeScopeStatus } =
+      await settleWorkspaceProcessWorkspace({
+        workspaceRoot: entry.prepared.workspaceRoot,
+        beforeSnapshot: entry.beforeSnapshot,
+        ...(entry.relativeWritePaths
+          ? { relativeWritePaths: entry.relativeWritePaths }
+          : {}),
+      });
     entry.workspaceDelta = workspaceDelta;
+    if (writeScopeStatus === "outside_scope" && !interruptionReason) {
+      interruptionReason =
+        "Workspace changes were observed outside the approved write scope; attribution is unknown.";
+    } else if (writeScopeStatus === "indeterminate" && !interruptionReason) {
+      interruptionReason =
+        "The scoped workspace write could not be completely verified.";
+    }
     const settledAt = nowIso();
     const stdoutSha256 = entry.stdout.hash.digest("hex");
     const stderrSha256 = entry.stderr.hash.digest("hex");
     const session = createWorkspaceProcessSession({
       ...stableSessionInput(entry.session),
+      schemaVersion: entry.session.schemaVersion,
       status,
       ...(entry.session.schemaVersion >= 3 ? { stdinOpen: false } : {}),
       settledAt,
@@ -760,6 +744,9 @@ export class WorkspaceProcessManager {
       workspaceDeltaStatus: workspaceDelta.status,
       workspaceChangedFileCount: workspaceDelta.changedFileCount,
       workspaceChangedPathSetSha256: workspaceDelta.changedPathSetSha256,
+      ...(writeScopeStatus
+        ? { workspaceWriteScopeStatus: writeScopeStatus }
+        : {}),
       ...(interruptionReason ? { interruptionReason } : {}),
     });
     entry.session = session;
@@ -770,6 +757,7 @@ export class WorkspaceProcessManager {
         ? WORKSPACE_PROCESS_INTERRUPTED_EVENT
         : WORKSPACE_PROCESS_SETTLED_EVENT,
     );
+    await entry.writeLock?.release();
     this.pruneRetainedEntries();
   }
 
@@ -789,6 +777,7 @@ export class WorkspaceProcessManager {
     if (entry.session.schemaVersion >= 3 && entry.session.stdinOpen === true) {
       entry.session = createWorkspaceProcessSession({
         ...stableSessionInput(entry.session),
+        schemaVersion: entry.session.schemaVersion,
         status: entry.session.status,
         stdinOpen: false,
       });
@@ -803,6 +792,7 @@ export class WorkspaceProcessManager {
     delete entry.workspaceDelta;
     entry.session = createWorkspaceProcessSession({
       ...stableSessionInput(entry.session),
+      schemaVersion: entry.session.schemaVersion,
       status: "interrupted",
       ...(entry.session.schemaVersion >= 3 ? { stdinOpen: false } : {}),
       settledAt: nowIso(),
@@ -957,27 +947,14 @@ export class WorkspaceProcessManager {
       );
     }
   }
-}
 
-function stableSessionInput(
-  session: WorkspaceProcessSession,
-): Omit<
-  WorkspaceProcessSession,
-  | "kind"
-  | "schemaVersion"
-  | "status"
-  | "outputAvailable"
-  | "workspaceDeltaAvailable"
-  | "contentSha256"
-> {
-  const {
-    kind: _kind,
-    schemaVersion: _schemaVersion,
-    status: _status,
-    outputAvailable: _outputAvailable,
-    workspaceDeltaAvailable: _workspaceDeltaAvailable,
-    contentSha256: _contentSha256,
-    ...input
-  } = session;
-  return input;
+  private assertRunOwnership(threadId: string, runId: string): void {
+    this.options.store.getThread(threadId);
+    const ownsRun = this.options.store
+      .listRuns(threadId)
+      .some((run) => run.id === runId);
+    if (!ownsRun) {
+      throw new Error("Workspace Process Run does not belong to the Thread");
+    }
+  }
 }

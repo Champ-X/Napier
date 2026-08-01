@@ -107,4 +107,39 @@ describe("Workspace Process event view", () => {
       }),
     ).toContain("runtime python");
   });
+
+  it("summarizes scoped write bindings without paths or preview bodies", () => {
+    const event: RunEvent = {
+      id: "event_1234567890abcdef1234",
+      threadId: "thread_1234567890abcdef1234",
+      runId: "run_1234567890abcdef1234",
+      seq: 5,
+      type: "workspace.process.settled",
+      category: "lifecycle",
+      visibility: "user",
+      createdAt: "2026-07-29T00:00:00.000Z",
+      payload: {
+        id: "process_1234567890abcdef1234",
+        status: "succeeded",
+        runtime: "node",
+        workspaceAccess: "scoped_write",
+        writeScopeCount: 2,
+        writeScopeSetSha256: "d".repeat(64),
+        writePreviewSha256: "e".repeat(64),
+        workspaceWriteScopeStatus: "within_scope",
+        workspaceDeltaStatus: "changed",
+        workspaceChangedFileCount: 2,
+        workspaceChangedPathSetSha256: "f".repeat(64),
+        rawWritePaths: ["PRIVATE_WRITE_SCOPE"],
+      },
+    };
+    const summary = workspaceProcessEventTraceSummary(event);
+    expect(summary).toContain(
+      `access scoped-write / write-scopes 2 / scope-set ${"d".repeat(12)} / write-preview ${"e".repeat(12)}`,
+    );
+    expect(summary).toContain("changed-path-count 2");
+    expect(summary).not.toContain("changed-files");
+    expect(summary).toContain("scope-status within_scope");
+    expect(summary).not.toContain("PRIVATE_WRITE_SCOPE");
+  });
 });

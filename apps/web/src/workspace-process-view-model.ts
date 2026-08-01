@@ -53,7 +53,10 @@ export function workspaceProcessCardView(
         ? "In progress"
         : `${session.durationMs.toLocaleString()} ms`,
     runtimeLabel: `${session.runtime} · ${session.sandbox}${terminalLabel}`,
-    scopeLabel: "Workspace read-only · Network denied",
+    scopeLabel:
+      session.workspaceAccess === "scoped_write"
+        ? `Workspace scoped write · ${session.writeScopeCount ?? 0} scope${session.writeScopeCount === 1 ? "" : "s"} · ${session.writeScopeSetSha256?.slice(0, 12) ?? "unavailable"} · Network denied`
+        : "Workspace read-only · Network denied",
     limitLabel: `${Math.round(session.timeoutMs / 1_000)}s · ${session.outputLimitChars.toLocaleString()} chars/stream`,
     outputLabel:
       session.ioMode === "pty"
@@ -142,7 +145,10 @@ function workspaceDeltaView(
   if (session.status === "running") {
     return {
       workspaceDeltaState: "pending",
-      workspaceDeltaLabel: "Comparison pending settlement",
+      workspaceDeltaLabel:
+        session.workspaceAccess === "scoped_write"
+          ? "Scoped write comparison pending settlement"
+          : "Comparison pending settlement",
       workspaceDeltaAvailable: false,
       ...(workspaceDeltaHashes ? { workspaceDeltaHashes } : {}),
     };
@@ -150,7 +156,10 @@ function workspaceDeltaView(
   if (session.workspaceDeltaStatus === "unchanged") {
     return {
       workspaceDeltaState: "unchanged",
-      workspaceDeltaLabel: "No workspace drift observed",
+      workspaceDeltaLabel:
+        session.workspaceAccess === "scoped_write"
+          ? "No workspace changes observed"
+          : "No workspace drift observed",
       workspaceDeltaAvailable: Boolean(session.workspaceDeltaAvailable),
       ...(workspaceDeltaHashes ? { workspaceDeltaHashes } : {}),
     };
@@ -159,7 +168,12 @@ function workspaceDeltaView(
     const count = session.workspaceChangedFileCount ?? 0;
     return {
       workspaceDeltaState: "changed",
-      workspaceDeltaLabel: `${count.toLocaleString()} file${count === 1 ? "" : "s"} drifted during window`,
+      workspaceDeltaLabel:
+        session.workspaceAccess === "scoped_write"
+          ? session.workspaceWriteScopeStatus === "within_scope"
+            ? `${count.toLocaleString()} path${count === 1 ? "" : "s"} changed within approved scope`
+            : `${count.toLocaleString()} observed path change${count === 1 ? "" : "s"} include unverified scope`
+          : `${count.toLocaleString()} file${count === 1 ? "" : "s"} drifted during window`,
       workspaceDeltaAvailable: Boolean(session.workspaceDeltaAvailable),
       ...(workspaceDeltaHashes ? { workspaceDeltaHashes } : {}),
     };
@@ -167,7 +181,10 @@ function workspaceDeltaView(
   if (session.workspaceDeltaStatus === "indeterminate") {
     return {
       workspaceDeltaState: "indeterminate",
-      workspaceDeltaLabel: "Workspace comparison indeterminate",
+      workspaceDeltaLabel:
+        session.workspaceAccess === "scoped_write"
+          ? "Scoped write verification indeterminate"
+          : "Workspace comparison indeterminate",
       workspaceDeltaAvailable: Boolean(session.workspaceDeltaAvailable),
       ...(workspaceDeltaHashes ? { workspaceDeltaHashes } : {}),
     };

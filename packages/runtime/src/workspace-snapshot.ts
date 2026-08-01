@@ -1,4 +1,11 @@
-import { lstat, readdir, readFile, realpath, stat } from "node:fs/promises";
+import {
+  lstat,
+  readdir,
+  readFile,
+  readlink,
+  realpath,
+  stat,
+} from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -11,6 +18,7 @@ const SNAPSHOT_EXCLUDED_SEGMENTS = new Set([".git", ".napier", "node_modules"]);
 
 export interface WorkspaceSnapshotEntry {
   path: string;
+  entryKind?: "file" | "directory" | "symlink";
   sha256?: string;
   sizeBytes: number;
   truncated?: boolean;
@@ -28,6 +36,7 @@ export interface WorkspacePathSnapshot {
 export interface WorkspaceDeltaEntry {
   kind: "added" | "modified" | "removed";
   path: string;
+  entryKind?: "file" | "directory" | "symlink";
   beforeSha256?: string;
   afterSha256?: string;
   beforeSizeBytes?: number;
@@ -45,6 +54,7 @@ export interface WorkspaceSnapshotDelta {
 export interface WorkspaceSnapshotOptions {
   maxFiles?: number;
   maxBytes?: number;
+  includeDirectories?: boolean;
 }
 
 export async function createWorkspacePathSnapshot(
@@ -67,6 +77,7 @@ export async function createWorkspacePathSnapshot(
   const limits = {
     maxFiles: options.maxFiles ?? MAX_WORKSPACE_SNAPSHOT_FILES,
     maxBytes: options.maxBytes ?? MAX_WORKSPACE_SNAPSHOT_BYTES,
+    includeDirectories: options.includeDirectories === true,
   };
   if (
     !Number.isSafeInteger(limits.maxFiles) ||
@@ -135,6 +146,7 @@ export function diffWorkspaceSnapshots(
         {
           kind: "added",
           path: entryPath,
+          ...(current.entryKind ? { entryKind: current.entryKind } : {}),
           ...(current.sha256 ? { afterSha256: current.sha256 } : {}),
           afterSizeBytes: current.sizeBytes,
         },
@@ -145,6 +157,7 @@ export function diffWorkspaceSnapshots(
         {
           kind: "removed",
           path: entryPath,
+          ...(previous.entryKind ? { entryKind: previous.entryKind } : {}),
           ...(previous.sha256 ? { beforeSha256: previous.sha256 } : {}),
           beforeSizeBytes: previous.sizeBytes,
         },
@@ -153,13 +166,15 @@ export function diffWorkspaceSnapshots(
     if (
       previous &&
       current &&
-      (previous.sha256 !== current.sha256 ||
+      (previous.entryKind !== current.entryKind ||
+        previous.sha256 !== current.sha256 ||
         previous.sizeBytes !== current.sizeBytes)
     ) {
       return [
         {
           kind: "modified",
           path: entryPath,
+          ...(current.entryKind ? { entryKind: current.entryKind } : {}),
           ...(previous.sha256 ? { beforeSha256: previous.sha256 } : {}),
           ...(current.sha256 ? { afterSha256: current.sha256 } : {}),
           beforeSizeBytes: previous.sizeBytes,
@@ -247,10 +262,15 @@ function createFileSnapshot(
 async function createDirectorySnapshot(
   workspaceRoot: string,
   directory: string,
-  limits: { maxFiles: number; maxBytes: number },
+  limits: {
+    maxFiles: number;
+    maxBytes: number;
+    includeDirectories: boolean;
+  },
 ): Promise<WorkspacePathSnapshot> {
   const entries: WorkspaceSnapshotEntry[] = [];
   let bytes = 0;
+  let fileCount = 0;
   let truncated = false;
 
   const visit = async (current: string): Promise<void> => {
@@ -261,16 +281,57 @@ async function createDirectorySnapshot(
     );
     for (const child of children) {
       if (truncated) return;
-      if (
-        child.isSymbolicLink() ||
-        SNAPSHOT_EXCLUDED_SEGMENTS.has(child.name)
-      ) {
+      if (SNAPSHOT_EXCLUDED_SEGMENTS.has(child.name)) {
         continue;
       }
       const absolute = path.join(current, child.name);
       const info = await lstat(absolute);
-      if (info.isSymbolicLink()) continue;
+      if (info.isSymbolicLink()) {
+        if (!limits.includeDirectories) continue;
+        const relative = path.relative(workspaceRoot, absolute) || ".";
+        const target = await readlink(absolute);
+        const sizeBytes = Buffer.byteLength(target);
+        if (
+          entries.length >= limits.maxFiles ||
+          bytes + sizeBytes > limits.maxBytes
+        ) {
+          truncated = true;
+          entries.push({
+            path: relative,
+            entryKind: "symlink",
+            sizeBytes,
+            truncated: true,
+          });
+          return;
+        }
+        bytes += sizeBytes;
+        entries.push({
+          path: relative,
+          entryKind: "symlink",
+          sha256: sha256(target),
+          sizeBytes,
+        });
+        continue;
+      }
       if (info.isDirectory()) {
+        if (limits.includeDirectories) {
+          const relative = path.relative(workspaceRoot, absolute) || ".";
+          if (entries.length >= limits.maxFiles) {
+            truncated = true;
+            entries.push({
+              path: relative,
+              entryKind: "directory",
+              sizeBytes: 0,
+              truncated: true,
+            });
+            return;
+          }
+          entries.push({
+            path: relative,
+            entryKind: "directory",
+            sizeBytes: 0,
+          });
+        }
         await visit(absolute);
         continue;
       }
@@ -290,8 +351,10 @@ async function createDirectorySnapshot(
       }
       const buffer = await readFile(absolute);
       bytes += buffer.byteLength;
+      fileCount += 1;
       entries.push({
         path: relative,
+        ...(limits.includeDirectories ? { entryKind: "file" as const } : {}),
         sha256: sha256(buffer),
         sizeBytes: buffer.byteLength,
       });
@@ -302,7 +365,7 @@ async function createDirectorySnapshot(
   return {
     kind: "directory",
     sha256: sha256(canonicalJson(entries)),
-    fileCount: entries.length,
+    fileCount: limits.includeDirectories ? fileCount : entries.length,
     bytes,
     truncated,
     entries,

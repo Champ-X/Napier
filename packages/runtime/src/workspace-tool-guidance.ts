@@ -198,8 +198,9 @@ export function formatWorkspaceToolGuidance(
       "Use workspace_process to start, poll, send bounded input to, resize, or cancel a background Node session. Choose ordinary interactive pipe mode for protocols that need closeable stdin, or explicit PTY mode for terminal-aware programs. Poll with the returned cursor and cancel sessions that are no longer needed.",
       "PTY sessions use merged terminal output and a fixed terminal type. Resize only the returned PTY Process ID. A PTY cannot truthfully use pipe close semantics; send explicit terminal control bytes when required and wait for settlement or cancel.",
       "Process input text is live-only. Never send secrets, and never blindly retry an input action after an unknown outcome; refresh the session and Trace first.",
-      "Process Sessions are read-only and offline, but starting or cancelling one is a lifecycle side effect. Never claim completion until polling returns a terminal status.",
-      "When a terminal Process Session reports workspace drift or an indeterminate comparison, surface that result without claiming the Process Session caused an external concurrent change.",
+      "Ordinary Process Sessions are read-only and offline. A scoped write requires preview_write with explicit existing paths, then one-use start_write; all other workspace paths and network remain unavailable. Starting or cancelling is a lifecycle side effect. Never claim completion until polling returns a terminal status.",
+      "For scoped writes, require workspaceWriteScopeStatus=within_scope and inspect the exact local Delta before accepting the result. Outside-scope or indeterminate observations have unknown attribution and must remain fail-visible.",
+      "When a read-only terminal Process Session reports workspace drift or an indeterminate comparison, surface that result without claiming the Process Session caused an external concurrent change.",
     );
   }
   if (hasBrowser) {

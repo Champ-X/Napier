@@ -81,7 +81,7 @@ export function applyWorkspaceProcessResizeReceipt(
   ) => WorkspaceProcessSession,
 ): WorkspaceProcessSession | undefined {
   if (
-    session.schemaVersion !== 4 ||
+    session.schemaVersion < 4 ||
     session.ioMode !== "pty" ||
     session.status !== "running" ||
     receipt.threadId !== session.threadId ||
@@ -101,7 +101,7 @@ export function applyWorkspaceProcessResizeReceipt(
   } = session;
   const updated = createSession({
     ...input,
-    schemaVersion: 4,
+    schemaVersion: session.schemaVersion,
     terminalColumns: receipt.columns,
     terminalRows: receipt.rows,
     terminalResizeCount: receipt.sequence,
@@ -112,7 +112,8 @@ export function applyWorkspaceProcessResizeReceipt(
 export function validWorkspaceProcessTerminalFields(
   value: Record<string, unknown>,
 ): boolean {
-  if (value["schemaVersion"] !== 4) return false;
+  if (value["schemaVersion"] !== 4 && value["schemaVersion"] !== 5)
+    return false;
   if (value["ioMode"] === "pipe") {
     return WORKSPACE_PROCESS_TERMINAL_FIELDS.filter(
       (field) => field !== "ioMode",

@@ -6,6 +6,40 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added preview-bound scoped writes to managed Workspace Process Sessions.
+  Ordinary `start` remains read-only; `preview_write` binds exact argv,
+  executable, environment, limits, cwd, Thread, Run, a complete workspace
+  baseline, and one to eight explicit existing file/directory scopes before a
+  one-use `start_write` can launch. Root, escape, overlap, protected segments,
+  symlinks, stale state, and over-limit trees fail closed. macOS Sandbox,
+  Bubblewrap, and OCI keep workspace root read-only and remount only approved
+  scopes writable while network, shell, inherited environment, and
+  user-selected executables remain unavailable. Cross-Manager data-root locks
+  serialize writers. Directory-aware 10,000-entry/64 MiB snapshots detect
+  empty-directory and symlink-identity changes without following link targets,
+  then classify the complete Delta as `within_scope`, `outside_scope`, or
+  `indeterminate`; external drift is never attributed to the child. Schema-v5
+  Process evidence, Agent tool effects, HTTP inspection, the lazy Processes
+  panel, Replay, and Trace bind preview/scope/workspace/output hashes and
+  counts while omitting argv, paths, file bodies, stdin, stdout, and private
+  errors. Focused Runtime, Server, and Web suites cover success, cancellation,
+  timeout, staleness, scope denial, outside drift, concurrency, lock release
+  after Ledger failure, restart projection, portable Replay, and privacy.
+  Clean production Web dogfood completed
+  `preview_write -> start_write -> poll -> poll`, verified a real 25-byte
+  file, a symlink, unchanged scope-external state, and
+  `read/write/read/read` effects. The Processes panel rendered both exact local
+  paths and entry kinds; Trace exposed `changed-path-count 2` with hash-only
+  evidence and zero browser console errors. Process admission and write
+  orchestration now live in focused modules, reducing
+  `workspace-processes.ts` from 983 to 960 lines. The opt-in macOS smoke
+  remains fail-closed with no host fallback when this IDE blocks nested
+  `sandbox-exec`. The complete gate passes 1,597 regular
+  tests with 28 opt-in
+  live tests skipped, 253 OpenAPI routes, and 244/244 compatibility
+  operations. Product performance remains within budget, the 90-file Web dist
+  main entry remains 130.24 KiB, dist is bound to `88a72b70a314adef`, and the
+  seven-artifact release set is bound to `981d5c0029424e35`.
 - Added typed constructed-input replacement to controlled Workflow checkpoint
   experiments. `mode=replace_input` emits a backward-compatible schema-4
   preview that binds the complete selected-node descendant execution set,

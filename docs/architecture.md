@@ -3269,8 +3269,9 @@ and after lock acquisition. Standard Node rename cannot provide portable
 `RENAME_NOREPLACE` for directories, so a hostile external writer can still
 race after the final check. The postcondition reports uncertainty instead of
 claiming distributed isolation. Permanent deletion, overwrite requests,
-permission changes, root moves, symlink lifecycle, and Process Session
-workspace writes remain outside this capability.
+permission changes, root moves, symlink lifecycle, and arbitrary/root-wide
+Process Session writes remain outside this capability. The separate Process
+protocol below grants only preview-bound writes to explicit existing scopes.
 
 ## Sandboxed Command Flow
 
@@ -3333,6 +3334,7 @@ Agent selects start + node + literal argv
      before async preparation
   -> reuse command cwd, executable, environment, and capability preparation
   -> capture a bounded deterministic workspace snapshot
+  -> keep the workspace read-only and network denied
   -> choose closed/interactive pipes or explicit bounded PTY
   -> for PTY, allocate node-pty around the sandbox wrapper, never the target
   -> launch the fixed Node target through macOS sandbox-exec or Linux Bubblewrap
@@ -3351,6 +3353,23 @@ Agent selects start + node + literal argv
   -> capture the post-settlement workspace snapshot
   -> classify the window as unchanged, changed, or indeterminate
   -> append workspace.process.settled with status, counts, and hashes
+
+Agent selects preview_write + node + literal argv + 1-8 existing scopes
+  -> reject root, escape, overlap, protected segments, symlinks, and large trees
+  -> capture a complete directory-aware 10,000-entry/64 MiB workspace baseline
+  -> bind command/runtime/environment/limits/cwd, scope set, baseline,
+     Thread, Run, and five-minute expiry into a one-use local preview
+Agent selects start_write + preview ID
+  -> acquire the data-root workspace write lock across Runtime Managers
+  -> rebuild every scope and complete baseline; reject any freshness drift
+  -> consume the preview, keep workspace root read-only, and remount only the
+     approved scopes writable in sandbox-exec, Bubblewrap, or OCI
+  -> launch and observe through the ordinary Process lifecycle
+  -> capture a directory-aware post-snapshot, including empty directories and
+     hash-only symlink identity without following its target
+  -> classify every changed path as within_scope, outside_scope, or
+     indeterminate without assigning external drift to the child
+  -> append schema-v5 hash-only Process settlement and release the lock
 ```
 
 `WorkspaceProcessManager` is a Capability Plane service outside `LocalStore`
@@ -3362,7 +3381,10 @@ Workbench polling without rescanning a long Thread. It is a cache of Ledger
 state plus active local handles, not a second durable source. Snapshot and diff
 logic is shared with workspace verification, excludes `.git`, `.napier`,
 `node_modules`, and symlinks, and fails closed as `indeterminate` when either
-side exceeds 2,000 files or 16 MiB or the post-snapshot is unavailable.
+ordinary read-only side exceeds 2,000 files or 16 MiB or the post-snapshot is
+unavailable. Scoped writes use a separate bounded complete baseline of 10,000
+file/directory entries and 64 MiB while leaving compatible read-only snapshot
+hashes unchanged.
 
 Input and output text are intentionally ephemeral. The live Agent tool result and
 `GET .../processes/{processId}/output?after=<cursor>` can return bounded chunks,
@@ -3385,19 +3407,27 @@ an unknown interruption rather than silently retrying.
 The similarly Thread-scoped `GET .../processes/{processId}/delta` returns at
 most 256 relative-path entries with before/after file metadata from the current
 Runtime. The Ledger retains only pre/post snapshot digests, truncation state,
-comparison status, changed-file count, and a changed-path-set digest. The lazy
+comparison status, changed-entry count, and a changed-path-set digest. The lazy
 Processes panel exposes output availability, status, limits, settlement
 evidence, cancellation, and workspace-window drift under the owning Thread.
 For running interactive sessions it also exposes bounded input and explicit
 stdin close for pipes. PTY cards instead show the fixed terminal type, current
 size, resize count, and merged output, and hide the invalid close action.
-Request-sequence and Process-selection guards discard stale responses. It
-explicitly does not attribute concurrent external changes to the read-only
-session. Path details disappear after Runtime restart while the summary
-evidence remains. Schema v1 sessions continue to project as
-delta-unavailable, schema v2 sessions retain snapshot evidence without input
-metadata, schema v3 retains pipe input evidence, and new pipe/PTY sessions use
-schema v4.
+Request-sequence and Process-selection guards discard stale responses.
+Read-only changes remain unattributed. Scoped cards distinguish changes wholly
+inside approved scopes from outside-scope or incomplete observations, but
+external writers still make authorship unknowable. Path details disappear
+after Runtime restart while the summary evidence remains. Schema v1 sessions
+continue to project as delta-unavailable, schema v2 sessions retain snapshot
+evidence without input metadata, schema v3 retains pipe input evidence,
+ordinary pipe/PTY sessions use schema v4, and scoped writes use schema v5.
+
+Admission reservation, write preview state and lock acquisition, output/Delta
+projection, settlement classification, tool result rendering, and tool input
+schemas live in focused Process modules rather than enlarging the Store,
+Server, or Agent loop. Scoped starts reuse `workspace-write-lock.ts` as a
+long-held cross-Manager lease. The Ledger is still the only durable Process
+source; preview IDs and exact paths disappear with the Runtime.
 
 `sandbox-terminal.ts` is the only adapter from `node-pty` into Napier's stream
 contract. It dynamically loads the native dependency only for a PTY request,
@@ -3415,13 +3445,13 @@ An abrupt host or Runtime loss cannot prove that a macOS sandbox wrapper died,
 because `sandbox-exec` has no parent-death contract; startup therefore records
 unknown interruption rather than completion or reattachment. A guardian or OCI
 identity is required for proved cleanup of abrupt or deliberately detached
-descendants and cross-restart reattachment. Workspace writes, hard total RSS
-quotas, package-backed Python, and remote sandboxes remain outside this slice.
-PTY mode supplies real terminal stdin/stdout, sizing, control bytes, and
-process-group cancellation, but does not grant shell access, cross-restart
-attach, a durable screen buffer, or Napier job-control commands. The
-JavaScript/Python kernels and Node debugger below are separate typed protocols
-over the same Process Session service.
+descendants and cross-restart reattachment. Hard total RSS quotas,
+package-backed Python, remote sandboxes, rollback, and writer attribution
+remain outside this slice. PTY mode supplies real terminal stdin/stdout,
+sizing, control bytes, and process-group cancellation, but does not grant shell
+access, cross-restart attach, a durable screen buffer, or Napier job-control
+commands. The JavaScript/Python kernels and Node debugger below remain
+read-only typed protocols over the same Process Session service.
 
 ## Persistent JavaScript Kernel Flow
 
@@ -5967,6 +5997,11 @@ The current boundary has fifty-six parts:
     and descendant scheduling, exact hidden recovery evidence, opaque portable
     import, honest per-node comparison, CLI/HTTP/SDK/RPC/Web delivery, and
     hash-only public input evidence.
+59. Preview-bound scoped Workspace Process writes with exact command and
+    complete workspace freshness, one-use Thread/Run capabilities, explicit
+    non-overlapping writable mounts, cross-Manager serialization,
+    directory-aware Delta containment, schema-v5 Ledger recovery, local path
+    inspection, and path/body-free public evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5975,7 +6010,8 @@ verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
 rename/quick-fix previews, preview-bound coordinated rename application,
 explicit-argv command execution, persistent synchronous JavaScript and
 restricted Python calculations, Run-owned Node launch debugging, and bounded
-background Process Session lifecycle control.
+background Process Session lifecycle control plus preview-bound writes to
+explicit existing scopes.
 `unrestricted` additionally permits an explicitly enabled controlled Browser
 Session and Research Source citations derived from its active page. It does
 not expose a shell, arbitrary host networking, an existing user browser
@@ -5998,7 +6034,8 @@ deferred until the local P0-P9 product loop is stable.
 ### Layer 1: Local execution and architecture
 
 - extend bounded Workspace Process Sessions with a managed guardian, proved
-  orphan cleanup, cross-restart reattachment, and write sessions;
+  orphan cleanup, cross-restart reattachment, rollback, and remote scoped-write
+  backends;
 - extend restricted Python into package-backed data/Notebook sessions and add
   managed tool callbacks without weakening Run ownership or Sandbox boundaries;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;

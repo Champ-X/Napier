@@ -42,7 +42,7 @@ export type WorkspaceProcessSessionInput = Omit<
   | "outputAvailable"
   | "workspaceDeltaAvailable"
   | "contentSha256"
-> & { schemaVersion?: 1 | 2 | 3 | 4 };
+> & { schemaVersion?: 1 | 2 | 3 | 4 | 5 };
 
 export function createWorkspaceProcessSession(
   input: WorkspaceProcessSessionInput,
@@ -51,7 +51,7 @@ export function createWorkspaceProcessSession(
   const base = {
     kind: "napier.workspace-process-session" as const,
     ...session,
-    ...(schemaVersion === 4 && session.ioMode === undefined
+    ...(schemaVersion >= 4 && session.ioMode === undefined
       ? { ioMode: "pipe" as const }
       : {}),
     outputAvailable: false,
@@ -71,6 +71,29 @@ export function workspaceProcessSessionPayload(
   session: WorkspaceProcessSession,
 ): JsonValue {
   return JSON.parse(JSON.stringify(session)) as JsonValue;
+}
+
+export function workspaceProcessStableSessionInput(
+  session: WorkspaceProcessSession,
+): Omit<
+  WorkspaceProcessSession,
+  | "kind"
+  | "schemaVersion"
+  | "status"
+  | "outputAvailable"
+  | "workspaceDeltaAvailable"
+  | "contentSha256"
+> {
+  const {
+    kind: _kind,
+    schemaVersion: _schemaVersion,
+    status: _status,
+    outputAvailable: _outputAvailable,
+    workspaceDeltaAvailable: _workspaceDeltaAvailable,
+    contentSha256: _contentSha256,
+    ...input
+  } = session;
+  return input;
 }
 
 export function createWorkspaceProcessInputReceipt(
@@ -161,7 +184,7 @@ export function projectWorkspaceProcessSessions(
               session.stdinWriteCount !== 0 ||
               session.stdinBytes !== 0 ||
               session.stdinSha256 !== EMPTY_SHA256)) ||
-          (session.schemaVersion === 4 &&
+          (session.schemaVersion >= 4 &&
             session.ioMode === "pty" &&
             session.terminalResizeCount !== 0)
         : session.status === "running")
@@ -247,7 +270,8 @@ function parseWorkspaceProcessSession(
     (value["schemaVersion"] !== 1 &&
       value["schemaVersion"] !== 2 &&
       value["schemaVersion"] !== 3 &&
-      value["schemaVersion"] !== 4) ||
+      value["schemaVersion"] !== 4 &&
+      value["schemaVersion"] !== 5) ||
     typeof status !== "string" ||
     !STATUSES.has(status as WorkspaceProcessStatus) ||
     typeof value["id"] !== "string" ||
@@ -258,7 +282,8 @@ function parseWorkspaceProcessSession(
     !RESOURCE_ID.test(value["runId"]) ||
     (value["runtime"] !== "node" && value["runtime"] !== "python") ||
     typeof value["sandbox"] !== "string" ||
-    value["workspaceAccess"] !== "read_only" ||
+    (value["workspaceAccess"] !== "read_only" &&
+      value["workspaceAccess"] !== "scoped_write") ||
     value["networkAccess"] !== "denied" ||
     !boundedInteger(value["argumentCount"], 0, 64) ||
     !hash(value["commandSha256"]) ||
@@ -296,10 +321,17 @@ function parseWorkspaceProcessSession(
     "stdinBytes",
     "stdinSha256",
   ] as const;
+  const writeFields = [
+    "writePreviewSha256",
+    "writeScopeCount",
+    "writeScopeSetSha256",
+    "workspaceWriteScopeStatus",
+  ] as const;
   if (value["schemaVersion"] === 1) {
     if (
       workspaceFields.some((field) => value[field] !== undefined) ||
       stdinFields.some((field) => value[field] !== undefined) ||
+      writeFields.some((field) => value[field] !== undefined) ||
       WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
         (field) => value[field] !== undefined,
       )
@@ -323,7 +355,7 @@ function parseWorkspaceProcessSession(
       WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
         (field) => value[field] !== undefined,
       )) ||
-    ((value["schemaVersion"] === 3 || value["schemaVersion"] === 4) &&
+    (value["schemaVersion"] >= 3 &&
       ((value["stdinMode"] !== "closed" &&
         value["stdinMode"] !== "interactive") ||
         typeof value["stdinOpen"] !== "boolean" ||
@@ -349,8 +381,26 @@ function parseWorkspaceProcessSession(
     return undefined;
   }
   if (
-    value["schemaVersion"] === 4 &&
+    value["schemaVersion"] >= 4 &&
     !validWorkspaceProcessTerminalFields(value)
+  ) {
+    return undefined;
+  }
+  if (
+    (value["schemaVersion"] < 5 &&
+      (value["workspaceAccess"] !== "read_only" ||
+        writeFields.some((field) => value[field] !== undefined))) ||
+    (value["schemaVersion"] === 5 &&
+      (value["workspaceAccess"] !== "scoped_write" ||
+        !hash(value["writePreviewSha256"]) ||
+        !boundedInteger(value["writeScopeCount"], 1, 8) ||
+        !hash(value["writeScopeSetSha256"]) ||
+        (status === "running"
+          ? value["workspaceWriteScopeStatus"] !== undefined
+          : value["workspaceWriteScopeStatus"] !== undefined &&
+            value["workspaceWriteScopeStatus"] !== "within_scope" &&
+            value["workspaceWriteScopeStatus"] !== "outside_scope" &&
+            value["workspaceWriteScopeStatus"] !== "indeterminate")))
   ) {
     return undefined;
   }
@@ -403,6 +453,14 @@ function parseWorkspaceProcessSession(
     value["schemaVersion"] >= 2 &&
     ((status === "running" && hasWorkspaceDelta) ||
       (status !== "running" && status !== "interrupted" && !hasWorkspaceDelta))
+  ) {
+    return undefined;
+  }
+  if (
+    value["schemaVersion"] === 5 &&
+    status !== "running" &&
+    status !== "interrupted" &&
+    value["workspaceWriteScopeStatus"] === undefined
   ) {
     return undefined;
   }

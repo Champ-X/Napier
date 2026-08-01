@@ -6,6 +6,7 @@ const PROCESS_ID = /^process_[a-z0-9]{8,80}$/u;
 const STATUS =
   /^(running|succeeded|failed|timed_out|output_capped|cancelled|interrupted)$/u;
 const DELTA_STATUS = /^(unchanged|changed|indeterminate)$/u;
+const WRITE_SCOPE_STATUS = /^(within_scope|outside_scope|indeterminate)$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 
 export function workspaceProcessEventTraceSummary(
@@ -97,11 +98,38 @@ export function workspaceProcessEventTraceSummary(
     event.payload["workspaceChangedPathSetSha256"],
     SHA256,
   );
+  const writeScopeCount = integer(event.payload["writeScopeCount"]);
+  const writeScopeSetSha256 = stringMatch(
+    event.payload["writeScopeSetSha256"],
+    SHA256,
+  );
+  const writePreviewSha256 = stringMatch(
+    event.payload["writePreviewSha256"],
+    SHA256,
+  );
+  const workspaceWriteScopeStatus = stringMatch(
+    event.payload["workspaceWriteScopeStatus"],
+    WRITE_SCOPE_STATUS,
+  );
   return [
     `process / ${event.type.slice("workspace.process.".length)}`,
     ...(processId ? [`id ${processId.slice(-10)}`] : []),
     ...(status ? [`status ${status}`] : []),
     ...(runtime ? [`runtime ${runtime}`] : []),
+    ...(event.payload["workspaceAccess"] === "scoped_write"
+      ? ["access scoped-write"]
+      : event.payload["workspaceAccess"] === "read_only"
+        ? ["access read-only"]
+        : []),
+    ...(writeScopeCount !== undefined
+      ? [`write-scopes ${writeScopeCount}`]
+      : []),
+    ...(writeScopeSetSha256
+      ? [`scope-set ${writeScopeSetSha256.slice(0, 12)}`]
+      : []),
+    ...(writePreviewSha256
+      ? [`write-preview ${writePreviewSha256.slice(0, 12)}`]
+      : []),
     ...(argumentCount !== undefined ? [`args ${argumentCount}`] : []),
     ...(stdoutChars !== undefined ? [`stdout-chars ${stdoutChars}`] : []),
     ...(stderrChars !== undefined ? [`stderr-chars ${stderrChars}`] : []),
@@ -128,10 +156,15 @@ export function workspaceProcessEventTraceSummary(
     ...(workspaceDeltaStatus ? [`workspace ${workspaceDeltaStatus}`] : []),
     ...(workspaceDeltaStatus !== "indeterminate" &&
     workspaceChangedFileCount !== undefined
-      ? [`changed-files ${workspaceChangedFileCount}`]
+      ? [
+          `${event.payload["workspaceAccess"] === "scoped_write" ? "changed-path-count" : "changed-files"} ${workspaceChangedFileCount}`,
+        ]
       : []),
     ...(workspaceChangedPathSetSha256
       ? [`changed-paths ${workspaceChangedPathSetSha256.slice(0, 12)}`]
+      : []),
+    ...(workspaceWriteScopeStatus
+      ? [`scope-status ${workspaceWriteScopeStatus}`]
       : []),
     ...(event.payload["stdoutTruncated"] === true ? ["stdout-truncated"] : []),
     ...(event.payload["stderrTruncated"] === true ? ["stderr-truncated"] : []),

@@ -75,6 +75,7 @@ export async function createLocalAgentRuntime(
     workspaceProcesses = new WorkspaceProcessManager({
       store,
       workspaceRoot,
+      dataRoot,
       sandbox,
     });
     await workspaceProcesses.initialize();

@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -34,6 +34,72 @@ afterEach(async () => {
 });
 
 describeLive("live Workspace Process smoke", () => {
+  it("writes only through a preview-bound scope in the real OS sandbox", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-process-write-workspace-"),
+    );
+    const dataRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-process-write-"),
+    );
+    temporaryRoots.push(workspaceRoot, dataRoot);
+    await mkdir(path.join(workspaceRoot, "generated"));
+    const store = new LocalStore({ workspaceRoot, dataRoot });
+    await store.initialize();
+    const sandbox = createPlatformSandboxAdapter();
+    const processes = new WorkspaceProcessManager({
+      store,
+      workspaceRoot,
+      dataRoot,
+      sandbox,
+    });
+    await processes.initialize();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Live scoped Process write",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const preview = await processes.previewWrite({
+      threadId: thread.id,
+      runId: run.id,
+      command: {
+        runtime: "node",
+        args: [
+          "-e",
+          "require('node:fs').writeFileSync('generated/live.txt','LIVE_SCOPED_WRITE')",
+        ],
+        timeoutMs: 10_000,
+      },
+      writePaths: ["generated"],
+    });
+    const started = await processes.startWrite({
+      threadId: thread.id,
+      runId: run.id,
+      previewId: preview.id,
+    });
+    const settled = await processes.waitForSettlement(thread.id, started.id);
+
+    expect(settled).toEqual(
+      expect.objectContaining({
+        status: "succeeded",
+        workspaceAccess: "scoped_write",
+        workspaceWriteScopeStatus: "within_scope",
+        workspaceChangedFileCount: 1,
+      }),
+    );
+    expect(
+      await readFile(path.join(workspaceRoot, "generated", "live.txt"), "utf8"),
+    ).toBe("LIVE_SCOPED_WRITE");
+    const durable = JSON.stringify(await store.listEvents(thread.id));
+    expect(durable).not.toContain("generated/live.txt");
+    expect(durable).not.toContain("LIVE_SCOPED_WRITE");
+    await processes.shutdown();
+    store.close();
+  }, 30_000);
+
   it("keeps state across bounded input writes in the real Agent sandbox", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "napier-live-process-workspace-"),

@@ -2,7 +2,7 @@ export const workspaceProcessCopy = {
   eyebrow: "SANDBOX SESSIONS",
   title: "Workspace processes",
   description:
-    "Observe bounded background Node work without granting shell, network, or workspace write access.",
+    "Observe bounded background Node work, including one-use preview-bound writes to explicit workspace scopes. Shell and network access remain denied.",
   refresh: "Refresh",
   cancel: "Cancel process",
   cancelling: "Cancelling...",
@@ -36,12 +36,19 @@ export const workspaceProcessCopy = {
     "The snapshot limit or an unavailable snapshot prevents a complete comparison.",
   deltaAttribution:
     "Changes may come from another local process; this view does not attribute a writer.",
+  scopedDeltaAttribution:
+    "Every observed change is inside the approved Process write scope. Inspect the exact local paths before accepting the result.",
+  outsideScopeDelta:
+    "At least one observed change is outside the approved Process write scope. Attribution is unknown; inspect the workspace before continuing.",
   deltaTruncated:
     "Only the first 256 paths are shown. The count and path-set hash cover the complete observed delta.",
   beforeHash: "before",
   afterHash: "after",
   beforeSize: "before bytes",
   afterSize: "after bytes",
+  deltaFile: "file",
+  deltaDirectory: "directory",
+  deltaSymlink: "symlink",
   commandHash: "Command",
   outputHashes: "stdout / stderr",
   started: "Started",

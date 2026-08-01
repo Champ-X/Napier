@@ -20,7 +20,7 @@ Audit date: 2026-08-01
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | --------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0 architecture and baseline      | In progress    | A checked local product-path budget now covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Split Server and Store by domain; extend budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded pipe input, sandboxed PTY with resize and merged terminal output, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, a guardian, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, and preview-bound Process writes to explicit existing scopes now exist. Scoped writes use one-use Thread/Run capabilities, complete workspace freshness, read-only root plus writable remounts, cross-Manager serialization, and directory-aware Delta containment. Package-backed Python/Notebook sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, rollback, a guardian, proved orphan cleanup, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and diagnostics, nearest-package write-linked relevant-test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint-only tests with durable successor holds, typed checkpoint output simulation, typed selected-checkpoint constructed-input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript definition/execution SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, write-capable Map/Loop, compensation, top-level Workflow input replacement, write/session side-effect simulation, richer interactive step controls, external adapters, natural-language extraction, and the visual builder remain. |
@@ -30,6 +30,108 @@ Audit date: 2026-08-01
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+
+## Implemented Slice: Preview-Bound Scoped Workspace Process Writes
+
+User scenario: an Agent can run a real background Node build, generator, or
+long test that writes only to explicitly reviewed workspace outputs, while an
+operator can inspect the live output and exact local Delta without granting a
+shell or root-wide host writes.
+
+Acceptance:
+
+- preserve ordinary `workspace_process start` as read-only and add the
+  `preview_write -> start_write` protocol under the existing Agent tool;
+- bind a preview to exact argv, runtime executable, fixed environment,
+  resource limits, cwd, complete workspace baseline, owning Thread and Run,
+  one to eight explicit write scopes, and a five-minute expiry;
+- require existing canonical workspace-relative file or directory scopes and
+  reject workspace root, escape, overlap, symlinks, `.git`, `.napier`,
+  `node_modules`, unsupported entries, and over-limit trees;
+- consume the preview once, reject workspace/runtime/scope drift, and acquire
+  one data-root file lock that serializes scoped writers across Runtime
+  Managers;
+- keep workspace root read-only in macOS Sandbox, Bubblewrap, and OCI while
+  remounting only the exact approved scopes writable; retain denied network,
+  fixed executable, fixed environment, timeout, output cap, cancellation, and
+  process-group settlement;
+- use a directory-aware, bounded 10,000-entry/64 MiB full-workspace baseline
+  for write sessions while preserving compatible read-only snapshot hashes;
+- detect file, empty-directory, and symlink-identity changes without following
+  link targets, then classify the complete Delta as `within_scope`,
+  `outside_scope`, or `indeterminate`;
+- retain command, preview, scope, workspace, output, and changed-path hashes in
+  schema-v5 Process events while keeping argv, paths, stdin/stdout, file
+  contents, and error bodies out of Ledger, Replay, Trace, and exports;
+- expose schema-v5 sessions through the existing Agent loop, HTTP list/Delta,
+  local Processes panel, strict Trace projection, and restart recovery without
+  a second durable Process state.
+
+Threat boundary:
+
+- this is explicit-argv Node execution, not a shell. It adds no user-selected
+  executable, inherited environment, package installation, network, workspace
+  root scope, or protected path access;
+- preview freshness prevents Napier from knowingly starting against changed
+  state. External processes do not honor Napier locks, so a later
+  `outside_scope` Delta has unknown attribution rather than proving sandbox
+  escape;
+- a complete within-scope Delta proves observed path containment, not business
+  correctness, rollback, or which process authored each byte;
+- write preview IDs and exact paths are local Runtime state. They are not
+  portable capabilities and cannot be recovered or replayed after restart;
+- the full baseline is bounded. More than 10,000 file/directory entries, more
+  than 64 MiB of file content, or an unavailable snapshot fails closed before
+  launch or settles `indeterminate`;
+- hard CPU/RSS/process quotas, remote Sandbox identity, rollback, guardian
+  cleanup, and cross-restart reattachment remain separate gaps.
+
+Observed result:
+
+- focused Runtime coverage passes 63 tests across Sandbox mounts, snapshots,
+  Process lifecycle, Agent integration, and portable Thread replay. It covers
+  normal writes, empty-directory and symlink lifecycle, one-use previews,
+  stale workspace/runtime state, protected/symlink/root/overlap denial,
+  outside-scope drift, cross-Manager exclusion and lock release after Ledger
+  failure, cancellation, timeout, and schema-v5 recovery;
+- Server integration passes two real HTTP projection tests; Web projection and
+  privacy suites pass ten tests. The Agent test performs
+  `preview_write -> start_write -> poll -> poll`, writes a real file, observes
+  `read -> write -> read -> read` tool effects, and keeps command/path/body
+  text out of Ledger;
+- the directory-aware baseline was measured against the current Napier
+  workspace at 2,006 files, 2,065 entries, and 27,480,665 bytes. It completed
+  without truncation in 843 ms while remaining bounded;
+- final production Web/HTTP dogfood completed one user Run with 53 ordered
+  Ledger events. Process `process_04cbabcc71d241319975` settled `succeeded`
+  in schema v5 with one scope, two changed paths, `within_scope`, denied
+  network, a 25-byte disk-verified file, and one verified symlink while the
+  scope-external directory remained unchanged;
+- the Processes panel rendered `2 paths changed within approved scope`, exact
+  local paths, `FILE` and `SYMLINK` kinds, scope attribution, and
+  before/after/path hashes. Trace rendered only `access scoped-write`, scope
+  count/set hash, preview hash, `changed-path-count 2`, and settlement status.
+  The Thread projection contained none of the command source, paths, symlink
+  target, file body, or stdout body;
+- production browser console output was empty and every captured document,
+  asset, bootstrap, and milestone request returned 200. The main Web entry is
+  130.24 KiB, below the 150 KiB budget;
+- Process admission, write-preview/lock orchestration, observation,
+  settlement, result rendering, and tool schemas now live in focused modules.
+  `workspace-processes.ts` falls from 983 lines at the source `HEAD` to 960;
+  the new admission module is 48 lines and write-preview module is 438;
+- the opt-in real OS-Sandbox suite was executed in this IDE host. macOS denied
+  nested `sandbox-exec` with exit 71 for all existing and new cases; the scoped
+  test wrote no file and did not fall back to host execution. The same smoke
+  remains available from an unsandboxed Terminal through
+  `npm run test:live-process`;
+- `npm run check` passes 1,597 regular tests with 28 opt-in live tests skipped,
+  253 OpenAPI routes, 244/244 compatibility operations, 6 workspaces, 254
+  packages, and 241/241 integrity entries. Product performance remains within
+  budget at 577.9 ms to first CLI event, 723.5 ms to first token, 1,018.5 ms
+  to completion, 0.4 ms read p95, and 7.1 ms for a 1,000-event projection.
+  The 90-file Web dist is bound to `88a72b70a314adef`; the seven-artifact
+  release set is bound to `981d5c0029424e35`.
 
 ## Implemented Slice: Workflow Checkpoint Input Replacement
 

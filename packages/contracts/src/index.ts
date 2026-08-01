@@ -4257,19 +4257,53 @@ export type WorkspaceProcessDeltaStatus =
   | "changed"
   | "indeterminate";
 
+export type WorkspaceProcessAccess = "read_only" | "scoped_write";
+export type WorkspaceProcessWriteScopeStatus =
+  | "within_scope"
+  | "outside_scope"
+  | "indeterminate";
 export type WorkspaceProcessStdinMode = "closed" | "interactive";
 export type WorkspaceProcessIoMode = "pipe" | "pty";
 
+export interface WorkspaceProcessWritePreview {
+  kind: "napier.workspace-process-write-preview";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  runtime: "node" | "python";
+  sandbox: string;
+  argumentCount: number;
+  commandSha256: string;
+  executableSha256: string;
+  environmentSha256: string;
+  resourceLimitsSha256: string;
+  cwdPathSha256: string;
+  timeoutMs: number;
+  ioMode: WorkspaceProcessIoMode;
+  terminalType?: "xterm-256color";
+  terminalColumns?: number;
+  terminalRows?: number;
+  writeScopeCount: number;
+  writeScopeSetSha256: string;
+  workspaceBeforeSha256: string;
+  workspaceBeforeFileCount: number;
+  workspaceBeforeBytes: number;
+  createdAt: string;
+  expiresAt: string;
+  contentSha256: string;
+}
+
 export interface WorkspaceProcessSession {
   kind: "napier.workspace-process-session";
-  schemaVersion: 1 | 2 | 3 | 4;
+  schemaVersion: 1 | 2 | 3 | 4 | 5;
   id: string;
   threadId: string;
   runId: string;
   runtime: "node" | "python";
   status: WorkspaceProcessStatus;
   sandbox: string;
-  workspaceAccess: "read_only";
+  workspaceAccess: WorkspaceProcessAccess;
   networkAccess: "denied";
   argumentCount: number;
   commandSha256: string;
@@ -4296,6 +4330,10 @@ export interface WorkspaceProcessSession {
   workspaceDeltaStatus?: WorkspaceProcessDeltaStatus;
   workspaceChangedFileCount?: number;
   workspaceChangedPathSetSha256?: string;
+  writePreviewSha256?: string;
+  writeScopeCount?: number;
+  writeScopeSetSha256?: string;
+  workspaceWriteScopeStatus?: WorkspaceProcessWriteScopeStatus;
   workspaceDeltaAvailable?: boolean;
   startedAt: string;
   settledAt?: string;
@@ -4370,6 +4408,7 @@ export interface WorkspaceProcessOutput {
 export interface WorkspaceProcessDeltaEntry {
   kind: "added" | "modified" | "removed";
   path: string;
+  entryKind?: "file" | "directory" | "symlink";
   beforeSha256?: string;
   afterSha256?: string;
   beforeSizeBytes?: number;
@@ -4381,6 +4420,7 @@ export interface WorkspaceProcessDelta {
   schemaVersion: 1;
   processId: string;
   status?: WorkspaceProcessDeltaStatus;
+  writeScopeStatus?: WorkspaceProcessWriteScopeStatus;
   available: boolean;
   entriesTruncated: boolean;
   entries: WorkspaceProcessDeltaEntry[];

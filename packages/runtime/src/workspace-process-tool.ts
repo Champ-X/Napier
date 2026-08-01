@@ -1,13 +1,5 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import type {
-  JsonValue,
-  WorkspaceProcessDeltaStatus,
-  WorkspaceProcessInputReceipt,
-  WorkspaceProcessOutputChunk,
-  WorkspaceProcessResizeReceipt,
-  WorkspaceProcessSession,
-  WorkspaceProcessStatus,
-} from "@napier/contracts";
+import type { JsonValue } from "@napier/contracts";
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -16,13 +8,18 @@ import {
   MAX_WORKSPACE_PROCESS_POLL_WAIT_MS,
   type WorkspaceProcessManager,
 } from "./workspace-processes.js";
-import { MAX_WORKSPACE_PROCESS_RESIZES } from "./workspace-process-terminal.js";
 import {
   MAX_TERMINAL_COLUMNS,
   MAX_TERMINAL_ROWS,
   MIN_TERMINAL_COLUMNS,
   MIN_TERMINAL_ROWS,
 } from "./sandbox-terminal.js";
+import {
+  type WorkspaceProcessToolDetails,
+  workspaceProcessToolResult as toolResult,
+  workspaceProcessWritePreviewToolResult as writePreviewToolResult,
+} from "./workspace-process-tool-result.js";
+import { workspaceProcessWriteActionSchema } from "./workspace-process-write-tool-schema.js";
 
 const workspaceProcessSchema = Type.Union([
   Type.Object(
@@ -143,29 +140,11 @@ const workspaceProcessSchema = Type.Union([
     },
     { additionalProperties: false },
   ),
+  workspaceProcessWriteActionSchema,
 ]);
 Object.assign(workspaceProcessSchema, { type: "object" });
 
-export interface WorkspaceProcessToolDetails {
-  action: "start" | "input" | "poll" | "resize" | "cancel";
-  processId: string;
-  status: WorkspaceProcessStatus;
-  nextCursor: number;
-  outputAvailable: boolean;
-  workspaceDeltaStatus?: WorkspaceProcessDeltaStatus;
-  workspaceChangedFileCount?: number;
-  chunkCount: number;
-  stdinOpen?: boolean;
-  stdinWriteCount?: number;
-  stdinBytes?: number;
-  inputReceiptSha256?: string;
-  resizeReceiptSha256?: string;
-  ioMode?: "pipe" | "pty";
-  terminalColumns?: number;
-  terminalRows?: number;
-  terminalResizeCount?: number;
-  resultSha256: string;
-}
+export type { WorkspaceProcessToolDetails } from "./workspace-process-tool-result.js";
 
 export function createWorkspaceProcessTool(
   manager: WorkspaceProcessManager,
@@ -175,9 +154,35 @@ export function createWorkspaceProcessTool(
     name: "workspace_process",
     label: "Workspace process",
     description:
-      "Start, send bounded input to, poll, resize, or cancel a background Node Process Session. Starts use explicit argv, a read-only workspace, denied network access, and a fixed environment. Choose either pipe interactive mode or a bounded PTY. PTY output is merged and PTY input cannot use pipe close semantics. Input and output text are ephemeral and redacted from Ledger evidence.",
+      "Start, send bounded input to, poll, resize, or cancel a background Node Process Session. Ordinary starts are read-only. Workspace writes require preview_write with 1-8 existing explicit scopes followed by one-use start_write; the Sandbox keeps the rest of the workspace read-only and settlement verifies the observed Delta. All starts use explicit argv, denied network access, and a fixed environment. Choose either pipe interactive mode or a bounded PTY. Input and output text are ephemeral and redacted from Ledger evidence.",
     parameters: workspaceProcessSchema,
     async execute(_toolCallId, input, signal) {
+      if (input.action === "preview_write") {
+        const preview = await manager.previewWrite({
+          ...context,
+          command: {
+            runtime: input.runtime,
+            args: input.args,
+            ...(input.cwd ? { cwd: input.cwd } : {}),
+            ...(input.timeoutMs ? { timeoutMs: input.timeoutMs } : {}),
+          },
+          writePaths: input.writePaths,
+          ...("terminal" in input ? { terminal: input.terminal } : {}),
+          ...("interactive" in input && input.interactive === true
+            ? { interactive: true }
+            : {}),
+          ...(signal ? { signal } : {}),
+        });
+        return writePreviewToolResult(preview);
+      }
+      if (input.action === "start_write") {
+        const session = await manager.startWrite({
+          ...context,
+          previewId: input.previewId,
+          ...(signal ? { signal } : {}),
+        });
+        return toolResult("start_write", session, []);
+      }
       if (input.action === "start") {
         const session = await manager.start({
           ...context,
@@ -250,6 +255,8 @@ export function workspaceProcessToolCallArgumentsLedgerProjection(
   const value = record(args) ? args : {};
   const action =
     value["action"] === "start" ||
+    value["action"] === "preview_write" ||
+    value["action"] === "start_write" ||
     value["action"] === "input" ||
     value["action"] === "poll" ||
     value["action"] === "resize" ||
@@ -265,6 +272,9 @@ export function workspaceProcessToolCallArgumentsLedgerProjection(
     ...(typeof value["processId"] === "string"
       ? { processId: value["processId"] }
       : {}),
+    ...(typeof value["previewId"] === "string"
+      ? { previewId: value["previewId"] }
+      : {}),
     argumentCount: Array.isArray(value["args"]) ? value["args"].length : 0,
     ...(typeof value["text"] === "string"
       ? {
@@ -277,6 +287,18 @@ export function workspaceProcessToolCallArgumentsLedgerProjection(
     ...(value["appendNewline"] === true ? { appendNewline: true } : {}),
     ...(value["close"] === true ? { close: true } : {}),
     ...(value["interactive"] === true ? { interactive: true } : {}),
+    ...(Array.isArray(value["writePaths"])
+      ? {
+          writeScopeCount: value["writePaths"].length,
+          writeScopeSetSha256: sha256(
+            canonicalJson(
+              value["writePaths"].map((writePath) => ({
+                pathSha256: sha256(String(writePath)),
+              })),
+            ),
+          ),
+        }
+      : {}),
     ...(record(value["terminal"]) &&
     Number.isSafeInteger(value["terminal"]["columns"]) &&
     Number.isSafeInteger(value["terminal"]["rows"])
@@ -323,127 +345,6 @@ export function workspaceProcessToolOutputLedgerProjection(
     outputBytes: Buffer.byteLength(output, "utf8"),
     outputRedacted: true,
     ...(resultSha256 ? { resultSha256 } : {}),
-  };
-}
-
-function toolResult(
-  action: WorkspaceProcessToolDetails["action"],
-  session: WorkspaceProcessSession,
-  chunks: WorkspaceProcessOutputChunk[],
-  inputReceipt?: WorkspaceProcessInputReceipt,
-  resizeReceipt?: WorkspaceProcessResizeReceipt,
-) {
-  const chunkSetSha256 = sha256(
-    canonicalJson(
-      chunks.map((chunk) => ({
-        cursor: chunk.cursor,
-        stream: chunk.stream,
-        textSha256: sha256(chunk.text),
-      })),
-    ),
-  );
-  const details: WorkspaceProcessToolDetails = {
-    action,
-    processId: session.id,
-    status: session.status,
-    nextCursor: chunks.at(-1)?.cursor ?? session.nextCursor,
-    outputAvailable: session.outputAvailable,
-    ...(session.workspaceDeltaStatus
-      ? { workspaceDeltaStatus: session.workspaceDeltaStatus }
-      : {}),
-    ...(session.workspaceChangedFileCount !== undefined
-      ? { workspaceChangedFileCount: session.workspaceChangedFileCount }
-      : {}),
-    chunkCount: chunks.length,
-    ...(session.stdinOpen !== undefined
-      ? { stdinOpen: session.stdinOpen }
-      : {}),
-    ...(session.stdinWriteCount !== undefined
-      ? { stdinWriteCount: session.stdinWriteCount }
-      : {}),
-    ...(session.stdinBytes !== undefined
-      ? { stdinBytes: session.stdinBytes }
-      : {}),
-    ...(inputReceipt ? { inputReceiptSha256: inputReceipt.contentSha256 } : {}),
-    ...(resizeReceipt
-      ? { resizeReceiptSha256: resizeReceipt.contentSha256 }
-      : {}),
-    ...(session.ioMode ? { ioMode: session.ioMode } : {}),
-    ...(session.terminalColumns !== undefined
-      ? { terminalColumns: session.terminalColumns }
-      : {}),
-    ...(session.terminalRows !== undefined
-      ? { terminalRows: session.terminalRows }
-      : {}),
-    ...(session.terminalResizeCount !== undefined
-      ? { terminalResizeCount: session.terminalResizeCount }
-      : {}),
-    resultSha256: sha256(
-      canonicalJson({
-        action,
-        processId: session.id,
-        status: session.status,
-        nextCursor: chunks.at(-1)?.cursor ?? session.nextCursor,
-        chunkCount: chunks.length,
-        chunkSetSha256,
-        sessionSha256: session.contentSha256,
-        workspaceDeltaStatus: session.workspaceDeltaStatus ?? null,
-        workspaceChangedFileCount: session.workspaceChangedFileCount ?? null,
-        stdinOpen: session.stdinOpen ?? null,
-        stdinWriteCount: session.stdinWriteCount ?? null,
-        stdinBytes: session.stdinBytes ?? null,
-        inputReceiptSha256: inputReceipt?.contentSha256 ?? null,
-        resizeReceiptSha256: resizeReceipt?.contentSha256 ?? null,
-        ioMode: session.ioMode ?? null,
-        terminalColumns: session.terminalColumns ?? null,
-        terminalRows: session.terminalRows ?? null,
-        terminalResizeCount: session.terminalResizeCount ?? null,
-      }),
-    ),
-  };
-  const lines = [
-    `Process ${session.id}: ${session.status}`,
-    `Cursor: ${details.nextCursor}`,
-    `Output available: ${String(session.outputAvailable)}`,
-    `I/O mode: ${session.ioMode ?? "legacy-pipe"}`,
-    `Stdin: ${session.stdinMode ?? "closed"} / ${
-      session.stdinOpen ? "open" : "closed"
-    }`,
-    `Input: ${session.stdinWriteCount ?? 0} writes / ${
-      session.stdinBytes ?? 0
-    } bytes`,
-    ...(session.ioMode === "pty"
-      ? [
-          `Terminal: ${session.terminalType} / ${session.terminalColumns}x${session.terminalRows}`,
-          `Terminal resizes: ${session.terminalResizeCount ?? 0} / ${MAX_WORKSPACE_PROCESS_RESIZES}`,
-        ]
-      : []),
-    `Workspace delta: ${session.workspaceDeltaStatus ?? "pending"}`,
-    `Workspace changed files: ${
-      session.workspaceDeltaStatus === "indeterminate"
-        ? "unknown"
-        : (session.workspaceChangedFileCount ?? "unknown")
-    }`,
-    `Session SHA-256: ${session.contentSha256}`,
-    ...(inputReceipt
-      ? [`Input receipt SHA-256: ${inputReceipt.contentSha256}`]
-      : []),
-    ...(resizeReceipt
-      ? [`Resize receipt SHA-256: ${resizeReceipt.contentSha256}`]
-      : []),
-  ];
-  if (chunks.length > 0) {
-    lines.push(
-      "",
-      "OUTPUT",
-      ...chunks.map(
-        (chunk) => `[${chunk.stream} @${chunk.cursor}]\n${chunk.text}`,
-      ),
-    );
-  }
-  return {
-    content: [{ type: "text" as const, text: lines.join("\n") }],
-    details,
   };
 }
 

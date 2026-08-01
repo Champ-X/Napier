@@ -24,7 +24,10 @@ export function builtInToolEffect(
       : "write";
   }
   if (toolName === "workspace_process") {
-    return record(args) && args["action"] === "poll" ? "read" : "write";
+    return record(args) &&
+      (args["action"] === "poll" || args["action"] === "preview_write")
+      ? "read"
+      : "write";
   }
   if (
     toolName === "list_files" ||
