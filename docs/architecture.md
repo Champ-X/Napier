@@ -210,8 +210,10 @@ model/tool loop or talks directly to Store for Run execution.
 continuation to `EmbeddedAgentService`. The returned Thread ID becomes the next
 turn's explicit input; `/model`, `/thread`, `/new`, `/resume`, `/status`,
 `/help`, and `/exit` only update bounded session state or invoke that service.
-Slash commands are never evaluated as shell input, and the adapter has no
-direct Store access. `cli-chat-options.ts` owns the command-line contract while
+`interactive-command-model.ts` owns these rules for both terminal adapters;
+`/clear` is accepted only by TUI and changes no Ledger evidence. Slash commands
+are never evaluated as shell input, and neither adapter has direct Store
+access. `cli-chat-options.ts` owns the shared command-line contract while
 `cli-option-values.ts` centralizes resource, model, timeout, and required-value
 validation shared with the existing one-shot parsers.
 
@@ -227,6 +229,37 @@ the prompt, metadata-only tool lifecycle cards, waiting notices, and bounded Run
 status. Tool arguments, results, and internal errors are not rendered. A broken
 output channel aborts the whole chat session instead of being mistaken for a
 failed Agent turn. A pre-aborted parent fails before Runtime bootstrap.
+
+`napier tui` is the full-screen local adapter over that same
+`EmbeddedAgentService`. It rejects non-TTY stdin/stdout and missing raw-mode
+support before Runtime bootstrap, then owns only bounded live projection state:
+recent user/assistant text, body-free tool cards, current Thread/model/Run,
+operator-waiting status, viewport offset, input history, and one latest pending
+frame. It never owns a Run, Agent loop, retry rule, tool executor, or durable
+Thread state. Prompts and interrupted-Run resume flow through the same service
+and event sink as chat, so Web, Replay, SDK, HTTP, and RPC inspect the identical
+Ledger evidence.
+
+`tui-input.ts` decodes split UTF-8 and fixed key sequences, bracketed paste,
+cursor editing, history, scrolling, idle exit, and active cancellation under a
+64 KiB prompt bound. `tui-terminal.ts` reflows a bounded frame for dimensions
+clamped to 20-400 columns and 5-200 rows. A slow output can hold at most one
+write in progress plus one coalesced latest frame. Dynamic values pass through
+the shared terminal-safe text layer: C0/C1, ANSI/OSC/DCS introducers, tab, and
+bidirectional controls become visible text, while tool arguments/results,
+diagnostics, credentials, hidden messages, and raw event JSON are not selected
+for rendering. Only fixed adapter-owned CSI sequences enter alternate screen,
+style the frame, control bracketed paste, and restore the cursor and prior
+screen.
+
+Raw mode and terminal controls are restored after normal exit, EOF, idle
+interrupt, parent termination, bootstrap failure, timeout, and active
+cancellation. Runtime shutdown and active-Run settlement happen before final
+terminal restoration. Shared writes settle from the actual Writable callback
+plus error/close events, so a destroyed output stream cannot strand cleanup
+waiting for a `drain` that will never arrive. If restoration cannot be
+confirmed because stdout is already destroyed, TUI still restores raw mode,
+cancels work, closes Runtime services, and exits non-zero.
 
 `napier branch` and the HTTP Branch route share
 `createThreadBranch()`, a Runtime domain service rather than duplicating
@@ -283,8 +316,8 @@ aborts the session and active Run. All paths settle Napier-owned Process
 Sessions and MCP transports before closing SQLite; they do not kill unrelated
 workspace processes or delete state. Environment credentials remain
 unavailable unless the selected data root already contains an active
-credential reference. This adapter does not yet provide a full-screen TUI,
-ACP, or Desktop packaging. Thread branching is durable message-history
+credential reference. The terminal adapters do not yet provide ACP or Desktop
+packaging. Thread branching is durable message-history
 materialization; it is not controlled model/tool re-execution, dependency
 substitution, or side-effect simulation.
 
@@ -361,7 +394,7 @@ Branch materialization, tool resolution, reuse, comparison, or confirmation
 logic. Approval deduction and
 evidence validation live in split `embedded-workflow-approvals.ts`; CLI, SDK,
 and RPC reuse that service rather than reading Store independently. Remote
-transport/authentication, client reconnection, ACP, TUI, and Desktop packaging
+transport/authentication, client reconnection, ACP, and Desktop packaging
 remain explicit gaps.
 
 ### Executable Plan Workflows

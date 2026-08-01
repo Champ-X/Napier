@@ -2,7 +2,7 @@ import path from "node:path";
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 
-import type { ModelRef, RunRecord } from "@napier/contracts";
+import type { RunRecord } from "@napier/contracts";
 import {
   streamRunErrorFrame,
   type EmbeddedAgentExecution,
@@ -10,32 +10,25 @@ import {
 } from "@napier/runtime";
 
 import type { CliChatOptions } from "./cli-chat-options.js";
-import { parseCliModelRef } from "./cli-option-values.js";
 import { writeLine, writeText } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli.js";
+import {
+  INTERACTIVE_COMMAND_HELP,
+  interactiveModelLabel,
+  interactiveStatusLine,
+  MAX_INTERACTIVE_INPUT_BYTES,
+  parseInteractiveCommand,
+} from "./interactive-command-model.js";
 import {
   InteractiveEventRenderer,
   InteractiveOutputError,
 } from "./interactive-renderer.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 
-const MAX_INTERACTIVE_LINE_BYTES = 64 * 1_024;
-const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
-const RUN_ID = /^run_[a-z0-9_-]{8,80}$/u;
 const INTERRUPT_DEBOUNCE_MS = 100;
 
 export const INTERACTIVE_HELP = [
-  "Interactive commands:",
-  "  /status                Show current Thread, model, and last Run",
-  "  /model                 Show the current model",
-  "  /model <provider/id>   Switch model for later turns",
-  "  /model default         Use the Agent's configured default model",
-  "  /thread <thread-id>    Continue another existing Thread",
-  "  /new [title]           Start a new Thread on the next prompt",
-  "  /resume [run-id]       Resume an interrupted Run on the current Thread",
-  "  /help                  Show these commands",
-  "  /exit                  Close the interactive session",
-  "  //text                 Send a prompt beginning with '/'",
+  INTERACTIVE_COMMAND_HELP,
   "  Ctrl-C                 Cancel the active Run, or exit while idle",
 ].join("\n");
 
@@ -137,89 +130,63 @@ export async function executeInteractive(
         await prompt(inputLoop, io.stderr, terminal, threadId);
         continue;
       }
-      if (Buffer.byteLength(rawLine, "utf8") > MAX_INTERACTIVE_LINE_BYTES) {
+      if (Buffer.byteLength(rawLine, "utf8") > MAX_INTERACTIVE_INPUT_BYTES) {
         await writeLine(
           io.stderr,
-          `Interactive input exceeds ${MAX_INTERACTIVE_LINE_BYTES} UTF-8 bytes.`,
+          `Interactive input exceeds ${MAX_INTERACTIVE_INPUT_BYTES} UTF-8 bytes.`,
         );
         await prompt(inputLoop, io.stderr, terminal, threadId);
         continue;
       }
       if (rawLine.startsWith("/") && !rawLine.startsWith("//")) {
-        const command = parseCommand(rawLine);
-        if (command.name === "exit") {
-          if (command.argument) {
-            await commandError(io.stderr, "/exit accepts no arguments");
-          } else {
+        try {
+          const command = parseInteractiveCommand(rawLine, threadId);
+          if (command.kind === "exit") {
             exitRequested = true;
             break;
           }
-        } else if (command.name === "help") {
-          if (command.argument) {
-            await commandError(io.stderr, "/help accepts no arguments");
-          } else {
+          if (command.kind === "help") {
             await writeLine(io.stderr, INTERACTIVE_HELP);
-          }
-        } else if (command.name === "status") {
-          if (command.argument) {
-            await commandError(io.stderr, "/status accepts no arguments");
-          } else {
-            await writeLine(io.stderr, statusLine(threadId, model, lastRun));
-          }
-        } else if (command.name === "model") {
-          if (!command.argument) {
-            await writeLine(io.stderr, `Model: ${modelLabel(model)}`);
-          } else if (command.argument === "default") {
+          } else if (command.kind === "status") {
+            await writeLine(
+              io.stderr,
+              interactiveStatusLine(threadId, model, lastRun),
+            );
+          } else if (command.kind === "model_show") {
+            await writeLine(
+              io.stderr,
+              `Model: ${interactiveModelLabel(model)}`,
+            );
+          } else if (command.kind === "model_default") {
             model = undefined;
             await writeLine(io.stderr, "Model: agent default");
-          } else {
-            try {
-              model = parseCliModelRef(command.argument);
-              await writeLine(io.stderr, `Model: ${modelLabel(model)}`);
-            } catch {
-              await commandError(
-                io.stderr,
-                "/model requires provider/model-id or default",
-              );
-            }
-          }
-        } else if (command.name === "thread") {
-          if (!command.argument || !RESOURCE_ID.test(command.argument)) {
-            await commandError(io.stderr, "/thread requires a valid Thread ID");
-          } else {
-            threadId = command.argument;
+          } else if (command.kind === "model_set") {
+            model = command.model;
+            await writeLine(
+              io.stderr,
+              `Model: ${interactiveModelLabel(model)}`,
+            );
+          } else if (command.kind === "thread") {
+            threadId = command.threadId;
             nextTitle = undefined;
             lastRun = undefined;
             await writeLine(io.stderr, `Thread: ${threadId}`);
-          }
-        } else if (command.name === "new") {
-          try {
-            nextTitle = interactiveTitle(command.argument);
+          } else if (command.kind === "new") {
+            nextTitle = command.title;
             threadId = undefined;
             lastRun = undefined;
             await writeLine(
               io.stderr,
               `Thread: new${nextTitle ? ` (${nextTitle})` : ""}`,
             );
-          } catch {
-            await commandError(
-              io.stderr,
-              "/new title must be 1-160 safe characters",
-            );
-          }
-        } else if (command.name === "resume") {
-          if (!threadId) {
-            await commandError(io.stderr, "/resume requires a current Thread");
-          } else if (command.argument && !RUN_ID.test(command.argument)) {
-            await commandError(io.stderr, "/resume Run ID is invalid");
-          } else {
+          } else if (command.kind === "resume") {
             const execution = await invoke(
               options.timeoutMs,
               sessionController.signal,
               (signal) =>
                 services!.embeddedAgents.resume({
                   threadId: threadId!,
-                  ...(command.argument ? { runId: command.argument } : {}),
+                  ...(command.runId ? { runId: command.runId } : {}),
                   ...(model ? { model } : {}),
                   signal,
                   onEvent: (event) => renderer.render(event),
@@ -238,12 +205,14 @@ export async function executeInteractive(
               threadId = execution.threadId;
               lastRun = execution.run;
             }
+          } else if (command.kind === "clear") {
+            await commandError(
+              io.stderr,
+              "/clear is available only in napier tui",
+            );
           }
-        } else {
-          await commandError(
-            io.stderr,
-            `Unknown interactive command: /${command.name}`,
-          );
+        } catch (error) {
+          await commandError(io.stderr, errorMessage(error));
         }
       } else {
         const text = rawLine.startsWith("//") ? rawLine.slice(1) : rawLine;
@@ -367,45 +336,14 @@ async function prompt(
   }
 }
 
-function parseCommand(line: string): { name: string; argument?: string } {
-  const separator = line.search(/\s/u);
-  const name = line
-    .slice(1, separator < 0 ? undefined : separator)
-    .toLowerCase();
-  const argument =
-    separator < 0 ? undefined : line.slice(separator + 1).trim() || undefined;
-  return { name, ...(argument ? { argument } : {}) };
-}
-
-function interactiveTitle(input: string | undefined): string | undefined {
-  if (input === undefined) return undefined;
-  const title = input.replace(/\s+/gu, " ").trim();
-  if (!title || title.length > 160 || /[\u0000-\u001f\u007f<>]/u.test(title)) {
-    throw new Error("Interactive title is invalid");
-  }
-  return title;
-}
-
-function statusLine(
-  threadId: string | undefined,
-  model: ModelRef | undefined,
-  run: RunRecord | undefined,
-): string {
-  return [
-    `Thread: ${threadId ?? "new"}`,
-    `Model: ${modelLabel(model)}`,
-    `Last Run: ${run ? `${run.id} ${run.status}` : "none"}`,
-  ].join(" | ");
-}
-
-function modelLabel(model: ModelRef | undefined): string {
-  return model ? `${model.provider}/${model.id}` : "agent default";
-}
-
 async function commandError(stderr: Writable, message: string): Promise<void> {
   await writeLine(stderr, `Interactive command error: ${message}`);
 }
 
 function streamIsTty(stream: Readable | Writable): boolean {
   return (stream as Readable & { isTTY?: boolean }).isTTY === true;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

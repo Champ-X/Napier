@@ -30,9 +30,10 @@ Version `0.1.0` includes:
   spanning OpenAI/Anthropic/Google APIs, OpenAI-compatible services, regional
   endpoints, subscription-capable Providers, gateways, and local-model hosts;
 - a deterministic zero-key demo model for onboarding and CI;
-- `napier chat` for one-Runtime multi-turn terminal sessions with model/Thread
-  switching, interrupted-Run resume, per-turn timeout, active-Run cancellation,
-  and metadata-only tool cards, plus `napier run`, `napier resume`,
+- `napier chat` for line-oriented and `napier tui` for bounded full-screen
+  one-Runtime multi-turn terminal sessions with model/Thread switching,
+  interrupted-Run resume, per-turn timeout, active-Run cancellation, and
+  metadata-only tool cards, plus `napier run`, `napier resume`,
   sequence-accurate `napier branch`, and typed `napier workflow` commands with
   human output or hash-bound JSONL, all backed by the same Agent Runtime, model
   registry, policy, Sandbox, SQLite Ledger, and domain services as HTTP/Web;
@@ -471,6 +472,27 @@ result bodies. Model-provided terminal controls and bidirectional-formatting
 characters are rendered as visible `\uXXXX` escapes rather than executed by the
 terminal.
 
+For the full-screen local terminal over the same Runtime and Ledger:
+
+```bash
+npm run --silent napier -- tui \
+  --workspace . \
+  --data-root .napier \
+  --model napier/demo
+```
+
+`tui` requires raw-mode stdin and TTY stdout. It provides a bounded transcript,
+streaming assistant text, body-free live tool cards, operator-waiting status,
+UTF-8 editing and history, PageUp/PageDown scrolling, bracketed paste, resize
+reflow, and the same slash commands as `chat`; `/clear` clears only the local
+viewport. `Ctrl-C` cancels an active Run or exits with status 130 while idle,
+and `Ctrl-D` exits while idle. Alternate-screen, cursor, paste, and raw-mode
+state are restored on normal exit, EOF, cancellation, parent termination, and
+recoverable failures. If a destroyed output channel makes restoration
+unconfirmable, TUI cancels active work and exits non-zero. Dynamic content
+cannot issue terminal controls, and tool arguments/results, diagnostics,
+credentials, hidden messages, and raw event JSON are never rendered.
+
 Continue an existing Thread by passing its explicit ID and the same state
 directory:
 
@@ -526,9 +548,9 @@ JSONL emits every new branch event followed by its authoritative snapshot and
 done frame. A future or missing source sequence fails before creating a
 Thread. The new ID can be passed to `napier run --thread` to continue through
 the normal Agent Runtime. The `branch` command itself is message-history
-branching, not model/tool checkpoint re-execution or side-effect replay. The
-CLI interactive session is line-oriented; it does not claim a full-screen TUI,
-ACP, or Desktop packaging.
+branching, not model/tool checkpoint re-execution or side-effect replay.
+`napier chat` remains the compatible line-oriented session; `napier tui` is the
+full-screen local projection. Neither command claims ACP or Desktop packaging.
 
 Preview and execute a controlled read-only rerun of one historical user
 message:
@@ -722,8 +744,8 @@ returns its recovery-ready target result. Internal diagnostics are hash-only.
 EOF, SIGINT, SIGTERM, `exit`, and Runtime shutdown cancel and await active Runs
 before SQLite closes. The transport is local stdio only: it does not open a
 socket, accept remote credentials, expose Store, or implement a second Agent
-or Workflow loop. Remote transport/authentication, ACP, and a full-screen TUI
-remain follow-up work.
+or Workflow loop. Remote transport/authentication and ACP remain follow-up
+work.
 
 Execute a versioned typed Workflow manifest through the same Runtime:
 

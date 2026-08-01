@@ -4,9 +4,7 @@ import type { RunEvent } from "@napier/contracts";
 import type { EmbeddedAgentExecution } from "@napier/runtime";
 
 import { writeLine, writeText } from "./cli-output.js";
-
-const TERMINAL_CONTROL =
-  /[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/gu;
+import { terminalSafeText } from "./terminal-safe-text.js";
 
 export class InteractiveOutputError extends Error {
   constructor(cause: unknown) {
@@ -106,11 +104,4 @@ function stringField(input: unknown, field: string): string | undefined {
 function displayId(value: string | undefined): string {
   if (!value) return "unknown";
   return value.replace(/[^\w./:-]/gu, "_").slice(0, 96);
-}
-
-function terminalSafeText(value: string): string {
-  return value.replace(TERMINAL_CONTROL, (character) => {
-    const codePoint = character.codePointAt(0);
-    return `\\u${codePoint?.toString(16).padStart(4, "0") ?? "fffd"}`;
-  });
 }

@@ -25,6 +25,11 @@ export interface CliChatAction {
   options: CliChatOptions;
 }
 
+export interface CliTuiAction {
+  kind: "tui";
+  options: CliChatOptions;
+}
+
 export const CHAT_VALUE_OPTIONS = new Set([
   "--workspace",
   "--data-root",
@@ -39,7 +44,28 @@ export function parseChatOptions(
   values: Map<string, string>,
   jsonl: boolean,
 ): CliChatAction {
-  if (jsonl) throw new Error("--jsonl cannot be used with chat");
+  return {
+    kind: "chat",
+    options: parseInteractiveOptions(values, jsonl, "chat"),
+  };
+}
+
+export function parseTuiOptions(
+  values: Map<string, string>,
+  jsonl: boolean,
+): CliTuiAction {
+  return {
+    kind: "tui",
+    options: parseInteractiveOptions(values, jsonl, "tui"),
+  };
+}
+
+function parseInteractiveOptions(
+  values: Map<string, string>,
+  jsonl: boolean,
+  command: "chat" | "tui",
+): CliChatOptions {
+  if (jsonl) throw new Error(`--jsonl cannot be used with ${command}`);
   const threadId = optionalResourceId(values, "--thread");
   const agentId = optionalResourceId(values, "--agent");
   if (threadId && values.has("--title")) {
@@ -52,18 +78,15 @@ export function parseChatOptions(
   }
   const model = optionalModelRef(values);
   return {
-    kind: "chat",
-    options: {
-      workspace: requiredValue(values, "--workspace"),
-      timeoutMs: parseTimeout(values.get("--timeout-ms")),
-      jsonl: false,
-      ...(values.has("--data-root")
-        ? { dataRoot: requiredValue(values, "--data-root") }
-        : {}),
-      ...(model ? { model } : {}),
-      ...(agentId ? { agentId } : {}),
-      ...(threadId ? { threadId } : {}),
-      ...(title ? { title } : {}),
-    },
+    workspace: requiredValue(values, "--workspace"),
+    timeoutMs: parseTimeout(values.get("--timeout-ms")),
+    jsonl: false,
+    ...(values.has("--data-root")
+      ? { dataRoot: requiredValue(values, "--data-root") }
+      : {}),
+    ...(model ? { model } : {}),
+    ...(agentId ? { agentId } : {}),
+    ...(threadId ? { threadId } : {}),
+    ...(title ? { title } : {}),
   };
 }

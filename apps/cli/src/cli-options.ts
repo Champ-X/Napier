@@ -6,7 +6,9 @@ import type {
 import {
   CHAT_VALUE_OPTIONS,
   parseChatOptions,
+  parseTuiOptions,
   type CliChatAction,
+  type CliTuiAction,
 } from "./cli-chat-options.js";
 import {
   MAX_TIMEOUT_MS,
@@ -99,6 +101,7 @@ export type CliAction =
   | { kind: "version" }
   | { kind: "run"; options: CliRunOptions }
   | CliChatAction
+  | CliTuiAction
   | { kind: "resume"; options: CliResumeOptions }
   | { kind: "branch"; options: CliBranchOptions }
   | {
@@ -190,6 +193,7 @@ export function parseCliArgs(argv: string[]): CliAction {
   if (
     command !== "run" &&
     command !== "chat" &&
+    command !== "tui" &&
     command !== "resume" &&
     command !== "branch" &&
     command !== "experiment" &&
@@ -207,7 +211,7 @@ export function parseCliArgs(argv: string[]): CliAction {
     argv.slice(1),
     command === "run"
       ? RUN_VALUE_OPTIONS
-      : command === "chat"
+      : command === "chat" || command === "tui"
         ? CHAT_VALUE_OPTIONS
         : command === "resume"
           ? RESUME_VALUE_OPTIONS
@@ -234,6 +238,7 @@ export function parseCliArgs(argv: string[]): CliAction {
   );
   if (command === "run") return parseRunOptions(values, jsonl);
   if (command === "chat") return parseChatOptions(values, jsonl);
+  if (command === "tui") return parseTuiOptions(values, jsonl);
   if (command === "resume") return parseResumeOptions(values, jsonl);
   if (command === "branch") return parseBranchOptions(values, jsonl);
   if (command === "experiment") {
@@ -605,6 +610,7 @@ export const CLI_HELP = `Napier CLI ${CLI_VERSION}
 Usage:
   napier run --workspace <path> --prompt <text> [options]
   napier chat --workspace <path> [options]
+  napier tui --workspace <path> [options]
   napier resume --workspace <path> --thread <thread-id> [options]
   napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
   napier experiment --workspace <path> --thread <thread-id> --run <run-id> --message-seq <n> [options]
@@ -616,6 +622,7 @@ Usage:
 Commands:
   run                    Start a new Run on a new or existing Thread
   chat                   Open a multi-turn interactive Agent session
+  tui                    Open the full-screen local Agent terminal
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
   experiment             Re-run a historical Agent message read-only
@@ -637,6 +644,9 @@ Chat options:
   --thread <thread-id>   Continue this existing Thread
   --title <text>         Title for the first new Thread
   --model <provider/id>  Initial model; switch later with /model
+
+TUI options:
+  Same as chat; requires interactive stdin/stdout TTYs with raw mode
 
 Run options:
   --prompt <text>        User prompt for the Run

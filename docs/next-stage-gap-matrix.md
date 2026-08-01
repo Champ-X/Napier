@@ -25,11 +25,102 @@ Audit date: 2026-08-02
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Python/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript and restricted exact-JSON Python Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output/input replacement, selector-free complete top-level input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Package-backed Python/Notebook Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, schema-5 durably releases exactly one remaining rerun node per Continue, and selector-free schema-6 replaces the complete top-level Workflow input and reruns every node through the ordinary scheduler with zero source reuse. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                           |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, full-screen TUI, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                                         |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, bounded full-screen local `napier tui`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                  |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P9 outcome benchmark              | Started        | Three fixed CLI Coding cases now cover single-file repair, a multi-file LSP-guided API migration, and debugger-qualified JavaScript repair with repeated trials, Sandbox assertions, capability-completion qualification, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+
+## Implemented Slice: Full-Screen Local TUI
+
+User scenario: a local user wants to run multi-turn coding, research, or data
+tasks from one terminal without losing the current Thread, model, active Run,
+tool progress, cancellation controls, or recent result context in interleaved
+scrollback. The same task must remain inspectable in Web/Replay because the TUI
+is only an Experience Plane projection over the shared Runtime and Ledger.
+
+Acceptance:
+
+- add `napier tui --workspace <path>` with the existing chat model, Agent,
+  Thread, title, data-root, and timeout options. Preserve `napier chat`,
+  one-shot, JSONL, and RPC behavior without compatibility changes;
+- require an interactive stdin and stdout TTY before Runtime bootstrap. Enter
+  alternate-screen/raw mode only after validation and restore raw mode, cursor,
+  bracketed-paste state, and the prior screen on normal exit, EOF, idle
+  interrupt, parent termination, bootstrap failure, render failure, or active
+  cancellation;
+- render a bounded full-screen layout with current Thread/model, active or last
+  Run status, scrollable recent user/assistant transcript, live body-free tool
+  cards, operator-waiting state, an editable prompt, and concise key help.
+  Reflow on terminal resize without persisting viewport state;
+- support UTF-8 input, cursor movement, Home/End, Backspace/Delete, bounded
+  history navigation, Enter submission, PageUp/PageDown transcript scrolling,
+  Ctrl-C active-Run cancellation, idle Ctrl-C exit, Ctrl-D idle exit, and
+  bracketed paste. Bound input, transcript entries, tool cards, render size,
+  terminal dimensions, and queued updates;
+- share `/status`, `/model`, `/thread`, `/new`, `/resume`, `/help`, `/exit`,
+  and doubled-slash prompt semantics with line-oriented chat through one
+  command model. Add `/clear` only as a local viewport action; it must not
+  delete Ledger evidence;
+- execute prompts and resume through `EmbeddedAgentService`, forward the same
+  event sink, and use no TUI-specific Agent loop, Store mutation, Thread state,
+  retry rule, or tool executor. Model changes affect only later Runs;
+- sanitize all rendered dynamic text against C0/C1 controls, ANSI/OSC/DCS,
+  bidi controls, invalid UTF-8, and overlong display width. Tool arguments,
+  tool output bodies, diagnostics, credentials, raw event JSON, and hidden
+  messages never render; user prompts and assistant answers are deliberate
+  terminal content;
+- cover normal multi-turn execution, model/new/existing Thread changes,
+  interrupted-Run resume, streaming text, concurrent tool cards, history and
+  editing, resize/scroll, active cancellation, timeout, provider failure,
+  operator waiting, non-TTY rejection before bootstrap, output failure,
+  parent termination, terminal restoration, and a real built-CLI PTY path;
+- Dogfood the built TUI in a real PTY for at least two durable turns and one
+  cancellation, then verify the resulting Runs and Replay through the ordinary
+  Runtime.
+
+Threat boundary:
+
+- the TUI is not a terminal emulator and never renders arbitrary tool output or
+  passes terminal control sequences from models, tools, events, Thread titles,
+  model IDs, or errors. Only its own fixed ANSI control vocabulary is emitted;
+- terminal dimensions and key input are untrusted, bounded live state. They do
+  not enter the Ledger, Run configuration, Replay, or model context except for
+  the submitted prompt text and explicit slash-command selections;
+- terminal restoration is a safety invariant. If restoration cannot be
+  confirmed, the command exits non-zero after cancelling active work; it does
+  not keep running in an unknown terminal state;
+- this slice does not claim Desktop, ACP, remote transport, mouse support,
+  arbitrary terminal widgets, session multiplexing, or background Run
+  reattachment.
+
+Observed result:
+
+- `napier tui` runs prompts and interrupted-Run resume through the ordinary
+  `EmbeddedAgentService`; model/Thread/new/status/help/clear commands update
+  bounded live state only. Existing Web, Replay, chat, one-shot, JSONL, SDK,
+  HTTP, and RPC paths retain the authoritative Ledger;
+- raw input supports split UTF-8, fixed editing/history keys, bracketed paste,
+  scrolling, idle exit, active cancellation, and a 64 KiB bound. The renderer
+  caps dimensions, transcript, cards, notice, frame bytes, and pending output
+  at one active plus one coalesced latest frame;
+- fixed ANSI controls are adapter-owned. C0/C1, tab, ANSI/OSC/DCS introducers,
+  bidi controls, and overlong dynamic values render as bounded visible text.
+  Tool arguments/results, operator question bodies, diagnostics, credentials,
+  raw events, and hidden messages are absent from the projection;
+- focused tests cover normal multi-turn work, tool lifecycle, model and Thread
+  changes, operator waiting, provider failure, interrupted resume, duplicate
+  prompt rejection, timeout, cancellation, non-TTY preflight, output failure,
+  bootstrap failure, parent termination, idle Ctrl-C/Ctrl-D/EOF, resize,
+  scroll/input parsing, slow-output coalescing, and terminal restoration;
+- a real built `dist/index.js` PTY completed two durable demo Runs, reflowed
+  after resize, cancelled a third streaming Run, restored raw/alternate-screen
+  state, then reopened the ordinary Runtime and verified the resulting
+  portable Replay as `valid`;
+- output-failure testing exposed and fixed a shared CLI deadlock: writes now
+  settle from the Writable callback plus error/close events rather than waiting
+  forever for `drain` on a destroyed stream. Every new production module
+  remains below 500 lines.
 
 ## Implemented Slice: Sandboxed Restricted Python Workflow Session
 

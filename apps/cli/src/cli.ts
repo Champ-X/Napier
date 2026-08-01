@@ -44,6 +44,7 @@ import { writeLine } from "./cli-output.js";
 import { executeInteractive } from "./interactive-cli.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
 import { executeRpc } from "./rpc-cli.js";
+import { executeTui } from "./tui-cli.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 
 export { CLI_HELP, CLI_VERSION, parseCliArgs };
@@ -101,6 +102,9 @@ export async function runCli(
   }
   if (action.kind === "chat") {
     return executeInteractive(action.options, io, dependencies, parentSignal);
+  }
+  if (action.kind === "tui") {
+    return executeTui(action.options, io, dependencies, parentSignal);
   }
   if (action.kind === "resume") {
     return executeResume(action.options, io, dependencies, parentSignal);

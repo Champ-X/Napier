@@ -6,6 +6,50 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a bounded full-screen local Agent terminal. `napier tui` shares chat's
+  validated workspace, data-root, Agent, model, Thread, title, and timeout
+  options, then delegates every prompt and interrupted-Run resume to the
+  existing `EmbeddedAgentService`. It keeps no second Agent loop or durable
+  state: current Thread/model/Run, streaming transcript, body-free tool cards,
+  operator-waiting status, input history, and scroll position are live
+  Experience Plane projections over the ordinary Work Ledger. Chat and TUI now
+  share one slash-command model; `/clear` affects only the TUI viewport.
+
+  Raw-mode input handles split UTF-8, fixed cursor/history keys, bracketed
+  paste, PageUp/PageDown, resize, Ctrl-C cancellation/idle exit, Ctrl-D, EOF,
+  timeout, and parent termination under explicit input and state bounds. The
+  renderer owns a fixed ANSI vocabulary, clamps terminal dimensions and frame
+  size, and coalesces rapid updates to one active plus one latest pending
+  frame. C0/C1, tab, ANSI/OSC/DCS introducers, and bidirectional controls become
+  visible text; tool arguments/results, operator bodies, diagnostics,
+  credentials, hidden messages, and raw events never render. Raw mode, cursor,
+  bracketed paste, and alternate screen restore on every confirmable exit. A
+  destroyed output stream cancels work, closes Runtime services, restores raw
+  mode, and exits non-zero rather than claiming terminal restoration.
+
+  Seventeen focused tests cover input, history, scrolling, sanitization,
+  slow-output coalescing, multi-turn execution, model/Thread changes, operator
+  waiting, provider failure, duplicate prompt rejection, timeout,
+  cancellation, interrupted resume, non-TTY preflight, bootstrap/output/parent
+  failures, idle Ctrl-C/Ctrl-D/EOF, and terminal restoration. A real built-CLI
+  PTY completed two durable demo Runs, resized, cancelled a third streaming
+  Run, restored terminal state, and produced a portable Replay verified as
+  `valid`. Output-failure testing also fixed a shared CLI deadlock:
+  `writeText()` now settles from the actual Writable callback plus error/close
+  events instead of waiting forever for `drain` on a destroyed stream. Every
+  new production module remains below 500 lines.
+
+  The complete 1,786 regular-test set passes across the workspace wrapper and
+  isolated original-budget reruns, with 33 opt-in tests skipped. The concurrent
+  wrapper hit unrelated 121-124 second Storage Management/APFS stalls in eleven
+  old Server/Runtime tests; all eleven passed unchanged in single-worker reruns
+  in 0.10-5.13 seconds, so no timeout was widened. Product performance passed
+  at 597.8 ms to first CLI event, 742.8 ms to first token, 1,052.0 ms to
+  completion, 0.3 ms read p95, 7.0 ms for a 1,000-event projection, and
+  749.568 closed SQLite bytes/event. The Web main entry remains 130.32 KiB,
+  Web dist remains `bc91c86abc8ea16c`, and the seven-artifact release set
+  remains `52ee5d8d5cfda1b6`.
+
 - Added sandboxed restricted Python Workflow Session nodes. A typed `python`
   node executes 1-8 bounded cells in one fresh existing Python Kernel,
   receives its complete constructed JSON through a trusted immutable `input`
