@@ -2878,10 +2878,12 @@ delegate_task(role=coder, writePaths=[1..8 file paths])
   -> overlay read-only parent dependencies, redirect workspace packages to the candidate
   -> run a Pi child with private read/AST tools, path-limited apply_patch,
      and candidate_file delete/move; both rename paths require grants
+  -> inherit enabled semantic LSP symbols/definition/references and,
+     only as paired capabilities, grant-bound rename/Code Action apply
   -> when the parent enables run_command, add explicit-argv read-only Node
      execution over the private candidate and protected dependency overlay
-  -> serialize create/modify/delete/move, candidate commands, real LSP,
-     and fixed verification
+  -> serialize create/modify/delete/move, semantic reads/applies,
+     candidate commands, diagnostics, and fixed verification
   -> bind command attempts independently as fresh/stale and
      succeeded/failed/timed-out/output-capped/error
   -> bind each verification result to the complete private candidate snapshot
@@ -2930,6 +2932,14 @@ verified commit, LSP observes add/modify paths and enabled test selection
 follows the new graph; a rename therefore contributes its physical source
 deletion and destination addition. Napier executes the sorted union once,
 dropping test paths intentionally removed by the lifecycle.
+In a declared monorepo, changes to the root or a declared workspace package
+retain whole-workspace reverse-dependency discovery. A nested standalone
+package that is not matched by the root workspaces is scanned from its nearest
+package boundary, so unrelated workspace size or broken imports cannot make
+that local result incomplete. If the standalone package imports a declared
+workspace package outside that scan boundary, Napier recognizes the package
+name but conservatively marks the graph incomplete instead of treating the
+dependency as external.
 Incomplete graphs, unresolved reachable imports, more than eight selected
 tests, missing retained tests, verifier failure, cancellation, and
 workspace/configuration drift remain explicit non-passing evidence. A
@@ -2948,6 +2958,21 @@ Unsafe, escaping, missing, replaced, or drifted overlay targets fail closed.
 The toolchain receipt binds the fixed entrypoint and package-manager metadata;
 it does not recursively hash every transitive dependency byte, so the local
 installed dependency tree remains part of the trusted host boundary.
+
+The child inherits each enabled `lsp_symbols`, `lsp_definition`,
+`lsp_references`, `lsp_rename`, `lsp_rename_apply`, `lsp_code_actions`, and
+`lsp_code_action_apply` capability from the parent profile; an apply tool is
+surfaced only with its corresponding preview tool. Read-only semantic calls
+bind identical complete candidate snapshots before and after execution.
+Rename and Code Action apply reuse the ordinary one-use WorkspaceEdit
+coordinators, CAS/staging/fsync/rollback transaction, and before/after
+diagnostics, but receive an additional candidate grant filter: rename gets no
+apply preview when any target is outside `writePaths`, while Code Action
+alternatives get apply IDs only when every target is granted. Code Action
+commands remain deny-all. A changed read snapshot, unverified semantic-write
+postcondition, or error that leaves candidate bytes changed permanently
+invalidates candidate settlement. A no-write preflight failure leaves the
+candidate usable but still requires a fresh preview.
 
 Patch, candidate command, and verification calls share one serial queue.
 Verification retains its existing 16-attempt limit. When the parent profile
@@ -2993,11 +3018,12 @@ Run the opt-in real Agent-to-private-worktree smoke:
 npm run test:live-coder
 ```
 
-The smoke uses the explicit direct-process test adapter to execute real Node
-against unmerged lifecycle bytes, load TypeScript through the dependency
-overlay, and then complete candidate LSP, fixed Vitest, parent
-diagnostics/tests, and explicit merge. `npm run test:live-command` separately
-exercises the real platform OS Sandbox on hosts that permit nested sandboxing.
+The smoke uses the explicit direct-process test adapter to run real
+symbols/definition/references, a grant-bound two-file semantic rename, Node,
+candidate diagnostics/Vitest, old/new dependency-graph test selection, parent
+diagnostics, and explicit merge against unmerged bytes. `npm run
+test:live-command` separately exercises the real platform OS Sandbox on hosts
+that permit nested sandboxing.
 
 New delegations must return a bounded
 JSON outcome containing a summary, typed findings/risks/recommendations,

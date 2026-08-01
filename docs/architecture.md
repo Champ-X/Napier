@@ -6072,7 +6072,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has sixty-seven parts:
+The current boundary has sixty-eight parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -6353,6 +6353,15 @@ The current boundary has sixty-seven parts:
     complete before/after snapshot equality, fail-closed read-only violation,
     independent fresh/stale status, and argv/output/path-free
     Agent/HTTP/Web/Replay evidence that never counts as verification.
+68. Capability-inherited private coder semantic LSP using existing one-shot
+    symbols/definition/references/rename/Code Action runners and WorkspaceEdit
+    coordinators, with complete read-snapshot equality, exact file-grant
+    filtering before apply-capability issuance, deny-all Code Action commands,
+    shared candidate operation ordering, fail-closed uncertain mutation,
+    same-Run previews, real two-file rename Dogfood, and no new durable
+    evidence stream. Nested packages outside declared workspaces keep nearest-
+    package test scans while declared workspace changes retain monorepo-wide
+    reverse-dependency discovery.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally

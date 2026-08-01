@@ -24,6 +24,7 @@ import {
   SubagentWorktreeMutationManager,
 } from "./subagent-worktree-mutation.js";
 import { MAX_SUBAGENT_WORKTREE_WRITE_FILES } from "./subagent-worktree-files.js";
+import { isSubagentSemanticLspToolName } from "./subagent-worktree-lsp-tools.js";
 import { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
 
 export {
@@ -141,6 +142,9 @@ export class SubagentCoordinator {
           options.profile.enabledTools.includes("verify_workspace"),
         enableCandidateCommand:
           options.profile.enabledTools.includes("run_command"),
+        enabledSemanticLspTools: options.profile.enabledTools.filter(
+          isSubagentSemanticLspToolName,
+        ),
         ...(tests ? { tests } : {}),
       });
     }

@@ -52,6 +52,7 @@ export interface LspRenameMutationManagerOptions {
   now?: () => Date;
   commit?: typeof commitLspRename;
   commitOptions?: Pick<CommitLspRenameOptions, "renameFile" | "linkFile">;
+  authorizeFiles?: (files: LspRenameFile[]) => boolean;
 }
 
 interface LspRenamePreviewSource extends LspWorkspaceEditPreviewSource {
@@ -61,6 +62,9 @@ interface LspRenamePreviewSource extends LspWorkspaceEditPreviewSource {
 }
 
 export class LspRenameMutationManager {
+  private readonly authorizeFiles:
+    | ((files: LspRenameFile[]) => boolean)
+    | undefined;
   private readonly coordinator: LspWorkspaceEditMutationCoordinator<
     LspRenamePreviewSource,
     LspRenameDiagnosticsState,
@@ -68,6 +72,7 @@ export class LspRenameMutationManager {
   >;
 
   constructor(options: LspRenameMutationManagerOptions) {
+    this.authorizeFiles = options.authorizeFiles;
     this.coordinator = new LspWorkspaceEditMutationCoordinator({
       workspaceRoot: options.workspaceRoot,
       dataRoot: options.dataRoot,
@@ -92,6 +97,9 @@ export class LspRenameMutationManager {
   storePreview(result: LspRenameResult): LspRenameApplyPreview | undefined {
     if (result.details.status !== "found" || result.files.length === 0) {
       return undefined;
+    }
+    if (this.authorizeFiles && !this.authorizeFiles(result.files)) {
+      throw new Error("LSP rename apply targets are not authorized");
     }
     const preview = this.coordinator.storePreview({
       sourcePreviewResultSha256: result.details.resultSha256,

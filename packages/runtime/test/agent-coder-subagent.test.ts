@@ -69,6 +69,13 @@ describe("Agent coder Subagent", () => {
       enabledTools: [
         "apply_patch",
         "lsp_diagnostics",
+        "lsp_symbols",
+        "lsp_definition",
+        "lsp_references",
+        "lsp_rename",
+        "lsp_rename_apply",
+        "lsp_code_actions",
+        "lsp_code_action_apply",
         "run_command",
         "verify_workspace",
       ],
@@ -108,6 +115,20 @@ describe("Agent coder Subagent", () => {
           "delegate_task",
         );
         return fauxAssistantMessage(
+          fauxToolCall("lsp_rename", {
+            path: "src/value.ts",
+            line: 1,
+            character: 14,
+            newName: "TOP_SECRET_SEMANTIC_NAME",
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          "LSP rename preview: not_found",
+        );
+        return fauxAssistantMessage(
           fauxToolCall("apply_patch", {
             operation: "replace",
             path: "src/value.ts",
@@ -118,8 +139,17 @@ describe("Agent coder Subagent", () => {
         );
       },
       (context) => {
-        expect(context.tools?.map((tool) => tool.name)).toContain(
-          "candidate_file",
+        expect(context.tools?.map((tool) => tool.name)).toEqual(
+          expect.arrayContaining([
+            "candidate_file",
+            "lsp_symbols",
+            "lsp_definition",
+            "lsp_references",
+            "lsp_rename",
+            "lsp_rename_apply",
+            "lsp_code_actions",
+            "lsp_code_action_apply",
+          ]),
         );
         return fauxAssistantMessage(
           fauxToolCall("apply_patch", {
@@ -294,6 +324,7 @@ describe("Agent coder Subagent", () => {
     expect(durable).not.toContain(testPath);
     expect(durable).not.toContain("TOP_SECRET_CANDIDATE_COMMAND_ARG");
     expect(durable).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
+    expect(durable).not.toContain("TOP_SECRET_SEMANTIC_NAME");
     expect(
       events.find(
         (event) =>

@@ -53,6 +53,7 @@ export interface LspCodeActionMutationManagerOptions {
   now?: () => Date;
   commit?: typeof commitLspRename;
   commitOptions?: Pick<CommitLspRenameOptions, "renameFile" | "linkFile">;
+  authorizeFiles?: (files: LspRenameFile[]) => boolean;
 }
 
 interface LspCodeActionPreviewSource extends LspWorkspaceEditPreviewSource {
@@ -63,6 +64,9 @@ interface LspCodeActionPreviewSource extends LspWorkspaceEditPreviewSource {
 }
 
 export class LspCodeActionMutationManager {
+  private readonly authorizeFiles:
+    | ((files: LspRenameFile[]) => boolean)
+    | undefined;
   private readonly coordinator: LspWorkspaceEditMutationCoordinator<
     LspCodeActionPreviewSource,
     LspRenameDiagnosticsState,
@@ -70,6 +74,7 @@ export class LspCodeActionMutationManager {
   >;
 
   constructor(options: LspCodeActionMutationManagerOptions) {
+    this.authorizeFiles = options.authorizeFiles;
     this.coordinator = new LspWorkspaceEditMutationCoordinator({
       workspaceRoot: options.workspaceRoot,
       dataRoot: options.dataRoot,
@@ -89,9 +94,16 @@ export class LspCodeActionMutationManager {
     if (result.details.status !== "found" || result.actions.length === 0) {
       return [];
     }
+    const authorizedActions = result.actions
+      .map((action, actionIndex) => ({ action, actionIndex }))
+      .filter(
+        ({ action }) =>
+          !this.authorizeFiles || this.authorizeFiles(action.files),
+      );
+    if (authorizedActions.length === 0) return [];
     const exclusiveGroupId = createId("actiongroup");
     const previews: LspCodeActionApplyPreview[] = [];
-    for (const [actionIndex, action] of result.actions.entries()) {
+    for (const { action, actionIndex } of authorizedActions) {
       const preview = this.coordinator.storePreview(
         actionSource(result, action, exclusiveGroupId),
       );

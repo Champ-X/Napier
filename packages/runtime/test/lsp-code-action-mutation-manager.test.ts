@@ -180,6 +180,44 @@ describe("LSP Code Action mutation manager", () => {
       await readFile(path.join(fixture.workspaceRoot, "source.ts"), "utf8"),
     ).toBe(drifted);
   });
+
+  it("mints apply capabilities only for authorized alternatives", async () => {
+    const fixture = await createFixture();
+    const unsafe = fixture.result.actions[1]!.files[0]!;
+    unsafe.path = "outside.ts";
+    unsafe.pathSha256 = sha256(unsafe.path);
+    for (const edit of unsafe.edits) {
+      edit.path = unsafe.path;
+      edit.pathSha256 = unsafe.pathSha256;
+    }
+    const manager = new LspCodeActionMutationManager({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      authorizeFiles: (files) =>
+        files.every((file) => file.path === "source.ts"),
+      diagnostics: {
+        async observeBefore() {
+          throw new Error("must not execute");
+        },
+        async observeAfter() {
+          throw new Error("must not execute");
+        },
+        unavailable() {
+          throw new Error("must not execute");
+        },
+      },
+    });
+
+    const previews = manager.storePreviews(fixture.result);
+
+    expect(previews).toHaveLength(1);
+    expect(previews[0]).toEqual(
+      expect.objectContaining({
+        actionIndex: 0,
+        actionSha256: fixture.result.actions[0]!.actionSha256,
+      }),
+    );
+  });
 });
 
 async function createFixture(): Promise<{

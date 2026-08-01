@@ -277,6 +277,130 @@ describe("write-linked test selection", () => {
     );
   });
 
+  it("keeps a standalone nested package out of unrelated declared workspaces", async () => {
+    const workspaceRoot = await createWorkspace();
+    const standaloneRoot = path.join(workspaceRoot, "fixtures/standalone");
+    const declaredRoot = path.join(workspaceRoot, "packages/unrelated");
+    await Promise.all([
+      mkdir(path.join(standaloneRoot, "src"), { recursive: true }),
+      mkdir(path.join(standaloneRoot, "test"), { recursive: true }),
+      mkdir(path.join(declaredRoot, "src"), { recursive: true }),
+    ]);
+    const source = "export const standaloneValue = 1;\n";
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "package.json"),
+        JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      ),
+      writeFile(
+        path.join(standaloneRoot, "package.json"),
+        JSON.stringify({ name: "@fixture/standalone" }),
+      ),
+      writeFile(path.join(standaloneRoot, "src/value.ts"), source),
+      writeFile(
+        path.join(standaloneRoot, "test/value.test.ts"),
+        'import "../src/value.js";\n',
+      ),
+      writeFile(
+        path.join(declaredRoot, "package.json"),
+        JSON.stringify({
+          name: "@fixture/unrelated",
+          source: "src/index.ts",
+        }),
+      ),
+      writeFile(
+        path.join(declaredRoot, "src/index.ts"),
+        "export const unrelated = true;\n",
+      ),
+      writeFile(
+        path.join(declaredRoot, "src/broken.ts"),
+        'import "./missing.js";\n',
+      ),
+    ]);
+
+    const selection = await selectWriteLinkedTests({
+      workspaceRoot,
+      changedFiles: [
+        {
+          path: "fixtures/standalone/src/value.ts",
+          expectedSha256: sha256(source),
+        },
+      ],
+    });
+
+    expect(selection).toEqual(
+      expect.objectContaining({
+        complete: true,
+        scanRootPaths: ["fixtures/standalone"],
+        scannedFileCount: 2,
+        workspacePackageCount: 2,
+        selectedTests: ["fixtures/standalone/test/value.test.ts"],
+        unresolvedImportCount: 0,
+      }),
+    );
+  });
+
+  it("fails closed when a standalone package imports an unscanned workspace package", async () => {
+    const workspaceRoot = await createWorkspace();
+    const standaloneRoot = path.join(workspaceRoot, "fixtures/standalone");
+    const declaredRoot = path.join(workspaceRoot, "packages/shared");
+    await Promise.all([
+      mkdir(path.join(standaloneRoot, "src"), { recursive: true }),
+      mkdir(path.join(standaloneRoot, "test"), { recursive: true }),
+      mkdir(path.join(declaredRoot, "src"), { recursive: true }),
+    ]);
+    const source =
+      'import { shared } from "@fixture/shared"; export const value = shared;\n';
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "package.json"),
+        JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      ),
+      writeFile(
+        path.join(standaloneRoot, "package.json"),
+        JSON.stringify({ name: "@fixture/standalone" }),
+      ),
+      writeFile(path.join(standaloneRoot, "src/value.ts"), source),
+      writeFile(
+        path.join(standaloneRoot, "test/value.test.ts"),
+        'import "../src/value.js";\n',
+      ),
+      writeFile(
+        path.join(declaredRoot, "package.json"),
+        JSON.stringify({
+          name: "@fixture/shared",
+          source: "src/index.ts",
+        }),
+      ),
+      writeFile(
+        path.join(declaredRoot, "src/index.ts"),
+        "export const shared = 1;\n",
+      ),
+    ]);
+
+    const selection = await selectWriteLinkedTests({
+      workspaceRoot,
+      changedFiles: [
+        {
+          path: "fixtures/standalone/src/value.ts",
+          expectedSha256: sha256(source),
+        },
+      ],
+    });
+
+    expect(selection).toEqual(
+      expect.objectContaining({
+        complete: false,
+        graphTruncated: true,
+        scanRootPaths: ["fixtures/standalone"],
+        scannedFileCount: 2,
+        workspacePackageCount: 2,
+        selectedTests: ["fixtures/standalone/test/value.test.ts"],
+        unresolvedImportCount: 1,
+      }),
+    );
+  });
+
   it("selects tests in a reverse-dependent workspace package", async () => {
     const workspaceRoot = await createWorkspace();
     const coreRoot = path.join(workspaceRoot, "packages/core");

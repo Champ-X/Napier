@@ -292,7 +292,85 @@ describe("Subagent worktree verification", () => {
     );
     const snapshot = await observeSubagentWorktreeCandidate(session);
     expect(() => operations.summarizeCommands(snapshot.contentSha256)).toThrow(
-      "violated the read-only",
+      "operation integrity is indeterminate",
+    );
+  });
+
+  it("invalidates a candidate when a semantic read changes bytes", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-subagent-lsp-"));
+    temporaryRoots.push(root);
+    const candidateRoot = await realpath(root);
+    const target = path.join(candidateRoot, "value.ts");
+    await writeFile(target, "export const value = 1;\n");
+    const session = { root: candidateRoot } as SubagentWorktreeSession;
+    const operations = new SubagentWorktreeOperationCoordinator();
+    const tool = operations.wrapReadOnlyTool(
+      {
+        name: "lsp_symbols",
+        label: "Symbols",
+        description: "fixture",
+        parameters: Type.Object({}),
+        async execute() {
+          await writeFile(target, "export const value = 2;\n");
+          return { content: [{ type: "text", text: "symbols" }] };
+        },
+      },
+      session,
+    );
+
+    await expect(tool.execute("symbols", {})).rejects.toThrow(
+      "changed candidate bytes",
+    );
+    expect(() => operations.assertIntegrity()).toThrow(
+      "operation integrity is indeterminate",
+    );
+  });
+
+  it("allows a failed no-write semantic apply but blocks indeterminate results", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-subagent-lsp-"));
+    temporaryRoots.push(root);
+    const candidateRoot = await realpath(root);
+    await writeFile(path.join(candidateRoot, "value.ts"), "export {};\n");
+    const session = { root: candidateRoot } as SubagentWorktreeSession;
+    const operations = new SubagentWorktreeOperationCoordinator();
+    const failed = operations.wrapMutationTool(
+      {
+        name: "lsp_rename_apply",
+        label: "Rename",
+        description: "fixture",
+        parameters: Type.Object({}),
+        async execute() {
+          throw new Error("stale preview");
+        },
+      },
+      session,
+    );
+    await expect(failed.execute("failed", {})).rejects.toThrow("stale preview");
+    expect(() => operations.assertIntegrity()).not.toThrow();
+
+    const indeterminate = operations.wrapMutationTool(
+      {
+        name: "lsp_rename_apply",
+        label: "Rename",
+        description: "fixture",
+        parameters: Type.Object({}),
+        async execute() {
+          return {
+            content: [{ type: "text", text: "indeterminate" }],
+            details: {
+              status: "indeterminate",
+              postcondition: "indeterminate",
+            },
+          };
+        },
+      },
+      session,
+    );
+    await expect(indeterminate.execute("indeterminate", {})).rejects.toThrow(
+      "verified postcondition",
+    );
+    expect(() => operations.assertIntegrity()).toThrow(
+      "operation integrity is indeterminate",
     );
   });
 

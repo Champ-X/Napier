@@ -6,6 +6,34 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added private coder semantic LSP navigation and edits. A coder now inherits
+  the parent's `lsp_symbols`, `lsp_definition`, `lsp_references`,
+  `lsp_rename`, `lsp_rename_apply`, `lsp_code_actions`, and
+  `lsp_code_action_apply` capabilities against only its unmerged worktree.
+  Existing one-shot language-server runners, deny-all Code Action policy, and
+  one-use WorkspaceEdit coordinators are reused rather than forked. Semantic
+  reads must preserve the complete candidate snapshot; rename receives no
+  apply preview unless every edit target is in `writePaths`, and Code Action
+  alternatives receive apply IDs only when all targets are granted. Semantic
+  applies share the patch/file/command/verification queue, use existing
+  CAS/stage/fsync/rollback and diagnostics, and permanently invalidate
+  settlement when an error changes bytes or a postcondition is not verified.
+  Raw semantic source, names, replacements, paths, diagnostics, outputs, and
+  preview IDs stay live-only; existing hash-only Subagent steps and final merge
+  evidence remain the durable projection. The tool composer, semantic LSP
+  adapter, and operation evidence were extracted into focused modules, keeping
+  touched production files below 500 lines. Write-linked selection now scans a
+  nested standalone package from its nearest package boundary even when the
+  repository root declares unrelated workspaces, while changes to declared
+  packages retain monorepo-wide reverse dependencies. Tests cover capability
+  pairing, unauthorized rename rejection before preview issuance, safe-only
+  Code Action alternatives, read mutation, indeterminate apply, cancellation,
+  drift, serialization, Agent/Replay privacy, and standalone-package graph
+  scope. Direct-process Dogfood used real symbols, cross-file definition and
+  references, a grant-bound two-file rename, Node, LSP, Vitest, old/new graph
+  selection, and parent merge in 27.49 seconds. The full gate passed 1,716
+  regular tests with 30 opt-in live tests skipped, product performance stayed
+  within baseline, and the Web main entry remained 130.32 KiB.
 - Added serialized read-only commands for isolated coder candidates. A child
   receives `run_command` only when its parent profile already enables that
   capability and an OS Sandbox exists. The existing explicit-argv Node runner

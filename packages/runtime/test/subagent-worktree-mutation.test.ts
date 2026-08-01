@@ -10,6 +10,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import type { LspRenameApplyDiagnosticsDetails } from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
@@ -21,6 +22,10 @@ import type {
 import type { LspWorkspaceEditDiagnosticsAdapter } from "../src/lsp-workspace-edit-mutation.js";
 import type { SubagentWorktreeLifecycleDiagnosticsAdapter } from "../src/subagent-worktree-lifecycle-diagnostics.js";
 import { SubagentWorktreeMutationManager } from "../src/subagent-worktree-mutation.js";
+import {
+  controlledLspRenameSandbox,
+  textEdit,
+} from "./lsp-rename-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 
@@ -33,6 +38,95 @@ afterEach(async () => {
 });
 
 describe("Subagent worktree mutation manager", () => {
+  it("inherits semantic LSP tools and requires paired apply capabilities", async () => {
+    const harness = await createHarness();
+    const manager = new SubagentWorktreeMutationManager({
+      ...harness,
+      ownerId: "worker_lsp_tools",
+      sandbox: {
+        id: "fixture",
+        async launch() {
+          throw new Error("must not launch");
+        },
+      },
+      enabledSemanticLspTools: [
+        "lsp_symbols",
+        "lsp_rename_apply",
+        "lsp_code_actions",
+        "lsp_code_action_apply",
+      ],
+      diagnostics: diagnosticsAdapter(),
+    });
+    const source = "export const value = 1;\n";
+    await writeFile(path.join(harness.workspaceRoot, "src/value.ts"), source);
+    const worktree = await manager.createWorktree("task_lsptools1", [
+      "src/value.ts",
+    ]);
+
+    expect(manager.createCoderTools(worktree).map((tool) => tool.name)).toEqual(
+      [
+        "list_files",
+        "read_file",
+        "search_files",
+        "list_symbols",
+        "inspect_data",
+        "inspect_code",
+        "read_symbol",
+        "ast_query",
+        "ast_edit_preview",
+        "apply_patch",
+        "candidate_file",
+        "lsp_symbols",
+        "lsp_code_actions",
+        "lsp_code_action_apply",
+        "lsp_diagnostics",
+      ],
+    );
+    await manager.cleanup(worktree);
+  });
+
+  it("refuses a semantic rename that targets an ungranted candidate file", async () => {
+    const harness = await createHarness();
+    let unsafeTarget = "";
+    const controlled = controlledLspRenameSandbox({
+      rename: () => ({
+        changes: {
+          [pathToFileURL(unsafeTarget).href]: [textEdit("changed", 0, 0, 0, 1)],
+        },
+      }),
+    });
+    const manager = new SubagentWorktreeMutationManager({
+      ...harness,
+      ownerId: "worker_lsp_scope",
+      sandbox: controlled.sandbox,
+      enabledSemanticLspTools: ["lsp_rename", "lsp_rename_apply"],
+      diagnostics: diagnosticsAdapter(),
+    });
+    const source = "export const value = 1;\n";
+    await writeFile(path.join(harness.workspaceRoot, "src/value.ts"), source);
+    const worktree = await manager.createWorktree("task_lspscope1", [
+      "src/value.ts",
+    ]);
+    unsafeTarget = path.join(worktree.root, "README.md");
+    const rename = manager
+      .createCoderTools(worktree)
+      .find((tool) => tool.name === "lsp_rename")!;
+
+    await expect(
+      rename.execute("rename-unsafe", {
+        path: "src/value.ts",
+        line: 1,
+        character: 14,
+        newName: "canonicalValue",
+      }),
+    ).rejects.toThrow("targets are not authorized");
+    await expect(readFile(unsafeTarget, "utf8")).resolves.toBe("workspace\n");
+    await expect(
+      readFile(path.join(harness.workspaceRoot, "README.md"), "utf8"),
+    ).resolves.toBe("workspace\n");
+    await manager.cleanup(worktree);
+  });
+
   it("keeps candidate writes isolated until one-use coordinated apply", async () => {
     const harness = await createHarness();
     const manager = createManager(harness);

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import {
   mkdir,
   mkdtemp,
@@ -35,7 +35,7 @@ describeLive("live coder Subagent smoke", () => {
   it("merges a real TypeScript candidate with diagnostics and selected Vitest", async () => {
     const workspaceRoot = await realpath(path.resolve(process.cwd(), "../.."));
     const suffix = randomBytes(5).toString("hex");
-    const fixtureName = `.subagent-coder-live-${suffix}`;
+    const fixtureName = `subagent-coder-live-${suffix}`;
     const fixtureRoot = path.join(workspaceRoot, fixtureName);
     const dataRoot = await mkdtemp(
       path.join(tmpdir(), "napier-coder-live-data-"),
@@ -45,24 +45,45 @@ describeLive("live coder Subagent smoke", () => {
       mkdir(path.join(fixtureRoot, "src"), { recursive: true }),
       mkdir(path.join(fixtureRoot, "test"), { recursive: true }),
     ]);
-    const addedPath = `${fixtureName}/src/added.ts`;
-    const deletedPath = `${fixtureName}/src/deleted.ts`;
-    const movedPath = `${fixtureName}/src/move.ts`;
-    const renamedPath = `${fixtureName}/src/renamed.ts`;
+    const apiPath = `${fixtureName}/src/api.ts`;
+    const consumerPath = `${fixtureName}/src/consumer.ts`;
     const testPath = `${fixtureName}/test/value.test.ts`;
-    const deleted = "export const deletedValue = 99;\n";
-    const moved = "export const movedValue = 3;\n";
-    const added = "export const addedValue = 2;\n";
+    const api =
+      "export function currentName(value: number): number { return value + 1; }\n";
+    const consumer = [
+      'import { currentName } from "./api.js";',
+      "export const semanticValue = currentName(4);",
+      "",
+    ].join("\n");
     await Promise.all([
-      writeFile(path.join(workspaceRoot, deletedPath), deleted),
-      writeFile(path.join(workspaceRoot, movedPath), moved),
+      writeFile(
+        path.join(fixtureRoot, "package.json"),
+        JSON.stringify({
+          name: `napier-live-coder-${suffix}`,
+          private: true,
+          type: "module",
+        }),
+      ),
+      writeFile(
+        path.join(fixtureRoot, "tsconfig.json"),
+        JSON.stringify({
+          compilerOptions: {
+            strict: true,
+            noEmit: true,
+            module: "NodeNext",
+            moduleResolution: "NodeNext",
+          },
+          include: ["src/**/*.ts", "test/**/*.ts"],
+        }),
+      ),
+      writeFile(path.join(workspaceRoot, apiPath), api),
+      writeFile(path.join(workspaceRoot, consumerPath), consumer),
       writeFile(
         path.join(workspaceRoot, testPath),
         [
           'import { expect, test } from "vitest";',
-          'import { addedValue } from "../src/added.js";',
-          'import { movedValue } from "../src/renamed.js";',
-          'test("coder lifecycle", () => expect(addedValue + movedValue).toBe(5));',
+          'import { semanticValue } from "../src/consumer.js";',
+          'test("coder semantic rename", () => expect(semanticValue).toBe(5));',
           "",
         ].join("\n"),
       ),
@@ -75,41 +96,94 @@ describeLive("live coder Subagent smoke", () => {
       sandbox,
       enableCandidateVerification: true,
       enableCandidateCommand: true,
+      enabledSemanticLspTools: [
+        "lsp_symbols",
+        "lsp_definition",
+        "lsp_references",
+        "lsp_rename",
+        "lsp_rename_apply",
+        "lsp_code_actions",
+        "lsp_code_action_apply",
+      ],
       tests: new WriteLinkedTestVerificationRunner({
         workspaceRoot,
         sandbox,
       }),
     });
     const worktree = await manager.createWorktree("task_livecoder1", [
-      addedPath,
-      deletedPath,
-      movedPath,
-      renamedPath,
+      apiPath,
+      consumerPath,
     ]);
     const tools = manager.createCoderTools(worktree);
-    const patch = tools.find((tool) => tool.name === "apply_patch")!;
     const lsp = tools.find((tool) => tool.name === "lsp_diagnostics")!;
     const verify = tools.find((tool) => tool.name === "verify_workspace")!;
     const command = tools.find((tool) => tool.name === "run_command")!;
-    const candidateFile = tools.find((tool) => tool.name === "candidate_file")!;
-    await patch.execute("live-coder-add", {
-      operation: "create",
-      path: addedPath,
-      expectedSha256: null,
-      content: added,
+    const symbols = tools.find((tool) => tool.name === "lsp_symbols")!;
+    const definition = tools.find((tool) => tool.name === "lsp_definition")!;
+    const references = tools.find((tool) => tool.name === "lsp_references")!;
+    const rename = tools.find((tool) => tool.name === "lsp_rename")!;
+    const renameApply = tools.find((tool) => tool.name === "lsp_rename_apply")!;
+    const candidateSymbols = await symbols.execute("live-coder-symbols", {
+      path: apiPath,
+      timeoutMs: 30_000,
     });
-    await candidateFile.execute("live-coder-delete", {
-      operation: "delete",
-      path: deletedPath,
-      expectedSha256: sha256(deleted),
+    expect(candidateSymbols.details).toEqual(
+      expect.objectContaining({ status: "found", symbolCount: 1 }),
+    );
+    const candidateDefinition = await definition.execute(
+      "live-coder-definition",
+      {
+        path: consumerPath,
+        line: 1,
+        character: 10,
+        timeoutMs: 30_000,
+      },
+    );
+    expect(candidateDefinition.details).toEqual(
+      expect.objectContaining({ status: "found", definitionCount: 1 }),
+    );
+    const candidateReferences = await references.execute(
+      "live-coder-references",
+      {
+        path: consumerPath,
+        line: 1,
+        character: 10,
+        includeDeclaration: true,
+        timeoutMs: 30_000,
+      },
+    );
+    expect(candidateReferences.details).toEqual(
+      expect.objectContaining({ status: "found", referenceCount: 3 }),
+    );
+    const renamePreview = await rename.execute("live-coder-rename", {
+      path: apiPath,
+      line: 1,
+      character: 17,
+      newName: "canonicalName",
+      timeoutMs: 30_000,
     });
-    await candidateFile.execute("live-coder-move", {
-      operation: "move",
-      sourcePath: movedPath,
-      destinationPath: renamedPath,
-      expectedSourceSha256: sha256(moved),
-      expectedDestinationSha256: null,
+    const renameText = renamePreview.content.find(
+      (item) => item.type === "text",
+    )?.text;
+    const renamePreviewId = renameText?.match(
+      /renamepreview_[a-z0-9]{8,80}/u,
+    )?.[0];
+    expect(renamePreviewId).toMatch(/^renamepreview_/u);
+    const semanticApply = await renameApply.execute("live-coder-rename-apply", {
+      previewId: renamePreviewId!,
     });
+    expect(semanticApply.details).toEqual(
+      expect.objectContaining({
+        status: "applied",
+        postcondition: "verified",
+      }),
+    );
+    await expect(
+      readFile(path.join(worktree.root, apiPath), "utf8"),
+    ).resolves.toContain("canonicalName");
+    await expect(
+      readFile(path.join(worktree.root, consumerPath), "utf8"),
+    ).resolves.toContain("canonicalName");
     const candidateCommand = await command.execute("live-coder-command", {
       runtime: "node",
       args: [
@@ -117,13 +191,13 @@ describeLive("live coder Subagent smoke", () => {
         [
           "const fs = require('node:fs');",
           "const ts = require('typescript');",
-          "const added = fs.readFileSync(process.argv[1], 'utf8');",
-          "const moved = fs.readFileSync(process.argv[2], 'utf8');",
-          "if (typeof ts.version !== 'string' || !added.includes('addedValue = 2') || !moved.includes('movedValue = 3')) process.exit(9);",
+          "const api = fs.readFileSync(process.argv[1], 'utf8');",
+          "const consumer = fs.readFileSync(process.argv[2], 'utf8');",
+          "if (typeof ts.version !== 'string' || !api.includes('canonicalName') || !consumer.includes('canonicalName')) process.exit(9);",
           "console.log('candidate-command-ok');",
         ].join(""),
-        addedPath,
-        renamedPath,
+        apiPath,
+        consumerPath,
       ],
       timeoutMs: 30_000,
     });
@@ -137,7 +211,7 @@ describeLive("live coder Subagent smoke", () => {
       }),
     );
     const candidateDiagnostics = await lsp.execute("live-coder-lsp", {
-      path: addedPath,
+      path: apiPath,
       timeoutMs: 30_000,
     });
     expect(candidateDiagnostics.details).toEqual(
@@ -157,11 +231,11 @@ describeLive("live coder Subagent smoke", () => {
     const preview = await manager.storePreview(worktree, "f".repeat(64));
     expect(preview).toEqual(
       expect.objectContaining({
-        changedFileCount: 4,
-        addedFileCount: 2,
-        modifiedFileCount: 0,
-        deletedFileCount: 2,
-        renamedFileCount: 1,
+        changedFileCount: 2,
+        addedFileCount: 0,
+        modifiedFileCount: 2,
+        deletedFileCount: 0,
+        renamedFileCount: 0,
         candidateCommands: expect.objectContaining({
           attemptCount: 1,
           freshCount: 1,
@@ -182,26 +256,26 @@ describeLive("live coder Subagent smoke", () => {
     );
 
     await expect(
-      readFile(path.join(workspaceRoot, addedPath)),
-    ).rejects.toMatchObject({ code: "ENOENT" });
+      readFile(path.join(workspaceRoot, apiPath), "utf8"),
+    ).resolves.toContain("currentName");
     const applied = await manager.apply(preview.id);
 
     expect(applied.details).toEqual(
       expect.objectContaining({
         status: "applied",
         postcondition: "verified",
-        fileCount: 4,
-        candidateAddedFileCount: 2,
-        candidateModifiedFileCount: 0,
-        candidateDeletedFileCount: 2,
-        candidateRenamedFileCount: 1,
+        fileCount: 2,
+        candidateAddedFileCount: 0,
+        candidateModifiedFileCount: 2,
+        candidateDeletedFileCount: 0,
+        candidateRenamedFileCount: 0,
         diagnostics: expect.objectContaining({
           status: "clean",
-          fileCount: 4,
+          fileCount: 2,
         }),
         tests: expect.objectContaining({
           status: "passed",
-          changedFileCount: 4,
+          changedFileCount: 2,
           selectedTestCount: 1,
         }),
         candidateVerificationAttemptCount: 2,
@@ -218,18 +292,12 @@ describeLive("live coder Subagent smoke", () => {
     );
     expect(applied.summary).toContain(testPath);
     await expect(
-      readFile(path.join(workspaceRoot, addedPath), "utf8"),
-    ).resolves.toBe(added);
+      readFile(path.join(workspaceRoot, apiPath), "utf8"),
+    ).resolves.toContain("canonicalName");
     await expect(
-      readFile(path.join(workspaceRoot, renamedPath), "utf8"),
-    ).resolves.toBe(moved);
-    await expect(
-      readFile(path.join(workspaceRoot, deletedPath)),
-    ).rejects.toMatchObject({ code: "ENOENT" });
-    await expect(
-      readFile(path.join(workspaceRoot, movedPath)),
-    ).rejects.toMatchObject({ code: "ENOENT" });
-    expect(JSON.stringify(applied.details)).not.toContain(addedPath);
+      readFile(path.join(workspaceRoot, consumerPath), "utf8"),
+    ).resolves.toContain("canonicalName");
+    expect(JSON.stringify(applied.details)).not.toContain(apiPath);
     expect(JSON.stringify(applied.details)).not.toContain(preview.id);
   }, 120_000);
 });
@@ -273,8 +341,4 @@ function directProcessAdapter(): OsSandboxAdapter {
       };
     },
   };
-}
-
-function sha256(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
 }

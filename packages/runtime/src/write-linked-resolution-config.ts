@@ -58,8 +58,12 @@ export async function discoverWriteLinkedResolutionConfiguration(
   >();
   const missingConfigurations = new Set<string>();
   const packageRoots = new Set<string>();
+  const nearestPackageRoots = new Set<string>();
+  const declaredPackageRoots = new Set<string>();
   let truncated = false;
   let workspaceDeclared = false;
+  let workspaceDeclarationPresent = false;
+  let workspaceDeclarationInvalid = false;
 
   for (const changedPath of changedPaths) {
     const nearest = await nearestWriteLinkedPackageRoot(
@@ -67,6 +71,7 @@ export async function discoverWriteLinkedResolutionConfiguration(
       changedPath,
     );
     packageRoots.add(nearest.root);
+    nearestPackageRoots.add(nearest.root);
     truncated ||= nearest.truncated;
   }
   const rootOutcome = await loadWriteLinkedResolutionConfiguration(
@@ -104,10 +109,11 @@ export async function discoverWriteLinkedResolutionConfiguration(
       truncated = true;
     }
     if (manifest?.["workspaces"] !== undefined) {
-      workspaceDeclared = true;
+      workspaceDeclarationPresent = true;
       const patterns = writeLinkedWorkspacePatterns(manifest["workspaces"]);
       if (!patterns) {
         truncated = true;
+        workspaceDeclarationInvalid = true;
       } else {
         for (const pattern of patterns) {
           const expanded = await expandWriteLinkedWorkspacePattern(
@@ -116,17 +122,32 @@ export async function discoverWriteLinkedResolutionConfiguration(
           );
           if (!expanded) {
             truncated = true;
+            workspaceDeclarationInvalid = true;
             continue;
           }
           for (const root of expanded) {
-            packageRoots.add(root);
-            if (packageRoots.size > MAX_WRITE_LINKED_WORKSPACE_PACKAGES) {
+            declaredPackageRoots.add(root);
+            if (
+              declaredPackageRoots.size > MAX_WRITE_LINKED_WORKSPACE_PACKAGES
+            ) {
               truncated = true;
               break;
             }
           }
         }
       }
+    }
+  }
+  workspaceDeclared =
+    workspaceDeclarationPresent &&
+    (workspaceDeclarationInvalid ||
+      nearestPackageRoots.has(workspaceRoot) ||
+      [...nearestPackageRoots].some((root) => declaredPackageRoots.has(root)));
+  for (const root of declaredPackageRoots) {
+    packageRoots.add(root);
+    if (packageRoots.size > MAX_WRITE_LINKED_WORKSPACE_PACKAGES) {
+      truncated = true;
+      break;
     }
   }
 
@@ -221,7 +242,9 @@ export async function discoverWriteLinkedResolutionConfiguration(
     truncated ||= outcome.truncated;
   }
   return {
-    scanRoots: workspaceDeclared ? [workspaceRoot] : [...packageRoots].sort(),
+    scanRoots: workspaceDeclared
+      ? [workspaceRoot]
+      : [...nearestPackageRoots].sort(),
     configurationFiles: [...configurations.values()]
       .map((config) => ({
         path: config.path,

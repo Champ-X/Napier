@@ -192,6 +192,28 @@ describe("LSP rename mutation manager", () => {
       "preview not found",
     );
   });
+
+  it("refuses to mint an apply preview for unauthorized edit targets", async () => {
+    const fixture = await createFixture();
+    const manager = new LspRenameMutationManager({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      authorizeFiles: (files) =>
+        files.every((file) => file.path === "granted.ts"),
+      diagnostics: {
+        async observeBefore() {
+          throw new Error("must not execute");
+        },
+        async observeAfter() {
+          throw new Error("must not execute");
+        },
+      },
+    });
+
+    expect(() => manager.storePreview(fixture.result)).toThrow(
+      "targets are not authorized",
+    );
+  });
 });
 
 async function createFixture(): Promise<{

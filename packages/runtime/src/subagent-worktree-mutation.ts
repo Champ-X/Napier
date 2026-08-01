@@ -4,13 +4,11 @@ import type {
   SubagentWorktreeApplyDetails,
 } from "@napier/contracts";
 
-import { createCommandTool } from "./command-tool.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type {
   LspRenameDiagnosticsObservation,
   LspRenameDiagnosticsState,
 } from "./lsp-rename-apply-diagnostics.js";
-import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
 import type { LspRenameFile } from "./lsp-rename-workspace-edit.js";
 import {
   LspWorkspaceEditMutationCoordinator,
@@ -24,7 +22,6 @@ import {
   type SubagentWorktreeApplyVerificationState,
 } from "./subagent-worktree-apply-verification.js";
 import { commitSubagentWorktreeChanges } from "./subagent-worktree-commit.js";
-import { createSubagentWorktreeFileTool } from "./subagent-worktree-file-tool.js";
 import {
   createSubagentWorktree,
   finalizeSubagentWorktree,
@@ -40,21 +37,18 @@ import {
   SubagentWorktreeLifecycleDiagnostics,
   type SubagentWorktreeLifecycleDiagnosticsAdapter,
 } from "./subagent-worktree-lifecycle-diagnostics.js";
-import { createSubagentWorktreePatchTool } from "./subagent-worktree-patch-tool.js";
 import { createSubagentWorktreeReview } from "./subagent-worktree-review.js";
 import {
   assertSubagentWorktreeToolchainStable,
   prepareSubagentWorktreeToolchain,
   type SubagentWorktreeToolchain,
 } from "./subagent-worktree-toolchain.js";
+import { createSubagentWorktreeTools } from "./subagent-worktree-tools.js";
 import {
   type SubagentCandidateCommandSummary,
   type SubagentCandidateVerificationSummary,
   SubagentWorktreeOperationCoordinator,
 } from "./subagent-worktree-verification.js";
-import { createTypescriptAstTools } from "./typescript-ast-tool.js";
-import { createWorkspaceTools } from "./tools.js";
-import { createVerificationTool } from "./verification.js";
 import {
   commitWorkspaceChanges,
   type CommitWorkspaceChangesOptions,
@@ -130,6 +124,7 @@ export interface SubagentWorktreeMutationManagerOptions {
   sandbox?: OsSandboxAdapter;
   enableCandidateVerification?: boolean;
   enableCandidateCommand?: boolean;
+  enabledSemanticLspTools?: readonly string[];
   diagnostics?: LspWorkspaceEditDiagnosticsAdapter<
     LspRenameDiagnosticsState,
     LspRenameDiagnosticsObservation
@@ -250,69 +245,22 @@ export class SubagentWorktreeMutationManager {
     if (!context) {
       throw new Error("Coder Subagent worktree context is unavailable");
     }
-    const tools = [
-      ...createWorkspaceTools(session.root),
-      ...createTypescriptAstTools(session.root),
-    ];
-    tools.push(
-      createSubagentWorktreePatchTool(
-        session,
-        this.options.dataRoot,
-        context.operations.runMutation.bind(context.operations),
-      ),
-    );
-    tools.push(
-      createSubagentWorktreeFileTool(
-        session,
-        context.operations.runMutation.bind(context.operations),
-      ),
-    );
-    if (this.options.sandbox) {
-      const verifyToolchain = context.toolchain
-        ? () => assertSubagentWorktreeToolchainStable(context.toolchain!)
-        : undefined;
-      const runtimeReadPaths = context.toolchain
-        ? [context.toolchain.sourceNodeModulesRoot]
-        : [];
-      if (this.options.enableCandidateCommand) {
-        tools.push(
-          context.operations.wrapCommandTool(
-            createCommandTool({
-              workspaceRoot: session.root,
-              sandbox: this.options.sandbox,
-              ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
-            }),
-            session,
-            verifyToolchain,
-          ),
-        );
-      }
-      tools.push(
-        context.operations.wrapVerificationTool(
-          createLspDiagnosticsTool({
-            workspaceRoot: session.root,
-            sandbox: this.options.sandbox,
-            ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
-          }),
-          session,
-          verifyToolchain,
-        ),
-      );
-      if (this.options.enableCandidateVerification && context.toolchain) {
-        tools.push(
-          context.operations.wrapVerificationTool(
-            createVerificationTool({
-              workspaceRoot: session.root,
-              toolchainRoot: session.sourceRoot,
-              sandbox: this.options.sandbox,
-            }),
-            session,
-            verifyToolchain,
-          ),
-        );
-      }
-    }
-    return tools;
+    return createSubagentWorktreeTools({
+      session,
+      dataRoot: this.options.dataRoot,
+      operations: context.operations,
+      ...(context.toolchain ? { toolchain: context.toolchain } : {}),
+      ...(this.options.sandbox ? { sandbox: this.options.sandbox } : {}),
+      ...(this.options.enableCandidateCommand
+        ? { enableCandidateCommand: true }
+        : {}),
+      ...(this.options.enableCandidateVerification
+        ? { enableCandidateVerification: true }
+        : {}),
+      ...(this.options.enabledSemanticLspTools
+        ? { enabledSemanticLspTools: this.options.enabledSemanticLspTools }
+        : {}),
+    });
   }
 
   async storePreview(
@@ -328,6 +276,7 @@ export class SubagentWorktreeMutationManager {
       throw new Error("Coder Subagent worktree context is unavailable");
     }
     await context.operations.settle();
+    context.operations.assertIntegrity();
     if (context.toolchain) {
       await assertSubagentWorktreeToolchainStable(context.toolchain);
     }
