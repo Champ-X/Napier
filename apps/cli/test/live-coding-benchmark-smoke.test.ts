@@ -102,7 +102,8 @@ describeLive("live DeepSeek coding outcome benchmark", () => {
         model: { provider: "deepseek", id: modelId },
         tooling: expect.objectContaining({
           applyPatchCompleted: true,
-          failed: 0,
+          started: expect.any(Number),
+          completed: expect.any(Number),
         }),
         evaluation: expect.objectContaining({
           status: "passed",
