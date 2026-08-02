@@ -257,19 +257,16 @@
   "allowedCycles": [
     [
       "packages/runtime/src/evaluation-calibration.ts",
-      "packages/runtime/src/evaluation-casebook-qualification.ts",
-      "packages/runtime/src/evaluation-casebooks.ts",
       "packages/runtime/src/evaluation-consensus.ts",
       "packages/runtime/src/evaluation-governance.ts",
       "packages/runtime/src/evaluation-suites.ts",
       "packages/runtime/src/evaluation.ts",
-      "packages/runtime/src/plan-archives.ts",
-      "packages/runtime/src/receipt-trust-directory-subscriptions.ts",
-      "packages/runtime/src/receipt-trust.ts",
       "packages/runtime/src/replay.ts",
-      "packages/runtime/src/store.ts",
-      "packages/runtime/src/thread-bundles.ts",
-      "packages/runtime/src/workflow-blueprints.ts"
+      "packages/runtime/src/thread-bundles.ts"
+    ],
+    [
+      "packages/runtime/src/receipt-trust-directory-subscriptions.ts",
+      "packages/runtime/src/receipt-trust.ts"
     ]
   ],
   "allowedWorkspaceImports": {

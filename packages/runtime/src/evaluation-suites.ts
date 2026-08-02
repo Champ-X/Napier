@@ -21,7 +21,7 @@ import {
 } from "./evaluation.js";
 import { createId, nowIso } from "./ids.js";
 import type { ModelRegistry } from "./models.js";
-import type { LocalStore } from "./store.js";
+import type { EvaluationSuiteStorePort } from "./store-port.js";
 
 export const DEFAULT_EVALUATION_SUITE_GATE: EvaluationSuiteGate = {
   minimumPassRate: 1,
@@ -33,7 +33,7 @@ export class EvaluationSuiteService {
   private readonly evaluations: RunEvaluationService;
 
   constructor(
-    private readonly store: LocalStore,
+    private readonly store: EvaluationSuiteStorePort,
     models: ModelRegistry,
   ) {
     this.evaluations = new RunEvaluationService(store, models);
@@ -267,7 +267,7 @@ export function hashEvaluationSuiteExecution(
 }
 
 export function createEvaluationSuiteGateReceipt(
-  store: LocalStore,
+  store: EvaluationSuiteStorePort,
   threadId: string,
   suiteId: string,
 ): EvaluationSuiteGateReceipt {

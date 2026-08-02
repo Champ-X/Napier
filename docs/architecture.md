@@ -177,10 +177,12 @@ The Contracts root/RPC pair then required moving its complete 133-declaration
 dependency closure into five bounded execution-domain modules. The
 then-current 54-module Runtime core component was subsequently reduced by
 extracting the shared Event sink, MCP client SPI, and Subagent worktree
-mutation model. The checked graph now contains one 14-module
-Evaluation/evidence/Store component rather than nine legacy components. That
-remaining closure requires deliberate Runtime domain decomposition; it is not
-treated as an acceptable target for local type-moving.
+mutation model. Narrow Store ports then removed Store, Plan archive, Workflow
+blueprint, and Casebook qualification from that closure. The checked graph now
+contains a seven-module Evaluation component and a two-module Receipt Trust
+component rather than nine legacy components. Those remaining closures require
+deliberate Runtime domain decomposition; they are not treated as acceptable
+targets for local type-moving.
 
 ### Server
 

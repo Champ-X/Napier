@@ -31,7 +31,7 @@ import {
 } from "./model-context-envelope.js";
 import type { ModelRegistry } from "./models.js";
 import { compareRuns } from "./replay.js";
-import type { LocalStore } from "./store.js";
+import type { RunEvaluationStorePort } from "./store-port.js";
 import { createUsageAccounting } from "./token-accounting.js";
 
 const VERDICTS = new Set<RunEvaluationVerdict>([
@@ -87,7 +87,7 @@ export interface RunEvaluationGovernanceEvidence {
 
 export class RunEvaluationService {
   constructor(
-    private readonly store: LocalStore,
+    private readonly store: RunEvaluationStorePort,
     private readonly models: ModelRegistry,
   ) {}
 

@@ -27,7 +27,7 @@ import {
 import { createId, nowIso } from "./ids.js";
 import type { ModelRegistry } from "./models.js";
 import { aggregateRunUsage, createRunReplaySnapshot } from "./replay.js";
-import type { LocalStore } from "./store.js";
+import type { EvaluationCasebookQualificationStorePort } from "./store-port.js";
 
 export const DEFAULT_EVALUATION_CASEBOOK_QUALIFICATION_GATE: EvaluationCasebookQualificationGate =
   {
@@ -47,7 +47,7 @@ export class EvaluationCasebookQualificationService {
   private readonly evaluator: RunEvaluationService;
 
   constructor(
-    private readonly store: LocalStore,
+    private readonly store: EvaluationCasebookQualificationStorePort,
     private readonly models: ModelRegistry,
   ) {
     this.evaluator = new RunEvaluationService(store, models);
@@ -365,7 +365,7 @@ export function validateEvaluationCasebookQualificationExecution(
 }
 
 export function createEvaluationCasebookQualificationReceipt(
-  store: LocalStore,
+  store: EvaluationCasebookQualificationStorePort,
   casebookId: string,
 ): EvaluationCasebookQualificationReceipt {
   const casebook = store.getEvaluationCasebook(casebookId);

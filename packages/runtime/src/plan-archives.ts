@@ -17,10 +17,9 @@ import {
   isArtifactReceiptEvent,
 } from "./artifact-receipts.js";
 import { hashEventStream } from "./replay.js";
-import type { LocalStore } from "./store.js";
+import type { PlanArchiveStorePort } from "./store-port.js";
 
 export const MAX_EXECUTION_PLAN_ARCHIVE_BYTES = 10 * 1024 * 1024;
-
 const SHA256 = /^[a-f0-9]{64}$/;
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,80}$/;
 const MAX_ARCHIVE_PLAN_EVENTS = 10_000;
@@ -58,7 +57,7 @@ export type ExecutionPlanArchiveContent = Omit<
 >;
 
 export async function createExecutionPlanArchive(
-  store: LocalStore,
+  store: PlanArchiveStorePort,
   threadId: string,
   planId: string,
 ): Promise<ExecutionPlanArchive> {
@@ -454,7 +453,8 @@ function assertArchivePlanEvent(
     !Number.isSafeInteger(record["seq"]) ||
     record["seq"] <= previousSeq ||
     typeof record["type"] !== "string" ||
-    (record["category"] !== "plan" && !isArchiveArtifactEvidenceEvent(record)) ||
+    (record["category"] !== "plan" &&
+      !isArchiveArtifactEvidenceEvent(record)) ||
     typeof record["visibility"] !== "string" ||
     typeof record["createdAt"] !== "string" ||
     Number.isNaN(Date.parse(record["createdAt"])) ||

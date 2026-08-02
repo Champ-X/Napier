@@ -17,7 +17,7 @@ import {
   type Usage,
 } from "@napier/contracts";
 
-import type { LocalStore } from "./store.js";
+import type { ReplayStorePort } from "./store-port.js";
 import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { compareRunConfigurations } from "./run-config.js";
@@ -79,7 +79,7 @@ const EVENT_VISIBILITIES = new Set(["user", "debug", "hidden"]);
 const SHA256 = /^[a-f0-9]{64}$/;
 
 export async function createRunReplaySnapshot(
-  store: LocalStore,
+  store: ReplayStorePort,
   threadId: string,
   runId: string,
 ): Promise<RunReplaySnapshot> {
@@ -146,7 +146,7 @@ export function verifyRunReplaySnapshot(
 }
 
 export async function exportThreadReplayBundle(
-  store: LocalStore,
+  store: ReplayStorePort,
   threadId: string,
 ): Promise<ThreadReplayBundle> {
   const detail = await store.getDetail(threadId);
@@ -158,7 +158,7 @@ export async function exportThreadReplayBundle(
 }
 
 export async function compareRuns(
-  store: LocalStore,
+  store: ReplayStorePort,
   threadId: string,
   leftRunId: string,
   rightRunId: string,

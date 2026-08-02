@@ -13,7 +13,7 @@ import {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createExecutionPlanArchive } from "./plan-archives.js";
 import { createExecutionPlan } from "./plans.js";
-import type { LocalStore } from "./store.js";
+import type { WorkflowBlueprintStorePort } from "./store-port.js";
 
 export const MAX_EXECUTION_PLAN_BLUEPRINT_BYTES = 2 * 1024 * 1024;
 
@@ -26,7 +26,7 @@ export type ExecutionPlanBlueprintContent = Omit<
 >;
 
 export async function createExecutionPlanBlueprint(
-  store: LocalStore,
+  store: WorkflowBlueprintStorePort,
   threadId: string,
   planId: string,
 ): Promise<ExecutionPlanBlueprint> {
@@ -341,7 +341,7 @@ export function validateExecutionPlanBlueprintRecord(
 }
 
 export async function qualifyExecutionPlanBlueprintRecord(
-  store: LocalStore,
+  store: WorkflowBlueprintStorePort,
   recordId: string,
 ): Promise<ExecutionPlanBlueprintRecordQualification> {
   const qualifiedAt = new Date().toISOString();
