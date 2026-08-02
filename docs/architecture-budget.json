@@ -45,7 +45,7 @@
     "apps/web/test/receipt-trust-api.test.ts": 1751,
     "apps/web/test/stream-api.test.ts": 2372,
     "apps/web/test/tool-event-view.test.ts": 1690,
-    "packages/contracts/src/index.ts": 8651,
+    "packages/contracts/src/index.ts": 7396,
     "packages/runtime/src/agent-runtime.ts": 3742,
     "packages/runtime/src/agents.ts": 817,
     "packages/runtime/src/automatic-recovery.ts": 815,
@@ -245,12 +245,16 @@
     "packages/runtime/src/write-linked-resolution-config.ts": 42
   },
   "publicExports": {
-    "packages/contracts/src/index.ts": 796,
+    "packages/contracts/src/execution-core.ts": 30,
+    "packages/contracts/src/execution-experiments.ts": 22,
+    "packages/contracts/src/execution-runs.ts": 21,
+    "packages/contracts/src/execution-workflows.ts": 40,
+    "packages/contracts/src/index.ts": 670,
+    "packages/contracts/src/workflow-experiments.ts": 18,
     "packages/runtime/src/index.ts": 201,
     "packages/sdk/src/index.ts": 22
   },
   "allowedCycles": [
-    ["packages/contracts/src/index.ts", "packages/contracts/src/rpc.ts"],
     [
       "packages/runtime/src/agent-kernels.ts",
       "packages/runtime/src/agent-milestone-tool.ts",

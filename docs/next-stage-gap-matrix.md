@@ -21,7 +21,7 @@ Audit date: 2026-08-02
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root public exports, workspace dependency direction, and 2 explicitly documented legacy import components, down from 10. Seven additional CLI/Runtime cycles were removed through leaf domain models without public API growth. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Memory HTTP is the first Store-SPI-bound Server extraction. Continue decomposing the Contracts/RPC pair and 54-module Runtime core component; extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and the one remaining legacy Runtime import component, down from 10. Seven CLI/Runtime cycles were removed through leaf domain models; the 133-declaration Contracts/RPC closure moved into five bounded execution domains. Both changes preserve the public API. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Memory HTTP is the first Store-SPI-bound Server extraction. Continue decomposing the 54-module Runtime core component; extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, and explicitly preauthorized failed-write compensation now exist. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, a guardian, proved orphan cleanup, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; directory lifecycle, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain.                      |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -131,14 +131,39 @@ Observed result:
 - removed seven checked strongly connected components: both CLI cycles plus
   Embedded Workflow, Sandbox terminal, Subagent Outcome, Workspace Patch, and
   Process resize cycles;
-- the architecture baseline now covers 587 production and 340 test modules
-  with only two explicit legacy components, down from ten before the ratchet;
+- the architecture baseline at this slice covered 587 production and 340 test
+  modules with two explicit legacy components, down from ten before the
+  ratchet;
 - `cli-options.ts` decreased from 727 to 721 lines, `cli.ts` from 710 to 696,
   `tools.ts` from 1,848 to 1,807, and `workspace-process-events.ts` from 612 to
   603;
-- remaining debt is not another small type edge: Contracts/RPC closes over
-  133 declarations, while the Runtime component contains 54 modules. Both
-  require deliberate domain/API decomposition.
+- the Contracts/RPC edge closed over 133 declarations and therefore required
+  the subsequent domain extraction below. The remaining Runtime component
+  contains 54 modules and still requires deliberate domain/API decomposition.
+
+## Implemented Slice: Contracts Execution Domain Extraction
+
+User scenario: RPC contracts must consume stable execution-domain types
+without importing the 8,651-line public Contracts root back into its own
+dependency graph.
+
+Observed result:
+
+- moved the complete 133-declaration RPC dependency closure into bounded
+  `execution-core`, `execution-runs`, `execution-workflows`,
+  `execution-experiments`, and `workflow-experiments` modules;
+- each new module is 190-427 lines. The Contracts root decreased from 8,651 to
+  7,396 lines, and `rpc.ts` now imports only the leaf domains it uses;
+- a TypeScript semantic export comparison reports exactly 825 root symbols
+  before and after, with zero additions or removals;
+- architecture budgets cover every new domain export surface independently:
+  30 core, 21 run, 40 workflow, 22 general experiment, and 18 Workflow
+  experiment declarations;
+- the Contracts/RPC strongly connected component is gone. The gate now covers
+  592 production and 340 test modules with one remaining 54-module Runtime
+  component;
+- Contracts and every downstream workspace typecheck against the rebuilt
+  package without compatibility changes.
 
 ## Implemented Slice: Ratcheted Architecture Growth Gate
 
@@ -148,7 +173,7 @@ architecture is incrementally extracted.
 
 Observed result:
 
-- `npm run check:architecture` analyzes 587 production and 340 test TypeScript
+- `npm run check:architecture` analyzes 592 production and 340 test TypeScript
   modules through the TypeScript AST and a relative-import graph;
 - new production modules default to 500 lines, tests to 1,000 lines, and
   functions to complexity 25. Existing exceptions are exact rather than broad
@@ -158,7 +183,7 @@ Observed result:
   depend only on Contracts and Runtime;
 - Contracts, Runtime, and SDK root export counts cannot grow without an
   explicit compatibility decision;
-- 2 current strongly connected components are recorded as debt. New or
+- 1 current strongly connected component is recorded as debt. New or
   enlarged cycles fail, while removed cycles make the baseline stale;
 - five fault-injection tests prove module/complexity growth, stale debt,
   public-export growth, new cycles, and reversed workspace dependencies fail.
@@ -175,7 +200,8 @@ Observed result:
 - the SDK public root remains source- and type-compatible at 22 exports while
   shrinking from 570 to 546 lines;
 - the architecture gate removed the stale SDK cycle baseline; subsequent leaf
-  extractions reduced the current total to 2 remaining components;
+  and Contracts domain extractions reduced the current total to 1 remaining
+  component;
 - all 28 SDK tests pass, including external built-package usage, experiments,
   approval recovery, and JavaScript/Python Workflow nodes.
 

@@ -1,30 +1,55 @@
+import type {
+  AutomaticRecoveryPolicy,
+  JsonPrimitive,
+  JsonValue,
+  McpToolEffect,
+  ModelAdvisorPolicy,
+  ModelAdvisorRuleId,
+  ModelRef,
+  OperatorDecision,
+  ResolvedModelAdvisorPolicy,
+  RunEvent,
+  RunLimits,
+  SubagentLimits,
+  SubagentRole,
+  TerminalRunStatus,
+  ToolLoopGuardPolicy,
+  ToolPolicyMode,
+  Usage,
+} from "./execution-core.js";
+import type {
+  AgentMessageExperimentResult,
+  ModelInvocationPurpose,
+  ModelInvocationExperimentResult,
+  ModelInvocationExperimentStatus,
+  ToolInvocationExperimentResult,
+  ToolInvocationExperimentStatus,
+} from "./execution-experiments.js";
+import type {
+  AgentProfile,
+  PromptVariableDefinition,
+  RunConfigurationDelta,
+  RunMetricDelta,
+  RunMetrics,
+  RunRecord,
+} from "./execution-runs.js";
+import type {
+  ArtifactManifestEntry,
+  ArtifactManifestStatus,
+  CreateExecutionPlanRequest,
+  ExecutionPlanBlueprint,
+  ExecutionPlanStatus,
+  ExecutionPlanWorkflowManifest,
+  ExecutionPlanWorkflowResult,
+  ExecutionPlanWorkflowStatus,
+  PlanStepStatus,
+  WorkflowObjectSchema,
+} from "./execution-workflows.js";
+import type { ExecutionPlanWorkflowExperimentResult } from "./workflow-experiments.js";
+
 export const NAPIER_API_VERSION = "2026-07-25";
 
-export type JsonPrimitive = boolean | number | string | null;
-export type JsonValue =
-  | JsonPrimitive
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
 export type ThreadStatus = "idle" | "running" | "waiting" | "failed";
-export type RunStatus =
-  | "queued"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled"
-  | "interrupted";
-export type TerminalRunStatus = Exclude<RunStatus, "queued" | "running">;
-export type RunInvocationSource =
-  | "user"
-  | "recovery"
-  | "schedule"
-  | "channel"
-  | "workflow"
-  | "workflow_reuse"
-  | "workflow_simulation"
-  | "model_experiment"
-  | "tool_experiment";
 export type GoalStatus = "active" | "completed" | "blocked";
 export type GoalBlocker =
   | "none"
@@ -33,33 +58,6 @@ export type GoalBlocker =
   | "run_failed"
   | "external_wait"
   | "goal_not_met_yet";
-
-export type EventCategory =
-  | "lifecycle"
-  | "message"
-  | "model"
-  | "tool"
-  | "artifact"
-  | "goal"
-  | "plan"
-  | "memory"
-  | "subagent"
-  | "extension"
-  | "credential"
-  | "evaluation"
-  | "automation"
-  | "channel"
-  | "system";
-
-export type EventVisibility = "user" | "debug" | "hidden";
-
-export interface Usage extends Record<string, JsonPrimitive> {
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadTokens: number;
-  cacheWriteTokens: number;
-  costUsd: number;
-}
 
 export type UsageAccountingStrategy =
   | "demo_estimate"
@@ -133,18 +131,6 @@ export interface VerifyUsagePriceTableCatalogRequest {
   requiredProviders?: string[];
 }
 
-export interface RunEvent<TPayload extends JsonValue = JsonValue> {
-  id: string;
-  threadId: string;
-  runId: string;
-  seq: number;
-  type: string;
-  category: EventCategory;
-  visibility: EventVisibility;
-  createdAt: string;
-  payload: TPayload;
-}
-
 export interface TextMessagePayload {
   role: "user" | "assistant" | "system";
   text: string;
@@ -164,13 +150,7 @@ export interface ToolEventPayload {
   policyReason?: string;
 }
 
-export type ModelAdvisorRuleId =
-  | "unverified_verification_claim"
-  | "destructive_command_reference";
-
 export type ModelAdvisorSeverity = "warning" | "blocker";
-
-export type ModelAdvisorMode = "observe" | "enforce" | "off";
 
 export type IndependentModelAdvisorIssueCode =
   | "instruction_following"
@@ -323,30 +303,6 @@ export interface ModelAdvisorNoticePayload {
   contentSha256: string;
 }
 
-export interface LegacyModelAdvisorPolicy {
-  mode: ModelAdvisorMode;
-  enabledRules: ModelAdvisorRuleId[];
-}
-
-export interface ModelAdvisorPolicy extends LegacyModelAdvisorPolicy {
-  maxCorrectionAttempts?: number;
-  reviewModel?: ModelRef;
-}
-
-export interface ResolvedModelAdvisorPolicy extends ModelAdvisorPolicy {
-  maxCorrectionAttempts: number;
-}
-
-export interface LegacyResolvedModelAdvisorPolicy extends LegacyModelAdvisorPolicy {
-  maxCorrectionAttempts: number;
-}
-
-export interface ToolLoopGuardPolicy {
-  enabled: boolean;
-  threshold: number;
-  exemptTools: string[];
-}
-
 export interface ToolLoopGuardContextReceipt {
   kind: "napier.tool-loop-guard-context";
   schemaVersion: 1;
@@ -440,25 +396,6 @@ export interface GoalEvaluation {
   reason: string;
   evidence: string;
 }
-
-export type ExecutionPlanStatus =
-  | "active"
-  | "completed"
-  | "blocked"
-  | "cancelled";
-export type PlanStepStatus =
-  | "pending"
-  | "ready"
-  | "running"
-  | "completed"
-  | "blocked"
-  | "skipped";
-export type ArtifactManifestStatus =
-  | "expected"
-  | "produced"
-  | "verified"
-  | "missing"
-  | "superseded";
 export type ExecutionPlanReplanStrategy =
   | "recover_blocked"
   | "scope_change"
@@ -476,20 +413,6 @@ export interface PlanStep {
   runId?: string;
   startedAt?: string;
   finishedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ArtifactManifestEntry {
-  id: string;
-  path: string;
-  kind: "file" | "directory" | "url" | "other";
-  description: string;
-  status: ArtifactManifestStatus;
-  sha256?: string;
-  sizeBytes?: number;
-  sourceRunId?: string;
-  evidence: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -642,23 +565,6 @@ export interface ExecutionPlan {
   updatedAt: string;
 }
 
-export interface CreateExecutionPlanRequest {
-  objective: string;
-  steps: Array<{
-    id: string;
-    title: string;
-    description: string;
-    verification: string;
-    dependsOn?: string[];
-  }>;
-  artifacts?: Array<{
-    id: string;
-    path: string;
-    kind?: ArtifactManifestEntry["kind"];
-    description: string;
-  }>;
-}
-
 export interface ReplanExecutionPlanRequest {
   expectedRevision: number;
   strategy: ExecutionPlanReplanStrategy;
@@ -727,30 +633,6 @@ export interface ExecutionPlanArchiveVerification {
   eventStreamSha256?: string;
 }
 
-export interface ExecutionPlanBlueprintSource {
-  type: "plan";
-  threadId: string;
-  planId: string;
-  planRevision: number;
-  planArchiveSha256: string;
-  eventStreamSha256: string;
-}
-
-export interface ExecutionPlanBlueprint {
-  kind: "napier.execution-plan-blueprint";
-  schemaVersion: 1;
-  apiVersion: string;
-  generatedAt: string;
-  title: string;
-  objective: string;
-  source: ExecutionPlanBlueprintSource;
-  steps: CreateExecutionPlanRequest["steps"];
-  artifacts?: NonNullable<CreateExecutionPlanRequest["artifacts"]>;
-  stepCount: number;
-  artifactCount: number;
-  contentSha256: string;
-}
-
 export interface VerifyExecutionPlanBlueprintRequest {
   blueprint: ExecutionPlanBlueprint;
 }
@@ -773,274 +655,6 @@ export interface ExecutionPlanBlueprintVerification {
 export interface CreateExecutionPlanFromBlueprintRequest {
   blueprint: ExecutionPlanBlueprint;
   objective?: string;
-}
-
-export interface WorkflowNullSchema {
-  type: "null";
-}
-
-export interface WorkflowBooleanSchema {
-  type: "boolean";
-}
-
-export interface WorkflowNumberSchema {
-  type: "number" | "integer";
-  minimum?: number;
-  maximum?: number;
-}
-
-export interface WorkflowStringSchema {
-  type: "string";
-  minLength?: number;
-  maxLength?: number;
-  enum?: string[];
-}
-
-export interface WorkflowArraySchema {
-  type: "array";
-  items: WorkflowValueSchema;
-  minItems?: number;
-  maxItems?: number;
-}
-
-export interface WorkflowObjectSchema {
-  type: "object";
-  properties: Record<string, WorkflowValueSchema>;
-  required: string[];
-  additionalProperties: false;
-}
-
-export type WorkflowValueSchema =
-  | WorkflowNullSchema
-  | WorkflowBooleanSchema
-  | WorkflowNumberSchema
-  | WorkflowStringSchema
-  | WorkflowArraySchema
-  | WorkflowObjectSchema;
-
-export type ExecutionPlanWorkflowValuePathSegment = string | number;
-
-export type ExecutionPlanWorkflowInputBinding =
-  | {
-      source: "literal";
-      value: JsonValue;
-    }
-  | {
-      source: "workflow";
-      path?: ExecutionPlanWorkflowValuePathSegment[];
-    }
-  | {
-      source: "node";
-      nodeId: string;
-      path?: ExecutionPlanWorkflowValuePathSegment[];
-    };
-
-export interface ExecutionPlanWorkflowCondition {
-  path: ExecutionPlanWorkflowValuePathSegment[];
-  equals: JsonValue;
-}
-
-export interface ExecutionPlanWorkflowDeterministicSwitchCase {
-  id: string;
-  equals: JsonValue;
-  then: ExecutionPlanWorkflowDeterministicTemplate;
-}
-
-export type ExecutionPlanWorkflowDeterministicTemplate =
-  | {
-      kind: "literal";
-      value: JsonValue;
-    }
-  | {
-      kind: "input";
-      path?: ExecutionPlanWorkflowValuePathSegment[];
-    }
-  | {
-      kind: "object";
-      properties: Record<string, ExecutionPlanWorkflowDeterministicTemplate>;
-    }
-  | {
-      kind: "array";
-      items: ExecutionPlanWorkflowDeterministicTemplate[];
-    }
-  | {
-      kind: "switch";
-      path: ExecutionPlanWorkflowValuePathSegment[];
-      cases: ExecutionPlanWorkflowDeterministicSwitchCase[];
-      default?: ExecutionPlanWorkflowDeterministicTemplate;
-    };
-
-export interface ExecutionPlanWorkflowAgentNode {
-  id: string;
-  type: "agent";
-  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
-  inputSchema: WorkflowObjectSchema;
-  outputSchema: WorkflowValueSchema;
-  when?: ExecutionPlanWorkflowCondition;
-  skipOutput?: JsonValue;
-  model?: ModelRef;
-  timeoutMs: number;
-  maxAttempts: number;
-}
-
-export interface ExecutionPlanWorkflowDeterministicNode {
-  id: string;
-  type: "deterministic";
-  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
-  inputSchema: WorkflowObjectSchema;
-  outputSchema: WorkflowValueSchema;
-  when?: ExecutionPlanWorkflowCondition;
-  skipOutput?: JsonValue;
-  template: ExecutionPlanWorkflowDeterministicTemplate;
-  timeoutMs: number;
-  maxAttempts: number;
-}
-
-export interface ExecutionPlanWorkflowJavascriptNode {
-  id: string;
-  type: "javascript";
-  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
-  inputSchema: WorkflowObjectSchema;
-  outputSchema: WorkflowValueSchema;
-  when?: ExecutionPlanWorkflowCondition;
-  skipOutput?: JsonValue;
-  cells: string[];
-  evaluationTimeoutMs: number;
-  timeoutMs: number;
-  maxAttempts: number;
-}
-
-export interface ExecutionPlanWorkflowPythonNode {
-  id: string;
-  type: "python";
-  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
-  inputSchema: WorkflowObjectSchema;
-  outputSchema: WorkflowValueSchema;
-  when?: ExecutionPlanWorkflowCondition;
-  skipOutput?: JsonValue;
-  cells: string[];
-  evaluationTimeoutMs: number;
-  timeoutMs: number;
-  maxAttempts: number;
-}
-
-export interface ExecutionPlanWorkflowMapNode {
-  id: string;
-  type: "map";
-  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
-  inputSchema: WorkflowObjectSchema;
-  outputSchema: WorkflowArraySchema;
-  when?: ExecutionPlanWorkflowCondition;
-  skipOutput?: JsonValue;
-  itemsPath: ExecutionPlanWorkflowValuePathSegment[];
-  model?: ModelRef;
-  maxConcurrency: number;
-  itemTimeoutMs: number;
-  timeoutMs: number;
-  maxAttempts: number;
-}
-
-export interface ExecutionPlanWorkflowLoopNode {
-  id: string;
-  type: "loop";
-  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
-  inputSchema: WorkflowObjectSchema;
-  outputSchema: WorkflowValueSchema;
-  when?: ExecutionPlanWorkflowCondition;
-  skipOutput?: JsonValue;
-  until: ExecutionPlanWorkflowCondition;
-  model?: ModelRef;
-  maxIterations: number;
-  iterationTimeoutMs: number;
-  timeoutMs: number;
-  maxAttempts: number;
-}
-
-export const EXECUTION_PLAN_WORKFLOW_REDUCE_OPERATIONS = [
-  "count",
-  "sum",
-  "minimum",
-  "maximum",
-  "all",
-  "any",
-] as const;
-
-export type ExecutionPlanWorkflowReduceOperation =
-  (typeof EXECUTION_PLAN_WORKFLOW_REDUCE_OPERATIONS)[number];
-
-export interface ExecutionPlanWorkflowReduceNode {
-  id: string;
-  type: "reduce";
-  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
-  inputSchema: WorkflowObjectSchema;
-  outputSchema: WorkflowValueSchema;
-  when?: ExecutionPlanWorkflowCondition;
-  skipOutput?: JsonValue;
-  itemsPath: ExecutionPlanWorkflowValuePathSegment[];
-  valuePath?: ExecutionPlanWorkflowValuePathSegment[];
-  operation: ExecutionPlanWorkflowReduceOperation;
-  timeoutMs: number;
-  maxAttempts: number;
-}
-
-export const EXECUTION_PLAN_WORKFLOW_TOOL_NAMES = [
-  "list_files",
-  "read_file",
-  "search_files",
-  "list_symbols",
-  "inspect_data",
-  "sqlite_query",
-  "inspect_code",
-  "read_symbol",
-  "ast_query",
-  "ast_edit_preview",
-  "lsp_diagnostics",
-  "lsp_symbols",
-  "lsp_definition",
-  "lsp_references",
-  "lsp_rename",
-  "lsp_code_actions",
-  "apply_patch",
-  "run_command",
-  "verify_workspace",
-] as const;
-
-export type ExecutionPlanWorkflowToolName =
-  (typeof EXECUTION_PLAN_WORKFLOW_TOOL_NAMES)[number];
-
-export interface ExecutionPlanWorkflowToolNode {
-  id: string;
-  type: "tool";
-  tool: ExecutionPlanWorkflowToolName;
-  effect: Exclude<McpToolEffect, "unknown">;
-  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
-  inputSchema: WorkflowObjectSchema;
-  outputSchema: WorkflowValueSchema;
-  when?: ExecutionPlanWorkflowCondition;
-  skipOutput?: JsonValue;
-  timeoutMs: number;
-  maxAttempts: number;
-}
-
-export interface ExecutionPlanWorkflowApprovalChoice {
-  label: string;
-  description: string;
-}
-
-export interface ExecutionPlanWorkflowApprovalNode {
-  id: string;
-  type: "approval";
-  header: string;
-  question: string;
-  approve: ExecutionPlanWorkflowApprovalChoice;
-  reject: ExecutionPlanWorkflowApprovalChoice;
-  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
-  inputSchema: WorkflowObjectSchema;
-  outputSchema: WorkflowObjectSchema;
-  when?: ExecutionPlanWorkflowCondition;
-  skipOutput?: JsonValue;
-  timeoutMs: number;
-  maxAttempts: number;
 }
 
 export const EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA = {
@@ -1067,35 +681,6 @@ export const EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const satisfies WorkflowObjectSchema;
 
-export type ExecutionPlanWorkflowNode =
-  | ExecutionPlanWorkflowAgentNode
-  | ExecutionPlanWorkflowDeterministicNode
-  | ExecutionPlanWorkflowJavascriptNode
-  | ExecutionPlanWorkflowPythonNode
-  | ExecutionPlanWorkflowMapNode
-  | ExecutionPlanWorkflowLoopNode
-  | ExecutionPlanWorkflowReduceNode
-  | ExecutionPlanWorkflowToolNode
-  | ExecutionPlanWorkflowApprovalNode;
-
-export interface ExecutionPlanWorkflowManifest {
-  kind: "napier.execution-plan-workflow";
-  schemaVersion: 1;
-  apiVersion: string;
-  generatedAt: string;
-  name: string;
-  version: number;
-  description: string;
-  blueprint: ExecutionPlanBlueprint;
-  inputSchema: WorkflowValueSchema;
-  outputSchema: WorkflowValueSchema;
-  outputNodeId: string;
-  nodes: ExecutionPlanWorkflowNode[];
-  nodeCount: number;
-  maxConcurrency?: number;
-  contentSha256: string;
-}
-
 export interface ExecutionPlanWorkflowManifestVerification {
   status: "valid" | "invalid";
   diagnostics: string[];
@@ -1104,59 +689,6 @@ export interface ExecutionPlanWorkflowManifestVerification {
   blueprintSha256?: string;
   inputSchemaSha256?: string;
   outputSchemaSha256?: string;
-}
-
-export type ExecutionPlanWorkflowNodeStatus =
-  | "completed"
-  | "skipped"
-  | "waiting"
-  | "blocked"
-  | "cancelled";
-
-export interface ExecutionPlanWorkflowNodeResult {
-  nodeId: string;
-  attempt: number;
-  status: ExecutionPlanWorkflowNodeStatus;
-  inputSha256: string;
-  inputSchemaSha256: string;
-  outputSchemaSha256: string;
-  runId?: string;
-  decisionId?: string;
-  output?: JsonValue;
-  outputSha256?: string;
-  errorCode?: string;
-  diagnosticSha256?: string;
-}
-
-export type ExecutionPlanWorkflowStatus =
-  | "completed"
-  | "waiting"
-  | "paused"
-  | "blocked"
-  | "cancelled";
-
-export interface ExecutionPlanWorkflowBreakpoint {
-  nodeId: string;
-  breakpointIndex: number;
-  breakpointCount: number;
-  reachedEventSeq: number;
-  bindingContextSha256: string;
-}
-
-export interface ExecutionPlanWorkflowResult {
-  kind: "napier.execution-plan-workflow-result";
-  schemaVersion: 1;
-  threadId: string;
-  planId: string;
-  manifestSha256: string;
-  blueprintSha256: string;
-  status: ExecutionPlanWorkflowStatus;
-  resumed: boolean;
-  nodeResults: ExecutionPlanWorkflowNodeResult[];
-  breakpoint?: ExecutionPlanWorkflowBreakpoint;
-  output?: JsonValue;
-  outputSha256?: string;
-  resultSha256: string;
 }
 
 export type ExecuteExecutionPlanWorkflowRequest =
@@ -1177,110 +709,6 @@ export type ExecuteExecutionPlanWorkflowRequest =
       breakBeforeNodeIds?: never;
     };
 
-export interface AgentMessageExperimentToolEffects {
-  toolCallCount: number;
-  readOnlyCount: number;
-  writeCount: number;
-  unknownCount: number;
-  unresolvedCount: number;
-  writeToolNames: string[];
-  unknownToolNames: string[];
-}
-
-export type AgentMessageExperimentToolResultMode = "live" | "reuse_source";
-
-export interface CreateAgentMessageExperimentRequest {
-  sourceRunId: string;
-  sourceMessageSeq: number;
-  model?: ModelRef;
-  title?: string;
-  toolResultMode?: AgentMessageExperimentToolResultMode;
-  expectedPreviewSha256?: string;
-}
-
-export interface AgentMessageExperimentPreview {
-  kind: "napier.agent-message-experiment-preview";
-  schemaVersion: 2;
-  sourceThreadId: string;
-  sourceRunId: string;
-  sourceMessageSeq: number;
-  branchFromSeq: number;
-  sourceAgentId: string;
-  sourceAgentRevision: number;
-  sourceRunConfigurationSha256: string;
-  sourcePromptVariableResolvedAt: string;
-  sourcePromptSha256: string;
-  sourceHistorySha256: string;
-  sourceHistoryMessageCount: number;
-  sourceMemoryContextSha256: string;
-  sourceSkillCatalogSha256: string;
-  candidateWorkspaceSnapshotSha256: string;
-  candidateWorkspaceFileCount: number;
-  candidateWorkspaceBytes: number;
-  sourceModel: ModelRef;
-  targetModel: ModelRef;
-  targetExecutionMode: "agent_experiment_read_only";
-  targetToolNames: string[];
-  sourceToolEffects: AgentMessageExperimentToolEffects;
-  toolResultMode: AgentMessageExperimentToolResultMode;
-  sourceReusableToolResultCount: number;
-  sourceToolResultSetSha256: string;
-  previewSha256: string;
-}
-
-export interface AgentMessageExperimentRunObservation {
-  threadId: string;
-  runId: string;
-  status: TerminalRunStatus;
-  configurationSha256: string;
-  model: ModelRef;
-  executionMode: RunExecutionMode;
-  metrics: RunMetrics;
-  toolNames: string[];
-  toolEffects: AgentMessageExperimentToolEffects;
-}
-
-export interface AgentMessageExperimentComparison {
-  kind: "napier.agent-message-experiment-comparison";
-  schemaVersion: 1;
-  source: AgentMessageExperimentRunObservation;
-  target: AgentMessageExperimentRunObservation;
-  metricDelta: RunMetricDelta;
-  outputChanged: boolean;
-  addedToolNames: string[];
-  removedToolNames: string[];
-  configurationDelta: RunConfigurationDelta;
-  contentSha256: string;
-}
-
-export interface AgentMessageExperimentResult {
-  kind: "napier.agent-message-experiment-result";
-  schemaVersion: 2;
-  preview: AgentMessageExperimentPreview;
-  targetThreadId: string;
-  targetRunId: string;
-  status: TerminalRunStatus;
-  assistantText?: string;
-  toolResultReuse: AgentMessageExperimentToolResultReuse;
-  comparison: AgentMessageExperimentComparison;
-}
-
-export interface AgentMessageExperimentToolResultReuse {
-  mode: AgentMessageExperimentToolResultMode;
-  sourceResultCount: number;
-  reusedResultCount: number;
-  divergenceCount: number;
-  complete: boolean;
-  sourceResultSetSha256: string;
-  targetReuseSetSha256: string;
-}
-
-export type ModelInvocationPurpose =
-  | "agent_turn"
-  | "context_compaction"
-  | "goal_evaluation"
-  | "memory_extraction";
-
 export interface ModelInvocationCapsuleReceipt {
   kind: "napier.model-invocation-capsule-receipt";
   schemaVersion: 1;
@@ -1293,94 +721,6 @@ export interface ModelInvocationCapsuleReceipt {
   capsuleBytes: number;
   storage: "local_only";
   contentSha256: string;
-}
-
-export interface CreateModelInvocationExperimentRequest {
-  sourceRunId: string;
-  sourceTurnIndex: number;
-  model?: ModelRef;
-  title?: string;
-  expectedPreviewSha256?: string;
-}
-
-export interface ModelInvocationExperimentPreview {
-  kind: "napier.model-invocation-experiment-preview";
-  schemaVersion: 1;
-  sourceThreadId: string;
-  sourceRunId: string;
-  sourceAgentId: string;
-  sourceAgentRevision: number;
-  sourceTurnIndex: number;
-  sourceCapsuleEventSeq: number;
-  sourceResponseEventSeq: number;
-  purpose: ModelInvocationPurpose;
-  sourceModel: ModelRef;
-  targetModel: ModelRef;
-  sourceContextEnvelopeSha256: string;
-  sourceContextSha256: string;
-  sourceCapsuleSha256: string;
-  sourceCapsuleBytes: number;
-  sourceMessageCount: number;
-  sourceToolCount: number;
-  sourceOutputSha256: string;
-  sourceTextSha256: string;
-  sourceStopReason: string;
-  targetExecutionMode: "model_experiment_single_call";
-  previewSha256: string;
-}
-
-export type ModelInvocationExperimentStatus =
-  | "completed"
-  | "failed"
-  | "cancelled";
-
-export interface ModelInvocationExperimentObservation {
-  threadId: string;
-  runId: string;
-  status: ModelInvocationExperimentStatus;
-  model: ModelRef;
-  stopReason: string;
-  durationMs: number;
-  usage: Usage;
-  textSha256: string;
-  outputSha256: string;
-  toolCallCount: number;
-  toolNames: string[];
-}
-
-export interface ModelInvocationExperimentMetricDelta {
-  durationMs: number;
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadTokens: number;
-  cacheWriteTokens: number;
-  costUsd: number;
-  toolCallCount: number;
-}
-
-export interface ModelInvocationExperimentComparison {
-  kind: "napier.model-invocation-experiment-comparison";
-  schemaVersion: 1;
-  source: ModelInvocationExperimentObservation;
-  target: ModelInvocationExperimentObservation;
-  metricDelta: ModelInvocationExperimentMetricDelta;
-  outputChanged: boolean;
-  textChanged: boolean;
-  addedToolNames: string[];
-  removedToolNames: string[];
-  contentSha256: string;
-}
-
-export interface ModelInvocationExperimentResult {
-  kind: "napier.model-invocation-experiment-result";
-  schemaVersion: 1;
-  preview: ModelInvocationExperimentPreview;
-  targetThreadId: string;
-  targetRunId: string;
-  status: ModelInvocationExperimentStatus;
-  assistantText?: string;
-  candidateToolCallNames: string[];
-  comparison: ModelInvocationExperimentComparison;
 }
 
 export interface ToolInvocationCapsuleReceipt {
@@ -1414,291 +754,6 @@ export interface ToolInvocationResultCapsuleReceipt {
   capsuleBytes: number;
   storage: "local_only";
   contentSha256: string;
-}
-
-export interface CreateToolInvocationExperimentRequest {
-  sourceRunId: string;
-  sourceCallId: string;
-  title?: string;
-  expectedPreviewSha256?: string;
-}
-
-export interface ToolInvocationExperimentPreview {
-  kind: "napier.tool-invocation-experiment-preview";
-  schemaVersion: 1;
-  sourceThreadId: string;
-  sourceRunId: string;
-  sourceAgentId: string;
-  sourceAgentRevision: number;
-  sourceCallId: string;
-  sourceCapsuleEventSeq: number;
-  sourceStartedEventSeq: number;
-  sourceTerminalEventSeq: number;
-  sourceToolName: string;
-  sourceEffect: "read";
-  sourceToolDefinitionSha256: string;
-  sourceArgumentsSha256: string;
-  sourceWorkspaceScopeSha256: string;
-  sourceCapsuleSha256: string;
-  sourceCapsuleBytes: number;
-  sourceDurationMs: number;
-  sourceOutputSha256: string;
-  sourceOutputBytes: number;
-  candidateWorkspaceSnapshotSha256: string;
-  candidateWorkspaceFileCount: number;
-  candidateWorkspaceBytes: number;
-  targetExecutionMode: "tool_experiment_read_only";
-  previewSha256: string;
-}
-
-export type ToolInvocationExperimentStatus =
-  | "completed"
-  | "failed"
-  | "cancelled";
-
-export interface ToolInvocationExperimentObservation {
-  threadId: string;
-  runId: string;
-  status: ToolInvocationExperimentStatus;
-  toolName: string;
-  durationMs: number;
-  outputSha256: string;
-  outputBytes: number;
-}
-
-export interface ToolInvocationExperimentComparison {
-  kind: "napier.tool-invocation-experiment-comparison";
-  schemaVersion: 1;
-  source: ToolInvocationExperimentObservation;
-  target: ToolInvocationExperimentObservation;
-  durationMsDelta: number;
-  outputChanged: boolean;
-  contentSha256: string;
-}
-
-export interface ToolInvocationExperimentResult {
-  kind: "napier.tool-invocation-experiment-result";
-  schemaVersion: 1;
-  preview: ToolInvocationExperimentPreview;
-  targetThreadId: string;
-  targetRunId: string;
-  status: ToolInvocationExperimentStatus;
-  candidateOutput?: string;
-  comparison: ToolInvocationExperimentComparison;
-}
-
-export interface ExecutionPlanWorkflowExperimentToolEffects {
-  nodeId: string;
-  attemptCount: number;
-  toolCallCount: number;
-  readOnlyCount: number;
-  writeCount: number;
-  unknownCount: number;
-  unresolvedCount: number;
-  writeToolNames: string[];
-  unknownToolNames: string[];
-}
-
-export type ExecutionPlanWorkflowExperimentMode =
-  | "subgraph"
-  | "single_node"
-  | "step_nodes"
-  | "simulate_node"
-  | "replace_input"
-  | "replace_workflow_input";
-
-interface ExecutionPlanWorkflowExperimentPreviewBase {
-  kind: "napier.execution-plan-workflow-experiment-preview";
-  sourceThreadId: string;
-  sourcePlanId: string;
-  sourcePlanRevision: number;
-  sourceManifestSha256: string;
-  candidateManifestSha256: string;
-  sourceAgentId: string;
-  sourceAgentRevision: number;
-  fromNodeId: string;
-  reusedNodeIds: string[];
-  rerunNodeIds: string[];
-  modelOverrides: Record<string, ModelRef>;
-  toolEffects: ExecutionPlanWorkflowExperimentToolEffects[];
-  requiresSideEffectConfirmation: boolean;
-  previewSha256: string;
-}
-
-export interface ExecutionPlanWorkflowExperimentPreviewV1 extends ExecutionPlanWorkflowExperimentPreviewBase {
-  schemaVersion: 1;
-}
-
-export interface ExecutionPlanWorkflowExperimentPreviewV2 extends ExecutionPlanWorkflowExperimentPreviewBase {
-  schemaVersion: 2;
-  mode: "single_node";
-  executionNodeIds: string[];
-  stopBeforeNodeIds: string[];
-}
-
-export interface ExecutionPlanWorkflowExperimentPreviewV3 extends ExecutionPlanWorkflowExperimentPreviewBase {
-  schemaVersion: 3;
-  mode: "simulate_node";
-  executionNodeIds: string[];
-  simulatedNodeId: string;
-  simulatedOutputSha256: string;
-  simulatedOutputBytes: number;
-}
-
-export interface ExecutionPlanWorkflowExperimentPreviewV4 extends ExecutionPlanWorkflowExperimentPreviewBase {
-  schemaVersion: 4;
-  mode: "replace_input";
-  executionNodeIds: string[];
-  replacedInputNodeId: string;
-  replacementInputSha256: string;
-  replacementInputBytes: number;
-}
-
-export interface ExecutionPlanWorkflowExperimentPreviewV5 extends ExecutionPlanWorkflowExperimentPreviewBase {
-  schemaVersion: 5;
-  mode: "step_nodes";
-  executionNodeIds: string[];
-  stopBeforeNodeIds: string[];
-}
-
-export interface ExecutionPlanWorkflowExperimentPreviewV6 extends Omit<
-  ExecutionPlanWorkflowExperimentPreviewBase,
-  "fromNodeId"
-> {
-  schemaVersion: 6;
-  mode: "replace_workflow_input";
-  executionNodeIds: string[];
-  replacementWorkflowInputSha256: string;
-  replacementWorkflowInputBytes: number;
-}
-
-export type ExecutionPlanWorkflowExperimentPreview =
-  | ExecutionPlanWorkflowExperimentPreviewV1
-  | ExecutionPlanWorkflowExperimentPreviewV2
-  | ExecutionPlanWorkflowExperimentPreviewV3
-  | ExecutionPlanWorkflowExperimentPreviewV4
-  | ExecutionPlanWorkflowExperimentPreviewV5
-  | ExecutionPlanWorkflowExperimentPreviewV6;
-
-export interface ExecutionPlanWorkflowExperimentMetricSet {
-  runCount: number;
-  attemptCount: number;
-  durationMs: number;
-  modelResponseCount: number;
-  toolCallCount: number;
-  toolCompletedCount: number;
-  toolFailedCount: number;
-  toolBlockedCount: number;
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadTokens: number;
-  cacheWriteTokens: number;
-  costUsd: number;
-}
-
-export interface ExecutionPlanWorkflowExperimentEvaluationSummary {
-  total: number;
-  leftBetter: number;
-  rightBetter: number;
-  tie: number;
-  inconclusive: number;
-}
-
-export interface ExecutionPlanWorkflowExperimentArtifactSummary {
-  total: number;
-  produced: number;
-  verified: number;
-  missing: number;
-  setSha256: string;
-}
-
-export type ExecutionPlanWorkflowExperimentValueChange =
-  | "unchanged"
-  | "changed"
-  | "became_available"
-  | "became_unavailable"
-  | "unavailable";
-
-export interface ExecutionPlanWorkflowExperimentNodeObservation {
-  status: PlanStepStatus;
-  runIds: string[];
-  runSources: RunInvocationSource[];
-  models: ModelRef[];
-  configurationSha256s: string[];
-  toolNames: string[];
-  inputSha256?: string;
-  outputSha256?: string;
-  metrics: ExecutionPlanWorkflowExperimentMetricSet;
-  evaluations: ExecutionPlanWorkflowExperimentEvaluationSummary;
-}
-
-export interface ExecutionPlanWorkflowExperimentNodeComparison {
-  nodeId: string;
-  execution: "reused" | "rerun" | "simulated" | "input_replaced";
-  source: ExecutionPlanWorkflowExperimentNodeObservation;
-  target: ExecutionPlanWorkflowExperimentNodeObservation;
-  statusChanged: boolean;
-  modelChanged: boolean;
-  configurationChanged: boolean;
-  inputChange: ExecutionPlanWorkflowExperimentValueChange;
-  outputChange: ExecutionPlanWorkflowExperimentValueChange;
-  metricDelta: ExecutionPlanWorkflowExperimentMetricSet;
-  addedToolNames: string[];
-  removedToolNames: string[];
-}
-
-export interface ExecutionPlanWorkflowExperimentComparison {
-  kind: "napier.execution-plan-workflow-experiment-comparison";
-  schemaVersion: 1;
-  sourceThreadId: string;
-  sourcePlanId: string;
-  targetThreadId: string;
-  targetPlanId: string;
-  sourceStatus: ExecutionPlanStatus;
-  targetStatus: ExecutionPlanWorkflowStatus;
-  sourceInputSha256: string;
-  targetInputSha256: string;
-  inputChange: ExecutionPlanWorkflowExperimentValueChange;
-  sourceOutputSha256?: string;
-  targetOutputSha256?: string;
-  outputChange: ExecutionPlanWorkflowExperimentValueChange;
-  reusedNodeCount: number;
-  rerunNodeCount: number;
-  sourceMetrics: ExecutionPlanWorkflowExperimentMetricSet;
-  targetMetrics: ExecutionPlanWorkflowExperimentMetricSet;
-  metricDelta: ExecutionPlanWorkflowExperimentMetricSet;
-  sourceEvaluations: ExecutionPlanWorkflowExperimentEvaluationSummary;
-  targetEvaluations: ExecutionPlanWorkflowExperimentEvaluationSummary;
-  sourceArtifacts: ExecutionPlanWorkflowExperimentArtifactSummary;
-  targetArtifacts: ExecutionPlanWorkflowExperimentArtifactSummary;
-  changedNodeIds: string[];
-  nodes: ExecutionPlanWorkflowExperimentNodeComparison[];
-  contentSha256: string;
-}
-
-export interface CreateExecutionPlanWorkflowExperimentRequest {
-  manifest: ExecutionPlanWorkflowManifest;
-  planId: string;
-  fromNodeId?: string;
-  mode?: ExecutionPlanWorkflowExperimentMode;
-  simulatedOutput?: JsonValue;
-  replacementInput?: JsonValue;
-  replacementWorkflowInput?: JsonValue;
-  title?: string;
-  modelOverrides?: Record<string, ModelRef>;
-  confirmSideEffects?: boolean;
-  expectedPreviewSha256?: string;
-}
-
-export interface ExecutionPlanWorkflowExperimentResult {
-  kind: "napier.execution-plan-workflow-experiment-result";
-  schemaVersion: 1;
-  preview: ExecutionPlanWorkflowExperimentPreview;
-  sourceManifest: ExecutionPlanWorkflowManifest;
-  candidateManifest: ExecutionPlanWorkflowManifest;
-  targetThreadId: string;
-  result: ExecutionPlanWorkflowResult;
-  comparison?: ExecutionPlanWorkflowExperimentComparison;
 }
 
 export type ExecutionPlanBlueprintRecordStatus = "active" | "archived";
@@ -2565,11 +1620,6 @@ export interface ReviewMemoryRequest {
   threadId?: string;
 }
 
-export interface ModelRef {
-  provider: string;
-  id: string;
-}
-
 export type CredentialReferenceSource =
   | {
       type: "environment";
@@ -2623,10 +1673,6 @@ export interface SetCredentialReferenceStatusRequest {
   status: CredentialReferenceStatus;
   threadId?: string;
 }
-
-export type ToolPolicyMode = "observe" | "workspace" | "unrestricted";
-
-export type SubagentRole = "researcher" | "reviewer" | "general" | "coder";
 export type SubagentTaskStatus =
   | "pending"
   | "running"
@@ -2792,37 +1838,6 @@ export interface SubagentOutcomeEvidenceVerification {
   contentSha256: string;
 }
 
-export interface SubagentLimits {
-  maxConcurrent: number;
-  maxTotal: number;
-  maxTurns: number;
-  timeoutMs: number;
-}
-
-export interface RunLimits {
-  maxTurns: number;
-  maxTotalTokens: number;
-  maxCostUsd: number;
-  timeoutMs: number;
-}
-
-export type AutomaticRecoveryMode = "manual" | "safe_read_only";
-
-export interface AutomaticRecoveryPolicy {
-  mode: AutomaticRecoveryMode;
-  maxAttempts: number;
-  backoffMs: number;
-}
-
-export type RunExecutionMode =
-  | "standard"
-  | "safe_read_only_recovery"
-  | "workflow_map_read_only"
-  | "workflow_loop_read_only"
-  | "agent_experiment_read_only"
-  | "model_experiment_single_call"
-  | "tool_experiment_read_only";
-
 export interface SubagentTask {
   id: string;
   threadId: string;
@@ -2894,7 +1909,6 @@ export type ExtensionCapability =
   | "external.write";
 export type ExtensionTrustStatus = "pending" | "approved" | "rejected";
 export type McpToolReviewStatus = "pending" | "approved" | "rejected";
-export type McpToolEffect = "read" | "write" | "unknown";
 export type ExtensionConnectionStatus =
   | "untested"
   | "connecting"
@@ -3505,33 +2519,6 @@ export interface ReviewMcpToolRequest {
   threadId?: string;
 }
 
-export type PromptVariableDateFormat =
-  | "readable-date"
-  | "iso-date"
-  | "local-date-time";
-
-export interface LiteralPromptVariableDefinition {
-  name: string;
-  type: "literal";
-  value: string;
-}
-
-export interface CurrentDatePromptVariableDefinition {
-  name: string;
-  type: "current_date";
-  format: PromptVariableDateFormat;
-}
-
-export interface SkillCatalogPromptVariableDefinition {
-  name: string;
-  type: "skill_catalog";
-}
-
-export type PromptVariableDefinition =
-  | LiteralPromptVariableDefinition
-  | CurrentDatePromptVariableDefinition
-  | SkillCatalogPromptVariableDefinition;
-
 export interface PromptVariableSnapshotEntry {
   name: string;
   type: PromptVariableDefinition["type"];
@@ -3589,28 +2576,6 @@ export const AGENT_TOOL_NAMES = [
 ] as const;
 
 export type AgentToolName = (typeof AGENT_TOOL_NAMES)[number];
-
-export interface AgentProfile {
-  id: string;
-  name: string;
-  description: string;
-  systemPrompt: string;
-  model: ModelRef;
-  thinkingLevel: "off" | "minimal" | "low" | "medium" | "high";
-  toolPolicy: ToolPolicyMode;
-  enabledTools: string[];
-  enabledSkills: string[];
-  enabledSubagents?: SubagentRole[];
-  subagentLimits?: SubagentLimits;
-  runLimits?: RunLimits;
-  automaticRecovery?: AutomaticRecoveryPolicy;
-  modelAdvisor?: ModelAdvisorPolicy;
-  promptVariables?: PromptVariableDefinition[];
-  toolLoopGuard?: ToolLoopGuardPolicy;
-  revision: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export type AgentProfileField =
   | "name"
@@ -3707,94 +2672,6 @@ export interface ThreadRecord extends ThreadSummary {
   importProvenance?: ThreadImportProvenance;
 }
 
-interface RunConfigurationFingerprintBase {
-  agentRevision: number;
-  model: ModelRef;
-  thinkingLevel: AgentProfile["thinkingLevel"];
-  toolPolicy: ToolPolicyMode;
-  enabledTools: string[];
-  enabledSkills: string[];
-  enabledSubagents: SubagentRole[];
-  subagentLimits: SubagentLimits;
-  runLimits: RunLimits;
-  systemPromptSha256: string;
-  contentSha256: string;
-}
-
-export interface RunConfigurationFingerprintV1 extends RunConfigurationFingerprintBase {
-  schemaVersion: 1;
-}
-
-export interface RunConfigurationFingerprintV2 extends RunConfigurationFingerprintBase {
-  schemaVersion: 2;
-  automaticRecovery: AutomaticRecoveryPolicy;
-  executionMode: RunExecutionMode;
-}
-
-export interface RunConfigurationFingerprintV3 extends RunConfigurationFingerprintBase {
-  schemaVersion: 3;
-  automaticRecovery: AutomaticRecoveryPolicy;
-  executionMode: RunExecutionMode;
-  skillCatalogSha256: string;
-}
-
-export interface RunConfigurationFingerprintV4 extends RunConfigurationFingerprintBase {
-  schemaVersion: 4;
-  automaticRecovery: AutomaticRecoveryPolicy;
-  executionMode: RunExecutionMode;
-  skillCatalogSha256: string;
-  modelAdvisor: LegacyModelAdvisorPolicy;
-}
-
-export interface RunConfigurationFingerprintV5 extends RunConfigurationFingerprintBase {
-  schemaVersion: 5;
-  automaticRecovery: AutomaticRecoveryPolicy;
-  executionMode: RunExecutionMode;
-  skillCatalogSha256: string;
-  modelAdvisor: LegacyResolvedModelAdvisorPolicy;
-}
-
-export interface RunConfigurationFingerprintV6 extends RunConfigurationFingerprintBase {
-  schemaVersion: 6;
-  automaticRecovery: AutomaticRecoveryPolicy;
-  executionMode: RunExecutionMode;
-  skillCatalogSha256: string;
-  modelAdvisor: ResolvedModelAdvisorPolicy;
-}
-
-export interface RunConfigurationFingerprintV7 extends RunConfigurationFingerprintBase {
-  schemaVersion: 7;
-  automaticRecovery: AutomaticRecoveryPolicy;
-  executionMode: RunExecutionMode;
-  skillCatalogSha256: string;
-  modelAdvisor: ResolvedModelAdvisorPolicy;
-  promptVariableCatalogSha256: string;
-  promptVariableSnapshotSha256: string;
-  resolvedSystemPromptSha256: string;
-}
-
-export interface RunConfigurationFingerprintV8 extends RunConfigurationFingerprintBase {
-  schemaVersion: 8;
-  automaticRecovery: AutomaticRecoveryPolicy;
-  executionMode: RunExecutionMode;
-  skillCatalogSha256: string;
-  modelAdvisor: ResolvedModelAdvisorPolicy;
-  promptVariableCatalogSha256: string;
-  promptVariableSnapshotSha256: string;
-  resolvedSystemPromptSha256: string;
-  toolLoopGuard: ToolLoopGuardPolicy;
-}
-
-export type RunConfigurationFingerprint =
-  | RunConfigurationFingerprintV1
-  | RunConfigurationFingerprintV2
-  | RunConfigurationFingerprintV3
-  | RunConfigurationFingerprintV4
-  | RunConfigurationFingerprintV5
-  | RunConfigurationFingerprintV6
-  | RunConfigurationFingerprintV7
-  | RunConfigurationFingerprintV8;
-
 export type AutomaticRecoveryBlockReason =
   | "configuration_missing"
   | "legacy_configuration"
@@ -3882,28 +2759,6 @@ export interface AutomaticRecoveryClaim {
   assessment: AutomaticRecoveryAssessment;
   attempt: AutomaticRecoveryAttempt;
   token: string;
-}
-
-export interface RunRecord {
-  id: string;
-  threadId: string;
-  agentId: string;
-  status: RunStatus;
-  source?: RunInvocationSource;
-  workflowPlanId?: string;
-  triggerId?: string;
-  startedAt: string;
-  finishedAt?: string;
-  parentRunId?: string;
-  branchFromSeq?: number;
-  interruptedAt?: string;
-  interruptionReason?: string;
-  usage: Usage;
-  agentRevision?: number;
-  limits?: RunLimits;
-  configuration?: RunConfigurationFingerprint;
-  error?: string;
-  lease?: RunLeaseSummary;
 }
 
 export type RunControlMessageMode = "steering" | "follow_up";
@@ -4699,25 +3554,6 @@ export interface WorkspaceTrashRestoreResult {
   evidence: WorkspaceFileMutationEvidence;
 }
 
-export type OperatorDecisionStatus =
-  | "pending"
-  | "answered"
-  | "continued"
-  | "cancelled";
-
-export type OperatorDecisionCancellationReason =
-  | "operator_cancelled"
-  | "workflow_timed_out"
-  | "run_completed_without_wait"
-  | "run_failed"
-  | "run_cancelled";
-
-export interface OperatorDecisionOption {
-  id: string;
-  label: string;
-  description: string;
-}
-
 export interface RequestOperatorDecisionInput {
   header: string;
   question: string;
@@ -4726,39 +3562,6 @@ export interface RequestOperatorDecisionInput {
     description: string;
   }>;
   multiSelect: boolean;
-}
-
-export interface AnswerOperatorDecisionRequest {
-  selectedOptionIds: string[];
-  customText?: string;
-}
-
-export interface OperatorDecision {
-  kind: "napier.operator-decision";
-  schemaVersion: 1;
-  id: string;
-  threadId: string;
-  runId: string;
-  status: OperatorDecisionStatus;
-  header: string;
-  question: string;
-  options: OperatorDecisionOption[];
-  multiSelect: boolean;
-  questionSha256: string;
-  requestedAt: string;
-  requestedEventSeq: number;
-  answeredAt?: string;
-  answeredEventSeq?: number;
-  selectedOptionIds?: string[];
-  customText?: string;
-  answerSha256?: string;
-  continuedAt?: string;
-  continuedEventSeq?: number;
-  continuationRunId?: string;
-  cancelledAt?: string;
-  cancellationEventSeq?: number;
-  cancellationReason?: OperatorDecisionCancellationReason;
-  contentSha256: string;
 }
 
 export type AgentMilestonePhase =
@@ -4803,14 +3606,6 @@ export interface AgentMilestone {
   recordedAt: string;
   eventSeq: number;
   contentSha256: string;
-}
-
-export interface RunLeaseSummary {
-  ownerId: string;
-  acquiredAt: string;
-  heartbeatAt: string;
-  expiresAt: string;
-  revision: number;
 }
 
 export interface RunLeaseHandle {
@@ -5313,28 +4108,6 @@ export interface ContextCheckpointCalibrationReport {
   contentSha256: string;
 }
 
-export interface RunMetrics {
-  durationMs: number;
-  eventCount: number;
-  messageCount: number;
-  modelResponseCount: number;
-  modelContextEnvelopeCount: number;
-  embeddedModelContextEnvelopeCount: number;
-  modelContextBoundResponseCount: number;
-  modelContextUnboundResponseCount: number;
-  toolCallCount: number;
-  toolCompletedCount: number;
-  toolFailedCount: number;
-  toolBlockedCount: number;
-  subagentCount: number;
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadTokens: number;
-  cacheWriteTokens: number;
-  costUsd: number;
-  assistantTextSha256: string;
-}
-
 export interface RunReplaySnapshot {
   schemaVersion: 1;
   generatedAt: string;
@@ -5475,39 +4248,6 @@ export interface OpenTelemetryTraceArtifactVerification {
   contentSha256?: string;
   eventStreamSha256?: string;
   eventAnchorSetSha256?: string;
-}
-
-export type RunMetricDelta = Omit<RunMetrics, "assistantTextSha256">;
-
-export type RunConfigurationField =
-  | "agentRevision"
-  | "model"
-  | "systemPrompt"
-  | "thinkingLevel"
-  | "toolPolicy"
-  | "enabledTools"
-  | "enabledSkills"
-  | "enabledSubagents"
-  | "subagentLimits"
-  | "runLimits"
-  | "automaticRecovery"
-  | "modelAdvisor"
-  | "executionMode"
-  | "skillCatalog"
-  | "promptVariables"
-  | "toolLoopGuard";
-
-export interface RunConfigurationDelta {
-  status: "comparable" | "unavailable";
-  leftSha256?: string;
-  rightSha256?: string;
-  changedFields: RunConfigurationField[];
-  addedTools: string[];
-  removedTools: string[];
-  addedSkills: string[];
-  removedSkills: string[];
-  addedSubagents: SubagentRole[];
-  removedSubagents: SubagentRole[];
 }
 
 export type RunContextCoverageStatus =
@@ -8523,6 +7263,11 @@ export interface CreateBranchRequest {
   title?: string;
 }
 
+export * from "./execution-core.js";
+export * from "./execution-runs.js";
+export * from "./execution-workflows.js";
+export * from "./execution-experiments.js";
+export * from "./workflow-experiments.js";
 export * from "./rpc.js";
 
 export type StreamFrame =
