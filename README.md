@@ -417,6 +417,10 @@ npm run dev
 ```
 
 Open `http://127.0.0.1:5173`. The demo model works without credentials.
+The root `dev` command loads a repository `.env` only when present before it
+starts Server and Web, so both child processes inherit the same environment
+without putting secret values in command arguments. Live Providers still
+require an explicit locator registration in **Context → Provider credentials**.
 The explicit root `postinstall` prepares only the current-platform native PTY
 helper after the dependency install; it rejects missing, non-regular, or
 symlinked helpers.

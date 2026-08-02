@@ -537,6 +537,10 @@ Observed result:
 - the repository `npm run napier` wrapper uses Node's
   `--env-file-if-exists=.env`; installed binaries retain normal inherited
   environment behavior;
+- the root `npm run dev` wrapper now loads the same optional `.env` before
+  starting Server and Web. A real isolated Server HTTP check resolved a
+  DeepSeek locator as `available`; all six settled state files contained zero
+  raw-key matches and both watch children released their ports on Ctrl-C;
 - isolated tests cover parsing, creation, availability, idempotent reuse,
   conflicting-locator rejection, zero model calls on conflict, Thread count,
   TTY preflight/raw-mode restoration, and secret absence from output and Store
@@ -546,7 +550,8 @@ Observed result:
   opt-in live JSONL smoke passed in 2.57 seconds. A byte scan of all six state
   files found no API key, while the retained reference contained only
   `DEEPSEEK_API_KEY`. A later clean-state built-CLI PTY Chat smoke completed
-  its first real turn in 3.47 seconds with the same locator-only state.
+  its first real turn in 3.32 seconds with exact assistant Ledger evidence and
+  the same locator-only state.
 
 ## Implemented Slice: Ratcheted Architecture Growth Gate
 

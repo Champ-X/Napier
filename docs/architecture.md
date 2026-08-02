@@ -258,6 +258,13 @@ release artifact source hash.
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 
+The repository-only `npm run dev` wrapper loads an optional root `.env` in its
+Node parent before starting Server and Web through `concurrently`. Both
+development children inherit the same environment; secret values are not
+copied into command arguments or generated files. Installed CLI and production
+Server processes continue to use their inherited deployment environment.
+Provider use remains gated by an explicit persisted credential locator.
+
 ### CLI
 
 `@napier/cli` is an Experience Plane adapter over the same local Runtime and
