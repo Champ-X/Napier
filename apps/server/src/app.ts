@@ -21,7 +21,6 @@ import type {
   CreateReceiptTrustAnchorRequest,
   CreateReceiptTrustAnchorDirectorySubscriptionRequest,
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
-  CreateInboundChannelRequest,
   ApplyInboundDeadLetterRetryRequest,
   CreateEvaluationCasebookRequest,
   CreateEvaluationSuiteRequest,
@@ -173,9 +172,6 @@ import type {
   ExecuteEvaluationCasebookRequest,
   InboundChannel,
   InboundChannelAdapter,
-  InboundChannelAdapterDescriptor,
-  InboundChannelAdapterPreview,
-  InboundChannelPolicyTemplateId,
   InboundDeadLetterExport,
   InboundDeadLetterExportVerification,
   InboundDeadLetterRetryApplyResult,
@@ -213,7 +209,6 @@ import type {
   PreviewExtensionPackageDeploymentRequest,
   PreviewExtensionPackageUpdateRequest,
   PreviewInboundDeadLetterRetryRequest,
-  PreviewInboundChannelAdapterRequest,
   PublishExtensionPackageRolloutChannelRequest,
   QueueRunControlMessageRequest,
   QualifyInspectorPackageRequest,
@@ -248,7 +243,6 @@ import type {
   SetExecutionPlanBlueprintRecordStatusRequest,
   SelectExecutionPlanBlueprintRecordRequest,
   SetGoalRequest,
-  SetInboundChannelStatusRequest,
   SignedExtensionPackageChannelIndexEnvelope,
   SignedInspectorPackageEnvelope,
   SkillContentReview,
@@ -265,8 +259,6 @@ import type {
   TrustedReceiptVerification,
   TransitionPlanStepRequest,
   UpdateArtifactManifestRequest,
-  UpdateInboundRetryPolicyRequest,
-  UpdateInboundSignaturePolicyRequest,
   UpdateEvaluationSuiteRequest,
   UpdateEvaluationCasebookRequest,
   UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
@@ -424,6 +416,19 @@ import {
   requestRecord,
   validThreadId,
 } from "./http-request-validation.js";
+import { registerInboundChannelAdminHttp } from "./inbound-channel-admin-http.js";
+import {
+  inboundChannelListSha256,
+  setInboundChannelCountHeaders,
+} from "./inbound-channel-admin-http-response.js";
+import {
+  inboundChannelAdapterCatalog,
+  inboundChannelAdapterCatalogSha256,
+  inboundChannelAdapterIdsSha256,
+  MAX_INBOUND_BODY_BYTES,
+} from "./inbound-channel-adapter-catalog.js";
+import { parseInboundMessageForAdapter } from "./inbound-channel-adapter.js";
+import { appendInboundChannelEvent } from "./inbound-channel-event.js";
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
 import { registerThreadEvidenceHttp } from "./thread-evidence-http.js";
@@ -500,127 +505,6 @@ const MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT = 1_000;
 
 const HEALTH_RUNTIME_COMPONENTS = ["sqlite", "openssl", "uv", "v8"] as const;
 
-const INBOUND_CHANNEL_ADAPTERS: readonly InboundChannelAdapterDescriptor[] = [
-  {
-    id: "napier_json",
-    label: "Napier JSON",
-    description:
-      "Native Napier delivery payload with explicit idempotency key and Agent message.",
-    idempotencySource: "body.idempotencyKey",
-    requiredHeaders: [],
-    sampleHeaders: {},
-    sampleBody: JSON.stringify(
-      {
-        idempotencyKey: "preview-delivery-0001",
-        message: "Review this preview delivery without accepting it.",
-      },
-      null,
-      2,
-    ),
-    securityNote:
-      "The channel bearer token and optional Napier HMAC signature still authorize real inbound delivery.",
-  },
-  {
-    id: "github_webhook",
-    label: "GitHub webhook",
-    description:
-      "GitHub webhook payload normalized into repository/action/subject work for the Agent.",
-    idempotencySource: "X-GitHub-Delivery",
-    requiredHeaders: ["x-github-delivery", "x-github-event"],
-    sampleHeaders: {
-      "x-github-delivery": "preview-delivery-0001",
-      "x-github-event": "pull_request",
-    },
-    sampleBody: JSON.stringify(
-      {
-        action: "opened",
-        repository: { full_name: "acme/widgets" },
-        pull_request: {
-          number: 42,
-          title: "Preview adapter mapping",
-          html_url: "https://github.com/acme/widgets/pull/42",
-        },
-        sender: { login: "octocat" },
-      },
-      null,
-      2,
-    ),
-    securityNote:
-      "GitHub delivery IDs are used only as hashed idempotency material; public evidence exposes a short fingerprint.",
-  },
-  {
-    id: "slack_event",
-    label: "Slack events",
-    description:
-      "Slack Events API callback normalized into team/app/channel/user event work.",
-    idempotencySource: "body.event_id",
-    requiredHeaders: [],
-    sampleHeaders: {},
-    sampleBody: JSON.stringify(
-      {
-        token: "redacted-verification-token",
-        team_id: "T01234567",
-        api_app_id: "A01234567",
-        type: "event_callback",
-        event_id: "Ev0123456789",
-        event_time: 1_785_000_000,
-        event: {
-          type: "message",
-          channel: "C01234567",
-          user: "U01234567",
-          text: "Preview this Slack event without accepting it.",
-          event_ts: "1785000000.000000",
-        },
-      },
-      null,
-      2,
-    ),
-    securityNote:
-      "Slack event IDs are used only as hashed idempotency material; public evidence exposes a short fingerprint.",
-  },
-  {
-    id: "linear_webhook",
-    label: "Linear webhook",
-    description:
-      "Linear entity-change webhook normalized into issue, project, state, and assignee work.",
-    idempotencySource:
-      "hash(webhookId, createdAt/webhookTimestamp, type, action, data.id)",
-    requiredHeaders: [],
-    sampleHeaders: {},
-    sampleBody: JSON.stringify(
-      {
-        action: "update",
-        type: "Issue",
-        webhookId: "wh_0123456789",
-        createdAt: "2026-07-25T21:00:00.000Z",
-        organizationId: "org_0123456789",
-        data: {
-          id: "issue_0123456789",
-          identifier: "NAP-42",
-          title: "Preview Linear webhook mapping",
-          url: "https://linear.app/acme/issue/NAP-42",
-          state: { name: "In Progress" },
-          assignee: { name: "Ada Lovelace" },
-          team: { key: "NAP", name: "Napier" },
-          project: { name: "Agent operations" },
-        },
-      },
-      null,
-      2,
-    ),
-    securityNote:
-      "Linear webhook identity is hashed before idempotency storage; public evidence exposes a short fingerprint.",
-  },
-];
-function inboundChannelAdapterCatalog(): InboundChannelAdapterDescriptor[] {
-  return INBOUND_CHANNEL_ADAPTERS.map((adapter) => structuredClone(adapter));
-}
-
-function inboundChannelAdapterCatalogSha256(): string {
-  return sha256Text(JSON.stringify(INBOUND_CHANNEL_ADAPTERS));
-}
-
-const MAX_INBOUND_BODY_BYTES = 64 * 1024;
 const MAX_THREAD_CREATE_REQUEST_BYTES = 8 * 1024;
 const MAX_GOAL_REQUEST_BYTES = 8 * 1024;
 const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
@@ -629,9 +513,6 @@ const MAX_OPERATOR_DECISION_REQUEST_BYTES = 32 * 1024;
 // A JSON control-character escape can expand one UTF-8 byte to six bytes.
 const MAX_RUN_CONTROL_MESSAGE_REQUEST_BYTES =
   MAX_RUN_CONTROL_MESSAGE_BYTES * 6 + 1024;
-const MAX_CHANNEL_ADMIN_REQUEST_BYTES = 8 * 1024;
-const MAX_CHANNEL_ADAPTER_PREVIEW_REQUEST_BYTES =
-  MAX_INBOUND_BODY_BYTES + 8 * 1024;
 const MAX_DEAD_LETTER_EXPORT_VERIFY_REQUEST_BYTES = 2 * 1024 * 1024;
 const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
 const MAX_EXTENSION_ADMIN_REQUEST_BYTES = 64 * 1024;
@@ -4498,313 +4379,7 @@ export function createApp(services: NapierServices): Hono {
 
   registerScheduleHttp(app, services);
 
-  app.get("/api/channels", (context) => {
-    const channels = services.store.listInboundChannels();
-    setInboundChannelListHeaders(context, channels);
-    return context.json(channels);
-  });
-
-  app.get("/api/channels/adapters", (context) => {
-    const catalog = inboundChannelAdapterCatalog();
-    setInboundChannelAdapterCatalogHeaders(context, catalog);
-    return context.json(catalog);
-  });
-
-  app.post("/api/channels", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_CHANNEL_ADMIN_REQUEST_BYTES,
-        "Inbound channel request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCreateInboundChannelRequest(input);
-    if (!body) {
-      return jsonError(context, "Inbound channel request is invalid", 400);
-    }
-    let created;
-    try {
-      created = await services.store.createInboundChannel(body);
-    } catch (error) {
-      if (
-        isInboundRetryPolicyError(error) ||
-        isInboundSignaturePolicyError(error) ||
-        isInboundChannelPolicyTemplateError(error)
-      ) {
-        return jsonError(context, error.message, 400);
-      }
-      throw error;
-    }
-    await appendChannelEvent(
-      services,
-      created.channel.threadId,
-      "channel.created",
-      {
-        channelId: created.channel.id,
-        name: created.channel.name,
-        type: created.channel.type,
-        adapter: created.channel.adapter,
-        status: created.channel.status,
-        tokenFingerprint: created.channel.tokenFingerprint,
-        policyTemplate: created.channel.policyTemplate,
-        signatureRequired: created.channel.signaturePolicy.required,
-        signatureAlgorithm: created.channel.signaturePolicy.algorithm,
-        signatureToleranceSeconds:
-          created.channel.signaturePolicy.toleranceSeconds,
-        retryMaxAttempts: created.channel.retryPolicy.maxAttempts,
-        retryBaseDelayMs: created.channel.retryPolicy.baseDelayMs,
-        revision: created.channel.revision,
-      },
-    );
-    setInboundChannelProjectionHeaders(context, created.channel);
-    return context.json(created, 201);
-  });
-
-  app.post("/api/channels/:channelId/status", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_CHANNEL_ADMIN_REQUEST_BYTES,
-        "Inbound channel status request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseSetInboundChannelStatusRequest(input);
-    if (!body) {
-      return jsonError(
-        context,
-        "Inbound channel status request is invalid",
-        400,
-      );
-    }
-    const before = services.store.getInboundChannel(
-      context.req.param("channelId"),
-    );
-    const channel = await services.store.setInboundChannelStatus(
-      context.req.param("channelId"),
-      body.status,
-    );
-    if (channel.revision !== before.revision) {
-      await appendChannelEvent(
-        services,
-        channel.threadId,
-        body.status === "active" ? "channel.enabled" : "channel.disabled",
-        {
-          channelId: channel.id,
-          status: channel.status,
-          revision: channel.revision,
-        },
-      );
-    }
-    setInboundChannelProjectionHeaders(context, channel, {
-      includeContentSha256: true,
-    });
-    return context.json(channel);
-  });
-
-  app.put("/api/channels/:channelId/retry-policy", async (context) => {
-    const channelId = context.req.param("channelId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_CHANNEL_ADMIN_REQUEST_BYTES,
-        "Inbound retry policy request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseUpdateInboundRetryPolicyRequest(input);
-    if (!body) {
-      return jsonError(context, "Inbound retry policy request is invalid", 400);
-    }
-    const before = services.store.getInboundChannel(channelId);
-    let channel;
-    try {
-      channel = await services.store.updateInboundRetryPolicy(
-        channelId,
-        body.retryPolicy,
-      );
-    } catch (error) {
-      if (isInboundRetryPolicyError(error)) {
-        return jsonError(context, error.message, 400);
-      }
-      throw error;
-    }
-    if (channel.revision !== before.revision) {
-      await appendChannelEvent(
-        services,
-        channel.threadId,
-        "channel.retry_policy.updated",
-        {
-          channelId: channel.id,
-          previousMaxAttempts: before.retryPolicy.maxAttempts,
-          previousBaseDelayMs: before.retryPolicy.baseDelayMs,
-          maxAttempts: channel.retryPolicy.maxAttempts,
-          baseDelayMs: channel.retryPolicy.baseDelayMs,
-          revision: channel.revision,
-        },
-      );
-    }
-    setInboundChannelProjectionHeaders(context, channel, {
-      includeContentSha256: true,
-    });
-    return context.json(channel);
-  });
-
-  app.put("/api/channels/:channelId/signature-policy", async (context) => {
-    const channelId = context.req.param("channelId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_CHANNEL_ADMIN_REQUEST_BYTES,
-        "Inbound signature policy request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseUpdateInboundSignaturePolicyRequest(input);
-    if (!body) {
-      return jsonError(
-        context,
-        "Inbound signature policy request is invalid",
-        400,
-      );
-    }
-    const before = services.store.getInboundChannel(channelId);
-    let channel;
-    try {
-      channel = await services.store.updateInboundSignaturePolicy(
-        channelId,
-        body.signaturePolicy,
-      );
-    } catch (error) {
-      if (isInboundSignaturePolicyError(error)) {
-        return jsonError(context, error.message, 400);
-      }
-      throw error;
-    }
-    if (channel.revision !== before.revision) {
-      await appendChannelEvent(
-        services,
-        channel.threadId,
-        "channel.signature_policy.updated",
-        {
-          channelId: channel.id,
-          previousRequired: before.signaturePolicy.required,
-          previousToleranceSeconds: before.signaturePolicy.toleranceSeconds,
-          required: channel.signaturePolicy.required,
-          toleranceSeconds: channel.signaturePolicy.toleranceSeconds,
-          algorithm: channel.signaturePolicy.algorithm,
-          revision: channel.revision,
-        },
-      );
-    }
-    setInboundChannelProjectionHeaders(context, channel, {
-      includeContentSha256: true,
-    });
-    return context.json(channel);
-  });
-
-  app.post("/api/channels/:channelId/token", async (context) => {
-    const channelId = context.req.param("channelId");
-    const before = services.store.getInboundChannel(channelId);
-    const rotated = await services.store.rotateInboundChannelToken(channelId);
-    await appendChannelEvent(
-      services,
-      rotated.channel.threadId,
-      "channel.token.rotated",
-      {
-        channelId: rotated.channel.id,
-        previousTokenFingerprint: before.tokenFingerprint,
-        tokenFingerprint: rotated.channel.tokenFingerprint,
-        status: rotated.channel.status,
-        revision: rotated.channel.revision,
-      },
-    );
-    setInboundChannelProjectionHeaders(context, rotated.channel);
-    return context.json(rotated);
-  });
-
-  app.post("/api/channels/:channelId/adapter-preview", async (context) => {
-    const channelId = context.req.param("channelId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_CHANNEL_ADAPTER_PREVIEW_REQUEST_BYTES,
-        "Inbound adapter preview request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parsePreviewInboundChannelAdapterRequest(input);
-    if (!body) {
-      return jsonError(
-        context,
-        "Inbound adapter preview request is invalid",
-        400,
-      );
-    }
-    if (Buffer.byteLength(body.body) > MAX_INBOUND_BODY_BYTES) {
-      return jsonError(context, "Inbound preview body is too large", 413);
-    }
-    let channel;
-    try {
-      channel = services.store.getInboundChannel(channelId);
-    } catch {
-      return jsonError(context, "Inbound channel not found", 404);
-    }
-    const parsed = parseInboundMessageForAdapter(
-      channel.adapter,
-      body.body,
-      previewHeaders(body.headers),
-    );
-    if (!parsed.ok) {
-      return jsonError(context, parsed.error, 400);
-    }
-    if (parsed.body.model) {
-      try {
-        await assertAvailableModel(services, parsed.body.model);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-    }
-    const preview = createInboundChannelAdapterPreview(
-      channel.id,
-      channel.adapter,
-      body.body,
-      parsed.body,
-    );
-    setInboundChannelAdapterPreviewHeaders(context, preview);
-    return context.json(preview);
-  });
+  registerInboundChannelAdminHttp(app, services);
 
   app.get("/api/channels/:channelId/deliveries", (context) => {
     const channelId = context.req.param("channelId");
@@ -4842,8 +4417,8 @@ export function createApp(services: NapierServices): Hono {
     );
     const qualificationSummary =
       inboundDeadLetterQualificationSummary(artifact);
-    await appendChannelEvent(
-      services,
+    await appendInboundChannelEvent(
+      services.store,
       artifact.channel.threadId,
       "channel.dead_letters.exported",
       {
@@ -4964,8 +4539,8 @@ export function createApp(services: NapierServices): Hono {
           body.confirmReplay,
         );
         const channel = services.store.getInboundChannel(channelId);
-        await appendChannelEvent(
-          services,
+        await appendInboundChannelEvent(
+          services.store,
           channel.threadId,
           "channel.dead_letters.retry_applied",
           {
@@ -11053,96 +10628,6 @@ function parseRunIdArray(
   return unique.size === input.length ? [...unique] : undefined;
 }
 
-function parseCreateInboundChannelRequest(
-  input: unknown,
-): CreateInboundChannelRequest | undefined {
-  const record = requestRecord(input, [
-    "name",
-    "threadId",
-    "adapter",
-    "policyTemplate",
-    "retryPolicy",
-    "signaturePolicy",
-  ]);
-  const name = normalizeBoundedText(record?.["name"], 1, 100);
-  const threadId = record?.["threadId"];
-  const adapter =
-    record?.["adapter"] === undefined
-      ? undefined
-      : parseInboundChannelAdapter(record["adapter"]);
-  const policyTemplate =
-    record?.["policyTemplate"] === undefined
-      ? undefined
-      : parseInboundChannelPolicyTemplate(record["policyTemplate"]);
-  const retryPolicy =
-    record?.["retryPolicy"] === undefined
-      ? undefined
-      : parseInboundRetryPolicy(record["retryPolicy"]);
-  const signaturePolicy =
-    record?.["signaturePolicy"] === undefined
-      ? undefined
-      : parseInboundSignaturePolicy(record["signaturePolicy"]);
-  if (
-    !record ||
-    !name ||
-    !validThreadId(threadId) ||
-    (record["adapter"] !== undefined && !adapter) ||
-    (record["policyTemplate"] !== undefined && !policyTemplate) ||
-    (policyTemplate !== undefined &&
-      policyTemplate !== "custom" &&
-      (record["retryPolicy"] !== undefined ||
-        record["signaturePolicy"] !== undefined)) ||
-    (policyTemplate === "custom" &&
-      record["retryPolicy"] === undefined &&
-      record["signaturePolicy"] === undefined) ||
-    (record["retryPolicy"] !== undefined && !retryPolicy) ||
-    (record["signaturePolicy"] !== undefined && !signaturePolicy)
-  ) {
-    return undefined;
-  }
-  return {
-    name,
-    threadId,
-    ...(adapter ? { adapter } : {}),
-    ...(policyTemplate ? { policyTemplate } : {}),
-    ...(retryPolicy ? { retryPolicy } : {}),
-    ...(signaturePolicy ? { signaturePolicy } : {}),
-  };
-}
-
-function parseInboundChannelAdapter(
-  input: unknown,
-): InboundChannelAdapter | undefined {
-  return typeof input === "string" &&
-    INBOUND_CHANNEL_ADAPTERS.some((adapter) => adapter.id === input)
-    ? (input as InboundChannelAdapter)
-    : undefined;
-}
-
-function parsePreviewInboundChannelAdapterRequest(
-  input: unknown,
-): PreviewInboundChannelAdapterRequest | undefined {
-  const record = requestRecord(input, ["body", "headers"]);
-  const body = record?.["body"];
-  const headers =
-    record?.["headers"] === undefined
-      ? undefined
-      : parsePreviewInboundHeaders(record["headers"]);
-  if (
-    !record ||
-    typeof body !== "string" ||
-    body.length === 0 ||
-    Buffer.byteLength(body) > MAX_INBOUND_BODY_BYTES ||
-    (record["headers"] !== undefined && !headers)
-  ) {
-    return undefined;
-  }
-  return {
-    body,
-    ...(headers && Object.keys(headers).length > 0 ? { headers } : {}),
-  };
-}
-
 function parseVerifyInboundDeadLetterExportRequest(
   input: unknown,
 ): VerifyInboundDeadLetterExportRequest | undefined {
@@ -11194,114 +10679,6 @@ function parseApplyInboundDeadLetterRetryRequest(
     expectedPreviewSha256,
     confirmReplay,
   };
-}
-
-function parsePreviewInboundHeaders(
-  input: unknown,
-): Record<string, string> | undefined {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    return undefined;
-  }
-  const entries = Object.entries(input as Record<string, unknown>);
-  if (entries.length > 32) return undefined;
-  const output: Record<string, string> = {};
-  for (const [key, value] of entries) {
-    const normalizedKey = key.trim().toLowerCase();
-    if (
-      !/^[a-z0-9][a-z0-9-]{0,79}$/.test(normalizedKey) ||
-      typeof value !== "string" ||
-      value.length > 1_000 ||
-      /[\r\n\u0000]/.test(value)
-    ) {
-      return undefined;
-    }
-    output[normalizedKey] = value.trim();
-  }
-  return output;
-}
-
-function parseInboundChannelPolicyTemplate(
-  input: unknown,
-): InboundChannelPolicyTemplateId | undefined {
-  return input === "legacy_bearer" ||
-    input === "signed_standard" ||
-    input === "signed_strict" ||
-    input === "custom"
-    ? input
-    : undefined;
-}
-
-function parseInboundSignaturePolicy(
-  input: unknown,
-): CreateInboundChannelRequest["signaturePolicy"] | undefined {
-  const record = requestRecord(input, ["required", "toleranceSeconds"]);
-  const required = record?.["required"];
-  const toleranceSeconds = record?.["toleranceSeconds"];
-  if (
-    !record ||
-    typeof required !== "boolean" ||
-    (toleranceSeconds !== undefined &&
-      (typeof toleranceSeconds !== "number" ||
-        !Number.isInteger(toleranceSeconds) ||
-        toleranceSeconds < 30 ||
-        toleranceSeconds > 900))
-  ) {
-    return undefined;
-  }
-  return {
-    required,
-    ...(typeof toleranceSeconds === "number" ? { toleranceSeconds } : {}),
-  };
-}
-
-function parseSetInboundChannelStatusRequest(
-  input: unknown,
-): SetInboundChannelStatusRequest | undefined {
-  const record = requestRecord(input, ["status"]);
-  const status = record?.["status"];
-  return record && (status === "active" || status === "disabled")
-    ? { status }
-    : undefined;
-}
-
-function parseUpdateInboundRetryPolicyRequest(
-  input: unknown,
-): UpdateInboundRetryPolicyRequest | undefined {
-  const record = requestRecord(input, ["retryPolicy"]);
-  const retryPolicy = parseInboundRetryPolicy(record?.["retryPolicy"]);
-  return record && retryPolicy ? { retryPolicy } : undefined;
-}
-
-function parseUpdateInboundSignaturePolicyRequest(
-  input: unknown,
-): UpdateInboundSignaturePolicyRequest | undefined {
-  const record = requestRecord(input, ["signaturePolicy"]);
-  const signaturePolicy = parseInboundSignaturePolicy(
-    record?.["signaturePolicy"],
-  );
-  return record && signaturePolicy ? { signaturePolicy } : undefined;
-}
-
-function parseInboundRetryPolicy(
-  input: unknown,
-): UpdateInboundRetryPolicyRequest["retryPolicy"] | undefined {
-  const record = requestRecord(input, ["maxAttempts", "baseDelayMs"]);
-  const maxAttempts = record?.["maxAttempts"];
-  const baseDelayMs = record?.["baseDelayMs"];
-  if (
-    !record ||
-    typeof maxAttempts !== "number" ||
-    !Number.isInteger(maxAttempts) ||
-    maxAttempts < 1 ||
-    maxAttempts > 10 ||
-    typeof baseDelayMs !== "number" ||
-    !Number.isInteger(baseDelayMs) ||
-    baseDelayMs < 250 ||
-    baseDelayMs > 60_000
-  ) {
-    return undefined;
-  }
-  return { maxAttempts, baseDelayMs };
 }
 
 function parseOptionalBoundedText(
@@ -12131,23 +11508,6 @@ function isSha256Hex(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 }
 
-function isInboundRetryPolicyError(error: unknown): error is Error {
-  return error instanceof Error && error.message.startsWith("Inbound retry ");
-}
-
-function isInboundSignaturePolicyError(error: unknown): error is Error {
-  return (
-    error instanceof Error && error.message.startsWith("Inbound signature ")
-  );
-}
-
-function isInboundChannelPolicyTemplateError(error: unknown): error is Error {
-  return (
-    error instanceof Error &&
-    error.message.startsWith("Inbound channel policy template")
-  );
-}
-
 function isInboundMessageValidationError(error: unknown): error is Error {
   return (
     error instanceof Error &&
@@ -12155,165 +11515,6 @@ function isInboundMessageValidationError(error: unknown): error is Error {
       error.message.startsWith("Inbound message ") ||
       error.message.startsWith("Inbound model "))
   );
-}
-
-type InboundMessageParseResult =
-  | { ok: true; body: InboundMessageRequest }
-  | { ok: false; error: string };
-
-function parseInboundMessageForAdapter(
-  adapter: InboundChannelAdapter,
-  source: string,
-  headers: Headers,
-): InboundMessageParseResult {
-  if (adapter === "napier_json") return parseNapierJsonInboundMessage(source);
-  if (adapter === "github_webhook") {
-    return parseGitHubWebhookInboundMessage(source, headers);
-  }
-  if (adapter === "slack_event") return parseSlackEventInboundMessage(source);
-  if (adapter === "linear_webhook") {
-    return parseLinearWebhookInboundMessage(source);
-  }
-  return { ok: false, error: "Inbound channel adapter is invalid" };
-}
-
-function parseNapierJsonInboundMessage(
-  source: string,
-): InboundMessageParseResult {
-  const parsed = parseJsonObject(source);
-  if (!parsed.ok) return parsed;
-  const record = requestRecord(parsed.record, [
-    "idempotencyKey",
-    "message",
-    "model",
-  ]);
-  const idempotencyKey = normalizeInboundVisibleText(
-    record?.["idempotencyKey"],
-    8,
-    200,
-  );
-  const message = normalizeInboundPromptText(record?.["message"], 20_000);
-  const model =
-    record?.["model"] === undefined
-      ? undefined
-      : parseModelRef(record["model"]);
-  if (
-    !record ||
-    !idempotencyKey ||
-    !message ||
-    (record["model"] !== undefined && !model)
-  ) {
-    return { ok: false, error: "Inbound body is invalid" };
-  }
-  return {
-    ok: true,
-    body: {
-      idempotencyKey,
-      message,
-      ...(model ? { model } : {}),
-    },
-  };
-}
-
-function parseGitHubWebhookInboundMessage(
-  source: string,
-  headers: Headers,
-): InboundMessageParseResult {
-  const delivery = normalizeInboundVisibleText(
-    headers.get("x-github-delivery"),
-    1,
-    193,
-  );
-  if (!delivery) {
-    return { ok: false, error: "GitHub delivery header is required" };
-  }
-  const event = normalizeInboundVisibleText(
-    headers.get("x-github-event"),
-    1,
-    80,
-  );
-  if (!event) {
-    return { ok: false, error: "GitHub event header is required" };
-  }
-  const parsed = parseJsonObject(source);
-  if (!parsed.ok) return parsed;
-  return {
-    ok: true,
-    body: {
-      idempotencyKey: `github:${delivery}`,
-      message: buildGitHubWebhookMessage(event, delivery, parsed.record),
-    },
-  };
-}
-
-function parseSlackEventInboundMessage(
-  source: string,
-): InboundMessageParseResult {
-  const parsed = parseJsonObject(source);
-  if (!parsed.ok) return parsed;
-  const eventId = normalizeInboundVisibleText(
-    parsed.record["event_id"],
-    4,
-    160,
-  );
-  if (!eventId) {
-    return { ok: false, error: "Slack event_id is required" };
-  }
-  return {
-    ok: true,
-    body: {
-      idempotencyKey: `slack:${eventId}`,
-      message: buildSlackEventMessage(eventId, parsed.record),
-    },
-  };
-}
-
-function parseLinearWebhookInboundMessage(
-  source: string,
-): InboundMessageParseResult {
-  const parsed = parseJsonObject(source);
-  if (!parsed.ok) return parsed;
-  const seed = linearWebhookSeed(parsed.record);
-  if (!seed.ok) return { ok: false, error: seed.error };
-  return {
-    ok: true,
-    body: {
-      idempotencyKey: `linear:${sha256Text(seed.value).slice(0, 32)}`,
-      message: buildLinearWebhookMessage(seed.value, parsed.record),
-    },
-  };
-}
-
-function previewHeaders(headers: Record<string, string> | undefined): Headers {
-  const output = new Headers();
-  for (const [key, value] of Object.entries(headers ?? {})) {
-    output.set(key, value);
-  }
-  return output;
-}
-
-function createInboundChannelAdapterPreview(
-  channelId: string,
-  adapter: InboundChannelAdapter,
-  source: string,
-  body: InboundMessageRequest,
-): InboundChannelAdapterPreview {
-  const messagePreview = body.message.replace(/\s+/g, " ").trim().slice(0, 240);
-  const content = {
-    channelId,
-    adapter,
-    bodySha256: sha256Text(source),
-    idempotencyFingerprint: sha256Text(
-      `${channelId}\0${body.idempotencyKey}`,
-    ).slice(0, 12),
-    messageSha256: sha256Text(body.message),
-    messagePreview,
-    ...(body.model ? { model: body.model } : {}),
-  };
-  return {
-    ...content,
-    contentSha256: sha256Text(JSON.stringify(content)),
-  };
 }
 
 function createInboundDeliveryQualification(
@@ -12386,347 +11587,6 @@ function inboundDeadLetterQualificationSummary(
       (delivery) => delivery.qualificationStatus === "adapter_catalog_drift",
     ).length,
   };
-}
-
-function parseJsonObject(source: string):
-  | {
-      ok: true;
-      record: Record<string, unknown>;
-    }
-  | { ok: false; error: string } {
-  let input: unknown;
-  try {
-    input = JSON.parse(source);
-  } catch {
-    return { ok: false, error: "Inbound body must be valid JSON" };
-  }
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    return { ok: false, error: "Inbound body must be a JSON object" };
-  }
-  return { ok: true, record: input as Record<string, unknown> };
-}
-
-function normalizeInboundVisibleText(
-  input: unknown,
-  minLength: number,
-  maxLength: number,
-): string | undefined {
-  if (typeof input !== "string") return undefined;
-  const normalized = input.trim();
-  if (
-    normalized.length < minLength ||
-    normalized.length > maxLength ||
-    /[\u0000-\u001f\u007f]/.test(normalized)
-  ) {
-    return undefined;
-  }
-  return normalized;
-}
-
-function normalizeInboundPromptText(
-  input: unknown,
-  maxLength: number,
-): string | undefined {
-  if (typeof input !== "string") return undefined;
-  const normalized = input.replace(/\r\n?/g, "\n").trim();
-  return normalized && normalized.length <= maxLength ? normalized : undefined;
-}
-
-function buildGitHubWebhookMessage(
-  event: string,
-  delivery: string,
-  payload: Record<string, unknown>,
-): string {
-  const deliveryFingerprint = sha256Text(delivery).slice(0, 12);
-  const lines = [
-    `GitHub ${event} webhook received.`,
-    `Delivery fingerprint: ${deliveryFingerprint}.`,
-  ];
-  const repository = gitHubNestedString(payload, "repository", "full_name");
-  const action = gitHubStringField(payload, "action", 120);
-  const sender = gitHubNestedString(payload, "sender", "login");
-  const ref = gitHubStringField(payload, "ref", 240);
-  const compare = gitHubStringField(payload, "compare", 500);
-  const subject = gitHubWebhookSubject(payload);
-
-  if (repository) lines.push(`Repository: ${repository}.`);
-  if (action) lines.push(`Action: ${action}.`);
-  if (sender) lines.push(`Sender: ${sender}.`);
-  if (subject) lines.push(subject);
-  if (ref) lines.push(`Ref: ${ref}.`);
-  if (compare) lines.push(`Compare: ${compare}.`);
-
-  return lines.join("\n").slice(0, 4_000);
-}
-
-function buildSlackEventMessage(
-  eventId: string,
-  payload: Record<string, unknown>,
-): string {
-  const event = slackRecordField(payload, "event");
-  const topLevelType = slackStringField(payload, "type", 120);
-  const eventType = event
-    ? slackStringField(event, "type", 120)
-    : slackStringField(payload, "event_type", 120);
-  const lines = [
-    `Slack ${eventType ?? topLevelType ?? "event"} webhook received.`,
-    `Event fingerprint: ${sha256Text(eventId).slice(0, 12)}.`,
-  ];
-  const team = slackStringField(payload, "team_id", 120);
-  const app = slackStringField(payload, "api_app_id", 120);
-  const channel = event ? slackStringField(event, "channel", 120) : undefined;
-  const user =
-    event &&
-    (slackStringField(event, "user", 120) ??
-      slackStringField(event, "bot_id", 120));
-  const text = event ? slackStringField(event, "text", 500) : undefined;
-  const ts =
-    event &&
-    (slackStringField(event, "event_ts", 80) ??
-      slackStringField(event, "ts", 80));
-
-  if (topLevelType) lines.push(`Envelope type: ${topLevelType}.`);
-  if (team) lines.push(`Team: ${team}.`);
-  if (app) lines.push(`App: ${app}.`);
-  if (channel) lines.push(`Channel: ${channel}.`);
-  if (user) lines.push(`Actor: ${user}.`);
-  if (ts) lines.push(`Timestamp: ${ts}.`);
-  if (text) lines.push(`Text: "${text}"`);
-
-  return lines.join("\n").slice(0, 4_000);
-}
-
-function linearWebhookSeed(
-  payload: Record<string, unknown>,
-): { ok: true; value: string } | { ok: false; error: string } {
-  const data = linearRecordField(payload, "data");
-  const webhookId = linearStringField(payload, "webhookId", 160);
-  const timestamp =
-    linearStringField(payload, "createdAt", 80) ??
-    linearStringField(payload, "webhookTimestamp", 80);
-  const type = linearStringField(payload, "type", 120);
-  const action = linearStringField(payload, "action", 120);
-  const dataId = data ? linearStringField(data, "id", 160) : undefined;
-  if (!webhookId) return { ok: false, error: "Linear webhookId is required" };
-  if (!timestamp) {
-    return { ok: false, error: "Linear webhook timestamp is required" };
-  }
-  if (!type || !action || !dataId) {
-    return { ok: false, error: "Linear webhook event identity is incomplete" };
-  }
-  return {
-    ok: true,
-    value: [webhookId, timestamp, type, action, dataId].join("\0"),
-  };
-}
-
-function buildLinearWebhookMessage(
-  seed: string,
-  payload: Record<string, unknown>,
-): string {
-  const data = linearRecordField(payload, "data");
-  const type = linearStringField(payload, "type", 120);
-  const action = linearStringField(payload, "action", 120);
-  const organization = linearStringField(payload, "organizationId", 160);
-  const identifier = data
-    ? (linearStringField(data, "identifier", 120) ??
-      linearStringField(data, "number", 120))
-    : undefined;
-  const title = data ? linearStringField(data, "title", 300) : undefined;
-  const url = data ? linearStringField(data, "url", 500) : undefined;
-  const state = linearNestedString(data, "state", "name", 160);
-  const assignee = linearNestedString(data, "assignee", "name", 160);
-  const team =
-    linearNestedString(data, "team", "key", 80) ??
-    linearNestedString(data, "team", "name", 160);
-  const project = linearNestedString(data, "project", "name", 160);
-  const lines = [
-    `Linear ${type ?? "entity"} ${action ?? "changed"} webhook received.`,
-    `Event fingerprint: ${sha256Text(seed).slice(0, 12)}.`,
-  ];
-
-  if (organization) lines.push(`Organization: ${organization}.`);
-  if (team) lines.push(`Team: ${team}.`);
-  if (project) lines.push(`Project: ${project}.`);
-  if (identifier || title) {
-    lines.push(
-      `Subject: ${[identifier, title ? `"${title}"` : undefined]
-        .filter(Boolean)
-        .join(" ")}`,
-    );
-  }
-  if (state) lines.push(`State: ${state}.`);
-  if (assignee) lines.push(`Assignee: ${assignee}.`);
-  if (url) lines.push(`URL: ${url}`);
-
-  return lines.join("\n").slice(0, 4_000);
-}
-
-function gitHubWebhookSubject(
-  payload: Record<string, unknown>,
-): string | undefined {
-  const pullRequest = gitHubRecordField(payload, "pull_request");
-  if (pullRequest) return gitHubIssueLikeLine("Pull request", pullRequest);
-  const issue = gitHubRecordField(payload, "issue");
-  if (issue) return gitHubIssueLikeLine("Issue", issue);
-  const release = gitHubRecordField(payload, "release");
-  if (release) return gitHubIssueLikeLine("Release", release);
-  const checkRun = gitHubRecordField(payload, "check_run");
-  if (checkRun) return gitHubWorkflowLikeLine("Check run", checkRun);
-  const checkSuite = gitHubRecordField(payload, "check_suite");
-  if (checkSuite) return gitHubWorkflowLikeLine("Check suite", checkSuite);
-  const workflowRun = gitHubRecordField(payload, "workflow_run");
-  if (workflowRun) return gitHubWorkflowLikeLine("Workflow run", workflowRun);
-  const headCommit = gitHubRecordField(payload, "head_commit");
-  if (headCommit) return gitHubCommitLine(headCommit);
-  return undefined;
-}
-
-function gitHubIssueLikeLine(
-  label: string,
-  record: Record<string, unknown>,
-): string {
-  const number = gitHubNumberField(record, "number");
-  const title =
-    gitHubStringField(record, "title", 220) ??
-    gitHubStringField(record, "name", 220) ??
-    gitHubStringField(record, "tag_name", 220);
-  const url = gitHubStringField(record, "html_url", 500);
-  return [
-    `${label}${number === undefined ? "" : ` #${number}`}:`,
-    title ? `"${title}"` : "untitled",
-    url ? `(${url})` : undefined,
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-function gitHubWorkflowLikeLine(
-  label: string,
-  record: Record<string, unknown>,
-): string {
-  const name =
-    gitHubStringField(record, "name", 220) ??
-    gitHubStringField(record, "workflow_name", 220);
-  const status = gitHubStringField(record, "status", 120);
-  const conclusion = gitHubStringField(record, "conclusion", 120);
-  const url = gitHubStringField(record, "html_url", 500);
-  return [
-    `${label}:`,
-    name ?? "unnamed",
-    status ? `status=${status}` : undefined,
-    conclusion ? `conclusion=${conclusion}` : undefined,
-    url ? `(${url})` : undefined,
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-function gitHubCommitLine(record: Record<string, unknown>): string {
-  const id = gitHubStringField(record, "id", 80);
-  const message = gitHubStringField(record, "message", 300)?.split("\n")[0];
-  const url = gitHubStringField(record, "url", 500);
-  return [
-    "Head commit:",
-    id ? id.slice(0, 12) : undefined,
-    message ? `"${message}"` : undefined,
-    url ? `(${url})` : undefined,
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-function gitHubRecordField(
-  record: Record<string, unknown>,
-  key: string,
-): Record<string, unknown> | undefined {
-  const value = record[key];
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
-}
-
-function gitHubNestedString(
-  record: Record<string, unknown>,
-  key: string,
-  nestedKey: string,
-): string | undefined {
-  const nested = gitHubRecordField(record, key);
-  return nested ? gitHubStringField(nested, nestedKey, 240) : undefined;
-}
-
-function gitHubStringField(
-  record: Record<string, unknown>,
-  key: string,
-  maxLength: number,
-): string | undefined {
-  const value = record[key];
-  if (typeof value !== "string") return undefined;
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized ? normalized.slice(0, maxLength) : undefined;
-}
-
-function gitHubNumberField(
-  record: Record<string, unknown>,
-  key: string,
-): number | undefined {
-  const value = record[key];
-  return typeof value === "number" && Number.isSafeInteger(value)
-    ? value
-    : undefined;
-}
-
-function slackRecordField(
-  record: Record<string, unknown>,
-  key: string,
-): Record<string, unknown> | undefined {
-  const value = record[key];
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
-}
-
-function slackStringField(
-  record: Record<string, unknown>,
-  key: string,
-  maxLength: number,
-): string | undefined {
-  const value = record[key];
-  if (typeof value !== "string") return undefined;
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized ? normalized.slice(0, maxLength) : undefined;
-}
-
-function linearRecordField(
-  record: Record<string, unknown> | undefined,
-  key: string,
-): Record<string, unknown> | undefined {
-  if (!record) return undefined;
-  const value = record[key];
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
-}
-
-function linearNestedString(
-  record: Record<string, unknown> | undefined,
-  key: string,
-  nestedKey: string,
-  maxLength: number,
-): string | undefined {
-  const nested = linearRecordField(record, key);
-  return nested ? linearStringField(nested, nestedKey, maxLength) : undefined;
-}
-
-function linearStringField(
-  record: Record<string, unknown>,
-  key: string,
-  maxLength: number,
-): string | undefined {
-  const value = record[key];
-  if (typeof value !== "string" && typeof value !== "number") return undefined;
-  const normalized = String(value).replace(/\s+/g, " ").trim();
-  return normalized ? normalized.slice(0, maxLength) : undefined;
 }
 
 function inboundChannelToken(headers: Headers): string | undefined {
@@ -23114,69 +21974,6 @@ function setAutomaticRecoveryProjectionHeaders(
   );
 }
 
-function setInboundChannelProjectionHeaders(
-  context: Context,
-  channel: InboundChannel,
-  options: { includeContentSha256?: boolean } = {},
-): void {
-  const channelSha256 = sha256Text(JSON.stringify(channel));
-  context.header("Cache-Control", "no-store");
-  context.header("X-Napier-Channel-SHA256", channelSha256);
-  if (options.includeContentSha256) {
-    setContentSha256Header(context, channelSha256, "body");
-  }
-  context.header("X-Napier-Channel-Status", channel.status);
-  context.header("X-Napier-Channel-Revision", String(channel.revision));
-  context.header("X-Napier-Token-Fingerprint", channel.tokenFingerprint);
-  context.header("X-Napier-Policy-Template", channel.policyTemplate);
-}
-
-function inboundChannelListSha256(channels: readonly InboundChannel[]): string {
-  return sha256Text(JSON.stringify(channels));
-}
-
-function setInboundChannelListHeaders(
-  context: Context,
-  channels: readonly InboundChannel[],
-): void {
-  const channelListSha256 = inboundChannelListSha256(channels);
-  context.header("Cache-Control", "no-store");
-  setContentSha256Header(context, channelListSha256, "body");
-  context.header("X-Napier-Channel-List-SHA256", channelListSha256);
-  setInboundChannelCountHeaders(context, channels);
-}
-
-function setInboundChannelCountHeaders(
-  context: Context,
-  channels: readonly InboundChannel[],
-): void {
-  context.header("X-Napier-Channel-Count", String(channels.length));
-  context.header(
-    "X-Napier-Active-Channel-Count",
-    String(channels.filter((channel) => channel.status === "active").length),
-  );
-  context.header(
-    "X-Napier-Disabled-Channel-Count",
-    String(channels.filter((channel) => channel.status === "disabled").length),
-  );
-}
-
-function setInboundChannelAdapterPreviewHeaders(
-  context: Context,
-  preview: InboundChannelAdapterPreview,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, preview.contentSha256);
-  context.header("X-Napier-Channel-Id", preview.channelId);
-  context.header("X-Napier-Adapter", preview.adapter);
-  context.header("X-Napier-Body-SHA256", preview.bodySha256);
-  context.header(
-    "X-Napier-Idempotency-Fingerprint",
-    preview.idempotencyFingerprint,
-  );
-  context.header("X-Napier-Message-SHA256", preview.messageSha256);
-}
-
 function setInboundDeliveryListHeaders(
   context: Context,
   channelId: string,
@@ -23552,29 +22349,6 @@ function setInboundDeadLetterRetryHistoryVerificationHeaders(
       String(verification.observedToSeq),
     );
   }
-}
-
-function inboundChannelAdapterIdsSha256(
-  adapters: readonly InboundChannelAdapterDescriptor[],
-): string {
-  return sha256Json(adapters.map((adapter) => adapter.id).sort());
-}
-
-function setInboundChannelAdapterCatalogHeaders(
-  context: Context,
-  adapters: readonly InboundChannelAdapterDescriptor[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setContentSha256Header(context, inboundChannelAdapterCatalogSha256(), "body");
-  context.header(
-    "X-Napier-Adapter-Catalog-SHA256",
-    inboundChannelAdapterCatalogSha256(),
-  );
-  context.header("X-Napier-Adapter-Count", String(adapters.length));
-  context.header(
-    "X-Napier-Adapter-Ids-SHA256",
-    inboundChannelAdapterIdsSha256(adapters),
-  );
 }
 
 function setBootstrapProjectionHeaders(
@@ -24561,22 +23335,6 @@ async function appendReceiptTrustEvent(
     runId: createId("runctl"),
     type,
     category: "evaluation",
-    visibility: "user",
-    payload,
-  });
-}
-
-async function appendChannelEvent(
-  services: NapierServices,
-  threadId: string,
-  type: string,
-  payload: Record<string, JsonValue>,
-): Promise<void> {
-  await services.store.appendEvent({
-    threadId,
-    runId: createId("runctl"),
-    type,
-    category: "channel",
     visibility: "user",
     payload,
   });

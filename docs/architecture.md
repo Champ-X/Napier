@@ -288,6 +288,17 @@ live in `http-response-evidence.ts`. OTLP generation depends only on a
 `app.ts` to 24,600 lines without changing the 255-operation route set or
 244/244 compatibility fixture.
 
+Inbound Channel administration and adapter normalization are now explicit
+domains. `inbound-channel-admin-http.ts` owns catalog/create/status/policy/token
+and preview routes through a narrow Store port. Leaf catalog, message-builder,
+normalizer, validation, response, and Ledger-event modules are reused by the
+remaining delivery, dead-letter, and ingress paths, so all entry points retain
+one adapter catalog and event vocabulary. Signed DeepSeek dogfood proved token
+rotation, HMAC admission, one completed delivery, duplicate suppression, and
+hash-only Channel events with zero API-key persistence. `app.ts` decreased to
+23,358 lines while the 255-operation route set and 244/244 compatibility
+fixture remained unchanged.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 

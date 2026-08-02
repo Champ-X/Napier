@@ -14545,12 +14545,13 @@
     "apps/server/src/agent-profile-http.ts",
     "apps/server/src/app.ts",
     "apps/server/src/credential-http.ts",
+    "apps/server/src/inbound-channel-admin-http.ts",
     "apps/server/src/memory-http.ts",
     "apps/server/src/schedule-http.ts",
     "apps/server/src/thread-evidence-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "26f7f152cc7073b3b686bedd2e9551ab3f86fe8799385346fea7cb30612f0a17",
+  "x-napier-source-sha256": "2ed66f33f8dd783b554c4ca674c067f31f6c4ddfa8c5eaf44ea51fcb7002471a",
   "x-napier-route-count": 255,
   "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }
