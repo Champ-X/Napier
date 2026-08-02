@@ -1,9 +1,11 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { access, mkdtemp, rm } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { access, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { probeMacOsSandboxAvailability } from "./macos-sandbox-availability.js";
+import { createParentGuardedTerminalLaunch } from "./process-guardian.js";
+import { launchSandboxProcess } from "./sandbox-process-lifecycle.js";
 import type {
   OsSandboxAdapter,
   PlatformSandboxOptions,
@@ -28,7 +30,6 @@ const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
 const BUBBLEWRAP_EXEC = "/usr/bin/bwrap";
 const CONTAINER_EXEC = "/usr/bin/docker";
 const CONTAINER_IMAGE_ENV = "NAPIER_CONTAINER_SANDBOX_IMAGE";
-const PROCESS_STOP_GRACE_MS = 2_000;
 const MAX_RUNTIME_READ_PATHS = 8;
 const MAX_WORKSPACE_WRITE_PATHS = 8;
 const LINUX_RUNTIME_READ_PATHS = [
@@ -86,76 +87,33 @@ export class MacOsSandboxAdapter implements OsSandboxAdapter {
       path.join(tmpdir(), "napier-process-sandbox-"),
     );
     const profile = buildMacOsSandboxProfile(request, sandboxHome);
+    const target = {
+      command: this.executable,
+      args: ["-p", profile, "--", request.command, ...request.args],
+      cwd: request.cwd,
+      env: {
+        ...request.env,
+        HOME: sandboxHome,
+        TMPDIR: sandboxHome,
+      },
+    };
     if (request.terminal) {
+      const launch = request.parentDeathGuard
+        ? createParentGuardedTerminalLaunch(target)
+        : target;
       return launchTerminalSandboxWrapper({
-        command: this.executable,
-        args: ["-p", profile, "--", request.command, ...request.args],
-        cwd: request.cwd,
-        env: {
-          ...request.env,
-          HOME: sandboxHome,
-          TMPDIR: sandboxHome,
-        },
+        ...launch,
         columns: request.terminal.columns,
         rows: request.terminal.rows,
         sandboxHome,
       });
     }
-    let child: ChildProcessWithoutNullStreams;
-    try {
-      child = this.spawnProcess(
-        this.executable,
-        ["-p", profile, "--", request.command, ...request.args],
-        {
-          cwd: request.cwd,
-          env: {
-            ...request.env,
-            HOME: sandboxHome,
-            TMPDIR: sandboxHome,
-          },
-          detached: true,
-          shell: false,
-          stdio: ["pipe", "pipe", "pipe"],
-          windowsHide: true,
-        },
-      );
-      await waitForSpawn(child);
-    } catch (error) {
-      await rm(sandboxHome, { recursive: true, force: true });
-      throw error;
-    }
-
-    const exit = new Promise<{
-      code: number | null;
-      signal: NodeJS.Signals | null;
-    }>((resolve) => {
-      child.once("exit", (code, signal) => resolve({ code, signal }));
-    }).finally(async () => {
-      signalProcessGroup(child, "SIGTERM");
-      await rm(sandboxHome, { recursive: true, force: true });
+    return launchSandboxProcess({
+      ...target,
+      sandboxHome,
+      parentDeathGuard: request.parentDeathGuard === true,
+      spawnProcess: this.spawnProcess,
     });
-
-    return {
-      stdin: child.stdin,
-      stdout: child.stdout,
-      stderr: child.stderr,
-      exit,
-      terminate: async () => {
-        if (child.exitCode !== null || child.signalCode !== null) {
-          await exit;
-          return;
-        }
-        signalProcessGroup(child, "SIGTERM");
-        const stopped = await Promise.race([
-          exit.then(() => true),
-          new Promise<false>((resolve) =>
-            setTimeout(() => resolve(false), PROCESS_STOP_GRACE_MS),
-          ),
-        ]);
-        if (!stopped) signalProcessGroup(child, "SIGKILL");
-        await exit;
-      },
-    };
   }
 }
 
@@ -180,72 +138,30 @@ export class LinuxBubblewrapSandboxAdapter implements OsSandboxAdapter {
       path.join(tmpdir(), "napier-process-sandbox-"),
     );
     const args = buildLinuxBubblewrapArgs(request, sandboxHome);
+    const target = {
+      command: this.executable,
+      args,
+      cwd: "/",
+      env: {
+        ...request.env,
+        HOME: "/tmp",
+        TMPDIR: "/tmp",
+      },
+    };
     if (request.terminal) {
       return launchTerminalSandboxWrapper({
-        command: this.executable,
-        args,
-        cwd: "/",
-        env: {
-          ...request.env,
-          HOME: "/tmp",
-          TMPDIR: "/tmp",
-        },
+        ...target,
         columns: request.terminal.columns,
         rows: request.terminal.rows,
         sandboxHome,
       });
     }
-    let child: ChildProcessWithoutNullStreams;
-    try {
-      child = this.spawnProcess(this.executable, args, {
-        cwd: "/",
-        env: {
-          ...request.env,
-          HOME: "/tmp",
-          TMPDIR: "/tmp",
-        },
-        detached: true,
-        shell: false,
-        stdio: ["pipe", "pipe", "pipe"],
-        windowsHide: true,
-      });
-      await waitForSpawn(child);
-    } catch (error) {
-      await rm(sandboxHome, { recursive: true, force: true });
-      throw error;
-    }
-
-    const exit = new Promise<{
-      code: number | null;
-      signal: NodeJS.Signals | null;
-    }>((resolve) => {
-      child.once("exit", (code, signal) => resolve({ code, signal }));
-    }).finally(async () => {
-      signalProcessGroup(child, "SIGTERM");
-      await rm(sandboxHome, { recursive: true, force: true });
+    return launchSandboxProcess({
+      ...target,
+      sandboxHome,
+      parentDeathGuard: false,
+      spawnProcess: this.spawnProcess,
     });
-
-    return {
-      stdin: child.stdin,
-      stdout: child.stdout,
-      stderr: child.stderr,
-      exit,
-      terminate: async () => {
-        if (child.exitCode !== null || child.signalCode !== null) {
-          await exit;
-          return;
-        }
-        signalProcessGroup(child, "SIGTERM");
-        const stopped = await Promise.race([
-          exit.then(() => true),
-          new Promise<false>((resolve) =>
-            setTimeout(() => resolve(false), PROCESS_STOP_GRACE_MS),
-          ),
-        ]);
-        if (!stopped) signalProcessGroup(child, "SIGKILL");
-        await exit;
-      },
-    };
   }
 }
 
@@ -270,6 +186,11 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
         "OCI PTY launch requires image-bound terminal runtime support",
       );
     }
+    if (request.parentDeathGuard) {
+      throw new Error(
+        "OCI parent-death guarding requires container runtime identity binding",
+      );
+    }
     validateContainerImage(this.image);
     try {
       await access(this.executable);
@@ -282,53 +203,15 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       path.join(tmpdir(), "napier-process-sandbox-"),
     );
     const args = buildOciContainerArgs(request, sandboxHome, this.image);
-    let child: ChildProcessWithoutNullStreams;
-    try {
-      child = this.spawnProcess(this.executable, args, {
-        cwd: "/",
-        env: containerProcessEnv(request.env),
-        detached: true,
-        shell: false,
-        stdio: ["pipe", "pipe", "pipe"],
-        windowsHide: true,
-      });
-      await waitForSpawn(child);
-    } catch (error) {
-      await rm(sandboxHome, { recursive: true, force: true });
-      throw error;
-    }
-
-    const exit = new Promise<{
-      code: number | null;
-      signal: NodeJS.Signals | null;
-    }>((resolve) => {
-      child.once("exit", (code, signal) => resolve({ code, signal }));
-    }).finally(async () => {
-      signalProcessGroup(child, "SIGTERM");
-      await rm(sandboxHome, { recursive: true, force: true });
+    return launchSandboxProcess({
+      command: this.executable,
+      args,
+      cwd: "/",
+      env: containerProcessEnv(request.env),
+      sandboxHome,
+      parentDeathGuard: false,
+      spawnProcess: this.spawnProcess,
     });
-
-    return {
-      stdin: child.stdin,
-      stdout: child.stdout,
-      stderr: child.stderr,
-      exit,
-      terminate: async () => {
-        if (child.exitCode !== null || child.signalCode !== null) {
-          await exit;
-          return;
-        }
-        signalProcessGroup(child, "SIGTERM");
-        const stopped = await Promise.race([
-          exit.then(() => true),
-          new Promise<false>((resolve) =>
-            setTimeout(() => resolve(false), PROCESS_STOP_GRACE_MS),
-          ),
-        ]);
-        if (!stopped) signalProcessGroup(child, "SIGKILL");
-        await exit;
-      },
-    };
   }
 }
 
@@ -672,40 +555,4 @@ function isPathInside(candidate: string, root: string): boolean {
 
 function sandboxLiteral(value: string): string {
   return JSON.stringify(path.resolve(value));
-}
-
-function waitForSpawn(child: ChildProcessWithoutNullStreams): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onSpawn = () => {
-      child.off("error", onError);
-      resolve();
-    };
-    const onError = (error: Error) => {
-      child.off("spawn", onSpawn);
-      reject(error);
-    };
-    child.once("spawn", onSpawn);
-    child.once("error", onError);
-  });
-}
-
-function signalProcessGroup(
-  child: ChildProcessWithoutNullStreams,
-  signal: NodeJS.Signals,
-): void {
-  if (child.pid !== undefined) {
-    try {
-      process.kill(-child.pid, signal);
-      return;
-    } catch (error) {
-      if (errorCode(error) === "ESRCH") return;
-    }
-  }
-  child.kill(signal);
-}
-
-function errorCode(error: unknown): string | undefined {
-  return error instanceof Error && "code" in error
-    ? String(error.code)
-    : undefined;
 }

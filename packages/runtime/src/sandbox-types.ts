@@ -11,6 +11,7 @@ export interface SandboxLaunchRequest {
   approvedCapabilities: ExtensionCapability[];
   runtimeReadPaths?: string[];
   workspaceWritePaths?: string[];
+  parentDeathGuard?: boolean;
   terminal?: {
     columns: number;
     rows: number;

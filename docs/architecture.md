@@ -4260,17 +4260,27 @@ prebuild's missing user execute bit only for a regular current-platform helper;
 symlinks and missing helpers fail installation.
 
 Graceful Server shutdown stops active process groups before closing the Store.
-An abrupt host or Runtime loss cannot prove that a macOS sandbox wrapper died,
-because `sandbox-exec` has no parent-death contract; startup therefore records
-unknown interruption rather than completion or reattachment. A guardian or OCI
-identity is required for proved cleanup of abrupt or deliberately detached
-descendants and cross-restart reattachment. Hard total RSS quotas,
-package-backed Python, remote sandboxes, and writer attribution remain outside
-this slice. PTY mode supplies real terminal stdin/stdout,
-sizing, control bytes, and process-group cancellation, but does not grant shell
-access, cross-restart attach, a durable screen buffer, or Napier job-control
-commands. The JavaScript/Python kernels and Node debugger below remain
-read-only typed protocols over the same Process Session service.
+Workspace Process launches also bind parent-death protection into their
+resource evidence. Linux reuses Bubblewrap's native `--die-with-parent`;
+macOS places `sandbox-exec` behind a fixed Node guardian that receives its
+private target specification over a dedicated pipe, watches the Runtime parent,
+and escalates target-group termination from `SIGTERM` to `SIGKILL`. PTY target
+specifications remain process-local and are removed before the sandbox target
+is spawned. Guardian/target PIDs, arguments, environment values, and protocol
+messages never enter the Ledger.
+
+An abrupt Runtime loss still leaves the task outcome unknown, so startup
+records interruption rather than completion. The guardian proves cleanup of
+the managed target process group, not deliberately re-sessioned descendants,
+cross-restart reattachment, or successful settlement. OCI guarding remains
+fail-closed until container runtime identity binding exists. Hard total RSS
+quotas, detached-descendant containment, package-backed Python, remote
+sandboxes, reattachment, and writer attribution remain outside this slice.
+PTY mode supplies real terminal stdin/stdout, sizing, control bytes, and
+process-group cancellation, but does not grant shell access, cross-restart
+attach, a durable screen buffer, or Napier job-control commands. The
+JavaScript/Python kernels and Node debugger below remain read-only typed
+protocols over the same Process Session service.
 
 ## Persistent JavaScript Kernel Flow
 
@@ -6973,8 +6983,9 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 1: Local execution and architecture
 
-- extend bounded Workspace Process Sessions with a managed guardian, proved
-  orphan cleanup, cross-restart reattachment, and remote scoped-write backends;
+- extend bounded Workspace Process Sessions beyond parent-loss target-group
+  cleanup with detached-descendant containment, cross-restart reattachment,
+  and remote scoped-write backends;
 - extend restricted Python into package-backed data/Notebook sessions and add
   managed tool callbacks without weakening Run ownership or Sandbox boundaries;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;

@@ -60,13 +60,12 @@ export function bindWorkspaceProcessIo(
       }
     : prepared.launch.env;
   return {
-    launch: terminal
-      ? {
-          ...prepared.launch,
-          env: environment,
-          terminal,
-        }
-      : prepared.launch,
+    launch: {
+      ...prepared.launch,
+      env: environment,
+      parentDeathGuard: true,
+      ...(terminal ? { terminal } : {}),
+    },
     commandSha256: sha256(
       canonicalJson({
         command: prepared.receipt,
@@ -76,14 +75,13 @@ export function bindWorkspaceProcessIo(
     environmentSha256: terminal
       ? sha256(canonicalJson(environment))
       : prepared.receipt.environmentSha256,
-    resourceLimitsSha256: terminal
-      ? sha256(
-          canonicalJson({
-            commandResourceLimitsSha256: prepared.receipt.resourceLimitsSha256,
-            terminal: terminalBinding,
-          }),
-        )
-      : prepared.receipt.resourceLimitsSha256,
+    resourceLimitsSha256: sha256(
+      canonicalJson({
+        commandResourceLimitsSha256: prepared.receipt.resourceLimitsSha256,
+        parentDeathGuard: true,
+        terminal: terminalBinding ?? null,
+      }),
+    ),
     session: terminal
       ? {
           ioMode: "pty",
