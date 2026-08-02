@@ -1257,8 +1257,40 @@ passed 2/2 trials. Duration was 3.115–3.541 seconds, mean cost was
 `$0.0013821556`, and every trial used five Runs. This is a reproducible fixed
 case, not a cross-model success-rate or superiority claim.
 
-Cross-model, broader Coding and Workflow, Research, Data, long-horizon,
-security, UX, and reference-project suites remain open.
+### Data Outcome Benchmark
+
+The `data_sqlite_metric_map_reduce_v1` case reuses the same Workflow runner,
+Series, and offline evidence protocol. Three isolated Map Runs inspect one
+hash-bound `analytics.sqlite` snapshot: two calculate paid/refunded totals and
+one renders a deterministic paid-revenue bar chart. The Reduce node sums the
+typed `90`, `12`, and `3` outputs to `105`.
+
+```bash
+npm run bench:workflow -- \
+  --case benchmarks/data/sqlite-metric-map-reduce-v1 \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 2
+```
+
+Passing requires exact Map/final outputs, a valid `schema -> operation`
+protocol in every Map Run, at least the required `schema/query/chart` action
+distribution, and an unchanged database hash. Extra read-only queries remain
+visible in action, cost, token, and latency evidence but do not turn a correct
+outcome into a false failure. Setup SQL runs under a fail-closed SQLite
+authorizer that denies attachment, extensions, temporary objects, and writes
+outside the fixture database.
+
+The checked-in DeepSeek
+[two-trial Data series](docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json)
+passed 2/2 trials in 9.494–10.193 seconds with five Runs per trial. Mean cost
+was `$0.0018431`; mean input/output tokens were 8,490/2,129.5. Each trial used
+three schema, four query, and one chart action while preserving the database.
+The retained action events contain only runtime hashes and counts; SQL, rows,
+SVG, model text/reasoning, and credentials are absent.
+
+Cross-model, broader Coding and Workflow, Research, long-horizon, security,
+UX, and reference-project suites remain open.
 
 ## Live Models
 
@@ -4926,15 +4958,17 @@ checked-in manifest is stale. `npm run write:release-artifacts` writes a
 top-level `napier.release-artifacts-audit` receipt that binds the package-lock
 receipt, runtime-environment receipt, product-performance baseline, management
 OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
-Web dist manifest, and the semantically verified Workflow Benchmark Series
-plus both Result/Ledger pairs by SHA-256; `npm run check:release-artifacts` /
+Web dist manifest, and the semantically verified Workflow and Data Benchmark
+Series plus all four Result/Ledger pairs by SHA-256;
+`npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
 tests before running workspace suites, so package-lock drift, runtime version
 drift, missing runtime components, OpenAPI route drift, manifest drift, extra
 dist files, malformed manifests, stale receipts, compatibility regressions,
 aggregate artifact drift, Workflow Benchmark trial substitution/tampering, and
-entry-budget regressions are covered without mutating the real build output.
+Data Benchmark evidence tampering and entry-budget regressions are covered
+without mutating the real build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with
 relative paths, file counts, main-entry budget status, the manifest SHA-256,
 the canonical dist-content SHA-256, and any errors for CI capture. Trace, Plan,

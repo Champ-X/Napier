@@ -6,6 +6,8 @@ import type {
   WorkflowBenchmarkLedgerEventReceipt,
   WorkflowBenchmarkResult,
 } from "./workflow-benchmark-types.js";
+import { validWorkflowBenchmarkLedgerWorkflow } from "./workflow-benchmark-ledger-workflow-shape.js";
+import { validWorkflowBenchmarkSqliteEvidenceBinding } from "./workflow-benchmark-sqlite-evidence.js";
 
 const TOP_LEVEL_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 threadId workflow runs evaluationEvent terminalEvent eventCount retainedEventCount omittedEventCount eventTypeCounts eventTypeSetSha256 sourceEventStreamSha256 sourceReplaySha256 eventReceipts receiptSetSha256 contentSha256",
@@ -30,6 +32,9 @@ export function createWorkflowBenchmarkLedgerBundle(input: {
   mapOutputSha256?: string;
   mapRunIds: string[];
   reduceRunId: string;
+  sqliteActionEvents?: RunEvent[];
+  databaseBeforeSha256?: string;
+  databaseAfterSha256?: string;
   runs: RunRecord[];
   evaluationEvent: RunEvent;
   terminalEvent: RunEvent;
@@ -59,6 +64,19 @@ export function createWorkflowBenchmarkLedgerBundle(input: {
         : {}),
       mapRunIds: [...input.mapRunIds].sort(),
       reduceRunId: input.reduceRunId,
+      ...(input.sqliteActionEvents
+        ? {
+            sqliteActionEvents: input.sqliteActionEvents
+              .map((event) => structuredClone(event))
+              .sort((left, right) => left.seq - right.seq),
+          }
+        : {}),
+      ...(input.databaseBeforeSha256
+        ? { databaseBeforeSha256: input.databaseBeforeSha256 }
+        : {}),
+      ...(input.databaseAfterSha256
+        ? { databaseAfterSha256: input.databaseAfterSha256 }
+        : {}),
     },
     runs: input.runs
       .map((run) => ({
@@ -148,6 +166,9 @@ export function verifyWorkflowBenchmarkLedgerBundle(input: unknown): {
   ) {
     diagnostics.push("ledger_event_binding_invalid");
   }
+  if (!validWorkflowBenchmarkSqliteEvidenceBinding(input)) {
+    diagnostics.push("ledger_sqlite_evidence_invalid");
+  }
   return {
     valid: diagnostics.length === 0,
     diagnostics,
@@ -191,7 +212,7 @@ function validBundleShape(
     resourceId(value["caseId"]) &&
     digest(value["caseSha256"]) &&
     resourceId(value["threadId"]) &&
-    validWorkflow(value["workflow"]) &&
+    validWorkflowBenchmarkLedgerWorkflow(value["workflow"]) &&
     validRuns(value["runs"]) &&
     validEvaluationEvent(value["evaluationEvent"]) &&
     validTerminalEvent(value["terminalEvent"]) &&
@@ -208,41 +229,6 @@ function validBundleShape(
     ) &&
     digest(value["receiptSetSha256"]) &&
     digest(value["contentSha256"])
-  );
-}
-
-function validWorkflow(value: unknown): boolean {
-  const workflow = recordValue(value);
-  const mapRunIds = workflow["mapRunIds"];
-  return (
-    exactRecord(value, [
-      "manifestSha256",
-      "blueprintSha256",
-      "resultSha256",
-      "outputSha256",
-      "nodeResultCount",
-      "completedNodeResultCount",
-      "planId",
-      "status",
-      ...(workflow["mapOutputSha256"] === undefined ? [] : ["mapOutputSha256"]),
-      "mapRunIds",
-      "reduceRunId",
-    ]) &&
-    resourceId(workflow["planId"]) &&
-    workflow["status"] === "completed" &&
-    digest(workflow["manifestSha256"]) &&
-    digest(workflow["blueprintSha256"]) &&
-    digest(workflow["resultSha256"]) &&
-    digest(workflow["outputSha256"]) &&
-    (workflow["mapOutputSha256"] === undefined ||
-      digest(workflow["mapOutputSha256"])) &&
-    Array.isArray(mapRunIds) &&
-    mapRunIds.every(resourceId) &&
-    new Set(mapRunIds).size === mapRunIds.length &&
-    mapRunIds.every((id, index) => index === 0 || mapRunIds[index - 1]! < id) &&
-    resourceId(workflow["reduceRunId"]) &&
-    nonNegativeInteger(workflow["nodeResultCount"]) &&
-    nonNegativeInteger(workflow["completedNodeResultCount"])
   );
 }
 

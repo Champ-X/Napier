@@ -1,0 +1,18 @@
+{
+  "kind": "napier.workflow-benchmark-case",
+  "schemaVersion": 2,
+  "id": "data_sqlite_metric_map_reduce_v1",
+  "title": "SQLite metric and chart Map Reduce",
+  "objective": "Use isolated model-backed Map runs to inspect one immutable SQLite snapshot, calculate two aggregate metrics, render one deterministic chart, and combine their typed results through deterministic Reduce.",
+  "inputPath": "input.json",
+  "expectedPath": "expected.json",
+  "timeoutMs": 120000,
+  "inputSha256": "1fb8fa538816236ded5bdf7604235a4d0f6fd2bcded4618a13803b12e0afab9f",
+  "expectedSha256": "d8f9e91ee0a51791ea24e6679ebc0fcef3324c119ce77711cf1ca6716ad85be9",
+  "scenario": "sqlite_metric_map_reduce",
+  "setupSqlPath": "setup.sql",
+  "setupSqlSha256": "1d686e832b1863780d7586918c9f4825da82079d18c7b891855019d2a60113eb",
+  "databasePath": "analytics.sqlite",
+  "requiredSqliteActions": ["schema", "query", "chart"],
+  "contentSha256": "1a4df6578a0ed27b1928d1725611d4a3396b9b60570c8f49c115b25b375ac96b"
+}

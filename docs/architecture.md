@@ -1449,6 +1449,40 @@ Each Ledger is about 44 KiB. Credentials and raw model/task content are absent
 from all retained artifacts. This small fixed case does not establish
 cross-model superiority.
 
+### Data Outcome Benchmark
+
+`data_sqlite_metric_map_reduce_v1` evolves the Workflow case schema to version
+2 without changing Result, Ledger, or Series schema versions. The case binds a
+setup SQL file and workspace-relative database path in addition to typed input
+and hidden expected output. Before Runtime startup, the runner creates the
+fixture under the temporary workspace with extensions disabled, defensive
+mode enabled, and an authorizer limited to main-database table creation and
+insertion. `ATTACH`, temporary schema, virtual tables, arbitrary functions,
+and paths outside the workspace fail closed.
+
+The ordinary Agent Map runtime executes three isolated read-only child Runs.
+Each Run must complete `sqlite_query schema` before its query/chart operation.
+The evaluation records schema/query/chart counts, a per-Run protocol verdict,
+and database hashes before and after execution. Required action coverage is a
+minimum rather than an exact call count: additional read-only exploration is
+retained as efficiency evidence in action counts, usage, latency, and cost,
+while exact typed Map/final outputs remain the task-success criterion.
+
+The Ledger retains only the six or more privacy-projected
+`tool.completed` events needed for SQLite evidence. Offline verification
+checks their exact nested shape, payload SHA-256 against the general receipt
+chain, Map Run ownership, global event order, schema-before-operation order,
+and database identity. SQL, parameters, result rows, chart labels/SVG, prompts,
+assistant text, reasoning, and credentials are omitted. The result evaluation
+is independently reconstructed from these events and the before/after hashes.
+
+The retained DeepSeek two-trial Series passed 2/2. Duration was
+9.494–10.193 seconds, mean cost was `$0.0018431`, and mean input/output tokens
+were 8,490/2,129.5. Both trials completed five Runs with three schema, four
+query, and one chart action and left the database unchanged. The release audit
+semantically verifies both Workflow and Data Series and binds their ten
+physical files into the 17-artifact release receipt.
+
 ### Workbench
 
 `@napier/web` maintains a projection of server state. It may optimistically
@@ -1548,13 +1582,14 @@ dist evidence.
 The top-level release artifact audit binds the package-lock receipt,
 runtime-environment receipt, management OpenAPI artifact, management OpenAPI
 compatibility fixture, product-performance baseline, Web dist receipt, Web
-dist manifest, and retained Workflow Benchmark Series plus its two
+dist manifest, and retained Workflow and Data Benchmark Series plus all four
 Result/Ledger pairs into one `napier.release-artifacts-audit` receipt. Before
-hashing the five Benchmark files, the gate performs full Series and trial
-semantic verification. It stores only artifact kinds, repo-relative paths,
-SHA-256 values, validity booleans, package name/version, and a canonical
-artifact-set digest. Verification re-runs the component and Benchmark
-verifiers and fails if any underlying artifact or the aggregate receipt drifts.
+hashing the ten Benchmark files, the gate performs full Series and trial
+semantic verification for both cases. It stores only artifact kinds,
+repo-relative paths, SHA-256 values, validity booleans, package name/version,
+and a canonical artifact-set digest. Verification re-runs the component and
+Benchmark verifiers and fails if any underlying artifact or the aggregate
+receipt drifts.
 
 ## Persistence
 

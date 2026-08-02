@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "bc9f9f13ef2c9ea158fd25ee36c74f52a746b12db9d1b17f338ec26bcdd563c6",
+  "artifactSetSha256": "bb9da4762abda185a61df7dedeb05ea33c39fc3bfc1c85d1a08427b145a0b41f",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -78,6 +78,36 @@
       "kind": "workflow-benchmark-ledger-2",
       "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-workflow_document_map_reduce_v1-8cb4c696f6b1ab81.json",
       "sha256": "b431309383a5dd1ab65cadec9aa922e7b20e4956e98406f61bcfe829a0f79539",
+      "valid": true
+    },
+    {
+      "kind": "data-benchmark-series",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json",
+      "sha256": "c20ccd01746d978bf3f1cb14423471cab81c6f9e2fe9d174444b7d753607dcac",
+      "valid": true
+    },
+    {
+      "kind": "data-benchmark-result-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-7a630af246e43dca.json",
+      "sha256": "c3a2a71da04e9720e6d2b9146b5d54eb1ba561c9c7707ad64f7ac8bd8c6e4092",
+      "valid": true
+    },
+    {
+      "kind": "data-benchmark-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-11e31cc3feb965d5.json",
+      "sha256": "8a3cb41c09a885369fe9eb8212387278be6c8a99b29b570aa41b3d591f299828",
+      "valid": true
+    },
+    {
+      "kind": "data-benchmark-result-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-e64a0aac17d7e17a.json",
+      "sha256": "b530fc6cd61a15454060c1af186244a91cf7462b0decb0fc269676430fc7b1e8",
+      "valid": true
+    },
+    {
+      "kind": "data-benchmark-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-9b2579178df01989.json",
+      "sha256": "71d9b5e37d6f72d97550e192cf202c7bd36a88812ec90ecd7df6b4df50fb7591",
       "valid": true
     }
   ],

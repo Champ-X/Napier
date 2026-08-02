@@ -10,6 +10,10 @@ import {
   validWorkflowBenchmarkResultShape,
 } from "./workflow-benchmark-artifact-shape.js";
 import { verifyWorkflowBenchmarkLedgerBundle } from "./workflow-benchmark-ledger.js";
+import {
+  workflowBenchmarkSqliteActionCounts,
+  workflowBenchmarkSqliteProtocolValid,
+} from "./workflow-benchmark-sqlite-evidence.js";
 import type {
   WorkflowBenchmarkArtifactVerification,
   WorkflowBenchmarkCase,
@@ -19,7 +23,7 @@ import type {
   WorkflowBenchmarkResult,
 } from "./workflow-benchmark-types.js";
 
-const CRITERIA = [
+const BASE_CRITERIA = [
   "workflow_completed",
   "exact_output",
   "ordered_map_output",
@@ -31,8 +35,11 @@ const CRITERIA = [
   "credential_absent",
 ] as const;
 
-export function createWorkflowBenchmarkEvaluation(input: {
-  benchmarkCase: Pick<WorkflowBenchmarkCase, "id" | "contentSha256">;
+interface CreateWorkflowBenchmarkEvaluationInput {
+  benchmarkCase: Pick<
+    WorkflowBenchmarkCase,
+    "id" | "schemaVersion" | "contentSha256"
+  >;
   workflowStatus: ExecutionPlanWorkflowResult["status"];
   expectedOutputSha256: string;
   actualOutputSha256?: string;
@@ -47,33 +54,25 @@ export function createWorkflowBenchmarkEvaluation(input: {
   reduceModelOrToolEventCount: number;
   replayValid: boolean;
   credentialLeakDetected: boolean;
-}): WorkflowBenchmarkEvaluation {
-  const diagnostics: WorkflowBenchmarkDiagnostic[] = [];
-  if (input.workflowStatus !== "completed") {
-    diagnostics.push("workflow_not_completed");
-  }
+  sqliteSchemaCompletedCount?: number;
+  sqliteQueryCompletedCount?: number;
+  sqliteChartCompletedCount?: number;
+  sqliteProtocolValid?: boolean;
+  databaseUnchanged?: boolean;
+}
+
+export function createWorkflowBenchmarkEvaluation(
+  input: CreateWorkflowBenchmarkEvaluationInput,
+): WorkflowBenchmarkEvaluation {
   const outputMatch = input.actualOutputSha256 === input.expectedOutputSha256;
-  if (!outputMatch) diagnostics.push("output_mismatch");
   const mapOutputMatch =
     input.actualMapOutputSha256 === input.expectedMapOutputSha256;
-  if (!mapOutputMatch) diagnostics.push("map_output_mismatch");
-  if (input.completedNodeResultCount !== input.expectedNodeResultCount) {
-    diagnostics.push("node_result_mismatch");
-  }
-  if (input.completedMapRunCount !== input.expectedMapItemCount) {
-    diagnostics.push("map_run_mismatch");
-  }
-  if (input.mapCompletedEventCount !== input.expectedMapItemCount) {
-    diagnostics.push("map_event_mismatch");
-  }
-  if (input.reduceCompletedEventCount !== 1) {
-    diagnostics.push("reduce_event_mismatch");
-  }
-  if (input.reduceModelOrToolEventCount !== 0) {
-    diagnostics.push("reduce_executed_model_or_tool");
-  }
-  if (!input.replayValid) diagnostics.push("replay_invalid");
-  if (input.credentialLeakDetected) diagnostics.push("credential_leaked");
+  const sqliteCase = input.benchmarkCase.schemaVersion === 2;
+  const diagnostics = workflowBenchmarkDiagnostics(
+    input,
+    outputMatch,
+    mapOutputMatch,
+  );
   const status =
     input.workflowStatus === "cancelled"
       ? ("inconclusive" as const)
@@ -82,12 +81,14 @@ export function createWorkflowBenchmarkEvaluation(input: {
         : ("failed" as const);
   const content = {
     kind: "napier.workflow-benchmark-evaluation" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: sqliteCase ? (2 as const) : (1 as const),
     caseId: input.benchmarkCase.id,
     caseSha256: input.benchmarkCase.contentSha256,
     status,
     workflowStatus: input.workflowStatus,
-    criteriaSha256: sha256(canonicalJson(CRITERIA)),
+    criteriaSha256: sha256(
+      canonicalJson(workflowBenchmarkCriteria(sqliteCase)),
+    ),
     expectedOutputSha256: input.expectedOutputSha256,
     ...(input.actualOutputSha256
       ? { actualOutputSha256: input.actualOutputSha256 }
@@ -107,12 +108,82 @@ export function createWorkflowBenchmarkEvaluation(input: {
     reduceModelOrToolEventCount: input.reduceModelOrToolEventCount,
     replayValid: input.replayValid,
     credentialLeakDetected: input.credentialLeakDetected,
+    ...(sqliteCase ? sqliteEvaluationEvidence(input) : {}),
     diagnostics,
   };
   return {
     ...content,
     contentSha256: sha256(canonicalJson(content)),
   };
+}
+
+function workflowBenchmarkDiagnostics(
+  input: CreateWorkflowBenchmarkEvaluationInput,
+  outputMatch: boolean,
+  mapOutputMatch: boolean,
+): WorkflowBenchmarkDiagnostic[] {
+  const diagnostics: WorkflowBenchmarkDiagnostic[] = [];
+  if (input.workflowStatus !== "completed") {
+    diagnostics.push("workflow_not_completed");
+  }
+  if (!outputMatch) diagnostics.push("output_mismatch");
+  if (!mapOutputMatch) diagnostics.push("map_output_mismatch");
+  if (input.completedNodeResultCount !== input.expectedNodeResultCount) {
+    diagnostics.push("node_result_mismatch");
+  }
+  if (input.completedMapRunCount !== input.expectedMapItemCount) {
+    diagnostics.push("map_run_mismatch");
+  }
+  if (input.mapCompletedEventCount !== input.expectedMapItemCount) {
+    diagnostics.push("map_event_mismatch");
+  }
+  if (input.reduceCompletedEventCount !== 1) {
+    diagnostics.push("reduce_event_mismatch");
+  }
+  if (input.reduceModelOrToolEventCount !== 0) {
+    diagnostics.push("reduce_executed_model_or_tool");
+  }
+  if (!input.replayValid) diagnostics.push("replay_invalid");
+  if (input.credentialLeakDetected) diagnostics.push("credential_leaked");
+  if (
+    input.benchmarkCase.schemaVersion === 2 &&
+    ((input.sqliteSchemaCompletedCount ?? 0) < 3 ||
+      (input.sqliteQueryCompletedCount ?? 0) < 2 ||
+      (input.sqliteChartCompletedCount ?? 0) < 1 ||
+      input.sqliteProtocolValid !== true)
+  ) {
+    diagnostics.push("sqlite_action_mismatch");
+  }
+  if (
+    input.benchmarkCase.schemaVersion === 2 &&
+    input.databaseUnchanged !== true
+  ) {
+    diagnostics.push("database_changed");
+  }
+  return diagnostics;
+}
+
+function sqliteEvaluationEvidence(
+  input: CreateWorkflowBenchmarkEvaluationInput,
+) {
+  return {
+    sqliteSchemaCompletedCount: input.sqliteSchemaCompletedCount ?? 0,
+    sqliteQueryCompletedCount: input.sqliteQueryCompletedCount ?? 0,
+    sqliteChartCompletedCount: input.sqliteChartCompletedCount ?? 0,
+    sqliteProtocolValid: input.sqliteProtocolValid ?? false,
+    databaseUnchanged: input.databaseUnchanged ?? false,
+  };
+}
+
+function workflowBenchmarkCriteria(sqliteCase: boolean): readonly string[] {
+  return sqliteCase
+    ? [
+        ...BASE_CRITERIA,
+        "sqlite_action_distribution",
+        "database_immutable",
+        "receipt_bound_sqlite_actions",
+      ]
+    : BASE_CRITERIA;
 }
 
 export function createWorkflowBenchmarkResult(
@@ -238,9 +309,13 @@ function benchmarkOutcomeMatches(
       receipt.runId === bundle.workflow.reduceRunId &&
       (receipt.type === "model.response" || receipt.type.startsWith("tool.")),
   ).length;
+  const sqliteCounts = workflowBenchmarkSqliteActionCounts(
+    bundle.workflow.sqliteActionEvents ?? [],
+  );
   const expectedEvaluation = createWorkflowBenchmarkEvaluation({
     benchmarkCase: {
       id: result.caseId,
+      schemaVersion: result.evaluation.schemaVersion,
       contentSha256: result.caseSha256,
     },
     workflowStatus: bundle.workflow.status,
@@ -267,6 +342,21 @@ function benchmarkOutcomeMatches(
     reduceModelOrToolEventCount,
     replayValid: result.evaluation.replayValid,
     credentialLeakDetected: result.evaluation.credentialLeakDetected,
+    ...(result.evaluation.schemaVersion === 2
+      ? {
+          sqliteSchemaCompletedCount: sqliteCounts.schema,
+          sqliteQueryCompletedCount: sqliteCounts.query,
+          sqliteChartCompletedCount: sqliteCounts.chart,
+          sqliteProtocolValid: workflowBenchmarkSqliteProtocolValid(
+            bundle.workflow.sqliteActionEvents ?? [],
+            new Set(bundle.workflow.mapRunIds),
+          ),
+          databaseUnchanged:
+            bundle.workflow.databaseBeforeSha256 !== undefined &&
+            bundle.workflow.databaseBeforeSha256 ===
+              bundle.workflow.databaseAfterSha256,
+        }
+      : {}),
   });
   return (
     canonicalJson(expectedEvaluation as unknown as JsonValue) ===

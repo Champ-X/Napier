@@ -30,7 +30,7 @@ Audit date: 2026-08-02
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, bounded full-screen local `napier tui`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                  |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| P9 outcome benchmark              | In progress    | Three fixed Coding cases cover single-file repair, multi-file LSP migration, and debugger-qualified repair with repeated trials, Sandbox assertions, tool distributions, and Ledger evidence. The first Workflow case now measures real model-backed typed Map fan-out plus deterministic Reduce, exact output, Run isolation, event semantics, Replay validity, credential privacy, offline Result/Ledger verification, and repeated latency/cost/token distributions. DeepSeek passed the retained Workflow series 2/2; the small sample is not a cross-model superiority claim. Research, Data, Long-horizon, Security, and UX cases, broader Coding/Workflow tasks, reference-project execution, and larger cross-model distributions remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| P9 outcome benchmark              | In progress    | Three fixed Coding cases cover single-file repair, multi-file LSP migration, and debugger-qualified repair with repeated trials, Sandbox assertions, tool distributions, and Ledger evidence. Workflow and Data cases now measure real model-backed typed Map fan-out plus deterministic Reduce, exact outputs, Run isolation, Replay validity, credential privacy, SQLite schema/query/chart protocol, database immutability, offline Result/Ledger verification, and repeated latency/cost/token distributions. DeepSeek passed both retained two-trial Series 2/2; these small samples are not a cross-model superiority claim. Research, Long-horizon, Security, and UX cases, broader Coding/Workflow/Data tasks, reference-project execution, and larger cross-model distributions remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Dogfood Evidence: Real DeepSeek Outcomes
@@ -71,6 +71,10 @@ environment:
 - a retained two-trial DeepSeek Series passed 2/2 in 3.115–3.541 seconds.
   Mean cost was `$0.0013821556`, mean input/output tokens were 8,567.5/641,
   and offline Series verification returned zero diagnostics.
+- `data_sqlite_metric_map_reduce_v1` passed a retained two-trial Series 2/2 in
+  9.494–10.193 seconds. Mean cost was `$0.0018431`, mean input/output tokens
+  were 8,490/2,129.5, every trial completed five Runs and the required
+  schema/query/chart protocol, and the source database remained unchanged.
 
 ## Implemented Slice: Workflow Outcome Benchmark
 
@@ -107,8 +111,42 @@ Observed result:
   and raw-content scans return no matches;
 - the formal release audit semantically verifies the Series and both
   Result/Ledger pairs, then binds all five physical file hashes into the
-  12-artifact release receipt. Missing, substituted, or tampered trials block
+  17-artifact release receipt. Missing, substituted, or tampered trials block
   release verification.
+
+## Implemented Slice: Data Outcome Benchmark
+
+User scenario: a data task must prove that a real model queried the intended
+immutable database, produced exact metrics and a chart-derived result, and did
+not rely on an unverifiable summary or mutate the source.
+
+Observed result:
+
+- `data_sqlite_metric_map_reduce_v1` binds typed metric requests, hidden
+  expected output, setup SQL, and the initial database path/hash through case
+  schema 2 while reusing the existing Workflow Result/Ledger/Series protocol;
+- three isolated Map Runs calculate paid total `90`, refunded total `12`, and
+  paid-region chart point count `3`; deterministic Reduce returns `105`;
+- setup runs before Runtime startup under SQLite defensive mode and an
+  authorizer limited to main-database table creation/insertion. A tested
+  `ATTACH` attempt fails without creating an external file;
+- scoring requires exact Map/final outputs, at least three schema, two query,
+  and one chart completion, a schema-before-operation protocol in every Map
+  Run, valid Replay, credential absence, and identical database hashes before
+  and after execution;
+- extra safe reads remain visible as efficiency evidence instead of being
+  misclassified as outcome failure. Both retained DeepSeek trials used three
+  schema, four query, and one chart call;
+- SQLite action events are retained only after the Runtime privacy projection.
+  The offline verifier checks exact event/detail shapes, payload receipts,
+  Run ownership/order, protocol, action counts, and database binding. SQL,
+  parameters, rows, SVG, model text/reasoning, and credentials are absent;
+- Faux 2-trial integration covers execution, v1 compatibility, external setup
+  denial, database drift, and self-rehashed action tampering. The live smoke
+  and retained DeepSeek 2-trial Series pass with zero verification diagnostics;
+- release verification independently loads both Benchmark Series plus all
+  eight referenced Result/Ledger files and binds the ten physical benchmark
+  files into the 17-artifact release receipt.
 
 ## Implemented Slice: Per-Tool Benchmark Outcome Evidence
 

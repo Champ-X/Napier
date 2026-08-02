@@ -7,7 +7,7 @@ import type {
 } from "./workflow-benchmark-types.js";
 
 const EVALUATION_KEYS = keySet(
-  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected diagnostics contentSha256",
+  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid databaseUnchanged diagnostics contentSha256",
 );
 const RESULT_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 status model environment run workflow evaluation ledger contentSha256",
@@ -38,38 +38,88 @@ export function validWorkflowBenchmarkEvaluationShape(
   value: unknown,
 ): value is WorkflowBenchmarkEvaluation {
   const evaluation = record(value);
-  const keys = EVALUATION_KEYS.filter(
-    (key) => key !== "actualOutputSha256" && key !== "actualMapOutputSha256",
-  ).concat(
-    evaluation["actualOutputSha256"] === undefined
-      ? []
-      : ["actualOutputSha256"],
-    evaluation["actualMapOutputSha256"] === undefined
-      ? []
-      : ["actualMapOutputSha256"],
-  );
+  const keys = evaluationKeys(evaluation);
   if (!exactRecord(value, keys)) return false;
   const { contentSha256, ...content } = value;
   return (
-    value["kind"] === "napier.workflow-benchmark-evaluation" &&
-    value["schemaVersion"] === 1 &&
-    resourceId(value["caseId"]) &&
-    digest(value["caseSha256"]) &&
-    resultStatus(value["status"]) &&
-    workflowStatus(value["workflowStatus"]) &&
-    digest(value["criteriaSha256"]) &&
-    digest(value["expectedOutputSha256"]) &&
-    optionalDigest(value["actualOutputSha256"]) &&
-    digest(value["expectedMapOutputSha256"]) &&
-    optionalDigest(value["actualMapOutputSha256"]) &&
-    typeof value["outputMatch"] === "boolean" &&
-    typeof value["mapOutputMatch"] === "boolean" &&
+    validEvaluationIdentity(value) &&
+    validEvaluationOutcome(value) &&
     validEvaluationCounts(value) &&
-    typeof value["replayValid"] === "boolean" &&
-    typeof value["credentialLeakDetected"] === "boolean" &&
+    validEvaluationEvidence(value) &&
     validDiagnostics(value["diagnostics"]) &&
     digest(contentSha256) &&
     sha256(canonicalJson(content as unknown as JsonValue)) === contentSha256
+  );
+}
+
+function evaluationKeys(
+  evaluation: Record<string, unknown>,
+): readonly string[] {
+  const optional = new Set([
+    "actualOutputSha256",
+    "actualMapOutputSha256",
+    "sqliteSchemaCompletedCount",
+    "sqliteQueryCompletedCount",
+    "sqliteChartCompletedCount",
+    "sqliteProtocolValid",
+    "databaseUnchanged",
+  ]);
+  const keys = EVALUATION_KEYS.filter((key) => !optional.has(key));
+  if (evaluation["actualOutputSha256"] !== undefined) {
+    keys.push("actualOutputSha256");
+  }
+  if (evaluation["actualMapOutputSha256"] !== undefined) {
+    keys.push("actualMapOutputSha256");
+  }
+  if (evaluation["schemaVersion"] === 2) {
+    keys.push(
+      "sqliteSchemaCompletedCount",
+      "sqliteQueryCompletedCount",
+      "sqliteChartCompletedCount",
+      "sqliteProtocolValid",
+      "databaseUnchanged",
+    );
+  }
+  return keys;
+}
+
+function validEvaluationIdentity(evaluation: Record<string, unknown>): boolean {
+  return (
+    evaluation["kind"] === "napier.workflow-benchmark-evaluation" &&
+    (evaluation["schemaVersion"] === 1 || evaluation["schemaVersion"] === 2) &&
+    resourceId(evaluation["caseId"]) &&
+    digest(evaluation["caseSha256"]) &&
+    resultStatus(evaluation["status"]) &&
+    workflowStatus(evaluation["workflowStatus"]) &&
+    digest(evaluation["criteriaSha256"])
+  );
+}
+
+function validEvaluationOutcome(evaluation: Record<string, unknown>): boolean {
+  return (
+    digest(evaluation["expectedOutputSha256"]) &&
+    optionalDigest(evaluation["actualOutputSha256"]) &&
+    digest(evaluation["expectedMapOutputSha256"]) &&
+    optionalDigest(evaluation["actualMapOutputSha256"]) &&
+    typeof evaluation["outputMatch"] === "boolean" &&
+    typeof evaluation["mapOutputMatch"] === "boolean"
+  );
+}
+
+function validEvaluationEvidence(evaluation: Record<string, unknown>): boolean {
+  if (
+    typeof evaluation["replayValid"] !== "boolean" ||
+    typeof evaluation["credentialLeakDetected"] !== "boolean"
+  ) {
+    return false;
+  }
+  return (
+    evaluation["schemaVersion"] === 1 ||
+    (nonNegativeInteger(evaluation["sqliteSchemaCompletedCount"]) &&
+      nonNegativeInteger(evaluation["sqliteQueryCompletedCount"]) &&
+      nonNegativeInteger(evaluation["sqliteChartCompletedCount"]) &&
+      typeof evaluation["sqliteProtocolValid"] === "boolean" &&
+      typeof evaluation["databaseUnchanged"] === "boolean")
   );
 }
 

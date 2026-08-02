@@ -1,0 +1,16 @@
+{
+  "documents": [
+    {
+      "id": "paid_total",
+      "text": "Inspect analytics.sqlite and calculate total amount_cents for orders whose status is paid. Return the integer as length for id paid_total."
+    },
+    {
+      "id": "refunded_total",
+      "text": "Inspect analytics.sqlite and calculate total amount_cents for orders whose status is refunded. Return the integer as length for id refunded_total."
+    },
+    {
+      "id": "paid_region_chart_points",
+      "text": "Inspect analytics.sqlite and render the required paid amount_cents by region bar chart. Return its pointCount as length for id paid_region_chart_points."
+    }
+  ]
+}

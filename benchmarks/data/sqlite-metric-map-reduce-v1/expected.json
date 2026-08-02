@@ -1,0 +1,8 @@
+{
+  "mapItems": [
+    { "id": "paid_total", "length": 90 },
+    { "id": "refunded_total", "length": 12 },
+    { "id": "paid_region_chart_points", "length": 3 }
+  ],
+  "output": 105
+}

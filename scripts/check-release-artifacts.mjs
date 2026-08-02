@@ -30,6 +30,8 @@ const defaultManagementOpenApiCompatibilityPath =
   "docs/artifacts/management-openapi-compatibility-0.1.0.json";
 const defaultWorkflowBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json";
+const defaultDataBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json";
 
 export async function auditReleaseArtifacts(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -55,6 +57,8 @@ export async function auditReleaseArtifacts(options = {}) {
     defaultManagementOpenApiCompatibilityPath;
   const workflowBenchmarkSeriesPath =
     options.workflowBenchmarkSeriesPath ?? defaultWorkflowBenchmarkSeriesPath;
+  const dataBenchmarkSeriesPath =
+    options.dataBenchmarkSeriesPath ?? defaultDataBenchmarkSeriesPath;
   const rootPackage = parseJson(
     await readTextFile(
       path.join(repoRoot, "package.json"),
@@ -136,7 +140,16 @@ export async function auditReleaseArtifacts(options = {}) {
       repoRoot,
       seriesPath: workflowBenchmarkSeriesPath,
       errors,
+      artifactKindPrefix: "workflow-benchmark",
+      diagnosticLabel: "workflow benchmark",
     });
+  const dataBenchmarkArtifacts = await verifyWorkflowBenchmarkReleaseArtifacts({
+    repoRoot,
+    seriesPath: dataBenchmarkSeriesPath,
+    errors,
+    artifactKindPrefix: "data-benchmark",
+    diagnosticLabel: "data benchmark",
+  });
 
   const artifacts = [
     {
@@ -182,6 +195,7 @@ export async function auditReleaseArtifacts(options = {}) {
       valid: managementOpenApiCompatibility.readable,
     },
     ...workflowBenchmarkArtifacts,
+    ...dataBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
     Buffer.from(formatArtifactSetManifest(artifacts), "utf8"),
@@ -407,6 +421,11 @@ function parseCliOptions(args) {
       index += 1;
       continue;
     }
+    if (arg === "--data-benchmark-series-path") {
+      options.dataBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
     throw new Error(`Unknown option: ${arg}`);
   }
   return options;
@@ -416,6 +435,8 @@ async function verifyWorkflowBenchmarkReleaseArtifacts({
   repoRoot,
   seriesPath,
   errors,
+  artifactKindPrefix,
+  diagnosticLabel,
 }) {
   const seriesEvidence = await readArtifactEvidence(
     repoRoot,
@@ -440,7 +461,7 @@ async function verifyWorkflowBenchmarkReleaseArtifacts({
     references = workflowBenchmarkSeriesArtifactReferences(series);
   } catch (error) {
     errors.push(
-      `workflow benchmark series: ${
+      `${diagnosticLabel} series: ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
@@ -449,7 +470,7 @@ async function verifyWorkflowBenchmarkReleaseArtifacts({
   const verificationArtifacts = [];
   const releaseArtifacts = [
     {
-      kind: "workflow-benchmark-series",
+      kind: `${artifactKindPrefix}-series`,
       ...seriesEvidence,
       valid: seriesEvidence.readable,
     },
@@ -470,12 +491,12 @@ async function verifyWorkflowBenchmarkReleaseArtifacts({
     });
     releaseArtifacts.push(
       {
-        kind: `workflow-benchmark-result-${reference.index}`,
+        kind: `${artifactKindPrefix}-result-${reference.index}`,
         ...resultEvidence,
         valid: resultEvidence.readable,
       },
       {
-        kind: `workflow-benchmark-ledger-${reference.index}`,
+        kind: `${artifactKindPrefix}-ledger-${reference.index}`,
         ...ledgerEvidence,
         valid: ledgerEvidence.readable,
       },
@@ -488,14 +509,14 @@ async function verifyWorkflowBenchmarkReleaseArtifacts({
   if (!verification.valid) {
     errors.push(
       ...verification.diagnostics.map(
-        (diagnostic) => `workflow benchmark series: ${diagnostic}`,
+        (diagnostic) => `${diagnosticLabel} series: ${diagnostic}`,
       ),
     );
     for (const trial of verification.trialDiagnostics) {
       errors.push(
         ...trial.diagnostics.map(
           (diagnostic) =>
-            `workflow benchmark trial ${trial.index}: ${diagnostic}`,
+            `${diagnosticLabel} trial ${trial.index}: ${diagnostic}`,
         ),
       );
     }

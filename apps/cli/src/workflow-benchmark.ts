@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -31,6 +31,12 @@ import {
   workflowBenchmarkResultFileName,
 } from "./workflow-benchmark-contract.js";
 import { createWorkflowBenchmarkLedgerBundle } from "./workflow-benchmark-ledger.js";
+import {
+  collectWorkflowBenchmarkSqliteActionEvents,
+  workflowBenchmarkSqliteActionCounts,
+  workflowBenchmarkSqliteProtocolValid,
+} from "./workflow-benchmark-sqlite-evidence.js";
+import { setupWorkflowBenchmarkDatabase } from "./workflow-benchmark-sqlite-setup.js";
 import type {
   WorkflowBenchmarkArtifacts,
   WorkflowBenchmarkResult,
@@ -83,21 +89,27 @@ export async function runWorkflowBenchmark(
   await mkdir(workspaceRoot);
   let runtime: LocalAgentRuntimeServices | undefined;
   try {
+    const databaseFixture = await setupWorkflowBenchmarkDatabase(
+      workspaceRoot,
+      loaded,
+    );
     runtime = await dependencies.createRuntime({
       workspaceRoot,
       dataRoot,
       env: options.env,
     });
-    if (credential) {
-      await runtime.store.createCredentialReference({
-        providerId: options.model.provider,
-        label: "Workflow benchmark credential",
-        source: { type: "environment", variable: credential.variable },
-      });
-    }
+    await configureWorkflowBenchmarkCredential(
+      runtime,
+      options.model,
+      credential,
+    );
     if (!(await runtime.models.isConfigured(options.model))) {
       throw new Error("Workflow benchmark model is not configured");
     }
+    await configureWorkflowBenchmarkAgent(
+      runtime,
+      loaded.benchmarkCase.schemaVersion === 2,
+    );
     const manifest = await createWorkflowBenchmarkManifest({
       store: runtime.store,
       benchmarkCase: loaded.benchmarkCase,
@@ -144,6 +156,15 @@ export async function runWorkflowBenchmark(
         run.configuration.executionMode === "workflow_map_read_only" &&
         run.status === "completed",
     );
+    const sqliteActionEvents = collectWorkflowBenchmarkSqliteActionEvents(
+      eventsBeforeEvaluation,
+      new Set(mapRuns.map((run) => run.id)),
+    );
+    const sqliteActionCounts =
+      workflowBenchmarkSqliteActionCounts(sqliteActionEvents);
+    const databaseAfterSha256 = databaseFixture
+      ? sha256(await readFile(databaseFixture.path))
+      : undefined;
     const reduceModelOrToolEventCount = reduceResult?.runId
       ? eventsBeforeEvaluation.filter(
           (event) =>
@@ -188,6 +209,20 @@ export async function runWorkflowBenchmark(
       replayValid:
         verifyThreadReplayBundle(replayBeforeEvaluation).status === "valid",
       credentialLeakDetected,
+      ...(loaded.benchmarkCase.schemaVersion === 2
+        ? {
+            sqliteSchemaCompletedCount: sqliteActionCounts.schema,
+            sqliteQueryCompletedCount: sqliteActionCounts.query,
+            sqliteChartCompletedCount: sqliteActionCounts.chart,
+            sqliteProtocolValid: workflowBenchmarkSqliteProtocolValid(
+              sqliteActionEvents,
+              new Set(mapRuns.map((run) => run.id)),
+            ),
+            databaseUnchanged:
+              databaseFixture !== undefined &&
+              databaseFixture.sha256 === databaseAfterSha256,
+          }
+        : {}),
     });
     const evidenceRunId =
       workflowResult.nodeResults.find((result) => result.runId)?.runId ??
@@ -242,6 +277,15 @@ export async function runWorkflowBenchmark(
       ...(mapOutputSha256 ? { mapOutputSha256 } : {}),
       mapRunIds: mapRuns.map((run) => run.id),
       reduceRunId: reduceResult?.runId ?? evidenceRunId,
+      ...(loaded.benchmarkCase.schemaVersion === 2
+        ? {
+            sqliteActionEvents,
+            ...(databaseFixture
+              ? { databaseBeforeSha256: databaseFixture.sha256 }
+              : {}),
+            ...(databaseAfterSha256 ? { databaseAfterSha256 } : {}),
+          }
+        : {}),
       runs,
       evaluationEvent,
       terminalEvent,
@@ -319,6 +363,30 @@ function workflowBenchmarkCredential(
     );
   }
   return { variable: options.credentialEnv, value };
+}
+
+async function configureWorkflowBenchmarkCredential(
+  runtime: LocalAgentRuntimeServices,
+  model: ModelRef,
+  credential: { variable: string; value: string } | undefined,
+): Promise<void> {
+  if (!credential) return;
+  await runtime.store.createCredentialReference({
+    providerId: model.provider,
+    label: "Workflow benchmark credential",
+    source: { type: "environment", variable: credential.variable },
+  });
+}
+
+async function configureWorkflowBenchmarkAgent(
+  runtime: LocalAgentRuntimeServices,
+  sqliteCase: boolean,
+): Promise<void> {
+  if (!sqliteCase) return;
+  const agent = runtime.store.listAgents()[0]!;
+  await runtime.store.updateAgent(agent.id, {
+    enabledTools: ["sqlite_query"],
+  });
 }
 
 function workflowRunEvidence(

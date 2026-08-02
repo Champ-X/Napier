@@ -13,14 +13,18 @@ const MAX_CASE_FILE_BYTES = 64 * 1024;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
 const DOCUMENT_ID = /^[a-z][a-z0-9_]{2,40}$/u;
 const ASCII_TEXT = /^[\x20-\x7e]{1,200}$/u;
-const CASE_KEYS = keySet(
+const CASE_KEYS_V1 = keySet(
   "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 contentSha256",
+);
+const CASE_KEYS_V2 = keySet(
+  "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario setupSqlPath setupSqlSha256 databasePath requiredSqliteActions contentSha256",
 );
 
 export interface LoadedWorkflowBenchmarkCase {
   benchmarkCase: WorkflowBenchmarkCase;
   input: WorkflowBenchmarkInput;
   expected: WorkflowBenchmarkExpected;
+  setupSqlSource?: string;
 }
 
 export async function loadWorkflowBenchmarkCase(
@@ -43,26 +47,32 @@ export async function loadWorkflowBenchmarkCase(
   if (sha256(canonicalJson(expected)) !== manifest.expectedSha256) {
     throw new Error("Workflow benchmark expected outcome hash mismatch");
   }
-  return { benchmarkCase: manifest, input, expected };
+  const setupSqlSource =
+    manifest.schemaVersion === 2
+      ? await readTextCaseEntry(root, manifest.setupSqlPath)
+      : undefined;
+  if (
+    manifest.schemaVersion === 2 &&
+    sha256(setupSqlSource ?? "") !== manifest.setupSqlSha256
+  ) {
+    throw new Error("Workflow benchmark setup SQL hash mismatch");
+  }
+  return {
+    benchmarkCase: manifest,
+    input,
+    expected,
+    ...(setupSqlSource === undefined ? {} : { setupSqlSource }),
+  };
 }
 
 export function validateWorkflowBenchmarkCase(
   input: unknown,
 ): WorkflowBenchmarkCase {
+  const keys = workflowBenchmarkCaseKeys(input);
   if (
-    !exactRecord(input, CASE_KEYS) ||
-    input["kind"] !== "napier.workflow-benchmark-case" ||
-    input["schemaVersion"] !== 1 ||
-    !resourceId(input["id"]) ||
-    !boundedText(input["title"], 1, 160) ||
-    !boundedText(input["objective"], 1, 500) ||
-    !safeRelativeFile(input["inputPath"]) ||
-    !safeRelativeFile(input["expectedPath"]) ||
-    input["inputPath"] === input["expectedPath"] ||
-    !integerBetween(input["timeoutMs"], 10_000, 180_000) ||
-    !digest(input["inputSha256"]) ||
-    !digest(input["expectedSha256"]) ||
-    !digest(input["contentSha256"])
+    !exactRecord(input, keys) ||
+    !validWorkflowBenchmarkCaseBase(input) ||
+    !validWorkflowBenchmarkSqliteCase(input)
   ) {
     throw new Error("Workflow benchmark case is invalid");
   }
@@ -74,6 +84,50 @@ export function validateWorkflowBenchmarkCase(
     throw new Error("Workflow benchmark case hash mismatch");
   }
   return benchmarkCase;
+}
+
+function workflowBenchmarkCaseKeys(input: unknown): readonly string[] {
+  return input !== null &&
+    typeof input === "object" &&
+    !Array.isArray(input) &&
+    (input as Record<string, unknown>)["schemaVersion"] === 2
+    ? CASE_KEYS_V2
+    : CASE_KEYS_V1;
+}
+
+function validWorkflowBenchmarkCaseBase(
+  input: Record<string, unknown>,
+): boolean {
+  return (
+    input["kind"] === "napier.workflow-benchmark-case" &&
+    (input["schemaVersion"] === 1 || input["schemaVersion"] === 2) &&
+    resourceId(input["id"]) &&
+    boundedText(input["title"], 1, 160) &&
+    boundedText(input["objective"], 1, 500) &&
+    safeRelativeFile(input["inputPath"]) &&
+    safeRelativeFile(input["expectedPath"]) &&
+    input["inputPath"] !== input["expectedPath"] &&
+    integerBetween(input["timeoutMs"], 10_000, 180_000) &&
+    digest(input["inputSha256"]) &&
+    digest(input["expectedSha256"]) &&
+    digest(input["contentSha256"])
+  );
+}
+
+function validWorkflowBenchmarkSqliteCase(
+  input: Record<string, unknown>,
+): boolean {
+  if (input["schemaVersion"] === 1) return true;
+  return (
+    input["scenario"] === "sqlite_metric_map_reduce" &&
+    safeRelativeFile(input["setupSqlPath"]) &&
+    digest(input["setupSqlSha256"]) &&
+    safeRelativeFile(input["databasePath"]) &&
+    input["databasePath"].endsWith(".sqlite") &&
+    Array.isArray(input["requiredSqliteActions"]) &&
+    canonicalJson(input["requiredSqliteActions"]) ===
+      canonicalJson(["schema", "query", "chart"])
+  );
 }
 
 export function validateWorkflowBenchmarkInput(
@@ -155,6 +209,25 @@ async function readJsonFile(filePath: string, root: string): Promise<unknown> {
   return JSON.parse(await readFile(filePath, "utf8")) as unknown;
 }
 
+async function readTextCaseEntry(
+  root: string,
+  relativePath: string,
+): Promise<string> {
+  const filePath = resolveInside(root, relativePath);
+  const canonical = await realpath(filePath);
+  const info = await lstat(filePath);
+  if (
+    canonical !== filePath ||
+    !inside(root, canonical) ||
+    !info.isFile() ||
+    info.isSymbolicLink() ||
+    info.size > MAX_CASE_FILE_BYTES
+  ) {
+    throw new Error("Workflow benchmark case entry is unsafe");
+  }
+  return readFile(filePath, "utf8");
+}
+
 function resolveInside(root: string, relativePath: string): string {
   const candidate = path.resolve(root, relativePath);
   if (!inside(root, candidate)) {
@@ -179,7 +252,14 @@ function safeRelativeFile(value: unknown): value is string {
     value.length <= 120 &&
     !value.includes("\\") &&
     !value.startsWith("/") &&
-    value.split("/").every((segment) => /^[A-Za-z0-9._-]+$/u.test(segment))
+    value
+      .split("/")
+      .every(
+        (segment) =>
+          segment !== "." &&
+          segment !== ".." &&
+          /^[A-Za-z0-9._-]+$/u.test(segment),
+      )
   );
 }
 

@@ -60,6 +60,11 @@ describe("release artifacts audit", () => {
       "workflow-benchmark-ledger-1",
       "workflow-benchmark-result-2",
       "workflow-benchmark-ledger-2",
+      "data-benchmark-series",
+      "data-benchmark-result-1",
+      "data-benchmark-ledger-1",
+      "data-benchmark-result-2",
+      "data-benchmark-ledger-2",
     ]);
     expect(createReleaseArtifactsReceipt(result)).toMatchObject({
       type: "napier.release-artifacts-audit",
@@ -197,7 +202,11 @@ describe("release artifacts audit", () => {
     const { root } = await createFixture();
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
     const resultName = (await readdir(benchmarkRoot))
-      .filter((name) => name.startsWith("napier-workflow-benchmark-result-"))
+      .filter((name) =>
+        name.startsWith(
+          "napier-workflow-benchmark-result-workflow_document_map_reduce_v1-",
+        ),
+      )
       .sort()[0];
     const resultPath = path.join(benchmarkRoot, resultName);
     const result = JSON.parse(await readFile(resultPath, "utf8"));
@@ -212,6 +221,33 @@ describe("release artifacts audit", () => {
         "workflow benchmark series: series_trial_invalid",
         "workflow benchmark trial 1: result_shape_invalid",
         "workflow benchmark trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
+  it("fails when retained Data benchmark evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const resultName = (await readdir(benchmarkRoot))
+      .filter((name) =>
+        name.startsWith(
+          "napier-workflow-benchmark-result-data_sqlite_metric_map_reduce_v1-",
+        ),
+      )
+      .sort()[0];
+    const resultPath = path.join(benchmarkRoot, resultName);
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.evaluation.sqliteProtocolValid = false;
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "data benchmark series: series_trial_invalid",
+        "data benchmark trial 1: result_shape_invalid",
+        "data benchmark trial 1: trial_binding_mismatch",
       ]),
     );
   });

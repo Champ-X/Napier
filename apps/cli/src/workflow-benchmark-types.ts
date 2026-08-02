@@ -21,9 +21,8 @@ export interface WorkflowBenchmarkExpected {
   output: number;
 }
 
-export interface WorkflowBenchmarkCase {
+interface WorkflowBenchmarkCaseBase {
   kind: "napier.workflow-benchmark-case";
-  schemaVersion: 1;
   id: string;
   title: string;
   objective: string;
@@ -35,6 +34,23 @@ export interface WorkflowBenchmarkCase {
   contentSha256: string;
 }
 
+export interface WorkflowBenchmarkCaseV1 extends WorkflowBenchmarkCaseBase {
+  schemaVersion: 1;
+}
+
+export interface WorkflowBenchmarkCaseV2 extends WorkflowBenchmarkCaseBase {
+  schemaVersion: 2;
+  scenario: "sqlite_metric_map_reduce";
+  setupSqlPath: string;
+  setupSqlSha256: string;
+  databasePath: string;
+  requiredSqliteActions: Array<"schema" | "query" | "chart">;
+}
+
+export type WorkflowBenchmarkCase =
+  | WorkflowBenchmarkCaseV1
+  | WorkflowBenchmarkCaseV2;
+
 export type WorkflowBenchmarkDiagnostic =
   | "workflow_not_completed"
   | "output_mismatch"
@@ -44,12 +60,14 @@ export type WorkflowBenchmarkDiagnostic =
   | "map_event_mismatch"
   | "reduce_event_mismatch"
   | "reduce_executed_model_or_tool"
+  | "sqlite_action_mismatch"
+  | "database_changed"
   | "replay_invalid"
   | "credential_leaked";
 
 export interface WorkflowBenchmarkEvaluation {
   kind: "napier.workflow-benchmark-evaluation";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   caseId: string;
   caseSha256: string;
   status: "passed" | "failed" | "inconclusive";
@@ -70,6 +88,11 @@ export interface WorkflowBenchmarkEvaluation {
   reduceModelOrToolEventCount: number;
   replayValid: boolean;
   credentialLeakDetected: boolean;
+  sqliteSchemaCompletedCount?: number;
+  sqliteQueryCompletedCount?: number;
+  sqliteChartCompletedCount?: number;
+  sqliteProtocolValid?: boolean;
+  databaseUnchanged?: boolean;
   diagnostics: WorkflowBenchmarkDiagnostic[];
   contentSha256: string;
 }
@@ -144,6 +167,9 @@ export interface WorkflowBenchmarkLedgerBundle {
     mapOutputSha256?: string;
     mapRunIds: string[];
     reduceRunId: string;
+    sqliteActionEvents?: RunEvent[];
+    databaseBeforeSha256?: string;
+    databaseAfterSha256?: string;
   };
   runs: Array<{
     id: string;
