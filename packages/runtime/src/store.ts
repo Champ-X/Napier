@@ -369,7 +369,7 @@ import {
   validateTrustedReceiptEnvelope,
   verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceiptEnvelope,
-} from "./receipt-trust.js";
+} from "./receipt-trust-envelopes.js";
 import {
   MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS,
   MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES,

@@ -110,7 +110,7 @@ export * from "./replan-review.js";
 export * from "./replay.js";
 export * from "./research-source-tool.js";
 export * from "./research-sources.js";
-export * from "./receipt-trust.js";
+export * from "./receipt-trust-envelopes.js";
 export * from "./receipt-trust-directory-subscriptions.js";
 export * from "./recovery-service.js";
 export * from "./run-budget.js";

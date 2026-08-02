@@ -13,8 +13,6 @@ import {
   type EvaluationCasebook,
   type EvaluationCasebookQualificationReceipt,
   type EvaluationQualificationBaseline,
-  type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
-  type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem,
   type ReceiptTrustAnchor,
   type ReceiptTrustAnchorDirectory,
   type ReceiptTrustAnchorDirectoryEntry,
@@ -22,10 +20,6 @@ import {
   type ReceiptTrustAnchorDirectoryMetadataVerification,
   type ReceiptTrustAnchorDirectoryVerification,
   type ReceiptTrustAnchorDirectoryVerificationPolicy,
-  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
-  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
-  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
-  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   type SignReceiptTrustAnchorDirectoryMetadataRequest,
   type TrustedReceipt,
   type TrustedReceiptEnvelope,
@@ -34,17 +28,7 @@ import {
 } from "@napier/contracts";
 
 import { validateEvaluationCasebookQualificationReceipt } from "./evaluation-casebook-qualification.js";
-import { validateEvaluationSuiteGateReceipt } from "./evaluation-suites.js";
 import { createId, nowIso } from "./ids.js";
-import {
-  validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
-  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
-  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
-  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
-  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
-  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
-  validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
-} from "./receipt-trust-directory-subscriptions.js";
 
 export const MAX_RECEIPT_TRUST_ANCHORS = 32;
 export const MAX_QUALIFICATION_BASELINES_PER_CASEBOOK = 20;
@@ -108,6 +92,15 @@ interface ReceiptSignatureStatement {
   keyId: string;
   signedAt: string;
 }
+
+export interface ValidatedTrustedReceipt {
+  receipt: TrustedReceipt;
+  receiptKind: TrustedReceiptKind;
+}
+
+export type TrustedReceiptValidator = (
+  value: unknown,
+) => ValidatedTrustedReceipt;
 
 export function createReceiptTrustAnchor(
   request: CreateReceiptTrustAnchorRequest,
@@ -303,11 +296,14 @@ export function validateReceiptTrustAnchorDirectory(
   ) {
     throw new Error("Receipt trust anchor directory counts are invalid");
   }
-  const { contentSha256: _contentSha256, generatedAt: _generatedAt, ...content } =
-    {
-      ...directory,
-      anchors,
-    };
+  const {
+    contentSha256: _contentSha256,
+    generatedAt: _generatedAt,
+    ...content
+  } = {
+    ...directory,
+    anchors,
+  };
   if (sha256(canonicalJson(content)) !== directory.contentSha256) {
     throw new Error("Receipt trust anchor directory content hash mismatch");
   }
@@ -323,12 +319,13 @@ export function verifyReceiptTrustAnchorDirectory(
 ): ReceiptTrustAnchorDirectoryVerification {
   const verifiedAtMs = Date.now();
   const diagnostics: string[] = [];
-  let normalizedPolicy: ReceiptTrustAnchorDirectoryVerificationPolicy | undefined;
+  let normalizedPolicy:
+    | ReceiptTrustAnchorDirectoryVerificationPolicy
+    | undefined;
   let policySha256: string | undefined;
   try {
-    normalizedPolicy = normalizeReceiptTrustAnchorDirectoryVerificationPolicy(
-      policy,
-    );
+    normalizedPolicy =
+      normalizeReceiptTrustAnchorDirectoryVerificationPolicy(policy);
     policySha256 = normalizedPolicy
       ? sha256(canonicalJson(normalizedPolicy))
       : undefined;
@@ -392,10 +389,12 @@ export function verifyReceiptTrustAnchorDirectory(
       recomputedAnchorSetSha256 =
         receiptTrustAnchorDirectoryAnchorSetSha256(anchors);
       anchorCount = anchors.length;
-      trustedCount = anchors.filter((anchor) => anchor.status === "trusted")
-        .length;
-      revokedCount = anchors.filter((anchor) => anchor.status === "revoked")
-        .length;
+      trustedCount = anchors.filter(
+        (anchor) => anchor.status === "trusted",
+      ).length;
+      revokedCount = anchors.filter(
+        (anchor) => anchor.status === "revoked",
+      ).length;
     } catch {
       diagnostics.push("anchors_invalid");
     }
@@ -512,10 +511,7 @@ export function createReceiptTrustAnchorDirectoryMetadataReceipt(
   input: unknown,
   request: Pick<
     SignReceiptTrustAnchorDirectoryMetadataRequest,
-    | "publisher"
-    | "sourceUrlSha256"
-    | "sourceOriginSha256"
-    | "expiresAt"
+    "publisher" | "sourceUrlSha256" | "sourceOriginSha256" | "expiresAt"
   >,
 ): ReceiptTrustAnchorDirectoryMetadataReceipt {
   const directory = validateReceiptTrustAnchorDirectory(input);
@@ -562,7 +558,9 @@ export function validateReceiptTrustAnchorDirectoryMetadataReceipt(
   value: unknown,
 ): ReceiptTrustAnchorDirectoryMetadataReceipt {
   if (!isRecord(value)) {
-    throw new Error("Receipt trust anchor directory metadata receipt is invalid");
+    throw new Error(
+      "Receipt trust anchor directory metadata receipt is invalid",
+    );
   }
   assertAllowedKeys(value, [
     "kind",
@@ -583,8 +581,7 @@ export function validateReceiptTrustAnchorDirectoryMetadataReceipt(
   const receipt =
     value as unknown as ReceiptTrustAnchorDirectoryMetadataReceipt;
   if (
-    receipt.kind !==
-      "napier.receipt-trust-anchor-directory-metadata-receipt" ||
+    receipt.kind !== "napier.receipt-trust-anchor-directory-metadata-receipt" ||
     receipt.schemaVersion !== 1 ||
     receipt.apiVersion !== NAPIER_API_VERSION ||
     !validTimestamp(receipt.generatedAt) ||
@@ -597,17 +594,22 @@ export function validateReceiptTrustAnchorDirectoryMetadataReceipt(
     receipt.trustedCount + receipt.revokedCount !== receipt.anchorCount ||
     !optionalSha256(receipt.sourceUrlSha256) ||
     !optionalSha256(receipt.sourceOriginSha256) ||
-    ((receipt.sourceUrlSha256 === undefined) !==
-      (receipt.sourceOriginSha256 === undefined)) ||
+    (receipt.sourceUrlSha256 === undefined) !==
+      (receipt.sourceOriginSha256 === undefined) ||
     (receipt.expiresAt !== undefined &&
       (!validTimestamp(receipt.expiresAt) ||
         receipt.expiresAt <= receipt.generatedAt)) ||
     !SHA256_PATTERN.test(receipt.contentSha256)
   ) {
-    throw new Error("Receipt trust anchor directory metadata receipt is invalid");
+    throw new Error(
+      "Receipt trust anchor directory metadata receipt is invalid",
+    );
   }
-  const { generatedAt: _generatedAt, contentSha256: _contentSha256, ...content } =
-    receipt;
+  const {
+    generatedAt: _generatedAt,
+    contentSha256: _contentSha256,
+    ...content
+  } = receipt;
   if (
     hashReceiptTrustAnchorDirectoryMetadataReceipt(content) !==
     receipt.contentSha256
@@ -633,9 +635,10 @@ export function verifyReceiptTrustAnchorDirectoryMetadata(
     directoryInput,
     options.directoryPolicy,
   );
-  const trustedReceiptVerification = verifyTrustedReceiptEnvelope(
+  const trustedReceiptVerification = verifyTrustedReceiptEnvelopeWithValidator(
     envelopeInput,
     anchors,
+    validateMetadataTrustedReceipt,
   );
   const diagnostics: string[] = [];
   let metadata: ReceiptTrustAnchorDirectoryMetadataReceipt | undefined;
@@ -650,7 +653,10 @@ export function verifyReceiptTrustAnchorDirectoryMetadata(
     diagnostics.push("trust_directory_invalid");
   }
   try {
-    const envelope = validateTrustedReceiptEnvelope(envelopeInput);
+    const envelope = validateTrustedReceiptEnvelopeWithValidator(
+      envelopeInput,
+      validateMetadataTrustedReceipt,
+    );
     if (
       envelope.receiptKind !== "receipt_trust_anchor_directory_metadata" ||
       envelope.receipt.kind !==
@@ -677,12 +683,12 @@ export function verifyReceiptTrustAnchorDirectoryMetadata(
 
   const directoryBindingValid = Boolean(
     metadata &&
-      directory &&
-      metadata.directorySha256 === directory.contentSha256 &&
-      metadata.anchorSetSha256 === directory.anchorSetSha256 &&
-      metadata.anchorCount === directory.anchorCount &&
-      metadata.trustedCount === directory.trustedCount &&
-      metadata.revokedCount === directory.revokedCount,
+    directory &&
+    metadata.directorySha256 === directory.contentSha256 &&
+    metadata.anchorSetSha256 === directory.anchorSetSha256 &&
+    metadata.anchorCount === directory.anchorCount &&
+    metadata.trustedCount === directory.trustedCount &&
+    metadata.revokedCount === directory.revokedCount,
   );
   if (metadata && directory && !directoryBindingValid) {
     diagnostics.push("directory_binding_mismatch");
@@ -749,9 +755,10 @@ export function receiptTrustAnchorsFromDirectory(
   );
 }
 
-export function signTrustedReceipt<Receipt extends TrustedReceipt>(
+export function signTrustedReceiptWithValidator<Receipt extends TrustedReceipt>(
   receipt: Receipt,
   anchor: ReceiptTrustAnchor,
+  validateReceipt: TrustedReceiptValidator,
   environment: NodeJS.ProcessEnv = process.env,
 ): TrustedReceiptEnvelope<Receipt> {
   const trustedAnchor = validateReceiptTrustAnchor(anchor);
@@ -761,7 +768,8 @@ export function signTrustedReceipt<Receipt extends TrustedReceipt>(
   if (!trustedAnchor.signingSource) {
     throw new Error(`Receipt trust anchor is verify-only: ${trustedAnchor.id}`);
   }
-  const validatedReceipt = validateTrustedReceipt(receipt) as Receipt;
+  const validated = validateReceipt(receipt);
+  const validatedReceipt = validated.receipt as Receipt;
   const privateValue = environment[trustedAnchor.signingSource.variable];
   if (!privateValue) {
     throw new Error(
@@ -774,7 +782,7 @@ export function signTrustedReceipt<Receipt extends TrustedReceipt>(
   if (exportPublicKeySpki(derivedPublicKey) !== trustedAnchor.publicKeySpki) {
     throw new Error("Receipt signing key does not match the trust anchor");
   }
-  const receiptKind = receiptKindFor(validatedReceipt);
+  const receiptKind = validated.receiptKind;
   const receiptArtifactSha256 = sha256(canonicalJson(validatedReceipt));
   const signedAt = nowIso();
   const statement = createSignatureStatement(
@@ -815,8 +823,9 @@ export function hashTrustedReceiptEnvelope(
   return sha256(canonicalJson(envelope));
 }
 
-export function validateTrustedReceiptEnvelope(
+export function validateTrustedReceiptEnvelopeWithValidator(
   value: unknown,
+  validateReceipt: TrustedReceiptValidator,
 ): TrustedReceiptEnvelope {
   if (
     !isRecord(value) ||
@@ -843,8 +852,9 @@ export function validateTrustedReceiptEnvelope(
   ) {
     throw new Error("Trusted receipt envelope header is invalid");
   }
-  const receipt = validateTrustedReceipt(envelope.receipt);
-  if (receiptKindFor(receipt) !== envelope.receiptKind) {
+  const validated = validateReceipt(envelope.receipt);
+  const receipt = validated.receipt;
+  if (validated.receiptKind !== envelope.receiptKind) {
     throw new Error("Trusted receipt kind does not match its payload");
   }
   if (!isRecord(envelope.signature)) {
@@ -893,14 +903,18 @@ export function validateTrustedReceiptEnvelope(
   });
 }
 
-export function verifyTrustedReceiptEnvelope(
+export function verifyTrustedReceiptEnvelopeWithValidator(
   value: unknown,
   anchors: ReceiptTrustAnchor[],
+  validateReceipt: TrustedReceiptValidator,
 ): TrustedReceiptVerification {
   const verifiedAt = nowIso();
   let envelope: TrustedReceiptEnvelope;
   try {
-    envelope = validateTrustedReceiptEnvelope(value);
+    envelope = validateTrustedReceiptEnvelopeWithValidator(
+      value,
+      validateReceipt,
+    );
   } catch (error) {
     return {
       status: "invalid",
@@ -977,7 +991,10 @@ export function createEvaluationQualificationBaseline(
   promotedByThreadId: string,
   supersedesBaselineId?: string,
 ): EvaluationQualificationBaseline {
-  const trustedEnvelope = validateTrustedReceiptEnvelope(envelope);
+  const trustedEnvelope = validateTrustedReceiptEnvelopeWithValidator(
+    envelope,
+    validateCasebookQualificationTrustedReceipt,
+  );
   if (
     trustedEnvelope.receiptKind !== "casebook_qualification" ||
     trustedEnvelope.receipt.kind !==
@@ -1051,7 +1068,10 @@ export function validateEvaluationQualificationBaseline(
     "contentSha256",
   ]);
   const baseline = value as unknown as EvaluationQualificationBaseline;
-  const envelope = validateTrustedReceiptEnvelope(baseline.envelope);
+  const envelope = validateTrustedReceiptEnvelopeWithValidator(
+    baseline.envelope,
+    validateCasebookQualificationTrustedReceipt,
+  );
   if (
     !RESOURCE_ID_PATTERN.test(baseline.id) ||
     !RESOURCE_ID_PATTERN.test(baseline.casebookId) ||
@@ -1084,7 +1104,11 @@ export function validateEvaluationQualificationBaseline(
     throw new Error("Evaluation qualification baseline evidence is invalid");
   }
   if (anchors) {
-    const verification = verifyTrustedReceiptEnvelope(envelope, anchors);
+    const verification = verifyTrustedReceiptEnvelopeWithValidator(
+      envelope,
+      anchors,
+      validateCasebookQualificationTrustedReceipt,
+    );
     if (!verification.integrityValid || !verification.signatureValid) {
       throw new Error(
         `Evaluation qualification baseline signature is invalid: ${verification.reason}`,
@@ -1102,271 +1126,22 @@ export function validateEvaluationQualificationBaseline(
   });
 }
 
-function validateTrustedReceipt(value: unknown): TrustedReceipt {
-  if (!isRecord(value) || typeof value["kind"] !== "string") {
-    throw new Error("Trusted receipt payload is invalid");
-  }
-  if (value["kind"] === "napier.evaluation-gate-receipt") {
-    return validateEvaluationSuiteGateReceipt(value);
-  }
-  if (value["kind"] === "napier.evaluation-casebook-qualification-receipt") {
-    return validateEvaluationCasebookQualificationReceipt(value);
-  }
-  if (
-    value["kind"] ===
-    "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle"
-  ) {
-    return validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle(
-      value,
-    );
-  }
-  if (
-    value["kind"] ===
-    "napier.receipt-trust-anchor-directory-metadata-receipt"
-  ) {
-    return validateReceiptTrustAnchorDirectoryMetadataReceipt(value);
-  }
-  if (
-    value["kind"] ===
-    "napier.receipt-trust-anchor-directory-quorum-promotion"
-  ) {
-    return validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt(value);
-  }
-  if (
-    value["kind"] ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-decision"
-  ) {
-    return validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt(
-      value,
-    );
-  }
-  if (
-    value["kind"] ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal"
-  ) {
-    return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
-      value,
-    ) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
-  }
-  if (
-    value["kind"] ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval"
-  ) {
-    return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval(
-      value,
-    ) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval;
-  }
-  if (
-    value["kind"] ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-review"
-  ) {
-    return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
-      value,
-    ) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview;
-  }
-  if (
-    value["kind"] ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint"
-  ) {
-    return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
-      value,
-    ) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint;
-  }
-  if (
-    value["kind"] ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum"
-  ) {
-    return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
-      value,
-    );
-  }
-  throw new Error("Trusted receipt kind is unsupported");
-}
-
-function validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle(
+function validateMetadataTrustedReceipt(
   value: unknown,
-): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle {
-  if (!isRecord(value)) {
-    throw new Error("Policy retirement proof bundle is invalid");
-  }
-  assertAllowedKeys(value, [
-    "kind",
-    "schemaVersion",
-    "apiVersion",
-    "generatedAt",
-    "status",
-    "diagnostics",
-    "historyCount",
-    "validHistoryCount",
-    "invalidHistoryCount",
-    "distinctHistoryCount",
-    "distinctPortfolioSetCount",
-    "distinctCurrentOverrideSetCount",
-    "distinctRetirementSetCount",
-    "historySetSha256",
-    "portfolioSetBundleSha256",
-    "currentOverrideSetBundleSha256",
-    "retirementSetBundleSha256",
-    "histories",
-    "contentSha256",
-  ]);
-  const proofBundle =
-    value as unknown as ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle;
-  if (
-    proofBundle.kind !==
-      "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle" ||
-    proofBundle.schemaVersion !== 1 ||
-    proofBundle.apiVersion !== NAPIER_API_VERSION ||
-    !validTimestamp(proofBundle.generatedAt) ||
-    (proofBundle.status !== "aligned" &&
-      proofBundle.status !== "divergent" &&
-      proofBundle.status !== "invalid") ||
-    !validDiagnostics(proofBundle.diagnostics) ||
-    !nonNegativeInteger(proofBundle.historyCount) ||
-    !nonNegativeInteger(proofBundle.validHistoryCount) ||
-    !nonNegativeInteger(proofBundle.invalidHistoryCount) ||
-    !nonNegativeInteger(proofBundle.distinctHistoryCount) ||
-    !nonNegativeInteger(proofBundle.distinctPortfolioSetCount) ||
-    !nonNegativeInteger(proofBundle.distinctCurrentOverrideSetCount) ||
-    !nonNegativeInteger(proofBundle.distinctRetirementSetCount) ||
-    !SHA256_PATTERN.test(proofBundle.historySetSha256) ||
-    !SHA256_PATTERN.test(proofBundle.portfolioSetBundleSha256) ||
-    !SHA256_PATTERN.test(proofBundle.currentOverrideSetBundleSha256) ||
-    !SHA256_PATTERN.test(proofBundle.retirementSetBundleSha256) ||
-    !Array.isArray(proofBundle.histories) ||
-    proofBundle.histories.length !== proofBundle.historyCount ||
-    !SHA256_PATTERN.test(proofBundle.contentSha256)
-  ) {
-    throw new Error("Policy retirement proof bundle is invalid");
-  }
-  const histories = proofBundle.histories.map(
-    validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem,
-  );
-  if (
-    histories.filter((history) => history.status === "valid").length !==
-      proofBundle.validHistoryCount ||
-    histories.filter((history) => history.status === "invalid").length !==
-      proofBundle.invalidHistoryCount
-  ) {
-    throw new Error("Policy retirement proof bundle counts are invalid");
-  }
-  const { contentSha256: _contentSha256, generatedAt: _generatedAt, ...content } =
-    {
-      ...proofBundle,
-      histories,
-    };
-  if (sha256(canonicalJson(content)) !== proofBundle.contentSha256) {
-    throw new Error("Policy retirement proof bundle hash mismatch");
-  }
-  return structuredClone({
-    ...proofBundle,
-    histories,
-  });
+): ValidatedTrustedReceipt {
+  return {
+    receipt: validateReceiptTrustAnchorDirectoryMetadataReceipt(value),
+    receiptKind: "receipt_trust_anchor_directory_metadata",
+  };
 }
 
-function validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem(
+function validateCasebookQualificationTrustedReceipt(
   value: unknown,
-): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem {
-  if (!isRecord(value)) {
-    throw new Error("Policy retirement proof bundle history is invalid");
-  }
-  assertAllowedKeys(value, [
-    "index",
-    "status",
-    "diagnostics",
-    "declaredContentSha256",
-    "recomputedContentSha256",
-    "declaredPortfolioSetSha256",
-    "declaredCurrentOverrideSetSha256",
-    "declaredRetirementSetSha256",
-    "recomputedRetirementSetSha256",
-    "retirementCount",
-    "recomputedRetirementCount",
-    "latestRetiredAt",
-    "recomputedLatestRetiredAt",
-    "itemSha256",
-  ]);
-  const item =
-    value as unknown as ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem;
-  if (
-    !nonNegativeInteger(item.index) ||
-    (item.status !== "valid" && item.status !== "invalid") ||
-    !validDiagnostics(item.diagnostics) ||
-    !optionalSha256(item.declaredContentSha256) ||
-    !optionalSha256(item.recomputedContentSha256) ||
-    !optionalSha256(item.declaredPortfolioSetSha256) ||
-    !optionalSha256(item.declaredCurrentOverrideSetSha256) ||
-    !optionalSha256(item.declaredRetirementSetSha256) ||
-    !optionalSha256(item.recomputedRetirementSetSha256) ||
-    !optionalNonNegativeInteger(item.retirementCount) ||
-    !optionalNonNegativeInteger(item.recomputedRetirementCount) ||
-    !optionalTimestamp(item.latestRetiredAt) ||
-    !optionalTimestamp(item.recomputedLatestRetiredAt) ||
-    !SHA256_PATTERN.test(item.itemSha256)
-  ) {
-    throw new Error("Policy retirement proof bundle history is invalid");
-  }
-  const { itemSha256: _itemSha256, ...content } = item;
-  if (sha256(canonicalJson(content)) !== item.itemSha256) {
-    throw new Error("Policy retirement proof bundle history hash mismatch");
-  }
-  return structuredClone(item);
-}
-
-function receiptKindFor(receipt: TrustedReceipt): TrustedReceiptKind {
-  if (receipt.kind === "napier.evaluation-gate-receipt") {
-    return "evaluation_gate";
-  }
-  if (receipt.kind === "napier.evaluation-casebook-qualification-receipt") {
-    return "casebook_qualification";
-  }
-  if (
-    receipt.kind === "napier.receipt-trust-anchor-directory-metadata-receipt"
-  ) {
-    return "receipt_trust_anchor_directory_metadata";
-  }
-  if (
-    receipt.kind === "napier.receipt-trust-anchor-directory-quorum-promotion"
-  ) {
-    return "receipt_trust_anchor_directory_quorum_promotion";
-  }
-  if (
-    receipt.kind ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-decision"
-  ) {
-    return "receipt_trust_anchor_directory_quorum_activation_decision";
-  }
-  if (
-    receipt.kind ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal"
-  ) {
-    return "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal";
-  }
-  if (
-    receipt.kind ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval"
-  ) {
-    return "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval";
-  }
-  if (
-    receipt.kind ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-review"
-  ) {
-    return "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review";
-  }
-  if (
-    receipt.kind ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint"
-  ) {
-    return "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint";
-  }
-  if (
-    receipt.kind ===
-    "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum"
-  ) {
-    return "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum";
-  }
-  return "policy_retirement_proof_bundle";
+): ValidatedTrustedReceipt {
+  return {
+    receipt: validateEvaluationCasebookQualificationReceipt(value),
+    receiptKind: "casebook_qualification",
+  };
 }
 
 function createSignatureStatement(
@@ -1529,16 +1304,8 @@ function validTimestamp(value: unknown): value is string {
   return typeof value === "string" && Number.isFinite(Date.parse(value));
 }
 
-function optionalTimestamp(value: unknown): boolean {
-  return value === undefined || validTimestamp(value);
-}
-
 function nonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
-}
-
-function optionalNonNegativeInteger(value: unknown): boolean {
-  return value === undefined || nonNegativeInteger(value);
 }
 
 function optionalSha256(value: unknown): boolean {
@@ -1600,9 +1367,8 @@ export function normalizeReceiptTrustAnchorDirectoryVerificationPolicy(
 export function hashReceiptTrustAnchorDirectoryVerificationPolicy(
   policy: ReceiptTrustAnchorDirectoryVerificationPolicy,
 ): string {
-  const normalized = normalizeReceiptTrustAnchorDirectoryVerificationPolicy(
-    policy,
-  );
+  const normalized =
+    normalizeReceiptTrustAnchorDirectoryVerificationPolicy(policy);
   if (!normalized) {
     throw new Error("Receipt trust anchor directory policy is required");
   }
@@ -1693,8 +1459,11 @@ function receiptTrustAnchorDirectoryAnchorSetSha256(
 function receiptTrustAnchorDirectoryHashContent(
   record: Record<string, unknown>,
 ): Record<string, unknown> {
-  const { contentSha256: _contentSha256, generatedAt: _generatedAt, ...content } =
-    record;
+  const {
+    contentSha256: _contentSha256,
+    generatedAt: _generatedAt,
+    ...content
+  } = record;
   return content;
 }
 
@@ -1702,26 +1471,18 @@ function compareReceiptTrustAnchorDirectoryEntries(
   left: ReceiptTrustAnchorDirectoryEntry,
   right: ReceiptTrustAnchorDirectoryEntry,
 ): number {
-  return left.keyId.localeCompare(right.keyId) || left.id.localeCompare(right.id);
+  return (
+    left.keyId.localeCompare(right.keyId) || left.id.localeCompare(right.id)
+  );
 }
 
-function validTrustedReceiptKinds(value: unknown): value is TrustedReceiptKind[] {
+function validTrustedReceiptKinds(
+  value: unknown,
+): value is TrustedReceiptKind[] {
   return (
     Array.isArray(value) &&
     value.length === TRUSTED_RECEIPT_KINDS.length &&
     TRUSTED_RECEIPT_KINDS.every((kind, index) => value[index] === kind)
-  );
-}
-
-function validDiagnostics(value: unknown): value is string[] {
-  return (
-    Array.isArray(value) &&
-    value.length <= 64 &&
-    value.every(
-      (diagnostic) =>
-        typeof diagnostic === "string" &&
-        /^[a-z0-9_]{1,80}$/.test(diagnostic),
-    )
   );
 }
 

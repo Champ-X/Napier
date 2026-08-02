@@ -28,7 +28,7 @@ import {
   signTrustedReceipt,
   verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceiptEnvelope,
-} from "../src/receipt-trust.js";
+} from "../src/receipt-trust-envelopes.js";
 import { LocalStore } from "../src/store.js";
 
 const SIGNING_ENV = "NAPIER_TEST_QUORUM_PROMOTION_KEY";

@@ -181,11 +181,17 @@ mutation model. Narrow Store ports then removed Store, Plan archive, Workflow
 blueprint, and Casebook qualification from that closure. The checked graph now
 temporarily contained a seven-module Evaluation component and a two-module
 Receipt Trust component. Extracting Run snapshot and comparison logic from the
-Thread replay facade then removed the Evaluation component. Only the
-two-module Receipt Trust component remains from the original nine legacy
-components. Its validator closures require deliberate Runtime domain
-decomposition; they are not treated as acceptable targets for local
-type-moving.
+Thread replay facade then removed the Evaluation component.
+
+The final Receipt Trust ratchet did not move its 58-declaration, roughly
+2,181-line validator closure into another large file. `receipt-trust.ts` now
+owns callback-parameterized envelope cryptography and directory primitives;
+`receipt-trust-envelopes.ts` is the public receipt-kind dispatch facade; and
+`receipt-trust-directory-subscriptions.ts` supplies its own bounded domain
+dispatcher without a reverse facade import. Discovery policy normalization and
+hashing live in a separate leaf module. The Runtime root still exposes the
+same 24 Receipt Trust declarations, while the checked relative-import graph
+now contains zero strongly connected components.
 
 ### Server
 

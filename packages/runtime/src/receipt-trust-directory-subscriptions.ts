@@ -21,7 +21,6 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
-  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
@@ -40,7 +39,6 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
-  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshStatus,
@@ -84,13 +82,28 @@ import {
 import { canonicalJson } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
 import {
+  hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
+  hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
+  normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
+  normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
+} from "./receipt-trust-directory-discovery-policy.js";
+import {
   hashReceiptTrustAnchorDirectoryVerificationPolicy,
   normalizeReceiptTrustAnchorDirectoryVerificationPolicy,
   receiptTrustAnchorsFromDirectory,
   validateReceiptTrustAnchorDirectory,
-  validateTrustedReceiptEnvelope,
-  verifyTrustedReceiptEnvelope,
+  validateReceiptTrustAnchorDirectoryMetadataReceipt,
+  validateTrustedReceiptEnvelopeWithValidator,
+  verifyTrustedReceiptEnvelopeWithValidator,
+  type ValidatedTrustedReceipt,
 } from "./receipt-trust.js";
+
+export {
+  hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
+  hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
+  normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
+  normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
+} from "./receipt-trust-directory-discovery-policy.js";
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const SUBSCRIPTION_ID_PATTERN = /^trustdir_[a-f0-9]{20}$/;
@@ -112,36 +125,90 @@ export const MIN_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 export const MAX_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS =
   30 * 24 * 60 * 60 * 1_000;
 
+const TRUST_DOMAIN_RECEIPT_VALIDATORS: Readonly<
+  Record<
+    string,
+    {
+      receiptKind: ValidatedTrustedReceipt["receiptKind"];
+      validate(value: unknown): ValidatedTrustedReceipt["receipt"];
+    }
+  >
+> = {
+  "napier.receipt-trust-anchor-directory-metadata-receipt": {
+    receiptKind: "receipt_trust_anchor_directory_metadata",
+    validate: validateReceiptTrustAnchorDirectoryMetadataReceipt,
+  },
+  "napier.receipt-trust-anchor-directory-quorum-promotion": {
+    receiptKind: "receipt_trust_anchor_directory_quorum_promotion",
+    validate: validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
+  },
+  "napier.receipt-trust-anchor-directory-quorum-activation-decision": {
+    receiptKind: "receipt_trust_anchor_directory_quorum_activation_decision",
+    validate:
+      validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  },
+  "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal":
+    {
+      receiptKind:
+        "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
+      validate:
+        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
+    },
+  "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval":
+    {
+      receiptKind:
+        "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval",
+      validate:
+        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
+    },
+  "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-review":
+    {
+      receiptKind:
+        "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review",
+      validate:
+        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
+    },
+  "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint":
+    {
+      receiptKind:
+        "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
+      validate:
+        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+    },
+  "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum":
+    {
+      receiptKind:
+        "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
+      validate:
+        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+    },
+};
+
 export interface ReceiptTrustAnchorDirectorySubscriptionClaimState {
   ownerId: string;
   acquiredAt: string;
   expiresAt: string;
 }
-
 export interface PersistedReceiptTrustAnchorDirectorySubscription extends ReceiptTrustAnchorDirectorySubscription {
   sourceUrl: string;
   claim?: ReceiptTrustAnchorDirectorySubscriptionClaimState;
   claimTokenSha256?: string;
 }
-
 export interface ReceiptTrustAnchorDirectorySubscriptionClaim {
   subscription: ReceiptTrustAnchorDirectorySubscription;
   sourceUrl: string;
   token: string;
 }
-
 export interface PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription extends ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription {
   sourceUrl: string;
   claim?: ReceiptTrustAnchorDirectorySubscriptionClaimState;
   claimTokenSha256?: string;
 }
-
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim {
   subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
   sourceUrl: string;
   token: string;
 }
-
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyStatus =
   "pending" | "applied" | "rejected" | "failed";
 
@@ -415,106 +482,6 @@ export function settleReceiptTrustAnchorDirectorySubscriptionRefresh(
       contentSha256: sha256(canonicalJson(resultContent)),
     },
   };
-}
-
-export function normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(
-  input: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy = {},
-): Required<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy> {
-  const requiredSignerKeyIds = Array.from(
-    new Set(input.requiredSignerKeyIds ?? []),
-  ).sort();
-  if (
-    !Number.isSafeInteger(input.maxEnvelopeAgeMs ?? 0) ||
-    (input.maxEnvelopeAgeMs !== undefined &&
-      (input.maxEnvelopeAgeMs < 0 ||
-        input.maxEnvelopeAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
-    (input.expectedCheckpointSha256 !== undefined &&
-      input.expectedCheckpointSha256 !== "" &&
-      !SHA256_PATTERN.test(input.expectedCheckpointSha256)) ||
-    (input.expectedSelectionSetSha256 !== undefined &&
-      input.expectedSelectionSetSha256 !== "" &&
-      !SHA256_PATTERN.test(input.expectedSelectionSetSha256)) ||
-    (input.expectedSelectionChainTailSha256 !== undefined &&
-      input.expectedSelectionChainTailSha256 !== "" &&
-      !SHA256_PATTERN.test(input.expectedSelectionChainTailSha256)) ||
-    (input.minimumSelectionCount !== undefined &&
-      (!Number.isSafeInteger(input.minimumSelectionCount) ||
-        input.minimumSelectionCount < 0 ||
-        input.minimumSelectionCount > 1_000)) ||
-    requiredSignerKeyIds.some((keyId) => !SHA256_PATTERN.test(keyId)) ||
-    (input.rejectRollback !== undefined &&
-      typeof input.rejectRollback !== "boolean")
-  ) {
-    throw new Error(
-      "Receipt trust anchor directory quorum activation selection checkpoint discovery policy is invalid",
-    );
-  }
-  return {
-    maxEnvelopeAgeMs: input.maxEnvelopeAgeMs ?? 7 * 24 * 60 * 60 * 1_000,
-    expectedCheckpointSha256: input.expectedCheckpointSha256 ?? "",
-    expectedSelectionSetSha256: input.expectedSelectionSetSha256 ?? "",
-    expectedSelectionChainTailSha256:
-      input.expectedSelectionChainTailSha256 ?? "",
-    minimumSelectionCount: input.minimumSelectionCount ?? 0,
-    requiredSignerKeyIds,
-    rejectRollback: input.rejectRollback ?? true,
-  };
-}
-
-export function hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(
-  input: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy = {},
-): string {
-  return sha256(
-    canonicalJson(
-      normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(
-        input,
-      ),
-    ),
-  );
-}
-
-export function normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
-  input: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy = {},
-): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy {
-  const requiredSignerKeyIds =
-    input.requiredSignerKeyIds === undefined
-      ? undefined
-      : Array.from(new Set(input.requiredSignerKeyIds)).sort();
-  return {
-    ...(input.maxEnvelopeAgeMs !== undefined
-      ? { maxEnvelopeAgeMs: input.maxEnvelopeAgeMs }
-      : {}),
-    ...(input.expectedEnvelopeSha256
-      ? { expectedEnvelopeSha256: input.expectedEnvelopeSha256 }
-      : {}),
-    ...(input.expectedProposalSha256
-      ? { expectedProposalSha256: input.expectedProposalSha256 }
-      : {}),
-    ...(input.expectedActivationDecisionRecordId
-      ? {
-          expectedActivationDecisionRecordId:
-            input.expectedActivationDecisionRecordId,
-        }
-      : {}),
-    ...(input.expectedCurrentSelectionSha256 !== undefined
-      ? { expectedCurrentSelectionSha256: input.expectedCurrentSelectionSha256 }
-      : {}),
-    ...(requiredSignerKeyIds && requiredSignerKeyIds.length > 0
-      ? { requiredSignerKeyIds }
-      : {}),
-  };
-}
-
-export function hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
-  input: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy = {},
-): string {
-  return sha256(
-    canonicalJson(
-      normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
-        input,
-      ),
-    ),
-  );
 }
 
 export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
@@ -8230,6 +8197,38 @@ function optionalRotationProposalSubscriptionRefreshStatus(
     value === "rejected" ||
     value === "failed"
   );
+}
+
+function validateTrustedReceiptEnvelope(
+  value: unknown,
+): TrustedReceiptEnvelope {
+  return validateTrustedReceiptEnvelopeWithValidator(
+    value,
+    validateTrustDomainReceipt,
+  );
+}
+
+function verifyTrustedReceiptEnvelope(
+  value: unknown,
+  anchors: ReceiptTrustAnchor[],
+): TrustedReceiptVerification {
+  return verifyTrustedReceiptEnvelopeWithValidator(
+    value,
+    anchors,
+    validateTrustDomainReceipt,
+  );
+}
+
+function validateTrustDomainReceipt(value: unknown): ValidatedTrustedReceipt {
+  if (!isRecord(value) || typeof value["kind"] !== "string") {
+    throw new Error("Trusted receipt payload is invalid");
+  }
+  const validator = TRUST_DOMAIN_RECEIPT_VALIDATORS[value["kind"]];
+  if (!validator) throw new Error("Trusted receipt kind is unsupported");
+  return {
+    receipt: validator.validate(value),
+    receiptKind: validator.receiptKind,
+  };
 }
 
 function optionalTimestamp(value: unknown): boolean {

@@ -33,8 +33,9 @@ import {
   verifyReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceiptEnvelope,
-} from "../src/receipt-trust.js";
+} from "../src/receipt-trust-envelopes.js";
 import { createRunReplaySnapshot } from "../src/replay.js";
+import * as receiptTrustPublic from "../src/receipt-trust-envelopes.js";
 import { LocalStore } from "../src/store.js";
 
 const SIGNING_ENV = "NAPIER_TEST_RECEIPT_SIGNING_KEY";
@@ -95,6 +96,35 @@ function installSigningKey(): string {
 }
 
 describe("trusted receipt provenance", () => {
+  it("preserves the exact public Receipt Trust facade", () => {
+    expect(Object.keys(receiptTrustPublic).sort()).toEqual([
+      "MAX_QUALIFICATION_BASELINES_PER_CASEBOOK",
+      "MAX_RECEIPT_TRUST_ANCHORS",
+      "MAX_TRUSTED_RECEIPT_BYTES",
+      "createEvaluationQualificationBaseline",
+      "createReceiptTrustAnchor",
+      "createReceiptTrustAnchorDirectory",
+      "createReceiptTrustAnchorDirectoryMetadataReceipt",
+      "hashEvaluationQualificationBaseline",
+      "hashReceiptTrustAnchor",
+      "hashReceiptTrustAnchorDirectoryMetadataReceipt",
+      "hashReceiptTrustAnchorDirectoryVerificationPolicy",
+      "hashTrustedReceiptEnvelope",
+      "normalizeReceiptTrustAnchorDirectoryVerificationPolicy",
+      "receiptTrustAnchorsFromDirectory",
+      "revokeReceiptTrustAnchor",
+      "signTrustedReceipt",
+      "validateEvaluationQualificationBaseline",
+      "validateReceiptTrustAnchor",
+      "validateReceiptTrustAnchorDirectory",
+      "validateReceiptTrustAnchorDirectoryMetadataReceipt",
+      "validateTrustedReceiptEnvelope",
+      "verifyReceiptTrustAnchorDirectory",
+      "verifyReceiptTrustAnchorDirectoryMetadata",
+      "verifyTrustedReceiptEnvelope",
+    ]);
+  });
+
   it("signs deep receipt evidence and fails closed on tampering or key drift", async () => {
     installSigningKey();
     const { store } = await createStore();
@@ -183,7 +213,9 @@ describe("trusted receipt provenance", () => {
       minimumTrustedCount: 1,
       requiredTrustedKeyIds: [anchor.keyId],
     };
-    expect(verifyReceiptTrustAnchorDirectory(directory, directoryPolicy)).toEqual(
+    expect(
+      verifyReceiptTrustAnchorDirectory(directory, directoryPolicy),
+    ).toEqual(
       expect.objectContaining({
         status: "valid",
         diagnostics: [],
