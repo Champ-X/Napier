@@ -46,6 +46,7 @@ export function createCodingBenchmarkSeries(input: {
   const runIds = new Set<string>();
   for (const trial of input.trials) {
     if (
+      trial.result.schemaVersion !== first.schemaVersion ||
       trial.result.caseId !== first.caseId ||
       trial.result.caseSha256 !== first.caseSha256 ||
       canonicalJson(trial.result.model) !== canonicalJson(first.model) ||

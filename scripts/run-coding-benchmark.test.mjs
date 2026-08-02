@@ -46,6 +46,9 @@ describe("coding benchmark command", () => {
         status: "failed",
         caseId: "coding_shipping_boundary_v1",
         model: { provider: "napier", id: "demo" },
+        tooling: expect.objectContaining({
+          toolOutcomes: expect.any(Array),
+        }),
         resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
@@ -116,11 +119,7 @@ describe("coding benchmark command", () => {
     );
     temporaryRoots.push(outputDir);
 
-    const rejectedSingleTrial = await runNode([
-      scriptPath,
-      "--trials",
-      "1",
-    ]);
+    const rejectedSingleTrial = await runNode([scriptPath, "--trials", "1"]);
     expect(rejectedSingleTrial).toEqual(
       expect.objectContaining({
         code: 1,

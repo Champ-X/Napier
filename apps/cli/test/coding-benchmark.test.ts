@@ -111,6 +111,7 @@ describe("CLI coding outcome benchmark", () => {
     expect(artifacts.result).toEqual(
       expect.objectContaining({
         kind: "napier.coding-benchmark-result",
+        schemaVersion: 2,
         status: "passed",
         tooling: expect.objectContaining({
           started: 2,
@@ -147,6 +148,7 @@ describe("CLI coding outcome benchmark", () => {
     expect(bundle).toEqual(
       expect.objectContaining({
         kind: "napier.coding-benchmark-ledger",
+        schemaVersion: 2,
         evaluationEvent: expect.objectContaining({
           type: "benchmark.evaluated",
         }),
@@ -250,9 +252,7 @@ describe("CLI coding outcome benchmark", () => {
         },
         dependencies,
       ),
-    ).rejects.toThrow(
-      "Coding benchmark outcome test evidence hash mismatch",
-    );
+    ).rejects.toThrow("Coding benchmark outcome test evidence hash mismatch");
   });
 
   it("records a failed outcome without leaking credentials and rejects tampering", async () => {
@@ -293,6 +293,34 @@ describe("CLI coding outcome benchmark", () => {
       expect.objectContaining({
         valid: false,
         diagnostics: expect.arrayContaining(["result_hash_mismatch"]),
+      }),
+    );
+    const tamperedDistribution = structuredClone(storedResult) as Record<
+      string,
+      unknown
+    >;
+    const tamperedTooling = tamperedDistribution["tooling"] as Record<
+      string,
+      unknown
+    >;
+    const tamperedOutcomes = tamperedTooling["toolOutcomes"] as Array<
+      Record<string, unknown>
+    >;
+    tamperedOutcomes.push({
+      toolName: "read_file",
+      started: 0,
+      completed: 0,
+      failed: 1,
+      blocked: 0,
+      repeatedCallCount: 0,
+    });
+    rehashJsonObject(tamperedDistribution);
+    expect(
+      verifyCodingBenchmarkArtifacts(tamperedDistribution, bundle),
+    ).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: expect.arrayContaining(["result_shape_invalid"]),
       }),
     );
     expect(verifyCodingBenchmarkArtifacts(storedResult, null)).toEqual(

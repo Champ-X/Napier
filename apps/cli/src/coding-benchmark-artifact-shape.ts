@@ -23,11 +23,15 @@ const RESULT_KEYS = keySet(
 const BUNDLE_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 threadId run tooling evaluationEvent eventCount retainedEventCount omittedEventCount eventTypeCounts eventTypeSetSha256 sourceEventStreamSha256 sourceSnapshotSha256 eventReceipts receiptSetSha256 contentSha256",
 );
-const TOOLING_KEYS = keySet(
+const TOOLING_V1_KEYS = keySet(
   "started completed failed blocked repeatedCallCount applyPatchCompleted",
 );
+const TOOLING_V2_KEYS = [...TOOLING_V1_KEYS, "toolOutcomes"] as const;
 const TOOLING_COUNT_KEYS = keySet(
   "started completed failed blocked repeatedCallCount",
+);
+const TOOL_OUTCOME_KEYS = keySet(
+  "toolName started completed failed blocked repeatedCallCount",
 );
 const ENVIRONMENT_KEYS = keySet("nodeVersion platform arch cliVersion");
 const RESULT_RUN_KEYS = keySet(
@@ -53,9 +57,10 @@ export function validCodingBenchmarkResultShape(
   value: unknown,
 ): value is CodingBenchmarkResult {
   if (!exactRecord(value, RESULT_KEYS)) return false;
+  const schemaVersion = value["schemaVersion"];
   return (
     value["kind"] === "napier.coding-benchmark-result" &&
-    value["schemaVersion"] === 1 &&
+    (schemaVersion === 1 || schemaVersion === 2) &&
     validIsoDate(value["generatedAt"]) &&
     resourceId(value["caseId"]) &&
     isSha256(value["caseSha256"]) &&
@@ -65,7 +70,7 @@ export function validCodingBenchmarkResultShape(
     validModel(value["model"]) &&
     validEnvironment(value["environment"]) &&
     validResultRun(value["run"]) &&
-    validCodingBenchmarkToolMetricsShape(value["tooling"]) &&
+    validCodingBenchmarkToolMetricsShape(value["tooling"], schemaVersion) &&
     validCodingBenchmarkEvaluationShape(value["evaluation"]) &&
     validResultLedger(value["ledger"]) &&
     isSha256(value["contentSha256"])
@@ -76,15 +81,16 @@ export function validCodingBenchmarkLedgerBundleShape(
   value: unknown,
 ): value is CodingBenchmarkLedgerBundle {
   if (!exactRecord(value, BUNDLE_KEYS)) return false;
+  const schemaVersion = value["schemaVersion"];
   return (
     value["kind"] === "napier.coding-benchmark-ledger" &&
-    value["schemaVersion"] === 1 &&
+    (schemaVersion === 1 || schemaVersion === 2) &&
     validIsoDate(value["generatedAt"]) &&
     resourceId(value["caseId"]) &&
     isSha256(value["caseSha256"]) &&
     resourceId(value["threadId"]) &&
     validBundleRun(value["run"]) &&
-    validCodingBenchmarkToolMetricsShape(value["tooling"]) &&
+    validCodingBenchmarkToolMetricsShape(value["tooling"], schemaVersion) &&
     validEvaluationEvent(value["evaluationEvent"]) &&
     nonNegativeInteger(value["eventCount"]) &&
     Number(value["eventCount"]) >= 1 &&
@@ -103,11 +109,66 @@ export function validCodingBenchmarkLedgerBundleShape(
 
 export function validCodingBenchmarkToolMetricsShape(
   value: unknown,
+  schemaVersion?: 1 | 2,
 ): value is CodingBenchmarkToolMetrics {
-  if (!exactRecord(value, TOOLING_KEYS)) return false;
+  const observedVersion =
+    schemaVersion ??
+    (recordHasOwn(value, "toolOutcomes") ? (2 as const) : (1 as const));
+  if (
+    !exactRecord(
+      value,
+      observedVersion === 2 ? TOOLING_V2_KEYS : TOOLING_V1_KEYS,
+    )
+  ) {
+    return false;
+  }
+  const countsValid = TOOLING_COUNT_KEYS.every((key) =>
+    nonNegativeInteger(value[key]),
+  );
+  if (
+    !countsValid ||
+    typeof value["applyPatchCompleted"] !== "boolean" ||
+    Number(value["repeatedCallCount"]) > Number(value["started"])
+  ) {
+    return false;
+  }
+  if (observedVersion === 1) return true;
+  const outcomes = value["toolOutcomes"];
+  if (
+    !Array.isArray(outcomes) ||
+    outcomes.length > 64 ||
+    !outcomes.every(validToolOutcome)
+  ) {
+    return false;
+  }
+  const names = outcomes.map((outcome) => String(outcome["toolName"]));
   return (
+    new Set(names).size === names.length &&
+    JSON.stringify(names) ===
+      JSON.stringify(
+        [...names].sort((left, right) => left.localeCompare(right)),
+      ) &&
+    TOOLING_COUNT_KEYS.every(
+      (key) =>
+        outcomes.reduce((total, outcome) => total + Number(outcome[key]), 0) ===
+        Number(value[key]),
+    ) &&
+    value["applyPatchCompleted"] ===
+      outcomes.some(
+        (outcome) =>
+          outcome["toolName"] === "apply_patch" &&
+          Number(outcome["completed"]) > 0,
+      )
+  );
+}
+
+function validToolOutcome(value: unknown): value is Record<string, unknown> {
+  return (
+    exactRecord(value, TOOL_OUTCOME_KEYS) &&
+    boundedText(value["toolName"], 1, 80) &&
+    /^[a-z][a-z0-9_.-]{0,79}$/u.test(String(value["toolName"])) &&
     TOOLING_COUNT_KEYS.every((key) => nonNegativeInteger(value[key])) &&
-    typeof value["applyPatchCompleted"] === "boolean"
+    Number(value["repeatedCallCount"]) <= Number(value["started"])
   );
 }
 
@@ -298,4 +359,8 @@ function validIsoDate(value: unknown): value is string {
 
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function recordHasOwn(value: unknown, key: string): boolean {
+  return record(value) && Object.hasOwn(value, key);
 }

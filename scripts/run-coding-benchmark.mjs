@@ -108,6 +108,7 @@ if (args.verifySeries) {
             model: artifacts.result.model,
             durationMs: artifacts.result.run.durationMs,
             usage: artifacts.result.run.usage,
+            tooling: artifacts.result.tooling,
             resultSha256: artifacts.result.contentSha256,
             resultPath: path.relative(repoRoot, artifacts.resultPath),
             ledgerPath: path.relative(repoRoot, artifacts.ledgerPath),

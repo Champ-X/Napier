@@ -1,18 +1,9 @@
-import {
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type { RunEvent } from "@napier/contracts";
-import {
-  createLocalAgentRuntime,
-  LspReferencesRunner,
-} from "@napier/runtime";
+import { createLocalAgentRuntime, LspReferencesRunner } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { runCodingBenchmark } from "../src/coding-benchmark.js";
@@ -36,6 +27,10 @@ import {
 } from "./coding-benchmark-multifile-fixture.js";
 
 const temporaryRoots: string[] = [];
+const LEGACY_ARTIFACT_ROOT = path.resolve(
+  import.meta.dirname,
+  "../../../docs/artifacts/benchmarks",
+);
 
 afterEach(async () => {
   await Promise.all(
@@ -75,7 +70,38 @@ describe("CLI multi-file coding outcome benchmark", () => {
       blocked: 0,
       repeatedCallCount: 1,
       applyPatchCompleted: false,
+      toolOutcomes: [
+        {
+          toolName: "read_file",
+          started: 3,
+          completed: 0,
+          failed: 0,
+          blocked: 0,
+          repeatedCallCount: 1,
+        },
+      ],
     });
+  });
+
+  it("continues to verify schema-1 result and Ledger artifacts", async () => {
+    const [result, bundle] = await Promise.all([
+      readJson(
+        path.join(
+          LEGACY_ARTIFACT_ROOT,
+          "napier-benchmark-result-coding_pricing_options_migration_v1-ecba9265f0750865.json",
+        ),
+      ),
+      readJson(
+        path.join(
+          LEGACY_ARTIFACT_ROOT,
+          "napier-benchmark-ledger-coding_pricing_options_migration_v1-e8ef307d538aab40.json",
+        ),
+      ),
+    ]);
+
+    expect(verifyCodingBenchmarkArtifacts(result, bundle)).toEqual(
+      expect.objectContaining({ valid: true, diagnostics: [] }),
+    );
   });
 
   it("binds the LSP position to the definition and both call sites", async () => {
@@ -187,6 +213,32 @@ describe("CLI multi-file coding outcome benchmark", () => {
           blocked: 0,
           repeatedCallCount: 0,
           applyPatchCompleted: true,
+          toolOutcomes: [
+            {
+              toolName: "apply_patch",
+              started: 3,
+              completed: 3,
+              failed: 0,
+              blocked: 0,
+              repeatedCallCount: 0,
+            },
+            {
+              toolName: "lsp_references",
+              started: 1,
+              completed: 1,
+              failed: 0,
+              blocked: 0,
+              repeatedCallCount: 0,
+            },
+            {
+              toolName: "read_file",
+              started: 3,
+              completed: 3,
+              failed: 0,
+              blocked: 0,
+              repeatedCallCount: 0,
+            },
+          ],
         },
         evaluation: expect.objectContaining({
           status: "passed",

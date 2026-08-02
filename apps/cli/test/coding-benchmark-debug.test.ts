@@ -118,6 +118,32 @@ describe("CLI debugging outcome benchmark", () => {
           blocked: 0,
           repeatedCallCount: 0,
           applyPatchCompleted: true,
+          toolOutcomes: [
+            {
+              toolName: "apply_patch",
+              started: 1,
+              completed: 1,
+              failed: 0,
+              blocked: 0,
+              repeatedCallCount: 0,
+            },
+            {
+              toolName: "node_debugger",
+              started: 4,
+              completed: 4,
+              failed: 0,
+              blocked: 0,
+              repeatedCallCount: 0,
+            },
+            {
+              toolName: "read_file",
+              started: 1,
+              completed: 1,
+              failed: 0,
+              blocked: 0,
+              repeatedCallCount: 0,
+            },
+          ],
         },
         evaluation: expect.objectContaining({
           schemaVersion: 3,

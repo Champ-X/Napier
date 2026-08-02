@@ -1336,6 +1336,14 @@ the source Run. It emits:
   and snapshot hashes, event-type counts, Run/evaluation bindings, and chained
   receipts for non-delta events.
 
+Result and Ledger schema v2 add a sorted `toolOutcomes` distribution for each
+safe tool name, with starts, completions, failures, blocks, and repeated-call
+counts. Aggregate totals must exactly equal the per-tool sums, and
+`applyPatchCompleted` must agree with the `apply_patch` outcome. Arguments,
+paths, output, and error text remain excluded. Offline verification continues
+to accept schema-v1 Result/Ledger pairs, requires both sides to use the same
+version, and rejects a self-rehashed distribution whose totals drift.
+
 `--trials 2..10` runs the same case/model sequentially in independent
 workspace, data-root, Thread, and Run lifecycles. The resulting
 `napier-benchmark-series-<case>-<hash>.json` binds every result/Ledger pair,

@@ -10,8 +10,9 @@ import type {
   CodingBenchmarkArtifactVerification,
   CodingBenchmarkCase,
   CodingBenchmarkLedgerBundle,
+  CodingBenchmarkLedgerBundleV2,
   CodingBenchmarkResult,
-  CodingBenchmarkToolMetrics,
+  CodingBenchmarkToolMetricsV2,
 } from "./coding-benchmark-types.js";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
@@ -26,11 +27,11 @@ export function createCodingBenchmarkLedgerBundle(input: {
   benchmarkCase: CodingBenchmarkCase;
   threadId: string;
   run: CodingBenchmarkLedgerBundle["run"];
-  tooling: CodingBenchmarkToolMetrics;
+  tooling: CodingBenchmarkToolMetricsV2;
   evaluationEvent: RunEvent;
   events: RunEvent[];
   sourceSnapshotSha256: string;
-}): CodingBenchmarkLedgerBundle {
+}): CodingBenchmarkLedgerBundleV2 {
   const eventTypeCounts = [
     ...input.events.reduce((counts, event) => {
       counts.set(event.type, (counts.get(event.type) ?? 0) + 1);
@@ -64,7 +65,7 @@ export function createCodingBenchmarkLedgerBundle(input: {
   });
   const content = {
     kind: "napier.coding-benchmark-ledger" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     generatedAt: input.generatedAt,
     caseId: input.benchmarkCase.id,
     caseSha256: input.benchmarkCase.contentSha256,
@@ -148,32 +149,13 @@ export function verifyCodingBenchmarkArtifacts(
   ) {
     diagnostics.push("ledger_evaluation_mismatch");
   }
-  const bundleRun = bundle?.run;
-  if (
-    !bundleRun ||
-    !record(result.run) ||
-    !validCodingBenchmarkToolMetricsShape(result.tooling) ||
-    !validCodingBenchmarkToolMetricsShape(bundle?.tooling) ||
-    result.run.runId !== bundleRun.id ||
-    result.run.agentId !== bundleRun.agentId ||
-    result.run.agentRevision !== bundleRun.agentRevision ||
-    result.run.status !== bundleRun.status ||
-    canonicalJson(result.model) !== canonicalJson(bundleRun.model) ||
-    result.run.configurationSha256 !== bundleRun.configurationSha256 ||
-    result.run.durationMs !== bundleRun.durationMs ||
-    !record(result.run.usage) ||
-    canonicalJson(result.run.usage) !== canonicalJson(bundleRun.usage) ||
-    canonicalJson(result.tooling) !== canonicalJson(bundle.tooling) ||
-    !record(result.evaluation) ||
-    !isSha256(result.evaluation["contentSha256"]) ||
-    !validEvaluationContentHash(result.evaluation) ||
-    canonicalJson(result.evaluation) !== canonicalJson(evaluationEvent?.payload)
-  ) {
+  if (!benchmarkRunMatches(result, bundle, evaluationEvent)) {
     diagnostics.push("ledger_run_mismatch");
   }
   if (
     result.kind !== "napier.coding-benchmark-result" ||
-    result.schemaVersion !== 1 ||
+    (result.schemaVersion !== 1 && result.schemaVersion !== 2) ||
+    result.schemaVersion !== bundle?.schemaVersion ||
     result.caseId !== result.evaluation?.caseId ||
     result.caseSha256 !== result.evaluation?.caseSha256 ||
     result.status !== result.evaluation?.status ||
@@ -190,6 +172,41 @@ export function verifyCodingBenchmarkArtifacts(
       ? { bundleSha256: bundle.contentSha256 }
       : {}),
   };
+}
+
+function benchmarkRunMatches(
+  result: CodingBenchmarkResult,
+  bundle: CodingBenchmarkLedgerBundle | undefined,
+  evaluationEvent: RunEvent | undefined,
+): boolean {
+  const bundleRun = bundle?.run;
+  return Boolean(
+    bundleRun &&
+    record(result.run) &&
+    validCodingBenchmarkToolMetricsShape(
+      result.tooling,
+      result.schemaVersion,
+    ) &&
+    validCodingBenchmarkToolMetricsShape(
+      bundle.tooling,
+      bundle.schemaVersion,
+    ) &&
+    result.run.runId === bundleRun.id &&
+    result.run.agentId === bundleRun.agentId &&
+    result.run.agentRevision === bundleRun.agentRevision &&
+    result.run.status === bundleRun.status &&
+    canonicalJson(result.model) === canonicalJson(bundleRun.model) &&
+    result.run.configurationSha256 === bundleRun.configurationSha256 &&
+    result.run.durationMs === bundleRun.durationMs &&
+    record(result.run.usage) &&
+    canonicalJson(result.run.usage) === canonicalJson(bundleRun.usage) &&
+    canonicalJson(result.tooling) === canonicalJson(bundle.tooling) &&
+    record(result.evaluation) &&
+    isSha256(result.evaluation["contentSha256"]) &&
+    validEvaluationContentHash(result.evaluation) &&
+    canonicalJson(result.evaluation) ===
+      canonicalJson(evaluationEvent?.payload),
+  );
 }
 
 export function verifyCodingBenchmarkLedgerBundle(input: unknown): {

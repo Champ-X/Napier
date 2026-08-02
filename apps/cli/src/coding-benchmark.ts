@@ -309,7 +309,7 @@ async function writeCodingBenchmarkArtifacts(input: {
   await writeCodingBenchmarkCasFile(ledgerPath, serializedBundle);
   const result = createCodingBenchmarkResult({
     kind: "napier.coding-benchmark-result",
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: input.generatedAt,
     caseId: input.benchmarkCaseId,
     caseSha256: input.evaluation.caseSha256,

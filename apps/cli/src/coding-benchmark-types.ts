@@ -94,7 +94,7 @@ export interface CodingBenchmarkEvaluation {
   contentSha256: string;
 }
 
-export interface CodingBenchmarkToolMetrics {
+interface CodingBenchmarkToolMetricsBase {
   started: number;
   completed: number;
   failed: number;
@@ -102,6 +102,25 @@ export interface CodingBenchmarkToolMetrics {
   repeatedCallCount: number;
   applyPatchCompleted: boolean;
 }
+
+export type CodingBenchmarkToolMetricsV1 = CodingBenchmarkToolMetricsBase;
+
+export interface CodingBenchmarkToolOutcomeMetrics {
+  toolName: string;
+  started: number;
+  completed: number;
+  failed: number;
+  blocked: number;
+  repeatedCallCount: number;
+}
+
+export type CodingBenchmarkToolMetricsV2 = CodingBenchmarkToolMetricsBase & {
+  toolOutcomes: CodingBenchmarkToolOutcomeMetrics[];
+};
+
+export type CodingBenchmarkToolMetrics =
+  | CodingBenchmarkToolMetricsV1
+  | CodingBenchmarkToolMetricsV2;
 
 export interface CodingBenchmarkLedgerEventReceipt {
   id: string;
@@ -116,9 +135,8 @@ export interface CodingBenchmarkLedgerEventReceipt {
   receiptSha256: string;
 }
 
-export interface CodingBenchmarkLedgerBundle {
+interface CodingBenchmarkLedgerBundleBase {
   kind: "napier.coding-benchmark-ledger";
-  schemaVersion: 1;
   generatedAt: string;
   caseId: string;
   caseSha256: string;
@@ -133,7 +151,6 @@ export interface CodingBenchmarkLedgerBundle {
     durationMs: number;
     usage: Usage;
   };
-  tooling: CodingBenchmarkToolMetrics;
   evaluationEvent: RunEvent;
   eventCount: number;
   retainedEventCount: number;
@@ -147,9 +164,22 @@ export interface CodingBenchmarkLedgerBundle {
   contentSha256: string;
 }
 
-export interface CodingBenchmarkResult {
-  kind: "napier.coding-benchmark-result";
+export interface CodingBenchmarkLedgerBundleV1 extends CodingBenchmarkLedgerBundleBase {
   schemaVersion: 1;
+  tooling: CodingBenchmarkToolMetricsV1;
+}
+
+export interface CodingBenchmarkLedgerBundleV2 extends CodingBenchmarkLedgerBundleBase {
+  schemaVersion: 2;
+  tooling: CodingBenchmarkToolMetricsV2;
+}
+
+export type CodingBenchmarkLedgerBundle =
+  | CodingBenchmarkLedgerBundleV1
+  | CodingBenchmarkLedgerBundleV2;
+
+interface CodingBenchmarkResultBase {
+  kind: "napier.coding-benchmark-result";
   generatedAt: string;
   caseId: string;
   caseSha256: string;
@@ -171,7 +201,6 @@ export interface CodingBenchmarkResult {
     durationMs: number;
     usage: Usage;
   };
-  tooling: CodingBenchmarkToolMetrics;
   evaluation: CodingBenchmarkEvaluation;
   ledger: {
     eventId: string;
@@ -184,6 +213,20 @@ export interface CodingBenchmarkResult {
   };
   contentSha256: string;
 }
+
+export interface CodingBenchmarkResultV1 extends CodingBenchmarkResultBase {
+  schemaVersion: 1;
+  tooling: CodingBenchmarkToolMetricsV1;
+}
+
+export interface CodingBenchmarkResultV2 extends CodingBenchmarkResultBase {
+  schemaVersion: 2;
+  tooling: CodingBenchmarkToolMetricsV2;
+}
+
+export type CodingBenchmarkResult =
+  | CodingBenchmarkResultV1
+  | CodingBenchmarkResultV2;
 
 export interface CodingBenchmarkArtifactVerification {
   valid: boolean;

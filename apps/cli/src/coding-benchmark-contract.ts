@@ -17,8 +17,8 @@ import type {
   CodingBenchmarkDiagnostic,
   CodingBenchmarkEvaluation,
   CodingBenchmarkOutcomeTestEvidence,
-  CodingBenchmarkResult,
-  CodingBenchmarkToolMetrics,
+  CodingBenchmarkResultV2,
+  CodingBenchmarkToolMetricsV2,
 } from "./coding-benchmark-types.js";
 
 export * from "./coding-benchmark-ledger.js";
@@ -245,35 +245,83 @@ export function createCodingBenchmarkEvaluation(input: {
 export function collectCodingBenchmarkToolMetrics(
   events: readonly RunEvent[],
   runId: string,
-): CodingBenchmarkToolMetrics {
+): CodingBenchmarkToolMetricsV2 {
   const runEvents = events.filter((event) => event.runId === runId);
-  const started = runEvents.filter((event) => event.type === "tool.started");
-  const seen = new Set<string>();
-  let repeatedCallCount = 0;
-  for (const event of started) {
+  const outcomes = new Map<
+    string,
+    {
+      toolName: string;
+      started: number;
+      completed: number;
+      failed: number;
+      blocked: number;
+      repeatedCallCount: number;
+      signatures: Set<string>;
+    }
+  >();
+  for (const event of runEvents) {
+    if (
+      event.type !== "tool.started" &&
+      event.type !== "tool.completed" &&
+      event.type !== "tool.failed" &&
+      event.type !== "tool.blocked"
+    ) {
+      continue;
+    }
     const payload = record(event.payload) ? event.payload : {};
-    const inputSha256 =
-      typeof payload["inputSha256"] === "string"
-        ? payload["inputSha256"]
-        : sha256(canonicalJson(payload["input"] ?? null));
-    const signature = `${String(payload["toolName"] ?? "")}:${String(
-      inputSha256,
-    )}`;
-    if (seen.has(signature)) repeatedCallCount += 1;
-    seen.add(signature);
+    const rawToolName = payload["toolName"];
+    const toolName =
+      typeof rawToolName === "string" &&
+      /^[a-z][a-z0-9_.-]{0,79}$/u.test(rawToolName)
+        ? rawToolName
+        : "unknown";
+    let outcome = outcomes.get(toolName);
+    if (!outcome) {
+      outcome = {
+        toolName,
+        started: 0,
+        completed: 0,
+        failed: 0,
+        blocked: 0,
+        repeatedCallCount: 0,
+        signatures: new Set(),
+      };
+      outcomes.set(toolName, outcome);
+    }
+    if (event.type === "tool.started") {
+      outcome.started += 1;
+      const inputSha256 =
+        typeof payload["inputSha256"] === "string"
+          ? payload["inputSha256"]
+          : sha256(canonicalJson(payload["input"] ?? null));
+      if (outcome.signatures.has(inputSha256)) {
+        outcome.repeatedCallCount += 1;
+      }
+      outcome.signatures.add(inputSha256);
+    } else if (event.type === "tool.completed") {
+      outcome.completed += 1;
+    } else if (event.type === "tool.failed") {
+      outcome.failed += 1;
+    } else {
+      outcome.blocked += 1;
+    }
   }
+  const toolOutcomes = [...outcomes.values()]
+    .map(({ signatures: _signatures, ...outcome }) => outcome)
+    .sort((left, right) => left.toolName.localeCompare(right.toolName));
+  const sum = (
+    key: "started" | "completed" | "failed" | "blocked" | "repeatedCallCount",
+  ) => toolOutcomes.reduce((total, outcome) => total + outcome[key], 0);
   return {
-    started: started.length,
-    completed: countEvents(runEvents, "tool.completed"),
-    failed: countEvents(runEvents, "tool.failed"),
-    blocked: countEvents(runEvents, "tool.blocked"),
-    repeatedCallCount,
-    applyPatchCompleted: runEvents.some(
-      (event) =>
-        event.type === "tool.completed" &&
-        record(event.payload) &&
-        event.payload["toolName"] === "apply_patch",
+    started: sum("started"),
+    completed: sum("completed"),
+    failed: sum("failed"),
+    blocked: sum("blocked"),
+    repeatedCallCount: sum("repeatedCallCount"),
+    applyPatchCompleted: toolOutcomes.some(
+      (outcome) => outcome.toolName === "apply_patch" && outcome.completed > 0,
     ),
+    toolOutcomes,
   };
 }
 
@@ -294,16 +342,12 @@ export function completedCodingBenchmarkTools(
 }
 
 export function createCodingBenchmarkResult(
-  content: Omit<CodingBenchmarkResult, "contentSha256">,
-): CodingBenchmarkResult {
+  content: Omit<CodingBenchmarkResultV2, "contentSha256">,
+): CodingBenchmarkResultV2 {
   return {
     ...content,
     contentSha256: sha256(canonicalJson(content)),
   };
-}
-
-function countEvents(events: readonly RunEvent[], type: string): number {
-  return events.filter((event) => event.type === type).length;
 }
 
 function exactKeys(
