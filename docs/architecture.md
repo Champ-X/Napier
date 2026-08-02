@@ -266,14 +266,17 @@ checks, status transitions, no-store evidence headers, and credential Ledger
 events retain their existing wire semantics. This extraction reduced `app.ts`
 from 26,869 to 26,438 lines.
 
-Schedule management follows the same boundary: `schedule-http.ts` owns
-create/list/update routes, hash-bound response evidence, and automation Ledger
-events; `schedule-http-validation.ts` owns interval/UTC-cron request parsing.
-Shared prompt/model validators moved into `http-request-validation.ts`.
-The extracted routes retain the existing `AutomationService` tick, lease,
-misfire, and Agent Run semantics, while `app.ts` decreased again to 26,095
-lines. Both domains keep all 255 generated operations and 244/244 compatibility
-fixtures.
+Schedule and Agent Profile management follow the same boundary.
+`schedule-http.ts` owns create/list/update routes and automation Ledger events;
+`agent-profile-http.ts` owns update/revision/rollback routes and hash-bound
+profile evidence. Their leaf validation modules reject unknown fields and
+normalize the complete request surfaces. Shared prompt/model parsing lives in
+`http-request-validation.ts`, while `model-http-availability.ts` supplies one
+narrow configured-model check to the composition root and extracted domains.
+The routes retain existing `AutomationService` tick/lease semantics and Agent
+profile revision/rollback behavior. `app.ts` decreased again to 25,465 lines
+and its maximum function complexity fell from 63 to 53, while all 255 generated
+operations and 244/244 compatibility fixtures remain unchanged.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

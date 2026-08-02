@@ -12,13 +12,10 @@ import type {
   ApplyExtensionPackageUpdateRequest,
   ApplyExtensionPackageUpdateResult,
   ApplySkillContentResult,
-  AgentProfile,
   CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
-  AgentProfileRevision,
-  AgentProfileRollbackResult,
   BootstrapResponse,
   CreateExtensionPublisherTrustAnchorRequest,
   CreateReceiptTrustAnchorRequest,
@@ -229,11 +226,8 @@ import type {
   PromptRequest,
   PromptPackageQualification,
   PromptPackageVerification,
-  PromptVariableDefinition,
-  ToolLoopGuardPolicy,
   ReplanExecutionPlanRequest,
   ReviewExecutionPlanReplanDraftRequest,
-  RollbackAgentProfileRequest,
   RunComparison,
   RunControlMessage,
   RunEvent,
@@ -278,7 +272,6 @@ import type {
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
   TransitionPlanStepRequest,
-  UpdateAgentProfileRequest,
   UpdateArtifactManifestRequest,
   UpdateInboundRetryPolicyRequest,
   UpdateInboundSignaturePolicyRequest,
@@ -315,12 +308,10 @@ import type {
   VerifySignedExtensionPackageRequest,
   VerifyTrustedReceiptRequest,
 } from "@napier/contracts";
-import { AGENT_TOOL_NAMES } from "@napier/contracts";
 import {
   type AgentRuntime,
   AutomationService,
   ChannelService,
-  changedAgentFields,
   canonicalJson,
   compareRuns,
   type CredentialReferenceStore,
@@ -379,8 +370,6 @@ import {
   type ModelRegistry,
   type ModelInvocationExperimentRuntime,
   type ToolInvocationExperimentRuntime,
-  normalizePromptVariableDefinitions,
-  normalizeToolLoopGuardPolicy,
   openTelemetryTraceArtifactEventAnchorSetSha256,
   RecoveryService,
   receiptTrustAnchorsFromDirectory,
@@ -446,7 +435,6 @@ import {
   RequestBodyTooLargeError,
 } from "./http-request-body.js";
 import {
-  normalizeBoundedPrompt,
   normalizeBoundedText,
   parseModelRef,
   requestRecord,
@@ -482,10 +470,12 @@ import {
   executeAgentMessageExperimentHttp,
   previewAgentMessageExperimentHttp,
 } from "./agent-message-experiment-http.js";
+import { registerAgentProfileHttp } from "./agent-profile-http.js";
 import {
   executeModelInvocationExperimentHttp,
   previewModelInvocationExperimentHttp,
 } from "./model-invocation-experiment-http.js";
+import { assertAvailableModel } from "./model-http-availability.js";
 import {
   executeToolInvocationExperimentHttp,
   previewToolInvocationExperimentHttp,
@@ -659,7 +649,6 @@ const MAX_CHANNEL_ADAPTER_PREVIEW_REQUEST_BYTES =
   MAX_INBOUND_BODY_BYTES + 8 * 1024;
 const MAX_DEAD_LETTER_EXPORT_VERIFY_REQUEST_BYTES = 2 * 1024 * 1024;
 const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
-const MAX_AGENT_PROFILE_REQUEST_BYTES = 32 * 1024;
 const MAX_EXTENSION_ADMIN_REQUEST_BYTES = 64 * 1024;
 const MAX_TRACE_EXPORT_REQUEST_BYTES = 8 * 1024;
 const MAX_BRANCH_REQUEST_BYTES = 8 * 1024;
@@ -5191,150 +5180,7 @@ export function createApp(services: NapierServices): Hono {
     }
   });
 
-  app.put("/api/agents/:agentId", async (context) => {
-    const agentId = context.req.param("agentId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_AGENT_PROFILE_REQUEST_BYTES,
-        "Agent profile request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseUpdateAgentProfileRequest(input);
-    if (!body) {
-      return jsonError(context, "Agent profile request is invalid", 400);
-    }
-    if (body.threadId) {
-      const thread = services.store.getThread(body.threadId);
-      if (thread.agentId !== agentId) {
-        return jsonError(
-          context,
-          "Audit thread does not use the target Agent",
-          400,
-        );
-      }
-    }
-    const before = services.store.getAgent(agentId);
-    const requestedModel = body.model
-      ? {
-          provider: body.model.provider.trim().toLowerCase(),
-          id: body.model.id.trim(),
-        }
-      : undefined;
-    try {
-      if (requestedModel) await assertAvailableModel(services, requestedModel);
-      await assertAdvisorReviewModel(
-        services,
-        requestedModel ?? before.model,
-        body.modelAdvisor !== undefined
-          ? body.modelAdvisor.reviewModel
-          : before.modelAdvisor?.reviewModel,
-      );
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 400);
-    }
-    let updated: AgentProfile;
-    try {
-      updated = await services.store.updateAgent(agentId, {
-        ...body,
-        ...(requestedModel ? { model: requestedModel } : {}),
-      });
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 400);
-    }
-    const changedFields = changedAgentFields(before, updated);
-    const revision = services.store.getAgentRevision(agentId, updated.revision);
-    if (body.threadId && changedFields.length > 0) {
-      await services.store.appendEvent({
-        threadId: body.threadId,
-        runId: createId("runctl"),
-        type: "agent.updated",
-        category: "system",
-        visibility: "user",
-        payload: {
-          agentId,
-          revision: updated.revision,
-          changedFields,
-          profileRevisionSha256: revision.contentSha256,
-        },
-      });
-    }
-    setAgentProfileHeaders(context, updated, revision, changedFields.length);
-    return context.json(updated);
-  });
-
-  app.get("/api/agents/:agentId/revisions", (context) => {
-    const agentId = context.req.param("agentId");
-    const revisions = services.store.listAgentRevisions(agentId);
-    setAgentRevisionListHeaders(context, agentId, revisions);
-    return context.json(revisions);
-  });
-
-  app.post("/api/agents/:agentId/rollback", async (context) => {
-    const agentId = context.req.param("agentId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_AGENT_PROFILE_REQUEST_BYTES,
-        "Agent rollback request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseRollbackAgentProfileRequest(input);
-    if (!body) {
-      return jsonError(context, "Agent rollback request is invalid", 400);
-    }
-    const thread = services.store.getThread(body.threadId);
-    if (thread.agentId !== agentId) {
-      return jsonError(
-        context,
-        "Audit thread does not use the target Agent",
-        400,
-      );
-    }
-    const target = services.store.getAgentRevision(agentId, body.revision);
-    try {
-      await assertAvailableModel(services, target.profile.model);
-      await assertAdvisorReviewModel(
-        services,
-        target.profile.model,
-        target.profile.modelAdvisor?.reviewModel,
-      );
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 400);
-    }
-    const result = await services.store.rollbackAgent(agentId, body.revision);
-    await services.store.appendEvent({
-      threadId: body.threadId,
-      runId: createId("runctl"),
-      type: "agent.rolled_back",
-      category: "system",
-      visibility: "user",
-      payload: {
-        agentId,
-        revision: result.agent.revision,
-        restoredFromRevision: body.revision,
-        changedFields: result.revision.changedFields,
-        profileRevisionSha256: result.revision.contentSha256,
-        restoredSnapshotSha256: target.contentSha256,
-      },
-    });
-    setAgentRollbackHeaders(context, result, target);
-    return context.json(result);
-  });
+  registerAgentProfileHttp(app, services);
 
   app.get("/api/threads/:threadId/events", async (context) => {
     const after = Number.parseInt(context.req.query("after") ?? "0", 10);
@@ -10879,373 +10725,6 @@ function parseReviewSubagentOutcomeRequest(
   return record && model ? { model } : undefined;
 }
 
-function parseUpdateAgentProfileRequest(
-  input: unknown,
-): UpdateAgentProfileRequest | undefined {
-  const record = requestRecord(input, [
-    "name",
-    "description",
-    "systemPrompt",
-    "model",
-    "thinkingLevel",
-    "toolPolicy",
-    "enabledTools",
-    "enabledSkills",
-    "enabledSubagents",
-    "subagentLimits",
-    "runLimits",
-    "automaticRecovery",
-    "modelAdvisor",
-    "promptVariables",
-    "toolLoopGuard",
-    "threadId",
-  ]);
-  if (!record) return undefined;
-  const name =
-    record["name"] === undefined
-      ? undefined
-      : normalizeBoundedText(record["name"], 1, 80);
-  const description =
-    record["description"] === undefined
-      ? undefined
-      : normalizeBoundedText(record["description"], 1, 500);
-  const systemPrompt =
-    record["systemPrompt"] === undefined
-      ? undefined
-      : normalizeBoundedPrompt(record["systemPrompt"], 12_000);
-  const model =
-    record["model"] === undefined ? undefined : parseModelRef(record["model"]);
-  const thinkingLevel = parseThinkingLevel(record["thinkingLevel"]);
-  const toolPolicy = parseToolPolicy(record["toolPolicy"]);
-  const enabledTools =
-    record["enabledTools"] === undefined
-      ? undefined
-      : parseEnabledTools(record["enabledTools"]);
-  const enabledSkills =
-    record["enabledSkills"] === undefined
-      ? undefined
-      : parseAgentNameArray(record["enabledSkills"], 128);
-  const enabledSubagents =
-    record["enabledSubagents"] === undefined
-      ? undefined
-      : parseEnabledSubagents(record["enabledSubagents"]);
-  const subagentLimits =
-    record["subagentLimits"] === undefined
-      ? undefined
-      : parseSubagentLimits(record["subagentLimits"]);
-  const runLimits =
-    record["runLimits"] === undefined
-      ? undefined
-      : parseRunLimits(record["runLimits"]);
-  const automaticRecovery =
-    record["automaticRecovery"] === undefined
-      ? undefined
-      : parseAutomaticRecoveryPolicy(record["automaticRecovery"]);
-  const modelAdvisor =
-    record["modelAdvisor"] === undefined
-      ? undefined
-      : parseModelAdvisorPolicy(record["modelAdvisor"]);
-  const promptVariables =
-    record["promptVariables"] === undefined
-      ? undefined
-      : parsePromptVariableDefinitions(record["promptVariables"]);
-  const toolLoopGuard =
-    record["toolLoopGuard"] === undefined
-      ? undefined
-      : parseToolLoopGuardPolicy(record["toolLoopGuard"]);
-  const threadId = record["threadId"];
-  if (
-    (record["name"] !== undefined && !name) ||
-    (record["description"] !== undefined && !description) ||
-    (record["systemPrompt"] !== undefined && !systemPrompt) ||
-    (record["model"] !== undefined && !model) ||
-    (record["thinkingLevel"] !== undefined && !thinkingLevel) ||
-    (record["toolPolicy"] !== undefined && !toolPolicy) ||
-    (record["enabledTools"] !== undefined && !enabledTools) ||
-    (record["enabledSkills"] !== undefined && !enabledSkills) ||
-    (record["enabledSubagents"] !== undefined && !enabledSubagents) ||
-    (record["subagentLimits"] !== undefined && !subagentLimits) ||
-    (record["runLimits"] !== undefined && !runLimits) ||
-    (record["automaticRecovery"] !== undefined && !automaticRecovery) ||
-    (record["modelAdvisor"] !== undefined && !modelAdvisor) ||
-    (record["promptVariables"] !== undefined &&
-      promptVariables === undefined) ||
-    (record["toolLoopGuard"] !== undefined && toolLoopGuard === undefined) ||
-    (threadId !== undefined && !validThreadId(threadId))
-  ) {
-    return undefined;
-  }
-  return {
-    ...(name ? { name } : {}),
-    ...(description ? { description } : {}),
-    ...(systemPrompt ? { systemPrompt } : {}),
-    ...(model ? { model } : {}),
-    ...(thinkingLevel ? { thinkingLevel } : {}),
-    ...(toolPolicy ? { toolPolicy } : {}),
-    ...(enabledTools ? { enabledTools } : {}),
-    ...(enabledSkills ? { enabledSkills } : {}),
-    ...(enabledSubagents ? { enabledSubagents } : {}),
-    ...(subagentLimits ? { subagentLimits } : {}),
-    ...(runLimits ? { runLimits } : {}),
-    ...(automaticRecovery ? { automaticRecovery } : {}),
-    ...(modelAdvisor ? { modelAdvisor } : {}),
-    ...(promptVariables !== undefined ? { promptVariables } : {}),
-    ...(toolLoopGuard !== undefined ? { toolLoopGuard } : {}),
-    ...(typeof threadId === "string" ? { threadId } : {}),
-  };
-}
-
-function parseToolLoopGuardPolicy(
-  input: unknown,
-): ToolLoopGuardPolicy | undefined {
-  try {
-    return normalizeToolLoopGuardPolicy(input as ToolLoopGuardPolicy);
-  } catch {
-    return undefined;
-  }
-}
-
-function parsePromptVariableDefinitions(
-  input: unknown,
-): PromptVariableDefinition[] | undefined {
-  if (!Array.isArray(input)) return undefined;
-  try {
-    return normalizePromptVariableDefinitions(
-      input as PromptVariableDefinition[],
-    );
-  } catch {
-    return undefined;
-  }
-}
-
-function parseModelAdvisorPolicy(
-  input: unknown,
-): UpdateAgentProfileRequest["modelAdvisor"] | undefined {
-  const record = requestRecord(input, [
-    "mode",
-    "enabledRules",
-    "maxCorrectionAttempts",
-    "reviewModel",
-  ]);
-  const mode = record?.["mode"];
-  const enabledRules = record?.["enabledRules"];
-  const maxCorrectionAttempts = record?.["maxCorrectionAttempts"];
-  const reviewModel =
-    record?.["reviewModel"] === undefined
-      ? undefined
-      : parseModelRef(record["reviewModel"]);
-  if (
-    !record ||
-    (mode !== "observe" && mode !== "enforce" && mode !== "off") ||
-    !Array.isArray(enabledRules) ||
-    enabledRules.length > 10 ||
-    !enabledRules.every(
-      (rule) =>
-        rule === "unverified_verification_claim" ||
-        rule === "destructive_command_reference",
-    ) ||
-    (maxCorrectionAttempts !== undefined &&
-      (typeof maxCorrectionAttempts !== "number" ||
-        !Number.isSafeInteger(maxCorrectionAttempts) ||
-        maxCorrectionAttempts < 0 ||
-        maxCorrectionAttempts > 3)) ||
-    (record["reviewModel"] !== undefined && !reviewModel)
-  ) {
-    return undefined;
-  }
-  return {
-    mode,
-    enabledRules,
-    ...(typeof maxCorrectionAttempts === "number"
-      ? { maxCorrectionAttempts }
-      : {}),
-    ...(reviewModel ? { reviewModel } : {}),
-  };
-}
-
-function parseRollbackAgentProfileRequest(
-  input: unknown,
-): RollbackAgentProfileRequest | undefined {
-  const record = requestRecord(input, ["revision", "threadId"]);
-  const revision = record?.["revision"];
-  const threadId = record?.["threadId"];
-  return record &&
-    typeof revision === "number" &&
-    Number.isSafeInteger(revision) &&
-    revision >= 1 &&
-    validThreadId(threadId)
-    ? { revision, threadId }
-    : undefined;
-}
-
-function parseThinkingLevel(
-  input: unknown,
-): UpdateAgentProfileRequest["thinkingLevel"] | undefined {
-  return input === "off" ||
-    input === "minimal" ||
-    input === "low" ||
-    input === "medium" ||
-    input === "high"
-    ? input
-    : undefined;
-}
-
-function parseToolPolicy(
-  input: unknown,
-): UpdateAgentProfileRequest["toolPolicy"] | undefined {
-  return input === "observe" ||
-    input === "workspace" ||
-    input === "unrestricted"
-    ? input
-    : undefined;
-}
-
-function parseEnabledTools(input: unknown): string[] | undefined {
-  const allowed: ReadonlySet<string> = new Set(AGENT_TOOL_NAMES);
-  if (
-    !Array.isArray(input) ||
-    input.length > allowed.size ||
-    input.some((value) => typeof value !== "string" || !allowed.has(value))
-  ) {
-    return undefined;
-  }
-  const unique = new Set(input);
-  return unique.size === input.length ? [...unique].sort() : undefined;
-}
-
-function parseAgentNameArray(
-  input: unknown,
-  maxItems: number,
-): string[] | undefined {
-  if (!Array.isArray(input) || input.length > maxItems) return undefined;
-  const normalized: string[] = [];
-  for (const value of input) {
-    if (typeof value !== "string") return undefined;
-    const item = value.trim().toLowerCase();
-    if (!/^[a-z][a-z0-9_-]{0,63}$/.test(item)) return undefined;
-    normalized.push(item);
-  }
-  const unique = new Set(normalized);
-  return unique.size === normalized.length ? [...unique].sort() : undefined;
-}
-
-function parseEnabledSubagents(
-  input: unknown,
-): NonNullable<UpdateAgentProfileRequest["enabledSubagents"]> | undefined {
-  if (!Array.isArray(input) || input.length > 4) return undefined;
-  const allowed = new Set(["researcher", "reviewer", "general", "coder"]);
-  if (input.some((value) => typeof value !== "string" || !allowed.has(value))) {
-    return undefined;
-  }
-  const unique = new Set(input);
-  return unique.size === input.length
-    ? ([...unique].sort() as NonNullable<
-        UpdateAgentProfileRequest["enabledSubagents"]
-      >)
-    : undefined;
-}
-
-function parseSubagentLimits(
-  input: unknown,
-): NonNullable<UpdateAgentProfileRequest["subagentLimits"]> | undefined {
-  const record = requestRecord(input, [
-    "maxConcurrent",
-    "maxTotal",
-    "maxTurns",
-    "timeoutMs",
-  ]);
-  const maxConcurrent = parseBoundedInteger(record?.["maxConcurrent"], 1, 8);
-  const maxTotal = parseBoundedInteger(record?.["maxTotal"], 1, 24);
-  const maxTurns = parseBoundedInteger(record?.["maxTurns"], 1, 32);
-  const timeoutMs = parseBoundedInteger(record?.["timeoutMs"], 1_000, 900_000);
-  return record &&
-    maxConcurrent !== undefined &&
-    maxTotal !== undefined &&
-    maxTurns !== undefined &&
-    timeoutMs !== undefined
-    ? { maxConcurrent, maxTotal, maxTurns, timeoutMs }
-    : undefined;
-}
-
-function parseRunLimits(
-  input: unknown,
-): NonNullable<UpdateAgentProfileRequest["runLimits"]> | undefined {
-  const record = requestRecord(input, [
-    "maxTurns",
-    "maxTotalTokens",
-    "maxCostUsd",
-    "timeoutMs",
-  ]);
-  const maxTurns = parseBoundedInteger(record?.["maxTurns"], 1, 128);
-  const maxTotalTokens = parseBoundedInteger(
-    record?.["maxTotalTokens"],
-    1_000,
-    10_000_000,
-  );
-  const maxCostUsd = parseBoundedFiniteNumber(
-    record?.["maxCostUsd"],
-    0.01,
-    1_000,
-  );
-  const timeoutMs = parseBoundedInteger(
-    record?.["timeoutMs"],
-    10_000,
-    3_600_000,
-  );
-  return record &&
-    maxTurns !== undefined &&
-    maxTotalTokens !== undefined &&
-    maxCostUsd !== undefined &&
-    timeoutMs !== undefined
-    ? { maxTurns, maxTotalTokens, maxCostUsd, timeoutMs }
-    : undefined;
-}
-
-function parseAutomaticRecoveryPolicy(
-  input: unknown,
-): NonNullable<UpdateAgentProfileRequest["automaticRecovery"]> | undefined {
-  const record = requestRecord(input, ["mode", "maxAttempts", "backoffMs"]);
-  const mode = record?.["mode"];
-  const maxAttempts = parseBoundedInteger(record?.["maxAttempts"], 1, 3);
-  const backoffMs = parseBoundedInteger(
-    record?.["backoffMs"],
-    1_000,
-    3_600_000,
-  );
-  return record &&
-    (mode === "manual" || mode === "safe_read_only") &&
-    maxAttempts !== undefined &&
-    backoffMs !== undefined
-    ? { mode, maxAttempts, backoffMs }
-    : undefined;
-}
-
-function parseBoundedInteger(
-  input: unknown,
-  minimum: number,
-  maximum: number,
-): number | undefined {
-  return typeof input === "number" &&
-    Number.isInteger(input) &&
-    input >= minimum &&
-    input <= maximum
-    ? input
-    : undefined;
-}
-
-function parseBoundedFiniteNumber(
-  input: unknown,
-  minimum: number,
-  maximum: number,
-): number | undefined {
-  return typeof input === "number" &&
-    Number.isFinite(input) &&
-    input >= minimum &&
-    input <= maximum
-    ? input
-    : undefined;
-}
-
 function parseCreateMcpExtensionRequest(
   input: unknown,
 ): CreateMcpExtensionRequest | undefined {
@@ -12904,41 +12383,6 @@ function boundedString(
 
 function isSha256Hex(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-}
-
-async function assertAvailableModel(
-  services: NapierServices,
-  model: { provider: string; id: string },
-): Promise<void> {
-  const provider = model.provider.trim().toLowerCase();
-  const id = model.id.trim();
-  if (provider === "napier" && id === "demo") return;
-  const ref = { provider, id };
-  await services.models.resolveConfigured(ref);
-}
-
-async function assertAdvisorReviewModel(
-  services: NapierServices,
-  primaryModel: { provider: string; id: string },
-  reviewModel: { provider: string; id: string } | undefined,
-): Promise<void> {
-  if (!reviewModel) return;
-  const primaryProvider = primaryModel.provider.trim().toLowerCase();
-  const primaryId = primaryModel.id.trim();
-  const reviewerProvider = reviewModel.provider.trim().toLowerCase();
-  const reviewerId = reviewModel.id.trim();
-  if (reviewerProvider === primaryProvider && reviewerId === primaryId) {
-    throw new Error(
-      "Model Advisor review model must differ from the primary model",
-    );
-  }
-  if (reviewerProvider === "napier" && reviewerId === "demo") {
-    throw new Error("Model Advisor review model must use a live model");
-  }
-  await assertAvailableModel(services, {
-    provider: reviewerProvider,
-    id: reviewerId,
-  });
 }
 
 function isInboundRetryPolicyError(error: unknown): error is Error {
@@ -17126,80 +16570,6 @@ function createHealthRuntimeProjection() {
       ]),
     ) as Record<(typeof HEALTH_RUNTIME_COMPONENTS)[number], string>,
   } satisfies HealthResponse["runtime"];
-}
-
-function setAgentProfileHeaders(
-  context: Context,
-  agent: AgentProfile,
-  revision: AgentProfileRevision,
-  changedFieldCount?: number,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, agent);
-  context.header("X-Napier-Agent-Id", agent.id);
-  context.header("X-Napier-Agent-Revision", String(agent.revision));
-  context.header(
-    "X-Napier-Agent-Profile-Revision-SHA256",
-    revision.contentSha256,
-  );
-  context.header("X-Napier-System-Prompt-SHA256", revision.systemPromptSha256);
-  if (changedFieldCount !== undefined) {
-    context.header(
-      "X-Napier-Agent-Changed-Field-Count",
-      String(changedFieldCount),
-    );
-  }
-}
-
-function setAgentRevisionListHeaders(
-  context: Context,
-  agentId: string,
-  revisions: readonly AgentProfileRevision[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, revisions);
-  context.header("X-Napier-Agent-Id", agentId);
-  context.header("X-Napier-Agent-Revision-Count", String(revisions.length));
-  const latest = revisions[0];
-  if (latest) {
-    context.header("X-Napier-Agent-Revision", String(latest.revision));
-    context.header(
-      "X-Napier-Agent-Profile-Revision-SHA256",
-      latest.contentSha256,
-    );
-    context.header("X-Napier-System-Prompt-SHA256", latest.systemPromptSha256);
-  }
-}
-
-function setAgentRollbackHeaders(
-  context: Context,
-  result: AgentProfileRollbackResult,
-  restoredSnapshot: AgentProfileRevision,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, result);
-  context.header("X-Napier-Agent-Id", result.agent.id);
-  context.header("X-Napier-Agent-Revision", String(result.agent.revision));
-  context.header(
-    "X-Napier-Agent-Restored-From-Revision",
-    String(restoredSnapshot.revision),
-  );
-  context.header(
-    "X-Napier-Agent-Profile-Revision-SHA256",
-    result.revision.contentSha256,
-  );
-  context.header(
-    "X-Napier-Agent-Restored-Snapshot-SHA256",
-    restoredSnapshot.contentSha256,
-  );
-  context.header(
-    "X-Napier-System-Prompt-SHA256",
-    result.revision.systemPromptSha256,
-  );
-  context.header(
-    "X-Napier-Agent-Changed-Field-Count",
-    String(result.revision.changedFields.length),
-  );
 }
 
 function setExecutionPlanListHeaders(

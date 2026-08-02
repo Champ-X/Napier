@@ -14540,15 +14540,16 @@
     }
   },
   "x-napier-artifact-kind": "management-openapi",
-  "x-napier-source-path": "apps/server/src/app.ts",
+  "x-napier-source-path": "apps/server/src/agent-profile-http.ts",
   "x-napier-source-paths": [
+    "apps/server/src/agent-profile-http.ts",
     "apps/server/src/app.ts",
     "apps/server/src/credential-http.ts",
     "apps/server/src/memory-http.ts",
     "apps/server/src/schedule-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "0703896dd3ffe96bb73e16a3c739be328487196bedd1a8f52625044084dca6f2",
+  "x-napier-source-sha256": "80e4c36dfe378d4bde1c4e1f814964b2ac7926c1e61b0ed8cadeff9909f9cfb5",
   "x-napier-route-count": 255,
   "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }

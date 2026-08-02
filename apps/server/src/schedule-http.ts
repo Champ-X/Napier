@@ -12,6 +12,7 @@ import {
   readLimitedJson,
   RequestBodyTooLargeError,
 } from "./http-request-body.js";
+import { assertAvailableModel } from "./model-http-availability.js";
 import {
   parseCreateAutomationScheduleRequest,
   parseUpdateAutomationScheduleRequest,
@@ -67,7 +68,7 @@ export function registerScheduleHttp(
     }
     services.store.getThread(body.threadId);
     try {
-      if (body.model) await assertAvailableModel(services.models, body.model);
+      if (body.model) await assertAvailableModel(services, body.model);
     } catch (error) {
       return jsonError(context, errorMessage(error), 400);
     }
@@ -105,7 +106,7 @@ export function registerScheduleHttp(
       return jsonError(context, "Schedule update request is invalid", 400);
     }
     try {
-      if (body.model) await assertAvailableModel(services.models, body.model);
+      if (body.model) await assertAvailableModel(services, body.model);
     } catch (error) {
       return jsonError(context, errorMessage(error), 400);
     }
@@ -129,16 +130,6 @@ export function registerScheduleHttp(
     setAutomationScheduleProjectionHeaders(context, schedule);
     return context.json(schedule);
   });
-}
-
-async function assertAvailableModel(
-  models: ModelRegistry,
-  model: { provider: string; id: string },
-): Promise<void> {
-  const provider = model.provider.trim().toLowerCase();
-  const id = model.id.trim();
-  if (provider === "napier" && id === "demo") return;
-  await models.resolveConfigured({ provider, id });
 }
 
 function scheduleChangedFields(
