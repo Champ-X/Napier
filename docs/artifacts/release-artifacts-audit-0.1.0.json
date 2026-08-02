@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "1181a967bfaeb8a07dd3dc2dd71bc8b17c0fec51eb384b55771a98627887211e",
+  "artifactSetSha256": "7dc3e202ff752598f396f382280806b861f5bdd96b67d401b5462255a5aa0faf",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "114536f55755ec3b56ce643074a182c416fafe441009f78eb1060f0f55a8a0a4",
+      "sha256": "22145a483509bfc72f41e25a3f9e732616f83303de4d75f05555752a57f57c33",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "bb0888c2b2562ec3a666fd8fbebb0bf60576c18bc2bbe5651c3f57bb4a729165",
+      "sha256": "b7b7694f4c6f5ce71af446bb5b7f7e45393177927665f40234cba098fa69b92b",
       "valid": true
     },
     {
@@ -198,6 +198,36 @@
       "kind": "research-benchmark-ledger-2",
       "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-6efe3b93ad3865ec.json",
       "sha256": "08a588256dee38641a1171183efc60794ddf9ed1fe5dd601005398da2c4f9e72",
+      "valid": true
+    },
+    {
+      "kind": "ux-benchmark-series",
+      "path": "docs/artifacts/benchmarks/napier-ux-benchmark-series-ux_first_task_cli_v1-747782333f3ad3c3.json",
+      "sha256": "4d8b0acb2ec553e0a5b5e5edf9e98aaa1a3446daa29f9438cc8ae3e9d8f5d18d",
+      "valid": true
+    },
+    {
+      "kind": "ux-benchmark-result-1",
+      "path": "docs/artifacts/benchmarks/napier-ux-benchmark-result-ux_first_task_cli_v1-b865c8ee74a86729.json",
+      "sha256": "b9343d917f2bb79d28ab8cc34a0e7d7159d1fb1b2d15c9f2657b3ac9be34e44b",
+      "valid": true
+    },
+    {
+      "kind": "ux-benchmark-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-ux-benchmark-ledger-ux_first_task_cli_v1-b1f7e005e871a6f8.json",
+      "sha256": "40b6a51576d15c5e5f579cb3ee0e9e336c9b7d09fc557e3ee1558588b3fd8274",
+      "valid": true
+    },
+    {
+      "kind": "ux-benchmark-result-2",
+      "path": "docs/artifacts/benchmarks/napier-ux-benchmark-result-ux_first_task_cli_v1-eb706b8a1445b4b1.json",
+      "sha256": "d5680c1100cf30c8acd12ab4b3dfdf318ce947b7603770371c769ef64c0cc499",
+      "valid": true
+    },
+    {
+      "kind": "ux-benchmark-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-ux-benchmark-ledger-ux_first_task_cli_v1-b6bed12286fe401e.json",
+      "sha256": "abb9c5d116f3b817a7333c43ca7e9865581bcb65feaa0097841dd1a0b0f8a490",
       "valid": true
     }
   ],

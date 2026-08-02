@@ -1,0 +1,69 @@
+{
+  "kind": "napier.ux-benchmark-result",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-02T15:30:38.842Z",
+  "caseId": "ux_first_task_cli_v1",
+  "caseSha256": "5bac88cc43de82b7c2909d130da71a053648300d128015b0a2cff1302de3dedc",
+  "status": "passed",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "run": {
+    "threadId": "thread_84591f04bf0243fa957d",
+    "runId": "run_bf08b07e60b6440e995e",
+    "status": "completed",
+    "durationMs": 2057,
+    "usage": {
+      "inputTokens": 5359,
+      "outputTokens": 48,
+      "cacheReadTokens": 768,
+      "cacheWriteTokens": 0,
+      "costUsd": 0.0007658504000000001
+    }
+  },
+  "evaluation": {
+    "kind": "napier.ux-benchmark-evaluation",
+    "schemaVersion": 1,
+    "caseId": "ux_first_task_cli_v1",
+    "caseSha256": "5bac88cc43de82b7c2909d130da71a053648300d128015b0a2cff1302de3dedc",
+    "status": "passed",
+    "runStatus": "completed",
+    "criteriaSha256": "365fecb8cf35bb54c5efd2ca9d5515811f622c03d002124258f0b0782025aa91",
+    "cliExitCode": 0,
+    "expectedOutputSha256": "2c9cc9a397ef7d23ee72669abbf2ba572aff4968ba9ad18cefa2ec619005ca16",
+    "actualOutputSha256": "2c9cc9a397ef7d23ee72669abbf2ba572aff4968ba9ad18cefa2ec619005ca16",
+    "outputMatch": true,
+    "manualCommandCount": 1,
+    "firstEventMs": 823,
+    "maxFirstEventMs": 30000,
+    "totalDurationMs": 2891,
+    "maxDurationMs": 120000,
+    "credentialReferenceCount": 1,
+    "credentialProviderMatch": true,
+    "credentialLocatorMatch": true,
+    "credentialAvailable": true,
+    "threadCountAfter": 2,
+    "replayValid": true,
+    "credentialLeakDetected": false,
+    "credentialPersistenceLeakDetected": false,
+    "diagnostics": [],
+    "contentSha256": "970450f112c30529edcc62a10d1bbde9f27dc690116310c41f37ff8ebe20c445"
+  },
+  "ledger": {
+    "eventId": "event_06bc5f89d71d4d17aa1f",
+    "eventSeq": 62,
+    "eventSha256": "7a67088a073ffe03a5f3bf8da4c6785c92994c00c02cd446337ee2a4feeda335",
+    "eventStreamSha256": "62f3222ecdff17a2540f63badd2bd484cef5539bd9b1c05be32dfdeb6e74e585",
+    "bundleFileName": "napier-ux-benchmark-ledger-ux_first_task_cli_v1-b6bed12286fe401e.json",
+    "bundleSha256": "b6bed12286fe401e31c2777f2ac6bbdd040a7fbcedad5e2b09370dae4664590d",
+    "bundleBytes": 15886
+  },
+  "contentSha256": "eb706b8a1445b4b1ad6f7f1e438a97051f0457f60d4b3b7db5b6d943394a42ed"
+}

@@ -1597,6 +1597,42 @@ scan of all five retained files found none of the 23 source/claim/report/key
 values. This case measures fixed-source synthesis and citation discipline, not
 open-web retrieval, source freshness, or cross-model superiority.
 
+### First-Task UX Outcome Benchmark
+
+`ux_first_task_cli_v1` exercises the production one-shot JSONL entry point
+from a new built CLI process. Each trial receives a new workspace and data
+root, explicitly registers one environment credential locator through
+`--credential-env`, creates the ordinary CLI Thread and Run, and is then
+inspected through the same SQLite Store and portable Thread Replay APIs.
+Process launch and module loading are included in first-event and total
+duration metrics; repository install and build time are not.
+
+The fixed oracle requires exit zero, completed Run state, exact assistant
+output, one manual command, the case latency budgets, one available locator
+for the selected Provider and hashed variable name, the clean-state Thread
+count, valid Replay, and no raw credential in stdout, stderr, Replay, or any
+workspace or data-root file. The bounded scan runs after the CLI process exits
+and before the evidence Runtime reopens the database. A model that echoes the
+key therefore fails both transient-output and persistence criteria.
+
+The Result binds model/environment, Run usage, UX scalars, the evaluation
+event, event stream, Ledger file name, bytes, and hash. The Ledger retains
+expected/actual output hashes, a locator-name hash, bounded UX scalars, the
+terminal/evaluation events, event-type aggregates, and chained payload
+receipts. It omits prompt and assistant text, the locator name, credential,
+reasoning, and model deltas. Exact shape/hash validation, evaluation
+reconstruction, Result/Ledger binding, CAS names, and Series reaggregation
+reject field injection, model replacement, valid-Ledger substitution, and
+cross-trial replacement.
+
+The retained DeepSeek two-trial Series passed 2/2. Cold-process first event
+was 717–823 ms and completion was 2.787–2.891 seconds at a mean cost of
+`$0.0007643804`; all trials used one command, one available locator, two
+clean-state Threads, valid Replay, and zero credential leaks. A reverse scan
+of all five retained artifacts found none of the raw key, variable name,
+prompt, or assistant text. Broader recovery, installation, Web onboarding,
+accessibility, and cross-model UX cases remain open.
+
 ### Workbench
 
 `@napier/web` maintains a projection of server state. It may optimistically
@@ -6912,8 +6948,8 @@ deferred until the local P0-P9 product loop is stable.
   evaluation-backed routing over the pinned Pi Provider core;
 - stable Extension developer APIs, ecosystem discovery, and compatibility
   tests;
-- fixed Capability & Outcome benchmarks centered on task success, recovery,
-  cost, latency, security, and first-task UX.
+- broaden fixed Capability & Outcome benchmarks across task success, recovery,
+  cost, latency, security, installation, and Web onboarding UX.
 
 ### Deferred: team and distributed
 

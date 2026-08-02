@@ -15,6 +15,10 @@ import {
   researchBenchmarkSeriesArtifactReferences,
   verifyResearchBenchmarkSeries,
 } from "../apps/cli/dist/research-benchmark-series.js";
+import {
+  uxBenchmarkSeriesArtifactReferences,
+  verifyUxBenchmarkSeries,
+} from "../apps/cli/dist/ux-benchmark-series.js";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -42,6 +46,8 @@ const defaultLongHorizonBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-523f1f822968ad1c.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json";
+const defaultUxBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-ux-benchmark-series-ux_first_task_cli_v1-747782333f3ad3c3.json";
 
 export async function auditReleaseArtifacts(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -76,6 +82,8 @@ export async function auditReleaseArtifacts(options = {}) {
     defaultLongHorizonBenchmarkSeriesPath;
   const researchBenchmarkSeriesPath =
     options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
+  const uxBenchmarkSeriesPath =
+    options.uxBenchmarkSeriesPath ?? defaultUxBenchmarkSeriesPath;
   const rootPackage = parseJson(
     await readTextFile(
       path.join(repoRoot, "package.json"),
@@ -197,6 +205,15 @@ export async function auditReleaseArtifacts(options = {}) {
     artifactReferences: researchBenchmarkSeriesArtifactReferences,
     verifySeries: verifyResearchBenchmarkSeries,
   });
+  const uxBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
+    repoRoot,
+    seriesPath: uxBenchmarkSeriesPath,
+    errors,
+    artifactKindPrefix: "ux-benchmark",
+    diagnosticLabel: "ux benchmark",
+    artifactReferences: uxBenchmarkSeriesArtifactReferences,
+    verifySeries: verifyUxBenchmarkSeries,
+  });
 
   const artifacts = [
     {
@@ -246,6 +263,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...securityBenchmarkArtifacts,
     ...longHorizonBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
+    ...uxBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
     Buffer.from(formatArtifactSetManifest(artifacts), "utf8"),
@@ -488,6 +506,11 @@ function parseCliOptions(args) {
     }
     if (arg === "--research-benchmark-series-path") {
       options.researchBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--ux-benchmark-series-path") {
+      options.uxBenchmarkSeriesPath = readCliValue(args, index, arg);
       index += 1;
       continue;
     }

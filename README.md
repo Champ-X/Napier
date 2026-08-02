@@ -1398,8 +1398,39 @@ mean input/output tokens were 7,628.5/4,758. Offline verification recomputes eac
 Result/Ledger pair and the Series aggregate. This fixed-source case does not
 measure open-web retrieval, source freshness, or cross-model superiority.
 
+### First-Task UX Outcome Benchmark
+
+The fixed `ux_first_task_cli_v1` case measures the clean-state one-shot path
+through a fresh built CLI process rather than calling the Runtime directly:
+
+```bash
+npm run bench:ux -- \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 2
+```
+
+Every trial starts a new Node process, workspace, data root, Thread, and Run.
+Passing requires one manual command, exact model output, a completed Run within
+the case latency budgets, exactly one available environment credential
+locator, the expected clean-state Thread count, valid Replay, and zero raw-key
+matches in CLI output/Replay and every workspace or data-root file. The Result
+and Ledger retain hashes and scalar UX evidence but omit the prompt, assistant
+text, environment variable name, credential, and reasoning. Series
+verification recomputes both trial verdicts and aggregate latency/cost/token
+distributions.
+
+The checked-in DeepSeek
+[two-trial UX series](docs/artifacts/benchmarks/napier-ux-benchmark-series-ux_first_task_cli_v1-747782333f3ad3c3.json)
+passed 2/2 trials. Cold-process first event was 717–823 ms and total CLI
+completion was 2.787–2.891 seconds; mean cost was `$0.0007643804`. A reverse
+scan of the five retained files found no key, locator name, prompt, or
+assistant-text match. The timing starts at the built CLI process launch and
+does not include repository installation or compilation.
+
 Cross-model, broader Coding, Workflow, Data, Security, Long-horizon, and
-Research cases, UX cases, and reference-project suites remain open.
+Research cases, UX recovery/browser-onboarding cases, and reference-project
+suites remain open.
 
 ## Live Models
 

@@ -1,0 +1,88 @@
+{
+  "kind": "napier.ux-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-02T15:30:38.848Z",
+  "caseId": "ux_first_task_cli_v1",
+  "caseSha256": "5bac88cc43de82b7c2909d130da71a053648300d128015b0a2cff1302de3dedc",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 2,
+  "completedTrialCount": 2,
+  "passedTrialCount": 2,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 0,
+  "completionRate": 1,
+  "passRate": 1,
+  "metrics": {
+    "firstEventMs": {
+      "total": 1540,
+      "min": 717,
+      "p50": 717,
+      "p95": 717,
+      "max": 823,
+      "mean": 770
+    },
+    "totalDurationMs": {
+      "total": 5678,
+      "min": 2787,
+      "p50": 2787,
+      "p95": 2787,
+      "max": 2891,
+      "mean": 2839
+    },
+    "costUsd": {
+      "total": 0.0015287608000000004,
+      "min": 0.0007629104000000001,
+      "p50": 0.0007629104000000001,
+      "p95": 0.0007629104000000001,
+      "max": 0.0007658504000000001,
+      "mean": 0.0007643804000000002
+    },
+    "inputTokens": {
+      "total": 10713,
+      "min": 5354,
+      "p50": 5354,
+      "p95": 5354,
+      "max": 5359,
+      "mean": 5356.5
+    },
+    "outputTokens": {
+      "total": 88,
+      "min": 40,
+      "p50": 40,
+      "p95": 40,
+      "max": 48,
+      "mean": 44
+    }
+  },
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_12568bcdf1ee4307aa1f",
+      "status": "passed",
+      "resultFileName": "napier-ux-benchmark-result-ux_first_task_cli_v1-b865c8ee74a86729.json",
+      "resultSha256": "b865c8ee74a867291f7b08f885f8fd1c8a247f9a4f798b6422b42dcd7fb118b8",
+      "ledgerFileName": "napier-ux-benchmark-ledger-ux_first_task_cli_v1-b1f7e005e871a6f8.json",
+      "ledgerSha256": "b1f7e005e871a6f82d491a601ee4802db01057aa5dbf22051f9b1a77ef1144d0"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_84591f04bf0243fa957d",
+      "status": "passed",
+      "resultFileName": "napier-ux-benchmark-result-ux_first_task_cli_v1-eb706b8a1445b4b1.json",
+      "resultSha256": "eb706b8a1445b4b1ad6f7f1e438a97051f0457f60d4b3b7db5b6d943394a42ed",
+      "ledgerFileName": "napier-ux-benchmark-ledger-ux_first_task_cli_v1-b6bed12286fe401e.json",
+      "ledgerSha256": "b6bed12286fe401e31c2777f2ac6bbdd040a7fbcedad5e2b09370dae4664590d"
+    }
+  ],
+  "contentSha256": "747782333f3ad3c3d43dade609ad272f05ab5d9df58eb7d1e7b773d74954e43d"
+}

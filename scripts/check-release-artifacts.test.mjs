@@ -80,6 +80,11 @@ describe("release artifacts audit", () => {
       "research-benchmark-ledger-1",
       "research-benchmark-result-2",
       "research-benchmark-ledger-2",
+      "ux-benchmark-series",
+      "ux-benchmark-result-1",
+      "ux-benchmark-ledger-1",
+      "ux-benchmark-result-2",
+      "ux-benchmark-ledger-2",
     ]);
     expect(createReleaseArtifactsReceipt(result)).toMatchObject({
       type: "napier.release-artifacts-audit",
@@ -348,6 +353,33 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when retained UX evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const seriesName = (await readdir(benchmarkRoot)).find((name) =>
+      name.startsWith("napier-ux-benchmark-series-ux_first_task_cli_v1-"),
+    );
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const resultName = series.trials[0].resultFileName;
+    const resultPath = path.join(benchmarkRoot, resultName);
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.evaluation.credentialPersistenceLeakDetected = true;
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "ux benchmark series: series_trial_invalid",
+        "ux benchmark trial 1: result_shape_invalid",
+        "ux benchmark trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
   it("rejects malformed release artifact receipts", async () => {
     const { root } = await createFixture();
     await writeJson(
@@ -417,7 +449,8 @@ async function createWorkflowBenchmarkFixture(root) {
   const names = (await readdir(sourceRoot)).filter(
     (name) =>
       name.startsWith("napier-workflow-benchmark-") ||
-      name.startsWith("napier-research-benchmark-"),
+      name.startsWith("napier-research-benchmark-") ||
+      name.startsWith("napier-ux-benchmark-"),
   );
   await Promise.all(
     names.map((name) =>

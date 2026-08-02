@@ -1,0 +1,15 @@
+{
+  "kind": "napier.ux-benchmark-case",
+  "schemaVersion": 1,
+  "id": "ux_first_task_cli_v1",
+  "title": "Clean-state CLI first task",
+  "objective": "Complete one real provider-backed CLI task from a clean data root using one explicit environment credential locator without persisting the secret.",
+  "promptPath": "prompt.md",
+  "expectedPath": "expected.json",
+  "timeoutMs": 120000,
+  "maxFirstEventMs": 30000,
+  "maxDurationMs": 120000,
+  "promptSha256": "bf5362855da8c745a440f0ddbd67bcb1252e8a0d28ca6cdf986c04fadea5d3cf",
+  "expectedSha256": "cbf5273a3f66b60662ff424ff9b95d6ffd87ac825930889d28186b1d5e10cacb",
+  "contentSha256": "5bac88cc43de82b7c2909d130da71a053648300d128015b0a2cff1302de3dedc"
+}
