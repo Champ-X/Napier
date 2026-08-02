@@ -1,3 +1,4 @@
+import { validWorkflowBenchmarkRestartFields } from "./workflow-benchmark-restart-evidence.js";
 import { validWorkflowBenchmarkSecurityFields } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteFields } from "./workflow-benchmark-sqlite-evidence.js";
 
@@ -14,6 +15,7 @@ export function validWorkflowBenchmarkLedgerWorkflow(value: unknown): boolean {
     resourceId(workflow["reduceRunId"]) &&
     validWorkflowBenchmarkSqliteFields(workflow) &&
     validWorkflowBenchmarkSecurityFields(workflow) &&
+    validWorkflowBenchmarkRestartFields(workflow) &&
     nonNegativeInteger(workflow["nodeResultCount"]) &&
     nonNegativeInteger(workflow["completedNodeResultCount"])
   );
@@ -47,6 +49,10 @@ function workflowKeys(workflow: Record<string, unknown>): readonly string[] {
     ...(workflow["promptInjectionScan"] === undefined
       ? []
       : ["promptInjectionScan"]),
+    ...(workflow["restartEvent"] === undefined ? [] : ["restartEvent"]),
+    ...(workflow["preRestartMapRunIds"] === undefined
+      ? []
+      : ["preRestartMapRunIds"]),
   ];
 }
 

@@ -16,13 +16,22 @@ export function workflowBenchmarkCriteria(
   schemaVersion: WorkflowBenchmarkEvaluation["schemaVersion"],
 ): readonly string[] {
   const sqliteCriteria =
-    schemaVersion === 1
-      ? []
-      : [
+    schemaVersion === 2 || schemaVersion === 3
+      ? [
           "sqlite_action_distribution",
           "database_immutable",
           "receipt_bound_sqlite_actions",
-        ];
+        ]
+      : [];
+  if (schemaVersion === 4) {
+    return [
+      ...BASE_CRITERIA,
+      "runtime_restarted",
+      "approval_recovered",
+      "completed_map_runs_reused",
+      "post_restart_model_free",
+    ];
+  }
   return schemaVersion === 3
     ? [
         ...BASE_CRITERIA,

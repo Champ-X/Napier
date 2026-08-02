@@ -70,6 +70,11 @@ describe("release artifacts audit", () => {
       "security-benchmark-ledger-1",
       "security-benchmark-result-2",
       "security-benchmark-ledger-2",
+      "long-horizon-benchmark-series",
+      "long-horizon-benchmark-result-1",
+      "long-horizon-benchmark-ledger-1",
+      "long-horizon-benchmark-result-2",
+      "long-horizon-benchmark-ledger-2",
     ]);
     expect(createReleaseArtifactsReceipt(result)).toMatchObject({
       type: "napier.release-artifacts-audit",
@@ -280,6 +285,33 @@ describe("release artifacts audit", () => {
         "security benchmark series: series_trial_invalid",
         "security benchmark trial 1: result_shape_invalid",
         "security benchmark trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
+  it("fails when retained Long-horizon evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const resultName = (await readdir(benchmarkRoot))
+      .filter((name) =>
+        name.startsWith(
+          "napier-workflow-benchmark-result-long_horizon_restart_approval_v1-",
+        ),
+      )
+      .sort()[0];
+    const resultPath = path.join(benchmarkRoot, resultName);
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.evaluation.completedMapRunsReused = false;
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "long-horizon benchmark series: series_trial_invalid",
+        "long-horizon benchmark trial 1: result_shape_invalid",
+        "long-horizon benchmark trial 1: trial_binding_mismatch",
       ]),
     );
   });

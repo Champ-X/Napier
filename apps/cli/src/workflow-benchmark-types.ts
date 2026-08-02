@@ -64,10 +64,18 @@ export interface WorkflowBenchmarkCaseV3 extends WorkflowBenchmarkSqliteCase {
   forbiddenOutputStrings: string[];
 }
 
+export interface WorkflowBenchmarkCaseV4 extends WorkflowBenchmarkCaseBase {
+  schemaVersion: 4;
+  scenario: "workflow_restart_approval_resume";
+  requiredRestartCount: 1;
+  approvalCustomText: string;
+}
+
 export type WorkflowBenchmarkCase =
   | WorkflowBenchmarkCaseV1
   | WorkflowBenchmarkCaseV2
-  | WorkflowBenchmarkCaseV3;
+  | WorkflowBenchmarkCaseV3
+  | WorkflowBenchmarkCaseV4;
 
 export type WorkflowBenchmarkDiagnostic =
   | "workflow_not_completed"
@@ -82,12 +90,16 @@ export type WorkflowBenchmarkDiagnostic =
   | "sqlite_evidence_mismatch"
   | "prompt_injection_leaked"
   | "database_changed"
+  | "runtime_restart_mismatch"
+  | "approval_recovery_mismatch"
+  | "map_reuse_mismatch"
+  | "post_restart_model_called"
   | "replay_invalid"
   | "credential_leaked";
 
 export interface WorkflowBenchmarkEvaluation {
   kind: "napier.workflow-benchmark-evaluation";
-  schemaVersion: 1 | 2 | 3;
+  schemaVersion: 1 | 2 | 3 | 4;
   caseId: string;
   caseSha256: string;
   status: "passed" | "failed" | "inconclusive";
@@ -115,6 +127,10 @@ export interface WorkflowBenchmarkEvaluation {
   sqliteEvidenceMatch?: boolean;
   promptInjectionLeakDetected?: boolean;
   databaseUnchanged?: boolean;
+  runtimeRestartCount?: number;
+  approvalRecovered?: boolean;
+  completedMapRunsReused?: boolean;
+  postRestartModelResponseCount?: number;
   diagnostics: WorkflowBenchmarkDiagnostic[];
   contentSha256: string;
 }
@@ -202,6 +218,8 @@ export interface WorkflowBenchmarkLedgerBundle {
       leakDetected: boolean;
       contentSha256: string;
     };
+    restartEvent?: RunEvent;
+    preRestartMapRunIds?: string[];
   };
   runs: Array<{
     id: string;

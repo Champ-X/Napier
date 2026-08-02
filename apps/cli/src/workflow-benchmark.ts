@@ -30,7 +30,12 @@ import {
   workflowBenchmarkLedgerFileName,
   workflowBenchmarkResultFileName,
 } from "./workflow-benchmark-contract.js";
+import { executeWorkflowBenchmark } from "./workflow-benchmark-execution.js";
 import { createWorkflowBenchmarkLedgerBundle } from "./workflow-benchmark-ledger.js";
+import {
+  workflowBenchmarkRestartEvaluationEvidence,
+  workflowBenchmarkRestartLedgerEvidence,
+} from "./workflow-benchmark-restart-evidence.js";
 import {
   benchmarkPromptInjectionLeakDetected,
   workflowBenchmarkPromptInjectionOutputProjection,
@@ -95,11 +100,12 @@ export async function runWorkflowBenchmark(
       workspaceRoot,
       loaded,
     );
-    runtime = await dependencies.createRuntime({
+    const runtimeOptions: LocalAgentRuntimeOptions = {
       workspaceRoot,
       dataRoot,
       env: options.env,
-    });
+    };
+    runtime = await dependencies.createRuntime(runtimeOptions);
     await configureWorkflowBenchmarkCredential(
       runtime,
       options.model,
@@ -110,7 +116,8 @@ export async function runWorkflowBenchmark(
     }
     await configureWorkflowBenchmarkAgent(
       runtime,
-      loaded.benchmarkCase.schemaVersion !== 1,
+      loaded.benchmarkCase.schemaVersion === 2 ||
+        loaded.benchmarkCase.schemaVersion === 3,
     );
     const manifest = await createWorkflowBenchmarkManifest({
       store: runtime.store,
@@ -127,14 +134,19 @@ export async function runWorkflowBenchmark(
     const signal = options.signal
       ? AbortSignal.any([options.signal, timeoutSignal])
       : timeoutSignal;
-    const workflowResult = await runtime.workflows.run({
+    const execution = await executeWorkflowBenchmark({
+      runtime,
+      createRuntime: dependencies.createRuntime,
+      runtimeOptions,
+      benchmarkCase: loaded.benchmarkCase,
+      manifest,
+      workflowInput: loaded.input as unknown as JsonValue,
       threadId: thread.id,
-      request: {
-        manifest,
-        input: loaded.input as unknown as JsonValue,
-      },
+      model: options.model,
       signal,
     });
+    runtime = execution.runtime;
+    const workflowResult = execution.result;
     const eventsBeforeEvaluation = await runtime.store.listEvents(thread.id);
     const runs = runtime.store.listRuns(thread.id);
     const replayBeforeEvaluation = await exportThreadReplayBundle(
@@ -200,7 +212,7 @@ export async function runWorkflowBenchmark(
       ...(mapOutputSha256 !== undefined
         ? { actualMapOutputSha256: mapOutputSha256 }
         : {}),
-      expectedNodeResultCount: 2,
+      expectedNodeResultCount: loaded.benchmarkCase.schemaVersion === 4 ? 3 : 2,
       completedNodeResultCount: workflowResult.nodeResults.filter(
         (result) => result.status === "completed",
       ).length,
@@ -225,6 +237,11 @@ export async function runWorkflowBenchmark(
         databaseBeforeSha256: databaseFixture?.sha256,
         databaseAfterSha256,
         injectionLeakDetected,
+      }),
+      ...workflowBenchmarkRestartEvaluationEvidence({
+        events: eventsBeforeEvaluation,
+        mapRunIds: mapRuns.map((run) => run.id),
+        restartEvidence: execution.restartEvidence,
       }),
     });
     const evidenceRunId =
@@ -291,6 +308,7 @@ export async function runWorkflowBenchmark(
         ),
         injectionLeakDetected,
       }),
+      ...workflowBenchmarkRestartLedgerEvidence(execution.restartEvidence),
       runs,
       evaluationEvent,
       terminalEvent,

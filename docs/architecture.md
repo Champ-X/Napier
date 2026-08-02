@@ -1480,8 +1480,8 @@ The retained DeepSeek two-trial Series passed 2/2. Duration was
 9.494–10.193 seconds, mean cost was `$0.0018431`, and mean input/output tokens
 were 8,490/2,129.5. Both trials completed five Runs with three schema, four
 query, and one chart action and left the database unchanged. The release audit
-semantically verifies Workflow, Data, and Security Series and binds their
-fifteen physical files into the 22-artifact release receipt.
+semantically verifies Workflow, Data, Security, and Long-horizon Series and
+binds their twenty physical files into the 27-artifact release receipt.
 
 ### Security Outcome Benchmark
 
@@ -1514,6 +1514,36 @@ Mean cost was `$0.001511958`, mean input/output tokens were
 three query actions. This first Security case covers SQLite row prompt
 injection only; SSRF, path escape, secret extraction, permission bypass, and
 duplicate side effects remain separate benchmark work.
+
+### Long-Horizon Outcome Benchmark
+
+`long_horizon_restart_approval_v1` uses case/evaluation schema 4 and the same
+Result/Ledger/Series envelope. Its graph is Map -> Approval -> Reduce. Reduce
+binds both the Map output and Approval output as direct dependencies, so it
+cannot run before the operator gate completes.
+
+After the three model-backed Map child Runs complete, the first execution
+returns `waiting`. The runner verifies the pre-restart Replay and single
+pending decision, captures the completed Map Run IDs, then calls the complete
+Runtime shutdown path. It rebuilds `LocalAgentRuntimeServices` against the
+same workspace/data roots, verifies the recovered decision ID/content hash,
+appends `benchmark.workflow.runtime.restarted`, answers the Approval, and
+resumes the original Plan ID.
+
+The restart event contains only schema version, Plan/Manifest hashes,
+pre-restart Replay hash/event count, sorted Map Run IDs, and decision
+ID/content hash. Offline verification checks its exact shape and payload
+receipt, Plan/Manifest identity, contiguous sequence after the pre-restart
+event count, and Map ID binding. Evaluation independently recomputes one
+restart event, one answered/continued decision pair after restart, equality of
+pre/final Map Run IDs, and zero post-restart `model.response` receipts.
+
+The retained DeepSeek two-trial Series passed 2/2 in 2.162–2.365 seconds at a
+mean cost of `$0.0013498856`. Each trial used seven Runs, preserved all three
+Map child Runs across one full Runtime restart, recovered the Approval, and
+performed only model-free Reduce afterward. This case does not yet cover
+multiple restarts, long wall-clock waits, budget exhaustion, no-progress
+detection, or recovery from uncertain write side effects.
 
 ### Workbench
 
@@ -1614,14 +1644,14 @@ dist evidence.
 The top-level release artifact audit binds the package-lock receipt,
 runtime-environment receipt, management OpenAPI artifact, management OpenAPI
 compatibility fixture, product-performance baseline, Web dist receipt, Web
-dist manifest, and retained Workflow, Data, and Security Benchmark Series plus
-all six Result/Ledger pairs into one `napier.release-artifacts-audit` receipt.
-Before hashing the fifteen Benchmark files, the gate performs full Series and
-trial semantic verification for all three cases. It stores only artifact kinds,
-repo-relative paths, SHA-256 values, validity booleans, package name/version,
-and a canonical artifact-set digest. Verification re-runs the component and
-Benchmark verifiers and fails if any underlying artifact or the aggregate
-receipt drifts.
+dist manifest, and retained Workflow, Data, Security, and Long-horizon
+Benchmark Series plus all eight Result/Ledger pairs into one
+`napier.release-artifacts-audit` receipt. Before hashing the twenty Benchmark
+files, the gate performs full Series and trial semantic verification for all
+four cases. It stores only artifact kinds, repo-relative paths, SHA-256 values,
+validity booleans, package name/version, and a canonical artifact-set digest.
+Verification re-runs the component and Benchmark verifiers and fails if any
+underlying artifact or the aggregate receipt drifts.
 
 ## Persistence
 

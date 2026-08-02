@@ -34,6 +34,8 @@ const defaultDataBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json";
 const defaultSecurityBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json";
+const defaultLongHorizonBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-523f1f822968ad1c.json";
 
 export async function auditReleaseArtifacts(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -63,6 +65,9 @@ export async function auditReleaseArtifacts(options = {}) {
     options.dataBenchmarkSeriesPath ?? defaultDataBenchmarkSeriesPath;
   const securityBenchmarkSeriesPath =
     options.securityBenchmarkSeriesPath ?? defaultSecurityBenchmarkSeriesPath;
+  const longHorizonBenchmarkSeriesPath =
+    options.longHorizonBenchmarkSeriesPath ??
+    defaultLongHorizonBenchmarkSeriesPath;
   const rootPackage = parseJson(
     await readTextFile(
       path.join(repoRoot, "package.json"),
@@ -162,6 +167,14 @@ export async function auditReleaseArtifacts(options = {}) {
       artifactKindPrefix: "security-benchmark",
       diagnosticLabel: "security benchmark",
     });
+  const longHorizonBenchmarkArtifacts =
+    await verifyWorkflowBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: longHorizonBenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "long-horizon-benchmark",
+      diagnosticLabel: "long-horizon benchmark",
+    });
 
   const artifacts = [
     {
@@ -209,6 +222,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...workflowBenchmarkArtifacts,
     ...dataBenchmarkArtifacts,
     ...securityBenchmarkArtifacts,
+    ...longHorizonBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
     Buffer.from(formatArtifactSetManifest(artifacts), "utf8"),
@@ -441,6 +455,11 @@ function parseCliOptions(args) {
     }
     if (arg === "--security-benchmark-series-path") {
       options.securityBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--long-horizon-benchmark-series-path") {
+      options.longHorizonBenchmarkSeriesPath = readCliValue(args, index, arg);
       index += 1;
       continue;
     }

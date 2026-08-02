@@ -22,6 +22,9 @@ const CASE_KEYS_V2 = keySet(
 const CASE_KEYS_V3 = keySet(
   "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario setupSqlPath setupSqlSha256 databasePath requiredSqliteActions requiredSqliteEvidence forbiddenOutputStrings contentSha256",
 );
+const CASE_KEYS_V4 = keySet(
+  "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario requiredRestartCount approvalCustomText contentSha256",
+);
 
 export interface LoadedWorkflowBenchmarkCase {
   benchmarkCase: WorkflowBenchmarkCase;
@@ -51,11 +54,11 @@ export async function loadWorkflowBenchmarkCase(
     throw new Error("Workflow benchmark expected outcome hash mismatch");
   }
   const setupSqlSource =
-    manifest.schemaVersion === 1
-      ? undefined
-      : await readTextCaseEntry(root, manifest.setupSqlPath);
+    manifest.schemaVersion === 2 || manifest.schemaVersion === 3
+      ? await readTextCaseEntry(root, manifest.setupSqlPath)
+      : undefined;
   if (
-    manifest.schemaVersion !== 1 &&
+    (manifest.schemaVersion === 2 || manifest.schemaVersion === 3) &&
     sha256(setupSqlSource ?? "") !== manifest.setupSqlSha256
   ) {
     throw new Error("Workflow benchmark setup SQL hash mismatch");
@@ -85,7 +88,7 @@ export function validateWorkflowBenchmarkCase(
   if (
     !exactRecord(input, keys) ||
     !validWorkflowBenchmarkCaseBase(input) ||
-    !validWorkflowBenchmarkSqliteCase(input)
+    !validWorkflowBenchmarkScenarioCase(input)
   ) {
     throw new Error("Workflow benchmark case is invalid");
   }
@@ -104,11 +107,13 @@ function workflowBenchmarkCaseKeys(input: unknown): readonly string[] {
     input !== null && typeof input === "object" && !Array.isArray(input)
       ? (input as Record<string, unknown>)["schemaVersion"]
       : undefined;
-  return version === 3
-    ? CASE_KEYS_V3
-    : version === 2
-      ? CASE_KEYS_V2
-      : CASE_KEYS_V1;
+  return version === 4
+    ? CASE_KEYS_V4
+    : version === 3
+      ? CASE_KEYS_V3
+      : version === 2
+        ? CASE_KEYS_V2
+        : CASE_KEYS_V1;
 }
 
 function validWorkflowBenchmarkCaseBase(
@@ -118,7 +123,8 @@ function validWorkflowBenchmarkCaseBase(
     input["kind"] === "napier.workflow-benchmark-case" &&
     (input["schemaVersion"] === 1 ||
       input["schemaVersion"] === 2 ||
-      input["schemaVersion"] === 3) &&
+      input["schemaVersion"] === 3 ||
+      input["schemaVersion"] === 4) &&
     resourceId(input["id"]) &&
     boundedText(input["title"], 1, 160) &&
     boundedText(input["objective"], 1, 500) &&
@@ -132,10 +138,18 @@ function validWorkflowBenchmarkCaseBase(
   );
 }
 
-function validWorkflowBenchmarkSqliteCase(
+function validWorkflowBenchmarkScenarioCase(
   input: Record<string, unknown>,
 ): boolean {
   if (input["schemaVersion"] === 1) return true;
+  if (input["schemaVersion"] === 4) {
+    return (
+      input["scenario"] === "workflow_restart_approval_resume" &&
+      input["requiredRestartCount"] === 1 &&
+      typeof input["approvalCustomText"] === "string" &&
+      ASCII_TEXT.test(input["approvalCustomText"])
+    );
+  }
   if (
     !(
       safeRelativeFile(input["setupSqlPath"]) &&

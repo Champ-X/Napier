@@ -1,9 +1,11 @@
 import type {
   ExecutionPlanWorkflowManifest,
+  ExecutionPlanWorkflowApprovalNode,
   ExecutionPlanWorkflowMapNode,
   ExecutionPlanWorkflowReduceNode,
   ModelRef,
 } from "@napier/contracts";
+import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import {
   createExecutionPlanBlueprint,
   defineExecutionPlanWorkflow,
@@ -21,12 +23,16 @@ export async function createWorkflowBenchmarkManifest(input: {
   benchmarkInput: WorkflowBenchmarkInput;
   model: ModelRef;
 }): Promise<ExecutionPlanWorkflowManifest> {
-  const sqliteCase = input.benchmarkCase.schemaVersion !== 1;
+  const sqliteCase =
+    input.benchmarkCase.schemaVersion === 2 ||
+    input.benchmarkCase.schemaVersion === 3;
   const securityCase = input.benchmarkCase.schemaVersion === 3;
+  const restartCase = input.benchmarkCase.schemaVersion === 4;
   const databasePath =
-    input.benchmarkCase.schemaVersion === 1
-      ? undefined
-      : input.benchmarkCase.databasePath;
+    input.benchmarkCase.schemaVersion === 2 ||
+    input.benchmarkCase.schemaVersion === 3
+      ? input.benchmarkCase.databasePath
+      : undefined;
   const sourceThread = input.store.listThreads()[0];
   if (!sourceThread) {
     throw new Error("Workflow benchmark source Thread is unavailable");
@@ -49,13 +55,26 @@ export async function createWorkflowBenchmarkManifest(input: {
         verification:
           "Every result contains only id and length and satisfies the declared schema.",
       },
+      ...(restartCase
+        ? [
+            {
+              id: "restart_gate",
+              title: "Resume after Runtime restart",
+              description:
+                "Wait for durable approval after the Runtime has closed and reopened.",
+              verification:
+                "The pending decision survives restart and is explicitly approved.",
+              dependsOn: ["extract"],
+            },
+          ]
+        : []),
       {
         id: "total_length",
         title: "Total document lengths",
         description:
           "Deterministically sum the typed length from every Map result.",
         verification: "The output equals the sum of every extracted length.",
-        dependsOn: ["extract"],
+        dependsOn: restartCase ? ["extract", "restart_gate"] : ["extract"],
       },
     ],
   });
@@ -115,9 +134,19 @@ export async function createWorkflowBenchmarkManifest(input: {
     timeoutMs: input.benchmarkCase.timeoutMs,
     maxAttempts: 1,
   };
-  const reduceNode: ExecutionPlanWorkflowReduceNode = {
-    id: "total_length",
-    type: "reduce",
+  const approvalNode: ExecutionPlanWorkflowApprovalNode = {
+    id: "restart_gate",
+    type: "approval",
+    header: "Restart",
+    question: "Approve continuation after the verified Runtime restart?",
+    approve: {
+      label: "Approve",
+      description: "Continue to model-free deterministic Reduce.",
+    },
+    reject: {
+      label: "Reject",
+      description: "Stop without reducing the recovered Map output.",
+    },
     inputBindings: {
       items: { source: "node", nodeId: "extract" },
     },
@@ -125,6 +154,36 @@ export async function createWorkflowBenchmarkManifest(input: {
       type: "object",
       properties: { items: mapOutputSchema },
       required: ["items"],
+      additionalProperties: false,
+    },
+    outputSchema: structuredClone(
+      EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+    ),
+    timeoutMs: input.benchmarkCase.timeoutMs,
+    maxAttempts: 1,
+  };
+  const reduceNode: ExecutionPlanWorkflowReduceNode = {
+    id: "total_length",
+    type: "reduce",
+    inputBindings: {
+      items: { source: "node", nodeId: "extract" },
+      ...(restartCase
+        ? { approval: { source: "node" as const, nodeId: "restart_gate" } }
+        : {}),
+    },
+    inputSchema: {
+      type: "object",
+      properties: {
+        items: mapOutputSchema,
+        ...(restartCase
+          ? {
+              approval: structuredClone(
+                EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+              ),
+            }
+          : {}),
+      },
+      required: restartCase ? ["items", "approval"] : ["items"],
       additionalProperties: false,
     },
     outputSchema: {
@@ -141,11 +200,13 @@ export async function createWorkflowBenchmarkManifest(input: {
   return defineExecutionPlanWorkflow({
     name: input.benchmarkCase.title,
     version: 1,
-    description: securityCase
-      ? "Fixed SQLite prompt-injection resistance Map and deterministic Reduce outcome benchmark."
-      : sqliteCase
-        ? "Fixed SQLite analysis/chart Agent Map and deterministic Reduce outcome benchmark."
-        : "Fixed typed Agent Map and deterministic Reduce outcome benchmark.",
+    description: restartCase
+      ? "Fixed Runtime restart, durable Approval recovery, Map reuse, and deterministic Reduce outcome benchmark."
+      : securityCase
+        ? "Fixed SQLite prompt-injection resistance Map and deterministic Reduce outcome benchmark."
+        : sqliteCase
+          ? "Fixed SQLite analysis/chart Agent Map and deterministic Reduce outcome benchmark."
+          : "Fixed typed Agent Map and deterministic Reduce outcome benchmark.",
     blueprint,
     inputSchema: {
       type: "object",
@@ -162,7 +223,9 @@ export async function createWorkflowBenchmarkManifest(input: {
     },
     outputSchema: reduceNode.outputSchema,
     outputNodeId: "total_length",
-    nodes: [mapNode, reduceNode],
+    nodes: restartCase
+      ? [mapNode, approvalNode, reduceNode]
+      : [mapNode, reduceNode],
     maxConcurrency: 4,
   });
 }

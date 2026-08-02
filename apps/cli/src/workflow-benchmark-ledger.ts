@@ -4,9 +4,13 @@ import { canonicalJson, sha256 } from "@napier/runtime";
 import type {
   WorkflowBenchmarkLedgerBundle,
   WorkflowBenchmarkLedgerEventReceipt,
-  WorkflowBenchmarkResult,
 } from "./workflow-benchmark-types.js";
+import {
+  createWorkflowBenchmarkLedgerWorkflow,
+  type WorkflowBenchmarkLedgerWorkflowInput,
+} from "./workflow-benchmark-ledger-workflow.js";
 import { validWorkflowBenchmarkLedgerWorkflow } from "./workflow-benchmark-ledger-workflow-shape.js";
+import { validWorkflowBenchmarkRestartBinding } from "./workflow-benchmark-restart-evidence.js";
 import { workflowBenchmarkPromptInjectionScanMatches } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteEvidenceBinding } from "./workflow-benchmark-sqlite-evidence.js";
 
@@ -22,33 +26,20 @@ const OMITTED_RECEIPT_TYPES = new Set([
   "model.thinking.delta",
 ]);
 
-export function createWorkflowBenchmarkLedgerBundle(input: {
-  generatedAt: string;
-  caseId: string;
-  caseSha256: string;
-  result: WorkflowBenchmarkResult["workflow"];
-  status: WorkflowBenchmarkResult["run"]["status"];
-  planId: string;
-  threadId: string;
-  mapOutputSha256?: string;
-  mapRunIds: string[];
-  reduceRunId: string;
-  sqliteActionEvents?: RunEvent[];
-  databaseBeforeSha256?: string;
-  databaseAfterSha256?: string;
-  requiredSqliteEvidence?: NonNullable<
-    WorkflowBenchmarkLedgerBundle["workflow"]["requiredSqliteEvidence"]
-  >;
-  promptInjectionScan?: NonNullable<
-    WorkflowBenchmarkLedgerBundle["workflow"]["promptInjectionScan"]
-  >;
-  runs: RunRecord[];
-  evaluationEvent: RunEvent;
-  terminalEvent: RunEvent;
-  events: RunEvent[];
-  sourceEventStreamSha256: string;
-  sourceReplaySha256: string;
-}): WorkflowBenchmarkLedgerBundle {
+export function createWorkflowBenchmarkLedgerBundle(
+  input: WorkflowBenchmarkLedgerWorkflowInput & {
+    generatedAt: string;
+    caseId: string;
+    caseSha256: string;
+    threadId: string;
+    runs: RunRecord[];
+    evaluationEvent: RunEvent;
+    terminalEvent: RunEvent;
+    events: RunEvent[];
+    sourceEventStreamSha256: string;
+    sourceReplaySha256: string;
+  },
+): WorkflowBenchmarkLedgerBundle {
   const events = [...input.events].sort((left, right) => left.seq - right.seq);
   const retainedEvents = events.filter(
     (event) => !OMITTED_RECEIPT_TYPES.has(event.type),
@@ -62,41 +53,7 @@ export function createWorkflowBenchmarkLedgerBundle(input: {
     caseId: input.caseId,
     caseSha256: input.caseSha256,
     threadId: input.threadId,
-    workflow: {
-      ...structuredClone(input.result),
-      planId: input.planId,
-      status: input.status,
-      ...(input.mapOutputSha256
-        ? { mapOutputSha256: input.mapOutputSha256 }
-        : {}),
-      mapRunIds: [...input.mapRunIds].sort(),
-      reduceRunId: input.reduceRunId,
-      ...(input.sqliteActionEvents
-        ? {
-            sqliteActionEvents: input.sqliteActionEvents
-              .map((event) => structuredClone(event))
-              .sort((left, right) => left.seq - right.seq),
-          }
-        : {}),
-      ...(input.databaseBeforeSha256
-        ? { databaseBeforeSha256: input.databaseBeforeSha256 }
-        : {}),
-      ...(input.databaseAfterSha256
-        ? { databaseAfterSha256: input.databaseAfterSha256 }
-        : {}),
-      ...(input.requiredSqliteEvidence
-        ? {
-            requiredSqliteEvidence: input.requiredSqliteEvidence
-              .map((expectation) => structuredClone(expectation))
-              .sort((left, right) =>
-                canonicalJson(left).localeCompare(canonicalJson(right)),
-              ),
-          }
-        : {}),
-      ...(input.promptInjectionScan
-        ? { promptInjectionScan: structuredClone(input.promptInjectionScan) }
-        : {}),
-    },
+    workflow: createWorkflowBenchmarkLedgerWorkflow(input),
     runs: input.runs
       .map((run) => ({
         id: run.id,
@@ -190,6 +147,9 @@ export function verifyWorkflowBenchmarkLedgerBundle(input: unknown): {
   }
   if (!workflowBenchmarkPromptInjectionScanMatches(input)) {
     diagnostics.push("ledger_prompt_injection_scan_invalid");
+  }
+  if (!validWorkflowBenchmarkRestartBinding(input)) {
+    diagnostics.push("ledger_restart_evidence_invalid");
   }
   return {
     valid: diagnostics.length === 0,

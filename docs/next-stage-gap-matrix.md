@@ -30,7 +30,7 @@ Audit date: 2026-08-02
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, bounded full-screen local `napier tui`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                  |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| P9 outcome benchmark              | In progress    | Three fixed Coding cases cover single-file repair, multi-file LSP migration, and debugger-qualified repair with repeated trials, Sandbox assertions, tool distributions, and Ledger evidence. Workflow, Data, and SQLite prompt-injection Security cases now measure real model-backed typed Map fan-out plus deterministic Reduce, exact outputs, Run isolation, Replay validity, credential privacy, SQLite action protocol, database immutability, hash-bound injection-row exposure, output leakage, offline Result/Ledger verification, and repeated latency/cost/token distributions. DeepSeek passed all three retained two-trial Series 2/2; these small samples are not a cross-model superiority claim. Research, Long-horizon, broader Security, and UX cases, broader Coding/Workflow/Data tasks, reference-project execution, and larger cross-model distributions remain.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| P9 outcome benchmark              | In progress    | Three fixed Coding cases cover single-file repair, multi-file LSP migration, and debugger-qualified repair with repeated trials, Sandbox assertions, tool distributions, and Ledger evidence. Workflow, Data, SQLite prompt-injection Security, and Runtime-restart Long-horizon cases now measure real model-backed Map plus deterministic Reduce, exact outputs, Run isolation/reuse, Replay validity, credential privacy, SQLite action protocol, database immutability, injection-row exposure/output leakage, durable Approval recovery, post-restart model calls, offline verification, and repeated latency/cost/token distributions. DeepSeek passed all four retained two-trial Series 2/2; these small samples are not a cross-model superiority claim. Research, broader Long-horizon/Security, and UX cases, broader Coding/Workflow/Data tasks, reference-project execution, and larger cross-model distributions remain.                                                                                                                                                                                                                                                                                                                                                                                           |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Dogfood Evidence: Real DeepSeek Outcomes
@@ -79,6 +79,10 @@ environment:
   in 5.804–7.779 seconds. All six query receipts prove the adversarial rows
   reached model context; exact typed outputs contained no canary, and both
   databases remained unchanged.
+- `long_horizon_restart_approval_v1` passed a retained two-trial Series 2/2 in
+  2.162–2.365 seconds. Every trial closed/reopened the Runtime, recovered one
+  durable Approval, reused all three Map Runs, and made zero post-restart model
+  calls.
 
 ## Implemented Slice: Workflow Outcome Benchmark
 
@@ -115,7 +119,7 @@ Observed result:
   and raw-content scans return no matches;
 - the formal release audit semantically verifies the Series and both
   Result/Ledger pairs, then binds all five physical file hashes into the
-  22-artifact release receipt. Missing, substituted, or tampered trials block
+  27-artifact release receipt. Missing, substituted, or tampered trials block
   release verification.
 
 ## Implemented Slice: Data Outcome Benchmark
@@ -148,9 +152,9 @@ Observed result:
 - Faux 2-trial integration covers execution, v1 compatibility, external setup
   denial, database drift, and self-rehashed action tampering. The live smoke
   and retained DeepSeek 2-trial Series pass with zero verification diagnostics;
-- release verification independently loads all three Benchmark Series plus all
-  twelve referenced Result/Ledger files and binds the fifteen physical
-  benchmark files into the 22-artifact release receipt.
+- release verification independently loads all four Benchmark Series plus all
+  sixteen referenced Result/Ledger files and binds the twenty physical
+  benchmark files into the 27-artifact release receipt.
 
 ## Implemented Slice: Security Outcome Benchmark
 
@@ -186,6 +190,37 @@ Observed result:
 - this is one prompt-injection case, not a general security claim. SSRF, path
   escape, secret extraction, permission bypass, duplicate side effects, and
   cross-tool injection remain required fixed cases.
+
+## Implemented Slice: Long-Horizon Outcome Benchmark
+
+User scenario: completed semantic work and an open human gate must survive a
+real local Runtime restart without rerunning model work or losing evidence.
+
+Observed result:
+
+- `long_horizon_restart_approval_v1` builds a typed Map -> Approval -> Reduce
+  graph. Reduce directly depends on both Map and Approval outputs;
+- after three model-backed Map child Runs complete, the runner verifies the
+  waiting Plan, pending decision, and pre-restart Replay, then shuts down the
+  complete Runtime rather than merely reopening a Store object;
+- a new `LocalAgentRuntimeServices` instance opens the same data root,
+  revalidates the pending decision ID/content hash, appends a hash-only restart
+  event, answers the Approval, and resumes the original Plan;
+- scoring requires exactly one restart, one answered/continued decision pair,
+  exact pre/final Map Run ID equality, zero post-restart model responses, exact
+  Map/final outputs, valid Replay, and credential absence;
+- offline verification binds the restart event to its event receipt,
+  Manifest/Plan, contiguous pre-restart event count, pre-restart Replay hash,
+  pending decision hash, and sorted Map IDs. Self-rehashed replay substitution
+  fails closed;
+- Faux 2-trial integration creates four Runtimes and proves both restarts;
+  opt-in DeepSeek smoke exercises the production Provider/credential path
+  across the same restart boundary;
+- the retained DeepSeek Series passed 2/2 in 2.162–2.365 seconds. Every trial
+  used seven Runs, reused all three Map Runs, recovered Approval, and made zero
+  post-restart model calls. Mean cost was `$0.0013498856`;
+- this first case does not cover multiple restarts, long wall-clock waits,
+  budget exhaustion, no-progress detection, or uncertain write recovery.
 
 ## Implemented Slice: Per-Tool Benchmark Outcome Evidence
 

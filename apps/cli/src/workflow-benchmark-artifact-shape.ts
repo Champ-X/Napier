@@ -7,7 +7,7 @@ import type {
 } from "./workflow-benchmark-types.js";
 
 const EVALUATION_KEYS = keySet(
-  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged diagnostics contentSha256",
+  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount diagnostics contentSha256",
 );
 const RESULT_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 status model environment run workflow evaluation ledger contentSha256",
@@ -65,6 +65,10 @@ function evaluationKeys(
     "sqliteEvidenceMatch",
     "promptInjectionLeakDetected",
     "databaseUnchanged",
+    "runtimeRestartCount",
+    "approvalRecovered",
+    "completedMapRunsReused",
+    "postRestartModelResponseCount",
   ]);
   const keys = EVALUATION_KEYS.filter((key) => !optional.has(key));
   if (evaluation["actualOutputSha256"] !== undefined) {
@@ -85,6 +89,14 @@ function evaluationKeys(
   if (evaluation["schemaVersion"] === 3) {
     keys.push("sqliteEvidenceMatch", "promptInjectionLeakDetected");
   }
+  if (evaluation["schemaVersion"] === 4) {
+    keys.push(
+      "runtimeRestartCount",
+      "approvalRecovered",
+      "completedMapRunsReused",
+      "postRestartModelResponseCount",
+    );
+  }
   return keys;
 }
 
@@ -93,7 +105,8 @@ function validEvaluationIdentity(evaluation: Record<string, unknown>): boolean {
     evaluation["kind"] === "napier.workflow-benchmark-evaluation" &&
     (evaluation["schemaVersion"] === 1 ||
       evaluation["schemaVersion"] === 2 ||
-      evaluation["schemaVersion"] === 3) &&
+      evaluation["schemaVersion"] === 3 ||
+      evaluation["schemaVersion"] === 4) &&
     resourceId(evaluation["caseId"]) &&
     digest(evaluation["caseSha256"]) &&
     resultStatus(evaluation["status"]) &&
@@ -119,6 +132,14 @@ function validEvaluationEvidence(evaluation: Record<string, unknown>): boolean {
     typeof evaluation["credentialLeakDetected"] !== "boolean"
   ) {
     return false;
+  }
+  if (evaluation["schemaVersion"] === 4) {
+    return (
+      nonNegativeInteger(evaluation["runtimeRestartCount"]) &&
+      typeof evaluation["approvalRecovered"] === "boolean" &&
+      typeof evaluation["completedMapRunsReused"] === "boolean" &&
+      nonNegativeInteger(evaluation["postRestartModelResponseCount"])
+    );
   }
   return (
     evaluation["schemaVersion"] === 1 ||

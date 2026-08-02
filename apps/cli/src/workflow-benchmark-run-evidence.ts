@@ -60,7 +60,12 @@ export function workflowBenchmarkSqliteEvaluationEvidence(input: {
   databaseAfterSha256: string | undefined;
   injectionLeakDetected: boolean;
 }) {
-  if (input.benchmarkCase.schemaVersion === 1) return {};
+  if (
+    input.benchmarkCase.schemaVersion !== 2 &&
+    input.benchmarkCase.schemaVersion !== 3
+  ) {
+    return {};
+  }
   const counts = workflowBenchmarkSqliteActionCounts(input.sqliteActionEvents);
   return {
     sqliteSchemaCompletedCount: counts.schema,
@@ -101,7 +106,12 @@ export function workflowBenchmarkSqliteLedgerEvidence(input: {
   | "requiredSqliteEvidence"
   | "promptInjectionScan"
 > {
-  if (input.benchmarkCase.schemaVersion === 1) return {};
+  if (
+    input.benchmarkCase.schemaVersion !== 2 &&
+    input.benchmarkCase.schemaVersion !== 3
+  ) {
+    return {};
+  }
   return {
     sqliteActionEvents: input.sqliteActionEvents,
     ...(input.databaseBeforeSha256
