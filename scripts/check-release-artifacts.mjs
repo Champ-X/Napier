@@ -7,6 +7,10 @@ import { verifyPackageLockReceipt } from "./check-package-lock.mjs";
 import { verifyRuntimeEnvironmentReceipt } from "./check-runtime-environment.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
+import {
+  verifyWorkflowBenchmarkSeries,
+  workflowBenchmarkSeriesArtifactReferences,
+} from "../apps/cli/dist/workflow-benchmark-series.js";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -24,6 +28,8 @@ const defaultManagementOpenApiPath =
   "docs/artifacts/management-openapi-0.1.0.json";
 const defaultManagementOpenApiCompatibilityPath =
   "docs/artifacts/management-openapi-compatibility-0.1.0.json";
+const defaultWorkflowBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json";
 
 export async function auditReleaseArtifacts(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -47,6 +53,8 @@ export async function auditReleaseArtifacts(options = {}) {
   const managementOpenApiCompatibilityPath =
     options.managementOpenApiCompatibilityPath ??
     defaultManagementOpenApiCompatibilityPath;
+  const workflowBenchmarkSeriesPath =
+    options.workflowBenchmarkSeriesPath ?? defaultWorkflowBenchmarkSeriesPath;
   const rootPackage = parseJson(
     await readTextFile(
       path.join(repoRoot, "package.json"),
@@ -123,6 +131,12 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const workflowBenchmarkArtifacts =
+    await verifyWorkflowBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: workflowBenchmarkSeriesPath,
+      errors,
+    });
 
   const artifacts = [
     {
@@ -167,6 +181,7 @@ export async function auditReleaseArtifacts(options = {}) {
       sha256: managementOpenApiCompatibility.sha256,
       valid: managementOpenApiCompatibility.readable,
     },
+    ...workflowBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
     Buffer.from(formatArtifactSetManifest(artifacts), "utf8"),
@@ -387,9 +402,121 @@ function parseCliOptions(args) {
       index += 1;
       continue;
     }
+    if (arg === "--workflow-benchmark-series-path") {
+      options.workflowBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
     throw new Error(`Unknown option: ${arg}`);
   }
   return options;
+}
+
+async function verifyWorkflowBenchmarkReleaseArtifacts({
+  repoRoot,
+  seriesPath,
+  errors,
+}) {
+  const seriesEvidence = await readArtifactEvidence(
+    repoRoot,
+    seriesPath,
+    errors,
+  );
+  const series = parseJson(
+    await readTextFile(
+      resolveRepoRelativePath(
+        repoRoot,
+        seriesPath,
+        "workflowBenchmarkSeriesPath",
+      ),
+      seriesPath,
+      errors,
+    ),
+    "Workflow benchmark series",
+    errors,
+  );
+  let references = [];
+  try {
+    references = workflowBenchmarkSeriesArtifactReferences(series);
+  } catch (error) {
+    errors.push(
+      `workflow benchmark series: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const artifactRoot = path.posix.dirname(seriesPath);
+  const verificationArtifacts = [];
+  const releaseArtifacts = [
+    {
+      kind: "workflow-benchmark-series",
+      ...seriesEvidence,
+      valid: seriesEvidence.readable,
+    },
+  ];
+  for (const reference of references) {
+    const resultPath = path.posix.join(artifactRoot, reference.resultFileName);
+    const ledgerPath = path.posix.join(artifactRoot, reference.ledgerFileName);
+    const [resultEvidence, ledgerEvidence, result, bundle] = await Promise.all([
+      readArtifactEvidence(repoRoot, resultPath, errors),
+      readArtifactEvidence(repoRoot, ledgerPath, errors),
+      readJsonArtifact(repoRoot, resultPath, errors),
+      readJsonArtifact(repoRoot, ledgerPath, errors),
+    ]);
+    verificationArtifacts.push({
+      resultFileName: reference.resultFileName,
+      result,
+      bundle,
+    });
+    releaseArtifacts.push(
+      {
+        kind: `workflow-benchmark-result-${reference.index}`,
+        ...resultEvidence,
+        valid: resultEvidence.readable,
+      },
+      {
+        kind: `workflow-benchmark-ledger-${reference.index}`,
+        ...ledgerEvidence,
+        valid: ledgerEvidence.readable,
+      },
+    );
+  }
+  const verification = verifyWorkflowBenchmarkSeries(
+    series,
+    verificationArtifacts,
+  );
+  if (!verification.valid) {
+    errors.push(
+      ...verification.diagnostics.map(
+        (diagnostic) => `workflow benchmark series: ${diagnostic}`,
+      ),
+    );
+    for (const trial of verification.trialDiagnostics) {
+      errors.push(
+        ...trial.diagnostics.map(
+          (diagnostic) =>
+            `workflow benchmark trial ${trial.index}: ${diagnostic}`,
+        ),
+      );
+    }
+  }
+  return releaseArtifacts.map(({ readable: _readable, ...artifact }) => ({
+    ...artifact,
+    valid: artifact.valid && verification.valid,
+  }));
+}
+
+async function readJsonArtifact(repoRoot, artifactPath, errors) {
+  const absolutePath = resolveRepoRelativePath(
+    repoRoot,
+    artifactPath,
+    "workflowBenchmarkArtifactPath",
+  );
+  return parseJson(
+    await readTextFile(absolutePath, artifactPath, errors),
+    artifactPath,
+    errors,
+  );
 }
 
 async function readArtifactEvidence(repoRoot, artifactPath, errors) {

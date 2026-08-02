@@ -1,6 +1,14 @@
 import { createHash } from "node:crypto";
 import { execFile as execFileWithCallback } from "node:child_process";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  cp,
+  mkdtemp,
+  mkdir,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -47,6 +55,11 @@ describe("release artifacts audit", () => {
       "web-dist-manifest",
       "management-openapi",
       "management-openapi-compatibility",
+      "workflow-benchmark-series",
+      "workflow-benchmark-result-1",
+      "workflow-benchmark-ledger-1",
+      "workflow-benchmark-result-2",
+      "workflow-benchmark-ledger-2",
     ]);
     expect(createReleaseArtifactsReceipt(result)).toMatchObject({
       type: "napier.release-artifacts-audit",
@@ -180,6 +193,29 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when a retained Workflow benchmark trial is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const resultName = (await readdir(benchmarkRoot))
+      .filter((name) => name.startsWith("napier-workflow-benchmark-result-"))
+      .sort()[0];
+    const resultPath = path.join(benchmarkRoot, resultName);
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.evaluation.completedMapRunCount = 0;
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "workflow benchmark series: series_trial_invalid",
+        "workflow benchmark trial 1: result_shape_invalid",
+        "workflow benchmark trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
   it("rejects malformed release artifact receipts", async () => {
     const { root } = await createFixture();
     await writeJson(
@@ -217,6 +253,7 @@ async function createFixture() {
   await createProductPerformanceFixture(root);
   await createManagementOpenApiFixture(root);
   await createManagementOpenApiCompatibilityFixture(root);
+  await createWorkflowBenchmarkFixture(root);
   await execFile(process.execPath, [
     packageLockScriptPath,
     "--repo-root",
@@ -239,6 +276,20 @@ async function createFixture() {
     "docs/artifacts/web-dist-audit-0.1.0.json",
   ]);
   return { root };
+}
+
+async function createWorkflowBenchmarkFixture(root) {
+  const sourceRoot = path.resolve("docs/artifacts/benchmarks");
+  const targetRoot = path.join(root, "docs/artifacts/benchmarks");
+  await mkdir(targetRoot, { recursive: true });
+  const names = (await readdir(sourceRoot)).filter((name) =>
+    name.startsWith("napier-workflow-benchmark-"),
+  );
+  await Promise.all(
+    names.map((name) =>
+      cp(path.join(sourceRoot, name), path.join(targetRoot, name)),
+    ),
+  );
 }
 
 async function createPackageLockFixture(root) {

@@ -1214,6 +1214,7 @@ and
 [Ledger bundle](docs/artifacts/benchmarks/napier-benchmark-ledger-coding_pricing_options_migration_v1-e8ef307d538aab40.json).
 It changed exactly the three allowed files in 19.087 seconds, but its LSP and
 outcome Sandbox launches were denied by this host, so it remains inconclusive.
+
 ### Workflow Outcome Benchmark
 
 The fixed `workflow_document_map_reduce_v1` case runs three typed, parallel
@@ -4923,16 +4924,17 @@ changes chunk names or hashes, run `npm run update:web-dist-manifest` to write t
 `npm run check:web-dist-manifest` is the check-only guard that fails when the
 checked-in manifest is stale. `npm run write:release-artifacts` writes a
 top-level `napier.release-artifacts-audit` receipt that binds the package-lock
-receipt, runtime-environment receipt, management OpenAPI artifact, management
-OpenAPI compatibility fixture, Web dist receipt, and Web dist manifest by
-SHA-256; `npm run check:release-artifacts` /
+receipt, runtime-environment receipt, product-performance baseline, management
+OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
+Web dist manifest, and the semantically verified Workflow Benchmark Series
+plus both Result/Ledger pairs by SHA-256; `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
 tests before running workspace suites, so package-lock drift, runtime version
 drift, missing runtime components, OpenAPI route drift, manifest drift, extra
 dist files, malformed manifests, stale receipts, compatibility regressions,
-aggregate artifact drift, and entry-budget regressions are covered without
-mutating the real build output.
+aggregate artifact drift, Workflow Benchmark trial substitution/tampering, and
+entry-budget regressions are covered without mutating the real build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with
 relative paths, file counts, main-entry budget status, the manifest SHA-256,
 the canonical dist-content SHA-256, and any errors for CI capture. Trace, Plan,

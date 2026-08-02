@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "935b9381a4af63ab5db3badb19d2296cbae094508c88d98d61d527f2bf3a413a",
+  "artifactSetSha256": "bc9f9f13ef2c9ea158fd25ee36c74f52a746b12db9d1b17f338ec26bcdd563c6",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "d3a867f082a5033c6e2a5bd1a62e38bd01a28c35abc46d96b65725ce0d38e890",
+      "sha256": "9a96159e2800f43a9bf0c04d5e88c9013be67cdcd8c53593f37fc247524c93c8",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "b93bf615546ab216d41ea69ab0cf4b5527cd00d7df1a71c671bb2e41c911fdb4",
+      "sha256": "e5f9e5689613a24b0cb9c437b4cf3f0413e32b46ce11e2a8330758f87fb7de04",
       "valid": true
     },
     {
@@ -48,6 +48,36 @@
       "kind": "management-openapi-compatibility",
       "path": "docs/artifacts/management-openapi-compatibility-0.1.0.json",
       "sha256": "b46201fef25835a122dd0aae07d8b64ffdc5bb1564f465526e9dfedccc580bf1",
+      "valid": true
+    },
+    {
+      "kind": "workflow-benchmark-series",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json",
+      "sha256": "c5969267c1aedcaca78193abf7fcef39fa17398d8fb3fbcb65337d706df4842d",
+      "valid": true
+    },
+    {
+      "kind": "workflow-benchmark-result-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-workflow_document_map_reduce_v1-5a2d0e8f01c7cbfc.json",
+      "sha256": "1eebf2febc1b24681373be3ccbf4a0f990f0b7628b06eff7d50a4b606dd9a1d0",
+      "valid": true
+    },
+    {
+      "kind": "workflow-benchmark-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-workflow_document_map_reduce_v1-aad6635336f19dbe.json",
+      "sha256": "d2d2b343325a714b1d71672ee15af92ea8672abbfdda51d0f45317bec910e271",
+      "valid": true
+    },
+    {
+      "kind": "workflow-benchmark-result-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-workflow_document_map_reduce_v1-88d3952bfe7360ae.json",
+      "sha256": "5d4ea6e2e4b9fe61d8e20485f07baa2c6b45585774aed5a51b7fdcb2268dea80",
+      "valid": true
+    },
+    {
+      "kind": "workflow-benchmark-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-workflow_document_map_reduce_v1-8cb4c696f6b1ab81.json",
+      "sha256": "b431309383a5dd1ab65cadec9aa922e7b20e4956e98406f61bcfe829a0f79539",
       "valid": true
     }
   ],

@@ -1547,10 +1547,13 @@ dist evidence.
 
 The top-level release artifact audit binds the package-lock receipt,
 runtime-environment receipt, management OpenAPI artifact, management OpenAPI
-compatibility fixture, Web dist receipt, and Web dist manifest into one
-`napier.release-artifacts-audit` receipt. It stores only artifact kinds,
-repo-relative paths, SHA-256 values, validity booleans, package name/version,
-and a canonical artifact-set digest. Verification re-runs the component receipt
+compatibility fixture, product-performance baseline, Web dist receipt, Web
+dist manifest, and retained Workflow Benchmark Series plus its two
+Result/Ledger pairs into one `napier.release-artifacts-audit` receipt. Before
+hashing the five Benchmark files, the gate performs full Series and trial
+semantic verification. It stores only artifact kinds, repo-relative paths,
+SHA-256 values, validity booleans, package name/version, and a canonical
+artifact-set digest. Verification re-runs the component and Benchmark
 verifiers and fails if any underlying artifact or the aggregate receipt drifts.
 
 ## Persistence
