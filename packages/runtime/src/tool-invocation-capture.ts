@@ -4,7 +4,7 @@ import type {
   ToolInvocationCapsuleReceipt,
 } from "@napier/contracts";
 
-import type { EventSink } from "./agent-runtime.js";
+import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import {

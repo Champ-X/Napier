@@ -52,6 +52,7 @@ import {
   createDelegationLedgerProjection,
   formatDelegationLedgerProjection,
 } from "./delegation-ledger.js";
+import type { EventSink } from "./event-sink.js";
 import {
   agentToolCallArgumentsLedgerProjection as toolCallArgumentsLedgerProjection,
   agentToolInputLedgerProjection as toolInputLedgerProjection,
@@ -162,8 +163,7 @@ import {
 } from "./tool-loop-guard.js";
 import { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
 import { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
-
-export type EventSink = (event: RunEvent) => Promise<void> | void;
+export type { EventSink } from "./event-sink.js";
 
 export interface RunPromptOptions {
   threadId: string;

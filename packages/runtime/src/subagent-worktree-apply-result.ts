@@ -6,7 +6,7 @@ import {
   formatLspWorkspaceEditApplySummary,
   type LspWorkspaceEditMutationExecution,
 } from "./lsp-workspace-edit-mutation.js";
-import type { WorktreePreviewSource } from "./subagent-worktree-mutation.js";
+import type { WorktreePreviewSource } from "./subagent-worktree-mutation-model.js";
 
 export function createSubagentWorktreeApplyResult(
   execution: LspWorkspaceEditMutationExecution<

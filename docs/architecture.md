@@ -174,11 +174,13 @@ Later ratchets moved CLI execution options/runtime injection, Embedded
 Workflow execution, Workspace Process event input, Workspace Patch contracts,
 Subagent Outcome validation, and Sandbox terminal types into leaf modules.
 The Contracts root/RPC pair then required moving its complete 133-declaration
-dependency closure into five bounded execution-domain modules. The checked
-graph now contains one legacy component rather than nine: the 54-module
-Runtime core component. That remaining closure requires deliberate Runtime
-domain decomposition; it is not treated as an acceptable target for local
-type-moving.
+dependency closure into five bounded execution-domain modules. The
+then-current 54-module Runtime core component was subsequently reduced by
+extracting the shared Event sink, MCP client SPI, and Subagent worktree
+mutation model. The checked graph now contains one 14-module
+Evaluation/evidence/Store component rather than nine legacy components. That
+remaining closure requires deliberate Runtime domain decomposition; it is not
+treated as an acceptable target for local type-moving.
 
 ### Server
 

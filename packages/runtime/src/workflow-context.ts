@@ -5,7 +5,7 @@ import type {
   JsonValue,
 } from "@napier/contracts";
 
-import type { EventSink } from "./agent-runtime.js";
+import type { EventSink } from "./event-sink.js";
 
 export interface WorkflowExecutionContext {
   threadId: string;

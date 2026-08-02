@@ -4,7 +4,7 @@ import type {
   RunRecord,
 } from "@napier/contracts";
 
-import type { EventSink } from "./agent-runtime.js";
+import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import type { LocalStore, OperatorDecisionMutation } from "./store.js";

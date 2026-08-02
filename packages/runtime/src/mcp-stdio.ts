@@ -5,7 +5,11 @@ import type {
   McpStdioTransportConfig,
 } from "@napier/contracts";
 
-import type { McpClient, McpClientCallResult, McpClientTool } from "./mcp.js";
+import type {
+  McpClient,
+  McpClientCallResult,
+  McpClientTool,
+} from "./mcp-client.js";
 import { isPathInsideWorkspace } from "./policy.js";
 import type { OsSandboxAdapter, SandboxedProcess } from "./sandbox.js";
 

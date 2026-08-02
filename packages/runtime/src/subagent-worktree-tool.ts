@@ -6,7 +6,7 @@ import type {
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import type { SubagentWorktreeMutationManager } from "./subagent-worktree-mutation.js";
+import type { SubagentWorktreeApplyManager } from "./subagent-worktree-mutation-model.js";
 
 const applySchema = Type.Object(
   {
@@ -21,7 +21,7 @@ const applySchema = Type.Object(
 );
 
 export function createSubagentWorktreeApplyTool(
-  manager: SubagentWorktreeMutationManager,
+  manager: SubagentWorktreeApplyManager,
 ): AgentTool<typeof applySchema, SubagentWorktreeApplyDetails> {
   return {
     name: "subagent_worktree_apply",

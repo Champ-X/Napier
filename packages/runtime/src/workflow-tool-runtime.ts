@@ -5,7 +5,8 @@ import type {
 } from "@napier/contracts";
 import { Check } from "typebox/value";
 
-import type { AgentRuntime, EventSink } from "./agent-runtime.js";
+import type { AgentRuntime } from "./agent-runtime.js";
+import type { EventSink } from "./event-sink.js";
 import {
   agentToolInputLedgerProjection,
   agentToolOutputLedgerProjection,

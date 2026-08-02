@@ -1,6 +1,7 @@
 import type { ModelRef, RunEvent, RunRecord } from "@napier/contracts";
 
-import { type AgentRuntime, type EventSink } from "./agent-runtime.js";
+import type { AgentRuntime } from "./agent-runtime.js";
+import type { EventSink } from "./event-sink.js";
 import type { LocalStore } from "./store.js";
 
 export const MAX_EMBEDDED_AGENT_PROMPT_BYTES = 64 * 1_024;

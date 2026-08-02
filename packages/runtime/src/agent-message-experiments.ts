@@ -7,7 +7,8 @@ import type {
   ThreadRecord,
 } from "@napier/contracts";
 
-import type { AgentRuntime, EventSink } from "./agent-runtime.js";
+import type { AgentRuntime } from "./agent-runtime.js";
+import type { EventSink } from "./event-sink.js";
 import {
   AGENT_MESSAGE_TOOL_RESULT_REPLAY,
   FrozenToolResultReplayController,

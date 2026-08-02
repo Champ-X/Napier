@@ -7,7 +7,7 @@ import type {
   ToolInvocationExperimentStatus,
 } from "@napier/contracts";
 
-import type { EventSink } from "./agent-runtime.js";
+import type { EventSink } from "./event-sink.js";
 import type { AgentRuntime } from "./agent-runtime.js";
 import {
   agentToolInputLedgerProjection,

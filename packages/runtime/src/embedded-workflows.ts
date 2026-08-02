@@ -7,7 +7,7 @@ import {
   type OperatorDecision,
 } from "@napier/contracts";
 
-import type { EventSink } from "./agent-runtime.js";
+import type { EventSink } from "./event-sink.js";
 import {
   EmbeddedWorkflowApprovalService,
   type AnswerAndResumeEmbeddedWorkflowOptions,

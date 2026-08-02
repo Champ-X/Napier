@@ -1,19 +1,14 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import type {
-  LspRenameApplyDiagnosticsDetails,
-  SubagentWorktreeApplyDetails,
-} from "@napier/contracts";
+import type { LspRenameApplyDiagnosticsDetails } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type {
   LspRenameDiagnosticsObservation,
   LspRenameDiagnosticsState,
 } from "./lsp-rename-apply-diagnostics.js";
-import type { LspRenameFile } from "./lsp-rename-workspace-edit.js";
 import {
   LspWorkspaceEditMutationCoordinator,
   type LspWorkspaceEditDiagnosticsAdapter,
-  type LspWorkspaceEditPreviewSource,
 } from "./lsp-workspace-edit-mutation.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import { createSubagentWorktreeApplyResult } from "./subagent-worktree-apply-result.js";
@@ -35,10 +30,7 @@ import {
   removeSubagentWorktree,
   type SubagentWorktreeSession,
 } from "./subagent-worktree-files.js";
-import {
-  subagentWorktreeModifiedLspFiles,
-  type SubagentWorktreeChange,
-} from "./subagent-worktree-diff.js";
+import { subagentWorktreeModifiedLspFiles } from "./subagent-worktree-diff.js";
 import {
   SubagentWorktreeLifecycleDiagnostics,
   type SubagentWorktreeLifecycleDiagnosticsAdapter,
@@ -55,6 +47,10 @@ import {
   type SubagentCandidateVerificationSummary,
   SubagentWorktreeOperationCoordinator,
 } from "./subagent-worktree-verification.js";
+import type {
+  SubagentWorktreeApplyResult,
+  WorktreePreviewSource,
+} from "./subagent-worktree-mutation-model.js";
 import {
   commitWorkspaceChanges,
   type CommitWorkspaceChangesOptions,
@@ -68,37 +64,10 @@ export {
   subagentWorktreeToolInputLedgerProjection,
   subagentWorktreeToolOutputLedgerProjection,
 } from "./subagent-worktree-tool.js";
-
-export interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
-  taskId: string;
-  outcomeSha256: string;
-  sourceRoot: string;
-  sourceSnapshotSha256: string;
-  sourceFileCount: number;
-  sourceBytes: number;
-  writeScopeCount: number;
-  writeScopeSetSha256: string;
-  changedFileSetSha256: string;
-  candidateVerificationAttemptCount: number;
-  candidateVerificationFreshCount: number;
-  candidateVerificationPassedCount: number;
-  candidateVerificationFailedCount: number;
-  candidateVerificationStaleCount: number;
-  candidateVerificationSetSha256: string;
-  candidateCommandAttemptCount: number;
-  candidateCommandFreshCount: number;
-  candidateCommandSucceededCount: number;
-  candidateCommandFailedCount: number;
-  candidateCommandStaleCount: number;
-  candidateCommandSetSha256: string;
-  candidateToolchainSha256?: string;
-  addedFileCount: number;
-  modifiedFileCount: number;
-  deletedFileCount: number;
-  renamedFileCount: number;
-  changes: SubagentWorktreeChange[];
-  files: LspRenameFile[];
-}
+export type {
+  SubagentWorktreeApplyResult,
+  WorktreePreviewSource,
+} from "./subagent-worktree-mutation-model.js";
 
 export interface SubagentWorktreePreview {
   id: string;
@@ -117,11 +86,6 @@ export interface SubagentWorktreePreview {
   candidateVerification: SubagentCandidateVerificationSummary;
   candidateCommands: SubagentCandidateCommandSummary;
   candidateToolchainSha256?: string;
-}
-
-export interface SubagentWorktreeApplyResult {
-  details: SubagentWorktreeApplyDetails;
-  summary: string;
 }
 
 export interface SubagentWorktreeMutationManagerOptions {

@@ -13,6 +13,11 @@ import {
   verifyBoundExtensionPackage,
   verifyBoundExtensionPackageTrust,
 } from "./extension-packages.js";
+import type {
+  McpClient,
+  McpClientCallResult,
+  McpClientTool,
+} from "./mcp-client.js";
 import { StdioMcpClient } from "./mcp-stdio.js";
 import { resolvePublicHost } from "./public-network.js";
 import {
@@ -20,6 +25,12 @@ import {
   type OsSandboxAdapter,
 } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
+
+export type {
+  McpClient,
+  McpClientCallResult,
+  McpClientTool,
+} from "./mcp-client.js";
 
 const MCP_PROTOCOL_VERSION = "2025-06-18";
 const CONNECT_TIMEOUT_MS = 12_000;
@@ -44,31 +55,6 @@ const mcpSchemaSearchSchema = Type.Object(
   },
   { additionalProperties: false },
 );
-
-export interface McpClientTool {
-  name: string;
-  description?: string;
-  inputSchema?: unknown;
-}
-
-export interface McpClientCallResult {
-  contentText: string;
-  isError: boolean;
-}
-
-export interface McpClient {
-  initialize(signal?: AbortSignal): Promise<void>;
-  listTools(
-    cursor?: string,
-    signal?: AbortSignal,
-  ): Promise<{ tools: McpClientTool[]; nextCursor?: string }>;
-  callTool(
-    toolName: string,
-    args: Record<string, unknown>,
-    signal?: AbortSignal,
-  ): Promise<McpClientCallResult>;
-  close(): Promise<void>;
-}
 
 export interface McpExtensionManagerOptions {
   store: LocalStore;
