@@ -19,6 +19,9 @@ const CASE_KEYS_V1 = keySet(
 const CASE_KEYS_V2 = keySet(
   "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario setupSqlPath setupSqlSha256 databasePath requiredSqliteActions contentSha256",
 );
+const CASE_KEYS_V3 = keySet(
+  "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario setupSqlPath setupSqlSha256 databasePath requiredSqliteActions requiredSqliteEvidence forbiddenOutputStrings contentSha256",
+);
 
 export interface LoadedWorkflowBenchmarkCase {
   benchmarkCase: WorkflowBenchmarkCase;
@@ -48,14 +51,24 @@ export async function loadWorkflowBenchmarkCase(
     throw new Error("Workflow benchmark expected outcome hash mismatch");
   }
   const setupSqlSource =
-    manifest.schemaVersion === 2
-      ? await readTextCaseEntry(root, manifest.setupSqlPath)
-      : undefined;
+    manifest.schemaVersion === 1
+      ? undefined
+      : await readTextCaseEntry(root, manifest.setupSqlPath);
   if (
-    manifest.schemaVersion === 2 &&
+    manifest.schemaVersion !== 1 &&
     sha256(setupSqlSource ?? "") !== manifest.setupSqlSha256
   ) {
     throw new Error("Workflow benchmark setup SQL hash mismatch");
+  }
+  if (
+    manifest.schemaVersion === 3 &&
+    (manifest.requiredSqliteEvidence.length !== input.documents.length ||
+      manifest.forbiddenOutputStrings.length !== input.documents.length ||
+      manifest.forbiddenOutputStrings.some(
+        (canary) => !setupSqlSource?.includes(canary),
+      ))
+  ) {
+    throw new Error("Workflow benchmark security case binding is invalid");
   }
   return {
     benchmarkCase: manifest,
@@ -87,12 +100,15 @@ export function validateWorkflowBenchmarkCase(
 }
 
 function workflowBenchmarkCaseKeys(input: unknown): readonly string[] {
-  return input !== null &&
-    typeof input === "object" &&
-    !Array.isArray(input) &&
-    (input as Record<string, unknown>)["schemaVersion"] === 2
-    ? CASE_KEYS_V2
-    : CASE_KEYS_V1;
+  const version =
+    input !== null && typeof input === "object" && !Array.isArray(input)
+      ? (input as Record<string, unknown>)["schemaVersion"]
+      : undefined;
+  return version === 3
+    ? CASE_KEYS_V3
+    : version === 2
+      ? CASE_KEYS_V2
+      : CASE_KEYS_V1;
 }
 
 function validWorkflowBenchmarkCaseBase(
@@ -100,7 +116,9 @@ function validWorkflowBenchmarkCaseBase(
 ): boolean {
   return (
     input["kind"] === "napier.workflow-benchmark-case" &&
-    (input["schemaVersion"] === 1 || input["schemaVersion"] === 2) &&
+    (input["schemaVersion"] === 1 ||
+      input["schemaVersion"] === 2 ||
+      input["schemaVersion"] === 3) &&
     resourceId(input["id"]) &&
     boundedText(input["title"], 1, 160) &&
     boundedText(input["objective"], 1, 500) &&
@@ -118,15 +136,65 @@ function validWorkflowBenchmarkSqliteCase(
   input: Record<string, unknown>,
 ): boolean {
   if (input["schemaVersion"] === 1) return true;
+  if (
+    !(
+      safeRelativeFile(input["setupSqlPath"]) &&
+      digest(input["setupSqlSha256"]) &&
+      safeRelativeFile(input["databasePath"]) &&
+      input["databasePath"].endsWith(".sqlite") &&
+      Array.isArray(input["requiredSqliteActions"])
+    )
+  ) {
+    return false;
+  }
+  if (input["schemaVersion"] === 2) {
+    return (
+      input["scenario"] === "sqlite_metric_map_reduce" &&
+      canonicalJson(input["requiredSqliteActions"]) ===
+        canonicalJson(["schema", "query", "chart"])
+    );
+  }
   return (
-    input["scenario"] === "sqlite_metric_map_reduce" &&
-    safeRelativeFile(input["setupSqlPath"]) &&
-    digest(input["setupSqlSha256"]) &&
-    safeRelativeFile(input["databasePath"]) &&
-    input["databasePath"].endsWith(".sqlite") &&
-    Array.isArray(input["requiredSqliteActions"]) &&
+    input["scenario"] === "sqlite_prompt_injection_map_reduce" &&
     canonicalJson(input["requiredSqliteActions"]) ===
-      canonicalJson(["schema", "query", "chart"])
+      canonicalJson(["schema", "query"]) &&
+    validSqliteEvidenceExpectations(input["requiredSqliteEvidence"]) &&
+    validForbiddenOutputStrings(input["forbiddenOutputStrings"])
+  );
+}
+
+function validSqliteEvidenceExpectations(value: unknown): boolean {
+  if (!Array.isArray(value) || value.length < 2 || value.length > 8) {
+    return false;
+  }
+  return (
+    value.every(
+      (expectation) =>
+        exactRecord(expectation, [
+          "sqlSha256",
+          "parameterSetSha256",
+          "rowsSha256",
+        ]) &&
+        digest(expectation["sqlSha256"]) &&
+        digest(expectation["parameterSetSha256"]) &&
+        digest(expectation["rowsSha256"]),
+    ) &&
+    new Set(value.map((expectation) => canonicalJson(expectation))).size ===
+      value.length
+  );
+}
+
+function validForbiddenOutputStrings(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length >= 2 &&
+    value.length <= 8 &&
+    value.every(
+      (canary) =>
+        typeof canary === "string" &&
+        /^INJECTION_[A-Z0-9_]{8,80}$/u.test(canary),
+    ) &&
+    new Set(value).size === value.length
   );
 }
 

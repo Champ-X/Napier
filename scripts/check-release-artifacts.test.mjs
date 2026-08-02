@@ -65,6 +65,11 @@ describe("release artifacts audit", () => {
       "data-benchmark-ledger-1",
       "data-benchmark-result-2",
       "data-benchmark-ledger-2",
+      "security-benchmark-series",
+      "security-benchmark-result-1",
+      "security-benchmark-ledger-1",
+      "security-benchmark-result-2",
+      "security-benchmark-ledger-2",
     ]);
     expect(createReleaseArtifactsReceipt(result)).toMatchObject({
       type: "napier.release-artifacts-audit",
@@ -248,6 +253,33 @@ describe("release artifacts audit", () => {
         "data benchmark series: series_trial_invalid",
         "data benchmark trial 1: result_shape_invalid",
         "data benchmark trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
+  it("fails when retained Security benchmark evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const resultName = (await readdir(benchmarkRoot))
+      .filter((name) =>
+        name.startsWith(
+          "napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-",
+        ),
+      )
+      .sort()[0];
+    const resultPath = path.join(benchmarkRoot, resultName);
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.evaluation.promptInjectionLeakDetected = true;
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "security benchmark series: series_trial_invalid",
+        "security benchmark trial 1: result_shape_invalid",
+        "security benchmark trial 1: trial_binding_mismatch",
       ]),
     );
   });

@@ -7,6 +7,7 @@ import type {
   WorkflowBenchmarkResult,
 } from "./workflow-benchmark-types.js";
 import { validWorkflowBenchmarkLedgerWorkflow } from "./workflow-benchmark-ledger-workflow-shape.js";
+import { workflowBenchmarkPromptInjectionScanMatches } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteEvidenceBinding } from "./workflow-benchmark-sqlite-evidence.js";
 
 const TOP_LEVEL_KEYS = keySet(
@@ -35,6 +36,12 @@ export function createWorkflowBenchmarkLedgerBundle(input: {
   sqliteActionEvents?: RunEvent[];
   databaseBeforeSha256?: string;
   databaseAfterSha256?: string;
+  requiredSqliteEvidence?: NonNullable<
+    WorkflowBenchmarkLedgerBundle["workflow"]["requiredSqliteEvidence"]
+  >;
+  promptInjectionScan?: NonNullable<
+    WorkflowBenchmarkLedgerBundle["workflow"]["promptInjectionScan"]
+  >;
   runs: RunRecord[];
   evaluationEvent: RunEvent;
   terminalEvent: RunEvent;
@@ -76,6 +83,18 @@ export function createWorkflowBenchmarkLedgerBundle(input: {
         : {}),
       ...(input.databaseAfterSha256
         ? { databaseAfterSha256: input.databaseAfterSha256 }
+        : {}),
+      ...(input.requiredSqliteEvidence
+        ? {
+            requiredSqliteEvidence: input.requiredSqliteEvidence
+              .map((expectation) => structuredClone(expectation))
+              .sort((left, right) =>
+                canonicalJson(left).localeCompare(canonicalJson(right)),
+              ),
+          }
+        : {}),
+      ...(input.promptInjectionScan
+        ? { promptInjectionScan: structuredClone(input.promptInjectionScan) }
         : {}),
     },
     runs: input.runs
@@ -168,6 +187,9 @@ export function verifyWorkflowBenchmarkLedgerBundle(input: unknown): {
   }
   if (!validWorkflowBenchmarkSqliteEvidenceBinding(input)) {
     diagnostics.push("ledger_sqlite_evidence_invalid");
+  }
+  if (!workflowBenchmarkPromptInjectionScanMatches(input)) {
+    diagnostics.push("ledger_prompt_injection_scan_invalid");
   }
   return {
     valid: diagnostics.length === 0,

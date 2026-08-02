@@ -1,3 +1,4 @@
+import { validWorkflowBenchmarkSecurityFields } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteFields } from "./workflow-benchmark-sqlite-evidence.js";
 
 export function validWorkflowBenchmarkLedgerWorkflow(value: unknown): boolean {
@@ -12,6 +13,7 @@ export function validWorkflowBenchmarkLedgerWorkflow(value: unknown): boolean {
     mapRunIds.every((id, index) => index === 0 || mapRunIds[index - 1]! < id) &&
     resourceId(workflow["reduceRunId"]) &&
     validWorkflowBenchmarkSqliteFields(workflow) &&
+    validWorkflowBenchmarkSecurityFields(workflow) &&
     nonNegativeInteger(workflow["nodeResultCount"]) &&
     nonNegativeInteger(workflow["completedNodeResultCount"])
   );
@@ -39,6 +41,12 @@ function workflowKeys(workflow: Record<string, unknown>): readonly string[] {
     ...(workflow["databaseAfterSha256"] === undefined
       ? []
       : ["databaseAfterSha256"]),
+    ...(workflow["requiredSqliteEvidence"] === undefined
+      ? []
+      : ["requiredSqliteEvidence"]),
+    ...(workflow["promptInjectionScan"] === undefined
+      ? []
+      : ["promptInjectionScan"]),
   ];
 }
 

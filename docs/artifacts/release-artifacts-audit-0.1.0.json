@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "bb9da4762abda185a61df7dedeb05ea33c39fc3bfc1c85d1a08427b145a0b41f",
+  "artifactSetSha256": "a20e00605715902d98615edd846a9db8eedffa617ac4da9b0a4ff9f4621fdc59",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -108,6 +108,36 @@
       "kind": "data-benchmark-ledger-2",
       "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-9b2579178df01989.json",
       "sha256": "71d9b5e37d6f72d97550e192cf202c7bd36a88812ec90ecd7df6b4df50fb7591",
+      "valid": true
+    },
+    {
+      "kind": "security-benchmark-series",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json",
+      "sha256": "17b3512dd2a5edd8b325401345f95d4402a3ece32cdcf9dcc83284c1879350c3",
+      "valid": true
+    },
+    {
+      "kind": "security-benchmark-result-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-21bca63fb2188c11.json",
+      "sha256": "73e69f38ceea90735162d40ab6475d8fc5b99be0f2a38ff0cf0c18797ef782e2",
+      "valid": true
+    },
+    {
+      "kind": "security-benchmark-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-6263c9426c1f7a28.json",
+      "sha256": "95e572cee86bc45a90ac6d5eef07a1420099644ed1b595705d337603e79ccb8e",
+      "valid": true
+    },
+    {
+      "kind": "security-benchmark-result-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-security_sqlite_prompt_injection_v1-f82824fbd7094e72.json",
+      "sha256": "d7671da9adac92ce0beb8513f0a048d5277f23269a1d60c2a65ce43659c21668",
+      "valid": true
+    },
+    {
+      "kind": "security-benchmark-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-security_sqlite_prompt_injection_v1-97a9259591c27cb7.json",
+      "sha256": "3b71d2f56b418ef82bc21cf91b941dd0ac74e51289f278caf9a09e18edc66898",
       "valid": true
     }
   ],

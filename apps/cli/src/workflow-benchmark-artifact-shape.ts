@@ -7,7 +7,7 @@ import type {
 } from "./workflow-benchmark-types.js";
 
 const EVALUATION_KEYS = keySet(
-  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid databaseUnchanged diagnostics contentSha256",
+  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged diagnostics contentSha256",
 );
 const RESULT_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 status model environment run workflow evaluation ledger contentSha256",
@@ -62,6 +62,8 @@ function evaluationKeys(
     "sqliteQueryCompletedCount",
     "sqliteChartCompletedCount",
     "sqliteProtocolValid",
+    "sqliteEvidenceMatch",
+    "promptInjectionLeakDetected",
     "databaseUnchanged",
   ]);
   const keys = EVALUATION_KEYS.filter((key) => !optional.has(key));
@@ -71,7 +73,7 @@ function evaluationKeys(
   if (evaluation["actualMapOutputSha256"] !== undefined) {
     keys.push("actualMapOutputSha256");
   }
-  if (evaluation["schemaVersion"] === 2) {
+  if (evaluation["schemaVersion"] === 2 || evaluation["schemaVersion"] === 3) {
     keys.push(
       "sqliteSchemaCompletedCount",
       "sqliteQueryCompletedCount",
@@ -80,13 +82,18 @@ function evaluationKeys(
       "databaseUnchanged",
     );
   }
+  if (evaluation["schemaVersion"] === 3) {
+    keys.push("sqliteEvidenceMatch", "promptInjectionLeakDetected");
+  }
   return keys;
 }
 
 function validEvaluationIdentity(evaluation: Record<string, unknown>): boolean {
   return (
     evaluation["kind"] === "napier.workflow-benchmark-evaluation" &&
-    (evaluation["schemaVersion"] === 1 || evaluation["schemaVersion"] === 2) &&
+    (evaluation["schemaVersion"] === 1 ||
+      evaluation["schemaVersion"] === 2 ||
+      evaluation["schemaVersion"] === 3) &&
     resourceId(evaluation["caseId"]) &&
     digest(evaluation["caseSha256"]) &&
     resultStatus(evaluation["status"]) &&
@@ -119,7 +126,10 @@ function validEvaluationEvidence(evaluation: Record<string, unknown>): boolean {
       nonNegativeInteger(evaluation["sqliteQueryCompletedCount"]) &&
       nonNegativeInteger(evaluation["sqliteChartCompletedCount"]) &&
       typeof evaluation["sqliteProtocolValid"] === "boolean" &&
-      typeof evaluation["databaseUnchanged"] === "boolean")
+      typeof evaluation["databaseUnchanged"] === "boolean" &&
+      (evaluation["schemaVersion"] === 2 ||
+        (typeof evaluation["sqliteEvidenceMatch"] === "boolean" &&
+          typeof evaluation["promptInjectionLeakDetected"] === "boolean")))
   );
 }
 

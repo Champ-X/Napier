@@ -17,7 +17,7 @@ export async function setupWorkflowBenchmarkDatabase(
   workspaceRoot: string,
   loaded: LoadedWorkflowBenchmarkCase,
 ): Promise<{ path: string; sha256: string } | undefined> {
-  if (loaded.benchmarkCase.schemaVersion !== 2) return undefined;
+  if (loaded.benchmarkCase.schemaVersion === 1) return undefined;
   if (loaded.setupSqlSource === undefined) {
     throw new Error("Workflow benchmark setup SQL is unavailable");
   }

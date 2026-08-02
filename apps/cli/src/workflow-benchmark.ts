@@ -32,10 +32,12 @@ import {
 } from "./workflow-benchmark-contract.js";
 import { createWorkflowBenchmarkLedgerBundle } from "./workflow-benchmark-ledger.js";
 import {
-  collectWorkflowBenchmarkSqliteActionEvents,
-  workflowBenchmarkSqliteActionCounts,
-  workflowBenchmarkSqliteProtocolValid,
-} from "./workflow-benchmark-sqlite-evidence.js";
+  benchmarkPromptInjectionLeakDetected,
+  workflowBenchmarkPromptInjectionOutputProjection,
+  workflowBenchmarkSqliteEvaluationEvidence,
+  workflowBenchmarkSqliteLedgerEvidence,
+} from "./workflow-benchmark-run-evidence.js";
+import { collectWorkflowBenchmarkSqliteActionEvents } from "./workflow-benchmark-sqlite-evidence.js";
 import { setupWorkflowBenchmarkDatabase } from "./workflow-benchmark-sqlite-setup.js";
 import type {
   WorkflowBenchmarkArtifacts,
@@ -108,7 +110,7 @@ export async function runWorkflowBenchmark(
     }
     await configureWorkflowBenchmarkAgent(
       runtime,
-      loaded.benchmarkCase.schemaVersion === 2,
+      loaded.benchmarkCase.schemaVersion !== 1,
     );
     const manifest = await createWorkflowBenchmarkManifest({
       store: runtime.store,
@@ -160,8 +162,6 @@ export async function runWorkflowBenchmark(
       eventsBeforeEvaluation,
       new Set(mapRuns.map((run) => run.id)),
     );
-    const sqliteActionCounts =
-      workflowBenchmarkSqliteActionCounts(sqliteActionEvents);
     const databaseAfterSha256 = databaseFixture
       ? sha256(await readFile(databaseFixture.path))
       : undefined;
@@ -180,6 +180,15 @@ export async function runWorkflowBenchmark(
         events: eventsBeforeEvaluation,
         replay: replayBeforeEvaluation,
       }).includes(credential.value);
+    const injectionOutputProjection =
+      workflowBenchmarkPromptInjectionOutputProjection(
+        workflowResult,
+        eventsBeforeEvaluation,
+      );
+    const injectionLeakDetected = benchmarkPromptInjectionLeakDetected(
+      loaded.benchmarkCase,
+      injectionOutputProjection,
+    );
     const evaluation = createWorkflowBenchmarkEvaluation({
       benchmarkCase: loaded.benchmarkCase,
       workflowStatus: workflowResult.status,
@@ -209,20 +218,14 @@ export async function runWorkflowBenchmark(
       replayValid:
         verifyThreadReplayBundle(replayBeforeEvaluation).status === "valid",
       credentialLeakDetected,
-      ...(loaded.benchmarkCase.schemaVersion === 2
-        ? {
-            sqliteSchemaCompletedCount: sqliteActionCounts.schema,
-            sqliteQueryCompletedCount: sqliteActionCounts.query,
-            sqliteChartCompletedCount: sqliteActionCounts.chart,
-            sqliteProtocolValid: workflowBenchmarkSqliteProtocolValid(
-              sqliteActionEvents,
-              new Set(mapRuns.map((run) => run.id)),
-            ),
-            databaseUnchanged:
-              databaseFixture !== undefined &&
-              databaseFixture.sha256 === databaseAfterSha256,
-          }
-        : {}),
+      ...workflowBenchmarkSqliteEvaluationEvidence({
+        benchmarkCase: loaded.benchmarkCase,
+        sqliteActionEvents,
+        mapRunIds: mapRuns.map((run) => run.id),
+        databaseBeforeSha256: databaseFixture?.sha256,
+        databaseAfterSha256,
+        injectionLeakDetected,
+      }),
     });
     const evidenceRunId =
       workflowResult.nodeResults.find((result) => result.runId)?.runId ??
@@ -277,15 +280,17 @@ export async function runWorkflowBenchmark(
       ...(mapOutputSha256 ? { mapOutputSha256 } : {}),
       mapRunIds: mapRuns.map((run) => run.id),
       reduceRunId: reduceResult?.runId ?? evidenceRunId,
-      ...(loaded.benchmarkCase.schemaVersion === 2
-        ? {
-            sqliteActionEvents,
-            ...(databaseFixture
-              ? { databaseBeforeSha256: databaseFixture.sha256 }
-              : {}),
-            ...(databaseAfterSha256 ? { databaseAfterSha256 } : {}),
-          }
-        : {}),
+      ...workflowBenchmarkSqliteLedgerEvidence({
+        benchmarkCase: loaded.benchmarkCase,
+        sqliteActionEvents,
+        databaseBeforeSha256: databaseFixture?.sha256,
+        databaseAfterSha256,
+        sourceReplaySha256: finalReplay.contentSha256,
+        outputProjectionSha256: sha256(
+          canonicalJson(injectionOutputProjection),
+        ),
+        injectionLeakDetected,
+      }),
       runs,
       evaluationEvent,
       terminalEvent,

@@ -32,6 +32,8 @@ const defaultWorkflowBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json";
 const defaultDataBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json";
+const defaultSecurityBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json";
 
 export async function auditReleaseArtifacts(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -59,6 +61,8 @@ export async function auditReleaseArtifacts(options = {}) {
     options.workflowBenchmarkSeriesPath ?? defaultWorkflowBenchmarkSeriesPath;
   const dataBenchmarkSeriesPath =
     options.dataBenchmarkSeriesPath ?? defaultDataBenchmarkSeriesPath;
+  const securityBenchmarkSeriesPath =
+    options.securityBenchmarkSeriesPath ?? defaultSecurityBenchmarkSeriesPath;
   const rootPackage = parseJson(
     await readTextFile(
       path.join(repoRoot, "package.json"),
@@ -150,6 +154,14 @@ export async function auditReleaseArtifacts(options = {}) {
     artifactKindPrefix: "data-benchmark",
     diagnosticLabel: "data benchmark",
   });
+  const securityBenchmarkArtifacts =
+    await verifyWorkflowBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: securityBenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "security-benchmark",
+      diagnosticLabel: "security benchmark",
+    });
 
   const artifacts = [
     {
@@ -196,6 +208,7 @@ export async function auditReleaseArtifacts(options = {}) {
     },
     ...workflowBenchmarkArtifacts,
     ...dataBenchmarkArtifacts,
+    ...securityBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
     Buffer.from(formatArtifactSetManifest(artifacts), "utf8"),
@@ -423,6 +436,11 @@ function parseCliOptions(args) {
     }
     if (arg === "--data-benchmark-series-path") {
       options.dataBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--security-benchmark-series-path") {
+      options.securityBenchmarkSeriesPath = readCliValue(args, index, arg);
       index += 1;
       continue;
     }

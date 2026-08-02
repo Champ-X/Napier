@@ -38,18 +38,36 @@ export interface WorkflowBenchmarkCaseV1 extends WorkflowBenchmarkCaseBase {
   schemaVersion: 1;
 }
 
-export interface WorkflowBenchmarkCaseV2 extends WorkflowBenchmarkCaseBase {
-  schemaVersion: 2;
-  scenario: "sqlite_metric_map_reduce";
+interface WorkflowBenchmarkSqliteCase extends WorkflowBenchmarkCaseBase {
   setupSqlPath: string;
   setupSqlSha256: string;
   databasePath: string;
+}
+
+export interface WorkflowBenchmarkCaseV2 extends WorkflowBenchmarkSqliteCase {
+  schemaVersion: 2;
+  scenario: "sqlite_metric_map_reduce";
   requiredSqliteActions: Array<"schema" | "query" | "chart">;
+}
+
+export interface WorkflowBenchmarkSqliteEvidenceExpectation {
+  sqlSha256: string;
+  parameterSetSha256: string;
+  rowsSha256: string;
+}
+
+export interface WorkflowBenchmarkCaseV3 extends WorkflowBenchmarkSqliteCase {
+  schemaVersion: 3;
+  scenario: "sqlite_prompt_injection_map_reduce";
+  requiredSqliteActions: Array<"schema" | "query">;
+  requiredSqliteEvidence: WorkflowBenchmarkSqliteEvidenceExpectation[];
+  forbiddenOutputStrings: string[];
 }
 
 export type WorkflowBenchmarkCase =
   | WorkflowBenchmarkCaseV1
-  | WorkflowBenchmarkCaseV2;
+  | WorkflowBenchmarkCaseV2
+  | WorkflowBenchmarkCaseV3;
 
 export type WorkflowBenchmarkDiagnostic =
   | "workflow_not_completed"
@@ -61,13 +79,15 @@ export type WorkflowBenchmarkDiagnostic =
   | "reduce_event_mismatch"
   | "reduce_executed_model_or_tool"
   | "sqlite_action_mismatch"
+  | "sqlite_evidence_mismatch"
+  | "prompt_injection_leaked"
   | "database_changed"
   | "replay_invalid"
   | "credential_leaked";
 
 export interface WorkflowBenchmarkEvaluation {
   kind: "napier.workflow-benchmark-evaluation";
-  schemaVersion: 1 | 2;
+  schemaVersion: 1 | 2 | 3;
   caseId: string;
   caseSha256: string;
   status: "passed" | "failed" | "inconclusive";
@@ -92,6 +112,8 @@ export interface WorkflowBenchmarkEvaluation {
   sqliteQueryCompletedCount?: number;
   sqliteChartCompletedCount?: number;
   sqliteProtocolValid?: boolean;
+  sqliteEvidenceMatch?: boolean;
+  promptInjectionLeakDetected?: boolean;
   databaseUnchanged?: boolean;
   diagnostics: WorkflowBenchmarkDiagnostic[];
   contentSha256: string;
@@ -170,6 +192,16 @@ export interface WorkflowBenchmarkLedgerBundle {
     sqliteActionEvents?: RunEvent[];
     databaseBeforeSha256?: string;
     databaseAfterSha256?: string;
+    requiredSqliteEvidence?: WorkflowBenchmarkSqliteEvidenceExpectation[];
+    promptInjectionScan?: {
+      kind: "napier.workflow-benchmark-prompt-injection-scan";
+      schemaVersion: 1;
+      forbiddenStringSha256s: string[];
+      sourceReplaySha256: string;
+      outputProjectionSha256: string;
+      leakDetected: boolean;
+      contentSha256: string;
+    };
   };
   runs: Array<{
     id: string;

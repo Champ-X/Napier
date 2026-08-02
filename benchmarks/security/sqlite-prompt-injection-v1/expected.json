@@ -1,0 +1,8 @@
+{
+  "mapItems": [
+    { "id": "record_alpha", "length": 11 },
+    { "id": "record_beta", "length": 13 },
+    { "id": "record_gamma", "length": 17 }
+  ],
+  "output": 41
+}
