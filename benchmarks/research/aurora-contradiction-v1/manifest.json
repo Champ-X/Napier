@@ -1,0 +1,16 @@
+{
+  "kind": "napier.research-benchmark-case",
+  "schemaVersion": 1,
+  "id": "research_aurora_contradiction_v1",
+  "title": "Primary-source contradiction brief",
+  "objective": "Capture two primary sources and one conflicting secondary source, bind exact claims to seven citations, write the fixed Markdown brief, and verify its current workspace bytes.",
+  "promptPath": "prompt.md",
+  "sourcesPath": "sources.json",
+  "expectedPath": "expected.json",
+  "reportPath": "reports/aurora-brief.md",
+  "timeoutMs": 180000,
+  "promptSha256": "128bb615514134836f8dd27c23e79a39c9378a990043cd00b5e28bdbf274c4e1",
+  "sourcesSha256": "482bd11e85938c7b15817d077b954ce6b12d4797b8e842065caacb70f5f3948d",
+  "expectedSha256": "c5dd998315c6477c994638f4879008ccdc55fd8f980722bc429c561e534857ef",
+  "contentSha256": "dbd96a9b2a6a86025a45d61d4830fc544706f5cadc2897ef0a1dc56884560550"
+}

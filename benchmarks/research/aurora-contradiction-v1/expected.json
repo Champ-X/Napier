@@ -1,0 +1,56 @@
+{
+  "claims": [
+    "Project Aurora launched in 2024.",
+    "A secondary source claims 2023, conflicting with two primary sources.",
+    "Retention is 30 days."
+  ],
+  "requiredCitations": [
+    {
+      "claimIndex": 0,
+      "sourceId": "source_fixture_primary_registry",
+      "startLine": 2,
+      "endLine": 2
+    },
+    {
+      "claimIndex": 0,
+      "sourceId": "source_fixture_primary_changelog",
+      "startLine": 2,
+      "endLine": 2
+    },
+    {
+      "claimIndex": 1,
+      "sourceId": "source_fixture_primary_registry",
+      "startLine": 2,
+      "endLine": 2
+    },
+    {
+      "claimIndex": 1,
+      "sourceId": "source_fixture_secondary_blog",
+      "startLine": 2,
+      "endLine": 2
+    },
+    {
+      "claimIndex": 1,
+      "sourceId": "source_fixture_primary_changelog",
+      "startLine": 2,
+      "endLine": 2
+    },
+    {
+      "claimIndex": 2,
+      "sourceId": "source_fixture_primary_registry",
+      "startLine": 3,
+      "endLine": 3
+    },
+    {
+      "claimIndex": 2,
+      "sourceId": "source_fixture_primary_changelog",
+      "startLine": 3,
+      "endLine": 3
+    }
+  ],
+  "requiredCaptureCount": 3,
+  "requiredCitationCount": 7,
+  "requiredPrimarySourceCount": 2,
+  "requiredSecondarySourceCount": 1,
+  "contradictionRequired": true
+}

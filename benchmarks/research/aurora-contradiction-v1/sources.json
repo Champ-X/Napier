@@ -1,0 +1,94 @@
+{
+  "sources": [
+    {
+      "id": "source_fixture_primary_registry",
+      "authority": "primary",
+      "capture": {
+        "url": "https://standards.example/aurora",
+        "title": "Official Aurora Standards Registry",
+        "lines": [
+          "Official Aurora Standards Registry",
+          "Project Aurora launched in 2024.",
+          "Retention is 30 days.",
+          "Authority: Aurora Standards Council primary registry."
+        ],
+        "textChars": 143,
+        "truncated": false,
+        "capturedContentSha256": "451ec4ed637672355696ed79827f5467936ee743bebf797f3d90f331ce89b6f7",
+        "sessionOperation": 1,
+        "sessionIdSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "browserExecutableSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "browserVersionSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "limitsSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "network": {
+          "requestCount": 1,
+          "connectCount": 1,
+          "rejectedCount": 0,
+          "transferredBytes": 512,
+          "destinationCount": 1,
+          "destinationsSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+        }
+      }
+    },
+    {
+      "id": "source_fixture_secondary_blog",
+      "authority": "secondary",
+      "capture": {
+        "url": "https://blog.example/aurora-history",
+        "title": "Market Watch Blog",
+        "lines": [
+          "Market Watch Blog",
+          "Project Aurora launched in 2023.",
+          "The blog provides no registry citation.",
+          "Authority: secondary commentary."
+        ],
+        "textChars": 123,
+        "truncated": false,
+        "capturedContentSha256": "32cea8851508711319173bf7ac18b90ba47a144cb65117405d746d28eb77af2f",
+        "sessionOperation": 2,
+        "sessionIdSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "browserExecutableSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "browserVersionSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "limitsSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "network": {
+          "requestCount": 1,
+          "connectCount": 1,
+          "rejectedCount": 0,
+          "transferredBytes": 384,
+          "destinationCount": 1,
+          "destinationsSha256": "7777777777777777777777777777777777777777777777777777777777777777"
+        }
+      }
+    },
+    {
+      "id": "source_fixture_primary_changelog",
+      "authority": "primary",
+      "capture": {
+        "url": "https://changelog.example/aurora/v1",
+        "title": "Official Aurora Changelog",
+        "lines": [
+          "Official Aurora Changelog",
+          "Project Aurora version 1.0 launched in 2024.",
+          "Retention policy is 30 days.",
+          "Authority: Aurora release engineering primary changelog."
+        ],
+        "textChars": 156,
+        "truncated": false,
+        "capturedContentSha256": "4f5b666bb6d0ee9e551d2d2aeb9b7e0ab5af6bd65b5303d590848751f2e90678",
+        "sessionOperation": 3,
+        "sessionIdSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "browserExecutableSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "browserVersionSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "limitsSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "network": {
+          "requestCount": 1,
+          "connectCount": 1,
+          "rejectedCount": 0,
+          "transferredBytes": 448,
+          "destinationCount": 1,
+          "destinationsSha256": "9999999999999999999999999999999999999999999999999999999999999999"
+        }
+      }
+    }
+  ]
+}

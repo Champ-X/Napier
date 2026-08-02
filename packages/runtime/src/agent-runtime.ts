@@ -62,6 +62,7 @@ import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
 import { AgentSessionRuntime } from "./agent-sessions.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
+import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
@@ -249,6 +250,7 @@ export class AgentRuntime {
     readonly workspaceProcesses?: WorkspaceProcessManager,
     readonly workspaceFileMutations?: WorkspaceFileMutationManager,
     readonly browserSessions?: RunBrowserSessionManager,
+    readonly researchSourceCaptures?: BrowserSourceCaptureProvider,
     readonly modelInvocationCapsules = new ModelInvocationCapsuleStore(
       store.dataRoot,
     ),
@@ -264,6 +266,7 @@ export class AgentRuntime {
       store.workspaceRoot,
       verificationSandbox,
       browserSessions,
+      researchSourceCaptures,
     );
   }
 
@@ -416,7 +419,6 @@ export class AgentRuntime {
     let modelContextEnvelopeTurnIndex = 0;
     const nextModelContextEnvelopeTurnIndex = (): number =>
       modelContextEnvelopeTurnIndex++;
-
     try {
       await options.onRunCreated?.(run);
       await this.record(
@@ -525,7 +527,6 @@ export class AgentRuntime {
           options.onEvent,
         );
       }
-
       abortController.signal.throwIfAborted();
       const model = await this.modelRegistry.resolveConfigured(modelRef);
       const subagents =
@@ -652,7 +653,6 @@ export class AgentRuntime {
           }
         }
       };
-
       let assistantText = await runTurn(prompt, invocationSource);
       toolResultReplay?.assertComplete();
       budget.throwIfExhausted();

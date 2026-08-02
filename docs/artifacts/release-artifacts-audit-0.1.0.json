@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "b56e1ad6eae5a5d261228f8ce2e69b151dfa9466c33a8f7474b3f1a6cb668ba6",
+  "artifactSetSha256": "d0cf3601812c14068d8a49acede5e2f0a4a9bb4fea851a20a4b8abadb3aa38cf",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "9a96159e2800f43a9bf0c04d5e88c9013be67cdcd8c53593f37fc247524c93c8",
+      "sha256": "e6509086cd7aaeb8224fe54d3c8c35cddcbc3f822af70954276f1269cefcc8c4",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "e5f9e5689613a24b0cb9c437b4cf3f0413e32b46ce11e2a8330758f87fb7de04",
+      "sha256": "8531c90fa6c67d1df6c92f5dac354f65ba6e60648717ea0559dda6eb4c894a52",
       "valid": true
     },
     {
@@ -168,6 +168,36 @@
       "kind": "long-horizon-benchmark-ledger-2",
       "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_restart_approval_v1-4fac417a7d02f704.json",
       "sha256": "7410d372b7adbc20f7d79416b9421ae20f835e31e3f9116506dbe8e9957b420a",
+      "valid": true
+    },
+    {
+      "kind": "research-benchmark-series",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json",
+      "sha256": "8571de92ac8de8664b77b444b705097322ce9144964fe4a3f69c8c4264253ccf",
+      "valid": true
+    },
+    {
+      "kind": "research-benchmark-result-1",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-9ded7844fa70d0cd.json",
+      "sha256": "fb3834bd2011caae779618cb4870490c0ad9e3ee1b645fdd7e9dac3c116f76e0",
+      "valid": true
+    },
+    {
+      "kind": "research-benchmark-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-9502abdc0176439a.json",
+      "sha256": "405b2316b5a620b15b7e3fe7cb319c85878249a4d87db3bac6763f842344e211",
+      "valid": true
+    },
+    {
+      "kind": "research-benchmark-result-2",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-d7b39fa9c99fcc19.json",
+      "sha256": "c376b1b445938cdb23e3b0e488cd47daa4a2a3ae8029b403c20865392e0fe769",
+      "valid": true
+    },
+    {
+      "kind": "research-benchmark-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-6efe3b93ad3865ec.json",
+      "sha256": "08a588256dee38641a1171183efc60794ddf9ed1fe5dd601005398da2c4f9e72",
       "valid": true
     }
   ],

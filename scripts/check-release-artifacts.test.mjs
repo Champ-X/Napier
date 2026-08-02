@@ -75,6 +75,11 @@ describe("release artifacts audit", () => {
       "long-horizon-benchmark-ledger-1",
       "long-horizon-benchmark-result-2",
       "long-horizon-benchmark-ledger-2",
+      "research-benchmark-series",
+      "research-benchmark-result-1",
+      "research-benchmark-ledger-1",
+      "research-benchmark-result-2",
+      "research-benchmark-ledger-2",
     ]);
     expect(createReleaseArtifactsReceipt(result)).toMatchObject({
       type: "napier.release-artifacts-audit",
@@ -316,6 +321,33 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when retained Research evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const resultName = (await readdir(benchmarkRoot))
+      .filter((name) =>
+        name.startsWith(
+          "napier-research-benchmark-result-research_aurora_contradiction_v1-",
+        ),
+      )
+      .sort()[0];
+    const resultPath = path.join(benchmarkRoot, resultName);
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.evaluation.reportVerified = false;
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "research benchmark series: series_trial_invalid",
+        "research benchmark trial 1: result_shape_invalid",
+        "research benchmark trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
   it("rejects malformed release artifact receipts", async () => {
     const { root } = await createFixture();
     await writeJson(
@@ -382,8 +414,10 @@ async function createWorkflowBenchmarkFixture(root) {
   const sourceRoot = path.resolve("docs/artifacts/benchmarks");
   const targetRoot = path.join(root, "docs/artifacts/benchmarks");
   await mkdir(targetRoot, { recursive: true });
-  const names = (await readdir(sourceRoot)).filter((name) =>
-    name.startsWith("napier-workflow-benchmark-"),
+  const names = (await readdir(sourceRoot)).filter(
+    (name) =>
+      name.startsWith("napier-workflow-benchmark-") ||
+      name.startsWith("napier-research-benchmark-"),
   );
   await Promise.all(
     names.map((name) =>

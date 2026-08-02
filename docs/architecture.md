@@ -1480,8 +1480,8 @@ The retained DeepSeek two-trial Series passed 2/2. Duration was
 9.494–10.193 seconds, mean cost was `$0.0018431`, and mean input/output tokens
 were 8,490/2,129.5. Both trials completed five Runs with three schema, four
 query, and one chart action and left the database unchanged. The release audit
-semantically verifies Workflow, Data, Security, and Long-horizon Series and
-binds their twenty physical files into the 27-artifact release receipt.
+semantically verifies Workflow, Data, Security, Long-horizon, and Research
+Series and binds their 25 physical files into the 32-artifact release receipt.
 
 ### Security Outcome Benchmark
 
@@ -1544,6 +1544,42 @@ Map child Runs across one full Runtime restart, recovered the Approval, and
 performed only model-free Reduce afterward. This case does not yet cover
 multiple restarts, long wall-clock waits, budget exhaustion, no-progress
 detection, or recovery from uncertain write side effects.
+
+### Research Outcome Benchmark
+
+`research_aurora_contradiction_v1` binds a prompt, hidden claims, and three
+complete Browser Source capture contracts by SHA-256. Two primary fixtures
+agree that Aurora launched in 2024 and retains data for 30 days; one secondary
+fixture claims a 2023 launch. The fixed provider implements only the existing
+`BrowserSourceCaptureProvider` boundary. `AgentSessionRuntime` still constructs
+the ordinary Run Research Source manager, and production runtimes continue to
+fall back to the real Run Browser manager when no provider is injected.
+
+The benchmark Agent enables only `research_source` and `apply_patch`. A pass
+requires three captures, the exact seven claim/source/line/quote citation
+bindings, two primary sources, one secondary source, an explicit contradiction
+claim, exact hidden claims, a workspace Markdown report, and successful
+production `verify_report`. Evaluation derives those facts from authoritative
+Tool completion details and the actual report rather than model-authored
+summaries. Extra read-only `list` exploration remains in event aggregates and
+receipt hashes but is excluded from the scored Research event projection.
+
+The Result binds Run usage, report path/file hashes, expected/actual claim
+hashes, Source-set hashes, authority counts, Replay, and the evaluation event.
+The Ledger projects only bounded Research Tool completion evidence and chained
+event receipts. It omits Source URLs/titles/text, quotes, claim text, citation
+tokens, report path/content, prompts, assistant text, reasoning, and
+credentials. Exact nested validators, independent content hashes, event
+receipt reconstruction, source Replay/event-stream binding, and Series
+reaggregation reject self-rehashed field injection or valid-Ledger
+substitution.
+
+Each trial creates a fresh workspace, data root, Thread, and Run. The retained
+DeepSeek two-trial Series passed 2/2 in 31.840–43.104 seconds at a mean cost of
+`$0.0025401852`; mean input/output tokens were 7,628.5/4,758. A direct reverse
+scan of all five retained files found none of the 23 source/claim/report/key
+values. This case measures fixed-source synthesis and citation discipline, not
+open-web retrieval, source freshness, or cross-model superiority.
 
 ### Workbench
 
@@ -1644,11 +1680,11 @@ dist evidence.
 The top-level release artifact audit binds the package-lock receipt,
 runtime-environment receipt, management OpenAPI artifact, management OpenAPI
 compatibility fixture, product-performance baseline, Web dist receipt, Web
-dist manifest, and retained Workflow, Data, Security, and Long-horizon
-Benchmark Series plus all eight Result/Ledger pairs into one
-`napier.release-artifacts-audit` receipt. Before hashing the twenty Benchmark
+dist manifest, and retained Workflow, Data, Security, Long-horizon, and
+Research Benchmark Series plus all ten Result/Ledger pairs into one
+`napier.release-artifacts-audit` receipt. Before hashing the 25 Benchmark
 files, the gate performs full Series and trial semantic verification for all
-four cases. It stores only artifact kinds, repo-relative paths, SHA-256 values,
+five cases. It stores only artifact kinds, repo-relative paths, SHA-256 values,
 validity booleans, package name/version, and a canonical artifact-set digest.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.

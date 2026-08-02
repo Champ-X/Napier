@@ -11,6 +11,10 @@ import {
   verifyWorkflowBenchmarkSeries,
   workflowBenchmarkSeriesArtifactReferences,
 } from "../apps/cli/dist/workflow-benchmark-series.js";
+import {
+  researchBenchmarkSeriesArtifactReferences,
+  verifyResearchBenchmarkSeries,
+} from "../apps/cli/dist/research-benchmark-series.js";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -36,6 +40,8 @@ const defaultSecurityBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json";
 const defaultLongHorizonBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-523f1f822968ad1c.json";
+const defaultResearchBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json";
 
 export async function auditReleaseArtifacts(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -68,6 +74,8 @@ export async function auditReleaseArtifacts(options = {}) {
   const longHorizonBenchmarkSeriesPath =
     options.longHorizonBenchmarkSeriesPath ??
     defaultLongHorizonBenchmarkSeriesPath;
+  const researchBenchmarkSeriesPath =
+    options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
   const rootPackage = parseJson(
     await readTextFile(
       path.join(repoRoot, "package.json"),
@@ -144,37 +152,51 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
-  const workflowBenchmarkArtifacts =
-    await verifyWorkflowBenchmarkReleaseArtifacts({
-      repoRoot,
-      seriesPath: workflowBenchmarkSeriesPath,
-      errors,
-      artifactKindPrefix: "workflow-benchmark",
-      diagnosticLabel: "workflow benchmark",
-    });
-  const dataBenchmarkArtifacts = await verifyWorkflowBenchmarkReleaseArtifacts({
+  const workflowBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
+    repoRoot,
+    seriesPath: workflowBenchmarkSeriesPath,
+    errors,
+    artifactKindPrefix: "workflow-benchmark",
+    diagnosticLabel: "workflow benchmark",
+    artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+    verifySeries: verifyWorkflowBenchmarkSeries,
+  });
+  const dataBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: dataBenchmarkSeriesPath,
     errors,
     artifactKindPrefix: "data-benchmark",
     diagnosticLabel: "data benchmark",
+    artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+    verifySeries: verifyWorkflowBenchmarkSeries,
   });
-  const securityBenchmarkArtifacts =
-    await verifyWorkflowBenchmarkReleaseArtifacts({
-      repoRoot,
-      seriesPath: securityBenchmarkSeriesPath,
-      errors,
-      artifactKindPrefix: "security-benchmark",
-      diagnosticLabel: "security benchmark",
-    });
-  const longHorizonBenchmarkArtifacts =
-    await verifyWorkflowBenchmarkReleaseArtifacts({
-      repoRoot,
-      seriesPath: longHorizonBenchmarkSeriesPath,
-      errors,
-      artifactKindPrefix: "long-horizon-benchmark",
-      diagnosticLabel: "long-horizon benchmark",
-    });
+  const securityBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
+    repoRoot,
+    seriesPath: securityBenchmarkSeriesPath,
+    errors,
+    artifactKindPrefix: "security-benchmark",
+    diagnosticLabel: "security benchmark",
+    artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+    verifySeries: verifyWorkflowBenchmarkSeries,
+  });
+  const longHorizonBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
+    repoRoot,
+    seriesPath: longHorizonBenchmarkSeriesPath,
+    errors,
+    artifactKindPrefix: "long-horizon-benchmark",
+    diagnosticLabel: "long-horizon benchmark",
+    artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+    verifySeries: verifyWorkflowBenchmarkSeries,
+  });
+  const researchBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
+    repoRoot,
+    seriesPath: researchBenchmarkSeriesPath,
+    errors,
+    artifactKindPrefix: "research-benchmark",
+    diagnosticLabel: "research benchmark",
+    artifactReferences: researchBenchmarkSeriesArtifactReferences,
+    verifySeries: verifyResearchBenchmarkSeries,
+  });
 
   const artifacts = [
     {
@@ -223,6 +245,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...dataBenchmarkArtifacts,
     ...securityBenchmarkArtifacts,
     ...longHorizonBenchmarkArtifacts,
+    ...researchBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
     Buffer.from(formatArtifactSetManifest(artifacts), "utf8"),
@@ -463,17 +486,24 @@ function parseCliOptions(args) {
       index += 1;
       continue;
     }
+    if (arg === "--research-benchmark-series-path") {
+      options.researchBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
     throw new Error(`Unknown option: ${arg}`);
   }
   return options;
 }
 
-async function verifyWorkflowBenchmarkReleaseArtifacts({
+async function verifyBenchmarkReleaseArtifacts({
   repoRoot,
   seriesPath,
   errors,
   artifactKindPrefix,
   diagnosticLabel,
+  artifactReferences,
+  verifySeries,
 }) {
   const seriesEvidence = await readArtifactEvidence(
     repoRoot,
@@ -482,20 +512,16 @@ async function verifyWorkflowBenchmarkReleaseArtifacts({
   );
   const series = parseJson(
     await readTextFile(
-      resolveRepoRelativePath(
-        repoRoot,
-        seriesPath,
-        "workflowBenchmarkSeriesPath",
-      ),
+      resolveRepoRelativePath(repoRoot, seriesPath, "benchmarkSeriesPath"),
       seriesPath,
       errors,
     ),
-    "Workflow benchmark series",
+    `${diagnosticLabel} Series`,
     errors,
   );
   let references = [];
   try {
-    references = workflowBenchmarkSeriesArtifactReferences(series);
+    references = artifactReferences(series);
   } catch (error) {
     errors.push(
       `${diagnosticLabel} series: ${
@@ -539,10 +565,7 @@ async function verifyWorkflowBenchmarkReleaseArtifacts({
       },
     );
   }
-  const verification = verifyWorkflowBenchmarkSeries(
-    series,
-    verificationArtifacts,
-  );
+  const verification = verifySeries(series, verificationArtifacts);
   if (!verification.valid) {
     errors.push(
       ...verification.diagnostics.map(
@@ -568,7 +591,7 @@ async function readJsonArtifact(repoRoot, artifactPath, errors) {
   const absolutePath = resolveRepoRelativePath(
     repoRoot,
     artifactPath,
-    "workflowBenchmarkArtifactPath",
+    "benchmarkArtifactPath",
   );
   return parseJson(
     await readTextFile(absolutePath, artifactPath, errors),

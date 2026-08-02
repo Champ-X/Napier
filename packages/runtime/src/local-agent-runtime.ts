@@ -11,6 +11,7 @@ import { McpExtensionManager } from "./mcp.js";
 import { ModelRegistry } from "./models.js";
 import { ModelInvocationExperimentRuntime } from "./model-invocation-experiments.js";
 import { ToolInvocationExperimentRuntime } from "./tool-invocation-experiments.js";
+import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
@@ -27,6 +28,7 @@ export interface LocalAgentRuntimeOptions {
   env?: Readonly<Record<string, string | undefined>>;
   keychain?: KeychainSecretStore;
   sandbox?: OsSandboxAdapter;
+  researchSourceCaptures?: BrowserSourceCaptureProvider;
 }
 
 export interface LocalAgentRuntimeServices {
@@ -94,6 +96,8 @@ export async function createLocalAgentRuntime(
       sandbox,
       initializedProcesses,
       workspaceFileMutations,
+      undefined,
+      options.researchSourceCaptures,
     );
     const embeddedAgents = new EmbeddedAgentService(store, runtime);
     const agentMessageExperiments = new AgentMessageExperimentRuntime(

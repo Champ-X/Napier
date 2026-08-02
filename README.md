@@ -1346,8 +1346,40 @@ passed 2/2 trials in 2.162–2.365 seconds. Every trial used seven Runs, one
 Runtime restart, three reused Map Runs, and zero post-restart model calls.
 Mean cost was `$0.0013498856`; mean input/output tokens were 8,563/528.
 
-Cross-model, broader Coding, Workflow, Data, Security, and Long-horizon cases,
-Research, UX, and reference-project suites remain open.
+### Research Outcome Benchmark
+
+The fixed `research_aurora_contradiction_v1` case injects three immutable
+Browser capture contracts into the ordinary Run-owned Research Source manager:
+two primary sources agree on a 2024 launch and 30-day retention, while one
+secondary source claims a conflicting 2023 launch. Production runtimes still
+capture through the real Browser manager unless this narrow provider SPI is
+explicitly supplied.
+
+```bash
+npm run bench:research -- \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 2
+```
+
+Passing requires all three captures, the exact seven claim/source/line/quote
+citation bindings, primary/secondary coverage, explicit contradiction
+handling, hidden claim agreement, a Markdown report written through
+`apply_patch`, successful production `research_source verify_report`, valid
+Replay, and no credential leak. The Ledger retains capture, authority,
+citation, report, and evaluation hashes plus privacy-projected tool receipts.
+URLs, titles, source text, quotes, claim text, citation tokens, report
+path/content, assistant text, reasoning, and credentials are omitted.
+
+The checked-in DeepSeek
+[two-trial Research series](docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json)
+passed 2/2 trials in 31.840–43.104 seconds. Mean cost was `$0.0025401852`;
+mean input/output tokens were 7,628.5/4,758. Offline verification recomputes each
+Result/Ledger pair and the Series aggregate. This fixed-source case does not
+measure open-web retrieval, source freshness, or cross-model superiority.
+
+Cross-model, broader Coding, Workflow, Data, Security, Long-horizon, and
+Research cases, UX cases, and reference-project suites remain open.
 
 ## Live Models
 
@@ -5015,8 +5047,9 @@ checked-in manifest is stale. `npm run write:release-artifacts` writes a
 top-level `napier.release-artifacts-audit` receipt that binds the package-lock
 receipt, runtime-environment receipt, product-performance baseline, management
 OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
-Web dist manifest, and the semantically verified Workflow, Data, Security, and
-Long-horizon Benchmark Series plus all eight Result/Ledger pairs by SHA-256;
+Web dist manifest, and the semantically verified Workflow, Data, Security,
+Long-horizon, and Research Benchmark Series plus all ten Result/Ledger pairs
+by SHA-256;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
@@ -5024,8 +5057,8 @@ tests before running workspace suites, so package-lock drift, runtime version
 drift, missing runtime components, OpenAPI route drift, manifest drift, extra
 dist files, malformed manifests, stale receipts, compatibility regressions,
 aggregate artifact drift, Workflow Benchmark trial substitution/tampering, and
-Data/Security/Long-horizon Benchmark evidence tampering and entry-budget
-regressions are covered without mutating the real build output.
+Data/Security/Long-horizon/Research Benchmark evidence tampering and
+entry-budget regressions are covered without mutating the real build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with
 relative paths, file counts, main-entry budget status, the manifest SHA-256,
 the canonical dist-content SHA-256, and any errors for CI capture. Trace, Plan,

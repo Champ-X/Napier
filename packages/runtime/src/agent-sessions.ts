@@ -8,7 +8,10 @@ import {
 import { NodeDebuggerManager } from "./node-debugger.js";
 import { createNodeDebuggerTool } from "./node-debugger-tool.js";
 import { createResearchSourceTool } from "./research-source-tool.js";
-import { RunResearchSourceManager } from "./research-sources.js";
+import {
+  type BrowserSourceCaptureProvider,
+  RunResearchSourceManager,
+} from "./research-sources.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 
@@ -24,13 +27,14 @@ export class AgentSessionRuntime {
     workspaceRoot: string,
     sandbox: OsSandboxAdapter,
     browserSessions?: RunBrowserSessionManager,
+    researchSourceCaptures?: BrowserSourceCaptureProvider,
   ) {
     this.kernels = new AgentKernelRuntime(processes);
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
     this.browsers =
       browserSessions ?? new RunBrowserSessionManager({ workspaceRoot });
     this.researchSources = new RunResearchSourceManager(
-      this.browsers,
+      researchSourceCaptures ?? this.browsers,
       workspaceRoot,
     );
     this.debuggerManager = processes

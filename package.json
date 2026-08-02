@@ -12,6 +12,7 @@
   },
   "scripts": {
     "bench:coding": "npm run build:core && npm run build -w @napier/cli && node scripts/run-coding-benchmark.mjs",
+    "bench:research": "npm run build:core && npm run build -w @napier/cli && node scripts/run-research-benchmark.mjs",
     "bench:workflow": "npm run build:core && npm run build -w @napier/cli && node scripts/run-workflow-benchmark.mjs",
     "bench:product-performance": "npm run build:core && npm run build -w @napier/cli && node scripts/benchmark-product-performance.mjs --output benchmark-results/product-performance.json",
     "bench:store-scale": "npm run build:core && node scripts/benchmark-store-scale.mjs",
@@ -48,6 +49,7 @@
     "test:live-loop": "npm run test:live-loop -w @napier/runtime",
     "test:live-process": "npm run test:live-process -w @napier/runtime",
     "test:live-provider": "npm run test:live-provider -w @napier/runtime",
+    "test:live-research-benchmark": "npm run test:live-research-benchmark -w @napier/cli",
     "test:live-sqlite": "npm run test:live-sqlite -w @napier/runtime",
     "test:live-workflow-javascript": "npm run test:live-workflow-javascript -w @napier/runtime",
     "test:live-workflow-benchmark": "npm run test:live-workflow-benchmark -w @napier/cli",
