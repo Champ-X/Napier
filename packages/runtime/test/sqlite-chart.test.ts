@@ -263,7 +263,7 @@ describe("verified SQLite chart rendering", () => {
     const database = new DatabaseSync(path.join(fixture, "analytics.db"));
     database.exec("UPDATE orders SET amount = amount + 1");
     database.close();
-    await expect(drifting).rejects.toThrow("changed during query");
+    await expect(drifting).rejects.toThrow("SQLite database changed");
   });
 
   it("shares the existing global SQLite worker admission bound", async () => {
