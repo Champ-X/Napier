@@ -264,8 +264,16 @@ the shared bounded-body/hash-response infrastructure; `app.ts` remains the
 composition root. Environment and macOS Keychain creation, availability
 checks, status transitions, no-store evidence headers, and credential Ledger
 events retain their existing wire semantics. This extraction reduced `app.ts`
-from 26,869 to 26,438 lines while keeping all 255 generated operations and
-244/244 compatibility fixtures.
+from 26,869 to 26,438 lines.
+
+Schedule management follows the same boundary: `schedule-http.ts` owns
+create/list/update routes, hash-bound response evidence, and automation Ledger
+events; `schedule-http-validation.ts` owns interval/UTC-cron request parsing.
+Shared prompt/model validators moved into `http-request-validation.ts`.
+The extracted routes retain the existing `AutomationService` tick, lease,
+misfire, and Agent Run semantics, while `app.ts` decreased again to 26,095
+lines. Both domains keep all 255 generated operations and 244/244 compatibility
+fixtures.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

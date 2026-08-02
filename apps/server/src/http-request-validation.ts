@@ -1,3 +1,5 @@
+import type { ModelRef } from "@napier/contracts";
+
 export function requestRecord(
   input: unknown,
   supportedKeys: readonly string[],
@@ -25,4 +27,34 @@ export function normalizeBoundedText(
   return normalized.length >= minLength && normalized.length <= maxLength
     ? normalized
     : undefined;
+}
+
+export function normalizeBoundedPrompt(
+  input: unknown,
+  maxLength: number,
+): string | undefined {
+  if (typeof input !== "string") return undefined;
+  const normalized = input.replace(/\r\n?/gu, "\n").trim();
+  return normalized.length > 0 && normalized.length <= maxLength
+    ? normalized
+    : undefined;
+}
+
+export function parseModelRef(input: unknown): ModelRef | undefined {
+  const record = requestRecord(input, ["provider", "id"]);
+  const provider =
+    typeof record?.["provider"] === "string"
+      ? record["provider"].trim().toLowerCase()
+      : undefined;
+  const id =
+    typeof record?.["id"] === "string" ? record["id"].trim() : undefined;
+  if (
+    !provider ||
+    !id ||
+    !/^[a-z0-9][a-z0-9._-]{1,80}$/u.test(provider) ||
+    !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/u.test(id)
+  ) {
+    return undefined;
+  }
+  return { provider, id };
 }

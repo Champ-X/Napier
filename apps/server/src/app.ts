@@ -19,7 +19,6 @@ import type {
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
   AgentProfileRevision,
   AgentProfileRollbackResult,
-  AutomationSchedule,
   BootstrapResponse,
   CreateExtensionPublisherTrustAnchorRequest,
   CreateReceiptTrustAnchorRequest,
@@ -34,7 +33,6 @@ import type {
   CreateMcpExtensionRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
   CreateRunEvaluationRequest,
-  CreateAutomationScheduleRequest,
   CreateThreadRequest,
   ContextCheckpointCalibrationReport,
   CreateExecutionPlanFromBlueprintRequest,
@@ -281,7 +279,6 @@ import type {
   TrustedReceiptVerification,
   TransitionPlanStepRequest,
   UpdateAgentProfileRequest,
-  UpdateAutomationScheduleRequest,
   UpdateArtifactManifestRequest,
   UpdateInboundRetryPolicyRequest,
   UpdateInboundSignaturePolicyRequest,
@@ -385,7 +382,6 @@ import {
   normalizePromptVariableDefinitions,
   normalizeToolLoopGuardPolicy,
   openTelemetryTraceArtifactEventAnchorSetSha256,
-  normalizeScheduleTrigger,
   RecoveryService,
   receiptTrustAnchorsFromDirectory,
   reviewExecutionPlanBlueprintRecordOutcomes,
@@ -450,12 +446,19 @@ import {
   RequestBodyTooLargeError,
 } from "./http-request-body.js";
 import {
+  normalizeBoundedPrompt,
   normalizeBoundedText,
+  parseModelRef,
   requestRecord,
   validThreadId,
 } from "./http-request-validation.js";
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
+import {
+  automationScheduleListSha256,
+  registerScheduleHttp,
+  setAutomationScheduleCountHeaders,
+} from "./schedule-http.js";
 import {
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyQueueResult,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult,
@@ -651,7 +654,6 @@ const MAX_OPERATOR_DECISION_REQUEST_BYTES = 32 * 1024;
 // A JSON control-character escape can expand one UTF-8 byte to six bytes.
 const MAX_RUN_CONTROL_MESSAGE_REQUEST_BYTES =
   MAX_RUN_CONTROL_MESSAGE_BYTES * 6 + 1024;
-const MAX_SCHEDULE_REQUEST_BYTES = 32 * 1024;
 const MAX_CHANNEL_ADMIN_REQUEST_BYTES = 8 * 1024;
 const MAX_CHANNEL_ADAPTER_PREVIEW_REQUEST_BYTES =
   MAX_INBOUND_BODY_BYTES + 8 * 1024;
@@ -4521,92 +4523,7 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.get("/api/schedules", (context) => {
-    const threadId = context.req.query("thread");
-    if (threadId) services.store.getThread(threadId);
-    const schedules = services.store.listSchedules(threadId);
-    setAutomationScheduleListHeaders(context, schedules);
-    return context.json(schedules);
-  });
-
-  app.post("/api/schedules", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SCHEDULE_REQUEST_BYTES,
-        "Schedule request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCreateAutomationScheduleRequest(input);
-    if (!body) {
-      return jsonError(context, "Schedule request is invalid", 400);
-    }
-    services.store.getThread(body.threadId);
-    try {
-      if (body.model) await assertAvailableModel(services, body.model);
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 400);
-    }
-    const schedule = await services.store.createSchedule(body);
-    await appendAutomationEvent(services, schedule, "schedule.created", {
-      scheduleId: schedule.id,
-      name: schedule.name,
-      status: schedule.status,
-      triggerType: schedule.trigger.type,
-      nextRunAt: schedule.nextRunAt,
-      revision: schedule.revision,
-    });
-    setAutomationScheduleProjectionHeaders(context, schedule);
-    return context.json(schedule, 201);
-  });
-
-  app.put("/api/schedules/:scheduleId", async (context) => {
-    const scheduleId = context.req.param("scheduleId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_SCHEDULE_REQUEST_BYTES,
-        "Schedule update request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseUpdateAutomationScheduleRequest(input);
-    if (!body) {
-      return jsonError(context, "Schedule update request is invalid", 400);
-    }
-    try {
-      if (body.model) await assertAvailableModel(services, body.model);
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 400);
-    }
-    const before = services.store.getSchedule(scheduleId);
-    const schedule = await services.store.updateSchedule(scheduleId, body);
-    const changedFields = scheduleChangedFields(before, schedule);
-    if (changedFields.length > 0) {
-      await appendAutomationEvent(services, schedule, "schedule.updated", {
-        scheduleId: schedule.id,
-        status: schedule.status,
-        nextRunAt: schedule.nextRunAt,
-        revision: schedule.revision,
-        changedFields,
-      });
-    }
-    setAutomationScheduleProjectionHeaders(context, schedule);
-    return context.json(schedule);
-  });
+  registerScheduleHttp(app, services);
 
   app.get("/api/channels", (context) => {
     const channels = services.store.listInboundChannels();
@@ -10954,25 +10871,6 @@ function parseAnswerOperatorDecisionRequest(
   };
 }
 
-function parseModelRef(input: unknown): PromptRequest["model"] | undefined {
-  const record = requestRecord(input, ["provider", "id"]);
-  const provider =
-    typeof record?.["provider"] === "string"
-      ? record["provider"].trim().toLowerCase()
-      : undefined;
-  const id =
-    typeof record?.["id"] === "string" ? record["id"].trim() : undefined;
-  if (
-    !provider ||
-    !id ||
-    !/^[a-z0-9][a-z0-9._-]{1,80}$/.test(provider) ||
-    !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/.test(id)
-  ) {
-    return undefined;
-  }
-  return { provider, id };
-}
-
 function parseReviewSubagentOutcomeRequest(
   input: unknown,
 ): ReviewSubagentOutcomeRequest | undefined {
@@ -11930,152 +11828,6 @@ function parseRunIdArray(
   return unique.size === input.length ? [...unique] : undefined;
 }
 
-function parseCreateAutomationScheduleRequest(
-  input: unknown,
-): CreateAutomationScheduleRequest | undefined {
-  const record = requestRecord(input, [
-    "name",
-    "threadId",
-    "prompt",
-    "model",
-    "trigger",
-    "status",
-    "misfirePolicy",
-  ]);
-  const name = normalizeBoundedText(record?.["name"], 1, 100);
-  const prompt = normalizeBoundedPrompt(record?.["prompt"], 20_000);
-  const threadId = record?.["threadId"];
-  const trigger = parseScheduleTrigger(record?.["trigger"]);
-  const model =
-    record?.["model"] === undefined
-      ? undefined
-      : parseModelRef(record["model"]);
-  const status = record?.["status"];
-  const misfirePolicy = record?.["misfirePolicy"];
-  if (
-    !record ||
-    !name ||
-    !prompt ||
-    !validThreadId(threadId) ||
-    !trigger ||
-    (record["model"] !== undefined && !model) ||
-    (status !== undefined && status !== "active" && status !== "paused") ||
-    (misfirePolicy !== undefined &&
-      misfirePolicy !== "run_once" &&
-      misfirePolicy !== "skip")
-  ) {
-    return undefined;
-  }
-  return {
-    name,
-    threadId,
-    prompt,
-    trigger,
-    ...(model ? { model } : {}),
-    ...(typeof status === "string" ? { status } : {}),
-    ...(typeof misfirePolicy === "string" ? { misfirePolicy } : {}),
-  };
-}
-
-function parseUpdateAutomationScheduleRequest(
-  input: unknown,
-): UpdateAutomationScheduleRequest | undefined {
-  const record = requestRecord(input, [
-    "name",
-    "prompt",
-    "model",
-    "trigger",
-    "status",
-    "misfirePolicy",
-  ]);
-  if (!record) return undefined;
-  const name =
-    record["name"] === undefined
-      ? undefined
-      : normalizeBoundedText(record["name"], 1, 100);
-  const prompt =
-    record["prompt"] === undefined
-      ? undefined
-      : normalizeBoundedPrompt(record["prompt"], 20_000);
-  const model =
-    record["model"] === undefined ? undefined : parseModelRef(record["model"]);
-  const trigger =
-    record["trigger"] === undefined
-      ? undefined
-      : parseScheduleTrigger(record["trigger"]);
-  const status = record["status"];
-  const misfirePolicy = record["misfirePolicy"];
-  if (
-    (record["name"] !== undefined && !name) ||
-    (record["prompt"] !== undefined && !prompt) ||
-    (record["model"] !== undefined && !model) ||
-    (record["trigger"] !== undefined && !trigger) ||
-    (status !== undefined && status !== "active" && status !== "paused") ||
-    (misfirePolicy !== undefined &&
-      misfirePolicy !== "run_once" &&
-      misfirePolicy !== "skip")
-  ) {
-    return undefined;
-  }
-  return {
-    ...(name ? { name } : {}),
-    ...(prompt ? { prompt } : {}),
-    ...(model ? { model } : {}),
-    ...(trigger ? { trigger } : {}),
-    ...(typeof status === "string" ? { status } : {}),
-    ...(typeof misfirePolicy === "string" ? { misfirePolicy } : {}),
-  };
-}
-
-function parseScheduleTrigger(
-  input: unknown,
-): CreateAutomationScheduleRequest["trigger"] | undefined {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    return undefined;
-  }
-  const type = (input as Record<string, unknown>)["type"];
-  try {
-    if (type === "interval") {
-      const record = requestRecord(input, ["type", "everyMs", "anchorAt"]);
-      const everyMs = record?.["everyMs"];
-      const anchorAt = record?.["anchorAt"];
-      if (
-        !record ||
-        typeof everyMs !== "number" ||
-        !Number.isSafeInteger(everyMs) ||
-        everyMs < 60_000 ||
-        everyMs > 30 * 24 * 60 * 60 * 1_000 ||
-        (anchorAt !== undefined &&
-          (typeof anchorAt !== "string" ||
-            anchorAt.length > 80 ||
-            !Number.isFinite(Date.parse(anchorAt))))
-      ) {
-        return undefined;
-      }
-      return normalizeScheduleTrigger({
-        type,
-        everyMs,
-        ...(typeof anchorAt === "string" ? { anchorAt } : {}),
-      });
-    }
-    if (type === "cron") {
-      const record = requestRecord(input, ["type", "expression", "timezone"]);
-      const expression = normalizeBoundedText(record?.["expression"], 1, 120);
-      if (!record || !expression || record["timezone"] !== "UTC") {
-        return undefined;
-      }
-      return normalizeScheduleTrigger({
-        type,
-        expression,
-        timezone: "UTC",
-      });
-    }
-  } catch {
-    return undefined;
-  }
-  return undefined;
-}
-
 function parseCreateInboundChannelRequest(
   input: unknown,
 ): CreateInboundChannelRequest | undefined {
@@ -12325,17 +12077,6 @@ function parseInboundRetryPolicy(
     return undefined;
   }
   return { maxAttempts, baseDelayMs };
-}
-
-function normalizeBoundedPrompt(
-  input: unknown,
-  maxLength: number,
-): string | undefined {
-  if (typeof input !== "string") return undefined;
-  const normalized = input.replace(/\r\n?/g, "\n").trim();
-  return normalized.length > 0 && normalized.length <= maxLength
-    ? normalized
-    : undefined;
 }
 
 function parseOptionalBoundedText(
@@ -13200,24 +12941,6 @@ async function assertAdvisorReviewModel(
   });
 }
 
-function scheduleChangedFields(
-  before: AutomationSchedule,
-  after: AutomationSchedule,
-): string[] {
-  const fields: Array<keyof AutomationSchedule> = [
-    "name",
-    "prompt",
-    "model",
-    "trigger",
-    "status",
-    "misfirePolicy",
-    "nextRunAt",
-  ];
-  return fields.filter(
-    (field) => JSON.stringify(before[field]) !== JSON.stringify(after[field]),
-  );
-}
-
 function isInboundRetryPolicyError(error: unknown): error is Error {
   return error instanceof Error && error.message.startsWith("Inbound retry ");
 }
@@ -13242,22 +12965,6 @@ function isInboundMessageValidationError(error: unknown): error is Error {
       error.message.startsWith("Inbound message ") ||
       error.message.startsWith("Inbound model "))
   );
-}
-
-async function appendAutomationEvent(
-  services: NapierServices,
-  schedule: AutomationSchedule,
-  type: string,
-  payload: Record<string, JsonValue>,
-): Promise<void> {
-  await services.store.appendEvent({
-    threadId: schedule.threadId,
-    runId: createId("runctl"),
-    type,
-    category: "automation",
-    visibility: "user",
-    payload,
-  });
 }
 
 type InboundMessageParseResult =
@@ -24895,56 +24602,6 @@ function setAutomaticRecoveryProjectionHeaders(
   context.header(
     "X-Napier-Recovery-Attempt-Count",
     String(recovery.attempts.length),
-  );
-}
-
-function automationScheduleSha256(schedule: AutomationSchedule): string {
-  return sha256Text(JSON.stringify(schedule));
-}
-
-function automationScheduleListSha256(
-  schedules: readonly AutomationSchedule[],
-): string {
-  return sha256Text(JSON.stringify(schedules));
-}
-
-function setAutomationScheduleProjectionHeaders(
-  context: Context,
-  schedule: AutomationSchedule,
-): void {
-  const scheduleSha256 = automationScheduleSha256(schedule);
-  context.header("Cache-Control", "no-store");
-  setContentSha256Header(context, scheduleSha256, "body");
-  context.header("X-Napier-Schedule-SHA256", scheduleSha256);
-  context.header("X-Napier-Schedule-Id", schedule.id);
-  context.header("X-Napier-Schedule-Status", schedule.status);
-  context.header("X-Napier-Schedule-Revision", String(schedule.revision));
-  context.header("X-Napier-Schedule-Next-Run-At", schedule.nextRunAt);
-}
-
-function setAutomationScheduleListHeaders(
-  context: Context,
-  schedules: readonly AutomationSchedule[],
-): void {
-  const scheduleListSha256 = automationScheduleListSha256(schedules);
-  context.header("Cache-Control", "no-store");
-  setContentSha256Header(context, scheduleListSha256, "body");
-  context.header("X-Napier-Schedule-List-SHA256", scheduleListSha256);
-  setAutomationScheduleCountHeaders(context, schedules);
-}
-
-function setAutomationScheduleCountHeaders(
-  context: Context,
-  schedules: readonly AutomationSchedule[],
-): void {
-  context.header("X-Napier-Schedule-Count", String(schedules.length));
-  context.header(
-    "X-Napier-Active-Schedule-Count",
-    String(schedules.filter((schedule) => schedule.status === "active").length),
-  );
-  context.header(
-    "X-Napier-Paused-Schedule-Count",
-    String(schedules.filter((schedule) => schedule.status === "paused").length),
   );
 }
 
