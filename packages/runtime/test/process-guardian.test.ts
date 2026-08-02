@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -61,7 +61,11 @@ describe("process guardian", () => {
       sha256(
         canonicalJson({
           commandResourceLimitsSha256: "command-resource-hash",
-          parentDeathGuard: true,
+          parentDeathGuard: {
+            schemaVersion: 2,
+            targetProcessGroup: true,
+            observedDescendants: true,
+          },
           terminal: null,
         }),
       ),
@@ -164,15 +168,77 @@ describe("process guardian", () => {
 
   const posixIt = process.platform === "win32" ? it.skip : it;
   posixIt(
+    "fails closed when descendant identity scanning is unavailable",
+    async () => {
+      const cwd = await temporaryRoot();
+      const workerSource = PROCESS_GUARDIAN_WORKER_SOURCE.replace(
+        'const PS_EXECUTABLE = "/bin/ps";',
+        'const PS_EXECUTABLE = "/missing-napier-process-scan";',
+      );
+      const guardian = spawn(
+        process.execPath,
+        ["--input-type=module", "--eval", workerSource],
+        {
+          cwd,
+          env: { LANG: "C", LC_ALL: "C", NO_COLOR: "1" },
+          detached: true,
+          shell: false,
+          stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"],
+        },
+      );
+      livePids.add(guardian.pid!);
+      const guardianExit = childResult(guardian);
+      guardian.once("spawn", () => {
+        guardian.stdio[3]!.end(
+          JSON.stringify({
+            parentPid: process.pid,
+            command: process.execPath,
+            args: [
+              "--input-type=module",
+              "--eval",
+              "setInterval(() => {}, 1000)",
+            ],
+            cwd,
+            env: { LANG: "C" },
+            statusFd: 4,
+          }),
+        );
+      });
+      await expect(readJsonLine(guardian.stdio[4]!)).resolves.toEqual({
+        type: "error",
+        code: "descendant_scan_failed",
+      });
+      await expect(guardianExit).resolves.toEqual({
+        code: 74,
+        signal: null,
+      });
+      livePids.delete(guardian.pid!);
+    },
+    15_000,
+  );
+
+  posixIt(
     "terminates the complete target process group after an ungraceful parent exit",
     async () => {
       const cwd = await temporaryRoot();
+      const childPidPath = path.join(cwd, "group-child.pid");
+      const targetSource = [
+        'import { spawn } from "node:child_process";',
+        'import { writeFileSync } from "node:fs";',
+        "const child = spawn(",
+        "  process.execPath,",
+        '  ["--input-type=module", "--eval", "setInterval(() => {}, 1000)"],',
+        "  { stdio: 'ignore' },",
+        ");",
+        `writeFileSync(${JSON.stringify(childPidPath)}, String(child.pid));`,
+        "setInterval(() => {}, 1000);",
+      ].join("\n");
       const parent = spawn(
         process.execPath,
         [
           "--input-type=module",
           "--eval",
-          parentHarnessSource(PROCESS_GUARDIAN_WORKER_SOURCE),
+          parentHarnessSource(PROCESS_GUARDIAN_WORKER_SOURCE, targetSource),
         ],
         {
           cwd,
@@ -184,20 +250,79 @@ describe("process guardian", () => {
       const ready = await readJsonLine(parent.stdout!);
       const guardianPid = Number(ready["guardianPid"]);
       const targetPid = Number(ready["targetPid"]);
+      const childPid = await waitForPidFile(childPidPath);
       expect(Number.isSafeInteger(guardianPid)).toBe(true);
       expect(Number.isSafeInteger(targetPid)).toBe(true);
-      livePids.add(guardianPid);
-      livePids.add(targetPid);
-      expect(isProcessAlive(guardianPid)).toBe(true);
-      expect(isProcessAlive(targetPid)).toBe(true);
+      expect(Number.isSafeInteger(childPid)).toBe(true);
+      for (const pid of [guardianPid, targetPid, childPid]) {
+        livePids.add(pid);
+        expect(isProcessAlive(pid)).toBe(true);
+      }
 
       parent.kill("SIGKILL");
       await parentExit;
-      await waitForProcessesToExit([guardianPid, targetPid]);
-      livePids.delete(guardianPid);
-      livePids.delete(targetPid);
-      expect(isProcessAlive(guardianPid)).toBe(false);
-      expect(isProcessAlive(targetPid)).toBe(false);
+      await waitForProcessesToExit([guardianPid, targetPid, childPid]);
+      for (const pid of [guardianPid, targetPid, childPid]) {
+        livePids.delete(pid);
+        expect(isProcessAlive(pid)).toBe(false);
+      }
+    },
+    15_000,
+  );
+
+  posixIt(
+    "tracks and terminates an observed detached descendant after parent loss",
+    async () => {
+      const cwd = await temporaryRoot();
+      const descendantPidPath = path.join(cwd, "descendant.pid");
+      const targetSource = [
+        'import { spawn } from "node:child_process";',
+        'import { writeFileSync } from "node:fs";',
+        "const child = spawn(",
+        "  process.execPath,",
+        '  ["--input-type=module", "--eval", "setInterval(() => {}, 1000)"],',
+        "  { detached: true, stdio: 'ignore' },",
+        ");",
+        "child.unref();",
+        `writeFileSync(${JSON.stringify(descendantPidPath)}, String(child.pid));`,
+        "setInterval(() => {}, 1000);",
+      ].join("\n");
+      const parent = spawn(
+        process.execPath,
+        [
+          "--input-type=module",
+          "--eval",
+          parentHarnessSource(PROCESS_GUARDIAN_WORKER_SOURCE, targetSource),
+        ],
+        {
+          cwd,
+          env: {},
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      );
+      const parentExit = childExit(parent);
+      const ready = await readJsonLine(parent.stdout!);
+      const guardianPid = Number(ready["guardianPid"]);
+      const targetPid = Number(ready["targetPid"]);
+      const descendantPid = await waitForPidFile(descendantPidPath);
+      for (const pid of [guardianPid, targetPid, descendantPid]) {
+        expect(Number.isSafeInteger(pid)).toBe(true);
+        livePids.add(pid);
+        expect(isProcessAlive(pid)).toBe(true);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      parent.kill("SIGKILL");
+      await parentExit;
+      await waitForProcessesToExit([
+        guardianPid,
+        targetPid,
+        descendantPid,
+      ]);
+      for (const pid of [guardianPid, targetPid, descendantPid]) {
+        livePids.delete(pid);
+        expect(isProcessAlive(pid)).toBe(false);
+      }
     },
     15_000,
   );
@@ -223,6 +348,15 @@ function collect(stream: NodeJS.ReadableStream): Promise<string> {
 function childExit(child: ChildProcess): Promise<void> {
   return new Promise((resolve) => {
     child.once("close", () => resolve());
+  });
+}
+
+function childResult(child: ChildProcess): Promise<{
+  code: number | null;
+  signal: NodeJS.Signals | null;
+}> {
+  return new Promise((resolve) => {
+    child.once("close", (code, signal) => resolve({ code, signal }));
   });
 }
 
@@ -264,7 +398,21 @@ async function waitForProcessesToExit(pids: number[]): Promise<void> {
   }
 }
 
-function parentHarnessSource(workerSource: string): string {
+async function waitForPidFile(filePath: string): Promise<number> {
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    const value = await readFile(filePath, "utf8").catch(() => "");
+    const pid = Number(value);
+    if (Number.isSafeInteger(pid) && pid > 1) return pid;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error("Detached descendant did not publish its PID");
+}
+
+function parentHarnessSource(
+  workerSource: string,
+  targetSource = "setInterval(() => {}, 1000)",
+): string {
   return `
     import { spawn } from "node:child_process";
     const workerSource = ${JSON.stringify(workerSource)};
@@ -283,7 +431,7 @@ function parentHarnessSource(workerSource: string): string {
       guardian.stdio[3].end(JSON.stringify({
         parentPid: process.pid,
         command: process.execPath,
-        args: ["--input-type=module", "--eval", "setInterval(() => {}, 1000)"],
+        args: ["--input-type=module", "--eval", ${JSON.stringify(targetSource)}],
         cwd: process.cwd(),
         env: { LANG: "C" },
         statusFd: 4,

@@ -18,6 +18,11 @@ import { createWorkspaceProcessResizeReceipt } from "./workspace-process-resize-
 
 export const MAX_WORKSPACE_PROCESS_RESIZES = 64;
 export const WORKSPACE_PROCESS_TERMINAL_TYPE = "xterm-256color";
+const WORKSPACE_PROCESS_PARENT_GUARD = {
+  schemaVersion: 2,
+  targetProcessGroup: true,
+  observedDescendants: true,
+} as const;
 
 export interface WorkspaceProcessTerminalSize {
   columns: number;
@@ -78,7 +83,7 @@ export function bindWorkspaceProcessIo(
     resourceLimitsSha256: sha256(
       canonicalJson({
         commandResourceLimitsSha256: prepared.receipt.resourceLimitsSha256,
-        parentDeathGuard: true,
+        parentDeathGuard: WORKSPACE_PROCESS_PARENT_GUARD,
         terminal: terminalBinding ?? null,
       }),
     ),

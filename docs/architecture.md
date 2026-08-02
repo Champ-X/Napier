@@ -4301,23 +4301,34 @@ Workspace Process launches also bind parent-death protection into their
 resource evidence. Linux reuses Bubblewrap's native `--die-with-parent`;
 macOS places `sandbox-exec` behind a fixed Node guardian that receives its
 private target specification over a dedicated pipe, watches the Runtime parent,
-and escalates target-group termination from `SIGTERM` to `SIGKILL`. PTY target
-specifications remain process-local and are removed before the sandbox target
-is spawned. Guardian/target PIDs, arguments, environment values, and protocol
-messages never enter the Ledger.
+and escalates target-tree termination from `SIGTERM` to `SIGKILL`. The guardian
+uses fixed `/bin/ps` invocations with a one-second time limit and 4 MiB output
+cap to record only PID, parent PID, process group, and start time at launch,
+every two seconds, and immediately before cleanup. It recursively tracks
+descendants and signals a PID only while its current start time still matches
+the observed identity, with deeper descendants stopped first. Process-table
+read failure terminates the managed target with a non-zero guardian result.
+PTY target specifications remain process-local and are removed before the
+sandbox target is spawned.
+Guardian/target/descendant PIDs, process-table observations, arguments,
+environment values, and protocol messages never enter the Ledger.
+New Process resource hashes bind guardian schema 2 with target-group and
+observed-descendant cleanup flags; historical Session schemas and receipts
+remain readable because only the new run's resource hash changes.
 
 An abrupt Runtime loss still leaves the task outcome unknown, so startup
 records interruption rather than completion. The guardian proves cleanup of
-the managed target process group, not deliberately re-sessioned descendants,
-cross-restart reattachment, or successful settlement. OCI guarding remains
+the managed target group and descendants observed before they reparent. A
+rapid double-fork that is created and reparented entirely between scans remains
+a platform race; kernel-enforced descendant containment, cross-restart
+reattachment, and successful settlement are not claimed. OCI guarding remains
 fail-closed until container runtime identity binding exists. Hard total RSS
-quotas, detached-descendant containment, package-backed Python, remote
-sandboxes, reattachment, and writer attribution remain outside this slice.
-PTY mode supplies real terminal stdin/stdout, sizing, control bytes, and
-process-group cancellation, but does not grant shell access, cross-restart
-attach, a durable screen buffer, or Napier job-control commands. The
-JavaScript/Python kernels and Node debugger below remain read-only typed
-protocols over the same Process Session service.
+quotas, package-backed Python, remote sandboxes, reattachment, and writer
+attribution remain outside this slice. PTY mode supplies real terminal
+stdin/stdout, sizing, control bytes, and process-group cancellation, but does
+not grant shell access, cross-restart attach, a durable screen buffer, or
+Napier job-control commands. The JavaScript/Python kernels and Node debugger
+below remain read-only typed protocols over the same Process Session service.
 
 ## Persistent JavaScript Kernel Flow
 
@@ -7027,9 +7038,9 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 1: Local execution and architecture
 
-- extend bounded Workspace Process Sessions beyond parent-loss target-group
-  cleanup with detached-descendant containment, cross-restart reattachment,
-  and remote scoped-write backends;
+- extend bounded Workspace Process Sessions beyond identity-checked observed
+  descendant cleanup with kernel-enforced rapid double-fork containment,
+  cross-restart reattachment, and remote scoped-write backends;
 - extend restricted Python into package-backed data/Notebook sessions and add
   managed tool callbacks without weakening Run ownership or Sandbox boundaries;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;

@@ -2475,17 +2475,19 @@ npm run test:live-process
 ```
 
 Graceful shutdown terminates active process groups before Store close. Abrupt
-host or Runtime loss can leave a macOS sandbox wrapper outcome unknown because
-`sandbox-exec` has no parent-death guarantee; deliberately detached descendants
-also require a stronger guardian boundary for proved cleanup. Proved orphan
-cleanup, cross-restart reattachment, hard CPU/memory/process quotas, and
-remote write backends require a managed guardian or OCI boundary and are not
-claimed by this implementation. Scoped settlement proves observed path
-containment, not which external process wrote each byte. Operator rollback
-restores approved scopes only; it cannot undo outside-scope drift, recover an
-unknown crash window, or become an unreviewed Agent action. The only automatic
-path is the exact failure recovery bound into the original write preview. Pipe
-interaction remains distinct from PTY; the PTY provides
+host or Runtime loss still leaves the task outcome unknown. On macOS, the
+guardian terminates the target group plus descendants whose PID and start time
+were observed at launch, during bounded background scans, or immediately
+before cleanup. This covers an observed child that creates a separate session
+without trusting PID alone. A rapid double-fork that reparents entirely between
+two scans, cross-restart reattachment, hard CPU/memory/process quotas, and
+remote write backends still require a stronger managed or OCI boundary.
+Scoped settlement proves observed path containment, not which external process
+wrote each byte. Operator rollback restores approved scopes only; it cannot
+undo outside-scope drift, recover an unknown crash window, or become an
+unreviewed Agent action. The only automatic path is the exact failure recovery
+bound into the original write preview. Pipe interaction remains distinct from
+PTY; the PTY provides
 terminal sizing and control bytes but not shell access, cross-restart attach, a
 durable screen buffer, or Napier job-control commands. The separate JavaScript
 kernel below builds on the read-only Process Session boundary. The restricted
