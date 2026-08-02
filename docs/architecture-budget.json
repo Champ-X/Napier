@@ -10,7 +10,7 @@
     "apps/cli/src/cli.ts": 696,
     "apps/cli/test/rpc-cli.test.ts": 1065,
     "apps/cli/test/workflow-cli.test.ts": 2912,
-    "apps/server/src/app.ts": 23358,
+    "apps/server/src/app.ts": 22437,
     "apps/server/src/receipt-trust-directory-subscriptions.ts": 919,
     "apps/server/src/receipt-trust-rotation-proposals.ts": 1464,
     "apps/server/test/app.test.ts": 15281,
