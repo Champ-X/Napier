@@ -2,9 +2,9 @@ import path from "node:path";
 
 import type { JsonValue, ToolPolicyMode } from "@napier/contracts";
 
-import { assessHashBoundDataToolPath } from "./data-tool-policy.js";
+import { assessGitStageCall } from "./git-stage-policy.js";
 import { validatePublicHttpUrl } from "./public-network.js";
-import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
+import { assessReadOnlyToolCall } from "./read-only-tool-policy.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 
 export interface PolicyDecision {
@@ -13,11 +13,6 @@ export interface PolicyDecision {
   reason: string;
 }
 
-const READ_ONLY_TOOLS = new Set([
-  ...CORE_STATELESS_READ_TOOL_NAMES,
-  "web_fetch",
-  "web_search",
-]);
 const WRITE_TOOLS = new Set(["apply_patch"]);
 const WORKSPACE_FILE_PREVIEW_TOOLS = new Set(["workspace_file_preview"]);
 const WORKSPACE_FILE_APPLY_TOOLS = new Set(["workspace_file_apply"]);
@@ -36,7 +31,8 @@ const LSP_TOOLS = new Set([
   "lsp_code_actions",
 ]);
 const PROCESS_TOOLS = new Set([
-  "git_inspect", "run_command",
+  "git_inspect",
+  "run_command",
   "javascript_kernel",
   "python_kernel",
   "node_debugger",
@@ -113,23 +109,10 @@ export function assessToolCall(
       reason: "internal durable-ledger update",
     };
   }
-  if (READ_ONLY_TOOLS.has(toolName)) {
-    const candidate = getStringField(input, "path");
-    const dataPathDenial = assessHashBoundDataToolPath(toolName, candidate);
-    if (dataPathDenial) return dataPathDenial;
-    if (candidate && !isPathInsideWorkspace(candidate, workspaceRoot)) {
-      return {
-        allowed: false,
-        risk: "high",
-        reason: "path escapes the configured workspace",
-      };
-    }
-    return {
-      allowed: true,
-      risk: "low",
-      reason: "read-only workspace operation",
-    };
-  }
+  const gitStageDecision = assessGitStageCall(mode, toolName, input, workspaceRoot);
+  if (gitStageDecision) return gitStageDecision;
+  const readOnlyDecision = assessReadOnlyToolCall(toolName, input, workspaceRoot);
+  if (readOnlyDecision) return readOnlyDecision;
 
   if (WORKSPACE_FILE_PREVIEW_TOOLS.has(toolName)) {
     for (const key of ["path", "sourcePath", "destinationPath"]) {

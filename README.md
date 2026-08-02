@@ -193,6 +193,10 @@ Version `0.1.0` includes:
   rejects gitfiles/symlinked metadata/index locks, disables optional locks,
   pagers, external diff, textconv, and submodule traversal, binds
   HEAD/index/config freshness, and keeps paths and hunks live-only;
+- `git_stage_preview` and `git_stage_apply` tools that build an exact one-path
+  patch in a private index/object directory, bind its attribute chain and
+  repository state, then promote verified objects and atomically install only
+  the reviewed index through `index.lock`;
 - a `workspace_process` tool and lazy Processes Workbench for bounded
   background Node sessions with cursor-based stdout/stderr observation,
   explicit interactive stdin, cancellation, lifecycle settlement, graceful
@@ -1367,7 +1371,7 @@ was `$0.002430694`; mean input/output tokens were 10,597.5/3,097.5. Offline
 verification reconstructs the six data-tool events and all hidden evidence
 from body-free Ledger projections. The release audit binds this Series and its
 four Result/Ledger files into the 42-artifact set
-`cd026e0ad91ddb76`.
+`bf1cf898ade8cf36`.
 
 ### Security Outcome Benchmark
 
@@ -2343,10 +2347,10 @@ separately managed `workspace_process` PTY below. Foreground commands remain
 read-only; Process Sessions add only the preview-bound scoped write mode
 described below. Hard per-command CPU/memory quotas remain explicit next-stage
 work. Python remains a separate restricted Kernel protocol. Generic
-`run_command` stays Node-only; Git uses the purpose-built read surface below
-rather than exposing arbitrary Git argv.
+`run_command` stays Node-only; Git uses the purpose-built inspection and
+preview-bound staging surfaces below rather than exposing arbitrary Git argv.
 
-## Read-Only Git Inspection
+## Controlled Git Inspection And Staging
 
 `git_inspect` reads the workspace-root repository through fixed
 `/usr/bin/git` execution in the same local read-only, denied-network OS
@@ -2357,24 +2361,60 @@ instead of returning incomplete evidence.
 
 Napier supplies every argument and disables optional locks, pagers, color,
 filesystem monitoring, rename detection, external diff, textconv, and
-submodule traversal. A fixed config preflight reads local key names without
+submodule traversal. Literal pathspec mode prevents a path from expanding into
+Git pathspec magic. A fixed config preflight reads local key names without
 following includes and rejects include paths, clean/smudge/process filters,
 diff commands/textconv, `core.attributesFile`, worktree config, split index,
-and sparse checkout. A direct `.git` directory is required at the workspace
-root; gitfiles, symlinked metadata, `config.worktree`, `sharedindex.*`,
-sparse-checkout metadata, protected paths, active index locks, OCI, commits,
-checkout, reset, clean, and arbitrary subcommands are rejected. Before and
-after execution, Napier rechecks no-follow HEAD/current-ref, packed-refs,
-index, config, and shallow metadata. Git executable drift or repository
-metadata drift fails the call.
+sparse checkout, and SHA-256 object repositories. A direct `.git` directory
+is required at the workspace root; gitfiles, symlinked metadata,
+`config.worktree`, `sharedindex.*`, sparse-checkout/graft metadata, protected
+paths, active index locks, OCI, commits, checkout, reset, clean, and arbitrary
+subcommands are rejected. Replacement refs are disabled. Before and after
+execution, Napier rechecks no-follow HEAD/current-ref, packed-refs, index,
+config, and shallow metadata. Git executable drift or repository metadata
+drift fails the call.
 
 Paths, branch/status lines, and patch bodies are available only to the current
 model as untrusted repository data. Ledger, Replay, Workflow output evidence,
 and Web Trace retain action/scope, counts, output bytes, duration, and
 repository/HEAD/index/config/executable/argv/environment/limit/output/result
 hashes, including the selected Sandbox backend hash. The tool supports Agent
-and model-free typed Workflow Tool nodes, but does not yet provide branch
-creation, staging, commit, conflict resolution, or Review promotion.
+and model-free typed Workflow Tool nodes.
+
+`git_stage_preview` extends this read surface without changing the real index,
+refs, worktree, or object database. It accepts exactly one bounded regular file
+or one tracked path deleted from the worktree. Napier copies the current index
+into `.git/napier-stage/<ephemeral>`, directs both `GIT_INDEX_FILE` and
+`GIT_OBJECT_DIRECTORY` there, uses the real fixed `git add`, and renders the
+result through `git diff --cached HEAD`. The OS Sandbox keeps the complete
+workspace read-only and grants write access only to that ephemeral directory.
+The resulting live patch, proposed index hash, repository/config/index state,
+target bytes/mode, parent `.gitattributes` chain, and `.git/info/attributes`
+produce a one-use five-minute capability scoped to its Agent Run or Workflow
+Plan.
+
+`git_stage_apply` consumes that capability, rechecks every binding under the
+existing cross-Manager path lock, reconstructs the same private index, and
+requires identical index and patch hashes. Runtime verifies every new loose
+object by SHA-1, promotes it by no-overwrite hard link, acquires the standard
+`.git/index.lock`, revalidates again, fsyncs the prepared index, and atomically
+renames it into place while preserving the prior index mode. A concurrent
+metadata/worktree/attribute change blocks before commitment or produces an
+explicit indeterminate postcondition after commitment. Paths and patch bodies
+remain live-only; durable evidence retains the expiring capability, bounded
+counts, state hashes, environment/argv/Sandbox hashes, durability, and result
+hash.
+
+This slice does not stage directories, symlinks, multiple paths in one
+transaction, repositories without an existing index/HEAD, linked worktrees,
+split/sparse indexes, SHA-256 object repositories, alternates, submodules, or
+shared repositories/ACLs, or OCI execution. It also does not create branches,
+commit, checkout, reset, clean, merge, resolve conflicts, or promote Review
+outcomes. Those operations remain separate preview-bound transactions;
+arbitrary Git argv and dangerous history rewriting remain unavailable.
+Preview capabilities are process-local and intentionally non-resumable:
+expiry or Runtime restart requires a fresh preview rather than replaying a
+stale index mutation.
 
 ## Workspace Process Sessions
 

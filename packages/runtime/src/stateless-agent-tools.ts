@@ -4,6 +4,11 @@ import type { AgentProfile } from "@napier/contracts";
 import { createCommandTool } from "./command-tool.js";
 import { createDataFrameTool } from "./data-frame-tool.js";
 import { createGitInspectTool } from "./git-inspect-tool.js";
+import {
+  createGitStageApplyTool,
+  createGitStagePreviewTool,
+} from "./git-stage-tool.js";
+import type { GitStageMutationManager } from "./git-stage.js";
 import { LspCodeActionApplyDiagnostics } from "./lsp-code-action-apply-diagnostics.js";
 import { createLspCodeActionApplyTool } from "./lsp-code-action-apply-tool.js";
 import { LspCodeActionMutationManager } from "./lsp-code-action-mutation-manager.js";
@@ -40,6 +45,8 @@ export interface CreateStatelessAgentToolsOptions {
   sandbox: OsSandboxAdapter;
   lspSession?: LspProtocolExecutor;
   workspaceFileMutations?: WorkspaceFileMutationManager;
+  gitStageMutations?: GitStageMutationManager;
+  gitStageScopeId?: string;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
 }
@@ -149,6 +156,7 @@ export function createStatelessAgentTools(
       }),
     );
   }
+  appendGitStageTools(tools, options, processAllowed);
   if (processAllowed && profile.enabledTools.includes("verify_workspace")) {
     tools.push(
       createVerificationTool({
@@ -208,6 +216,24 @@ function appendProcessReadTools(
   }
   if (options.profile.enabledTools.includes("git_inspect")) {
     tools.push(createGitInspectTool(runnerOptions));
+  }
+}
+
+function appendGitStageTools(
+  tools: AgentTool[],
+  options: CreateStatelessAgentToolsOptions,
+  processAllowed: boolean,
+): void {
+  if (!processAllowed || !options.gitStageMutations) return;
+  const context = {
+    threadId: options.threadId,
+    scopeId: options.gitStageScopeId ?? options.runId,
+  };
+  if (options.profile.enabledTools.includes("git_stage_preview")) {
+    tools.push(createGitStagePreviewTool(options.gitStageMutations, context));
+  }
+  if (options.profile.enabledTools.includes("git_stage_apply")) {
+    tools.push(createGitStageApplyTool(options.gitStageMutations, context));
   }
 }
 

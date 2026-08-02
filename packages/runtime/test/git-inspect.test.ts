@@ -95,6 +95,13 @@ describe("git_inspect", () => {
     expect(
       await sha256File(path.join(fixture.workspaceRoot, ".git/index")),
     ).toBe(indexBefore);
+    const literalPathspec = await tool.execute("git-literal-pathspec", {
+      action: "diff",
+      scope: "working",
+      path: ":(glob)*.txt",
+    });
+    expect(literalPathspec.content[0]?.text).not.toContain("PRIVATE_AFTER");
+    expect(literalPathspec.details.fileCount).toBe(0);
 
     await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
     const staged = await tool.execute("git-staged", {
@@ -123,6 +130,7 @@ describe("git_inspect", () => {
         expect.arrayContaining([
           "--no-pager",
           "--no-optional-locks",
+          "--literal-pathspecs",
           "-c",
           "core.fsmonitor=false",
         ]),
@@ -131,6 +139,7 @@ describe("git_inspect", () => {
       expect(request.env).toEqual(
         expect.objectContaining({
           GIT_CONFIG_NOSYSTEM: "1",
+          GIT_LITERAL_PATHSPECS: "1",
           GIT_OPTIONAL_LOCKS: "0",
           GIT_TERMINAL_PROMPT: "0",
         }),

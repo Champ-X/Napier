@@ -19,6 +19,8 @@ export const CORE_STATELESS_READ_TOOL_NAMES = [
 export const DEFAULT_AGENT_ENABLED_TOOLS = [
   ...WORKSPACE_STATELESS_READ_TOOL_NAMES,
   "git_inspect",
+  "git_stage_preview",
+  "git_stage_apply",
   "apply_patch",
   "verify_workspace",
 ] as const;

@@ -10,10 +10,24 @@ const READ_ONLY_TOOLS = new Set([
   "lsp_code_actions",
   "workspace_file_preview",
   "git_inspect",
+  "git_stage_preview",
   "run_command",
   "verify_workspace",
   "web_fetch",
   "web_search",
+]);
+const WRITE_TOOLS = new Set([
+  "apply_patch",
+  "lsp_rename_apply",
+  "lsp_code_action_apply",
+  "workspace_file_apply",
+  "git_stage_apply",
+  "bash",
+  "create_plan",
+  "update_plan_step",
+  "update_plan_artifact",
+  "delegate_task",
+  "subagent_worktree_apply",
 ]);
 
 export function builtInToolEffect(
@@ -50,18 +64,7 @@ export function builtInToolEffect(
   if (READ_ONLY_TOOLS.has(toolName)) {
     return "read";
   }
-  if (
-    toolName === "apply_patch" ||
-    toolName === "lsp_rename_apply" ||
-    toolName === "lsp_code_action_apply" ||
-    toolName === "workspace_file_apply" ||
-    toolName === "bash" ||
-    toolName === "create_plan" ||
-    toolName === "update_plan_step" ||
-    toolName === "update_plan_artifact" ||
-    toolName === "delegate_task" ||
-    toolName === "subagent_worktree_apply"
-  ) {
+  if (WRITE_TOOLS.has(toolName)) {
     return "write";
   }
   return undefined;

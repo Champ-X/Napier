@@ -4296,9 +4296,90 @@ Threat boundary:
 - repository worktree files may change concurrently. This read-only slice
   binds Git metadata freshness but does not claim an atomic filesystem
   snapshot or authorize a subsequent write;
-- branch creation, staging, commit, checkout, reset, clean, merge, conflict
-  resolution, Review, linked worktrees, submodules, and arbitrary revision
-  reads remain outside this slice and require preview-bound mutation semantics.
+- branch creation, commit, checkout, reset, clean, merge, conflict resolution,
+  Review, linked worktrees, submodules, and arbitrary revision reads remain
+  outside this slice. Exact one-path staging is completed in the next slice.
+
+## Completed Slice: Preview-Bound Atomic Git Staging
+
+User scenario: after reviewing one exact working-tree patch, a Coding Agent or
+typed Workflow can stage only that path without receiving general Git argv,
+changing refs, or trusting a stale worktree/index.
+
+Acceptance:
+
+- expose separate `git_stage_preview` and `git_stage_apply` tools. Preview is
+  read-effect evidence; apply is a medium-risk write and is unavailable under
+  observe policy or restricted recovery;
+- support one bounded regular file or tracked deletion. Reject directories,
+  symlinks, protected/escaping paths, missing HEAD/index, active locks,
+  linked/split/sparse/object-alternate/SHA-256/shared repositories, submodules,
+  OCI, grafts, unsafe config, stderr, timeout, and patches above 128 KiB;
+- construct the exact proposed index with fixed `git add -- path` in a private
+  index/object directory. The complete workspace is read-only to Git and only
+  `.git/napier-stage/<ephemeral>` is writable during preview/preparation;
+- bind repository/index/config modes and bytes, target bytes/executable bit,
+  root-to-target `.gitattributes`, `.git/info/attributes`, fixed executable,
+  argv, environment, resource limits, Sandbox backend, proposed index, and
+  exact staged patch;
+- scope the five-minute capability to one Thread plus Agent Run or Workflow
+  Plan, consume it once, and revalidate before preparation, after preparation,
+  and while holding the standard `.git/index.lock` commit barrier;
+- inflate and SHA-1 verify every bounded loose object before no-overwrite
+  promotion; fsync objects/index/directories, preserve index mode, and report
+  post-commit drift or durability uncertainty as `indeterminate`;
+- keep path and patch bodies live-only. Ledger, Replay, typed output, and Web
+  Trace retain the expiring capability, bounded counts, hashes, durability,
+  cancellation, and postcondition.
+
+Observed result:
+
+- real repositories prove zero real index/object mutation during preview,
+  exact modified/untracked/deleted staging during apply, unchanged worktree,
+  preserved index mode, absent `index.lock`, and cleanup of every private
+  staging directory;
+- negative tests reject cross-scope and reused capabilities, stale worktree or
+  index, parent attribute drift, command-bearing filters, symlinks, active
+  index locks, protected paths, pathspec magic expansion, broken object
+  alternates, and output overflow without changing the real index;
+- a scripted production Agent reviews the live private patch, passes its
+  capability to apply, finishes with a valid staged diff, and exports valid
+  Replay. Durable tool events contain hashes and capability but no filename,
+  before/after source, or patch body;
+- two typed Workflow Tool nodes pass the preview capability across distinct
+  child Runs through their shared Plan scope, apply the exact index, return a
+  schema-1 receipt, and export valid Replay;
+- Web Trace rejects impossible preview/apply status, postcondition, digest, and
+  byte-bound combinations while rendering only counts and hash prefixes;
+- built Runtime production Sandbox execution fails before Git starts in the
+  current nested macOS IDE host and leaves the index unchanged. The same built
+  Runtime with an explicitly labelled test adapter produces an exact preview,
+  applies a verified index, and exposes four private-directory-only writable
+  launches.
+- the complete repository gate passes 1,907 regular tests with 41 opt-in live
+  tests skipped: root 78, CLI 150, Server 137, Web 454, Runtime 1,060, and SDK
+  28. Architecture covers 708 production and 378 test modules with zero
+  relative-import cycles. Product performance measures 686.3 ms to first CLI
+  event, 835.5 ms to first token, 1,145.7 ms to completion, 0.3 ms read p95,
+  6.8 ms 1,000-event projection, and 753.664 SQLite bytes/event;
+- the 96-file Web dist remains at 115.44 KiB for the main entry and is bound
+  to `33b50cbe497b3b75`; the 42-artifact Release set is bound to
+  `bf1cf898ade8cf36`.
+
+Threat boundary:
+
+- the Runtime process, not model-selected Git argv, promotes verified loose
+  objects and installs the index. A failed commit barrier can leave unreachable
+  content-addressed objects but cannot expose them through refs or the index;
+- external processes that honor Git's `index.lock` serialize with commit.
+  Concurrent worktree/ref/config/attribute drift before commitment blocks;
+  drift after the atomic rename is fail-visible as `indeterminate`;
+- capabilities are process-local and one-use. Runtime restart, expiry, or a
+  recovered Workflow must produce a fresh preview rather than applying a
+  persisted capability/output;
+- multi-path atomic staging, branch creation, commit, checkout, reset, clean,
+  merge/conflict resolution, Review promotion, linked worktrees, SHA-256
+  repositories, alternates, and submodules remain outside this slice.
 
 ## Completed Slice: Bounded Workspace Process Sessions
 

@@ -1596,7 +1596,7 @@ mean reported cost of `$0.002430694`; mean input/output tokens were
 semantically validates five Workflow benchmark Series plus the independent
 Research and UX Series. Their 28 referenced Result/Ledger files and seven
 Series files form 35 benchmark artifacts inside the 42-artifact release
-receipt `cd026e0ad91ddb76`.
+receipt `bf1cf898ade8cf36`.
 
 ### Security Outcome Benchmark
 
@@ -4149,9 +4149,10 @@ git_inspect(status | diff)
   -> list local config key names with --no-includes
   -> reject include paths, filter clean/smudge/process,
      diff command/textconv, core.attributesFile,
-     worktree config, split index, and sparse checkout
+     worktree config, split index, sparse checkout, and SHA-256 objects
   -> generate status or working/staged diff argv internally
-  -> disable optional locks, pager, color, fsmonitor, rename detection,
+  -> force literal pathspecs; disable replace refs, optional locks,
+     pager, color, fsmonitor, rename detection,
      external diff, textconv, and submodule traversal
   -> execute read-only/offline in the existing OS Sandbox
   -> cap each stream at 128 KiB and reject truncated or stderr-bearing output
@@ -4162,8 +4163,10 @@ git_inspect(status | diff)
 
 The Git process implementation is private to `git-inspect-process.ts`; it
 reuses `runSandboxedProcess` without adding Git to the public/general
-`CommandRuntime` union. `git-inspect.ts` owns repository validation, fixed
-argument construction, metadata freshness, and status/hunk counts.
+`CommandRuntime` union. `git-repository.ts` owns shared direct-repository,
+no-follow metadata, mode, path, and freshness validation;
+`git-inspect-arguments.ts` owns every fixed argv set. `git-inspect.ts` owns
+read-only status/hunk execution and counts.
 `git-inspect-tool.ts` owns the TypeBox contract and privacy projection.
 `agent-process-tool-ledger.ts` dispatches command and Git projections outside
 the central Agent Ledger module. Web validation lives in
@@ -4171,15 +4174,63 @@ the central Agent Ledger module. Web validation lives in
 `workspace-read-event-view.ts` reduces the central Tool Trace module.
 
 The direct `.git` boundary deliberately excludes linked worktrees, worktree
-config, split indexes, sparse checkout, and submodules whose object metadata
-lives outside the workspace. Local config and attributes are untrusted. The
+config, split indexes, sparse checkout, graft metadata, SHA-256 object
+repositories, and submodules whose object metadata lives outside the
+workspace. Local config and attributes are untrusted. The
 config preflight rejects includes and every supported command-bearing
 filter/diff key before status/diff; external diff and textconv are also
 disabled in argv. As a second boundary, the OS Sandbox admits only the fixed
-Git executable, so other configured helpers cannot run. This slice does not
-stage, branch, commit, checkout, reset, clean, merge, resolve conflicts, or
-accept arbitrary revisions. It is the evidence-bearing read side for a later
-preview-bound Git mutation transaction, not a general Git shell.
+Git executable, so other configured helpers cannot run.
+
+## Git Stage Transaction
+
+```text
+git_stage_preview(path)
+  -> bind direct repository + HEAD/config/index modes and bytes
+  -> bind target file bytes/executable bit or tracked deletion
+  -> bind root-to-target .gitattributes + .git/info/attributes
+  -> create 0700 .git/napier-stage/<ephemeral>
+  -> copy current index; redirect GIT_INDEX_FILE and GIT_OBJECT_DIRECTORY
+  -> mount workspace read-only; mount only ephemeral directory writable
+  -> run fixed git add -- path, then fixed git diff --cached HEAD -- path
+  -> require one complete <=128 KiB patch and unchanged real repository
+  -> delete private index/objects
+  -> return live patch + one-use Run/Plan-scoped preview capability
+
+git_stage_apply(previewId)
+  -> consume capability; lock real index + target path
+  -> revalidate repository, target, attributes, config policy, and executable
+  -> reconstruct private index; require identical index and patch hashes
+  -> inflate and SHA-1 verify each bounded loose object
+  -> promote objects with no-overwrite hard links and directory fsync
+  -> create standard .git/index.lock exclusively
+  -> revalidate all preview state at the commit barrier
+  -> write/fsync prepared index, preserve mode, rename, fsync .git
+  -> verify new index + unchanged non-index/target/attribute state
+  -> return applied or indeterminate hash-only durable evidence
+```
+
+`git-stage.ts` owns expiring capability scope and state transitions;
+`git-stage-private-index.ts` owns private Git execution, loose-object
+verification/promotion, and index installation; `git-stage-model.ts` owns
+bounded target/attribute snapshots; `git-stage-details.ts` owns receipt
+construction. Agent Runs scope capabilities by Run ID, while typed Workflow
+nodes scope them by Plan ID because each node has a distinct child Run.
+Ledger/Replay retain the capability and hashes but no path or patch body. Web
+Trace validates only bounded counts, state/result hashes, durability, and
+postcondition.
+
+The transaction intentionally supports one regular or tracked-deleted path at
+a time. It rejects directories, symlinks, missing HEAD/index, linked
+worktrees, split/sparse indexes, SHA-256 object repositories, alternates,
+submodules, shared repository ACLs, command-bearing config, graft metadata,
+OCI, and attribute-chain drift. Literal pathspec mode prevents target strings
+from selecting additional paths. Loose objects promoted before a failed commit
+barrier may remain unreachable, matching Git's content-addressed safety model.
+Capabilities remain process-local; restart or expiry requires a fresh preview
+instead of reusing a completed Workflow node output. Branch, commit, checkout,
+reset, clean, merge, conflict resolution, Review promotion, and arbitrary
+revisions remain unavailable; staging is not a general Git shell.
 
 ## Workspace Process Session Flow
 

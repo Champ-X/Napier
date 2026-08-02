@@ -147,6 +147,7 @@ import {
   type LoadedSkillCatalog,
 } from "./skills.js";
 import { createStatelessAgentTools } from "./stateless-agent-tools.js";
+import { gitStageMutationManagerFor } from "./git-stage.js";
 import { LocalStore } from "./store.js";
 import { SubagentCoordinator } from "./subagents.js";
 import { createUsageAccounting } from "./token-accounting.js";
@@ -165,7 +166,6 @@ import {
 import { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
 import { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 export type { EventSink } from "./event-sink.js";
-
 export interface RunPromptOptions {
   threadId: string;
   text: string;
@@ -221,7 +221,6 @@ interface ActiveRun {
   abort: () => void;
   source: RunInvocationSource;
 }
-
 type TurnSource =
   | RunInvocationSource
   | "goal_continuation"
@@ -1308,6 +1307,7 @@ export class AgentRuntime {
       ...(this.workspaceFileMutations
         ? { workspaceFileMutations: this.workspaceFileMutations }
         : {}),
+      gitStageMutations: gitStageMutationManagerFor(this.store, this.verificationSandbox),
       restrictedReadOnlyExecution,
       advisorCorrection,
     });

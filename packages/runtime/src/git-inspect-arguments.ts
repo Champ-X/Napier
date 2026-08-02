@@ -1,5 +1,24 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
 
+const CONFIG_POLICY_EXACT_KEYS = [
+  "include.path",
+  "core.attributesfile",
+  "core.sparsecheckout",
+  "core.sparsecheckoutcone",
+  "core.splitindex",
+  "extensions.objectformat",
+  "extensions.worktreeconfig",
+] as const;
+const CONFIG_POLICY_PATTERNS = [
+  "^includeif\\..+\\.path$",
+  "^filter\\..+\\.(?:clean|smudge|process)$",
+  "^diff\\..+\\.(?:command|textconv)$",
+] as const;
+const STAGE_CONFIG_POLICY_EXACT_KEYS = ["core.sharedrepository"] as const;
+const CONFIG_POLICY_REGEX = CONFIG_POLICY_PATTERNS.map(
+  (source) => new RegExp(source, "u"),
+);
+
 export interface GitArgumentRepository {
   root: string;
   gitDirectory: string;
@@ -63,35 +82,112 @@ export function gitInspectionArgumentsSha256(
 ): string {
   return sha256(
     canonicalJson({
-      configPolicy: gitConfigPolicyArguments(repository),
+      configPolicyArguments: gitConfigPolicyArguments(repository),
+      configPolicySha256: gitConfigPolicySha256("inspection"),
       inspection: gitInspectArguments(repository, request),
     }),
   );
 }
 
+export function gitStageAddArguments(
+  repository: GitArgumentRepository,
+  targetPath: string,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "-c",
+    "advice.addIgnoredFile=false",
+    "add",
+    "--",
+    targetPath,
+  ];
+}
+
+export function gitStageDiffArguments(
+  repository: GitArgumentRepository,
+  targetPath: string,
+  contextLines: number,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "diff",
+    "--cached",
+    "HEAD",
+    "--patch",
+    "--no-ext-diff",
+    "--no-textconv",
+    "--no-color",
+    "--ignore-submodules=all",
+    `--unified=${contextLines}`,
+    "--",
+    targetPath,
+  ];
+}
+
+export function gitStageArgumentsSha256(
+  repository: GitArgumentRepository,
+  targetPath: string,
+  contextLines: number,
+): string {
+  return sha256(
+    canonicalJson({
+      configPolicyArguments: gitConfigPolicyArguments(repository),
+      configPolicySha256: gitConfigPolicySha256("stage"),
+      add: gitStageAddArguments(repository, targetPath),
+      diff: gitStageDiffArguments(repository, targetPath, contextLines),
+    }),
+  );
+}
+
 export function gitConfigKeysPermitInspection(output: string): boolean {
-  return output
-    .split("\n")
-    .map((key) => key.trim().toLowerCase())
-    .filter(Boolean)
+  return configKeys(output)
     .every(
       (key) =>
-        key !== "include.path" &&
-        !(key.startsWith("includeif.") && key.endsWith(".path")) &&
-        !/^filter\..+\.(?:clean|smudge|process)$/u.test(key) &&
-        !/^diff\..+\.(?:command|textconv)$/u.test(key) &&
-        key !== "core.attributesfile" &&
-        key !== "core.sparsecheckout" &&
-        key !== "core.sparsecheckoutcone" &&
-        key !== "core.splitindex" &&
-        key !== "extensions.worktreeconfig",
+        !CONFIG_POLICY_EXACT_KEYS.includes(
+          key as (typeof CONFIG_POLICY_EXACT_KEYS)[number],
+        ) && !CONFIG_POLICY_REGEX.some((pattern) => pattern.test(key)),
     );
 }
 
-function commonGitArguments(repository: GitArgumentRepository): string[] {
+export function gitConfigKeysPermitStage(output: string): boolean {
+  return (
+    gitConfigKeysPermitInspection(output) &&
+    !configKeys(output).some((key) =>
+      STAGE_CONFIG_POLICY_EXACT_KEYS.includes(
+        key as (typeof STAGE_CONFIG_POLICY_EXACT_KEYS)[number],
+      ),
+    )
+  );
+}
+
+export function gitConfigPolicySha256(
+  operation: "inspection" | "stage",
+): string {
+  return sha256(
+    canonicalJson({
+      schemaVersion: 1,
+      exactKeys: CONFIG_POLICY_EXACT_KEYS,
+      patterns: CONFIG_POLICY_PATTERNS,
+      stageExactKeys:
+        operation === "stage" ? STAGE_CONFIG_POLICY_EXACT_KEYS : [],
+    }),
+  );
+}
+
+function configKeys(output: string): string[] {
+  return output
+    .split("\n")
+    .map((key) => key.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function commonGitArguments(
+  repository: GitArgumentRepository,
+): string[] {
   return [
     "--no-pager",
     "--no-optional-locks",
+    "--literal-pathspecs",
     `--git-dir=${repository.gitDirectory}`,
     `--work-tree=${repository.root}`,
     "-c",

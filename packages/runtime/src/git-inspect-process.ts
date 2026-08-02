@@ -18,8 +18,10 @@ const GIT_ENVIRONMENT = {
   FORCE_COLOR: "0",
   GIT_ATTR_NOSYSTEM: "1",
   GIT_CONFIG_NOSYSTEM: "1",
+  GIT_LITERAL_PATHSPECS: "1",
   GIT_OPTIONAL_LOCKS: "0",
   GIT_PAGER: "cat",
+  GIT_NO_REPLACE_OBJECTS: "1",
   GIT_TERMINAL_PROMPT: "0",
   LANG: "C",
   LC_ALL: "C",
@@ -46,19 +48,46 @@ export interface GitInspectProcessResult {
   resourceLimitsSha256: string;
 }
 
+export interface GitPrivateProcessFiles {
+  indexFile: string;
+  objectDirectory: string;
+  alternateObjectDirectory: string;
+}
+
 export async function runGitInspectProcess(
   options: GitInspectProcessOptions,
   args: string[],
   timeoutMs: number,
   signal?: AbortSignal,
 ): Promise<GitInspectProcessResult> {
+  return runGitProcess(options, args, timeoutMs, signal);
+}
+
+export async function runGitProcess(
+  options: GitInspectProcessOptions,
+  args: string[],
+  timeoutMs: number,
+  signal?: AbortSignal,
+  isolation?: {
+    privateFiles: GitPrivateProcessFiles;
+    workspaceWritePaths: string[];
+  },
+): Promise<GitInspectProcessResult> {
   validateGitArguments(args);
+  const operation = isolation ? "Git stage preparation" : "Git inspection";
   if (options.sandbox.id === "oci-container") {
     throw new Error(
-      "Git inspection requires a local OS sandbox until container runtime identity binding is available",
+      `${operation} requires a local OS sandbox until container runtime identity binding is available`,
     );
   }
   const workspaceRoot = await realpath(path.resolve(options.workspaceRoot));
+  const privateEnvironment = isolation
+    ? validatePrivateProcessFiles(isolation.privateFiles, workspaceRoot)
+    : {};
+  const environment = { ...GIT_ENVIRONMENT, ...privateEnvironment };
+  const approvedCapabilities = isolation
+    ? (["process.spawn", "workspace.read", "workspace.write"] as const)
+    : (["process.spawn", "workspace.read"] as const);
   const executable = await resolveGitExecutable(options.gitExecutable);
   const executableSha256 = await sha256File(executable);
   const resourceLimits = {
@@ -67,6 +96,10 @@ export async function runGitInspectProcess(
     processGroupTermination: true,
     cpuLimit: "sandbox_backend_default",
     memoryLimit: "sandbox_backend_default",
+    approvedCapabilities,
+    workspaceWritePathSha256: (isolation?.workspaceWritePaths ?? []).map(
+      (value) => sha256(path.resolve(value)),
+    ),
   };
   let execution;
   try {
@@ -76,18 +109,21 @@ export async function runGitInspectProcess(
         command: executable,
         args: [...args],
         cwd: workspaceRoot,
-        env: { ...GIT_ENVIRONMENT },
+        env: environment,
         workspaceRoot,
-        approvedCapabilities: ["process.spawn", "workspace.read"],
+        approvedCapabilities: [...approvedCapabilities],
+        ...(isolation
+          ? { workspaceWritePaths: isolation.workspaceWritePaths }
+          : {}),
       },
       timeoutMs,
       maxOutputChars: MAX_GIT_PROCESS_OUTPUT_CHARS,
       ...(signal ? { signal } : {}),
-      abortedMessage: "Git inspection was aborted",
+      abortedMessage: `${operation} was aborted`,
     });
   } finally {
     if ((await sha256File(executable).catch(() => "")) !== executableSha256) {
-      throw new Error("Git executable changed during inspection");
+      throw new Error(`Git executable changed during ${operation.toLowerCase()}`);
     }
   }
   const status =
@@ -105,8 +141,36 @@ export async function runGitInspectProcess(
     sandboxSha256: sha256(options.sandbox.id),
     executableSha256,
     argumentSetSha256: sha256(canonicalJson(args)),
-    environmentSha256: sha256(canonicalJson(GIT_ENVIRONMENT)),
+    environmentSha256: sha256(canonicalJson(environment)),
     resourceLimitsSha256: sha256(canonicalJson(resourceLimits)),
+  };
+}
+
+function validatePrivateProcessFiles(
+  files: GitPrivateProcessFiles,
+  workspaceRoot: string,
+): Record<string, string> {
+  const values = [
+    files.indexFile,
+    files.objectDirectory,
+    files.alternateObjectDirectory,
+  ];
+  if (
+    values.some(
+      (value) =>
+        !path.isAbsolute(value) ||
+        !isPathInside(value, workspaceRoot) ||
+        /[\u0000-\u001f\u007f]/u.test(value),
+    )
+  ) {
+    throw new Error("Git private process paths are invalid");
+  }
+  return {
+    GIT_INDEX_FILE: path.resolve(files.indexFile),
+    GIT_OBJECT_DIRECTORY: path.resolve(files.objectDirectory),
+    GIT_ALTERNATE_OBJECT_DIRECTORIES: path.resolve(
+      files.alternateObjectDirectory,
+    ),
   };
 }
 
@@ -141,6 +205,16 @@ function validateGitArguments(args: string[]): void {
     args.reduce((total, argument) => total + argument.length, 0) >
       MAX_GIT_TOTAL_ARGUMENT_CHARS
   ) {
-    throw new Error("Git inspection arguments are invalid");
+    throw new Error("Git arguments are invalid");
   }
+}
+
+function isPathInside(candidate: string, root: string): boolean {
+  const relative = path.relative(path.resolve(root), path.resolve(candidate));
+  return (
+    relative === "" ||
+    (relative !== ".." &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative))
+  );
 }

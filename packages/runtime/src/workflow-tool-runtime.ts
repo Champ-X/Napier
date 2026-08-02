@@ -14,6 +14,7 @@ import {
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
+import { gitStageMutationManagerFor } from "./git-stage.js";
 import { assessToolCall } from "./policy.js";
 import { createStatelessAgentTools } from "./stateless-agent-tools.js";
 import type { LocalStore } from "./store.js";
@@ -136,6 +137,11 @@ export class ExecutionPlanWorkflowToolRuntime {
               workspaceFileMutations: this.agentRuntime.workspaceFileMutations,
             }
           : {}),
+        gitStageMutations: gitStageMutationManagerFor(
+          this.store,
+          this.agentRuntime.verificationSandbox,
+        ),
+        gitStageScopeId: options.planId,
       }).find((candidate) => candidate.name === options.node.tool);
       if (!tool) {
         const errorCode = profile.enabledTools.includes(options.node.tool)

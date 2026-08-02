@@ -10,6 +10,11 @@ import {
   gitInspectToolInputLedgerProjection,
   gitInspectToolOutputLedgerProjection,
 } from "./git-inspect-tool.js";
+import {
+  gitStageToolCallArgumentsLedgerProjection,
+  gitStageToolInputLedgerProjection,
+  gitStageToolOutputLedgerProjection,
+} from "./git-stage-tool.js";
 
 export function agentProcessToolCallProjection(
   toolName: string,
@@ -17,6 +22,9 @@ export function agentProcessToolCallProjection(
 ): JsonValue | undefined {
   if (toolName === "run_command") {
     return commandToolCallArgumentsLedgerProjection(args);
+  }
+  if (toolName === "git_stage_preview" || toolName === "git_stage_apply") {
+    return gitStageToolCallArgumentsLedgerProjection(toolName, args);
   }
   return toolName === "git_inspect"
     ? gitInspectToolCallArgumentsLedgerProjection(args)
@@ -30,6 +38,9 @@ export function agentProcessToolInputProjection(
   if (toolName === "run_command") {
     return commandToolInputLedgerProjection(args);
   }
+  if (toolName === "git_stage_preview" || toolName === "git_stage_apply") {
+    return gitStageToolInputLedgerProjection(toolName, args);
+  }
   return toolName === "git_inspect"
     ? gitInspectToolInputLedgerProjection(args)
     : undefined;
@@ -42,6 +53,9 @@ export function agentProcessToolOutputProjection(
 ): Record<string, JsonValue> | undefined {
   if (toolName === "run_command") {
     return commandToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "git_stage_preview" || toolName === "git_stage_apply") {
+    return gitStageToolOutputLedgerProjection(output, result);
   }
   return toolName === "git_inspect"
     ? gitInspectToolOutputLedgerProjection(output, result)

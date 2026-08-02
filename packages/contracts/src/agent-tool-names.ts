@@ -7,6 +7,8 @@ export const AGENT_TOOL_NAMES = [
   "data_frame",
   "sqlite_query",
   "git_inspect",
+  "git_stage_preview",
+  "git_stage_apply",
   "inspect_code",
   "read_symbol",
   "ast_query",

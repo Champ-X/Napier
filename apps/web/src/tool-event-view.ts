@@ -10,10 +10,10 @@ import {
   type InspectDataToolEventTraceView,
 } from "./inspect-data-event-view";
 import {
-  gitInspectEventEvidence,
-  gitInspectSummaryParts,
-  type GitInspectToolEventTraceView,
-} from "./git-inspect-event-view";
+  gitToolEventEvidence,
+  gitToolSummaryParts,
+  type GitToolEventTraceView,
+} from "./git-event-view";
 import {
   browserEventEvidence,
   browserSummaryParts,
@@ -90,7 +90,7 @@ export interface ToolEventTraceView
     ResearchSourceToolEventTraceView,
     SqliteQueryToolEventTraceView,
     DataFrameToolEventTraceView,
-    GitInspectToolEventTraceView,
+    GitToolEventTraceView,
     InspectDataToolEventTraceView,
     NodeDebuggerToolEventTraceView,
     TypescriptAstToolEventTraceView,
@@ -204,10 +204,10 @@ export function toolEventTraceView(
     toolName === "run_command"
       ? commandToolEventEvidence(event.payload["details"])
       : undefined;
-  const gitInspectEvidence =
-    toolName === "git_inspect"
-      ? gitInspectEventEvidence(event.payload["details"])
-      : undefined;
+  const gitEvidence = gitToolEventEvidence(
+    toolName,
+    event.payload["details"],
+  );
   const browserEvidence =
     toolName === "browser"
       ? browserEventEvidence(event.payload["details"])
@@ -263,7 +263,7 @@ export function toolEventTraceView(
     ...(lspEvidence ? lspEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
-    ...(gitInspectEvidence ? gitInspectEvidence : {}),
+    ...(gitEvidence ? gitEvidence : {}),
     ...(browserEvidence ? browserEvidence : {}),
     ...(researchSourceEvidence ? researchSourceEvidence : {}),
     ...(sqliteQueryEvidence ? sqliteQueryEvidence : {}),
@@ -312,7 +312,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...lspToolEventSummaryParts(view),
     ...verificationSummaryParts(view),
     ...commandToolEventSummaryParts(view),
-    ...gitInspectSummaryParts(view),
+    ...gitToolSummaryParts(view),
     ...browserSummaryParts(view),
     ...researchSourceSummaryParts(view),
     ...sqliteQuerySummaryParts(view),

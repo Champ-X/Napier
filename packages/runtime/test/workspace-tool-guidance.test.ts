@@ -89,6 +89,19 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain("Use verify_workspace for broader typecheck");
   });
 
+  it("binds Git staging to one exact private-index preview", () => {
+    const guidance = formatWorkspaceToolGuidance([
+      { name: "git_inspect" } as AgentTool,
+      { name: "git_stage_preview" } as AgentTool,
+      { name: "git_stage_apply" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain("exact working or staged hunks");
+    expect(guidance).toContain("review its complete private-index patch");
+    expect(guidance).toContain("execution-scoped preview ID");
+    expect(guidance).toContain("never commits or changes refs/worktree");
+  });
+
   it("describes the restricted Python state boundary", () => {
     const guidance = formatWorkspaceToolGuidance([
       { name: "python_kernel" } as AgentTool,

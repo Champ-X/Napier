@@ -1,11 +1,6 @@
-import { constants as fsConstants } from "node:fs";
-import { lstat, open, readdir, realpath, stat } from "node:fs/promises";
-import path from "node:path";
-
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { assertGitConfigPolicy } from "./git-config-policy.js";
 import {
-  gitConfigKeysPermitInspection,
-  gitConfigPolicyArguments,
   gitInspectArguments,
   gitInspectionArgumentsSha256,
 } from "./git-inspect-arguments.js";
@@ -14,21 +9,20 @@ import {
   runGitInspectProcess,
   type GitInspectProcessResult,
 } from "./git-inspect-process.js";
+import {
+  MAX_GIT_PATH_CHARS,
+  normalizeGitPath,
+  resolveGitRepository,
+  snapshotGitRepository,
+  type GitRepositoryState,
+} from "./git-repository.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
-import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 
 export const DEFAULT_GIT_INSPECT_TIMEOUT_MS = 10_000;
 export const MAX_GIT_INSPECT_TIMEOUT_MS = 30_000;
-export const MAX_GIT_INSPECT_PATH_CHARS = 500;
+export const MAX_GIT_INSPECT_PATH_CHARS = MAX_GIT_PATH_CHARS;
 export const MAX_GIT_DIFF_CONTEXT_LINES = 10;
 export const MAX_GIT_INSPECT_OUTPUT_BYTES = MAX_GIT_PROCESS_OUTPUT_CHARS;
-const MAX_GIT_INDEX_BYTES = 64 * 1024 * 1024;
-const MAX_GIT_CONFIG_BYTES = 1024 * 1024;
-const MAX_GIT_PACKED_REFS_BYTES = 8 * 1024 * 1024;
-const MAX_GIT_METADATA_BYTES = 16 * 1024;
-const GIT_ARGUMENT_PATTERN = /^[^\u0000-\u001f\u007f]*$/u;
-const GIT_REF_PATTERN = /^refs\/(?:heads|tags)\/[^\u0000-\u001f\u007f]{1,500}$/u;
-const EMPTY_SHA256 = sha256("");
 
 export type GitInspectRequest =
   | {
@@ -84,24 +78,6 @@ export interface GitInspectRunnerOptions {
   gitExecutable?: string;
 }
 
-interface GitRepository {
-  root: string;
-  gitDirectory: string;
-}
-
-interface BoundFile {
-  present: boolean;
-  sha256: string;
-  bytes: number;
-}
-
-interface GitRepositoryState {
-  stateSha256: string;
-  headStateSha256: string;
-  index: BoundFile;
-  config: BoundFile;
-}
-
 export class GitInspectRunner {
   constructor(private readonly options: GitInspectRunnerOptions) {}
 
@@ -120,20 +96,13 @@ export class GitInspectRunner {
     let durationMs = 0;
     let output = "";
     try {
-      const config = await runGitInspectProcess(
+      const config = await assertGitConfigPolicy(
         this.options,
-        gitConfigPolicyArguments(repository),
+        repository,
         timeoutMs,
         signal,
       );
       durationMs += config.durationMs;
-      if (
-        config.status !== "succeeded" ||
-        config.stderr.length > 0 ||
-        !gitConfigKeysPermitInspection(config.stdout)
-      ) {
-        throw new Error("Git repository has unsafe execution configuration");
-      }
       const remainingMs = deadline - Date.now();
       if (remainingMs <= 0) throw new Error("Git inspection timed out");
       const result = await runGitInspectProcess(
@@ -255,179 +224,6 @@ function inspectGitOutput(
   };
 }
 
-async function resolveGitRepository(
-  workspaceRoot: string,
-): Promise<GitRepository> {
-  const root = await realpath(path.resolve(workspaceRoot));
-  const gitDirectory = path.join(root, ".git");
-  let info;
-  try {
-    info = await lstat(gitDirectory);
-  } catch {
-    throw new Error("Workspace root is not a supported Git repository");
-  }
-  if (!info.isDirectory() || info.isSymbolicLink()) {
-    throw new Error("Workspace root is not a supported Git repository");
-  }
-  const resolvedGitDirectory = await realpath(gitDirectory);
-  if (
-    resolvedGitDirectory !== gitDirectory ||
-    !isPathInside(resolvedGitDirectory, root)
-  ) {
-    throw new Error("Git directory escapes the workspace");
-  }
-  const entries = await readdir(resolvedGitDirectory);
-  if (
-    entries.some(
-      (name) => name === "config.worktree" || name.startsWith("sharedindex."),
-    ) ||
-    (await pathExists(path.join(resolvedGitDirectory, "info/sparse-checkout")))
-  ) {
-    throw new Error("Git repository uses unsupported metadata extensions");
-  }
-  return { root, gitDirectory: resolvedGitDirectory };
-}
-
-async function snapshotGitRepository(
-  repository: GitRepository,
-): Promise<GitRepositoryState> {
-  if (await pathExists(path.join(repository.gitDirectory, "index.lock"))) {
-    throw new Error("Git repository has an active index lock");
-  }
-  const head = await readBoundFile(
-    path.join(repository.gitDirectory, "HEAD"),
-    MAX_GIT_METADATA_BYTES,
-    false,
-  );
-  const headText = await readBoundText(
-    path.join(repository.gitDirectory, "HEAD"),
-    MAX_GIT_METADATA_BYTES,
-  );
-  const currentRef = currentHeadRef(headText);
-  const ref = currentRef
-    ? await readBoundFile(
-        path.join(repository.gitDirectory, currentRef),
-        MAX_GIT_METADATA_BYTES,
-        true,
-      )
-    : absentFile();
-  const [packedRefs, index, config, shallow] = await Promise.all([
-    readBoundFile(
-      path.join(repository.gitDirectory, "packed-refs"),
-      MAX_GIT_PACKED_REFS_BYTES,
-      true,
-    ),
-    readBoundFile(
-      path.join(repository.gitDirectory, "index"),
-      MAX_GIT_INDEX_BYTES,
-      true,
-    ),
-    readBoundFile(
-      path.join(repository.gitDirectory, "config"),
-      MAX_GIT_CONFIG_BYTES,
-      false,
-    ),
-    readBoundFile(
-      path.join(repository.gitDirectory, "shallow"),
-      MAX_GIT_PACKED_REFS_BYTES,
-      true,
-    ),
-  ]);
-  const headStateSha256 = sha256(
-    canonicalJson({ head, currentRef: currentRef ?? null, ref, packedRefs }),
-  );
-  return {
-    stateSha256: sha256(
-      canonicalJson({ headStateSha256, index, config, shallow }),
-    ),
-    headStateSha256,
-    index,
-    config,
-  };
-}
-
-function currentHeadRef(head: string): string | undefined {
-  const value = head.trim();
-  if (!value.startsWith("ref: ")) return undefined;
-  const reference = value.slice(5);
-  const segments = reference.split("/");
-  if (
-    !GIT_REF_PATTERN.test(reference) ||
-    path.posix.normalize(reference) !== reference ||
-    segments.some(
-      (segment) =>
-        segment === "." ||
-        segment === ".." ||
-        isProtectedWorkspacePathSegment(segment),
-    )
-  ) {
-    throw new Error("Git HEAD reference is invalid");
-  }
-  return reference;
-}
-
-async function readBoundText(
-  filePath: string,
-  maximumBytes: number,
-): Promise<string> {
-  const value = await readBoundFileBytes(filePath, maximumBytes, false);
-  if (!value) throw new Error("Git metadata file is unavailable");
-  return value.toString("utf8");
-}
-
-async function readBoundFile(
-  filePath: string,
-  maximumBytes: number,
-  optional: boolean,
-): Promise<BoundFile> {
-  const value = await readBoundFileBytes(filePath, maximumBytes, optional);
-  return value
-    ? {
-        present: true,
-        sha256: sha256(value),
-        bytes: value.length,
-      }
-    : absentFile();
-}
-
-async function readBoundFileBytes(
-  filePath: string,
-  maximumBytes: number,
-  optional: boolean,
-): Promise<Buffer | undefined> {
-  let handle;
-  try {
-    handle = await open(
-      filePath,
-      fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0),
-    );
-    const info = await handle.stat();
-    if (!info.isFile() || info.size > maximumBytes) {
-      throw new Error("Git metadata file is invalid");
-    }
-    return await handle.readFile();
-  } catch (error) {
-    if (optional && errorCode(error) === "ENOENT") return undefined;
-    throw new Error("Git metadata file is unavailable");
-  } finally {
-    await handle?.close();
-  }
-}
-
-function absentFile(): BoundFile {
-  return { present: false, sha256: EMPTY_SHA256, bytes: 0 };
-}
-
-async function pathExists(filePath: string): Promise<boolean> {
-  try {
-    await stat(filePath);
-    return true;
-  } catch (error) {
-    if (errorCode(error) === "ENOENT") return false;
-    throw new Error("Git metadata path is unavailable");
-  }
-}
-
 function validateGitInspectRequest(request: GitInspectRequest): void {
   if (request.action !== "status" && request.action !== "diff") {
     throw new Error("Git inspection action is invalid");
@@ -452,40 +248,5 @@ function validateGitInspectRequest(request: GitInspectRequest): void {
   ) {
     throw new Error("Git diff context is invalid");
   }
-  if (request.path !== undefined) validateGitPath(request.path);
-}
-
-function validateGitPath(candidate: string): void {
-  if (
-    !candidate ||
-    candidate.length > MAX_GIT_INSPECT_PATH_CHARS ||
-    path.isAbsolute(candidate) ||
-    !GIT_ARGUMENT_PATTERN.test(candidate)
-  ) {
-    throw new Error("Git inspection path must be workspace-relative");
-  }
-  const normalized = path.normalize(candidate);
-  if (
-    normalized === ".." ||
-    normalized.startsWith(`..${path.sep}`) ||
-    normalized.split(path.sep).some(isProtectedWorkspacePathSegment)
-  ) {
-    throw new Error("Git inspection path escapes the workspace");
-  }
-}
-
-function isPathInside(candidate: string, root: string): boolean {
-  const relative = path.relative(root, candidate);
-  return (
-    relative === "" ||
-    (relative !== ".." &&
-      !relative.startsWith(`..${path.sep}`) &&
-      !path.isAbsolute(relative))
-  );
-}
-
-function errorCode(error: unknown): string | undefined {
-  return error instanceof Error && "code" in error
-    ? String(error.code)
-    : undefined;
+  if (request.path !== undefined) normalizeGitPath(request.path);
 }
