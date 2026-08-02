@@ -11,7 +11,7 @@ import {
 
 import type { CliChatOptions } from "./cli-chat-options.js";
 import { writeLine, writeText } from "./cli-output.js";
-import type { CliIo, RunCliDependencies } from "./cli.js";
+import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import {
   INTERACTIVE_COMMAND_HELP,
   interactiveModelLabel,

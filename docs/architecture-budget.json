@@ -6,8 +6,8 @@
     "maxFunctionComplexity": 25
   },
   "lineOverrides": {
-    "apps/cli/src/cli-options.ts": 727,
-    "apps/cli/src/cli.ts": 710,
+    "apps/cli/src/cli-options.ts": 721,
+    "apps/cli/src/cli.ts": 696,
     "apps/cli/test/rpc-cli.test.ts": 1065,
     "apps/cli/test/workflow-cli.test.ts": 2912,
     "apps/server/src/app.ts": 26869,
@@ -83,7 +83,7 @@
     "packages/runtime/src/store.ts": 15931,
     "packages/runtime/src/thread-bundles.ts": 2460,
     "packages/runtime/src/tool-loop-guard.ts": 551,
-    "packages/runtime/src/tools.ts": 1848,
+    "packages/runtime/src/tools.ts": 1807,
     "packages/runtime/src/typescript-ast.ts": 507,
     "packages/runtime/src/workflow-blueprints.ts": 720,
     "packages/runtime/src/workflow-experiment-comparison-protocol.ts": 727,
@@ -94,7 +94,7 @@
     "packages/runtime/src/workflow-recovery.ts": 623,
     "packages/runtime/src/workflow-schemas.ts": 608,
     "packages/runtime/src/workspace-file-mutations.ts": 748,
-    "packages/runtime/src/workspace-process-events.ts": 612,
+    "packages/runtime/src/workspace-process-events.ts": 603,
     "packages/runtime/src/workspace-processes.ts": 942,
     "packages/runtime/test/agent-runtime.test.ts": 4950,
     "packages/runtime/test/model-advisor.test.ts": 1089,
@@ -250,12 +250,6 @@
     "packages/sdk/src/index.ts": 22
   },
   "allowedCycles": [
-    ["apps/cli/src/cli-options.ts", "apps/cli/src/cli-workflow-options.ts"],
-    [
-      "apps/cli/src/cli.ts",
-      "apps/cli/src/interactive-cli.ts",
-      "apps/cli/src/tui-cli.ts"
-    ],
     ["packages/contracts/src/index.ts", "packages/contracts/src/rpc.ts"],
     [
       "packages/runtime/src/agent-kernels.ts",
@@ -312,26 +306,6 @@
       "packages/runtime/src/workspace-process-rollback-ledger.ts",
       "packages/runtime/src/workspace-process-tool.ts",
       "packages/runtime/src/workspace-processes.ts"
-    ],
-    [
-      "packages/runtime/src/embedded-workflow-approvals.ts",
-      "packages/runtime/src/embedded-workflows.ts"
-    ],
-    [
-      "packages/runtime/src/sandbox-terminal.ts",
-      "packages/runtime/src/sandbox.ts"
-    ],
-    [
-      "packages/runtime/src/subagent-outcome-verification.ts",
-      "packages/runtime/src/subagent-outcomes.ts"
-    ],
-    [
-      "packages/runtime/src/tools.ts",
-      "packages/runtime/src/workspace-patch-tool.ts"
-    ],
-    [
-      "packages/runtime/src/workspace-process-events.ts",
-      "packages/runtime/src/workspace-process-resize-events.ts"
     ]
   ],
   "allowedWorkspaceImports": {

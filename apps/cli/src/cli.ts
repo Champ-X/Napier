@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { Readable, Writable } from "node:stream";
+import type { Writable } from "node:stream";
 
 import type {
   ExecutionPlanWorkflowExperimentResultFrame,
@@ -21,7 +21,6 @@ import {
   streamRunErrorFrame,
   streamSnapshotFrame,
   validateExecuteExecutionPlanWorkflowRequest,
-  type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
 
@@ -44,25 +43,12 @@ import { writeLine } from "./cli-output.js";
 import { executeInteractive } from "./interactive-cli.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
 import { executeRpc } from "./rpc-cli.js";
+import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import { executeTui } from "./tui-cli.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 
 export { CLI_HELP, CLI_VERSION, parseCliArgs };
-
-export interface CliIo {
-  cwd: string;
-  env: Readonly<Record<string, string | undefined>>;
-  stdin?: Readable;
-  stdout: Writable;
-  stderr: Writable;
-  subscribeInterrupt?(listener: () => void): () => void;
-}
-
-export interface RunCliDependencies {
-  createRuntime(
-    options: LocalAgentRuntimeOptions,
-  ): Promise<LocalAgentRuntimeServices>;
-}
+export type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 
 const DEFAULT_DEPENDENCIES: RunCliDependencies = {
   createRuntime: createLocalAgentRuntime,

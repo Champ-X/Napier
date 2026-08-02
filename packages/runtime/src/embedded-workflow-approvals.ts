@@ -8,7 +8,7 @@ import type {
 } from "@napier/contracts";
 
 import type { EventSink } from "./agent-runtime.js";
-import type { EmbeddedWorkflowExecution } from "./embedded-workflows.js";
+import type { EmbeddedWorkflowExecution } from "./embedded-workflow-model.js";
 import { validateExecutionPlanWorkflowManifest } from "./workflow-manifests.js";
 import { createOperatorDecisionAnsweredPayload } from "./operator-decisions.js";
 import type { LocalStore } from "./store.js";

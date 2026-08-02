@@ -9,7 +9,7 @@ import {
 
 import type { CliChatOptions } from "./cli-chat-options.js";
 import { writeLine } from "./cli-output.js";
-import type { CliIo, RunCliDependencies } from "./cli.js";
+import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import {
   interactiveModelLabel,
   parseInteractiveCommand,

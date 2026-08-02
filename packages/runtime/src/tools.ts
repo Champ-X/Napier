@@ -29,8 +29,16 @@ import {
   createWorkspacePatchTool,
   type WorkspacePatchObserver,
 } from "./workspace-patch-tool.js";
+import type {
+  WorkspacePatchInput,
+  WorkspacePatchResult,
+} from "./workspace-patch-model.js";
 import { withWorkspacePathLock } from "./workspace-write-lock.js";
 export type { WorkspaceDataFormat } from "./structured-data.js";
+export type {
+  WorkspacePatchInput,
+  WorkspacePatchResult,
+} from "./workspace-patch-model.js";
 
 const MAX_LIST_ENTRIES = 300;
 const MAX_READ_BYTES = 96 * 1024;
@@ -163,55 +171,6 @@ const readSymbolSchema = Type.Object({
     }),
   ),
 });
-
-export type WorkspacePatchInput =
-  | {
-      operation: "create";
-      path: string;
-      expectedSha256: null;
-      content: string;
-      createParentDirectories?: boolean;
-    }
-  | {
-      operation: "replace";
-      path: string;
-      expectedSha256: string;
-      edits: Array<{ oldText: string; newText: string }>;
-    }
-  | {
-      operation: "hashline_replace";
-      path: string;
-      expectedSha256: string;
-      edits: Array<{
-        line?: number;
-        anchorSha256: string;
-        newText: string;
-      }>;
-    }
-  | {
-      operation: "hashrange_replace";
-      path: string;
-      expectedSha256: string;
-      edits: Array<{
-        startLine: number;
-        endLine: number;
-        rangeSha256: string;
-        newText: string;
-      }>;
-    };
-
-export interface WorkspacePatchResult {
-  path: string;
-  pathSha256: string;
-  operation: WorkspacePatchInput["operation"];
-  beforeSha256: string | null;
-  afterSha256: string;
-  beforeBytes: number;
-  afterBytes: number;
-  editCount: number;
-  createdParentDirectoryCount?: number;
-  createdParentDirectorySetSha256?: string;
-}
 
 export interface WorkspaceSearchMatch {
   path: string;

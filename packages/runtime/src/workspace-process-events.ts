@@ -9,6 +9,7 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import type { WorkspaceProcessSessionInput } from "./workspace-process-event-model.js";
 import {
   applyWorkspaceProcessResizeReceipt,
   parseWorkspaceProcessResizeReceipt,
@@ -17,6 +18,7 @@ import {
 } from "./workspace-process-resize-events.js";
 import { projectWorkspaceProcessRollbackHistory } from "./workspace-process-rollback-events.js";
 export { workspaceProcessSessionWithRuntimeState } from "./workspace-process-runtime-session.js";
+export type { WorkspaceProcessSessionInput } from "./workspace-process-event-model.js";
 export {
   parseWorkspaceProcessRollbackAttempt,
   parseWorkspaceProcessRollbackResult,
@@ -46,17 +48,6 @@ const STATUSES = new Set<WorkspaceProcessStatus>([
   "cancelled",
   "interrupted",
 ]);
-
-export type WorkspaceProcessSessionInput = Omit<
-  WorkspaceProcessSession,
-  | "kind"
-  | "schemaVersion"
-  | "outputAvailable"
-  | "workspaceDeltaAvailable"
-  | "workspaceRollbackAvailable"
-  | "workspaceCompensationStatus"
-  | "contentSha256"
-> & { schemaVersion?: 1 | 2 | 3 | 4 | 5 | 6 | 7 };
 
 export function createWorkspaceProcessSession(
   input: WorkspaceProcessSessionInput,

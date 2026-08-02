@@ -3,7 +3,6 @@ import {
   type CreateExecutionPlanRequest,
   type ExecutionPlanArchive,
   type ExecutionPlanWorkflowManifest,
-  type ExecutionPlanWorkflowResult,
   type JsonValue,
   type OperatorDecision,
 } from "@napier/contracts";
@@ -15,6 +14,7 @@ import {
   type EmbeddedWorkflowApprovalExecution,
   type PendingEmbeddedWorkflowApprovalOptions,
 } from "./embedded-workflow-approvals.js";
+import type { EmbeddedWorkflowExecution } from "./embedded-workflow-model.js";
 import { createExecutionPlan } from "./plans.js";
 import {
   hashExecutionPlanArchiveContent,
@@ -42,6 +42,7 @@ export {
   type EmbeddedWorkflowApprovalExecution,
   type PendingEmbeddedWorkflowApprovalOptions,
 } from "./embedded-workflow-approvals.js";
+export type { EmbeddedWorkflowExecution } from "./embedded-workflow-model.js";
 
 const PREFLIGHT_THREAD_ID = "thread_embedded_workflow_preflight";
 const PREFLIGHT_GENERATED_AT = "2000-01-01T00:00:00.000Z";
@@ -80,12 +81,6 @@ export interface ResumeEmbeddedWorkflowOptions {
   continueBreakpoint?: boolean;
   signal?: AbortSignal;
   onEvent?: EventSink;
-}
-
-export interface EmbeddedWorkflowExecution {
-  threadId: string;
-  result: ExecutionPlanWorkflowResult;
-  pendingDecision?: OperatorDecision;
 }
 
 export function validateRunEmbeddedWorkflowInput(

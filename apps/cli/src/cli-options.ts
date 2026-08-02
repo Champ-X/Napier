@@ -1,7 +1,4 @@
-import type {
-  AgentMessageExperimentToolResultMode,
-  ModelRef,
-} from "@napier/contracts";
+import type { AgentMessageExperimentToolResultMode } from "@napier/contracts";
 
 import {
   CHAT_VALUE_OPTIONS,
@@ -10,6 +7,10 @@ import {
   type CliChatAction,
   type CliTuiAction,
 } from "./cli-chat-options.js";
+import type {
+  CliExecutionOptions,
+  CliWorkspaceOptions,
+} from "./cli-execution-options.js";
 import {
   MAX_TIMEOUT_MS,
   MIN_TIMEOUT_MS,
@@ -27,22 +28,15 @@ import {
 } from "./cli-workflow-options.js";
 
 export type { CliWorkflowOptions };
+export type {
+  CliExecutionOptions,
+  CliWorkspaceOptions,
+} from "./cli-execution-options.js";
 
 export const CLI_VERSION = "0.1.0";
 const MAX_PROMPT_BYTES = 64 * 1_024;
 const MAX_TITLE_CHARS = 160;
 const MAX_BRANCH_TITLE_CHARS = 100;
-
-export interface CliWorkspaceOptions {
-  workspace: string;
-  dataRoot?: string;
-  jsonl: boolean;
-}
-
-export interface CliExecutionOptions extends CliWorkspaceOptions {
-  model?: ModelRef;
-  timeoutMs: number;
-}
 
 export interface CliRunOptions extends CliExecutionOptions {
   prompt: string;

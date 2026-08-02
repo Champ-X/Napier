@@ -7,7 +7,7 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { canonicalSubagentEvidence } from "./subagent-outcome-model.js";
-import { validateSubagentOutcome } from "./subagent-outcomes.js";
+import { validateSubagentOutcome } from "./subagent-outcome-validation.js";
 import { readWorkspaceTextEvidence } from "./tools.js";
 
 type GroundedVerificationEvidence = {

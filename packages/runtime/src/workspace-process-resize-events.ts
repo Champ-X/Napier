@@ -5,7 +5,7 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import type { WorkspaceProcessSessionInput } from "./workspace-process-events.js";
+import type { WorkspaceProcessSessionInput } from "./workspace-process-event-model.js";
 
 const PROCESS_ID = /^process_[a-z0-9]{8,80}$/;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/;

@@ -4,7 +4,7 @@ import { PassThrough, Writable } from "node:stream";
 
 import type { IPty } from "node-pty";
 
-import type { SandboxedProcess } from "./sandbox.js";
+import type { SandboxedProcess } from "./sandbox-types.js";
 
 const PROCESS_STOP_GRACE_MS = 2_000;
 export const MIN_TERMINAL_COLUMNS = 20;

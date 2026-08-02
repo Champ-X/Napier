@@ -7,7 +7,10 @@ import type {
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import type { WorkspacePatchInput, WorkspacePatchResult } from "./tools.js";
+import type {
+  WorkspacePatchInput,
+  WorkspacePatchResult,
+} from "./workspace-patch-model.js";
 
 const MAX_PATCH_BYTES = 256 * 1024;
 const MAX_PATCH_EDITS = 32;

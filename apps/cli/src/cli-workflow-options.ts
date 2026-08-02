@@ -3,7 +3,7 @@ import {
   parseTimeout,
   requiredValue,
 } from "./cli-option-values.js";
-import type { CliExecutionOptions } from "./cli-options.js";
+import type { CliExecutionOptions } from "./cli-execution-options.js";
 
 const MAX_WORKFLOW_INPUT_BYTES = 64 * 1_024;
 const MAX_WORKFLOW_BREAKPOINTS = 16;

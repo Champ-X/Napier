@@ -170,6 +170,15 @@ SDK root and Workflow experiment adapter now depend on that leaf module, which
 removed their prior cycle while preserving the root's 22-export public
 surface.
 
+Later ratchets moved CLI execution options/runtime injection, Embedded
+Workflow execution, Workspace Process event input, Workspace Patch contracts,
+Subagent Outcome validation, and Sandbox terminal types into leaf modules.
+The checked graph now contains two legacy components rather than nine: the
+Contracts root/RPC pair and the 54-module Runtime core component. Those
+remaining closures require deliberate Contracts and Runtime domain
+decomposition; they are not treated as acceptable targets for local
+type-moving.
+
 ### Server
 
 `@napier/server` is a thin Hono adapter:
