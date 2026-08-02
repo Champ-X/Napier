@@ -3,14 +3,22 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   MAX_SQLITE_CHART_POINTS,
+  MAX_SQLITE_CHART_SERIES,
+  MAX_SQLITE_CHART_SVG_BYTES,
+  MAX_SQLITE_CHART_TOTAL_POINTS,
   SQLITE_CHART_RENDERER_SHA256,
   renderSqliteChart,
+  type MultiSeriesSqliteChartSpec,
+  type SqliteChartSpec,
 } from "../src/sqlite-chart-renderer.js";
-import { executeSqliteChart } from "../src/sqlite-chart.js";
+import {
+  executeSqliteChart,
+  type SqliteChartRequest,
+} from "../src/sqlite-chart.js";
 import { inspectSqliteDatabase } from "../src/sqlite-database-file.js";
 
 const roots: string[] = [];
@@ -22,6 +30,16 @@ afterEach(async () => {
 });
 
 describe("verified SQLite chart rendering", () => {
+  it("preserves the required legacy yColumn type beside the multi-series type", () => {
+    expectTypeOf<SqliteChartSpec["yColumn"]>().toEqualTypeOf<string>();
+    expectTypeOf<MultiSeriesSqliteChartSpec["yColumns"]>().toEqualTypeOf<
+      string[]
+    >();
+    expectTypeOf<
+      SqliteChartRequest["chart"]["yColumn"]
+    >().toEqualTypeOf<string>();
+  });
+
   it("renders deterministic fixed-grammar bar and line SVG with escaped labels", () => {
     const spec = {
       type: "bar" as const,
@@ -78,6 +96,80 @@ describe("verified SQLite chart rendering", () => {
     expect(first.svg).not.toContain("<foreignObject");
     expect(line.svg).toContain("<polyline");
     expect(line.svg).toContain("<circle");
+  });
+
+  it("renders deterministic grouped bars and multiple line series with a shared legend", () => {
+    const spec = {
+      type: "bar" as const,
+      xColumn: "quarter",
+      yColumns: ["Paid", "Pending"],
+      title: "Revenue status by quarter",
+      yLabel: "Revenue",
+      width: 900,
+      height: 520,
+    };
+    const rows = [
+      ["Q1", 30, 10],
+      ["Q2", 45, 15],
+      ["Q3", -5, 20],
+    ];
+    const grouped = renderSqliteChart(
+      spec,
+      ["quarter", "Paid", "Pending"],
+      rows,
+    );
+    const repeated = renderSqliteChart(
+      spec,
+      ["quarter", "Paid", "Pending"],
+      rows,
+    );
+    const lines = renderSqliteChart(
+      { ...spec, type: "line" },
+      ["quarter", "Paid", "Pending"],
+      rows,
+    );
+
+    expect(grouped).toEqual(repeated);
+    expect(grouped.spec).toEqual(
+      expect.objectContaining({
+        yColumn: "Paid",
+        yColumns: ["Paid", "Pending"],
+      }),
+    );
+    expect(grouped).toEqual(
+      expect.objectContaining({
+        categoryCount: 3,
+        seriesCount: 2,
+        points: [
+          { label: "Q1", value: 30 },
+          { label: "Q2", value: 45 },
+          { label: "Q3", value: -5 },
+          { label: "Q1", value: 10 },
+          { label: "Q2", value: 15 },
+          { label: "Q3", value: 20 },
+        ],
+      }),
+    );
+    expect(grouped.svg).toContain(">Paid</text>");
+    expect(grouped.svg).toContain(">Pending</text>");
+    expect(grouped.svg.match(/<rect /gu)).toHaveLength(9);
+    expect(lines.svg.match(/<polyline /gu)).toHaveLength(2);
+    expect(lines.svg.match(/<circle /gu)).toHaveLength(6);
+
+    const sixSeries = Array.from(
+      { length: MAX_SQLITE_CHART_SERIES },
+      (_value, index) => `S${index + 1}`,
+    );
+    const bounded = renderSqliteChart(
+      { type: "line", xColumn: "category", yColumns: sixSeries },
+      ["category", ...sixSeries],
+      Array.from({ length: 33 }, (_value, index) => [
+        `C${index + 1}`,
+        ...sixSeries.map((_series, seriesIndex) => index + seriesIndex),
+      ]),
+    );
+    expect(bounded.points).toHaveLength(198);
+    expect(bounded.svgBytes).toBeLessThanOrEqual(MAX_SQLITE_CHART_SVG_BYTES);
   });
 
   it("rejects ambiguous columns, incomplete geometry, and unsafe values", () => {
@@ -163,6 +255,85 @@ describe("verified SQLite chart rendering", () => {
         ],
       ),
     ).toThrow("range exceeds finite geometry");
+    expect(() =>
+      renderSqliteChart(
+        {
+          type: "bar",
+          xColumn: "region",
+          yColumn: "paid",
+          yColumns: ["paid", "pending"],
+        },
+        ["region", "paid", "pending"],
+        [["west", 30, 10]],
+      ),
+    ).toThrow("exactly one");
+    expect(() =>
+      renderSqliteChart(
+        {
+          type: "bar",
+          xColumn: "region",
+          yColumns: ["paid", "paid"],
+        },
+        ["region", "paid"],
+        [["west", 30]],
+      ),
+    ).toThrow("series columns are invalid");
+    expect(() =>
+      renderSqliteChart(
+        {
+          type: "line",
+          xColumn: "region",
+          yColumns: Array.from(
+            { length: MAX_SQLITE_CHART_SERIES + 1 },
+            (_value, index) => `series-${index}`,
+          ),
+        },
+        ["region"],
+        [["west"]],
+      ),
+    ).toThrow("series columns are invalid");
+    expect(() =>
+      renderSqliteChart(
+        {
+          type: "line",
+          xColumn: "region",
+          yColumns: [
+            "series-1",
+            "series-2",
+            "series-3",
+            "series-4",
+            "series-5",
+            "series-6",
+          ],
+        },
+        [
+          "region",
+          "series-1",
+          "series-2",
+          "series-3",
+          "series-4",
+          "series-5",
+          "series-6",
+        ],
+        Array.from(
+          {
+            length:
+              Math.floor(
+                MAX_SQLITE_CHART_TOTAL_POINTS / MAX_SQLITE_CHART_SERIES,
+              ) + 1,
+          },
+          (_value, index) => [
+            `region-${index}`,
+            index,
+            index,
+            index,
+            index,
+            index,
+            index,
+          ],
+        ),
+      ),
+    ).toThrow("200-point series limit");
   });
 
   it("executes a real aggregate and binds the complete SVG to its query result", async () => {
@@ -200,6 +371,47 @@ describe("verified SQLite chart rendering", () => {
     );
     expect(result.svg).toContain("Paid revenue by region");
     expect(result.database.fileSha256).toBe(snapshot.fileSha256);
+  });
+
+  it("executes real conditional aggregates as a hash-bound multi-series chart", async () => {
+    const fixture = await createFixture();
+    const snapshot = await inspectSqliteDatabase(fixture, "analytics.db");
+    const result = await executeSqliteChart(fixture, {
+      action: "chart",
+      path: "analytics.db",
+      databaseSha256: snapshot.fileSha256,
+      sql: `SELECT region,
+        SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS Paid,
+        SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS Pending
+        FROM orders GROUP BY region ORDER BY region`,
+      chart: {
+        type: "bar",
+        xColumn: "region",
+        yColumns: ["Paid", "Pending"],
+        title: "Revenue status by region",
+      },
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        columns: ["region", "Paid", "Pending"],
+        rows: [
+          ["east", "15", "0"],
+          ["west", "30", "100"],
+        ],
+        categoryCount: 2,
+        seriesCount: 2,
+        pointCount: 4,
+        chart: expect.objectContaining({
+          yColumn: "Paid",
+          yColumns: ["Paid", "Pending"],
+        }),
+        svgSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(result.svg).toContain(">Paid</text>");
+    expect(result.svg).toContain(">Pending</text>");
   });
 
   it("rejects stale, truncated, timed-out, cancelled, and drifting chart queries", async () => {

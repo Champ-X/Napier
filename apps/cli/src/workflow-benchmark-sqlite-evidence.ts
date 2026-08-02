@@ -20,6 +20,9 @@ const QUERY_DETAILS_KEYS = keySet(
 const CHART_DETAILS_KEYS = keySet(
   "kind schemaVersion action databasePathSha256 databaseSha256 databaseBytes sqlSha256 parameterCount parameterSetSha256 columnCount rowCount truncated columnsSha256 rowsSha256 durationMs workerSha256 runtimeSha256 limitsSha256 chartType pointCount width height chartSpecSha256 svgSha256 svgBytes rendererSha256 chartLimitsSha256 queryResultSha256 resultSha256",
 );
+const MULTI_CHART_DETAILS_KEYS = keySet(
+  "kind schemaVersion action databasePathSha256 databaseSha256 databaseBytes sqlSha256 parameterCount parameterSetSha256 columnCount rowCount truncated columnsSha256 rowsSha256 durationMs workerSha256 runtimeSha256 limitsSha256 chartType pointCount categoryCount seriesCount width height chartSpecSha256 svgSha256 svgBytes rendererSha256 chartLimitsSha256 queryResultSha256 resultSha256",
+);
 
 export function collectWorkflowBenchmarkSqliteActionEvents(
   events: RunEvent[],
@@ -209,7 +212,14 @@ function validSqliteDetails(value: unknown): boolean {
   if (!record(value)) return false;
   const chart = value["action"] === "chart";
   return (
-    exactRecord(value, chart ? CHART_DETAILS_KEYS : QUERY_DETAILS_KEYS) &&
+    exactRecord(
+      value,
+      chart
+        ? value["schemaVersion"] === 2
+          ? MULTI_CHART_DETAILS_KEYS
+          : CHART_DETAILS_KEYS
+        : QUERY_DETAILS_KEYS,
+    ) &&
     validSqliteCommonDetails(value) &&
     (chart ? validSqliteChartDetails(value) : validSqliteQueryDetails(value))
   );
@@ -217,7 +227,7 @@ function validSqliteDetails(value: unknown): boolean {
 
 function validSqliteCommonDetails(details: Record<string, unknown>): boolean {
   return (
-    details["schemaVersion"] === 1 &&
+    (details["schemaVersion"] === 1 || details["schemaVersion"] === 2) &&
     digest(details["databasePathSha256"]) &&
     digest(details["databaseSha256"]) &&
     nonNegativeInteger(details["databaseBytes"]) &&
@@ -240,6 +250,7 @@ function validSqliteCommonDetails(details: Record<string, unknown>): boolean {
 function validSqliteQueryDetails(details: Record<string, unknown>): boolean {
   return (
     details["kind"] === "napier.sqlite-query" &&
+    details["schemaVersion"] === 1 &&
     (details["action"] === "schema" || details["action"] === "query")
   );
 }
@@ -248,8 +259,9 @@ function validSqliteChartDetails(details: Record<string, unknown>): boolean {
   return (
     details["kind"] === "napier.sqlite-chart" &&
     details["action"] === "chart" &&
+    details["truncated"] === false &&
     (details["chartType"] === "bar" || details["chartType"] === "line") &&
-    nonNegativeInteger(details["pointCount"]) &&
+    validSqliteChartGeometry(details) &&
     nonNegativeInteger(details["width"]) &&
     nonNegativeInteger(details["height"]) &&
     digest(details["chartSpecSha256"]) &&
@@ -258,6 +270,32 @@ function validSqliteChartDetails(details: Record<string, unknown>): boolean {
     digest(details["rendererSha256"]) &&
     digest(details["chartLimitsSha256"]) &&
     digest(details["queryResultSha256"])
+  );
+}
+
+function validSqliteChartGeometry(details: Record<string, unknown>): boolean {
+  const pointCount = details["pointCount"];
+  const rowCount = details["rowCount"];
+  if (details["schemaVersion"] === 1) {
+    return (
+      positiveInteger(pointCount) &&
+      Number(pointCount) <= 50 &&
+      pointCount === rowCount
+    );
+  }
+  const categoryCount = details["categoryCount"];
+  const seriesCount = details["seriesCount"];
+  return (
+    details["schemaVersion"] === 2 &&
+    positiveInteger(categoryCount) &&
+    Number(categoryCount) <= 50 &&
+    categoryCount === rowCount &&
+    positiveInteger(seriesCount) &&
+    Number(seriesCount) >= 2 &&
+    Number(seriesCount) <= 6 &&
+    positiveInteger(pointCount) &&
+    Number(pointCount) <= 200 &&
+    Number(pointCount) === Number(categoryCount) * Number(seriesCount)
   );
 }
 
@@ -306,6 +344,10 @@ function boundedString(
 
 function nonNegativeInteger(value: unknown): boolean {
   return Number.isSafeInteger(value) && Number(value) >= 0;
+}
+
+function positiveInteger(value: unknown): boolean {
+  return Number.isSafeInteger(value) && Number(value) > 0;
 }
 
 function nonNegativeNumber(value: unknown): boolean {

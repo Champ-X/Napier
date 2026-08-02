@@ -205,9 +205,10 @@ Version `0.1.0` includes:
   lazy Files recovery panel for directory creation, no-overwrite-intent moves,
   reversible trash, and explicit restore without shell access;
 - a `sqlite_query` tool for schema inspection, parameterized read-only SQL, and
-  deterministic single-series bar/line SVG over canonical static workspace
-  database snapshots, with process-isolated timeout/cancellation, live-only
-  rows/SVG, and verified Artifact delivery through the existing CAS writer;
+  deterministic single- or multi-series bar/line SVG over canonical static
+  workspace database snapshots, with process-isolated timeout/cancellation,
+  live-only rows/SVG, and verified Artifact delivery through the existing CAS
+  writer;
 - Run-owned controlled Chrome Sessions plus a `research_source` tool that
   freezes bounded visible page text, binds exact line ranges to report claims,
   returns citation tokens to the live Agent, and retains only privacy-bounded

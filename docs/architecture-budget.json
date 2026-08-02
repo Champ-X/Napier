@@ -109,7 +109,7 @@
     "packages/runtime/test/workflow-experiments.test.ts": 3274,
     "packages/runtime/test/workflow-manifests.test.ts": 1086,
     "packages/runtime/test/workflow-recovery.test.ts": 1331,
-    "packages/runtime/test/workflow-runtime.test.ts": 3907,
+    "packages/runtime/test/workflow-runtime.test.ts": 3833,
     "packages/runtime/test/workspace-processes.test.ts": 3071,
     "packages/sdk/src/index.ts": 546,
     "packages/sdk/test/sdk-workflow.test.ts": 1089
@@ -157,7 +157,7 @@
     "apps/web/src/ReceiptTrustPanel.tsx": 149,
     "apps/web/src/research-source-event-view.ts": 61,
     "apps/web/src/RunLabPanel.tsx": 46,
-    "apps/web/src/sqlite-query-event-view.ts": 46,
+    "apps/web/src/sqlite-query-event-view.ts": 32,
     "apps/web/src/subagent-event-view.ts": 56,
     "apps/web/src/subagent-worktree-event-view.ts": 43,
     "apps/web/src/tool-event-view.ts": 106,

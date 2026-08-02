@@ -6817,8 +6817,9 @@ The current boundary has sixty-nine parts:
     bounded model/Thread/new/resume/status controls, separates assistant output
     from metadata-only tool status, applies per-turn cancellation and timeout,
     and is covered through a real built-process PTY.
-50. Deterministic SQLite chart delivery through the existing read-only worker,
-    with complete-result enforcement, finite fixed SVG geometry, live-only
+50. Deterministic single- and multi-series SQLite chart delivery through the
+    existing read-only worker, with complete-result enforcement, bounded shared
+    Y geometry, grouped bars or multiple lines, fixed legends, live-only
     semantic output, typed Workflow receipts, public SSE/Trace projection, and
     CAS plus Plan Artifact verification for actual file delivery.
 51. Pi's complete pinned built-in Provider catalog, with no duplicated Napier

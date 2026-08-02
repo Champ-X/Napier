@@ -27,7 +27,7 @@ Audit date: 2026-08-03
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 22,437 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                           |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss target-group guarding now exist. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, detached-descendant containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; directory lifecycle, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain.                      |
-| P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown; a fixed-source Outcome case now measures primary/secondary authority coverage and contradiction handling through the production capture/cite/report verifier path. Data analysis includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, general source-quality scoring and contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown; a fixed-source Outcome case now measures primary/secondary authority coverage and contradiction handling through the production capture/cite/report verifier path. Data analysis includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single- or multi-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, general source-quality scoring and contradiction automation, DataFrame/Notebook, interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Python/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript and restricted exact-JSON Python Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output/input replacement, selector-free complete top-level input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Package-backed Python/Notebook Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, schema-5 durably releases exactly one remaining rerun node per Continue, and selector-free schema-6 replaces the complete top-level Workflow input and reruns every node through the ordinary scheduler with zero source reuse. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                           |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented `napier chat`, and bounded full-screen `napier tui` share explicit first-task environment-locator bootstrap and one Runtime with the local TypeScript SDK and versioned stdio JSON-RPC. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                         |
@@ -3502,9 +3502,9 @@ Observed result:
 ## Completed Slice: Verified SQLite Chart Delivery
 
 User scenario: an Agent can run one aggregate over a bound static SQLite
-snapshot, turn the complete result into a deterministic bar or line SVG, write
-that SVG through the existing CAS patch tool, and verify the real workspace
-file as a Plan Artifact.
+snapshot, turn the complete result into a deterministic single- or multi-series
+bar or line SVG, write that SVG through the existing CAS patch tool, and verify
+the real workspace file as a Plan Artifact.
 
 Acceptance:
 
@@ -3513,18 +3513,22 @@ Acceptance:
 - execute the SQL through the unchanged process-isolated read-only worker with
   database hash, parameter, timeout, cancellation, authorizer, sidecar, drift,
   output, and global process bounds;
-- support bounded `bar` and `line` specifications with one named X column, one
-  named numeric Y column, optional title and axis labels, fixed-theme output,
-  and bounded dimensions;
-- require 1-50 complete rows, reject truncated queries, missing or ambiguous
-  columns, non-finite Y values, oversized labels, and invalid chart geometry;
+- support bounded `bar` and `line` specifications with one named X column,
+  either the compatible single `yColumn` or 2-6 unique numeric `yColumns`,
+  optional title and axis labels, fixed-theme output, and bounded dimensions;
+- require 1-50 complete categories and at most 200 total points, reject
+  truncated queries, missing or ambiguous columns, non-finite Y values,
+  oversized labels, and invalid chart geometry;
+- render multi-series bars as grouped categories and lines as one polyline per
+  series over a shared finite Y domain, with a fixed at-most-three-column,
+  two-row legend whose labels come from bounded SQL aliases;
 - generate deterministic standalone SVG through a pure renderer with no
   script, event handler, foreign object, external resource, link, image,
   arbitrary CSS, or model-provided markup;
 - return SVG only to the live Agent. Durable Tool, Replay, SSE, Workflow, and
   Trace evidence retains query/result/spec/renderer/SVG hashes, dimensions,
-  chart type, and point/byte counts but no path, SQL, parameter, label, row, or
-  SVG body;
+  chart type, category/series/point counts, and byte counts but no path, SQL,
+  parameter, label, row, or SVG body;
 - keep file creation on the existing `apply_patch` plus Plan Artifact path so
   chart generation does not silently gain Workspace write permission;
 - cover rendering determinism, XML escaping, positive/negative/zero domains,
@@ -3549,35 +3553,44 @@ Threat boundary:
 
 Observed result:
 
-- pure renderer tests cover deterministic bar/line output, XML escaping,
-  positive/negative/zero baselines, duplicate or missing columns, duplicate X
-  values, nonnumeric Y values, oversized and bidirectional text, invalid
-  dimensions, non-finite geometry, and point/output bounds;
+- pure renderer tests cover deterministic grouped-bar/multi-line output,
+  single-series compatibility, shared positive/negative/zero baselines,
+  legends, XML escaping, duplicate or missing columns, duplicate X values,
+  nonnumeric Y values, oversized and bidirectional text, invalid dimensions,
+  non-finite geometry, and category/series/point/output bounds;
 - real process tests cover database-hash binding, BigInt aggregate projection,
   truncation denial, malformed requests, timeout, cancellation, source drift,
   and the existing four-worker global admission limit;
-- a real Agent Run creates a Plan, inspects schema, renders grouped paid revenue
-  as SVG, writes it through `apply_patch`, verifies the exact workspace bytes as
-  a Plan Artifact, and exports a valid portable Replay without retaining path,
-  SQL, parameter, label, row, or SVG bodies in SQLite Tool events;
+- a real Agent Run creates a Plan, inspects schema, renders paid and pending
+  revenue as grouped SVG series, writes it through `apply_patch`, verifies the
+  exact workspace bytes as a Plan Artifact, and exports a valid portable Replay
+  without retaining path, SQL, parameter, label, row, or SVG bodies in SQLite
+  Tool events;
+- a real DeepSeek Run completed schema inspection and a two-series conditional
+  aggregate in 11.4 seconds. Its schema-2 receipt bound 3 categories, 2 series,
+  6 points, and SVG SHA-256 `3b0e68ce2e4f`; SQLite Tool events retained none of
+  the SQL, aliases, row values, or SVG body, and the API key was absent from
+  every data-root file;
 - a typed Workflow Tool node passes only the chart receipt to its downstream
   Agent. A real Hono SSE request lets the live model consume SVG while public
-  frames and Ledger remain body-free; Web Trace validates complete receipt
-  geometry and renders only bounded metadata and hash prefixes;
+  frames and Ledger remain body-free; Web Trace accepts legacy schema 1 and
+  validates schema 2 category × series = point geometry before rendering only
+  bounded metadata and hash prefixes;
 - `npm run test:live-sqlite` executes the real Node SQLite worker for both an
   aggregate query and deterministic SVG generation;
-- chart execution, rendering, and receipt formatting live in 174-, 382-, and
-  97-line modules; the existing `sqlite-query-tool.ts` remains at 396 lines and
-  the SQLite worker/query implementation is unchanged;
-- the complete repository gate passes 1,426 regular tests with 25 opt-in live
-  tests skipped, 247 OpenAPI routes, 244/244 compatibility operations, six
-  workspaces, 254 packages, and 241/241 integrity entries. The product budget
-  measures 679.6 ms to the first CLI event, 828.0 ms to the first token,
-  1,145.9 ms to completion, 0.3 ms read p95, 7.0 ms 1,000-event projection, and
-  753.664 SQLite bytes/event;
-- the 69-file Web dist remains at 130.08 KiB for the main entry, is bound to
-  `1c8fa5c2345e0677`, and the refreshed seven-artifact release set is bound to
-  `b4974083aa6e92c1`.
+- chart execution, normalization, SVG geometry, and receipt formatting remain
+  split into sub-500-line modules; the SQLite worker/query implementation is
+  unchanged;
+- the complete repository gate passes 1,873 regular tests with 40 opt-in live
+  tests skipped, 673 production modules, 363 test modules, zero relative-import
+  cycles, 255 OpenAPI routes, 244/244 compatibility operations, six workspaces,
+  254 packages, and 241/241 integrity entries. The product budget measures
+  642.6 ms to the first CLI event, 793.0 ms to the first token, 1,101.2 ms to
+  completion, 0.3 ms read p95, 7.4 ms 1,000-event projection, and 749.568
+  SQLite bytes/event;
+- the 92-file Web dist remains at 130.32 KiB for the main entry, is bound to
+  `778504b256adac56`, and the 37-artifact release set is bound to
+  `36059bcead60f37a`.
 
 ## Completed Slice: Interactive Agent CLI
 

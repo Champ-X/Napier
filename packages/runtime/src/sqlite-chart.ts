@@ -5,13 +5,15 @@ import {
   SQLITE_CHART_RENDERER_SHA256,
   normalizeSqliteChartSpec,
   renderSqliteChart,
+  type MultiSeriesSqliteChartSpec,
   type NormalizedSqliteChartSpec,
+  type SqliteChartRequestSpec,
   type SqliteChartSpec,
 } from "./sqlite-chart-renderer.js";
 import { executeSqliteQuery, type SqliteQueryResult } from "./sqlite-query.js";
 import type { SqliteQueryParameter } from "./sqlite-query-worker.js";
 
-export interface SqliteChartRequest {
+interface SqliteChartRequestBase {
   action: "chart";
   path: string;
   databaseSha256: string;
@@ -19,7 +21,18 @@ export interface SqliteChartRequest {
   params?: SqliteQueryParameter[];
   maxRows?: number;
   timeoutMs?: number;
+}
+
+export interface SqliteChartRequest extends SqliteChartRequestBase {
   chart: SqliteChartSpec;
+}
+
+export interface MultiSeriesSqliteChartRequest extends SqliteChartRequestBase {
+  chart: MultiSeriesSqliteChartSpec;
+}
+
+export interface SqliteChartExecutionRequest extends SqliteChartRequestBase {
+  chart: SqliteChartRequestSpec;
 }
 
 export interface SqliteChartResult extends Omit<
@@ -29,6 +42,8 @@ export interface SqliteChartResult extends Omit<
   action: "chart";
   chart: NormalizedSqliteChartSpec;
   pointCount: number;
+  categoryCount: number;
+  seriesCount: number;
   svg: string;
   svgSha256: string;
   svgBytes: number;
@@ -41,7 +56,7 @@ export interface SqliteChartResult extends Omit<
 
 export async function executeSqliteChart(
   workspaceRoot: string,
-  request: SqliteChartRequest,
+  request: SqliteChartExecutionRequest,
   signal?: AbortSignal,
 ): Promise<SqliteChartResult> {
   const normalized = normalizeChartRequest(request);
@@ -82,6 +97,8 @@ export async function executeSqliteChart(
     rowsSha256: sha256(canonicalJson(query.rows)),
     chartSpecSha256,
     pointCount: rendered.points.length,
+    categoryCount: rendered.categoryCount,
+    seriesCount: rendered.seriesCount,
     svgSha256: rendered.svgSha256,
     svgBytes: rendered.svgBytes,
     rendererSha256: SQLITE_CHART_RENDERER_SHA256,
@@ -99,6 +116,8 @@ export async function executeSqliteChart(
     limitsSha256: query.limitsSha256,
     chart: rendered.spec,
     pointCount: rendered.points.length,
+    categoryCount: rendered.categoryCount,
+    seriesCount: rendered.seriesCount,
     svg: rendered.svg,
     svgSha256: rendered.svgSha256,
     svgBytes: rendered.svgBytes,
@@ -110,14 +129,14 @@ export async function executeSqliteChart(
   };
 }
 
-function normalizeChartRequest(request: SqliteChartRequest): {
+function normalizeChartRequest(request: SqliteChartExecutionRequest): {
   path: string;
   databaseSha256: string;
   sql: string;
   params: SqliteQueryParameter[];
   maxRows: number;
   timeoutMs: number | undefined;
-  chart: NormalizedSqliteChartSpec;
+  chart: SqliteChartRequestSpec;
 } {
   if (
     !record(request) ||
@@ -151,6 +170,7 @@ function normalizeChartRequest(request: SqliteChartRequest): {
   ) {
     throw new Error("SQLite chart maxRows must be between 1 and 50");
   }
+  normalizeSqliteChartSpec(request.chart);
   return {
     path: request.path,
     databaseSha256: request.databaseSha256,
@@ -158,7 +178,7 @@ function normalizeChartRequest(request: SqliteChartRequest): {
     params: request.params ?? [],
     maxRows,
     timeoutMs: request.timeoutMs,
-    chart: normalizeSqliteChartSpec(request.chart),
+    chart: structuredClone(request.chart),
   };
 }
 

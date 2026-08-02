@@ -136,6 +136,68 @@ describe("sqlite_query Agent tool", () => {
     );
   });
 
+  it("renders multi-series chart aliases with schema-2 hash-only evidence", async () => {
+    const root = await fixture();
+    const tool = createSqliteQueryTool(root);
+    const schema = await tool.execute("schema-multi-chart-call", {
+      action: "schema",
+      path: "private-analytics.db",
+    });
+    const args = {
+      action: "chart" as const,
+      path: "private-analytics.db",
+      databaseSha256: schema.details.databaseSha256,
+      sql: `SELECT category AS PRIVATE_CATEGORY,
+        SUM(value) AS PRIVATE_TOTAL,
+        COUNT(*) AS PRIVATE_COUNT
+        FROM metrics GROUP BY category ORDER BY category`,
+      chart: {
+        type: "line" as const,
+        xColumn: "PRIVATE_CATEGORY",
+        yColumns: ["PRIVATE_TOTAL", "PRIVATE_COUNT"],
+        title: "PRIVATE MULTI CHART",
+      },
+    };
+    const charted = await tool.execute("multi-chart-call", args);
+    const live = charted.content[0]?.text ?? "";
+
+    expect(live.match(/<polyline /gu)).toHaveLength(2);
+    expect(live).toContain(">PRIVATE_TOTAL</text>");
+    expect(live).toContain(">PRIVATE_COUNT</text>");
+    expect(charted.details).toEqual(
+      expect.objectContaining({
+        kind: "napier.sqlite-chart",
+        schemaVersion: 2,
+        chartType: "line",
+        categoryCount: 2,
+        seriesCount: 2,
+        pointCount: 4,
+      }),
+    );
+    const call = sqliteQueryToolCallArgumentsLedgerProjection(args);
+    const output = sqliteQueryToolOutputLedgerProjection(live, {
+      details: charted.details,
+    });
+    const durable = JSON.stringify({ call, output, details: charted.details });
+    for (const secret of [
+      "PRIVATE_CATEGORY",
+      "PRIVATE_TOTAL",
+      "PRIVATE_COUNT",
+      "PRIVATE MULTI CHART",
+      "alpha",
+      "beta",
+      "<svg",
+    ]) {
+      expect(durable).not.toContain(secret);
+    }
+    expect(call).toEqual(
+      expect.objectContaining({
+        chartSeriesCount: 2,
+        chartRequestSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+  });
+
   it("requires workspace confinement and remains a read effect", () => {
     const workspace = path.resolve("/workspace");
     expect(

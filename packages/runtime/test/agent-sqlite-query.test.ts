@@ -202,7 +202,7 @@ describe("Agent SQLite query integration", () => {
     }
   });
 
-  it("renders a real SQLite chart and verifies the exact SVG artifact", async () => {
+  it("renders a real multi-series SQLite chart and verifies the exact SVG artifact", async () => {
     const fixture = await createFixture();
     const chartPath = "reports/paid-revenue.svg";
     let planId = "";
@@ -263,13 +263,16 @@ describe("Agent SQLite query integration", () => {
             action: "chart",
             path: "PRIVATE_REVENUE_DATABASE.db",
             databaseSha256,
-            sql: "SELECT region AS PRIVATE_REGION, SUM(amount) AS PRIVATE_PAID_TOTAL FROM PRIVATE_ORDERS WHERE status = ? GROUP BY region ORDER BY PRIVATE_PAID_TOTAL DESC",
-            params: ["PRIVATE_PAID_STATUS"],
+            sql: `SELECT region AS PRIVATE_REGION,
+              SUM(CASE WHEN status = ? THEN amount ELSE 0 END) AS PRIVATE_PAID_TOTAL,
+              SUM(CASE WHEN status <> ? THEN amount ELSE 0 END) AS PRIVATE_PENDING
+              FROM PRIVATE_ORDERS GROUP BY region ORDER BY PRIVATE_REGION`,
+            params: ["PRIVATE_PAID_STATUS", "PRIVATE_PAID_STATUS"],
             chart: {
               type: "bar",
               xColumn: "PRIVATE_REGION",
-              yColumn: "PRIVATE_PAID_TOTAL",
-              title: "PRIVATE Paid revenue by region",
+              yColumns: ["PRIVATE_PAID_TOTAL", "PRIVATE_PENDING"],
+              title: "PRIVATE Revenue status by region",
               xLabel: "PRIVATE Region",
               yLabel: "PRIVATE Revenue",
             },
@@ -283,7 +286,9 @@ describe("Agent SQLite query integration", () => {
         );
         const start = output?.indexOf("<svg") ?? -1;
         svg = start >= 0 ? output!.slice(start) : "";
-        expect(svg).toContain("PRIVATE Paid revenue by region");
+        expect(svg).toContain("PRIVATE Revenue status by region");
+        expect(svg).toContain(">PRIVATE_PAID_TOTAL</text>");
+        expect(svg).toContain(">PRIVATE_PENDING</text>");
         expect(svg).toContain("</svg>");
         expect(svg).not.toContain("<script");
         return fauxAssistantMessage(
@@ -336,7 +341,7 @@ describe("Agent SQLite query integration", () => {
 
     const run = await runtime.runPrompt({
       threadId: fixture.threadId,
-      text: "Chart paid revenue by region as a verified SVG.",
+      text: "Chart paid and pending revenue by region as a verified multi-series SVG.",
       model: { provider: "faux-sqlite-chart", id: "faux-1" },
     });
 
@@ -368,11 +373,17 @@ describe("Agent SQLite query integration", () => {
         .filter((event) => event.type === "tool.completed")
         .map((event) => {
           const details = record(record(event.payload)?.["details"]);
-          return [details?.["kind"], details?.["action"]];
+          return [
+            details?.["kind"],
+            details?.["action"],
+            details?.["schemaVersion"],
+            details?.["seriesCount"] ?? null,
+            details?.["categoryCount"] ?? null,
+          ];
         }),
     ).toEqual([
-      ["napier.sqlite-query", "schema"],
-      ["napier.sqlite-chart", "chart"],
+      ["napier.sqlite-query", "schema", 1, null, null],
+      ["napier.sqlite-chart", "chart", 2, 2, 2],
     ]);
     const durable = JSON.stringify(sqliteEvents);
     for (const secret of [
@@ -380,8 +391,9 @@ describe("Agent SQLite query integration", () => {
       "PRIVATE_ORDERS",
       "PRIVATE_REGION",
       "PRIVATE_PAID_TOTAL",
+      "PRIVATE_PENDING",
       "PRIVATE_PAID_STATUS",
-      "PRIVATE Paid revenue",
+      "PRIVATE Revenue status",
       "<svg",
       "west",
       "east",

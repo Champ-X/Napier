@@ -1,8 +1,16 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  renderSqliteChartSvg,
+  SQLITE_CHART_SVG_POLICY,
+  type SqliteChartSvgSeries,
+} from "./sqlite-chart-svg.js";
 import type { SqliteQueryCell } from "./sqlite-query.js";
 
 export const MAX_SQLITE_CHART_POINTS = 50;
+export const MAX_SQLITE_CHART_SERIES = 6;
+export const MAX_SQLITE_CHART_TOTAL_POINTS = 200;
 export const MAX_SQLITE_CHART_LABEL_CHARS = 80;
+export const MAX_SQLITE_CHART_SERIES_LABEL_CHARS = 20;
 export const MAX_SQLITE_CHART_TITLE_CHARS = 160;
 export const MAX_SQLITE_CHART_SVG_BYTES = 48 * 1024;
 export const MIN_SQLITE_CHART_WIDTH = 480;
@@ -12,15 +20,6 @@ export const MAX_SQLITE_CHART_HEIGHT = 1_000;
 export const DEFAULT_SQLITE_CHART_WIDTH = 960;
 export const DEFAULT_SQLITE_CHART_HEIGHT = 540;
 
-const PALETTE = {
-  background: "#f7f4ed",
-  axis: "#292722",
-  grid: "#d8d2c6",
-  primary: "#4e6e5d",
-  text: "#292722",
-};
-const CHART_MARGIN = { top: 64, right: 28, bottom: 94, left: 82 };
-const Y_TICK_COUNT = 5;
 const NUMERIC_TEXT = /^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?$/u;
 
 const UNSAFE_TEXT =
@@ -30,10 +29,9 @@ const UNSAFE_TEXT_PRESENT =
 
 export type SqliteChartType = "bar" | "line";
 
-export interface SqliteChartSpec {
+interface SqliteChartPresentation {
   type: SqliteChartType;
   xColumn: string;
-  yColumn: string;
   title?: string;
   xLabel?: string;
   yLabel?: string;
@@ -41,10 +39,23 @@ export interface SqliteChartSpec {
   height?: number;
 }
 
+export interface SqliteChartSpec extends SqliteChartPresentation {
+  yColumn: string;
+}
+
+export interface MultiSeriesSqliteChartSpec extends SqliteChartPresentation {
+  yColumns: string[];
+}
+
+export type SqliteChartRequestSpec =
+  | SqliteChartSpec
+  | MultiSeriesSqliteChartSpec;
+
 export interface NormalizedSqliteChartSpec {
   type: SqliteChartType;
   xColumn: string;
   yColumn: string;
+  yColumns: string[];
   title: string;
   xLabel: string;
   yLabel: string;
@@ -60,6 +71,8 @@ export interface SqliteChartPoint {
 export interface RenderedSqliteChart {
   spec: NormalizedSqliteChartSpec;
   points: SqliteChartPoint[];
+  categoryCount: number;
+  seriesCount: number;
   svg: string;
   svgSha256: string;
   svgBytes: number;
@@ -67,32 +80,19 @@ export interface RenderedSqliteChart {
 
 export const SQLITE_CHART_RENDERER_SHA256 = sha256(
   canonicalJson({
-    schemaVersion: 1,
-    grammar: [
-      "svg",
-      "title",
-      "desc",
-      "rect",
-      "line",
-      "text",
-      "polyline",
-      "circle",
-    ],
-    margin: CHART_MARGIN,
-    palette: PALETTE,
-    yTickCount: Y_TICK_COUNT,
-    xLabelRotationDegrees: -35,
-    numberFormatting: "six-significant-digits",
-    textPolicy: "xml-escaped-c0-c1-bidi-safe",
-    geometryPolicy: "finite-domain-with-zero-baseline",
+    schemaVersion: 2,
+    svg: SQLITE_CHART_SVG_POLICY,
   }),
 );
 
 export const SQLITE_CHART_LIMITS_SHA256 = sha256(
   canonicalJson({
-    schemaVersion: 1,
-    maxPoints: MAX_SQLITE_CHART_POINTS,
+    schemaVersion: 2,
+    maxCategories: MAX_SQLITE_CHART_POINTS,
+    maxSeries: MAX_SQLITE_CHART_SERIES,
+    maxTotalPoints: MAX_SQLITE_CHART_TOTAL_POINTS,
     maxLabelChars: MAX_SQLITE_CHART_LABEL_CHARS,
+    maxSeriesLabelChars: MAX_SQLITE_CHART_SERIES_LABEL_CHARS,
     maxTitleChars: MAX_SQLITE_CHART_TITLE_CHARS,
     maxSvgBytes: MAX_SQLITE_CHART_SVG_BYTES,
     width: [MIN_SQLITE_CHART_WIDTH, MAX_SQLITE_CHART_WIDTH],
@@ -103,7 +103,7 @@ export const SQLITE_CHART_LIMITS_SHA256 = sha256(
 );
 
 export function normalizeSqliteChartSpec(
-  input: SqliteChartSpec,
+  input: SqliteChartRequestSpec,
 ): NormalizedSqliteChartSpec {
   if (
     !record(input) ||
@@ -111,6 +111,7 @@ export function normalizeSqliteChartSpec(
       "type",
       "xColumn",
       "yColumn",
+      "yColumns",
       "title",
       "xLabel",
       "yLabel",
@@ -126,17 +127,16 @@ export function normalizeSqliteChartSpec(
     256,
     "SQLite chart X column is invalid",
   );
-  const yColumn = boundedText(
-    input.yColumn,
-    256,
-    "SQLite chart Y column is invalid",
-  );
-  if (xColumn === yColumn) {
+  const yColumns = normalizeYColumns(input);
+  const yColumn = yColumns[0]!;
+  if (yColumns.includes(xColumn)) {
     throw new Error("SQLite chart X and Y columns must differ");
   }
   const title = optionalText(
     input.title,
-    `${yColumn} by ${xColumn}`,
+    yColumns.length === 1
+      ? `${yColumn} by ${xColumn}`
+      : `${yColumns.length} series by ${xColumn}`,
     MAX_SQLITE_CHART_TITLE_CHARS,
   );
   const xLabel = optionalText(
@@ -146,7 +146,7 @@ export function normalizeSqliteChartSpec(
   );
   const yLabel = optionalText(
     input.yLabel,
-    yColumn,
+    yColumns.length === 1 ? yColumn : "Value",
     MAX_SQLITE_CHART_LABEL_CHARS,
   );
   const width = input.width ?? DEFAULT_SQLITE_CHART_WIDTH;
@@ -165,6 +165,7 @@ export function normalizeSqliteChartSpec(
     type: input.type,
     xColumn,
     yColumn,
+    yColumns,
     title,
     xLabel,
     yLabel,
@@ -174,7 +175,7 @@ export function normalizeSqliteChartSpec(
 }
 
 export function renderSqliteChart(
-  specInput: SqliteChartSpec,
+  specInput: SqliteChartRequestSpec,
   columns: string[],
   rows: SqliteQueryCell[][],
 ): RenderedSqliteChart {
@@ -182,16 +183,26 @@ export function renderSqliteChart(
   if (rows.length < 1 || rows.length > MAX_SQLITE_CHART_POINTS) {
     throw new Error("SQLite chart requires 1-50 complete rows");
   }
+  if (rows.length * spec.yColumns.length > MAX_SQLITE_CHART_TOTAL_POINTS) {
+    throw new Error("SQLite chart exceeds the 200-point series limit");
+  }
   const xIndex = uniqueColumnIndex(columns, spec.xColumn);
-  const yIndex = uniqueColumnIndex(columns, spec.yColumn);
-  const points = rows.map((row) => ({
-    label: chartLabel(row[xIndex]),
-    value: chartNumber(row[yIndex]),
-  }));
-  if (new Set(points.map((point) => point.label)).size !== points.length) {
+  const labels = rows.map((row) => chartLabel(row[xIndex]));
+  if (new Set(labels).size !== labels.length) {
     throw new Error("SQLite chart X values must be unique");
   }
-  const svg = renderSvg(spec, points);
+  const series: SqliteChartSvgSeries[] = spec.yColumns.map((name) => {
+    const yIndex = uniqueColumnIndex(columns, name);
+    return {
+      name,
+      points: rows.map((row, index) => ({
+        label: labels[index]!,
+        value: chartNumber(row[yIndex]),
+      })),
+    };
+  });
+  const points = series.flatMap((candidate) => candidate.points);
+  const svg = renderSqliteChartSvg(spec, series);
   const svgBytes = Buffer.byteLength(svg, "utf8");
   if (svgBytes > MAX_SQLITE_CHART_SVG_BYTES) {
     throw new Error("SQLite chart SVG exceeds the output limit");
@@ -199,92 +210,41 @@ export function renderSqliteChart(
   return {
     spec,
     points,
+    categoryCount: rows.length,
+    seriesCount: series.length,
     svg,
     svgSha256: sha256(svg),
     svgBytes,
   };
 }
 
-function renderSvg(
-  spec: NormalizedSqliteChartSpec,
-  points: SqliteChartPoint[],
-): string {
-  const plotWidth = spec.width - CHART_MARGIN.left - CHART_MARGIN.right;
-  const plotHeight = spec.height - CHART_MARGIN.top - CHART_MARGIN.bottom;
-  const values = points.map((point) => point.value);
-  let minimum = Math.min(0, ...values);
-  let maximum = Math.max(0, ...values);
-  if (minimum === maximum) maximum = minimum + 1;
-  const span = maximum - minimum;
-  if (!Number.isFinite(span) || span <= 0) {
-    throw new Error("SQLite chart Y range exceeds finite geometry");
+function normalizeYColumns(input: SqliteChartRequestSpec): string[] {
+  const yColumn = "yColumn" in input ? input.yColumn : undefined;
+  const yColumns = "yColumns" in input ? input.yColumns : undefined;
+  const hasSingle = yColumn !== undefined;
+  const hasMultiple = yColumns !== undefined;
+  if (hasSingle === hasMultiple) {
+    throw new Error("SQLite chart requires exactly one of yColumn or yColumns");
   }
-  const yPosition = (value: number) =>
-    CHART_MARGIN.top + ((maximum - value) / span) * plotHeight;
-  const baseline = yPosition(0);
-  const step = plotWidth / points.length;
-  const centers = points.map(
-    (_point, index) => CHART_MARGIN.left + step * (index + 0.5),
-  );
-  const labelStride = Math.max(1, Math.ceil(points.length / 12));
-  const polylinePoints = points
-    .map(
-      (point, index) =>
-        `${decimal(centers[index]!)},${decimal(yPosition(point.value))}`,
-    )
-    .join(" ");
-  const lines = [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${spec.width}" height="${spec.height}" viewBox="0 0 ${spec.width} ${spec.height}" role="img" aria-labelledby="chart-title chart-description">`,
-    `  <title id="chart-title">${xml(spec.title)}</title>`,
-    `  <desc id="chart-description">${xml(`${spec.type} chart with ${points.length} points; X axis ${spec.xLabel}; Y axis ${spec.yLabel}.`)}</desc>`,
-    `  <rect x="0" y="0" width="${spec.width}" height="${spec.height}" fill="${PALETTE.background}"/>`,
-    `  <text x="${CHART_MARGIN.left}" y="34" fill="${PALETTE.text}" font-family="system-ui, sans-serif" font-size="22" font-weight="600">${xml(spec.title)}</text>`,
-  ];
-  for (let index = 0; index <= Y_TICK_COUNT; index += 1) {
-    const value = minimum + ((maximum - minimum) * index) / Y_TICK_COUNT;
-    const y = yPosition(value);
-    lines.push(
-      `  <line x1="${CHART_MARGIN.left}" y1="${decimal(y)}" x2="${spec.width - CHART_MARGIN.right}" y2="${decimal(y)}" stroke="${PALETTE.grid}" stroke-width="1"/>`,
-      `  <text x="${CHART_MARGIN.left - 10}" y="${decimal(y + 4)}" fill="${PALETTE.text}" font-family="system-ui, sans-serif" font-size="12" text-anchor="end">${xml(numberLabel(value))}</text>`,
-    );
+  const columns = hasSingle
+    ? [boundedText(yColumn, 256, "SQLite chart Y column is invalid")]
+    : Array.isArray(yColumns)
+      ? yColumns.map((column) =>
+          boundedText(
+            column,
+            MAX_SQLITE_CHART_SERIES_LABEL_CHARS,
+            "SQLite chart series column is invalid",
+          ),
+        )
+      : [];
+  if (
+    (!hasSingle &&
+      (columns.length < 2 || columns.length > MAX_SQLITE_CHART_SERIES)) ||
+    new Set(columns).size !== columns.length
+  ) {
+    throw new Error("SQLite chart series columns are invalid");
   }
-  lines.push(
-    `  <line x1="${CHART_MARGIN.left}" y1="${decimal(CHART_MARGIN.top)}" x2="${CHART_MARGIN.left}" y2="${decimal(CHART_MARGIN.top + plotHeight)}" stroke="${PALETTE.axis}" stroke-width="1.5"/>`,
-    `  <line x1="${CHART_MARGIN.left}" y1="${decimal(baseline)}" x2="${spec.width - CHART_MARGIN.right}" y2="${decimal(baseline)}" stroke="${PALETTE.axis}" stroke-width="1.5"/>`,
-  );
-  if (spec.type === "bar") {
-    const barWidth = Math.max(2, step * 0.64);
-    points.forEach((point, index) => {
-      const valueY = yPosition(point.value);
-      lines.push(
-        `  <rect x="${decimal(centers[index]! - barWidth / 2)}" y="${decimal(Math.min(valueY, baseline))}" width="${decimal(barWidth)}" height="${decimal(Math.abs(baseline - valueY))}" fill="${PALETTE.primary}" rx="2"/>`,
-      );
-    });
-  } else {
-    lines.push(
-      `  <polyline points="${polylinePoints}" fill="none" stroke="${PALETTE.primary}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`,
-    );
-    points.forEach((point, index) => {
-      lines.push(
-        `  <circle cx="${decimal(centers[index]!)}" cy="${decimal(yPosition(point.value))}" r="4" fill="${PALETTE.primary}"/>`,
-      );
-    });
-  }
-  points.forEach((point, index) => {
-    if (index % labelStride !== 0 && index !== points.length - 1) return;
-    const x = centers[index]!;
-    const y = CHART_MARGIN.top + plotHeight + 18;
-    lines.push(
-      `  <text x="${decimal(x)}" y="${decimal(y)}" fill="${PALETTE.text}" font-family="system-ui, sans-serif" font-size="11" text-anchor="end" transform="rotate(-35 ${decimal(x)} ${decimal(y)})">${xml(point.label)}</text>`,
-    );
-  });
-  lines.push(
-    `  <text x="${decimal(CHART_MARGIN.left + plotWidth / 2)}" y="${spec.height - 14}" fill="${PALETTE.text}" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">${xml(spec.xLabel)}</text>`,
-    `  <text x="18" y="${decimal(CHART_MARGIN.top + plotHeight / 2)}" fill="${PALETTE.text}" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle" transform="rotate(-90 18 ${decimal(CHART_MARGIN.top + plotHeight / 2)})">${xml(spec.yLabel)}</text>`,
-    "</svg>",
-    "",
-  );
-  return lines.join("\n");
+  return columns;
 }
 
 function uniqueColumnIndex(columns: string[], target: string): number {
@@ -344,29 +304,6 @@ function boundedText(value: unknown, maximum: number, error: string): string {
     throw new Error(error);
   }
   return normalized;
-}
-
-function numberLabel(value: number): string {
-  if (Object.is(value, -0)) return "0";
-  return Number(value.toPrecision(6)).toString();
-}
-
-function decimal(value: number): string {
-  return Number(value.toFixed(2)).toString();
-}
-
-function xml(value: string): string {
-  return value.replace(
-    /[&<>"']/gu,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&apos;",
-      })[character]!,
-  );
 }
 
 function record(value: unknown): value is Record<string, unknown> {

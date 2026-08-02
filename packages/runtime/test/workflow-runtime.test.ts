@@ -30,6 +30,10 @@ import {
   validateExecutionPlanWorkflowResult,
 } from "../src/workflow-protocol.js";
 import { ExecutionPlanWorkflowRuntime } from "../src/workflow-runtime.js";
+import {
+  sqliteChartReceiptSchema,
+  sqliteQueryReceiptSchema,
+} from "./workflow-sqlite-schema-fixtures.js";
 
 const temporaryRoots: string[] = [];
 
@@ -1165,10 +1169,15 @@ describe("Execution Plan Workflow runtime", () => {
           properties: {
             type: { type: "string", enum: ["bar"] },
             xColumn: { type: "string", minLength: 1, maxLength: 256 },
-            yColumn: { type: "string", minLength: 1, maxLength: 256 },
+            yColumns: {
+              type: "array",
+              items: { type: "string", minLength: 1, maxLength: 20 },
+              minItems: 2,
+              maxItems: 6,
+            },
             title: { type: "string", minLength: 1, maxLength: 160 },
           },
-          required: ["type", "xColumn", "yColumn", "title"],
+          required: ["type", "xColumn", "yColumns", "title"],
           additionalProperties: false,
         },
       },
@@ -1193,14 +1202,14 @@ describe("Execution Plan Workflow runtime", () => {
             sql: {
               source: "literal",
               value:
-                "SELECT category, SUM(value) AS total FROM metrics GROUP BY category ORDER BY total DESC",
+                "SELECT category, SUM(value) AS Total, COUNT(*) AS Count FROM metrics GROUP BY category ORDER BY category",
             },
             chart: {
               source: "literal",
               value: {
                 type: "bar",
                 xColumn: "category",
-                yColumn: "total",
+                yColumns: ["Total", "Count"],
                 title: "PRIVATE Workflow chart",
               },
             },
@@ -1230,7 +1239,9 @@ describe("Execution Plan Workflow runtime", () => {
       (context) => {
         const messages = JSON.stringify(context.messages);
         expect(messages).toContain('\\"chartType\\":\\"bar\\"');
-        expect(messages).toContain('\\"pointCount\\":2');
+        expect(messages).toContain('\\"categoryCount\\":2');
+        expect(messages).toContain('\\"seriesCount\\":2');
+        expect(messages).toContain('\\"pointCount\\":4');
         expect(messages).toContain('\\"svgSha256\\":');
         expect(messages).not.toContain("PRIVATE Workflow chart");
         expect(messages).not.toContain("alpha");
@@ -1256,7 +1267,9 @@ describe("Execution Plan Workflow runtime", () => {
         action: "chart",
         databaseSha256: snapshot.fileSha256,
         chartType: "bar",
-        pointCount: 2,
+        categoryCount: 2,
+        seriesCount: 2,
+        pointCount: 4,
         svgSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
@@ -3779,93 +3792,6 @@ function listFilesReceiptSchema(): WorkflowObjectSchema {
     },
     required: ["count", "truncated", "pathSha256", "entrySetSha256"],
     additionalProperties: false,
-  };
-}
-
-function sqliteQueryReceiptSchema(): WorkflowObjectSchema {
-  const hash = { type: "string" as const, minLength: 64, maxLength: 64 };
-  return {
-    type: "object",
-    properties: {
-      kind: { type: "string", enum: ["napier.sqlite-query"] },
-      schemaVersion: { type: "integer", minimum: 1, maximum: 1 },
-      action: { type: "string", enum: ["query"] },
-      databasePathSha256: hash,
-      databaseSha256: hash,
-      databaseBytes: { type: "integer", minimum: 16 },
-      sqlSha256: hash,
-      parameterCount: { type: "integer", minimum: 0, maximum: 50 },
-      parameterSetSha256: hash,
-      columnCount: { type: "integer", minimum: 0, maximum: 80 },
-      rowCount: { type: "integer", minimum: 0, maximum: 100 },
-      truncated: { type: "boolean" },
-      columnsSha256: hash,
-      rowsSha256: hash,
-      durationMs: { type: "integer", minimum: 0, maximum: 6_000 },
-      workerSha256: hash,
-      runtimeSha256: hash,
-      limitsSha256: hash,
-      resultSha256: hash,
-    },
-    required: [
-      "kind",
-      "schemaVersion",
-      "action",
-      "databasePathSha256",
-      "databaseSha256",
-      "databaseBytes",
-      "sqlSha256",
-      "parameterCount",
-      "parameterSetSha256",
-      "columnCount",
-      "rowCount",
-      "truncated",
-      "columnsSha256",
-      "rowsSha256",
-      "durationMs",
-      "workerSha256",
-      "runtimeSha256",
-      "limitsSha256",
-      "resultSha256",
-    ],
-    additionalProperties: false,
-  };
-}
-
-function sqliteChartReceiptSchema(): WorkflowObjectSchema {
-  const base = sqliteQueryReceiptSchema();
-  const hash = { type: "string" as const, minLength: 64, maxLength: 64 };
-  return {
-    ...base,
-    properties: {
-      ...base.properties,
-      kind: { type: "string", enum: ["napier.sqlite-chart"] },
-      action: { type: "string", enum: ["chart"] },
-      rowCount: { type: "integer", minimum: 1, maximum: 50 },
-      chartType: { type: "string", enum: ["bar", "line"] },
-      pointCount: { type: "integer", minimum: 1, maximum: 50 },
-      width: { type: "integer", minimum: 480, maximum: 1_600 },
-      height: { type: "integer", minimum: 320, maximum: 1_000 },
-      chartSpecSha256: hash,
-      svgSha256: hash,
-      svgBytes: { type: "integer", minimum: 1, maximum: 48 * 1024 },
-      rendererSha256: hash,
-      chartLimitsSha256: hash,
-      queryResultSha256: hash,
-    },
-    required: [
-      ...base.required,
-      "chartType",
-      "pointCount",
-      "width",
-      "height",
-      "chartSpecSha256",
-      "svgSha256",
-      "svgBytes",
-      "rendererSha256",
-      "chartLimitsSha256",
-      "queryResultSha256",
-    ],
   };
 }
 

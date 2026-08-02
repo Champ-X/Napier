@@ -90,6 +90,31 @@ describe("SQLite query Trace projection", () => {
     expect(JSON.stringify(view)).not.toContain("PRIVATE_CHART");
   });
 
+  it("projects internally consistent multi-series chart evidence", () => {
+    const view = sqliteQueryEventEvidence({
+      ...chartDetails(),
+      schemaVersion: 2,
+      rowCount: 10,
+      pointCount: 30,
+      categoryCount: 10,
+      seriesCount: 3,
+    });
+
+    expect(view).toEqual(
+      expect.objectContaining({
+        sqliteQueryAction: "chart",
+        sqliteChartPointCount: 30,
+        sqliteChartCategoryCount: 10,
+        sqliteChartSeriesCount: 3,
+      }),
+    );
+    const summary = sqliteQuerySummaryParts(view!);
+    expect(summary).toContain("chart-points 30");
+    expect(summary).toContain("chart-categories 10");
+    expect(summary).toContain("chart-series 3");
+    expect(JSON.stringify(view)).not.toContain("PRIVATE_CHART");
+  });
+
   it("fails closed on partial or impossible evidence", () => {
     expect(
       sqliteQueryEventEvidence({
@@ -125,6 +150,24 @@ describe("SQLite query Trace projection", () => {
       sqliteQueryEventEvidence({
         ...chartDetails(),
         svgSha256: undefined,
+      }),
+    ).toBeUndefined();
+    expect(
+      sqliteQueryEventEvidence({
+        ...chartDetails(),
+        schemaVersion: 2,
+        pointCount: 21,
+        categoryCount: 10,
+        seriesCount: 2,
+      }),
+    ).toBeUndefined();
+    expect(
+      sqliteQueryEventEvidence({
+        ...chartDetails(),
+        schemaVersion: 2,
+        pointCount: 70,
+        categoryCount: 10,
+        seriesCount: 7,
       }),
     ).toBeUndefined();
   });

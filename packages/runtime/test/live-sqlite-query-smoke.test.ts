@@ -26,9 +26,13 @@ describeLive("live SQLite analysis smoke", () => {
     database.exec(`
       CREATE TABLE sales (
         region TEXT NOT NULL,
+        status TEXT NOT NULL,
         amount INTEGER NOT NULL
       ) STRICT;
-      INSERT INTO sales VALUES ('east', 10), ('east', 5), ('west', 30);
+      INSERT INTO sales VALUES
+        ('east', 'paid', 10),
+        ('east', 'pending', 5),
+        ('west', 'paid', 30);
     `);
     database.close();
 
@@ -40,31 +44,43 @@ describeLive("live SQLite analysis smoke", () => {
       action: "query",
       path: "analytics.sqlite",
       databaseSha256: schema.database.fileSha256,
-      sql: "SELECT region, SUM(amount) AS total FROM sales GROUP BY region ORDER BY total DESC",
+      sql: `SELECT region,
+        SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS Paid,
+        SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS Pending
+        FROM sales GROUP BY region ORDER BY region DESC`,
     });
     const chart = await executeSqliteChart(root, {
       action: "chart",
       path: "analytics.sqlite",
       databaseSha256: schema.database.fileSha256,
-      sql: "SELECT region, SUM(amount) AS total FROM sales GROUP BY region ORDER BY total DESC",
+      sql: `SELECT region,
+        SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS Paid,
+        SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS Pending
+        FROM sales GROUP BY region ORDER BY region DESC`,
       chart: {
         type: "bar",
         xColumn: "region",
-        yColumn: "total",
-        title: "Sales by region",
+        yColumns: ["Paid", "Pending"],
+        title: "Sales status by region",
       },
     });
 
     expect(schema.rows).toEqual(
-      expect.arrayContaining([expect.arrayContaining(["table", "sales", 2])]),
+      expect.arrayContaining([expect.arrayContaining(["table", "sales", 3])]),
     );
     expect(result.rows).toEqual([
-      ["west", "30"],
-      ["east", "15"],
+      ["west", "30", "0"],
+      ["east", "10", "5"],
     ]);
     expect(result.durationMs).toBeLessThan(5_000);
-    expect(chart.pointCount).toBe(2);
-    expect(chart.svg).toContain("Sales by region");
+    expect(chart).toEqual(
+      expect.objectContaining({
+        categoryCount: 2,
+        seriesCount: 2,
+        pointCount: 4,
+      }),
+    );
+    expect(chart.svg).toContain("Sales status by region");
     expect(chart.svgSha256).toMatch(/^[a-f0-9]{64}$/u);
   }, 15_000);
 });
