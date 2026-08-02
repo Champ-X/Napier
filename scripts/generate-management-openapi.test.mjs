@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(20);
+    expect(generated.routeCount).toBe(23);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -68,9 +68,10 @@ describe("management OpenAPI generator", () => {
         "x-napier-source-path": "apps/server/src/app.ts",
         "x-napier-source-paths": [
           "apps/server/src/app.ts",
+          "apps/server/src/domains/memory-http.ts",
           "apps/server/src/workspace-process-http.ts",
         ],
-        "x-napier-route-count": 20,
+        "x-napier-route-count": 23,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -738,10 +739,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 20 routes",
+      "Wrote docs/artifacts/management-openapi.json: 23 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(20);
+    expect(artifact["x-napier-route-count"]).toBe(23);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -775,6 +776,7 @@ async function createFixture() {
   const root = await mkdtemp(path.join(tmpdir(), "napier-openapi-"));
   temporaryRoots.push(root);
   await mkdir(path.join(root, "apps/server/src"), { recursive: true });
+  await mkdir(path.join(root, "apps/server/src/domains"), { recursive: true });
   await mkdir(path.join(root, "docs/artifacts"), { recursive: true });
   await writeFile(
     path.join(root, "package.json"),
@@ -807,6 +809,15 @@ async function createFixture() {
       );
       app.get("/assets/index.js", () => undefined);
     `,
+  );
+  await writeFile(
+    path.join(root, "apps/server/src/domains/memory-http.ts"),
+    [
+      'app.get("/api/memories", () => undefined);',
+      'app.post("/api/memories", () => undefined);',
+      'app.post("/api/memories/:memoryId/review", () => undefined);',
+      "",
+    ].join("\n"),
   );
   await writeFile(
     path.join(root, "apps/server/src/workspace-process-http.ts"),

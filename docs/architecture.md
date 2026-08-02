@@ -227,6 +227,10 @@ Ledger event projection, and response evidence behind a six-method Store SPI.
 evidence. `app.ts` remains the composition root and registers the domain
 adapter against the same `LocalStore`; Memory behavior and API compatibility
 continue to be proven by the existing end-to-end Server tests.
+Management OpenAPI generation recursively discovers TypeScript modules under
+`apps/server/src` that declare `/api/*` Hono routes, so extracting another
+domain cannot silently remove its endpoints from the generated protocol or
+release artifact source hash.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

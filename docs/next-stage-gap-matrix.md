@@ -87,6 +87,9 @@ Observed result:
   infrastructure reused by the remaining Server routes;
 - `app.ts` remains the composition root and is 544 lines smaller. Every new
   production module is below 500 lines;
+- OpenAPI generation now discovers route-bearing Server domain modules
+  recursively; the 255-route artifact includes all three Memory endpoints and
+  preserves the 244-operation compatibility baseline;
 - focused end-to-end tests prove proposal/approval, stale/correction
   supersession, multi-source consolidation, body hashes, projection headers,
   and Ledger event compatibility.

@@ -5,7 +5,7 @@
   "package": {
     "name": "napier",
     "version": "0.1.0",
-    "packageJsonSha256": "fed82d1785a0704c50f4ab20d2d44ab740339059962654e66005bd3bd2161f9d"
+    "packageJsonSha256": "dd3d4c8feeb1bb554d861a853d4f1c3f5e25269f608bb6f73ca36f91d14b30b4"
   },
   "node": {
     "version": "24.16.0",

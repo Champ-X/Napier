@@ -1,15 +1,11 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
-const defaultSourcePath = "apps/server/src/app.ts";
-const defaultSourcePaths = [
-  defaultSourcePath,
-  "apps/server/src/workspace-process-http.ts",
-];
+const defaultSourceDirectory = "apps/server/src";
 const defaultArtifactPath = "docs/artifacts/management-openapi-0.1.0.json";
 const PROMOTED_OPERATION_SCHEMAS = {
   "GET /api/health": {
@@ -170,7 +166,7 @@ export async function generateManagementOpenApi(options = {}) {
     ? [...options.sourcePaths]
     : options.sourcePath
       ? [options.sourcePath]
-      : defaultSourcePaths;
+      : await discoverManagementSourcePaths(repoRoot);
   const absoluteSourcePaths = sourcePaths.map((sourcePath) =>
     resolveRepoRelativePath(repoRoot, sourcePath, "sourcePath"),
   );
@@ -2075,6 +2071,42 @@ export function extractManagementRoutes(sourceText) {
     throw new Error("No /api management routes were found");
   }
   return routes;
+}
+
+export async function discoverManagementSourcePaths(repoRoot) {
+  const sourceRoot = resolveRepoRelativePath(
+    repoRoot,
+    defaultSourceDirectory,
+    "sourceDirectory",
+  );
+  const candidates = [];
+  await collectTypeScriptSources(sourceRoot, candidates);
+  const discovered = [];
+  for (const candidate of candidates.sort()) {
+    const source = await readFile(candidate, "utf8");
+    if (
+      /app\.(?:get|post|put|delete|patch)\(\s*(?:["'`])\/api\//u.test(source)
+    ) {
+      discovered.push(toRepoRelativePath(repoRoot, candidate));
+    }
+  }
+  if (discovered.length === 0) {
+    throw new Error("No management API source modules were found");
+  }
+  return discovered;
+}
+
+async function collectTypeScriptSources(directory, output) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.name === "dist" || entry.name.startsWith(".")) continue;
+    const absolutePath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      await collectTypeScriptSources(absolutePath, output);
+    } else if (entry.isFile() && /\.tsx?$/u.test(entry.name)) {
+      output.push(absolutePath);
+    }
+  }
 }
 
 async function runCli() {
