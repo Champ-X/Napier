@@ -53,6 +53,15 @@ environment:
   `lsp_references` completed 0/3 with one repeat, and `read_file` completed
   7/15 with three repeats. This localizes the next coding-quality work to
   read/navigation protocols rather than write commitment;
+- after adding one bounded `list_files` discovery step and explicit Sandbox
+  availability preflight, a real rerun dropped from 21 to 13 calls, 11 to 1
+  failures, 34.9 to 25.6 seconds, and about $0.00290 to $0.00251. Reads
+  completed 8/8; the remaining failure is the correctly classified unavailable
+  LSP Sandbox in this nested host;
+- after aligning repeated-call evidence with terminal result hashes and adding
+  no-retry guidance for unavailable Sandboxes, the final real run retained 13
+  calls and one LSP failure while reducing repeated calls to zero. Reads,
+  discovery, and all three writes completed without failure;
 - live smoke now gates final outcome, allowed change set, diagnostics, and
   completed patch evidence. Tool failures and repeats remain independent
   distribution metrics rather than being misclassified as task failure.
@@ -77,6 +86,33 @@ Observed result:
 - production modules remain below 500 lines, and extracting the tooling
   binding reduced the benchmark verifier's maximum function complexity from
   48 to 33.
+
+## Implemented Slice: Sandbox Availability And Bounded Discovery
+
+User scenario: an Agent must distinguish a missing/unavailable host Sandbox
+from a crashed tool and must not guess workspace paths when bounded discovery
+is available.
+
+Observed result:
+
+- the macOS Adapter executes one cached, one-second, minimal profile probe
+  before the first target launch. A denied `sandbox_apply` fails before target
+  code with a stable unavailable error and no host fallback;
+- probe success/denial and wrapper process-group behavior are covered with
+  deterministic child-process tests;
+- the pricing benchmark enables and explicitly requests one `list_files`
+  operation before reads, removing nonexistent test/index path probes in real
+  DeepSeek execution;
+- repeated-call evidence now binds both arguments and terminal result hash, so
+  a necessary re-read after workspace change is not counted as a retry;
+- shared Workspace guidance tells models not to retry process-backed tools
+  after a host Sandbox availability failure; the final DeepSeek run followed
+  that boundary with one LSP attempt;
+- stable Sandbox SPI types, unsupported behavior, and macOS availability moved
+  into leaf modules. `sandbox.ts` decreased from 740 to 711 lines;
+- production LSP remains unavailable in this nested IDE host, now reported
+  accurately instead of as a language-server crash. Non-nested macOS/Linux
+  release environments still require live matrix proof.
 
 ## Implemented Slice: Ratcheted Architecture Growth Gate
 

@@ -1343,6 +1343,8 @@ counts. Aggregate totals must exactly equal the per-tool sums, and
 paths, output, and error text remain excluded. Offline verification continues
 to accept schema-v1 Result/Ledger pairs, requires both sides to use the same
 version, and rejects a self-rehashed distribution whose totals drift.
+Repeated calls require the same tool, arguments, terminal event kind, and
+terminal result hash; re-reading a changed file is not mislabeled as a retry.
 
 `--trials 2..10` runs the same case/model sequentially in independent
 workspace, data-root, Thread, and Run lifecycles. The resulting
@@ -3782,6 +3784,16 @@ protocol that binds a recognized system interpreter and a bounded no-site
 bootstrap dependency set proven to cover the worker's loaded module files,
 without granting models an arbitrary Python argv surface. Git remains outside
 the runtime enum.
+
+The macOS adapter runs one cached, one-second, deny-default `sandbox-exec`
+profile probe before launching the first task process. This distinguishes an
+executable that exists from a host that actually permits `sandbox_apply`.
+Failure returns a stable sandbox-unavailable error before target code starts;
+it never falls back to an unsandboxed process. Stable Sandbox SPI types and the
+unsupported adapter live in leaf modules, while the availability probe remains
+an internal implementation detail. Shared Workspace guidance treats this as a
+host capability failure and tells the Agent not to retry the same
+process-backed tool within the Run.
 
 ## Workspace Process Session Flow
 

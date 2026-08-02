@@ -247,6 +247,21 @@ export function collectCodingBenchmarkToolMetrics(
   runId: string,
 ): CodingBenchmarkToolMetricsV2 {
   const runEvents = events.filter((event) => event.runId === runId);
+  const terminalByCallId = new Map(
+    runEvents
+      .filter(
+        (event) =>
+          event.type === "tool.completed" ||
+          event.type === "tool.failed" ||
+          event.type === "tool.blocked",
+      )
+      .flatMap((event) => {
+        const payload = record(event.payload) ? event.payload : {};
+        return typeof payload["callId"] === "string"
+          ? ([[payload["callId"], event]] as const)
+          : [];
+      }),
+  );
   const outcomes = new Map<
     string,
     {
@@ -294,10 +309,14 @@ export function collectCodingBenchmarkToolMetrics(
         typeof payload["inputSha256"] === "string"
           ? payload["inputSha256"]
           : sha256(canonicalJson(payload["input"] ?? null));
-      if (outcome.signatures.has(inputSha256)) {
+      const signature = `${inputSha256}:${toolTerminalSignature(
+        terminalByCallId.get(String(payload["callId"] ?? "")),
+        event.id,
+      )}`;
+      if (outcome.signatures.has(signature)) {
         outcome.repeatedCallCount += 1;
       }
-      outcome.signatures.add(inputSha256);
+      outcome.signatures.add(signature);
     } else if (event.type === "tool.completed") {
       outcome.completed += 1;
     } else if (event.type === "tool.failed") {
@@ -323,6 +342,21 @@ export function collectCodingBenchmarkToolMetrics(
     ),
     toolOutcomes,
   };
+}
+
+function toolTerminalSignature(
+  event: RunEvent | undefined,
+  unsettledId: string,
+): string {
+  if (!event) return `unsettled:${unsettledId}`;
+  const payload = record(event.payload) ? event.payload : {};
+  const outputSha256 =
+    typeof payload["outputTextSha256"] === "string"
+      ? payload["outputTextSha256"]
+      : typeof payload["outputSha256"] === "string"
+        ? payload["outputSha256"]
+        : sha256(canonicalJson(payload["details"] ?? null));
+  return `${event.type}:${outputSha256}`;
 }
 
 export function completedCodingBenchmarkTools(

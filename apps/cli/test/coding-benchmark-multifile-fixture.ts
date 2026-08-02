@@ -64,6 +64,9 @@ export function quoteTotalCents(subtotalCents, discountPercent = 0) {
 export function createMultifileProvider(): ReturnType<typeof fauxProvider> {
   const provider = fauxProvider({ provider: "faux-coding-multifile" });
   provider.setResponses([
+    fauxAssistantMessage(fauxToolCall("list_files", { path: ".", depth: 2 }), {
+      stopReason: "toolUse",
+    }),
     fauxAssistantMessage(
       fauxToolCall("read_file", { path: "src/pricing.js" }),
       { stopReason: "toolUse" },
@@ -81,10 +84,9 @@ export function createMultifileProvider(): ReturnType<typeof fauxProvider> {
       fauxToolCall("read_file", { path: "src/checkout.js" }),
       { stopReason: "toolUse" },
     ),
-    fauxAssistantMessage(
-      fauxToolCall("read_file", { path: "src/quote.js" }),
-      { stopReason: "toolUse" },
-    ),
+    fauxAssistantMessage(fauxToolCall("read_file", { path: "src/quote.js" }), {
+      stopReason: "toolUse",
+    }),
     fauxAssistantMessage(
       fauxToolCall("apply_patch", {
         operation: "replace",

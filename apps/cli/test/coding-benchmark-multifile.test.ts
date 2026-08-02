@@ -43,29 +43,50 @@ afterEach(async () => {
 describe("CLI multi-file coding outcome benchmark", () => {
   it("distinguishes generic tool inputs while detecting a true repeat", () => {
     const runId = "run_coding_metric";
-    const events = ["src/a.js", "src/b.js", "src/a.js"].map(
-      (filePath, index) =>
-        ({
-          id: `event_coding_metric_${String(index + 1)}`,
-          threadId: "thread_coding_metric",
-          runId,
-          seq: index + 1,
-          type: "tool.started",
-          category: "tool",
-          visibility: "user",
-          createdAt: `2026-07-30T01:00:0${String(index)}.000Z`,
-          payload: {
-            callId: `call_${String(index + 1)}`,
-            toolName: "read_file",
-            status: "started",
-            input: { path: filePath },
+    const events = ["src/a.js", "src/b.js", "src/a.js"].flatMap(
+      (filePath, index) => {
+        const callId = `call_${String(index + 1)}`;
+        return [
+          {
+            id: `event_coding_metric_start_${String(index + 1)}`,
+            threadId: "thread_coding_metric",
+            runId,
+            seq: index * 2 + 1,
+            type: "tool.started",
+            category: "tool",
+            visibility: "user",
+            createdAt: `2026-07-30T01:00:0${String(index)}.000Z`,
+            payload: {
+              callId,
+              toolName: "read_file",
+              status: "started",
+              input: { path: filePath },
+            },
           },
-        }) satisfies RunEvent,
+          {
+            id: `event_coding_metric_end_${String(index + 1)}`,
+            threadId: "thread_coding_metric",
+            runId,
+            seq: index * 2 + 2,
+            type: "tool.completed",
+            category: "tool",
+            visibility: "user",
+            createdAt: `2026-07-30T01:00:0${String(index)}.100Z`,
+            payload: {
+              callId,
+              toolName: "read_file",
+              status: "completed",
+              outputTextSha256:
+                filePath === "src/a.js" ? "a".repeat(64) : "b".repeat(64),
+            },
+          },
+        ] satisfies RunEvent[];
+      },
     );
 
     expect(collectCodingBenchmarkToolMetrics(events, runId)).toEqual({
       started: 3,
-      completed: 0,
+      completed: 3,
       failed: 0,
       blocked: 0,
       repeatedCallCount: 1,
@@ -74,7 +95,7 @@ describe("CLI multi-file coding outcome benchmark", () => {
         {
           toolName: "read_file",
           started: 3,
-          completed: 0,
+          completed: 3,
           failed: 0,
           blocked: 0,
           repeatedCallCount: 1,
@@ -207,8 +228,8 @@ describe("CLI multi-file coding outcome benchmark", () => {
       expect.objectContaining({
         status: "passed",
         tooling: {
-          started: 7,
-          completed: 7,
+          started: 8,
+          completed: 8,
           failed: 0,
           blocked: 0,
           repeatedCallCount: 0,
@@ -218,6 +239,14 @@ describe("CLI multi-file coding outcome benchmark", () => {
               toolName: "apply_patch",
               started: 3,
               completed: 3,
+              failed: 0,
+              blocked: 0,
+              repeatedCallCount: 0,
+            },
+            {
+              toolName: "list_files",
+              started: 1,
+              completed: 1,
               failed: 0,
               blocked: 0,
               repeatedCallCount: 0,

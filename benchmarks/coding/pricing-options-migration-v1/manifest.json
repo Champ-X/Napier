@@ -7,19 +7,15 @@
   "fixturePath": "fixture",
   "targetPath": "src/pricing.js",
   "expectedTargetPath": "expected/src/pricing.js",
-  "allowedChangedPaths": [
-    "src/checkout.js",
-    "src/pricing.js",
-    "src/quote.js"
-  ],
-  "requiredTools": ["read_file", "lsp_references", "apply_patch"],
+  "allowedChangedPaths": ["src/checkout.js", "src/pricing.js", "src/quote.js"],
+  "requiredTools": ["list_files", "read_file", "lsp_references", "apply_patch"],
   "timeoutMs": 120000,
-  "promptSha256": "a2ff0ca6e822666a5165d55a331cc5d886cabaca5a4268e44b5f6fbae9bb85f1",
+  "promptSha256": "cea375de140d56ce38ad34d2fc5e86d4056e017433651b1a90f14c343f8bdf91",
   "fixtureSha256": "c5f74d208d2abada12065e3a8579fdbf0cbc674be774223c9e3beb0547bfbaee",
   "targetBeforeSha256": "043ccba543ff00864f7c434bd84052376fc01eb4e6fdadc1ea4f70416e7ac54a",
   "expectedTargetSha256": "bc49fcc5e00989980e755612410e85f0872e18dd4d7807e3e3d4e8186928c2a1",
   "expectedTargetAstSha256": "3e696bfdc1192b587dd26443a62c4d7b8db2f024c9d241709c391dc52da727db",
   "outcomeTestPath": "tests/outcome.mjs",
   "outcomeTestSha256": "f780ebd713172ac1a0e783743f8c12960ce71b1b7e5b29e27ab1a9f1046547a6",
-  "contentSha256": "6078ae0219d4b3358ac6a926c0fc4c353ffa1637e049633518313f9d346eaa86"
+  "contentSha256": "caaf63494f774c032d66780ba56f3bb675bd481ba91ece3126a587d3f6db410e"
 }
