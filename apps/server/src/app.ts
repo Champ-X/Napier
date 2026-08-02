@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -35,7 +35,6 @@ import type {
   CredentialReference,
   CreateExecutionPlanRequest,
   CreateMcpExtensionRequest,
-  CreateMemoryRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
   CreateRunEvaluationRequest,
   CreateAutomationScheduleRequest,
@@ -206,7 +205,6 @@ import type {
   InspectorPackageQualification,
   InspectorPackageVerification,
   JsonValue,
-  MemoryFact,
   McpToolEffect,
   McpTransportConfig,
   OpenTelemetryTraceArtifact,
@@ -256,7 +254,6 @@ import type {
   ResumeRunRequest,
   ReviewSubagentOutcomeRequest,
   ReviewExtensionRequest,
-  ReviewMemoryRequest,
   ReviewMcpToolRequest,
   ReviewExecutionPlanBlueprintRecordOutcomesRequest,
   ReviewRunEvaluationRequest,
@@ -434,13 +431,29 @@ import {
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 import {
   ReceiptTrustAnchorDirectoryDiscoveryError,
   ReceiptTrustAnchorDirectoryDiscoveryService,
   type ReceiptTrustAnchorDirectoryDiscoveryOptions,
 } from "./receipt-trust-directory-discovery.js";
+import {
+  errorMessage,
+  jsonError,
+  setBodyContentSha256Header,
+  setContentSha256Header,
+  setStableContentSha256Header,
+  sha256Bytes,
+  sha256Json,
+  sha256Text,
+} from "./http-response-evidence.js";
+import {
+  readLimitedBytes,
+  readLimitedJson,
+  readOptionalLimitedJson,
+  RequestBodyTooLargeError,
+} from "./http-request-body.js";
+import { registerMemoryHttp } from "./memory-http.js";
 import {
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyQueueResult,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult,
@@ -641,7 +654,6 @@ const MAX_CHANNEL_ADMIN_REQUEST_BYTES = 8 * 1024;
 const MAX_CHANNEL_ADAPTER_PREVIEW_REQUEST_BYTES =
   MAX_INBOUND_BODY_BYTES + 8 * 1024;
 const MAX_DEAD_LETTER_EXPORT_VERIFY_REQUEST_BYTES = 2 * 1024 * 1024;
-const MAX_MEMORY_REQUEST_BYTES = 16 * 1024;
 const MAX_CREDENTIAL_REQUEST_BYTES = 8 * 1024;
 const MAX_CREDENTIAL_SECRET_REQUEST_BYTES = 16 * 1024;
 const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
@@ -8591,143 +8603,7 @@ export function createApp(services: NapierServices): Hono {
     return context.json(detail);
   });
 
-  app.get("/api/memories", (context) => {
-    const agentId = context.req.query("agent");
-    const memories = services.store.listMemories(agentId ? { agentId } : {});
-    setMemoryListHeaders(context, memories, agentId);
-    return context.json(memories);
-  });
-
-  app.post("/api/memories", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_MEMORY_REQUEST_BYTES,
-        "Memory proposal request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCreateMemoryRequest(input);
-    if (!body) {
-      return jsonError(context, "Memory proposal request is invalid", 400);
-    }
-    const thread = body.threadId
-      ? services.store.getThread(body.threadId)
-      : undefined;
-    const agentId =
-      body.scope === "agent"
-        ? (body.agentId ??
-          thread?.agentId ??
-          services.store.listAgents()[0]?.id)
-        : body.agentId;
-    const fact = await services.store.proposeMemory(
-      {
-        ...body,
-        ...(agentId ? { agentId } : {}),
-      },
-      {
-        type: "manual",
-        ...(body.threadId ? { threadId: body.threadId } : {}),
-      },
-    );
-    if (body.threadId) {
-      await services.store.appendEvent({
-        threadId: body.threadId,
-        runId: createId("runctl"),
-        type: "memory.proposed",
-        category: "memory",
-        visibility: "user",
-        payload: {
-          memoryId: fact.id,
-          content: fact.content,
-          category: fact.category,
-          confidence: fact.confidence,
-          scope: fact.scope,
-          reviewIntervalDays: fact.reviewIntervalDays,
-          ...(fact.agentId ? { agentId: fact.agentId } : {}),
-          ...(fact.supersedesMemoryId
-            ? { supersedesMemoryId: fact.supersedesMemoryId }
-            : {}),
-          ...(fact.consolidatesMemoryIds
-            ? { consolidatesMemoryIds: fact.consolidatesMemoryIds }
-            : {}),
-        },
-      });
-    }
-    setMemoryProjectionHeaders(context, fact);
-    return context.json(fact, 201);
-  });
-
-  app.post("/api/memories/:memoryId/review", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_MEMORY_REQUEST_BYTES,
-        "Memory review request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseReviewMemoryRequest(input);
-    if (!body) {
-      return jsonError(context, "Memory review request is invalid", 400);
-    }
-    if (body.threadId) services.store.getThread(body.threadId);
-    const fact = await services.store.reviewMemory(
-      context.req.param("memoryId"),
-      body,
-    );
-    if (body.threadId) {
-      await services.store.appendEvent({
-        threadId: body.threadId,
-        runId: createId("runctl"),
-        type: memoryReviewEventType(body.action),
-        category: "memory",
-        visibility: "user",
-        payload: {
-          memoryId: fact.id,
-          status: fact.status,
-          content: fact.content,
-          reviewIntervalDays: fact.reviewIntervalDays,
-          reviewDueAt: fact.reviewDueAt ?? "",
-          useCount: fact.useCount,
-          ...(fact.supersedesMemoryId
-            ? {
-                supersedesMemoryId: fact.supersedesMemoryId,
-                ...(body.action === "approve"
-                  ? { supersededMemoryStatus: "archived" }
-                  : {}),
-              }
-            : {}),
-          ...(fact.consolidatesMemoryIds
-            ? {
-                consolidatesMemoryIds: fact.consolidatesMemoryIds,
-                ...(body.action === "approve"
-                  ? { consolidatedMemoryStatus: "archived" }
-                  : {}),
-              }
-            : {}),
-          ...(fact.supersededByMemoryId
-            ? { supersededByMemoryId: fact.supersededByMemoryId }
-            : {}),
-          ...(fact.reviewNote ? { note: fact.reviewNote } : {}),
-        },
-      });
-    }
-    setMemoryProjectionHeaders(context, fact);
-    return context.json(fact);
-  });
+  registerMemoryHttp(app, services.store);
 
   app.get("/api/credentials", (context) => {
     const references = services.store.listCredentialReferences();
@@ -12628,149 +12504,6 @@ function normalizeBoundedPrompt(
     : undefined;
 }
 
-function parseCreateMemoryRequest(
-  input: unknown,
-): CreateMemoryRequest | undefined {
-  const record = requestRecord(input, [
-    "content",
-    "category",
-    "scope",
-    "agentId",
-    "confidence",
-    "reviewIntervalDays",
-    "supersedesMemoryId",
-    "consolidatesMemoryIds",
-    "threadId",
-  ]);
-  const content = normalizeBoundedText(record?.["content"], 1, 2_000);
-  const category =
-    record?.["category"] === undefined
-      ? undefined
-      : parseMemoryCategory(record["category"]);
-  const scope =
-    record?.["scope"] === undefined
-      ? undefined
-      : parseMemoryScope(record["scope"]);
-  const agentId = record?.["agentId"];
-  const threadId = record?.["threadId"];
-  const confidence = record?.["confidence"];
-  const reviewIntervalDays = record?.["reviewIntervalDays"];
-  const supersedesMemoryId = record?.["supersedesMemoryId"];
-  const consolidatesMemoryIds =
-    record?.["consolidatesMemoryIds"] === undefined
-      ? undefined
-      : parseMemoryIdArray(record["consolidatesMemoryIds"], 2, 8);
-  if (
-    !record ||
-    !content ||
-    (record["category"] !== undefined && !category) ||
-    (record["scope"] !== undefined && !scope) ||
-    (agentId !== undefined && !validAgentId(agentId)) ||
-    (threadId !== undefined && !validThreadId(threadId)) ||
-    (confidence !== undefined &&
-      (typeof confidence !== "number" ||
-        !Number.isFinite(confidence) ||
-        confidence < 0 ||
-        confidence > 1)) ||
-    (reviewIntervalDays !== undefined &&
-      (typeof reviewIntervalDays !== "number" ||
-        !Number.isInteger(reviewIntervalDays) ||
-        reviewIntervalDays < 1 ||
-        reviewIntervalDays > 3_650)) ||
-    (supersedesMemoryId !== undefined && !validMemoryId(supersedesMemoryId)) ||
-    (record["consolidatesMemoryIds"] !== undefined && !consolidatesMemoryIds) ||
-    (supersedesMemoryId !== undefined &&
-      record["consolidatesMemoryIds"] !== undefined)
-  ) {
-    return undefined;
-  }
-  return {
-    content,
-    ...(category ? { category } : {}),
-    ...(scope ? { scope } : {}),
-    ...(typeof agentId === "string" ? { agentId } : {}),
-    ...(typeof confidence === "number" ? { confidence } : {}),
-    ...(typeof reviewIntervalDays === "number" ? { reviewIntervalDays } : {}),
-    ...(typeof supersedesMemoryId === "string" ? { supersedesMemoryId } : {}),
-    ...(consolidatesMemoryIds ? { consolidatesMemoryIds } : {}),
-    ...(typeof threadId === "string" ? { threadId } : {}),
-  };
-}
-
-function parseReviewMemoryRequest(
-  input: unknown,
-): ReviewMemoryRequest | undefined {
-  const record = requestRecord(input, ["action", "note", "threadId"]);
-  const action = parseMemoryReviewAction(record?.["action"]);
-  const threadId = record?.["threadId"];
-  const note = parseOptionalBoundedText(record?.["note"], 500);
-  if (
-    !record ||
-    !action ||
-    (record["note"] !== undefined && note === undefined) ||
-    (threadId !== undefined && !validThreadId(threadId))
-  ) {
-    return undefined;
-  }
-  return {
-    action,
-    ...(note ? { note } : {}),
-    ...(typeof threadId === "string" ? { threadId } : {}),
-  };
-}
-
-function parseMemoryCategory(
-  input: unknown,
-): NonNullable<CreateMemoryRequest["category"]> | undefined {
-  return input === "preference" ||
-    input === "context" ||
-    input === "goal" ||
-    input === "constraint" ||
-    input === "decision" ||
-    input === "identity" ||
-    input === "behavior" ||
-    input === "correction" ||
-    input === "other"
-    ? input
-    : undefined;
-}
-
-function parseMemoryScope(
-  input: unknown,
-): NonNullable<CreateMemoryRequest["scope"]> | undefined {
-  return input === "workspace" || input === "agent" ? input : undefined;
-}
-
-function parseMemoryReviewAction(
-  input: unknown,
-): ReviewMemoryRequest["action"] | undefined {
-  return input === "approve" ||
-    input === "reject" ||
-    input === "archive" ||
-    input === "restore" ||
-    input === "refresh" ||
-    input === "mark_stale"
-    ? input
-    : undefined;
-}
-
-function parseMemoryIdArray(
-  input: unknown,
-  minItems: number,
-  maxItems: number,
-): string[] | undefined {
-  if (
-    !Array.isArray(input) ||
-    input.length < minItems ||
-    input.length > maxItems
-  ) {
-    return undefined;
-  }
-  if (!input.every((value) => validMemoryId(value))) return undefined;
-  const unique = new Set(input);
-  return unique.size === input.length ? [...unique].sort() : undefined;
-}
-
 function parseCreateCredentialReferenceRequest(
   input: unknown,
 ): CreateCredentialReferenceRequest | undefined {
@@ -14466,17 +14199,6 @@ function validInboundSignature(
   const left = Buffer.from(expected, "hex");
   const right = Buffer.from(normalized.toLowerCase(), "hex");
   return right.byteLength === left.byteLength && timingSafeEqual(left, right);
-}
-
-function memoryReviewEventType(action: ReviewMemoryRequest["action"]): string {
-  return {
-    approve: "memory.approved",
-    reject: "memory.rejected",
-    archive: "memory.archived",
-    restore: "memory.restored",
-    refresh: "memory.refreshed",
-    mark_stale: "memory.stale",
-  }[action];
 }
 
 function evaluationSuiteEventPayload(
@@ -17889,29 +17611,6 @@ function validWorkspaceTrashId(value: unknown): value is string {
   return typeof value === "string" && /^trash_[a-z0-9]{8,80}$/.test(value);
 }
 
-function validMemoryId(value: unknown): value is string {
-  return typeof value === "string" && /^memory_[a-z0-9]{8,80}$/.test(value);
-}
-
-type ContentSha256Mode = "body" | "stable";
-
-function setContentSha256Header(
-  context: Context,
-  digest: string,
-  mode: ContentSha256Mode,
-): void {
-  context.header("X-Napier-Content-SHA256", digest);
-  context.header("X-Napier-Content-SHA256-Mode", mode);
-}
-
-function setBodyContentSha256Header(context: Context, body: unknown): void {
-  setContentSha256Header(context, sha256Text(JSON.stringify(body)), "body");
-}
-
-function setStableContentSha256Header(context: Context, digest: string): void {
-  setContentSha256Header(context, digest, "stable");
-}
-
 function setOptionalHeader(
   context: Context,
   name: string,
@@ -18057,53 +17756,6 @@ function createHealthRuntimeProjection() {
       ]),
     ) as Record<(typeof HEALTH_RUNTIME_COMPONENTS)[number], string>,
   } satisfies HealthResponse["runtime"];
-}
-
-function setJsonErrorProjectionHeaders(
-  context: Context,
-  body: { error: string },
-  status: ContentfulStatusCode,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, body);
-  context.header("X-Napier-Error-Status", String(status));
-  context.header("X-Napier-Error-Code", jsonErrorCode(status));
-  context.header("X-Napier-Error-Message-SHA256", sha256Text(body.error));
-}
-
-function jsonError(
-  context: Context,
-  message: string,
-  status: ContentfulStatusCode,
-): Response {
-  const body = { error: message };
-  setJsonErrorProjectionHeaders(context, body, status);
-  return context.json(body, status);
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function jsonErrorCode(status: ContentfulStatusCode): string {
-  switch (status) {
-    case 400:
-      return "invalid_request";
-    case 401:
-      return "unauthorized";
-    case 403:
-      return "forbidden";
-    case 404:
-      return "not_found";
-    case 409:
-      return "conflict";
-    case 413:
-      return "request_too_large";
-    case 429:
-      return "rate_limited";
-    default:
-      return status >= 500 ? "server_error" : "http_error";
-  }
 }
 
 function setAgentProfileHeaders(
@@ -20997,70 +20649,6 @@ function setExtensionRecordHeaders(
     context.header(
       "X-Napier-Extension-Package-Binding-SHA256",
       extension.packageBinding.contentSha256,
-    );
-  }
-}
-
-function setMemoryListHeaders(
-  context: Context,
-  memories: readonly MemoryFact[],
-  agentId: string | undefined,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, memories);
-  if (agentId) {
-    context.header("X-Napier-Agent-Id", agentId);
-  }
-  context.header("X-Napier-Memory-Count", String(memories.length));
-  for (const status of [
-    "proposed",
-    "active",
-    "stale",
-    "rejected",
-    "archived",
-  ] satisfies MemoryFact["status"][]) {
-    context.header(
-      `X-Napier-Memory-${status[0]!.toUpperCase()}${status.slice(1)}-Count`,
-      String(memories.filter((memory) => memory.status === status).length),
-    );
-  }
-}
-
-function setMemoryProjectionHeaders(
-  context: Context,
-  memory: MemoryFact,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, memory);
-  context.header("X-Napier-Memory-Id", memory.id);
-  context.header("X-Napier-Memory-Status", memory.status);
-  context.header("X-Napier-Memory-Revision", String(memory.revision));
-  context.header("X-Napier-Memory-Scope", memory.scope);
-  context.header("X-Napier-Memory-Category", memory.category);
-  context.header(
-    "X-Napier-Memory-Review-Interval-Days",
-    String(memory.reviewIntervalDays),
-  );
-  context.header("X-Napier-Memory-Use-Count", String(memory.useCount));
-  if (memory.agentId) {
-    context.header("X-Napier-Agent-Id", memory.agentId);
-  }
-  if (memory.reviewDueAt) {
-    context.header("X-Napier-Memory-Review-Due-At", memory.reviewDueAt);
-  }
-  if (memory.supersedesMemoryId) {
-    context.header("X-Napier-Memory-Supersedes-Id", memory.supersedesMemoryId);
-  }
-  if (memory.supersededByMemoryId) {
-    context.header(
-      "X-Napier-Memory-Superseded-By-Id",
-      memory.supersededByMemoryId,
-    );
-  }
-  if (memory.consolidatesMemoryIds) {
-    context.header(
-      "X-Napier-Memory-Consolidates-Count",
-      String(memory.consolidatesMemoryIds.length),
     );
   }
 }
@@ -26256,20 +25844,8 @@ function setBootstrapProjectionHeaders(
   );
 }
 
-function sha256Json(value: JsonValue): string {
-  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
-}
-
 function jsonByteLength(value: unknown): number {
   return Buffer.byteLength(JSON.stringify(value), "utf8");
-}
-
-function sha256Text(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
-}
-
-function sha256Bytes(value: Buffer): string {
-  return createHash("sha256").update(value).digest("hex");
 }
 
 function requestRecord(
@@ -27290,124 +26866,4 @@ async function appendCredentialEvent(
       ...(reference.lastError ? { error: reference.lastError } : {}),
     },
   });
-}
-
-async function readOptionalLimitedJson(
-  request: Request,
-  maximumBytes: number,
-  subject: string,
-): Promise<unknown | undefined> {
-  const declaredLength = request.headers.get("content-length");
-  if (
-    declaredLength &&
-    Number.isFinite(Number(declaredLength)) &&
-    Number(declaredLength) > maximumBytes
-  ) {
-    throw new RequestBodyTooLargeError(
-      `${subject} exceeds ${maximumBytes} bytes`,
-    );
-  }
-  if (!request.body) return undefined;
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let byteLength = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      byteLength += value.byteLength;
-      if (byteLength > maximumBytes) {
-        await reader.cancel();
-        throw new RequestBodyTooLargeError(
-          `${subject} exceeds ${maximumBytes} bytes`,
-        );
-      }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  if (byteLength === 0) return undefined;
-  const source = Buffer.concat(chunks).toString("utf8");
-  return source.trim() ? (JSON.parse(source) as unknown) : undefined;
-}
-
-class RequestBodyTooLargeError extends Error {}
-
-async function readLimitedBytes(
-  request: Request,
-  maximumBytes: number,
-  subject: string,
-): Promise<Buffer> {
-  const declaredLength = request.headers.get("content-length");
-  if (
-    declaredLength &&
-    Number.isFinite(Number(declaredLength)) &&
-    Number(declaredLength) > maximumBytes
-  ) {
-    throw new RequestBodyTooLargeError(
-      `${subject} exceeds ${maximumBytes} bytes`,
-    );
-  }
-  if (!request.body) throw new Error("request body is required");
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let byteLength = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      byteLength += value.byteLength;
-      if (byteLength > maximumBytes) {
-        await reader.cancel();
-        throw new RequestBodyTooLargeError(
-          `${subject} exceeds ${maximumBytes} bytes`,
-        );
-      }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  return Buffer.concat(chunks);
-}
-
-async function readLimitedJson(
-  request: Request,
-  maximumBytes: number,
-  subject = "Thread replay import",
-): Promise<unknown> {
-  const declaredLength = request.headers.get("content-length");
-  if (
-    declaredLength &&
-    Number.isFinite(Number(declaredLength)) &&
-    Number(declaredLength) > maximumBytes
-  ) {
-    throw new RequestBodyTooLargeError(
-      `${subject} exceeds ${maximumBytes} bytes`,
-    );
-  }
-  if (!request.body) throw new Error("request body is required");
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let byteLength = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      byteLength += value.byteLength;
-      if (byteLength > maximumBytes) {
-        await reader.cancel();
-        throw new RequestBodyTooLargeError(
-          `${subject} exceeds ${maximumBytes} bytes`,
-        );
-      }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  if (byteLength === 0) throw new Error("request body is required");
-  const body = Buffer.concat(chunks).toString("utf8");
-  return JSON.parse(body) as unknown;
 }

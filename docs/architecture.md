@@ -191,6 +191,15 @@ profiles remain separate follow-up work.
 - same-origin static hosting for production;
 - provider secret values remain process-local and are never serialized.
 
+The Server is being split by HTTP domain without introducing domain-specific
+state or execution loops. `memory-http.ts` owns Memory request parsing, routes,
+Ledger event projection, and response evidence behind a six-method Store SPI.
+`http-request-body.ts` owns bounded streaming body reads, while
+`http-response-evidence.ts` owns shared content hashes and structured JSON error
+evidence. `app.ts` remains the composition root and registers the domain
+adapter against the same `LocalStore`; Memory behavior and API compatibility
+continue to be proven by the existing end-to-end Server tests.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 

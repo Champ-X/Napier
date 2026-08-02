@@ -311,12 +311,16 @@ describe("Napier HTTP goal flow", () => {
   });
 
   it("keeps no-store response header helpers content-hash bound", async () => {
-    const source = await readFile(new URL("../src/app.ts", import.meta.url), {
-      encoding: "utf8",
-    });
-    const noStoreHelpers = extractFunctions(source).filter(({ body }) =>
-      body.includes('"Cache-Control", "no-store"'),
+    const sources = await Promise.all(
+      ["app.ts", "http-response-evidence.ts", "memory-http.ts"].map((file) =>
+        readFile(new URL(`../src/${file}`, import.meta.url), {
+          encoding: "utf8",
+        }),
+      ),
     );
+    const noStoreHelpers = sources
+      .flatMap((source) => extractFunctions(source))
+      .filter(({ body }) => body.includes('"Cache-Control", "no-store"'));
     const missingContentHash = noStoreHelpers
       .filter(({ body }) => !bodyCallsContentHashHelper(body))
       .map(({ line, name }) => `${name}:${line}`);
@@ -328,10 +332,14 @@ describe("Napier HTTP goal flow", () => {
   });
 
   it("keeps content hash mode projection centralized", async () => {
-    const source = await readFile(new URL("../src/app.ts", import.meta.url), {
-      encoding: "utf8",
-    });
-    const functions = extractFunctions(source);
+    const sources = await Promise.all(
+      ["app.ts", "http-response-evidence.ts"].map((file) =>
+        readFile(new URL(`../src/${file}`, import.meta.url), {
+          encoding: "utf8",
+        }),
+      ),
+    );
+    const functions = sources.flatMap((source) => extractFunctions(source));
     const contentHashHeader = functions.find(
       ({ name }) => name === "setContentSha256Header",
     );
