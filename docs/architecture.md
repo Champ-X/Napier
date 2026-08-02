@@ -278,6 +278,16 @@ profile revision/rollback behavior. `app.ts` decreased again to 25,465 lines
 and its maximum function complexity fell from 63 to 53, while all 255 generated
 operations and 244/244 compatibility fixtures remain unchanged.
 
+Thread evidence now follows a dedicated boundary as well.
+`thread-evidence-http.ts` owns event projection, portable fixture verification,
+Run replay, comparison, and OTLP trace routes; separate Replay and Trace
+response modules retain every hash, range, metric, redaction, and path-binding
+header. Generic JSON-byte, event-boundary, filename, and Run-metric helpers now
+live in `http-response-evidence.ts`. OTLP generation depends only on a
+`getDetail` Store port instead of concrete `LocalStore`. The extraction reduced
+`app.ts` to 24,600 lines without changing the 255-operation route set or
+244/244 compatibility fixture.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 

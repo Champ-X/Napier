@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import type { JsonValue } from "@napier/contracts";
+import type { JsonValue, RunEvent, RunMetrics } from "@napier/contracts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
@@ -39,6 +39,92 @@ export function setStableContentSha256Header(
   digest: string,
 ): void {
   setContentSha256Header(context, digest, "stable");
+}
+
+export function jsonByteLength(value: unknown): number {
+  return Buffer.byteLength(JSON.stringify(value), "utf8");
+}
+
+export function safeFilenameSegment(value: string, fallback: string): string {
+  const normalized = value.replace(/[^A-Za-z0-9._-]/gu, "_");
+  return normalized.length > 0 ? normalized : fallback;
+}
+
+export function setEventBoundaryHeaders(
+  context: Context,
+  events: readonly RunEvent[],
+): void {
+  const firstSeq = events[0]?.seq;
+  const lastSeq = events.at(-1)?.seq;
+  if (firstSeq !== undefined) {
+    context.header("X-Napier-First-Event-Seq", String(firstSeq));
+  }
+  if (lastSeq !== undefined) {
+    context.header("X-Napier-Last-Event-Seq", String(lastSeq));
+  }
+}
+
+export function setRunMetricsHeaders(
+  context: Context,
+  prefix: string,
+  metrics: Omit<RunMetrics, "assistantTextSha256"> & {
+    assistantTextSha256?: string;
+  },
+): void {
+  context.header(`${prefix}-Duration-Ms`, String(metrics.durationMs));
+  context.header(`${prefix}-Event-Count`, String(metrics.eventCount));
+  context.header(`${prefix}-Message-Count`, String(metrics.messageCount));
+  context.header(
+    `${prefix}-Model-Response-Count`,
+    String(metrics.modelResponseCount),
+  );
+  context.header(
+    `${prefix}-Model-Context-Envelope-Count`,
+    String(metrics.modelContextEnvelopeCount),
+  );
+  context.header(
+    `${prefix}-Embedded-Model-Context-Envelope-Count`,
+    String(metrics.embeddedModelContextEnvelopeCount),
+  );
+  context.header(
+    `${prefix}-Model-Context-Bound-Response-Count`,
+    String(metrics.modelContextBoundResponseCount),
+  );
+  context.header(
+    `${prefix}-Model-Context-Unbound-Response-Count`,
+    String(metrics.modelContextUnboundResponseCount),
+  );
+  context.header(`${prefix}-Tool-Call-Count`, String(metrics.toolCallCount));
+  context.header(
+    `${prefix}-Tool-Completed-Count`,
+    String(metrics.toolCompletedCount),
+  );
+  context.header(
+    `${prefix}-Tool-Failed-Count`,
+    String(metrics.toolFailedCount),
+  );
+  context.header(
+    `${prefix}-Tool-Blocked-Count`,
+    String(metrics.toolBlockedCount),
+  );
+  context.header(`${prefix}-Subagent-Count`, String(metrics.subagentCount));
+  context.header(`${prefix}-Input-Tokens`, String(metrics.inputTokens));
+  context.header(`${prefix}-Output-Tokens`, String(metrics.outputTokens));
+  context.header(
+    `${prefix}-Cache-Read-Tokens`,
+    String(metrics.cacheReadTokens),
+  );
+  context.header(
+    `${prefix}-Cache-Write-Tokens`,
+    String(metrics.cacheWriteTokens),
+  );
+  context.header(`${prefix}-Cost-Usd`, String(metrics.costUsd));
+  if (metrics.assistantTextSha256) {
+    context.header(
+      `${prefix}-Assistant-Text-SHA256`,
+      metrics.assistantTextSha256,
+    );
+  }
 }
 
 export function jsonError(

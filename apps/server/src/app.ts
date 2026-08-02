@@ -76,7 +76,6 @@ import type {
   EvaluationAdjudication,
   EvaluationCalibrationReport,
   EvaluationQualificationBaseline,
-  ExportOpenTelemetryTraceRequest,
   ExportExtensionPackageLockfileRequest,
   HealthResponse,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest,
@@ -199,12 +198,9 @@ import type {
   JsonValue,
   McpToolEffect,
   McpTransportConfig,
-  OpenTelemetryTraceArtifact,
-  OpenTelemetryTraceArtifactVerification,
   OperatorDecision,
   ThreadDetail,
   ThreadReplayBundle,
-  ThreadReplayBundleVerification,
   ExtensionPackageChannelIndexVerification,
   ExtensionPackageDeploymentPreview,
   ExtensionPackageLockfile,
@@ -228,13 +224,9 @@ import type {
   PromptPackageVerification,
   ReplanExecutionPlanRequest,
   ReviewExecutionPlanReplanDraftRequest,
-  RunComparison,
   RunControlMessage,
   RunEvent,
   RunEvaluationRecord,
-  RunMetrics,
-  RunReplaySnapshot,
-  RunReplaySnapshotVerification,
   SubagentOutcomeEvidenceVerification,
   SubagentOutcomeReview,
   EvaluationReviewerBallot,
@@ -290,10 +282,7 @@ import type {
   VerifyExecutionPlanBlueprintRecordReplayOutcomesRequest,
   VerifyExecutionPlanArchiveRequest,
   VerifyInspectorPackageRequest,
-  VerifyOpenTelemetryTraceArtifactRequest,
   VerifyPromptPackageRequest,
-  VerifyRunReplaySnapshotRequest,
-  VerifyThreadReplayBundleRequest,
   VerifyUsagePriceTableCatalogRequest,
   VerifyReceiptTrustAnchorDirectoryRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
@@ -313,7 +302,6 @@ import {
   AutomationService,
   ChannelService,
   canonicalJson,
-  compareRuns,
   type CredentialReferenceStore,
   createLocalAgentRuntime,
   createThreadBranch,
@@ -328,7 +316,6 @@ import {
   createExecutionPlanArchive,
   createExecutionPlanBlueprint,
   createPlanArtifactEventPayload,
-  createRunReplaySnapshot,
   createWorkspaceArtifactDriftRequest,
   createWorkspaceArtifactVerificationRequest,
   exportWorkspaceFileArtifact,
@@ -341,9 +328,7 @@ import {
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
   createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
-  createOpenTelemetryTraceArtifact,
   builtinUsagePriceTableCatalog,
-  exportThreadReplayBundle,
   hashEventStream,
   type LocalStore,
   MAX_RECEIPT_TRUST_ANCHORS,
@@ -370,7 +355,6 @@ import {
   type ModelRegistry,
   type ModelInvocationExperimentRuntime,
   type ToolInvocationExperimentRuntime,
-  openTelemetryTraceArtifactEventAnchorSetSha256,
   RecoveryService,
   receiptTrustAnchorsFromDirectory,
   reviewExecutionPlanBlueprintRecordOutcomes,
@@ -394,11 +378,8 @@ import {
   verifyTrustedReceiptEnvelope,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
-  verifyOpenTelemetryTraceArtifact,
-  verifyRunReplaySnapshot,
   verifySubagentOutcomeEvidence,
   validateThreadReplayBundle,
-  verifyThreadReplayBundle,
   verifyInboundDeadLetterExportArtifact,
   verifyInboundDeadLetterRetryHistory,
   verifyUsagePriceTableCatalog,
@@ -420,9 +401,12 @@ import {
 } from "./receipt-trust-directory-discovery.js";
 import {
   errorMessage,
+  jsonByteLength,
   jsonError,
+  safeFilenameSegment,
   setBodyContentSha256Header,
   setContentSha256Header,
+  setEventBoundaryHeaders,
   setStableContentSha256Header,
   sha256Bytes,
   sha256Json,
@@ -442,6 +426,7 @@ import {
 } from "./http-request-validation.js";
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
+import { registerThreadEvidenceHttp } from "./thread-evidence-http.js";
 import {
   automationScheduleListSha256,
   registerScheduleHttp,
@@ -650,7 +635,6 @@ const MAX_CHANNEL_ADAPTER_PREVIEW_REQUEST_BYTES =
 const MAX_DEAD_LETTER_EXPORT_VERIFY_REQUEST_BYTES = 2 * 1024 * 1024;
 const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
 const MAX_EXTENSION_ADMIN_REQUEST_BYTES = 64 * 1024;
-const MAX_TRACE_EXPORT_REQUEST_BYTES = 8 * 1024;
 const MAX_BRANCH_REQUEST_BYTES = 8 * 1024;
 const MAX_TRUST_ADMIN_REQUEST_BYTES = 8 * 1024;
 const MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES = 64 * 1024;
@@ -5182,215 +5166,7 @@ export function createApp(services: NapierServices): Hono {
 
   registerAgentProfileHttp(app, services);
 
-  app.get("/api/threads/:threadId/events", async (context) => {
-    const after = Number.parseInt(context.req.query("after") ?? "0", 10);
-    const afterSeq = Number.isFinite(after) ? after : 0;
-    const threadId = context.req.param("threadId");
-    const events = await services.store.listEvents(threadId, afterSeq);
-    setThreadEventsProjectionHeaders(context, threadId, events, afterSeq);
-    return context.json(events);
-  });
-
-  app.get("/api/threads/:threadId/fixture", async (context) => {
-    const bundle = await exportThreadReplayBundle(
-      services.store,
-      context.req.param("threadId"),
-    );
-    const verification = verifyThreadReplayBundle(bundle);
-    if (verification.status !== "valid") {
-      throw new Error(
-        `Exported thread replay bundle verification failed: ${verification.diagnostics.join(", ")}`,
-      );
-    }
-    setThreadReplayBundleHeaders(context, bundle, verification);
-    return context.json(bundle);
-  });
-
-  app.post("/api/threads/import/verify", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_THREAD_REPLAY_BUNDLE_BYTES,
-        "Thread replay bundle verification request",
-      );
-    } catch (error) {
-      if (error instanceof RequestBodyTooLargeError) {
-        return jsonError(context, error.message, 413);
-      }
-      return jsonError(
-        context,
-        error instanceof Error
-          ? `Invalid thread replay verification request: ${error.message}`
-          : "Invalid thread replay verification request",
-        400,
-      );
-    }
-    const request = parseVerifyThreadReplayBundleRequest(input);
-    if (!request) {
-      return jsonError(
-        context,
-        "Thread replay verification request is invalid",
-        400,
-      );
-    }
-    const verification = verifyThreadReplayBundle(request.bundle);
-    setThreadReplayBundleVerificationHeaders(context, verification);
-    return context.json(verification);
-  });
-
-  app.post("/api/threads/:threadId/trace/otlp", async (context) => {
-    let input: unknown;
-    try {
-      input = await readOptionalLimitedJson(
-        context.req.raw,
-        MAX_TRACE_EXPORT_REQUEST_BYTES,
-        "OpenTelemetry trace export request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseExportOpenTelemetryTraceRequest(input);
-    if (!body) {
-      return jsonError(
-        context,
-        "OpenTelemetry trace export request is invalid",
-        400,
-      );
-    }
-    const threadId = context.req.param("threadId");
-    const artifact = await createOpenTelemetryTraceArtifact(
-      services.store,
-      threadId,
-      body.runId,
-    );
-    await services.store.appendEvent({
-      threadId,
-      runId: createId("runctl"),
-      type: "trace.otlp.exported",
-      category: "system",
-      visibility: "user",
-      payload: {
-        scope: body.runId ? "run" : "thread",
-        ...(body.runId ? { sourceRunId: body.runId } : {}),
-        traceId: artifact.traceId,
-        spanCount: artifact.spanCount,
-        eventCount: artifact.eventRange.eventCount,
-        eventStreamSha256: artifact.eventRange.eventStreamSha256,
-        eventAnchorSetSha256:
-          openTelemetryTraceArtifactEventAnchorSetSha256(artifact),
-        contentSha256: artifact.contentSha256,
-      },
-    });
-    setOpenTelemetryTraceArtifactHeaders(context, artifact);
-    return context.json(artifact);
-  });
-
-  app.post("/api/threads/:threadId/trace/otlp/verify", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_THREAD_REPLAY_BUNDLE_BYTES,
-        "OpenTelemetry trace verification request",
-      );
-    } catch (error) {
-      if (error instanceof RequestBodyTooLargeError) {
-        return jsonError(context, error.message, 413);
-      }
-      return jsonError(
-        context,
-        error instanceof Error
-          ? `Invalid OpenTelemetry trace verification request: ${error.message}`
-          : "Invalid OpenTelemetry trace verification request",
-        400,
-      );
-    }
-    const request = parseVerifyOpenTelemetryTraceArtifactRequest(input);
-    if (!request) {
-      return jsonError(
-        context,
-        "OpenTelemetry trace verification request is invalid",
-        400,
-      );
-    }
-    const verification = bindOpenTelemetryTraceArtifactVerification(
-      verifyOpenTelemetryTraceArtifact(request.artifact),
-      context.req.param("threadId"),
-    );
-    setOpenTelemetryTraceArtifactVerificationHeaders(context, verification);
-    return context.json(verification);
-  });
-
-  app.get("/api/threads/:threadId/runs/:runId/replay", async (context) => {
-    const snapshot = await createRunReplaySnapshot(
-      services.store,
-      context.req.param("threadId"),
-      context.req.param("runId"),
-    );
-    setRunReplaySnapshotHeaders(context, snapshot);
-    return context.json(snapshot);
-  });
-
-  app.post(
-    "/api/threads/:threadId/runs/:runId/replay/verify",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_THREAD_REPLAY_BUNDLE_BYTES,
-          "Run replay snapshot verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          error instanceof Error
-            ? `Invalid Run replay snapshot verification request: ${error.message}`
-            : "Invalid Run replay snapshot verification request",
-          400,
-        );
-      }
-      const request = parseVerifyRunReplaySnapshotRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Run replay snapshot verification request is invalid",
-          400,
-        );
-      }
-      const verification = bindRunReplaySnapshotVerification(
-        verifyRunReplaySnapshot(request.snapshot),
-        context.req.param("threadId"),
-        context.req.param("runId"),
-      );
-      setRunReplaySnapshotVerificationHeaders(context, verification);
-      return context.json(verification);
-    },
-  );
-
-  app.get("/api/threads/:threadId/runs/compare", async (context) => {
-    const leftRunId = context.req.query("left")?.trim();
-    const rightRunId = context.req.query("right")?.trim();
-    if (!leftRunId || !rightRunId) {
-      return jsonError(context, "left and right run IDs are required", 400);
-    }
-    const comparison = await compareRuns(
-      services.store,
-      context.req.param("threadId"),
-      leftRunId,
-      rightRunId,
-    );
-    setRunComparisonHeaders(context, comparison);
-    return context.json(comparison);
-  });
+  registerThreadEvidenceHttp(app, services);
 
   app.get("/api/threads/:threadId/evaluations", (context) => {
     const threadId = context.req.param("threadId");
@@ -10538,36 +10314,6 @@ function parseImportThreadReplayBundleRequest(
   return {
     bundle: record["bundle"] as ThreadReplayBundle,
     ...(normalizedTitle ? { title: normalizedTitle } : {}),
-  };
-}
-
-function parseVerifyThreadReplayBundleRequest(
-  input: unknown,
-): VerifyThreadReplayBundleRequest | undefined {
-  const record = requestRecord(input, ["bundle"]);
-  if (!record || record["bundle"] === undefined) return undefined;
-  return {
-    bundle: record["bundle"] as ThreadReplayBundle,
-  };
-}
-
-function parseVerifyRunReplaySnapshotRequest(
-  input: unknown,
-): VerifyRunReplaySnapshotRequest | undefined {
-  const record = requestRecord(input, ["snapshot"]);
-  if (!record || record["snapshot"] === undefined) return undefined;
-  return {
-    snapshot: record["snapshot"] as RunReplaySnapshot,
-  };
-}
-
-function parseVerifyOpenTelemetryTraceArtifactRequest(
-  input: unknown,
-): VerifyOpenTelemetryTraceArtifactRequest | undefined {
-  const record = requestRecord(input, ["artifact"]);
-  if (!record || record["artifact"] === undefined) return undefined;
-  return {
-    artifact: record["artifact"] as OpenTelemetryTraceArtifact,
   };
 }
 
@@ -16289,22 +16035,6 @@ function parseImportSignedExtensionPackageRequest(
     : undefined;
 }
 
-function parseExportOpenTelemetryTraceRequest(
-  input: unknown,
-): ExportOpenTelemetryTraceRequest | undefined {
-  if (input === undefined) return {};
-  const record = requestRecord(input, ["runId"]);
-  const runId = record?.["runId"];
-  if (
-    !record ||
-    (runId !== undefined &&
-      (typeof runId !== "string" || !/^run_[a-z0-9]{8,80}$/.test(runId)))
-  ) {
-    return undefined;
-  }
-  return typeof runId === "string" ? { runId } : {};
-}
-
 function isReceiptTrustConflict(error: Error): boolean {
   return [
     "signing key is unavailable",
@@ -19808,28 +19538,6 @@ function operatorDecisionErrorStatus(error: unknown): 400 | 404 | 409 {
   return 400;
 }
 
-function setThreadEventsProjectionHeaders(
-  context: Context,
-  threadId: string,
-  events: readonly RunEvent[],
-  afterSeq: number,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, events);
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-After-Seq", String(afterSeq));
-  context.header("X-Napier-Event-Count", String(events.length));
-  context.header("X-Napier-Event-Bytes", String(jsonByteLength(events)));
-  const firstSeq = events[0]?.seq;
-  const lastSeq = events.at(-1)?.seq;
-  if (firstSeq !== undefined) {
-    context.header("X-Napier-First-Event-Seq", String(firstSeq));
-  }
-  if (lastSeq !== undefined) {
-    context.header("X-Napier-Last-Event-Seq", String(lastSeq));
-  }
-}
-
 function setThreadStopHeaders(
   context: Context,
   threadId: string,
@@ -19884,505 +19592,6 @@ function setThreadRunStreamErrorHeaders(context: Context): void {
     "X-Napier-Stream-Error-Message-SHA256",
     sha256Text(RUN_STREAM_ERROR_MESSAGE),
   );
-}
-
-function setThreadReplayBundleHeaders(
-  context: Context,
-  bundle: ThreadReplayBundle,
-  verification: ThreadReplayBundleVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  context.header(
-    "Content-Disposition",
-    `attachment; filename="${threadReplayBundleFilename(bundle)}"`,
-  );
-  setStableContentSha256Header(context, bundle.contentSha256);
-  context.header("X-Napier-Thread-Id", bundle.thread.id);
-  context.header("X-Napier-Event-Stream-SHA256", bundle.eventStreamSha256);
-  context.header("X-Napier-Verification-Status", verification.status);
-  context.header("X-Napier-Event-Count", String(verification.eventCount));
-  context.header("X-Napier-Run-Count", String(verification.runCount));
-  context.header("X-Napier-Plan-Count", String(verification.planCount));
-  context.header(
-    "X-Napier-Evaluation-Count",
-    String(verification.evaluationCount),
-  );
-  context.header(
-    "X-Napier-Model-Context-Envelope-Count",
-    String(verification.modelContextEnvelopeCount),
-  );
-  context.header(
-    "X-Napier-Embedded-Model-Context-Envelope-Count",
-    String(verification.embeddedModelContextEnvelopeCount),
-  );
-  setEventBoundaryHeaders(context, bundle.events);
-}
-
-function threadReplayBundleFilename(bundle: ThreadReplayBundle): string {
-  const safeThreadId = safeFilenameSegment(bundle.thread.id, "thread");
-  return `napier-thread-${safeThreadId}-${bundle.contentSha256.slice(0, 12)}.json`;
-}
-
-function setThreadReplayBundleVerificationHeaders(
-  context: Context,
-  verification: ThreadReplayBundleVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, verification);
-  context.header("X-Napier-Verification-Status", verification.status);
-  context.header("X-Napier-Event-Count", String(verification.eventCount));
-  context.header("X-Napier-Run-Count", String(verification.runCount));
-  context.header("X-Napier-Plan-Count", String(verification.planCount));
-  context.header(
-    "X-Napier-Evaluation-Count",
-    String(verification.evaluationCount),
-  );
-  context.header(
-    "X-Napier-Model-Context-Envelope-Count",
-    String(verification.modelContextEnvelopeCount),
-  );
-  context.header(
-    "X-Napier-Embedded-Model-Context-Envelope-Count",
-    String(verification.embeddedModelContextEnvelopeCount),
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  if (verification.threadId) {
-    context.header("X-Napier-Thread-Id", verification.threadId);
-  }
-  if (verification.agentId) {
-    context.header("X-Napier-Agent-Id", verification.agentId);
-  }
-  if (verification.contentSha256) {
-    context.header("X-Napier-Bundle-SHA256", verification.contentSha256);
-  }
-  if (verification.eventStreamSha256) {
-    context.header(
-      "X-Napier-Event-Stream-SHA256",
-      verification.eventStreamSha256,
-    );
-  }
-}
-
-function bindOpenTelemetryTraceArtifactVerification(
-  verification: OpenTelemetryTraceArtifactVerification,
-  threadId: string,
-): OpenTelemetryTraceArtifactVerification {
-  if (verification.status !== "valid") return verification;
-  if (verification.threadId === threadId) return verification;
-  return {
-    ...verification,
-    status: "invalid",
-    diagnostics: ["path_mismatch"],
-  };
-}
-
-function setOpenTelemetryTraceArtifactVerificationHeaders(
-  context: Context,
-  verification: OpenTelemetryTraceArtifactVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, verification);
-  context.header("X-Napier-Verification-Status", verification.status);
-  context.header("X-Napier-Span-Count", String(verification.spanCount));
-  context.header("X-Napier-Event-Count", String(verification.eventCount));
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  if (verification.threadId) {
-    context.header("X-Napier-Thread-Id", verification.threadId);
-  }
-  if (verification.runId) {
-    context.header("X-Napier-Run-Id", verification.runId);
-  }
-  if (verification.traceId) {
-    context.header("X-Napier-Trace-Id", verification.traceId);
-  }
-  if (verification.contentSha256) {
-    context.header("X-Napier-Trace-SHA256", verification.contentSha256);
-  }
-  if (verification.eventStreamSha256) {
-    context.header(
-      "X-Napier-Event-Stream-SHA256",
-      verification.eventStreamSha256,
-    );
-  }
-  if (verification.eventAnchorSetSha256) {
-    context.header(
-      "X-Napier-Event-Anchor-Set-SHA256",
-      verification.eventAnchorSetSha256,
-    );
-  }
-}
-
-function bindRunReplaySnapshotVerification(
-  verification: RunReplaySnapshotVerification,
-  threadId: string,
-  runId: string,
-): RunReplaySnapshotVerification {
-  if (verification.status !== "valid") return verification;
-  if (verification.threadId === threadId && verification.runId === runId) {
-    return verification;
-  }
-  return {
-    ...verification,
-    status: "invalid",
-    diagnostics: ["path_mismatch"],
-  };
-}
-
-function setRunReplaySnapshotHeaders(
-  context: Context,
-  snapshot: RunReplaySnapshot,
-): void {
-  context.header("Cache-Control", "no-store");
-  context.header(
-    "Content-Disposition",
-    `attachment; filename="${runReplaySnapshotFilename(snapshot)}"`,
-  );
-  setBodyContentSha256Header(context, snapshot);
-  context.header("X-Napier-Thread-Id", snapshot.threadId);
-  context.header("X-Napier-Run-Id", snapshot.run.id);
-  context.header("X-Napier-Snapshot-SHA256", snapshot.contentSha256);
-  context.header("X-Napier-Event-Stream-SHA256", snapshot.eventStreamSha256);
-  context.header("X-Napier-Event-Count", String(snapshot.events.length));
-  context.header("X-Napier-Subagent-Count", String(snapshot.subagents.length));
-  setRunMetricsHeaders(context, "X-Napier-Run", snapshot.metrics);
-  if (snapshot.configurationSha256) {
-    context.header(
-      "X-Napier-Configuration-SHA256",
-      snapshot.configurationSha256,
-    );
-  }
-  setEventBoundaryHeaders(context, snapshot.events);
-}
-
-function runReplaySnapshotFilename(snapshot: RunReplaySnapshot): string {
-  const safeRunId = safeFilenameSegment(snapshot.run.id, "run");
-  return `napier-${safeRunId}-replay-${snapshot.contentSha256.slice(0, 12)}.json`;
-}
-
-function safeFilenameSegment(value: string, fallback: string): string {
-  const normalized = value.replace(/[^A-Za-z0-9._-]/g, "_");
-  return normalized.length > 0 ? normalized : fallback;
-}
-
-function setRunReplaySnapshotVerificationHeaders(
-  context: Context,
-  verification: RunReplaySnapshotVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, verification);
-  context.header("X-Napier-Verification-Status", verification.status);
-  context.header("X-Napier-Event-Count", String(verification.eventCount));
-  context.header("X-Napier-Subagent-Count", String(verification.subagentCount));
-  context.header(
-    "X-Napier-Model-Context-Envelope-Count",
-    String(verification.modelContextEnvelopeCount),
-  );
-  context.header(
-    "X-Napier-Embedded-Model-Context-Envelope-Count",
-    String(verification.embeddedModelContextEnvelopeCount),
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  if (verification.threadId) {
-    context.header("X-Napier-Thread-Id", verification.threadId);
-  }
-  if (verification.runId) {
-    context.header("X-Napier-Run-Id", verification.runId);
-  }
-  if (verification.contentSha256) {
-    context.header("X-Napier-Snapshot-SHA256", verification.contentSha256);
-  }
-  if (verification.eventStreamSha256) {
-    context.header(
-      "X-Napier-Event-Stream-SHA256",
-      verification.eventStreamSha256,
-    );
-  }
-  if (verification.configurationSha256) {
-    context.header(
-      "X-Napier-Configuration-SHA256",
-      verification.configurationSha256,
-    );
-  }
-  if (verification.assistantTextSha256) {
-    context.header(
-      "X-Napier-Assistant-Text-SHA256",
-      verification.assistantTextSha256,
-    );
-  }
-}
-
-function setRunComparisonHeaders(
-  context: Context,
-  comparison: RunComparison,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, comparison);
-  context.header("X-Napier-Thread-Id", comparison.threadId);
-  context.header("X-Napier-Left-Run-Id", comparison.left.run.id);
-  context.header("X-Napier-Right-Run-Id", comparison.right.run.id);
-  context.header(
-    "X-Napier-Left-Event-Stream-SHA256",
-    comparison.left.eventStreamSha256,
-  );
-  context.header(
-    "X-Napier-Right-Event-Stream-SHA256",
-    comparison.right.eventStreamSha256,
-  );
-  context.header(
-    "X-Napier-Left-Event-Count",
-    String(comparison.left.events.length),
-  );
-  context.header(
-    "X-Napier-Right-Event-Count",
-    String(comparison.right.events.length),
-  );
-  setRunMetricsHeaders(context, "X-Napier-Left-Run", comparison.left.metrics);
-  setRunMetricsHeaders(context, "X-Napier-Right-Run", comparison.right.metrics);
-  setRunMetricsHeaders(context, "X-Napier-Run-Delta", comparison.metricDelta);
-  context.header("X-Napier-Output-Changed", String(comparison.outputChanged));
-  context.header(
-    "X-Napier-Configuration-Delta-Status",
-    comparison.configurationDelta.status,
-  );
-  context.header(
-    "X-Napier-Context-Coverage-Status",
-    comparison.contextCoverageDelta.status,
-  );
-  context.header(
-    "X-Napier-Context-Coverage-Left-Rate",
-    String(comparison.contextCoverageDelta.left.coverageRate),
-  );
-  context.header(
-    "X-Napier-Context-Coverage-Right-Rate",
-    String(comparison.contextCoverageDelta.right.coverageRate),
-  );
-  context.header(
-    "X-Napier-Context-Coverage-Rate-Delta",
-    String(comparison.contextCoverageDelta.coverageRateDelta),
-  );
-  context.header(
-    "X-Napier-Context-Coverage-Left-Embedded-Envelope-Count",
-    String(comparison.contextCoverageDelta.left.embeddedEnvelopeCount),
-  );
-  context.header(
-    "X-Napier-Context-Coverage-Right-Embedded-Envelope-Count",
-    String(comparison.contextCoverageDelta.right.embeddedEnvelopeCount),
-  );
-  context.header(
-    "X-Napier-Context-Coverage-Embedded-Envelope-Delta",
-    String(comparison.contextCoverageDelta.embeddedEnvelopeDelta),
-  );
-  context.header(
-    "X-Napier-Context-Coverage-Diagnostic-Count",
-    String(comparison.contextCoverageDelta.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Context-Coverage-Diagnostics-SHA256",
-    sha256Json(comparison.contextCoverageDelta.diagnostics),
-  );
-  context.header(
-    "X-Napier-Trace-Summary-Boundary-Status",
-    comparison.traceSummaryBoundaryDelta.status,
-  );
-  context.header(
-    "X-Napier-Trace-Summary-Boundary-Left-Generic-Count",
-    String(comparison.traceSummaryBoundaryDelta.left.generic),
-  );
-  context.header(
-    "X-Napier-Trace-Summary-Boundary-Right-Generic-Count",
-    String(comparison.traceSummaryBoundaryDelta.right.generic),
-  );
-  context.header(
-    "X-Napier-Trace-Summary-Boundary-Generic-Delta",
-    String(comparison.traceSummaryBoundaryDelta.genericDelta),
-  );
-  context.header(
-    "X-Napier-Trace-Summary-Boundary-Diagnostic-Count",
-    String(comparison.traceSummaryBoundaryDelta.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Trace-Summary-Boundary-Diagnostics-SHA256",
-    sha256Json(comparison.traceSummaryBoundaryDelta.diagnostics),
-  );
-  context.header(
-    "X-Napier-Event-Type-Delta-SHA256",
-    sha256Json(comparison.eventTypeDelta),
-  );
-  context.header(
-    "X-Napier-Added-Tool-Count",
-    String(comparison.addedToolNames.length),
-  );
-  context.header(
-    "X-Napier-Removed-Tool-Count",
-    String(comparison.removedToolNames.length),
-  );
-  context.header(
-    "X-Napier-Added-Tools-SHA256",
-    sha256Json(comparison.addedToolNames),
-  );
-  context.header(
-    "X-Napier-Removed-Tools-SHA256",
-    sha256Json(comparison.removedToolNames),
-  );
-  setRunConfigurationDeltaHeaders(context, comparison.configurationDelta);
-  if (comparison.left.configurationSha256) {
-    context.header(
-      "X-Napier-Left-Configuration-SHA256",
-      comparison.left.configurationSha256,
-    );
-  }
-  if (comparison.right.configurationSha256) {
-    context.header(
-      "X-Napier-Right-Configuration-SHA256",
-      comparison.right.configurationSha256,
-    );
-  }
-}
-
-function setRunConfigurationDeltaHeaders(
-  context: Context,
-  delta: RunComparison["configurationDelta"],
-): void {
-  context.header(
-    "X-Napier-Configuration-Changed-Field-Count",
-    String(delta.changedFields.length),
-  );
-  context.header(
-    "X-Napier-Configuration-Changed-Fields-SHA256",
-    sha256Json(delta.changedFields),
-  );
-  context.header(
-    "X-Napier-Configuration-Added-Tool-Count",
-    String(delta.addedTools.length),
-  );
-  context.header(
-    "X-Napier-Configuration-Removed-Tool-Count",
-    String(delta.removedTools.length),
-  );
-  context.header(
-    "X-Napier-Configuration-Added-Tools-SHA256",
-    sha256Json(delta.addedTools),
-  );
-  context.header(
-    "X-Napier-Configuration-Removed-Tools-SHA256",
-    sha256Json(delta.removedTools),
-  );
-  context.header(
-    "X-Napier-Configuration-Added-Skill-Count",
-    String(delta.addedSkills.length),
-  );
-  context.header(
-    "X-Napier-Configuration-Removed-Skill-Count",
-    String(delta.removedSkills.length),
-  );
-  context.header(
-    "X-Napier-Configuration-Added-Skills-SHA256",
-    sha256Json(delta.addedSkills),
-  );
-  context.header(
-    "X-Napier-Configuration-Removed-Skills-SHA256",
-    sha256Json(delta.removedSkills),
-  );
-  context.header(
-    "X-Napier-Configuration-Added-Subagent-Count",
-    String(delta.addedSubagents.length),
-  );
-  context.header(
-    "X-Napier-Configuration-Removed-Subagent-Count",
-    String(delta.removedSubagents.length),
-  );
-  context.header(
-    "X-Napier-Configuration-Added-Subagents-SHA256",
-    sha256Json(delta.addedSubagents),
-  );
-  context.header(
-    "X-Napier-Configuration-Removed-Subagents-SHA256",
-    sha256Json(delta.removedSubagents),
-  );
-}
-
-function setRunMetricsHeaders(
-  context: Context,
-  prefix: string,
-  metrics: Omit<RunMetrics, "assistantTextSha256"> & {
-    assistantTextSha256?: string;
-  },
-): void {
-  context.header(`${prefix}-Duration-Ms`, String(metrics.durationMs));
-  context.header(`${prefix}-Event-Count`, String(metrics.eventCount));
-  context.header(`${prefix}-Message-Count`, String(metrics.messageCount));
-  context.header(
-    `${prefix}-Model-Response-Count`,
-    String(metrics.modelResponseCount),
-  );
-  context.header(
-    `${prefix}-Model-Context-Envelope-Count`,
-    String(metrics.modelContextEnvelopeCount),
-  );
-  context.header(
-    `${prefix}-Embedded-Model-Context-Envelope-Count`,
-    String(metrics.embeddedModelContextEnvelopeCount),
-  );
-  context.header(
-    `${prefix}-Model-Context-Bound-Response-Count`,
-    String(metrics.modelContextBoundResponseCount),
-  );
-  context.header(
-    `${prefix}-Model-Context-Unbound-Response-Count`,
-    String(metrics.modelContextUnboundResponseCount),
-  );
-  context.header(`${prefix}-Tool-Call-Count`, String(metrics.toolCallCount));
-  context.header(
-    `${prefix}-Tool-Completed-Count`,
-    String(metrics.toolCompletedCount),
-  );
-  context.header(
-    `${prefix}-Tool-Failed-Count`,
-    String(metrics.toolFailedCount),
-  );
-  context.header(
-    `${prefix}-Tool-Blocked-Count`,
-    String(metrics.toolBlockedCount),
-  );
-  context.header(`${prefix}-Subagent-Count`, String(metrics.subagentCount));
-  context.header(`${prefix}-Input-Tokens`, String(metrics.inputTokens));
-  context.header(`${prefix}-Output-Tokens`, String(metrics.outputTokens));
-  context.header(
-    `${prefix}-Cache-Read-Tokens`,
-    String(metrics.cacheReadTokens),
-  );
-  context.header(
-    `${prefix}-Cache-Write-Tokens`,
-    String(metrics.cacheWriteTokens),
-  );
-  context.header(`${prefix}-Cost-Usd`, String(metrics.costUsd));
-  if (metrics.assistantTextSha256) {
-    context.header(
-      `${prefix}-Assistant-Text-SHA256`,
-      metrics.assistantTextSha256,
-    );
-  }
 }
 
 function setRunEvaluationListHeaders(
@@ -23844,62 +23053,6 @@ function setUsagePriceTableVerificationHeaders(
   }
 }
 
-function setOpenTelemetryTraceArtifactHeaders(
-  context: Context,
-  artifact: OpenTelemetryTraceArtifact,
-): void {
-  context.header("Cache-Control", "no-store");
-  context.header(
-    "Content-Disposition",
-    `attachment; filename="${openTelemetryTraceArtifactFilename(artifact)}"`,
-  );
-  setStableContentSha256Header(context, artifact.contentSha256);
-  context.header("X-Napier-Trace-Id", artifact.traceId);
-  context.header("X-Napier-Thread-Id", artifact.threadId);
-  if (artifact.runId) {
-    context.header("X-Napier-Run-Id", artifact.runId);
-  }
-  context.header("X-Napier-Span-Count", String(artifact.spanCount));
-  context.header(
-    "X-Napier-Event-Count",
-    String(artifact.eventRange.eventCount),
-  );
-  context.header(
-    "X-Napier-First-Event-Seq",
-    String(artifact.eventRange.fromSeq),
-  );
-  context.header("X-Napier-Last-Event-Seq", String(artifact.eventRange.toSeq));
-  context.header(
-    "X-Napier-Event-Stream-SHA256",
-    artifact.eventRange.eventStreamSha256,
-  );
-  context.header(
-    "X-Napier-Event-Anchor-Set-SHA256",
-    openTelemetryTraceArtifactEventAnchorSetSha256(artifact),
-  );
-  context.header("X-Napier-Trace-Redaction-Mode", artifact.redaction.mode);
-  context.header(
-    "X-Napier-Trace-Content-Capture",
-    String(artifact.redaction.contentCapture),
-  );
-  context.header(
-    "X-Napier-Trace-Excluded-Event-Type-Count",
-    String(artifact.redaction.excludedEventTypes.length),
-  );
-  context.header(
-    "X-Napier-Trace-Excluded-Payload-Key-Count",
-    String(artifact.redaction.excludedPayloadKeys.length),
-  );
-}
-
-function openTelemetryTraceArtifactFilename(
-  artifact: OpenTelemetryTraceArtifact,
-): string {
-  const sourceId = artifact.runId ?? artifact.threadId;
-  const safeSourceId = safeFilenameSegment(sourceId, "trace");
-  return `napier-otel-${safeSourceId}-${artifact.contentSha256.slice(0, 12)}.json`;
-}
-
 function setExtensionPublisherTrustAnchorListHeaders(
   context: Context,
   anchors: readonly ExtensionPublisherTrustAnchor[],
@@ -23940,20 +23093,6 @@ function setExtensionPublisherTrustAnchorHeaders(
     "X-Napier-Extension-Publisher-Trust-Signing-Capable",
     String(Boolean(anchor.signingSource)),
   );
-}
-
-function setEventBoundaryHeaders(
-  context: Context,
-  events: readonly RunEvent[],
-): void {
-  const firstSeq = events[0]?.seq;
-  const lastSeq = events.at(-1)?.seq;
-  if (firstSeq !== undefined) {
-    context.header("X-Napier-First-Event-Seq", String(firstSeq));
-  }
-  if (lastSeq !== undefined) {
-    context.header("X-Napier-Last-Event-Seq", String(lastSeq));
-  }
 }
 
 function setAutomaticRecoveryProjectionHeaders(
@@ -24477,10 +23616,6 @@ function setBootstrapProjectionHeaders(
     "X-Napier-Adapter-Ids-SHA256",
     inboundChannelAdapterIdsSha256(response.inboundChannelAdapters),
   );
-}
-
-function jsonByteLength(value: unknown): number {
-  return Buffer.byteLength(JSON.stringify(value), "utf8");
 }
 
 function nonNegativeSafeInteger(value: unknown): value is number {

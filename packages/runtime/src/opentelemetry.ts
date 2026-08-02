@@ -19,7 +19,7 @@ import {
 } from "@napier/contracts";
 
 import { hashEventStream } from "./run-replay.js";
-import type { LocalStore } from "./store.js";
+import type { RuntimeStorePort } from "./store-port.js";
 
 export const MAX_OTLP_TRACE_EVENTS = 10_000;
 export const MAX_OTLP_TRACE_SPANS = 5_000;
@@ -379,7 +379,7 @@ interface EventAnchor {
 }
 
 export async function createOpenTelemetryTraceArtifact(
-  store: LocalStore,
+  store: Pick<RuntimeStorePort, "getDetail">,
   threadId: string,
   runId?: string,
   generatedAt = new Date(),
