@@ -142,6 +142,28 @@ resource quota. The 1,000-event profile is a release regression boundary;
 extended 10,000-event, external-provider, HTTP, browser, and hard quota
 profiles remain separate follow-up work.
 
+### Architecture Growth Gate
+
+`npm run check:architecture` parses every TypeScript production and test module
+under `apps/*` and `packages/*`. The checked
+`docs/architecture-budget.json` baseline enforces:
+
+- 500 production lines and 1,000 test lines by default, with exact,
+  ratchet-only overrides for existing debt;
+- cyclomatic complexity 25 by default, with exact per-file overrides for
+  existing complex functions;
+- exact public export ceilings for Contracts, Runtime, and SDK root entries;
+- no new relative-import strongly connected components;
+- one-way workspace dependencies: Contracts depends on no Napier package,
+  Runtime depends only on Contracts, Web depends only on Contracts, and
+  Server/CLI/SDK may depend on Contracts and Runtime.
+
+When a refactor reduces an override or removes a cycle, the gate fails until
+the baseline is lowered with `npm run write:architecture-baseline`. This makes
+debt reduction sticky while preventing routine checks from silently accepting
+growth. The baseline currently documents legacy debt; it is not an assertion
+that the allowed oversized modules or cycles are desirable.
+
 ### Server
 
 `@napier/server` is a thin Hono adapter:
