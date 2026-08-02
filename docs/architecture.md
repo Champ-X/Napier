@@ -183,6 +183,15 @@ temporarily contained a seven-module Evaluation component and a two-module
 Receipt Trust component. Extracting Run snapshot and comparison logic from the
 Thread replay facade then removed the Evaluation component.
 
+The Channel boundary now continues through Contracts and Runtime. Its 37
+public declarations live in the bounded `execution-channels.ts` domain and are
+re-exported from the Contracts root without changing the semantic root symbol
+set. `ChannelService` depends on an internal 12-method `ChannelStorePort`
+instead of concrete `LocalStore`; the existing `InboundExecution` Runtime
+export remains a compatibility alias for the SPI execution record. Architecture
+budgets independently freeze the Channel contract surface and prevent the
+Contracts root from regrowing.
+
 The final Receipt Trust ratchet did not move its 58-declaration, roughly
 2,181-line validator closure into another large file. `receipt-trust.ts` now
 owns callback-parameterized envelope cryptography and directory primitives;

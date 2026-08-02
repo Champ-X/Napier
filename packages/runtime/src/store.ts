@@ -251,6 +251,7 @@ import {
 } from "@napier/contracts";
 
 import { createId, nowIso } from "./ids.js";
+import type { ChannelDeliveryExecution } from "./store-port.js";
 import {
   DEFAULT_MODEL_ADVISOR_POLICY,
   DEFAULT_RUN_LIMITS,
@@ -818,11 +819,7 @@ export interface AutomaticRecoveryClaims {
   deferred: number;
 }
 
-export interface InboundExecution {
-  delivery: InboundDelivery;
-  message: string;
-  model?: InboundMessageRequest["model"];
-}
+export type InboundExecution = ChannelDeliveryExecution;
 
 const EMPTY_STATE: PersistedState = {
   version: 1,

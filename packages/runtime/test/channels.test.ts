@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { fauxProvider } from "@earendil-works/pi-ai";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { ChannelService } from "../src/channels.js";
@@ -60,6 +60,7 @@ describe("inbound webhook channels", () => {
       toleranceSeconds: 300,
     });
     const channels = new ChannelService(store, runtime);
+    expectTypeOf(channels.store).toEqualTypeOf<LocalStore>();
     const request = {
       idempotencyKey: "delivery-2026-07-25-0001",
       message: "Review this inbound build notification.",

@@ -18,6 +18,7 @@ const defaultPolicy = {
 };
 const defaultPublicEntries = [
   "packages/contracts/src/index.ts",
+  "packages/contracts/src/execution-channels.ts",
   "packages/contracts/src/execution-core.ts",
   "packages/contracts/src/execution-experiments.ts",
   "packages/contracts/src/execution-runs.ts",

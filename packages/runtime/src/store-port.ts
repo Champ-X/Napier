@@ -9,6 +9,10 @@ import type {
   EventVisibility,
   ExecutionPlan,
   ExecutionPlanBlueprintRecord,
+  InboundChannel,
+  InboundDelivery,
+  InboundMessageRequest,
+  InboundReceipt,
   JsonValue,
   ModelRef,
   RunEvaluationRecord,
@@ -76,6 +80,48 @@ export interface RuntimeStorePort {
   saveRunEvaluation(
     evaluation: RunEvaluationRecord,
   ): Promise<RunEvaluationRecord>;
+}
+
+export interface ChannelDeliveryExecution {
+  delivery: InboundDelivery;
+  message: string;
+  model?: InboundMessageRequest["model"];
+}
+
+export interface ChannelStorePort extends Pick<
+  RuntimeStorePort,
+  "appendEvent" | "getAgent" | "getThread"
+> {
+  acceptInboundDelivery(
+    channelId: string,
+    token: string,
+    request: InboundMessageRequest,
+  ): Promise<InboundReceipt>;
+  retryInboundDelivery(
+    channelId: string,
+    deliveryId: string,
+    now?: Date,
+  ): Promise<InboundDelivery>;
+  getInboundChannel(channelId: string): InboundChannel;
+  listInboundDeliveries(channelId?: string): InboundDelivery[];
+  listRunnableInboundDeliveryIds(now?: Date): string[];
+  claimInboundDelivery(
+    deliveryId: string,
+    now?: Date,
+  ): Promise<ChannelDeliveryExecution | undefined>;
+  getRunByTriggerId(triggerId: string): RunRecord | undefined;
+  finishInboundDelivery(
+    deliveryId: string,
+    input:
+      | { status: "completed"; runId: string }
+      | { status: "failed"; error: string; runId?: string },
+  ): Promise<InboundDelivery>;
+  scheduleInboundDeliveryRetry(
+    deliveryId: string,
+    error: string,
+    delayMs: number,
+    now?: Date,
+  ): Promise<InboundDelivery>;
 }
 
 type ReplayStoreMethod =

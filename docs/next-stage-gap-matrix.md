@@ -14,6 +14,9 @@ Audit date: 2026-08-03
   largest production modules. Memory, Credential, Schedule, Agent Profile,
   Thread Evidence, and complete Channel HTTP boundaries are now extracted; new
   execution code must stay outside both oversized composition modules.
+- Channel Contracts now occupy a bounded 37-declaration leaf domain, and
+  `ChannelService` consumes a 12-method Store SPI instead of concrete
+  `LocalStore`; the Contracts root remains the compatibility export surface.
 - The Web main entry remains subject to the 150 KiB release gate.
 - General host shell execution remains unavailable.
 
@@ -406,6 +409,27 @@ Observed result:
   54-module Runtime component;
 - Contracts and every downstream workspace typecheck against the rebuilt
   package without compatibility changes.
+
+## Implemented Slice: Channel Contract And Store SPI Boundary
+
+User scenario: Channel adapters, HTTP routes, and execution must share a stable
+protocol without coupling the Runtime service to the 15,000-line Store
+implementation.
+
+Observed result:
+
+- moved all 37 Channel administration, ingress, delivery, qualification, and
+  dead-letter declarations into the 346-line `execution-channels.ts` domain;
+- retained the Contracts root re-export and Bootstrap type imports, with a
+  TypeScript semantic export comparison proving an unchanged root symbol set;
+- reduced the Contracts root from 7,396 to 7,056 lines and ratcheted its direct
+  declaration budget from 670 to 634;
+- introduced an internal 12-method `ChannelStorePort`; `ChannelService` no
+  longer imports concrete `LocalStore`;
+- preserved the public `InboundExecution` Runtime name as a compatibility
+  alias for the internal Store execution record;
+- Channel/transactional Store tests and all downstream workspace typechecks
+  pass without wire, persistence, or public API changes.
 
 ## Implemented Slice: Runtime Event And Client SPI Boundaries
 

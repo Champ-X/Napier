@@ -12,7 +12,7 @@ import { AgentRuntime } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import { createInboundDeadLetterRetryPreview } from "./inbound-dead-letters.js";
-import { LocalStore } from "./store.js";
+import type { ChannelStorePort } from "./store-port.js";
 
 const DEFAULT_SWEEP_MS = 2_000;
 const MAX_RETRY_DELAY_MS = 5 * 60_000;
@@ -21,12 +21,14 @@ export interface ChannelServiceOptions {
   sweepMs?: number;
 }
 
-export class ChannelService {
+export class ChannelService<
+  TStore extends ChannelStorePort = ChannelStorePort,
+> {
   private timer: ReturnType<typeof setInterval> | undefined;
   private draining: Promise<void> | undefined;
 
   constructor(
-    readonly store: LocalStore,
+    readonly store: TStore,
     readonly runtime: AgentRuntime,
     options: ChannelServiceOptions = {},
   ) {
