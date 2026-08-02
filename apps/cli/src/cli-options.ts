@@ -586,7 +586,7 @@ Chat options:
   --agent <agent-id>     Agent for the first new Thread
   --thread <thread-id>   Continue this existing Thread
   --title <text>         Title for the first new Thread
-  --model <provider/id>  Initial model; switch later with /model
+  --model <provider/id>  Initial model; --credential-env <var> bootstraps it
 
 TUI options:
   Same as chat; requires interactive stdin/stdout TTYs with raw mode

@@ -75,6 +75,150 @@ describe("Napier interactive CLI", () => {
         "conflict",
       ]),
     ).toThrow("--title cannot be used");
+    expect(
+      parseCliArgs([
+        "chat",
+        "--workspace",
+        ".",
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "--credential-env",
+        "DEEPSEEK_API_KEY",
+      ]),
+    ).toEqual({
+      kind: "chat",
+      options: {
+        workspace: ".",
+        model: { provider: "deepseek", id: "deepseek-v4-flash" },
+        credentialEnv: "DEEPSEEK_API_KEY",
+        timeoutMs: 600_000,
+        jsonl: false,
+      },
+    });
+    expect(() =>
+      parseCliArgs([
+        "chat",
+        "--workspace",
+        ".",
+        "--credential-env",
+        "DEEPSEEK_API_KEY",
+      ]),
+    ).toThrow("--credential-env requires a live --model");
+    expect(() =>
+      parseCliArgs([
+        "chat",
+        "--workspace",
+        ".",
+        "--model",
+        "napier/demo",
+        "--credential-env",
+        "DEEPSEEK_API_KEY",
+      ]),
+    ).toThrow("--credential-env requires a live --model");
+  });
+
+  it("bootstraps, reuses, and protects an interactive credential locator", async () => {
+    const fixture = await createFixture();
+    const provider = fauxProvider({ provider: "interactive-bootstrap" });
+    provider.setResponses([
+      fauxAssistantMessage("CHAT_BOOTSTRAP_FIRST"),
+      fauxAssistantMessage('{"facts":[]}'),
+      fauxAssistantMessage("CHAT_BOOTSTRAP_SECOND"),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const dependencies = providersDependencies([provider]);
+    const secret = "PRIVATE_INTERACTIVE_BOOTSTRAP_KEY";
+    const runSession = async (prompt: string) => {
+      const input = ttyInput("", false);
+      const stdout = new CaptureWritable();
+      const stderr = new CaptureWritable();
+      const running = runCli(
+        [
+          "chat",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--model",
+          "interactive-bootstrap/faux-1",
+          "--credential-env",
+          "INTERACTIVE_BOOTSTRAP_KEY",
+        ],
+        {
+          ...interactiveIo(fixture.root, input, stdout, stderr),
+          env: { INTERACTIVE_BOOTSTRAP_KEY: secret },
+        },
+        dependencies,
+      );
+      await vi.waitFor(() => expect(stderr.text()).toContain("chat ready"));
+      input.end(`${prompt}\n/exit\n`);
+      expect(await running).toBe(0);
+      expect(stdout.text()).not.toContain(secret);
+      expect(stderr.text()).not.toContain(secret);
+      return stdout.text();
+    };
+
+    expect(await runSession("First interactive task.")).toContain(
+      "CHAT_BOOTSTRAP_FIRST",
+    );
+    expect(await runSession("Second interactive task.")).toContain(
+      "CHAT_BOOTSTRAP_SECOND",
+    );
+    const providerCalls = provider.state.callCount;
+    const conflictSecret = "PRIVATE_INTERACTIVE_CONFLICT_KEY";
+    const conflictStderr = new CaptureWritable();
+    const conflictCode = await runCli(
+      [
+        "chat",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--model",
+        "interactive-bootstrap/faux-1",
+        "--credential-env",
+        "OTHER_INTERACTIVE_KEY",
+      ],
+      {
+        ...interactiveIo(
+          fixture.root,
+          ttyInput("", false),
+          new CaptureWritable(),
+          conflictStderr,
+        ),
+        env: { OTHER_INTERACTIVE_KEY: conflictSecret },
+      },
+      dependencies,
+    );
+    expect(conflictCode).toBe(1);
+    expect(provider.state.callCount).toBe(providerCalls);
+    expect(conflictStderr.text()).not.toContain(conflictSecret);
+
+    const reopened = await createLocalAgentRuntime({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      env: { INTERACTIVE_BOOTSTRAP_KEY: secret },
+      sandbox: new UnsupportedSandboxAdapter("interactive-bootstrap-inspect"),
+    });
+    try {
+      expect(reopened.store.listCredentialReferences()).toEqual([
+        expect.objectContaining({
+          providerId: "interactive-bootstrap",
+          source: {
+            type: "environment",
+            variable: "INTERACTIVE_BOOTSTRAP_KEY",
+          },
+          status: "active",
+          availability: "available",
+        }),
+      ]);
+      expect(reopened.store.listThreads()).toHaveLength(3);
+      expect(
+        JSON.stringify(reopened.store.listCredentialReferences()),
+      ).not.toContain(secret);
+    } finally {
+      await reopened.shutdown();
+    }
   });
 
   it("runs multiple turns, renders tool cards, switches model, and starts a new Thread", async () => {

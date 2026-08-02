@@ -4,11 +4,11 @@ import {
   parseTimeout,
   requiredValue,
 } from "./cli-option-values.js";
+import { parseCredentialEnvironment } from "./cli-credential-options.js";
 import type { CliExecutionOptions } from "./cli-execution-options.js";
 
 const MAX_PROMPT_BYTES = 64 * 1_024;
 const MAX_TITLE_CHARS = 160;
-const CREDENTIAL_ENVIRONMENT = /^[A-Z_][A-Z0-9_]{1,127}$/u;
 
 export interface CliRunOptions extends CliExecutionOptions {
   prompt: string;
@@ -50,15 +50,7 @@ export function parseRunOptions(
     throw new Error(`--title must be 1-${MAX_TITLE_CHARS} characters`);
   }
   const model = optionalModelRef(values);
-  const credentialEnv = values.get("--credential-env")?.trim();
-  if (credentialEnv !== undefined) {
-    if (!CREDENTIAL_ENVIRONMENT.test(credentialEnv)) {
-      throw new Error("--credential-env is invalid");
-    }
-    if (!model || model.provider === "napier") {
-      throw new Error("--credential-env requires a live --model");
-    }
-  }
+  const credentialEnv = parseCredentialEnvironment(values, model);
   return {
     kind: "run",
     options: {

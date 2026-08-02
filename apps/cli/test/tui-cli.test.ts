@@ -41,7 +41,9 @@ describe("Napier full-screen TUI", () => {
         "--workspace",
         ".",
         "--model",
-        "napier/demo",
+        "deepseek/deepseek-v4-flash",
+        "--credential-env",
+        "DEEPSEEK_API_KEY",
         "--title",
         "Terminal session",
         "--timeout-ms",
@@ -51,7 +53,8 @@ describe("Napier full-screen TUI", () => {
       kind: "tui",
       options: {
         workspace: ".",
-        model: { provider: "napier", id: "demo" },
+        model: { provider: "deepseek", id: "deepseek-v4-flash" },
+        credentialEnv: "DEEPSEEK_API_KEY",
         title: "Terminal session",
         timeoutMs: 5_000,
         jsonl: false,
@@ -84,6 +87,69 @@ describe("Napier full-screen TUI", () => {
     expect(code).toBe(2);
     expect(bootstraps).toBe(0);
     expect(stderr.text()).toContain("requires interactive stdin/stdout TTYs");
+  });
+
+  it("bootstraps an explicit credential before the first TUI Run", async () => {
+    const fixture = await createFixture();
+    const provider = fauxProvider({ provider: "tui-bootstrap" });
+    provider.setResponses([
+      fauxAssistantMessage("TUI_BOOTSTRAP_RESULT"),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const secret = "PRIVATE_TUI_BOOTSTRAP_KEY";
+    const input = new RawTtyInput();
+    const stdout = new TtyCapture();
+    const stderr = new CaptureWritable();
+    const running = runCli(
+      [
+        "tui",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--model",
+        "tui-bootstrap/faux-1",
+        "--credential-env",
+        "TUI_BOOTSTRAP_KEY",
+      ],
+      {
+        ...tuiIo(fixture.root, input, stdout, stderr),
+        env: { TUI_BOOTSTRAP_KEY: secret },
+      },
+      providersDependencies([provider]),
+    );
+    await ready(stdout);
+    input.write("Complete the first TUI task.\r");
+    await waitForFrame(stdout, "TUI_BOOTSTRAP_RESULT");
+    await waitForRunStatus(stdout, "completed");
+    input.write("/exit\r");
+
+    expect(await running).toBe(0);
+    expect(input.rawModes).toEqual([true, false]);
+    expect(stdout.text()).not.toContain(secret);
+    expect(stderr.text()).not.toContain(secret);
+    const reopened = await createLocalAgentRuntime({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      env: { TUI_BOOTSTRAP_KEY: secret },
+      sandbox: new UnsupportedSandboxAdapter("tui-bootstrap-inspect"),
+    });
+    try {
+      expect(reopened.store.listCredentialReferences()).toEqual([
+        expect.objectContaining({
+          providerId: "tui-bootstrap",
+          source: {
+            type: "environment",
+            variable: "TUI_BOOTSTRAP_KEY",
+          },
+          status: "active",
+          availability: "available",
+        }),
+      ]);
+      expect(reopened.store.listThreads()).toHaveLength(2);
+    } finally {
+      await reopened.shutdown();
+    }
   });
 
   it("runs durable turns, renders body-free tools, switches model and Thread, and shows operator waiting", async () => {

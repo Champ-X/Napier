@@ -10,6 +10,7 @@ import {
 } from "@napier/runtime";
 
 import type { CliChatOptions } from "./cli-chat-options.js";
+import { configureCliModelCredential } from "./cli-model-credential.js";
 import { writeLine, writeText } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import {
@@ -97,6 +98,8 @@ export async function executeInteractive(
       dataRoot,
       env: io.env,
     });
+    parentSignal?.throwIfAborted();
+    await configureCliModelCredential(services, options, io.env);
     parentSignal?.throwIfAborted();
     const inputLoop = createInterface({
       input: io.stdin,

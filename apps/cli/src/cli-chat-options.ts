@@ -6,6 +6,7 @@ import {
   parseTimeout,
   requiredValue,
 } from "./cli-option-values.js";
+import { parseCredentialEnvironment } from "./cli-credential-options.js";
 
 const MAX_TITLE_CHARS = 160;
 
@@ -18,6 +19,7 @@ export interface CliChatOptions {
   agentId?: string;
   threadId?: string;
   title?: string;
+  credentialEnv?: string;
 }
 
 export interface CliChatAction {
@@ -34,6 +36,7 @@ export const CHAT_VALUE_OPTIONS = new Set([
   "--workspace",
   "--data-root",
   "--model",
+  "--credential-env",
   "--agent",
   "--thread",
   "--title",
@@ -77,6 +80,7 @@ function parseInteractiveOptions(
     throw new Error(`--title must be 1-${MAX_TITLE_CHARS} characters`);
   }
   const model = optionalModelRef(values);
+  const credentialEnv = parseCredentialEnvironment(values, model);
   return {
     workspace: requiredValue(values, "--workspace"),
     timeoutMs: parseTimeout(values.get("--timeout-ms")),
@@ -85,6 +89,7 @@ function parseInteractiveOptions(
       ? { dataRoot: requiredValue(values, "--data-root") }
       : {}),
     ...(model ? { model } : {}),
+    ...(credentialEnv ? { credentialEnv } : {}),
     ...(agentId ? { agentId } : {}),
     ...(threadId ? { threadId } : {}),
     ...(title ? { title } : {}),

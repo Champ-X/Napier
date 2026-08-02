@@ -269,15 +269,17 @@ resume` selects a waiting Thread plus an optional interrupted Run and calls
 streaming, cancellation, and shutdown path; neither implements a second
 model/tool loop or talks directly to Store for Run execution.
 
-For a first live one-shot task, `run --credential-env <variable>` requires an
-explicit non-demo `--model`, validates the environment name and current value,
-then creates or re-enables only the matching provider locator before Thread
-creation. The preflight checks locator availability and model configuration.
-An existing matching active locator is reused; a different active locator
-fails closed without creating a Thread or calling the model. The repository
-`npm run napier` wrapper uses Node's optional `.env` loading, while an installed
-binary continues to use its inherited shell environment. In both paths the raw
-credential remains outside arguments, Store, Ledger, and output.
+For a first live CLI task, `run`, `chat`, and `tui`
+`--credential-env <variable>` require an explicit non-demo `--model`, validate
+the environment name and current value, then create or re-enable only the
+matching Provider locator before Thread creation or model execution. All three
+commands call the same credential preflight. An existing matching active
+locator is reused; a different active locator fails closed without creating a
+task Thread or calling the model. Interactive `/model` changes do not
+implicitly bootstrap another locator. The repository `npm run napier` wrapper
+uses Node's optional `.env` loading, while an installed binary continues to use
+its inherited shell environment. In both paths the raw credential remains
+outside arguments, Store, Ledger, and output.
 
 `napier chat` is the line-oriented interactive adapter. It keeps one
 `LocalAgentRuntime` open and delegates every prompt and interrupted-Run

@@ -1,11 +1,11 @@
 import type { CredentialReference } from "@napier/contracts";
 import type { LocalAgentRuntimeServices } from "@napier/runtime";
 
-import type { CliRunOptions } from "./cli-run-options.js";
+import type { CliCredentialBootstrapOptions } from "./cli-credential-options.js";
 
-export async function configureCliRunCredential(
+export async function configureCliModelCredential(
   services: LocalAgentRuntimeServices,
-  options: CliRunOptions,
+  options: CliCredentialBootstrapOptions,
   env: Readonly<Record<string, string | undefined>>,
 ): Promise<void> {
   if (!options.credentialEnv) return;

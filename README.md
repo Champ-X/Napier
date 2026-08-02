@@ -454,9 +454,29 @@ npm run napier -- run \
 
 The repository `napier` script loads `.env` only when it exists. The Run
 preflight stores or reuses only the environment-variable name, verifies that
-the selected live model is configured, and creates no Thread on a missing or
-conflicting locator. It never persists the key. An installed `napier` binary
-uses the same command after the variable is exported by the shell.
+the selected live model is configured, and creates no task Thread on a missing
+or conflicting locator. It never persists the key. An installed `napier`
+binary uses the same command after the variable is exported by the shell.
+
+The same explicit clean-state bootstrap is available before an interactive
+session starts:
+
+```bash
+npm run napier -- chat \
+  --workspace . \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY
+
+npm run napier -- tui \
+  --workspace . \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY
+```
+
+`chat` and `tui` create no task Thread until the first prompt. A missing or
+conflicting locator fails before the session becomes ready or calls the model.
+Later `/model` changes reuse already configured Provider references and do not
+implicitly authorize another environment variable.
 
 Human mode writes only the final assistant result to stdout and a concise Run
 status to stderr. Use the same Runtime as a line-delimited automation stream:
@@ -1467,9 +1487,10 @@ to that Keychain item once through the bounded vault-write API. Napier stores
 only the locator and clears the submitted secret from the web form after the
 request completes.
 
-For a one-shot CLI first task, the explicit `run --credential-env <variable>`
-option performs the same environment-locator registration before creating the
-Thread. Other CLI modes reuse that persisted reference.
+For a CLI first task, explicit `run`, `chat`, and `tui`
+`--credential-env <variable>` options perform the same environment-locator
+registration before creating a Thread or calling the model. Later invocations
+reuse that persisted reference.
 
 An active reference is resolved only when needed and can be checked, disabled,
 or re-enabled independently. If it is missing, model authentication fails

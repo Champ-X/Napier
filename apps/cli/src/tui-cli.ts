@@ -8,6 +8,7 @@ import {
 } from "@napier/runtime";
 
 import type { CliChatOptions } from "./cli-chat-options.js";
+import { configureCliModelCredential } from "./cli-model-credential.js";
 import { writeLine } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import {
@@ -309,6 +310,8 @@ export async function executeTui(
       dataRoot,
       env: io.env,
     });
+    sessionController.signal.throwIfAborted();
+    await configureCliModelCredential(services, options, io.env);
     sessionController.signal.throwIfAborted();
     ready = true;
     state.setNotice("Ready; type a prompt or /help");

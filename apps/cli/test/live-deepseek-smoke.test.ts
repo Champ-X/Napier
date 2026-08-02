@@ -16,6 +16,7 @@ import {
   validateExecutionPlanWorkflowExperimentResultFrame,
   validateExecutionPlanWorkflowResultFrame,
 } from "@napier/runtime";
+import { spawn as spawnTerminal } from "node-pty";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { runCli } from "../src/cli.js";
@@ -106,6 +107,114 @@ describeLive("live DeepSeek CLI smoke", () => {
       await inspection.shutdown();
     }
   }, 60_000);
+
+  it("bootstraps a clean-state interactive Chat through the built CLI", async () => {
+    const apiKey = process.env["DEEPSEEK_API_KEY"]?.trim();
+    if (!apiKey) {
+      throw new Error(
+        "Set DEEPSEEK_API_KEY before running the live CLI smoke test",
+      );
+    }
+    const modelId =
+      process.env["DEEPSEEK_MODEL"]?.trim() || "deepseek-v4-flash";
+    const root = await mkdtemp(path.join(tmpdir(), "napier-live-chat-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "state");
+    await mkdir(workspaceRoot);
+    const entrypoint = path.resolve(import.meta.dirname, "../dist/index.js");
+    let output = "";
+    let exited = false;
+    const terminal = spawnTerminal(
+      process.execPath,
+      [
+        entrypoint,
+        "chat",
+        "--workspace",
+        workspaceRoot,
+        "--data-root",
+        dataRoot,
+        "--model",
+        `deepseek/${modelId}`,
+        "--credential-env",
+        "DEEPSEEK_API_KEY",
+      ],
+      {
+        name: "xterm-256color",
+        cols: 100,
+        rows: 30,
+        cwd: root,
+        env: {
+          ...terminalEnvironment(),
+          DEEPSEEK_API_KEY: apiKey,
+        },
+      },
+    );
+    const dataSubscription = terminal.onData((data) => {
+      output += data;
+    });
+    const exit = new Promise<number>((resolve) => {
+      terminal.onExit(({ exitCode }) => {
+        exited = true;
+        resolve(exitCode);
+      });
+    });
+    try {
+      await expect
+        .poll(() => output, { timeout: 10_000 })
+        .toContain("Napier chat ready");
+      terminal.write("Reply with exactly NAPIER_CHAT_LIVE_OK.\r");
+      await expect
+        .poll(() => output.match(/NAPIER_CHAT_LIVE_OK/gu)?.length ?? 0, {
+          timeout: 60_000,
+        })
+        .toBeGreaterThanOrEqual(2);
+      terminal.write("/exit\r");
+      expect(await exit).toBe(0);
+    } finally {
+      dataSubscription.dispose();
+      if (!exited) terminal.kill();
+    }
+
+    expect(output).not.toContain(apiKey);
+    const inspection = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      env: { DEEPSEEK_API_KEY: apiKey },
+    });
+    try {
+      const threads = inspection.store.listThreads();
+      expect(inspection.store.listCredentialReferences()).toEqual([
+        expect.objectContaining({
+          providerId: "deepseek",
+          source: {
+            type: "environment",
+            variable: "DEEPSEEK_API_KEY",
+          },
+          availability: "available",
+        }),
+      ]);
+      expect(
+        threads
+          .flatMap((thread) => inspection.store.listRuns(thread.id))
+          .filter((run) => run.source === "user"),
+      ).toEqual([expect.objectContaining({ status: "completed" })]);
+      const events = (
+        await Promise.all(
+          threads.map((thread) => inspection.store.listEvents(thread.id)),
+        )
+      ).flat();
+      expect(
+        events
+          .filter((event) => event.type === "message.assistant")
+          .map((event) => event.payload),
+      ).toContainEqual(
+        expect.objectContaining({ text: "NAPIER_CHAT_LIVE_OK" }),
+      );
+    } finally {
+      await inspection.shutdown();
+    }
+  }, 90_000);
 
   it("resumes an interrupted Run through the real model", async () => {
     const apiKey = process.env["DEEPSEEK_API_KEY"]?.trim();
@@ -389,6 +498,14 @@ function liveWorkflowInputSchema(): WorkflowObjectSchema {
     required: ["request"],
     additionalProperties: false,
   };
+}
+
+function terminalEnvironment(): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(
+      (entry): entry is [string, string] => entry[1] !== undefined,
+    ),
+  );
 }
 
 class CaptureWritable extends Writable {

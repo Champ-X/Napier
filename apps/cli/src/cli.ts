@@ -43,7 +43,7 @@ import { writeLine } from "./cli-output.js";
 import { executeInteractive } from "./interactive-cli.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
 import { executeRpc } from "./rpc-cli.js";
-import { configureCliRunCredential } from "./cli-run-credential.js";
+import { configureCliModelCredential } from "./cli-model-credential.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import { executeTui } from "./tui-cli.js";
 import { canonicalWorkspace } from "./workspace-path.js";
@@ -140,7 +140,7 @@ async function executeRun(
     parentSignal,
     options.threadId ?? "thread_cli_preflight",
     async (services) => {
-      await configureCliRunCredential(services, options, io.env);
+      await configureCliModelCredential(services, options, io.env);
       const thread = options.threadId
         ? existingThread(services, options)
         : await newThread(services, options);
