@@ -164,6 +164,12 @@ debt reduction sticky while preventing routine checks from silently accepting
 growth. The baseline currently documents legacy debt; it is not an assertion
 that the allowed oversized modules or cycles are desirable.
 
+The first ratchet extracted the branded `NapierWorkflow` and
+`DefineNapierWorkflowInput` types into `packages/sdk/src/workflow.ts`. Both the
+SDK root and Workflow experiment adapter now depend on that leaf module, which
+removed their prior cycle while preserving the root's 22-export public
+surface.
+
 ### Server
 
 `@napier/server` is a thin Hono adapter:

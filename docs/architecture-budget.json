@@ -112,7 +112,7 @@
     "packages/runtime/test/workflow-recovery.test.ts": 1331,
     "packages/runtime/test/workflow-runtime.test.ts": 3907,
     "packages/runtime/test/workspace-processes.test.ts": 3071,
-    "packages/sdk/src/index.ts": 570,
+    "packages/sdk/src/index.ts": 546,
     "packages/sdk/test/sdk-workflow.test.ts": 1089
   },
   "complexityOverrides": {
@@ -332,8 +332,7 @@
     [
       "packages/runtime/src/workspace-process-events.ts",
       "packages/runtime/src/workspace-process-resize-events.ts"
-    ],
-    ["packages/sdk/src/index.ts", "packages/sdk/src/workflow-experiments.ts"]
+    ]
   ],
   "allowedWorkspaceImports": {
     "@napier/cli": ["@napier/contracts", "@napier/runtime"],

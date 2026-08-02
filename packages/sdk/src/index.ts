@@ -15,12 +15,10 @@ import type {
   RunRecord,
   ToolInvocationExperimentPreview,
   ToolInvocationExperimentResult,
-  WorkflowValueSchema,
 } from "@napier/contracts";
 import {
   createLocalAgentRuntime,
   validateExecutionPlanWorkflowManifest,
-  type DefineEmbeddedWorkflowInput,
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
@@ -49,6 +47,7 @@ import {
   type PreviewNapierWorkflowExperimentOptions,
   type RunNapierWorkflowExperimentOptions,
 } from "./workflow-experiments.js";
+import type { DefineNapierWorkflowInput, NapierWorkflow } from "./workflow.js";
 
 export type {
   PreviewNapierAgentMessageExperimentOptions,
@@ -66,9 +65,7 @@ export type {
   PreviewNapierWorkflowExperimentOptions,
   RunNapierWorkflowExperimentOptions,
 } from "./workflow-experiments.js";
-
-declare const workflowInputType: unique symbol;
-declare const workflowOutputType: unique symbol;
+export type { DefineNapierWorkflowInput, NapierWorkflow } from "./workflow.js";
 
 export interface RunNapierAgentOptions {
   prompt: string;
@@ -95,27 +92,6 @@ export interface NapierAgentExecution {
   assistantText?: string;
   run: RunRecord;
 }
-
-export interface NapierWorkflow<
-  TInput extends JsonValue = JsonValue,
-  TOutput extends JsonValue = JsonValue,
-> {
-  readonly manifest: ExecutionPlanWorkflowManifest;
-  readonly sourceThreadId: string;
-  readonly sourcePlanId: string;
-  readonly [workflowInputType]?: TInput;
-  readonly [workflowOutputType]?: TOutput;
-}
-
-export type DefineNapierWorkflowInput<
-  TInput extends JsonValue,
-  TOutput extends JsonValue,
-> = Omit<DefineEmbeddedWorkflowInput, "inputSchema" | "outputSchema"> & {
-  inputSchema: WorkflowValueSchema;
-  outputSchema: WorkflowValueSchema;
-  readonly [workflowInputType]?: TInput;
-  readonly [workflowOutputType]?: TOutput;
-};
 
 export interface RunNapierWorkflowOptions<
   TInput extends JsonValue,

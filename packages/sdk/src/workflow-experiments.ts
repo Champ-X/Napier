@@ -8,7 +8,7 @@ import type {
 } from "@napier/contracts";
 import type { LocalAgentRuntimeServices } from "@napier/runtime";
 
-import type { NapierWorkflow } from "./index.js";
+import type { NapierWorkflow } from "./workflow.js";
 
 export interface PreviewNapierWorkflowExperimentOptions<
   TInput extends JsonValue,
