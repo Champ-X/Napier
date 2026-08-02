@@ -5,6 +5,7 @@ import { PassThrough } from "node:stream";
 import { describe, expect, it } from "vitest";
 import { vi } from "vitest";
 
+import { probeMacOsSandboxAvailability } from "../src/macos-sandbox-availability.js";
 import {
   buildLinuxBubblewrapArgs,
   buildMacOsSandboxProfile,
@@ -145,6 +146,97 @@ describe("OS sandbox adapters", () => {
     ).rejects.toThrow("OCI container sandbox requires an executable");
   });
 
+  it("detects a host that denies macOS sandbox profiles", async () => {
+    const emitter = new EventEmitter();
+    const child = Object.assign(emitter, {
+      stdin: new PassThrough(),
+      stdout: new PassThrough(),
+      stderr: new PassThrough(),
+      pid: 2_147_483_646,
+      exitCode: null as number | null,
+      signalCode: null as NodeJS.Signals | null,
+      kill: vi.fn(() => true),
+    }) as unknown as ChildProcessWithoutNullStreams;
+    const spawnProcess = vi.fn(() => {
+      queueMicrotask(() => {
+        emitter.emit("spawn");
+        setImmediate(() => {
+          child.exitCode = 71;
+          child.stderr.end(
+            "sandbox-exec: sandbox_apply: Operation not permitted\n",
+          );
+          emitter.emit("exit", 71, null);
+        });
+      });
+      return child;
+    });
+
+    await expect(
+      probeMacOsSandboxAvailability(process.execPath, spawnProcess as never),
+    ).rejects.toThrow(
+      "macOS process sandbox is unavailable in this host environment",
+    );
+    expect(spawnProcess.mock.calls[0]?.[1]).toEqual(
+      expect.arrayContaining(["--", "/usr/bin/true"]),
+    );
+  });
+
+  it("accepts a usable macOS sandbox profile", async () => {
+    const emitter = new EventEmitter();
+    const child = Object.assign(emitter, {
+      stdin: new PassThrough(),
+      stdout: new PassThrough(),
+      stderr: new PassThrough(),
+      pid: 2_147_483_645,
+      exitCode: null as number | null,
+      signalCode: null as NodeJS.Signals | null,
+      kill: vi.fn(() => true),
+    }) as unknown as ChildProcessWithoutNullStreams;
+    const spawnProcess = vi.fn(() => {
+      queueMicrotask(() => {
+        emitter.emit("spawn");
+        setImmediate(() => {
+          child.exitCode = 0;
+          child.stderr.end();
+          emitter.emit("exit", 0, null);
+        });
+      });
+      return child;
+    });
+
+    await expect(
+      probeMacOsSandboxAvailability(process.execPath, spawnProcess as never),
+    ).resolves.toBeUndefined();
+  });
+
+  it("bounds a stalled macOS sandbox availability probe", async () => {
+    const emitter = new EventEmitter();
+    const kill = vi.fn(() => {
+      setImmediate(() => emitter.emit("exit", null, "SIGKILL"));
+      return true;
+    });
+    const child = Object.assign(emitter, {
+      stdin: new PassThrough(),
+      stdout: new PassThrough(),
+      stderr: new PassThrough(),
+      pid: 2_147_483_644,
+      exitCode: null as number | null,
+      signalCode: null as NodeJS.Signals | null,
+      kill,
+    }) as unknown as ChildProcessWithoutNullStreams;
+    const spawnProcess = vi.fn(() => {
+      queueMicrotask(() => emitter.emit("spawn"));
+      return child;
+    });
+
+    await expect(
+      probeMacOsSandboxAvailability(process.execPath, spawnProcess as never, 5),
+    ).rejects.toThrow(
+      "macOS process sandbox is unavailable in this host environment",
+    );
+    expect(kill).toHaveBeenCalledWith("SIGKILL");
+  });
+
   it("launches sandbox wrappers in an isolated process group", async () => {
     const emitter = new EventEmitter();
     const child = Object.assign(emitter, {
@@ -163,6 +255,7 @@ describe("OS sandbox adapters", () => {
     const adapter = new MacOsSandboxAdapter(
       process.execPath,
       spawnProcess as never,
+      async () => undefined,
     );
 
     const sandboxed = await adapter.launch({

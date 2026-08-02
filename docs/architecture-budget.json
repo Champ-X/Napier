@@ -78,7 +78,7 @@
     "packages/runtime/src/replay.ts": 770,
     "packages/runtime/src/research-sources.ts": 510,
     "packages/runtime/src/run-config.ts": 961,
-    "packages/runtime/src/sandbox.ts": 740,
+    "packages/runtime/src/sandbox.ts": 711,
     "packages/runtime/src/skill-packages.ts": 754,
     "packages/runtime/src/store.ts": 15931,
     "packages/runtime/src/thread-bundles.ts": 2460,

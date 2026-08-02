@@ -2,14 +2,27 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { access, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { Readable, Writable } from "node:stream";
 
-import type { ExtensionCapability } from "@napier/contracts";
-
+import { probeMacOsSandboxAvailability } from "./macos-sandbox-availability.js";
+import type {
+  OsSandboxAdapter,
+  PlatformSandboxOptions,
+  SandboxedProcess,
+  SandboxLaunchRequest,
+} from "./sandbox-types.js";
 import {
   launchTerminalSandboxWrapper,
   validateTerminalDimensions,
 } from "./sandbox-terminal.js";
+import { UnsupportedSandboxAdapter } from "./unsupported-sandbox.js";
+
+export type {
+  OsSandboxAdapter,
+  PlatformSandboxOptions,
+  SandboxedProcess,
+  SandboxLaunchRequest,
+} from "./sandbox-types.js";
+export { UnsupportedSandboxAdapter } from "./unsupported-sandbox.js";
 
 const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
 const BUBBLEWRAP_EXEC = "/usr/bin/bwrap";
@@ -29,41 +42,6 @@ const LINUX_RUNTIME_READ_PATHS = [
   "/etc",
 ] as const;
 
-export interface SandboxLaunchRequest {
-  command: string;
-  args: string[];
-  cwd: string;
-  env: Record<string, string>;
-  workspaceRoot: string;
-  approvedCapabilities: ExtensionCapability[];
-  runtimeReadPaths?: string[];
-  workspaceWritePaths?: string[];
-  terminal?: {
-    columns: number;
-    rows: number;
-  };
-}
-
-export interface SandboxedProcess {
-  stdin: Writable;
-  stdout: Readable;
-  stderr: Readable;
-  exit: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
-  resize?(columns: number, rows: number): Promise<void>;
-  terminate(): Promise<void>;
-}
-
-export interface OsSandboxAdapter {
-  readonly id: string;
-  launch(request: SandboxLaunchRequest): Promise<SandboxedProcess>;
-}
-
-export interface PlatformSandboxOptions {
-  containerImage?: string;
-  containerExecutable?: string;
-  preferContainer?: boolean;
-}
-
 export function createPlatformSandboxAdapter(
   platform = process.platform,
   options: PlatformSandboxOptions = {},
@@ -82,24 +60,15 @@ export function createPlatformSandboxAdapter(
   return new UnsupportedSandboxAdapter(platform);
 }
 
-export class UnsupportedSandboxAdapter implements OsSandboxAdapter {
-  readonly id = "unsupported";
-
-  constructor(private readonly platform: string) {}
-
-  async launch(): Promise<SandboxedProcess> {
-    throw new Error(
-      `No OS sandbox adapter is available for platform: ${this.platform}`,
-    );
-  }
-}
-
 export class MacOsSandboxAdapter implements OsSandboxAdapter {
   readonly id = "macos-sandbox-exec";
+  private availability: Promise<void> | undefined;
 
   constructor(
     private readonly executable = SANDBOX_EXEC,
     private readonly spawnProcess = spawn,
+    private readonly availabilityCheck = () =>
+      probeMacOsSandboxAvailability(executable, spawnProcess),
   ) {}
 
   async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
@@ -111,6 +80,8 @@ export class MacOsSandboxAdapter implements OsSandboxAdapter {
         `macOS process sandbox requires sandbox-exec at ${this.executable}`,
       );
     }
+    this.availability ??= this.availabilityCheck();
+    await this.availability;
     const sandboxHome = await mkdtemp(
       path.join(tmpdir(), "napier-process-sandbox-"),
     );
