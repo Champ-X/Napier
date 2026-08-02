@@ -121,6 +121,7 @@ export const contextCopy = {
     inspect_data: "Inspect data",
     data_frame: "DataFrame",
     sqlite_query: "SQLite query",
+  git_inspect: "Inspect Git",
     inspect_code: "Inspect code",
     read_symbol: "Read symbol",
     ast_query: "AST query",

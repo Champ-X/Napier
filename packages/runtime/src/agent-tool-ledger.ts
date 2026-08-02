@@ -72,10 +72,10 @@ import {
   lspSymbolsToolOutputLedgerProjection,
 } from "./lsp-symbols-tool.js";
 import {
-  commandToolCallArgumentsLedgerProjection,
-  commandToolInputLedgerProjection,
-  commandToolOutputLedgerProjection,
-} from "./command-tool.js";
+  agentProcessToolCallProjection,
+  agentProcessToolInputProjection,
+  agentProcessToolOutputProjection,
+} from "./agent-process-tool-ledger.js";
 import {
   typescriptAstToolCallArgumentsLedgerProjection,
   typescriptAstToolInputLedgerProjection,
@@ -128,14 +128,13 @@ export function agentToolCallArgumentsLedgerProjection(
 ): JsonValue {
   const dataProjection = agentDataToolCallProjection(toolName, args);
   if (dataProjection !== undefined) return dataProjection;
+  const processProjection = agentProcessToolCallProjection(toolName, args);
+  if (processProjection !== undefined) return processProjection;
   if (toolName === "research_source") {
     return researchSourceToolCallArgumentsLedgerProjection(args);
   }
   if (toolName === "browser") {
     return browserToolCallArgumentsLedgerProjection(args);
-  }
-  if (toolName === "run_command") {
-    return commandToolCallArgumentsLedgerProjection(args);
   }
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolCallArgumentsLedgerProjection(args);
@@ -206,14 +205,13 @@ export function agentToolInputLedgerProjection(
 ): Record<string, JsonValue> {
   const dataProjection = agentDataToolInputProjection(toolName, args);
   if (dataProjection !== undefined) return dataProjection;
+  const processProjection = agentProcessToolInputProjection(toolName, args);
+  if (processProjection !== undefined) return processProjection;
   if (toolName === "research_source") {
     return researchSourceToolInputLedgerProjection(args);
   }
   if (toolName === "browser") {
     return browserToolInputLedgerProjection(args);
-  }
-  if (toolName === "run_command") {
-    return commandToolInputLedgerProjection(args);
   }
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolInputLedgerProjection(args);
@@ -293,14 +291,17 @@ export function agentToolOutputLedgerProjection(
     result,
   );
   if (dataProjection !== undefined) return dataProjection;
+  const processProjection = agentProcessToolOutputProjection(
+    toolName,
+    output,
+    result,
+  );
+  if (processProjection !== undefined) return processProjection;
   if (toolName === "research_source") {
     return researchSourceToolOutputLedgerProjection(output, result);
   }
   if (toolName === "browser") {
     return browserToolOutputLedgerProjection(output, result);
-  }
-  if (toolName === "run_command") {
-    return commandToolOutputLedgerProjection(output, result);
   }
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolOutputLedgerProjection(output, result);

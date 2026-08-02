@@ -3,6 +3,7 @@ import type { AgentProfile } from "@napier/contracts";
 
 import { createCommandTool } from "./command-tool.js";
 import { createDataFrameTool } from "./data-frame-tool.js";
+import { createGitInspectTool } from "./git-inspect-tool.js";
 import { LspCodeActionApplyDiagnostics } from "./lsp-code-action-apply-diagnostics.js";
 import { createLspCodeActionApplyTool } from "./lsp-code-action-apply-tool.js";
 import { LspCodeActionMutationManager } from "./lsp-code-action-mutation-manager.js";
@@ -188,15 +189,26 @@ export function createStatelessAgentTools(
   ) {
     tools.push(createLspCodeActionApplyTool(codeActionMutationManager));
   }
-  if (processAllowed && profile.enabledTools.includes("run_command")) {
-    tools.push(
-      createCommandTool({
-        workspaceRoot: options.store.workspaceRoot,
-        sandbox: options.sandbox,
-      }),
-    );
-  }
+  appendProcessReadTools(tools, options, processAllowed);
   return tools;
+}
+
+function appendProcessReadTools(
+  tools: AgentTool[],
+  options: CreateStatelessAgentToolsOptions,
+  processAllowed: boolean,
+): void {
+  if (!processAllowed) return;
+  const runnerOptions = {
+    workspaceRoot: options.store.workspaceRoot,
+    sandbox: options.sandbox,
+  };
+  if (options.profile.enabledTools.includes("run_command")) {
+    tools.push(createCommandTool(runnerOptions));
+  }
+  if (options.profile.enabledTools.includes("git_inspect")) {
+    tools.push(createGitInspectTool(runnerOptions));
+  }
 }
 
 function appendDataTools(

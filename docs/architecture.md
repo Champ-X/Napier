@@ -1596,7 +1596,7 @@ mean reported cost of `$0.002430694`; mean input/output tokens were
 semantically validates five Workflow benchmark Series plus the independent
 Research and UX Series. Their 28 referenced Result/Ledger files and seven
 Series files form 35 benchmark artifacts inside the 42-artifact release
-receipt `d099442802d862aa`.
+receipt `cd026e0ad91ddb76`.
 
 ### Security Outcome Benchmark
 
@@ -4124,7 +4124,8 @@ runtime remains Node-only. Restricted Python uses a separate typed private
 protocol that binds a recognized system interpreter and a bounded no-site
 bootstrap dependency set proven to cover the worker's loaded module files,
 without granting models an arbitrary Python argv surface. Git remains outside
-the runtime enum.
+that generic runtime enum and is available only through the fixed operation
+graph below.
 
 The macOS adapter runs one cached, one-second, deny-default `sandbox-exec`
 profile probe before launching the first task process. This distinguishes an
@@ -4135,6 +4136,50 @@ unsupported adapter live in leaf modules, while the availability probe remains
 an internal implementation detail. Shared Workspace guidance treats this as a
 host capability failure and tells the Agent not to retry the same
 process-backed tool within the Run.
+
+## Git Inspection Flow
+
+```text
+git_inspect(status | diff)
+  -> require non-observe policy + enabled git_inspect
+  -> require canonical workspace root with a direct non-symlink .git directory
+  -> reject gitfile, metadata symlink, active index lock, protected/escaping path
+  -> snapshot no-follow HEAD/current ref/packed refs/index/config/shallow
+  -> resolve and hash fixed /usr/bin/git
+  -> list local config key names with --no-includes
+  -> reject include paths, filter clean/smudge/process,
+     diff command/textconv, core.attributesFile,
+     worktree config, split index, and sparse checkout
+  -> generate status or working/staged diff argv internally
+  -> disable optional locks, pager, color, fsmonitor, rename detection,
+     external diff, textconv, and submodule traversal
+  -> execute read-only/offline in the existing OS Sandbox
+  -> cap each stream at 128 KiB and reject truncated or stderr-bearing output
+  -> rehash Git executable and repository metadata
+  -> return paths/hunks live; persist counts and hashes only,
+     including the selected Sandbox backend hash
+```
+
+The Git process implementation is private to `git-inspect-process.ts`; it
+reuses `runSandboxedProcess` without adding Git to the public/general
+`CommandRuntime` union. `git-inspect.ts` owns repository validation, fixed
+argument construction, metadata freshness, and status/hunk counts.
+`git-inspect-tool.ts` owns the TypeBox contract and privacy projection.
+`agent-process-tool-ledger.ts` dispatches command and Git projections outside
+the central Agent Ledger module. Web validation lives in
+`git-inspect-event-view.ts`; extracting legacy workspace-read validation into
+`workspace-read-event-view.ts` reduces the central Tool Trace module.
+
+The direct `.git` boundary deliberately excludes linked worktrees, worktree
+config, split indexes, sparse checkout, and submodules whose object metadata
+lives outside the workspace. Local config and attributes are untrusted. The
+config preflight rejects includes and every supported command-bearing
+filter/diff key before status/diff; external diff and textconv are also
+disabled in argv. As a second boundary, the OS Sandbox admits only the fixed
+Git executable, so other configured helpers cannot run. This slice does not
+stage, branch, commit, checkout, reset, clean, merge, resolve conflicts, or
+accept arbitrary revisions. It is the evidence-bearing read side for a later
+preview-bound Git mutation transaction, not a general Git shell.
 
 ## Workspace Process Session Flow
 

@@ -292,6 +292,7 @@ export const EXECUTION_PLAN_WORKFLOW_TOOL_NAMES = [
   "inspect_data",
   "data_frame",
   "sqlite_query",
+  "git_inspect",
   "inspect_code",
   "read_symbol",
   "ast_query",

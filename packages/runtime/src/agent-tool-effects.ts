@@ -9,6 +9,7 @@ const READ_ONLY_TOOLS = new Set([
   "lsp_rename",
   "lsp_code_actions",
   "workspace_file_preview",
+  "git_inspect",
   "run_command",
   "verify_workspace",
   "web_fetch",

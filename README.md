@@ -188,6 +188,11 @@ Version `0.1.0` includes:
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
   parent-Run cancellation, and argument/output-redacted Ledger evidence;
+- a `git_inspect` tool for workspace-root repository status plus working or
+  staged patches with bounded context. Napier generates every Git argument,
+  rejects gitfiles/symlinked metadata/index locks, disables optional locks,
+  pagers, external diff, textconv, and submodule traversal, binds
+  HEAD/index/config freshness, and keeps paths and hunks live-only;
 - a `workspace_process` tool and lazy Processes Workbench for bounded
   background Node sessions with cursor-based stdout/stderr observation,
   explicit interactive stdin, cancellation, lifecycle settlement, graceful
@@ -1362,7 +1367,7 @@ was `$0.002430694`; mean input/output tokens were 10,597.5/3,097.5. Offline
 verification reconstructs the six data-tool events and all hidden evidence
 from body-free Ledger projections. The release audit binds this Series and its
 four Result/Ledger files into the 42-artifact set
-`d099442802d862aa`.
+`cd026e0ad91ddb76`.
 
 ### Security Outcome Benchmark
 
@@ -2337,9 +2342,39 @@ image. Foreground `run_command` remains pipe-only; terminal-aware work uses the
 separately managed `workspace_process` PTY below. Foreground commands remain
 read-only; Process Sessions add only the preview-bound scoped write mode
 described below. Hard per-command CPU/memory quotas remain explicit next-stage
-work. Python and Git are not advertised by this slice because their macOS
-Developer Tools shims require a broader managed Runtime boundary than the Node
-smoke.
+work. Python remains a separate restricted Kernel protocol. Generic
+`run_command` stays Node-only; Git uses the purpose-built read surface below
+rather than exposing arbitrary Git argv.
+
+## Read-Only Git Inspection
+
+`git_inspect` reads the workspace-root repository through fixed
+`/usr/bin/git` execution in the same local read-only, denied-network OS
+Sandbox. `status` returns porcelain-v2 branch and entry lines. `diff` returns a
+working or staged patch, optionally limited to one workspace-relative path and
+0–10 context lines. Output is capped at 128 KiB; an over-limit patch fails
+instead of returning incomplete evidence.
+
+Napier supplies every argument and disables optional locks, pagers, color,
+filesystem monitoring, rename detection, external diff, textconv, and
+submodule traversal. A fixed config preflight reads local key names without
+following includes and rejects include paths, clean/smudge/process filters,
+diff commands/textconv, `core.attributesFile`, worktree config, split index,
+and sparse checkout. A direct `.git` directory is required at the workspace
+root; gitfiles, symlinked metadata, `config.worktree`, `sharedindex.*`,
+sparse-checkout metadata, protected paths, active index locks, OCI, commits,
+checkout, reset, clean, and arbitrary subcommands are rejected. Before and
+after execution, Napier rechecks no-follow HEAD/current-ref, packed-refs,
+index, config, and shallow metadata. Git executable drift or repository
+metadata drift fails the call.
+
+Paths, branch/status lines, and patch bodies are available only to the current
+model as untrusted repository data. Ledger, Replay, Workflow output evidence,
+and Web Trace retain action/scope, counts, output bytes, duration, and
+repository/HEAD/index/config/executable/argv/environment/limit/output/result
+hashes, including the selected Sandbox backend hash. The tool supports Agent
+and model-free typed Workflow Tool nodes, but does not yet provide branch
+creation, staging, commit, conflict resolution, or Review promotion.
 
 ## Workspace Process Sessions
 

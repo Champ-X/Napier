@@ -36,7 +36,7 @@ const LSP_TOOLS = new Set([
   "lsp_code_actions",
 ]);
 const PROCESS_TOOLS = new Set([
-  "run_command",
+  "git_inspect", "run_command",
   "javascript_kernel",
   "python_kernel",
   "node_debugger",

@@ -10,6 +10,11 @@ import {
   type InspectDataToolEventTraceView,
 } from "./inspect-data-event-view";
 import {
+  gitInspectEventEvidence,
+  gitInspectSummaryParts,
+  type GitInspectToolEventTraceView,
+} from "./git-inspect-event-view";
+import {
   browserEventEvidence,
   browserSummaryParts,
   type BrowserToolEventTraceView,
@@ -69,6 +74,11 @@ import {
   verificationSummaryParts,
   type VerificationToolEventTraceView,
 } from "./verification-event-view";
+import {
+  workspaceReadEventEvidence,
+  workspaceReadSummaryParts,
+  type WorkspaceReadToolEventTraceView,
+} from "./workspace-read-event-view";
 
 export interface ToolEventTraceView
   extends
@@ -80,60 +90,19 @@ export interface ToolEventTraceView
     ResearchSourceToolEventTraceView,
     SqliteQueryToolEventTraceView,
     DataFrameToolEventTraceView,
+    GitInspectToolEventTraceView,
     InspectDataToolEventTraceView,
     NodeDebuggerToolEventTraceView,
     TypescriptAstToolEventTraceView,
     SubagentWorktreeToolEventTraceView,
     VerificationToolEventTraceView,
-    WriteLinkedTestEventTraceView {
+    WriteLinkedTestEventTraceView,
+    WorkspaceReadToolEventTraceView {
   toolName: string;
   status: string;
   effect?: "read" | "write";
   inputSha256?: string;
   loopGuardTriggerSha256?: string;
-  searchMatchCount?: number;
-  searchTruncated?: boolean;
-  searchMatchSetSha256?: string;
-  symbolIndexFileCount?: number;
-  symbolIndexSkippedFileCount?: number;
-  symbolIndexSymbolCount?: number;
-  symbolIndexTotalLines?: number;
-  symbolIndexSizeBytes?: number;
-  symbolIndexTruncated?: boolean;
-  symbolIndexPathSha256?: string;
-  symbolIndexLanguageCountsSha256?: string;
-  symbolIndexFileSetSha256?: string;
-  symbolIndexSymbolSetSha256?: string;
-  codeLanguage?: "typescript" | "javascript" | "python" | "go" | "unknown";
-  codeSymbolCount?: number;
-  codeTotalLines?: number;
-  codeSizeBytes?: number;
-  codeTruncated?: boolean;
-  codePathSha256?: string;
-  codeFileSha256?: string;
-  codeSymbolSetSha256?: string;
-  symbolSourceKind?:
-    | "class"
-    | "function"
-    | "interface"
-    | "type"
-    | "enum"
-    | "variable"
-    | "struct"
-    | "method";
-  symbolSourceStartLine?: number;
-  symbolSourceEndLine?: number;
-  symbolSourceLine?: number;
-  symbolSourceObservedLineCount?: number;
-  symbolSourceSizeBytes?: number;
-  symbolSourceTruncated?: boolean;
-  symbolSourcePathSha256?: string;
-  symbolSourceFileSha256?: string;
-  symbolSourceNameSha256?: string;
-  symbolSourceLineSha256?: string;
-  symbolSourceSignatureSha256?: string;
-  symbolSourceRangeSha256?: string;
-  symbolSourceLineAnchorSetSha256?: string;
   patchOperation?:
     | "create"
     | "replace"
@@ -175,19 +144,6 @@ export interface ToolEventTraceView
   fileMutationBytes?: number;
   fileMutationReversible?: boolean;
   fileMutationPostcondition?: "verified" | "drifted" | "indeterminate";
-  listCount?: number;
-  listTruncated?: boolean;
-  listPathSha256?: string;
-  listEntrySetSha256?: string;
-  readStartLine?: number;
-  readEndLine?: number;
-  readTotalLines?: number;
-  readPathSha256?: string;
-  readFileSha256?: string;
-  readSizeBytes?: number;
-  readTruncated?: boolean;
-  readLineAnchorsTruncated?: boolean;
-  readLineAnchorSetSha256?: string;
   sourceRunId?: string;
   sourceCallId?: string;
   targetCallId?: string;
@@ -231,26 +187,14 @@ export function toolEventTraceView(
   const loopGuardTriggerSha256 = sha256(
     event.payload["loopGuardTriggerSha256"],
   );
-  const searchEvidence =
-    toolName === "search_files"
-      ? searchFilesEvidence(event.payload["details"])
-      : undefined;
-  const symbolIndexEvidence =
-    toolName === "list_symbols"
-      ? listSymbolsEvidence(event.payload["details"])
-      : undefined;
+  const workspaceReadEvidence = workspaceReadEventEvidence(
+    toolName,
+    event.payload["details"],
+  );
   const dataEvidence = inspectDataToolEventEvidence(
     toolName,
     event.payload["details"],
   );
-  const codeEvidence =
-    toolName === "inspect_code"
-      ? inspectCodeEvidence(event.payload["details"])
-      : undefined;
-  const symbolSourceEvidence =
-    toolName === "read_symbol"
-      ? readSymbolEvidence(event.payload["details"])
-      : undefined;
   const lspEvidence = lspToolEventEvidence(toolName, event.payload["details"]);
   const verificationEvidence =
     toolName === "verify_workspace"
@@ -259,6 +203,10 @@ export function toolEventTraceView(
   const commandEvidence =
     toolName === "run_command"
       ? commandToolEventEvidence(event.payload["details"])
+      : undefined;
+  const gitInspectEvidence =
+    toolName === "git_inspect"
+      ? gitInspectEventEvidence(event.payload["details"])
       : undefined;
   const browserEvidence =
     toolName === "browser"
@@ -304,28 +252,18 @@ export function toolEventTraceView(
     toolName === "workspace_file_preview" || toolName === "workspace_file_apply"
       ? workspaceFileMutationEvidence(event.payload["details"])
       : undefined;
-  const listEvidence =
-    toolName === "list_files"
-      ? listFilesEvidence(event.payload["details"])
-      : undefined;
-  const readEvidence =
-    toolName === "read_file"
-      ? readFileEvidence(event.payload["details"])
-      : undefined;
   return {
     toolName,
     status,
     ...(effect ? { effect } : {}),
     ...(inputSha256 ? { inputSha256 } : {}),
     ...(loopGuardTriggerSha256 ? { loopGuardTriggerSha256 } : {}),
-    ...(searchEvidence ? searchEvidence : {}),
-    ...(symbolIndexEvidence ? symbolIndexEvidence : {}),
+    ...(workspaceReadEvidence ?? {}),
     ...(dataEvidence ?? {}),
-    ...(codeEvidence ? codeEvidence : {}),
-    ...(symbolSourceEvidence ? symbolSourceEvidence : {}),
     ...(lspEvidence ? lspEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
+    ...(gitInspectEvidence ? gitInspectEvidence : {}),
     ...(browserEvidence ? browserEvidence : {}),
     ...(researchSourceEvidence ? researchSourceEvidence : {}),
     ...(sqliteQueryEvidence ? sqliteQueryEvidence : {}),
@@ -337,8 +275,6 @@ export function toolEventTraceView(
     ...(patchEvidence ? patchEvidence : {}),
     ...(subagentWorktreeEvidence ? subagentWorktreeEvidence : {}),
     ...(fileMutationEvidence ? fileMutationEvidence : {}),
-    ...(listEvidence ? listEvidence : {}),
-    ...(readEvidence ? readEvidence : {}),
     ...safeStatusField(event.payload, "sourceRunId"),
     ...safeStatusField(event.payload, "sourceCallId"),
     ...safeStatusField(event.payload, "targetCallId"),
@@ -371,101 +307,12 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.loopGuardTriggerSha256
       ? [`loop ${view.loopGuardTriggerSha256.slice(0, 12)}`]
       : []),
-    ...(view.searchMatchCount !== undefined
-      ? [`matches ${view.searchMatchCount}`]
-      : []),
-    ...(view.searchTruncated ? ["truncated"] : []),
-    ...(view.searchMatchSetSha256
-      ? [`match-set ${view.searchMatchSetSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolIndexFileCount !== undefined
-      ? [`indexed-files ${view.symbolIndexFileCount}`]
-      : []),
-    ...(view.symbolIndexSkippedFileCount !== undefined
-      ? [`skipped-files ${view.symbolIndexSkippedFileCount}`]
-      : []),
-    ...(view.symbolIndexSymbolCount !== undefined
-      ? [`indexed-symbols ${view.symbolIndexSymbolCount}`]
-      : []),
-    ...(view.symbolIndexTotalLines !== undefined
-      ? [`indexed-lines ${view.symbolIndexTotalLines}`]
-      : []),
-    ...(view.symbolIndexSizeBytes !== undefined
-      ? [`indexed-size ${view.symbolIndexSizeBytes}`]
-      : []),
-    ...(view.symbolIndexTruncated ? ["symbol-index-truncated"] : []),
-    ...(view.symbolIndexPathSha256
-      ? [`symbol-root ${view.symbolIndexPathSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolIndexLanguageCountsSha256
-      ? [`language-counts ${view.symbolIndexLanguageCountsSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolIndexFileSetSha256
-      ? [`symbol-files ${view.symbolIndexFileSetSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolIndexSymbolSetSha256
-      ? [`symbol-set ${view.symbolIndexSymbolSetSha256.slice(0, 12)}`]
-      : []),
+    ...workspaceReadSummaryParts(view),
     ...inspectDataSummaryParts(view),
-    ...(view.codeLanguage ? [`code ${view.codeLanguage}`] : []),
-    ...(view.codeSymbolCount !== undefined
-      ? [`symbols ${view.codeSymbolCount}`]
-      : []),
-    ...(view.codeTotalLines !== undefined
-      ? [`lines ${view.codeTotalLines}`]
-      : []),
-    ...(view.codeSizeBytes !== undefined ? [`size ${view.codeSizeBytes}`] : []),
-    ...(view.codeTruncated ? ["code-truncated"] : []),
-    ...(view.codePathSha256
-      ? [`code-path ${view.codePathSha256.slice(0, 12)}`]
-      : []),
-    ...(view.codeFileSha256
-      ? [`code-file ${view.codeFileSha256.slice(0, 12)}`]
-      : []),
-    ...(view.codeSymbolSetSha256
-      ? [`symbol-set ${view.codeSymbolSetSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolSourceKind ? [`symbol ${view.symbolSourceKind}`] : []),
-    ...(view.symbolSourceStartLine !== undefined &&
-    view.symbolSourceEndLine !== undefined
-      ? [
-          `symbol-range ${view.symbolSourceStartLine}-${view.symbolSourceEndLine}`,
-        ]
-      : []),
-    ...(view.symbolSourceLine !== undefined
-      ? [`symbol-line ${view.symbolSourceLine}`]
-      : []),
-    ...(view.symbolSourceObservedLineCount !== undefined
-      ? [`symbol-lines ${view.symbolSourceObservedLineCount}`]
-      : []),
-    ...(view.symbolSourceSizeBytes !== undefined
-      ? [`symbol-size ${view.symbolSourceSizeBytes}`]
-      : []),
-    ...(view.symbolSourceTruncated ? ["symbol-truncated"] : []),
-    ...(view.symbolSourcePathSha256
-      ? [`symbol-path ${view.symbolSourcePathSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolSourceFileSha256
-      ? [`symbol-file ${view.symbolSourceFileSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolSourceNameSha256
-      ? [`symbol-name ${view.symbolSourceNameSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolSourceLineSha256
-      ? [`symbol-line-hash ${view.symbolSourceLineSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolSourceSignatureSha256
-      ? [`signature ${view.symbolSourceSignatureSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolSourceRangeSha256
-      ? [`symbol-source ${view.symbolSourceRangeSha256.slice(0, 12)}`]
-      : []),
-    ...(view.symbolSourceLineAnchorSetSha256
-      ? [`symbol-anchors ${view.symbolSourceLineAnchorSetSha256.slice(0, 12)}`]
-      : []),
     ...lspToolEventSummaryParts(view),
     ...verificationSummaryParts(view),
     ...commandToolEventSummaryParts(view),
+    ...gitInspectSummaryParts(view),
     ...browserSummaryParts(view),
     ...researchSourceSummaryParts(view),
     ...sqliteQuerySummaryParts(view),
@@ -561,32 +408,6 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       ? [`postcondition ${view.fileMutationPostcondition}`]
       : []),
     ...(view.fileMutationReversible ? ["reversible"] : []),
-    ...(view.listCount !== undefined ? [`entries ${view.listCount}`] : []),
-    ...(view.listTruncated ? ["entries-truncated"] : []),
-    ...(view.listPathSha256
-      ? [`list-path ${view.listPathSha256.slice(0, 12)}`]
-      : []),
-    ...(view.listEntrySetSha256
-      ? [`entry-set ${view.listEntrySetSha256.slice(0, 12)}`]
-      : []),
-    ...(view.readStartLine !== undefined && view.readEndLine !== undefined
-      ? [`range ${view.readStartLine}-${view.readEndLine}`]
-      : []),
-    ...(view.readTotalLines !== undefined
-      ? [`lines ${view.readTotalLines}`]
-      : []),
-    ...(view.readSizeBytes !== undefined ? [`size ${view.readSizeBytes}`] : []),
-    ...(view.readTruncated ? ["read-truncated"] : []),
-    ...(view.readLineAnchorsTruncated ? ["anchors-truncated"] : []),
-    ...(view.readPathSha256
-      ? [`read-path ${view.readPathSha256.slice(0, 12)}`]
-      : []),
-    ...(view.readFileSha256
-      ? [`file ${view.readFileSha256.slice(0, 12)}`]
-      : []),
-    ...(view.readLineAnchorSetSha256
-      ? [`anchor-set ${view.readLineAnchorSetSha256.slice(0, 12)}`]
-      : []),
     ...(view.sourceRunId ? [`source ${view.sourceRunId.slice(-10)}`] : []),
     ...(view.sourceCallId ? [`call ${view.sourceCallId.slice(-10)}`] : []),
     ...(view.targetCallId
@@ -670,234 +491,6 @@ function safeEffect(value: unknown): "read" | "write" | undefined {
 
 function sha256(value: unknown): string | undefined {
   return typeof value === "string" && SHA256.test(value) ? value : undefined;
-}
-
-function searchFilesEvidence(value: unknown):
-  | {
-      searchMatchCount: number;
-      searchTruncated?: boolean;
-      searchMatchSetSha256?: string;
-    }
-  | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const record = value as Record<string, unknown>;
-  const count = record["count"];
-  if (
-    typeof count !== "number" ||
-    !Number.isSafeInteger(count) ||
-    count < 0 ||
-    count > 80
-  ) {
-    return undefined;
-  }
-  const truncated = record["truncated"] === true;
-  const matchSetSha256 = sha256(record["matchSetSha256"]);
-  return {
-    searchMatchCount: count,
-    ...(truncated ? { searchTruncated: true } : {}),
-    ...(matchSetSha256 ? { searchMatchSetSha256: matchSetSha256 } : {}),
-  };
-}
-
-function listSymbolsEvidence(value: unknown):
-  | {
-      symbolIndexFileCount: number;
-      symbolIndexSkippedFileCount: number;
-      symbolIndexSymbolCount: number;
-      symbolIndexTotalLines?: number;
-      symbolIndexSizeBytes?: number;
-      symbolIndexTruncated?: boolean;
-      symbolIndexPathSha256?: string;
-      symbolIndexLanguageCountsSha256?: string;
-      symbolIndexFileSetSha256?: string;
-      symbolIndexSymbolSetSha256?: string;
-    }
-  | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const record = value as Record<string, unknown>;
-  const fileCount = integerInRange(record["fileCount"], 0, 120);
-  const skippedFileCount = integerInRange(record["skippedFileCount"], 0, 120);
-  const symbolCount = integerInRange(record["symbolCount"], 0, 240);
-  if (
-    fileCount === undefined ||
-    skippedFileCount === undefined ||
-    symbolCount === undefined
-  ) {
-    return undefined;
-  }
-  const totalLines = integerInRange(record["totalLines"], 0, 10_000_000);
-  const sizeBytes = integerInRange(record["sizeBytes"], 0, 256 * 1024 * 1024);
-  const pathSha256 = sha256(record["pathSha256"]);
-  const languageCountsSha256 = sha256(record["languageCountsSha256"]);
-  const fileSetSha256 = sha256(record["fileSetSha256"]);
-  const symbolSetSha256 = sha256(record["symbolSetSha256"]);
-  return {
-    symbolIndexFileCount: fileCount,
-    symbolIndexSkippedFileCount: skippedFileCount,
-    symbolIndexSymbolCount: symbolCount,
-    ...(totalLines !== undefined ? { symbolIndexTotalLines: totalLines } : {}),
-    ...(sizeBytes !== undefined ? { symbolIndexSizeBytes: sizeBytes } : {}),
-    ...(record["truncated"] === true ? { symbolIndexTruncated: true } : {}),
-    ...(pathSha256 ? { symbolIndexPathSha256: pathSha256 } : {}),
-    ...(languageCountsSha256
-      ? { symbolIndexLanguageCountsSha256: languageCountsSha256 }
-      : {}),
-    ...(fileSetSha256 ? { symbolIndexFileSetSha256: fileSetSha256 } : {}),
-    ...(symbolSetSha256 ? { symbolIndexSymbolSetSha256: symbolSetSha256 } : {}),
-  };
-}
-
-function inspectCodeEvidence(value: unknown):
-  | {
-      codeLanguage: "typescript" | "javascript" | "python" | "go" | "unknown";
-      codeSymbolCount: number;
-      codeTotalLines: number;
-      codeSizeBytes?: number;
-      codeTruncated?: boolean;
-      codePathSha256?: string;
-      codeFileSha256?: string;
-      codeSymbolSetSha256?: string;
-    }
-  | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const record = value as Record<string, unknown>;
-  const language = codeLanguage(record["language"]);
-  const symbolCount = integerInRange(record["symbolCount"], 0, 120);
-  const totalLines = integerInRange(record["totalLines"], 0, 1_000_000);
-  if (!language || symbolCount === undefined || totalLines === undefined) {
-    return undefined;
-  }
-  const sizeBytes = integerInRange(record["sizeBytes"], 0, 2 * 1024 * 1024);
-  const pathSha256 = sha256(record["pathSha256"]);
-  const fileSha256 = sha256(record["sha256"]);
-  const symbolSetSha256 = sha256(record["symbolSetSha256"]);
-  return {
-    codeLanguage: language,
-    codeSymbolCount: symbolCount,
-    codeTotalLines: totalLines,
-    ...(sizeBytes !== undefined ? { codeSizeBytes: sizeBytes } : {}),
-    ...(record["truncated"] === true ? { codeTruncated: true } : {}),
-    ...(pathSha256 ? { codePathSha256: pathSha256 } : {}),
-    ...(fileSha256 ? { codeFileSha256: fileSha256 } : {}),
-    ...(symbolSetSha256 ? { codeSymbolSetSha256: symbolSetSha256 } : {}),
-  };
-}
-
-function readSymbolEvidence(value: unknown):
-  | {
-      symbolSourceKind:
-        | "class"
-        | "function"
-        | "interface"
-        | "type"
-        | "enum"
-        | "variable"
-        | "struct"
-        | "method";
-      symbolSourceStartLine: number;
-      symbolSourceEndLine: number;
-      symbolSourceLine: number;
-      symbolSourceObservedLineCount?: number;
-      symbolSourceSizeBytes?: number;
-      symbolSourceTruncated?: boolean;
-      symbolSourcePathSha256?: string;
-      symbolSourceFileSha256?: string;
-      symbolSourceNameSha256?: string;
-      symbolSourceLineSha256?: string;
-      symbolSourceSignatureSha256?: string;
-      symbolSourceRangeSha256?: string;
-      symbolSourceLineAnchorSetSha256?: string;
-    }
-  | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const record = value as Record<string, unknown>;
-  const kind = symbolKind(record["symbolKind"]);
-  const startLine = integerInRange(record["startLine"], 1, 1_000_000);
-  const endLine = integerInRange(record["endLine"], 1, 1_000_000);
-  const symbolLine = integerInRange(record["symbolLine"], 1, 1_000_000);
-  if (
-    !kind ||
-    startLine === undefined ||
-    endLine === undefined ||
-    symbolLine === undefined
-  ) {
-    return undefined;
-  }
-  const observedLineCount = integerInRange(record["observedLineCount"], 1, 220);
-  const sizeBytes = integerInRange(record["sizeBytes"], 0, 2 * 1024 * 1024);
-  const pathSha256 = sha256(record["pathSha256"]);
-  const fileSha256 = sha256(record["sha256"]);
-  const nameSha256 = sha256(record["symbolNameSha256"]);
-  const lineSha256 = sha256(record["lineSha256"]);
-  const signatureSha256 = sha256(record["signatureSha256"]);
-  const rangeSha256 = sha256(record["rangeSha256"]);
-  const lineAnchorSetSha256 = sha256(record["lineAnchorSetSha256"]);
-  return {
-    symbolSourceKind: kind,
-    symbolSourceStartLine: startLine,
-    symbolSourceEndLine: endLine,
-    symbolSourceLine: symbolLine,
-    ...(observedLineCount !== undefined
-      ? { symbolSourceObservedLineCount: observedLineCount }
-      : {}),
-    ...(sizeBytes !== undefined ? { symbolSourceSizeBytes: sizeBytes } : {}),
-    ...(record["truncated"] === true ? { symbolSourceTruncated: true } : {}),
-    ...(pathSha256 ? { symbolSourcePathSha256: pathSha256 } : {}),
-    ...(fileSha256 ? { symbolSourceFileSha256: fileSha256 } : {}),
-    ...(nameSha256 ? { symbolSourceNameSha256: nameSha256 } : {}),
-    ...(lineSha256 ? { symbolSourceLineSha256: lineSha256 } : {}),
-    ...(signatureSha256
-      ? { symbolSourceSignatureSha256: signatureSha256 }
-      : {}),
-    ...(rangeSha256 ? { symbolSourceRangeSha256: rangeSha256 } : {}),
-    ...(lineAnchorSetSha256
-      ? { symbolSourceLineAnchorSetSha256: lineAnchorSetSha256 }
-      : {}),
-  };
-}
-
-function symbolKind(
-  value: unknown,
-):
-  | "class"
-  | "function"
-  | "interface"
-  | "type"
-  | "enum"
-  | "variable"
-  | "struct"
-  | "method"
-  | undefined {
-  return value === "class" ||
-    value === "function" ||
-    value === "interface" ||
-    value === "type" ||
-    value === "enum" ||
-    value === "variable" ||
-    value === "struct" ||
-    value === "method"
-    ? value
-    : undefined;
-}
-
-function codeLanguage(
-  value: unknown,
-): "typescript" | "javascript" | "python" | "go" | "unknown" | undefined {
-  return value === "typescript" ||
-    value === "javascript" ||
-    value === "python" ||
-    value === "go" ||
-    value === "unknown"
-    ? value
-    : undefined;
 }
 
 function integerInRange(
@@ -1149,76 +742,5 @@ function workspaceFileMutationEvidence(value: unknown):
     ...(bytes !== undefined ? { fileMutationBytes: bytes } : {}),
     ...(record["reversible"] === true ? { fileMutationReversible: true } : {}),
     ...(postcondition ? { fileMutationPostcondition: postcondition } : {}),
-  };
-}
-
-function listFilesEvidence(value: unknown):
-  | {
-      listCount: number;
-      listTruncated?: boolean;
-      listPathSha256?: string;
-      listEntrySetSha256?: string;
-    }
-  | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const record = value as Record<string, unknown>;
-  const count = integerInRange(record["count"], 0, 300);
-  if (count === undefined) return undefined;
-  const pathSha256 = sha256(record["pathSha256"]);
-  const entrySetSha256 = sha256(record["entrySetSha256"]);
-  return {
-    listCount: count,
-    ...(record["truncated"] === true ? { listTruncated: true } : {}),
-    ...(pathSha256 ? { listPathSha256: pathSha256 } : {}),
-    ...(entrySetSha256 ? { listEntrySetSha256: entrySetSha256 } : {}),
-  };
-}
-
-function readFileEvidence(value: unknown):
-  | {
-      readStartLine?: number;
-      readEndLine?: number;
-      readTotalLines?: number;
-      readPathSha256?: string;
-      readFileSha256?: string;
-      readSizeBytes?: number;
-      readTruncated?: boolean;
-      readLineAnchorsTruncated?: boolean;
-      readLineAnchorSetSha256?: string;
-    }
-  | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const record = value as Record<string, unknown>;
-  const startLine = integerInRange(record["startLine"], 1, 1_000_000);
-  const endLine = integerInRange(record["endLine"], 1, 1_000_000);
-  if (startLine !== undefined && endLine !== undefined && endLine < startLine) {
-    return undefined;
-  }
-  const totalLines = integerInRange(record["totalLines"], 1, 1_000_000);
-  const pathSha256 = sha256(record["pathSha256"]);
-  const fileSha256 = sha256(record["sha256"]);
-  const lineAnchorSetSha256 = sha256(record["lineAnchorSetSha256"]);
-  const sizeBytes = integerInRange(record["sizeBytes"], 0, 2_097_152);
-  if (!fileSha256 && !pathSha256 && startLine === undefined) {
-    return undefined;
-  }
-  return {
-    ...(startLine !== undefined ? { readStartLine: startLine } : {}),
-    ...(endLine !== undefined ? { readEndLine: endLine } : {}),
-    ...(totalLines !== undefined ? { readTotalLines: totalLines } : {}),
-    ...(pathSha256 ? { readPathSha256: pathSha256 } : {}),
-    ...(fileSha256 ? { readFileSha256: fileSha256 } : {}),
-    ...(sizeBytes !== undefined ? { readSizeBytes: sizeBytes } : {}),
-    ...(record["truncated"] === true ? { readTruncated: true } : {}),
-    ...(record["lineAnchorsTruncated"] === true
-      ? { readLineAnchorsTruncated: true }
-      : {}),
-    ...(lineAnchorSetSha256
-      ? { readLineAnchorSetSha256: lineAnchorSetSha256 }
-      : {}),
   };
 }
