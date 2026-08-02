@@ -2,7 +2,7 @@ import path from "node:path";
 
 import type { JsonValue, ToolPolicyMode } from "@napier/contracts";
 
-import { assessGitStageCall } from "./git-stage-policy.js";
+import { assessGitToolCall } from "./git-tool-policy.js";
 import { validatePublicHttpUrl } from "./public-network.js";
 import { assessReadOnlyToolCall } from "./read-only-tool-policy.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
@@ -109,8 +109,8 @@ export function assessToolCall(
       reason: "internal durable-ledger update",
     };
   }
-  const gitStageDecision = assessGitStageCall(mode, toolName, input, workspaceRoot);
-  if (gitStageDecision) return gitStageDecision;
+  const gitDecision = assessGitToolCall(mode, toolName, input, workspaceRoot);
+  if (gitDecision) return gitDecision;
   const readOnlyDecision = assessReadOnlyToolCall(toolName, input, workspaceRoot);
   if (readOnlyDecision) return readOnlyDecision;
 

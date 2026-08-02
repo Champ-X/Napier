@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 96,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DImlD6O6.js",
+    "path": "apps/web/dist/assets/index-LcLbFf-Q.js",
     "sizeBytes": 118213,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "33b50cbe497b3b757c8a162c974e1fbdb51267c0a7429b67def084853cf42ab7"
+    "sha256": "5fba7dc06f83e25f6c8496cbe157869eff8e85dbd7f3fdc705a8f77901a0e7c8"
   },
-  "distContentSha256": "33b50cbe497b3b757c8a162c974e1fbdb51267c0a7429b67def084853cf42ab7",
+  "distContentSha256": "5fba7dc06f83e25f6c8496cbe157869eff8e85dbd7f3fdc705a8f77901a0e7c8",
   "errors": []
 }

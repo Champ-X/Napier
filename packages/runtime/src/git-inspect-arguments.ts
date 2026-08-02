@@ -7,6 +7,7 @@ const CONFIG_POLICY_EXACT_KEYS = [
   "core.sparsecheckoutcone",
   "core.splitindex",
   "extensions.objectformat",
+  "extensions.refstorage",
   "extensions.worktreeconfig",
 ] as const;
 const CONFIG_POLICY_PATTERNS = [
@@ -139,14 +140,141 @@ export function gitStageArgumentsSha256(
   );
 }
 
+export function gitHeadCommitArguments(
+  repository: GitArgumentRepository,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "rev-parse",
+    "--verify",
+    "HEAD^{commit}",
+  ];
+}
+
+export function gitRefCommitArguments(
+  repository: GitArgumentRepository,
+  branchRef: string,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "rev-parse",
+    "--verify",
+    `${branchRef}^{commit}`,
+  ];
+}
+
+export function gitStagedDiffArguments(
+  repository: GitArgumentRepository,
+  contextLines: number,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "diff",
+    "--cached",
+    "HEAD",
+    "--patch",
+    "--no-ext-diff",
+    "--no-textconv",
+    "--no-color",
+    "--ignore-submodules=all",
+    `--unified=${contextLines}`,
+    "--",
+  ];
+}
+
+export function gitStagedRawArguments(
+  repository: GitArgumentRepository,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "diff",
+    "--cached",
+    "--raw",
+    "-z",
+    "--no-renames",
+    "HEAD",
+    "--",
+  ];
+}
+
+export function gitWriteTreeArguments(
+  repository: GitArgumentRepository,
+): string[] {
+  return [...commonGitArguments(repository), "write-tree"];
+}
+
+export function gitCommitTreeArguments(
+  repository: GitArgumentRepository,
+  treeSha1: string,
+  parentCommitSha1: string,
+  messageFile: string,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "commit-tree",
+    treeSha1,
+    "-p",
+    parentCommitSha1,
+    "-F",
+    messageFile,
+  ];
+}
+
+export function gitUpdateBranchArguments(
+  repository: GitArgumentRepository,
+  branchRef: string,
+  commitSha1: string,
+  parentCommitSha1: string,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "-c",
+    "core.logAllRefUpdates=true",
+    "update-ref",
+    "-m",
+    "napier atomic commit",
+    branchRef,
+    commitSha1,
+    parentCommitSha1,
+  ];
+}
+
+export function gitCommitArgumentsSha256(
+  repository: GitArgumentRepository,
+  contextLines: number,
+): string {
+  return sha256(
+    canonicalJson({
+      configPolicyArguments: gitConfigPolicyArguments(repository),
+      configPolicySha256: gitConfigPolicySha256("commit"),
+      head: gitHeadCommitArguments(repository),
+      branch: gitRefCommitArguments(repository, "$BRANCH_REF"),
+      stagedRaw: gitStagedRawArguments(repository),
+      stagedDiff: gitStagedDiffArguments(repository, contextLines),
+      writeTree: gitWriteTreeArguments(repository),
+      commitTree: gitCommitTreeArguments(
+        repository,
+        "$TREE_SHA1",
+        "$PARENT_SHA1",
+        "$PRIVATE_MESSAGE_FILE",
+      ),
+      updateBranch: gitUpdateBranchArguments(
+        repository,
+        "$BRANCH_REF",
+        "$COMMIT_SHA1",
+        "$PARENT_SHA1",
+      ),
+    }),
+  );
+}
+
 export function gitConfigKeysPermitInspection(output: string): boolean {
-  return configKeys(output)
-    .every(
-      (key) =>
-        !CONFIG_POLICY_EXACT_KEYS.includes(
-          key as (typeof CONFIG_POLICY_EXACT_KEYS)[number],
-        ) && !CONFIG_POLICY_REGEX.some((pattern) => pattern.test(key)),
-    );
+  return configKeys(output).every(
+    (key) =>
+      !CONFIG_POLICY_EXACT_KEYS.includes(
+        key as (typeof CONFIG_POLICY_EXACT_KEYS)[number],
+      ) && !CONFIG_POLICY_REGEX.some((pattern) => pattern.test(key)),
+  );
 }
 
 export function gitConfigKeysPermitStage(output: string): boolean {
@@ -161,7 +289,7 @@ export function gitConfigKeysPermitStage(output: string): boolean {
 }
 
 export function gitConfigPolicySha256(
-  operation: "inspection" | "stage",
+  operation: "inspection" | "stage" | "commit",
 ): string {
   return sha256(
     canonicalJson({
@@ -169,7 +297,7 @@ export function gitConfigPolicySha256(
       exactKeys: CONFIG_POLICY_EXACT_KEYS,
       patterns: CONFIG_POLICY_PATTERNS,
       stageExactKeys:
-        operation === "stage" ? STAGE_CONFIG_POLICY_EXACT_KEYS : [],
+        operation === "inspection" ? [] : STAGE_CONFIG_POLICY_EXACT_KEYS,
     }),
   );
 }
@@ -194,6 +322,8 @@ export function commonGitArguments(
     "color.ui=false",
     "-c",
     "core.fsmonitor=false",
+    "-c",
+    "core.hooksPath=/dev/null",
     "-c",
     "diff.algorithm=myers",
     "-c",

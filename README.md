@@ -197,6 +197,10 @@ Version `0.1.0` includes:
   patch in a private index/object directory, bind its attribute chain and
   repository state, then promote verified objects and atomically install only
   the reviewed index through `index.lock`;
+- `git_commit_preview` and `git_commit_apply` tools that reconstruct the
+  complete staged tree in a private object directory, bind a normalized message
+  plus fixed identity/timestamp to the proposed commit, then promote verified
+  objects and CAS-update only the attached branch with durable reflog evidence;
 - a `workspace_process` tool and lazy Processes Workbench for bounded
   background Node sessions with cursor-based stdout/stderr observation,
   explicit interactive stdin, cancellation, lifecycle settlement, graceful
@@ -2347,10 +2351,10 @@ separately managed `workspace_process` PTY below. Foreground commands remain
 read-only; Process Sessions add only the preview-bound scoped write mode
 described below. Hard per-command CPU/memory quotas remain explicit next-stage
 work. Python remains a separate restricted Kernel protocol. Generic
-`run_command` stays Node-only; Git uses the purpose-built inspection and
-preview-bound staging surfaces below rather than exposing arbitrary Git argv.
+`run_command` stays Node-only; Git uses the purpose-built inspection, staging,
+and commit surfaces below rather than exposing arbitrary Git argv.
 
-## Controlled Git Inspection And Staging
+## Controlled Git Inspection, Staging, And Commit
 
 `git_inspect` reads the workspace-root repository through fixed
 `/usr/bin/git` execution in the same local read-only, denied-network OS
@@ -2365,8 +2369,9 @@ submodule traversal. Literal pathspec mode prevents a path from expanding into
 Git pathspec magic. A fixed config preflight reads local key names without
 following includes and rejects include paths, clean/smudge/process filters,
 diff commands/textconv, `core.attributesFile`, worktree config, split index,
-sparse checkout, and SHA-256 object repositories. A direct `.git` directory
-is required at the workspace root; gitfiles, symlinked metadata,
+sparse checkout, reftable ref storage, and SHA-256 object repositories. A
+direct `.git` directory is required at the workspace root; gitfiles,
+symlinked metadata,
 `config.worktree`, `sharedindex.*`, sparse-checkout/graft metadata, protected
 paths, active index locks, OCI, commits, checkout, reset, clean, and arbitrary
 subcommands are rejected. Replacement refs are disabled. Before and after
@@ -2405,16 +2410,44 @@ remain live-only; durable evidence retains the expiring capability, bounded
 counts, state hashes, environment/argv/Sandbox hashes, durability, and result
 hash.
 
-This slice does not stage directories, symlinks, multiple paths in one
-transaction, repositories without an existing index/HEAD, linked worktrees,
-split/sparse indexes, SHA-256 object repositories, alternates, submodules, or
-shared repositories/ACLs, or OCI execution. It also does not create branches,
-commit, checkout, reset, clean, merge, resolve conflicts, or promote Review
-outcomes. Those operations remain separate preview-bound transactions;
+`git_commit_preview` consumes the complete existing staged index without
+changing refs, the real index, worktree, or object database. It rejects empty
+staging, more than 32 changed entries, staged gitlinks, detached or unborn
+HEAD, and active merge/rebase/cherry-pick/revert/bisect/sequencer state. The
+Runtime writes a normalized message, copied index, and new objects only under
+`.git/napier-stage/<ephemeral>`, then runs fixed `write-tree` and
+`commit-tree` operations with the `Napier Agent <napier@localhost>` identity
+and preview timestamp. The returned five-minute one-use Run/Plan capability
+binds the branch, parent, tree, exact proposed commit SHA-1, message, staged
+patch, repository state, executable, Sandbox, environment, and limits.
+
+`git_commit_apply` consumes that capability under index and branch-ref locks,
+reconstructs the same commit, requires every bound hash to match, and promotes
+only SHA-1-verified loose objects. A fixed
+`update-ref <previewed-branch> <new> <old>` CAS is the sole ref mutation;
+`core.hooksPath=/dev/null` disables reference hooks, and no editor, signing,
+checkout, merge, remote, or arbitrary revision is exposed to the model. Apply
+settles HEAD after failures, timeout, cancellation, or process uncertainty. A
+result is `applied` only when HEAD and the attached branch equal the proposed
+commit, the index remains unchanged, the staged diff becomes empty, operation
+markers remain absent, the exact ref plus HEAD/branch reflog files are fsynced,
+both reflog tails bind the parent-to-commit transition, and a final settlement
+still proves the same state. Any outcome that cannot prove those postconditions
+is reported as `indeterminate`, never as a safe failure. Messages and patches
+remain live-only; durable evidence retains bounded counts and
+content/state/runtime hashes.
+
+These slices do not stage directories, symlinks, or multiple paths in one
+staging transaction, and do not support repositories without an existing
+index/HEAD, linked worktrees, split/sparse indexes, SHA-256 objects, reftable
+refs, alternates, staged submodule/gitlink changes, shared repository ACLs, or
+OCI execution. They also do not create/switch branches, checkout, reset, clean,
+merge, resolve conflicts, sign commits, run hooks, or promote Review outcomes.
+Those operations remain separate preview-bound transactions;
 arbitrary Git argv and dangerous history rewriting remain unavailable.
 Preview capabilities are process-local and intentionally non-resumable:
 expiry or Runtime restart requires a fresh preview rather than replaying a
-stale index mutation.
+stale index or ref mutation.
 
 ## Workspace Process Sessions
 

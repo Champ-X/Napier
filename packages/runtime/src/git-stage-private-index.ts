@@ -153,7 +153,7 @@ export async function preparePrivateGitStage(input: {
 }
 
 export async function promotePreparedGitObjects(
-  prepared: PreparedGitStage,
+  prepared: Pick<PreparedGitStage, "objectDirectory">,
   repository: GitRepository,
 ): Promise<void> {
   const objectRoot = await validateObjectDirectory(repository);
@@ -239,7 +239,7 @@ export async function installPreparedGitIndex(input: {
 }
 
 export async function cleanupPreparedGitStage(
-  prepared: PreparedGitStage,
+  prepared: Pick<PreparedGitStage, "temporaryDirectory">,
 ): Promise<void> {
   await rm(prepared.temporaryDirectory, { recursive: true, force: true });
 }
@@ -267,7 +267,8 @@ async function ensurePrivateStageRoot(
     info.isSymbolicLink() ||
     (!created &&
       ((info.mode & 0o777) !== 0o700 ||
-        (typeof process.getuid === "function" && info.uid !== process.getuid())))
+        (typeof process.getuid === "function" &&
+          info.uid !== process.getuid())))
   ) {
     throw new Error("Git private stage root is invalid");
   }

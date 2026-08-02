@@ -28,6 +28,8 @@ export function formatWorkspaceToolGuidance(
     "git_inspect",
     "git_stage_preview",
     "git_stage_apply",
+    "git_commit_preview",
+    "git_commit_apply",
   ].some((name) => toolNames.has(name));
   const hasCommand = toolNames.has("run_command");
   const hasJavascriptKernel = toolNames.has("javascript_kernel");
@@ -250,6 +252,18 @@ function gitToolGuidance(toolNames: ReadonlySet<string>): string[] {
     ...(toolNames.has("git_stage_apply")
       ? [
           "git_stage_apply updates only the Git index through a one-use preview and index.lock; it never commits or changes refs/worktree files. On an indeterminate outcome, inspect status and staged diff before any retry.",
+        ]
+      : []),
+    ...(toolNames.has("git_commit_preview")
+      ? [
+          toolNames.has("git_commit_apply")
+            ? "After reviewing staged diff, use git_commit_preview with a credential-free message. Review its complete staged patch and exact commit SHA-1, then pass only the execution-scoped ID to git_commit_apply."
+            : "git_commit_preview constructs the exact commit privately but cannot update HEAD because git_commit_apply is disabled.",
+        ]
+      : []),
+    ...(toolNames.has("git_commit_apply")
+      ? [
+          "git_commit_apply CAS-updates only the attached branch bound by the preview. It never runs hooks, signing, checkout, merge, remote operations, or history rewriting. Inspect HEAD and status after an indeterminate result.",
         ]
       : []),
   ];

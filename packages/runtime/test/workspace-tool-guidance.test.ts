@@ -94,12 +94,16 @@ describe("workspace tool guidance", () => {
       { name: "git_inspect" } as AgentTool,
       { name: "git_stage_preview" } as AgentTool,
       { name: "git_stage_apply" } as AgentTool,
+      { name: "git_commit_preview" } as AgentTool,
+      { name: "git_commit_apply" } as AgentTool,
     ]);
 
     expect(guidance).toContain("exact working or staged hunks");
     expect(guidance).toContain("review its complete private-index patch");
     expect(guidance).toContain("execution-scoped preview ID");
     expect(guidance).toContain("never commits or changes refs/worktree");
+    expect(guidance).toContain("exact commit SHA-1");
+    expect(guidance).toContain("never runs hooks, signing, checkout");
   });
 
   it("describes the restricted Python state boundary", () => {

@@ -9,6 +9,8 @@ export const AGENT_TOOL_NAMES = [
   "git_inspect",
   "git_stage_preview",
   "git_stage_apply",
+  "git_commit_preview",
+  "git_commit_apply",
   "inspect_code",
   "read_symbol",
   "ast_query",

@@ -5,6 +5,11 @@ import { createCommandTool } from "./command-tool.js";
 import { createDataFrameTool } from "./data-frame-tool.js";
 import { createGitInspectTool } from "./git-inspect-tool.js";
 import {
+  createGitCommitApplyTool,
+  createGitCommitPreviewTool,
+} from "./git-commit-tool.js";
+import { gitCommitMutationManagerFor } from "./git-commit.js";
+import {
   createGitStageApplyTool,
   createGitStagePreviewTool,
 } from "./git-stage-tool.js";
@@ -47,6 +52,7 @@ export interface CreateStatelessAgentToolsOptions {
   workspaceFileMutations?: WorkspaceFileMutationManager;
   gitStageMutations?: GitStageMutationManager;
   gitStageScopeId?: string;
+  gitCommitScopeId?: string;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
 }
@@ -157,6 +163,7 @@ export function createStatelessAgentTools(
     );
   }
   appendGitStageTools(tools, options, processAllowed);
+  appendGitCommitTools(tools, options, processAllowed);
   if (processAllowed && profile.enabledTools.includes("verify_workspace")) {
     tools.push(
       createVerificationTool({
@@ -234,6 +241,25 @@ function appendGitStageTools(
   }
   if (options.profile.enabledTools.includes("git_stage_apply")) {
     tools.push(createGitStageApplyTool(options.gitStageMutations, context));
+  }
+}
+
+function appendGitCommitTools(
+  tools: AgentTool[],
+  options: CreateStatelessAgentToolsOptions,
+  processAllowed: boolean,
+): void {
+  if (!processAllowed) return;
+  const manager = gitCommitMutationManagerFor(options.store, options.sandbox);
+  const context = {
+    threadId: options.threadId,
+    scopeId: options.gitCommitScopeId ?? options.runId,
+  };
+  if (options.profile.enabledTools.includes("git_commit_preview")) {
+    tools.push(createGitCommitPreviewTool(manager, context));
+  }
+  if (options.profile.enabledTools.includes("git_commit_apply")) {
+    tools.push(createGitCommitApplyTool(manager, context));
   }
 }
 

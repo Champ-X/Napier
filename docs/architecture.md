@@ -4149,7 +4149,8 @@ git_inspect(status | diff)
   -> list local config key names with --no-includes
   -> reject include paths, filter clean/smudge/process,
      diff command/textconv, core.attributesFile,
-     worktree config, split index, sparse checkout, and SHA-256 objects
+     worktree config, split index, sparse checkout, reftable refs,
+     and SHA-256 objects
   -> generate status or working/staged diff argv internally
   -> force literal pathspecs; disable replace refs, optional locks,
      pager, color, fsmonitor, rename detection,
@@ -4228,9 +4229,72 @@ OCI, and attribute-chain drift. Literal pathspec mode prevents target strings
 from selecting additional paths. Loose objects promoted before a failed commit
 barrier may remain unreachable, matching Git's content-addressed safety model.
 Capabilities remain process-local; restart or expiry requires a fresh preview
-instead of reusing a completed Workflow node output. Branch, commit, checkout,
-reset, clean, merge, conflict resolution, Review promotion, and arbitrary
-revisions remain unavailable; staging is not a general Git shell.
+instead of reusing a completed Workflow node output. Branch creation/switch,
+checkout, reset, clean, merge, conflict resolution, Review promotion, and
+arbitrary revisions remain unavailable; staging is not a general Git shell.
+
+## Git Commit Transaction
+
+```text
+git_commit_preview(message)
+  -> require attached existing branch + existing HEAD/index
+  -> reject merge/rebase/cherry-pick/revert/bisect/sequencer state
+  -> normalize <=4 KiB message; fix Napier identity and current UTC second
+  -> copy index and message into 0700 .git/napier-stage/<ephemeral>
+  -> redirect GIT_INDEX_FILE and GIT_OBJECT_DIRECTORY
+  -> read HEAD commit; inspect complete raw staged entries and staged patch
+  -> reject empty/>32-file patches and every old/new gitlink mode
+  -> run fixed write-tree and commit-tree in the private object directory
+  -> bind parent/tree/proposed commit/message/patch/runtime/repository hashes
+  -> delete private data and return one-use Run/Plan-scoped capability
+
+git_commit_apply(previewId)
+  -> consume capability; lock index + exact attached branch ref
+  -> revalidate branch/repository/index/config/executable/operation markers
+  -> reconstruct exact tree and commit; require every preview binding
+  -> SHA-1 verify and no-overwrite promote private loose objects
+  -> validate canonical non-symlink refs/heads and reflog ancestors
+  -> disable hooks and update exact previewed branch <proposed> <parent>
+  -> settle HEAD after success, failure, timeout, cancellation, or uncertainty
+  -> require attached branch, unchanged index/static state, empty staged diff
+  -> fsync exact loose ref + HEAD/branch reflogs and verify both old->new tails
+  -> settle HEAD/branch/index again after durability checks
+  -> delete private data and return applied or indeterminate hash-only evidence
+```
+
+`git-commit.ts` owns process-local capabilities, scope, locks, reconstruction,
+ref-CAS orchestration, and unknown-outcome classification.
+`git-commit-private.ts` owns private index/message/object construction, staged
+raw-entry validation, operation-marker checks, ref-path confinement, reflog
+verification, and durability. `git-commit-settlement.ts` independently
+re-observes HEAD, repository/index state, and the empty post-commit staged diff.
+`git-commit-details.ts` compresses executable/argv/environment/limit/Sandbox
+evidence into one runtime digest so typed Workflow output remains within the
+shared schema budget. Agent Runs scope the one-use capability by Run ID; typed
+Workflow Tool nodes share it through Plan ID. Message, branch, patch, paths,
+errors, and capability arguments are live-only or hash-projected through
+Ledger/Replay/Web Trace.
+
+The commit timestamp, `Napier Agent <napier@localhost>` author/committer
+identity, normalized message, parent, and tree are fixed during preview, so a
+successful reconstruction must produce the exact same commit SHA-1. The sole
+ref mutation is generated internally as
+`update-ref <previewed-branch> new old`; the old parent is a CAS precondition,
+and `core.hooksPath=/dev/null` disables `reference-transaction` hooks. The
+exact ref target prevents a concurrent symbolic-HEAD switch from redirecting
+the mutation to another branch. If process status is untrustworthy, settlement
+distinguishes unchanged parent, exact proposed commit, and an unknown third
+state. Once the ref process starts, any missing staged/index/static, cleanup,
+ref fsync, reflog, or final settlement proof yields `indeterminate`, not a
+false failure.
+
+This transaction intentionally excludes unborn/detached HEAD, linked
+worktrees, shared repositories, alternates, split/sparse indexes, SHA-256
+objects, reftable refs, submodules/gitlinks, signing, user-selected identity,
+hooks, merge commits, amend, checkout, reset, remotes, and history rewriting.
+It commits the complete current index, up to 32 changed entries and a 128 KiB
+patch. Capabilities are memory-only and expire after five minutes; recovery
+must inspect current state and create a new preview.
 
 ## Workspace Process Session Flow
 

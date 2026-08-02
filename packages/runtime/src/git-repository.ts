@@ -30,7 +30,9 @@ export interface GitBoundFile {
 export interface GitRepositoryState {
   stateSha256: string;
   nonIndexStateSha256: string;
+  staticStateSha256: string;
   headStateSha256: string;
+  currentRef?: string;
   index: GitBoundFile;
   config: GitBoundFile;
 }
@@ -64,9 +66,7 @@ export async function resolveGitRepository(
     (await gitPathExists(
       path.join(resolvedGitDirectory, "info/sparse-checkout"),
     )) ||
-    (await gitPathExists(
-      path.join(resolvedGitDirectory, "info/grafts"),
-    ))
+    (await gitPathExists(path.join(resolvedGitDirectory, "info/grafts")))
   ) {
     throw new Error("Git repository uses unsupported metadata extensions");
   }
@@ -125,15 +125,18 @@ export async function snapshotGitRepository(
   const headStateSha256 = sha256(
     canonicalJson({ head, currentRef: currentRef ?? null, ref, packedRefs }),
   );
+  const staticStateSha256 = sha256(canonicalJson({ config, shallow }));
   const nonIndexStateSha256 = sha256(
-    canonicalJson({ headStateSha256, config, shallow }),
+    canonicalJson({ headStateSha256, staticStateSha256 }),
   );
   return {
     stateSha256: sha256(
       canonicalJson({ headStateSha256, index, config, shallow }),
     ),
     nonIndexStateSha256,
+    staticStateSha256,
     headStateSha256,
+    ...(currentRef ? { currentRef } : {}),
     index,
     config,
   };
@@ -165,9 +168,9 @@ export async function readGitIndexBytes(
 ): Promise<Buffer | undefined> {
   return (
     await readGitBoundFilePayload(
-    path.join(repository.gitDirectory, "index"),
-    MAX_GIT_INDEX_BYTES,
-    true,
+      path.join(repository.gitDirectory, "index"),
+      MAX_GIT_INDEX_BYTES,
+      true,
     )
   )?.content;
 }
@@ -192,11 +195,7 @@ async function readGitBoundText(
   filePath: string,
   maximumBytes: number,
 ): Promise<string> {
-  const value = await readGitBoundFilePayload(
-    filePath,
-    maximumBytes,
-    false,
-  );
+  const value = await readGitBoundFilePayload(filePath, maximumBytes, false);
   if (!value) throw new Error("Git metadata file is unavailable");
   return value.content.toString("utf8");
 }
@@ -206,11 +205,7 @@ async function readGitBoundFile(
   maximumBytes: number,
   optional: boolean,
 ): Promise<GitBoundFile> {
-  const value = await readGitBoundFilePayload(
-    filePath,
-    maximumBytes,
-    optional,
-  );
+  const value = await readGitBoundFilePayload(filePath, maximumBytes, optional);
   return value
     ? {
         present: true,

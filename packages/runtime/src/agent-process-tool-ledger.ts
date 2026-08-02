@@ -11,6 +11,11 @@ import {
   gitInspectToolOutputLedgerProjection,
 } from "./git-inspect-tool.js";
 import {
+  gitCommitToolCallArgumentsLedgerProjection,
+  gitCommitToolInputLedgerProjection,
+  gitCommitToolOutputLedgerProjection,
+} from "./git-commit-tool.js";
+import {
   gitStageToolCallArgumentsLedgerProjection,
   gitStageToolInputLedgerProjection,
   gitStageToolOutputLedgerProjection,
@@ -22,6 +27,9 @@ export function agentProcessToolCallProjection(
 ): JsonValue | undefined {
   if (toolName === "run_command") {
     return commandToolCallArgumentsLedgerProjection(args);
+  }
+  if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
+    return gitCommitToolCallArgumentsLedgerProjection(toolName, args);
   }
   if (toolName === "git_stage_preview" || toolName === "git_stage_apply") {
     return gitStageToolCallArgumentsLedgerProjection(toolName, args);
@@ -38,6 +46,9 @@ export function agentProcessToolInputProjection(
   if (toolName === "run_command") {
     return commandToolInputLedgerProjection(args);
   }
+  if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
+    return gitCommitToolInputLedgerProjection(toolName, args);
+  }
   if (toolName === "git_stage_preview" || toolName === "git_stage_apply") {
     return gitStageToolInputLedgerProjection(toolName, args);
   }
@@ -53,6 +64,9 @@ export function agentProcessToolOutputProjection(
 ): Record<string, JsonValue> | undefined {
   if (toolName === "run_command") {
     return commandToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
+    return gitCommitToolOutputLedgerProjection(output, result);
   }
   if (toolName === "git_stage_preview" || toolName === "git_stage_apply") {
     return gitStageToolOutputLedgerProjection(output, result);

@@ -21,6 +21,8 @@ export const DEFAULT_AGENT_ENABLED_TOOLS = [
   "git_inspect",
   "git_stage_preview",
   "git_stage_apply",
+  "git_commit_preview",
+  "git_commit_apply",
   "apply_patch",
   "verify_workspace",
 ] as const;

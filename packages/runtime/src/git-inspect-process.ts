@@ -28,6 +28,10 @@ const GIT_ENVIRONMENT = {
   NO_COLOR: "1",
   PAGER: "cat",
 } as const;
+export const GIT_COMMIT_IDENTITY = {
+  name: "Napier Agent",
+  email: "napier@localhost",
+} as const;
 
 export interface GitInspectProcessOptions {
   workspaceRoot: string;
@@ -54,6 +58,13 @@ export interface GitPrivateProcessFiles {
   alternateObjectDirectory: string;
 }
 
+export interface GitProcessIsolation {
+  operation?: "stage" | "commit";
+  privateFiles?: GitPrivateProcessFiles;
+  workspaceWritePaths: string[];
+  commitTimestampSeconds?: number;
+}
+
 export async function runGitInspectProcess(
   options: GitInspectProcessOptions,
   args: string[],
@@ -68,23 +79,33 @@ export async function runGitProcess(
   args: string[],
   timeoutMs: number,
   signal?: AbortSignal,
-  isolation?: {
-    privateFiles: GitPrivateProcessFiles;
-    workspaceWritePaths: string[];
-  },
+  isolation?: GitProcessIsolation,
 ): Promise<GitInspectProcessResult> {
   validateGitArguments(args);
-  const operation = isolation ? "Git stage preparation" : "Git inspection";
+  const operation =
+    isolation?.operation === "commit"
+      ? "Git commit"
+      : isolation
+        ? "Git stage preparation"
+        : "Git inspection";
   if (options.sandbox.id === "oci-container") {
     throw new Error(
       `${operation} requires a local OS sandbox until container runtime identity binding is available`,
     );
   }
   const workspaceRoot = await realpath(path.resolve(options.workspaceRoot));
-  const privateEnvironment = isolation
+  const privateEnvironment = isolation?.privateFiles
     ? validatePrivateProcessFiles(isolation.privateFiles, workspaceRoot)
     : {};
-  const environment = { ...GIT_ENVIRONMENT, ...privateEnvironment };
+  const commitEnvironment =
+    isolation?.commitTimestampSeconds !== undefined
+      ? commitIdentityEnvironment(isolation.commitTimestampSeconds)
+      : {};
+  const environment = {
+    ...GIT_ENVIRONMENT,
+    ...privateEnvironment,
+    ...commitEnvironment,
+  };
   const approvedCapabilities = isolation
     ? (["process.spawn", "workspace.read", "workspace.write"] as const)
     : (["process.spawn", "workspace.read"] as const);
@@ -123,7 +144,9 @@ export async function runGitProcess(
     });
   } finally {
     if ((await sha256File(executable).catch(() => "")) !== executableSha256) {
-      throw new Error(`Git executable changed during ${operation.toLowerCase()}`);
+      throw new Error(
+        `Git executable changed during ${operation.toLowerCase()}`,
+      );
     }
   }
   const status =
@@ -143,6 +166,27 @@ export async function runGitProcess(
     argumentSetSha256: sha256(canonicalJson(args)),
     environmentSha256: sha256(canonicalJson(environment)),
     resourceLimitsSha256: sha256(canonicalJson(resourceLimits)),
+  };
+}
+
+function commitIdentityEnvironment(
+  timestampSeconds: number,
+): Record<string, string> {
+  if (
+    !Number.isSafeInteger(timestampSeconds) ||
+    timestampSeconds < 0 ||
+    timestampSeconds > 9_999_999_999
+  ) {
+    throw new Error("Git commit timestamp is invalid");
+  }
+  const date = `${timestampSeconds} +0000`;
+  return {
+    GIT_AUTHOR_NAME: GIT_COMMIT_IDENTITY.name,
+    GIT_AUTHOR_EMAIL: GIT_COMMIT_IDENTITY.email,
+    GIT_AUTHOR_DATE: date,
+    GIT_COMMITTER_NAME: GIT_COMMIT_IDENTITY.name,
+    GIT_COMMITTER_EMAIL: GIT_COMMIT_IDENTITY.email,
+    GIT_COMMITTER_DATE: date,
   };
 }
 

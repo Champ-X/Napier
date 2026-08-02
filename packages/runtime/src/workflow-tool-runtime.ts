@@ -142,6 +142,7 @@ export class ExecutionPlanWorkflowToolRuntime {
           this.agentRuntime.verificationSandbox,
         ),
         gitStageScopeId: options.planId,
+        gitCommitScopeId: options.planId,
       }).find((candidate) => candidate.name === options.node.tool);
       if (!tool) {
         const errorCode = profile.enabledTools.includes(options.node.tool)
