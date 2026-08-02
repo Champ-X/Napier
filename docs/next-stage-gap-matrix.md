@@ -27,7 +27,7 @@ Audit date: 2026-08-02
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown; a fixed-source Outcome case now measures primary/secondary authority coverage and contradiction handling through the production capture/cite/report verifier path. Data analysis includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, general source-quality scoring and contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Python/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript and restricted exact-JSON Python Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output/input replacement, selector-free complete top-level input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Package-backed Python/Notebook Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, schema-5 durably releases exactly one remaining rerun node per Continue, and selector-free schema-6 replaces the complete top-level Workflow input and reruns every node through the ordinary scheduler with zero source reuse. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                           |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, bounded full-screen local `napier tui`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                  |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI with explicit first-task environment-locator bootstrap, line-oriented interactive `napier chat`, bounded full-screen local `napier tui`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                           |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P9 outcome benchmark              | In progress    | Three fixed Coding cases cover single-file repair, multi-file LSP migration, and debugger-qualified repair with repeated trials, Sandbox assertions, tool distributions, and Ledger evidence. Workflow, Data, SQLite prompt-injection Security, Runtime-restart Long-horizon, and fixed-source Research cases measure exact outputs/claims, Run isolation/reuse, Replay validity, credential privacy, tool protocols, database immutability, injection leakage, durable Approval recovery, post-restart model calls, source authority/citation/contradiction evidence, verified reports, offline verification, and repeated latency/cost/token distributions. DeepSeek passed all five retained two-trial Series 2/2; these small samples are not a cross-model superiority claim. Broader Research/Long-horizon/Security and UX cases, broader Coding/Workflow/Data tasks, open-web freshness, reference-project execution, and larger cross-model distributions remain.                                                                                                                                                                                                                                                                                                                                                        |
@@ -468,6 +468,39 @@ Observed result:
   persistence, signature tampering, and fail-closed unknown-kind behavior.
   Focused Server Receipt Trust HTTP tests also pass.
 
+## Implemented Slice: First-Task CLI Credential Bootstrap
+
+User scenario: a new local user with a provider key in `.env` must be able to
+complete the first real task from the CLI without opening the Web UI or writing
+Store setup code, while the key remains outside Napier state and evidence.
+
+Observed result:
+
+- `napier run --credential-env <variable>` requires an explicit live
+  `--model`, validates the uppercase environment locator, and checks the value
+  before any credential or Thread mutation;
+- the preflight creates only a provider/environment locator, records its
+  availability through the existing Credential service, verifies that the
+  exact model is configured, then enters the unchanged shared Agent Runtime.
+  A second invocation reuses the same locator without duplication;
+- a missing value or a different active provider locator fails before Thread
+  creation and before any model call. Supplying an ambient key without the
+  explicit flag continues to fail closed;
+- Run option parsing moved into two bounded leaf modules. `cli-options.ts`
+  decreases from 721 to 671 lines, while `cli.ts` remains at its exact 696-line
+  architecture ratchet;
+- the repository `npm run napier` wrapper uses Node's
+  `--env-file-if-exists=.env`; installed binaries retain normal inherited
+  environment behavior;
+- isolated tests cover parsing, creation, availability, idempotent reuse,
+  conflicting-locator rejection, zero model calls on conflict, Thread count,
+  and secret absence from output and Store projections;
+- a real clean-state `deepseek-v4-flash` command completed
+  `NAPIER_FIRST_TASK_OK` in 6.89 seconds including Runtime/CLI builds. The
+  opt-in live JSONL smoke passed in 2.57 seconds. A byte scan of all six state
+  files found no API key, while the retained reference contained only
+  `DEEPSEEK_API_KEY`.
+
 ## Implemented Slice: Ratcheted Architecture Growth Gate
 
 User scenario: a contributor must be unable to make Napier's known oversized
@@ -486,8 +519,9 @@ Observed result:
   depend only on Contracts and Runtime;
 - Contracts, Runtime, and SDK root export counts cannot grow without an
   explicit compatibility decision;
-- 1 current strongly connected component is recorded as debt. New or
-  enlarged cycles fail, while removed cycles make the baseline stale;
+- the original ratchet recorded one remaining component as debt; the current
+  baseline records zero. New cycles fail, while removed cycles make the
+  baseline stale;
 - five fault-injection tests prove module/complexity growth, stale debt,
   public-export growth, new cycles, and reversed workspace dependencies fail.
 
@@ -4633,7 +4667,8 @@ Acceptance:
   to stderr; machine mode emits no banners or non-JSON stdout;
 - preserve credential fail-closed behavior: an environment variable is usable
   only when the selected data root already contains an active credential
-  reference; CLI arguments and errors must never print secret values;
+  reference or `run` explicitly names its locator with `--credential-env`;
+  ambient variables, CLI arguments, and errors must never expose secret values;
 - cleanly stop active Process Sessions and MCP transports on success, failure,
   timeout, cancellation, SIGINT, and bootstrap failure, then close SQLite;
 - cover new/existing Thread, demo/live-provider availability, normal/failure/
@@ -4677,10 +4712,10 @@ Observed result:
   lifecycle for both Server and CLI. Shared Run stream constructors also
   replace the Server-local event/snapshot/done/error implementations;
 - the CLI suite covers parsing, new and existing Threads, hash/order
-  verification, stdout backpressure, preflight rejection, missing credential
-  references, timeout, pre-aborted cancellation, independent-runtime Run lease
-  contention, a built subprocess, and deterministic help. The second
-  concurrent Runtime does not call its model;
+  verification, stdout backpressure, preflight rejection, missing and explicit
+  credential references, timeout, pre-aborted cancellation,
+  independent-runtime Run lease contention, a built subprocess, and
+  deterministic help. The second concurrent Runtime does not call its model;
 - the built zero-key CLI subprocess completed in about 0.85 seconds on the
   current machine. The first JSONL Run event remained under the 1-second
   budget;

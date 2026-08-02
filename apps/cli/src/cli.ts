@@ -43,18 +43,17 @@ import { writeLine } from "./cli-output.js";
 import { executeInteractive } from "./interactive-cli.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
 import { executeRpc } from "./rpc-cli.js";
+import { configureCliRunCredential } from "./cli-run-credential.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import { executeTui } from "./tui-cli.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 
 export { CLI_HELP, CLI_VERSION, parseCliArgs };
 export type { CliIo, RunCliDependencies } from "./cli-runtime.js";
-
 const DEFAULT_DEPENDENCIES: RunCliDependencies = {
   createRuntime: createLocalAgentRuntime,
 };
 const WORKFLOW_MANIFEST_EXTENSIONS = new Set([".json"]);
-
 export async function runCli(
   argv: string[],
   io: CliIo,
@@ -141,6 +140,7 @@ async function executeRun(
     parentSignal,
     options.threadId ?? "thread_cli_preflight",
     async (services) => {
+      await configureCliRunCredential(services, options, io.env);
       const thread = options.threadId
         ? existingThread(services, options)
         : await newThread(services, options);

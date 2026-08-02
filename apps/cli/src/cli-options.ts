@@ -26,24 +26,21 @@ import {
   WORKFLOW_VALUE_OPTIONS,
   type CliWorkflowOptions,
 } from "./cli-workflow-options.js";
+import {
+  parseRunOptions,
+  RUN_VALUE_OPTIONS,
+  type CliRunOptions,
+} from "./cli-run-options.js";
 
 export type { CliWorkflowOptions };
+export type { CliRunOptions };
 export type {
   CliExecutionOptions,
   CliWorkspaceOptions,
 } from "./cli-execution-options.js";
 
 export const CLI_VERSION = "0.1.0";
-const MAX_PROMPT_BYTES = 64 * 1_024;
-const MAX_TITLE_CHARS = 160;
 const MAX_BRANCH_TITLE_CHARS = 100;
-
-export interface CliRunOptions extends CliExecutionOptions {
-  prompt: string;
-  agentId?: string;
-  threadId?: string;
-  title?: string;
-}
 
 export interface CliResumeOptions extends CliExecutionOptions {
   threadId: string;
@@ -113,16 +110,6 @@ export type CliAction =
   | { kind: "rpc"; options: CliRpcOptions }
   | { kind: "workflow"; options: CliWorkflowOptions };
 
-const RUN_VALUE_OPTIONS = new Set([
-  "--workspace",
-  "--data-root",
-  "--prompt",
-  "--model",
-  "--agent",
-  "--thread",
-  "--title",
-  "--timeout-ms",
-]);
 const RESUME_VALUE_OPTIONS = new Set([
   "--workspace",
   "--data-root",
@@ -246,44 +233,6 @@ export function parseCliArgs(argv: string[]): CliAction {
   }
   if (command === "rpc") return parseRpcOptions(values, jsonl);
   return parseWorkflowOptions(values, flags, jsonl);
-}
-
-function parseRunOptions(
-  values: Map<string, string>,
-  jsonl: boolean,
-): Extract<CliAction, { kind: "run" }> {
-  const workspace = requiredValue(values, "--workspace");
-  const prompt = requiredValue(values, "--prompt");
-  if (Buffer.byteLength(prompt, "utf8") > MAX_PROMPT_BYTES) {
-    throw new Error(`--prompt exceeds ${MAX_PROMPT_BYTES} UTF-8 bytes`);
-  }
-  const threadId = optionalResourceId(values, "--thread");
-  const agentId = optionalResourceId(values, "--agent");
-  if (threadId && values.has("--title")) {
-    throw new Error("--title cannot be used with an existing --thread");
-  }
-  const rawTitle = values.get("--title");
-  const title = rawTitle?.trim();
-  if (rawTitle !== undefined && (!title || title.length > MAX_TITLE_CHARS)) {
-    throw new Error(`--title must be 1-${MAX_TITLE_CHARS} characters`);
-  }
-  const model = optionalModelRef(values);
-  return {
-    kind: "run",
-    options: {
-      workspace,
-      prompt,
-      timeoutMs: parseTimeout(values.get("--timeout-ms")),
-      jsonl,
-      ...(values.has("--data-root")
-        ? { dataRoot: requiredValue(values, "--data-root") }
-        : {}),
-      ...(model ? { model } : {}),
-      ...(agentId ? { agentId } : {}),
-      ...(threadId ? { threadId } : {}),
-      ...(title ? { title } : {}),
-    },
-  };
 }
 
 function parseResumeOptions(
@@ -644,6 +593,7 @@ TUI options:
 
 Run options:
   --prompt <text>        User prompt for the Run
+  --credential-env <var> Register/reuse this model credential environment name
   --agent <agent-id>     Agent for a new Thread
   --thread <thread-id>   Append to an existing Thread
   --title <text>         Title for a new Thread

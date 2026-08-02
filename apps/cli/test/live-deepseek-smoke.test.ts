@@ -49,17 +49,6 @@ describeLive("live DeepSeek CLI smoke", () => {
     const workspaceRoot = path.join(root, "workspace");
     const dataRoot = path.join(root, "state");
     await mkdir(workspaceRoot);
-    const setup = await createLocalAgentRuntime({
-      workspaceRoot,
-      dataRoot,
-      env: { DEEPSEEK_API_KEY: apiKey },
-    });
-    await setup.store.createCredentialReference({
-      providerId: "deepseek",
-      label: "CLI live smoke env",
-      source: { type: "environment", variable: "DEEPSEEK_API_KEY" },
-    });
-    await setup.shutdown();
     const stdout = new CaptureWritable();
     const stderr = new CaptureWritable();
 
@@ -74,6 +63,8 @@ describeLive("live DeepSeek CLI smoke", () => {
         "Reply with exactly NAPIER_CLI_LIVE_OK.",
         "--model",
         `deepseek/${modelId}`,
+        "--credential-env",
+        "DEEPSEEK_API_KEY",
         "--jsonl",
       ],
       {
@@ -95,6 +86,25 @@ describeLive("live DeepSeek CLI smoke", () => {
       expect.objectContaining({ type: "done", status: "completed" }),
     );
     expect(stdout.text()).not.toContain(apiKey);
+    const inspection = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      env: { DEEPSEEK_API_KEY: apiKey },
+    });
+    try {
+      expect(inspection.store.listCredentialReferences()).toEqual([
+        expect.objectContaining({
+          providerId: "deepseek",
+          source: {
+            type: "environment",
+            variable: "DEEPSEEK_API_KEY",
+          },
+          availability: "available",
+        }),
+      ]);
+    } finally {
+      await inspection.shutdown();
+    }
   }, 60_000);
 
   it("resumes an interrupted Run through the real model", async () => {

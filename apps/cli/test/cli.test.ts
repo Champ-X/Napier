@@ -45,6 +45,8 @@ describe("Napier one-shot CLI", () => {
         "Inspect the workspace.",
         "--model",
         "deepseek/deepseek-v4-flash",
+        "--credential-env",
+        "DEEPSEEK_API_KEY",
         "--timeout-ms",
         "5000",
         "--jsonl",
@@ -55,6 +57,7 @@ describe("Napier one-shot CLI", () => {
         workspace: ".",
         prompt: "Inspect the workspace.",
         model: { provider: "deepseek", id: "deepseek-v4-flash" },
+        credentialEnv: "DEEPSEEK_API_KEY",
         timeoutMs: 5_000,
         jsonl: true,
       },
@@ -96,6 +99,30 @@ describe("Napier one-shot CLI", () => {
         "999",
       ]),
     ).toThrow("--timeout-ms must be");
+    expect(() =>
+      parseCliArgs([
+        "run",
+        "--workspace",
+        ".",
+        "--prompt",
+        "x",
+        "--credential-env",
+        "DEEPSEEK_API_KEY",
+      ]),
+    ).toThrow("--credential-env requires a live --model");
+    expect(() =>
+      parseCliArgs([
+        "run",
+        "--workspace",
+        ".",
+        "--prompt",
+        "x",
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "--credential-env",
+        "lowercase-key",
+      ]),
+    ).toThrow("--credential-env is invalid");
   });
 
   it("streams hash-bound JSONL frames through the real Agent Runtime", async () => {
@@ -333,6 +360,110 @@ describe("Napier one-shot CLI", () => {
       }),
     ]);
     expect(stdout.text()).not.toContain(secret);
+  });
+
+  it("bootstraps and reuses an explicit environment credential locator", async () => {
+    const fixture = await createFixture();
+    const provider = fauxProvider({ provider: "deepseek" });
+    provider.setResponses([
+      fauxAssistantMessage("FIRST_TASK_OK"),
+      fauxAssistantMessage('{"facts":[]}'),
+      fauxAssistantMessage("SECOND_TASK_OK"),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const secret = "PRIVATE_EXPLICIT_DEEPSEEK_KEY";
+    const dependencies = providerDependencies(provider);
+    const runOnce = async (prompt: string): Promise<CaptureWritable> => {
+      const stdout = new CaptureWritable();
+      const code = await runCli(
+        [
+          "run",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--prompt",
+          prompt,
+          "--model",
+          "deepseek/faux-1",
+          "--credential-env",
+          "DEEPSEEK_API_KEY",
+          "--jsonl",
+        ],
+        {
+          cwd: fixture.root,
+          env: { DEEPSEEK_API_KEY: secret },
+          stdout,
+          stderr: new CaptureWritable(),
+        },
+        dependencies,
+      );
+      expect(code).toBe(0);
+      expect(stdout.text()).not.toContain(secret);
+      return stdout;
+    };
+
+    expect(parseFrames((await runOnce("First task.")).text()).at(-1)).toEqual(
+      expect.objectContaining({ type: "done", status: "completed" }),
+    );
+    expect(parseFrames((await runOnce("Second task.")).text()).at(-1)).toEqual(
+      expect.objectContaining({ type: "done", status: "completed" }),
+    );
+
+    const providerCalls = provider.state.callCount;
+    const conflictStdout = new CaptureWritable();
+    const conflictCode = await runCli(
+      [
+        "run",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--prompt",
+        "Conflicting locator.",
+        "--model",
+        "deepseek/faux-1",
+        "--credential-env",
+        "OTHER_DEEPSEEK_KEY",
+        "--jsonl",
+      ],
+      {
+        cwd: fixture.root,
+        env: { OTHER_DEEPSEEK_KEY: "PRIVATE_CONFLICTING_KEY" },
+        stdout: conflictStdout,
+        stderr: new CaptureWritable(),
+      },
+      dependencies,
+    );
+    expect(conflictCode).toBe(1);
+    expect(provider.state.callCount).toBe(providerCalls);
+    expect(conflictStdout.text()).not.toContain("PRIVATE_CONFLICTING_KEY");
+
+    const inspection = await createLocalAgentRuntime({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      env: { DEEPSEEK_API_KEY: secret },
+      sandbox: new UnsupportedSandboxAdapter("cli-credential-inspection"),
+    });
+    try {
+      expect(inspection.store.listCredentialReferences()).toEqual([
+        expect.objectContaining({
+          providerId: "deepseek",
+          source: {
+            type: "environment",
+            variable: "DEEPSEEK_API_KEY",
+          },
+          status: "active",
+          availability: "available",
+        }),
+      ]);
+      expect(
+        JSON.stringify(inspection.store.listCredentialReferences()),
+      ).not.toContain(secret);
+      expect(inspection.store.listThreads()).toHaveLength(3);
+    } finally {
+      await inspection.shutdown();
+    }
   });
 
   it("does not use an environment secret without a registered reference", async () => {

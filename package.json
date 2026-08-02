@@ -34,7 +34,7 @@
     "check:web-dist-receipt": "node scripts/check-web-dist.mjs --verify-receipt-path docs/artifacts/web-dist-audit-0.1.0.json",
     "dev": "npm run build:core && concurrently -n server,web -c yellow,cyan \"npm run dev -w @napier/server\" \"npm run dev -w @napier/web\"",
     "format": "prettier --write .",
-    "napier": "npm run build:core && npm run build -w @napier/cli && node apps/cli/dist/index.js",
+    "napier": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env apps/cli/dist/index.js",
     "postinstall": "node scripts/prepare-node-pty.mjs",
     "test": "npm run test:root && npm run test --workspaces --if-present",
     "test:live-browser": "npm run test:live-browser -w @napier/runtime",
