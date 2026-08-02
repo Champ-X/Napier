@@ -27,12 +27,9 @@ import type {
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
   CreateInboundChannelRequest,
   ApplyInboundDeadLetterRetryRequest,
-  CreateMacOsKeychainCredentialRequest,
   CreateEvaluationCasebookRequest,
   CreateEvaluationSuiteRequest,
   CreateBranchRequest,
-  CreateCredentialReferenceRequest,
-  CredentialReference,
   CreateExecutionPlanRequest,
   CreateMcpExtensionRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
@@ -263,7 +260,6 @@ import type {
   CurateEvaluationCaseRequest,
   RemoveEvaluationCaseRequest,
   SetExtensionEnabledRequest,
-  SetCredentialReferenceStatusRequest,
   SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   SetExecutionPlanBlueprintRecordStatusRequest,
   SelectExecutionPlanBlueprintRecordRequest,
@@ -453,6 +449,12 @@ import {
   readOptionalLimitedJson,
   RequestBodyTooLargeError,
 } from "./http-request-body.js";
+import {
+  normalizeBoundedText,
+  requestRecord,
+  validThreadId,
+} from "./http-request-validation.js";
+import { registerCredentialHttp } from "./credential-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
 import {
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyQueueResult,
@@ -654,8 +656,6 @@ const MAX_CHANNEL_ADMIN_REQUEST_BYTES = 8 * 1024;
 const MAX_CHANNEL_ADAPTER_PREVIEW_REQUEST_BYTES =
   MAX_INBOUND_BODY_BYTES + 8 * 1024;
 const MAX_DEAD_LETTER_EXPORT_VERIFY_REQUEST_BYTES = 2 * 1024 * 1024;
-const MAX_CREDENTIAL_REQUEST_BYTES = 8 * 1024;
-const MAX_CREDENTIAL_SECRET_REQUEST_BYTES = 16 * 1024;
 const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
 const MAX_AGENT_PROFILE_REQUEST_BYTES = 32 * 1024;
 const MAX_EXTENSION_ADMIN_REQUEST_BYTES = 64 * 1024;
@@ -8604,161 +8604,7 @@ export function createApp(services: NapierServices): Hono {
   });
 
   registerMemoryHttp(app, services.store);
-
-  app.get("/api/credentials", (context) => {
-    const references = services.store.listCredentialReferences();
-    setCredentialReferenceListHeaders(context, references);
-    return context.json(references);
-  });
-
-  app.post("/api/credentials", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_CREDENTIAL_REQUEST_BYTES,
-        "Credential reference request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCreateCredentialReferenceRequest(input);
-    if (!body) {
-      return jsonError(context, "Credential reference request is invalid", 400);
-    }
-    if (body.threadId) services.store.getThread(body.threadId);
-    if (!services.models.models.getProvider(body.providerId)) {
-      return jsonError(context, `Provider not found: ${body.providerId}`, 400);
-    }
-    const reference = await services.store.createCredentialReference(body);
-    await appendCredentialEvent(
-      services,
-      body.threadId,
-      "credential.reference.created",
-      reference,
-    );
-    setCredentialReferenceHeaders(context, reference);
-    return context.json(reference, 201);
-  });
-
-  app.post("/api/credentials/macos-keychain", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_CREDENTIAL_SECRET_REQUEST_BYTES,
-        "macOS Keychain credential request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCreateMacOsKeychainCredentialRequest(input);
-    if (!body) {
-      return jsonError(
-        context,
-        "macOS Keychain credential request is invalid",
-        400,
-      );
-    }
-    if (body.threadId) services.store.getThread(body.threadId);
-    if (!services.models.models.getProvider(body.providerId)) {
-      return jsonError(context, `Provider not found: ${body.providerId}`, 400);
-    }
-    let reference;
-    try {
-      reference = await services.credentials.createMacOsKeychainReference(body);
-    } catch (error) {
-      if (isCredentialReferenceMutationError(error)) {
-        return jsonError(context, error.message, 400);
-      }
-      throw error;
-    }
-    await appendCredentialEvent(
-      services,
-      body.threadId,
-      "credential.reference.keychain_created",
-      reference,
-    );
-    setCredentialReferenceHeaders(context, reference);
-    return context.json(reference, 201);
-  });
-
-  app.post("/api/credentials/:referenceId/check", async (context) => {
-    let input: unknown;
-    try {
-      input = await readOptionalLimitedJson(
-        context.req.raw,
-        MAX_CREDENTIAL_REQUEST_BYTES,
-        "Credential check request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCredentialThreadContextRequest(input);
-    if (!body) {
-      return jsonError(context, "Credential check request is invalid", 400);
-    }
-    if (body.threadId) services.store.getThread(body.threadId);
-    const reference = await services.credentials.check(
-      context.req.param("referenceId"),
-    );
-    await appendCredentialEvent(
-      services,
-      body.threadId,
-      "credential.reference.checked",
-      reference,
-    );
-    setCredentialReferenceHeaders(context, reference);
-    return context.json(reference);
-  });
-
-  app.post("/api/credentials/:referenceId/status", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_CREDENTIAL_REQUEST_BYTES,
-        "Credential status request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseSetCredentialReferenceStatusRequest(input);
-    if (!body) {
-      return jsonError(context, "Credential status request is invalid", 400);
-    }
-    if (body.threadId) services.store.getThread(body.threadId);
-    const reference = await services.store.setCredentialReferenceStatus(
-      context.req.param("referenceId"),
-      body.status,
-    );
-    await appendCredentialEvent(
-      services,
-      body.threadId,
-      body.status === "active"
-        ? "credential.reference.enabled"
-        : "credential.reference.disabled",
-      reference,
-    );
-    setCredentialReferenceHeaders(context, reference);
-    return context.json(reference);
-  });
+  registerCredentialHttp(app, services);
 
   app.get("/api/extensions", (context) => {
     const agentId = context.req.query("agent");
@@ -12481,18 +12327,6 @@ function parseInboundRetryPolicy(
   return { maxAttempts, baseDelayMs };
 }
 
-function normalizeBoundedText(
-  input: unknown,
-  minLength: number,
-  maxLength: number,
-): string | undefined {
-  if (typeof input !== "string") return undefined;
-  const normalized = input.replace(/\s+/g, " ").trim();
-  return normalized.length >= minLength && normalized.length <= maxLength
-    ? normalized
-    : undefined;
-}
-
 function normalizeBoundedPrompt(
   input: unknown,
   maxLength: number,
@@ -12504,149 +12338,6 @@ function normalizeBoundedPrompt(
     : undefined;
 }
 
-function parseCreateCredentialReferenceRequest(
-  input: unknown,
-): CreateCredentialReferenceRequest | undefined {
-  const record = requestRecord(input, [
-    "providerId",
-    "label",
-    "source",
-    "threadId",
-  ]);
-  const providerId = normalizeProviderId(record?.["providerId"]);
-  const label = normalizeBoundedText(record?.["label"], 1, 100);
-  const source = parseCredentialReferenceSource(record?.["source"]);
-  const threadId = record?.["threadId"];
-  if (
-    !record ||
-    !providerId ||
-    !label ||
-    !source ||
-    (threadId !== undefined && !validThreadId(threadId))
-  ) {
-    return undefined;
-  }
-  return {
-    providerId,
-    label,
-    source,
-    ...(typeof threadId === "string" ? { threadId } : {}),
-  };
-}
-
-function parseCreateMacOsKeychainCredentialRequest(
-  input: unknown,
-): CreateMacOsKeychainCredentialRequest | undefined {
-  const record = requestRecord(input, [
-    "providerId",
-    "label",
-    "service",
-    "account",
-    "secret",
-    "replaceExisting",
-    "threadId",
-  ]);
-  const providerId = normalizeProviderId(record?.["providerId"]);
-  const label = normalizeBoundedText(record?.["label"], 1, 100);
-  const service = parseSingleLineText(record?.["service"], 1, 200);
-  const account = parseSingleLineText(record?.["account"], 1, 200);
-  const secret = parseCredentialSecret(record?.["secret"]);
-  const replaceExisting = record?.["replaceExisting"];
-  const threadId = record?.["threadId"];
-  if (
-    !record ||
-    !providerId ||
-    !label ||
-    !service ||
-    !account ||
-    !secret ||
-    (replaceExisting !== undefined && typeof replaceExisting !== "boolean") ||
-    (threadId !== undefined && !validThreadId(threadId))
-  ) {
-    return undefined;
-  }
-  return {
-    providerId,
-    label,
-    service,
-    account,
-    secret,
-    ...(typeof replaceExisting === "boolean" ? { replaceExisting } : {}),
-    ...(typeof threadId === "string" ? { threadId } : {}),
-  };
-}
-
-function parseCredentialThreadContextRequest(
-  input: unknown,
-): { threadId?: string } | undefined {
-  if (input === undefined) return {};
-  const record = requestRecord(input, ["threadId"]);
-  const threadId = record?.["threadId"];
-  return record && (threadId === undefined || validThreadId(threadId))
-    ? {
-        ...(typeof threadId === "string" ? { threadId } : {}),
-      }
-    : undefined;
-}
-
-function parseSetCredentialReferenceStatusRequest(
-  input: unknown,
-): SetCredentialReferenceStatusRequest | undefined {
-  const record = requestRecord(input, ["status", "threadId"]);
-  const status = record?.["status"];
-  const threadId = record?.["threadId"];
-  return record &&
-    (status === "active" || status === "disabled") &&
-    (threadId === undefined || validThreadId(threadId))
-    ? {
-        status,
-        ...(typeof threadId === "string" ? { threadId } : {}),
-      }
-    : undefined;
-}
-
-function parseCredentialReferenceSource(
-  input: unknown,
-): CreateCredentialReferenceRequest["source"] | undefined {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    return undefined;
-  }
-  const type = (input as Record<string, unknown>)["type"];
-  if (type === "environment") {
-    const record = requestRecord(input, ["type", "variable"]);
-    const variable =
-      typeof record?.["variable"] === "string"
-        ? record["variable"].trim()
-        : undefined;
-    return variable && /^[A-Z_][A-Z0-9_]{1,127}$/.test(variable)
-      ? { type, variable }
-      : undefined;
-  }
-  if (type === "macos_keychain") {
-    const record = requestRecord(input, ["type", "service", "account"]);
-    const service = parseSingleLineText(record?.["service"], 1, 200);
-    const account = parseSingleLineText(record?.["account"], 1, 200);
-    return record && service && account
-      ? { type, service, account }
-      : undefined;
-  }
-  return undefined;
-}
-
-function parseCredentialSecret(input: unknown): string | undefined {
-  if (typeof input !== "string") return undefined;
-  const secret = input.trim();
-  return secret.length >= 8 && secret.length <= 4096 && !/[\u0000]/.test(secret)
-    ? secret
-    : undefined;
-}
-
-function normalizeProviderId(input: unknown): string | undefined {
-  if (typeof input !== "string") return undefined;
-  const normalized = input.trim().toLowerCase();
-  return /^[a-z][a-z0-9_-]{0,63}$/.test(normalized) ? normalized : undefined;
-}
-
 function parseOptionalBoundedText(
   input: unknown,
   maxLength: number,
@@ -12655,20 +12346,6 @@ function parseOptionalBoundedText(
   if (typeof input !== "string") return undefined;
   const normalized = input.replace(/\s+/g, " ").trim();
   return normalized.length <= maxLength ? normalized : undefined;
-}
-
-function parseSingleLineText(
-  input: unknown,
-  minLength: number,
-  maxLength: number,
-): string | undefined {
-  if (typeof input !== "string" || /[\u0000\r\n]/.test(input)) {
-    return undefined;
-  }
-  const normalized = input.replace(/\s+/g, " ").trim();
-  return normalized.length >= minLength && normalized.length <= maxLength
-    ? normalized
-    : undefined;
 }
 
 function parseCreateExecutionPlanRequest(
@@ -13564,16 +13241,6 @@ function isInboundMessageValidationError(error: unknown): error is Error {
     (error.message.startsWith("Inbound idempotency ") ||
       error.message.startsWith("Inbound message ") ||
       error.message.startsWith("Inbound model "))
-  );
-}
-
-function isCredentialReferenceMutationError(error: unknown): error is Error {
-  if (!(error instanceof Error)) return false;
-  return (
-    error.message.startsWith("Provider already has an active credential") ||
-    error.message.startsWith("Credential reference source already exists") ||
-    error.message.startsWith("Credential secret") ||
-    error.message.startsWith("macOS Keychain")
   );
 }
 
@@ -17595,10 +17262,6 @@ function isPlanClientError(error: Error): boolean {
   ].some((message) => error.message.toLowerCase().includes(message));
 }
 
-function validThreadId(value: unknown): value is string {
-  return typeof value === "string" && /^thread_[a-z0-9]{8,80}$/.test(value);
-}
-
 function validAgentId(value: unknown): value is string {
   return typeof value === "string" && /^agent_[a-z0-9_]{2,80}$/.test(value);
 }
@@ -20649,61 +20312,6 @@ function setExtensionRecordHeaders(
     context.header(
       "X-Napier-Extension-Package-Binding-SHA256",
       extension.packageBinding.contentSha256,
-    );
-  }
-}
-
-function setCredentialReferenceListHeaders(
-  context: Context,
-  references: readonly CredentialReference[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, references);
-  context.header("X-Napier-Credential-Count", String(references.length));
-  for (const status of [
-    "active",
-    "disabled",
-  ] satisfies CredentialReference["status"][]) {
-    context.header(
-      `X-Napier-Credential-${status[0]!.toUpperCase()}${status.slice(1)}-Count`,
-      String(
-        references.filter((reference) => reference.status === status).length,
-      ),
-    );
-  }
-  for (const availability of [
-    "unknown",
-    "available",
-    "missing",
-    "error",
-  ] satisfies CredentialReference["availability"][]) {
-    context.header(
-      `X-Napier-Credential-${availability[0]!.toUpperCase()}${availability.slice(1)}-Count`,
-      String(
-        references.filter(
-          (reference) => reference.availability === availability,
-        ).length,
-      ),
-    );
-  }
-}
-
-function setCredentialReferenceHeaders(
-  context: Context,
-  reference: CredentialReference,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, reference);
-  context.header("X-Napier-Credential-Id", reference.id);
-  context.header("X-Napier-Credential-Provider", reference.providerId);
-  context.header("X-Napier-Credential-Source-Type", reference.source.type);
-  context.header("X-Napier-Credential-Status", reference.status);
-  context.header("X-Napier-Credential-Availability", reference.availability);
-  context.header("X-Napier-Credential-Revision", String(reference.revision));
-  if (reference.lastCheckedAt) {
-    context.header(
-      "X-Napier-Credential-Last-Checked-At",
-      reference.lastCheckedAt,
     );
   }
 }
@@ -25848,19 +25456,6 @@ function jsonByteLength(value: unknown): number {
   return Buffer.byteLength(JSON.stringify(value), "utf8");
 }
 
-function requestRecord(
-  input: unknown,
-  supportedKeys: string[],
-): Record<string, unknown> | undefined {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    return undefined;
-  }
-  const record = input as Record<string, unknown>;
-  return Object.keys(record).every((key) => supportedKeys.includes(key))
-    ? record
-    : undefined;
-}
-
 function nonNegativeSafeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
@@ -26839,31 +26434,5 @@ async function appendExtensionEvent(
     category: "extension",
     visibility: "user",
     payload,
-  });
-}
-
-async function appendCredentialEvent(
-  services: NapierServices,
-  threadId: string | undefined,
-  type: string,
-  reference: CredentialReference,
-): Promise<void> {
-  if (!threadId) return;
-  await services.store.appendEvent({
-    threadId,
-    runId: createId("runctl"),
-    type,
-    category: "credential",
-    visibility: "user",
-    payload: {
-      referenceId: reference.id,
-      providerId: reference.providerId,
-      label: reference.label,
-      sourceType: reference.source.type,
-      status: reference.status,
-      availability: reference.availability,
-      revision: reference.revision,
-      ...(reference.lastError ? { error: reference.lastError } : {}),
-    },
   });
 }

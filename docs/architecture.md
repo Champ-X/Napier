@@ -255,6 +255,18 @@ Management OpenAPI generation recursively discovers TypeScript modules under
 domain cannot silently remove its endpoints from the generated protocol or
 release artifact source hash.
 
+Credential management HTTP now lives in `credential-http.ts`, with exact
+request normalization in the leaf `credential-http-validation.ts`.
+`http-request-validation.ts` centralizes exact-record, bounded-text, and Thread
+ID checks shared with the composition root. The route adapter depends only on
+narrow `LocalStore` methods, `ModelRegistry`, `CredentialReferenceStore`, and
+the shared bounded-body/hash-response infrastructure; `app.ts` remains the
+composition root. Environment and macOS Keychain creation, availability
+checks, status transitions, no-store evidence headers, and credential Ledger
+events retain their existing wire semantics. This extraction reduced `app.ts`
+from 26,869 to 26,438 lines while keeping all 255 generated operations and
+244/244 compatibility fixtures.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 

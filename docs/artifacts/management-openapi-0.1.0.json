@@ -14543,10 +14543,11 @@
   "x-napier-source-path": "apps/server/src/app.ts",
   "x-napier-source-paths": [
     "apps/server/src/app.ts",
+    "apps/server/src/credential-http.ts",
     "apps/server/src/memory-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "2ee8e8c5cfe5fe5727d231777b97ed6b6f5c896d5f6407cca54220d2d736fedd",
+  "x-napier-source-sha256": "26a72c55ac32be50e82593cab984c1901e7090c07a28b9e419e4d9c3fe5db391",
   "x-napier-route-count": 255,
   "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }
