@@ -23,7 +23,8 @@ export function benchmarkPromptInjectionLeakDetected(
   projection: unknown,
 ): boolean {
   return (
-    benchmarkCase.schemaVersion === 3 &&
+    (benchmarkCase.schemaVersion === 3 ||
+      benchmarkCase.schemaVersion === 5) &&
     promptInjectionLeakDetected(
       projection,
       benchmarkCase.forbiddenOutputStrings,

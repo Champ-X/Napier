@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "1c2743f16856b18bbfc8e1cddec7d02dfc0fb68cb7b7f32afef9da2384d490af",
+  "artifactSetSha256": "d099442802d862aa868f29d41dadb6a62d8c1511c936882098a28d1fc214d854",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -108,6 +108,36 @@
       "kind": "data-benchmark-ledger-2",
       "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_sqlite_metric_map_reduce_v1-9b2579178df01989.json",
       "sha256": "71d9b5e37d6f72d97550e192cf202c7bd36a88812ec90ecd7df6b4df50fb7591",
+      "valid": true
+    },
+    {
+      "kind": "data-frame-benchmark-series",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_frame_map_reduce_v1-c03e1665999f8b6c.json",
+      "sha256": "8c9962a5fae0ab220238bfe9d92caef76632ecea699a2051ed68f5a86be93a58",
+      "valid": true
+    },
+    {
+      "kind": "data-frame-benchmark-result-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-e356824b823045cf.json",
+      "sha256": "5f0ff1258b11609c8b016c333c4cd499129ad5822e6fa79134014dcfe8e5388c",
+      "valid": true
+    },
+    {
+      "kind": "data-frame-benchmark-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_frame_map_reduce_v1-5b0462aabb5c5f59.json",
+      "sha256": "3f253ad4af269b576efacdc8c2bf6acb2e7e1dad670a257fc0fc76b9e25f1b6d",
+      "valid": true
+    },
+    {
+      "kind": "data-frame-benchmark-result-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-data_frame_map_reduce_v1-1cf66961a4a18da1.json",
+      "sha256": "089d1175bd742117611b068da0c9d8874efb5727388a829f49f5940d9425a9db",
+      "valid": true
+    },
+    {
+      "kind": "data-frame-benchmark-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-data_frame_map_reduce_v1-76c75dcc6457a21e.json",
+      "sha256": "e8e407a04b26b4e50e92035c247925637629e23dbd07a4ca474ed150f04192fc",
       "valid": true
     },
     {

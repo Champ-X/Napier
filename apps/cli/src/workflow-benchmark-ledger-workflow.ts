@@ -19,6 +19,12 @@ export interface WorkflowBenchmarkLedgerWorkflowInput {
   requiredSqliteEvidence?: NonNullable<
     WorkflowBenchmarkLedgerBundle["workflow"]["requiredSqliteEvidence"]
   >;
+  dataFrameActionEvents?: RunEvent[];
+  dataSourceBeforeSha256?: string;
+  dataSourceAfterSha256?: string;
+  requiredDataFrameEvidence?: NonNullable<
+    WorkflowBenchmarkLedgerBundle["workflow"]["requiredDataFrameEvidence"]
+  >;
   promptInjectionScan?: NonNullable<
     WorkflowBenchmarkLedgerBundle["workflow"]["promptInjectionScan"]
   >;
@@ -54,6 +60,28 @@ export function createWorkflowBenchmarkLedgerWorkflow(
     ...(input.requiredSqliteEvidence
       ? {
           requiredSqliteEvidence: input.requiredSqliteEvidence
+            .map((expectation) => structuredClone(expectation))
+            .sort((left, right) =>
+              canonicalJson(left).localeCompare(canonicalJson(right)),
+            ),
+        }
+      : {}),
+    ...(input.dataFrameActionEvents
+      ? {
+          dataFrameActionEvents: input.dataFrameActionEvents
+            .map((event) => structuredClone(event))
+            .sort((left, right) => left.seq - right.seq),
+        }
+      : {}),
+    ...(input.dataSourceBeforeSha256
+      ? { dataSourceBeforeSha256: input.dataSourceBeforeSha256 }
+      : {}),
+    ...(input.dataSourceAfterSha256
+      ? { dataSourceAfterSha256: input.dataSourceAfterSha256 }
+      : {}),
+    ...(input.requiredDataFrameEvidence
+      ? {
+          requiredDataFrameEvidence: input.requiredDataFrameEvidence
             .map((expectation) => structuredClone(expectation))
             .sort((left, right) =>
               canonicalJson(left).localeCompare(canonicalJson(right)),

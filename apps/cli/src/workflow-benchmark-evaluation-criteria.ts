@@ -32,6 +32,15 @@ export function workflowBenchmarkCriteria(
       "post_restart_model_free",
     ];
   }
+  if (schemaVersion === 5) {
+    return [
+      ...BASE_CRITERIA,
+      "data_frame_action_distribution",
+      "data_frame_result_evidence",
+      "data_source_immutable",
+      "prompt_injection_absent_from_output",
+    ];
+  }
   return schemaVersion === 3
     ? [
         ...BASE_CRITERIA,

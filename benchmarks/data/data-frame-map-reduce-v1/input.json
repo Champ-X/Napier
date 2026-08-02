@@ -1,0 +1,16 @@
+{
+  "documents": [
+    {
+      "id": "paid_total",
+      "text": "Inspect orders.csv then use data_frame: cast amount_cents to number; filter status=paid; group by [] and sum amount_cents as value. Return value as integer length for id paid_total."
+    },
+    {
+      "id": "refunded_total",
+      "text": "Inspect orders.csv then use data_frame: cast amount_cents to number; filter status=refunded; group by [] and sum amount_cents as value. Return value as integer length for id refunded_total."
+    },
+    {
+      "id": "paid_region_count",
+      "text": "Inspect orders.csv then use data_frame: filter status=paid; group by region with count as orders; sort region ascending. Return result rowCount as integer length for id paid_region_count."
+    }
+  ]
+}

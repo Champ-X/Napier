@@ -1,24 +1,62 @@
+import {
+  validWorkflowBenchmarkDataFrameFields,
+  workflowBenchmarkDataFrameFieldDiagnostics,
+} from "./workflow-benchmark-data-frame-evidence.js";
 import { validWorkflowBenchmarkRestartFields } from "./workflow-benchmark-restart-evidence.js";
 import { validWorkflowBenchmarkSecurityFields } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteFields } from "./workflow-benchmark-sqlite-evidence.js";
 
 export function validWorkflowBenchmarkLedgerWorkflow(value: unknown): boolean {
+  return workflowBenchmarkLedgerWorkflowDiagnostics(value).length === 0;
+}
+
+export function workflowBenchmarkLedgerWorkflowDiagnostics(
+  value: unknown,
+): string[] {
   const workflow = recordValue(value);
   const mapRunIds = workflow["mapRunIds"];
-  return (
-    exactRecord(value, workflowKeys(workflow)) &&
-    validWorkflowIdentity(workflow) &&
-    Array.isArray(mapRunIds) &&
-    mapRunIds.every(resourceId) &&
-    new Set(mapRunIds).size === mapRunIds.length &&
-    mapRunIds.every((id, index) => index === 0 || mapRunIds[index - 1]! < id) &&
-    resourceId(workflow["reduceRunId"]) &&
-    validWorkflowBenchmarkSqliteFields(workflow) &&
-    validWorkflowBenchmarkSecurityFields(workflow) &&
-    validWorkflowBenchmarkRestartFields(workflow) &&
-    nonNegativeInteger(workflow["nodeResultCount"]) &&
-    nonNegativeInteger(workflow["completedNodeResultCount"])
-  );
+  const diagnostics: string[] = [];
+  if (!exactRecord(value, workflowKeys(workflow))) {
+    diagnostics.push("workflow_fields_invalid");
+  }
+  if (!validWorkflowIdentity(workflow)) {
+    diagnostics.push("workflow_identity_invalid");
+  }
+  if (
+    !Array.isArray(mapRunIds) ||
+    !mapRunIds.every(resourceId) ||
+    new Set(mapRunIds).size !== mapRunIds.length ||
+    !mapRunIds.every((id, index) => index === 0 || mapRunIds[index - 1]! < id)
+  ) {
+    diagnostics.push("workflow_map_runs_invalid");
+  }
+  if (!resourceId(workflow["reduceRunId"])) {
+    diagnostics.push("workflow_reduce_run_invalid");
+  }
+  if (!validWorkflowBenchmarkSqliteFields(workflow)) {
+    diagnostics.push("workflow_sqlite_fields_invalid");
+  }
+  if (!validWorkflowBenchmarkDataFrameFields(workflow)) {
+    diagnostics.push(
+      "workflow_data_frame_fields_invalid",
+      ...workflowBenchmarkDataFrameFieldDiagnostics(workflow).map(
+        (diagnostic) => `workflow_${diagnostic}`,
+      ),
+    );
+  }
+  if (!validWorkflowBenchmarkSecurityFields(workflow)) {
+    diagnostics.push("workflow_security_fields_invalid");
+  }
+  if (!validWorkflowBenchmarkRestartFields(workflow)) {
+    diagnostics.push("workflow_restart_fields_invalid");
+  }
+  if (
+    !nonNegativeInteger(workflow["nodeResultCount"]) ||
+    !nonNegativeInteger(workflow["completedNodeResultCount"])
+  ) {
+    diagnostics.push("workflow_counts_invalid");
+  }
+  return diagnostics;
 }
 
 function workflowKeys(workflow: Record<string, unknown>): readonly string[] {
@@ -46,6 +84,18 @@ function workflowKeys(workflow: Record<string, unknown>): readonly string[] {
     ...(workflow["requiredSqliteEvidence"] === undefined
       ? []
       : ["requiredSqliteEvidence"]),
+    ...(workflow["dataFrameActionEvents"] === undefined
+      ? []
+      : ["dataFrameActionEvents"]),
+    ...(workflow["dataSourceBeforeSha256"] === undefined
+      ? []
+      : ["dataSourceBeforeSha256"]),
+    ...(workflow["dataSourceAfterSha256"] === undefined
+      ? []
+      : ["dataSourceAfterSha256"]),
+    ...(workflow["requiredDataFrameEvidence"] === undefined
+      ? []
+      : ["requiredDataFrameEvidence"]),
     ...(workflow["promptInjectionScan"] === undefined
       ? []
       : ["promptInjectionScan"]),

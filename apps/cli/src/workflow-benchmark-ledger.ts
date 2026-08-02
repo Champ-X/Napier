@@ -9,7 +9,11 @@ import {
   createWorkflowBenchmarkLedgerWorkflow,
   type WorkflowBenchmarkLedgerWorkflowInput,
 } from "./workflow-benchmark-ledger-workflow.js";
-import { validWorkflowBenchmarkLedgerWorkflow } from "./workflow-benchmark-ledger-workflow-shape.js";
+import { validWorkflowBenchmarkDataFrameEvidenceBinding } from "./workflow-benchmark-data-frame-evidence.js";
+import {
+  validWorkflowBenchmarkLedgerWorkflow,
+  workflowBenchmarkLedgerWorkflowDiagnostics,
+} from "./workflow-benchmark-ledger-workflow-shape.js";
 import { validWorkflowBenchmarkRestartBinding } from "./workflow-benchmark-restart-evidence.js";
 import { workflowBenchmarkPromptInjectionScanMatches } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteEvidenceBinding } from "./workflow-benchmark-sqlite-evidence.js";
@@ -100,9 +104,13 @@ export function verifyWorkflowBenchmarkLedgerBundle(input: unknown): {
 } {
   const diagnostics: string[] = [];
   if (!validBundleShape(input)) {
+    const value = recordValue(input);
     return {
       valid: false,
-      diagnostics: ["ledger_shape_invalid"],
+      diagnostics: [
+        "ledger_shape_invalid",
+        ...workflowBenchmarkLedgerWorkflowDiagnostics(value["workflow"]),
+      ],
       bundleSha256: sha256(String(input)),
     };
   }
@@ -144,6 +152,9 @@ export function verifyWorkflowBenchmarkLedgerBundle(input: unknown): {
   }
   if (!validWorkflowBenchmarkSqliteEvidenceBinding(input)) {
     diagnostics.push("ledger_sqlite_evidence_invalid");
+  }
+  if (!validWorkflowBenchmarkDataFrameEvidenceBinding(input)) {
+    diagnostics.push("ledger_data_frame_evidence_invalid");
   }
   if (!workflowBenchmarkPromptInjectionScanMatches(input)) {
     diagnostics.push("ledger_prompt_injection_scan_invalid");

@@ -31,6 +31,12 @@ import {
   workflowBenchmarkResultFileName,
 } from "./workflow-benchmark-contract.js";
 import { executeWorkflowBenchmark } from "./workflow-benchmark-execution.js";
+import { collectWorkflowBenchmarkDataFrameActionEvents } from "./workflow-benchmark-data-frame-evidence.js";
+import {
+  workflowBenchmarkDataFrameEvaluationEvidence,
+  workflowBenchmarkDataFrameLedgerEvidence,
+} from "./workflow-benchmark-data-frame-run-evidence.js";
+import { setupWorkflowBenchmarkDataFrameSource } from "./workflow-benchmark-data-frame-setup.js";
 import { createWorkflowBenchmarkLedgerBundle } from "./workflow-benchmark-ledger.js";
 import {
   workflowBenchmarkRestartEvaluationEvidence,
@@ -46,6 +52,7 @@ import { collectWorkflowBenchmarkSqliteActionEvents } from "./workflow-benchmark
 import { setupWorkflowBenchmarkDatabase } from "./workflow-benchmark-sqlite-setup.js";
 import type {
   WorkflowBenchmarkArtifacts,
+  WorkflowBenchmarkCase,
   WorkflowBenchmarkResult,
 } from "./workflow-benchmark-types.js";
 import { createWorkflowBenchmarkManifest } from "./workflow-benchmark-workflow.js";
@@ -100,6 +107,10 @@ export async function runWorkflowBenchmark(
       workspaceRoot,
       loaded,
     );
+    const dataFrameFixture = await setupWorkflowBenchmarkDataFrameSource(
+      workspaceRoot,
+      loaded,
+    );
     const runtimeOptions: LocalAgentRuntimeOptions = {
       workspaceRoot,
       dataRoot,
@@ -114,11 +125,7 @@ export async function runWorkflowBenchmark(
     if (!(await runtime.models.isConfigured(options.model))) {
       throw new Error("Workflow benchmark model is not configured");
     }
-    await configureWorkflowBenchmarkAgent(
-      runtime,
-      loaded.benchmarkCase.schemaVersion === 2 ||
-        loaded.benchmarkCase.schemaVersion === 3,
-    );
+    await configureWorkflowBenchmarkAgent(runtime, loaded.benchmarkCase);
     const manifest = await createWorkflowBenchmarkManifest({
       store: runtime.store,
       benchmarkCase: loaded.benchmarkCase,
@@ -174,8 +181,15 @@ export async function runWorkflowBenchmark(
       eventsBeforeEvaluation,
       new Set(mapRuns.map((run) => run.id)),
     );
+    const dataFrameActionEvents = collectWorkflowBenchmarkDataFrameActionEvents(
+      eventsBeforeEvaluation,
+      new Set(mapRuns.map((run) => run.id)),
+    );
     const databaseAfterSha256 = databaseFixture
       ? sha256(await readFile(databaseFixture.path))
+      : undefined;
+    const dataSourceAfterSha256 = dataFrameFixture
+      ? sha256(await readFile(dataFrameFixture.path))
       : undefined;
     const reduceModelOrToolEventCount = reduceResult?.runId
       ? eventsBeforeEvaluation.filter(
@@ -236,6 +250,14 @@ export async function runWorkflowBenchmark(
         mapRunIds: mapRuns.map((run) => run.id),
         databaseBeforeSha256: databaseFixture?.sha256,
         databaseAfterSha256,
+        injectionLeakDetected,
+      }),
+      ...workflowBenchmarkDataFrameEvaluationEvidence({
+        benchmarkCase: loaded.benchmarkCase,
+        dataFrameActionEvents,
+        mapRunIds: mapRuns.map((run) => run.id),
+        sourceBeforeSha256: dataFrameFixture?.sha256,
+        sourceAfterSha256: dataSourceAfterSha256,
         injectionLeakDetected,
       }),
       ...workflowBenchmarkRestartEvaluationEvidence({
@@ -302,6 +324,17 @@ export async function runWorkflowBenchmark(
         sqliteActionEvents,
         databaseBeforeSha256: databaseFixture?.sha256,
         databaseAfterSha256,
+        sourceReplaySha256: finalReplay.contentSha256,
+        outputProjectionSha256: sha256(
+          canonicalJson(injectionOutputProjection),
+        ),
+        injectionLeakDetected,
+      }),
+      ...workflowBenchmarkDataFrameLedgerEvidence({
+        benchmarkCase: loaded.benchmarkCase,
+        dataFrameActionEvents,
+        sourceBeforeSha256: dataFrameFixture?.sha256,
+        sourceAfterSha256: dataSourceAfterSha256,
         sourceReplaySha256: finalReplay.contentSha256,
         outputProjectionSha256: sha256(
           canonicalJson(injectionOutputProjection),
@@ -403,12 +436,18 @@ async function configureWorkflowBenchmarkCredential(
 
 async function configureWorkflowBenchmarkAgent(
   runtime: LocalAgentRuntimeServices,
-  sqliteCase: boolean,
+  benchmarkCase: WorkflowBenchmarkCase,
 ): Promise<void> {
-  if (!sqliteCase) return;
+  const tools =
+    benchmarkCase.schemaVersion === 2 || benchmarkCase.schemaVersion === 3
+      ? ["sqlite_query"]
+      : benchmarkCase.schemaVersion === 5
+        ? ["inspect_data", "data_frame"]
+        : undefined;
+  if (!tools) return;
   const agent = runtime.store.listAgents()[0]!;
   await runtime.store.updateAgent(agent.id, {
-    enabledTools: ["sqlite_query"],
+    enabledTools: tools,
   });
 }
 

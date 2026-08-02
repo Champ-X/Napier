@@ -65,6 +65,11 @@ describe("release artifacts audit", () => {
       "data-benchmark-ledger-1",
       "data-benchmark-result-2",
       "data-benchmark-ledger-2",
+      "data-frame-benchmark-series",
+      "data-frame-benchmark-result-1",
+      "data-frame-benchmark-ledger-1",
+      "data-frame-benchmark-result-2",
+      "data-frame-benchmark-ledger-2",
       "security-benchmark-series",
       "security-benchmark-result-1",
       "security-benchmark-ledger-1",
@@ -268,6 +273,37 @@ describe("release artifacts audit", () => {
         "data benchmark series: series_trial_invalid",
         "data benchmark trial 1: result_shape_invalid",
         "data benchmark trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
+  it("fails when retained DataFrame benchmark evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const seriesName = (await readdir(benchmarkRoot))
+      .filter((name) =>
+        name.startsWith(
+          "napier-workflow-benchmark-series-data_frame_map_reduce_v1-",
+        ),
+      )
+      .sort()[0];
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const resultName = series.trials[0].resultFileName;
+    const resultPath = path.join(benchmarkRoot, resultName);
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.evaluation.dataFrameEvidenceMatch = false;
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "DataFrame benchmark series: series_trial_invalid",
+        "DataFrame benchmark trial 1: result_shape_invalid",
+        "DataFrame benchmark trial 1: trial_binding_mismatch",
       ]),
     );
   });

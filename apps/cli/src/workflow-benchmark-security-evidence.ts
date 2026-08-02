@@ -59,6 +59,9 @@ export function validWorkflowBenchmarkSecurityFields(
   const required = workflow["requiredSqliteEvidence"];
   const scan = workflow["promptInjectionScan"];
   if (required === undefined && scan === undefined) return true;
+  if (required === undefined) {
+    return validWorkflowBenchmarkPromptInjectionScan(scan);
+  }
   return (
     Array.isArray(required) &&
     required.length >= 2 &&

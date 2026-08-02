@@ -40,6 +40,8 @@ const defaultWorkflowBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json";
 const defaultDataBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_sqlite_metric_map_reduce_v1-48f028b75bb535cc.json";
+const defaultDataFrameBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-data_frame_map_reduce_v1-c03e1665999f8b6c.json";
 const defaultSecurityBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json";
 const defaultLongHorizonBenchmarkSeriesPath =
@@ -75,6 +77,8 @@ export async function auditReleaseArtifacts(options = {}) {
     options.workflowBenchmarkSeriesPath ?? defaultWorkflowBenchmarkSeriesPath;
   const dataBenchmarkSeriesPath =
     options.dataBenchmarkSeriesPath ?? defaultDataBenchmarkSeriesPath;
+  const dataFrameBenchmarkSeriesPath =
+    options.dataFrameBenchmarkSeriesPath ?? defaultDataFrameBenchmarkSeriesPath;
   const securityBenchmarkSeriesPath =
     options.securityBenchmarkSeriesPath ?? defaultSecurityBenchmarkSeriesPath;
   const longHorizonBenchmarkSeriesPath =
@@ -178,6 +182,15 @@ export async function auditReleaseArtifacts(options = {}) {
     artifactReferences: workflowBenchmarkSeriesArtifactReferences,
     verifySeries: verifyWorkflowBenchmarkSeries,
   });
+  const dataFrameBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
+    repoRoot,
+    seriesPath: dataFrameBenchmarkSeriesPath,
+    errors,
+    artifactKindPrefix: "data-frame-benchmark",
+    diagnosticLabel: "DataFrame benchmark",
+    artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+    verifySeries: verifyWorkflowBenchmarkSeries,
+  });
   const securityBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: securityBenchmarkSeriesPath,
@@ -260,6 +273,7 @@ export async function auditReleaseArtifacts(options = {}) {
     },
     ...workflowBenchmarkArtifacts,
     ...dataBenchmarkArtifacts,
+    ...dataFrameBenchmarkArtifacts,
     ...securityBenchmarkArtifacts,
     ...longHorizonBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
@@ -491,6 +505,11 @@ function parseCliOptions(args) {
     }
     if (arg === "--data-benchmark-series-path") {
       options.dataBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--data-frame-benchmark-series-path") {
+      options.dataFrameBenchmarkSeriesPath = readCliValue(args, index, arg);
       index += 1;
       continue;
     }

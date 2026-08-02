@@ -25,12 +25,16 @@ const CASE_KEYS_V3 = keySet(
 const CASE_KEYS_V4 = keySet(
   "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario requiredRestartCount approvalCustomText contentSha256",
 );
+const CASE_KEYS_V5 = keySet(
+  "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario sourceDataPath sourceDataSha256 workspaceDataPath requiredDataFrameActions requiredDataFrameEvidence forbiddenOutputStrings contentSha256",
+);
 
 export interface LoadedWorkflowBenchmarkCase {
   benchmarkCase: WorkflowBenchmarkCase;
   input: WorkflowBenchmarkInput;
   expected: WorkflowBenchmarkExpected;
   setupSqlSource?: string;
+  sourceData?: string;
 }
 
 export async function loadWorkflowBenchmarkCase(
@@ -73,11 +77,26 @@ export async function loadWorkflowBenchmarkCase(
   ) {
     throw new Error("Workflow benchmark security case binding is invalid");
   }
+  const sourceData =
+    manifest.schemaVersion === 5
+      ? await readTextCaseEntry(root, manifest.sourceDataPath)
+      : undefined;
+  if (
+    manifest.schemaVersion === 5 &&
+    (sha256(sourceData ?? "") !== manifest.sourceDataSha256 ||
+      manifest.requiredDataFrameEvidence.length !== input.documents.length ||
+      manifest.forbiddenOutputStrings.some(
+        (canary) => !sourceData?.includes(canary),
+      ))
+  ) {
+    throw new Error("Workflow benchmark DataFrame case binding is invalid");
+  }
   return {
     benchmarkCase: manifest,
     input,
     expected,
     ...(setupSqlSource === undefined ? {} : { setupSqlSource }),
+    ...(sourceData === undefined ? {} : { sourceData }),
   };
 }
 
@@ -107,13 +126,15 @@ function workflowBenchmarkCaseKeys(input: unknown): readonly string[] {
     input !== null && typeof input === "object" && !Array.isArray(input)
       ? (input as Record<string, unknown>)["schemaVersion"]
       : undefined;
-  return version === 4
-    ? CASE_KEYS_V4
-    : version === 3
-      ? CASE_KEYS_V3
-      : version === 2
-        ? CASE_KEYS_V2
-        : CASE_KEYS_V1;
+  return version === 5
+    ? CASE_KEYS_V5
+    : version === 4
+      ? CASE_KEYS_V4
+      : version === 3
+        ? CASE_KEYS_V3
+        : version === 2
+          ? CASE_KEYS_V2
+          : CASE_KEYS_V1;
 }
 
 function validWorkflowBenchmarkCaseBase(
@@ -124,7 +145,8 @@ function validWorkflowBenchmarkCaseBase(
     (input["schemaVersion"] === 1 ||
       input["schemaVersion"] === 2 ||
       input["schemaVersion"] === 3 ||
-      input["schemaVersion"] === 4) &&
+      input["schemaVersion"] === 4 ||
+      input["schemaVersion"] === 5) &&
     resourceId(input["id"]) &&
     boundedText(input["title"], 1, 160) &&
     boundedText(input["objective"], 1, 500) &&
@@ -148,6 +170,18 @@ function validWorkflowBenchmarkScenarioCase(
       input["requiredRestartCount"] === 1 &&
       typeof input["approvalCustomText"] === "string" &&
       ASCII_TEXT.test(input["approvalCustomText"])
+    );
+  }
+  if (input["schemaVersion"] === 5) {
+    return (
+      input["scenario"] === "data_frame_metric_map_reduce" &&
+      safeRelativeFile(input["sourceDataPath"]) &&
+      digest(input["sourceDataSha256"]) &&
+      safeRelativeFile(input["workspaceDataPath"]) &&
+      canonicalJson(input["requiredDataFrameActions"]) ===
+        canonicalJson(["inspect_data", "data_frame"]) &&
+      validDataFrameEvidenceExpectations(input["requiredDataFrameEvidence"]) &&
+      validForbiddenOutputStrings(input["forbiddenOutputStrings"])
     );
   }
   if (
@@ -174,6 +208,23 @@ function validWorkflowBenchmarkScenarioCase(
       canonicalJson(["schema", "query"]) &&
     validSqliteEvidenceExpectations(input["requiredSqliteEvidence"]) &&
     validForbiddenOutputStrings(input["forbiddenOutputStrings"])
+  );
+}
+
+function validDataFrameEvidenceExpectations(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length >= 2 &&
+    value.length <= 8 &&
+    value.every(
+      (expectation) =>
+        exactRecord(expectation, ["rowsSha256", "rowCount", "columnCount"]) &&
+        digest(expectation["rowsSha256"]) &&
+        integerBetween(expectation["rowCount"], 0, 1_000) &&
+        integerBetween(expectation["columnCount"], 0, 80),
+    ) &&
+    new Set(value.map((expectation) => canonicalJson(expectation))).size ===
+      value.length
   );
 }
 

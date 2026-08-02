@@ -9,6 +9,12 @@ import {
   validWorkflowBenchmarkEvaluationShape,
   validWorkflowBenchmarkResultShape,
 } from "./workflow-benchmark-artifact-shape.js";
+import {
+  workflowBenchmarkDataFrameDiagnostics,
+  workflowBenchmarkDataFrameEvaluationFromBundle,
+  workflowBenchmarkDataFrameEvaluationProjection,
+  type WorkflowBenchmarkDataFrameEvaluationInput,
+} from "./workflow-benchmark-data-frame-evaluation.js";
 import { workflowBenchmarkCriteria } from "./workflow-benchmark-evaluation-criteria.js";
 import { verifyWorkflowBenchmarkLedgerBundle } from "./workflow-benchmark-ledger.js";
 import {
@@ -30,7 +36,9 @@ import type {
   WorkflowBenchmarkResult,
 } from "./workflow-benchmark-types.js";
 
-interface CreateWorkflowBenchmarkEvaluationInput {
+export { createWorkflowBenchmarkResult } from "./workflow-benchmark-result.js";
+
+interface CreateWorkflowBenchmarkEvaluationInput extends WorkflowBenchmarkDataFrameEvaluationInput {
   benchmarkCase: Pick<
     WorkflowBenchmarkCase,
     "id" | "schemaVersion" | "contentSha256"
@@ -115,6 +123,7 @@ export function createWorkflowBenchmarkEvaluation(
     replayValid: input.replayValid,
     credentialLeakDetected: input.credentialLeakDetected,
     ...(sqliteCase ? sqliteEvaluationEvidence(input) : {}),
+    ...workflowBenchmarkDataFrameEvaluationProjection(input),
     ...(restartCase ? workflowBenchmarkRestartEvaluationProjection(input) : {}),
     diagnostics,
   };
@@ -153,6 +162,7 @@ function workflowBenchmarkDiagnostics(
   if (!input.replayValid) diagnostics.push("replay_invalid");
   if (input.credentialLeakDetected) diagnostics.push("credential_leaked");
   appendSqliteDiagnostics(input, diagnostics);
+  diagnostics.push(...workflowBenchmarkDataFrameDiagnostics(input));
   diagnostics.push(...workflowBenchmarkRestartDiagnostics(input));
   return diagnostics;
 }
@@ -211,15 +221,6 @@ function sqliteEvaluationEvidence(
   };
 }
 
-export function createWorkflowBenchmarkResult(
-  content: Omit<WorkflowBenchmarkResult, "contentSha256">,
-): WorkflowBenchmarkResult {
-  return {
-    ...structuredClone(content),
-    contentSha256: sha256(canonicalJson(content as unknown as JsonValue)),
-  };
-}
-
 export function verifyWorkflowBenchmarkArtifacts(
   resultInput: unknown,
   bundleInput: unknown,
@@ -244,7 +245,12 @@ export function verifyWorkflowBenchmarkArtifacts(
   }
   const bundleVerification = verifyWorkflowBenchmarkLedgerBundle(bundleInput);
   if (!bundleVerification.valid) {
-    diagnostics.push("ledger_invalid");
+    diagnostics.push(
+      "ledger_invalid",
+      ...bundleVerification.diagnostics.map(
+        (diagnostic) => `ledger:${diagnostic}`,
+      ),
+    );
   }
   const bundle = bundleInput as WorkflowBenchmarkLedgerBundle;
   if (bundleVerification.valid && !benchmarkBundleMatches(result, bundle)) {
@@ -395,6 +401,9 @@ function benchmarkOutcomeMatches(
       : {}),
     ...(result.evaluation.schemaVersion === 4
       ? workflowBenchmarkRestartEvaluationFromBundle(bundle)
+      : {}),
+    ...(result.evaluation.schemaVersion === 5
+      ? workflowBenchmarkDataFrameEvaluationFromBundle(bundle)
       : {}),
   });
   return (

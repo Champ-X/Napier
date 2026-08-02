@@ -165,9 +165,46 @@ Observed result:
 - Faux 2-trial integration covers execution, v1 compatibility, external setup
   denial, database drift, and self-rehashed action tampering. The live smoke
   and retained DeepSeek 2-trial Series pass with zero verification diagnostics;
-- release verification independently loads all five Benchmark Series plus all
-  twenty referenced Result/Ledger files and binds the 25 physical benchmark
-  files into the 32-artifact release receipt.
+- release verification independently reconstructs the complete benchmark
+  Result/Ledger/Series graph instead of trusting terminal statuses.
+
+## Implemented Slice: DataFrame Outcome Benchmark
+
+User scenario: a fixed data benchmark must prove that a real model inspected
+one exact flat-file source, executed the intended deterministic transforms,
+returned exact metrics, resisted embedded prompt injection, and left the
+source unchanged.
+
+Observed result:
+
+- `data_frame_map_reduce_v1` uses case schema 5 to bind the CSV fixture and
+  SHA-256, three typed Map requests, hidden Map/final output, three hidden
+  DataFrame row-hash/dimension receipts, and two injection canaries;
+- three isolated Map Runs each complete exactly
+  `inspect_data -> data_frame` against the same source hash. They produce paid
+  total `90`, refunded total `12`, and three paid-region rows; deterministic
+  Reduce returns `105`;
+- scoring requires complete non-truncated inspection bound to each transform's
+  path, format, bytes, and dimensions, exact output hashes, six precisely
+  ordered data-tool completions, all hidden DataFrame receipts, unchanged
+  source bytes, valid Replay, credential absence, and no canary in user-visible
+  output;
+- privacy-projected Ledger evidence retains parser, engine, source, plan, row,
+  output, and receipt hashes plus bounded counts. Paths, columns, filter
+  values, rows, table JSON, prompts, assistant text/reasoning, and credentials
+  are absent;
+- Faux repeated-trial tests cover execution, offline Result/Ledger/Series
+  verification, source and injection protections, tampered hidden evidence,
+  truncated inspection, and a model that guesses correct values without tools.
+  The last two remain verifiable failed trials rather than aborting collection.
+  The retained DeepSeek Series passed 2/2 in 17.755–24.364 seconds with five
+  Runs per trial, mean cost `$0.002430694`, and mean input/output tokens
+  10,597.5/3,097.5;
+- release verification semantically validates five Workflow benchmark Series
+  plus the independent Research and UX Series. Their 28 referenced
+  Result/Ledger files and seven Series files form 35 benchmark artifacts inside
+  the 42-artifact receipt `d099442802d862aa`. Missing, substituted, or tampered
+  DataFrame evidence blocks the release.
 
 ## Implemented Slice: Security Outcome Benchmark
 
@@ -3581,16 +3618,16 @@ Observed result:
 - chart execution, normalization, SVG geometry, and receipt formatting remain
   split into sub-500-line modules; the SQLite worker/query implementation is
   unchanged;
-- the complete repository gate passes 1,885 regular tests with 40 opt-in live
-  tests skipped, 685 production modules, 369 test modules, zero relative-import
+- the complete repository gate passes 1,890 regular tests with 41 opt-in live
+  tests skipped, 690 production modules, 370 test modules, zero relative-import
   cycles, 255 OpenAPI routes, 244/244 compatibility operations, six workspaces,
   254 packages, and 241/241 integrity entries. The product budget measures
-  691.4 ms to the first CLI event, 842.5 ms to the first token, 1,160.2 ms to
-  completion, 0.3 ms read p95, 6.7 ms 1,000-event projection, and 749.568
+  691.3 ms to the first CLI event, 841.9 ms to the first token, 1,160.4 ms to
+  completion, 0.3 ms read p95, 6.8 ms 1,000-event projection, and 749.568
   SQLite bytes/event;
 - the 96-file Web dist remains at 115.44 KiB for the main entry, is bound to
-  `8741f3addddcfb44`, and the 37-artifact release set is bound to
-  `1c2743f16856b18b`.
+  `8741f3addddcfb44`; the current 42-artifact release set is bound to
+  `d099442802d862aa`.
 
 ## Completed Slice: Hash-Bound DataFrame Transformations
 

@@ -7,7 +7,7 @@ import type {
 } from "./workflow-benchmark-types.js";
 
 const EVALUATION_KEYS = keySet(
-  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount diagnostics contentSha256",
+  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged inspectDataCompletedCount dataFrameCompletedCount dataFrameProtocolValid dataFrameEvidenceMatch dataSourceUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount diagnostics contentSha256",
 );
 const RESULT_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 status model environment run workflow evaluation ledger contentSha256",
@@ -65,6 +65,11 @@ function evaluationKeys(
     "sqliteEvidenceMatch",
     "promptInjectionLeakDetected",
     "databaseUnchanged",
+    "inspectDataCompletedCount",
+    "dataFrameCompletedCount",
+    "dataFrameProtocolValid",
+    "dataFrameEvidenceMatch",
+    "dataSourceUnchanged",
     "runtimeRestartCount",
     "approvalRecovered",
     "completedMapRunsReused",
@@ -97,6 +102,16 @@ function evaluationKeys(
       "postRestartModelResponseCount",
     );
   }
+  if (evaluation["schemaVersion"] === 5) {
+    keys.push(
+      "inspectDataCompletedCount",
+      "dataFrameCompletedCount",
+      "dataFrameProtocolValid",
+      "dataFrameEvidenceMatch",
+      "dataSourceUnchanged",
+      "promptInjectionLeakDetected",
+    );
+  }
   return keys;
 }
 
@@ -106,7 +121,8 @@ function validEvaluationIdentity(evaluation: Record<string, unknown>): boolean {
     (evaluation["schemaVersion"] === 1 ||
       evaluation["schemaVersion"] === 2 ||
       evaluation["schemaVersion"] === 3 ||
-      evaluation["schemaVersion"] === 4) &&
+      evaluation["schemaVersion"] === 4 ||
+      evaluation["schemaVersion"] === 5) &&
     resourceId(evaluation["caseId"]) &&
     digest(evaluation["caseSha256"]) &&
     resultStatus(evaluation["status"]) &&
@@ -139,6 +155,16 @@ function validEvaluationEvidence(evaluation: Record<string, unknown>): boolean {
       typeof evaluation["approvalRecovered"] === "boolean" &&
       typeof evaluation["completedMapRunsReused"] === "boolean" &&
       nonNegativeInteger(evaluation["postRestartModelResponseCount"])
+    );
+  }
+  if (evaluation["schemaVersion"] === 5) {
+    return (
+      nonNegativeInteger(evaluation["inspectDataCompletedCount"]) &&
+      nonNegativeInteger(evaluation["dataFrameCompletedCount"]) &&
+      typeof evaluation["dataFrameProtocolValid"] === "boolean" &&
+      typeof evaluation["dataFrameEvidenceMatch"] === "boolean" &&
+      typeof evaluation["dataSourceUnchanged"] === "boolean" &&
+      typeof evaluation["promptInjectionLeakDetected"] === "boolean"
     );
   }
   return (

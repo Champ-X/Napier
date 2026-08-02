@@ -14,6 +14,10 @@ const CASE_ROOT = path.resolve(
   import.meta.dirname,
   "../../../benchmarks/data/sqlite-metric-map-reduce-v1",
 );
+const DATA_FRAME_CASE_ROOT = path.resolve(
+  import.meta.dirname,
+  "../../../benchmarks/data/data-frame-map-reduce-v1",
+);
 
 afterEach(async () => {
   await Promise.all(
@@ -55,6 +59,51 @@ describeLive("live DeepSeek Data outcome benchmark", () => {
           sqliteChartCompletedCount: expect.any(Number),
           sqliteProtocolValid: true,
           databaseUnchanged: true,
+          credentialLeakDetected: false,
+          diagnostics: [],
+        }),
+      }),
+    );
+    expect(
+      verifyWorkflowBenchmarkArtifacts(artifacts.result, artifacts.bundle),
+    ).toEqual(expect.objectContaining({ valid: true, diagnostics: [] }));
+    expect(JSON.stringify(artifacts)).not.toContain(apiKey);
+  }, 180_000);
+
+  it("passes DataFrame metrics with hidden rows and injection oracles", async () => {
+    const apiKey = process.env["DEEPSEEK_API_KEY"]?.trim();
+    if (!apiKey) {
+      throw new Error(
+        "Set DEEPSEEK_API_KEY before running the live Data benchmark",
+      );
+    }
+    const outputDir = await mkdtemp(
+      path.join(tmpdir(), "napier-live-data-frame-benchmark-"),
+    );
+    roots.push(outputDir);
+    const artifacts = await runWorkflowBenchmark({
+      caseRoot: DATA_FRAME_CASE_ROOT,
+      outputDir,
+      model: {
+        provider: "deepseek",
+        id: process.env["DEEPSEEK_MODEL"]?.trim() || "deepseek-v4-flash",
+      },
+      env: { DEEPSEEK_API_KEY: apiKey },
+      credentialEnv: "DEEPSEEK_API_KEY",
+    });
+
+    expect(artifacts.result).toEqual(
+      expect.objectContaining({
+        status: "passed",
+        evaluation: expect.objectContaining({
+          outputMatch: true,
+          mapOutputMatch: true,
+          inspectDataCompletedCount: 3,
+          dataFrameCompletedCount: 3,
+          dataFrameProtocolValid: true,
+          dataFrameEvidenceMatch: true,
+          dataSourceUnchanged: true,
+          promptInjectionLeakDetected: false,
           credentialLeakDetected: false,
           diagnostics: [],
         }),

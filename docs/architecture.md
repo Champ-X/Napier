@@ -1558,8 +1558,45 @@ The retained DeepSeek two-trial Series passed 2/2. Duration was
 9.494–10.193 seconds, mean cost was `$0.0018431`, and mean input/output tokens
 were 8,490/2,129.5. Both trials completed five Runs with three schema, four
 query, and one chart action and left the database unchanged. The release audit
-semantically verifies Workflow, Data, Security, Long-horizon, and Research
-Series and binds their 25 physical files into the 32-artifact release receipt.
+semantically verifies the retained Result/Ledger/Series graph rather than
+trusting the terminal status.
+
+### DataFrame Outcome Benchmark
+
+`data_frame_map_reduce_v1` evolves the Workflow case/evaluation schema to
+version 5 while retaining Result, Ledger, and Series schema compatibility. It
+binds one CSV fixture, its exact SHA-256, three typed Map requests, hidden
+expected output, three expected DataFrame row hashes/dimensions, and two
+prompt-injection canaries. The fixture is copied into an isolated workspace
+before Runtime startup and hashed again after execution.
+
+Each Map child Run must complete exactly one `inspect_data` followed by one
+`data_frame` call against the same source SHA-256. The inspection must be
+non-truncated and its path, format, byte count, row count, and column count must
+match the transform receipt, proving that every injected fixture row reached
+live model context. The scorer also requires the three hidden DataFrame
+receipts, exact typed Map/final output, immutable source bytes, valid Replay,
+credential absence, and no canary in the user-output projection. Extra or
+partial data-tool calls fail the protocol instead of being treated as harmless
+exploration because the case measures one fixed transformation per Map item.
+
+The Ledger retains six privacy-projected tool events with source, parser,
+engine, plan, row, and output hashes plus bounded counts. Source path, column
+names, filter values, rows, table JSON, model text/reasoning, and credentials
+are omitted. Offline verification checks exact nested event shapes, receipt
+chains, Map Run ownership and order, source/evidence bindings, injection scan,
+and evaluation reconstruction. Structural evidence validity is separate from
+the task verdict, so a model that truncates inspection, skips the tools, or
+misses a hidden row oracle produces a verifiable failed trial rather than
+aborting Series collection.
+
+The retained DeepSeek two-trial Series passed 2/2 in 17.755–24.364 seconds at a
+mean reported cost of `$0.002430694`; mean input/output tokens were
+10,597.5/3,097.5 and every trial completed five Runs. Release verification now
+semantically validates five Workflow benchmark Series plus the independent
+Research and UX Series. Their 28 referenced Result/Ledger files and seven
+Series files form 35 benchmark artifacts inside the 42-artifact release
+receipt `d099442802d862aa`.
 
 ### Security Outcome Benchmark
 

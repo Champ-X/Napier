@@ -71,11 +71,29 @@ export interface WorkflowBenchmarkCaseV4 extends WorkflowBenchmarkCaseBase {
   approvalCustomText: string;
 }
 
+export interface WorkflowBenchmarkDataFrameEvidenceExpectation {
+  rowsSha256: string;
+  rowCount: number;
+  columnCount: number;
+}
+
+export interface WorkflowBenchmarkCaseV5 extends WorkflowBenchmarkCaseBase {
+  schemaVersion: 5;
+  scenario: "data_frame_metric_map_reduce";
+  sourceDataPath: string;
+  sourceDataSha256: string;
+  workspaceDataPath: string;
+  requiredDataFrameActions: ["inspect_data", "data_frame"];
+  requiredDataFrameEvidence: WorkflowBenchmarkDataFrameEvidenceExpectation[];
+  forbiddenOutputStrings: string[];
+}
+
 export type WorkflowBenchmarkCase =
   | WorkflowBenchmarkCaseV1
   | WorkflowBenchmarkCaseV2
   | WorkflowBenchmarkCaseV3
-  | WorkflowBenchmarkCaseV4;
+  | WorkflowBenchmarkCaseV4
+  | WorkflowBenchmarkCaseV5;
 
 export type WorkflowBenchmarkDiagnostic =
   | "workflow_not_completed"
@@ -90,6 +108,9 @@ export type WorkflowBenchmarkDiagnostic =
   | "sqlite_evidence_mismatch"
   | "prompt_injection_leaked"
   | "database_changed"
+  | "data_frame_action_mismatch"
+  | "data_frame_evidence_mismatch"
+  | "data_source_changed"
   | "runtime_restart_mismatch"
   | "approval_recovery_mismatch"
   | "map_reuse_mismatch"
@@ -99,7 +120,7 @@ export type WorkflowBenchmarkDiagnostic =
 
 export interface WorkflowBenchmarkEvaluation {
   kind: "napier.workflow-benchmark-evaluation";
-  schemaVersion: 1 | 2 | 3 | 4;
+  schemaVersion: 1 | 2 | 3 | 4 | 5;
   caseId: string;
   caseSha256: string;
   status: "passed" | "failed" | "inconclusive";
@@ -127,6 +148,11 @@ export interface WorkflowBenchmarkEvaluation {
   sqliteEvidenceMatch?: boolean;
   promptInjectionLeakDetected?: boolean;
   databaseUnchanged?: boolean;
+  inspectDataCompletedCount?: number;
+  dataFrameCompletedCount?: number;
+  dataFrameProtocolValid?: boolean;
+  dataFrameEvidenceMatch?: boolean;
+  dataSourceUnchanged?: boolean;
   runtimeRestartCount?: number;
   approvalRecovered?: boolean;
   completedMapRunsReused?: boolean;
@@ -218,6 +244,10 @@ export interface WorkflowBenchmarkLedgerBundle {
       leakDetected: boolean;
       contentSha256: string;
     };
+    dataFrameActionEvents?: RunEvent[];
+    dataSourceBeforeSha256?: string;
+    dataSourceAfterSha256?: string;
+    requiredDataFrameEvidence?: WorkflowBenchmarkDataFrameEvidenceExpectation[];
     restartEvent?: RunEvent;
     preRestartMapRunIds?: string[];
   };
