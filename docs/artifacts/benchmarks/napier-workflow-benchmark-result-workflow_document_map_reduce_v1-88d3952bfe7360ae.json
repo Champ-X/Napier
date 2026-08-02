@@ -1,0 +1,77 @@
+{
+  "kind": "napier.workflow-benchmark-result",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-02T09:29:02.597Z",
+  "caseId": "workflow_document_map_reduce_v1",
+  "caseSha256": "30ae0920f2a3a8985add40db9c71f76a0a14bde5232601fc2f864905bfcda918",
+  "status": "passed",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "run": {
+    "threadId": "thread_a520b85bcb2b4921bcff",
+    "planId": "plan_44b4de0623e647c58538",
+    "status": "completed",
+    "durationMs": 3541,
+    "runCount": 5,
+    "completedRunCount": 5,
+    "usage": {
+      "inputTokens": 8572,
+      "outputTokens": 772,
+      "cacheReadTokens": 1152,
+      "cacheWriteTokens": 0,
+      "costUsd": 0.0014194656000000002
+    }
+  },
+  "workflow": {
+    "manifestSha256": "8dbf9aab1231a7a9f0c68ef2ac7e2a262e452d9c19fd21fd2e8d72cd6efad0a5",
+    "blueprintSha256": "c7ce847f93487bd26b9f7ade01dec4353ac315702583ccbbd9d10ddd8423a053",
+    "resultSha256": "18f27348059ad3d57f5accdd126b34d120815f6685b7df5510870892665a3ef8",
+    "outputSha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+    "nodeResultCount": 2,
+    "completedNodeResultCount": 2
+  },
+  "evaluation": {
+    "kind": "napier.workflow-benchmark-evaluation",
+    "schemaVersion": 1,
+    "caseId": "workflow_document_map_reduce_v1",
+    "caseSha256": "30ae0920f2a3a8985add40db9c71f76a0a14bde5232601fc2f864905bfcda918",
+    "status": "passed",
+    "workflowStatus": "completed",
+    "criteriaSha256": "bc20963fe5b922e144695c6f2aaa5ddfd947cb2c77bee768708c748deeda07ac",
+    "expectedOutputSha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+    "actualOutputSha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+    "expectedMapOutputSha256": "c0a3b197e158c3e6cf1b2db325da5646c7c88fee920f5726fc46f5c56bbbe33d",
+    "actualMapOutputSha256": "c0a3b197e158c3e6cf1b2db325da5646c7c88fee920f5726fc46f5c56bbbe33d",
+    "outputMatch": true,
+    "mapOutputMatch": true,
+    "expectedNodeResultCount": 2,
+    "completedNodeResultCount": 2,
+    "expectedMapItemCount": 3,
+    "completedMapRunCount": 3,
+    "mapCompletedEventCount": 3,
+    "reduceCompletedEventCount": 1,
+    "reduceModelOrToolEventCount": 0,
+    "replayValid": true,
+    "credentialLeakDetected": false,
+    "diagnostics": [],
+    "contentSha256": "8e94d9d58a51b0ec6c73811a8eaa83a571c4a828c7a131214ca30b5710edcd9d"
+  },
+  "ledger": {
+    "eventId": "event_420fcf3ecc5c4fc388ec",
+    "eventSeq": 837,
+    "eventSha256": "051128b10da6d3bee58573435c30c06a125463e757b76659eec23cd27de64492",
+    "eventStreamSha256": "7275bf01cf60b4ef5f11080c860158520247144b00c7f3cc61207dbbdf8f6e37",
+    "bundleFileName": "napier-workflow-benchmark-ledger-workflow_document_map_reduce_v1-8cb4c696f6b1ab81.json",
+    "bundleSha256": "8cb4c696f6b1ab81143720fb13d9b60cd5af03c0ed37b80d08408cc1b7871503",
+    "bundleBytes": 44694
+  },
+  "contentSha256": "88d3952bfe7360ae03b7363884f1f1de1fba203a8c23357bd33cfd5cb2b8cdac"
+}

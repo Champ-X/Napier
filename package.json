@@ -12,6 +12,7 @@
   },
   "scripts": {
     "bench:coding": "npm run build:core && npm run build -w @napier/cli && node scripts/run-coding-benchmark.mjs",
+    "bench:workflow": "npm run build:core && npm run build -w @napier/cli && node scripts/run-workflow-benchmark.mjs",
     "bench:product-performance": "npm run build:core && npm run build -w @napier/cli && node scripts/benchmark-product-performance.mjs --output benchmark-results/product-performance.json",
     "bench:store-scale": "npm run build:core && node scripts/benchmark-store-scale.mjs",
     "build": "npm run build:core && npm run build -w @napier/sdk && npm run build -w @napier/cli && npm run build -w @napier/server && npm run build -w @napier/web",
@@ -49,6 +50,7 @@
     "test:live-provider": "npm run test:live-provider -w @napier/runtime",
     "test:live-sqlite": "npm run test:live-sqlite -w @napier/runtime",
     "test:live-workflow-javascript": "npm run test:live-workflow-javascript -w @napier/runtime",
+    "test:live-workflow-benchmark": "npm run test:live-workflow-benchmark -w @napier/cli",
     "test:live-workflow-python": "npm run test:live-workflow-python -w @napier/runtime",
     "test:live-workflow-step": "npm run test:live-workflow-step -w @napier/cli",
     "test:live-deepseek": "npm run test:live-deepseek -w @napier/runtime",

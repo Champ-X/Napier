@@ -1412,6 +1412,43 @@ Run/cost/tool evidence. A non-nested Sandbox run, cross-model execution, more
 Coding categories, reference-project runs, and the other P9 domains remain
 required.
 
+### Workflow Outcome Benchmark
+
+`workflow_document_map_reduce_v1` is the first non-Coding Outcome benchmark.
+Its hash-bound case separates typed input and hidden expected output from the
+Workflow Manifest constructed by the runner. Three documents execute through
+the ordinary read-only Agent Map runtime; a normal deterministic Reduce node
+sums the typed lengths without a model or tool call.
+
+The scorer requires:
+
+- exact final output and ordered Map output hashes;
+- two completed node results and one completed Map child Run per input item;
+- exact `workflow.map.item.completed` and `workflow.reduce.completed` counts;
+- zero `model.response` or `tool.*` events on the Reduce Run;
+- a valid portable Thread Replay bundle and no credential bytes in the
+  Workflow result, Run/Event evidence, or Replay projection.
+
+After scoring, `benchmark.workflow.evaluated` commits the hash-only evaluation
+to the same Thread. Generation first validates the complete Thread Replay,
+then emits a privacy-bounded Ledger projection containing Run summaries,
+terminal/evaluation events, source Replay/event-stream hashes, event-type
+counts, and chained payload-hash receipts. Prompt, assistant text, reasoning,
+document bodies, and high-volume model deltas are not retained. A CAS result
+binds the terminal Workflow event, Manifest, Blueprint, result/output hashes,
+aggregate usage, and projected Ledger. Offline verification validates exact
+nested shapes, hashes/receipt chains, event aggregates, evaluation event, and
+terminal Workflow binding. Substituting another valid Ledger fails.
+
+`--trials 2..10` uses independent workspace, data-root, Thread, Plan, and Run
+lifecycles. The Series rejects duplicate result/Thread identities, verifies
+every result/Ledger pair, and recomputes pass rate plus duration, cost, token,
+and Run-count distributions. The retained DeepSeek two-trial Series passed
+2/2 in 3.115–3.541 seconds at a mean reported cost of `$0.0013821556`.
+Each Ledger is about 44 KiB. Credentials and raw model/task content are absent
+from all retained artifacts. This small fixed case does not establish
+cross-model superiority.
+
 ### Workbench
 
 `@napier/web` maintains a projection of server state. It may optimistically

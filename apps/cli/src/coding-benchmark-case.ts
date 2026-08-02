@@ -1,12 +1,4 @@
-import {
-  cp,
-  lstat,
-  mkdir,
-  readFile,
-  readdir,
-  realpath,
-  writeFile,
-} from "node:fs/promises";
+import { cp, lstat, readFile, readdir, realpath } from "node:fs/promises";
 import path from "node:path";
 
 import ts from "typescript";
@@ -21,6 +13,7 @@ import {
   validateCodingBenchmarkCase,
   type CodingBenchmarkCase,
 } from "./coding-benchmark-contract.js";
+export { writeBenchmarkCasFile as writeCodingBenchmarkCasFile } from "./benchmark-artifact-file.js";
 
 const MAX_FIXTURE_FILES = 256;
 const MAX_FIXTURE_BYTES = 2 * 1024 * 1024;
@@ -164,25 +157,6 @@ export function codingBenchmarkAstSha256(source: string): string {
     ts.ScriptKind.JS,
   );
   return sha256(canonicalJson(astProjection(sourceFile, sourceFile)));
-}
-
-export async function writeCodingBenchmarkCasFile(
-  filePath: string,
-  content: string,
-): Promise<void> {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  try {
-    await writeFile(filePath, content, { encoding: "utf8", flag: "wx" });
-  } catch (error) {
-    if (
-      !(error instanceof Error) ||
-      !("code" in error) ||
-      String(error.code) !== "EEXIST" ||
-      (await readFile(filePath, "utf8")) !== content
-    ) {
-      throw error;
-    }
-  }
 }
 
 async function inspectFixtureTree(root: string): Promise<void> {

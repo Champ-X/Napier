@@ -1214,8 +1214,50 @@ and
 [Ledger bundle](docs/artifacts/benchmarks/napier-benchmark-ledger-coding_pricing_options_migration_v1-e8ef307d538aab40.json).
 It changed exactly the three allowed files in 19.087 seconds, but its LSP and
 outcome Sandbox launches were denied by this host, so it remains inconclusive.
-Cross-model, broader Coding, Research, Workflow, long-horizon, security, UX,
-and reference-project suites remain open.
+### Workflow Outcome Benchmark
+
+The fixed `workflow_document_map_reduce_v1` case runs three typed, parallel
+Agent Map items through the selected model and aggregates their exact outputs
+with the model-free deterministic Reduce node. Success requires the expected
+ordered Map output and total, two completed Workflow node results, three
+isolated `workflow_map_read_only` child Runs, exact Map/Reduce Ledger events,
+zero model/tool events in Reduce, valid portable Replay, and no credential
+leak.
+
+Run one real-provider trial:
+
+```bash
+source .env
+npm run bench:workflow -- \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY
+```
+
+Run and aggregate 2–10 independent trials:
+
+```bash
+npm run bench:workflow -- \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 2
+```
+
+Each trial writes a CAS result plus a privacy-bounded Ledger projection bound
+to a fully verified Thread Replay and source event stream. High-volume model
+deltas are summarized by count and hash; prompt, assistant text, reasoning,
+and document bodies are omitted. The Series binds every pair by hash-derived
+filename and reports task pass rate plus latency, cost, token, and Run-count
+distributions. Offline commands support `--verify-result ... --ledger ...`
+and `--verify-series ...` with no model call.
+
+The checked-in DeepSeek
+[two-trial Workflow series](docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json)
+passed 2/2 trials. Duration was 3.115–3.541 seconds, mean cost was
+`$0.0013821556`, and every trial used five Runs. This is a reproducible fixed
+case, not a cross-model success-rate or superiority claim.
+
+Cross-model, broader Coding and Workflow, Research, Data, long-horizon,
+security, UX, and reference-project suites remain open.
 
 ## Live Models
 

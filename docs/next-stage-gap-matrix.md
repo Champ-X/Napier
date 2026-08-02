@@ -30,7 +30,7 @@ Audit date: 2026-08-02
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, bounded full-screen local `napier tui`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                  |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| P9 outcome benchmark              | Started        | Three fixed CLI Coding cases now cover single-file repair, a multi-file LSP-guided API migration, and debugger-qualified JavaScript repair with repeated trials, Sandbox assertions, capability-completion qualification, distributions, and Ledger evidence. Result/Ledger schema v2 adds privacy-safe per-tool outcome distributions with schema-v1 verification compatibility. Real DeepSeek dogfood passed the single-file and multi-file outcomes, while exposing failures concentrated in read and LSP tools plus one correctly inconclusive nested-Sandbox run. Broader repeated model distributions, non-nested scoring, broader Coding, and other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| P9 outcome benchmark              | In progress    | Three fixed Coding cases cover single-file repair, multi-file LSP migration, and debugger-qualified repair with repeated trials, Sandbox assertions, tool distributions, and Ledger evidence. The first Workflow case now measures real model-backed typed Map fan-out plus deterministic Reduce, exact output, Run isolation, event semantics, Replay validity, credential privacy, offline Result/Ledger verification, and repeated latency/cost/token distributions. DeepSeek passed the retained Workflow series 2/2; the small sample is not a cross-model superiority claim. Research, Data, Long-horizon, Security, and UX cases, broader Coding/Workflow tasks, reference-project execution, and larger cross-model distributions remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Dogfood Evidence: Real DeepSeek Outcomes
@@ -64,7 +64,47 @@ environment:
   discovery, and all three writes completed without failure;
 - live smoke now gates final outcome, allowed change set, diagnostics, and
   completed patch evidence. Tool failures and repeats remain independent
-  distribution metrics rather than being misclassified as task failure.
+  distribution metrics rather than being misclassified as task failure;
+- the real `workflow_document_map_reduce_v1` command passed one trial in
+  2.854 seconds using five Runs and `$0.00148862`, with exact ordered Map and
+  final Reduce output, valid Replay, and no credential leak;
+- a retained two-trial DeepSeek Series passed 2/2 in 3.115–3.541 seconds.
+  Mean cost was `$0.0013821556`, mean input/output tokens were 8,567.5/641,
+  and offline Series verification returned zero diagnostics.
+
+## Implemented Slice: Workflow Outcome Benchmark
+
+User scenario: a Workflow author must be able to prove that real model-backed
+fan-out and deterministic aggregation completed the task correctly, rather
+than relying on a terminal status or model-authored summary.
+
+Observed result:
+
+- `workflow_document_map_reduce_v1` executes three typed documents through
+  ordinary parallel Agent Map child Runs and aggregates exact lengths through
+  the model-free Reduce node;
+- scoring requires exact ordered Map/final output hashes, two completed nodes,
+  three isolated `workflow_map_read_only` Runs, exact Map/Reduce event counts,
+  zero Reduce model/tool events, valid portable Replay, and credential
+  absence;
+- each trial validates the complete Thread Replay, then emits a hash-bound
+  Result and privacy-bounded Ledger projection. Offline verification checks
+  exact shapes, all self-hashes, event receipt chains/aggregates, evaluation
+  and terminal Workflow events, source Replay/event-stream hashes, bundle
+  bytes/name, and Result/Ledger identity; a substituted valid Ledger fails;
+- `--trials 2..10` uses independent Runtime lifecycles and records pass rate
+  plus duration, cost, input/output tokens, and Run-count distributions;
+- the command parser dogfood exposed and fixed an incorrect reuse of the
+  timeout parser for `--trials 2`;
+- Faux Provider tests execute the real Workflow scheduler, reject tampered
+  evidence, and cover Series aggregation. Opt-in live testing and the formal
+  CLI both pass with `deepseek-v4-flash`;
+- high-volume model deltas are summarized, and prompt, assistant text,
+  reasoning, and document bodies are omitted. Real Ledgers decreased from
+  295–648 KiB full Replay exports to about 44 KiB projections;
+- the retained two-trial Series and its four referenced artifacts are
+  independently verifiable from `docs/artifacts/benchmarks`; direct secret
+  and raw-content scans return no matches.
 
 ## Implemented Slice: Per-Tool Benchmark Outcome Evidence
 
@@ -246,7 +286,7 @@ architecture is incrementally extracted.
 
 Observed result:
 
-- `npm run check:architecture` analyzes 597 production and 340 test TypeScript
+- `npm run check:architecture` analyzes 606 production and 342 test TypeScript
   modules through the TypeScript AST and a relative-import graph;
 - new production modules default to 500 lines, tests to 1,000 lines, and
   functions to complexity 25. Existing exceptions are exact rather than broad

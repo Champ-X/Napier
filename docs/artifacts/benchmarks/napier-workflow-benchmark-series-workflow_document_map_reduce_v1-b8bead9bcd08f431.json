@@ -1,0 +1,89 @@
+{
+  "kind": "napier.workflow-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-02T09:29:02.630Z",
+  "caseId": "workflow_document_map_reduce_v1",
+  "caseSha256": "30ae0920f2a3a8985add40db9c71f76a0a14bde5232601fc2f864905bfcda918",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 2,
+  "completedTrialCount": 2,
+  "scoredTrialCount": 2,
+  "passedTrialCount": 2,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 0,
+  "completionRate": 1,
+  "passRate": 1,
+  "metrics": {
+    "durationMs": {
+      "total": 6656,
+      "min": 3115,
+      "p50": 3115,
+      "p95": 3541,
+      "max": 3541,
+      "mean": 3328
+    },
+    "costUsd": {
+      "total": 0.0027643112000000003,
+      "min": 0.0013448456,
+      "p50": 0.0013448456,
+      "p95": 0.0014194656000000002,
+      "max": 0.0014194656000000002,
+      "mean": 0.0013821556000000001
+    },
+    "inputTokens": {
+      "total": 17135,
+      "min": 8563,
+      "p50": 8563,
+      "p95": 8572,
+      "max": 8572,
+      "mean": 8567.5
+    },
+    "outputTokens": {
+      "total": 1282,
+      "min": 510,
+      "p50": 510,
+      "p95": 772,
+      "max": 772,
+      "mean": 641
+    },
+    "runCount": {
+      "total": 10,
+      "min": 5,
+      "p50": 5,
+      "p95": 5,
+      "max": 5,
+      "mean": 5
+    }
+  },
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_60ff52a410b94802bb92",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-workflow_document_map_reduce_v1-5a2d0e8f01c7cbfc.json",
+      "resultSha256": "5a2d0e8f01c7cbfccc11d06814dd116db0204072427636955539065f1dce92f6",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-workflow_document_map_reduce_v1-aad6635336f19dbe.json",
+      "ledgerSha256": "aad6635336f19dbe330785a4ef07686b700ed5f314566f02718f490003a71a1a"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_a520b85bcb2b4921bcff",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-workflow_document_map_reduce_v1-88d3952bfe7360ae.json",
+      "resultSha256": "88d3952bfe7360ae03b7363884f1f1de1fba203a8c23357bd33cfd5cb2b8cdac",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-workflow_document_map_reduce_v1-8cb4c696f6b1ab81.json",
+      "ledgerSha256": "8cb4c696f6b1ab81143720fb13d9b60cd5af03c0ed37b80d08408cc1b7871503"
+    }
+  ],
+  "contentSha256": "b8bead9bcd08f431f0c4a0d4fbac5bf926147f94955d85e7093abab3f983fcc3"
+}
