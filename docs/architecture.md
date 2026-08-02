@@ -6629,7 +6629,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has sixty-nine parts:
+The current boundary has seventy-four parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -6842,14 +6842,14 @@ The current boundary has sixty-nine parts:
     isolated provider call, zero candidate tool execution, call-level
     comparison, CLI/HTTP/SDK/RPC/Web delivery, independently verified browser
     protocol, and privacy-bounded Replay/Trace receipts.
-55. Preview-bound single-tool-invocation re-execution for ten built-in
+55. Preview-bound single-tool-invocation re-execution for eleven built-in
     stateless read-only tools with exact local-only argument capsules, scoped
     Workspace freshness, implementation/effect/policy binding, one isolated
     tool call and zero model calls, source/target comparison,
     CLI/HTTP/SDK/RPC/Web delivery, independently verified browser protocol,
     and argument/path/output-body-free Replay/Trace projections.
 56. Frozen historical results inside Agent message experiments for the same
-    ten stateless read-only tools, with post-settlement local result capsules,
+    eleven stateless read-only tools, with post-settlement local result capsules,
     exact ordered implementation/argument matching, zero live-tool fallback,
     preserved source error state, divergence failure, shared
     Web/CLI/HTTP/SDK/RPC delivery, and body-free Ledger/Replay/Trace evidence.
@@ -6952,9 +6952,15 @@ The current boundary has sixty-nine parts:
     runtime/configuration/memory-bound body-free evidence, commit-gap recovery,
     explicit-only stateful retry, checkpoint reuse/rerun, CLI/SDK/RPC/HTTP/Web
     delivery, and no package, file, network, subprocess, or host fallback.
+74. Hash-bound bounded DataFrame transformation over the shared
+    JSON/JSONL/CSV/TSV/Markdown parser, with explicit cast/filter/select/sort/
+    group/limit plans, homogeneous comparison and finite aggregation semantics,
+    complete 1,000-row/256 KiB table JSON, source-drift rejection,
+    Agent/Workflow/Artifact reuse, privacy-bounded Replay/Trace, and no
+    expression, package, process, filesystem-write, or network authority.
 
-`observe` permits only in-process read operations, including AST query and
-edit preview. `workspace` additionally
+`observe` permits only in-process read operations, including bounded DataFrame,
+AST query, and edit preview. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
 verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
 rename/quick-fix previews, preview-bound coordinated rename or selected

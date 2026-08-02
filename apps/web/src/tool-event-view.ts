@@ -1,5 +1,15 @@
 import type { RunEvent } from "@napier/contracts";
 import {
+  dataFrameSummaryParts,
+  dataFrameToolEventEvidence,
+  type DataFrameToolEventTraceView,
+} from "./data-frame-event-view";
+import {
+  inspectDataSummaryParts,
+  inspectDataToolEventEvidence,
+  type InspectDataToolEventTraceView,
+} from "./inspect-data-event-view";
+import {
   browserEventEvidence,
   browserSummaryParts,
   type BrowserToolEventTraceView,
@@ -40,11 +50,6 @@ import {
   type CommandToolEventTraceView,
 } from "./command-tool-event-view";
 import {
-  isStructuredDataFormat,
-  structuredDataFormatLabel,
-  type StructuredDataFormat,
-} from "./structured-data-format-view";
-import {
   lspToolEventEvidence,
   lspToolEventSummaryParts,
   type LspToolEventTraceView,
@@ -74,6 +79,8 @@ export interface ToolEventTraceView
     PythonKernelToolEventTraceView,
     ResearchSourceToolEventTraceView,
     SqliteQueryToolEventTraceView,
+    DataFrameToolEventTraceView,
+    InspectDataToolEventTraceView,
     NodeDebuggerToolEventTraceView,
     TypescriptAstToolEventTraceView,
     SubagentWorktreeToolEventTraceView,
@@ -97,15 +104,6 @@ export interface ToolEventTraceView
   symbolIndexLanguageCountsSha256?: string;
   symbolIndexFileSetSha256?: string;
   symbolIndexSymbolSetSha256?: string;
-  dataFormat?: StructuredDataFormat;
-  dataRowCount?: number;
-  dataColumnCount?: number;
-  dataSizeBytes?: number;
-  dataTruncated?: boolean;
-  dataPathSha256?: string;
-  dataFileSha256?: string;
-  dataColumnSetSha256?: string;
-  dataSampleSha256?: string;
   codeLanguage?: "typescript" | "javascript" | "python" | "go" | "unknown";
   codeSymbolCount?: number;
   codeTotalLines?: number;
@@ -241,10 +239,10 @@ export function toolEventTraceView(
     toolName === "list_symbols"
       ? listSymbolsEvidence(event.payload["details"])
       : undefined;
-  const dataEvidence =
-    toolName === "inspect_data"
-      ? inspectDataEvidence(event.payload["details"])
-      : undefined;
+  const dataEvidence = inspectDataToolEventEvidence(
+    toolName,
+    event.payload["details"],
+  );
   const codeEvidence =
     toolName === "inspect_code"
       ? inspectCodeEvidence(event.payload["details"])
@@ -274,6 +272,10 @@ export function toolEventTraceView(
     toolName === "sqlite_query"
       ? sqliteQueryEventEvidence(event.payload["details"])
       : undefined;
+  const dataFrameEvidence = dataFrameToolEventEvidence(
+    toolName,
+    event.payload["details"],
+  );
   const javascriptKernelEvidence =
     toolName === "javascript_kernel"
       ? javascriptKernelEventEvidence(event.payload["details"])
@@ -318,7 +320,7 @@ export function toolEventTraceView(
     ...(loopGuardTriggerSha256 ? { loopGuardTriggerSha256 } : {}),
     ...(searchEvidence ? searchEvidence : {}),
     ...(symbolIndexEvidence ? symbolIndexEvidence : {}),
-    ...(dataEvidence ? dataEvidence : {}),
+    ...(dataEvidence ?? {}),
     ...(codeEvidence ? codeEvidence : {}),
     ...(symbolSourceEvidence ? symbolSourceEvidence : {}),
     ...(lspEvidence ? lspEvidence : {}),
@@ -327,6 +329,7 @@ export function toolEventTraceView(
     ...(browserEvidence ? browserEvidence : {}),
     ...(researchSourceEvidence ? researchSourceEvidence : {}),
     ...(sqliteQueryEvidence ? sqliteQueryEvidence : {}),
+    ...(dataFrameEvidence ?? {}),
     ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
     ...(pythonKernelEvidence ? pythonKernelEvidence : {}),
     ...(nodeDebuggerEvidence ? nodeDebuggerEvidence : {}),
@@ -403,27 +406,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.symbolIndexSymbolSetSha256
       ? [`symbol-set ${view.symbolIndexSymbolSetSha256.slice(0, 12)}`]
       : []),
-    ...(view.dataFormat
-      ? [`data ${structuredDataFormatLabel(view.dataFormat)}`]
-      : []),
-    ...(view.dataRowCount !== undefined ? [`rows ${view.dataRowCount}`] : []),
-    ...(view.dataColumnCount !== undefined
-      ? [`columns ${view.dataColumnCount}`]
-      : []),
-    ...(view.dataSizeBytes !== undefined ? [`size ${view.dataSizeBytes}`] : []),
-    ...(view.dataTruncated ? ["data-truncated"] : []),
-    ...(view.dataPathSha256
-      ? [`data-path ${view.dataPathSha256.slice(0, 12)}`]
-      : []),
-    ...(view.dataFileSha256
-      ? [`data-file ${view.dataFileSha256.slice(0, 12)}`]
-      : []),
-    ...(view.dataColumnSetSha256
-      ? [`column-set ${view.dataColumnSetSha256.slice(0, 12)}`]
-      : []),
-    ...(view.dataSampleSha256
-      ? [`sample ${view.dataSampleSha256.slice(0, 12)}`]
-      : []),
+    ...inspectDataSummaryParts(view),
     ...(view.codeLanguage ? [`code ${view.codeLanguage}`] : []),
     ...(view.codeSymbolCount !== undefined
       ? [`symbols ${view.codeSymbolCount}`]
@@ -486,6 +469,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...browserSummaryParts(view),
     ...researchSourceSummaryParts(view),
     ...sqliteQuerySummaryParts(view),
+    ...dataFrameSummaryParts(view),
     ...javascriptKernelSummaryParts(view),
     ...pythonKernelSummaryParts(view),
     ...nodeDebuggerSummaryParts(view),
@@ -717,47 +701,6 @@ function searchFilesEvidence(value: unknown):
   };
 }
 
-function inspectDataEvidence(value: unknown):
-  | {
-      dataFormat: StructuredDataFormat;
-      dataRowCount: number;
-      dataColumnCount: number;
-      dataSizeBytes?: number;
-      dataTruncated?: boolean;
-      dataPathSha256?: string;
-      dataFileSha256?: string;
-      dataColumnSetSha256?: string;
-      dataSampleSha256?: string;
-    }
-  | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const record = value as Record<string, unknown>;
-  const format = dataFormat(record["format"]);
-  const rowCount = integerInRange(record["rowCount"], 0, 1_000_000);
-  const columnCount = integerInRange(record["columnCount"], 0, 1_000);
-  if (!format || rowCount === undefined || columnCount === undefined) {
-    return undefined;
-  }
-  const sizeBytes = integerInRange(record["sizeBytes"], 0, 2 * 1024 * 1024);
-  const pathSha256 = sha256(record["pathSha256"]);
-  const fileSha256 = sha256(record["sha256"]);
-  const columnSetSha256 = sha256(record["columnSetSha256"]);
-  const sampleSha256 = sha256(record["sampleSha256"]);
-  return {
-    dataFormat: format,
-    dataRowCount: rowCount,
-    dataColumnCount: columnCount,
-    ...(sizeBytes !== undefined ? { dataSizeBytes: sizeBytes } : {}),
-    ...(record["truncated"] === true ? { dataTruncated: true } : {}),
-    ...(pathSha256 ? { dataPathSha256: pathSha256 } : {}),
-    ...(fileSha256 ? { dataFileSha256: fileSha256 } : {}),
-    ...(columnSetSha256 ? { dataColumnSetSha256: columnSetSha256 } : {}),
-    ...(sampleSha256 ? { dataSampleSha256: sampleSha256 } : {}),
-  };
-}
-
 function listSymbolsEvidence(value: unknown):
   | {
       symbolIndexFileCount: number;
@@ -806,10 +749,6 @@ function listSymbolsEvidence(value: unknown):
     ...(fileSetSha256 ? { symbolIndexFileSetSha256: fileSetSha256 } : {}),
     ...(symbolSetSha256 ? { symbolIndexSymbolSetSha256: symbolSetSha256 } : {}),
   };
-}
-
-function dataFormat(value: unknown): StructuredDataFormat | undefined {
-  return isStructuredDataFormat(value) ? value : undefined;
 }
 
 function inspectCodeEvidence(value: unknown):

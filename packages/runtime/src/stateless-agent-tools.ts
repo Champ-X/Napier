@@ -2,6 +2,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { AgentProfile } from "@napier/contracts";
 
 import { createCommandTool } from "./command-tool.js";
+import { createDataFrameTool } from "./data-frame-tool.js";
 import { LspCodeActionApplyDiagnostics } from "./lsp-code-action-apply-diagnostics.js";
 import { createLspCodeActionApplyTool } from "./lsp-code-action-apply-tool.js";
 import { LspCodeActionMutationManager } from "./lsp-code-action-mutation-manager.js";
@@ -117,9 +118,7 @@ export function createStatelessAgentTools(
     dataRoot: options.store.dataRoot,
     ...(patchObserver ? { patchObserver } : {}),
   }).filter((tool) => profile.enabledTools.includes(tool.name));
-  if (profile.enabledTools.includes("sqlite_query")) {
-    tools.push(createSqliteQueryTool(options.store.workspaceRoot));
-  }
+  appendDataTools(tools, profile, options.store.workspaceRoot);
 
   tools.push(
     ...createTypescriptAstTools(options.store.workspaceRoot).filter((tool) =>
@@ -198,4 +197,17 @@ export function createStatelessAgentTools(
     );
   }
   return tools;
+}
+
+function appendDataTools(
+  tools: AgentTool[],
+  profile: AgentProfile,
+  workspaceRoot: string,
+): void {
+  if (profile.enabledTools.includes("sqlite_query")) {
+    tools.push(createSqliteQueryTool(workspaceRoot));
+  }
+  if (profile.enabledTools.includes("data_frame")) {
+    tools.push(createDataFrameTool(workspaceRoot));
+  }
 }

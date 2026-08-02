@@ -251,6 +251,7 @@ import {
 } from "@napier/contracts";
 
 import { createId, nowIso } from "./ids.js";
+import { DEFAULT_AGENT_ENABLED_TOOLS } from "./read-only-tool-names.js";
 import type { ChannelDeliveryExecution } from "./store-port.js";
 import {
   DEFAULT_MODEL_ADVISOR_POLICY,
@@ -9559,18 +9560,7 @@ export class LocalStore {
       model: { provider: "napier", id: "demo" },
       thinkingLevel: "medium",
       toolPolicy: "observe",
-      enabledTools: [
-        "list_files",
-        "read_file",
-        "search_files",
-        "list_symbols",
-        "inspect_data",
-        "sqlite_query",
-        "inspect_code",
-        "read_symbol",
-        "apply_patch",
-        "verify_workspace",
-      ],
+      enabledTools: [...DEFAULT_AGENT_ENABLED_TOOLS],
       enabledSkills: [
         "data-analysis",
         "research-brief",

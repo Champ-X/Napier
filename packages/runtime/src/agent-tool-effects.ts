@@ -1,3 +1,20 @@
+import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
+
+const READ_ONLY_TOOLS = new Set([
+  ...CORE_STATELESS_READ_TOOL_NAMES,
+  "lsp_diagnostics",
+  "lsp_symbols",
+  "lsp_definition",
+  "lsp_references",
+  "lsp_rename",
+  "lsp_code_actions",
+  "workspace_file_preview",
+  "run_command",
+  "verify_workspace",
+  "web_fetch",
+  "web_search",
+]);
+
 export function builtInToolEffect(
   toolName: string,
   args?: unknown,
@@ -29,29 +46,7 @@ export function builtInToolEffect(
       ? "read"
       : "write";
   }
-  if (
-    toolName === "list_files" ||
-    toolName === "read_file" ||
-    toolName === "search_files" ||
-    toolName === "list_symbols" ||
-    toolName === "inspect_data" ||
-    toolName === "sqlite_query" ||
-    toolName === "inspect_code" ||
-    toolName === "read_symbol" ||
-    toolName === "ast_query" ||
-    toolName === "ast_edit_preview" ||
-    toolName === "lsp_diagnostics" ||
-    toolName === "lsp_symbols" ||
-    toolName === "lsp_definition" ||
-    toolName === "lsp_references" ||
-    toolName === "lsp_rename" ||
-    toolName === "lsp_code_actions" ||
-    toolName === "workspace_file_preview" ||
-    toolName === "run_command" ||
-    toolName === "verify_workspace" ||
-    toolName === "web_fetch" ||
-    toolName === "web_search"
-  ) {
+  if (READ_ONLY_TOOLS.has(toolName)) {
     return "read";
   }
   if (

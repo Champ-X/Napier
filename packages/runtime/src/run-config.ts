@@ -33,6 +33,7 @@ import {
   normalizeSubagentLimits,
 } from "./agents.js";
 import { createPromptVariableCatalog } from "./prompt-variables.js";
+import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 import { normalizeToolLoopGuardPolicy } from "./tool-loop-guard.js";
 
 const SHA256 = /^[a-f0-9]{64}$/;
@@ -55,18 +56,9 @@ const EXECUTION_MODES = new Set<RunExecutionMode>([
   "model_experiment_single_call",
   "tool_experiment_read_only",
 ]);
-const READ_ONLY_EXECUTION_TOOLS = new Set([
-  "list_files",
-  "read_file",
-  "search_files",
-  "list_symbols",
-  "inspect_data",
-  "sqlite_query",
-  "inspect_code",
-  "read_symbol",
-  "ast_query",
-  "ast_edit_preview",
-]);
+const READ_ONLY_EXECUTION_TOOLS = new Set<string>(
+  CORE_STATELESS_READ_TOOL_NAMES,
+);
 const V1_FINGERPRINT_KEYS = new Set([
   "schemaVersion",
   "agentRevision",

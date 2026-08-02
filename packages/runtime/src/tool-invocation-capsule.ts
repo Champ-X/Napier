@@ -7,21 +7,13 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 
 export const MAX_TOOL_INVOCATION_CAPSULE_BYTES = 512 * 1024;
 
-export const TOOL_INVOCATION_EXPERIMENT_TOOLS = new Set([
-  "list_files",
-  "read_file",
-  "search_files",
-  "list_symbols",
-  "inspect_data",
-  "sqlite_query",
-  "inspect_code",
-  "read_symbol",
-  "ast_query",
-  "ast_edit_preview",
-]);
+export const TOOL_INVOCATION_EXPERIMENT_TOOLS = new Set<string>(
+  CORE_STATELESS_READ_TOOL_NAMES,
+);
 
 const HASH = /^[a-f0-9]{64}$/u;
 const THREAD_ID = /^thread_[a-z0-9]{8,80}$/u;

@@ -2,7 +2,9 @@ import path from "node:path";
 
 import type { JsonValue, ToolPolicyMode } from "@napier/contracts";
 
+import { assessHashBoundDataToolPath } from "./data-tool-policy.js";
 import { validatePublicHttpUrl } from "./public-network.js";
+import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 
 export interface PolicyDecision {
@@ -12,16 +14,7 @@ export interface PolicyDecision {
 }
 
 const READ_ONLY_TOOLS = new Set([
-  "list_files",
-  "read_file",
-  "search_files",
-  "list_symbols",
-  "inspect_data",
-  "sqlite_query",
-  "inspect_code",
-  "read_symbol",
-  "ast_query",
-  "ast_edit_preview",
+  ...CORE_STATELESS_READ_TOOL_NAMES,
   "web_fetch",
   "web_search",
 ]);
@@ -122,38 +115,14 @@ export function assessToolCall(
   }
   if (READ_ONLY_TOOLS.has(toolName)) {
     const candidate = getStringField(input, "path");
-    if (
-      toolName === "sqlite_query" &&
-      (!candidate || path.isAbsolute(candidate))
-    ) {
-      return {
-        allowed: false,
-        risk: "high",
-        reason: "SQLite queries require a workspace-relative database path",
-      };
-    }
+    const dataPathDenial = assessHashBoundDataToolPath(toolName, candidate);
+    if (dataPathDenial) return dataPathDenial;
     if (candidate && !isPathInsideWorkspace(candidate, workspaceRoot)) {
       return {
         allowed: false,
         risk: "high",
         reason: "path escapes the configured workspace",
       };
-    }
-    if (toolName === "sqlite_query" && candidate) {
-      const relative = path.relative(
-        path.resolve(workspaceRoot),
-        path.resolve(workspaceRoot, candidate),
-      );
-      const protectedSegment = relative
-        .split(path.sep)
-        .find(isProtectedWorkspacePathSegment);
-      if (protectedSegment) {
-        return {
-          allowed: false,
-          risk: "high",
-          reason: `SQLite queries cannot read protected path segment: ${protectedSegment}`,
-        };
-      }
     }
     return {
       allowed: true,

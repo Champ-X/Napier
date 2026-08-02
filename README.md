@@ -101,7 +101,7 @@ Version `0.1.0` includes:
   the complete hash chain while provider Context, raw thinking, candidate
   text/tool arguments, and capsule contents remain absent from portable Replay,
   Web Trace, and the rendered desk;
-- controlled single-tool-invocation experiments for ten built-in stateless
+- controlled single-tool-invocation experiments for eleven built-in stateless
   read-only tools. Exact admitted arguments remain in a bounded local-only
   capsule while CLI JSONL, HTTP SSE, TypeScript SDK, local stdio RPC, and a
   lazy Run Lab desk preview-bind the source call, current scoped Workspace,
@@ -209,6 +209,10 @@ Version `0.1.0` includes:
   workspace database snapshots, with process-isolated timeout/cancellation,
   live-only rows/SVG, and verified Artifact delivery through the existing CAS
   writer;
+- a hash-bound `data_frame` tool for complete JSON/JSONL/CSV/TSV/Markdown
+  table transformations through explicit typed casts, filters, selection,
+  stable sorting, grouping, aggregation, and limits, with complete JSON output,
+  Agent/Workflow reuse, and body-free Replay/Trace evidence;
 - Run-owned controlled Chrome Sessions plus a `research_source` tool that
   freezes bounded visible page text, binds exact line ranges to report claims,
   returns citation tokens to the live Agent, and retains only privacy-bounded
@@ -2728,15 +2732,28 @@ model, and records path/file, column-set, and sample SHA-256 receipts. Trace
 summaries show only format, row/column counts, byte size, truncation state, and
 hashes, never column names or sample values.
 
+`data_frame` turns one exact `inspect_data` file SHA-256 into a deterministic
+bounded table transformation without evaluating code or expressions. Ordered
+plans support explicit scalar casts, typed filters, column selection, stable
+null-last sorting, grouping with count/sum/mean/min/max, and limits over up to
+10,000 source rows. CSV, TSV, and Markdown cells remain strings until an
+explicit cast; nested cells, implicit numeric coercion, oversized results, and
+source drift fail closed. The complete result is returned as table JSON up to
+1,000 rows and 256 KiB. Ledger, Replay, Workflow, and Trace retain only source,
+plan, parser, engine, columns, rows, output, limits, and result hashes plus
+bounded counts.
+Delivery still uses `apply_patch` and Plan Artifact verification.
+
 `sqlite_query` adds real SQL analysis without opening a general database or
 shell capability. `schema` accepts a canonical `.db`, `.sqlite`, or `.sqlite3`
 workspace file up to 64 MiB and returns its bounded table/view shape plus
 complete file SHA-256. `query` requires that exact database hash, one
 parameterized `SELECT`, `WITH`, or `VALUES` statement, up to 50 positional
 parameters, 100 rows, and a 100-5,000 ms deadline. `chart` uses the same query
-boundary but requires a complete 1-50 row result, one unique X column, and one
-finite numeric Y column. It renders a fixed-theme standalone bar or line SVG
-with bounded title, axis labels, and dimensions.
+boundary but requires a complete 1-50 category result, one unique X column, and
+either one finite numeric Y column or 2-6 finite numeric series. It renders a
+fixed-theme standalone grouped bar or multi-line SVG with bounded title,
+legend, axis labels, and dimensions.
 
 Napier rejects symlinks, protected paths, live WAL/journal sidecars, PRAGMA,
 ATTACH, DDL, DML, extension loading, multiple statements, unsafe functions,

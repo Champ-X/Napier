@@ -27,9 +27,9 @@ Audit date: 2026-08-03
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 22,437 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                           |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss target-group guarding now exist. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, detached-descendant containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; directory lifecycle, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain.                      |
-| P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown; a fixed-source Outcome case now measures primary/secondary authority coverage and contradiction handling through the production capture/cite/report verifier path. Data analysis includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single- or multi-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, general source-quality scoring and contradiction automation, DataFrame/Notebook, interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown; a fixed-source Outcome case now measures primary/secondary authority coverage and contradiction handling through the production capture/cite/report verifier path. Data analysis includes flat-file inspection, hash-bound typed DataFrame transformations, process-isolated parameterized read-only SQLite, and deterministic single- or multi-series SVG chart delivery, with Agent/Workflow reuse, bundled Skill guidance, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, general source-quality scoring and contradiction automation, package-backed Python/Notebook, interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Python/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript and restricted exact-JSON Python Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output/input replacement, selector-free complete top-level input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Package-backed Python/Notebook Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain. |
-| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, schema-5 durably releases exactly one remaining rerun node per Continue, and selector-free schema-6 replaces the complete top-level Workflow input and reruns every node through the ordinary scheduler with zero source reuse. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                           |
+| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, schema-5 durably releases exactly one remaining rerun node per Continue, and selector-free schema-6 replaces the complete top-level Workflow input and reruns every node through the ordinary scheduler with zero source reuse. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for eleven stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same eleven tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                     |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented `napier chat`, and bounded full-screen `napier tui` share explicit first-task environment-locator bootstrap and one Runtime with the local TypeScript SDK and versioned stdio JSON-RPC. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                         |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -2996,7 +2996,7 @@ Acceptance:
 
 Threat boundary:
 
-- this slice reuses only the same ten stateless built-in read-only tools already
+- this slice reuses only the same eleven stateless built-in read-only tools already
   eligible for tool-invocation experiments. It does not simulate writes,
   Browser/Process/Kernel/Debugger/LSP Sessions, Extensions, or unknown effects;
 - captured output is sensitive local execution state and is not portable. A
@@ -3292,7 +3292,7 @@ Threat boundary:
   source prompt, source result, target result, Memory text, Skill text, tool
   bodies, paths, credentials, or raw diagnostics;
 - later slices add model/tool-call checkpoints and frozen captured results for
-  the ten stateless read-only tools. Write/session side-effect simulation,
+  the eleven stateless read-only tools. Write/session side-effect simulation,
   Prompt/Skill/Memory replacement, single-step or batch debugging, and
   promotion remain open.
 
@@ -3581,16 +3581,90 @@ Observed result:
 - chart execution, normalization, SVG geometry, and receipt formatting remain
   split into sub-500-line modules; the SQLite worker/query implementation is
   unchanged;
-- the complete repository gate passes 1,873 regular tests with 40 opt-in live
-  tests skipped, 673 production modules, 363 test modules, zero relative-import
+- the complete repository gate passes 1,885 regular tests with 40 opt-in live
+  tests skipped, 685 production modules, 369 test modules, zero relative-import
   cycles, 255 OpenAPI routes, 244/244 compatibility operations, six workspaces,
   254 packages, and 241/241 integrity entries. The product budget measures
-  642.6 ms to the first CLI event, 793.0 ms to the first token, 1,101.2 ms to
-  completion, 0.3 ms read p95, 7.4 ms 1,000-event projection, and 749.568
+  691.4 ms to the first CLI event, 842.5 ms to the first token, 1,160.2 ms to
+  completion, 0.3 ms read p95, 6.7 ms 1,000-event projection, and 749.568
   SQLite bytes/event;
-- the 92-file Web dist remains at 130.32 KiB for the main entry, is bound to
-  `778504b256adac56`, and the 37-artifact release set is bound to
-  `36059bcead60f37a`.
+- the 96-file Web dist remains at 115.44 KiB for the main entry, is bound to
+  `8741f3addddcfb44`, and the 37-artifact release set is bound to
+  `1c2743f16856b18b`.
+
+## Completed Slice: Hash-Bound DataFrame Transformations
+
+User scenario: an Agent can inspect a local JSON, JSONL, CSV, TSV, or Markdown
+table, bind its exact file version, run a reproducible typed transformation,
+and deliver the complete derived table as a verified JSON Artifact.
+
+Acceptance:
+
+- reuse one extracted parser for `inspect_data` and `data_frame`; do not
+  maintain parallel CSV/JSON grammars or add a process, package, shell, network,
+  or write capability;
+- require the exact source SHA-256 returned by `inspect_data`, reject symlinks,
+  protected paths, invalid UTF-8, nested cells, source drift, more than 2 MiB,
+  10,000 source rows, 80 columns, or 4 KiB scalar cells;
+- execute 1-12 ordered explicit `cast`, `filter`, `select`, `sort`, `group`,
+  and `limit` operations with no expression language, callbacks, code strings,
+  imports, or implicit CSV numeric coercion;
+- keep comparison typed and homogeneous, sorting stable with nulls last, and
+  sum/mean finite. Support count/sum/mean/min/max aggregation with explicit
+  output aliases and deterministic first-seen group order;
+- require the complete result to fit 1,000 rows and 256 KiB, return deterministic
+  table JSON live, and leave delivery to existing `apply_patch` plus Plan
+  Artifact verification;
+- retain only source/path, plan, parser, engine, columns, rows, output, limits,
+  and result hashes plus bounded format/count/byte metadata in Ledger, Replay,
+  Workflow, SSE, and Web Trace;
+- share one internal stateless-read tool registry across Policy, recovery,
+  Run fingerprints, tool experiments, effects, and the default Agent rather
+  than expanding each large module independently.
+
+Threat boundary:
+
+- this is a bounded deterministic DataFrame, not pandas, a package-backed
+  Python environment, Notebook, SQL engine, arbitrary expression evaluator, or
+  streaming/out-of-core system;
+- CSV, TSV, and Markdown values remain strings until an explicit cast. JSON
+  preserves scalar types. Mixed comparison types, non-finite numbers, failed
+  casts, oversized outputs, and incomplete plans fail closed rather than
+  silently coercing;
+- source columns and cells are untrusted data. They appear only in live output
+  or an explicitly written Artifact; durable execution evidence remains
+  body-free;
+- table JSON delivery may intentionally disclose selected source values.
+  Normal Plan review, workspace policy, CAS writing, and Artifact verification
+  govern that file.
+
+Observed result:
+
+- pure engine tests cover multi-step cast/filter/group/sort/select execution,
+  global empty aggregates, typed equality, stable ordering, nested-value
+  rejection, missing sort fields, source/result row limits, and explicit cast
+  failures;
+- real file tests cover CSV and typed JSON, exact source hashes, protected and
+  symbolic paths, invalid nested cells, cancellation, output byte limits, and
+  deterministic source/plan/row/output receipts;
+- a production Agent Run inspects a private CSV, executes four operations,
+  writes the exact returned table JSON, verifies its workspace bytes as a Plan
+  Artifact, exports a valid Replay, and retains none of the private path,
+  columns, filter value, rows, or output body in Data tool events;
+- a real Workflow Tool node executes `data_frame` through the shared Runtime
+  and passes only a schema-1 typed hash receipt as its node output;
+- Web Trace independently validates source/result/operation/output bounds and
+  renders only counts and hash prefixes. Extracting both DataFrame and legacy
+  `inspect_data` views reduces the central Tool event module;
+- two real DeepSeek Runs completed `inspect_data → data_frame → final` in
+  18.9–30.3 seconds with 4 operations and a 2-row × 3-column result. The final
+  receipt bound parser `bf09cfe93a4a`, engine `52e9bd44dc57`, and exact output
+  hashes. Unique private markers and the table body were absent from Tool
+  Ledger events, and the API key was absent from every data-root file;
+- Contracts tool names and the shared read-only registry preserve one Runtime
+  capability model across Agent, Workflow, recovery, experiments, Policy, and
+  Ledger while reducing Contracts root, Store, Policy, Run configuration, and
+  Tool effect architecture debt.
 
 ## Completed Slice: Interactive Agent CLI
 

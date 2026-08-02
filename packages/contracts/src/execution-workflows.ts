@@ -290,6 +290,7 @@ export const EXECUTION_PLAN_WORKFLOW_TOOL_NAMES = [
   "search_files",
   "list_symbols",
   "inspect_data",
+  "data_frame",
   "sqlite_query",
   "inspect_code",
   "read_symbol",

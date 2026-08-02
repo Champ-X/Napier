@@ -14,6 +14,7 @@ import {
   DEFAULT_AUTOMATIC_RECOVERY_POLICY,
   normalizeAutomaticRecoveryPolicy,
 } from "./agents.js";
+import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 import { fingerprintAutomaticRecovery } from "./run-config.js";
 
 export const MAX_AUTOMATIC_RECOVERY_EVENTS = 10_000;
@@ -21,16 +22,7 @@ export const MAX_AUTOMATIC_RECOVERY_EVENTS = 10_000;
 const SHA256 = /^[a-f0-9]{64}$/;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/;
 const SAFE_READ_ONLY_TOOLS = new Set([
-  "list_files",
-  "read_file",
-  "search_files",
-  "list_symbols",
-  "inspect_data",
-  "sqlite_query",
-  "inspect_code",
-  "read_symbol",
-  "ast_query",
-  "ast_edit_preview",
+  ...CORE_STATELESS_READ_TOOL_NAMES,
   "lsp_diagnostics",
   "lsp_symbols",
   "lsp_definition",

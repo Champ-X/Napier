@@ -1,5 +1,10 @@
 import type { JsonValue } from "@napier/contracts";
 
+import {
+  agentDataToolCallProjection,
+  agentDataToolInputProjection,
+  agentDataToolOutputProjection,
+} from "./agent-data-tool-ledger.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   browserToolCallArgumentsLedgerProjection,
@@ -21,11 +26,6 @@ import {
   researchSourceToolInputLedgerProjection,
   researchSourceToolOutputLedgerProjection,
 } from "./research-source-tool.js";
-import {
-  sqliteQueryToolCallArgumentsLedgerProjection,
-  sqliteQueryToolInputLedgerProjection,
-  sqliteQueryToolOutputLedgerProjection,
-} from "./sqlite-query-tool.js";
 import {
   nodeDebuggerToolCallArgumentsLedgerProjection,
   nodeDebuggerToolInputLedgerProjection,
@@ -126,11 +126,10 @@ export function agentToolCallArgumentsLedgerProjection(
   toolName: string,
   args: unknown,
 ): JsonValue {
+  const dataProjection = agentDataToolCallProjection(toolName, args);
+  if (dataProjection !== undefined) return dataProjection;
   if (toolName === "research_source") {
     return researchSourceToolCallArgumentsLedgerProjection(args);
-  }
-  if (toolName === "sqlite_query") {
-    return sqliteQueryToolCallArgumentsLedgerProjection(args);
   }
   if (toolName === "browser") {
     return browserToolCallArgumentsLedgerProjection(args);
@@ -205,11 +204,10 @@ export function agentToolInputLedgerProjection(
   toolName: string,
   args: unknown,
 ): Record<string, JsonValue> {
+  const dataProjection = agentDataToolInputProjection(toolName, args);
+  if (dataProjection !== undefined) return dataProjection;
   if (toolName === "research_source") {
     return researchSourceToolInputLedgerProjection(args);
-  }
-  if (toolName === "sqlite_query") {
-    return sqliteQueryToolInputLedgerProjection(args);
   }
   if (toolName === "browser") {
     return browserToolInputLedgerProjection(args);
@@ -289,11 +287,14 @@ export function agentToolOutputLedgerProjection(
   output: string,
   result: unknown,
 ): Record<string, JsonValue> {
+  const dataProjection = agentDataToolOutputProjection(
+    toolName,
+    output,
+    result,
+  );
+  if (dataProjection !== undefined) return dataProjection;
   if (toolName === "research_source") {
     return researchSourceToolOutputLedgerProjection(output, result);
-  }
-  if (toolName === "sqlite_query") {
-    return sqliteQueryToolOutputLedgerProjection(output, result);
   }
   if (toolName === "browser") {
     return browserToolOutputLedgerProjection(output, result);
