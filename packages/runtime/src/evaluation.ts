@@ -30,7 +30,7 @@ import {
   MODEL_CONTEXT_ENVELOPE_EVENT,
 } from "./model-context-envelope.js";
 import type { ModelRegistry } from "./models.js";
-import { compareRuns } from "./replay.js";
+import { compareRuns } from "./run-replay.js";
 import type { RunEvaluationStorePort } from "./store-port.js";
 import { createUsageAccounting } from "./token-accounting.js";
 

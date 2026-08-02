@@ -75,7 +75,6 @@
     "packages/runtime/src/prompt-packages.ts": 505,
     "packages/runtime/src/receipt-trust-directory-subscriptions.ts": 8393,
     "packages/runtime/src/receipt-trust.ts": 1763,
-    "packages/runtime/src/replay.ts": 770,
     "packages/runtime/src/research-sources.ts": 510,
     "packages/runtime/src/run-config.ts": 961,
     "packages/runtime/src/sandbox.ts": 711,
@@ -255,15 +254,6 @@
     "packages/sdk/src/index.ts": 22
   },
   "allowedCycles": [
-    [
-      "packages/runtime/src/evaluation-calibration.ts",
-      "packages/runtime/src/evaluation-consensus.ts",
-      "packages/runtime/src/evaluation-governance.ts",
-      "packages/runtime/src/evaluation-suites.ts",
-      "packages/runtime/src/evaluation.ts",
-      "packages/runtime/src/replay.ts",
-      "packages/runtime/src/thread-bundles.ts"
-    ],
     [
       "packages/runtime/src/receipt-trust-directory-subscriptions.ts",
       "packages/runtime/src/receipt-trust.ts"

@@ -179,10 +179,13 @@ then-current 54-module Runtime core component was subsequently reduced by
 extracting the shared Event sink, MCP client SPI, and Subagent worktree
 mutation model. Narrow Store ports then removed Store, Plan archive, Workflow
 blueprint, and Casebook qualification from that closure. The checked graph now
-contains a seven-module Evaluation component and a two-module Receipt Trust
-component rather than nine legacy components. Those remaining closures require
-deliberate Runtime domain decomposition; they are not treated as acceptable
-targets for local type-moving.
+temporarily contained a seven-module Evaluation component and a two-module
+Receipt Trust component. Extracting Run snapshot and comparison logic from the
+Thread replay facade then removed the Evaluation component. Only the
+two-module Receipt Trust component remains from the original nine legacy
+components. Its validator closures require deliberate Runtime domain
+decomposition; they are not treated as acceptable targets for local
+type-moving.
 
 ### Server
 

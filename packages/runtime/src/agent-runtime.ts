@@ -133,7 +133,7 @@ import {
   PROMPT_VARIABLES_RESOLVED_EVENT,
   resolvePromptVariables,
 } from "./prompt-variables.js";
-import { aggregateRunUsage } from "./replay.js";
+import { aggregateRunUsage } from "./run-replay.js";
 import { RunBudgetExceededError, RunBudgetTracker } from "./run-budget.js";
 import {
   createPlatformSandboxAdapter,

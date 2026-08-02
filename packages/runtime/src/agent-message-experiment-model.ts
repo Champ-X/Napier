@@ -11,7 +11,7 @@ import type {
 
 import { collectRunToolEffectObservations } from "./automatic-recovery.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { deriveRunMetrics } from "./replay.js";
+import { deriveRunMetrics } from "./run-replay.js";
 import { compareRunConfigurations } from "./run-config.js";
 import type { LocalStore } from "./store.js";
 

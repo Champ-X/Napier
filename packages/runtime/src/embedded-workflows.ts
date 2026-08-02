@@ -21,7 +21,7 @@ import {
   type ExecutionPlanArchiveContent,
 } from "./plan-archives.js";
 import { OrderedRunEventWriter } from "./ordered-run-event-writer.js";
-import { hashEventStream } from "./replay.js";
+import { hashEventStream } from "./run-replay.js";
 import type { LocalStore } from "./store.js";
 import {
   createExecutionPlanBlueprint,

@@ -25,7 +25,7 @@ import {
   workflowExperimentValueChange,
 } from "./workflow-experiment-comparison-model.js";
 import { validateExecutionPlanWorkflowExperimentComparison } from "./workflow-experiment-comparison-protocol.js";
-import { deriveRunMetrics } from "./replay.js";
+import { deriveRunMetrics } from "./run-replay.js";
 import type { LocalStore } from "./store.js";
 
 const HASH = /^[a-f0-9]{64}$/u;

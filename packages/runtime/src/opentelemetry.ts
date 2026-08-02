@@ -18,7 +18,7 @@ import {
   type ThreadImportProvenance,
 } from "@napier/contracts";
 
-import { hashEventStream } from "./replay.js";
+import { hashEventStream } from "./run-replay.js";
 import type { LocalStore } from "./store.js";
 
 export const MAX_OTLP_TRACE_EVENTS = 10_000;

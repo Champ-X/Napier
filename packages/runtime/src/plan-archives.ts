@@ -16,7 +16,7 @@ import {
   assertArtifactReceiptEventBoundary,
   isArtifactReceiptEvent,
 } from "./artifact-receipts.js";
-import { hashEventStream } from "./replay.js";
+import { hashEventStream } from "./run-replay.js";
 import type { PlanArchiveStorePort } from "./store-port.js";
 
 export const MAX_EXECUTION_PLAN_ARCHIVE_BYTES = 10 * 1024 * 1024;
