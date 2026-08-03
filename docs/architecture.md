@@ -379,6 +379,16 @@ Evaluation and Context Checkpoint calibration behind a five-method Store port;
 its response module preserves body/stable hashes and all count headers. This
 lowers `app.ts` to 19,987 lines without changing the 255-route contract.
 
+Workspace-global Evaluation Casebook and Thread-local Evaluation Suite
+projections use `evaluation-catalog-http.ts`. Its nine-method Store port plus
+the existing receipt-builder ports cover ten list/detail/calibration/export,
+qualification, baseline, gate-receipt, and execution routes. Response helpers
+remain injected from the composition root, preserving every body hash, count,
+download, and receipt header. Signed receipt, baseline promotion, curation,
+Suite mutation, and execution routes remain explicit mutation domains. This
+lowers `app.ts` to 19,895 lines while preserving all 255 routes and 244
+compatibility operations.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 

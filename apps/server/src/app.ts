@@ -360,6 +360,7 @@ import { registerInboundChannelDeadLetterHttp } from "./inbound-channel-dead-let
 import { registerInboundChannelDeliveryHttp } from "./inbound-channel-delivery-http.js";
 import { registerInboundChannelIngressHttp } from "./inbound-channel-ingress-http.js";
 import { registerCredentialHttp } from "./credential-http.js";
+import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
 import { registerPlanLifecycleHttp } from "./plan-lifecycle-http.js";
 import {
@@ -4174,59 +4175,19 @@ export function createApp(services: NapierServices): Hono {
 
   registerThreadEvaluationHttp(app, services.store);
 
-  app.get("/api/evaluation-casebooks", (context) => {
-    const casebooks = services.store.listEvaluationCasebooks();
-    setEvaluationCasebookListHeaders(context, casebooks);
-    return context.json(casebooks);
+  registerEvaluationCatalogHttp(app, services.store, {
+    setCasebookListHeaders: setEvaluationCasebookListHeaders,
+    setCasebookHeaders: setEvaluationCasebookProjectionHeaders,
+    setCalibrationHeaders: setEvaluationCasebookCalibrationHeaders,
+    setArtifactHeaders: setEvaluationCasebookArtifactHeaders,
+    setQualificationListHeaders: setEvaluationCasebookQualificationListHeaders,
+    setQualificationReceiptHeaders:
+      setEvaluationCasebookQualificationReceiptHeaders,
+    setBaselineListHeaders: setEvaluationQualificationBaselineListHeaders,
+    setSuiteListHeaders: setEvaluationSuiteListHeaders,
+    setSuiteReceiptHeaders: setEvaluationSuiteGateReceiptHeaders,
+    setSuiteExecutionListHeaders: setEvaluationSuiteExecutionListHeaders,
   });
-
-  app.get("/api/evaluation-casebooks/:casebookId", (context) => {
-    const casebook = services.store.getEvaluationCasebook(
-      context.req.param("casebookId"),
-    );
-    setEvaluationCasebookProjectionHeaders(context, casebook);
-    return context.json(casebook);
-  });
-
-  app.get("/api/evaluation-casebooks/:casebookId/calibration", (context) => {
-    const report = services.store.getEvaluationCasebookCalibration(
-      context.req.param("casebookId"),
-    );
-    setEvaluationCasebookCalibrationHeaders(context, report);
-    return context.json(report);
-  });
-
-  app.get("/api/evaluation-casebooks/:casebookId/export", (context) => {
-    const artifact = services.store.exportEvaluationCasebook(
-      context.req.param("casebookId"),
-    );
-    setEvaluationCasebookArtifactHeaders(context, artifact);
-    return context.json(artifact);
-  });
-
-  app.get("/api/evaluation-casebooks/:casebookId/qualifications", (context) => {
-    const casebookId = context.req.param("casebookId");
-    const qualifications =
-      services.store.listEvaluationCasebookQualificationExecutions(casebookId);
-    setEvaluationCasebookQualificationListHeaders(
-      context,
-      casebookId,
-      qualifications,
-    );
-    return context.json(qualifications);
-  });
-
-  app.get(
-    "/api/evaluation-casebooks/:casebookId/qualification-receipt",
-    (context) => {
-      const receipt = createEvaluationCasebookQualificationReceipt(
-        services.store,
-        context.req.param("casebookId"),
-      );
-      setEvaluationCasebookQualificationReceiptHeaders(context, receipt);
-      return context.json(receipt);
-    },
-  );
 
   app.post(
     "/api/evaluation-casebooks/:casebookId/signed-qualification-receipt",
@@ -4274,21 +4235,6 @@ export function createApp(services: NapierServices): Hono {
         `napier-signed-casebook-qualification-${receipt.casebook.id}-r${receipt.casebook.currentRevision}-${envelope.contentSha256.slice(0, 12)}.json`,
       );
       return context.json(envelope, 201);
-    },
-  );
-
-  app.get(
-    "/api/evaluation-casebooks/:casebookId/qualification-baselines",
-    (context) => {
-      const casebookId = context.req.param("casebookId");
-      const baselines =
-        services.store.listEvaluationQualificationBaselines(casebookId);
-      setEvaluationQualificationBaselineListHeaders(
-        context,
-        casebookId,
-        baselines,
-      );
-      return context.json(baselines);
     },
   );
 
@@ -4376,27 +4322,6 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.get("/api/threads/:threadId/evaluation-suites", (context) => {
-    const threadId = context.req.param("threadId");
-    services.store.getThread(threadId);
-    const suites = services.store.listEvaluationSuites(threadId);
-    setEvaluationSuiteListHeaders(context, threadId, suites);
-    return context.json(suites);
-  });
-
-  app.get(
-    "/api/threads/:threadId/evaluation-suites/:suiteId/receipt",
-    (context) => {
-      const receipt = createEvaluationSuiteGateReceipt(
-        services.store,
-        context.req.param("threadId"),
-        context.req.param("suiteId"),
-      );
-      setEvaluationSuiteGateReceiptHeaders(context, receipt);
-      return context.json(receipt);
-    },
-  );
-
   app.post(
     "/api/threads/:threadId/evaluation-suites/:suiteId/signed-receipt",
     async (context) => {
@@ -4446,23 +4371,6 @@ export function createApp(services: NapierServices): Hono {
       return context.json(envelope, 201);
     },
   );
-
-  app.get("/api/threads/:threadId/evaluation-suite-executions", (context) => {
-    const threadId = context.req.param("threadId");
-    services.store.getThread(threadId);
-    const suiteId = context.req.query("suite")?.trim();
-    const executions = services.store.listEvaluationSuiteExecutions(
-      threadId,
-      suiteId || undefined,
-    );
-    setEvaluationSuiteExecutionListHeaders(
-      context,
-      threadId,
-      suiteId || undefined,
-      executions,
-    );
-    return context.json(executions);
-  });
 
   registerPlanLifecycleHttp(app, services);
 
