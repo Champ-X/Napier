@@ -396,7 +396,11 @@ qualification-gate bounds, with dedicated malformed-input tests. This lowers
 `app.ts` to 19,758 lines. `evaluation-admin-http-response.ts` owns the shared
 Casebook/Suite mutation projections and qualification/Suite execution headers
 on top of the common evidence-header primitives, lowering `app.ts` further to
-19,655 lines before the mutation routes themselves move.
+19,655 lines. `evaluation-casebook-admin-http.ts` now owns all five Casebook
+create/update/curate/remove/qualify routes behind a six-method Store port,
+Model Registry, and execute-only Qualification service. It preserves revision
+event types, 200/201 curation semantics, model validation, conflict handling,
+and bounded-body errors while lowering `app.ts` to 19,439 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

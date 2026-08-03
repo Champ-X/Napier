@@ -14545,6 +14545,7 @@
     "apps/server/src/agent-profile-http.ts",
     "apps/server/src/app.ts",
     "apps/server/src/credential-http.ts",
+    "apps/server/src/evaluation-casebook-admin-http.ts",
     "apps/server/src/evaluation-catalog-http.ts",
     "apps/server/src/inbound-channel-admin-http.ts",
     "apps/server/src/inbound-channel-dead-letter-http.ts",
@@ -14562,7 +14563,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "824939f0c1a1eb842a7608ac156f59b94debd8cdcf63a62455bb575c391909f8",
+  "x-napier-source-sha256": "f89a80ddbf6c3fc9f482ddc8b89c8c69308f4b7184905ddd74841b7b77090132",
   "x-napier-route-count": 255,
   "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }
