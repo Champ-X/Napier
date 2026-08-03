@@ -445,6 +445,13 @@ and hash-only Ledger event projections. Shared response helpers preserve binary
 download, body/stable hash, Artifact identity, count, and receipt headers.
 This completes the Plan Artifact inspection/verification boundary and lowers
 `app.ts` to 16,894 lines.
+Plan step transitions and Artifact lifecycle updates use
+`plan-progress-http.ts` behind a five-capability Store port. Its dedicated
+validation module preserves raw bounded evidence text, exact action/status
+sets, Run ID bounds, and server-observed verification rules. Runtime remains
+authoritative for Run ownership, revision changes, workspace drift, and Plan
+projection updates; the adapter retains the existing hash-only lifecycle
+events and response headers. This lowers `app.ts` to 16,645 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

@@ -198,8 +198,6 @@ import type {
   SignInspectorPackageRequest,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
-  TransitionPlanStepRequest,
-  UpdateArtifactManifestRequest,
   UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
   UsagePriceTableCatalog,
   UsagePriceTableVerification,
@@ -239,9 +237,6 @@ import {
   createEvaluationCasebookQualificationReceipt,
   createEvaluationSuiteGateReceipt,
   createId,
-  createPlanArtifactEventPayload,
-  createWorkspaceArtifactDriftRequest,
-  createWorkspaceArtifactVerificationRequest,
   createReceiptTrustAnchorDirectoryMetadataReceipt,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
   createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
@@ -345,6 +340,7 @@ import { registerPlanArtifactDirectoryHttp } from "./plan-artifact-directory-htt
 import { registerPlanArtifactFileHttp } from "./plan-artifact-file-http.js";
 import { registerPlanArtifactInspectionHttp } from "./plan-artifact-inspection-http.js";
 import { registerPlanLifecycleHttp } from "./plan-lifecycle-http.js";
+import { registerPlanProgressHttp } from "./plan-progress-http.js";
 import {
   setExecutionPlanBlueprintSourceHeaders,
   setExecutionPlanBlueprintVerificationHeaders,
@@ -5293,144 +5289,7 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.post(
-    "/api/threads/:threadId/plans/:planId/steps/:stepId",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const planId = context.req.param("planId");
-      assertPlanThread(services, planId, threadId);
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          8 * 1024,
-          "Plan step transition request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Plan step transition request is invalid",
-          400,
-        );
-      }
-      const body = parseTransitionPlanStepRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Plan step transition request is invalid",
-          400,
-        );
-      }
-      const before = services.store.getPlan(planId);
-      const plan = await services.store.transitionPlanStep(
-        planId,
-        context.req.param("stepId"),
-        body,
-      );
-      const step = plan.steps.find(
-        (candidate) => candidate.id === context.req.param("stepId"),
-      );
-      if (plan.revision !== before.revision && step) {
-        await services.store.appendEvent({
-          threadId,
-          runId: body.runId ?? createId("runctl"),
-          type: `plan.step.${planStepEventSuffix(body.action)}`,
-          category: "plan",
-          visibility: "user",
-          payload: {
-            planId,
-            stepId: step.id,
-            title: step.title,
-            status: step.status,
-            planStatus: plan.status,
-            criticalPathStepIds: plan.criticalPathStepIds,
-            readyStepIds: plan.readyStepIds,
-            blockedStepIds: plan.blockedStepIds,
-            evidence: step.evidence,
-            ...(step.blocker ? { blocker: step.blocker } : {}),
-            ...(step.runId ? { runId: step.runId } : {}),
-          },
-        });
-      }
-      setExecutionPlanHeaders(context, plan);
-      return context.json(plan);
-    },
-  );
-
-  app.post(
-    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const planId = context.req.param("planId");
-      assertPlanThread(services, planId, threadId);
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          16 * 1024,
-          "Plan artifact request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(context, "Plan artifact request is invalid", 400);
-      }
-      const body = parseUpdateArtifactManifestRequest(input);
-      if (!body) {
-        return jsonError(context, "Plan artifact request is invalid", 400);
-      }
-      const before = services.store.getPlan(planId);
-      let artifactRequest: UpdateArtifactManifestRequest = body;
-      if (body.observeWorkspace) {
-        const artifact = before.artifacts.find(
-          (candidate) => candidate.id === context.req.param("artifactId"),
-        );
-        if (!artifact) {
-          return jsonError(context, "Plan artifact request is invalid", 400);
-        }
-        try {
-          artifactRequest =
-            body.status === "missing"
-              ? await createWorkspaceArtifactDriftRequest(
-                  services.store.workspaceRoot,
-                  artifact,
-                  body,
-                )
-              : await createWorkspaceArtifactVerificationRequest(
-                  services.store.workspaceRoot,
-                  artifact,
-                  body,
-                );
-        } catch (error) {
-          return jsonError(context, errorMessage(error), 400);
-        }
-      }
-      const plan = await services.store.updatePlanArtifact(
-        planId,
-        context.req.param("artifactId"),
-        artifactRequest,
-      );
-      const artifact = plan.artifacts.find(
-        (candidate) => candidate.id === context.req.param("artifactId"),
-      );
-      if (plan.revision !== before.revision && artifact) {
-        await services.store.appendEvent({
-          threadId,
-          runId: artifactRequest.sourceRunId ?? createId("runctl"),
-          type: `plan.artifact.${artifact.status}`,
-          category: "plan",
-          visibility: "user",
-          payload: createPlanArtifactEventPayload(plan, artifact),
-        });
-      }
-      setExecutionPlanHeaders(context, plan);
-      return context.json(plan);
-    },
-  );
+  registerPlanProgressHttp(app, services.store);
 
   registerPlanArtifactInspectionHttp(app, services.store);
 
@@ -7110,27 +6969,6 @@ export async function readProductionIndex(): Promise<string | undefined> {
   }
 }
 
-function assertPlanThread(
-  services: NapierServices,
-  planId: string,
-  threadId: string,
-): void {
-  const plan = services.store.getPlan(planId);
-  if (plan.threadId !== threadId) {
-    throw new Error(`Plan not found in thread: ${planId}`);
-  }
-}
-
-function planStepEventSuffix(
-  action: TransitionPlanStepRequest["action"],
-): string {
-  if (action === "start") return "started";
-  if (action === "complete") return "completed";
-  if (action === "block") return "blocked";
-  if (action === "skip") return "skipped";
-  return "reopened";
-}
-
 function parseVerifyUsagePriceTableCatalogRequest(
   input: unknown,
 ): VerifyUsagePriceTableCatalogRequest | undefined {
@@ -7942,93 +7780,6 @@ function parseCreateExecutionPlanFromBlueprintRecordRequest(
     recordId: record["recordId"],
     ...(objective ? { objective } : {}),
     ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
-  };
-}
-
-function parseTransitionPlanStepRequest(
-  input: unknown,
-): TransitionPlanStepRequest | undefined {
-  const record = requestRecord(input, [
-    "action",
-    "runId",
-    "evidence",
-    "blocker",
-  ]);
-  const action = record?.["action"];
-  const runId = record?.["runId"];
-  const evidence = record?.["evidence"];
-  const blocker = record?.["blocker"];
-  if (
-    !record ||
-    (action !== "start" &&
-      action !== "complete" &&
-      action !== "block" &&
-      action !== "skip" &&
-      action !== "reopen") ||
-    (runId !== undefined &&
-      (typeof runId !== "string" || !/^run_[a-z0-9]{8,80}$/.test(runId))) ||
-    (evidence !== undefined && !boundedString(evidence, 0, 2_000)) ||
-    (blocker !== undefined && !boundedString(blocker, 0, 1_000))
-  ) {
-    return undefined;
-  }
-  return {
-    action,
-    ...(typeof runId === "string" ? { runId } : {}),
-    ...(typeof evidence === "string" ? { evidence } : {}),
-    ...(typeof blocker === "string" ? { blocker } : {}),
-  };
-}
-
-function parseUpdateArtifactManifestRequest(
-  input: unknown,
-): UpdateArtifactManifestRequest | undefined {
-  const record = requestRecord(input, [
-    "status",
-    "sha256",
-    "sizeBytes",
-    "sourceRunId",
-    "evidence",
-    "observeWorkspace",
-  ]);
-  const status = record?.["status"];
-  const sha256 = record?.["sha256"];
-  const sizeBytes = record?.["sizeBytes"];
-  const sourceRunId = record?.["sourceRunId"];
-  const evidence = record?.["evidence"];
-  const observeWorkspace = record?.["observeWorkspace"];
-  if (
-    !record ||
-    (status !== "expected" &&
-      status !== "produced" &&
-      status !== "verified" &&
-      status !== "missing" &&
-      status !== "superseded") ||
-    (sha256 !== undefined &&
-      (typeof sha256 !== "string" || !/^[a-f0-9]{64}$/.test(sha256))) ||
-    (sizeBytes !== undefined &&
-      (typeof sizeBytes !== "number" ||
-        !Number.isSafeInteger(sizeBytes) ||
-        sizeBytes < 0)) ||
-    (sourceRunId !== undefined &&
-      (typeof sourceRunId !== "string" ||
-        !/^run_[a-z0-9]{8,80}$/.test(sourceRunId))) ||
-    (evidence !== undefined && !boundedString(evidence, 0, 2_000)) ||
-    (observeWorkspace !== undefined && typeof observeWorkspace !== "boolean") ||
-    (observeWorkspace === true &&
-      ((status !== "verified" && status !== "missing") ||
-        sha256 !== undefined ||
-        sizeBytes !== undefined))
-  ) {
-    return undefined;
-  }
-  return {
-    status,
-    ...(typeof sha256 === "string" ? { sha256 } : {}),
-    ...(typeof sizeBytes === "number" ? { sizeBytes } : {}),
-    ...(typeof sourceRunId === "string" ? { sourceRunId } : {}),
-    ...(typeof evidence === "string" ? { evidence } : {}),
-    ...(observeWorkspace === true ? { observeWorkspace } : {}),
   };
 }
 

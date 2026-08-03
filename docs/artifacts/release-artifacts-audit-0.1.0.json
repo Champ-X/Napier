@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "4ecbe6345116aa9d1bd7d2683ba13ddb02fc67f3e9d37db2239f07524dd702b2",
+  "artifactSetSha256": "01431a241b1596fd3baed2df2449cf37369cb1288cd881d6dd09aca63f47a128",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -41,7 +41,7 @@
     {
       "kind": "management-openapi",
       "path": "docs/artifacts/management-openapi-0.1.0.json",
-      "sha256": "e8ba6ad383943e0edda0ae74e7d3fd51445b4acd0acc4bb37d95866a3e504853",
+      "sha256": "edb369f068d95fd240e3e8df8b6276c0ae1cc0263206640264dec4f1c6cf006d",
       "valid": true
     },
     {
