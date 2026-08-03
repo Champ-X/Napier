@@ -402,6 +402,12 @@ Model Registry, and execute-only Qualification service. It preserves revision
 event types, 200/201 curation semantics, model validation, conflict handling,
 and bounded-body errors while lowering `app.ts` to 19,439 lines.
 
+Run Evaluation and Evaluation Suite requests now share
+`evaluation-http-validation.ts` for exact Run IDs, distinct baseline/candidate
+sets, bounded rubric criteria, optional model refs, and Suite gates.
+Create/update Suite semantics remain identical, with validation complexity
+split below the per-function budget. This lowers `app.ts` to 19,197 lines.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 
