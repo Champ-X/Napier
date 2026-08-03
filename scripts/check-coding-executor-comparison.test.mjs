@@ -2,7 +2,10 @@ import { readFile } from "node:fs/promises";
 
 import { describe, expect, it } from "vitest";
 
-import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
+import {
+  verifyCodingExecutorComparison,
+  verifyCodingExecutorComparisonSet,
+} from "./check-coding-executor-comparison.mjs";
 
 const artifact = JSON.parse(
   await readFile(
@@ -87,6 +90,37 @@ describe("coding executor comparison verifier", () => {
         verdict: "napier_not_worse",
         napierOfficialPassed: 3,
         napierCanonicalTargetMatches: 3,
+      }),
+    );
+  });
+
+  it("recomputes the cross-seed pass and latency evidence", async () => {
+    await expect(
+      verifyCodingExecutorComparisonSet([
+        artifact,
+        seededArtifact,
+        secondSeedArtifact,
+      ]),
+    ).resolves.toEqual({
+      valid: true,
+      errors: [],
+      seededReportCount: 2,
+      caseCount: 6,
+      napierPassed: 6,
+      ompPassed: 6,
+      napierLatencyWins: 6,
+      verdict: "napier_not_worse",
+    });
+  });
+
+  it("rejects duplicate seeds and cases in aggregate evidence", async () => {
+    await expect(
+      verifyCodingExecutorComparisonSet([seededArtifact, seededArtifact]),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        valid: false,
+        verdict: "not_proven",
+        errors: expect.arrayContaining(["duplicate_seed", "duplicate_case"]),
       }),
     );
   });

@@ -82,6 +82,53 @@ export async function verifyCodingExecutorComparison(input, options = {}) {
   };
 }
 
+export async function verifyCodingExecutorComparisonSet(reports) {
+  const results = await Promise.all(
+    reports.map((report) => verifyCodingExecutorComparison(report)),
+  );
+  const seededReports = reports.filter((report) =>
+    positiveInteger(report?.taskSelection?.seed),
+  );
+  const seeds = seededReports.map((report) => report.taskSelection.seed);
+  const cases = seededReports.flatMap((report) => report.cases ?? []);
+  const caseIds = cases.map((entry) => entry?.caseId);
+  const errors = [];
+  if (seededReports.length === 0) errors.push("seeded_report_missing");
+  if (new Set(seeds).size !== seeds.length) errors.push("duplicate_seed");
+  if (new Set(caseIds).size !== caseIds.length) errors.push("duplicate_case");
+  if (results.some((result) => !result.valid)) {
+    errors.push("report_invalid");
+  }
+  const napierPassed = cases.filter(
+    (entry) => entry?.napier?.officialStatus === "passed",
+  ).length;
+  const ompPassed = cases.filter(
+    (entry) => entry?.omp?.hiddenOutcomePassed === true,
+  ).length;
+  const napierLatencyWins = cases.filter(
+    (entry) =>
+      typeof entry?.napier?.durationMs === "number" &&
+      typeof entry?.omp?.durationMs === "number" &&
+      entry.napier.durationMs < entry.omp.durationMs,
+  ).length;
+  const valid = errors.length === 0;
+  return {
+    valid,
+    errors,
+    seededReportCount: seededReports.length,
+    caseCount: cases.length,
+    napierPassed,
+    ompPassed,
+    napierLatencyWins,
+    verdict:
+      valid && napierPassed >= ompPassed
+        ? "napier_not_worse"
+        : valid
+          ? "napier_worse"
+          : "not_proven",
+  };
+}
+
 function validateCase(entry, errors) {
   if (
     !record(entry) ||
@@ -179,14 +226,19 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ? [path.resolve(root, process.argv[2])]
     : defaultPaths.map((entry) => path.resolve(root, entry));
   const results = [];
+  const reports = [];
   for (const reportPath of reportPaths) {
     const report = JSON.parse(await readFile(reportPath, "utf8"));
+    reports.push(report);
     results.push(
       await verifyCodingExecutorComparison(report, {
         path: path.relative(root, reportPath),
       }),
     );
   }
-  process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
-  if (results.some((result) => !result.valid)) process.exitCode = 1;
+  const aggregate = await verifyCodingExecutorComparisonSet(reports);
+  process.stdout.write(
+    `${JSON.stringify({ reports: results, aggregate }, null, 2)}\n`,
+  );
+  if (!aggregate.valid) process.exitCode = 1;
 }
