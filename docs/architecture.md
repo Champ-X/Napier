@@ -341,6 +341,17 @@ uses. Operator continuation and prompt/stop/resume SSE remain in the execution
 boundary. This extraction lowers `app.ts` to 21,377 lines without changing the
 255-route or 244-operation contracts.
 
+Thread execution streaming now has its own stateless HTTP boundary.
+`thread-execution-http.ts` owns Operator Decision continuation, explicit stop,
+manual resume, prompt submission, and their shared event/snapshot/done/error
+SSE framing. It depends only on `getDetail`, model availability, and the four
+corresponding `AgentRuntime` methods; the Runtime remains the sole owner of Run
+creation, execution, cancellation, recovery, and Ledger settlement. Leaf
+validation and response modules preserve exact request bounds, model headers,
+stop receipts, and hash-only stream diagnostics. The composition root only
+registers this adapter, lowering `app.ts` to 21,077 lines and preserving the
+255-route and 244-operation contracts.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 

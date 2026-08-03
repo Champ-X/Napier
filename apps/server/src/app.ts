@@ -188,7 +188,6 @@ import type {
   QualifyInspectorPackageRequest,
   QualifyPromptPackageRequest,
   QualifySkillPackageRequest,
-  PromptRequest,
   PromptPackageQualification,
   PromptPackageVerification,
   ReplanExecutionPlanRequest,
@@ -198,7 +197,6 @@ import type {
   EvaluationReviewerBallot,
   EvaluationConsensusReport,
   EvaluationConsensusResolution,
-  ResumeRunRequest,
   ReviewExtensionRequest,
   ReviewMcpToolRequest,
   ReviewExecutionPlanBlueprintRecordOutcomesRequest,
@@ -222,7 +220,6 @@ import type {
   SaveExecutionPlanBlueprintResult,
   SignExtensionPackageChannelIndexRequest,
   SignInspectorPackageRequest,
-  StreamFrame,
   SubmitEvaluationReviewerBallotRequest,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
@@ -287,7 +284,6 @@ import {
   createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   builtinUsagePriceTableCatalog,
-  hashEventStream,
   type LocalStore,
   MAX_RECEIPT_TRUST_ANCHORS,
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
@@ -316,14 +312,8 @@ import {
   receiptTrustAnchorsFromDirectory,
   reviewExecutionPlanBlueprintRecordOutcomes,
   reviewExecutionPlanReplanDraft,
-  RUN_STREAM_ERROR_CODE,
-  RUN_STREAM_ERROR_MESSAGE,
   RunEvaluationService,
   signTrustedReceipt,
-  streamEventFrame,
-  streamRunDoneFrame,
-  streamRunErrorFrame,
-  streamSnapshotFrame,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
@@ -343,7 +333,6 @@ import {
 } from "@napier/runtime";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
-import { streamSSE } from "hono/streaming";
 
 import {
   ReceiptTrustAnchorDirectoryDiscoveryError,
@@ -390,6 +379,7 @@ import { registerInboundChannelIngressHttp } from "./inbound-channel-ingress-htt
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
 import { registerThreadEvidenceHttp } from "./thread-evidence-http.js";
+import { registerThreadExecutionHttp } from "./thread-execution-http.js";
 import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
 import { registerThreadControlHttp } from "./thread-control-http.js";
 import { registerThreadOperationsHttp } from "./thread-operations-http.js";
@@ -466,8 +456,6 @@ const MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT = 1_000;
 
 const HEALTH_RUNTIME_COMPONENTS = ["sqlite", "openssl", "uv", "v8"] as const;
 
-const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
-const MAX_PROMPT_REQUEST_BYTES = 64 * 1024;
 const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
 const MAX_EXTENSION_ADMIN_REQUEST_BYTES = 64 * 1024;
 const MAX_TRUST_ADMIN_REQUEST_BYTES = 8 * 1024;
@@ -8619,199 +8607,7 @@ export function createApp(services: NapierServices): Hono {
   });
 
   registerThreadControlHttp(app, services);
-
-  app.post(
-    "/api/threads/:threadId/operator-decisions/:decisionId/continue",
-    (context) => {
-      const threadId = context.req.param("threadId");
-      const decisionId = context.req.param("decisionId");
-      setOperatorDecisionContinueStreamHeaders(context, threadId, decisionId);
-      return streamSSE(context, async (stream) => {
-        const writeFrame = async (
-          frame: StreamFrame,
-          id?: string,
-        ): Promise<void> => {
-          await stream.writeSSE({
-            event: frame.type,
-            data: JSON.stringify(frame),
-            ...(id ? { id } : {}),
-          });
-        };
-        try {
-          const run = await services.runtime.continueOperatorDecision({
-            threadId,
-            decisionId,
-            onEvent: async (event) => {
-              await writeFrame(streamEventFrame(event), String(event.seq));
-            },
-          });
-          const snapshotFrame = streamSnapshotFrame(
-            await services.store.getDetail(threadId),
-          );
-          const doneFrame = streamRunDoneFrame(
-            threadId,
-            run.id,
-            run.status,
-            snapshotFrame.detailSha256,
-            snapshotFrame.detailBytes,
-            snapshotFrame.detail.thread.eventCount,
-            snapshotFrame.eventBytes,
-            hashEventStream(snapshotFrame.detail.events),
-          );
-          await writeFrame(snapshotFrame);
-          await writeFrame(doneFrame);
-        } catch (error) {
-          await writeFrame(streamRunErrorFrame(threadId, error));
-        }
-      });
-    },
-  );
-
-  app.post("/api/threads/:threadId/stop", (context) => {
-    const threadId = context.req.param("threadId");
-    const receipt = { stopped: services.runtime.stop(threadId) };
-    setThreadStopHeaders(context, threadId, receipt);
-    return context.json(receipt, receipt.stopped ? 202 : 409);
-  });
-
-  app.post("/api/threads/:threadId/resume", async (context) => {
-    const threadId = context.req.param("threadId");
-    let input: unknown;
-    try {
-      input = await readOptionalLimitedJson(
-        context.req.raw,
-        MAX_RESUME_REQUEST_BYTES,
-        "Resume request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseResumeRunRequest(input);
-    if (!body) {
-      return jsonError(context, "Resume request is invalid", 400);
-    }
-    if (body.model) {
-      try {
-        await assertAvailableModel(services, body.model);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-    }
-    setThreadResumeStreamHeaders(context, threadId, body.runId, body.model);
-    return streamSSE(context, async (stream) => {
-      const writeFrame = async (
-        frame: StreamFrame,
-        id?: string,
-      ): Promise<void> => {
-        await stream.writeSSE({
-          event: frame.type,
-          data: JSON.stringify(frame),
-          ...(id ? { id } : {}),
-        });
-      };
-      try {
-        const run = await services.runtime.resumeInterruptedRun({
-          threadId,
-          ...(body.runId ? { runId: body.runId } : {}),
-          ...(body.model ? { model: body.model } : {}),
-          onEvent: async (event) => {
-            await writeFrame(streamEventFrame(event), String(event.seq));
-          },
-        });
-        const snapshotFrame = streamSnapshotFrame(
-          await services.store.getDetail(threadId),
-        );
-        const doneFrame = streamRunDoneFrame(
-          threadId,
-          run.id,
-          run.status,
-          snapshotFrame.detailSha256,
-          snapshotFrame.detailBytes,
-          snapshotFrame.detail.thread.eventCount,
-          snapshotFrame.eventBytes,
-          hashEventStream(snapshotFrame.detail.events),
-        );
-        await writeFrame(snapshotFrame);
-        await writeFrame(doneFrame);
-      } catch (error) {
-        await writeFrame(streamRunErrorFrame(threadId, error));
-      }
-    });
-  });
-
-  app.post("/api/threads/:threadId/messages", async (context) => {
-    const threadId = context.req.param("threadId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_PROMPT_REQUEST_BYTES,
-        "Prompt request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parsePromptRequest(input);
-    if (!body) {
-      return jsonError(context, "Prompt request is invalid", 400);
-    }
-    if (body.model) {
-      try {
-        await assertAvailableModel(services, body.model);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-    }
-    setThreadPromptStreamHeaders(context, threadId, body.model);
-
-    return streamSSE(context, async (stream) => {
-      const writeFrame = async (
-        frame: StreamFrame,
-        id?: string,
-      ): Promise<void> => {
-        await stream.writeSSE({
-          event: frame.type,
-          data: JSON.stringify(frame),
-          ...(id ? { id } : {}),
-        });
-      };
-      try {
-        const run = await services.runtime.runPrompt({
-          threadId,
-          text: body.text,
-          ...(body.model ? { model: body.model } : {}),
-          onEvent: async (event) => {
-            await writeFrame(streamEventFrame(event), String(event.seq));
-          },
-        });
-        const snapshotFrame = streamSnapshotFrame(
-          await services.store.getDetail(threadId),
-        );
-        const doneFrame = streamRunDoneFrame(
-          threadId,
-          run.id,
-          run.status,
-          snapshotFrame.detailSha256,
-          snapshotFrame.detailBytes,
-          snapshotFrame.detail.thread.eventCount,
-          snapshotFrame.eventBytes,
-          hashEventStream(snapshotFrame.detail.events),
-        );
-        await writeFrame(snapshotFrame);
-        await writeFrame(doneFrame);
-      } catch (error) {
-        await writeFrame(streamRunErrorFrame(threadId, error));
-      }
-    });
-  });
+  registerThreadExecutionHttp(app, services);
 
   app.post("/api/threads/:threadId/workflows", (context) =>
     executeWorkflowHttp(context, services, {
@@ -8999,34 +8795,6 @@ function parseVerifyUsagePriceTableCatalogRequest(
   return {
     catalog: catalog as VerifyUsagePriceTableCatalogRequest["catalog"],
     requiredProviders,
-  };
-}
-
-function parseResumeRunRequest(input: unknown): ResumeRunRequest | undefined {
-  if (input === undefined) return {};
-  const record = requestRecord(input, ["runId", "model"]);
-  if (!record) return undefined;
-  const runId = record["runId"];
-  if (runId !== undefined && !validRunId(runId)) return undefined;
-  const model =
-    record["model"] === undefined ? undefined : parseModelRef(record["model"]);
-  if (record["model"] !== undefined && !model) return undefined;
-  return {
-    ...(typeof runId === "string" ? { runId } : {}),
-    ...(model ? { model } : {}),
-  };
-}
-
-function parsePromptRequest(input: unknown): PromptRequest | undefined {
-  const record = requestRecord(input, ["text", "model"]);
-  if (!record || !boundedString(record["text"], 1, 60_000)) return undefined;
-  if (!record["text"].trim()) return undefined;
-  const model =
-    record["model"] === undefined ? undefined : parseModelRef(record["model"]);
-  if (record["model"] !== undefined && !model) return undefined;
-  return {
-    text: record["text"],
-    ...(model ? { model } : {}),
   };
 }
 
@@ -16799,74 +16567,6 @@ function setWorkspaceProcessProjectionHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, projection);
-}
-
-function setOperatorDecisionContinueStreamHeaders(
-  context: Context,
-  threadId: string,
-  decisionId: string,
-): void {
-  context.header("X-Accel-Buffering", "no");
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Operator-Decision-Id", decisionId);
-  context.header("X-Napier-Run-Intent", "operator-decision-continuation");
-  setThreadRunStreamErrorHeaders(context);
-}
-
-function setThreadStopHeaders(
-  context: Context,
-  threadId: string,
-  receipt: { stopped: boolean },
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, receipt);
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Thread-Stopped", String(receipt.stopped));
-}
-
-function setThreadResumeStreamHeaders(
-  context: Context,
-  threadId: string,
-  runId: string | undefined,
-  model: ResumeRunRequest["model"] | undefined,
-): void {
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Resume-Requested", "true");
-  setThreadRunStreamErrorHeaders(context);
-  if (runId) {
-    context.header("X-Napier-Run-Id", runId);
-  }
-  setThreadRunStreamModelHeaders(context, model);
-}
-
-function setThreadPromptStreamHeaders(
-  context: Context,
-  threadId: string,
-  model: PromptRequest["model"] | undefined,
-): void {
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Prompt-Requested", "true");
-  setThreadRunStreamErrorHeaders(context);
-  setThreadRunStreamModelHeaders(context, model);
-}
-
-function setThreadRunStreamModelHeaders(
-  context: Context,
-  model: PromptRequest["model"] | ResumeRunRequest["model"] | undefined,
-): void {
-  if (model) {
-    context.header("X-Napier-Model-Provider", model.provider);
-    context.header("X-Napier-Model-Id", model.id);
-  }
-}
-
-function setThreadRunStreamErrorHeaders(context: Context): void {
-  context.header("X-Napier-Stream-Error-Code", RUN_STREAM_ERROR_CODE);
-  context.header("X-Napier-Stream-Error-Diagnostic", "sha256");
-  context.header(
-    "X-Napier-Stream-Error-Message-SHA256",
-    sha256Text(RUN_STREAM_ERROR_MESSAGE),
-  );
 }
 
 function setRunEvaluationListHeaders(
