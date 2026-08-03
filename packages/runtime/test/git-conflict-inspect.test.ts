@@ -17,7 +17,10 @@ import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
-import { parseGitConflictIndex } from "../src/git-conflict-index.js";
+import {
+  parseGitConflictIndex,
+  parseGitConflictIndexSet,
+} from "../src/git-conflict-index.js";
 import {
   createGitInspectTool,
   gitInspectToolCallArgumentsLedgerProjection,
@@ -52,6 +55,12 @@ describe("Git conflict inspection", () => {
       path.join(fixture.workspaceRoot, ".git/index"),
     );
     expect(parseGitConflictIndex(indexBefore, "CONFLICT.txt")).toHaveLength(3);
+    const parsedSet = parseGitConflictIndexSet(indexBefore, [
+      "ABSENT.txt",
+      "CONFLICT.txt",
+    ]);
+    expect(parsedSet.get("ABSENT.txt")).toEqual([]);
+    expect(parsedSet.get("CONFLICT.txt")).toHaveLength(3);
     const tamperedIndex = Buffer.from(indexBefore);
     tamperedIndex[20] = (tamperedIndex[20] ?? 0) ^ 1;
     expect(() => parseGitConflictIndex(tamperedIndex, "CONFLICT.txt")).toThrow(

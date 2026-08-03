@@ -206,6 +206,8 @@ describe("Workflow preview-bound Git commit Tool nodes", () => {
         status: "applied",
         parentCommitSha1: topology.firstParent,
         mergeParentCommitSha1: topology.mergeParent,
+        fileCount: 0,
+        hunkCount: 0,
       }),
     );
     const parents = (
@@ -273,7 +275,7 @@ async function createResolvedMerge(workspaceRoot: string): Promise<{
   ).catch(() => undefined);
   await writeFile(
     path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
-    "PRIVATE_RESOLVED\n",
+    "PRIVATE_OURS\n",
   );
   await git(workspaceRoot, ["add", "PRIVATE_WORKFLOW.txt"]);
   return { firstParent, mergeParent };

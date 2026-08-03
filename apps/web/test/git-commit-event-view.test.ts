@@ -39,6 +39,26 @@ describe("Git commit Trace evidence", () => {
     expect(toolEventTraceSummary(previewEvent)).toContain(
       "git commit preview / commit ready",
     );
+    const zeroDeltaMerge = toolEventTraceView(
+      event("git_commit_preview", {
+        ...previewDetails(),
+        mergeParentCommitSha1: "a".repeat(40),
+        action: "preview",
+        status: "ready",
+        postcondition: "not_applied",
+        fileCount: 0,
+        hunkCount: 0,
+        addedLineCount: 0,
+        deletedLineCount: 0,
+        durable: false,
+      }),
+    );
+    expect(zeroDeltaMerge).toEqual(
+      expect.objectContaining({
+        gitCommitFileCount: 0,
+        gitCommitMergeParentSha1: "a".repeat(40),
+      }),
+    );
 
     const currentApplyDetails = baseDetails();
     delete currentApplyDetails["identitySha256"];
@@ -77,6 +97,37 @@ describe("Git commit Trace evidence", () => {
           refUpdateStatus: "succeeded",
           afterHeadStateSha256: "d".repeat(64),
           sourcePreviewResultSha256: "e".repeat(64),
+        }),
+      )?.gitCommitAction,
+    ).toBeUndefined();
+    expect(
+      toolEventTraceView(
+        event("git_commit_preview", {
+          ...previewDetails(),
+          action: "preview",
+          status: "ready",
+          postcondition: "not_applied",
+          fileCount: 0,
+          hunkCount: 0,
+          addedLineCount: 0,
+          deletedLineCount: 0,
+          durable: false,
+        }),
+      )?.gitCommitAction,
+    ).toBeUndefined();
+    expect(
+      toolEventTraceView(
+        event("git_commit_preview", {
+          ...previewDetails(),
+          mergeParentCommitSha1: "a".repeat(40),
+          action: "preview",
+          status: "ready",
+          postcondition: "not_applied",
+          fileCount: 0,
+          hunkCount: 1,
+          addedLineCount: 0,
+          deletedLineCount: 0,
+          durable: false,
         }),
       )?.gitCommitAction,
     ).toBeUndefined();

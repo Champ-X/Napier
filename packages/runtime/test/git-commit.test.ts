@@ -177,7 +177,7 @@ describe("preview-bound atomic Git commit", () => {
     }
   }, 30_000);
 
-  it("constructs and atomically completes one resolved two-parent merge", async () => {
+  it("completes a two-parent merge whose resolved tree matches HEAD", async () => {
     const fixture = await createRepository();
     await git(fixture.workspaceRoot, ["branch", "feature"]);
     await writeFile(
@@ -216,7 +216,7 @@ describe("preview-bound atomic Git commit", () => {
     ).rejects.toThrow();
     await writeFile(
       path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
-      "PRIVATE_RESOLVED\n",
+      "PRIVATE_OURS\n",
     );
     await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
     const indexBefore = await sha256File(
@@ -238,9 +238,24 @@ describe("preview-bound atomic Git commit", () => {
         parentCommitSha1: firstParent,
         mergeParentCommitSha1: mergeParent,
         status: "ready",
+        fileCount: 0,
+        hunkCount: 0,
+        addedLineCount: 0,
+        deletedLineCount: 0,
       }),
     );
-    expect(preview.stagedPatch).toContain("PRIVATE_RESOLVED");
+    expect(preview.stagedPatch).toContain("GIT MERGE TREE TRANSITION");
+    expect(preview.stagedPatch).toContain(
+      "Tree: matches first parent; no staged tree delta",
+    );
+    expect(preview.details.treeSha1).toBe(
+      (
+        await gitOutput(fixture.workspaceRoot, [
+          "rev-parse",
+          `${firstParent}^{tree}`,
+        ])
+      ).trim(),
+    );
     expect(
       await readFile(path.join(fixture.workspaceRoot, ".git/MERGE_HEAD")),
     ).toEqual(mergeHeadBefore);

@@ -2391,7 +2391,7 @@ v4 index, and changed worktree/index state fail closed. The complete
 worktree/base/ours/theirs text is live untrusted data. Agents can resolve it
 through `read_file` and `apply_patch`, then reuse
 `git_stage_preview`/`git_stage_apply` to atomically replace the unmerged stages
-with one reviewed stage-0 entry.
+with one reviewed resolved index state.
 
 Napier supplies every argument and disables optional locks, pagers, color,
 filesystem monitoring, rename detection, external diff, textconv, and
@@ -2427,9 +2427,12 @@ sorts targets by code point, and binds every file bytes/mode plus root-to-target
 `.git/napier-stage/<ephemeral>`, directs both `GIT_INDEX_FILE` and
 `GIT_OBJECT_DIRECTORY` there, then runs fixed `git add -- path` once per ordered
 target against that same private index. It renders one complete patch by
-concatenating a fixed path-filtered `git diff --cached HEAD` for every target;
-each target must contribute a reviewable staged delta and the aggregate remains
-128 KiB.
+concatenating a fixed path-filtered `git diff --cached HEAD` for every target.
+If a supported unmerged text target resolves into an index state whose tree
+matches HEAD, the otherwise empty diff becomes an explicit canonical index
+transition naming the prior stage set and zero tree delta. An ordinary empty
+target remains rejected. Every target therefore contributes reviewable staged
+tree or index-transition evidence, with a 128 KiB aggregate limit.
 
 For one `path`, a strictly increasing set of 1-based `hunkIndexes` instead
 selects up to 32 complete hunks from a fixed single-path index-to-worktree patch
@@ -2439,10 +2442,11 @@ and applies only those hunks to the private index through fixed
 mode-changing, renamed, malformed, CRLF patch, or out-of-range selections fail
 closed; whole-path staging remains available for supported new/deleted files.
 The OS Sandbox keeps the complete workspace read-only and grants write access
-only to that ephemeral directory. The resulting live patch, proposed index
-hash, repository/config/index state, target bytes/mode, selected-hunk protocol
-and digest, parent `.gitattributes` chain, and `.git/info/attributes` produce a
-one-use five-minute capability scoped to its Agent Run or Workflow Plan.
+only to that ephemeral directory. The resulting live patch/index transition,
+proposed index hash, repository/config/index state, target bytes/mode,
+selected-hunk protocol and digest, parent `.gitattributes` chain, and
+`.git/info/attributes` produce a one-use five-minute capability scoped to its
+Agent Run or Workflow Plan.
 
 `git_stage_apply` consumes that capability, locks the real index plus every
 target path, rechecks every binding, reconstructs the same private index, and
@@ -2460,18 +2464,22 @@ contract.
 
 `git_commit_preview` consumes the complete existing staged index without
 changing refs, the real index, worktree, or object database. It rejects empty
-staging, more than 32 changed entries, staged gitlinks, detached or unborn
-HEAD, and rebase/cherry-pick/revert/bisect/sequencer/squash/autostash state.
+ordinary staging, more than 32 changed entries, staged gitlinks, detached or
+unborn HEAD, and rebase/cherry-pick/revert/bisect/sequencer/squash/autostash
+state.
 An ordinary commit requires no operation markers. A merge commit requires
 exactly one bounded `MERGE_HEAD`, a bound `MERGE_MSG`, an already resolved
 stage-0 index, and optional bound `MERGE_MODE`, `AUTO_MERGE`, and `MERGE_RR`
-files. Octopus merge heads are rejected. The Runtime writes a normalized
+files. If that resolved index has no tree delta from HEAD, Napier emits an
+explicit canonical merge-tree transition and still reviews the two ordered
+parents; ordinary empty commits remain unavailable. Octopus merge heads are
+rejected. The Runtime writes a normalized
 message, copied index, and new objects only under
 `.git/napier-stage/<ephemeral>`, then runs fixed `write-tree` and `commit-tree`
 with one or two ordered `-p` arguments, the
 `Napier Agent <napier@localhost>` identity, and preview timestamp. The
 five-minute one-use Run/Plan capability binds both parents when present, tree,
-exact proposed commit SHA-1, message, staged patch, operation state,
+exact proposed commit SHA-1, message, staged tree/transition, operation state,
 repository, executable, Sandbox, environment, and limits.
 Before reading operation state, preview takes the private commit lock and scans
 for one unfinished Napier marker-isolation transaction. It restores only

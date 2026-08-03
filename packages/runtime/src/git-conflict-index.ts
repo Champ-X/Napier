@@ -19,6 +19,13 @@ export function parseGitConflictIndex(
   index: Buffer,
   targetPath: string,
 ): GitConflictIndexEntry[] {
+  return parseGitConflictIndexSet(index, [targetPath]).get(targetPath) ?? [];
+}
+
+export function parseGitConflictIndexSet(
+  index: Buffer,
+  targetPaths: readonly string[],
+): ReadonlyMap<string, GitConflictIndexEntry[]> {
   const payloadEnd = index.length - INDEX_CHECKSUM_BYTES;
   const { version, count } = readIndexHeader(index, payloadEnd);
   if (
@@ -28,8 +35,13 @@ export function parseGitConflictIndex(
   ) {
     throw new Error("Git conflict index version is unsupported");
   }
-  const target = Buffer.from(targetPath, "utf8");
-  const matches: GitConflictIndexEntry[] = [];
+  const targets = targetPathBuckets(targetPaths);
+  const matches = new Map(
+    targetPaths.map((targetPath) => [
+      targetPath,
+      [] as GitConflictIndexEntry[],
+    ]),
+  );
   let offset = INDEX_HEADER_BYTES;
   for (let entryIndex = 0; entryIndex < count; entryIndex += 1) {
     const entryStart = offset;
@@ -65,7 +77,9 @@ export function parseGitConflictIndex(
     ) {
       throw new Error("Git conflict index entry padding is invalid");
     }
-    if (!index.subarray(nameStart, nameEnd).equals(target)) continue;
+    const name = index.subarray(nameStart, nameEnd);
+    const targetPath = matchingTargetPath(name, targets);
+    if (!targetPath) continue;
     const stage = (flags & INDEX_STAGE_MASK) >> 12;
     if (stage === 0) continue;
     if (
@@ -74,13 +88,35 @@ export function parseGitConflictIndex(
     ) {
       throw new Error("Git conflict index target is unsupported");
     }
-    matches.push({
+    matches.get(targetPath)!.push({
       stage,
       mode: rawMode === 0o100755 ? "100755" : "100644",
       objectSha1,
     });
   }
   return matches;
+}
+
+function matchingTargetPath(
+  name: Buffer,
+  targets: Map<number, Array<{ path: string; bytes: Buffer }>>,
+): string | undefined {
+  return targets.get(name[0] ?? -1)?.find((target) => target.bytes.equals(name))
+    ?.path;
+}
+
+function targetPathBuckets(
+  targetPaths: readonly string[],
+): Map<number, Array<{ path: string; bytes: Buffer }>> {
+  const buckets = new Map<number, Array<{ path: string; bytes: Buffer }>>();
+  for (const targetPath of targetPaths) {
+    const bytes = Buffer.from(targetPath, "utf8");
+    const key = bytes[0] ?? -1;
+    const bucket = buckets.get(key) ?? [];
+    bucket.push({ path: targetPath, bytes });
+    buckets.set(key, bucket);
+  }
+  return buckets;
 }
 
 function readIndexHeader(

@@ -105,7 +105,8 @@ describe("workspace tool guidance", () => {
     ]);
 
     expect(guidance).toContain("exact working or staged hunks");
-    expect(guidance).toContain("review its complete private-index patch");
+    expect(guidance).toContain("complete private-index tree patch");
+    expect(guidance).toContain("unmerged-to-resolved index transition");
     expect(guidance).toContain("strictly increasing 1-based hunkIndexes");
     expect(guidance).toContain("canonical 1-16 path atomic set");
     expect(guidance).toContain("execution-scoped preview ID");

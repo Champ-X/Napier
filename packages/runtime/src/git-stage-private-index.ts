@@ -36,6 +36,7 @@ import {
   type GitDiffCounts,
   MAX_GIT_STAGE_TARGETS,
 } from "./git-stage-model.js";
+import { gitStageIndexTransitions } from "./git-stage-index-transition.js";
 import { preparePrivateStageMutation } from "./git-stage-private-mutation.js";
 import { syncDirectory } from "./workspace-file-scope.js";
 
@@ -117,16 +118,24 @@ export async function preparePrivateGitStage(input: {
       throw new Error("Git stage target has no unstaged change");
     }
     const diffs = await createGitStageDiffs(input, isolation);
-    const patch = diffs.map((diff) => diff.stdout).join("");
-    const processes = [input.configProcess, ...mutation.processes, ...diffs];
+    const patch = diffs.parts.join("");
+    const processes = [
+      input.configProcess,
+      ...mutation.processes,
+      ...diffs.processes,
+    ];
     assertSameRuntime(processes);
+    const counts = gitDiffCounts(patch);
     return {
       temporaryDirectory,
       objectDirectory,
       indexBytes,
       indexSha256,
       patch,
-      counts: gitDiffCounts(patch),
+      counts: {
+        ...counts,
+        fileCount: counts.fileCount + diffs.indexTransitionCount,
+      },
       targetCount: input.targetPaths.length,
       selectionMode: mutation.selectionMode,
       selectedHunkCount: mutation.selectedHunkCount,
@@ -150,9 +159,12 @@ export async function preparePrivateGitStage(input: {
 async function createGitStageDiffs(
   input: Parameters<typeof preparePrivateGitStage>[0],
   isolation: GitProcessIsolation,
-): Promise<GitInspectProcessResult[]> {
-  const diffs: GitInspectProcessResult[] = [];
-  let totalBytes = 0;
+): Promise<{
+  processes: GitInspectProcessResult[];
+  parts: string[];
+  indexTransitionCount: number;
+}> {
+  const processes: GitInspectProcessResult[] = [];
   for (const targetPath of input.targetPaths) {
     const diff = await runGitProcess(
       input.processOptions,
@@ -161,30 +173,47 @@ async function createGitStageDiffs(
       input.signal,
       isolation,
     );
-    totalBytes += Buffer.byteLength(diff.stdout, "utf8");
+    const outputTooLarge =
+      Buffer.byteLength(diff.stdout, "utf8") > MAX_GIT_PROCESS_OUTPUT_CHARS;
     if (
       diff.status !== "succeeded" ||
       diff.stderr.length > 0 ||
-      diff.stdout.length === 0 ||
-      totalBytes > MAX_GIT_PROCESS_OUTPUT_CHARS
+      outputTooLarge
     ) {
-      if (
-        diff.status === "succeeded" &&
-        diff.stderr.length === 0 &&
-        diff.stdout.length === 0
-      ) {
-        throw new Error("Every Git stage target must have a staged change");
-      }
       throw new Error(
-        diff.status === "output_capped" ||
-          totalBytes > MAX_GIT_PROCESS_OUTPUT_CHARS
+        diff.status === "output_capped" || outputTooLarge
           ? "Git stage preview exceeds its bounded output limit"
           : "Git stage preview could not be constructed",
       );
     }
-    diffs.push(diff);
+    processes.push(diff);
   }
-  return diffs;
+  const emptyPaths = input.targetPaths.filter(
+    (_targetPath, index) => processes[index]?.stdout.length === 0,
+  );
+  const transitions =
+    emptyPaths.length > 0 && input.hunkIndexes === undefined
+      ? gitStageIndexTransitions(input.initialIndexBytes, emptyPaths)
+      : new Map<string, string>();
+  const parts: string[] = [];
+  let totalBytes = 0;
+  for (let index = 0; index < input.targetPaths.length; index += 1) {
+    const targetPath = input.targetPaths[index]!;
+    const part = processes[index]!.stdout || transitions.get(targetPath) || "";
+    if (part.length === 0) {
+      throw new Error("Every Git stage target must have a staged change");
+    }
+    totalBytes += Buffer.byteLength(part, "utf8");
+    if (totalBytes > MAX_GIT_PROCESS_OUTPUT_CHARS) {
+      throw new Error("Git stage preview exceeds its bounded output limit");
+    }
+    parts.push(part);
+  }
+  return {
+    processes,
+    parts,
+    indexTransitionCount: transitions.size,
+  };
 }
 
 export async function promotePreparedGitObjects(

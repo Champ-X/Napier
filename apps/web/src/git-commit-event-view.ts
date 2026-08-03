@@ -45,7 +45,7 @@ export function gitCommitEventEvidence(
   const messageBytes = integer(value["messageBytes"], 1, 4 * 1024);
   const timestamp = integer(value["commitTimestampSeconds"], 0, 9_999_999_999);
   const contextLines = integer(value["contextLines"], 0, 10);
-  const fileCount = integer(value["fileCount"], 1, 32);
+  const fileCount = integer(value["fileCount"], 0, 32);
   const hunkCount = integer(value["hunkCount"], 0, 100_000);
   const added = integer(value["addedLineCount"], 0, 1_000_000);
   const deleted = integer(value["deletedLineCount"], 0, 1_000_000);
@@ -79,7 +79,12 @@ export function gitCommitEventEvidence(
         duration,
       ],
       sha256Values,
-    })
+    }) ||
+    (fileCount === 0 &&
+      (!sha1(value["mergeParentCommitSha1"]) ||
+        hunkCount !== 0 ||
+        added !== 0 ||
+        deleted !== 0))
   ) {
     return undefined;
   }

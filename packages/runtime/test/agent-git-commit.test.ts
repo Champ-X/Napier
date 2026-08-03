@@ -173,7 +173,8 @@ describe("Agent preview-bound Git commit", () => {
       ),
       (context) => {
         const messages = JSON.stringify(context.messages);
-        expect(messages).toContain("PRIVATE_RESOLVED");
+        expect(messages).toContain("GIT MERGE TREE TRANSITION");
+        expect(messages).toContain("no staged tree delta");
         expect(messages).toContain(mergeParent);
         const previewId = messages.match(
           /gitcommitpreview_[a-z0-9]{8,80}/u,
@@ -223,7 +224,6 @@ describe("Agent preview-bound Git commit", () => {
       "PRIVATE_SOURCE",
       "PRIVATE_OURS",
       "PRIVATE_THEIRS",
-      "PRIVATE_RESOLVED",
       "PRIVATE_MERGE_MESSAGE",
     ]) {
       expect(durable).not.toContain(privateValue);
@@ -276,7 +276,7 @@ async function createResolvedMerge(workspaceRoot: string): Promise<{
   ).catch(() => undefined);
   await writeFile(
     path.join(workspaceRoot, "PRIVATE_SOURCE.txt"),
-    "PRIVATE_RESOLVED\n",
+    "PRIVATE_OURS\n",
   );
   await git(workspaceRoot, ["add", "PRIVATE_SOURCE.txt"]);
   return { firstParent, mergeParent };

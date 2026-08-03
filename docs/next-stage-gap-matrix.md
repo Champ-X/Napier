@@ -4326,9 +4326,11 @@ Acceptance:
   OCI, grafts, unsafe config, stderr, timeout, and patches above 128 KiB;
 - construct the exact proposed index with one fixed `git add -- path` per
   canonical target against the same private index/object directory. Require one
-  non-empty path-filtered final patch per target and cap the aggregate at
-  128 KiB. The workspace is read-only to Git and only the 0700 ephemeral
-  directory is writable;
+  reviewable path-filtered final patch per target, except that a supported
+  initial text conflict resolving to a tree equal to HEAD emits an
+  explicit canonical index transition. Reject ordinary zero-delta targets and
+  cap aggregate evidence at 128 KiB. The workspace is read-only to Git and only
+  the 0700 ephemeral directory is writable;
 - bind repository/index/config modes and bytes, every target bytes/mode and
   attribute chain, ordered set, fixed executable/argv/environment/limits/
   Sandbox, proposed complete index, and exact aggregate staged patch;
@@ -4357,6 +4359,10 @@ Observed result:
 - no-change members, normalized aliases, path+paths ambiguity, multi-path hunk
   selection, >16 targets, one-target drift, and protected members fail closed
   without partially changing the real index;
+- one mixed atomic set resolves a modify/modify conflict exactly to the current
+  HEAD tree while staging an ordinary companion delta. Preview reports the
+  prior `1,2,3` stages and zero tree delta, apply clears all unmerged entries,
+  and `fileCount=2` remains compatible without adding Receipt properties;
 - negative tests reject cross-scope and reused capabilities, stale worktree or
   index, parent attribute drift, command-bearing filters, symlinks, active
   index locks, protected paths, pathspec magic expansion, broken object
@@ -4387,15 +4393,15 @@ Observed result:
   Runtime with an explicitly labelled test adapter produces an exact preview,
   applies a verified index, and exposes four private-directory-only writable
   launches.
-- the complete repository gate passes 1,978 regular tests: root 78, CLI 150,
-  Server 137, Web 465, Runtime 1,120, and SDK 28. Architecture covers 763
+- the complete repository gate passes 1,979 regular tests: root 78, CLI 150,
+  Server 137, Web 465, Runtime 1,121, and SDK 28. Architecture covers 765
   production and 398 test modules with zero relative-import cycles. Product
-  performance measures 623.9 ms to first CLI event, 772.4 ms to first token,
-  1,107.6 ms to completion, 0.3 ms read p95, 6.8 ms 1,000-event projection,
-  and 757.76 SQLite bytes/event;
+  performance measures 764.8 ms to first CLI event, 911.2 ms to first token,
+  1,224.4 ms to completion, 0.8 ms read p95, 8.0 ms 1,000-event projection,
+  and 761.856 SQLite bytes/event;
 - the 96-file Web dist remains at 115.44 KiB for the main entry and is bound
-  to `72b3f5b3a7af732a`; the 42-artifact Release set is bound to
-  `e529725de9aac1ee`.
+  to `87cec29274efbca7`; the 42-artifact Release set is bound to
+  `11be9c9789d6ddd6`.
 
 Threat boundary:
 
@@ -4924,7 +4930,7 @@ Threat boundary:
 User scenario: a Coding Agent or typed Workflow can inspect one unmerged text
 path with complete worktree/base/ours/theirs evidence. An Agent can then edit
 the conflict and reuse the existing preview-bound Stage transaction to replace
-unmerged stages with one reviewed stage-0 entry.
+unmerged stages with one reviewed resolved index state.
 
 Acceptance:
 
@@ -5007,10 +5013,11 @@ git_stage_apply`, clears the unmerged index, exports valid Replay, and keeps
 
 Threat boundary:
 
-- this slice resolves one regular-text path into stage-0. It does not itself
-  complete the merge, accept a resolution body directly through Git, or
-  support binary, symlink, gitlink, directory/file, rename, or multi-path
-  conflict transactions;
+- inspection still exposes one regular-text conflict at a time and does not
+  itself complete the merge or accept a resolution body through Git. The Stage
+  transaction can now atomically clear multiple already reviewed text
+  conflicts, including a resolved tree equal to HEAD; binary, symlink, gitlink,
+  directory/file, and rename conflicts remain unsupported;
 - exact two-parent completion is implemented in the next slice and still
   requires a fresh Commit preview over the complete resolved stage-0 index;
 - all Git blob subprocesses are read-only. Text editing and index installation
@@ -5039,7 +5046,8 @@ Acceptance:
 - require the complete real index to contain only resolved stage-0 entries.
   Reuse raw staged-entry/gitlink denial, 32-file/128-KiB patch bounds,
   write-tree, fixed Napier identity/timestamp, private object construction, and
-  loose-object SHA-1 verification;
+  loose-object SHA-1 verification. Permit zero raw/tree delta only for a bound
+  merge and emit canonical first-parent-tree/second-parent review evidence;
 - construct fixed `commit-tree <tree> -p <HEAD> -p <MERGE_HEAD> -F <private>`
   with ordered, distinct, exact parents. Bind the second parent in Receipt and
   bind identity plus complete operation state inside runtime evidence;
@@ -5084,6 +5092,10 @@ Observed result:
   HEAD/index/objects/all markers, and apply creates an exact two-parent commit
   in HEAD-first order while preserving the index and removing every merge
   marker;
+- a resolution exactly equal to HEAD first clears its unmerged index stages
+  through Stage transition evidence, then Commit previews `fileCount=0` with a
+  canonical merge-tree transition, creates the exact two-parent commit whose
+  tree equals the first parent, and continues rejecting ordinary empty commits;
 - the fixed `commit-tree` launch contains two ordered `-p` flags, carries no
   message argv, uses the fixed identity/timestamp, and the ref update remains
   exact-branch old-parent CAS with hooks disabled;
@@ -5105,27 +5117,33 @@ Observed result:
   model-free typed merge Workflow all pass. Agent/Workflow history keeps
   private resolution, message, marker, and patch text out of Ledger/Replay;
 - Web Trace projects the optional merge parent, identifies two-parent
-  topology, accepts legacy optional identity evidence, and rejects a second
-  parent equal to HEAD;
+  topology, accepts merge-only zero-delta receipts plus legacy optional identity
+  evidence, and rejects ordinary or semantically inconsistent zero-file
+  receipts and a second parent equal to HEAD;
 - built Runtime production Sandbox execution fails before private construction
   in the nested IDE host and leaves merge state unchanged. The explicit built
   adapter previews the exact two parents, creates that topology, preserves the
   index, clears merge markers, and returns `applied/verified`;
+- built end-to-end Dogfood inspects all three conflict sides, resolves exactly
+  to HEAD, applies a durable unmerged-to-resolved Stage transition with empty
+  staged tree diff, then applies a durable zero-file merge-tree transition.
+  Final topology has the exact two parents, the first-parent tree, no markers,
+  no private residue, and only confined write mounts;
 - Review found Workflow property-budget/error-evidence, phased deadline,
   marker half-cleanup, uncertain-update cleanup ordering, private construction
   ordering, cleanup durability, and cross-restart reconciliation issues. All
   were fixed with focused regressions and independent validation.
-- the complete gate passes 1,950 regular tests: 78 root, 150 CLI, 137 Server,
-  461 Web, 1,096 Runtime, and 28 SDK tests. Architecture remains at 739
-  production modules, 392 test modules, zero relative-import cycles, current
+- the complete gate passes 1,979 regular tests: 78 root, 150 CLI, 137 Server,
+  465 Web, 1,121 Runtime, and 28 SDK tests. Architecture remains at 765
+  production modules, 398 test modules, zero relative-import cycles, current
   runtime/lock/OpenAPI artifacts, 255 routes, and 244/244 compatibility
   operations;
-- product performance remains within baseline: 664.3 ms CLI first event,
-  813.2 ms first token, 1,115.5 ms completion, 0.4 ms read p95, 8.6 ms
+- product performance remains within baseline: 764.8 ms CLI first event,
+  911.2 ms first token, 1,224.4 ms completion, 0.8 ms read p95, 8.0 ms
   1,000-event projection, and 761.856 SQLite bytes/event;
 - the 96-file Web dist keeps the main entry at 115.44 KiB and is bound to
-  `1d498be1e31f709a`; the 42-artifact Release set is bound to
-  `8c16d05974179e4a`.
+  `87cec29274efbca7`; the 42-artifact Release set is bound to
+  `11be9c9789d6ddd6`.
 
 Threat boundary:
 
@@ -5133,6 +5151,8 @@ Threat boundary:
   not run merge strategies, choose branches/revisions, resolve files, execute
   hooks, sign, amend, rebase, cherry-pick, squash, autostash, or create octopus
   commits;
+- a tree equal to the first parent is not an unrestricted empty commit: it is
+  admitted only with exact merge operation state and a distinct second parent;
 - marker isolation starts only after the merge commit ref and reflogs are
   durable. `MERGE_HEAD` moves last and restores first. A process/host crash
   before that move remains visibly merge-active; after it, the durable merge

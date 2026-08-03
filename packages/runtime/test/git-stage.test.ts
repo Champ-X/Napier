@@ -618,6 +618,87 @@ describe("preview-bound Git staging", () => {
     ).rejects.toThrow("active index lock");
   }, 30_000);
 
+  it("atomically clears a conflict-to-HEAD beside a regular staged delta", async () => {
+    const fixture = await createRepository();
+    const companion = path.join(fixture.workspaceRoot, "PRIVATE_COMPANION.txt");
+    await writeFile(companion, "PRIVATE_COMPANION_BEFORE\n");
+    await git(fixture.workspaceRoot, ["add", "PRIVATE_COMPANION.txt"]);
+    await commitAll(fixture.workspaceRoot, "companion");
+    await createMergeConflict(fixture.workspaceRoot);
+    const target = path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt");
+    await writeFile(target, "PRIVATE_OURS\n");
+    await writeFile(companion, "PRIVATE_COMPANION_AFTER\n");
+    expect(
+      await gitOutput(fixture.workspaceRoot, [
+        "ls-files",
+        "--unmerged",
+        "--",
+        "PRIVATE_TRACKED.txt",
+      ]),
+    ).not.toBe("");
+    const indexBefore = await sha256File(
+      path.join(fixture.workspaceRoot, ".git/index"),
+    );
+    const manager = managerFor(fixture, directSandbox());
+
+    const preview = await manager.preview("thread_conflict", "run_conflict", {
+      paths: ["PRIVATE_TRACKED.txt", "PRIVATE_COMPANION.txt"],
+    });
+
+    expect(preview.patch).toContain("GIT INDEX TRANSITION");
+    expect(preview.patch).toContain("Before: unmerged stages 1,2,3");
+    expect(preview.patch).toContain(
+      "After: resolved index; staged tree matches HEAD",
+    );
+    expect(preview.patch).toContain("+PRIVATE_COMPANION_AFTER");
+    expect(preview.details).toEqual(
+      expect.objectContaining({
+        fileCount: 2,
+        hunkCount: 1,
+        addedLineCount: 1,
+        deletedLineCount: 1,
+      }),
+    );
+    expect(
+      await sha256File(path.join(fixture.workspaceRoot, ".git/index")),
+    ).toBe(indexBefore);
+
+    const applied = await manager.apply(
+      "thread_conflict",
+      "run_conflict",
+      preview.id,
+    );
+
+    expect(applied.details.status).toBe("applied");
+    expect(applied.details.postcondition).toBe("verified");
+    expect(
+      await gitOutput(fixture.workspaceRoot, [
+        "ls-files",
+        "--unmerged",
+        "--",
+        "PRIVATE_TRACKED.txt",
+      ]),
+    ).toBe("");
+    expect(
+      await gitOutput(fixture.workspaceRoot, [
+        "diff",
+        "--cached",
+        "--",
+        "PRIVATE_TRACKED.txt",
+      ]),
+    ).toBe("");
+    expect(
+      await gitOutput(fixture.workspaceRoot, [
+        "diff",
+        "--cached",
+        "--",
+        "PRIVATE_COMPANION.txt",
+      ]),
+    ).toContain("+PRIVATE_COMPANION_AFTER");
+    expect(await readFile(target, "utf8")).toBe("PRIVATE_OURS\n");
+    expect(await readFile(companion, "utf8")).toBe("PRIVATE_COMPANION_AFTER\n");
+  }, 30_000);
+
   it("bounds patch output and exposes medium-risk preview/apply effects", async () => {
     const fixture = await createRepository();
     const manager = managerFor(fixture, directSandbox());
@@ -747,6 +828,61 @@ async function createRepository(): Promise<{
     "fixture",
   ]);
   return { root, workspaceRoot };
+}
+
+async function createMergeConflict(workspaceRoot: string): Promise<void> {
+  const sourceBranch = (
+    await gitOutput(workspaceRoot, ["symbolic-ref", "--short", "HEAD"])
+  ).trim();
+  await git(workspaceRoot, ["branch", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_TRACKED.txt"),
+    "PRIVATE_OURS\n",
+  );
+  await commitAll(workspaceRoot, "ours");
+  await git(workspaceRoot, ["checkout", "--quiet", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_TRACKED.txt"),
+    "PRIVATE_THEIRS\n",
+  );
+  await commitAll(workspaceRoot, "theirs");
+  await git(workspaceRoot, ["checkout", "--quiet", sourceBranch]);
+  await execFileAsync(
+    "/usr/bin/git",
+    [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "merge",
+      "feature",
+    ],
+    {
+      cwd: workspaceRoot,
+      env: {
+        ...process.env,
+        GIT_CONFIG_NOSYSTEM: "1",
+        GIT_TERMINAL_PROMPT: "0",
+      },
+    },
+  ).catch(() => undefined);
+}
+
+async function commitAll(
+  workspaceRoot: string,
+  message: string,
+): Promise<void> {
+  await git(workspaceRoot, ["add", "--all"]);
+  await git(workspaceRoot, [
+    "-c",
+    "user.name=Napier Test",
+    "-c",
+    "user.email=napier@example.invalid",
+    "commit",
+    "--quiet",
+    "-m",
+    message,
+  ]);
 }
 
 async function git(cwd: string, args: string[]): Promise<void> {

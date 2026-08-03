@@ -4203,9 +4203,9 @@ parser/command policy with the ordered actual `cat-file` argument-set digests.
 Runtime and Web projections require conflict kind, stage count, and
 base/ours/theirs presence to form one exact valid combination. Agents resolve
 through `read_file` plus `apply_patch`, then reuse the existing atomic
-single-path Stage transaction. This clears unmerged stages into a reviewed
-stage-0 entry but does not create a merge commit; Commit continues to reject
-`MERGE_HEAD`.
+Stage transaction. This clears unmerged stages into a reviewed resolved index
+state but does not create a merge commit; Commit remains a separate preview/
+apply transaction.
 
 ## Git Stage Transaction
 
@@ -4224,13 +4224,16 @@ git_stage_preview(path | paths, hunkIndexes?)
      - run fixed git add -- path for every ordered target against one index
      - run fixed path-filtered git diff --cached HEAD for every target
      - require every target to contribute one reviewable staged delta
+     - if an initially supported unmerged text target has zero final tree diff,
+       emit canonical unmerged -> resolved / tree-matches-HEAD evidence
+     - continue rejecting zero-diff targets that were not unmerged
   -> with strictly increasing 1-based hunkIndexes:
      - require the single path input; reject paths
      - run fixed single-path index-to-worktree diff
      - parse <=32 complete existing regular-text modification hunks
      - reject new/delete/binary/mode/rename/malformed/CRLF forms
      - run fixed git apply --cached --unidiff-zero with selected patch stdin
-  -> require one complete aggregate <=128 KiB patch and unchanged real repository
+  -> require <=128 KiB aggregate tree/index-transition review evidence
   -> delete private index/objects
   -> return live patch + one-use Run/Plan-scoped preview capability
 
@@ -4252,7 +4255,9 @@ git_stage_apply(previewId)
 verification/promotion, and index installation; `git-stage-hunk-patch.ts`
 owns structural parsing, bounds, selected patch construction, and the semantic
 protocol digest; `git-stage-private-mutation.ts` owns ordered whole-path or
-selected-hunk private-index mutation. `git-stage-targets.ts` owns target
+selected-hunk private-index mutation. `git-stage-index-transition.ts` recognizes
+supported initial unmerged stage sets and renders live-only zero-tree-delta
+review evidence. `git-stage-targets.ts` owns target
 normalization, collision rejection, aggregate bounds, state/attribute snapshots,
 and compatible single/set hashes. `git-stage-hunk-arguments.ts` owns fixed argv.
 `git-stage-model.ts` owns bounded file/attribute snapshots;
@@ -4277,8 +4282,9 @@ instead of reusing a completed Workflow node output. Branch switch, checkout,
 reset, clean, merge completion, binary/multi-path conflict resolution,
 non-linear Review promotion, and arbitrary revisions remain unavailable.
 Multiple reviewed text-conflict worktree resolutions can share the whole-path
-transaction when each produces a staged delta, but conflict inspection remains
-one path at a time; staging is not a general Git shell.
+transaction. A resolution equal to HEAD still clears its unmerged entries
+through explicit index-transition evidence; conflict inspection remains one
+path at a time, and staging is not a general Git shell.
 
 ## Git Commit Transaction
 
@@ -4293,7 +4299,9 @@ git_commit_preview(message)
   -> copy index and message into 0700 .git/napier-stage/<ephemeral>
   -> redirect GIT_INDEX_FILE and GIT_OBJECT_DIRECTORY
   -> read HEAD commit; inspect complete raw staged entries and staged patch
-  -> reject empty/>32-file patches and every old/new gitlink mode
+  -> reject empty ordinary/>32-file patches and every old/new gitlink mode
+  -> for merge only, allow zero raw/tree delta and emit canonical evidence
+     that the merge tree matches its first parent while recording parent two
   -> run fixed write-tree and commit-tree with one or two ordered parents
   -> bind parent set/tree/proposed commit/message/patch/operation/runtime hashes
   -> delete private data and return one-use Run/Plan-scoped capability
@@ -4331,7 +4339,9 @@ the expected operation state from content/mode-verified immutable backups,
 requires each marker to exist in exactly one of the root or isolated locations,
 and performs restore-plus-directory-fsync before a new preview/apply proceeds.
 `git-commit-private.ts` owns private index/message/object construction, staged
-raw-entry validation, and operation-marker checks. `git-ref-files.ts` owns
+raw-entry validation, and operation-marker checks.
+`git-commit-tree-transition.ts` renders live-only zero-delta merge evidence.
+`git-ref-files.ts` owns
 shared canonical ref-path confinement, exact ref/reflog fsync, transition-tail
 verification, and parent-directory durability. `git-commit-settlement.ts`
 independently re-observes HEAD, repository/index state, and the empty
@@ -4362,7 +4372,9 @@ worktrees, shared repositories, alternates, split/sparse indexes, SHA-256
 objects, reftable refs, submodules/gitlinks, signing, user-selected identity,
 hooks, octopus/squash/autostash merge completion, merge execution, amend,
 checkout, reset, remotes, and history rewriting. It commits the complete
-current stage-0 index, up to 32 changed entries and a 128 KiB patch. Marker
+current stage-0 index, up to 32 changed entries and 128 KiB of tree/transition
+evidence. A zero-delta tree is valid only for a bound two-parent merge; ordinary
+empty commits remain rejected. Marker
 isolation begins only after ref/reflog durability; `MERGE_HEAD` moves last and
 restores first, while a 0700 backup survives incomplete in-process or
 cross-restart rollback. Rename failure and parent-fsync failure remain

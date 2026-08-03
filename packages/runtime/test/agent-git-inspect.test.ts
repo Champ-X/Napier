@@ -121,7 +121,7 @@ describe("Agent Git inspection", () => {
       path.join(fixture.workspaceRoot, "PRIVATE_SOURCE.txt"),
       "utf8",
     );
-    const resolvedText = "PRIVATE_RESOLVED\n";
+    const resolvedText = "PRIVATE_OURS\n";
     const agent = await fixture.store.updateAgent(
       fixture.store.listAgents()[0]!.id,
       {
@@ -178,7 +178,8 @@ describe("Agent Git inspection", () => {
       ),
       (context) => {
         const messages = JSON.stringify(context.messages);
-        expect(messages).toContain("PRIVATE_RESOLVED");
+        expect(messages).toContain("GIT INDEX TRANSITION");
+        expect(messages).toContain("staged tree matches HEAD");
         const previewId = messages.match(
           /gitstagepreview_[a-z0-9]{8,80}/u,
         )?.[0];
@@ -227,7 +228,6 @@ describe("Agent Git inspection", () => {
       "PRIVATE_BEFORE",
       "PRIVATE_OURS",
       "PRIVATE_THEIRS",
-      "PRIVATE_RESOLVED",
       "<<<<<<<",
     ]) {
       expect(durable).not.toContain(privateValue);

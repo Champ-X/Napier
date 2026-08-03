@@ -38,6 +38,7 @@ import {
   type GitRepository,
 } from "./git-repository.js";
 import { MAX_GIT_COMMIT_FILES } from "./git-commit-model.js";
+import { gitCommitTreeTransition } from "./git-commit-tree-transition.js";
 import { gitDiffCounts, type GitDiffCounts } from "./git-stage-model.js";
 
 const SHA1 = /^[a-f0-9]{40}$/u;
@@ -120,10 +121,18 @@ export async function preparePrivateGitCommit(input: {
       input.signal,
       isolation,
     );
-    validateStagedPatch(diff);
+    validateStagedPatch(
+      diff,
+      input.operationState.mergeParentCommitSha1 !== undefined,
+    );
     const counts = gitDiffCounts(diff.stdout);
+    const emptyMerge =
+      input.operationState.mergeParentCommitSha1 !== undefined &&
+      rawCount === 0 &&
+      diff.stdout.length === 0 &&
+      counts.fileCount === 0;
     if (
-      counts.fileCount < 1 ||
+      (!emptyMerge && counts.fileCount < 1) ||
       counts.fileCount > MAX_GIT_COMMIT_FILES ||
       counts.fileCount !== rawCount
     ) {
@@ -169,7 +178,12 @@ export async function preparePrivateGitCommit(input: {
       operationStateSha256: input.operationState.stateSha256,
       treeSha1,
       commitSha1,
-      stagedPatch: diff.stdout,
+      stagedPatch:
+        diff.stdout ||
+        gitCommitTreeTransition(
+          parentCommitSha1,
+          input.operationState.mergeParentCommitSha1!,
+        ),
       counts,
       identitySha256: sha256(canonicalJson(GIT_COMMIT_IDENTITY)),
       sandboxSha256: commit.sandboxSha256,
@@ -227,7 +241,10 @@ export async function cleanupGitCommitDirectory(
   await rm(temporaryDirectory, { recursive: true, force: true });
 }
 
-function validateStagedPatch(result: GitInspectProcessResult): void {
+function validateStagedPatch(
+  result: GitInspectProcessResult,
+  allowEmpty: boolean,
+): void {
   if (
     result.status === "output_capped" ||
     Buffer.byteLength(result.stdout, "utf8") > MAX_GIT_PROCESS_OUTPUT_CHARS
@@ -237,7 +254,7 @@ function validateStagedPatch(result: GitInspectProcessResult): void {
   if (
     result.status !== "succeeded" ||
     result.stderr.length > 0 ||
-    result.stdout.length === 0
+    (!allowEmpty && result.stdout.length === 0)
   ) {
     throw new Error("Git commit requires a non-empty staged patch");
   }
