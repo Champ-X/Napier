@@ -1,9 +1,10 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { assertGitConfigPolicy } from "./git-config-policy.js";
 import {
-  inspectGitConflict,
+  inspectGitConflictSet,
   type GitConflictEvidence,
-  type GitConflictKind,
+  type GitConflictSetKind,
+  MAX_GIT_CONFLICT_PATHS,
 } from "./git-conflict-inspect.js";
 import {
   gitInspectArguments,
@@ -21,6 +22,7 @@ import {
   snapshotGitRepository,
   type GitRepositoryState,
 } from "./git-repository.js";
+import { gitPathSetSha256, normalizeGitPathSet } from "./git-path-set.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 
 export const DEFAULT_GIT_INSPECT_TIMEOUT_MS = 10_000;
@@ -28,6 +30,7 @@ export const MAX_GIT_INSPECT_TIMEOUT_MS = 30_000;
 export const MAX_GIT_INSPECT_PATH_CHARS = MAX_GIT_PATH_CHARS;
 export const MAX_GIT_DIFF_CONTEXT_LINES = 10;
 export const MAX_GIT_INSPECT_OUTPUT_BYTES = MAX_GIT_PROCESS_OUTPUT_CHARS;
+export { MAX_GIT_CONFLICT_PATHS };
 
 export type GitInspectRequest =
   | {
@@ -36,7 +39,8 @@ export type GitInspectRequest =
     }
   | {
       action: "conflict";
-      path: string;
+      path?: string;
+      paths?: string[];
       timeoutMs?: number;
     }
   | {
@@ -61,7 +65,7 @@ export interface GitInspectDetails {
   hunkCount: number;
   addedLineCount: number;
   deletedLineCount: number;
-  conflictKind?: GitConflictKind;
+  conflictKind?: GitConflictSetKind;
   conflictStageCount?: number;
   basePresent?: boolean;
   oursPresent?: boolean;
@@ -131,10 +135,10 @@ export class GitInspectRunner {
       const remainingMs = deadline - Date.now();
       if (remainingMs <= 0) throw new Error("Git inspection timed out");
       if (normalizedRequest.action === "conflict") {
-        const result = await inspectGitConflict({
+        const result = await inspectGitConflictSet({
           options: this.options,
           repository,
-          targetPath: normalizedRequest.path,
+          targetPaths: gitConflictPaths(normalizedRequest),
           expectedIndexSha256: before.index.sha256,
           deadline,
           ...(signal ? { signal } : {}),
@@ -197,7 +201,7 @@ function finalizeGitInspection(
   output: string,
   conflictEvidence?: GitConflictEvidence,
 ): GitInspectResult {
-  const counts = inspectGitOutput(request.action, output);
+  const counts = inspectGitOutput(request, output);
   const outputSha256 = sha256(output);
   const core = {
     kind: "napier.git-inspection" as const,
@@ -206,10 +210,11 @@ function finalizeGitInspection(
     ...(request.action === "diff" ? { scope: request.scope } : {}),
     repositoryPathSha256: sha256("."),
     gitDirectorySha256: sha256(".git"),
-    ...((request.action === "diff" || request.action === "conflict") &&
-    request.path
+    ...(request.action === "diff" && request.path
       ? { pathSha256: sha256(request.path) }
-      : {}),
+      : request.action === "conflict"
+        ? { pathSha256: gitPathSetSha256(gitConflictPaths(request)) }
+        : {}),
     ...(request.action === "diff"
       ? { contextLines: request.contextLines ?? 3 }
       : {}),
@@ -239,7 +244,7 @@ function finalizeGitInspection(
 }
 
 function inspectGitOutput(
-  action: GitInspectRequest["action"],
+  request: GitInspectRequest,
   output: string,
 ): Pick<
   GitInspectDetails,
@@ -250,7 +255,7 @@ function inspectGitOutput(
   | "deletedLineCount"
 > {
   const lines = output.split("\n");
-  if (action === "status") {
+  if (request.action === "status") {
     return {
       statusEntryCount: lines.filter((line) =>
         /^(?:1 |2 |u |\? |! )/u.test(line),
@@ -261,10 +266,10 @@ function inspectGitOutput(
       deletedLineCount: 0,
     };
   }
-  if (action === "conflict") {
+  if (request.action === "conflict") {
     return {
       statusEntryCount: 0,
-      fileCount: 1,
+      fileCount: gitConflictPaths(request).length,
       hunkCount: 0,
       addedLineCount: 0,
       deletedLineCount: 0,
@@ -303,7 +308,7 @@ function normalizeGitInspectRequest(
   }
   if (request.action === "status") return { ...request };
   if (request.action === "conflict") {
-    return { ...request, path: normalizeGitPath(request.path) };
+    return normalizeGitConflictRequest(request);
   }
   if (request.scope !== "working" && request.scope !== "staged") {
     throw new Error("Git diff scope is invalid");
@@ -322,6 +327,40 @@ function normalizeGitInspectRequest(
       ? { path: normalizeGitPath(request.path) }
       : {}),
   };
+}
+
+function normalizeGitConflictRequest(
+  request: Extract<GitInspectRequest, { action: "conflict" }>,
+): GitInspectRequest {
+  const hasPath = request.path !== undefined;
+  const hasPaths = request.paths !== undefined;
+  if (
+    hasPath === hasPaths ||
+    (hasPath && typeof request.path !== "string") ||
+    (hasPaths &&
+      (!Array.isArray(request.paths) ||
+        request.paths.length < 1 ||
+        request.paths.length > MAX_GIT_CONFLICT_PATHS ||
+        request.paths.some((value) => typeof value !== "string")))
+  ) {
+    throw new Error("Git conflict target set is invalid");
+  }
+  const paths = normalizeGitPathSet(hasPath ? [request.path!] : request.paths!);
+  const normalized = {
+    action: "conflict" as const,
+    ...(request.timeoutMs !== undefined
+      ? { timeoutMs: request.timeoutMs }
+      : {}),
+  };
+  return paths.length === 1
+    ? { ...normalized, path: paths[0]! }
+    : { ...normalized, paths };
+}
+
+function gitConflictPaths(
+  request: Extract<GitInspectRequest, { action: "conflict" }>,
+): string[] {
+  return request.path ? [request.path] : (request.paths ?? []);
 }
 
 function aggregateGitInspectProcesses(

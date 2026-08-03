@@ -189,7 +189,7 @@ Version `0.1.0` includes:
   capabilities, a fixed secret-free environment, bounded output and wall time,
   parent-Run cancellation, and argument/output-redacted Ledger evidence;
 - a `git_inspect` tool for workspace-root repository status, working/staged
-  patches, and one bounded regular-text conflict. Napier generates every Git
+  patches, and one bounded 1–4 path regular-text conflict set. Napier generates every Git
   argument, parses the exact bound index for base/ours/theirs stages, rejects
   gitfiles/symlinked metadata/index locks, disables optional locks, pagers,
   external diff, textconv, and submodule traversal, binds HEAD/index/config
@@ -2380,15 +2380,20 @@ working or staged patch, optionally limited to one workspace-relative path and
 0–10 context lines. Output is capped at 128 KiB; an over-limit patch fails
 instead of returning incomplete evidence.
 
-`conflict` accepts one normalized workspace-relative path with unmerged index
-stages. Napier reads and SHA-1-checks the exact preview-bound index bytes
-directly, supports index v2/v3 regular-file stages, classifies modify/modify,
-add/add, and either modify/delete direction, then uses fixed `cat-file blob`
-commands for each present base/ours/theirs object. The canonical no-follow
-worktree file and every stage must be complete UTF-8 text bounded to 24 KiB;
+`conflict` accepts `path` or a mutually exclusive canonical `paths` set of 1–4
+workspace-relative files with unmerged index stages. Napier normalizes aliases,
+rejects NFC/case collisions, reads and SHA-1-checks the exact preview-bound
+index bytes once, and parses all targets from that v2/v3 index scan. It
+classifies modify/modify, add/add, and either modify/delete direction, then uses
+fixed `cat-file blob` commands for each present base/ours/theirs object. Every
+canonical no-follow worktree file and stage must be complete UTF-8 text bounded
+to 24 KiB;
 FIFO/device, symlink, gitlink, binary/control text, invalid checksum, SHA-256/
 v4 index, and changed worktree/index state fail closed. The complete
-worktree/base/ours/theirs text is live untrusted data. Agents can resolve it
+worktree/base/ours/theirs text is live untrusted data. Multi-path Receipt
+`conflictStageCount` is the total stage count, `mixed` means classifications
+differ, and presence booleans mean every target has that side. Agents can
+resolve the set
 through `read_file` and `apply_patch`, then reuse
 `git_stage_preview`/`git_stage_apply` to atomically replace the unmerged stages
 with one reviewed resolved index state.

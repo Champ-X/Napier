@@ -6,6 +6,7 @@ import path from "node:path";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   parseGitConflictIndex,
+  parseGitConflictIndexSet,
   type GitConflictIndexEntry,
 } from "./git-conflict-index.js";
 import { gitConflictBlobArguments } from "./git-inspect-arguments.js";
@@ -21,15 +22,17 @@ import {
 } from "./git-repository.js";
 
 const MAX_CONFLICT_TEXT_BYTES = 24 * 1024;
+export const MAX_GIT_CONFLICT_PATHS = 4;
 
 export type GitConflictKind =
   | "both_modified"
   | "both_added"
   | "deleted_by_them"
   | "deleted_by_us";
+export type GitConflictSetKind = GitConflictKind | "mixed";
 
 export interface GitConflictEvidence {
-  conflictKind: GitConflictKind;
+  conflictKind: GitConflictSetKind;
   conflictStageCount: number;
   basePresent: boolean;
   oursPresent: boolean;
@@ -43,6 +46,11 @@ export interface GitConflictInspection {
   evidence: GitConflictEvidence;
   processes: GitInspectProcessResult[];
   durationMs: number;
+}
+
+interface SingleGitConflictInspection extends GitConflictInspection {
+  targetPath: string;
+  worktreeStateSha256: string;
 }
 
 interface ConflictStage {
@@ -69,25 +77,24 @@ type StageOutcome =
     }
   | { ok: false; error: unknown };
 
-export async function inspectGitConflict(input: {
+async function inspectGitConflict(input: {
   options: GitInspectProcessOptions;
   repository: GitRepository;
   targetPath: string;
   expectedIndexSha256: string;
+  indexEntries?: readonly GitConflictIndexEntry[];
   deadline: number;
   signal?: AbortSignal;
-}): Promise<GitConflictInspection> {
+}): Promise<SingleGitConflictInspection> {
   const startedAt = Date.now();
   const beforeWorktree = await readWorktreeText(
     input.repository,
     input.targetPath,
   );
-  const indexBytes = await readGitIndexBytes(input.repository);
-  if (!indexBytes || sha256(indexBytes) !== input.expectedIndexSha256) {
-    throw new Error("Git conflict index changed during inspection");
-  }
   const indexEntries = validateConflictEntries(
-    parseGitConflictIndex(indexBytes, input.targetPath),
+    input.indexEntries
+      ? [...input.indexEntries]
+      : await readConflictEntries(input),
   );
   const stageOutcomes = await Promise.all(
     indexEntries.map(async (entry): Promise<StageOutcome> => {
@@ -144,10 +151,107 @@ export async function inspectGitConflict(input: {
   const evidence = conflictEvidence(values, beforeWorktree);
   const output = formatConflictOutput(input.targetPath, values, beforeWorktree);
   return {
+    targetPath: input.targetPath,
+    worktreeStateSha256: sha256(canonicalJson(afterWorktree)),
     output,
     evidence,
     processes: stages.map((item) => item.process),
     durationMs: Date.now() - startedAt,
+  };
+}
+
+export async function inspectGitConflictSet(input: {
+  options: GitInspectProcessOptions;
+  repository: GitRepository;
+  targetPaths: readonly string[];
+  expectedIndexSha256: string;
+  deadline: number;
+  signal?: AbortSignal;
+}): Promise<GitConflictInspection> {
+  if (
+    input.targetPaths.length < 1 ||
+    input.targetPaths.length > MAX_GIT_CONFLICT_PATHS
+  ) {
+    throw new Error("Git conflict target set is invalid");
+  }
+  const startedAt = Date.now();
+  const indexBytes = await readGitIndexBytes(input.repository);
+  if (!indexBytes || sha256(indexBytes) !== input.expectedIndexSha256) {
+    throw new Error("Git conflict index changed during inspection");
+  }
+  const entriesByPath = parseGitConflictIndexSet(indexBytes, input.targetPaths);
+  const inspections: SingleGitConflictInspection[] = [];
+  for (const targetPath of input.targetPaths) {
+    inspections.push(
+      await inspectGitConflict({
+        options: input.options,
+        repository: input.repository,
+        targetPath,
+        expectedIndexSha256: input.expectedIndexSha256,
+        indexEntries: entriesByPath.get(targetPath) ?? [],
+        deadline: input.deadline,
+        ...(input.signal ? { signal: input.signal } : {}),
+      }),
+    );
+  }
+  const finalWorktrees = await Promise.all(
+    input.targetPaths.map((targetPath) =>
+      readWorktreeText(input.repository, targetPath),
+    ),
+  );
+  if (
+    finalWorktrees.some(
+      (worktree, index) =>
+        sha256(canonicalJson(worktree)) !==
+        inspections[index]?.worktreeStateSha256,
+    )
+  ) {
+    throw new Error("Git conflict worktree set changed during inspection");
+  }
+  return {
+    output: inspections.map((inspection) => inspection.output).join("\n\n"),
+    evidence: conflictSetEvidence(input.targetPaths, inspections),
+    processes: inspections.flatMap((inspection) => inspection.processes),
+    durationMs: Date.now() - startedAt,
+  };
+}
+
+async function readConflictEntries(
+  input: Parameters<typeof inspectGitConflict>[0],
+): Promise<GitConflictIndexEntry[]> {
+  const indexBytes = await readGitIndexBytes(input.repository);
+  if (!indexBytes || sha256(indexBytes) !== input.expectedIndexSha256) {
+    throw new Error("Git conflict index changed during inspection");
+  }
+  return parseGitConflictIndex(indexBytes, input.targetPath);
+}
+
+function conflictSetEvidence(
+  targetPaths: readonly string[],
+  inspections: readonly GitConflictInspection[],
+): GitConflictEvidence {
+  if (inspections.length === 1) return inspections[0]!.evidence;
+  const evidences = inspections.map((inspection) => inspection.evidence);
+  const kinds = new Set(evidences.map((evidence) => evidence.conflictKind));
+  return {
+    conflictKind:
+      kinds.size === 1 ? evidences[0]!.conflictKind : ("mixed" as const),
+    conflictStageCount: evidences.reduce(
+      (total, evidence) => total + evidence.conflictStageCount,
+      0,
+    ),
+    basePresent: evidences.every((evidence) => evidence.basePresent),
+    oursPresent: evidences.every((evidence) => evidence.oursPresent),
+    theirsPresent: evidences.every((evidence) => evidence.theirsPresent),
+    worktreePresent: evidences.every((evidence) => evidence.worktreePresent),
+    conflictEvidenceSha256: sha256(
+      canonicalJson(
+        evidences.map((evidence, index) => ({
+          pathSha256: sha256(targetPaths[index]!),
+          conflictEvidenceSha256: evidence.conflictEvidenceSha256,
+        })),
+      ),
+    ),
   };
 }
 

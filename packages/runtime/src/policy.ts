@@ -30,14 +30,9 @@ const LSP_TOOLS = new Set([
   "lsp_rename",
   "lsp_code_actions",
 ]);
-const PROCESS_TOOLS = new Set([
-  "git_inspect",
-  "run_command",
-  "javascript_kernel",
-  "python_kernel",
-  "node_debugger",
-  "workspace_process",
-]);
+const PROCESS_TOOL_NAMES =
+  "run_command javascript_kernel python_kernel node_debugger workspace_process";
+const PROCESS_TOOLS = new Set(PROCESS_TOOL_NAMES.split(" "));
 const BROWSER_TOOLS = new Set(["browser", "research_source"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",

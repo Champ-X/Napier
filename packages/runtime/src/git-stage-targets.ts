@@ -1,8 +1,8 @@
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { gitPathSetSha256, normalizeGitPathSet } from "./git-path-set.js";
 import {
-  normalizeGitPath,
   snapshotGitRepository,
   type GitRepository,
   type GitRepositoryState,
@@ -94,15 +94,7 @@ export async function verifyGitStageTargetsApplied(input: {
 export function gitStageTargetPathsSha256(
   targets: readonly GitStageTarget[],
 ): string {
-  return targets.length === 1
-    ? sha256(targets[0]!.path)
-    : sha256(
-        canonicalJson(
-          targets.map((target) => ({
-            pathSha256: sha256(target.path),
-          })),
-        ),
-      );
+  return gitPathSetSha256(targets.map((target) => target.path));
 }
 
 export function gitStageTargetStatesSha256(
@@ -138,16 +130,17 @@ export function gitStageTargetAttributesSha256(
 export function normalizeGitStageTargetPaths(
   values: readonly string[],
 ): string[] {
-  const normalized = values.map((value) => normalizeGitPath(value));
-  const identities = new Set<string>();
-  for (const targetPath of normalized) {
-    const identity = gitStagePathIdentity(targetPath);
-    if (identities.has(identity)) {
+  try {
+    return normalizeGitPathSet(values);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "Git target paths collide"
+    ) {
       throw new Error("Git stage target paths collide");
     }
-    identities.add(identity);
+    throw error;
   }
-  return normalized.sort(compareCodePoints);
 }
 
 function sameGitStageTargets(
@@ -163,15 +156,4 @@ function sameGitStageTargets(
         target.attributesStateSha256 === right[index]?.attributesStateSha256,
     )
   );
-}
-
-function gitStagePathIdentity(value: string): string {
-  const normalized = value.normalize("NFC");
-  return process.platform === "darwin" || process.platform === "win32"
-    ? normalized.toLowerCase()
-    : normalized;
-}
-
-function compareCodePoints(left: string, right: string): number {
-  return left < right ? -1 : left > right ? 1 : 0;
 }

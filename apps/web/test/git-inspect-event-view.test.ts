@@ -125,6 +125,35 @@ describe("Git inspection Trace projection", () => {
         basePresent: false,
       }),
     ).toBeUndefined();
+    const mixed = gitInspectEventEvidence({
+      ...conflictDetails(),
+      fileCount: 2,
+      conflictKind: "mixed",
+      conflictStageCount: 5,
+      oursPresent: false,
+    });
+    expect(mixed).toEqual(
+      expect.objectContaining({
+        gitInspectFileCount: 2,
+        gitInspectConflictKind: "mixed",
+        gitInspectConflictStageCount: 5,
+        gitInspectOursPresent: false,
+      }),
+    );
+    expect(
+      gitInspectEventEvidence({
+        ...conflictDetails(),
+        fileCount: 2,
+        conflictStageCount: 3,
+      }),
+    ).toBeUndefined();
+    expect(
+      gitInspectEventEvidence({
+        ...conflictDetails(),
+        conflictKind: "mixed",
+        fileCount: 1,
+      }),
+    ).toBeUndefined();
   });
 });
 

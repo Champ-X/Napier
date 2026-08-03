@@ -17,6 +17,7 @@ import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
+import { gitPathSetSha256 } from "../src/git-path-set.js";
 import {
   parseGitConflictIndex,
   parseGitConflictIndexSet,
@@ -372,6 +373,103 @@ describe("Git conflict inspection", () => {
       new Set(results.map((result) => result.details.gitArgumentsSha256)).size,
     ).toBe(3);
   }, 30_000);
+
+  it("inspects one canonical mixed conflict set with aggregate evidence", async () => {
+    const fixture = await createMixedConflict();
+    const sandbox = directSandbox();
+    const runner = new GitInspectRunner({
+      workspaceRoot: fixture.workspaceRoot,
+      sandbox,
+    });
+
+    const inspected = await runner.inspect({
+      action: "conflict",
+      paths: ["CONFLICT_B.txt", "sub/../CONFLICT.txt"],
+    });
+
+    expect(inspected.output.indexOf("Path: CONFLICT.txt")).toBeLessThan(
+      inspected.output.indexOf("Path: CONFLICT_B.txt"),
+    );
+    for (const expected of [
+      "PRIVATE_A_BASE",
+      "PRIVATE_A_OURS",
+      "PRIVATE_A_THEIRS",
+      "PRIVATE_B_BASE",
+      "PRIVATE_B_THEIRS",
+    ]) {
+      expect(inspected.output).toContain(expected);
+    }
+    expect(inspected.details).toEqual(
+      expect.objectContaining({
+        action: "conflict",
+        pathSha256: gitPathSetSha256(["CONFLICT.txt", "CONFLICT_B.txt"]),
+        fileCount: 2,
+        conflictKind: "mixed",
+        conflictStageCount: 5,
+        basePresent: true,
+        oursPresent: false,
+        theirsPresent: true,
+        worktreePresent: true,
+      }),
+    );
+    expect(
+      sandbox.launches.filter((launch) => launch.args.includes("cat-file")),
+    ).toHaveLength(5);
+    expect(
+      gitInspectToolCallArgumentsLedgerProjection({
+        action: "conflict",
+        paths: ["CONFLICT_B.txt", "sub/../CONFLICT.txt"],
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        pathCount: 2,
+        pathSetSha256: inspected.details.pathSha256,
+      }),
+    );
+    const durable = JSON.stringify(
+      gitInspectToolOutputLedgerProjection(inspected.output, {
+        details: inspected.details,
+      }),
+    );
+    expect(durable).toContain('"conflictKind":"mixed"');
+    expect(durable).not.toContain("CONFLICT");
+    expect(durable).not.toContain("PRIVATE_");
+    await expect(
+      runner.inspect({
+        action: "conflict",
+        path: "CONFLICT.txt",
+        paths: ["CONFLICT_B.txt"],
+      }),
+    ).rejects.toThrow("target set is invalid");
+    await expect(
+      runner.inspect({
+        action: "conflict",
+        path: "CONFLICT.txt",
+        paths: "invalid" as unknown as string[],
+      }),
+    ).rejects.toThrow("target set is invalid");
+    await expect(
+      runner.inspect({
+        action: "conflict",
+        paths: ["CONFLICT.txt", "sub/../CONFLICT.txt"],
+      }),
+    ).rejects.toThrow("paths collide");
+    await expect(
+      runner.inspect({
+        action: "conflict",
+        paths: ["CONFLICT.txt", "CLEAN.txt"],
+      }),
+    ).rejects.toThrow("does not have a supported unmerged conflict");
+    await expect(
+      new GitInspectRunner({
+        workspaceRoot: fixture.workspaceRoot,
+        sandbox: driftingConflictSetSandbox(fixture.workspaceRoot),
+      }).inspect({
+        action: "conflict",
+        paths: ["CONFLICT.txt", "CONFLICT_B.txt"],
+      }),
+    ).rejects.toThrow("worktree set changed");
+  }, 30_000);
 });
 
 async function createConflictFixture(
@@ -450,6 +548,59 @@ async function createDeleteConflict(
   await commit(fixture.workspaceRoot, "theirs");
   await git(fixture.workspaceRoot, ["checkout", "--quiet", "main"]);
   await mergeExpectingConflict(fixture.workspaceRoot);
+  return fixture;
+}
+
+async function createMixedConflict(): Promise<{
+  root: string;
+  workspaceRoot: string;
+}> {
+  const fixture = await createRepository();
+  await writeFile(
+    path.join(fixture.workspaceRoot, "CONFLICT.txt"),
+    "PRIVATE_A_BASE\n",
+  );
+  await writeFile(
+    path.join(fixture.workspaceRoot, "CONFLICT_B.txt"),
+    "PRIVATE_B_BASE\n",
+  );
+  await git(fixture.workspaceRoot, ["add", "--all"]);
+  await commit(fixture.workspaceRoot, "mixed base");
+  const sourceBranch = (
+    await gitOutput(fixture.workspaceRoot, ["symbolic-ref", "--short", "HEAD"])
+  ).trim();
+  await git(fixture.workspaceRoot, ["branch", "feature-mixed"]);
+  await writeFile(
+    path.join(fixture.workspaceRoot, "CONFLICT.txt"),
+    "PRIVATE_A_OURS\n",
+  );
+  await rm(path.join(fixture.workspaceRoot, "CONFLICT_B.txt"));
+  await git(fixture.workspaceRoot, ["add", "--all"]);
+  await commit(fixture.workspaceRoot, "mixed ours");
+  await git(fixture.workspaceRoot, ["checkout", "--quiet", "feature-mixed"]);
+  await writeFile(
+    path.join(fixture.workspaceRoot, "CONFLICT.txt"),
+    "PRIVATE_A_THEIRS\n",
+  );
+  await writeFile(
+    path.join(fixture.workspaceRoot, "CONFLICT_B.txt"),
+    "PRIVATE_B_THEIRS\n",
+  );
+  await git(fixture.workspaceRoot, ["add", "--all"]);
+  await commit(fixture.workspaceRoot, "mixed theirs");
+  await git(fixture.workspaceRoot, ["checkout", "--quiet", sourceBranch]);
+  await execFileAsync(
+    "/usr/bin/git",
+    [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "merge",
+      "feature-mixed",
+    ],
+    { cwd: fixture.workspaceRoot, env: gitEnvironment() },
+  ).catch(() => undefined);
   return fixture;
 }
 
@@ -566,6 +717,24 @@ function directSandbox(): OsSandboxAdapter & {
         stdio: ["pipe", "pipe", "pipe"],
       });
       return childProcess(child);
+    },
+  };
+}
+
+function driftingConflictSetSandbox(workspaceRoot: string): OsSandboxAdapter {
+  const sandbox = directSandbox();
+  let blobLaunches = 0;
+  return {
+    ...sandbox,
+    id: "drifting-git-conflict-set",
+    async launch(request) {
+      if (request.args.includes("cat-file") && (blobLaunches += 1) === 4) {
+        await writeFile(
+          path.join(workspaceRoot, "CONFLICT.txt"),
+          "PRIVATE_SET_DRIFT\n",
+        );
+      }
+      return sandbox.launch(request);
     },
   };
 }

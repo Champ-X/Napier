@@ -258,11 +258,7 @@ describe("git_inspect", () => {
     await expect(runner.inspect({ action: "status" })).rejects.toThrow(
       "unsafe execution configuration",
     );
-    await git(fixture.workspaceRoot, [
-      "config",
-      "--unset-all",
-      "include.path",
-    ]);
+    await git(fixture.workspaceRoot, ["config", "--unset-all", "include.path"]);
     await git(fixture.workspaceRoot, [
       "config",
       "extensions.worktreeConfig",
@@ -345,7 +341,12 @@ describe("git_inspect", () => {
   it("is a medium-risk read effect enabled for ordinary workspace agents", () => {
     const workspace = path.resolve("/workspace");
     expect(
-      assessToolCall("workspace", "git_inspect", { action: "status" }, workspace),
+      assessToolCall(
+        "workspace",
+        "git_inspect",
+        { action: "status" },
+        workspace,
+      ),
     ).toEqual(
       expect.objectContaining({
         allowed: true,
@@ -361,6 +362,22 @@ describe("git_inspect", () => {
         reason: "the active agent policy does not allow process execution",
       }),
     );
+    expect(
+      assessToolCall(
+        "workspace",
+        "git_inspect",
+        { action: "conflict", paths: ["src/a.ts", "src/b.ts"] },
+        workspace,
+      ).allowed,
+    ).toBe(true);
+    expect(
+      assessToolCall(
+        "workspace",
+        "git_inspect",
+        { action: "conflict", paths: ["src/a.ts", "../outside.ts"] },
+        workspace,
+      ).allowed,
+    ).toBe(false);
     expect(builtInToolEffect("git_inspect")).toBe("read");
     expect(DEFAULT_AGENT_ENABLED_TOOLS).toContain("git_inspect");
   });
@@ -434,9 +451,7 @@ function directSandbox(): OsSandboxAdapter & {
   };
 }
 
-function fakeSandbox(
-  onLaunch: () => Promise<void>,
-): OsSandboxAdapter {
+function fakeSandbox(onLaunch: () => Promise<void>): OsSandboxAdapter {
   return {
     id: "fake-git-test",
     async launch() {

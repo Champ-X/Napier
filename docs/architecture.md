@@ -4177,9 +4177,12 @@ no-follow metadata, mode, path, and freshness validation;
 `git-conflict-index.ts` parses checksum-bound v2/v3 index entries without an
 index-observation subprocess, preventing index ABA substitution.
 `git-conflict-inspect.ts` owns bounded worktree/base/ours/theirs text,
-Git-blob verification, parallel process settlement, and conflict
-classification. `git-inspect.ts` owns read-only status/hunk/conflict execution
-and aggregate evidence.
+Git-blob verification, per-path parallel process settlement, set-level
+freshness, and conflict classification. `git-path-set.ts` owns shared
+canonical ordering, collision denial, and compatible single/set hashes.
+`git-inspect.ts` owns read-only status/hunk/conflict execution and aggregate
+evidence; `git-inspect-policy.ts` keeps all requested members workspace-bound
+before process admission.
 `git-inspect-tool.ts` owns the TypeBox contract and privacy projection.
 `agent-process-tool-ledger.ts` dispatches command and Git projections outside
 the central Agent Ledger module. Web validation lives in
@@ -4195,17 +4198,23 @@ filter/diff key before every action; external diff and textconv are also
 disabled in argv. As a second boundary, the OS Sandbox admits only the fixed
 Git executable, so other configured helpers cannot run.
 
-Conflict inspection supports one complete regular-text path at a time. Each
-worktree/stage body is capped at 24 KiB and rejects invalid UTF-8, binary
-control text, symlinks, FIFO/devices, gitlinks, v4/SHA-256 index formats, and
-checksum or freshness drift. The public argv digest combines the semantic
-parser/command policy with the ordered actual `cat-file` argument-set digests.
-Runtime and Web projections require conflict kind, stage count, and
-base/ours/theirs presence to form one exact valid combination. Agents resolve
-through `read_file` plus `apply_patch`, then reuse the existing atomic
-Stage transaction. This clears unmerged stages into a reviewed resolved index
-state but does not create a merge commit; Commit remains a separate preview/
-apply transaction.
+Conflict inspection supports one canonical set of one to four complete
+regular-text paths. It scans the checksum-bound index once, orders targets by
+code point, and runs each target's verified blob reads before a final concurrent
+worktree-set freshness check. Each worktree/stage body is capped at 24 KiB and
+rejects invalid UTF-8, binary control text, symlinks, FIFO/devices, gitlinks,
+v4/SHA-256 index formats, and checksum or freshness drift. The public argv
+digest combines semantic target-set/parser policy with every ordered actual
+`cat-file` argument-set digest.
+
+For one path, Receipt fields retain their exact legacy values. For a set,
+`fileCount` is target count, `conflictStageCount` is the total, `mixed` means
+per-path classifications differ, and each presence boolean means all targets
+have that side. Runtime and Web projections validate single/same-kind/mixed
+aggregate semantics. Agents resolve every live body through `read_file` plus
+`apply_patch`, then reuse one atomic Stage path-set transaction. This clears
+unmerged stages into a reviewed resolved index state but does not create a
+merge commit; Commit remains a separate preview/apply transaction.
 
 ## Git Stage Transaction
 

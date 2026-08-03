@@ -31,7 +31,8 @@ export type GitArgumentRequest =
   | { action: "status" }
   | {
       action: "conflict";
-      path: string;
+      path?: string;
+      paths?: string[];
     }
   | {
       action: "diff";
@@ -101,6 +102,7 @@ export function gitInspectionArgumentsSha256(
   request: GitArgumentRequest,
 ): string {
   if (request.action === "conflict") {
+    const targetPaths = request.path ? [request.path] : (request.paths ?? []);
     return sha256(
       canonicalJson({
         configPolicyArguments: gitConfigPolicyArguments(repository),
@@ -108,7 +110,9 @@ export function gitInspectionArgumentsSha256(
         indexParser: {
           schemaVersion: 1,
           formats: ["DIRC-v2-sha1", "DIRC-v3-sha1"],
-          targetPath: request.path,
+          ...(targetPaths.length === 1
+            ? { targetPath: targetPaths[0] }
+            : { targetPaths }),
         },
         blob: gitConflictBlobArguments(repository, "$BLOB_SHA1"),
       }),

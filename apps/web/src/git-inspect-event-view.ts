@@ -11,7 +11,8 @@ export interface GitInspectToolEventTraceView {
     | "both_modified"
     | "both_added"
     | "deleted_by_them"
-    | "deleted_by_us";
+    | "deleted_by_us"
+    | "mixed";
   gitInspectConflictStageCount?: number;
   gitInspectBasePresent?: boolean;
   gitInspectOursPresent?: boolean;
@@ -52,7 +53,7 @@ export function gitInspectEventEvidence(
   const durationMs = integer(value["durationMs"], 0, 31_000);
   const contextLines = integer(value["contextLines"], 0, 10);
   const conflictKind = gitConflictKind(value["conflictKind"]);
-  const conflictStageCount = integer(value["conflictStageCount"], 2, 3);
+  const conflictStageCount = integer(value["conflictStageCount"], 2, 12);
   const digests = [
     value["repositoryPathSha256"],
     value["gitDirectorySha256"],
@@ -211,7 +212,7 @@ function validActionShape(
       scope === undefined &&
       contextLines === undefined &&
       value["statusEntryCount"] === 0 &&
-      value["fileCount"] === 1 &&
+      integer(value["fileCount"], 1, 4) !== undefined &&
       value["hunkCount"] === 0 &&
       value["addedLineCount"] === 0 &&
       value["deletedLineCount"] === 0 &&
@@ -260,21 +261,34 @@ function validConflictShape(
 }
 
 function conflictStageShapeValid(value: Record<string, unknown>): boolean {
+  const files = integer(value["fileCount"], 1, 4) ?? 0;
+  const stages = Number(value["conflictStageCount"]);
+  if (value["conflictKind"] === "mixed") {
+    return files >= 2 && stages >= files * 2 && stages <= files * 3;
+  }
   const shape = [
-    value["conflictStageCount"],
+    stages,
     value["basePresent"],
     value["oursPresent"],
     value["theirsPresent"],
   ];
   switch (value["conflictKind"]) {
     case "both_modified":
-      return JSON.stringify(shape) === JSON.stringify([3, true, true, true]);
+      return (
+        JSON.stringify(shape) === JSON.stringify([files * 3, true, true, true])
+      );
     case "both_added":
-      return JSON.stringify(shape) === JSON.stringify([2, false, true, true]);
+      return (
+        JSON.stringify(shape) === JSON.stringify([files * 2, false, true, true])
+      );
     case "deleted_by_them":
-      return JSON.stringify(shape) === JSON.stringify([2, true, true, false]);
+      return (
+        JSON.stringify(shape) === JSON.stringify([files * 2, true, true, false])
+      );
     case "deleted_by_us":
-      return JSON.stringify(shape) === JSON.stringify([2, true, false, true]);
+      return (
+        JSON.stringify(shape) === JSON.stringify([files * 2, true, false, true])
+      );
     default:
       return false;
   }
@@ -286,7 +300,8 @@ function gitConflictKind(
   return value === "both_modified" ||
     value === "both_added" ||
     value === "deleted_by_them" ||
-    value === "deleted_by_us"
+    value === "deleted_by_us" ||
+    value === "mixed"
     ? value
     : undefined;
 }

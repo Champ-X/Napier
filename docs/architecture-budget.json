@@ -71,7 +71,7 @@
     "packages/runtime/src/plan-archives.ts": 578,
     "packages/runtime/src/plan-tools.ts": 1033,
     "packages/runtime/src/plans.ts": 1475,
-    "packages/runtime/src/policy.ts": 480,
+    "packages/runtime/src/policy.ts": 475,
     "packages/runtime/src/prompt-packages.ts": 505,
     "packages/runtime/src/receipt-trust-directory-subscriptions.ts": 8392,
     "packages/runtime/src/receipt-trust.ts": 1524,

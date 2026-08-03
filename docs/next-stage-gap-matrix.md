@@ -26,7 +26,7 @@ Audit date: 2026-08-03
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 22,437 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus hash-bound text-conflict stages, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/multi-path conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown; a fixed-source Outcome case now measures primary/secondary authority coverage and contradiction handling through the production capture/cite/report verifier path. Data analysis includes flat-file inspection, hash-bound typed DataFrame transformations, process-isolated parameterized read-only SQLite, and deterministic single- or multi-series SVG chart delivery, with Agent/Workflow reuse, bundled Skill guidance, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, general source-quality scoring and contradiction automation, package-backed Python/Notebook, interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Python/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript and restricted exact-JSON Python Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output/input replacement, selector-free complete top-level input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Package-backed Python/Notebook Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, schema-5 durably releases exactly one remaining rerun node per Continue, and selector-free schema-6 replaces the complete top-level Workflow input and reruns every node through the ordinary scheduler with zero source reuse. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for eleven stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same eleven tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -4393,15 +4393,15 @@ Observed result:
   Runtime with an explicitly labelled test adapter produces an exact preview,
   applies a verified index, and exposes four private-directory-only writable
   launches.
-- the complete repository gate passes 1,979 regular tests: root 78, CLI 150,
-  Server 137, Web 465, Runtime 1,121, and SDK 28. Architecture covers 765
+- the complete repository gate passes 1,980 regular tests: root 78, CLI 150,
+  Server 137, Web 465, Runtime 1,122, and SDK 28. Architecture covers 767
   production and 398 test modules with zero relative-import cycles. Product
-  performance measures 764.8 ms to first CLI event, 911.2 ms to first token,
-  1,224.4 ms to completion, 0.8 ms read p95, 8.0 ms 1,000-event projection,
-  and 761.856 SQLite bytes/event;
+  performance measures 661.6 ms to first CLI event, 811.8 ms to first token,
+  1,132.4 ms to completion, 0.3 ms read p95, 6.8 ms 1,000-event projection,
+  and 757.76 SQLite bytes/event;
 - the 96-file Web dist remains at 115.44 KiB for the main entry and is bound
-  to `87cec29274efbca7`; the 42-artifact Release set is bound to
-  `11be9c9789d6ddd6`.
+  to `12854c43524e3b08`; the 42-artifact Release set is bound to
+  `ccf139d90d68e214`.
 
 Threat boundary:
 
@@ -4927,25 +4927,28 @@ Threat boundary:
 
 ## Completed Slice: Hash-Bound Text Conflict Inspection And Resolution Staging
 
-User scenario: a Coding Agent or typed Workflow can inspect one unmerged text
-path with complete worktree/base/ours/theirs evidence. An Agent can then edit
-the conflict and reuse the existing preview-bound Stage transaction to replace
-unmerged stages with one reviewed resolved index state.
+User scenario: a Coding Agent or typed Workflow can inspect one canonical
+one-to-four-path unmerged text set with complete worktree/base/ours/theirs
+evidence. An Agent can then edit every conflict and reuse one preview-bound
+Stage transaction to atomically install the reviewed resolved index state.
 
 Acceptance:
 
-- extend fixed `git_inspect` with a required-path `conflict` action while
+- extend fixed `git_inspect` with mutually exclusive `path` or 1-4 `paths`
+  conflict input while
   preserving the existing medium-risk read effect, non-observe policy, denied
   writes/network, and default Agent/typed Workflow availability;
-- normalize one visible workspace-relative path once and bind that same value
-  to execution, live output, semantic arguments, and durable path hash;
+- normalize aliases, reject NFC/case collisions, sort by code point, and bind
+  the same set to execution, live output, semantic arguments, and a compatible
+  single-path/set hash;
 - read the exact no-follow index bytes bound by the repository snapshot,
   verify the Git SHA-1 trailer, and parse only DIRC v2/v3 stage entries. Reject
   v4/SHA-256, checksum errors, invalid padding/flags, stage-0-only targets,
   symlink/gitlink modes, duplicate/invalid stages, and every unsupported index;
-- classify exact stage combinations as modify/modify, add/add,
-  deleted-by-us, or deleted-by-them. Require Runtime Ledger and Web Trace
-  validators to reject every contradictory kind/count/presence combination;
+- classify each exact stage combination as modify/modify, add/add,
+  deleted-by-us, or deleted-by-them. For sets, expose total stages, `mixed` when
+  kinds differ, and all-target presence booleans. Require Runtime Ledger and
+  Web Trace validators to reject contradictory single/same-kind/mixed shapes;
 - inspect only a canonical regular worktree file or an absent delete side.
   Perform `lstat` before nonblocking/no-follow open, compare device/inode after
   open, and reject FIFO/devices, symlinks, parent escape, growth, or file drift;
@@ -4959,17 +4962,23 @@ Acceptance:
 - bind final argv evidence to semantic parser/config policy plus ordered actual
   process argument-set hashes, so path, blob OIDs, stage command count, and
   execution order cannot be substituted;
-- recheck the canonical worktree file and complete repository snapshot after
-  inspection. Keep path and all four text bodies live-only; retain only
+- recheck every canonical worktree concurrently after all path inspections and
+  recheck the complete repository snapshot. Keep paths and all text bodies
+  live-only; retain only
   conflict kind/presence/counts plus repository/index/conflict/runtime/output/
   result hashes through Ledger, Replay, Workflow, and Web Trace;
-- prove the existing `apply_patch -> git_stage_preview -> git_stage_apply`
-  chain resolves one conflict without adding a second Git mutation surface.
+- prove the existing `apply_patch -> git_stage_preview(paths) ->
+  git_stage_apply` chain resolves the reviewed set without a second Git
+  mutation surface.
 
 Observed result:
 
 - real modify/modify, add/add, deleted-by-us, and deleted-by-them repositories
   return the exact supported stage combinations and complete private text;
+- a real two-path mixed set combines one 3-stage modify/modify and one 2-stage
+  deleted-by-us conflict. Unsorted alias input becomes canonical output,
+  one checksum-bound index scan feeds five fixed blob reads, and the Receipt
+  reports `fileCount=2`, `mixed`, total stages 5, and compatible set hashes;
 - a complete modify/modify flow edits the worktree resolution, previews the
   exact staged patch through a private index, atomically installs it, and
   proves `git ls-files --unmerged` is empty;
@@ -4981,12 +4990,15 @@ Observed result:
 - normalized aliases such as `sub/../CONFLICT.txt` bind the effective
   `CONFLICT.txt` hash. Different blob/stage command sequences produce distinct
   final Git argument hashes;
+- duplicate aliases, path+paths ambiguity, a clean set member, escaping policy
+  members, and drift of an earlier path while a later path is inspected all
+  invalidate the whole inspection;
 - one scripted Agent Run executes
   `git_inspect -> read_file -> apply_patch -> git_stage_preview ->
 git_stage_apply`, clears the unmerged index, exports valid Replay, and keeps
   every private path, marker, and version out of durable events;
 - one model-free typed Workflow Tool node returns exactly 32 hash-only
-  properties for conflict classification without durable path or text;
+  properties for a two-path conflict set without durable path or text;
 - Web Trace rejects conflict fields on status/diff, missing presence,
   out-of-range stages, and semantically impossible kind/count/presence
   combinations;
@@ -4996,28 +5008,38 @@ git_stage_apply`, clears the unmerged index, exports valid Replay, and keeps
   verified sides through read-only `cat-file`, launches no `ls-files`
   subprocess, leaves inspection state unchanged, then atomically stages the
   resolution and clears every unmerged entry without changing HEAD;
+- built mixed-set Dogfood reads canonical A then B through exactly five verified
+  blobs, reports two files/five stages/`mixed`, atomically applies two
+  unmerged-to-resolved transitions, and completes a zero-delta two-parent merge.
+  Production Sandbox fails closed; final index, topology, tree, markers, and
+  private cleanup all verify;
 - Review found eight process-settlement, semantic evidence, privacy,
   argument-binding, index-ABA, FIFO, path-normalization, and control-text
   issues. All fixes are covered by regressions and independently revalidated;
-- the complete gate passes 1,940 regular tests: 78 root, 150 CLI, 137 Server,
-  460 Web, 1,087 Runtime, and 28 SDK tests. Architecture remains at 736
-  production modules, 391 test modules, zero relative-import cycles, current
+- multi-path Review additionally found repeated index parsing, earlier-target
+  freshness after later inspections, array-member policy confinement, malformed
+  path+paths ambiguity, and central policy architecture pressure. Shared set
+  parsing/hashes, final concurrent freshness, dedicated Git policy, strict
+  presence validation, and lowered architecture budgets cover each issue;
+- the complete gate passes 1,980 regular tests: 78 root, 150 CLI, 137 Server,
+  465 Web, 1,122 Runtime, and 28 SDK tests. Architecture remains at 767
+  production modules, 398 test modules, zero relative-import cycles, current
   runtime/lock/OpenAPI artifacts, 255 routes, and 244/244 compatibility
   operations;
-- product performance remains within baseline: 652.9 ms CLI first event,
-  799.5 ms first token, 1,099.4 ms completion, 0.5 ms read p95, 7.3 ms
-  1,000-event projection, and 761.856 SQLite bytes/event;
+- product performance remains within baseline: 661.6 ms CLI first event,
+  811.8 ms first token, 1,132.4 ms completion, 0.3 ms read p95, 6.8 ms
+  1,000-event projection, and 757.76 SQLite bytes/event;
 - the 96-file Web dist keeps the main entry at 115.44 KiB and is bound to
-  `be88dce55641ccb9`; the 42-artifact Release set is bound to
-  `d01992eed89736b7`.
+  `12854c43524e3b08`; the 42-artifact Release set is bound to
+  `ccf139d90d68e214`.
 
 Threat boundary:
 
-- inspection still exposes one regular-text conflict at a time and does not
-  itself complete the merge or accept a resolution body through Git. The Stage
-  transaction can now atomically clear multiple already reviewed text
-  conflicts, including a resolved tree equal to HEAD; binary, symlink, gitlink,
-  directory/file, and rename conflicts remain unsupported;
+- inspection exposes at most four bounded regular-text conflicts and does not
+  itself complete the merge or accept a resolution body through Git. Stage can
+  atomically clear the reviewed set, including a resolved tree equal to HEAD;
+  binary, symlink, gitlink, directory/file, and rename conflicts remain
+  unsupported;
 - exact two-parent completion is implemented in the next slice and still
   requires a fresh Commit preview over the complete resolved stage-0 index;
 - all Git blob subprocesses are read-only. Text editing and index installation
@@ -5133,17 +5155,17 @@ Observed result:
   marker half-cleanup, uncertain-update cleanup ordering, private construction
   ordering, cleanup durability, and cross-restart reconciliation issues. All
   were fixed with focused regressions and independent validation.
-- the complete gate passes 1,979 regular tests: 78 root, 150 CLI, 137 Server,
-  465 Web, 1,121 Runtime, and 28 SDK tests. Architecture remains at 765
+- the complete gate passes 1,980 regular tests: 78 root, 150 CLI, 137 Server,
+  465 Web, 1,122 Runtime, and 28 SDK tests. Architecture remains at 767
   production modules, 398 test modules, zero relative-import cycles, current
   runtime/lock/OpenAPI artifacts, 255 routes, and 244/244 compatibility
   operations;
-- product performance remains within baseline: 764.8 ms CLI first event,
-  911.2 ms first token, 1,224.4 ms completion, 0.8 ms read p95, 8.0 ms
-  1,000-event projection, and 761.856 SQLite bytes/event;
+- product performance remains within baseline: 661.6 ms CLI first event,
+  811.8 ms first token, 1,132.4 ms completion, 0.3 ms read p95, 6.8 ms
+  1,000-event projection, and 757.76 SQLite bytes/event;
 - the 96-file Web dist keeps the main entry at 115.44 KiB and is bound to
-  `87cec29274efbca7`; the 42-artifact Release set is bound to
-  `11be9c9789d6ddd6`.
+  `12854c43524e3b08`; the 42-artifact Release set is bound to
+  `ccf139d90d68e214`.
 
 Threat boundary:
 

@@ -104,13 +104,13 @@ describe("Workflow Git inspection Tool node", () => {
     fixture.store.close();
   }, 30_000);
 
-  it("returns typed hash-only evidence for one text conflict", async () => {
+  it("returns typed hash-only evidence for one canonical conflict set", async () => {
     const fixture = await createFixture();
     await createMergeConflict(fixture.workspaceRoot);
     const manifest = defineExecutionPlanWorkflow({
       name: "Inspect Git conflict",
       version: 1,
-      description: "Inspect one unmerged regular-text path.",
+      description: "Inspect one unmerged regular-text path set.",
       blueprint: fixture.blueprint,
       inputSchema: requestSchema(),
       outputSchema: conflictReceiptSchema(),
@@ -124,7 +124,10 @@ describe("Workflow Git inspection Tool node", () => {
           effect: "read",
           inputBindings: {
             action: { source: "literal", value: "conflict" },
-            path: { source: "literal", value: "PRIVATE_WORKFLOW.txt" },
+            paths: {
+              source: "literal",
+              value: ["PRIVATE_WORKFLOW.txt", "PRIVATE_WORKFLOW_B.txt"],
+            },
           },
           inputSchema: conflictInputSchema(),
           outputSchema: conflictReceiptSchema(),
@@ -155,7 +158,8 @@ describe("Workflow Git inspection Tool node", () => {
         kind: "napier.git-inspection",
         action: "conflict",
         conflictKind: "both_modified",
-        conflictStageCount: 3,
+        conflictStageCount: 6,
+        fileCount: 2,
         basePresent: true,
         oursPresent: true,
         theirsPresent: true,
@@ -167,6 +171,7 @@ describe("Workflow Git inspection Tool node", () => {
     const durable = JSON.stringify(events);
     for (const privateValue of [
       "PRIVATE_WORKFLOW.txt",
+      "PRIVATE_WORKFLOW_B.txt",
       "PRIVATE_BEFORE",
       "PRIVATE_OURS",
       "PRIVATE_THEIRS",
@@ -193,7 +198,11 @@ async function createFixture() {
     path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
     "PRIVATE_BEFORE\n",
   );
-  await git(workspaceRoot, ["add", "PRIVATE_WORKFLOW.txt"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_WORKFLOW_B.txt"),
+    "PRIVATE_B_BEFORE\n",
+  );
+  await git(workspaceRoot, ["add", "--all"]);
   await git(workspaceRoot, [
     "-c",
     "user.name=Napier Test",
@@ -260,9 +269,14 @@ function conflictInputSchema(): WorkflowObjectSchema {
     type: "object",
     properties: {
       action: { type: "string", enum: ["conflict"] },
-      path: { type: "string" },
+      paths: {
+        type: "array",
+        items: { type: "string" },
+        minItems: 2,
+        maxItems: 4,
+      },
     },
-    required: ["action", "path"],
+    required: ["action", "paths"],
     additionalProperties: false,
   };
 }
@@ -345,9 +359,15 @@ function conflictReceiptSchema(): WorkflowObjectSchema {
     deletedLineCount: count,
     conflictKind: {
       type: "string",
-      enum: ["both_modified", "both_added", "deleted_by_them", "deleted_by_us"],
+      enum: [
+        "both_modified",
+        "both_added",
+        "deleted_by_them",
+        "deleted_by_us",
+        "mixed",
+      ],
     } as const,
-    conflictStageCount: { type: "integer", minimum: 2, maximum: 3 } as const,
+    conflictStageCount: { type: "integer", minimum: 2, maximum: 12 } as const,
     basePresent: { type: "boolean" } as const,
     oursPresent: { type: "boolean" } as const,
     theirsPresent: { type: "boolean" } as const,
@@ -385,11 +405,19 @@ async function createMergeConflict(workspaceRoot: string): Promise<void> {
     path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
     "PRIVATE_OURS\n",
   );
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_WORKFLOW_B.txt"),
+    "PRIVATE_B_OURS\n",
+  );
   await commit(workspaceRoot, "ours");
   await git(workspaceRoot, ["checkout", "--quiet", "feature"]);
   await writeFile(
     path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
     "PRIVATE_THEIRS\n",
+  );
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_WORKFLOW_B.txt"),
+    "PRIVATE_B_THEIRS\n",
   );
   await commit(workspaceRoot, "theirs");
   await git(workspaceRoot, ["checkout", "--quiet", sourceBranch]);
@@ -408,7 +436,7 @@ async function createMergeConflict(workspaceRoot: string): Promise<void> {
 }
 
 async function commit(workspaceRoot: string, message: string): Promise<void> {
-  await git(workspaceRoot, ["add", "PRIVATE_WORKFLOW.txt"]);
+  await git(workspaceRoot, ["add", "--all"]);
   await git(workspaceRoot, [
     "-c",
     "user.name=Napier Test",
