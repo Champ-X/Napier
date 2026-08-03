@@ -188,11 +188,12 @@ Version `0.1.0` includes:
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
   parent-Run cancellation, and argument/output-redacted Ledger evidence;
-- a `git_inspect` tool for workspace-root repository status plus working or
-  staged patches with bounded context. Napier generates every Git argument,
-  rejects gitfiles/symlinked metadata/index locks, disables optional locks,
-  pagers, external diff, textconv, and submodule traversal, binds
-  HEAD/index/config freshness, and keeps paths and hunks live-only;
+- a `git_inspect` tool for workspace-root repository status, working/staged
+  patches, and one bounded regular-text conflict. Napier generates every Git
+  argument, parses the exact bound index for base/ours/theirs stages, rejects
+  gitfiles/symlinked metadata/index locks, disables optional locks, pagers,
+  external diff, textconv, and submodule traversal, binds HEAD/index/config
+  freshness, and keeps paths, hunks, and conflict text live-only;
 - `git_stage_preview` and `git_stage_apply` tools that build an exact one-path
   patch in a private index/object directory, bind its attribute chain and
   repository state, then promote verified objects and atomically install only
@@ -2371,6 +2372,19 @@ working or staged patch, optionally limited to one workspace-relative path and
 0–10 context lines. Output is capped at 128 KiB; an over-limit patch fails
 instead of returning incomplete evidence.
 
+`conflict` accepts one normalized workspace-relative path with unmerged index
+stages. Napier reads and SHA-1-checks the exact preview-bound index bytes
+directly, supports index v2/v3 regular-file stages, classifies modify/modify,
+add/add, and either modify/delete direction, then uses fixed `cat-file blob`
+commands for each present base/ours/theirs object. The canonical no-follow
+worktree file and every stage must be complete UTF-8 text bounded to 24 KiB;
+FIFO/device, symlink, gitlink, binary/control text, invalid checksum, SHA-256/
+v4 index, and changed worktree/index state fail closed. The complete
+worktree/base/ours/theirs text is live untrusted data. Agents can resolve it
+through `read_file` and `apply_patch`, then reuse
+`git_stage_preview`/`git_stage_apply` to atomically replace the unmerged stages
+with one reviewed stage-0 entry.
+
 Napier supplies every argument and disables optional locks, pagers, color,
 filesystem monitoring, rename detection, external diff, textconv, and
 submodule traversal. Literal pathspec mode prevents a path from expanding into
@@ -2387,12 +2401,13 @@ execution, Napier rechecks no-follow HEAD/current-ref, packed-refs, index,
 config, and shallow metadata. Git executable drift or repository metadata
 drift fails the call.
 
-Paths, branch/status lines, and patch bodies are available only to the current
-model as untrusted repository data. Ledger, Replay, Workflow output evidence,
-and Web Trace retain action/scope, counts, output bytes, duration, and
-repository/HEAD/index/config/executable/argv/environment/limit/output/result
-hashes, including the selected Sandbox backend hash. The tool supports Agent
-and model-free typed Workflow Tool nodes.
+Paths, branch/status lines, patch bodies, and conflict text are available only
+to the current model as untrusted repository data. Ledger, Replay, Workflow
+output evidence, and Web Trace retain action/scope, conflict kind/stage
+presence, counts, output bytes, duration, and repository/HEAD/index/config/
+conflict/executable/actual-argv/environment/limit/output/result hashes,
+including the selected Sandbox backend hash. The tool supports Agent and
+model-free typed Workflow Tool nodes.
 
 `git_stage_preview` extends this read surface without changing the real index,
 refs, worktree, or object database. It accepts exactly one bounded regular file
@@ -2487,9 +2502,9 @@ staging transaction, and do not support repositories without an existing
 index/HEAD, linked worktrees, split/sparse indexes, SHA-256 objects, reftable
 refs, alternates, staged submodule/gitlink changes, shared repository ACLs, or
 OCI execution. They also do not switch to divergent branches, checkout/reset/
-clean worktree files, merge, resolve conflicts, sign commits, run hooks, or
-promote Review outcomes. Those operations remain separate preview-bound
-transactions;
+clean worktree files, complete merges or merge commits, resolve binary/symlink/
+multi-file conflicts as one transaction, sign commits, run hooks, or promote
+Review outcomes. Those operations remain separate preview-bound transactions;
 arbitrary Git argv and dangerous history rewriting remain unavailable.
 Preview capabilities are process-local and intentionally non-resumable:
 expiry or Runtime restart requires a fresh preview rather than replaying a

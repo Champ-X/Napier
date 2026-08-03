@@ -31,6 +31,10 @@ export interface GitArgumentRepository {
 export type GitArgumentRequest =
   | { action: "status" }
   | {
+      action: "conflict";
+      path: string;
+    }
+  | {
       action: "diff";
       scope: "working" | "staged";
       path?: string;
@@ -65,6 +69,9 @@ export function gitInspectArguments(
       "--ignore-submodules=all",
     ];
   }
+  if (request.action === "conflict") {
+    throw new Error("Git conflict inspection uses bounded index parsing");
+  }
   return [
     ...common,
     "diff",
@@ -80,10 +87,34 @@ export function gitInspectArguments(
   ];
 }
 
+export function gitConflictBlobArguments(
+  repository: GitArgumentRepository,
+  blobSha1: string,
+): string[] {
+  if (blobSha1 !== "$BLOB_SHA1" && !/^[a-f0-9]{40}$/u.test(blobSha1)) {
+    throw new Error("Git conflict blob is invalid");
+  }
+  return [...commonGitArguments(repository), "cat-file", "blob", blobSha1];
+}
+
 export function gitInspectionArgumentsSha256(
   repository: GitArgumentRepository,
   request: GitArgumentRequest,
 ): string {
+  if (request.action === "conflict") {
+    return sha256(
+      canonicalJson({
+        configPolicyArguments: gitConfigPolicyArguments(repository),
+        configPolicySha256: gitConfigPolicySha256("inspection"),
+        indexParser: {
+          schemaVersion: 1,
+          formats: ["DIRC-v2-sha1", "DIRC-v3-sha1"],
+          targetPath: request.path,
+        },
+        blob: gitConflictBlobArguments(repository, "$BLOB_SHA1"),
+      }),
+    );
+  }
   return sha256(
     canonicalJson({
       configPolicyArguments: gitConfigPolicyArguments(repository),

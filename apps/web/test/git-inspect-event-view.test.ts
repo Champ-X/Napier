@@ -81,8 +81,73 @@ describe("Git inspection Trace projection", () => {
         repositoryStateSha256: "invalid",
       }),
     ).toBeUndefined();
+    expect(
+      gitInspectEventEvidence({
+        ...details(),
+        conflictKind: "both_modified",
+      }),
+    ).toBeUndefined();
+  });
+
+  it("projects conflict classification without repository text", () => {
+    const view = gitInspectEventEvidence(conflictDetails());
+
+    expect(view).toEqual(
+      expect.objectContaining({
+        gitInspectAction: "conflict",
+        gitInspectConflictKind: "both_modified",
+        gitInspectConflictStageCount: 3,
+        gitInspectBasePresent: true,
+        gitInspectOursPresent: true,
+        gitInspectTheirsPresent: true,
+        gitInspectWorktreePresent: true,
+        gitInspectConflictEvidenceSha256: "9".repeat(64),
+      }),
+    );
+    expect(gitInspectSummaryParts(view!)).toEqual(
+      expect.arrayContaining([
+        "git conflict",
+        "conflict both_modified",
+        "stages 3",
+      ]),
+    );
+    expect(JSON.stringify(view)).not.toContain("PRIVATE");
+    expect(
+      gitInspectEventEvidence({
+        ...conflictDetails(),
+        theirsPresent: undefined,
+      }),
+    ).toBeUndefined();
+    expect(
+      gitInspectEventEvidence({
+        ...conflictDetails(),
+        conflictStageCount: 2,
+        basePresent: false,
+      }),
+    ).toBeUndefined();
   });
 });
+
+function conflictDetails() {
+  return {
+    ...details(),
+    action: "conflict",
+    scope: undefined,
+    contextLines: undefined,
+    statusEntryCount: 0,
+    fileCount: 1,
+    hunkCount: 0,
+    addedLineCount: 0,
+    deletedLineCount: 0,
+    conflictKind: "both_modified",
+    conflictStageCount: 3,
+    basePresent: true,
+    oursPresent: true,
+    theirsPresent: true,
+    worktreePresent: true,
+    conflictEvidenceSha256: "9".repeat(64),
+  };
+}
 
 function details() {
   return {

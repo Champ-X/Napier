@@ -10,10 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { ModelRegistry } from "../src/models.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
-import type {
-  OsSandboxAdapter,
-  SandboxedProcess,
-} from "../src/sandbox.js";
+import type { OsSandboxAdapter, SandboxedProcess } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { createExecutionPlanBlueprint } from "../src/workflow-blueprints.js";
@@ -67,10 +64,7 @@ describe("Workflow Git inspection Tool node", () => {
       undefined,
       directSandbox(),
     );
-    const workflows = new ExecutionPlanWorkflowRuntime(
-      fixture.store,
-      runtime,
-    );
+    const workflows = new ExecutionPlanWorkflowRuntime(fixture.store, runtime);
 
     const result = await workflows.run({
       threadId: fixture.threadId,
@@ -80,9 +74,7 @@ describe("Workflow Git inspection Tool node", () => {
       },
     });
 
-    expect(result).toEqual(
-      expect.objectContaining({ status: "completed" }),
-    );
+    expect(result).toEqual(expect.objectContaining({ status: "completed" }));
     expect(result.output).toEqual(
       expect.objectContaining({
         kind: "napier.git-inspection",
@@ -104,6 +96,84 @@ describe("Workflow Git inspection Tool node", () => {
     expect(durable).not.toContain("PRIVATE_WORKFLOW");
     expect(durable).not.toContain("PRIVATE_BEFORE");
     expect(durable).not.toContain("PRIVATE_AFTER");
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(fixture.store, fixture.threadId),
+      ),
+    ).toEqual(expect.objectContaining({ status: "valid" }));
+    fixture.store.close();
+  }, 30_000);
+
+  it("returns typed hash-only evidence for one text conflict", async () => {
+    const fixture = await createFixture();
+    await createMergeConflict(fixture.workspaceRoot);
+    const manifest = defineExecutionPlanWorkflow({
+      name: "Inspect Git conflict",
+      version: 1,
+      description: "Inspect one unmerged regular-text path.",
+      blueprint: fixture.blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: conflictReceiptSchema(),
+      outputNodeId: "status",
+      maxConcurrency: 1,
+      nodes: [
+        {
+          id: "status",
+          type: "tool",
+          tool: "git_inspect",
+          effect: "read",
+          inputBindings: {
+            action: { source: "literal", value: "conflict" },
+            path: { source: "literal", value: "PRIVATE_WORKFLOW.txt" },
+          },
+          inputSchema: conflictInputSchema(),
+          outputSchema: conflictReceiptSchema(),
+          timeoutMs: 10_000,
+          maxAttempts: 1,
+        },
+      ],
+    });
+    const runtime = new AgentRuntime(
+      fixture.store,
+      new ModelRegistry(),
+      undefined,
+      directSandbox(),
+    );
+    const workflows = new ExecutionPlanWorkflowRuntime(fixture.store, runtime);
+
+    const result = await workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest,
+        input: { request: "Inspect conflict." },
+      },
+    });
+
+    expect(result).toEqual(expect.objectContaining({ status: "completed" }));
+    expect(result.output).toEqual(
+      expect.objectContaining({
+        kind: "napier.git-inspection",
+        action: "conflict",
+        conflictKind: "both_modified",
+        conflictStageCount: 3,
+        basePresent: true,
+        oursPresent: true,
+        theirsPresent: true,
+        worktreePresent: true,
+        conflictEvidenceSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    const events = await fixture.store.listEvents(fixture.threadId);
+    const durable = JSON.stringify(events);
+    for (const privateValue of [
+      "PRIVATE_WORKFLOW.txt",
+      "PRIVATE_BEFORE",
+      "PRIVATE_OURS",
+      "PRIVATE_THEIRS",
+      "<<<<<<<",
+    ]) {
+      expect(durable).not.toContain(privateValue);
+    }
     expect(
       verifyThreadReplayBundle(
         await exportThreadReplayBundle(fixture.store, fixture.threadId),
@@ -185,6 +255,18 @@ function statusInputSchema(): WorkflowObjectSchema {
   };
 }
 
+function conflictInputSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      action: { type: "string", enum: ["conflict"] },
+      path: { type: "string" },
+    },
+    required: ["action", "path"],
+    additionalProperties: false,
+  };
+}
+
 function receiptSchema(): WorkflowObjectSchema {
   const digest = { type: "string", minLength: 64, maxLength: 64 } as const;
   const count = { type: "integer", minimum: 0 } as const;
@@ -246,15 +328,121 @@ function receiptSchema(): WorkflowObjectSchema {
   };
 }
 
+function conflictReceiptSchema(): WorkflowObjectSchema {
+  const digest = { type: "string", minLength: 64, maxLength: 64 } as const;
+  const count = { type: "integer", minimum: 0 } as const;
+  const properties = {
+    kind: { type: "string", enum: ["napier.git-inspection"] } as const,
+    schemaVersion: { type: "integer", minimum: 1, maximum: 1 } as const,
+    action: { type: "string", enum: ["conflict"] } as const,
+    repositoryPathSha256: digest,
+    gitDirectorySha256: digest,
+    pathSha256: digest,
+    statusEntryCount: count,
+    fileCount: count,
+    hunkCount: count,
+    addedLineCount: count,
+    deletedLineCount: count,
+    conflictKind: {
+      type: "string",
+      enum: ["both_modified", "both_added", "deleted_by_them", "deleted_by_us"],
+    } as const,
+    conflictStageCount: { type: "integer", minimum: 2, maximum: 3 } as const,
+    basePresent: { type: "boolean" } as const,
+    oursPresent: { type: "boolean" } as const,
+    theirsPresent: { type: "boolean" } as const,
+    worktreePresent: { type: "boolean" } as const,
+    conflictEvidenceSha256: digest,
+    outputSha256: digest,
+    outputBytes: count,
+    repositoryStateSha256: digest,
+    headStateSha256: digest,
+    indexSha256: digest,
+    indexPresent: { type: "boolean" } as const,
+    configSha256: digest,
+    sandboxSha256: digest,
+    gitExecutableSha256: digest,
+    gitArgumentsSha256: digest,
+    gitEnvironmentSha256: digest,
+    gitResourceLimitsSha256: digest,
+    durationMs: count,
+    resultSha256: digest,
+  };
+  return {
+    type: "object",
+    properties,
+    required: Object.keys(properties),
+    additionalProperties: false,
+  };
+}
+
+async function createMergeConflict(workspaceRoot: string): Promise<void> {
+  const sourceBranch = (
+    await gitOutput(workspaceRoot, ["symbolic-ref", "--short", "HEAD"])
+  ).trim();
+  await git(workspaceRoot, ["branch", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
+    "PRIVATE_OURS\n",
+  );
+  await commit(workspaceRoot, "ours");
+  await git(workspaceRoot, ["checkout", "--quiet", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
+    "PRIVATE_THEIRS\n",
+  );
+  await commit(workspaceRoot, "theirs");
+  await git(workspaceRoot, ["checkout", "--quiet", sourceBranch]);
+  await execFileAsync(
+    "/usr/bin/git",
+    [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "merge",
+      "feature",
+    ],
+    { cwd: workspaceRoot, env: gitEnvironment() },
+  ).catch(() => undefined);
+}
+
+async function commit(workspaceRoot: string, message: string): Promise<void> {
+  await git(workspaceRoot, ["add", "PRIVATE_WORKFLOW.txt"]);
+  await git(workspaceRoot, [
+    "-c",
+    "user.name=Napier Test",
+    "-c",
+    "user.email=napier@example.invalid",
+    "commit",
+    "--quiet",
+    "-m",
+    message,
+  ]);
+}
+
 async function git(cwd: string, args: string[]): Promise<void> {
   await execFileAsync("/usr/bin/git", args, {
     cwd,
-    env: {
-      ...process.env,
-      GIT_CONFIG_NOSYSTEM: "1",
-      GIT_TERMINAL_PROMPT: "0",
-    },
+    env: gitEnvironment(),
   });
+}
+
+async function gitOutput(cwd: string, args: string[]): Promise<string> {
+  return (
+    await execFileAsync("/usr/bin/git", args, {
+      cwd,
+      env: gitEnvironment(),
+    })
+  ).stdout;
+}
+
+function gitEnvironment(): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_TERMINAL_PROMPT: "0",
+  };
 }
 
 function directSandbox(): OsSandboxAdapter {

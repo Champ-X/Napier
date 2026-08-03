@@ -1,5 +1,5 @@
 export interface GitInspectToolEventTraceView {
-  gitInspectAction?: "status" | "diff";
+  gitInspectAction?: "status" | "diff" | "conflict";
   gitInspectScope?: "working" | "staged";
   gitInspectContextLines?: number;
   gitInspectStatusEntryCount?: number;
@@ -7,6 +7,17 @@ export interface GitInspectToolEventTraceView {
   gitInspectHunkCount?: number;
   gitInspectAddedLineCount?: number;
   gitInspectDeletedLineCount?: number;
+  gitInspectConflictKind?:
+    | "both_modified"
+    | "both_added"
+    | "deleted_by_them"
+    | "deleted_by_us";
+  gitInspectConflictStageCount?: number;
+  gitInspectBasePresent?: boolean;
+  gitInspectOursPresent?: boolean;
+  gitInspectTheirsPresent?: boolean;
+  gitInspectWorktreePresent?: boolean;
+  gitInspectConflictEvidenceSha256?: string;
   gitInspectOutputBytes?: number;
   gitInspectDurationMs?: number;
   gitInspectIndexPresent?: boolean;
@@ -40,6 +51,8 @@ export function gitInspectEventEvidence(
   const outputBytes = integer(value["outputBytes"], 0, 128 * 1024);
   const durationMs = integer(value["durationMs"], 0, 31_000);
   const contextLines = integer(value["contextLines"], 0, 10);
+  const conflictKind = gitConflictKind(value["conflictKind"]);
+  const conflictStageCount = integer(value["conflictStageCount"], 2, 3);
   const digests = [
     value["repositoryPathSha256"],
     value["gitDirectorySha256"],
@@ -68,6 +81,7 @@ export function gitInspectEventEvidence(
     durationMs === undefined ||
     typeof value["indexPresent"] !== "boolean" ||
     !digests.every(sha256) ||
+    !validConflictShape(value, action, conflictKind, conflictStageCount) ||
     (value["pathSha256"] !== undefined && !sha256(value["pathSha256"]))
   ) {
     return undefined;
@@ -84,6 +98,19 @@ export function gitInspectEventEvidence(
     gitInspectHunkCount: hunkCount,
     gitInspectAddedLineCount: addedLineCount,
     gitInspectDeletedLineCount: deletedLineCount,
+    ...(conflictKind
+      ? {
+          gitInspectConflictKind: conflictKind,
+          gitInspectConflictStageCount: conflictStageCount!,
+          gitInspectBasePresent: Boolean(value["basePresent"]),
+          gitInspectOursPresent: Boolean(value["oursPresent"]),
+          gitInspectTheirsPresent: Boolean(value["theirsPresent"]),
+          gitInspectWorktreePresent: Boolean(value["worktreePresent"]),
+          gitInspectConflictEvidenceSha256: value[
+            "conflictEvidenceSha256"
+          ] as string,
+        }
+      : {}),
     gitInspectOutputBytes: outputBytes,
     gitInspectDurationMs: durationMs,
     gitInspectIndexPresent: value["indexPresent"],
@@ -133,6 +160,12 @@ export function gitInspectSummaryParts(
     ...(view.gitInspectDeletedLineCount !== undefined
       ? [`deleted ${view.gitInspectDeletedLineCount}`]
       : []),
+    ...(view.gitInspectConflictKind
+      ? [
+          `conflict ${view.gitInspectConflictKind}`,
+          `stages ${view.gitInspectConflictStageCount}`,
+        ]
+      : []),
     ...(view.gitInspectOutputBytes !== undefined
       ? [`output-bytes ${view.gitInspectOutputBytes}`]
       : []),
@@ -154,13 +187,15 @@ function integer(
     : undefined;
 }
 
-function gitAction(value: unknown): "status" | "diff" | undefined {
-  return value === "status" || value === "diff" ? value : undefined;
+function gitAction(value: unknown): "status" | "diff" | "conflict" | undefined {
+  return value === "status" || value === "diff" || value === "conflict"
+    ? value
+    : undefined;
 }
 
 function validActionShape(
   value: Record<string, unknown>,
-  action: "status" | "diff" | undefined,
+  action: "status" | "diff" | "conflict" | undefined,
   scope: "working" | "staged" | undefined,
   contextLines: number | undefined,
 ): action is "status" | "diff" {
@@ -169,6 +204,18 @@ function validActionShape(
       scope !== undefined &&
       contextLines !== undefined &&
       value["statusEntryCount"] === 0
+    );
+  }
+  if (action === "conflict") {
+    return (
+      scope === undefined &&
+      contextLines === undefined &&
+      value["statusEntryCount"] === 0 &&
+      value["fileCount"] === 1 &&
+      value["hunkCount"] === 0 &&
+      value["addedLineCount"] === 0 &&
+      value["deletedLineCount"] === 0 &&
+      sha256(value["pathSha256"])
     );
   }
   return (
@@ -181,6 +228,67 @@ function validActionShape(
     value["addedLineCount"] === 0 &&
     value["deletedLineCount"] === 0
   );
+}
+
+function validConflictShape(
+  value: Record<string, unknown>,
+  action: "status" | "diff" | "conflict" | undefined,
+  conflictKind: GitInspectToolEventTraceView["gitInspectConflictKind"],
+  conflictStageCount: number | undefined,
+): boolean {
+  const keys = [
+    "conflictKind",
+    "conflictStageCount",
+    "basePresent",
+    "oursPresent",
+    "theirsPresent",
+    "worktreePresent",
+    "conflictEvidenceSha256",
+  ] as const;
+  if (action !== "conflict") {
+    return keys.every((key) => value[key] === undefined);
+  }
+  return (
+    conflictKind !== undefined &&
+    conflictStageCount !== undefined &&
+    ["basePresent", "oursPresent", "theirsPresent", "worktreePresent"].every(
+      (key) => typeof value[key] === "boolean",
+    ) &&
+    conflictStageShapeValid(value) &&
+    sha256(value["conflictEvidenceSha256"])
+  );
+}
+
+function conflictStageShapeValid(value: Record<string, unknown>): boolean {
+  const shape = [
+    value["conflictStageCount"],
+    value["basePresent"],
+    value["oursPresent"],
+    value["theirsPresent"],
+  ];
+  switch (value["conflictKind"]) {
+    case "both_modified":
+      return JSON.stringify(shape) === JSON.stringify([3, true, true, true]);
+    case "both_added":
+      return JSON.stringify(shape) === JSON.stringify([2, false, true, true]);
+    case "deleted_by_them":
+      return JSON.stringify(shape) === JSON.stringify([2, true, true, false]);
+    case "deleted_by_us":
+      return JSON.stringify(shape) === JSON.stringify([2, true, false, true]);
+    default:
+      return false;
+  }
+}
+
+function gitConflictKind(
+  value: unknown,
+): GitInspectToolEventTraceView["gitInspectConflictKind"] {
+  return value === "both_modified" ||
+    value === "both_added" ||
+    value === "deleted_by_them" ||
+    value === "deleted_by_us"
+    ? value
+    : undefined;
 }
 
 function gitScope(value: unknown): "working" | "staged" | undefined {

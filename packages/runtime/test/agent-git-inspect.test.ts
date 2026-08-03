@@ -1,5 +1,5 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -12,13 +12,11 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
+import { sha256 } from "../src/ed25519.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { ModelRegistry } from "../src/models.js";
-import type {
-  OsSandboxAdapter,
-  SandboxedProcess,
-} from "../src/sandbox.js";
+import type { OsSandboxAdapter, SandboxedProcess } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 
 const execFileAsync = promisify(execFile);
@@ -79,8 +77,7 @@ describe("Agent Git inspection", () => {
     expect(run.status).toBe("completed");
     const events = await fixture.store.listEvents(thread.id);
     const gitEvents = events.filter(
-      (event) =>
-        record(event.payload)?.["toolName"] === "git_inspect",
+      (event) => record(event.payload)?.["toolName"] === "git_inspect",
     );
     expect(gitEvents.map((event) => event.type)).toEqual([
       "tool.started",
@@ -116,7 +113,178 @@ describe("Agent Git inspection", () => {
     ).toEqual(expect.objectContaining({ status: "valid" }));
     fixture.store.close();
   }, 30_000);
+
+  it("inspects, edits, and atomically stages one text conflict", async () => {
+    const fixture = await createFixture();
+    await createMergeConflict(fixture.workspaceRoot);
+    const conflictText = await readFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_SOURCE.txt"),
+      "utf8",
+    );
+    const resolvedText = "PRIVATE_RESOLVED\n";
+    const agent = await fixture.store.updateAgent(
+      fixture.store.listAgents()[0]!.id,
+      {
+        toolPolicy: "workspace",
+        enabledTools: [
+          "git_inspect",
+          "read_file",
+          "apply_patch",
+          "git_stage_preview",
+          "git_stage_apply",
+        ],
+      },
+    );
+    const thread = await fixture.store.createThread({
+      title: "Private Git conflict",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "faux-git-conflict" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("git_inspect", {
+          action: "conflict",
+          path: "PRIVATE_SOURCE.txt",
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("PRIVATE_BEFORE");
+        expect(messages).toContain("PRIVATE_OURS");
+        expect(messages).toContain("PRIVATE_THEIRS");
+        return fauxAssistantMessage(
+          fauxToolCall("read_file", { path: "PRIVATE_SOURCE.txt" }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain("<<<<<<< HEAD");
+        return fauxAssistantMessage(
+          fauxToolCall("apply_patch", {
+            operation: "replace",
+            path: "PRIVATE_SOURCE.txt",
+            expectedSha256: sha256(conflictText),
+            edits: [{ oldText: conflictText, newText: resolvedText }],
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage(
+        fauxToolCall("git_stage_preview", {
+          path: "PRIVATE_SOURCE.txt",
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("PRIVATE_RESOLVED");
+        const previewId = messages.match(
+          /gitstagepreview_[a-z0-9]{8,80}/u,
+        )?.[0];
+        return fauxAssistantMessage(
+          fauxToolCall("git_stage_apply", { previewId }),
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage("The conflict is resolved and staged."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const models = new ModelRegistry();
+    models.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      fixture.store,
+      models,
+      undefined,
+      directSandbox(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Inspect and resolve the current text conflict.",
+      model: { provider: "faux-git-conflict", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(
+      await gitOutput(fixture.workspaceRoot, [
+        "ls-files",
+        "--unmerged",
+        "--",
+        "PRIVATE_SOURCE.txt",
+      ]),
+    ).toBe("");
+    expect(
+      await readFile(
+        path.join(fixture.workspaceRoot, "PRIVATE_SOURCE.txt"),
+        "utf8",
+      ),
+    ).toBe(resolvedText);
+    const events = await fixture.store.listEvents(thread.id);
+    const durable = JSON.stringify(events);
+    for (const privateValue of [
+      "PRIVATE_SOURCE.txt",
+      "PRIVATE_BEFORE",
+      "PRIVATE_OURS",
+      "PRIVATE_THEIRS",
+      "PRIVATE_RESOLVED",
+      "<<<<<<<",
+    ]) {
+      expect(durable).not.toContain(privateValue);
+    }
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(fixture.store, thread.id),
+      ),
+    ).toEqual(expect.objectContaining({ status: "valid" }));
+    fixture.store.close();
+  }, 30_000);
 });
+
+async function createMergeConflict(workspaceRoot: string): Promise<void> {
+  const sourceBranch = (
+    await gitOutput(workspaceRoot, ["symbolic-ref", "--short", "HEAD"])
+  ).trim();
+  await git(workspaceRoot, ["branch", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_SOURCE.txt"),
+    "PRIVATE_OURS\n",
+  );
+  await commit(workspaceRoot, "ours");
+  await git(workspaceRoot, ["checkout", "--quiet", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_SOURCE.txt"),
+    "PRIVATE_THEIRS\n",
+  );
+  await commit(workspaceRoot, "theirs");
+  await git(workspaceRoot, ["checkout", "--quiet", sourceBranch]);
+  await execFileAsync(
+    "/usr/bin/git",
+    [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "merge",
+      "feature",
+    ],
+    { cwd: workspaceRoot, env: gitEnvironment() },
+  ).catch(() => undefined);
+}
+
+async function commit(workspaceRoot: string, message: string): Promise<void> {
+  await git(workspaceRoot, ["add", "PRIVATE_SOURCE.txt"]);
+  await git(workspaceRoot, [
+    "-c",
+    "user.name=Napier Test",
+    "-c",
+    "user.email=napier@example.invalid",
+    "commit",
+    "--quiet",
+    "-m",
+    message,
+  ]);
+}
 
 async function createFixture(): Promise<{
   root: string;
@@ -154,12 +322,25 @@ async function createFixture(): Promise<{
 async function git(cwd: string, args: string[]): Promise<void> {
   await execFileAsync("/usr/bin/git", args, {
     cwd,
-    env: {
-      ...process.env,
-      GIT_CONFIG_NOSYSTEM: "1",
-      GIT_TERMINAL_PROMPT: "0",
-    },
+    env: gitEnvironment(),
   });
+}
+
+async function gitOutput(cwd: string, args: string[]): Promise<string> {
+  return (
+    await execFileAsync("/usr/bin/git", args, {
+      cwd,
+      env: gitEnvironment(),
+    })
+  ).stdout;
+}
+
+function gitEnvironment(): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_TERMINAL_PROMPT: "0",
+  };
 }
 
 function directSandbox(): OsSandboxAdapter {

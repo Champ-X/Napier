@@ -4140,7 +4140,7 @@ process-backed tool within the Run.
 ## Git Inspection Flow
 
 ```text
-git_inspect(status | diff)
+git_inspect(status | diff | conflict)
   -> require non-observe policy + enabled git_inspect
   -> require canonical workspace root with a direct non-symlink .git directory
   -> reject gitfile, metadata symlink, active index lock, protected/escaping path
@@ -4151,14 +4151,21 @@ git_inspect(status | diff)
      diff command/textconv, core.attributesFile,
      worktree config, split index, sparse checkout, reftable refs,
      and SHA-256 objects
-  -> generate status or working/staged diff argv internally
+  -> for status/diff, generate exact read-only argv internally
+  -> for conflict:
+     - normalize one target path and read the exact bound index bytes
+     - verify SHA-1 checksum; parse v2/v3 regular-file stage 1/2/3 entries
+     - classify modify/modify, add/add, deleted-by-us, or deleted-by-them
+     - lstat canonical worktree text before nonblocking no-follow open
+     - run fixed cat-file blob for each present stage and verify Git SHA-1
+     - await every parallel blob process, then recheck worktree/repository state
   -> force literal pathspecs; disable replace refs, optional locks,
      pager, color, fsmonitor, rename detection,
      external diff, textconv, and submodule traversal
   -> execute read-only/offline in the existing OS Sandbox
   -> cap each stream at 128 KiB and reject truncated or stderr-bearing output
   -> rehash Git executable and repository metadata
-  -> return paths/hunks live; persist counts and hashes only,
+  -> return paths/hunks/conflict text live; persist counts and hashes only,
      including the selected Sandbox backend hash
 ```
 
@@ -4166,8 +4173,13 @@ The Git process implementation is private to `git-inspect-process.ts`; it
 reuses `runSandboxedProcess` without adding Git to the public/general
 `CommandRuntime` union. `git-repository.ts` owns shared direct-repository,
 no-follow metadata, mode, path, and freshness validation;
-`git-inspect-arguments.ts` owns every fixed argv set. `git-inspect.ts` owns
-read-only status/hunk execution and counts.
+`git-inspect-arguments.ts` owns every fixed argv set.
+`git-conflict-index.ts` parses checksum-bound v2/v3 index entries without an
+index-observation subprocess, preventing index ABA substitution.
+`git-conflict-inspect.ts` owns bounded worktree/base/ours/theirs text,
+Git-blob verification, parallel process settlement, and conflict
+classification. `git-inspect.ts` owns read-only status/hunk/conflict execution
+and aggregate evidence.
 `git-inspect-tool.ts` owns the TypeBox contract and privacy projection.
 `agent-process-tool-ledger.ts` dispatches command and Git projections outside
 the central Agent Ledger module. Web validation lives in
@@ -4179,9 +4191,21 @@ config, split indexes, sparse checkout, graft metadata, SHA-256 object
 repositories, and submodules whose object metadata lives outside the
 workspace. Local config and attributes are untrusted. The
 config preflight rejects includes and every supported command-bearing
-filter/diff key before status/diff; external diff and textconv are also
+filter/diff key before every action; external diff and textconv are also
 disabled in argv. As a second boundary, the OS Sandbox admits only the fixed
 Git executable, so other configured helpers cannot run.
+
+Conflict inspection supports one complete regular-text path at a time. Each
+worktree/stage body is capped at 24 KiB and rejects invalid UTF-8, binary
+control text, symlinks, FIFO/devices, gitlinks, v4/SHA-256 index formats, and
+checksum or freshness drift. The public argv digest combines the semantic
+parser/command policy with the ordered actual `cat-file` argument-set digests.
+Runtime and Web projections require conflict kind, stage count, and
+base/ours/theirs presence to form one exact valid combination. Agents resolve
+through `read_file` plus `apply_patch`, then reuse the existing atomic
+single-path Stage transaction. This clears unmerged stages into a reviewed
+stage-0 entry but does not create a merge commit; Commit continues to reject
+`MERGE_HEAD`.
 
 ## Git Stage Transaction
 
@@ -4230,8 +4254,10 @@ from selecting additional paths. Loose objects promoted before a failed commit
 barrier may remain unreachable, matching Git's content-addressed safety model.
 Capabilities remain process-local; restart or expiry requires a fresh preview
 instead of reusing a completed Workflow node output. Branch switch, checkout,
-reset, clean, merge, conflict resolution, Review promotion, and arbitrary
-revisions remain unavailable; staging is not a general Git shell.
+reset, clean, merge completion, binary/multi-path conflict resolution, Review
+promotion, and arbitrary revisions remain unavailable. Bounded single-text
+conflicts can reach this transaction only through the hash-bound inspection
+flow above; staging is not a general Git shell.
 
 ## Git Commit Transaction
 

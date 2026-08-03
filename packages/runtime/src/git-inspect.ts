@@ -1,6 +1,11 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { assertGitConfigPolicy } from "./git-config-policy.js";
 import {
+  inspectGitConflict,
+  type GitConflictEvidence,
+  type GitConflictKind,
+} from "./git-conflict-inspect.js";
+import {
   gitInspectArguments,
   gitInspectionArgumentsSha256,
 } from "./git-inspect-arguments.js";
@@ -30,6 +35,11 @@ export type GitInspectRequest =
       timeoutMs?: number;
     }
   | {
+      action: "conflict";
+      path: string;
+      timeoutMs?: number;
+    }
+  | {
       action: "diff";
       scope: "working" | "staged";
       path?: string;
@@ -40,7 +50,7 @@ export type GitInspectRequest =
 export interface GitInspectDetails {
   kind: "napier.git-inspection";
   schemaVersion: 1;
-  action: "status" | "diff";
+  action: "status" | "diff" | "conflict";
   scope?: "working" | "staged";
   repositoryPathSha256: string;
   gitDirectorySha256: string;
@@ -51,6 +61,13 @@ export interface GitInspectDetails {
   hunkCount: number;
   addedLineCount: number;
   deletedLineCount: number;
+  conflictKind?: GitConflictKind;
+  conflictStageCount?: number;
+  basePresent?: boolean;
+  oursPresent?: boolean;
+  theirsPresent?: boolean;
+  worktreePresent?: boolean;
+  conflictEvidenceSha256?: string;
   outputSha256: string;
   outputBytes: number;
   repositoryStateSha256: string;
@@ -85,16 +102,24 @@ export class GitInspectRunner {
     request: GitInspectRequest,
     signal?: AbortSignal,
   ): Promise<GitInspectResult> {
-    validateGitInspectRequest(request);
+    const normalizedRequest = normalizeGitInspectRequest(request);
     const repository = await resolveGitRepository(this.options.workspaceRoot);
     const before = await snapshotGitRepository(repository);
-    const args = gitInspectArguments(repository, request);
-    const argumentsSha256 = gitInspectionArgumentsSha256(repository, request);
-    const timeoutMs = request.timeoutMs ?? DEFAULT_GIT_INSPECT_TIMEOUT_MS;
+    const args =
+      normalizedRequest.action === "conflict"
+        ? undefined
+        : gitInspectArguments(repository, normalizedRequest);
+    let argumentsSha256 = gitInspectionArgumentsSha256(
+      repository,
+      normalizedRequest,
+    );
+    const timeoutMs =
+      normalizedRequest.timeoutMs ?? DEFAULT_GIT_INSPECT_TIMEOUT_MS;
     const deadline = Date.now() + timeoutMs;
     let commandDetails: GitInspectProcessResult | undefined;
     let durationMs = 0;
     let output = "";
+    let conflictEvidence: GitConflictEvidence | undefined;
     try {
       const config = await assertGitConfigPolicy(
         this.options,
@@ -105,23 +130,44 @@ export class GitInspectRunner {
       durationMs += config.durationMs;
       const remainingMs = deadline - Date.now();
       if (remainingMs <= 0) throw new Error("Git inspection timed out");
-      const result = await runGitInspectProcess(
-        this.options,
-        args,
-        remainingMs,
-        signal,
-      );
-      commandDetails = result;
-      durationMs += result.durationMs;
-      output = result.stdout;
-      if (
-        result.status === "output_capped" ||
-        Buffer.byteLength(output, "utf8") > MAX_GIT_INSPECT_OUTPUT_BYTES
-      ) {
-        throw new Error("Git inspection output exceeds its bounded limit");
+      if (normalizedRequest.action === "conflict") {
+        const result = await inspectGitConflict({
+          options: this.options,
+          repository,
+          targetPath: normalizedRequest.path,
+          expectedIndexSha256: before.index.sha256,
+          deadline,
+          ...(signal ? { signal } : {}),
+        });
+        commandDetails = aggregateGitInspectProcesses(result.processes);
+        argumentsSha256 = sha256(
+          canonicalJson({
+            semanticArgumentsSha256: argumentsSha256,
+            executedArgumentSetsSha256: commandDetails.argumentSetSha256,
+          }),
+        );
+        durationMs += result.durationMs;
+        output = result.output;
+        conflictEvidence = result.evidence;
+      } else {
+        const result = await runGitInspectProcess(
+          this.options,
+          args!,
+          remainingMs,
+          signal,
+        );
+        commandDetails = result;
+        durationMs += result.durationMs;
+        output = result.stdout;
+        if (result.status === "output_capped") {
+          throw new Error("Git inspection output exceeds its bounded limit");
+        }
+        if (result.status !== "succeeded" || result.stderr.length > 0) {
+          throw new Error("Git inspection failed");
+        }
       }
-      if (result.status !== "succeeded" || result.stderr.length > 0) {
-        throw new Error("Git inspection failed");
+      if (Buffer.byteLength(output, "utf8") > MAX_GIT_INSPECT_OUTPUT_BYTES) {
+        throw new Error("Git inspection output exceeds its bounded limit");
       }
     } finally {
       const after = await snapshotGitRepository(repository);
@@ -131,12 +177,13 @@ export class GitInspectRunner {
     }
     if (!commandDetails) throw new Error("Git inspection did not execute");
     return finalizeGitInspection(
-      request,
+      normalizedRequest,
       before,
       commandDetails,
       argumentsSha256,
       durationMs,
       output,
+      conflictEvidence,
     );
   }
 }
@@ -148,6 +195,7 @@ function finalizeGitInspection(
   argumentsSha256: string,
   durationMs: number,
   output: string,
+  conflictEvidence?: GitConflictEvidence,
 ): GitInspectResult {
   const counts = inspectGitOutput(request.action, output);
   const outputSha256 = sha256(output);
@@ -158,13 +206,15 @@ function finalizeGitInspection(
     ...(request.action === "diff" ? { scope: request.scope } : {}),
     repositoryPathSha256: sha256("."),
     gitDirectorySha256: sha256(".git"),
-    ...(request.action === "diff" && request.path
+    ...((request.action === "diff" || request.action === "conflict") &&
+    request.path
       ? { pathSha256: sha256(request.path) }
       : {}),
     ...(request.action === "diff"
       ? { contextLines: request.contextLines ?? 3 }
       : {}),
     ...counts,
+    ...(conflictEvidence ?? {}),
     outputSha256,
     outputBytes: Buffer.byteLength(output, "utf8"),
     repositoryStateSha256: state.stateSha256,
@@ -211,6 +261,15 @@ function inspectGitOutput(
       deletedLineCount: 0,
     };
   }
+  if (action === "conflict") {
+    return {
+      statusEntryCount: 0,
+      fileCount: 1,
+      hunkCount: 0,
+      addedLineCount: 0,
+      deletedLineCount: 0,
+    };
+  }
   return {
     statusEntryCount: 0,
     fileCount: lines.filter((line) => line.startsWith("diff --git ")).length,
@@ -224,8 +283,14 @@ function inspectGitOutput(
   };
 }
 
-function validateGitInspectRequest(request: GitInspectRequest): void {
-  if (request.action !== "status" && request.action !== "diff") {
+function normalizeGitInspectRequest(
+  request: GitInspectRequest,
+): GitInspectRequest {
+  if (
+    request.action !== "status" &&
+    request.action !== "diff" &&
+    request.action !== "conflict"
+  ) {
     throw new Error("Git inspection action is invalid");
   }
   if (
@@ -236,7 +301,10 @@ function validateGitInspectRequest(request: GitInspectRequest): void {
   ) {
     throw new Error("Git inspection timeout is invalid");
   }
-  if (request.action === "status") return;
+  if (request.action === "status") return { ...request };
+  if (request.action === "conflict") {
+    return { ...request, path: normalizeGitPath(request.path) };
+  }
   if (request.scope !== "working" && request.scope !== "staged") {
     throw new Error("Git diff scope is invalid");
   }
@@ -248,5 +316,40 @@ function validateGitInspectRequest(request: GitInspectRequest): void {
   ) {
     throw new Error("Git diff context is invalid");
   }
-  if (request.path !== undefined) normalizeGitPath(request.path);
+  return {
+    ...request,
+    ...(request.path !== undefined
+      ? { path: normalizeGitPath(request.path) }
+      : {}),
+  };
+}
+
+function aggregateGitInspectProcesses(
+  processes: GitInspectProcessResult[],
+): GitInspectProcessResult {
+  const first = processes[0];
+  if (
+    !first ||
+    processes.some(
+      (process) =>
+        process.status !== "succeeded" ||
+        process.stderr.length > 0 ||
+        process.sandboxSha256 !== first.sandboxSha256 ||
+        process.executableSha256 !== first.executableSha256 ||
+        process.environmentSha256 !== first.environmentSha256,
+    )
+  ) {
+    throw new Error("Git conflict process evidence is inconsistent");
+  }
+  return {
+    ...first,
+    stdout: "",
+    durationMs: Math.max(...processes.map((process) => process.durationMs)),
+    argumentSetSha256: sha256(
+      canonicalJson(processes.map((process) => process.argumentSetSha256)),
+    ),
+    resourceLimitsSha256: sha256(
+      canonicalJson(processes.map((process) => process.resourceLimitsSha256)),
+    ),
+  };
 }
