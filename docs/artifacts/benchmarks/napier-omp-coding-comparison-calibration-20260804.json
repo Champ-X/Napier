@@ -97,13 +97,14 @@
         "failedTools": ["node_debugger"]
       },
       "napierOuterSandbox": {
-        "officialStatus": "failed",
+        "officialStatus": "passed",
         "hiddenOutcomePassed": true,
-        "durationMs": 32662,
-        "costUsd": 0.0024612672,
+        "durationMs": 29229,
+        "costUsd": 0.0025486552,
         "requiredDebuggerCompleted": true,
-        "runStatus": "failed",
-        "failureReason": "model continued debugger calls after the correct repair"
+        "runStatus": "completed",
+        "toolFailed": 0,
+        "promptStopPolicyVerified": true
       },
       "omp": {
         "agentExitCode": 1,
@@ -129,7 +130,6 @@
       "Make Coding Benchmark outcome execution reliable under the supported outer-sandbox environment.",
       "Fix benchmark-workspace LSP startup and record actionable diagnostics.",
       "Fix benchmark-workspace DAP startup or classify unavailable debugger infrastructure separately from model task failure.",
-      "Stop the Agent after verified task completion instead of allowing later debugger calls to fail the Run.",
       "Repeat multiple shuffled trials after infrastructure repair before making a competitiveness claim."
     ]
   }
