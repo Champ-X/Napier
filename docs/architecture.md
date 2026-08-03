@@ -393,7 +393,10 @@ Evaluation Casebook mutation validation now lives in
 `evaluation-casebook-http-validation.ts`. It owns exact-object create, update,
 curation, removal, and qualification parsing, including name/description and
 qualification-gate bounds, with dedicated malformed-input tests. This lowers
-`app.ts` to 19,758 lines before the mutation routes themselves move.
+`app.ts` to 19,758 lines. `evaluation-admin-http-response.ts` owns the shared
+Casebook/Suite mutation projections and qualification/Suite execution headers
+on top of the common evidence-header primitives, lowering `app.ts` further to
+19,655 lines before the mutation routes themselves move.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
