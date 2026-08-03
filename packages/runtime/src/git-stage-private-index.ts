@@ -22,10 +22,19 @@ import {
   gitStageDiffArguments,
 } from "./git-inspect-arguments.js";
 import {
+  gitStageApplyPatchArguments,
+  gitStageWorkingDiffArguments,
+} from "./git-stage-hunk-arguments.js";
+import {
+  gitStagePathSelectionSha256,
+  selectGitStageHunks,
+} from "./git-stage-hunk-patch.js";
+import {
   MAX_GIT_PROCESS_OUTPUT_CHARS,
   runGitProcess,
   type GitInspectProcessOptions,
   type GitInspectProcessResult,
+  type GitProcessIsolation,
 } from "./git-inspect-process.js";
 import {
   gitErrorCode,
@@ -49,6 +58,9 @@ export interface PreparedGitStage {
   indexSha256: string;
   patch: string;
   counts: GitDiffCounts;
+  selectionMode: "path" | "hunks";
+  selectedHunkCount: number;
+  hunkSelectionSha256: string;
   sandboxSha256: string;
   executableSha256: string;
   environmentSha256: string;
@@ -62,6 +74,7 @@ export async function preparePrivateGitStage(input: {
   initialIndexBytes: Buffer;
   targetPath: string;
   contextLines: number;
+  hunkIndexes?: number[];
   deadline: number;
   configProcess: GitInspectProcessResult;
   signal?: AbortSignal;
@@ -74,7 +87,8 @@ export async function preparePrivateGitStage(input: {
   try {
     await mkdir(objectDirectory, { mode: 0o700 });
     await writePrivateIndex(indexFile, input.initialIndexBytes);
-    const isolation = {
+    const isolation: GitProcessIsolation = {
+      operation: "stage",
       privateFiles: {
         indexFile,
         objectDirectory,
@@ -84,20 +98,7 @@ export async function preparePrivateGitStage(input: {
       },
       workspaceWritePaths: [temporaryDirectory],
     };
-    const add = await runGitProcess(
-      input.processOptions,
-      gitStageAddArguments(input.repository, input.targetPath),
-      remainingTime(input.deadline),
-      input.signal,
-      isolation,
-    );
-    if (
-      add.status !== "succeeded" ||
-      add.stdout.length > 0 ||
-      add.stderr.length > 0
-    ) {
-      throw new Error("Git stage preparation failed");
-    }
+    const mutation = await preparePrivateStageMutation(input, isolation);
     const indexBytes = await readPrivateIndex(indexFile);
     const indexSha256 = sha256(indexBytes);
     if (indexSha256 === sha256(input.initialIndexBytes)) {
@@ -127,7 +128,7 @@ export async function preparePrivateGitStage(input: {
     ) {
       throw new Error("Git stage preview could not be constructed");
     }
-    const processes = [input.configProcess, add, diff];
+    const processes = [input.configProcess, ...mutation.processes, diff];
     assertSameRuntime(processes);
     return {
       temporaryDirectory,
@@ -136,8 +137,11 @@ export async function preparePrivateGitStage(input: {
       indexSha256,
       patch: diff.stdout,
       counts: gitDiffCounts(diff.stdout),
-      sandboxSha256: add.sandboxSha256,
-      executableSha256: add.executableSha256,
+      selectionMode: mutation.selectionMode,
+      selectedHunkCount: mutation.selectedHunkCount,
+      hunkSelectionSha256: mutation.hunkSelectionSha256,
+      sandboxSha256: mutation.processes.at(-1)!.sandboxSha256,
+      executableSha256: mutation.processes.at(-1)!.executableSha256,
       environmentSha256: sha256(
         canonicalJson(processes.map((item) => item.environmentSha256)),
       ),
@@ -149,6 +153,83 @@ export async function preparePrivateGitStage(input: {
   } catch (error) {
     await rm(temporaryDirectory, { recursive: true, force: true });
     throw error;
+  }
+}
+
+async function preparePrivateStageMutation(
+  input: Parameters<typeof preparePrivateGitStage>[0],
+  isolation: GitProcessIsolation,
+): Promise<{
+  processes: GitInspectProcessResult[];
+  selectionMode: PreparedGitStage["selectionMode"];
+  selectedHunkCount: number;
+  hunkSelectionSha256: string;
+}> {
+  if (!input.hunkIndexes) {
+    const add = await runGitProcess(
+      input.processOptions,
+      gitStageAddArguments(input.repository, input.targetPath),
+      remainingTime(input.deadline),
+      input.signal,
+      isolation,
+    );
+    assertEmptySuccessfulProcess(add, "Git stage preparation failed");
+    return {
+      processes: [add],
+      selectionMode: "path",
+      selectedHunkCount: 0,
+      hunkSelectionSha256: gitStagePathSelectionSha256(),
+    };
+  }
+  const working = await runGitProcess(
+    input.processOptions,
+    gitStageWorkingDiffArguments(
+      input.repository,
+      input.targetPath,
+      input.contextLines,
+    ),
+    remainingTime(input.deadline),
+    input.signal,
+    isolation,
+  );
+  if (
+    working.status !== "succeeded" ||
+    working.stderr.length > 0 ||
+    working.stdout.length === 0 ||
+    Buffer.byteLength(working.stdout, "utf8") > MAX_GIT_PROCESS_OUTPUT_CHARS
+  ) {
+    throw new Error("Git stage working patch is unavailable");
+  }
+  const selection = selectGitStageHunks(working.stdout, input.hunkIndexes);
+  const apply = await runGitProcess(
+    input.processOptions,
+    gitStageApplyPatchArguments(input.repository),
+    remainingTime(input.deadline),
+    input.signal,
+    {
+      ...isolation,
+      stdin: selection.selectedPatch,
+    },
+  );
+  assertEmptySuccessfulProcess(apply, "Git selected hunk application failed");
+  return {
+    processes: [working, apply],
+    selectionMode: "hunks",
+    selectedHunkCount: selection.selectedHunkCount,
+    hunkSelectionSha256: selection.selectionSha256,
+  };
+}
+
+function assertEmptySuccessfulProcess(
+  result: GitInspectProcessResult,
+  message: string,
+): void {
+  if (
+    result.status !== "succeeded" ||
+    result.stdout.length > 0 ||
+    result.stderr.length > 0
+  ) {
+    throw new Error(message);
   }
 }
 

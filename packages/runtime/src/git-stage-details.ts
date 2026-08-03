@@ -1,14 +1,8 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { gitStageArgumentsSha256 } from "./git-inspect-arguments.js";
-import type {
-  GitRepository,
-  GitRepositoryState,
-} from "./git-repository.js";
+import { gitStageOperationArgumentsSha256 } from "./git-stage-hunk-arguments.js";
+import type { GitRepository, GitRepositoryState } from "./git-repository.js";
 import type { PreparedGitStage } from "./git-stage-private-index.js";
-import type {
-  GitStageDetails,
-  GitStagePathState,
-} from "./git-stage-model.js";
+import type { GitStageDetails, GitStagePathState } from "./git-stage-model.js";
 
 export function createGitStageDetails(input: {
   action: "preview" | "apply";
@@ -55,10 +49,12 @@ export function createGitStageDetails(input: {
       : {}),
     sandboxSha256: input.prepared.sandboxSha256,
     gitExecutableSha256: input.prepared.executableSha256,
-    gitArgumentsSha256: gitStageArgumentsSha256(
+    gitArgumentsSha256: gitStageOperationArgumentsSha256(
       input.repository,
       input.path,
       input.contextLines,
+      input.prepared.selectionMode,
+      input.prepared.hunkSelectionSha256,
     ),
     gitEnvironmentSha256: input.prepared.environmentSha256,
     gitResourceLimitsSha256: input.prepared.resourceLimitsSha256,

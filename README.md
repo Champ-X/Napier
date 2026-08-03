@@ -195,9 +195,9 @@ Version `0.1.0` includes:
   external diff, textconv, and submodule traversal, binds HEAD/index/config
   freshness, and keeps paths, hunks, and conflict text live-only;
 - `git_stage_preview` and `git_stage_apply` tools that build an exact one-path
-  patch in a private index/object directory, bind its attribute chain and
-  repository state, then promote verified objects and atomically install only
-  the reviewed index through `index.lock`;
+  whole-file or selected-hunk patch in a private index/object directory, bind
+  its attribute chain, selection, and repository state, then promote verified
+  objects and atomically install only the reviewed index through `index.lock`;
 - `git_commit_preview` and `git_commit_apply` tools that reconstruct the
   complete staged tree in a private object directory, bind an ordinary or
   exact two-parent merge topology plus normalized message and fixed identity/
@@ -2414,15 +2414,21 @@ model-free typed Workflow Tool nodes.
 
 `git_stage_preview` extends this read surface without changing the real index,
 refs, worktree, or object database. It accepts exactly one bounded regular file
-or one tracked path deleted from the worktree. Napier copies the current index
-into `.git/napier-stage/<ephemeral>`, directs both `GIT_INDEX_FILE` and
-`GIT_OBJECT_DIRECTORY` there, uses the real fixed `git add`, and renders the
-result through `git diff --cached HEAD`. The OS Sandbox keeps the complete
-workspace read-only and grants write access only to that ephemeral directory.
-The resulting live patch, proposed index hash, repository/config/index state,
-target bytes/mode, parent `.gitattributes` chain, and `.git/info/attributes`
-produce a one-use five-minute capability scoped to its Agent Run or Workflow
-Plan.
+or one tracked path deleted from the worktree. With omitted `hunkIndexes`,
+Napier copies the current index into `.git/napier-stage/<ephemeral>`, directs
+both `GIT_INDEX_FILE` and `GIT_OBJECT_DIRECTORY` there, uses the real fixed
+`git add`, and renders the result through `git diff --cached HEAD`. For an
+existing regular-text modification, a strictly increasing set of 1-based
+`hunkIndexes` instead selects up to 32 complete hunks from a fixed single-path
+index-to-worktree patch and applies only those hunks to the private index
+through fixed `git apply --cached --unidiff-zero`. New/deleted/binary,
+mode-changing, renamed, malformed, CRLF patch, or out-of-range selections fail
+closed; whole-path staging remains available for supported new/deleted files.
+The OS Sandbox keeps the complete workspace read-only and grants write access
+only to that ephemeral directory. The resulting live patch, proposed index
+hash, repository/config/index state, target bytes/mode, selected-hunk protocol
+and digest, parent `.gitattributes` chain, and `.git/info/attributes` produce a
+one-use five-minute capability scoped to its Agent Run or Workflow Plan.
 
 `git_stage_apply` consumes that capability, rechecks every binding under the
 existing cross-Manager path lock, reconstructs the same private index, and
@@ -2434,7 +2440,9 @@ metadata/worktree/attribute change blocks before commitment or produces an
 explicit indeterminate postcondition after commitment. Paths and patch bodies
 remain live-only; durable evidence retains the expiring capability, bounded
 counts, state hashes, environment/argv/Sandbox hashes, durability, and result
-hash.
+hash. The selection digest is folded into the existing `gitArgumentsSha256`,
+preserving the schema-1 32-property Workflow Receipt and legacy Web Trace
+contract.
 
 `git_commit_preview` consumes the complete existing staged index without
 changing refs, the real index, worktree, or object database. It rejects empty
@@ -2536,7 +2544,9 @@ Receipt/Trace expose `recoveryAction=none|rolled_back|completed`; patch, paths,
 branch names, file content, and recovery locations remain live/private.
 
 These slices do not stage directories, symlinks, or multiple paths in one
-staging transaction, and do not support repositories without an existing
+staging transaction. Selected-hunk staging is text-only and does not split
+new/deleted, binary, mode, rename, or more-than-32-hunk changes. They do not
+support repositories without an existing
 index/HEAD, linked worktrees, split/sparse indexes, SHA-256 objects, reftable
 refs, alternates, staged submodule/gitlink changes, shared repository ACLs, or
 OCI execution. Divergent switching remains limited to clean bounded UTF-8

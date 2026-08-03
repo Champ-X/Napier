@@ -14,10 +14,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { ModelRegistry } from "../src/models.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
-import type {
-  OsSandboxAdapter,
-  SandboxedProcess,
-} from "../src/sandbox.js";
+import type { OsSandboxAdapter, SandboxedProcess } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 
@@ -35,7 +32,7 @@ describe("Agent preview-bound Git staging", () => {
     const fixture = await createFixture();
     await writeFile(
       path.join(fixture.workspaceRoot, "PRIVATE_SOURCE.txt"),
-      "PRIVATE_AFTER\n",
+      selectedHunkContent("PRIVATE_FIRST_AFTER", "PRIVATE_SECOND_AFTER"),
     );
     const agent = await fixture.store.updateAgent(
       fixture.store.listAgents()[0]!.id,
@@ -51,12 +48,17 @@ describe("Agent preview-bound Git staging", () => {
     const provider = fauxProvider({ provider: "faux-git-stage" });
     provider.setResponses([
       fauxAssistantMessage(
-        fauxToolCall("git_stage_preview", { path: "PRIVATE_SOURCE.txt" }),
+        fauxToolCall("git_stage_preview", {
+          path: "PRIVATE_SOURCE.txt",
+          contextLines: 1,
+          hunkIndexes: [2],
+        }),
         { stopReason: "toolUse" },
       ),
       (context) => {
         const messages = JSON.stringify(context.messages);
-        expect(messages).toContain("PRIVATE_AFTER");
+        expect(messages).toContain("PRIVATE_SECOND_AFTER");
+        expect(messages).not.toContain("PRIVATE_FIRST_AFTER");
         const previewId = messages.match(
           /gitstagepreview_[a-z0-9]{8,80}/u,
         )?.[0];
@@ -68,7 +70,7 @@ describe("Agent preview-bound Git staging", () => {
       },
       (context) => {
         expect(JSON.stringify(context.messages)).toContain(
-          "The exact previewed path is staged",
+          "The exact previewed hunk selection is staged",
         );
         return fauxAssistantMessage("The reviewed path is staged.");
       },
@@ -96,7 +98,15 @@ describe("Agent preview-bound Git staging", () => {
       "--",
       "PRIVATE_SOURCE.txt",
     ]);
-    expect(staged).toContain("+PRIVATE_AFTER");
+    expect(staged).toContain("+PRIVATE_SECOND_AFTER");
+    expect(staged).not.toContain("+PRIVATE_FIRST_AFTER");
+    const working = await gitOutput(fixture.workspaceRoot, [
+      "diff",
+      "--",
+      "PRIVATE_SOURCE.txt",
+    ]);
+    expect(working).toContain("+PRIVATE_FIRST_AFTER");
+    expect(working).not.toContain("+PRIVATE_SECOND_AFTER");
     const events = await fixture.store.listEvents(thread.id);
     const gitEvents = events.filter((event) =>
       ["git_stage_preview", "git_stage_apply"].includes(
@@ -110,7 +120,10 @@ describe("Agent preview-bound Git staging", () => {
       "tool.completed",
     ]);
     expect(gitEvents[0]?.payload).toEqual(
-      expect.objectContaining({ effect: "read", inputRedacted: true }),
+      expect.objectContaining({
+        effect: "read",
+        inputRedacted: true,
+      }),
     );
     expect(gitEvents[2]?.payload).toEqual(
       expect.objectContaining({ effect: "write", inputRedacted: true }),
@@ -129,8 +142,9 @@ describe("Agent preview-bound Git staging", () => {
     );
     const durable = JSON.stringify(gitEvents);
     expect(durable).not.toContain("PRIVATE_SOURCE");
-    expect(durable).not.toContain("PRIVATE_BEFORE");
-    expect(durable).not.toContain("PRIVATE_AFTER");
+    expect(durable).not.toContain("PRIVATE_FIRST_BEFORE");
+    expect(durable).not.toContain("PRIVATE_FIRST_AFTER");
+    expect(durable).not.toContain("PRIVATE_SECOND_AFTER");
     expect(durable).toContain("gitstagepreview_");
     expect(durable).not.toContain("STAGED PATCH");
     expect(
@@ -154,7 +168,7 @@ async function createFixture(): Promise<{
   await git(workspaceRoot, ["init", "--quiet"]);
   await writeFile(
     path.join(workspaceRoot, "PRIVATE_SOURCE.txt"),
-    "PRIVATE_BEFORE\n",
+    selectedHunkContent("PRIVATE_FIRST_BEFORE", "PRIVATE_SECOND_BEFORE"),
   );
   await git(workspaceRoot, ["add", "PRIVATE_SOURCE.txt"]);
   await git(workspaceRoot, [
@@ -173,6 +187,13 @@ async function createFixture(): Promise<{
   });
   await store.initialize();
   return { root, workspaceRoot, store };
+}
+
+function selectedHunkContent(first: string, second: string): string {
+  const lines = Array.from({ length: 20 }, (_, index) => `line-${index + 1}`);
+  lines[1] = first;
+  lines[17] = second;
+  return `${lines.join("\n")}\n`;
 }
 
 async function git(cwd: string, args: string[]): Promise<void> {

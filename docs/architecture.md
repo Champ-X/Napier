@@ -4210,14 +4210,21 @@ stage-0 entry but does not create a merge commit; Commit continues to reject
 ## Git Stage Transaction
 
 ```text
-git_stage_preview(path)
+git_stage_preview(path, hunkIndexes?)
   -> bind direct repository + HEAD/config/index modes and bytes
   -> bind target file bytes/executable bit or tracked deletion
   -> bind root-to-target .gitattributes + .git/info/attributes
   -> create 0700 .git/napier-stage/<ephemeral>
   -> copy current index; redirect GIT_INDEX_FILE and GIT_OBJECT_DIRECTORY
   -> mount workspace read-only; mount only ephemeral directory writable
-  -> run fixed git add -- path, then fixed git diff --cached HEAD -- path
+  -> with omitted hunkIndexes:
+     - run fixed git add -- path
+  -> with strictly increasing 1-based hunkIndexes:
+     - run fixed single-path index-to-worktree diff
+     - parse <=32 complete existing regular-text modification hunks
+     - reject new/delete/binary/mode/rename/malformed/CRLF forms
+     - run fixed git apply --cached --unidiff-zero with selected patch stdin
+  -> run fixed git diff --cached HEAD -- path
   -> require one complete <=128 KiB patch and unchanged real repository
   -> delete private index/objects
   -> return live patch + one-use Run/Plan-scoped preview capability
@@ -4237,12 +4244,16 @@ git_stage_apply(previewId)
 
 `git-stage.ts` owns expiring capability scope and state transitions;
 `git-stage-private-index.ts` owns private Git execution, loose-object
-verification/promotion, and index installation; `git-stage-model.ts` owns
-bounded target/attribute snapshots; `git-stage-details.ts` owns receipt
-construction. Agent Runs scope capabilities by Run ID, while typed Workflow
-nodes scope them by Plan ID because each node has a distinct child Run.
-Ledger/Replay retain the capability and hashes but no path or patch body. Web
-Trace validates only bounded counts, state/result hashes, durability, and
+verification/promotion, and index installation; `git-stage-hunk-patch.ts`
+owns structural parsing, bounds, selected patch construction, and the semantic
+protocol digest; `git-stage-hunk-arguments.ts` owns fixed diff/apply argv.
+`git-stage-model.ts` owns bounded target/attribute snapshots;
+`git-stage-details.ts` owns receipt construction. The selection digest is
+folded into `gitArgumentsSha256`, so schema-1 Receipt shape remains compatible.
+Agent Runs scope capabilities by Run ID, while typed Workflow nodes scope them
+by Plan ID because each node has a distinct child Run. Ledger/Replay retain the
+capability and hashes but no path or patch body. Web Trace validates only
+bounded counts, state/result hashes, durability, and
 postcondition.
 
 The transaction intentionally supports one regular or tracked-deleted path at

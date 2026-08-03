@@ -10,10 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { ModelRegistry } from "../src/models.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
-import type {
-  OsSandboxAdapter,
-  SandboxedProcess,
-} from "../src/sandbox.js";
+import type { OsSandboxAdapter, SandboxedProcess } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { createExecutionPlanBlueprint } from "../src/workflow-blueprints.js";
@@ -34,7 +31,7 @@ describe("Workflow preview-bound Git stage Tool nodes", () => {
     const fixture = await createFixture();
     await writeFile(
       path.join(fixture.workspaceRoot, "PRIVATE_WORKFLOW.txt"),
-      "PRIVATE_AFTER\n",
+      selectedHunkContent("PRIVATE_FIRST_AFTER", "PRIVATE_SECOND_AFTER"),
     );
     const previewReceipt = receiptSchema("preview");
     const applyReceipt = receiptSchema("apply");
@@ -55,6 +52,8 @@ describe("Workflow preview-bound Git stage Tool nodes", () => {
           effect: "read",
           inputBindings: {
             path: { source: "literal", value: "PRIVATE_WORKFLOW.txt" },
+            contextLines: { source: "literal", value: 1 },
+            hunkIndexes: { source: "literal", value: [2] },
           },
           inputSchema: previewInputSchema(),
           outputSchema: previewReceipt,
@@ -86,10 +85,7 @@ describe("Workflow preview-bound Git stage Tool nodes", () => {
       undefined,
       directSandbox(),
     );
-    const workflows = new ExecutionPlanWorkflowRuntime(
-      fixture.store,
-      runtime,
-    );
+    const workflows = new ExecutionPlanWorkflowRuntime(fixture.store, runtime);
 
     const result = await workflows.run({
       threadId: fixture.threadId,
@@ -111,14 +107,21 @@ describe("Workflow preview-bound Git stage Tool nodes", () => {
         resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
-    expect(
-      await gitOutput(fixture.workspaceRoot, [
-        "diff",
-        "--cached",
-        "--",
-        "PRIVATE_WORKFLOW.txt",
-      ]),
-    ).toContain("+PRIVATE_AFTER");
+    const staged = await gitOutput(fixture.workspaceRoot, [
+      "diff",
+      "--cached",
+      "--",
+      "PRIVATE_WORKFLOW.txt",
+    ]);
+    const working = await gitOutput(fixture.workspaceRoot, [
+      "diff",
+      "--",
+      "PRIVATE_WORKFLOW.txt",
+    ]);
+    expect(staged).toContain("+PRIVATE_SECOND_AFTER");
+    expect(staged).not.toContain("+PRIVATE_FIRST_AFTER");
+    expect(working).toContain("+PRIVATE_FIRST_AFTER");
+    expect(working).not.toContain("+PRIVATE_SECOND_AFTER");
     const events = await fixture.store.listEvents(fixture.threadId);
     const completed = events.filter(
       (event) =>
@@ -139,8 +142,9 @@ describe("Workflow preview-bound Git stage Tool nodes", () => {
     );
     const durable = JSON.stringify(completed);
     expect(durable).not.toContain("PRIVATE_WORKFLOW");
-    expect(durable).not.toContain("PRIVATE_BEFORE");
-    expect(durable).not.toContain("PRIVATE_AFTER");
+    expect(durable).not.toContain("PRIVATE_FIRST_BEFORE");
+    expect(durable).not.toContain("PRIVATE_FIRST_AFTER");
+    expect(durable).not.toContain("PRIVATE_SECOND_AFTER");
     expect(durable).not.toContain("STAGED PATCH");
     expect(
       verifyThreadReplayBundle(
@@ -159,7 +163,7 @@ async function createFixture() {
   await git(workspaceRoot, ["init", "--quiet"]);
   await writeFile(
     path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
-    "PRIVATE_BEFORE\n",
+    selectedHunkContent("PRIVATE_FIRST_BEFORE", "PRIVATE_SECOND_BEFORE"),
   );
   await git(workspaceRoot, ["add", "PRIVATE_WORKFLOW.txt"]);
   await git(workspaceRoot, [
@@ -224,8 +228,17 @@ function requestSchema(): WorkflowObjectSchema {
 function previewInputSchema(): WorkflowObjectSchema {
   return {
     type: "object",
-    properties: { path: { type: "string" } },
-    required: ["path"],
+    properties: {
+      path: { type: "string" },
+      contextLines: { type: "integer", minimum: 0, maximum: 10 },
+      hunkIndexes: {
+        type: "array",
+        items: { type: "integer", minimum: 1, maximum: 32 },
+        minItems: 1,
+        maxItems: 32,
+      },
+    },
+    required: ["path", "contextLines", "hunkIndexes"],
     additionalProperties: false,
   };
 }
@@ -239,9 +252,7 @@ function applyInputSchema(): WorkflowObjectSchema {
   };
 }
 
-function receiptSchema(
-  action: "preview" | "apply",
-): WorkflowObjectSchema {
+function receiptSchema(action: "preview" | "apply"): WorkflowObjectSchema {
   const digest = { type: "string", minLength: 64, maxLength: 64 } as const;
   const count = { type: "integer", minimum: 0 } as const;
   const properties = {
@@ -255,9 +266,7 @@ function receiptSchema(
     postcondition: {
       type: "string",
       enum:
-        action === "preview"
-          ? ["not_applied"]
-          : ["verified", "indeterminate"],
+        action === "preview" ? ["not_applied"] : ["verified", "indeterminate"],
     } as const,
     previewId: { type: "string" } as const,
     expiresAt: { type: "string" } as const,
@@ -323,13 +332,16 @@ function receiptSchema(
     required:
       action === "preview"
         ? [...common, "previewId", "expiresAt"]
-        : [
-            ...common,
-            "afterIndexSha256",
-            "sourcePreviewResultSha256",
-          ],
+        : [...common, "afterIndexSha256", "sourcePreviewResultSha256"],
     additionalProperties: false,
   };
+}
+
+function selectedHunkContent(first: string, second: string): string {
+  const lines = Array.from({ length: 20 }, (_, index) => `line-${index + 1}`);
+  lines[1] = first;
+  lines[17] = second;
+  return `${lines.join("\n")}\n`;
 }
 
 async function git(cwd: string, args: string[]): Promise<void> {

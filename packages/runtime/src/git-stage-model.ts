@@ -3,10 +3,7 @@ import { lstat, open, realpath } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import {
-  gitErrorCode,
-  type GitRepository,
-} from "./git-repository.js";
+import { gitErrorCode, type GitRepository } from "./git-repository.js";
 
 export const DEFAULT_GIT_STAGE_TIMEOUT_MS = 15_000;
 export const MAX_GIT_STAGE_TIMEOUT_MS = 30_000;
@@ -64,12 +61,16 @@ export interface GitStagePreview {
   expiresAt: string;
   path: string;
   patch: string;
+  selectionMode: "path" | "hunks";
+  selectedHunkCount: number;
   details: GitStageDetails;
 }
 
 export interface GitStageApplyResult {
   path: string;
   patch: string;
+  selectionMode: "path" | "hunks";
+  selectedHunkCount: number;
   details: GitStageDetails;
 }
 

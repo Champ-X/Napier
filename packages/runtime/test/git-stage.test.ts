@@ -81,8 +81,9 @@ describe("preview-bound Git staging", () => {
     await expect(
       readdir(path.join(fixture.workspaceRoot, ".git/napier-stage")),
     ).resolves.toEqual([]);
-    await expect(gitOutput(fixture.workspaceRoot, ["diff", "--cached"])).resolves
-      .not.toContain("PRIVATE_AFTER");
+    await expect(
+      gitOutput(fixture.workspaceRoot, ["diff", "--cached"]),
+    ).resolves.not.toContain("PRIVATE_AFTER");
 
     const applied = await manager.apply(
       "thread_private",
@@ -118,11 +119,7 @@ describe("preview-bound Git staging", () => {
       ]),
     ).resolves.toContain("+PRIVATE_AFTER");
     await expect(
-      gitOutput(fixture.workspaceRoot, [
-        "diff",
-        "--",
-        "PRIVATE_TRACKED.txt",
-      ]),
+      gitOutput(fixture.workspaceRoot, ["diff", "--", "PRIVATE_TRACKED.txt"]),
     ).resolves.toBe("");
     await expect(
       lstat(path.join(fixture.workspaceRoot, ".git/index.lock")),
@@ -155,6 +152,179 @@ describe("preview-bound Git staging", () => {
     }
   }, 30_000);
 
+  it("stages only selected one-based hunks while preserving other worktree changes", async () => {
+    const fixture = await createRepository();
+    const target = path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt");
+    const baseline = Array.from(
+      { length: 20 },
+      (_, index) => `line-${index + 1}`,
+    );
+    await writeFile(target, `${baseline.join("\n")}\n`);
+    await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+    await git(fixture.workspaceRoot, [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "hunk baseline",
+    ]);
+    const changed = [...baseline];
+    changed[1] = "PRIVATE_FIRST_HUNK";
+    changed[17] = "PRIVATE_SECOND_HUNK";
+    await writeFile(target, `${changed.join("\n")}\n`);
+    const indexBefore = await sha256File(
+      path.join(fixture.workspaceRoot, ".git/index"),
+    );
+    const manager = managerFor(fixture, directSandbox());
+
+    const preview = await manager.preview("thread_hunk", "run_hunk", {
+      path: "PRIVATE_TRACKED.txt",
+      contextLines: 0,
+      hunkIndexes: [2],
+    });
+
+    expect(preview).toEqual(
+      expect.objectContaining({
+        selectionMode: "hunks",
+        selectedHunkCount: 1,
+        details: expect.objectContaining({
+          hunkCount: 1,
+          gitArgumentsSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      }),
+    );
+    expect(preview.patch).toContain("+PRIVATE_SECOND_HUNK");
+    expect(preview.patch).not.toContain("+PRIVATE_FIRST_HUNK");
+    expect(
+      await sha256File(path.join(fixture.workspaceRoot, ".git/index")),
+    ).toBe(indexBefore);
+    const wholePathPreview = await manager.preview(
+      "thread_whole",
+      "run_whole",
+      {
+        path: "PRIVATE_TRACKED.txt",
+        contextLines: 0,
+      },
+    );
+    expect(wholePathPreview.patch).toContain("+PRIVATE_FIRST_HUNK");
+    expect(wholePathPreview.patch).toContain("+PRIVATE_SECOND_HUNK");
+    expect(wholePathPreview.details.gitArgumentsSha256).not.toBe(
+      preview.details.gitArgumentsSha256,
+    );
+
+    const applied = await manager.apply("thread_hunk", "run_hunk", preview.id);
+
+    expect(applied.details.status).toBe("applied");
+    expect(applied.selectedHunkCount).toBe(1);
+    const staged = await gitOutput(fixture.workspaceRoot, [
+      "diff",
+      "--cached",
+      "--",
+      "PRIVATE_TRACKED.txt",
+    ]);
+    const working = await gitOutput(fixture.workspaceRoot, [
+      "diff",
+      "--",
+      "PRIVATE_TRACKED.txt",
+    ]);
+    expect(staged).toContain("+PRIVATE_SECOND_HUNK");
+    expect(staged).not.toContain("+PRIVATE_FIRST_HUNK");
+    expect(working).toContain("+PRIVATE_FIRST_HUNK");
+    expect(working).not.toContain("+PRIVATE_SECOND_HUNK");
+    expect(await readFile(target, "utf8")).toBe(`${changed.join("\n")}\n`);
+
+    const staleIndex = await sha256File(
+      path.join(fixture.workspaceRoot, ".git/index"),
+    );
+    await expect(
+      manager.preview("thread_hunk", "run_hunk", {
+        path: "PRIVATE_TRACKED.txt",
+        hunkIndexes: [0],
+      }),
+    ).rejects.toThrow("hunk selection is invalid");
+    await expect(
+      manager.preview("thread_hunk", "run_hunk", {
+        path: "PRIVATE_TRACKED.txt",
+        hunkIndexes: [2, 1],
+      }),
+    ).rejects.toThrow("strictly increasing");
+    await expect(
+      manager.preview("thread_hunk", "run_hunk", {
+        path: "PRIVATE_TRACKED.txt",
+        contextLines: 1,
+        hunkIndexes: [2],
+      }),
+    ).rejects.toThrow("available hunks");
+    expect(
+      await sha256File(path.join(fixture.workspaceRoot, ".git/index")),
+    ).toBe(staleIndex);
+  }, 30_000);
+
+  it("adds multiple selected hunks onto existing staged content", async () => {
+    const fixture = await createRepository();
+    const target = path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt");
+    const baseline = Array.from(
+      { length: 30 },
+      (_, index) => `line-${index + 1}`,
+    );
+    await writeFile(target, `${baseline.join("\n")}\n`);
+    await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+    await git(fixture.workspaceRoot, [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "multi hunk baseline",
+    ]);
+    const stagedContent = [...baseline];
+    stagedContent[14] = "PRIVATE_ALREADY_STAGED";
+    await writeFile(target, `${stagedContent.join("\n")}\n`);
+    await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+    const worktreeContent = [...stagedContent];
+    worktreeContent[1] = "PRIVATE_SELECTED_FIRST";
+    worktreeContent[27] = "PRIVATE_SELECTED_SECOND";
+    await writeFile(target, `${worktreeContent.join("\n")}\n`);
+    const manager = managerFor(fixture, directSandbox());
+
+    const preview = await manager.preview("thread_multi", "run_multi", {
+      path: "PRIVATE_TRACKED.txt",
+      contextLines: 1,
+      hunkIndexes: [1, 2],
+    });
+
+    expect(preview.patch).toContain("+PRIVATE_ALREADY_STAGED");
+    expect(preview.patch).toContain("+PRIVATE_SELECTED_FIRST");
+    expect(preview.patch).toContain("+PRIVATE_SELECTED_SECOND");
+    expect(preview.details.hunkCount).toBe(3);
+    expect(preview.selectedHunkCount).toBe(2);
+
+    const applied = await manager.apply(
+      "thread_multi",
+      "run_multi",
+      preview.id,
+    );
+    const staged = await gitOutput(fixture.workspaceRoot, [
+      "diff",
+      "--cached",
+      "--",
+      "PRIVATE_TRACKED.txt",
+    ]);
+    expect(applied.details.status).toBe("applied");
+    expect(applied.selectedHunkCount).toBe(2);
+    expect(staged).toContain("+PRIVATE_ALREADY_STAGED");
+    expect(staged).toContain("+PRIVATE_SELECTED_FIRST");
+    expect(staged).toContain("+PRIVATE_SELECTED_SECOND");
+    await expect(
+      gitOutput(fixture.workspaceRoot, ["diff", "--", "PRIVATE_TRACKED.txt"]),
+    ).resolves.toBe("");
+  }, 30_000);
+
   it("supports untracked and deleted files while rejecting stale or unsafe state", async () => {
     const fixture = await createRepository();
     const sandbox = directSandbox();
@@ -168,11 +338,7 @@ describe("preview-bound Git staging", () => {
     await expect(
       manager.apply("thread_other", "run_a", newPreview.id),
     ).rejects.toThrow("not found");
-    const newApplied = await manager.apply(
-      "thread_a",
-      "run_a",
-      newPreview.id,
-    );
+    const newApplied = await manager.apply("thread_a", "run_a", newPreview.id);
     expect(newApplied.details.status).toBe("applied");
     await expect(
       gitOutput(fixture.workspaceRoot, [
@@ -183,10 +349,7 @@ describe("preview-bound Git staging", () => {
       ]),
     ).resolves.toContain("+PRIVATE_NEW");
 
-    const tracked = path.join(
-      fixture.workspaceRoot,
-      "PRIVATE_TRACKED.txt",
-    );
+    const tracked = path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt");
     await unlink(tracked);
     const deletePreview = await manager.preview("thread_a", "run_a", {
       path: "PRIVATE_TRACKED.txt",
@@ -264,10 +427,7 @@ describe("preview-bound Git staging", () => {
       fixture.workspaceRoot,
       ".git/objects/info/alternates",
     );
-    await symlink(
-      path.join(fixture.root, "missing-alternate"),
-      alternates,
-    );
+    await symlink(path.join(fixture.root, "missing-alternate"), alternates);
     await expect(
       manager.preview("thread_a", "run_a", {
         path: "PRIVATE_TRACKED.txt",
@@ -343,9 +503,14 @@ describe("preview-bound Git staging", () => {
       }),
     );
     expect(
-      assessToolCall("workspace", "git_stage_apply", {
-        previewId: "gitstagepreview_12345678",
-      }, workspace),
+      assessToolCall(
+        "workspace",
+        "git_stage_apply",
+        {
+          previewId: "gitstagepreview_12345678",
+        },
+        workspace,
+      ),
     ).toEqual(
       expect.objectContaining({
         allowed: true,

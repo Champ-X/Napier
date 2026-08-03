@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -36,6 +36,7 @@ describeLive("live DeepSeek smoke", () => {
     const modelId = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-v4-flash";
     const root = await mkdtemp(path.join(tmpdir(), "napier-live-deepseek-"));
     temporaryRoots.push(root);
+    await mkdir(path.join(root, "workspace"));
     const store = new LocalStore({
       dataRoot: path.join(root, "data"),
       workspaceRoot: path.join(root, "workspace"),

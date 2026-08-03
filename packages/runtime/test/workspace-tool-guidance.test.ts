@@ -104,6 +104,7 @@ describe("workspace tool guidance", () => {
 
     expect(guidance).toContain("exact working or staged hunks");
     expect(guidance).toContain("review its complete private-index patch");
+    expect(guidance).toContain("strictly increasing 1-based hunkIndexes");
     expect(guidance).toContain("execution-scoped preview ID");
     expect(guidance).toContain("never commits or changes refs/worktree");
     expect(guidance).toContain("exact commit SHA-1");
