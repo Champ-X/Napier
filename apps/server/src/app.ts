@@ -18,7 +18,6 @@ import type {
   CreateReceiptTrustAnchorRequest,
   CreateReceiptTrustAnchorDirectorySubscriptionRequest,
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
-  CreateEvaluationCasebookRequest,
   CreateEvaluationSuiteRequest,
   CreateMcpExtensionRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
@@ -156,7 +155,6 @@ import type {
   SignSkillPackageRequest,
   SignTrustedReceiptRequest,
   EvaluationConsensusGate,
-  ExecuteEvaluationCasebookRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest,
   ImportSignedExtensionPackageRequest,
   InstallSkillPackageRequest,
@@ -195,8 +193,6 @@ import type {
   ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest,
   ResolveEvaluationConsensusRequest,
   ResolveEvaluationConsensusResult,
-  CurateEvaluationCaseRequest,
-  RemoveEvaluationCaseRequest,
   SetExtensionEnabledRequest,
   SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   SetExecutionPlanBlueprintRecordStatusRequest,
@@ -217,7 +213,6 @@ import type {
   TransitionPlanStepRequest,
   UpdateArtifactManifestRequest,
   UpdateEvaluationSuiteRequest,
-  UpdateEvaluationCasebookRequest,
   UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
   UsagePriceTableCatalog,
   UsagePriceTableVerification,
@@ -361,6 +356,13 @@ import { registerInboundChannelDeliveryHttp } from "./inbound-channel-delivery-h
 import { registerInboundChannelIngressHttp } from "./inbound-channel-ingress-http.js";
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
+import {
+  parseCreateEvaluationCasebookRequest,
+  parseCurateEvaluationCaseRequest,
+  parseExecuteEvaluationCasebookRequest,
+  parseRemoveEvaluationCaseRequest,
+  parseUpdateEvaluationCasebookRequest,
+} from "./evaluation-casebook-http-validation.js";
 import { registerMemoryHttp } from "./memory-http.js";
 import { registerPlanLifecycleHttp } from "./plan-lifecycle-http.js";
 import {
@@ -9488,131 +9490,6 @@ function evaluationCasebookEventPayload(
     ...(revision.caseId ? { caseId: revision.caseId } : {}),
     ...(revision.sourceEvaluationId
       ? { sourceEvaluationId: revision.sourceEvaluationId }
-      : {}),
-  };
-}
-
-function parseCreateEvaluationCasebookRequest(
-  input: unknown,
-): CreateEvaluationCasebookRequest | undefined {
-  const record = requestRecord(input, ["threadId", "name", "description"]);
-  if (
-    !record ||
-    typeof record["threadId"] !== "string" ||
-    !record["threadId"].trim() ||
-    !validCasebookName(record["name"]) ||
-    !validCasebookDescription(record["description"])
-  ) {
-    return undefined;
-  }
-  return {
-    threadId: record["threadId"],
-    name: record["name"],
-    ...(typeof record["description"] === "string"
-      ? { description: record["description"] }
-      : {}),
-  };
-}
-
-function parseUpdateEvaluationCasebookRequest(
-  input: unknown,
-): UpdateEvaluationCasebookRequest | undefined {
-  const record = requestRecord(input, ["threadId", "name", "description"]);
-  if (
-    !record ||
-    typeof record["threadId"] !== "string" ||
-    !record["threadId"].trim() ||
-    (record["name"] !== undefined && !validCasebookName(record["name"])) ||
-    !validCasebookDescription(record["description"])
-  ) {
-    return undefined;
-  }
-  return {
-    threadId: record["threadId"],
-    ...(typeof record["name"] === "string" ? { name: record["name"] } : {}),
-    ...(typeof record["description"] === "string"
-      ? { description: record["description"] }
-      : {}),
-  };
-}
-
-function parseCurateEvaluationCaseRequest(
-  input: unknown,
-): CurateEvaluationCaseRequest | undefined {
-  const record = requestRecord(input, ["threadId", "evaluationId"]);
-  return record &&
-    typeof record["threadId"] === "string" &&
-    record["threadId"].trim() &&
-    typeof record["evaluationId"] === "string" &&
-    record["evaluationId"].trim()
-    ? {
-        threadId: record["threadId"],
-        evaluationId: record["evaluationId"],
-      }
-    : undefined;
-}
-
-function parseRemoveEvaluationCaseRequest(
-  input: unknown,
-): RemoveEvaluationCaseRequest | undefined {
-  const record = requestRecord(input, ["threadId"]);
-  return record &&
-    typeof record["threadId"] === "string" &&
-    record["threadId"].trim()
-    ? { threadId: record["threadId"] }
-    : undefined;
-}
-
-function parseExecuteEvaluationCasebookRequest(
-  input: unknown,
-): ExecuteEvaluationCasebookRequest | undefined {
-  const record = requestRecord(input, ["threadId", "model", "gate"]);
-  const model = requestRecord(record?.["model"], ["provider", "id"]);
-  const gate =
-    record?.["gate"] === undefined
-      ? undefined
-      : requestRecord(record["gate"], [
-          "minimumAgreementRate",
-          "allowInconclusive",
-        ]);
-  const minimumAgreementRate = gate?.["minimumAgreementRate"];
-  const allowInconclusive = gate?.["allowInconclusive"];
-  if (
-    !record ||
-    typeof record["threadId"] !== "string" ||
-    !record["threadId"].trim() ||
-    !model ||
-    typeof model["provider"] !== "string" ||
-    !model["provider"].trim() ||
-    typeof model["id"] !== "string" ||
-    !model["id"].trim() ||
-    (record["gate"] !== undefined && !gate) ||
-    (minimumAgreementRate !== undefined &&
-      (typeof minimumAgreementRate !== "number" ||
-        !Number.isFinite(minimumAgreementRate) ||
-        minimumAgreementRate < 0 ||
-        minimumAgreementRate > 1)) ||
-    (allowInconclusive !== undefined && typeof allowInconclusive !== "boolean")
-  ) {
-    return undefined;
-  }
-  return {
-    threadId: record["threadId"],
-    model: {
-      provider: model["provider"],
-      id: model["id"],
-    },
-    ...(gate
-      ? {
-          gate: {
-            ...(typeof minimumAgreementRate === "number"
-              ? { minimumAgreementRate }
-              : {}),
-            ...(typeof allowInconclusive === "boolean"
-              ? { allowInconclusive }
-              : {}),
-          },
-        }
       : {}),
   };
 }
@@ -18940,20 +18817,6 @@ function isSha256String(value: unknown): value is string {
 function isStringArray(value: unknown): value is string[] {
   return (
     Array.isArray(value) && value.every((item) => typeof item === "string")
-  );
-}
-
-function validCasebookName(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized.length > 0 && normalized.length <= 100;
-}
-
-function validCasebookDescription(value: unknown): boolean {
-  return (
-    value === undefined ||
-    (typeof value === "string" &&
-      value.replace(/\s+/g, " ").trim().length <= 1_000)
   );
 }
 
