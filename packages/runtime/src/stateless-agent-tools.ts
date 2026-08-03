@@ -3,6 +3,11 @@ import type { AgentProfile } from "@napier/contracts";
 
 import { createCommandTool } from "./command-tool.js";
 import { createDataFrameTool } from "./data-frame-tool.js";
+import {
+  createGitBranchApplyTool,
+  createGitBranchPreviewTool,
+} from "./git-branch-tool.js";
+import { gitBranchMutationManagerFor } from "./git-branch.js";
 import { createGitInspectTool } from "./git-inspect-tool.js";
 import {
   createGitCommitApplyTool,
@@ -53,6 +58,7 @@ export interface CreateStatelessAgentToolsOptions {
   gitStageMutations?: GitStageMutationManager;
   gitStageScopeId?: string;
   gitCommitScopeId?: string;
+  gitBranchScopeId?: string;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
 }
@@ -164,6 +170,7 @@ export function createStatelessAgentTools(
   }
   appendGitStageTools(tools, options, processAllowed);
   appendGitCommitTools(tools, options, processAllowed);
+  appendGitBranchTools(tools, options, processAllowed);
   if (processAllowed && profile.enabledTools.includes("verify_workspace")) {
     tools.push(
       createVerificationTool({
@@ -260,6 +267,25 @@ function appendGitCommitTools(
   }
   if (options.profile.enabledTools.includes("git_commit_apply")) {
     tools.push(createGitCommitApplyTool(manager, context));
+  }
+}
+
+function appendGitBranchTools(
+  tools: AgentTool[],
+  options: CreateStatelessAgentToolsOptions,
+  processAllowed: boolean,
+): void {
+  if (!processAllowed) return;
+  const manager = gitBranchMutationManagerFor(options.store, options.sandbox);
+  const context = {
+    threadId: options.threadId,
+    scopeId: options.gitBranchScopeId ?? options.runId,
+  };
+  if (options.profile.enabledTools.includes("git_branch_create_preview")) {
+    tools.push(createGitBranchPreviewTool(manager, context));
+  }
+  if (options.profile.enabledTools.includes("git_branch_create_apply")) {
+    tools.push(createGitBranchApplyTool(manager, context));
   }
 }
 

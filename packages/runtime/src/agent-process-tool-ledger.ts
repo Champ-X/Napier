@@ -6,6 +6,11 @@ import {
   commandToolOutputLedgerProjection,
 } from "./command-tool.js";
 import {
+  gitBranchToolCallArgumentsLedgerProjection,
+  gitBranchToolInputLedgerProjection,
+  gitBranchToolOutputLedgerProjection,
+} from "./git-branch-tool.js";
+import {
   gitInspectToolCallArgumentsLedgerProjection,
   gitInspectToolInputLedgerProjection,
   gitInspectToolOutputLedgerProjection,
@@ -28,6 +33,12 @@ export function agentProcessToolCallProjection(
   if (toolName === "run_command") {
     return commandToolCallArgumentsLedgerProjection(args);
   }
+  if (
+    toolName === "git_branch_create_preview" ||
+    toolName === "git_branch_create_apply"
+  ) {
+    return gitBranchToolCallArgumentsLedgerProjection(toolName, args);
+  }
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitToolCallArgumentsLedgerProjection(toolName, args);
   }
@@ -45,6 +56,12 @@ export function agentProcessToolInputProjection(
 ): Record<string, JsonValue> | undefined {
   if (toolName === "run_command") {
     return commandToolInputLedgerProjection(args);
+  }
+  if (
+    toolName === "git_branch_create_preview" ||
+    toolName === "git_branch_create_apply"
+  ) {
+    return gitBranchToolInputLedgerProjection(toolName, args);
   }
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitToolInputLedgerProjection(toolName, args);
@@ -64,6 +81,12 @@ export function agentProcessToolOutputProjection(
 ): Record<string, JsonValue> | undefined {
   if (toolName === "run_command") {
     return commandToolOutputLedgerProjection(output, result);
+  }
+  if (
+    toolName === "git_branch_create_preview" ||
+    toolName === "git_branch_create_apply"
+  ) {
+    return gitBranchToolOutputLedgerProjection(output, result);
   }
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitToolOutputLedgerProjection(output, result);

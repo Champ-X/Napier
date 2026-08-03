@@ -23,6 +23,8 @@ export const DEFAULT_AGENT_ENABLED_TOOLS = [
   "git_stage_apply",
   "git_commit_preview",
   "git_commit_apply",
+  "git_branch_create_preview",
+  "git_branch_create_apply",
   "apply_patch",
   "verify_workspace",
 ] as const;

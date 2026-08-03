@@ -96,6 +96,8 @@ describe("workspace tool guidance", () => {
       { name: "git_stage_apply" } as AgentTool,
       { name: "git_commit_preview" } as AgentTool,
       { name: "git_commit_apply" } as AgentTool,
+      { name: "git_branch_create_preview" } as AgentTool,
+      { name: "git_branch_create_apply" } as AgentTool,
     ]);
 
     expect(guidance).toContain("exact working or staged hunks");
@@ -104,6 +106,8 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain("never commits or changes refs/worktree");
     expect(guidance).toContain("exact commit SHA-1");
     expect(guidance).toContain("never runs hooks, signing, checkout");
+    expect(guidance).toContain("bind one new local branch name");
+    expect(guidance).toContain("does not switch HEAD");
   });
 
   it("describes the restricted Python state boundary", () => {

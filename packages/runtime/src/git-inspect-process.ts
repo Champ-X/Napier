@@ -59,7 +59,7 @@ export interface GitPrivateProcessFiles {
 }
 
 export interface GitProcessIsolation {
-  operation?: "stage" | "commit";
+  operation?: "stage" | "commit" | "branch";
   privateFiles?: GitPrivateProcessFiles;
   workspaceWritePaths: string[];
   commitTimestampSeconds?: number;
@@ -82,12 +82,13 @@ export async function runGitProcess(
   isolation?: GitProcessIsolation,
 ): Promise<GitInspectProcessResult> {
   validateGitArguments(args);
-  const operation =
-    isolation?.operation === "commit"
+  const operation = isolation
+    ? isolation.operation === "commit"
       ? "Git commit"
-      : isolation
-        ? "Git stage preparation"
-        : "Git inspection";
+      : isolation.operation === "branch"
+        ? "Git branch creation"
+        : "Git stage preparation"
+    : "Git inspection";
   if (options.sandbox.id === "oci-container") {
     throw new Error(
       `${operation} requires a local OS sandbox until container runtime identity binding is available`,

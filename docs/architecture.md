@@ -4229,9 +4229,9 @@ OCI, and attribute-chain drift. Literal pathspec mode prevents target strings
 from selecting additional paths. Loose objects promoted before a failed commit
 barrier may remain unreachable, matching Git's content-addressed safety model.
 Capabilities remain process-local; restart or expiry requires a fresh preview
-instead of reusing a completed Workflow node output. Branch creation/switch,
-checkout, reset, clean, merge, conflict resolution, Review promotion, and
-arbitrary revisions remain unavailable; staging is not a general Git shell.
+instead of reusing a completed Workflow node output. Branch switch, checkout,
+reset, clean, merge, conflict resolution, Review promotion, and arbitrary
+revisions remain unavailable; staging is not a general Git shell.
 
 ## Git Commit Transaction
 
@@ -4265,9 +4265,11 @@ git_commit_apply(previewId)
 `git-commit.ts` owns process-local capabilities, scope, locks, reconstruction,
 ref-CAS orchestration, and unknown-outcome classification.
 `git-commit-private.ts` owns private index/message/object construction, staged
-raw-entry validation, operation-marker checks, ref-path confinement, reflog
-verification, and durability. `git-commit-settlement.ts` independently
-re-observes HEAD, repository/index state, and the empty post-commit staged diff.
+raw-entry validation, and operation-marker checks. `git-ref-files.ts` owns
+shared canonical ref-path confinement, exact ref/reflog fsync, transition-tail
+verification, and parent-directory durability. `git-commit-settlement.ts`
+independently re-observes HEAD, repository/index state, and the empty
+post-commit staged diff.
 `git-commit-details.ts` compresses executable/argv/environment/limit/Sandbox
 evidence into one runtime digest so typed Workflow output remains within the
 shared schema budget. Agent Runs scope the one-use capability by Run ID; typed
@@ -4295,6 +4297,48 @@ hooks, merge commits, amend, checkout, reset, remotes, and history rewriting.
 It commits the complete current index, up to 32 changed entries and a 128 KiB
 patch. Capabilities are memory-only and expire after five minutes; recovery
 must inspect current state and create a new preview.
+
+## Git Branch Create Transaction
+
+```text
+git_branch_create_preview(branchName)
+  -> validate one <=200-byte conservative ASCII local branch name
+  -> require direct file-ref repository + existing HEAD commit
+  -> reject unsafe config, shared/reftable/SHA-256 refs, existing loose/packed
+     target, non-canonical ref roots, and symlinked target ancestors
+  -> bind exact HEAD/repository/config/index/executable/Sandbox evidence
+  -> return one-use Run/Plan-scoped preview without changing any repository byte
+
+git_branch_create_apply(previewId)
+  -> consume capability; lock the exact proposed ref path
+  -> revalidate repository/config/index/HEAD and target absence
+  -> disable hooks and run fixed update-ref <target> <HEAD> <zero>
+  -> settle exact target ref plus unchanged HEAD/repository state
+  -> fsync loose ref + branch reflog and verify zero->target tail
+  -> settle exact target ref plus unchanged HEAD/repository state again
+  -> return applied or indeterminate hash-only durable evidence
+```
+
+`git-branch.ts` owns process-local capability scope, ref locks, preflight,
+zero-old CAS, unknown-outcome settlement, and result classification.
+`git-branch-settlement.ts` independently observes current HEAD, the exact
+target branch, and the repository snapshot before and after durability.
+`git-ref-files.ts` is shared with Commit so canonical ancestors, symlink
+denial, reflog-tail proof, file fsync, and directory fsync have one
+implementation. `git-branch-details.ts` binds the semantic fixed argv,
+runtime/resource evidence, target commit, and repository states. Agent Runs
+scope capabilities by Run ID; Workflow Tool nodes use Plan ID.
+
+Branch names appear only in live Agent tool output. Ledger/Replay/Web Trace
+retain the branch-ref hash, name byte count, target commit, state/runtime
+hashes, ref status, durability, cancellation, and postcondition. Preview
+accepts attached or detached existing HEAD but rejects unborn repositories.
+Apply creates one local branch ref only: it does not change symbolic HEAD,
+checkout files, update the index/worktree, create objects, run hooks, contact a
+remote, or rewrite history. A concurrent HEAD switch can leave the exact
+previewed branch created, but the result is `indeterminate` because the
+unchanged-HEAD postcondition no longer holds. Branch switch remains a separate
+whole-worktree transaction.
 
 ## Workspace Process Session Flow
 

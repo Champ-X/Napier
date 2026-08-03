@@ -201,6 +201,10 @@ Version `0.1.0` includes:
   complete staged tree in a private object directory, bind a normalized message
   plus fixed identity/timestamp to the proposed commit, then promote verified
   objects and CAS-update only the attached branch with durable reflog evidence;
+- `git_branch_create_preview` and `git_branch_create_apply` tools that bind one
+  validated local branch name to the exact current HEAD, then zero-old-CAS
+  create and fsync only that ref/reflog without switching HEAD or touching the
+  index/worktree;
 - a `workspace_process` tool and lazy Processes Workbench for bounded
   background Node sessions with cursor-based stdout/stderr observation,
   explicit interactive stdin, cancellation, lifecycle settlement, graceful
@@ -2352,9 +2356,10 @@ read-only; Process Sessions add only the preview-bound scoped write mode
 described below. Hard per-command CPU/memory quotas remain explicit next-stage
 work. Python remains a separate restricted Kernel protocol. Generic
 `run_command` stays Node-only; Git uses the purpose-built inspection, staging,
-and commit surfaces below rather than exposing arbitrary Git argv.
+commit, and branch-creation surfaces below rather than exposing arbitrary Git
+argv.
 
-## Controlled Git Inspection, Staging, And Commit
+## Controlled Git Inspection, Staging, Commit, And Branch Creation
 
 `git_inspect` reads the workspace-root repository through fixed
 `/usr/bin/git` execution in the same local read-only, denied-network OS
@@ -2437,13 +2442,31 @@ is reported as `indeterminate`, never as a safe failure. Messages and patches
 remain live-only; durable evidence retains bounded counts and
 content/state/runtime hashes.
 
+`git_branch_create_preview` accepts one bounded ASCII local branch name and
+binds it to the exact current `HEAD^{commit}` plus repository/config/index
+state. It rejects invalid or existing loose/packed refs, shared/reftable/
+SHA-256 repositories, unsafe config, and symlinked ref ancestors. Preview is
+read-only and returns a five-minute one-use Run/Plan capability; branch names
+remain live-only while durable evidence retains only their ref hash and byte
+count.
+
+`git_branch_create_apply` consumes that capability under the exact ref lock,
+rechecks HEAD/repository/config/index state and ref absence, then runs only
+`update-ref <previewed-ref> <target> <zero>` with hooks disabled. It fsyncs the
+new loose ref and branch reflog, verifies the zero-to-target reflog tail, and
+settles HEAD, repository state, and the exact branch before and after
+durability. `applied` therefore proves the branch exists at the previewed
+commit while HEAD, index, worktree, and objects remain unchanged. A concurrent
+HEAD switch or uncertain ref process is returned as `indeterminate`; the
+created ref, if present, is never hidden as a safe failure.
+
 These slices do not stage directories, symlinks, or multiple paths in one
 staging transaction, and do not support repositories without an existing
 index/HEAD, linked worktrees, split/sparse indexes, SHA-256 objects, reftable
 refs, alternates, staged submodule/gitlink changes, shared repository ACLs, or
-OCI execution. They also do not create/switch branches, checkout, reset, clean,
-merge, resolve conflicts, sign commits, run hooks, or promote Review outcomes.
-Those operations remain separate preview-bound transactions;
+OCI execution. They also do not switch branches, checkout, reset, clean, merge,
+resolve conflicts, sign commits, run hooks, or promote Review outcomes. Those
+operations remain separate preview-bound transactions;
 arbitrary Git argv and dangerous history rewriting remain unavailable.
 Preview capabilities are process-local and intentionally non-resumable:
 expiry or Runtime restart requires a fresh preview rather than replaying a

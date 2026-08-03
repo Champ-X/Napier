@@ -297,6 +297,8 @@ export const EXECUTION_PLAN_WORKFLOW_TOOL_NAMES = [
   "git_stage_apply",
   "git_commit_preview",
   "git_commit_apply",
+  "git_branch_create_preview",
+  "git_branch_create_apply",
   "inspect_code",
   "read_symbol",
   "ast_query",

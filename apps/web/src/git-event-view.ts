@@ -1,4 +1,9 @@
 import {
+  gitBranchEventEvidence,
+  gitBranchSummaryParts,
+  type GitBranchToolEventTraceView,
+} from "./git-branch-event-view";
+import {
   gitInspectEventEvidence,
   gitInspectSummaryParts,
   type GitInspectToolEventTraceView,
@@ -18,7 +23,8 @@ export interface GitToolEventTraceView
   extends
     GitInspectToolEventTraceView,
     GitStageToolEventTraceView,
-    GitCommitToolEventTraceView {}
+    GitCommitToolEventTraceView,
+    GitBranchToolEventTraceView {}
 
 export function gitToolEventEvidence(
   toolName: string,
@@ -31,6 +37,12 @@ export function gitToolEventEvidence(
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitEventEvidence(details);
   }
+  if (
+    toolName === "git_branch_create_preview" ||
+    toolName === "git_branch_create_apply"
+  ) {
+    return gitBranchEventEvidence(details);
+  }
   return undefined;
 }
 
@@ -39,5 +51,6 @@ export function gitToolSummaryParts(view: GitToolEventTraceView): string[] {
     ...gitInspectSummaryParts(view),
     ...gitStageSummaryParts(view),
     ...gitCommitSummaryParts(view),
+    ...gitBranchSummaryParts(view),
   ];
 }

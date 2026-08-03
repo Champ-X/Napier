@@ -1,5 +1,7 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
 
+const ZERO_GIT_OBJECT_ID = "0000000000000000000000000000000000000000";
+
 const CONFIG_POLICY_EXACT_KEYS = [
   "include.path",
   "core.attributesfile",
@@ -239,6 +241,56 @@ export function gitUpdateBranchArguments(
   ];
 }
 
+export function gitRefExistsArguments(
+  repository: GitArgumentRepository,
+  branchRef: string,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "show-ref",
+    "--verify",
+    "--quiet",
+    branchRef,
+  ];
+}
+
+export function gitCreateBranchArguments(
+  repository: GitArgumentRepository,
+  branchRef: string,
+  targetCommitSha1: string,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "-c",
+    "core.logAllRefUpdates=true",
+    "update-ref",
+    "-m",
+    "napier create branch",
+    branchRef,
+    targetCommitSha1,
+    ZERO_GIT_OBJECT_ID,
+  ];
+}
+
+export function gitBranchArgumentsSha256(
+  repository: GitArgumentRepository,
+): string {
+  return sha256(
+    canonicalJson({
+      configPolicyArguments: gitConfigPolicyArguments(repository),
+      configPolicySha256: gitConfigPolicySha256("branch"),
+      head: gitHeadCommitArguments(repository),
+      exists: gitRefExistsArguments(repository, "$BRANCH_REF"),
+      create: gitCreateBranchArguments(
+        repository,
+        "$BRANCH_REF",
+        "$TARGET_COMMIT_SHA1",
+      ),
+      settle: gitRefCommitArguments(repository, "$BRANCH_REF"),
+    }),
+  );
+}
+
 export function gitCommitArgumentsSha256(
   repository: GitArgumentRepository,
   contextLines: number,
@@ -289,7 +341,7 @@ export function gitConfigKeysPermitStage(output: string): boolean {
 }
 
 export function gitConfigPolicySha256(
-  operation: "inspection" | "stage" | "commit",
+  operation: "inspection" | "stage" | "commit" | "branch",
 ): string {
   return sha256(
     canonicalJson({

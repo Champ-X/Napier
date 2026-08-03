@@ -30,6 +30,8 @@ export function formatWorkspaceToolGuidance(
     "git_stage_apply",
     "git_commit_preview",
     "git_commit_apply",
+    "git_branch_create_preview",
+    "git_branch_create_apply",
   ].some((name) => toolNames.has(name));
   const hasCommand = toolNames.has("run_command");
   const hasJavascriptKernel = toolNames.has("javascript_kernel");
@@ -264,6 +266,18 @@ function gitToolGuidance(toolNames: ReadonlySet<string>): string[] {
     ...(toolNames.has("git_commit_apply")
       ? [
           "git_commit_apply CAS-updates only the attached branch bound by the preview. It never runs hooks, signing, checkout, merge, remote operations, or history rewriting. Inspect HEAD and status after an indeterminate result.",
+        ]
+      : []),
+    ...(toolNames.has("git_branch_create_preview")
+      ? [
+          toolNames.has("git_branch_create_apply")
+            ? "Use git_branch_create_preview to bind one new local branch name to the exact current HEAD. Review the branch and target commit, then pass only its execution-scoped ID to git_branch_create_apply."
+            : "git_branch_create_preview verifies a new local branch without creating it because git_branch_create_apply is disabled.",
+        ]
+      : []),
+    ...(toolNames.has("git_branch_create_apply")
+      ? [
+          "git_branch_create_apply creates only the previewed ref with a zero-old CAS. It does not switch HEAD, checkout files, change the index/worktree, run hooks, contact remotes, or rewrite history.",
         ]
       : []),
   ];

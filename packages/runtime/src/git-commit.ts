@@ -13,9 +13,7 @@ import {
 import {
   assertSimpleGitCommitState,
   cleanupGitCommitDirectory,
-  gitCommitWritePaths,
   preparePrivateGitCommit,
-  syncGitCommitRef,
   type PreparedGitCommit,
 } from "./git-commit-private.js";
 import {
@@ -40,6 +38,10 @@ import {
   type GitRepository,
   type GitRepositoryState,
 } from "./git-repository.js";
+import {
+  gitBranchRefWritePaths,
+  syncGitBranchRefTransition,
+} from "./git-ref-files.js";
 import { promotePreparedGitObjects } from "./git-stage-private-index.js";
 import { createId } from "./ids.js";
 import { withWorkspacePathLocks } from "./workspace-write-lock.js";
@@ -302,7 +304,7 @@ export class GitCommitMutationManager {
         signal,
         {
           operation: "commit",
-          workspaceWritePaths: await gitCommitWritePaths(
+          workspaceWritePaths: await gitBranchRefWritePaths(
             repository,
             preview.branchRef,
           ),
@@ -326,12 +328,13 @@ export class GitCommitMutationManager {
     const committed =
       initialSettlement.branchCommitSha1 === prepared.commitSha1;
     const durable = committed
-      ? await syncGitCommitRef(
+      ? await syncGitBranchRefTransition({
           repository,
-          preview.branchRef,
-          prepared.parentCommitSha1,
-          prepared.commitSha1,
-        )
+          branchRef: preview.branchRef,
+          oldObjectId: prepared.parentCommitSha1,
+          newObjectId: prepared.commitSha1,
+          includeHeadReflog: true,
+        })
       : false;
     const finalSettlement = committed
       ? await settleGitCommit({

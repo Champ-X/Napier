@@ -15,7 +15,7 @@ export async function assertGitConfigPolicy(
   repository: GitRepository,
   timeoutMs: number,
   signal?: AbortSignal,
-  operation: "inspection" | "stage" | "commit" = "inspection",
+  operation: "inspection" | "stage" | "commit" | "branch" = "inspection",
 ): Promise<GitInspectProcessResult> {
   const result = await runGitInspectProcess(
     options,
@@ -26,7 +26,7 @@ export async function assertGitConfigPolicy(
   if (
     result.status !== "succeeded" ||
     result.stderr.length > 0 ||
-    !(operation === "stage" || operation === "commit"
+    !(operation !== "inspection"
       ? gitConfigKeysPermitStage(result.stdout)
       : gitConfigKeysPermitInspection(result.stdout))
   ) {
