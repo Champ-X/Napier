@@ -27,7 +27,6 @@ import type {
   CreateMcpExtensionRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
   CreateRunEvaluationRequest,
-  CreateThreadRequest,
   ContextCheckpointCalibrationReport,
   CreateExecutionPlanFromBlueprintRequest,
   CreateExecutionPlanFromBlueprintRecordRequest,
@@ -170,7 +169,6 @@ import type {
   ExecuteEvaluationCasebookRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest,
   ImportSignedExtensionPackageRequest,
-  ImportThreadReplayBundleRequest,
   InstallSkillPackageRequest,
   InstallSkillPackageResult,
   InspectorPackageQualification,
@@ -179,8 +177,6 @@ import type {
   McpToolEffect,
   McpTransportConfig,
   OperatorDecision,
-  ThreadDetail,
-  ThreadReplayBundle,
   ExtensionPackageChannelIndexVerification,
   ExtensionPackageDeploymentPreview,
   ExtensionPackageLockfile,
@@ -225,7 +221,6 @@ import type {
   SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   SetExecutionPlanBlueprintRecordStatusRequest,
   SelectExecutionPlanBlueprintRecordRequest,
-  SetGoalRequest,
   SignedExtensionPackageChannelIndexEnvelope,
   SignedInspectorPackageEnvelope,
   SkillContentReview,
@@ -286,7 +281,6 @@ import {
   type OsSandboxAdapter,
   createEvaluationCasebookQualificationReceipt,
   createEvaluationSuiteGateReceipt,
-  createGoal,
   createId,
   createExecutionPlanArchive,
   createExecutionPlanBlueprint,
@@ -353,7 +347,6 @@ import {
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
   verifySubagentOutcomeEvidence,
-  validateThreadReplayBundle,
   verifyUsagePriceTableCatalog,
   type WorkspaceFileMutationManager,
   type WorkspaceProcessManager,
@@ -411,6 +404,8 @@ import { registerInboundChannelIngressHttp } from "./inbound-channel-ingress-htt
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
 import { registerThreadEvidenceHttp } from "./thread-evidence-http.js";
+import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
+import { setThreadDetailProjectionHeaders } from "./thread-lifecycle-http-response.js";
 import {
   automationScheduleListSha256,
   registerScheduleHttp,
@@ -484,8 +479,6 @@ const MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT = 1_000;
 
 const HEALTH_RUNTIME_COMPONENTS = ["sqlite", "openssl", "uv", "v8"] as const;
 
-const MAX_THREAD_CREATE_REQUEST_BYTES = 8 * 1024;
-const MAX_GOAL_REQUEST_BYTES = 8 * 1024;
 const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
 const MAX_PROMPT_REQUEST_BYTES = 64 * 1024;
 const MAX_OPERATOR_DECISION_REQUEST_BYTES = 32 * 1024;
@@ -4209,13 +4202,7 @@ export function createApp(services: NapierServices): Hono {
     return context.json(verification);
   });
 
-  app.get("/api/threads/:threadId", async (context) => {
-    const detail = await services.store.getDetail(
-      context.req.param("threadId"),
-    );
-    setThreadDetailProjectionHeaders(context, detail);
-    return context.json(detail);
-  });
+  registerThreadLifecycleHttp(app, services);
 
   app.post(
     "/api/threads/:threadId/subagents/:taskId/outcome/verify",
@@ -7214,135 +7201,6 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.post("/api/threads", async (context) => {
-    let input: unknown;
-    try {
-      input = await readOptionalLimitedJson(
-        context.req.raw,
-        MAX_THREAD_CREATE_REQUEST_BYTES,
-        "Thread creation request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCreateThreadRequest(input);
-    if (!body) {
-      return jsonError(context, "Thread creation request is invalid", 400);
-    }
-    const agent = body?.agentId
-      ? services.store.getAgent(body.agentId)
-      : services.store.listAgents()[0];
-    if (!agent) throw new Error("No agent profiles are available");
-    const thread = await services.store.createThread({
-      title: normalizeTitle(body?.title),
-      agentId: agent.id,
-    });
-    const detail = await services.store.getDetail(thread.id);
-    setThreadDetailProjectionHeaders(context, detail);
-    return context.json(detail, 201);
-  });
-
-  app.post("/api/threads/import", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_THREAD_REPLAY_BUNDLE_BYTES,
-      );
-    } catch (error) {
-      if (error instanceof RequestBodyTooLargeError) {
-        return jsonError(context, error.message, 413);
-      }
-      return jsonError(
-        context,
-        error instanceof Error
-          ? `Invalid thread replay import request: ${error.message}`
-          : "Invalid thread replay import request",
-        400,
-      );
-    }
-    const request = parseImportThreadReplayBundleRequest(input);
-    if (!request) {
-      return jsonError(context, "Thread replay import request is invalid", 400);
-    }
-    let bundle;
-    try {
-      bundle = validateThreadReplayBundle(request.bundle);
-    } catch (error) {
-      return jsonError(
-        context,
-        error instanceof Error
-          ? error.message
-          : "Thread replay bundle is invalid",
-        400,
-      );
-    }
-    const detail = await services.store.importThreadReplayBundle(
-      bundle,
-      request.title,
-    );
-    setThreadDetailProjectionHeaders(context, detail);
-    return context.json(detail, 201);
-  });
-
-  app.put("/api/threads/:threadId/goal", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_GOAL_REQUEST_BYTES,
-        "Goal request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseSetGoalRequest(input);
-    if (!body) {
-      return jsonError(context, "Goal request is invalid", 400);
-    }
-    const goal = createGoal(body.objective, body.maxContinuations);
-    const threadId = context.req.param("threadId");
-    await services.store.setGoal(threadId, goal);
-    await services.store.appendEvent({
-      threadId,
-      runId: createId("runctl"),
-      type: "goal.set",
-      category: "goal",
-      visibility: "user",
-      payload: {
-        objective: goal.objective,
-        maxContinuations: goal.maxContinuations,
-      },
-    });
-    const detail = await services.store.getDetail(threadId);
-    setThreadDetailProjectionHeaders(context, detail);
-    return context.json(detail);
-  });
-
-  app.delete("/api/threads/:threadId/goal", async (context) => {
-    const threadId = context.req.param("threadId");
-    await services.store.setGoal(threadId, undefined);
-    await services.store.appendEvent({
-      threadId,
-      runId: createId("runctl"),
-      type: "goal.cleared",
-      category: "goal",
-      visibility: "user",
-      payload: {},
-    });
-    const detail = await services.store.getDetail(threadId);
-    setThreadDetailProjectionHeaders(context, detail);
-    return context.json(detail);
-  });
-
   registerMemoryHttp(app, services.store);
   registerCredentialHttp(app, services);
 
@@ -9438,11 +9296,6 @@ export async function readProductionIndex(): Promise<string | undefined> {
   }
 }
 
-function normalizeTitle(title?: string): string {
-  const normalized = title?.replace(/\s+/g, " ").trim();
-  return normalized ? normalized.slice(0, 100) : "Untitled ledger";
-}
-
 function assertPlanThread(
   services: NapierServices,
   planId: string,
@@ -9498,49 +9351,6 @@ function parseVerifyUsagePriceTableCatalogRequest(
   };
 }
 
-function parseImportThreadReplayBundleRequest(
-  input: unknown,
-): ImportThreadReplayBundleRequest | undefined {
-  const record = requestRecord(input, ["bundle", "title"]);
-  if (!record || record["bundle"] === undefined) return undefined;
-  const title = record["title"];
-  const normalizedTitle =
-    typeof title === "string" ? title.replace(/\s+/g, " ").trim() : undefined;
-  if (
-    title !== undefined &&
-    (!normalizedTitle || !boundedString(normalizedTitle, 1, 100))
-  ) {
-    return undefined;
-  }
-  return {
-    bundle: record["bundle"] as ThreadReplayBundle,
-    ...(normalizedTitle ? { title: normalizedTitle } : {}),
-  };
-}
-
-function parseCreateThreadRequest(
-  input: unknown,
-): CreateThreadRequest | undefined {
-  if (input === undefined) return {};
-  const record = requestRecord(input, ["title", "agentId"]);
-  if (!record) return undefined;
-  const title = record["title"];
-  const normalizedTitle =
-    typeof title === "string" ? title.replace(/\s+/g, " ").trim() : undefined;
-  if (
-    title !== undefined &&
-    (!normalizedTitle || !boundedString(normalizedTitle, 1, 100))
-  ) {
-    return undefined;
-  }
-  const agentId = record["agentId"];
-  if (agentId !== undefined && !validAgentId(agentId)) return undefined;
-  return {
-    ...(normalizedTitle ? { title: normalizedTitle } : {}),
-    ...(typeof agentId === "string" ? { agentId } : {}),
-  };
-}
-
 function parseCreateBranchRequest(
   input: unknown,
 ): CreateBranchRequest | undefined {
@@ -9562,29 +9372,6 @@ function parseCreateBranchRequest(
   return {
     fromSeq,
     ...(normalizedTitle ? { title: normalizedTitle } : {}),
-  };
-}
-
-function parseSetGoalRequest(input: unknown): SetGoalRequest | undefined {
-  const record = requestRecord(input, ["objective", "maxContinuations"]);
-  const objective =
-    typeof record?.["objective"] === "string"
-      ? record["objective"].replace(/\s+/g, " ").trim()
-      : undefined;
-  const maxContinuations = record?.["maxContinuations"];
-  if (!objective || !boundedString(objective, 1, 4_000)) return undefined;
-  if (
-    maxContinuations !== undefined &&
-    (typeof maxContinuations !== "number" ||
-      !Number.isInteger(maxContinuations) ||
-      maxContinuations < 0 ||
-      maxContinuations > 8)
-  ) {
-    return undefined;
-  }
-  return {
-    objective,
-    ...(typeof maxContinuations === "number" ? { maxContinuations } : {}),
   };
 }
 
@@ -17439,90 +17226,6 @@ function setExtensionRecordHeaders(
   }
 }
 
-function setThreadDetailProjectionHeaders(
-  context: Context,
-  detail: ThreadDetail,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, detail);
-  context.header("X-Napier-Thread-Id", detail.thread.id);
-  context.header(
-    "X-Napier-Thread-Detail-Bytes",
-    String(jsonByteLength(detail)),
-  );
-  context.header(
-    "X-Napier-Thread-Event-Bytes",
-    String(jsonByteLength(detail.events)),
-  );
-  context.header("X-Napier-Run-Count", String(detail.runs.length));
-  context.header("X-Napier-Event-Count", String(detail.events.length));
-  context.header("X-Napier-Plan-Count", String(detail.plans.length));
-  context.header(
-    "X-Napier-Evaluation-Count",
-    String(detail.evaluations.length),
-  );
-  context.header("X-Napier-Subagent-Count", String(detail.subagents.length));
-  context.header(
-    "X-Napier-Run-Control-Message-Count",
-    String(detail.runControlMessages.length),
-  );
-  context.header(
-    "X-Napier-Operator-Decision-Count",
-    String(detail.operatorDecisions.length),
-  );
-  context.header(
-    "X-Napier-Recovery-Assessment-Count",
-    String(detail.automaticRecoveryAssessments.length),
-  );
-  context.header(
-    "X-Napier-Recovery-Attempt-Count",
-    String(detail.automaticRecoveryAttempts.length),
-  );
-  const provenance = detail.thread.importProvenance;
-  if (!provenance) return;
-  context.header("X-Napier-Import-Source-Thread-Id", provenance.sourceThreadId);
-  context.header(
-    "X-Napier-Import-Source-API-Version",
-    provenance.sourceApiVersion,
-  );
-  context.header(
-    "X-Napier-Import-Source-Content-SHA256",
-    provenance.sourceContentSha256,
-  );
-  context.header(
-    "X-Napier-Import-Source-Event-Stream-SHA256",
-    provenance.sourceEventStreamSha256,
-  );
-  context.header(
-    "X-Napier-Import-Source-Event-Count",
-    String(provenance.sourceEventCount),
-  );
-  if (provenance.localImportedThroughSeq !== undefined) {
-    context.header(
-      "X-Napier-Import-Local-Imported-Through-Seq",
-      String(provenance.localImportedThroughSeq),
-    );
-  }
-  if (provenance.sourceModelContextEnvelopeCount !== undefined) {
-    context.header(
-      "X-Napier-Import-Source-Model-Context-Envelope-Count",
-      String(provenance.sourceModelContextEnvelopeCount),
-    );
-  }
-  if (provenance.sourceEmbeddedModelContextEnvelopeCount !== undefined) {
-    context.header(
-      "X-Napier-Import-Source-Embedded-Model-Context-Envelope-Count",
-      String(provenance.sourceEmbeddedModelContextEnvelopeCount),
-    );
-  }
-  context.header("X-Napier-Imported-At", provenance.importedAt);
-  const receipt = importProvenanceReceipt(detail);
-  if (receipt) {
-    context.header("X-Napier-Import-Receipt-Seq", String(receipt.seq));
-    context.header("X-Napier-Import-Receipt-SHA256", receipt.payloadSha256);
-  }
-}
-
 function setWorkspaceProcessProjectionHeaders(
   context: Context,
   projection: unknown,
@@ -17537,26 +17240,6 @@ function setWorkspaceFileProjectionHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, projection);
-}
-
-function importProvenanceReceipt(
-  detail: ThreadDetail,
-): { seq: number; payloadSha256: string } | undefined {
-  const provenance = detail.thread.importProvenance;
-  if (provenance?.localImportedThroughSeq === undefined) return undefined;
-  const event = detail.events.find(
-    (candidate) =>
-      candidate.type === "thread.imported" &&
-      candidate.seq === provenance.localImportedThroughSeq &&
-      candidate.category === "lifecycle" &&
-      candidate.visibility === "debug" &&
-      candidate.createdAt === provenance.importedAt,
-  );
-  if (!event) return undefined;
-  return {
-    seq: event.seq,
-    payloadSha256: sha256Json(event.payload),
-  };
 }
 
 function setSubagentOutcomeEvidenceVerificationHeaders(

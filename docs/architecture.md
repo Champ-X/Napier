@@ -308,6 +308,18 @@ valid dead-letter export/preview/history, hash-only Channel events, and zero
 API-key persistence. `app.ts` decreased to 22,437 lines while the 255-operation
 route set and 244/244 compatibility fixture remained unchanged.
 
+Thread lifecycle HTTP now has the same domain boundary.
+`thread-lifecycle-http.ts` owns Thread get/create/import and Goal set/clear
+routes behind a seven-method Store SPI; it reuses the sole `LocalStore`, shared
+bounded-body/error infrastructure, and Runtime Replay/Goal implementations.
+`thread-lifecycle-http-validation.ts` preserves exact title, Agent ID, Replay
+wrapper, objective, and continuation semantics.
+`thread-lifecycle-http-response.ts` owns the no-store detail projection and
+import-provenance/receipt headers, which branch creation continues to reuse.
+The composition root now only registers the adapter, decreasing `app.ts` to
+22,120 lines. The generated contract remains 255 routes with the same route-set
+digest and all 244 compatibility operations.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 
