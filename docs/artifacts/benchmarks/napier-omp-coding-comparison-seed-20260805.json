@@ -1,0 +1,116 @@
+{
+  "type": "napier.executor-comparison-calibration",
+  "schemaVersion": 1,
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "taskSelection": {
+    "source": "seeded parameterized coding benchmark generator",
+    "seed": 20260805,
+    "suiteSha256": "0ebb706b95865453f0152c9fda1b643b965347b95a22e68890b1098962b718b9",
+    "samePrompt": true,
+    "sameFixture": true,
+    "sameHiddenOutcomeTest": true,
+    "externalTimeoutMs": 120000
+  },
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nestedSandboxAvailable": true,
+    "trustedOuterSandboxCalibration": true,
+    "ompVersion": "17.2.1",
+    "notes": [
+      "All generated cases passed hash-bound loader validation.",
+      "Both executors ran inside TRAE's outer Sandbox in isolated workspaces."
+    ]
+  },
+  "cases": [
+    {
+      "caseId": "coding_seed_20260805_boundary",
+      "complexity": "low",
+      "caseSha256": "4318b93b397da580358a0999e9e702be89e8773de82b3aef9caf9d994168fa75",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": true,
+        "durationMs": 8881,
+        "costUsd": 0.00115444,
+        "toolStarted": 3,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 8881
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 9270
+      }
+    },
+    {
+      "caseId": "coding_seed_20260805_migration",
+      "complexity": "medium",
+      "caseSha256": "36bc9c80c3759786b6f8c025bfdfa2f976593f0ad3f332c52577ab9431aba09a",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": true,
+        "durationMs": 21868,
+        "costUsd": 0.0022251824,
+        "toolStarted": 11,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 21868
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 32170
+      }
+    },
+    {
+      "caseId": "coding_seed_20260805_debugger",
+      "complexity": "high",
+      "caseSha256": "a32e83ba2d7dafd4cd97950e0a4e2666e7149738b673bf05ea0ae983cbe43b10",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": true,
+        "durationMs": 21932,
+        "costUsd": 0.0022633408,
+        "toolStarted": 8,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 21932
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 44253
+      }
+    }
+  ],
+  "summary": {
+    "napierOfficialPassed": 3,
+    "napierOfficialInconclusive": 0,
+    "napierOfficialFailed": 0,
+    "napierCanonicalTargetMatches": 3,
+    "ompHiddenOutcomePassed": 3,
+    "ompHiddenOutcomeFailed": 0,
+    "napierOuterHiddenOutcomePassed": 3,
+    "napierOuterHiddenOutcomeFailed": 0,
+    "outerOutcomeVerdict": "napier_not_worse",
+    "verdict": "napier_not_worse",
+    "requiredFollowUps": [
+      "Repeat multiple trials per seed.",
+      "Capture comparable OMP token and cost evidence.",
+      "Add more structural task families beyond the three parameterized templates."
+    ]
+  }
+}

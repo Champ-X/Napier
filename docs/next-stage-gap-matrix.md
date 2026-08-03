@@ -69,6 +69,14 @@ report is
 This proves `napier_not_worse` for this seeded batch, while broader multi-seed,
 multi-trial evidence remains open.
 
+Independent seed `20260805` produced a different suite
+(`0ebb706b95865453`) and repeated the result: both executors passed 3/3, while
+Napier was faster in all three cases at 8.88/21.87/21.93 seconds versus
+9.27/32.17/44.25 seconds. Across the two generated seeds Napier is 6/6 on
+official Runs with zero failed tools, both executors are 6/6 on hidden
+outcomes, and Napier has lower wall time in 6/6 matched cases. This remains a
+small template-bound sample, not a general superiority claim.
+
 Observed on 2026-08-02 with `deepseek-v4-flash` loaded from the local
 environment:
 

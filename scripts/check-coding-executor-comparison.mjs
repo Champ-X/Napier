@@ -6,6 +6,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const defaultPaths = [
   "docs/artifacts/benchmarks/napier-omp-coding-comparison-calibration-20260804.json",
   "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260804.json",
+  "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260805.json",
 ];
 
 export async function verifyCodingExecutorComparison(input, options = {}) {
