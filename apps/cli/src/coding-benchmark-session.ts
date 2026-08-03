@@ -50,7 +50,7 @@ export async function configureCodingBenchmarkAgent(input: {
       name: "Napier Coding Benchmark",
       description: "Executes one fixed, deterministically scored coding task.",
       systemPrompt:
-        "Complete the fixed coding task using only the enabled workspace tools. Inspect before editing, make the smallest correct change, do not create unrelated files, and never treat your own summary as proof of success. After the required tool evidence and correct minimal edit are complete, stop calling tools and finish immediately with a concise summary.",
+        "Complete the fixed coding task using only the enabled workspace tools. Inspect before editing, make the smallest correct change, do not create unrelated files, and never treat your own summary as proof of success. Use stateful tools sequentially and close or cancel any debugger session before editing. After apply_patch succeeds, never call debugger or LSP tools again. Once the required tool evidence and correct minimal edit are complete, stop calling tools and finish immediately with a concise summary.",
       model: input.model,
       thinkingLevel: "low",
       toolPolicy: "workspace",

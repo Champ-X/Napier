@@ -3,8 +3,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const defaultPath =
-  "docs/artifacts/benchmarks/napier-omp-coding-comparison-calibration-20260804.json";
+const defaultPaths = [
+  "docs/artifacts/benchmarks/napier-omp-coding-comparison-calibration-20260804.json",
+  "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260804.json",
+];
 
 export async function verifyCodingExecutorComparison(input, options = {}) {
   const errors = [];
@@ -172,11 +174,18 @@ function positiveInteger(value) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const reportPath = path.resolve(root, process.argv[2] ?? defaultPath);
-  const report = JSON.parse(await readFile(reportPath, "utf8"));
-  const result = await verifyCodingExecutorComparison(report, {
-    path: path.relative(root, reportPath),
-  });
-  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-  if (!result.valid) process.exitCode = 1;
+  const reportPaths = process.argv[2]
+    ? [path.resolve(root, process.argv[2])]
+    : defaultPaths.map((entry) => path.resolve(root, entry));
+  const results = [];
+  for (const reportPath of reportPaths) {
+    const report = JSON.parse(await readFile(reportPath, "utf8"));
+    results.push(
+      await verifyCodingExecutorComparison(report, {
+        path: path.relative(root, reportPath),
+      }),
+    );
+  }
+  process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
+  if (results.some((result) => !result.valid)) process.exitCode = 1;
 }

@@ -1,0 +1,133 @@
+{
+  "type": "napier.executor-comparison-calibration",
+  "schemaVersion": 1,
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "taskSelection": {
+    "source": "seeded parameterized coding benchmark generator",
+    "seed": 20260804,
+    "suiteSha256": "95171625192756f17d044f77ed927fa5e055321563f23768e93e0ac6bbbbe8f4",
+    "samePrompt": true,
+    "sameFixture": true,
+    "sameHiddenOutcomeTest": true,
+    "externalTimeoutMs": 120000
+  },
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nestedSandboxAvailable": true,
+    "trustedOuterSandboxCalibration": true,
+    "ompVersion": "17.2.1",
+    "notes": [
+      "Each parameterized case was generated from seed 20260804 and validated through the hash-bound Coding Benchmark loader.",
+      "Napier used its test-only direct adapter inside TRAE's outer Sandbox; production Sandbox defaults were unchanged.",
+      "OMP used isolated profiles and workspaces inside the same outer Sandbox."
+    ]
+  },
+  "cases": [
+    {
+      "caseId": "coding_seed_20260804_boundary",
+      "complexity": "low",
+      "caseSha256": "2e1ef416962d171f05448172ab0e9d09c5b3b9a01fca01a717278a244ef4b93a",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": true,
+        "allowedChangeSetMatch": true,
+        "outcomeTestStatus": "succeeded",
+        "durationMs": 8543,
+        "costUsd": 0.00116214,
+        "toolStarted": 3,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 8543,
+        "costUsd": 0.00116214,
+        "toolFailed": 0
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 9658
+      }
+    },
+    {
+      "caseId": "coding_seed_20260804_migration",
+      "complexity": "medium",
+      "caseSha256": "91f5cc89c0eae968305607be14012875b8b798298050fd426aaa3052ad46aec3",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": false,
+        "allowedChangeSetMatch": true,
+        "outcomeTestStatus": "succeeded",
+        "durationMs": 22253,
+        "costUsd": 0.0023038792,
+        "toolStarted": 12,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 22253,
+        "costUsd": 0.0023038792,
+        "toolFailed": 0,
+        "lspReferencesCompleted": true
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 33286
+      }
+    },
+    {
+      "caseId": "coding_seed_20260804_debugger",
+      "complexity": "high",
+      "caseSha256": "60843118c6e518b9a4522d2af8583f27d0f896038066aa2aa4823172743b7abb",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": true,
+        "allowedChangeSetMatch": true,
+        "outcomeTestStatus": "succeeded",
+        "durationMs": 21599,
+        "costUsd": 0.0020988184,
+        "toolStarted": 7,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 21599,
+        "costUsd": 0.0020988184,
+        "requiredDebuggerCompleted": true,
+        "runStatus": "completed",
+        "toolFailed": 0,
+        "statefulToolStopPolicyVerified": true
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 38628
+      }
+    }
+  ],
+  "summary": {
+    "napierOfficialPassed": 3,
+    "napierOfficialInconclusive": 0,
+    "napierOfficialFailed": 0,
+    "napierCanonicalTargetMatches": 2,
+    "ompHiddenOutcomePassed": 3,
+    "ompHiddenOutcomeFailed": 0,
+    "napierOuterHiddenOutcomePassed": 3,
+    "napierOuterHiddenOutcomeFailed": 0,
+    "outerOutcomeVerdict": "napier_not_worse",
+    "verdict": "napier_not_worse",
+    "requiredFollowUps": [
+      "Repeat the seeded suite for multiple trials and additional seeds.",
+      "Capture OMP token and cost evidence when its machine output exposes stable usage fields.",
+      "Run the same suite outside nested TRAE isolation before making a production Sandbox release claim."
+    ]
+  }
+}

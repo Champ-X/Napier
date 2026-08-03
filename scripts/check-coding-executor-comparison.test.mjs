@@ -13,6 +13,15 @@ const artifact = JSON.parse(
     "utf8",
   ),
 );
+const seededArtifact = JSON.parse(
+  await readFile(
+    new URL(
+      "../docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260804.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
 
 describe("coding executor comparison verifier", () => {
   it("verifies the committed calibration without overstating its verdict", async () => {
@@ -42,6 +51,20 @@ describe("coding executor comparison verifier", () => {
           "summary_mismatch",
           "sensitive_key_present",
         ]),
+      }),
+    );
+  });
+
+  it("verifies the seeded comparison as Napier not worse", async () => {
+    await expect(
+      verifyCodingExecutorComparison(seededArtifact),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        valid: true,
+        caseCount: 3,
+        verdict: "napier_not_worse",
+        napierOfficialPassed: 3,
+        ompHiddenOutcomePassed: 3,
       }),
     );
   });

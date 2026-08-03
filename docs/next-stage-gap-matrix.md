@@ -59,6 +59,16 @@ execution still blocks a release-quality claim. The structured artifact is
 The next benchmark iteration must repair LSP/DAP/outcome execution, shuffle
 multiple trials, and rerun before using this evidence as a release claim.
 
+A second batch generated low, medium, and high cases from fixed seed
+`20260804` (suite hash `95171625192756f1`). Both executors passed all three
+hidden outcomes. Napier completed all three Runs with no failed tools after its
+stateful-tool stop guidance was tightened, and was faster in every case:
+8.54/22.25/21.60 seconds versus OMP's 9.66/33.29/38.63 seconds. The verified
+report is
+`docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260804.json`.
+This proves `napier_not_worse` for this seeded batch, while broader multi-seed,
+multi-trial evidence remains open.
+
 Observed on 2026-08-02 with `deepseek-v4-flash` loaded from the local
 environment:
 
