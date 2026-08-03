@@ -27,8 +27,19 @@ export interface ThreadBranchOptions {
   includeGoalContinuationPrompts?: boolean;
 }
 
+type ThreadBranchStore = Pick<
+  LocalStore,
+  | "appendEvent"
+  | "createLeasedRun"
+  | "createThread"
+  | "finishRun"
+  | "getDetail"
+  | "getThread"
+  | "listEvents"
+>;
+
 export async function createThreadBranch(
-  store: LocalStore,
+  store: ThreadBranchStore,
   sourceThreadId: string,
   request: CreateBranchRequest,
   options: ThreadBranchOptions = {},

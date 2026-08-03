@@ -2,8 +2,6 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import type {
-  AnswerOperatorDecisionRequest,
-  AgentMilestone,
   ApplyExtensionPackageDeploymentRequest,
   ApplyExtensionPackageDeploymentResult,
   ApplyExtensionPackageRolloutChannelRequest,
@@ -22,7 +20,6 @@ import type {
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
   CreateEvaluationCasebookRequest,
   CreateEvaluationSuiteRequest,
-  CreateBranchRequest,
   CreateExecutionPlanRequest,
   CreateMcpExtensionRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
@@ -176,7 +173,6 @@ import type {
   JsonValue,
   McpToolEffect,
   McpTransportConfig,
-  OperatorDecision,
   ExtensionPackageChannelIndexVerification,
   ExtensionPackageDeploymentPreview,
   ExtensionPackageLockfile,
@@ -189,7 +185,6 @@ import type {
   PreviewExtensionPackageDeploymentRequest,
   PreviewExtensionPackageUpdateRequest,
   PublishExtensionPackageRolloutChannelRequest,
-  QueueRunControlMessageRequest,
   QualifyInspectorPackageRequest,
   QualifyPromptPackageRequest,
   QualifySkillPackageRequest,
@@ -198,7 +193,6 @@ import type {
   PromptPackageVerification,
   ReplanExecutionPlanRequest,
   ReviewExecutionPlanReplanDraftRequest,
-  RunControlMessage,
   RunEvent,
   RunEvaluationRecord,
   EvaluationReviewerBallot,
@@ -271,7 +265,6 @@ import {
   canonicalJson,
   type CredentialReferenceStore,
   createLocalAgentRuntime,
-  createThreadBranch,
   EvaluationCasebookQualificationService,
   EvaluationSuiteService,
   type KeychainSecretStore,
@@ -314,7 +307,6 @@ import {
   MAX_TRUSTED_RECEIPT_BYTES,
   MAX_EXECUTION_PLAN_ARCHIVE_BYTES,
   MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-  MAX_RUN_CONTROL_MESSAGE_BYTES,
   MAX_THREAD_REPLAY_BUNDLE_BYTES,
   type McpExtensionManager,
   type ModelRegistry,
@@ -332,7 +324,6 @@ import {
   streamRunDoneFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
-  ThreadBranchRequestError,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
@@ -400,7 +391,7 @@ import { registerCredentialHttp } from "./credential-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
 import { registerThreadEvidenceHttp } from "./thread-evidence-http.js";
 import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
-import { setThreadDetailProjectionHeaders } from "./thread-lifecycle-http-response.js";
+import { registerThreadControlHttp } from "./thread-control-http.js";
 import { registerThreadOperationsHttp } from "./thread-operations-http.js";
 import {
   automationScheduleListSha256,
@@ -477,13 +468,8 @@ const HEALTH_RUNTIME_COMPONENTS = ["sqlite", "openssl", "uv", "v8"] as const;
 
 const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
 const MAX_PROMPT_REQUEST_BYTES = 64 * 1024;
-const MAX_OPERATOR_DECISION_REQUEST_BYTES = 32 * 1024;
-// A JSON control-character escape can expand one UTF-8 byte to six bytes.
-const MAX_RUN_CONTROL_MESSAGE_REQUEST_BYTES =
-  MAX_RUN_CONTROL_MESSAGE_BYTES * 6 + 1024;
 const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
 const MAX_EXTENSION_ADMIN_REQUEST_BYTES = 64 * 1024;
-const MAX_BRANCH_REQUEST_BYTES = 8 * 1024;
 const MAX_TRUST_ADMIN_REQUEST_BYTES = 8 * 1024;
 const MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES = 64 * 1024;
 const MAX_PLAN_ARTIFACT_FILE_VERIFY_REQUEST_BYTES = 32 * 1024 * 1024;
@@ -8632,210 +8618,7 @@ export function createApp(services: NapierServices): Hono {
     return context.json(extension);
   });
 
-  app.post("/api/threads/:threadId/branches", async (context) => {
-    const sourceThreadId = context.req.param("threadId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_BRANCH_REQUEST_BYTES,
-        "Thread branch request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCreateBranchRequest(input);
-    if (!body) {
-      return jsonError(context, "Thread branch request is invalid", 400);
-    }
-    try {
-      const { detail } = await createThreadBranch(
-        services.store,
-        sourceThreadId,
-        body,
-      );
-      setThreadDetailProjectionHeaders(context, detail);
-      return context.json(detail, 201);
-    } catch (error) {
-      if (error instanceof ThreadBranchRequestError) {
-        return jsonError(context, error.message, 400);
-      }
-      throw error;
-    }
-  });
-
-  app.get(
-    "/api/threads/:threadId/runs/:runId/control-messages",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const runId = context.req.param("runId");
-      const run = services.store
-        .listRuns(threadId)
-        .find((candidate) => candidate.id === runId);
-      if (!run) return jsonError(context, `Run not found: ${runId}`, 404);
-      const messages = await services.store.listRunControlMessages(
-        threadId,
-        runId,
-      );
-      setRunControlMessageListHeaders(context, threadId, runId, messages);
-      return context.json(messages);
-    },
-  );
-
-  app.post(
-    "/api/threads/:threadId/runs/:runId/control-messages",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const runId = context.req.param("runId");
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_RUN_CONTROL_MESSAGE_REQUEST_BYTES,
-          "Run control message request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body = parseQueueRunControlMessageRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Run control message request is invalid",
-          400,
-        );
-      }
-      try {
-        const message = await services.store.queueRunControlMessage({
-          threadId,
-          runId,
-          mode: body.mode,
-          text: body.text,
-        });
-        setRunControlMessageHeaders(context, message);
-        return context.json(message, 202);
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          runControlMessageErrorStatus(error),
-        );
-      }
-    },
-  );
-
-  app.post(
-    "/api/threads/:threadId/runs/:runId/control-messages/:controlMessageId/cancel",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const runId = context.req.param("runId");
-      const controlMessageId = context.req.param("controlMessageId");
-      try {
-        const message = await services.store.cancelRunControlMessage(
-          threadId,
-          runId,
-          controlMessageId,
-        );
-        setRunControlMessageHeaders(context, message);
-        return context.json(message);
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          runControlMessageErrorStatus(error),
-        );
-      }
-    },
-  );
-
-  app.get("/api/threads/:threadId/operator-decisions", async (context) => {
-    const threadId = context.req.param("threadId");
-    const decisions = await services.store.listOperatorDecisions(threadId);
-    setOperatorDecisionListHeaders(context, threadId, decisions);
-    return context.json(decisions);
-  });
-
-  app.get("/api/threads/:threadId/agent-milestones", async (context) => {
-    const threadId = context.req.param("threadId");
-    const milestones = await services.store.listAgentMilestones(threadId);
-    setAgentMilestoneListHeaders(context, threadId, milestones);
-    return context.json(milestones);
-  });
-
-  app.post(
-    "/api/threads/:threadId/operator-decisions/:decisionId/answer",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const decisionId = context.req.param("decisionId");
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_OPERATOR_DECISION_REQUEST_BYTES,
-          "Operator decision answer request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body = parseAnswerOperatorDecisionRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Operator decision answer request is invalid",
-          400,
-        );
-      }
-      try {
-        const mutation = await services.store.answerOperatorDecision(
-          threadId,
-          decisionId,
-          body,
-        );
-        setOperatorDecisionHeaders(context, mutation.decision);
-        return context.json(mutation.decision, 202);
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          operatorDecisionErrorStatus(error),
-        );
-      }
-    },
-  );
-
-  app.post(
-    "/api/threads/:threadId/operator-decisions/:decisionId/cancel",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const decisionId = context.req.param("decisionId");
-      try {
-        const mutation = await services.store.cancelOperatorDecision(
-          threadId,
-          decisionId,
-        );
-        setOperatorDecisionHeaders(context, mutation.decision);
-        return context.json(mutation.decision);
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          operatorDecisionErrorStatus(error),
-        );
-      }
-    },
-  );
+  registerThreadControlHttp(app, services);
 
   app.post(
     "/api/threads/:threadId/operator-decisions/:decisionId/continue",
@@ -9219,30 +9002,6 @@ function parseVerifyUsagePriceTableCatalogRequest(
   };
 }
 
-function parseCreateBranchRequest(
-  input: unknown,
-): CreateBranchRequest | undefined {
-  const record = requestRecord(input, ["fromSeq", "title"]);
-  const fromSeq = record?.["fromSeq"];
-  const title = record?.["title"];
-  const normalizedTitle =
-    typeof title === "string" ? title.replace(/\s+/g, " ").trim() : undefined;
-  if (
-    !record ||
-    typeof fromSeq !== "number" ||
-    !Number.isSafeInteger(fromSeq) ||
-    fromSeq < 1 ||
-    (title !== undefined &&
-      (!normalizedTitle || !boundedString(normalizedTitle, 1, 100)))
-  ) {
-    return undefined;
-  }
-  return {
-    fromSeq,
-    ...(normalizedTitle ? { title: normalizedTitle } : {}),
-  };
-}
-
 function parseResumeRunRequest(input: unknown): ResumeRunRequest | undefined {
   if (input === undefined) return {};
   const record = requestRecord(input, ["runId", "model"]);
@@ -9268,54 +9027,6 @@ function parsePromptRequest(input: unknown): PromptRequest | undefined {
   return {
     text: record["text"],
     ...(model ? { model } : {}),
-  };
-}
-
-function parseQueueRunControlMessageRequest(
-  input: unknown,
-): QueueRunControlMessageRequest | undefined {
-  const record = requestRecord(input, ["mode", "text"]);
-  const mode = record?.["mode"];
-  const text =
-    typeof record?.["text"] === "string" ? record["text"].trim() : undefined;
-  if (
-    (mode !== "steering" && mode !== "follow_up") ||
-    !text ||
-    Buffer.byteLength(text, "utf8") > MAX_RUN_CONTROL_MESSAGE_BYTES
-  ) {
-    return undefined;
-  }
-  return { mode, text };
-}
-
-function parseAnswerOperatorDecisionRequest(
-  input: unknown,
-): AnswerOperatorDecisionRequest | undefined {
-  const record = requestRecord(input, ["selectedOptionIds", "customText"]);
-  const selectedOptionIds = record?.["selectedOptionIds"];
-  const customText =
-    typeof record?.["customText"] === "string"
-      ? record["customText"].trim()
-      : undefined;
-  if (
-    !Array.isArray(selectedOptionIds) ||
-    selectedOptionIds.length > 4 ||
-    selectedOptionIds.some(
-      (optionId) =>
-        typeof optionId !== "string" || !/^option_[1-4]$/.test(optionId),
-    ) ||
-    new Set(selectedOptionIds).size !== selectedOptionIds.length ||
-    (record?.["customText"] !== undefined &&
-      typeof record["customText"] !== "string") ||
-    (customText !== undefined &&
-      Buffer.byteLength(customText, "utf8") > 4 * 1024) ||
-    (selectedOptionIds.length === 0 && !customText)
-  ) {
-    return undefined;
-  }
-  return {
-    selectedOptionIds,
-    ...(customText ? { customText } : {}),
   };
 }
 
@@ -17090,211 +16801,6 @@ function setWorkspaceProcessProjectionHeaders(
   setBodyContentSha256Header(context, projection);
 }
 
-function setRunControlMessageHeaders(
-  context: Context,
-  message: RunControlMessage,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, message.contentSha256);
-  context.header("X-Napier-Thread-Id", message.threadId);
-  context.header("X-Napier-Run-Id", message.runId);
-  context.header("X-Napier-Run-Control-Message-Id", message.id);
-  context.header("X-Napier-Run-Control-Mode", message.mode);
-  context.header("X-Napier-Run-Control-Status", message.status);
-  context.header("X-Napier-Run-Control-Text-SHA256", message.textSha256);
-  context.header("X-Napier-Run-Control-Text-Bytes", String(message.textBytes));
-  context.header(
-    "X-Napier-Run-Control-Queued-Event-Seq",
-    String(message.queuedEventSeq),
-  );
-  if (message.deliveredEventSeq !== undefined) {
-    context.header(
-      "X-Napier-Run-Control-Delivered-Event-Seq",
-      String(message.deliveredEventSeq),
-    );
-  }
-  if (message.messageEventSeq !== undefined) {
-    context.header(
-      "X-Napier-Run-Control-Message-Event-Seq",
-      String(message.messageEventSeq),
-    );
-  }
-  if (message.cancellationEventSeq !== undefined) {
-    context.header(
-      "X-Napier-Run-Control-Cancellation-Event-Seq",
-      String(message.cancellationEventSeq),
-    );
-  }
-  if (message.cancellationReason) {
-    context.header(
-      "X-Napier-Run-Control-Cancellation-Reason",
-      message.cancellationReason,
-    );
-  }
-}
-
-function setRunControlMessageListHeaders(
-  context: Context,
-  threadId: string,
-  runId: string,
-  messages: RunControlMessage[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, messages);
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Run-Id", runId);
-  context.header("X-Napier-Run-Control-Message-Count", String(messages.length));
-  for (const status of [
-    "queued",
-    "delivered",
-    "cancelled",
-  ] satisfies RunControlMessage["status"][]) {
-    context.header(
-      `X-Napier-Run-Control-${status[0]!.toUpperCase()}${status.slice(1)}-Count`,
-      String(messages.filter((message) => message.status === status).length),
-    );
-  }
-  for (const mode of [
-    "steering",
-    "follow_up",
-  ] satisfies RunControlMessage["mode"][]) {
-    context.header(
-      `X-Napier-Run-Control-${mode === "steering" ? "Steering" : "Follow-Up"}-Count`,
-      String(messages.filter((message) => message.mode === mode).length),
-    );
-  }
-}
-
-function runControlMessageErrorStatus(error: unknown): 400 | 404 | 409 {
-  const message = errorMessage(error).toLowerCase();
-  if (message.includes("not found")) return 404;
-  if (
-    message.includes("active thread run") ||
-    message.includes("cannot be cancelled") ||
-    message.includes("limit reached") ||
-    message.includes("demo model")
-  ) {
-    return 409;
-  }
-  return 400;
-}
-
-function setOperatorDecisionHeaders(
-  context: Context,
-  decision: OperatorDecision,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, decision.contentSha256);
-  context.header("X-Napier-Thread-Id", decision.threadId);
-  context.header("X-Napier-Run-Id", decision.runId);
-  context.header("X-Napier-Operator-Decision-Id", decision.id);
-  context.header("X-Napier-Operator-Decision-Status", decision.status);
-  context.header(
-    "X-Napier-Operator-Decision-Question-SHA256",
-    decision.questionSha256,
-  );
-  context.header(
-    "X-Napier-Operator-Decision-Option-Count",
-    String(decision.options.length),
-  );
-  context.header(
-    "X-Napier-Operator-Decision-Requested-Event-Seq",
-    String(decision.requestedEventSeq),
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Operator-Decision-Answered-Event-Seq",
-    decision.answeredEventSeq,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Operator-Decision-Continued-Event-Seq",
-    decision.continuedEventSeq,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Operator-Decision-Cancellation-Event-Seq",
-    decision.cancellationEventSeq,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Operator-Decision-Answer-SHA256",
-    decision.answerSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Operator-Decision-Continuation-Run-Id",
-    decision.continuationRunId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Operator-Decision-Cancellation-Reason",
-    decision.cancellationReason,
-  );
-}
-
-function setOperatorDecisionListHeaders(
-  context: Context,
-  threadId: string,
-  decisions: OperatorDecision[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, decisions);
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Operator-Decision-Count", String(decisions.length));
-  for (const status of [
-    "pending",
-    "answered",
-    "continued",
-    "cancelled",
-  ] satisfies OperatorDecision["status"][]) {
-    context.header(
-      `X-Napier-Operator-Decision-${status[0]!.toUpperCase()}${status.slice(1)}-Count`,
-      String(decisions.filter((decision) => decision.status === status).length),
-    );
-  }
-}
-
-function setAgentMilestoneListHeaders(
-  context: Context,
-  threadId: string,
-  milestones: AgentMilestone[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, milestones);
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Agent-Milestone-Count", String(milestones.length));
-  context.header(
-    "X-Napier-Agent-Milestone-Evidence-Event-Count",
-    String(
-      milestones.reduce(
-        (total, milestone) => total + milestone.evidence.eventCount,
-        0,
-      ),
-    ),
-  );
-  const latest = milestones.at(-1);
-  setOptionalHeader(context, "X-Napier-Agent-Milestone-Latest-Id", latest?.id);
-  setOptionalHeader(
-    context,
-    "X-Napier-Agent-Milestone-Latest-Content-SHA256",
-    latest?.contentSha256,
-  );
-  for (const phase of [
-    "planning",
-    "execution",
-    "verification",
-    "delivery",
-  ] satisfies AgentMilestone["phase"][]) {
-    context.header(
-      `X-Napier-Agent-Milestone-${phase[0]!.toUpperCase()}${phase.slice(1)}-Count`,
-      String(
-        milestones.filter((milestone) => milestone.phase === phase).length,
-      ),
-    );
-  }
-}
-
 function setOperatorDecisionContinueStreamHeaders(
   context: Context,
   threadId: string,
@@ -17305,22 +16811,6 @@ function setOperatorDecisionContinueStreamHeaders(
   context.header("X-Napier-Operator-Decision-Id", decisionId);
   context.header("X-Napier-Run-Intent", "operator-decision-continuation");
   setThreadRunStreamErrorHeaders(context);
-}
-
-function operatorDecisionErrorStatus(error: unknown): 400 | 404 | 409 {
-  const message = errorMessage(error).toLowerCase();
-  if (message.includes("not found")) return 404;
-  if (
-    message.includes("requires a waiting thread") ||
-    message.includes("already been answered") ||
-    message.includes("cannot be answered") ||
-    message.includes("cannot be cancelled") ||
-    message.includes("cannot continue") ||
-    message.includes("while the thread is running")
-  ) {
-    return 409;
-  }
-  return 400;
 }
 
 function setThreadStopHeaders(

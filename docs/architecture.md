@@ -330,6 +330,17 @@ counts, and body-bound file evidence. No execution or state moved out of the
 Runtime. This extraction reduces `app.ts` again to 21,887 lines while the
 route set and compatibility baseline remain unchanged.
 
+Thread control HTTP is separated from execution streaming.
+`thread-control-http.ts` owns Ledger branch creation, Run control-message
+inbox, Operator Decision list/answer/cancel, and Agent Milestone projection.
+Validation and response modules retain all request byte bounds, state/error
+mapping, stable hashes, count headers, and exact-record semantics.
+`createThreadBranch` now consumes a seven-method Store port rather than
+`LocalStore`; the Server adapter composes it with only the control methods it
+uses. Operator continuation and prompt/stop/resume SSE remain in the execution
+boundary. This extraction lowers `app.ts` to 21,377 lines without changing the
+255-route or 244-operation contracts.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 
