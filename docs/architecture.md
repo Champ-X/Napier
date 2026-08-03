@@ -362,6 +362,17 @@ snapshot, and result framing behavior. They now depend on one shared
 composition root only registers the adapter. This lowers `app.ts` to 20,975
 lines without changing the 255-route or 244-operation contracts.
 
+Plan lifecycle HTTP now follows a bounded domain boundary.
+`plan-lifecycle-http.ts` owns Plan list/create, replan, independent replan-draft
+review, Archive/Blueprint export, and both verification routes behind a
+nine-method Store port plus the existing model registry. Separate validation
+and response modules preserve exact nested request bounds, Plan Ledger event
+payloads, model availability, portable evidence binding, download filenames,
+and every response hash/count header. Blueprint library, step transition, and
+Artifact operations remain separate follow-up domains. This extraction lowers
+`app.ts` to 20,130 lines while preserving the generated contracts and the sole
+Runtime/Store implementations.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 

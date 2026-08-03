@@ -20,7 +20,6 @@ import type {
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
   CreateEvaluationCasebookRequest,
   CreateEvaluationSuiteRequest,
-  CreateExecutionPlanRequest,
   CreateMcpExtensionRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
   CreateRunEvaluationRequest,
@@ -29,8 +28,6 @@ import type {
   CreateExecutionPlanFromBlueprintRecordRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
   ExecutionPlan,
-  ExecutionPlanArchive,
-  ExecutionPlanArchiveVerification,
   ExecutionPlanBlueprint,
   ExecutionPlanBlueprintRecord,
   ExecutionPlanBlueprintRecordPreview,
@@ -53,8 +50,6 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   ExecutionPlanBlueprintRecordSelection,
-  ExecutionPlanBlueprintVerification,
-  ExecutionPlanReplanDraftModelReview,
   ExtensionCapability,
   ExtensionRecord,
   ExtensionPublisherTrustAnchor,
@@ -190,8 +185,6 @@ import type {
   QualifySkillPackageRequest,
   PromptPackageQualification,
   PromptPackageVerification,
-  ReplanExecutionPlanRequest,
-  ReviewExecutionPlanReplanDraftRequest,
   RunEvent,
   RunEvaluationRecord,
   EvaluationReviewerBallot,
@@ -232,13 +225,11 @@ import type {
   UsagePriceTableVerification,
   VerifyExtensionPackageLockfileRequest,
   VerifyExtensionPackageChannelIndexRequest,
-  VerifyExecutionPlanBlueprintRequest,
   VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest,
   VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
   VerifyExecutionPlanBlueprintRecordReplayHistoryRequest,
   VerifyExecutionPlanBlueprintRecordReplayOutcomesRequest,
-  VerifyExecutionPlanArchiveRequest,
   VerifyInspectorPackageRequest,
   VerifyPromptPackageRequest,
   VerifyUsagePriceTableCatalogRequest,
@@ -269,8 +260,6 @@ import {
   createEvaluationCasebookQualificationReceipt,
   createEvaluationSuiteGateReceipt,
   createId,
-  createExecutionPlanArchive,
-  createExecutionPlanBlueprint,
   createPlanArtifactEventPayload,
   createWorkspaceArtifactDriftRequest,
   createWorkspaceArtifactVerificationRequest,
@@ -301,7 +290,6 @@ import {
   MAX_SIGNED_SKILL_PACKAGE_BYTES,
   MAX_SKILL_CONTENT_BYTES,
   MAX_TRUSTED_RECEIPT_BYTES,
-  MAX_EXECUTION_PLAN_ARCHIVE_BYTES,
   MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
   MAX_THREAD_REPLAY_BUNDLE_BYTES,
   type McpExtensionManager,
@@ -311,7 +299,6 @@ import {
   RecoveryService,
   receiptTrustAnchorsFromDirectory,
   reviewExecutionPlanBlueprintRecordOutcomes,
-  reviewExecutionPlanReplanDraft,
   RunEvaluationService,
   signTrustedReceipt,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
@@ -321,7 +308,6 @@ import {
   verifySignedExtensionPackageEnvelope,
   verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceiptEnvelope,
-  verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
   verifyUsagePriceTableCatalog,
   type WorkspaceFileMutationManager,
@@ -345,7 +331,6 @@ import {
   jsonError,
   safeFilenameSegment,
   setBodyContentSha256Header,
-  setEventBoundaryHeaders,
   setStableContentSha256Header,
   sha256Bytes,
   sha256Json,
@@ -378,6 +363,12 @@ import { registerInboundChannelDeliveryHttp } from "./inbound-channel-delivery-h
 import { registerInboundChannelIngressHttp } from "./inbound-channel-ingress-http.js";
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
+import { registerPlanLifecycleHttp } from "./plan-lifecycle-http.js";
+import {
+  setExecutionPlanBlueprintSourceHeaders,
+  setExecutionPlanBlueprintVerificationHeaders,
+  setExecutionPlanHeaders,
+} from "./plan-lifecycle-http-response.js";
 import { registerThreadEvidenceHttp } from "./thread-evidence-http.js";
 import { registerThreadExecutionHttp } from "./thread-execution-http.js";
 import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
@@ -4507,271 +4498,7 @@ export function createApp(services: NapierServices): Hono {
     return context.json(executions);
   });
 
-  app.get("/api/threads/:threadId/plans", (context) => {
-    const threadId = context.req.param("threadId");
-    services.store.getThread(threadId);
-    const plans = services.store.listPlans(threadId);
-    setExecutionPlanListHeaders(context, threadId, plans);
-    return context.json(plans);
-  });
-
-  app.post("/api/threads/:threadId/plans", async (context) => {
-    const threadId = context.req.param("threadId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        128 * 1024,
-        "Execution plan request",
-      );
-    } catch (error) {
-      if (error instanceof RequestBodyTooLargeError) {
-        return jsonError(context, error.message, 413);
-      }
-      return jsonError(context, "Execution plan request is invalid", 400);
-    }
-    const body = parseCreateExecutionPlanRequest(input);
-    if (!body) {
-      return jsonError(context, "Execution plan request is invalid", 400);
-    }
-    const plan = await services.store.createPlan(threadId, body);
-    await services.store.appendEvent({
-      threadId,
-      runId: createId("runctl"),
-      type: "plan.created",
-      category: "plan",
-      visibility: "user",
-      payload: {
-        planId: plan.id,
-        objective: plan.objective,
-        status: plan.status,
-        stepCount: plan.steps.length,
-        artifactCount: plan.artifacts.length,
-        criticalPathStepIds: plan.criticalPathStepIds,
-        readyStepIds: plan.readyStepIds,
-        blockedStepIds: plan.blockedStepIds,
-      },
-    });
-    setExecutionPlanHeaders(context, plan);
-    return context.json(plan, 201);
-  });
-
-  app.post("/api/threads/:threadId/plans/:planId/replan", async (context) => {
-    const threadId = context.req.param("threadId");
-    const planId = context.req.param("planId");
-    assertPlanThread(services, planId, threadId);
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        64 * 1024,
-        "Plan replan request",
-      );
-    } catch (error) {
-      if (error instanceof RequestBodyTooLargeError) {
-        return jsonError(context, error.message, 413);
-      }
-      return jsonError(context, "Plan replan request is invalid", 400);
-    }
-    const body = parseReplanExecutionPlanRequest(input);
-    if (!body) {
-      return jsonError(context, "Plan replan request is invalid", 400);
-    }
-    const before = services.store.getPlan(planId);
-    const plan = await services.store.replanPlan(planId, body);
-    const replan = plan.replans.at(-1);
-    if (plan.revision !== before.revision && replan) {
-      await services.store.appendEvent({
-        threadId,
-        runId: createId("runctl"),
-        type: "plan.replanned",
-        category: "plan",
-        visibility: "user",
-        payload: {
-          planId,
-          replanId: replan.id,
-          strategy: replan.strategy,
-          fromRevision: replan.fromRevision,
-          toRevision: replan.toRevision,
-          replanSha256: replan.replanSha256,
-          addedStepIds: replan.addedStepIds,
-          addedArtifactIds: replan.addedArtifactIds,
-          supersededStepIds: replan.supersededStepIds,
-          supersededArtifactIds: replan.supersededArtifactIds,
-          dependencyUpdatedStepIds: replan.dependencyUpdatedStepIds,
-          addedStepsSha256: replan.addedStepsSha256,
-          addedArtifactsSha256: replan.addedArtifactsSha256,
-          dependencyUpdatesSha256: replan.dependencyUpdatesSha256,
-          status: plan.status,
-          criticalPathStepIds: plan.criticalPathStepIds,
-          readyStepIds: plan.readyStepIds,
-          blockedStepIds: plan.blockedStepIds,
-        },
-      });
-    }
-    setExecutionPlanHeaders(context, plan);
-    return context.json(plan);
-  });
-
-  app.post(
-    "/api/threads/:threadId/plans/:planId/replan-draft-review",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const planId = context.req.param("planId");
-      assertPlanThread(services, planId, threadId);
-      const plan = services.store.getPlan(planId);
-      let input: unknown;
-      try {
-        input = await readOptionalLimitedJson(
-          context.req.raw,
-          8 * 1024,
-          "Plan replan draft review request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Plan replan draft review request is invalid",
-          400,
-        );
-      }
-      const body = parseReviewExecutionPlanReplanDraftRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Plan replan draft review request is invalid",
-          400,
-        );
-      }
-      if (!plan.replanRecommendation) {
-        return jsonError(
-          context,
-          "Plan has no active replan recommendation",
-          409,
-        );
-      }
-      const thread = services.store.getThread(threadId);
-      const agent = services.store.getAgent(thread.agentId);
-      const model = body.model ?? agent.model;
-      try {
-        await assertAvailableModel(services, model);
-        const review = await reviewExecutionPlanReplanDraft(
-          services.models,
-          plan,
-          model,
-        );
-        setExecutionPlanReplanDraftReviewHeaders(context, review);
-        return context.json(review);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-    },
-  );
-
-  app.get("/api/threads/:threadId/plans/:planId/archive", async (context) => {
-    const threadId = context.req.param("threadId");
-    const planId = context.req.param("planId");
-    assertPlanThread(services, planId, threadId);
-    const archive = await createExecutionPlanArchive(
-      services.store,
-      threadId,
-      planId,
-    );
-    setExecutionPlanArchiveHeaders(context, archive);
-    return context.json(archive);
-  });
-
-  app.get("/api/threads/:threadId/plans/:planId/blueprint", async (context) => {
-    const threadId = context.req.param("threadId");
-    const planId = context.req.param("planId");
-    assertPlanThread(services, planId, threadId);
-    const blueprint = await createExecutionPlanBlueprint(
-      services.store,
-      threadId,
-      planId,
-    );
-    setExecutionPlanBlueprintHeaders(context, blueprint);
-    return context.json(blueprint);
-  });
-
-  app.post(
-    "/api/threads/:threadId/plans/:planId/archive/verify",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const planId = context.req.param("planId");
-      assertPlanThread(services, planId, threadId);
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_EXECUTION_PLAN_ARCHIVE_BYTES,
-          "Execution plan archive verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan archive verification request is invalid",
-          400,
-        );
-      }
-      const request = parseVerifyExecutionPlanArchiveRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan archive verification request is invalid",
-          400,
-        );
-      }
-      const verification = bindExecutionPlanArchiveVerification(
-        verifyExecutionPlanArchive(request.archive),
-        threadId,
-        planId,
-      );
-      setExecutionPlanArchiveVerificationHeaders(context, verification);
-      return context.json(verification);
-    },
-  );
-
-  app.post(
-    "/api/threads/:threadId/plans/blueprints/verify",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      services.store.getThread(threadId);
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-          "Execution plan blueprint verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint verification request is invalid",
-          400,
-        );
-      }
-      const request = parseVerifyExecutionPlanBlueprintRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint verification request is invalid",
-          400,
-        );
-      }
-      const verification = verifyExecutionPlanBlueprint(request.blueprint);
-      setExecutionPlanBlueprintVerificationHeaders(context, verification);
-      return context.json(verification);
-    },
-  );
+  registerPlanLifecycleHttp(app, services);
 
   app.get("/api/plan-blueprints", (context) => {
     const status = context.req.query("status");
@@ -9288,156 +9015,6 @@ function parseOptionalBoundedText(
   return normalized.length <= maxLength ? normalized : undefined;
 }
 
-function parseCreateExecutionPlanRequest(
-  input: unknown,
-): CreateExecutionPlanRequest | undefined {
-  const record = requestRecord(input, ["objective", "steps", "artifacts"]);
-  if (!record || !boundedString(record["objective"], 1, 4_000)) {
-    return undefined;
-  }
-  const steps = parsePlanStepInputs(record["steps"]);
-  if (!steps) return undefined;
-  const artifacts =
-    record["artifacts"] === undefined
-      ? undefined
-      : parsePlanArtifactInputs(record["artifacts"]);
-  if (record["artifacts"] !== undefined && !artifacts) return undefined;
-  return {
-    objective: record["objective"],
-    steps,
-    ...(artifacts ? { artifacts } : {}),
-  };
-}
-
-function parseReplanExecutionPlanRequest(
-  input: unknown,
-): ReplanExecutionPlanRequest | undefined {
-  const record = requestRecord(input, [
-    "expectedRevision",
-    "strategy",
-    "reason",
-    "evidence",
-    "supersedeStepIds",
-    "supersedeArtifactIds",
-    "dependencyUpdates",
-    "addSteps",
-    "addArtifacts",
-  ]);
-  const expectedRevision = record?.["expectedRevision"];
-  const strategy = record?.["strategy"];
-  const reason = record?.["reason"];
-  const evidence = record?.["evidence"];
-  if (
-    !record ||
-    typeof expectedRevision !== "number" ||
-    !Number.isSafeInteger(expectedRevision) ||
-    expectedRevision < 1 ||
-    (strategy !== "recover_blocked" &&
-      strategy !== "scope_change" &&
-      strategy !== "artifact_drift") ||
-    !boundedString(reason, 1, 1_000) ||
-    !boundedString(evidence, 1, 2_000)
-  ) {
-    return undefined;
-  }
-  const supersedeStepIds =
-    record["supersedeStepIds"] === undefined
-      ? undefined
-      : parseBoundedStringArray(record["supersedeStepIds"], 30, 1, 64);
-  if (record["supersedeStepIds"] !== undefined && !supersedeStepIds) {
-    return undefined;
-  }
-  const supersedeArtifactIds =
-    record["supersedeArtifactIds"] === undefined
-      ? undefined
-      : parseBoundedStringArray(record["supersedeArtifactIds"], 30, 1, 64);
-  if (record["supersedeArtifactIds"] !== undefined && !supersedeArtifactIds) {
-    return undefined;
-  }
-  const dependencyUpdates =
-    record["dependencyUpdates"] === undefined
-      ? undefined
-      : parsePlanDependencyUpdates(record["dependencyUpdates"]);
-  if (record["dependencyUpdates"] !== undefined && !dependencyUpdates) {
-    return undefined;
-  }
-  const addSteps =
-    record["addSteps"] === undefined
-      ? undefined
-      : parsePlanStepInputs(record["addSteps"]);
-  if (record["addSteps"] !== undefined && !addSteps) return undefined;
-  const addArtifacts =
-    record["addArtifacts"] === undefined
-      ? undefined
-      : parsePlanArtifactInputs(record["addArtifacts"]);
-  if (
-    record["addArtifacts"] !== undefined &&
-    (!addArtifacts || addArtifacts.length === 0)
-  ) {
-    return undefined;
-  }
-  if (
-    (supersedeStepIds?.length ?? 0) === 0 &&
-    (supersedeArtifactIds?.length ?? 0) === 0 &&
-    (dependencyUpdates?.length ?? 0) === 0 &&
-    (addSteps?.length ?? 0) === 0 &&
-    (addArtifacts?.length ?? 0) === 0
-  ) {
-    return undefined;
-  }
-  return {
-    expectedRevision,
-    strategy,
-    reason,
-    evidence,
-    ...(supersedeStepIds && supersedeStepIds.length > 0
-      ? { supersedeStepIds }
-      : {}),
-    ...(supersedeArtifactIds && supersedeArtifactIds.length > 0
-      ? { supersedeArtifactIds }
-      : {}),
-    ...(dependencyUpdates && dependencyUpdates.length > 0
-      ? { dependencyUpdates }
-      : {}),
-    ...(addSteps ? { addSteps } : {}),
-    ...(addArtifacts && addArtifacts.length > 0 ? { addArtifacts } : {}),
-  };
-}
-
-function parseReviewExecutionPlanReplanDraftRequest(
-  input: unknown,
-): ReviewExecutionPlanReplanDraftRequest | undefined {
-  if (input === undefined) return {};
-  const record = requestRecord(input, ["model"]);
-  if (!record) return undefined;
-  const model =
-    record["model"] === undefined ? undefined : parseModelRef(record["model"]);
-  if (record["model"] !== undefined && !model) return undefined;
-  return {
-    ...(model ? { model } : {}),
-  };
-}
-
-function parseVerifyExecutionPlanArchiveRequest(
-  input: unknown,
-): VerifyExecutionPlanArchiveRequest | undefined {
-  const record = requestRecord(input, ["archive"]);
-  if (!record || record["archive"] === undefined) return undefined;
-  return {
-    archive: record["archive"] as ExecutionPlanArchive,
-  };
-}
-
-function parseVerifyExecutionPlanBlueprintRequest(
-  input: unknown,
-): VerifyExecutionPlanBlueprintRequest | undefined {
-  const record = requestRecord(input, ["blueprint"]);
-  if (!record || record["blueprint"] === undefined) return undefined;
-  return {
-    blueprint: record["blueprint"] as ExecutionPlanBlueprint,
-  };
-}
-
 function parseVerifyExecutionPlanBlueprintRecordReplayHistoryRequest(
   input: unknown,
 ): VerifyExecutionPlanBlueprintRecordReplayHistoryRequest | undefined {
@@ -9898,98 +9475,6 @@ function parseCreateExecutionPlanFromBlueprintRecordRequest(
   };
 }
 
-function parsePlanStepInputs(
-  input: unknown,
-): CreateExecutionPlanRequest["steps"] | undefined {
-  if (!Array.isArray(input) || input.length < 1 || input.length > 30) {
-    return undefined;
-  }
-  const output: CreateExecutionPlanRequest["steps"] = [];
-  for (const value of input) {
-    const record = requestRecord(value, [
-      "id",
-      "title",
-      "description",
-      "verification",
-      "dependsOn",
-    ]);
-    if (
-      !record ||
-      !boundedString(record["id"], 1, 64) ||
-      !boundedString(record["title"], 1, 120) ||
-      !boundedString(record["description"], 1, 1_500) ||
-      !boundedString(record["verification"], 1, 1_000)
-    ) {
-      return undefined;
-    }
-    const dependsOn =
-      record["dependsOn"] === undefined
-        ? undefined
-        : parseBoundedStringArray(record["dependsOn"], 30, 1, 64);
-    if (record["dependsOn"] !== undefined && !dependsOn) return undefined;
-    output.push({
-      id: record["id"],
-      title: record["title"],
-      description: record["description"],
-      verification: record["verification"],
-      ...(dependsOn ? { dependsOn } : {}),
-    });
-  }
-  return output;
-}
-
-function parsePlanDependencyUpdates(
-  input: unknown,
-): ReplanExecutionPlanRequest["dependencyUpdates"] | undefined {
-  if (!Array.isArray(input) || input.length > 30) return undefined;
-  const output: NonNullable<ReplanExecutionPlanRequest["dependencyUpdates"]> =
-    [];
-  for (const value of input) {
-    const record = requestRecord(value, ["stepId", "dependsOn"]);
-    if (!record || !boundedString(record["stepId"], 1, 64)) {
-      return undefined;
-    }
-    const dependsOn = parseBoundedStringArray(record["dependsOn"], 30, 1, 64);
-    if (!dependsOn) return undefined;
-    output.push({
-      stepId: record["stepId"],
-      dependsOn,
-    });
-  }
-  return output;
-}
-
-function parsePlanArtifactInputs(
-  input: unknown,
-): CreateExecutionPlanRequest["artifacts"] | undefined {
-  if (!Array.isArray(input) || input.length > 30) return undefined;
-  const output: NonNullable<CreateExecutionPlanRequest["artifacts"]> = [];
-  for (const value of input) {
-    const record = requestRecord(value, ["id", "path", "kind", "description"]);
-    const kind = record?.["kind"];
-    if (
-      !record ||
-      !boundedString(record["id"], 1, 64) ||
-      !boundedString(record["path"], 1, 500) ||
-      !boundedString(record["description"], 1, 1_000) ||
-      (kind !== undefined &&
-        kind !== "file" &&
-        kind !== "directory" &&
-        kind !== "url" &&
-        kind !== "other")
-    ) {
-      return undefined;
-    }
-    output.push({
-      id: record["id"],
-      path: record["path"],
-      description: record["description"],
-      ...(typeof kind === "string" ? { kind } : {}),
-    });
-  }
-  return output;
-}
-
 function parseTransitionPlanStepRequest(
   input: unknown,
 ): TransitionPlanStepRequest | undefined {
@@ -10075,18 +9560,6 @@ function parseUpdateArtifactManifestRequest(
     ...(typeof evidence === "string" ? { evidence } : {}),
     ...(observeWorkspace === true ? { observeWorkspace } : {}),
   };
-}
-
-function parseBoundedStringArray(
-  input: unknown,
-  maxItems: number,
-  minLength: number,
-  maxLength: number,
-): string[] | undefined {
-  if (!Array.isArray(input) || input.length > maxItems) return undefined;
-  return input.every((value) => boundedString(value, minLength, maxLength))
-    ? input
-    : undefined;
 }
 
 function boundedString(
@@ -13638,90 +13111,6 @@ function createHealthRuntimeProjection() {
   } satisfies HealthResponse["runtime"];
 }
 
-function setExecutionPlanListHeaders(
-  context: Context,
-  threadId: string,
-  plans: readonly ExecutionPlan[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, plans);
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Plan-Count", String(plans.length));
-  for (const status of [
-    "active",
-    "completed",
-    "blocked",
-    "cancelled",
-  ] satisfies ExecutionPlan["status"][]) {
-    context.header(
-      `X-Napier-Plan-${status[0]!.toUpperCase()}${status.slice(1)}-Count`,
-      String(plans.filter((plan) => plan.status === status).length),
-    );
-  }
-  context.header(
-    "X-Napier-Plan-Step-Count",
-    String(plans.reduce((total, plan) => total + plan.steps.length, 0)),
-  );
-  context.header(
-    "X-Napier-Plan-Artifact-Count",
-    String(plans.reduce((total, plan) => total + plan.artifacts.length, 0)),
-  );
-  context.header(
-    "X-Napier-Plan-Replan-Count",
-    String(plans.reduce((total, plan) => total + plan.replans.length, 0)),
-  );
-}
-
-function setExecutionPlanHeaders(context: Context, plan: ExecutionPlan): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, plan);
-  context.header("X-Napier-Thread-Id", plan.threadId);
-  context.header("X-Napier-Plan-Id", plan.id);
-  context.header("X-Napier-Plan-Status", plan.status);
-  context.header("X-Napier-Plan-Revision", String(plan.revision));
-  context.header("X-Napier-Plan-Step-Count", String(plan.steps.length));
-  context.header("X-Napier-Plan-Artifact-Count", String(plan.artifacts.length));
-  context.header("X-Napier-Plan-Replan-Count", String(plan.replans.length));
-  context.header(
-    "X-Napier-Plan-Critical-Path-Count",
-    String(plan.criticalPathStepIds.length),
-  );
-  context.header(
-    "X-Napier-Plan-Ready-Step-Count",
-    String(plan.readyStepIds.length),
-  );
-  context.header(
-    "X-Napier-Plan-Blocked-Step-Count",
-    String(plan.blockedStepIds.length),
-  );
-  context.header("X-Napier-Plan-Phase-Count", String(plan.phaseWaves.length));
-  context.header(
-    "X-Napier-Plan-Active-Phase-Index",
-    plan.activePhaseIndex === null ? "" : String(plan.activePhaseIndex),
-  );
-  context.header(
-    "X-Napier-Plan-Parallel-Ready-Step-Count",
-    String(plan.parallelReadyStepIds.length),
-  );
-  context.header(
-    "X-Napier-Plan-Phase-Projection-SHA256",
-    plan.phaseProjectionSha256,
-  );
-  if (plan.replanRecommendation) {
-    context.header("X-Napier-Replan-Recommendation", "true");
-    context.header(
-      "X-Napier-Replan-Recommendation-SHA256",
-      plan.replanRecommendation.recommendationSha256,
-    );
-    context.header(
-      "X-Napier-Replan-Recommendation-Strategy",
-      plan.replanRecommendation.strategy,
-    );
-  } else {
-    context.header("X-Napier-Replan-Recommendation", "false");
-  }
-}
-
 type LedgerEventReceiptProjection = {
   ledgerEventId: string;
   ledgerEventSeq: number;
@@ -14731,216 +14120,6 @@ function safePlanArtifactFilenameSegment(
     : fallback;
 }
 
-function setExecutionPlanReplanDraftReviewHeaders(
-  context: Context,
-  review: ExecutionPlanReplanDraftModelReview,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, review.reviewSha256);
-  context.header("X-Napier-Thread-Id", review.threadId);
-  context.header("X-Napier-Plan-Id", review.planId);
-  context.header(
-    "X-Napier-Plan-Expected-Revision",
-    String(review.expectedRevision),
-  );
-  context.header(
-    "X-Napier-Replan-Recommendation-SHA256",
-    review.recommendationSha256,
-  );
-  context.header("X-Napier-Replan-Draft-SHA256", review.draftSha256);
-  context.header(
-    "X-Napier-Replan-Draft-Evaluation-SHA256",
-    review.deterministicEvaluationSha256,
-  );
-  context.header("X-Napier-Replan-Review-Verdict", review.verdict);
-  context.header("X-Napier-Replan-Review-Risk", review.risk);
-  context.header("X-Napier-Replan-Review-Score", String(review.score));
-  if (review.modelContextEnvelope) {
-    context.header(
-      "X-Napier-Replan-Review-Model-Context-Envelope-SHA256",
-      review.modelContextEnvelope.contentSha256,
-    );
-  }
-}
-
-function setExecutionPlanArchiveHeaders(
-  context: Context,
-  archive: ExecutionPlanArchive,
-): void {
-  context.header("Cache-Control", "no-store");
-  context.header(
-    "Content-Disposition",
-    `attachment; filename="${executionPlanArchiveFilename(archive)}"`,
-  );
-  setStableContentSha256Header(context, archive.contentSha256);
-  context.header("X-Napier-Thread-Id", archive.threadId);
-  context.header("X-Napier-Plan-Id", archive.plan.id);
-  context.header("X-Napier-Plan-Status", archive.plan.status);
-  context.header("X-Napier-Plan-Revision", String(archive.plan.revision));
-  context.header("X-Napier-Plan-Archive-SHA256", archive.contentSha256);
-  context.header("X-Napier-Event-Stream-SHA256", archive.eventStreamSha256);
-  context.header("X-Napier-Event-Count", String(archive.events.length));
-  context.header("X-Napier-Plan-Step-Count", String(archive.plan.steps.length));
-  context.header(
-    "X-Napier-Plan-Artifact-Count",
-    String(archive.plan.artifacts.length),
-  );
-  context.header(
-    "X-Napier-Plan-Replan-Count",
-    String(archive.plan.replans.length),
-  );
-  setEventBoundaryHeaders(context, archive.events);
-}
-
-function setExecutionPlanBlueprintHeaders(
-  context: Context,
-  blueprint: ExecutionPlanBlueprint,
-): void {
-  context.header("Cache-Control", "no-store");
-  context.header(
-    "Content-Disposition",
-    `attachment; filename="${executionPlanBlueprintFilename(blueprint)}"`,
-  );
-  setStableContentSha256Header(context, blueprint.contentSha256);
-  setExecutionPlanBlueprintSourceHeaders(context, blueprint);
-  context.header("X-Napier-Plan-Step-Count", String(blueprint.stepCount));
-  context.header(
-    "X-Napier-Plan-Artifact-Count",
-    String(blueprint.artifactCount),
-  );
-}
-
-function executionPlanArchiveFilename(archive: ExecutionPlanArchive): string {
-  const safePlanId = safeFilenameSegment(archive.plan.id, "plan");
-  return `napier-plan-${safePlanId}-r${archive.plan.revision}-${archive.contentSha256.slice(0, 12)}.json`;
-}
-
-function executionPlanBlueprintFilename(
-  blueprint: ExecutionPlanBlueprint,
-): string {
-  const safePlanId = safeFilenameSegment(blueprint.source.planId, "plan");
-  return `napier-plan-blueprint-${safePlanId}-r${blueprint.source.planRevision}-${blueprint.contentSha256.slice(0, 12)}.json`;
-}
-
-function bindExecutionPlanArchiveVerification(
-  verification: ExecutionPlanArchiveVerification,
-  threadId: string,
-  planId: string,
-): ExecutionPlanArchiveVerification {
-  if (verification.status !== "valid") return verification;
-  if (verification.threadId === threadId && verification.planId === planId) {
-    return verification;
-  }
-  return {
-    ...verification,
-    status: "invalid",
-    diagnostics: ["path_mismatch"],
-  };
-}
-
-function setExecutionPlanArchiveVerificationHeaders(
-  context: Context,
-  verification: ExecutionPlanArchiveVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, verification);
-  context.header("X-Napier-Verification-Status", verification.status);
-  context.header("X-Napier-Event-Count", String(verification.eventCount));
-  context.header("X-Napier-Plan-Step-Count", String(verification.stepCount));
-  context.header(
-    "X-Napier-Plan-Artifact-Count",
-    String(verification.artifactCount),
-  );
-  context.header(
-    "X-Napier-Plan-Replan-Count",
-    String(verification.replanCount),
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  if (verification.threadId) {
-    context.header("X-Napier-Thread-Id", verification.threadId);
-  }
-  if (verification.planId) {
-    context.header("X-Napier-Plan-Id", verification.planId);
-  }
-  if (verification.revision !== undefined) {
-    context.header("X-Napier-Plan-Revision", String(verification.revision));
-  }
-  if (verification.contentSha256) {
-    context.header("X-Napier-Plan-Archive-SHA256", verification.contentSha256);
-  }
-  if (verification.eventStreamSha256) {
-    context.header(
-      "X-Napier-Event-Stream-SHA256",
-      verification.eventStreamSha256,
-    );
-  }
-}
-
-function setExecutionPlanBlueprintVerificationHeaders(
-  context: Context,
-  verification: ExecutionPlanBlueprintVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, verification);
-  context.header("X-Napier-Verification-Status", verification.status);
-  context.header("X-Napier-Plan-Step-Count", String(verification.stepCount));
-  context.header(
-    "X-Napier-Plan-Artifact-Count",
-    String(verification.artifactCount),
-  );
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  if (verification.contentSha256) {
-    context.header(
-      "X-Napier-Plan-Blueprint-SHA256",
-      verification.contentSha256,
-    );
-  }
-  if (verification.sourceThreadId) {
-    context.header(
-      "X-Napier-Blueprint-Source-Thread-Id",
-      verification.sourceThreadId,
-    );
-  }
-  if (verification.sourcePlanId) {
-    context.header(
-      "X-Napier-Blueprint-Source-Plan-Id",
-      verification.sourcePlanId,
-    );
-  }
-  if (verification.sourcePlanRevision !== undefined) {
-    context.header(
-      "X-Napier-Blueprint-Source-Plan-Revision",
-      String(verification.sourcePlanRevision),
-    );
-  }
-  if (verification.sourcePlanArchiveSha256) {
-    context.header(
-      "X-Napier-Blueprint-Source-Archive-SHA256",
-      verification.sourcePlanArchiveSha256,
-    );
-  }
-  if (verification.sourceEventStreamSha256) {
-    context.header(
-      "X-Napier-Blueprint-Source-Event-Stream-SHA256",
-      verification.sourceEventStreamSha256,
-    );
-  }
-}
-
 function setExecutionPlanFromBlueprintHeaders(
   context: Context,
   plan: ExecutionPlan,
@@ -14948,30 +14127,6 @@ function setExecutionPlanFromBlueprintHeaders(
 ): void {
   setExecutionPlanHeaders(context, plan);
   setExecutionPlanBlueprintSourceHeaders(context, blueprint);
-}
-
-function setExecutionPlanBlueprintSourceHeaders(
-  context: Context,
-  blueprint: ExecutionPlanBlueprint,
-): void {
-  context.header("X-Napier-Plan-Blueprint-SHA256", blueprint.contentSha256);
-  context.header(
-    "X-Napier-Blueprint-Source-Thread-Id",
-    blueprint.source.threadId,
-  );
-  context.header("X-Napier-Blueprint-Source-Plan-Id", blueprint.source.planId);
-  context.header(
-    "X-Napier-Blueprint-Source-Plan-Revision",
-    String(blueprint.source.planRevision),
-  );
-  context.header(
-    "X-Napier-Blueprint-Source-Archive-SHA256",
-    blueprint.source.planArchiveSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Source-Event-Stream-SHA256",
-    blueprint.source.eventStreamSha256,
-  );
 }
 
 function setExecutionPlanBlueprintRecordListHeaders(

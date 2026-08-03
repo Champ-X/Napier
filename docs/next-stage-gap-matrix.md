@@ -878,6 +878,52 @@ Observed result:
 - the Web dist remains `12854c43524e3b08` with a 115.44 KiB main entry; the
   42-artifact Release set is `c8c67f63d194892c`.
 
+## Implemented Slice: Plan Lifecycle HTTP Domain Extraction
+
+User scenario: an operator must create, inspect, revise, independently review,
+export, and verify a Plan without those lifecycle operations remaining coupled
+to the Server composition root.
+
+Acceptance:
+
+- extract Plan list/create, replan, replan-draft review, Archive/Blueprint
+  export, and both verification routes while retaining the sole Store and
+  Runtime implementations;
+- use a narrow Store port plus the existing model registry and preserve all
+  nested request limits, exact-record validation, model availability, and
+  thread/Plan ownership checks;
+- preserve `plan.created`/`plan.replanned` payloads, replan revision semantics,
+  Archive path binding, portable Blueprint validation, response status,
+  filenames, hashes, counts, and event boundaries;
+- keep Blueprint library, step transition, and Artifact operations separate,
+  preserve OpenAPI/compatibility, and ratchet the reduced composition root.
+
+Observed result:
+
+- route, response, and validation modules are 369, 338, and 300 lines, all
+  below the default production budget; focused parsers stay below complexity
+  25 without a new architecture exception;
+- `app.ts` drops another 845 lines from 20,975 to 20,130; the adapter depends
+  on nine Store methods, including one inherited by Runtime's existing
+  Blueprint port but not exercised by this path;
+- 39 existing end-to-end Server tests plus four focused validation tests pass,
+  covering Plan/Replan events, nested bounds, ownership, model review,
+  Archive/Blueprint export, path mismatch, tampering, and response evidence;
+- built Server Dogfood runs all eight routes, advances revision 1 to 2, records
+  one create and one replan event, returns fail-closed `inconclusive/high`
+  review from the demo model, and verifies both exported artifacts as valid;
+  the temporary data root is removed;
+- OpenAPI remains 255 routes at `a28c1dda79ad754e` and 244/244 compatibility;
+  architecture covers 784 production and 404 test modules with zero
+  relative-import cycles;
+- the complete gate passes 1,993 tests: Root 78, CLI 150, Server 150, Web 465,
+  Runtime 1,122, and SDK 28;
+- product performance remains within baseline at 730.6 ms to first CLI event,
+  878.1 ms to first token, 1,199.6 ms completion, 0.3 ms read p95, 10.1 ms
+  1,000-event projection, and 761.856 SQLite bytes/event;
+- the Web dist remains `12854c43524e3b08` with a 115.44 KiB main entry; the
+  42-artifact Release set is `f9b5cad3878a4e7a`.
+
 ## Implemented Slice: Full-Screen Local TUI
 
 User scenario: a local user wants to run multi-turn coding, research, or data
