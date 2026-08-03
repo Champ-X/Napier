@@ -14562,7 +14562,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "e87bc7df85177995e0b378e847f8e2f5f8cc7c9d1f7cdb57290c9d3167424af2",
+  "x-napier-source-sha256": "833725b2b02c3962b9338909614bdee1b037c7949da907efbfe5d762947b2967",
   "x-napier-route-count": 255,
   "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }

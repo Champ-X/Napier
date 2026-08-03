@@ -365,7 +365,7 @@ export function validateEvaluationCasebookQualificationExecution(
 }
 
 export function createEvaluationCasebookQualificationReceipt(
-  store: EvaluationCasebookQualificationStorePort,
+  store: import("./store-port.js").CasebookReceiptStorePort,
   casebookId: string,
 ): EvaluationCasebookQualificationReceipt {
   const casebook = store.getEvaluationCasebook(casebookId);

@@ -6,7 +6,7 @@ import {
   type LocalStore,
 } from "@napier/runtime";
 
-type EvaluationCatalogStore = Pick<
+export type EvaluationCatalogStore = Pick<
   LocalStore,
   | "exportEvaluationCasebook"
   | "getEvaluationCasebook"

@@ -267,7 +267,7 @@ export function hashEvaluationSuiteExecution(
 }
 
 export function createEvaluationSuiteGateReceipt(
-  store: EvaluationSuiteStorePort,
+  store: import("./store-port.js").SuiteGateReceiptStorePort,
   threadId: string,
   suiteId: string,
 ): EvaluationSuiteGateReceipt {

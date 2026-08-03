@@ -380,8 +380,8 @@ its response module preserves body/stable hashes and all count headers. This
 lowers `app.ts` to 19,987 lines without changing the 255-route contract.
 
 Workspace-global Evaluation Casebook and Thread-local Evaluation Suite
-projections use `evaluation-catalog-http.ts`. Its nine-method Store port plus
-the existing receipt-builder ports cover ten list/detail/calibration/export,
+projections use `evaluation-catalog-http.ts`. Its eleven-method read-only Store
+port covers ten list/detail/calibration/export,
 qualification, baseline, gate-receipt, and execution routes. Response helpers
 remain injected from the composition root, preserving every body hash, count,
 download, and receipt header. Signed receipt, baseline promotion, curation,

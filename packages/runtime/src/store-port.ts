@@ -162,6 +162,16 @@ export type EvaluationCasebookQualificationStorePort = Pick<
   | "saveEvaluationCasebookQualificationExecution"
 >;
 
+export type CasebookReceiptStorePort = Pick<
+  RuntimeStorePort,
+  "getEvaluationCasebook" | "listEvaluationCasebookQualificationExecutions"
+>;
+
+export type SuiteGateReceiptStorePort = Pick<
+  RuntimeStorePort,
+  "getEvaluationSuite" | "listEvaluationSuiteExecutions" | "listRunEvaluations"
+>;
+
 export type PlanArchiveStorePort = Pick<
   RuntimeStorePort,
   "getPlan" | "getThread" | "listEvents"
