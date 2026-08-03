@@ -73,6 +73,7 @@ export interface CreateStatelessAgentToolsOptions {
   gitReviewScopeId?: string;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
+  beforeWorkspaceWrite?: (() => Promise<void>) | undefined;
 }
 
 export function createStatelessAgentTools(
@@ -148,6 +149,7 @@ export function createStatelessAgentTools(
   const tools = createWorkspaceTools(options.store.workspaceRoot, {
     includeWriteTools: processAllowed,
     dataRoot: options.store.dataRoot,
+    beforeWorkspaceWrite: options.beforeWorkspaceWrite,
     ...(patchObserver ? { patchObserver } : {}),
   }).filter((tool) => profile.enabledTools.includes(tool.name));
   appendDataTools(tools, profile, options.store.workspaceRoot);

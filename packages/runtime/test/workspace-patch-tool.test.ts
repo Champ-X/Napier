@@ -39,9 +39,34 @@ describe("workspace patch Agent tool", () => {
         ]),
       }),
     );
-    expect(
-      (tool.parameters as { anyOf?: unknown[] }).anyOf,
-    ).toHaveLength(4);
+    expect((tool.parameters as { anyOf?: unknown[] }).anyOf).toHaveLength(4);
+  });
+
+  it("settles Run-owned sessions before mutating the workspace", async () => {
+    const fixture = await createFixture();
+    const target = path.join(fixture.workspaceRoot, "target.ts");
+    const source = "export const value = 1;\n";
+    await writeFile(target, source);
+    const order: string[] = [];
+    const tool = createWorkspacePatchTool({
+      ...fixture,
+      beforeWrite: async () => {
+        order.push("cleanup");
+      },
+      applyPatch: async (...args) => {
+        order.push("mutation");
+        return applyWorkspacePatch(...args);
+      },
+    });
+
+    await tool.execute("patch-after-cleanup", {
+      operation: "replace",
+      path: "target.ts",
+      expectedSha256: sha256(source),
+      edits: [{ oldText: "1", newText: "2" }],
+    });
+
+    expect(order).toEqual(["cleanup", "mutation"]);
   });
 
   it("leaves the workspace unchanged when pre-write diagnostics fail", async () => {

@@ -89,4 +89,19 @@ export class AgentSessionRuntime {
     );
     if (failure) throw failure.reason;
   }
+
+  async cancelDebuggerRun(request: {
+    threadId: string;
+    runId: string;
+  }): Promise<void> {
+    await this.debuggerManager?.cancelRun(request);
+  }
+
+  debuggerWriteBarrier(request: { threadId: string; id: string }) {
+    return () =>
+      this.cancelDebuggerRun({
+        threadId: request.threadId,
+        runId: request.id,
+      });
+  }
 }

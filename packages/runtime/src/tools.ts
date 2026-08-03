@@ -291,8 +291,8 @@ export interface CreateWorkspaceToolsOptions {
   includeWriteTools?: boolean;
   dataRoot?: string;
   patchObserver?: WorkspacePatchObserver;
+  beforeWorkspaceWrite?: (() => Promise<void>) | undefined;
 }
-
 async function resolveWorkspacePath(
   workspaceRoot: string,
   candidate: string,
@@ -1196,7 +1196,6 @@ async function walkFiles(root: string, depth: number): Promise<string[]> {
   await visit(root, depth);
   return output;
 }
-
 export function createWorkspaceTools(
   workspaceRoot: string,
   options: CreateWorkspaceToolsOptions = {},
@@ -1789,6 +1788,7 @@ export function createWorkspaceTools(
         workspaceRoot,
         dataRoot: options.dataRoot,
         applyPatch: applyWorkspacePatch,
+        beforeWrite: options.beforeWorkspaceWrite,
         ...(options.patchObserver ? { observer: options.patchObserver } : {}),
       }),
     );

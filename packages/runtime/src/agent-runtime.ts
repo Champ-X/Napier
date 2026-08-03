@@ -225,22 +225,18 @@ type TurnSource =
   | RunInvocationSource
   | "goal_continuation"
   | "advisor_correction";
-
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
-
 class OperatorDecisionPendingError extends Error {
   constructor(readonly decisionId: string) {
     super(`Run is waiting for operator decision ${decisionId}`);
     this.name = "OperatorDecisionPendingError";
   }
 }
-
 export class AgentRuntime {
   private readonly activeRuns = new Map<string, Map<string, ActiveRun>>();
   private readonly workerId = createId("worker");
   private readonly sessions: AgentSessionRuntime;
-
   constructor(
     readonly store: LocalStore,
     readonly modelRegistry: ModelRegistry,
@@ -1307,7 +1303,11 @@ export class AgentRuntime {
       ...(this.workspaceFileMutations
         ? { workspaceFileMutations: this.workspaceFileMutations }
         : {}),
-      gitStageMutations: gitStageMutationManagerFor(this.store, this.verificationSandbox),
+      gitStageMutations: gitStageMutationManagerFor(
+        this.store,
+        this.verificationSandbox,
+      ),
+      beforeWorkspaceWrite: this.sessions.debuggerWriteBarrier(run),
       restrictedReadOnlyExecution,
       advisorCorrection,
     });

@@ -66,18 +66,20 @@ stateful-tool stop guidance was tightened, and was faster in every case:
 8.54/22.25/21.60 seconds versus OMP's 9.66/33.29/38.63 seconds. The verified
 report is
 `docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260804.json`.
-This proved `napier_not_worse` for the first trial only. A second trial kept
-both executors passing on low and medium cases, but Napier failed the debugger
-case while OMP passed. Prompt-only remediation was not stable and was reverted;
-the report now records Napier 5/6 versus OMP 6/6 and verdict `napier_worse`.
+This proved `napier_not_worse` for the first trial only. A second pre-fix trial
+kept both executors passing on low and medium cases, but Napier failed the
+debugger case while OMP passed. Prompt-only remediation was unstable and
+reverted. Runtime now deterministically cancels the Run-owned debugger before
+patch preflight; two post-fix debugger trials passed and the original failure
+remains in the report's remediation history.
 
 Independent seed `20260805` produced a different suite
 (`0ebb706b95865453`) and repeated the result: both executors passed 3/3, while
 Napier was faster in all three cases at 8.88/21.87/21.93 seconds versus
-9.27/32.17/44.25 seconds. Across all retained trials Napier is 8/9 and OMP is
-9/9; Napier has lower wall time in all eight matched passing trials. Success
-rate takes precedence over latency, so the aggregate gate now records
-`napier_worse` until the debugger-to-patch transition is fixed and repeated.
+9.27/32.17/44.25 seconds. Across current post-fix trials both executors are 9/9
+and Napier has lower wall time in all nine matched passing trials. The
+aggregate gate therefore records `napier_not_worse`, while retaining the
+pre-fix debugger failure and rejected prompt experiments for audit.
 
 Observed on 2026-08-02 with `deepseek-v4-flash` loaded from the local
 environment:

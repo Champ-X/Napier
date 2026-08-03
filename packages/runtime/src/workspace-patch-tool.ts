@@ -201,6 +201,7 @@ export interface WorkspacePatchToolDetails extends Omit<
 export interface WorkspacePatchToolOptions {
   workspaceRoot: string;
   dataRoot: string;
+  beforeWrite?: (() => Promise<void>) | undefined;
   applyPatch(
     workspaceRoot: string,
     dataRoot: string,
@@ -220,6 +221,10 @@ export function createWorkspacePatchTool(
     parameters: applyPatchSchema,
     async execute(_toolCallId, rawInput, signal) {
       const input = rawInput as WorkspacePatchInput;
+      if (signal?.aborted) {
+        throw new Error("Workspace patch was aborted before session cleanup");
+      }
+      await options.beforeWrite?.();
       const observed = options.observer?.supports(input.path) === true;
       let before: WorkspacePatchObservationState | undefined;
       if (observed && input.operation !== "create") {

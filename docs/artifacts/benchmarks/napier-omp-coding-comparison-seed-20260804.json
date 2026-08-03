@@ -138,23 +138,29 @@
       "trials": [
         {
           "trial": 1,
-          "napier": { "status": "passed", "durationMs": 21599 },
+          "napier": { "status": "passed", "durationMs": 27732 },
           "omp": { "hiddenOutcomePassed": true, "durationMs": 38628 }
         },
         {
           "trial": 2,
-          "napier": { "status": "failed", "durationMs": 39707 },
+          "napier": { "status": "passed", "durationMs": 29654 },
           "omp": { "hiddenOutcomePassed": true, "durationMs": 62073 }
         }
       ],
       "remediation": {
-        "status": "unresolved",
+        "status": "resolved",
         "failedTool": "apply_patch",
         "debuggerActionsCompletedBeforeFailure": 10,
         "promptVariantsRetained": false,
+        "runtimeFix": "cancel the Run-owned debugger before workspace patch preflight",
+        "preFixTrials": [
+          { "status": "passed", "durationMs": 21599 },
+          { "status": "failed", "durationMs": 39707 }
+        ],
+        "postFixValidationPassed": 2,
         "notes": [
-          "Retry guidance reduced repeated debugger failures but did not make the patch transition deterministic.",
-          "Mandatory cancel guidance regressed latency and still passed only one of two attempts."
+          "Prompt-only remediation was unstable and was reverted.",
+          "The Runtime write barrier passed two independent validation trials."
         ]
       }
     }
@@ -169,13 +175,13 @@
     "napierOuterHiddenOutcomePassed": 3,
     "napierOuterHiddenOutcomeFailed": 0,
     "trialCount": 6,
-    "napierTrialPassed": 5,
+    "napierTrialPassed": 6,
     "ompTrialPassed": 6,
-    "napierTrialLatencyWins": 5,
+    "napierTrialLatencyWins": 6,
     "outerOutcomeVerdict": "napier_not_worse",
-    "verdict": "napier_worse",
+    "verdict": "napier_not_worse",
     "requiredFollowUps": [
-      "Diagnose and fix the debugger-to-patch transition before making a not-worse stability claim.",
+      "Extend the Runtime write barrier to other coordinated write tools where session drift can block mutation.",
       "Capture OMP token and cost evidence when its machine output exposes stable usage fields.",
       "Run the same suite outside nested TRAE isolation before making a production Sandbox release claim."
     ]
