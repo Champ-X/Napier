@@ -26,7 +26,7 @@ export type ExecutionPlanBlueprintContent = Omit<
 >;
 
 export async function createExecutionPlanBlueprint(
-  store: WorkflowBlueprintStorePort,
+  store: import("./store-port.js").PlanArchiveStorePort,
   threadId: string,
   planId: string,
 ): Promise<ExecutionPlanBlueprint> {

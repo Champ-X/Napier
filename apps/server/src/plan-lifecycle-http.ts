@@ -42,7 +42,6 @@ type PlanLifecycleHttpStore = Pick<
   | "appendEvent"
   | "createPlan"
   | "getAgent"
-  | "getExecutionPlanBlueprintRecord"
   | "getPlan"
   | "getThread"
   | "listEvents"

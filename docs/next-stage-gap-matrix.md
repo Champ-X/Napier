@@ -904,8 +904,9 @@ Observed result:
   below the default production budget; focused parsers stay below complexity
   25 without a new architecture exception;
 - `app.ts` drops another 845 lines from 20,975 to 20,130; the adapter depends
-  on nine Store methods, including one inherited by Runtime's existing
-  Blueprint port but not exercised by this path;
+  on eight Store methods. Blueprint construction now consumes the exact
+  three-method Plan Archive port, while qualification alone retains
+  Blueprint-record access;
 - 39 existing end-to-end Server tests plus four focused validation tests pass,
   covering Plan/Replan events, nested bounds, ownership, model review,
   Archive/Blueprint export, path mismatch, tampering, and response evidence;
@@ -914,10 +915,10 @@ Observed result:
   review from the demo model, and verifies both exported artifacts as valid;
   the temporary data root is removed;
 - OpenAPI remains 255 routes at `a28c1dda79ad754e` and 244/244 compatibility;
-  architecture covers 784 production and 404 test modules with zero
+  architecture covers 784 production and 405 test modules with zero
   relative-import cycles;
-- the complete gate passes 1,993 tests: Root 78, CLI 150, Server 150, Web 465,
-  Runtime 1,122, and SDK 28;
+- the complete gate passes 1,994 tests: Root 78, CLI 150, Server 150, Web 465,
+  Runtime 1,123, and SDK 28;
 - product performance remains within baseline at 730.6 ms to first CLI event,
   878.1 ms to first token, 1,199.6 ms completion, 0.3 ms read p95, 10.1 ms
   1,000-event projection, and 761.856 SQLite bytes/event;
