@@ -419,6 +419,9 @@ Evaluation adjudication, reviewer ballot, and consensus gate requests use
 adjudication-note and raw ballot-note contracts, exact reviewer identity and
 verdict bounds, and consensus quorum/rate limits. Dedicated malformed-input
 tests lower `app.ts` to 18,950 lines before the review routes move.
+`evaluation-review-http-response.ts` owns adjudication, ballot, consensus
+preview, and resolution list/result evidence headers on shared hash
+primitives, lowering `app.ts` to 18,803 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
