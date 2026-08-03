@@ -836,6 +836,48 @@ Observed result:
 - the Web dist remains `12854c43524e3b08` with a 115.44 KiB main entry; the
   42-artifact Release set is `6e05b94d29669319`.
 
+## Implemented Slice: Thread Workflow HTTP Composition Boundary
+
+User scenario: Workflow execution and controlled experiments must keep one
+Runtime/Ledger implementation while their HTTP route registration no longer
+depends on the oversized Server composition root or a full concrete Store.
+
+Acceptance:
+
+- move all nine Workflow, Agent-message, model-invocation, tool-invocation, and
+  Workflow-experiment route bindings behind one stateless registration module;
+- narrow the five existing execution adapters to the exact `getThread` and
+  `getDetail` Store operations they read;
+- preserve body limits, strict validation, preview freshness, explicit
+  side-effect confirmation, ordered SSE events, request-abort cancellation,
+  snapshots, result frames, errors, and response headers;
+- keep the generated route set and compatibility fixture unchanged and lower
+  the composition-root ratchet.
+
+Observed result:
+
+- a 92-line registration module owns only routes and shared HTTP helpers; a
+  six-line Store SPI replaces five concrete `LocalStore` dependencies without
+  introducing state or another execution path;
+- `app.ts` falls another 102 lines from 21,077 to 20,975, while every existing
+  execution module remains below the default 500-line production budget;
+- all 27 focused Workflow/Experiment Server tests pass, covering deterministic,
+  Agent, Tool, JavaScript, Python, preview/execute, stale confirmation,
+  cancellation, Replay, and real Web-client paths;
+- built Server Dogfood completes one model-free Deterministic Workflow with
+  snapshot-before-result ordering and confirms all eight remaining routes reach
+  domain validation rather than 404; the temporary data root is removed;
+- OpenAPI remains 255 routes at `a28c1dda79ad754e` and 244/244 compatibility;
+  architecture covers 781 production and 403 test modules with zero
+  relative-import cycles;
+- the complete gate remains 1,989 tests: Root 78, CLI 150, Server 146, Web 465,
+  Runtime 1,122, and SDK 28;
+- product performance remains within baseline at 657.5 ms to first CLI event,
+  804.7 ms to first token, 1,127.5 ms completion, 0.4 ms read p95, 7.2 ms
+  1,000-event projection, and 761.856 SQLite bytes/event;
+- the Web dist remains `12854c43524e3b08` with a 115.44 KiB main entry; the
+  42-artifact Release set is `c8c67f63d194892c`.
+
 ## Implemented Slice: Full-Screen Local TUI
 
 User scenario: a local user wants to run multi-turn coding, research, or data

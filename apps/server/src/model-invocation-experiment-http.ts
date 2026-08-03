@@ -11,14 +11,15 @@ import {
   streamRunErrorFrame,
   streamSnapshotFrame,
   validateCreateModelInvocationExperimentRequest,
-  type LocalStore,
   type ModelInvocationExperimentRuntime,
 } from "@napier/runtime";
 import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
+import type { ThreadWorkflowHttpStore } from "./thread-workflow-http-store.js";
+
 export interface ModelInvocationExperimentHttpServices {
-  store: LocalStore;
+  store: ThreadWorkflowHttpStore;
   modelInvocationExperiments: ModelInvocationExperimentRuntime;
 }
 

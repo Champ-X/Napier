@@ -14556,9 +14556,10 @@
     "apps/server/src/thread-execution-http.ts",
     "apps/server/src/thread-lifecycle-http.ts",
     "apps/server/src/thread-operations-http.ts",
+    "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "3359fa1a449b3c2073e39ce39fd28a9e206caffbb9689ea93743ff05210aa6bd",
+  "x-napier-source-sha256": "31393b0f573421ca093eef7cb48f46ea59e782525c4fd784f58b266347c8da6d",
   "x-napier-route-count": 255,
   "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }

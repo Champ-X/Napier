@@ -11,14 +11,15 @@ import {
   streamRunErrorFrame,
   streamSnapshotFrame,
   validateCreateToolInvocationExperimentRequest,
-  type LocalStore,
   type ToolInvocationExperimentRuntime,
 } from "@napier/runtime";
 import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
+import type { ThreadWorkflowHttpStore } from "./thread-workflow-http-store.js";
+
 export interface ToolInvocationExperimentHttpServices {
-  store: LocalStore;
+  store: ThreadWorkflowHttpStore;
   toolInvocationExperiments: ToolInvocationExperimentRuntime;
 }
 

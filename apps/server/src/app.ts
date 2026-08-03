@@ -383,6 +383,7 @@ import { registerThreadExecutionHttp } from "./thread-execution-http.js";
 import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
 import { registerThreadControlHttp } from "./thread-control-http.js";
 import { registerThreadOperationsHttp } from "./thread-operations-http.js";
+import { registerThreadWorkflowHttp } from "./thread-workflow-http.js";
 import {
   automationScheduleListSha256,
   registerScheduleHttp,
@@ -407,25 +408,8 @@ import {
   type ReceiptTrustAnchorDirectorySubscriptionServiceOptions,
 } from "./receipt-trust-directory-subscriptions.js";
 import { BUNDLED_SKILLS } from "./bundled-skills.js";
-import {
-  executeAgentMessageExperimentHttp,
-  previewAgentMessageExperimentHttp,
-} from "./agent-message-experiment-http.js";
 import { registerAgentProfileHttp } from "./agent-profile-http.js";
-import {
-  executeModelInvocationExperimentHttp,
-  previewModelInvocationExperimentHttp,
-} from "./model-invocation-experiment-http.js";
 import { assertAvailableModel } from "./model-http-availability.js";
-import {
-  executeToolInvocationExperimentHttp,
-  previewToolInvocationExperimentHttp,
-} from "./tool-invocation-experiment-http.js";
-import { executeWorkflowHttp } from "./workflow-http.js";
-import {
-  executeWorkflowExperimentHttp,
-  previewWorkflowExperimentHttp,
-} from "./workflow-experiment-http.js";
 import { registerWorkspaceProcessHttp } from "./workspace-process-http.js";
 
 export interface NapierServices {
@@ -8608,93 +8592,7 @@ export function createApp(services: NapierServices): Hono {
 
   registerThreadControlHttp(app, services);
   registerThreadExecutionHttp(app, services);
-
-  app.post("/api/threads/:threadId/workflows", (context) =>
-    executeWorkflowHttp(context, services, {
-      readJson: readLimitedJson,
-      jsonError: (target, message, status) =>
-        jsonError(target, message, status),
-      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
-    }),
-  );
-
-  app.post("/api/threads/:threadId/agent-experiments/preview", (context) =>
-    previewAgentMessageExperimentHttp(context, services, {
-      readJson: readLimitedJson,
-      jsonError: (target, message, status) =>
-        jsonError(target, message, status),
-      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
-    }),
-  );
-
-  app.post("/api/threads/:threadId/agent-experiments", (context) =>
-    executeAgentMessageExperimentHttp(context, services, {
-      readJson: readLimitedJson,
-      jsonError: (target, message, status) =>
-        jsonError(target, message, status),
-      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
-    }),
-  );
-
-  app.post(
-    "/api/threads/:threadId/model-invocation-experiments/preview",
-    (context) =>
-      previewModelInvocationExperimentHttp(context, services, {
-        readJson: readLimitedJson,
-        jsonError: (target, message, status) =>
-          jsonError(target, message, status),
-        isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
-      }),
-  );
-
-  app.post("/api/threads/:threadId/model-invocation-experiments", (context) =>
-    executeModelInvocationExperimentHttp(context, services, {
-      readJson: readLimitedJson,
-      jsonError: (target, message, status) =>
-        jsonError(target, message, status),
-      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
-    }),
-  );
-
-  app.post(
-    "/api/threads/:threadId/tool-invocation-experiments/preview",
-    (context) =>
-      previewToolInvocationExperimentHttp(context, services, {
-        readJson: readLimitedJson,
-        jsonError: (target, message, status) =>
-          jsonError(target, message, status),
-        isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
-      }),
-  );
-
-  app.post("/api/threads/:threadId/tool-invocation-experiments", (context) =>
-    executeToolInvocationExperimentHttp(context, services, {
-      readJson: readLimitedJson,
-      jsonError: (target, message, status) =>
-        jsonError(target, message, status),
-      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
-    }),
-  );
-
-  app.post(
-    "/api/threads/:threadId/workflows/:planId/experiments/preview",
-    (context) =>
-      previewWorkflowExperimentHttp(context, services, {
-        readJson: readLimitedJson,
-        jsonError: (target, message, status) =>
-          jsonError(target, message, status),
-        isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
-      }),
-  );
-
-  app.post("/api/threads/:threadId/workflows/:planId/experiments", (context) =>
-    executeWorkflowExperimentHttp(context, services, {
-      readJson: readLimitedJson,
-      jsonError: (target, message, status) =>
-        jsonError(target, message, status),
-      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
-    }),
-  );
+  registerThreadWorkflowHttp(app, services);
 
   app.notFound((context) => {
     const pathname = new URL(context.req.url).pathname;

@@ -12,13 +12,14 @@ import {
   streamSnapshotFrame,
   validateExecuteExecutionPlanWorkflowRequest,
   type ExecutionPlanWorkflowRuntime,
-  type LocalStore,
 } from "@napier/runtime";
 import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
+import type { ThreadWorkflowHttpStore } from "./thread-workflow-http-store.js";
+
 export interface WorkflowHttpServices {
-  store: LocalStore;
+  store: ThreadWorkflowHttpStore;
   workflows: ExecutionPlanWorkflowRuntime;
 }
 

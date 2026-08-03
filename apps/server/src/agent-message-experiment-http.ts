@@ -12,13 +12,14 @@ import {
   streamSnapshotFrame,
   validateCreateAgentMessageExperimentRequest,
   type AgentMessageExperimentRuntime,
-  type LocalStore,
 } from "@napier/runtime";
 import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
+import type { ThreadWorkflowHttpStore } from "./thread-workflow-http-store.js";
+
 export interface AgentMessageExperimentHttpServices {
-  store: LocalStore;
+  store: ThreadWorkflowHttpStore;
   agentMessageExperiments: AgentMessageExperimentRuntime;
 }
 

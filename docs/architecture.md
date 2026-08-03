@@ -352,6 +352,16 @@ stop receipts, and hash-only stream diagnostics. The composition root only
 registers this adapter, lowering `app.ts` to 21,077 lines and preserving the
 255-route and 244-operation contracts.
 
+Workflow and controlled-experiment route registration follows the same
+composition boundary. `thread-workflow-http.ts` owns the nine Workflow, Agent
+message, model invocation, tool invocation, and Workflow experiment route
+bindings plus their shared bounded-body/error adapter. The five existing HTTP
+execution modules retain all preview, execution, ordered-event, cancellation,
+snapshot, and result framing behavior. They now depend on one shared
+`getThread`/`getDetail` Store port instead of concrete `LocalStore`; the
+composition root only registers the adapter. This lowers `app.ts` to 20,975
+lines without changing the 255-route or 244-operation contracts.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 
