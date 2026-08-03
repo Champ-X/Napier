@@ -354,16 +354,9 @@ import { registerInboundChannelIngressHttp } from "./inbound-channel-ingress-htt
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerEvaluationCasebookAdminHttp } from "./evaluation-casebook-admin-http.js";
 import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
-import {
-  setEvaluationCasebookProjectionHeaders,
-  setEvaluationSuiteExecutionHeaders,
-  setEvaluationSuiteProjectionHeaders,
-} from "./evaluation-admin-http-response.js";
-import {
-  parseCreateEvaluationSuiteRequest,
-  parseCreateRunEvaluationRequest,
-  parseUpdateEvaluationSuiteRequest,
-} from "./evaluation-http-validation.js";
+import { setEvaluationCasebookProjectionHeaders } from "./evaluation-admin-http-response.js";
+import { parseCreateRunEvaluationRequest } from "./evaluation-http-validation.js";
+import { registerEvaluationSuiteAdminHttp } from "./evaluation-suite-admin-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
 import { registerPlanLifecycleHttp } from "./plan-lifecycle-http.js";
 import {
@@ -6317,126 +6310,19 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.post("/api/threads/:threadId/evaluation-suites", async (context) => {
-    const threadId = context.req.param("threadId");
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EVALUATION_REQUEST_BYTES,
-        "Evaluation suite request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCreateEvaluationSuiteRequest(input);
-    if (!body) {
-      return jsonError(context, "Evaluation suite request is invalid", 400);
-    }
-    try {
-      if (body.model) await assertAvailableModel(services, body.model);
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 400);
-    }
-    const suite = await services.store.createEvaluationSuite(threadId, body);
-    await services.store.appendEvent({
-      threadId,
-      runId: createId("runctl"),
-      type: "evaluation.suite.created",
-      category: "evaluation",
-      visibility: "user",
-      payload: evaluationSuiteEventPayload(suite),
-    });
-    setEvaluationSuiteProjectionHeaders(context, suite);
-    return context.json(suite, 201);
-  });
-
-  app.put(
-    "/api/threads/:threadId/evaluation-suites/:suiteId",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const current = services.store.getEvaluationSuite(
-        context.req.param("suiteId"),
-      );
-      if (current.threadId !== threadId) {
-        throw new Error(
-          "Evaluation suite does not belong to the target thread",
-        );
-      }
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_EVALUATION_REQUEST_BYTES,
-          "Evaluation suite update request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const body = parseUpdateEvaluationSuiteRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Evaluation suite update request is invalid",
-          400,
-        );
-      }
-      try {
-        if (body.model) await assertAvailableModel(services, body.model);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-      const suite = await services.store.updateEvaluationSuite(
-        current.id,
-        body,
-      );
-      if (suite.revision !== current.revision) {
-        await services.store.appendEvent({
-          threadId,
-          runId: createId("runctl"),
-          type: "evaluation.suite.updated",
-          category: "evaluation",
-          visibility: "user",
-          payload: evaluationSuiteEventPayload(suite),
-        });
-      }
-      setEvaluationSuiteProjectionHeaders(context, suite);
-      return context.json(suite);
+  registerEvaluationSuiteAdminHttp(
+    app,
+    {
+      store: services.store,
+      models: services.models,
+      suites: services.evaluationSuites,
     },
-  );
-
-  app.post(
-    "/api/threads/:threadId/evaluation-suites/:suiteId/executions",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const suiteId = context.req.param("suiteId");
-      const suite = services.store.getEvaluationSuite(suiteId);
-      if (suite.threadId !== threadId) {
-        return jsonError(
-          context,
-          "Evaluation suite does not belong to the target thread",
-          400,
-        );
-      }
-      try {
-        await assertAvailableModel(services, suite.evaluatorModel);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-      const execution = await services.evaluationSuites.execute(
-        threadId,
-        suiteId,
-      );
-      setEvaluationSuiteExecutionHeaders(context, execution);
-      return context.json(execution, 201);
+    {
+      readRequest: (request, label) =>
+        readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
+      requestBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+      errorMessage,
+      jsonError,
     },
   );
 
@@ -9022,28 +8908,6 @@ function boundedString(
 
 function isSha256Hex(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-}
-
-function evaluationSuiteEventPayload(
-  suite: EvaluationSuite,
-): Record<string, JsonValue> {
-  return {
-    suiteId: suite.id,
-    name: suite.name,
-    revision: suite.revision,
-    baselineRunId: suite.baselineRunId,
-    candidateRunIds: suite.candidateRunIds,
-    rubric: suite.rubric.name,
-    evaluatorModel: {
-      provider: suite.evaluatorModel.provider,
-      id: suite.evaluatorModel.id,
-    },
-    gate: {
-      minimumPassRate: suite.gate.minimumPassRate,
-      minimumCandidateScore: suite.gate.minimumCandidateScore,
-      allowInconclusive: suite.gate.allowInconclusive,
-    },
-  };
 }
 
 function parseSubmitEvaluationReviewerBallotRequest(

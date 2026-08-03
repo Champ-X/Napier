@@ -408,6 +408,12 @@ sets, bounded rubric criteria, optional model refs, and Suite gates.
 Create/update Suite semantics remain identical, with validation complexity
 split below the per-function budget. This lowers `app.ts` to 19,197 lines.
 
+`evaluation-suite-admin-http.ts` owns Suite create/update/execute behind a
+four-method Store port, Model Registry, and execute-only Suite service.
+Revision event emission, Thread ownership, model availability, response
+headers, and bounded-body errors are unchanged. This lowers `app.ts` to 19,061
+lines and completes the Casebook/Suite administration split.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 
