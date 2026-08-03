@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 96,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BZp_Ttyo.js",
+    "path": "apps/web/dist/assets/index-DlkA6kwe.js",
     "sizeBytes": 118213,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "f2852ae581721f9c6a586a116b369f695a441de338c4e8fdc915f575d7fe84bb"
+    "sha256": "5c8755faac8ba873c584f734da5fd7c3ec8066e0c91768d42792208cd32b0cb7"
   },
-  "distContentSha256": "f2852ae581721f9c6a586a116b369f695a441de338c4e8fdc915f575d7fe84bb",
+  "distContentSha256": "5c8755faac8ba873c584f734da5fd7c3ec8066e0c91768d42792208cd32b0cb7",
   "errors": []
 }

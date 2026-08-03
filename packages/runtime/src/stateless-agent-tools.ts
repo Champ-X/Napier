@@ -24,6 +24,11 @@ import {
   createGitStagePreviewTool,
 } from "./git-stage-tool.js";
 import type { GitStageMutationManager } from "./git-stage.js";
+import {
+  createGitReviewApplyTool,
+  createGitReviewPreviewTool,
+} from "./git-review-tool.js";
+import { gitReviewMutationManagerFor } from "./git-review.js";
 import { LspCodeActionApplyDiagnostics } from "./lsp-code-action-apply-diagnostics.js";
 import { createLspCodeActionApplyTool } from "./lsp-code-action-apply-tool.js";
 import { LspCodeActionMutationManager } from "./lsp-code-action-mutation-manager.js";
@@ -65,6 +70,7 @@ export interface CreateStatelessAgentToolsOptions {
   gitCommitScopeId?: string;
   gitBranchScopeId?: string;
   gitBranchSwitchScopeId?: string;
+  gitReviewScopeId?: string;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
 }
@@ -178,6 +184,7 @@ export function createStatelessAgentTools(
   appendGitCommitTools(tools, options, processAllowed);
   appendGitBranchTools(tools, options, processAllowed);
   appendGitBranchSwitchTools(tools, options, processAllowed);
+  appendGitReviewTools(tools, options, processAllowed);
   if (processAllowed && profile.enabledTools.includes("verify_workspace")) {
     tools.push(
       createVerificationTool({
@@ -315,6 +322,25 @@ function appendGitBranchSwitchTools(
   }
   if (options.profile.enabledTools.includes("git_branch_switch_apply")) {
     tools.push(createGitBranchSwitchApplyTool(manager, context));
+  }
+}
+
+function appendGitReviewTools(
+  tools: AgentTool[],
+  options: CreateStatelessAgentToolsOptions,
+  processAllowed: boolean,
+): void {
+  if (!processAllowed) return;
+  const manager = gitReviewMutationManagerFor(options.store, options.sandbox);
+  const context = {
+    threadId: options.threadId,
+    scopeId: options.gitReviewScopeId ?? options.runId,
+  };
+  if (options.profile.enabledTools.includes("git_review_preview")) {
+    tools.push(createGitReviewPreviewTool(manager, context));
+  }
+  if (options.profile.enabledTools.includes("git_review_apply")) {
+    tools.push(createGitReviewApplyTool(manager, context));
   }
 }
 

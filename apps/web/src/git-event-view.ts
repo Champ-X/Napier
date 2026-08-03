@@ -23,6 +23,11 @@ import {
   gitStageSummaryParts,
   type GitStageToolEventTraceView,
 } from "./git-stage-event-view";
+import {
+  gitReviewEventEvidence,
+  gitReviewSummaryParts,
+  type GitReviewToolEventTraceView,
+} from "./git-review-event-view";
 
 export interface GitToolEventTraceView
   extends
@@ -30,7 +35,8 @@ export interface GitToolEventTraceView
     GitStageToolEventTraceView,
     GitCommitToolEventTraceView,
     GitBranchToolEventTraceView,
-    GitBranchSwitchToolEventTraceView {}
+    GitBranchSwitchToolEventTraceView,
+    GitReviewToolEventTraceView {}
 
 export function gitToolEventEvidence(
   toolName: string,
@@ -55,6 +61,9 @@ export function gitToolEventEvidence(
   ) {
     return gitBranchSwitchEventEvidence(details);
   }
+  if (toolName === "git_review_preview" || toolName === "git_review_apply") {
+    return gitReviewEventEvidence(details);
+  }
   return undefined;
 }
 
@@ -65,5 +74,6 @@ export function gitToolSummaryParts(view: GitToolEventTraceView): string[] {
     ...gitCommitSummaryParts(view),
     ...gitBranchSummaryParts(view),
     ...gitBranchSwitchSummaryParts(view),
+    ...gitReviewSummaryParts(view),
   ];
 }

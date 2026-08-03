@@ -27,6 +27,8 @@ export const DEFAULT_AGENT_ENABLED_TOOLS = [
   "git_branch_create_apply",
   "git_branch_switch_preview",
   "git_branch_switch_apply",
+  "git_review_preview",
+  "git_review_apply",
   "apply_patch",
   "verify_workspace",
 ] as const;

@@ -294,6 +294,18 @@ function gitToolGuidance(toolNames: ReadonlySet<string>): string[] {
           "git_branch_switch_apply commits a reviewed bounded divergent worktree and target index before an exact source/target HEAD transaction, with durable private rollback/recovery. Binary, symlink, attribute-converted, directory-lifecycle, remote, hook, and history-rewrite operations remain unavailable.",
         ]
       : []),
+    ...(toolNames.has("git_review_preview")
+      ? [
+          toolNames.has("git_review_apply")
+            ? "Use git_review_preview while attached to the reviewed source branch, naming one older local target branch. Review its complete bounded commit patch and exact source/target commits, then pass only its fresh execution-scoped ID to git_review_apply."
+            : "git_review_preview proves a bounded fast-forward range without changing refs because git_review_apply is disabled.",
+        ]
+      : []),
+    ...(toolNames.has("git_review_apply")
+      ? [
+          "git_review_apply only fast-forwards the previewed target ref with old-target CAS and exact reflog proof. It never merges, rebases, resets, force-updates, switches HEAD, changes index/worktree, creates objects, runs hooks, or contacts remotes.",
+        ]
+      : []),
   ];
 }
 

@@ -19,7 +19,7 @@ export async function gitBranchRefWritePaths(
   branchRef: string,
 ): Promise<string[]> {
   const relativeRef = branchRelativePath(branchRef);
-  await assertNoGitObjectAlternates(repository);
+  await assertStandaloneRefStorage(repository);
   const candidates = [
     path.join(repository.gitDirectory, "refs/heads"),
     path.join(repository.gitDirectory, "logs"),
@@ -53,7 +53,7 @@ export async function gitBranchRefWritePaths(
 export async function gitHeadSwitchWritePaths(
   repository: GitRepository,
 ): Promise<string[]> {
-  await assertNoGitObjectAlternates(repository);
+  await assertStandaloneRefStorage(repository);
   const logsDirectory = path.join(repository.gitDirectory, "logs");
   for (const directory of [repository.gitDirectory, logsDirectory]) {
     const info = await lstat(directory);
@@ -75,7 +75,30 @@ export async function gitHeadSwitchWritePaths(
 export async function snapshotGitHeadReflog(
   repository: GitRepository,
 ): Promise<GitBoundFile> {
-  const filePath = path.join(repository.gitDirectory, "logs/HEAD");
+  return snapshotGitReflog(
+    path.join(repository.gitDirectory, "logs/HEAD"),
+    "Git HEAD reflog",
+  );
+}
+
+export async function snapshotGitBranchReflog(
+  repository: GitRepository,
+  branchRef: string,
+): Promise<GitBoundFile> {
+  return snapshotGitReflog(
+    path.join(
+      repository.gitDirectory,
+      "logs/refs/heads",
+      branchRelativePath(branchRef),
+    ),
+    "Git branch reflog",
+  );
+}
+
+async function snapshotGitReflog(
+  filePath: string,
+  label: string,
+): Promise<GitBoundFile> {
   const handle = await open(
     filePath,
     fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0),
@@ -83,7 +106,7 @@ export async function snapshotGitHeadReflog(
   try {
     const info = await handle.stat();
     if (!info.isFile() || info.size > MAX_GIT_REFLOG_BYTES) {
-      throw new Error("Git HEAD reflog is invalid");
+      throw new Error(`${label} is invalid`);
     }
     const content = Buffer.alloc(info.size);
     let offset = 0;
@@ -95,13 +118,13 @@ export async function snapshotGitHeadReflog(
         offset,
       );
       if (result.bytesRead === 0) {
-        throw new Error("Git HEAD reflog changed while it was read");
+        throw new Error(`${label} changed while it was read`);
       }
       offset += result.bytesRead;
     }
     const probe = Buffer.alloc(1);
     if ((await handle.read(probe, 0, 1, info.size)).bytesRead > 0) {
-      throw new Error("Git HEAD reflog changed while it was read");
+      throw new Error(`${label} changed while it was read`);
     }
     return {
       present: true,
@@ -120,6 +143,8 @@ export async function syncGitBranchRefTransition(input: {
   oldObjectId: string;
   newObjectId: string;
   includeHeadReflog: boolean;
+  beforeBranchReflog?: GitBoundFile;
+  message?: string;
 }): Promise<boolean> {
   const relativeRef = branchRelativePath(input.branchRef);
   const refFile = path.join(
@@ -141,16 +166,55 @@ export async function syncGitBranchRefTransition(input: {
   const files = [refFile, ...reflogs];
   try {
     for (const file of files) await syncExactFile(file);
-    await Promise.all(
-      reflogs.map((file) =>
-        verifyReflogTail(file, input.oldObjectId, input.newObjectId),
-      ),
-    );
+    if (input.beforeBranchReflog) {
+      await verifyGitBranchReflogTransition({
+        repository: input.repository,
+        branchRef: input.branchRef,
+        beforeBranchReflog: input.beforeBranchReflog,
+        oldCommitSha1: input.oldObjectId,
+        newCommitSha1: input.newObjectId,
+        ...(input.message ? { message: input.message } : {}),
+      });
+    } else {
+      await Promise.all(
+        reflogs.map((file) =>
+          verifyReflogTail(
+            file,
+            input.oldObjectId,
+            input.newObjectId,
+            input.message,
+          ),
+        ),
+      );
+    }
     await syncParentDirectories(input.repository, files);
     return true;
   } catch {
     return false;
   }
+}
+
+export async function verifyGitBranchReflogTransition(input: {
+  repository: GitRepository;
+  branchRef: string;
+  beforeBranchReflog: GitBoundFile;
+  oldCommitSha1: string;
+  newCommitSha1: string;
+  message?: string;
+}): Promise<GitBoundFile> {
+  const filePath = path.join(
+    input.repository.gitDirectory,
+    "logs/refs/heads",
+    branchRelativePath(input.branchRef),
+  );
+  return verifyExactReflogAppend({
+    filePath,
+    before: input.beforeBranchReflog,
+    oldObjectId: input.oldCommitSha1,
+    newObjectId: input.newCommitSha1,
+    ...(input.message ? { message: input.message } : {}),
+    label: "Git branch reflog",
+  });
 }
 
 export async function syncGitHeadSwitch(input: {
@@ -181,43 +245,60 @@ export async function verifyGitHeadSwitchReflog(input: {
   newCommitSha1: string;
   message: string;
 }): Promise<GitBoundFile> {
-  const filePath = path.join(input.repository.gitDirectory, "logs/HEAD");
+  return verifyExactReflogAppend({
+    filePath: path.join(input.repository.gitDirectory, "logs/HEAD"),
+    before: input.beforeHeadReflog,
+    oldObjectId: input.oldCommitSha1,
+    newObjectId: input.newCommitSha1,
+    message: input.message,
+    label: "Git HEAD reflog",
+  });
+}
+
+async function verifyExactReflogAppend(input: {
+  filePath: string;
+  before: GitBoundFile;
+  oldObjectId: string;
+  newObjectId: string;
+  message?: string;
+  label: string;
+}): Promise<GitBoundFile> {
   const handle = await open(
-    filePath,
+    input.filePath,
     fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0),
   );
   try {
     const info = await handle.stat();
-    const suffixBytes = info.size - input.beforeHeadReflog.bytes;
+    const suffixBytes = info.size - input.before.bytes;
     if (
-      !input.beforeHeadReflog.present ||
+      !input.before.present ||
       !info.isFile() ||
       info.size > MAX_GIT_REFLOG_BYTES ||
-      (info.mode & 0o777) !== input.beforeHeadReflog.mode ||
+      (info.mode & 0o777) !== input.before.mode ||
       suffixBytes < 1 ||
       suffixBytes > 4 * 1024
     ) {
-      throw new Error("Git HEAD reflog append is invalid");
+      throw new Error(`${input.label} append is invalid`);
     }
-    const prefix = Buffer.alloc(input.beforeHeadReflog.bytes);
+    const prefix = Buffer.alloc(input.before.bytes);
     await readExact(handle, prefix, 0);
-    if (sha256(prefix) !== input.beforeHeadReflog.sha256) {
-      throw new Error("Git HEAD reflog prefix changed");
+    if (sha256(prefix) !== input.before.sha256) {
+      throw new Error(`${input.label} prefix changed`);
     }
     const suffix = Buffer.alloc(suffixBytes);
-    await readExact(handle, suffix, input.beforeHeadReflog.bytes);
+    await readExact(handle, suffix, input.before.bytes);
     const probe = Buffer.alloc(1);
     if ((await handle.read(probe, 0, 1, info.size)).bytesRead > 0) {
-      throw new Error("Git HEAD reflog changed while it was read");
+      throw new Error(`${input.label} changed while it was read`);
     }
     const text = suffix.toString("utf8");
     if (
       !text.endsWith("\n") ||
       text.slice(0, -1).includes("\n") ||
-      !text.startsWith(`${input.oldCommitSha1} ${input.newCommitSha1} `) ||
-      !text.endsWith(`\t${input.message}\n`)
+      !text.startsWith(`${input.oldObjectId} ${input.newObjectId} `) ||
+      (input.message !== undefined && !text.endsWith(`\t${input.message}\n`))
     ) {
-      throw new Error("Git HEAD reflog transition is invalid");
+      throw new Error(`${input.label} transition is invalid`);
     }
     return {
       present: true,
@@ -313,9 +394,12 @@ async function verifyReflogTail(
   }
 }
 
-async function assertNoGitObjectAlternates(
+async function assertStandaloneRefStorage(
   repository: GitRepository,
 ): Promise<void> {
+  if (await gitPathExists(path.join(repository.gitDirectory, "worktrees"))) {
+    throw new Error("Git linked worktrees are unsupported");
+  }
   if (
     await gitPathExists(
       path.join(repository.gitDirectory, "objects/info/alternates"),

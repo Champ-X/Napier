@@ -61,7 +61,7 @@ export interface GitPrivateProcessFiles {
 }
 
 export interface GitProcessIsolation {
-  operation?: "stage" | "commit" | "branch" | "switch";
+  operation?: "stage" | "commit" | "branch" | "switch" | "review";
   privateFiles?: GitPrivateProcessFiles;
   workspaceWritePaths: string[];
   commitTimestampSeconds?: number;
@@ -93,7 +93,9 @@ export async function runGitProcess(
         ? "Git branch creation"
         : isolation.operation === "switch"
           ? "Git branch switch"
-          : "Git stage preparation"
+          : isolation.operation === "review"
+            ? "Git review promotion"
+            : "Git stage preparation"
     : "Git inspection";
   if (options.sandbox.id === "oci-container") {
     throw new Error(

@@ -301,6 +301,8 @@ export const EXECUTION_PLAN_WORKFLOW_TOOL_NAMES = [
   "git_branch_create_apply",
   "git_branch_switch_preview",
   "git_branch_switch_apply",
+  "git_review_preview",
+  "git_review_apply",
   "inspect_code",
   "read_symbol",
   "ast_query",

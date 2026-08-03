@@ -30,6 +30,11 @@ import {
   gitStageToolInputLedgerProjection,
   gitStageToolOutputLedgerProjection,
 } from "./git-stage-tool.js";
+import {
+  gitReviewToolCallArgumentsLedgerProjection,
+  gitReviewToolInputLedgerProjection,
+  gitReviewToolOutputLedgerProjection,
+} from "./git-review-tool.js";
 
 export function agentProcessToolCallProjection(
   toolName: string,
@@ -49,6 +54,9 @@ export function agentProcessToolCallProjection(
     toolName === "git_branch_switch_apply"
   ) {
     return gitBranchSwitchToolCallArgumentsLedgerProjection(toolName, args);
+  }
+  if (toolName === "git_review_preview" || toolName === "git_review_apply") {
+    return gitReviewToolCallArgumentsLedgerProjection(toolName, args);
   }
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitToolCallArgumentsLedgerProjection(toolName, args);
@@ -80,6 +88,9 @@ export function agentProcessToolInputProjection(
   ) {
     return gitBranchSwitchToolInputLedgerProjection(toolName, args);
   }
+  if (toolName === "git_review_preview" || toolName === "git_review_apply") {
+    return gitReviewToolInputLedgerProjection(toolName, args);
+  }
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitToolInputLedgerProjection(toolName, args);
   }
@@ -110,6 +121,9 @@ export function agentProcessToolOutputProjection(
     toolName === "git_branch_switch_apply"
   ) {
     return gitBranchSwitchToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "git_review_preview" || toolName === "git_review_apply") {
+    return gitReviewToolOutputLedgerProjection(output, result);
   }
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitToolOutputLedgerProjection(output, result);

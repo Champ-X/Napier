@@ -100,6 +100,8 @@ describe("workspace tool guidance", () => {
       { name: "git_branch_create_apply" } as AgentTool,
       { name: "git_branch_switch_preview" } as AgentTool,
       { name: "git_branch_switch_apply" } as AgentTool,
+      { name: "git_review_preview" } as AgentTool,
+      { name: "git_review_apply" } as AgentTool,
     ]);
 
     expect(guidance).toContain("exact working or staged hunks");
@@ -114,6 +116,8 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain("existing local branch");
     expect(guidance).toContain("complete checkout patch");
     expect(guidance).toContain("source/target HEAD transaction");
+    expect(guidance).toContain("complete bounded commit patch");
+    expect(guidance).toContain("only fast-forwards the previewed target ref");
   });
 
   it("describes the restricted Python state boundary", () => {

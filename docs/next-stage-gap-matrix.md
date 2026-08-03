@@ -26,7 +26,7 @@ Audit date: 2026-08-03
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 22,437 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus hash-bound text-conflict stages, preview-bound one-path whole-file or selected-text-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, and preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/multi-path conflicts, Review promotion, multi-path staging, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus hash-bound text-conflict stages, preview-bound one-path whole-file or selected-text-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/multi-path conflicts, non-linear/merge Review promotion, multi-path staging, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown; a fixed-source Outcome case now measures primary/secondary authority coverage and contradiction handling through the production capture/cite/report verifier path. Data analysis includes flat-file inspection, hash-bound typed DataFrame transformations, process-isolated parameterized read-only SQLite, and deterministic single- or multi-series SVG chart delivery, with Agent/Workflow reuse, bundled Skill guidance, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, general source-quality scoring and contradiction automation, package-backed Python/Notebook, interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Python/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript and restricted exact-JSON Python Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output/input replacement, selector-free complete top-level input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Package-backed Python/Notebook Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, schema-5 durably releases exactly one remaining rerun node per Continue, and selector-free schema-6 replaces the complete top-level Workflow input and reruns every node through the ordinary scheduler with zero source reuse. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for eleven stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same eleven tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -4806,6 +4806,104 @@ Threat boundary:
 - branch switching does not itself run diagnostics or tests. The Agent or
   Workflow must review the complete patch and run task-specific verification
   before or after switching when required.
+
+## Completed Slice: Preview-Bound Linear Git Review Promotion
+
+User scenario: while attached to a reviewed local source branch, a Coding Agent
+or typed Workflow can inspect every commit that is not yet on an older local
+target branch, then durably fast-forward only that target without switching the
+workspace or receiving arbitrary Git/ref authority.
+
+Acceptance:
+
+- expose `git_review_preview` as a medium-risk read and `git_review_apply` as a
+  high-risk write under workspace policy only. Use one five-minute, one-use
+  Thread plus Run/Plan capability and deny automatic recovery replay;
+- require current HEAD attached to one direct local source branch and one
+  different existing direct local target with canonical no-follow ref/reflog
+  storage. Reject missing/unborn/detached/equal/symbolic refs, unsafe config,
+  linked/shared/reftable/SHA-256/alternate repositories, and OCI;
+- prove target is an ancestor of source, then parse at most 64 exact
+  `commit parent` records. Require one parent per commit, first parent equal to
+  target, every next parent equal to the previous commit, and final commit equal
+  to source. Merge and side-history promotion remain unavailable;
+- generate fixed parent-to-commit raw and patch diffs for every commit instead
+  of one cumulative tree diff. This must expose intermediate add-then-delete
+  content that remains reachable in promoted history;
+- accept at most 32 total regular-file A/M/D transitions, 64 KiB per old/new
+  blob, 512 KiB aggregate transition bytes, and 128 KiB generated review output.
+  Read every old/new blob through fixed `cat-file`, require complete UTF-8
+  without NUL, and verify exact Git SHA-1. Disable rename detection so moves are
+  explicit delete/add transitions; reject binary, symlink, gitlink, type,
+  malformed, capped, stderr-bearing, or incomplete patches;
+- bind source/target ref hashes and commits, exact linear topology, raw/patch
+  hashes, repository/index/config, HEAD/target reflog prefixes, fixed runtime,
+  limits, Sandbox, and result into a 31-property Workflow Receipt. Branch names,
+  paths, patch bodies, and preview IDs remain live-only or redacted;
+- under cooperative HEAD/source/target locks, reconstruct the complete review,
+  then execute only hooks-disabled
+  `update-ref --no-deref -m <fixed> target source old-target`. No model-selected
+  ref, object ID, message, or argv reaches Git;
+- settle unchanged HEAD/source/index/config/HEAD reflog and exact target before
+  and after durability. Fsync the target loose ref/reflog and prove the target
+  reflog equals its previewed prefix plus exactly one old-to-source record;
+- classify CAS loss, source/HEAD drift, symbolic-ref replacement, extra reflog
+  writes, reported process failure, timeout/cancellation, fsync failure, or
+  incomplete postcondition as `indeterminate`, never as permission to merge,
+  force, reset, retry a stale capability, or rewrite history.
+
+Observed result:
+
+- a dirty real repository preview changes no ref/index/worktree/object/reflog
+  byte. Apply fast-forwards only the non-current target, preserves attached
+  source, dirty index/worktree, object set, and HEAD reflog byte-for-byte, and
+  proves one exact fixed-message target reflog append;
+- a five-commit range including add, delete, and empty metadata commits returns
+  every complete per-commit patch. The cumulative final tree would have hidden
+  that reachable intermediate content;
+- detached/equal/missing/non-ancestor/binary/symbolic-ref and merge ranges fail
+  closed. Target CAS loss preserves the competing target; a last-moment target
+  symref replacement cannot redirect the update because `--no-deref` acts on
+  the named ref itself;
+- an extra target reflog append and a process that performs the ref update but
+  reports failure both become explicit `indeterminate` outcomes;
+- one scripted Agent and one model-free typed Workflow pass the capability,
+  reach `applied/verified`, export valid Replay, and retain only branch-ref
+  hashes, commit IDs, counts, and plan/runtime/result evidence;
+- Web Trace accepts valid preview/apply and no-tree-delta receipts while
+  rejecting impossible capability, commit, patch, ref-status, and durability
+  combinations;
+- structured Review found and fixed cumulative-diff history hiding, target
+  symref dereference at the CAS boundary, unjoined parallel Git siblings, and
+  target branches checked out through linked worktrees. Regressions bind
+  per-commit output, `--no-deref`, all-settled process completion, and shared
+  linked-worktree ref-write denial;
+- built Runtime Dogfood proves production Sandbox unavailability fails closed
+  without target/index drift. The explicit adapter exposes both intermediate
+  add/delete patches across three commits, reaches `applied/verified/durable`,
+  promotes only target, and preserves source/HEAD/index/HEAD reflog;
+- the complete gate passes 1,974 regular tests: Root 78, CLI 150, Server 137,
+  Web 464, Runtime 1,117, and SDK 28. Architecture covers 761 production and 398
+  test modules with zero relative-import cycles;
+- product performance remains within baseline at 759.6 ms CLI first event,
+  907.7 ms first token, 1,214.9 ms completion, 0.4 ms read p95, 7.5 ms
+  1,000-event projection, and 761.856 SQLite bytes/event;
+- the 96-file Web dist keeps its main entry at 115.44 KiB and is bound to
+  `5c8755faac8ba873`; the 42-artifact Release set is bound to
+  `2dc9f267f943e73f`.
+
+Threat boundary:
+
+- this is bounded local linear fast-forward promotion, not pull-request hosting,
+  merge execution, squash, rebase, cherry-pick, force update, reset, remote
+  fetch/push, signing, hooks, or arbitrary ref manipulation;
+- commit messages and author identity are bound indirectly by immutable commit
+  IDs but the current live review surface emphasizes complete per-commit tree
+  changes. Broader metadata policy and non-linear topology remain future work;
+- cooperative locks serialize Napier operations. Non-cooperating same-UID
+  writers can force CAS failure or `indeterminate`; `--no-deref`, old-target
+  CAS, exact reflog-prefix proof, and post-settlement prevent them from
+  redirecting a verified promotion.
 
 ## Completed Slice: Hash-Bound Text Conflict Inspection And Resolution Staging
 

@@ -4265,10 +4265,10 @@ from selecting additional paths. Loose objects promoted before a failed commit
 barrier may remain unreachable, matching Git's content-addressed safety model.
 Capabilities remain process-local; restart or expiry requires a fresh preview
 instead of reusing a completed Workflow node output. Branch switch, checkout,
-reset, clean, merge completion, binary/multi-path conflict resolution, Review
-promotion, and arbitrary revisions remain unavailable. Bounded single-text
-conflicts can reach this transaction only through the hash-bound inspection
-flow above; staging is not a general Git shell.
+reset, clean, merge completion, binary/multi-path conflict resolution,
+non-linear Review promotion, and arbitrary revisions remain unavailable.
+Bounded single-text conflicts can reach this transaction only through the
+hash-bound inspection flow above; staging is not a general Git shell.
 
 ## Git Commit Transaction
 
@@ -4483,6 +4483,63 @@ gitlinks, attributes, EOL conversion config, filters, >32 files, >64 KiB files,
 > worktree, static state, and old-to-new reflog all verify. Unknown or drifted
 > state preserves backup and fails closed. Hooks, remotes, arbitrary revisions,
 > merge execution, reset/clean, and history rewriting remain unavailable.
+
+## Git Review Promotion Transaction
+
+```text
+git_review_preview(targetBranchName)
+  -> require current HEAD attached to one direct local source branch
+  -> require a different existing direct local target branch + canonical reflog
+  -> bind repository/index/config + HEAD and target reflog prefixes
+  -> prove target commit is an ancestor of exact source HEAD
+  -> parse <=64 ordered commit+single-parent records
+  -> require parent[0]=target, each next parent=previous, final commit=source
+  -> for every commit:
+     - run fixed parent->commit raw and patch diff
+     - accept only regular UTF-8 A/M/D transitions
+     - Git-SHA-1 verify every old/new blob through fixed cat-file
+  -> cap total transitions at 32, blobs at 64 KiB each/512 KiB aggregate,
+     and generated commit-marked patch at 128 KiB
+  -> return complete per-commit live review + one-use Run/Plan capability
+
+git_review_apply(previewId)
+  -> consume capability; lock HEAD + source ref + target ref
+  -> revalidate exact repository/reflogs/direct refs/linear range/patch/blobs
+  -> run fixed update-ref --no-deref -m <fixed> target source old-target
+  -> settle unchanged HEAD/source/index/config/HEAD-reflog + exact target
+  -> fsync target loose ref and target reflog
+  -> prove target reflog == preview prefix + one exact old->source record
+  -> settle the complete postcondition again
+  -> return applied or indeterminate hash-only durable evidence
+```
+
+`git-review.ts` owns process-local capability scope, locks, and pre-CAS
+freshness. `git-review-prepare.ts` owns direct-ref, ancestry, linear topology,
+per-commit raw/patch, and complete blob proof. `git-review-apply.ts` and
+`git-review-settlement.ts` own post-CAS observation, durability, and unknown
+outcome classification. Fixed argv live in `git-review-arguments.ts`; the
+31-property Receipt and plan hash live in the model/details modules.
+`git-ref-files.ts` provides no-follow HEAD/branch reflog snapshots and exact
+prefix-plus-one append verification shared with branch switching.
+
+The operation is a local fast-forward promotion, not merge execution. A
+cumulative target-to-source tree diff is insufficient because intermediate
+commits could add then remove sensitive content while remaining reachable after
+promotion; therefore every accepted commit is linear and independently shown.
+Merge commits, side histories, symbolic source/target refs, binary/symlink/
+gitlink/type transitions, more than 64 commits or 32 file transitions, remote
+operations, hooks, rebase, force, reset, and arbitrary ref updates are denied.
+`--no-deref` guarantees a target symref race cannot redirect the CAS to its
+referent. Dirty index/worktree state is preserved byte-for-byte because the
+sole mutation is the non-current target ref and its reflog.
+
+Source/target branch names and every patch body remain live-only.
+Ledger/Replay/Workflow/Web Trace retain source/target ref hashes, commit IDs,
+commit/file/hunk/line counts, patch/plan/repository/runtime/result hashes,
+ref status, durability, and postcondition. Runtime restart or capability expiry
+requires a fresh review; the atomic ref either remains at old target or reaches
+the exact reviewed source, with uncertain evidence reported as
+`indeterminate`.
 
 ## Workspace Process Session Flow
 

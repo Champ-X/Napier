@@ -212,6 +212,10 @@ Version `0.1.0` includes:
   HEAD to an existing local branch through an exact source/target ref
   transaction; same-tree switches preserve dirty state, while bounded
   divergent text trees use durable worktree/index backup and recovery;
+- `git_review_preview` and `git_review_apply` tools that expose every bounded
+  linear commit patch from one older local target to current attached HEAD,
+  then fast-forward only that target through old-target CAS and exact reflog
+  proof without switching or rewriting source history;
 - a `workspace_process` tool and lazy Processes Workbench for bounded
   background Node sessions with cursor-based stdout/stderr observation,
   explicit interactive stdin, cancellation, lifecycle settlement, graceful
@@ -2543,6 +2547,32 @@ uncertainty returns `indeterminate`.
 Receipt/Trace expose `recoveryAction=none|rolled_back|completed`; patch, paths,
 branch names, file content, and recovery locations remain live/private.
 
+`git_review_preview` requires current HEAD to be attached to a direct local
+source branch and accepts one different existing direct local target branch.
+The target must be an ancestor of source. Napier rejects merge topology and
+walks at most 64 strictly linear commits in parent order, rendering each commit
+ID plus its complete patch so intermediate add-then-delete content cannot be
+hidden by a cumulative tree diff. Across the range it permits at most 32
+regular UTF-8 A/M/D file transitions, 64 KiB per blob, 512 KiB aggregate blob
+bytes, and 128 KiB of live review output. Every old/new blob is independently
+read with fixed `cat-file` and verified by Git SHA-1. Binary, symlink, gitlink,
+type-transition, non-ancestor, merge, symbolic-ref, unsafe, and stale ranges
+fail closed.
+
+`git_review_apply` consumes the one-use Run/Plan capability under HEAD,
+source-ref, and target-ref locks, reconstructs the complete per-commit review,
+then runs only fixed hooks-disabled
+`update-ref --no-deref -m <fixed> <target> <source> <old-target>`. The
+`--no-deref` boundary prevents a last-moment symbolic-ref replacement from
+redirecting authority. Apply requires HEAD/source/index/config to remain
+preview-exact, fsyncs only the target loose ref and reflog, proves the target
+reflog equals its previewed prefix plus one exact old-to-new record, and settles
+HEAD/source/target plus unchanged HEAD reflog twice. A CAS loss, extra reflog
+append, process ambiguity, or postcondition drift is `indeterminate`; it is
+never retried as merge, force, reset, or history rewriting. Branch names and
+patches remain live-only while Ledger/Replay/Workflow/Web retain commit IDs,
+counts, and plan/ref/runtime/result hashes.
+
 These slices do not stage directories, symlinks, or multiple paths in one
 staging transaction. Selected-hunk staging is text-only and does not split
 new/deleted, binary, mode, rename, or more-than-32-hunk changes. They do not
@@ -2553,9 +2583,9 @@ OCI execution. Divergent switching remains limited to clean bounded UTF-8
 regular files with existing canonical parent directories; it does not support
 binary/symlink/gitlink files, attribute conversion, directory lifecycle,
 general checkout/reset/clean, merge execution, octopus/squash/autostash merge
-completion, multi-file conflict resolution as one transaction, signing, hooks,
-or Review promotion. Those operations remain separate preview-bound
-transactions;
+completion, multi-file conflict resolution as one transaction, non-linear
+Review promotion, signing, hooks, or remote operations. Those operations remain
+separate preview-bound transactions;
 arbitrary Git argv and dangerous history rewriting remain unavailable.
 Preview capabilities are process-local and intentionally non-resumable:
 expiry or Runtime restart requires a fresh preview rather than replaying a

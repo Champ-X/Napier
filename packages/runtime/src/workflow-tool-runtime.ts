@@ -145,6 +145,7 @@ export class ExecutionPlanWorkflowToolRuntime {
         gitCommitScopeId: options.planId,
         gitBranchScopeId: options.planId,
         gitBranchSwitchScopeId: options.planId,
+        gitReviewScopeId: options.planId,
       }).find((candidate) => candidate.name === options.node.tool);
       if (!tool) {
         const errorCode = profile.enabledTools.includes(options.node.tool)
