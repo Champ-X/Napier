@@ -81,6 +81,23 @@ and Napier has lower wall time in all nine matched passing trials. The
 aggregate gate therefore records `napier_not_worse`, while retaining the
 pre-fix debugger failure and rejected prompt experiments for audit.
 
+Extended seed `20260806` used `extended_v1` (suite hash
+`2d6a0a68fbf6aa2c`) and added a fourth, structurally distinct
+test-guided-concurrency family. The same generated prompt, fixture, changed-path
+allowlist, visible test, and hidden test ran through both executors in isolated
+workspaces with counterbalanced order. Napier passed 4/4; OMP passed the
+boundary, migration, and new concurrency tasks but reached the 120-second
+external limit without a valid debugger repair. Both passed the new
+concurrency task in 18.66/25.06 seconds. Across the three seeded reports,
+Napier is now 13/13 versus OMP 12/13 and has lower latency in 10 matched trials,
+so the aggregate gate remains `napier_not_worse`. The new Napier runs consumed
+40,133 input and 19,225 output tokens at $0.0118058696. OMP v17.2.1 JSON output
+did not expose stable usage metrics, so the report records zero comparable
+cost/Token samples rather than inventing zero usage. The verified artifact is
+`docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260806.json`.
+This remains a small same-model sample inside a trusted outer Sandbox, not a
+cross-model or production-Sandbox superiority claim.
+
 Observed on 2026-08-02 with `deepseek-v4-flash` loaded from the local
 environment:
 
@@ -245,9 +262,10 @@ Observed result:
   10,597.5/3,097.5;
 - release verification semantically validates five Workflow benchmark Series
   plus the independent Research and UX Series. Their 28 referenced
-  Result/Ledger files and seven Series files form 35 benchmark artifacts inside
-  the 42-artifact receipt `d099442802d862aa`. Missing, substituted, or tampered
-  DataFrame evidence blocks the release.
+  Result/Ledger files and seven Series files plus the verified Coding executor
+  comparison form 36 benchmark artifacts inside the 43-artifact receipt
+  `90cf892b914fc793`. Missing, substituted, or tampered DataFrame or executor
+  comparison evidence blocks the release.
 
 ## Implemented Slice: Security Outcome Benchmark
 
@@ -5258,7 +5276,7 @@ Acceptance:
   conflict kind/presence/counts plus repository/index/conflict/runtime/output/
   result hashes through Ledger, Replay, Workflow, and Web Trace;
 - prove the existing `apply_patch -> git_stage_preview(paths) ->
-  git_stage_apply` chain resolves the reviewed set without a second Git
+git_stage_apply` chain resolves the reviewed set without a second Git
   mutation surface.
 
 Observed result:

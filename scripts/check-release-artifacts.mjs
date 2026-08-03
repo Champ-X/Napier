@@ -7,6 +7,7 @@ import { verifyPackageLockReceipt } from "./check-package-lock.mjs";
 import { verifyRuntimeEnvironmentReceipt } from "./check-runtime-environment.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
+import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
 import {
   verifyWorkflowBenchmarkSeries,
   workflowBenchmarkSeriesArtifactReferences,
@@ -36,6 +37,8 @@ const defaultManagementOpenApiPath =
   "docs/artifacts/management-openapi-0.1.0.json";
 const defaultManagementOpenApiCompatibilityPath =
   "docs/artifacts/management-openapi-compatibility-0.1.0.json";
+const defaultCodingExecutorComparisonPath =
+  "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260806.json";
 const defaultWorkflowBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json";
 const defaultDataBenchmarkSeriesPath =
@@ -73,6 +76,8 @@ export async function auditReleaseArtifacts(options = {}) {
   const managementOpenApiCompatibilityPath =
     options.managementOpenApiCompatibilityPath ??
     defaultManagementOpenApiCompatibilityPath;
+  const codingExecutorComparisonPath =
+    options.codingExecutorComparisonPath ?? defaultCodingExecutorComparisonPath;
   const workflowBenchmarkSeriesPath =
     options.workflowBenchmarkSeriesPath ?? defaultWorkflowBenchmarkSeriesPath;
   const dataBenchmarkSeriesPath =
@@ -227,6 +232,25 @@ export async function auditReleaseArtifacts(options = {}) {
     artifactReferences: uxBenchmarkSeriesArtifactReferences,
     verifySeries: verifyUxBenchmarkSeries,
   });
+  const codingExecutorComparisonEvidence = await readArtifactEvidence(
+    repoRoot,
+    codingExecutorComparisonPath,
+    errors,
+  );
+  const codingExecutorComparison = await readJsonArtifact(
+    repoRoot,
+    codingExecutorComparisonPath,
+    errors,
+  );
+  const codingExecutorComparisonVerification =
+    await verifyCodingExecutorComparison(codingExecutorComparison);
+  if (!codingExecutorComparisonVerification.valid) {
+    errors.push(
+      ...codingExecutorComparisonVerification.errors.map(
+        (error) => `coding executor comparison: ${error}`,
+      ),
+    );
+  }
 
   const artifacts = [
     {
@@ -270,6 +294,14 @@ export async function auditReleaseArtifacts(options = {}) {
       path: managementOpenApiCompatibility.path,
       sha256: managementOpenApiCompatibility.sha256,
       valid: managementOpenApiCompatibility.readable,
+    },
+    {
+      kind: "coding-executor-comparison",
+      path: codingExecutorComparisonEvidence.path,
+      sha256: codingExecutorComparisonEvidence.sha256,
+      valid:
+        codingExecutorComparisonEvidence.readable &&
+        codingExecutorComparisonVerification.valid,
     },
     ...workflowBenchmarkArtifacts,
     ...dataBenchmarkArtifacts,
@@ -495,6 +527,11 @@ function parseCliOptions(args) {
         index,
         arg,
       );
+      index += 1;
+      continue;
+    }
+    if (arg === "--coding-executor-comparison-path") {
+      options.codingExecutorComparisonPath = readCliValue(args, index, arg);
       index += 1;
       continue;
     }

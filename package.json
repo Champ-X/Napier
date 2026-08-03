@@ -12,6 +12,7 @@
   },
   "scripts": {
     "bench:coding": "npm run build:core && npm run build -w @napier/cli && node scripts/run-coding-benchmark.mjs",
+    "bench:coding:compare": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-coding-executor-comparison.mjs",
     "bench:research": "npm run build:core && npm run build -w @napier/cli && node scripts/run-research-benchmark.mjs",
     "bench:ux": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-ux-benchmark.mjs",
     "bench:workflow": "npm run build:core && npm run build -w @napier/cli && node scripts/run-workflow-benchmark.mjs",

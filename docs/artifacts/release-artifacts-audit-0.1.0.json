@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "287e7ea7906d590338c23086c26ed3853f912dd71bf0655bfd6cdb8be04c15d5",
+  "artifactSetSha256": "90cf892b914fc793edfebe44ee1b31c3857f3b8ab5a0df787754fb6be731066d",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "ecdac12b1a0a0110ab963ae6efff328b3e61a249e77eb313a2fa89d411381f95",
+      "sha256": "a1116d39dc4a560e3f35e1fd9afb9f2d8f09984add0453a5ad98c056a762533f",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "648630b06fcb3dd3096a30218d9db3e4414fc4aaa6e8531b411ecc4948b6a5ff",
+      "sha256": "447e2402521e23e068ac1e33ab24a193aeacb5f3437933830523215b004b4c3f",
       "valid": true
     },
     {
@@ -48,6 +48,12 @@
       "kind": "management-openapi-compatibility",
       "path": "docs/artifacts/management-openapi-compatibility-0.1.0.json",
       "sha256": "b46201fef25835a122dd0aae07d8b64ffdc5bb1564f465526e9dfedccc580bf1",
+      "valid": true
+    },
+    {
+      "kind": "coding-executor-comparison",
+      "path": "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260806.json",
+      "sha256": "bc3e888baf2642f6e8343cb96af88f8700bb7936d947a25960f76d3c67bbe24d",
       "valid": true
     },
     {

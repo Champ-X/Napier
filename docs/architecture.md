@@ -1609,6 +1609,18 @@ inconclusive. Duration, cost, token, tool, and repetition distributions retain
 total/min/p50/p95/max/mean values. Parent cancellation records the completed
 prefix and does not start another trial.
 
+The seeded executor-comparison generator keeps `core_v1` byte-for-byte stable
+for historical reports. `extended_v1` adds a distinct test-guided concurrency
+repair: the Agent must run a visible Node test through `run_command`, implement
+a general order-preserving concurrency bound, and pass a separate hidden
+workload. `run-coding-executor-comparison.mjs` regenerates the suite from the
+seed instead of accepting arbitrary executable fixtures, isolates OMP
+workspace/HOME/profile state, counterbalances executor order, applies the same
+changed-path and hidden-outcome gates, probes the actual OMP version, and
+verifies the report before writing. A direct process adapter requires the
+explicit test-only trusted-outer-Sandbox flag. Token-count fields are allowed
+as non-secret metrics, while credential/token locator fields remain rejected.
+
 High-volume text/thinking delta receipts are summarized by count and source
 event-stream hash. Prompt, assistant text, reasoning, tool bodies, workspace
 paths, debugger expressions/variables/output, hidden-test source, and
@@ -1640,13 +1652,16 @@ The live case also established two Runtime compatibility boundaries:
   successful assistant output. The Runtime records only the diagnostic hash
   and settles the Run as failed or cancelled.
 
-Two cases and the current executions do not establish task success rate or
-superiority. The checked-in v2 shipping series and multi-file DeepSeek result
-are explicitly inconclusive because the current IDE host denied nested
-`sandbox-exec`; the latter still proves exact three-path modification plus
-Run/cost/tool evidence. A non-nested Sandbox run, cross-model execution, more
-Coding categories, reference-project runs, and the other P9 domains remain
-required.
+The fixed and three seeded comparisons now cover boundary repair, multi-file
+API migration, debugger-qualified repair, and test-guided concurrency, but the
+sample still does not establish general superiority. Historical production
+Sandbox evidence remains explicitly inconclusive where the IDE host denied
+nested `sandbox-exec`; no host fallback occurred. The extended trusted-outer
+sample records Napier 13/13 versus OMP 12/13, with the OMP debugger attempt
+timing out, and separately records that OMP machine output exposed no stable
+usage metrics. A non-nested production-Sandbox run, cross-model execution,
+more Coding categories, broader repeated distributions, and the other P9
+domains remain required.
 
 ### Workflow Outcome Benchmark
 
@@ -1753,8 +1768,8 @@ mean reported cost of `$0.002430694`; mean input/output tokens were
 10,597.5/3,097.5 and every trial completed five Runs. Release verification now
 semantically validates five Workflow benchmark Series plus the independent
 Research and UX Series. Their 28 referenced Result/Ledger files and seven
-Series files form 35 benchmark artifacts inside the 42-artifact release
-receipt `bf1cf898ade8cf36`.
+Series files plus the verified Coding executor comparison form 36 benchmark
+artifacts inside the 43-artifact release receipt `90cf892b914fc793`.
 
 ### Security Outcome Benchmark
 

@@ -55,6 +55,7 @@ describe("release artifacts audit", () => {
       "web-dist-manifest",
       "management-openapi",
       "management-openapi-compatibility",
+      "coding-executor-comparison",
       "workflow-benchmark-series",
       "workflow-benchmark-result-1",
       "workflow-benchmark-ledger-1",
@@ -247,6 +248,24 @@ describe("release artifacts audit", () => {
         "workflow benchmark trial 1: result_shape_invalid",
         "workflow benchmark trial 1: trial_binding_mismatch",
       ]),
+    );
+  });
+
+  it("fails when the retained coding executor comparison is tampered", async () => {
+    const { root } = await createFixture();
+    const reportPath = path.join(
+      root,
+      "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260806.json",
+    );
+    const report = JSON.parse(await readFile(reportPath, "utf8"));
+    report.summary.napierTrialPassed = 0;
+    await writeJson(reportPath, report);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain(
+      "coding executor comparison: summary_mismatch",
     );
   });
 
@@ -486,7 +505,8 @@ async function createWorkflowBenchmarkFixture(root) {
     (name) =>
       name.startsWith("napier-workflow-benchmark-") ||
       name.startsWith("napier-research-benchmark-") ||
-      name.startsWith("napier-ux-benchmark-"),
+      name.startsWith("napier-ux-benchmark-") ||
+      name === "napier-omp-coding-comparison-seed-20260806.json",
   );
   await Promise.all(
     names.map((name) =>

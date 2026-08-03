@@ -26,6 +26,9 @@ describe("seeded coding comparison suite generator", () => {
     ]);
 
     expect(left).toEqual(right);
+    expect(left.contentSha256).toBe(
+      "95171625192756f17d044f77ed927fa5e055321563f23768e93e0ac6bbbbe8f4",
+    );
     expect(left.cases.map((entry) => entry.complexity)).toEqual([
       "low",
       "medium",
@@ -42,6 +45,41 @@ describe("seeded coding comparison suite generator", () => {
     expect(
       manifests.every((manifest) => manifest.includes(String(left.seed))),
     ).toBe(true);
+  });
+
+  it("adds a test-guided concurrency family only in the extended profile", async () => {
+    const output = await outputRoot("extended");
+    const suite = await generateCodingComparisonSuite({
+      outputDir: output,
+      seed: 20_260_806,
+      profile: "extended_v1",
+    });
+
+    expect(suite.profile).toBe("extended_v1");
+    expect(suite.cases.map((entry) => entry.complexity)).toEqual([
+      "low",
+      "medium",
+      "high",
+      "high",
+    ]);
+    expect(suite.cases.map((entry) => entry.taskFamily)).toEqual([
+      "boundary_repair",
+      "api_migration",
+      "runtime_debugging",
+      "test_guided_concurrency",
+    ]);
+    const manifest = JSON.parse(
+      await readFile(
+        path.join(output, "high-async-concurrency", "manifest.json"),
+        "utf8",
+      ),
+    );
+    expect(manifest.requiredTools).toEqual([
+      "read_file",
+      "run_command",
+      "apply_patch",
+    ]);
+    expect(manifest.requiredCompletedTools).toEqual(["run_command"]);
   });
 
   it("changes task parameters and hashes when the seed changes", async () => {
@@ -62,6 +100,17 @@ describe("seeded coding comparison suite generator", () => {
     expect(left.cases.map((entry) => entry.contentSha256)).not.toEqual(
       right.cases.map((entry) => entry.contentSha256),
     );
+  });
+
+  it("rejects unknown suite profiles before writing", async () => {
+    const output = await outputRoot("invalid-profile");
+    await expect(
+      generateCodingComparisonSuite({
+        outputDir: output,
+        seed: 20_260_806,
+        profile: "unknown",
+      }),
+    ).rejects.toThrow("Coding comparison profile is invalid");
   });
 });
 

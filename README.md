@@ -1244,6 +1244,28 @@ npm run bench:coding -- \
   --trials 3
 ```
 
+Run the same generated suite through Napier and the installed Oh My Pi using
+`deepseek-v4-flash`:
+
+```bash
+npm run bench:coding:compare -- \
+  --seed 20260806 \
+  --profile extended_v1 \
+  --trials 1 \
+  --timeout-ms 120000 \
+  --trusted-outer-sandbox true
+```
+
+The comparison runner generates cases from the seed, validates every
+hash-bound manifest, counterbalances executor order, isolates OMP
+HOME/profile/workspace state, runs the same hidden assertions, and verifies the
+report before writing it under ignored `benchmark-results/`. The
+`--trusted-outer-sandbox true` mode is test-only: it bypasses a second local
+process Sandbox only when the whole runner is already inside a trusted outer
+Sandbox. Omit it for production platform-Sandbox evidence. The API key is read
+from `.env` through `DEEPSEEK_API_KEY`; it is never passed in argv or written
+to the report.
+
 A single run writes two CAS-named files under ignored `benchmark-results/`: a
 small result and a privacy-bounded Ledger bundle. A repeated run also writes a
 CAS series with completed/scored/inconclusive counts, pass rate, and
@@ -1390,8 +1412,8 @@ passed 2/2 trials in 17.755–24.364 seconds with five Runs per trial. Mean cost
 was `$0.002430694`; mean input/output tokens were 10,597.5/3,097.5. Offline
 verification reconstructs the six data-tool events and all hidden evidence
 from body-free Ledger projections. The release audit binds this Series and its
-four Result/Ledger files into the 42-artifact set
-`bf1cf898ade8cf36`.
+four Result/Ledger files plus the verified Coding executor comparison into the
+43-artifact set `90cf892b914fc793`.
 
 ### Security Outcome Benchmark
 

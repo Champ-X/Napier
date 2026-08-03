@@ -1,0 +1,216 @@
+{
+  "type": "napier.executor-comparison-calibration",
+  "schemaVersion": 1,
+  "taskSelection": {
+    "source": "seeded structural coding benchmark generator",
+    "seed": 20260806,
+    "profile": "extended_v1",
+    "suiteSha256": "2d6a0a68fbf6aa2c73d7938f24ec911966909fd1c4cbf5237fa905d77018fd06",
+    "samePrompt": true,
+    "sameFixture": true,
+    "sameHiddenOutcomeTest": true,
+    "externalTimeoutMs": 120000
+  },
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nestedSandboxAvailable": true,
+    "trustedOuterSandboxCalibration": true,
+    "ompVersion": "17.2.1",
+    "notes": [
+      "All generated cases passed hash-bound loader validation.",
+      "Both executors used isolated workspaces and counterbalanced execution order.",
+      "Napier process tools used a test-only direct adapter inside the trusted outer Sandbox."
+    ]
+  },
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "cases": [
+    {
+      "caseId": "coding_seed_20260806_boundary",
+      "complexity": "low",
+      "taskFamily": "boundary_repair",
+      "caseSha256": "a2cc6e90b21286c0924040c54b9539438da8d2bd4aa2cedbb9cb884f1c88df73",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": true,
+        "allowedChangeSetMatch": true,
+        "outcomeTestStatus": "succeeded",
+        "durationMs": 36543,
+        "costUsd": 0.0024627679999999997,
+        "usage": {
+          "inputTokens": 6982,
+          "outputTokens": 4927,
+          "cacheReadTokens": 37760,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0024627679999999997
+        },
+        "toolStarted": 5,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 36543,
+        "costUsd": 0.0024627679999999997,
+        "toolFailed": 0
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 12147,
+        "targetSemanticMatch": true,
+        "allowedChangeSetMatch": true
+      }
+    },
+    {
+      "caseId": "coding_seed_20260806_migration",
+      "complexity": "medium",
+      "taskFamily": "api_migration",
+      "caseSha256": "468e1db492bbd1f78f5865fcd2427e3abf800f42c5bbb4e9d86b0f538781c696",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": true,
+        "allowedChangeSetMatch": true,
+        "outcomeTestStatus": "succeeded",
+        "durationMs": 51637,
+        "costUsd": 0.004184689600000001,
+        "usage": {
+          "inputTokens": 14088,
+          "outputTokens": 6917,
+          "cacheReadTokens": 98432,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.004184689600000001
+        },
+        "toolStarted": 27,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 51637,
+        "costUsd": 0.004184689600000001,
+        "toolFailed": 0
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 41765,
+        "targetSemanticMatch": false,
+        "allowedChangeSetMatch": true
+      }
+    },
+    {
+      "caseId": "coding_seed_20260806_debugger",
+      "complexity": "high",
+      "taskFamily": "runtime_debugging",
+      "caseSha256": "f7dd4014f953ff5285f8064f09acd07a07e48fb753aaa44dbac6b48a01b629a9",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": true,
+        "allowedChangeSetMatch": true,
+        "outcomeTestStatus": "succeeded",
+        "durationMs": 48967,
+        "costUsd": 0.0033015808000000004,
+        "usage": {
+          "inputTokens": 10656,
+          "outputTokens": 5264,
+          "cacheReadTokens": 119936,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0033015808000000004
+        },
+        "toolStarted": 12,
+        "toolFailed": 1
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 48967,
+        "costUsd": 0.0033015808000000004,
+        "toolFailed": 1
+      },
+      "omp": {
+        "agentExitCode": 143,
+        "hiddenOutcomePassed": false,
+        "durationMs": 120042,
+        "targetSemanticMatch": false,
+        "allowedChangeSetMatch": false
+      }
+    },
+    {
+      "caseId": "coding_seed_20260806_async_concurrency",
+      "complexity": "high",
+      "taskFamily": "test_guided_concurrency",
+      "caseSha256": "6dbd3fddc394f4c36274fb1d1643fed6784af52f3b785ee8d6d719fa9f1e0adf",
+      "napier": {
+        "officialStatus": "passed",
+        "targetSemanticMatch": false,
+        "allowedChangeSetMatch": true,
+        "outcomeTestStatus": "succeeded",
+        "durationMs": 18664,
+        "costUsd": 0.0018568312000000003,
+        "usage": {
+          "inputTokens": 8407,
+          "outputTokens": 2117,
+          "cacheReadTokens": 31104,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0018568312000000003
+        },
+        "toolStarted": 5,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 18664,
+        "costUsd": 0.0018568312000000003,
+        "toolFailed": 0
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 25064,
+        "targetSemanticMatch": false,
+        "allowedChangeSetMatch": true
+      }
+    }
+  ],
+  "summary": {
+    "napierOfficialPassed": 4,
+    "napierOfficialInconclusive": 0,
+    "napierOfficialFailed": 0,
+    "napierCanonicalTargetMatches": 3,
+    "ompHiddenOutcomePassed": 3,
+    "ompHiddenOutcomeFailed": 1,
+    "napierOuterHiddenOutcomePassed": 4,
+    "napierOuterHiddenOutcomeFailed": 0,
+    "trialCount": 4,
+    "napierTrialPassed": 4,
+    "ompTrialPassed": 3,
+    "napierTrialLatencyWins": 1,
+    "resources": {
+      "sampleCount": 4,
+      "napierUsageSampleCount": 4,
+      "ompUsageSampleCount": 0,
+      "comparableUsageSampleCount": 0,
+      "napierCostSampleCount": 4,
+      "ompCostSampleCount": 0,
+      "comparableCostSampleCount": 0,
+      "napierInputTokens": 40133,
+      "napierOutputTokens": 19225,
+      "napierCostUsd": 0.0118058696,
+      "ompInputTokens": null,
+      "ompOutputTokens": null,
+      "ompCostUsd": null
+    },
+    "outerOutcomeVerdict": "napier_not_worse",
+    "verdict": "napier_not_worse",
+    "requiredFollowUps": [
+      "Repeat structural families across additional seeds and models.",
+      "Retain OMP token and cost metrics only when its machine output exposes stable usage.",
+      "Repeat outside nested IDE isolation before making a production Sandbox claim."
+    ]
+  }
+}

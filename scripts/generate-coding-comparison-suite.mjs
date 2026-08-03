@@ -17,16 +17,28 @@ const repoRoot = path.resolve(
   "..",
 );
 const DEFAULT_SEED = 20260804;
+const DEFAULT_PROFILE = "core_v1";
+const PROFILES = [DEFAULT_PROFILE, "extended_v1"];
 
-export async function generateCodingComparisonSuite({ outputDir, seed }) {
+export async function generateCodingComparisonSuite({
+  outputDir,
+  seed,
+  profile = DEFAULT_PROFILE,
+}) {
   if (!Number.isSafeInteger(seed) || seed < 1 || seed > 0xffff_ffff) {
     throw new Error("Coding comparison seed must be a uint32");
+  }
+  if (!PROFILES.includes(profile)) {
+    throw new Error("Coding comparison profile is invalid");
   }
   const random = mulberry32(seed);
   const cases = [
     lowBoundaryCase(random, seed),
     mediumMigrationCase(random, seed),
     highDebuggerCase(random, seed),
+    ...(profile === "extended_v1"
+      ? [highAsyncConcurrencyCase(random, seed)]
+      : []),
   ];
   await mkdir(outputDir, { recursive: false });
   const entries = [];
@@ -37,6 +49,9 @@ export async function generateCodingComparisonSuite({ outputDir, seed }) {
     entries.push({
       caseId: manifest.id,
       complexity: specification.complexity,
+      ...(profile === DEFAULT_PROFILE
+        ? {}
+        : { taskFamily: specification.taskFamily }),
       directory: specification.directory,
       contentSha256: manifest.contentSha256,
     });
@@ -46,6 +61,7 @@ export async function generateCodingComparisonSuite({ outputDir, seed }) {
     schemaVersion: 1,
     seed,
     generator: "generate-coding-comparison-suite.mjs",
+    ...(profile === DEFAULT_PROFILE ? {} : { profile }),
     cases: entries,
   };
   const suite = {
@@ -136,6 +152,7 @@ function lowBoundaryCase(random, seed) {
     id: `coding_seed_${seed}_boundary`,
     directory: "low-boundary",
     complexity: "low",
+    taskFamily: "boundary_repair",
     title: `Fix randomized shipping boundary ${seed}`,
     targetPath,
     allowedChangedPaths: [targetPath],
@@ -200,6 +217,7 @@ export function quoteTotalCents(subtotalCents, discountPercent = ${defaultDiscou
     id: `coding_seed_${seed}_migration`,
     directory: "medium-migration",
     complexity: "medium",
+    taskFamily: "api_migration",
     title: `Migrate randomized pricing API ${seed}`,
     targetPath,
     allowedChangedPaths: ["src/checkout.js", "src/pricing.js", "src/quote.js"],
@@ -262,6 +280,7 @@ globalThis.BENCHMARK_TOTAL = loyaltyTotalCents(${subtotal}, "gold");
     id: `coding_seed_${seed}_debugger`,
     directory: "high-debugger",
     complexity: "high",
+    taskFamily: "runtime_debugging",
     title: `Debug randomized loyalty calculation ${seed}`,
     targetPath,
     allowedChangedPaths: [targetPath],
@@ -287,6 +306,97 @@ assertEqual(globalThis.BENCHMARK_TOTAL, ${expectedTotal}, "module total");
 ${assertEqualSource()}
 `,
   };
+}
+
+function highAsyncConcurrencyCase(random, seed) {
+  const limit = integer(random, 2, 4);
+  const itemCount = limit + integer(random, 3, 5);
+  const targetPath = "src/concurrency.js";
+  const before = `export async function mapWithConcurrency(items, limit, worker) {
+  if (!Array.isArray(items)) throw new TypeError("items must be an array");
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new TypeError("limit must be a positive integer");
+  }
+  if (typeof worker !== "function") throw new TypeError("worker must be a function");
+  return Promise.all(items.map((item, index) => worker(item, index)));
+}
+`;
+  const expected = `export async function mapWithConcurrency(items, limit, worker) {
+  if (!Array.isArray(items)) throw new TypeError("items must be an array");
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new TypeError("limit must be a positive integer");
+  }
+  if (typeof worker !== "function") throw new TypeError("worker must be a function");
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  async function consume() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await worker(items[index], index);
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => consume()),
+  );
+  return results;
+}
+`;
+  const visibleTest = concurrencyTestSource(limit, itemCount, false);
+  return {
+    id: `coding_seed_${seed}_async_concurrency`,
+    directory: "high-async-concurrency",
+    complexity: "high",
+    taskFamily: "test_guided_concurrency",
+    title: `Repair randomized concurrency limiter ${seed}`,
+    targetPath,
+    allowedChangedPaths: [targetPath],
+    requiredTools: ["read_file", "run_command", "apply_patch"],
+    requiredCompletedTools: ["run_command"],
+    fixture: {
+      "package.json":
+        '{\n  "type": "module",\n  "scripts": { "test": "node --test test/concurrency.test.mjs" }\n}\n',
+      [targetPath]: before,
+      "test/concurrency.test.mjs": visibleTest,
+    },
+    expectedTarget: expected,
+    prompt: `Fix the concurrency regression in \`${targetPath}\`.
+
+\`mapWithConcurrency\` must preserve input order while never running more than
+${limit} worker calls concurrently, including when there are ${itemCount}
+items. First inspect the implementation and visible test, then use
+\`run_command\` to run \`node --test test/concurrency.test.mjs\` before editing.
+Modify only \`${targetPath}\`, preserve validation, and make a general bounded
+implementation rather than special-casing the fixture. Run the same test again
+after the repair, then stop.
+`,
+    outcomeTest: concurrencyTestSource(limit, itemCount + 2, true),
+  };
+}
+
+function concurrencyTestSource(limit, itemCount, hidden) {
+  const values = Array.from({ length: itemCount }, (_, index) => index + 1);
+  const label = hidden ? "hidden" : "visible";
+  return `import test from "node:test";
+import assert from "node:assert/strict";
+import { mapWithConcurrency } from "${hidden ? "./src" : "../src"}/concurrency.js";
+
+test("${label} concurrency bound and ordering", async () => {
+  let active = 0;
+  let maximum = 0;
+  const values = ${JSON.stringify(values)};
+  const result = await mapWithConcurrency(values, ${limit}, async (value, index) => {
+    active += 1;
+    maximum = Math.max(maximum, active);
+    await new Promise((resolve) => setTimeout(resolve, (values.length - index) * 2));
+    active -= 1;
+    return value * 3;
+  });
+  assert.deepEqual(result, values.map((value) => value * 3));
+  assert.ok(maximum <= ${limit}, \`maximum concurrency \${maximum} exceeded ${limit}\`);
+  assert.ok(maximum > 1, "implementation did not execute concurrently");
+});
+`;
 }
 
 function outcomeHeader(targetPath, exportName = "shippingCostCents") {
@@ -325,29 +435,39 @@ async function writeJson(filePath, value) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { seed, outputDir } = parseArgs(process.argv.slice(2));
-  const suite = await generateCodingComparisonSuite({ seed, outputDir });
+  const { seed, outputDir, profile } = parseArgs(process.argv.slice(2));
+  const suite = await generateCodingComparisonSuite({
+    seed,
+    outputDir,
+    profile,
+  });
   process.stdout.write(`${JSON.stringify(suite, null, 2)}\n`);
 }
 
 function parseArgs(argv) {
   let seed = DEFAULT_SEED;
   let outputDir;
+  let profile = DEFAULT_PROFILE;
   for (let index = 0; index < argv.length; index += 2) {
     const flag = argv[index];
     const value = argv[index + 1];
-    if (!value || !["--seed", "--output-dir"].includes(flag)) {
-      throw new Error("Usage: --seed <uint32> --output-dir <path>");
+    if (!value || !["--seed", "--output-dir", "--profile"].includes(flag)) {
+      throw new Error(
+        "Usage: --seed <uint32> --profile <profile> --output-dir <path>",
+      );
     }
     if (flag === "--seed") {
       if (!/^[0-9]+$/u.test(value)) throw new Error("Seed must be a uint32");
       seed = Number(value);
-    } else {
+    } else if (flag === "--output-dir") {
       outputDir = path.resolve(value);
+    } else {
+      profile = value;
     }
   }
   return {
     seed,
+    profile,
     outputDir:
       outputDir ??
       path.join(
