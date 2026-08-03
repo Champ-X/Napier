@@ -426,6 +426,10 @@ primitives, lowering `app.ts` to 18,803 lines.
 preview/resolve, and resolution-history routes behind a nine-method Store port.
 Ledger event payloads, idempotent 200/201 behavior, 404/409 errors, and every
 response hash remain unchanged. This lowers `app.ts` to 18,534 lines.
+Run Evaluation creation uses `run-evaluation-http.ts` with a two-method
+Thread/Agent Store port, Model Registry, and evaluate-only service. Its record
+headers now live beside the read projections in
+`thread-evaluation-http-response.ts`, lowering `app.ts` to 18,463 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

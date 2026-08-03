@@ -178,7 +178,6 @@ import type {
   PromptPackageQualification,
   PromptPackageVerification,
   RunEvent,
-  RunEvaluationRecord,
   ReviewExtensionRequest,
   ReviewMcpToolRequest,
   ReviewExecutionPlanBlueprintRecordOutcomesRequest,
@@ -346,7 +345,6 @@ import { registerCredentialHttp } from "./credential-http.js";
 import { registerEvaluationCasebookAdminHttp } from "./evaluation-casebook-admin-http.js";
 import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
 import { setEvaluationCasebookProjectionHeaders } from "./evaluation-admin-http-response.js";
-import { parseCreateRunEvaluationRequest } from "./evaluation-http-validation.js";
 import { registerEvaluationReviewHttp } from "./evaluation-review-http.js";
 import { registerEvaluationSuiteAdminHttp } from "./evaluation-suite-admin-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
@@ -368,6 +366,7 @@ import {
   registerScheduleHttp,
   setAutomationScheduleCountHeaders,
 } from "./schedule-http.js";
+import { registerRunEvaluationHttp } from "./run-evaluation-http.js";
 import {
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyQueueResult,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult,
@@ -5987,39 +5986,21 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.post("/api/threads/:threadId/evaluations", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EVALUATION_REQUEST_BYTES,
-        "Run evaluation request",
-      );
-    } catch (error) {
-      return jsonError(
-        context,
-        errorMessage(error),
-        error instanceof RequestBodyTooLargeError ? 413 : 400,
-      );
-    }
-    const body = parseCreateRunEvaluationRequest(input);
-    if (!body) {
-      return jsonError(context, "Run evaluation request is invalid", 400);
-    }
-    const thread = services.store.getThread(context.req.param("threadId"));
-    const agent = services.store.getAgent(thread.agentId);
-    try {
-      await assertAvailableModel(services, body.model ?? agent.model);
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 400);
-    }
-    const evaluation = await services.evaluations.evaluate(
-      context.req.param("threadId"),
-      body,
-    );
-    setRunEvaluationRecordHeaders(context, evaluation);
-    return context.json(evaluation, 201);
-  });
+  registerRunEvaluationHttp(
+    app,
+    {
+      store: services.store,
+      models: services.models,
+      evaluations: services.evaluations,
+    },
+    {
+      readRequest: (request, label) =>
+        readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
+      requestBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+      errorMessage,
+      jsonError,
+    },
+  );
 
   registerEvaluationReviewHttp(app, services.store, {
     readRequest: (request, label) =>
@@ -14406,58 +14387,6 @@ function setWorkspaceProcessProjectionHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, projection);
-}
-
-function setRunEvaluationRecordHeaders(
-  context: Context,
-  evaluation: RunEvaluationRecord,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, evaluation);
-  context.header("X-Napier-Thread-Id", evaluation.threadId);
-  context.header("X-Napier-Evaluation-Id", evaluation.id);
-  context.header("X-Napier-Left-Run-Id", evaluation.leftRunId);
-  context.header("X-Napier-Right-Run-Id", evaluation.rightRunId);
-  context.header("X-Napier-Evaluation-Verdict", evaluation.verdict);
-  context.header(
-    "X-Napier-Left-Snapshot-SHA256",
-    evaluation.leftSnapshotSha256,
-  );
-  context.header(
-    "X-Napier-Right-Snapshot-SHA256",
-    evaluation.rightSnapshotSha256,
-  );
-  context.header(
-    "X-Napier-Evaluation-Criterion-Count",
-    String(evaluation.scores.length),
-  );
-  if (evaluation.comparisonGovernance) {
-    context.header(
-      "X-Napier-Comparison-Governance-SHA256",
-      evaluation.comparisonGovernance.contentSha256,
-    );
-    context.header(
-      "X-Napier-Context-Coverage-Status",
-      evaluation.comparisonGovernance.contextCoverageStatus,
-    );
-    context.header(
-      "X-Napier-Context-Coverage-Diagnostics-SHA256",
-      evaluation.comparisonGovernance.contextCoverageDiagnosticsSha256,
-    );
-    if (
-      evaluation.comparisonGovernance.traceSummaryBoundaryStatus &&
-      evaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256
-    ) {
-      context.header(
-        "X-Napier-Trace-Summary-Boundary-Status",
-        evaluation.comparisonGovernance.traceSummaryBoundaryStatus,
-      );
-      context.header(
-        "X-Napier-Trace-Summary-Boundary-Diagnostics-SHA256",
-        evaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256,
-      );
-    }
-  }
 }
 
 function setEvaluationSuiteListHeaders(
