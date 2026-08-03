@@ -14554,6 +14554,7 @@
     "apps/server/src/inbound-channel-delivery-http.ts",
     "apps/server/src/inbound-channel-ingress-http.ts",
     "apps/server/src/memory-http.ts",
+    "apps/server/src/plan-artifact-inspection-http.ts",
     "apps/server/src/plan-lifecycle-http.ts",
     "apps/server/src/run-evaluation-http.ts",
     "apps/server/src/schedule-http.ts",
@@ -14566,7 +14567,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "95190af1c67a8dd3decb5cced1b181746957691235f840d3dbfa6e498a89a2df",
+  "x-napier-source-sha256": "4e53696a106f58fe9af022fd2658b693b1cd8ed653490cf64fcaf3c993cd9bb1",
   "x-napier-route-count": 255,
   "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }

@@ -244,10 +244,8 @@ import {
   createWorkspaceArtifactDriftRequest,
   createWorkspaceArtifactVerificationRequest,
   exportWorkspaceFileArtifact,
-  inspectWorkspaceArtifactDrift,
   previewWorkspaceDataArtifactProfile,
   previewWorkspaceDirectoryArtifactManifest,
-  previewWorkspaceTextArtifact,
   createReceiptTrustAnchorDirectoryMetadataReceipt,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
   createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
@@ -306,11 +304,14 @@ import {
   type ReceiptTrustAnchorDirectoryDiscoveryOptions,
 } from "./receipt-trust-directory-discovery.js";
 import {
+  createLedgerEventReceiptProjection,
   errorMessage,
   jsonByteLength,
   jsonError,
+  type LedgerEventReceiptProjection,
   safeFilenameSegment,
   setBodyContentSha256Header,
+  setLedgerEventReceiptHeaders,
   setStableContentSha256Header,
   sha256Bytes,
   sha256Json,
@@ -348,6 +349,7 @@ import { setEvaluationCasebookProjectionHeaders } from "./evaluation-admin-http-
 import { registerEvaluationReviewHttp } from "./evaluation-review-http.js";
 import { registerEvaluationSuiteAdminHttp } from "./evaluation-suite-admin-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
+import { registerPlanArtifactInspectionHttp } from "./plan-artifact-inspection-http.js";
 import { registerPlanLifecycleHttp } from "./plan-lifecycle-http.js";
 import {
   setExecutionPlanBlueprintSourceHeaders,
@@ -5440,76 +5442,7 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.post(
-    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/drift-check",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const planId = context.req.param("planId");
-      assertPlanThread(services, planId, threadId);
-      const plan = services.store.getPlan(planId);
-      const artifact = plan.artifacts.find(
-        (candidate) => candidate.id === context.req.param("artifactId"),
-      );
-      if (!artifact) {
-        return jsonError(context, "Plan artifact drift check is invalid", 404);
-      }
-      try {
-        const inspection = await inspectWorkspaceArtifactDrift(
-          services.store.workspaceRoot,
-          artifact,
-        );
-        const payload = {
-          kind: "napier.plan-artifact-drift-check" as const,
-          schemaVersion: 1 as const,
-          planId: plan.id,
-          artifactId: artifact.id,
-          planRevision: plan.revision,
-          status: artifact.status,
-          artifactKind: artifact.kind,
-          pathSha256: sha256Text(artifact.path),
-          expectedSha256: inspection.expectedSha256,
-          result: inspection.result,
-          ...(inspection.observedSha256
-            ? { observedSha256: inspection.observedSha256 }
-            : {}),
-          ...(inspection.sizeBytes !== undefined
-            ? { sizeBytes: inspection.sizeBytes }
-            : {}),
-        };
-        const ledgerEvent = await services.store.appendEvent({
-          threadId,
-          runId: createId("runctl"),
-          type: "artifact.drift_checked",
-          category: "artifact",
-          visibility: "user",
-          payload: {
-            planId: plan.id,
-            artifactId: artifact.id,
-            planRevision: plan.revision,
-            status: artifact.status,
-            kind: artifact.kind,
-            pathSha256: payload.pathSha256,
-            expectedSha256: inspection.expectedSha256,
-            result: inspection.result,
-            ...(inspection.observedSha256
-              ? { observedSha256: inspection.observedSha256 }
-              : {}),
-            ...(inspection.sizeBytes !== undefined
-              ? { sizeBytes: inspection.sizeBytes }
-              : {}),
-          },
-        });
-        const response = {
-          ...payload,
-          ...createLedgerEventReceiptProjection(ledgerEvent),
-        };
-        setPlanArtifactDriftCheckHeaders(context, plan, artifact, response);
-        return context.json(response);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-    },
-  );
+  registerPlanArtifactInspectionHttp(app, services.store);
 
   app.get(
     "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/file",
@@ -5769,70 +5702,6 @@ export function createApp(services: NapierServices): Hono {
           ...createLedgerEventReceiptProjection(ledgerEvent),
         };
         setPlanArtifactDirectoryManifestVerificationHeaders(context, response);
-        return context.json(response);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-    },
-  );
-
-  app.get(
-    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/preview",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const planId = context.req.param("planId");
-      assertPlanThread(services, planId, threadId);
-      const plan = services.store.getPlan(planId);
-      const artifact = plan.artifacts.find(
-        (candidate) => candidate.id === context.req.param("artifactId"),
-      );
-      if (!artifact) {
-        return jsonError(context, "Plan artifact preview is invalid", 404);
-      }
-      try {
-        const preview = await previewWorkspaceTextArtifact(
-          services.store.workspaceRoot,
-          artifact,
-        );
-        const payload = {
-          kind: "napier.plan-artifact-text-preview" as const,
-          schemaVersion: 1 as const,
-          planId: plan.id,
-          artifactId: artifact.id,
-          planRevision: plan.revision,
-          status: artifact.status,
-          artifactKind: artifact.kind,
-          pathSha256: sha256Text(artifact.path),
-          sha256: preview.sha256,
-          sizeBytes: preview.sizeBytes,
-          lineCount: preview.lineCount,
-          textSha256: sha256Text(preview.text),
-          text: preview.text,
-        };
-        const ledgerEvent = await services.store.appendEvent({
-          threadId,
-          runId: createId("runctl"),
-          type: "artifact.previewed",
-          category: "artifact",
-          visibility: "user",
-          payload: {
-            planId: plan.id,
-            artifactId: artifact.id,
-            planRevision: plan.revision,
-            status: artifact.status,
-            kind: artifact.kind,
-            pathSha256: payload.pathSha256,
-            sha256: preview.sha256,
-            sizeBytes: preview.sizeBytes,
-            lineCount: preview.lineCount,
-            textSha256: payload.textSha256,
-          },
-        });
-        const response = {
-          ...payload,
-          ...createLedgerEventReceiptProjection(ledgerEvent),
-        };
-        setPlanArtifactTextPreviewHeaders(context, plan, artifact, response);
         return context.json(response);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
@@ -11878,37 +11747,6 @@ function createHealthRuntimeProjection() {
   } satisfies HealthResponse["runtime"];
 }
 
-type LedgerEventReceiptProjection = {
-  ledgerEventId: string;
-  ledgerEventSeq: number;
-  ledgerEventSha256: string;
-};
-
-function createLedgerEventReceiptProjection(
-  event: RunEvent,
-): LedgerEventReceiptProjection {
-  return {
-    ledgerEventId: event.id,
-    ledgerEventSeq: event.seq,
-    ledgerEventSha256: sha256Json(event as unknown as JsonValue),
-  };
-}
-
-function setLedgerEventReceiptHeaders(
-  context: Context,
-  receipt: Partial<LedgerEventReceiptProjection>,
-): void {
-  if (receipt.ledgerEventId) {
-    context.header("X-Napier-Ledger-Event-Id", receipt.ledgerEventId);
-  }
-  if (receipt.ledgerEventSeq !== undefined) {
-    context.header("X-Napier-Ledger-Event-Seq", String(receipt.ledgerEventSeq));
-  }
-  if (receipt.ledgerEventSha256) {
-    context.header("X-Napier-Ledger-Event-SHA256", receipt.ledgerEventSha256);
-  }
-}
-
 function setPlanArtifactFileExportHeaders(
   context: Context,
   plan: ExecutionPlan,
@@ -12051,41 +11889,6 @@ function createPlanArtifactFileVerificationEventPayload(
     expectedSizeBytes: verification.expectedSizeBytes,
     observedSizeBytes: verification.observedSizeBytes,
   };
-}
-
-function setPlanArtifactTextPreviewHeaders(
-  context: Context,
-  plan: ExecutionPlan,
-  artifact: ExecutionPlan["artifacts"][number],
-  preview: {
-    sha256: string;
-    sizeBytes: number;
-    lineCount: number;
-    textSha256: string;
-  } & Partial<LedgerEventReceiptProjection>,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, preview);
-  context.header("X-Napier-Thread-Id", plan.threadId);
-  context.header("X-Napier-Plan-Id", plan.id);
-  context.header("X-Napier-Plan-Revision", String(plan.revision));
-  context.header("X-Napier-Plan-Artifact-Id", artifact.id);
-  context.header("X-Napier-Plan-Artifact-Status", artifact.status);
-  context.header(
-    "X-Napier-Plan-Artifact-Path-SHA256",
-    sha256Text(artifact.path),
-  );
-  context.header("X-Napier-Plan-Artifact-SHA256", preview.sha256);
-  context.header(
-    "X-Napier-Plan-Artifact-Size-Bytes",
-    String(preview.sizeBytes),
-  );
-  context.header(
-    "X-Napier-Plan-Artifact-Line-Count",
-    String(preview.lineCount),
-  );
-  context.header("X-Napier-Plan-Artifact-Text-SHA256", preview.textSha256);
-  setLedgerEventReceiptHeaders(context, preview);
 }
 
 function setPlanArtifactDataProfileHeaders(
@@ -12819,47 +12622,6 @@ function setPlanArtifactDirectoryManifestHeaders(
     String(manifest.directoryCount),
   );
   setLedgerEventReceiptHeaders(context, manifest);
-}
-
-function setPlanArtifactDriftCheckHeaders(
-  context: Context,
-  plan: ExecutionPlan,
-  artifact: ExecutionPlan["artifacts"][number],
-  inspection: {
-    expectedSha256: string;
-    result: string;
-    observedSha256?: string;
-    sizeBytes?: number;
-  } & Partial<LedgerEventReceiptProjection>,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, inspection);
-  context.header("X-Napier-Thread-Id", plan.threadId);
-  context.header("X-Napier-Plan-Id", plan.id);
-  context.header("X-Napier-Plan-Revision", String(plan.revision));
-  context.header("X-Napier-Plan-Artifact-Id", artifact.id);
-  context.header("X-Napier-Plan-Artifact-Status", artifact.status);
-  context.header(
-    "X-Napier-Plan-Artifact-Path-SHA256",
-    sha256Text(artifact.path),
-  );
-  context.header(
-    "X-Napier-Plan-Artifact-Expected-SHA256",
-    inspection.expectedSha256,
-  );
-  context.header("X-Napier-Plan-Artifact-Drift-Result", inspection.result);
-  setOptionalHeader(
-    context,
-    "X-Napier-Plan-Artifact-Observed-SHA256",
-    inspection.observedSha256,
-  );
-  if (inspection.sizeBytes !== undefined) {
-    context.header(
-      "X-Napier-Plan-Artifact-Size-Bytes",
-      String(inspection.sizeBytes),
-    );
-  }
-  setLedgerEventReceiptHeaders(context, inspection);
 }
 
 function planArtifactDownloadFilename(

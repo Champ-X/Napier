@@ -6,6 +6,12 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 export type ContentSha256Mode = "body" | "stable";
 
+export type LedgerEventReceiptProjection = {
+  ledgerEventId: string;
+  ledgerEventSeq: number;
+  ledgerEventSha256: string;
+};
+
 export function sha256Json(value: JsonValue): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
@@ -39,6 +45,31 @@ export function setStableContentSha256Header(
   digest: string,
 ): void {
   setContentSha256Header(context, digest, "stable");
+}
+
+export function createLedgerEventReceiptProjection(
+  event: RunEvent,
+): LedgerEventReceiptProjection {
+  return {
+    ledgerEventId: event.id,
+    ledgerEventSeq: event.seq,
+    ledgerEventSha256: sha256Json(event as unknown as JsonValue),
+  };
+}
+
+export function setLedgerEventReceiptHeaders(
+  context: Context,
+  receipt: Partial<LedgerEventReceiptProjection>,
+): void {
+  if (receipt.ledgerEventId) {
+    context.header("X-Napier-Ledger-Event-Id", receipt.ledgerEventId);
+  }
+  if (receipt.ledgerEventSeq !== undefined) {
+    context.header("X-Napier-Ledger-Event-Seq", String(receipt.ledgerEventSeq));
+  }
+  if (receipt.ledgerEventSha256) {
+    context.header("X-Napier-Ledger-Event-SHA256", receipt.ledgerEventSha256);
+  }
 }
 
 export function jsonByteLength(value: unknown): number {

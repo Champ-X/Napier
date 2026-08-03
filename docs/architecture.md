@@ -430,6 +430,13 @@ Run Evaluation creation uses `run-evaluation-http.ts` with a two-method
 Thread/Agent Store port, Model Registry, and evaluate-only service. Its record
 headers now live beside the read projections in
 `thread-evaluation-http-response.ts`, lowering `app.ts` to 18,463 lines.
+Plan Artifact drift inspection and text preview use
+`plan-artifact-inspection-http.ts` behind a three-capability Store port:
+workspace root, Plan lookup, and Ledger append. Their hash-only event payloads,
+body hashes, receipt headers, and Artifact evidence headers are owned by
+`plan-artifact-http-response.ts`; the reusable Ledger event receipt projection
+now lives with the common HTTP evidence primitives. This lowers `app.ts` to
+18,225 lines without changing the 255-route contract.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
