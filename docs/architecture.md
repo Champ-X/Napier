@@ -452,6 +452,13 @@ sets, Run ID bounds, and server-observed verification rules. Runtime remains
 authoritative for Run ownership, revision changes, workspace drift, and Plan
 projection updates; the adapter retains the existing hash-only lifecycle
 events and response headers. This lowers `app.ts` to 16,645 lines.
+Plan Blueprint Library list, save/reuse, qualification, status, and selection
+use `plan-blueprint-library-http.ts` behind a seven-method Store port.
+Dedicated validation preserves raw save metadata, normalized selection
+objectives, policy-template bounds, and exact status requests. Its response
+module owns Record, qualification, save, and selection evidence headers while
+exporting the shared Record metadata projections used by record-based Plan
+creation. This lowers `app.ts` to 16,110 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

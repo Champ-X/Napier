@@ -45,7 +45,6 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
-  ExecutionPlanBlueprintRecordSelection,
   ExtensionCapability,
   ExtensionRecord,
   ExtensionPublisherTrustAnchor,
@@ -184,16 +183,12 @@ import type {
   ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest,
   SetExtensionEnabledRequest,
   SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
-  SetExecutionPlanBlueprintRecordStatusRequest,
-  SelectExecutionPlanBlueprintRecordRequest,
   SignedExtensionPackageChannelIndexEnvelope,
   SignedInspectorPackageEnvelope,
   SkillContentReview,
   SkillPackageInstallation,
   SkillPackageQualification,
   SkillPackageVerification,
-  SaveExecutionPlanBlueprintRequest,
-  SaveExecutionPlanBlueprintResult,
   SignExtensionPackageChannelIndexRequest,
   SignInspectorPackageRequest,
   TrustedReceiptEnvelope,
@@ -335,6 +330,11 @@ import { setEvaluationCasebookProjectionHeaders } from "./evaluation-admin-http-
 import { registerEvaluationReviewHttp } from "./evaluation-review-http.js";
 import { registerEvaluationSuiteAdminHttp } from "./evaluation-suite-admin-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
+import { registerPlanBlueprintLibraryHttp } from "./plan-blueprint-library-http.js";
+import {
+  setExecutionPlanBlueprintRecordMetadataHeaders,
+  setExecutionPlanBlueprintRecordQualificationMetadataHeaders,
+} from "./plan-blueprint-library-http-response.js";
 import { registerPlanArtifactDataHttp } from "./plan-artifact-data-http.js";
 import { registerPlanArtifactDirectoryHttp } from "./plan-artifact-directory-http.js";
 import { registerPlanArtifactFileHttp } from "./plan-artifact-file-http.js";
@@ -4349,19 +4349,7 @@ export function createApp(services: NapierServices): Hono {
 
   registerPlanLifecycleHttp(app, services);
 
-  app.get("/api/plan-blueprints", (context) => {
-    const status = context.req.query("status");
-    if (status !== undefined && status !== "active" && status !== "archived") {
-      return jsonError(
-        context,
-        "Execution plan blueprint status is invalid",
-        400,
-      );
-    }
-    const records = services.store.listExecutionPlanBlueprints(status);
-    setExecutionPlanBlueprintRecordListHeaders(context, records);
-    return context.json(records);
-  });
+  registerPlanBlueprintLibraryHttp(app, services.store);
 
   app.get("/api/plan-blueprints/portfolio/calibration", async (context) => {
     const calibration =
@@ -4696,15 +4684,6 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.get("/api/plan-blueprints/:recordId/qualification", async (context) => {
-    const qualification =
-      await services.store.qualifyExecutionPlanBlueprintRecord(
-        context.req.param("recordId"),
-      );
-    setExecutionPlanBlueprintRecordQualificationHeaders(context, qualification);
-    return context.json(qualification);
-  });
-
   app.get("/api/plan-blueprints/:recordId/replays", async (context) => {
     const history =
       await services.store.getExecutionPlanBlueprintRecordReplayHistory(
@@ -4985,145 +4964,6 @@ export function createApp(services: NapierServices): Hono {
       return context.json(verification);
     },
   );
-
-  app.post("/api/threads/:threadId/plan-blueprints", async (context) => {
-    const threadId = context.req.param("threadId");
-    services.store.getThread(threadId);
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-        "Execution plan blueprint save request",
-      );
-    } catch (error) {
-      if (error instanceof RequestBodyTooLargeError) {
-        return jsonError(context, error.message, 413);
-      }
-      return jsonError(
-        context,
-        "Execution plan blueprint save request is invalid",
-        400,
-      );
-    }
-    const request = parseSaveExecutionPlanBlueprintRequest(input);
-    if (!request) {
-      return jsonError(
-        context,
-        "Execution plan blueprint save request is invalid",
-        400,
-      );
-    }
-    try {
-      const result = await services.store.saveExecutionPlanBlueprint(
-        threadId,
-        request,
-      );
-      await services.store.appendEvent({
-        threadId,
-        runId: createId("runctl"),
-        type: result.created ? "plan.blueprint.saved" : "plan.blueprint.reused",
-        category: "plan",
-        visibility: "user",
-        payload: {
-          blueprintRecordId: result.record.id,
-          blueprintSha256: result.record.blueprintSha256,
-          sourcePlanId: result.record.sourcePlanId,
-          sourcePlanRevision: result.record.sourcePlanRevision,
-          sourcePlanArchiveSha256: result.record.sourcePlanArchiveSha256,
-          created: result.created,
-        },
-      });
-      setExecutionPlanBlueprintSaveResultHeaders(context, result);
-      return context.json(result, result.created ? 201 : 200);
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 400);
-    }
-  });
-
-  app.post(
-    "/api/threads/:threadId/plan-blueprints/selection",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      services.store.getThread(threadId);
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-          "Execution plan blueprint selection request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint selection request is invalid",
-          400,
-        );
-      }
-      const request = parseSelectExecutionPlanBlueprintRecordRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint selection request is invalid",
-          400,
-        );
-      }
-      try {
-        const selection =
-          await services.store.selectExecutionPlanBlueprintRecord(
-            threadId,
-            request,
-          );
-        setExecutionPlanBlueprintRecordSelectionHeaders(context, selection);
-        return context.json(selection);
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message.startsWith("Execution plan blueprint selection")
-        ) {
-          return jsonError(context, error.message, 400);
-        }
-        throw error;
-      }
-    },
-  );
-
-  app.post("/api/plan-blueprints/:recordId/status", async (context) => {
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        8 * 1024,
-        "Execution plan blueprint status request",
-      );
-    } catch (error) {
-      if (error instanceof RequestBodyTooLargeError) {
-        return jsonError(context, error.message, 413);
-      }
-      return jsonError(
-        context,
-        "Execution plan blueprint status request is invalid",
-        400,
-      );
-    }
-    const request = parseSetExecutionPlanBlueprintRecordStatusRequest(input);
-    if (!request) {
-      return jsonError(
-        context,
-        "Execution plan blueprint status request is invalid",
-        400,
-      );
-    }
-    const record = await services.store.setExecutionPlanBlueprintRecordStatus(
-      context.req.param("recordId"),
-      request,
-    );
-    setExecutionPlanBlueprintRecordHeaders(context, record);
-    return context.json(record);
-  });
 
   app.post("/api/threads/:threadId/plans/from-blueprint", async (context) => {
     const threadId = context.req.param("threadId");
@@ -7620,63 +7460,6 @@ function parseCreateExecutionPlanFromBlueprintRequest(
   };
 }
 
-function parseSaveExecutionPlanBlueprintRequest(
-  input: unknown,
-): SaveExecutionPlanBlueprintRequest | undefined {
-  const record = requestRecord(input, ["blueprint", "name", "description"]);
-  if (!record || record["blueprint"] === undefined) return undefined;
-  const name =
-    record["name"] === undefined || !boundedString(record["name"], 1, 120)
-      ? undefined
-      : record["name"];
-  if (record["name"] !== undefined && !name) return undefined;
-  const description =
-    record["description"] === undefined ||
-    !boundedString(record["description"], 0, 1_000)
-      ? undefined
-      : record["description"];
-  if (record["description"] !== undefined && description === undefined) {
-    return undefined;
-  }
-  return {
-    blueprint: record["blueprint"] as ExecutionPlanBlueprint,
-    ...(name ? { name } : {}),
-    ...(description !== undefined ? { description } : {}),
-  };
-}
-
-function parseSelectExecutionPlanBlueprintRecordRequest(
-  input: unknown,
-): SelectExecutionPlanBlueprintRecordRequest | undefined {
-  const record = requestRecord(input, ["objective", "policyTemplate"]);
-  if (!record) return undefined;
-  const objective =
-    record["objective"] === undefined
-      ? undefined
-      : typeof record["objective"] === "string"
-        ? record["objective"].trim()
-        : undefined;
-  const policyTemplate = record["policyTemplate"];
-  if (
-    record["objective"] !== undefined &&
-    (!objective || !boundedString(objective, 1, 4_000))
-  ) {
-    return undefined;
-  }
-  if (
-    policyTemplate !== undefined &&
-    policyTemplate !== "balanced" &&
-    policyTemplate !== "delivery_first" &&
-    policyTemplate !== "portfolio_first"
-  ) {
-    return undefined;
-  }
-  return {
-    ...(objective ? { objective } : {}),
-    ...(policyTemplate ? { policyTemplate } : {}),
-  };
-}
-
 function parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
   input: unknown,
 ): SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest | undefined {
@@ -7738,17 +7521,6 @@ function parseRetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
     expectedDriftReviewSetSha256,
     expectedPortfolioSetSha256,
   };
-}
-
-function parseSetExecutionPlanBlueprintRecordStatusRequest(
-  input: unknown,
-): SetExecutionPlanBlueprintRecordStatusRequest | undefined {
-  const record = requestRecord(input, ["status"]);
-  const status = record?.["status"];
-  if (!record || (status !== "active" && status !== "archived")) {
-    return undefined;
-  }
-  return { status };
 }
 
 function parseCreateExecutionPlanFromBlueprintRecordRequest(
@@ -11092,153 +10864,6 @@ function setExecutionPlanFromBlueprintHeaders(
   setExecutionPlanBlueprintSourceHeaders(context, blueprint);
 }
 
-function setExecutionPlanBlueprintRecordListHeaders(
-  context: Context,
-  records: readonly ExecutionPlanBlueprintRecord[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, records);
-  context.header("X-Napier-Plan-Blueprint-Count", String(records.length));
-  context.header(
-    "X-Napier-Plan-Blueprint-Active-Count",
-    String(records.filter((record) => record.status === "active").length),
-  );
-  context.header(
-    "X-Napier-Plan-Blueprint-Archived-Count",
-    String(records.filter((record) => record.status === "archived").length),
-  );
-  context.header(
-    "X-Napier-Plan-Blueprint-Set-SHA256",
-    sha256Json(records.map((record) => record.blueprintSha256).sort()),
-  );
-}
-
-function setExecutionPlanBlueprintRecordHeaders(
-  context: Context,
-  record: ExecutionPlanBlueprintRecord,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, record);
-  context.header("X-Napier-Plan-Blueprint-Record-Id", record.id);
-  context.header("X-Napier-Plan-Blueprint-Status", record.status);
-  context.header("X-Napier-Plan-Blueprint-SHA256", record.blueprintSha256);
-  context.header("X-Napier-Blueprint-Source-Thread-Id", record.sourceThreadId);
-  context.header("X-Napier-Blueprint-Source-Plan-Id", record.sourcePlanId);
-  context.header(
-    "X-Napier-Blueprint-Source-Plan-Revision",
-    String(record.sourcePlanRevision),
-  );
-  context.header(
-    "X-Napier-Blueprint-Source-Archive-SHA256",
-    record.sourcePlanArchiveSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Source-Event-Stream-SHA256",
-    record.sourceEventStreamSha256,
-  );
-  context.header(
-    "X-Napier-Plan-Step-Count",
-    String(record.blueprint.stepCount),
-  );
-  context.header(
-    "X-Napier-Plan-Artifact-Count",
-    String(record.blueprint.artifactCount),
-  );
-}
-
-function setExecutionPlanBlueprintRecordQualificationHeaders(
-  context: Context,
-  qualification: ExecutionPlanBlueprintRecordQualification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, qualification);
-  context.header("X-Napier-Qualification-Status", qualification.status);
-  context.header("X-Napier-Plan-Blueprint-Record-Id", qualification.recordId);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(qualification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(qualification.diagnostics),
-  );
-  context.header("X-Napier-Plan-Step-Count", String(qualification.stepCount));
-  context.header(
-    "X-Napier-Plan-Artifact-Count",
-    String(qualification.artifactCount),
-  );
-  if (qualification.recordStatus) {
-    context.header(
-      "X-Napier-Plan-Blueprint-Status",
-      qualification.recordStatus,
-    );
-  }
-  if (qualification.blueprintSha256) {
-    context.header(
-      "X-Napier-Plan-Blueprint-SHA256",
-      qualification.blueprintSha256,
-    );
-  }
-  if (qualification.sourceThreadId) {
-    context.header(
-      "X-Napier-Blueprint-Source-Thread-Id",
-      qualification.sourceThreadId,
-    );
-  }
-  if (qualification.sourcePlanId) {
-    context.header(
-      "X-Napier-Blueprint-Source-Plan-Id",
-      qualification.sourcePlanId,
-    );
-  }
-  if (qualification.sourcePlanRevision !== undefined) {
-    context.header(
-      "X-Napier-Blueprint-Source-Plan-Revision",
-      String(qualification.sourcePlanRevision),
-    );
-  }
-  if (qualification.expectedPlanArchiveSha256) {
-    context.header(
-      "X-Napier-Blueprint-Source-Archive-SHA256",
-      qualification.expectedPlanArchiveSha256,
-    );
-  }
-  if (qualification.expectedEventStreamSha256) {
-    context.header(
-      "X-Napier-Blueprint-Source-Event-Stream-SHA256",
-      qualification.expectedEventStreamSha256,
-    );
-  }
-  if (qualification.actualSourcePlanRevision !== undefined) {
-    context.header(
-      "X-Napier-Blueprint-Actual-Source-Plan-Revision",
-      String(qualification.actualSourcePlanRevision),
-    );
-  }
-  if (qualification.actualPlanArchiveSha256) {
-    context.header(
-      "X-Napier-Blueprint-Actual-Source-Archive-SHA256",
-      qualification.actualPlanArchiveSha256,
-    );
-  }
-  if (qualification.actualEventStreamSha256) {
-    context.header(
-      "X-Napier-Blueprint-Actual-Source-Event-Stream-SHA256",
-      qualification.actualEventStreamSha256,
-    );
-  }
-}
-
-function setExecutionPlanBlueprintSaveResultHeaders(
-  context: Context,
-  result: SaveExecutionPlanBlueprintResult,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, result);
-  context.header("X-Napier-Plan-Blueprint-Created", String(result.created));
-  setExecutionPlanBlueprintRecordMetadataHeaders(context, result.record);
-}
-
 function setExecutionPlanBlueprintRecordPreviewHeaders(
   context: Context,
   preview: ExecutionPlanBlueprintRecordPreview,
@@ -11873,116 +11498,6 @@ function setExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
   }
 }
 
-function setExecutionPlanBlueprintRecordSelectionHeaders(
-  context: Context,
-  selection: ExecutionPlanBlueprintRecordSelection,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, selection.contentSha256);
-  context.header("X-Napier-Thread-Id", selection.threadId);
-  context.header(
-    "X-Napier-Plan-Blueprint-Candidate-Count",
-    String(selection.candidateCount),
-  );
-  context.header(
-    "X-Napier-Plan-Blueprint-Qualified-Candidate-Count",
-    String(selection.qualifiedCandidateCount),
-  );
-  context.header(
-    "X-Napier-Plan-Blueprint-Rejected-Candidate-Count",
-    String(selection.rejectedCandidateCount),
-  );
-  context.header(
-    "X-Napier-Plan-Blueprint-Selection-Set-SHA256",
-    selection.selectionSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Portfolio-Set-SHA256",
-    selection.portfolioSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Recommendation-Policy-Template",
-    selection.recommendationPolicy.templateId,
-  );
-  context.header(
-    "X-Napier-Blueprint-Recommendation-Policy-SHA256",
-    selection.recommendationPolicySha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Count",
-    String(selection.familyPolicyOverrideCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Family-Policy-Override-Set-SHA256",
-    selection.familyPolicyOverrideSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Objective-SHA256",
-    selection.objectiveSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Selected-Plan-Blueprint-Record-Id",
-    selection.selectedRecordId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Preview-SHA256",
-    selection.selectedPreviewSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Outcome-Baseline-Id",
-    selection.selectedBaselineId,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Outcome-Baseline-SHA256",
-    selection.selectedBaselineSha256,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Score-BPS",
-    selection.selectedScoreBps,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Family-SHA256",
-    selection.selectedFamilySha256,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Family-Completion-Rate-BPS",
-    selection.selectedFamilyCompletionRateBps,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Recommendation-Score-BPS",
-    selection.selectedRecommendationScoreBps,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Recommendation-Policy-Template",
-    selection.selectedRecommendationPolicyTemplate,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Recommendation-Policy-SHA256",
-    selection.selectedRecommendationPolicySha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Recommendation-Policy-Source",
-    selection.selectedRecommendationPolicySource,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Selected-Blueprint-Family-Policy-Override-SHA256",
-    selection.selectedFamilyPolicyOverrideSha256,
-  );
-}
-
 function setExecutionPlanBlueprintPortfolioCalibrationHeaders(
   context: Context,
   calibration: ExecutionPlanBlueprintPortfolioCalibration,
@@ -12436,56 +11951,6 @@ function setExecutionPlanFromBlueprintRecordHeaders(
   context.header(
     "X-Napier-Blueprint-Replay-Event-SHA256",
     sha256Json(replayEvent as unknown as JsonValue),
-  );
-}
-
-function setExecutionPlanBlueprintRecordQualificationMetadataHeaders(
-  context: Context,
-  qualification: ExecutionPlanBlueprintRecordQualification,
-): void {
-  context.header("X-Napier-Qualification-Status", qualification.status);
-  context.header(
-    "X-Napier-Blueprint-Qualification-SHA256",
-    sha256Json(qualification as unknown as JsonValue),
-  );
-  context.header(
-    "X-Napier-Blueprint-Qualification-Diagnostics-SHA256",
-    sha256Json(qualification.diagnostics),
-  );
-  if (qualification.actualPlanArchiveSha256) {
-    context.header(
-      "X-Napier-Blueprint-Actual-Source-Archive-SHA256",
-      qualification.actualPlanArchiveSha256,
-    );
-  }
-  if (qualification.actualEventStreamSha256) {
-    context.header(
-      "X-Napier-Blueprint-Actual-Source-Event-Stream-SHA256",
-      qualification.actualEventStreamSha256,
-    );
-  }
-}
-
-function setExecutionPlanBlueprintRecordMetadataHeaders(
-  context: Context,
-  record: ExecutionPlanBlueprintRecord,
-): void {
-  context.header("X-Napier-Plan-Blueprint-Record-Id", record.id);
-  context.header("X-Napier-Plan-Blueprint-Status", record.status);
-  context.header("X-Napier-Plan-Blueprint-SHA256", record.blueprintSha256);
-  context.header("X-Napier-Blueprint-Source-Thread-Id", record.sourceThreadId);
-  context.header("X-Napier-Blueprint-Source-Plan-Id", record.sourcePlanId);
-  context.header(
-    "X-Napier-Blueprint-Source-Plan-Revision",
-    String(record.sourcePlanRevision),
-  );
-  context.header(
-    "X-Napier-Blueprint-Source-Archive-SHA256",
-    record.sourcePlanArchiveSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Source-Event-Stream-SHA256",
-    record.sourceEventStreamSha256,
   );
 }
 
