@@ -8,7 +8,9 @@ import { gitErrorCode, type GitRepository } from "./git-repository.js";
 export const DEFAULT_GIT_STAGE_TIMEOUT_MS = 15_000;
 export const MAX_GIT_STAGE_TIMEOUT_MS = 30_000;
 export const MAX_GIT_STAGE_FILE_BYTES = 16 * 1024 * 1024;
+export const MAX_GIT_STAGE_TOTAL_BYTES = 32 * 1024 * 1024;
 export const MAX_GIT_STAGE_PREVIEWS = 32;
+export const MAX_GIT_STAGE_TARGETS = 16;
 export const GIT_STAGE_PREVIEW_TTL_MS = 5 * 60_000;
 const MAX_GIT_ATTRIBUTE_FILES = 64;
 const MAX_GIT_ATTRIBUTE_FILE_BYTES = 1024 * 1024;
@@ -60,6 +62,7 @@ export interface GitStagePreview {
   id: string;
   expiresAt: string;
   path: string;
+  paths: string[];
   patch: string;
   selectionMode: "path" | "hunks";
   selectedHunkCount: number;
@@ -68,6 +71,7 @@ export interface GitStagePreview {
 
 export interface GitStageApplyResult {
   path: string;
+  paths: string[];
   patch: string;
   selectionMode: "path" | "hunks";
   selectedHunkCount: number;

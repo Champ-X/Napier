@@ -19,8 +19,13 @@ export function assessGitStageCall(
 ): GitStagePolicyDecision | undefined {
   if (!GIT_STAGE_TOOLS.has(toolName)) return undefined;
   if (toolName === "git_stage_preview") {
-    const candidate = stringField(input, "path");
-    if (!candidate || !safeWorkspacePath(candidate, workspaceRoot)) {
+    const candidates = stagePaths(input);
+    if (
+      !candidates ||
+      candidates.some(
+        (candidate) => !safeWorkspacePath(candidate, workspaceRoot),
+      )
+    ) {
       return {
         allowed: false,
         risk: "high",
@@ -45,22 +50,30 @@ export function assessGitStageCall(
   };
 }
 
+function stagePaths(input: JsonValue): string[] | undefined {
+  if (!input || Array.isArray(input) || typeof input !== "object") {
+    return undefined;
+  }
+  const pathValue = input["path"];
+  const pathsValue = input["paths"];
+  const hasPath = typeof pathValue === "string";
+  const validPaths =
+    Array.isArray(pathsValue) &&
+    pathsValue.length >= 1 &&
+    pathsValue.length <= 16 &&
+    pathsValue.every((value) => typeof value === "string");
+  if (hasPath) {
+    return pathsValue === undefined ? [pathValue] : undefined;
+  }
+  return validPaths ? (pathsValue as string[]) : undefined;
+}
+
 function safeWorkspacePath(candidate: string, workspaceRoot: string): boolean {
   const root = path.resolve(workspaceRoot);
   const resolved = path.resolve(root, candidate);
-  if (
-    resolved !== root &&
-    !resolved.startsWith(`${root}${path.sep}`)
-  ) {
+  if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) {
     return false;
   }
   const relative = path.relative(root, resolved);
   return !relative.split(path.sep).some(isProtectedWorkspacePathSegment);
-}
-
-function stringField(input: JsonValue, key: string): string | undefined {
-  if (!input || Array.isArray(input) || typeof input !== "object") {
-    return undefined;
-  }
-  return typeof input[key] === "string" ? input[key] : undefined;
 }

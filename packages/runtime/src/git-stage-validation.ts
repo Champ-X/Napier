@@ -1,14 +1,19 @@
-import { normalizeGitPath, type GitRepositoryState } from "./git-repository.js";
+import type { GitRepositoryState } from "./git-repository.js";
 import { normalizeGitStageHunkIndexes } from "./git-stage-hunk-patch.js";
-import { MAX_GIT_STAGE_TIMEOUT_MS } from "./git-stage-model.js";
+import {
+  MAX_GIT_STAGE_TARGETS,
+  MAX_GIT_STAGE_TIMEOUT_MS,
+} from "./git-stage-model.js";
+import { normalizeGitStageTargetPaths } from "./git-stage-targets.js";
 
 export function validateGitStageRequest(request: {
-  path: string;
+  path?: string;
+  paths?: string[];
   contextLines?: number;
   hunkIndexes?: number[];
   timeoutMs?: number;
 }): {
-  path: string;
+  paths: string[];
   hunkIndexes?: number[];
 } {
   if (
@@ -22,9 +27,27 @@ export function validateGitStageRequest(request: {
   if (request.timeoutMs !== undefined) {
     validateGitStageTimeout(request.timeoutMs);
   }
+  const hasPath = typeof request.path === "string";
+  const hasPaths = Array.isArray(request.paths);
+  if (
+    hasPath === hasPaths ||
+    (hasPaths &&
+      (request.paths!.length < 1 ||
+        request.paths!.length > MAX_GIT_STAGE_TARGETS ||
+        request.paths!.some((value) => typeof value !== "string")))
+  ) {
+    throw new Error(
+      "Git stage requires exactly one path or one bounded path list",
+    );
+  }
   const hunkIndexes = normalizeGitStageHunkIndexes(request.hunkIndexes);
+  if (hunkIndexes && !hasPath) {
+    throw new Error("Git stage hunk selection requires the single path input");
+  }
   return {
-    path: normalizeGitPath(request.path),
+    paths: normalizeGitStageTargetPaths(
+      hasPath ? [request.path!] : request.paths!,
+    ),
     ...(hunkIndexes ? { hunkIndexes } : {}),
   };
 }

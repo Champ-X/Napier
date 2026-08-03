@@ -21,15 +21,17 @@ import { createGitStageDetails } from "./git-stage-details.js";
 import {
   DEFAULT_GIT_STAGE_TIMEOUT_MS,
   GIT_STAGE_PREVIEW_TTL_MS,
-  assertGitStagePathAncestors,
   type GitStageApplyResult,
   type GitStageDetails,
-  type GitStagePathState,
   type GitStagePreview,
   MAX_GIT_STAGE_PREVIEWS,
-  snapshotGitAttributeState,
-  snapshotGitStagePath,
 } from "./git-stage-model.js";
+import {
+  assertGitStageTargetsState,
+  snapshotGitStageTargets,
+  type GitStageTarget,
+  verifyGitStageTargetsApplied,
+} from "./git-stage-targets.js";
 import {
   abortGitStage,
   remainingGitStageTime,
@@ -46,7 +48,8 @@ export interface GitStageMutationManagerOptions extends GitInspectProcessOptions
 }
 
 export interface GitStagePreviewRequest {
-  path: string;
+  path?: string;
+  paths?: string[];
   contextLines?: number;
   hunkIndexes?: number[];
   timeoutMs?: number;
@@ -81,9 +84,7 @@ interface StoredGitStagePreview {
   id: string;
   threadId: string;
   scopeId: string;
-  path: string;
-  pathState: GitStagePathState;
-  attributesStateSha256: string;
+  targets: GitStageTarget[];
   repositoryState: GitRepositoryState;
   contextLines: number;
   hunkIndexes?: number[];
@@ -115,12 +116,7 @@ export class GitStageMutationManager {
     const repository = await resolveGitRepository(this.options.workspaceRoot);
     const repositoryState = await snapshotGitRepository(repository);
     requireGitStageIndex(repositoryState);
-    const absolutePath = path.join(repository.root, validated.path);
-    await assertGitStagePathAncestors(repository, validated.path);
-    const [pathState, attributesStateSha256] = await Promise.all([
-      snapshotGitStagePath(absolutePath),
-      snapshotGitAttributeState(repository, validated.path),
-    ]);
+    const targets = await snapshotGitStageTargets(repository, validated.paths);
     abortGitStage(signal);
     const config = await assertGitConfigPolicy(
       this.options,
@@ -137,7 +133,7 @@ export class GitStageMutationManager {
       processOptions: this.options,
       repository,
       initialIndexBytes,
-      targetPath: validated.path,
+      targetPaths: validated.paths,
       contextLines: request.contextLines ?? 3,
       ...(validated.hunkIndexes ? { hunkIndexes: validated.hunkIndexes } : {}),
       deadline,
@@ -147,13 +143,7 @@ export class GitStageMutationManager {
     let stored: StoredGitStagePreview;
     try {
       validatePreparedStage(prepared);
-      await assertPreviewState(
-        repository,
-        repositoryState,
-        absolutePath,
-        pathState,
-        attributesStateSha256,
-      );
+      await assertGitStageTargetsState(repository, repositoryState, targets);
       const now = this.validNow();
       const previewId = createId("gitstagepreview");
       const expiresAt = new Date(
@@ -167,9 +157,7 @@ export class GitStageMutationManager {
         expiresAt,
         repository,
         repositoryState,
-        path: validated.path,
-        pathState,
-        attributesStateSha256,
+        targets,
         contextLines: request.contextLines ?? 3,
         prepared,
         durable: false,
@@ -179,9 +167,7 @@ export class GitStageMutationManager {
         id: previewId,
         threadId,
         scopeId,
-        path: validated.path,
-        pathState,
-        attributesStateSha256,
+        targets,
         repositoryState,
         contextLines: request.contextLines ?? 3,
         ...(validated.hunkIndexes
@@ -224,36 +210,28 @@ export class GitStageMutationManager {
     }
     abortGitStage(signal);
     const repository = await resolveGitRepository(this.options.workspaceRoot);
-    const absolutePath = path.join(repository.root, preview.path);
     return withWorkspacePathLocks(
       this.options.dataRoot,
-      [path.join(repository.gitDirectory, "index"), absolutePath],
+      [
+        path.join(repository.gitDirectory, "index"),
+        ...preview.targets.map((target) => target.absolutePath),
+      ],
       "Git stage apply",
-      () =>
-        this.applyUnderLock(
-          repository,
-          absolutePath,
-          preview,
-          timeoutMs,
-          signal,
-        ),
+      () => this.applyUnderLock(repository, preview, timeoutMs, signal),
     );
   }
 
   private async applyUnderLock(
     repository: GitRepository,
-    absolutePath: string,
     preview: StoredGitStagePreview,
     timeoutMs: number,
     signal?: AbortSignal,
   ): Promise<GitStageApplyResult> {
     const deadline = Date.now() + timeoutMs;
-    await assertPreviewState(
+    await assertGitStageTargetsState(
       repository,
       preview.repositoryState,
-      absolutePath,
-      preview.pathState,
-      preview.attributesStateSha256,
+      preview.targets,
     );
     const config = await assertGitConfigPolicy(
       this.options,
@@ -270,7 +248,7 @@ export class GitStageMutationManager {
       processOptions: this.options,
       repository,
       initialIndexBytes,
-      targetPath: preview.path,
+      targetPaths: preview.targets.map((target) => target.path),
       contextLines: preview.contextLines,
       ...(preview.hunkIndexes ? { hunkIndexes: preview.hunkIndexes } : {}),
       deadline,
@@ -288,12 +266,10 @@ export class GitStageMutationManager {
       ) {
         throw new Error("Git stage preview is stale; preview the target again");
       }
-      await assertPreviewState(
+      await assertGitStageTargetsState(
         repository,
         preview.repositoryState,
-        absolutePath,
-        preview.pathState,
-        preview.attributesStateSha256,
+        preview.targets,
       );
       await promotePreparedGitObjects(prepared, repository);
       abortGitStage(signal);
@@ -302,23 +278,21 @@ export class GitStageMutationManager {
         repository,
         indexMode: preview.repositoryState.index.mode,
         verifyCurrentState: () =>
-          assertPreviewState(
+          assertGitStageTargetsState(
             repository,
             preview.repositoryState,
-            absolutePath,
-            preview.pathState,
-            preview.attributesStateSha256,
+            preview.targets,
             true,
           ),
         ...(signal ? { signal } : {}),
       });
       committed = true;
-      const verified = await verifyAppliedState(
+      const verified = await verifyGitStageTargetsApplied({
         repository,
-        preview,
-        absolutePath,
-        prepared,
-      );
+        expectedRepository: preview.repositoryState,
+        expectedTargets: preview.targets,
+        expectedIndexSha256: prepared.indexSha256,
+      });
       const cleanupComplete = await cleanupPreparedGitStage(prepared)
         .then(() => true)
         .catch(() => false);
@@ -330,9 +304,7 @@ export class GitStageMutationManager {
         postcondition: status === "applied" ? "verified" : "indeterminate",
         repository,
         repositoryState: preview.repositoryState,
-        path: preview.path,
-        pathState: preview.pathState,
-        attributesStateSha256: preview.attributesStateSha256,
+        targets: preview.targets,
         contextLines: preview.contextLines,
         prepared,
         ...(verified ? { afterIndexSha256: prepared.indexSha256 } : {}),
@@ -341,7 +313,8 @@ export class GitStageMutationManager {
         cancellationObserved: signal?.aborted === true,
       });
       return {
-        path: preview.path,
+        path: preview.targets[0]!.path,
+        paths: preview.targets.map((target) => target.path),
         patch: prepared.patch,
         selectionMode: prepared.selectionMode,
         selectedHunkCount: prepared.selectedHunkCount,
@@ -359,9 +332,7 @@ export class GitStageMutationManager {
         postcondition: "indeterminate",
         repository,
         repositoryState: preview.repositoryState,
-        path: preview.path,
-        pathState: preview.pathState,
-        attributesStateSha256: preview.attributesStateSha256,
+        targets: preview.targets,
         contextLines: preview.contextLines,
         prepared,
         sourcePreviewResultSha256: preview.details.resultSha256,
@@ -369,7 +340,8 @@ export class GitStageMutationManager {
         cancellationObserved: signal?.aborted === true,
       });
       return {
-        path: preview.path,
+        path: preview.targets[0]!.path,
+        paths: preview.targets.map((target) => target.path),
         patch: prepared.patch,
         selectionMode: prepared.selectionMode,
         selectedHunkCount: prepared.selectedHunkCount,
@@ -400,56 +372,6 @@ export class GitStageMutationManager {
   }
 }
 
-async function assertPreviewState(
-  repository: GitRepository,
-  expectedRepository: GitRepositoryState,
-  absolutePath: string,
-  expectedPath: GitStagePathState,
-  expectedAttributesStateSha256: string,
-  allowIndexLock = false,
-): Promise<void> {
-  const targetPath = path
-    .relative(repository.root, absolutePath)
-    .split(path.sep)
-    .join("/");
-  await assertGitStagePathAncestors(repository, targetPath);
-  const [currentRepository, currentPath, currentAttributesStateSha256] =
-    await Promise.all([
-      snapshotGitRepository(repository, { allowIndexLock }),
-      snapshotGitStagePath(absolutePath),
-      snapshotGitAttributeState(repository, targetPath),
-    ]);
-  if (
-    currentRepository.stateSha256 !== expectedRepository.stateSha256 ||
-    currentPath.stateSha256 !== expectedPath.stateSha256 ||
-    currentAttributesStateSha256 !== expectedAttributesStateSha256
-  ) {
-    throw new Error("Git stage preview is stale; preview the target again");
-  }
-}
-
-async function verifyAppliedState(
-  repository: GitRepository,
-  preview: StoredGitStagePreview,
-  absolutePath: string,
-  prepared: PreparedGitStage,
-): Promise<boolean> {
-  await assertGitStagePathAncestors(repository, preview.path);
-  const [currentRepository, currentPath, currentAttributesStateSha256] =
-    await Promise.all([
-      snapshotGitRepository(repository),
-      snapshotGitStagePath(absolutePath),
-      snapshotGitAttributeState(repository, preview.path),
-    ]);
-  return (
-    currentRepository.nonIndexStateSha256 ===
-      preview.repositoryState.nonIndexStateSha256 &&
-    currentRepository.index.sha256 === prepared.indexSha256 &&
-    currentPath.stateSha256 === preview.pathState.stateSha256 &&
-    currentAttributesStateSha256 === preview.attributesStateSha256
-  );
-}
-
 async function boundIndexBytes(
   repository: GitRepository,
   expected: GitRepositoryState,
@@ -462,8 +384,8 @@ async function boundIndexBytes(
 }
 
 function validatePreparedStage(prepared: PreparedGitStage): void {
-  if (prepared.counts.fileCount !== 1) {
-    throw new Error("Git stage preview must contain exactly one file");
+  if (prepared.counts.fileCount !== prepared.targetCount) {
+    throw new Error("Git stage preview must contain every target file");
   }
 }
 
@@ -471,7 +393,8 @@ function publicPreview(stored: StoredGitStagePreview): GitStagePreview {
   return {
     id: stored.id,
     expiresAt: stored.expiresAt,
-    path: stored.path,
+    path: stored.targets[0]!.path,
+    paths: stored.targets.map((target) => target.path),
     patch: stored.patch,
     selectionMode: stored.hunkIndexes ? "hunks" : "path",
     selectedHunkCount: stored.hunkIndexes?.length ?? 0,

@@ -1,5 +1,5 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -147,6 +147,124 @@ describe("Agent preview-bound Git staging", () => {
     expect(durable).not.toContain("PRIVATE_SECOND_AFTER");
     expect(durable).toContain("gitstagepreview_");
     expect(durable).not.toContain("STAGED PATCH");
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(fixture.store, thread.id),
+      ),
+    ).toEqual(expect.objectContaining({ status: "valid" }));
+    fixture.store.close();
+  }, 30_000);
+
+  it("reviews and atomically stages one private multi-path set", async () => {
+    const fixture = await createFixture();
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_DELETE.txt"),
+      "PRIVATE_DELETE_BEFORE\n",
+    );
+    await git(fixture.workspaceRoot, ["add", "PRIVATE_DELETE.txt"]);
+    await git(fixture.workspaceRoot, [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "multi baseline",
+    ]);
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_SOURCE.txt"),
+      "PRIVATE_MULTI_MODIFIED\n",
+    );
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_NEW.txt"),
+      "PRIVATE_MULTI_NEW\n",
+    );
+    await unlink(path.join(fixture.workspaceRoot, "PRIVATE_DELETE.txt"));
+    const agent = await fixture.store.updateAgent(
+      fixture.store.listAgents()[0]!.id,
+      {
+        toolPolicy: "workspace",
+        enabledTools: ["git_stage_preview", "git_stage_apply"],
+      },
+    );
+    const thread = await fixture.store.createThread({
+      title: "Private multi Git stage",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "faux-git-multi-stage" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("git_stage_preview", {
+          paths: [
+            "PRIVATE_SOURCE.txt",
+            "PRIVATE_NEW.txt",
+            "PRIVATE_DELETE.txt",
+          ],
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("PRIVATE_MULTI_MODIFIED");
+        expect(messages).toContain("PRIVATE_MULTI_NEW");
+        expect(messages).toContain("PRIVATE_DELETE_BEFORE");
+        const previewId = messages.match(
+          /gitstagepreview_[a-z0-9]{8,80}/u,
+        )?.[0];
+        return fauxAssistantMessage(
+          fauxToolCall("git_stage_apply", { previewId }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          "path set is staged atomically",
+        );
+        return fauxAssistantMessage("The reviewed path set is staged.");
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const models = new ModelRegistry();
+    models.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      fixture.store,
+      models,
+      undefined,
+      directSandbox(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Preview and atomically stage the three exact paths.",
+      model: { provider: "faux-git-multi-stage", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const staged = await gitOutput(fixture.workspaceRoot, ["diff", "--cached"]);
+    expect(staged).toContain("PRIVATE_MULTI_MODIFIED");
+    expect(staged).toContain("PRIVATE_MULTI_NEW");
+    expect(staged).toContain("PRIVATE_DELETE_BEFORE");
+    const gitEvents = (await fixture.store.listEvents(thread.id)).filter(
+      (event) =>
+        ["git_stage_preview", "git_stage_apply"].includes(
+          String(record(event.payload)?.["toolName"]),
+        ),
+    );
+    expect(gitEvents.at(-1)?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({ fileCount: 3, status: "applied" }),
+      }),
+    );
+    const durable = JSON.stringify(gitEvents);
+    for (const secret of [
+      "PRIVATE_SOURCE",
+      "PRIVATE_NEW",
+      "PRIVATE_DELETE",
+      "PRIVATE_MULTI_MODIFIED",
+    ]) {
+      expect(durable).not.toContain(secret);
+    }
     expect(
       verifyThreadReplayBundle(
         await exportThreadReplayBundle(fixture.store, thread.id),

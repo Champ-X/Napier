@@ -26,7 +26,7 @@ Audit date: 2026-08-03
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 22,437 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus hash-bound text-conflict stages, preview-bound one-path whole-file or selected-text-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/multi-path conflicts, non-linear/merge Review promotion, multi-path staging, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus hash-bound text-conflict stages, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/multi-path conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown; a fixed-source Outcome case now measures primary/secondary authority coverage and contradiction handling through the production capture/cite/report verifier path. Data analysis includes flat-file inspection, hash-bound typed DataFrame transformations, process-isolated parameterized read-only SQLite, and deterministic single- or multi-series SVG chart delivery, with Agent/Workflow reuse, bundled Skill guidance, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, general source-quality scoring and contradiction automation, package-backed Python/Notebook, interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/JavaScript/Python/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, bounded stateful JavaScript and restricted exact-JSON Python Session nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint tests, full-subgraph one-node-at-a-time step control, typed checkpoint output/input replacement, selector-free complete top-level input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Package-backed Python/Notebook Sessions, cross-node Session handles, graph-level branch pruning, write-capable Map/Loop, compensation, write/session side-effect simulation, external adapters, natural-language extraction, and the visual builder remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 executes one selected checkpoint and pauses direct successors, schema-3 simulates one typed selected-node output, schema-4 replaces one complete constructed checkpoint input, schema-5 durably releases exactly one remaining rerun node per Continue, and selector-free schema-6 replaces the complete top-level Workflow input and reruns every node through the ordinary scheduler with zero source reuse. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for eleven stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same eleven tools support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -4302,8 +4302,9 @@ Threat boundary:
 ## Completed Slice: Preview-Bound Atomic Git Staging
 
 User scenario: after reviewing one exact working-tree patch, a Coding Agent or
-typed Workflow can stage only that path without receiving general Git argv,
-changing refs, or trusting a stale worktree/index.
+typed Workflow can atomically stage one whole-path set or selected hunks from
+one path without receiving general Git argv, changing refs, or trusting a stale
+worktree/index.
 
 Acceptance:
 
@@ -4315,17 +4316,22 @@ Acceptance:
   complete hunk, apply only the selection to the private index with fixed
   `git apply --cached --unidiff-zero`, and bind the selection into the existing
   argv digest without changing the 32-property Receipt;
-- support one bounded regular file or tracked deletion. Reject directories,
+- accept `path` for one target or mutually exclusive `paths` for 1-16 whole
+  targets. Normalize, collision-check, and code-point sort the set; reject
+  `hunkIndexes` with `paths`. Preserve the legacy single-path Receipt hashes;
+- support bounded regular files or tracked deletions at 16 MiB each and 32 MiB
+  aggregate present bytes. Reject directories,
   symlinks, protected/escaping paths, missing HEAD/index, active locks,
   linked/split/sparse/object-alternate/SHA-256/shared repositories, submodules,
   OCI, grafts, unsafe config, stderr, timeout, and patches above 128 KiB;
-- construct the exact proposed index with fixed `git add -- path` in a private
-  index/object directory. The complete workspace is read-only to Git and only
-  `.git/napier-stage/<ephemeral>` is writable during preview/preparation;
-- bind repository/index/config modes and bytes, target bytes/executable bit,
-  root-to-target `.gitattributes`, `.git/info/attributes`, fixed executable,
-  argv, environment, resource limits, Sandbox backend, proposed index, and
-  exact staged patch;
+- construct the exact proposed index with one fixed `git add -- path` per
+  canonical target against the same private index/object directory. Require one
+  non-empty path-filtered final patch per target and cap the aggregate at
+  128 KiB. The workspace is read-only to Git and only the 0700 ephemeral
+  directory is writable;
+- bind repository/index/config modes and bytes, every target bytes/mode and
+  attribute chain, ordered set, fixed executable/argv/environment/limits/
+  Sandbox, proposed complete index, and exact aggregate staged patch;
 - scope the five-minute capability to one Thread plus Agent Run or Workflow
   Plan, consume it once, and revalidate before preparation, after preparation,
   and while holding the standard `.git/index.lock` commit barrier;
@@ -4345,6 +4351,12 @@ Observed result:
 - one two-hunk regular file proves selecting only hunk 2 stages that exact
   change while hunk 1 remains in the working diff and worktree bytes remain
   unchanged; context-zero selected patches are supported;
+- one canonical three-path modify/add/delete preview leaves real index and
+  objects unchanged, then one apply installs all three staged deltas through a
+  single `index.lock` rename. Input order differs from deterministic execution;
+- no-change members, normalized aliases, path+paths ambiguity, multi-path hunk
+  selection, >16 targets, one-target drift, and protected members fail closed
+  without partially changing the real index;
 - negative tests reject cross-scope and reused capabilities, stale worktree or
   index, parent attribute drift, command-bearing filters, symlinks, active
   index locks, protected paths, pathspec magic expansion, broken object
@@ -4357,13 +4369,17 @@ Observed result:
   Sandbox without changing the index. An explicitly labelled test adapter then
   previews only hunk 2, applies it as `verified` and durable, leaves hunk 1 in
   the working diff, and removes every private staging entry;
+- built multi-path Dogfood canonicalizes unsorted modify/add/delete targets,
+  proves preview leaves real index/object storage unchanged, then reaches
+  `applied/verified/durable` with all three staged, clean working diff,
+  byte-stable HEAD/reflog, and empty private storage;
 - a live DeepSeek Agent, read-only message re-execution, model invocation
   re-execution, and Replay validation pass through the real credential
   reference while the API key remains absent from durable events. This run
   also fixed the live fixture to create its canonical temporary workspace;
-- two typed Workflow Tool nodes pass the preview capability across distinct
-  child Runs through their shared Plan scope, apply the exact index, return a
-  schema-1 receipt, and export valid Replay;
+- Agent and typed Workflow tests exercise both selected-hunk and three-path
+  atomic flows, pass capabilities across Run/Plan scope, apply the exact index,
+  export valid Replay, and retain no private path or patch body;
 - Web Trace rejects impossible preview/apply status, postcondition, digest, and
   byte-bound combinations while rendering only counts and hash prefixes;
 - built Runtime production Sandbox execution fails before Git starts in the
@@ -4371,15 +4387,15 @@ Observed result:
   Runtime with an explicitly labelled test adapter produces an exact preview,
   applies a verified index, and exposes four private-directory-only writable
   launches.
-- the complete repository gate passes 1,963 regular tests: root 78, CLI 150,
-  Server 137, Web 461, Runtime 1,109, and SDK 28. Architecture covers 751
-  production and 394 test modules with zero relative-import cycles. Product
-  performance measures 711.5 ms to first CLI event, 861.0 ms to first token,
-  1,183.6 ms to completion, 0.4 ms read p95, 9.6 ms 1,000-event projection,
+- the complete repository gate passes 1,978 regular tests: root 78, CLI 150,
+  Server 137, Web 465, Runtime 1,120, and SDK 28. Architecture covers 763
+  production and 398 test modules with zero relative-import cycles. Product
+  performance measures 623.9 ms to first CLI event, 772.4 ms to first token,
+  1,107.6 ms to completion, 0.3 ms read p95, 6.8 ms 1,000-event projection,
   and 757.76 SQLite bytes/event;
 - the 96-file Web dist remains at 115.44 KiB for the main entry and is bound
-  to `f2852ae581721f9c`; the 42-artifact Release set is bound to
-  `3a14e9f0cec6a1fa`.
+  to `72b3f5b3a7af732a`; the 42-artifact Release set is bound to
+  `e529725de9aac1ee`.
 
 Threat boundary:
 
@@ -4392,11 +4408,9 @@ Threat boundary:
 - capabilities are process-local and one-use. Runtime restart, expiry, or a
   recovered Workflow must produce a fresh preview rather than applying a
   persisted capability/output;
-- multi-path atomic staging, partial new/delete/binary/mode/rename staging,
-  branch switch, checkout, reset, clean,
-  merge/conflict resolution, Review promotion, linked worktrees, SHA-256
-  repositories, alternates, and staged submodule changes remain outside this
-  slice.
+- multi-path hunk selection, partial new/delete/binary/mode/rename staging,
+  directory/symlink lifecycle, linked worktrees, SHA-256 repositories,
+  alternates, and staged submodule changes remain outside this slice.
 
 ## Completed Slice: Preview-Bound Atomic Git Commit
 

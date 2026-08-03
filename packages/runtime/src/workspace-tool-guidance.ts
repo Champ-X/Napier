@@ -249,7 +249,7 @@ function gitToolGuidance(toolNames: ReadonlySet<string>): string[] {
     ...(hasPreview
       ? [
           toolNames.has("git_stage_apply")
-            ? "Before staging, use git_stage_preview on exactly one regular or tracked-deleted path and review its complete private-index patch. To stage part of an existing regular-text modification, first inspect its current single-path working patch and pass strictly increasing 1-based hunkIndexes; omitted hunkIndexes stages the complete path. Pass only the fresh execution-scoped preview ID to git_stage_apply."
+            ? "Before staging, use git_stage_preview with path for one target or paths for one canonical 1-16 path atomic set, then review its complete private-index patch. To stage part of an existing regular-text modification, use only path after inspecting its current working patch and pass strictly increasing 1-based hunkIndexes. Pass only the fresh execution-scoped preview ID to git_stage_apply."
             : "git_stage_preview never changes the real index. Use its complete patch only as evidence; no staging apply tool is enabled.",
         ]
       : []),

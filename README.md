@@ -194,10 +194,11 @@ Version `0.1.0` includes:
   gitfiles/symlinked metadata/index locks, disables optional locks, pagers,
   external diff, textconv, and submodule traversal, binds HEAD/index/config
   freshness, and keeps paths, hunks, and conflict text live-only;
-- `git_stage_preview` and `git_stage_apply` tools that build an exact one-path
-  whole-file or selected-hunk patch in a private index/object directory, bind
-  its attribute chain, selection, and repository state, then promote verified
-  objects and atomically install only the reviewed index through `index.lock`;
+- `git_stage_preview` and `git_stage_apply` tools that build an exact
+  one-to-sixteen-path whole-file set or one selected-hunk patch in a private
+  index/object directory, bind every attribute chain, selection, and repository
+  state, then promote verified objects and atomically install only the reviewed
+  index through `index.lock`;
 - `git_commit_preview` and `git_commit_apply` tools that reconstruct the
   complete staged tree in a private object directory, bind an ordinary or
   exact two-parent merge topology plus normalized message and fixed identity/
@@ -2417,15 +2418,24 @@ including the selected Sandbox backend hash. The tool supports Agent and
 model-free typed Workflow Tool nodes.
 
 `git_stage_preview` extends this read surface without changing the real index,
-refs, worktree, or object database. It accepts exactly one bounded regular file
-or one tracked path deleted from the worktree. With omitted `hunkIndexes`,
-Napier copies the current index into `.git/napier-stage/<ephemeral>`, directs
-both `GIT_INDEX_FILE` and `GIT_OBJECT_DIRECTORY` there, uses the real fixed
-`git add`, and renders the result through `git diff --cached HEAD`. For an
-existing regular-text modification, a strictly increasing set of 1-based
-`hunkIndexes` instead selects up to 32 complete hunks from a fixed single-path
-index-to-worktree patch and applies only those hunks to the private index
-through fixed `git apply --cached --unidiff-zero`. New/deleted/binary,
+refs, worktree, or object database. It accepts `path` for one bounded regular or
+tracked-deleted file, or `paths` for one canonical 1–16 target set. Napier
+normalizes aliases, rejects NFC/case-fold collisions on relevant filesystems,
+sorts targets by code point, and binds every file bytes/mode plus root-to-target
+`.gitattributes` chain. Present target bytes are capped at 16 MiB each and
+32 MiB aggregate. Napier copies the current index into
+`.git/napier-stage/<ephemeral>`, directs both `GIT_INDEX_FILE` and
+`GIT_OBJECT_DIRECTORY` there, then runs fixed `git add -- path` once per ordered
+target against that same private index. It renders one complete patch by
+concatenating a fixed path-filtered `git diff --cached HEAD` for every target;
+each target must contribute a reviewable staged delta and the aggregate remains
+128 KiB.
+
+For one `path`, a strictly increasing set of 1-based `hunkIndexes` instead
+selects up to 32 complete hunks from a fixed single-path index-to-worktree patch
+and applies only those hunks to the private index through fixed
+`git apply --cached --unidiff-zero`. Hunk selection is unavailable with
+`paths`. New/deleted/binary,
 mode-changing, renamed, malformed, CRLF patch, or out-of-range selections fail
 closed; whole-path staging remains available for supported new/deleted files.
 The OS Sandbox keeps the complete workspace read-only and grants write access
@@ -2434,8 +2444,8 @@ hash, repository/config/index state, target bytes/mode, selected-hunk protocol
 and digest, parent `.gitattributes` chain, and `.git/info/attributes` produce a
 one-use five-minute capability scoped to its Agent Run or Workflow Plan.
 
-`git_stage_apply` consumes that capability, rechecks every binding under the
-existing cross-Manager path lock, reconstructs the same private index, and
+`git_stage_apply` consumes that capability, locks the real index plus every
+target path, rechecks every binding, reconstructs the same private index, and
 requires identical index and patch hashes. Runtime verifies every new loose
 object by SHA-1, promotes it by no-overwrite hard link, acquires the standard
 `.git/index.lock`, revalidates again, fsyncs the prepared index, and atomically
@@ -2573,9 +2583,10 @@ never retried as merge, force, reset, or history rewriting. Branch names and
 patches remain live-only while Ledger/Replay/Workflow/Web retain commit IDs,
 counts, and plan/ref/runtime/result hashes.
 
-These slices do not stage directories, symlinks, or multiple paths in one
-staging transaction. Selected-hunk staging is text-only and does not split
-new/deleted, binary, mode, rename, or more-than-32-hunk changes. They do not
+These slices do not stage directories or symlinks. Multi-path staging is capped
+at 16 whole paths and does not permit per-path hunk selections; selected-hunk
+staging is text-only and does not split new/deleted, binary, mode, rename, or
+more-than-32-hunk changes. They do not
 support repositories without an existing
 index/HEAD, linked worktrees, split/sparse indexes, SHA-256 objects, reftable
 refs, alternates, staged submodule/gitlink changes, shared repository ACLs, or

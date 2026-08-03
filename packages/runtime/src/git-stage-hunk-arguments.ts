@@ -3,6 +3,7 @@ import {
   commonGitArguments,
   gitConfigPolicyArguments,
   gitConfigPolicySha256,
+  gitStageAddArguments,
   gitStageArgumentsSha256,
   gitStageDiffArguments,
   type GitArgumentRepository,
@@ -43,14 +44,30 @@ export function gitStageApplyPatchArguments(
 
 export function gitStageOperationArgumentsSha256(
   repository: GitArgumentRepository,
-  targetPath: string,
+  targetPaths: readonly string[],
   contextLines: number,
   selectionMode: "path" | "hunks",
   hunkSelectionSha256: string,
 ): string {
-  if (selectionMode === "path") {
-    return gitStageArgumentsSha256(repository, targetPath, contextLines);
+  if (selectionMode === "path" && targetPaths.length === 1) {
+    return gitStageArgumentsSha256(repository, targetPaths[0]!, contextLines);
   }
+  if (selectionMode === "path") {
+    return sha256(
+      canonicalJson({
+        configPolicyArguments: gitConfigPolicyArguments(repository),
+        configPolicySha256: gitConfigPolicySha256("stage"),
+        mode: "ordered_multi_path",
+        add: targetPaths.map((targetPath) =>
+          gitStageAddArguments(repository, targetPath),
+        ),
+        stagedDiff: targetPaths.map((targetPath) =>
+          gitStageDiffArguments(repository, targetPath, contextLines),
+        ),
+      }),
+    );
+  }
+  const targetPath = targetPaths[0]!;
   return sha256(
     canonicalJson({
       configPolicyArguments: gitConfigPolicyArguments(repository),

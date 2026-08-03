@@ -37,7 +37,7 @@ export function gitStageEventEvidence(
   const status = stageStatus(value["status"]);
   const postcondition = stagePostcondition(value["postcondition"]);
   const contextLines = integer(value["contextLines"], 0, 10);
-  const fileCount = integer(value["fileCount"], 0, 1);
+  const fileCount = integer(value["fileCount"], 1, 16);
   const hunkCount = integer(value["hunkCount"], 0, 100_000);
   const addedLineCount = integer(value["addedLineCount"], 0, 1_000_000);
   const deletedLineCount = integer(value["deletedLineCount"], 0, 1_000_000);
@@ -64,7 +64,7 @@ export function gitStageEventEvidence(
     value["schemaVersion"] !== 1 ||
     !validShape(value, action, status, postcondition) ||
     contextLines === undefined ||
-    fileCount !== 1 ||
+    fileCount === undefined ||
     hunkCount === undefined ||
     addedLineCount === undefined ||
     deletedLineCount === undefined ||
@@ -107,8 +107,7 @@ export function gitStageEventEvidence(
       : {}),
     ...(typeof value["sourcePreviewResultSha256"] === "string"
       ? {
-          gitStageSourcePreviewResultSha256:
-            value["sourcePreviewResultSha256"],
+          gitStageSourcePreviewResultSha256: value["sourcePreviewResultSha256"],
         }
       : {}),
     gitStageSandboxSha256: digest[8]!,
@@ -192,9 +191,7 @@ function stageAction(value: unknown): "preview" | "apply" | undefined {
 function stageStatus(
   value: unknown,
 ): "ready" | "applied" | "indeterminate" | undefined {
-  return value === "ready" ||
-    value === "applied" ||
-    value === "indeterminate"
+  return value === "ready" || value === "applied" || value === "indeterminate"
     ? value
     : undefined;
 }

@@ -4210,35 +4210,40 @@ stage-0 entry but does not create a merge commit; Commit continues to reject
 ## Git Stage Transaction
 
 ```text
-git_stage_preview(path, hunkIndexes?)
+git_stage_preview(path | paths, hunkIndexes?)
   -> bind direct repository + HEAD/config/index modes and bytes
-  -> bind target file bytes/executable bit or tracked deletion
-  -> bind root-to-target .gitattributes + .git/info/attributes
+  -> normalize one path or 1-16 paths; reject aliases/NFC/case collisions
+  -> sort by deterministic code-point order
+  -> bind every target bytes/executable bit or tracked deletion
+  -> require <=16 MiB each and <=32 MiB aggregate present target bytes
+  -> bind every root-to-target .gitattributes + .git/info/attributes chain
   -> create 0700 .git/napier-stage/<ephemeral>
   -> copy current index; redirect GIT_INDEX_FILE and GIT_OBJECT_DIRECTORY
   -> mount workspace read-only; mount only ephemeral directory writable
-  -> with omitted hunkIndexes:
-     - run fixed git add -- path
+  -> with whole-path mode:
+     - run fixed git add -- path for every ordered target against one index
+     - run fixed path-filtered git diff --cached HEAD for every target
+     - require every target to contribute one reviewable staged delta
   -> with strictly increasing 1-based hunkIndexes:
+     - require the single path input; reject paths
      - run fixed single-path index-to-worktree diff
      - parse <=32 complete existing regular-text modification hunks
      - reject new/delete/binary/mode/rename/malformed/CRLF forms
      - run fixed git apply --cached --unidiff-zero with selected patch stdin
-  -> run fixed git diff --cached HEAD -- path
-  -> require one complete <=128 KiB patch and unchanged real repository
+  -> require one complete aggregate <=128 KiB patch and unchanged real repository
   -> delete private index/objects
   -> return live patch + one-use Run/Plan-scoped preview capability
 
 git_stage_apply(previewId)
-  -> consume capability; lock real index + target path
-  -> revalidate repository, target, attributes, config policy, and executable
+  -> consume capability; lock real index + every target path
+  -> revalidate repository, all targets/attributes, config policy, executable
   -> reconstruct private index; require identical index and patch hashes
   -> inflate and SHA-1 verify each bounded loose object
   -> promote objects with no-overwrite hard links and directory fsync
   -> create standard .git/index.lock exclusively
   -> revalidate all preview state at the commit barrier
   -> write/fsync prepared index, preserve mode, rename, fsync .git
-  -> verify new index + unchanged non-index/target/attribute state
+  -> verify new index + unchanged non-index/all-target/all-attribute state
   -> return applied or indeterminate hash-only durable evidence
 ```
 
@@ -4246,8 +4251,11 @@ git_stage_apply(previewId)
 `git-stage-private-index.ts` owns private Git execution, loose-object
 verification/promotion, and index installation; `git-stage-hunk-patch.ts`
 owns structural parsing, bounds, selected patch construction, and the semantic
-protocol digest; `git-stage-hunk-arguments.ts` owns fixed diff/apply argv.
-`git-stage-model.ts` owns bounded target/attribute snapshots;
+protocol digest; `git-stage-private-mutation.ts` owns ordered whole-path or
+selected-hunk private-index mutation. `git-stage-targets.ts` owns target
+normalization, collision rejection, aggregate bounds, state/attribute snapshots,
+and compatible single/set hashes. `git-stage-hunk-arguments.ts` owns fixed argv.
+`git-stage-model.ts` owns bounded file/attribute snapshots;
 `git-stage-details.ts` owns receipt construction. The selection digest is
 folded into `gitArgumentsSha256`, so schema-1 Receipt shape remains compatible.
 Agent Runs scope capabilities by Run ID, while typed Workflow nodes scope them
@@ -4256,8 +4264,9 @@ capability and hashes but no path or patch body. Web Trace validates only
 bounded counts, state/result hashes, durability, and
 postcondition.
 
-The transaction intentionally supports one regular or tracked-deleted path at
-a time. It rejects directories, symlinks, missing HEAD/index, linked
+The transaction supports up to sixteen whole regular/tracked-deleted paths or
+selected hunks from one existing text path. It rejects directories, symlinks,
+multi-path hunk selection, missing HEAD/index, linked
 worktrees, split/sparse indexes, SHA-256 object repositories, alternates,
 submodules, shared repository ACLs, command-bearing config, graft metadata,
 OCI, and attribute-chain drift. Literal pathspec mode prevents target strings
@@ -4267,8 +4276,9 @@ Capabilities remain process-local; restart or expiry requires a fresh preview
 instead of reusing a completed Workflow node output. Branch switch, checkout,
 reset, clean, merge completion, binary/multi-path conflict resolution,
 non-linear Review promotion, and arbitrary revisions remain unavailable.
-Bounded single-text conflicts can reach this transaction only through the
-hash-bound inspection flow above; staging is not a general Git shell.
+Multiple reviewed text-conflict worktree resolutions can share the whole-path
+transaction when each produces a staged delta, but conflict inspection remains
+one path at a time; staging is not a general Git shell.
 
 ## Git Commit Transaction
 

@@ -1,5 +1,5 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -153,6 +153,124 @@ describe("Workflow preview-bound Git stage Tool nodes", () => {
     ).toEqual(expect.objectContaining({ status: "valid" }));
     fixture.store.close();
   }, 30_000);
+
+  it("passes one atomic multi-path preview across Plan-scoped child Runs", async () => {
+    const fixture = await createFixture();
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_WORKFLOW.txt"),
+      "PRIVATE_MULTI_MODIFIED\n",
+    );
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_WORKFLOW_NEW.txt"),
+      "PRIVATE_MULTI_NEW\n",
+    );
+    await unlink(
+      path.join(fixture.workspaceRoot, "PRIVATE_WORKFLOW_DELETE.txt"),
+    );
+    const previewReceipt = receiptSchema("preview");
+    const applyReceipt = receiptSchema("apply");
+    const manifest = defineExecutionPlanWorkflow({
+      name: "Stage reviewed Git path set",
+      version: 1,
+      description: "Preview and atomically stage three repository paths.",
+      blueprint: fixture.blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: applyReceipt,
+      outputNodeId: "apply",
+      maxConcurrency: 1,
+      nodes: [
+        {
+          id: "preview",
+          type: "tool",
+          tool: "git_stage_preview",
+          effect: "read",
+          inputBindings: {
+            paths: {
+              source: "literal",
+              value: [
+                "PRIVATE_WORKFLOW.txt",
+                "PRIVATE_WORKFLOW_NEW.txt",
+                "PRIVATE_WORKFLOW_DELETE.txt",
+              ],
+            },
+          },
+          inputSchema: multiPreviewInputSchema(),
+          outputSchema: previewReceipt,
+          timeoutMs: 15_000,
+          maxAttempts: 1,
+        },
+        {
+          id: "apply",
+          type: "tool",
+          tool: "git_stage_apply",
+          effect: "write",
+          inputBindings: {
+            previewId: {
+              source: "node",
+              nodeId: "preview",
+              path: ["previewId"],
+            },
+          },
+          inputSchema: applyInputSchema(),
+          outputSchema: applyReceipt,
+          timeoutMs: 15_000,
+          maxAttempts: 1,
+        },
+      ],
+    });
+    const runtime = new AgentRuntime(
+      fixture.store,
+      new ModelRegistry(),
+      undefined,
+      directSandbox(),
+    );
+    const workflows = new ExecutionPlanWorkflowRuntime(fixture.store, runtime);
+
+    const result = await workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest,
+        input: { request: "Stage the reviewed path set atomically." },
+      },
+    });
+
+    expect(result).toEqual(expect.objectContaining({ status: "completed" }));
+    expect(result.output).toEqual(
+      expect.objectContaining({
+        kind: "napier.git-stage",
+        action: "apply",
+        status: "applied",
+        postcondition: "verified",
+        fileCount: 3,
+        durable: true,
+      }),
+    );
+    const staged = await gitOutput(fixture.workspaceRoot, ["diff", "--cached"]);
+    expect(staged).toContain("PRIVATE_MULTI_MODIFIED");
+    expect(staged).toContain("PRIVATE_MULTI_NEW");
+    expect(staged).toContain("PRIVATE_WORKFLOW_DELETE");
+    const completed = (await fixture.store.listEvents(fixture.threadId)).filter(
+      (event) =>
+        event.type === "tool.completed" &&
+        ["git_stage_preview", "git_stage_apply"].includes(
+          String(record(event.payload)?.["toolName"]),
+        ),
+    );
+    const durable = JSON.stringify(completed);
+    for (const secret of [
+      "PRIVATE_WORKFLOW_NEW",
+      "PRIVATE_WORKFLOW_DELETE",
+      "PRIVATE_MULTI_MODIFIED",
+    ]) {
+      expect(durable).not.toContain(secret);
+    }
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(fixture.store, fixture.threadId),
+      ),
+    ).toEqual(expect.objectContaining({ status: "valid" }));
+    fixture.store.close();
+  }, 30_000);
 });
 
 async function createFixture() {
@@ -165,7 +283,15 @@ async function createFixture() {
     path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
     selectedHunkContent("PRIVATE_FIRST_BEFORE", "PRIVATE_SECOND_BEFORE"),
   );
-  await git(workspaceRoot, ["add", "PRIVATE_WORKFLOW.txt"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_WORKFLOW_DELETE.txt"),
+    "PRIVATE_WORKFLOW_DELETE\n",
+  );
+  await git(workspaceRoot, [
+    "add",
+    "PRIVATE_WORKFLOW.txt",
+    "PRIVATE_WORKFLOW_DELETE.txt",
+  ]);
   await git(workspaceRoot, [
     "-c",
     "user.name=Napier Test",
@@ -248,6 +374,22 @@ function applyInputSchema(): WorkflowObjectSchema {
     type: "object",
     properties: { previewId: { type: "string" } },
     required: ["previewId"],
+    additionalProperties: false,
+  };
+}
+
+function multiPreviewInputSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      paths: {
+        type: "array",
+        items: { type: "string" },
+        minItems: 1,
+        maxItems: 16,
+      },
+    },
+    required: ["paths"],
     additionalProperties: false,
   };
 }

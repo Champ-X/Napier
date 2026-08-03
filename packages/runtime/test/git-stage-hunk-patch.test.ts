@@ -91,7 +91,7 @@ describe("Git stage hunk patch selection", () => {
     expect(
       gitStageOperationArgumentsSha256(
         repository,
-        "source.txt",
+        ["source.txt"],
         3,
         "path",
         pathSelection,
@@ -100,7 +100,7 @@ describe("Git stage hunk patch selection", () => {
     expect(
       gitStageOperationArgumentsSha256(
         repository,
-        "source.txt",
+        ["source.txt"],
         3,
         "hunks",
         firstHunk,
@@ -108,11 +108,20 @@ describe("Git stage hunk patch selection", () => {
     ).not.toBe(
       gitStageOperationArgumentsSha256(
         repository,
-        "source.txt",
+        ["source.txt"],
         3,
         "hunks",
         secondHunk,
       ),
     );
+    expect(
+      gitStageOperationArgumentsSha256(
+        repository,
+        ["a.txt", "b.txt"],
+        3,
+        "path",
+        pathSelection,
+      ),
+    ).not.toBe(gitStageArgumentsSha256(repository, "a.txt", 3));
   });
 });

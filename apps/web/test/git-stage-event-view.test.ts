@@ -44,17 +44,17 @@ describe("Git stage Trace evidence", () => {
         gitStageProposedIndexSha256: "6".repeat(64),
       }),
     );
-    expect(toolEventTraceSummary(
-      event("git_stage_preview", {
-        ...baseDetails(),
-        action: "preview",
-        status: "ready",
-        postcondition: "not_applied",
-        durable: false,
-      }),
-    )).toContain(
-      "git stage preview / stage ready",
-    );
+    expect(
+      toolEventTraceSummary(
+        event("git_stage_preview", {
+          ...baseDetails(),
+          action: "preview",
+          status: "ready",
+          postcondition: "not_applied",
+          durable: false,
+        }),
+      ),
+    ).toContain("git stage preview / stage ready");
 
     const apply = toolEventTraceView(
       event("git_stage_apply", {
@@ -127,6 +127,37 @@ describe("Git stage Trace evidence", () => {
         }),
       )?.gitStageAction,
     ).toBeUndefined();
+    expect(
+      toolEventTraceView(
+        event("git_stage_preview", {
+          ...baseDetails(),
+          action: "preview",
+          status: "ready",
+          postcondition: "not_applied",
+          durable: false,
+          fileCount: 17,
+        }),
+      )?.gitStageAction,
+    ).toBeUndefined();
+  });
+
+  it("accepts a bounded multi-path stage receipt", () => {
+    const view = toolEventTraceView(
+      event("git_stage_preview", {
+        ...baseDetails(),
+        action: "preview",
+        status: "ready",
+        postcondition: "not_applied",
+        durable: false,
+        fileCount: 16,
+      }),
+    );
+    expect(view).toEqual(
+      expect.objectContaining({
+        gitStageAction: "preview",
+        gitStageFileCount: 16,
+      }),
+    );
   });
 });
 
@@ -146,10 +177,7 @@ function baseDetails() {
   };
 }
 
-function event(
-  toolName: string,
-  details: Record<string, JsonValue>,
-): RunEvent {
+function event(toolName: string, details: Record<string, JsonValue>): RunEvent {
   return {
     id: "event_git_stage",
     threadId: "thread_git_stage",

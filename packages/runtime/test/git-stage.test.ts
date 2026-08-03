@@ -325,6 +325,156 @@ describe("preview-bound Git staging", () => {
     ).resolves.toBe("");
   }, 30_000);
 
+  it("atomically stages one canonical multi-path modify/add/delete set", async () => {
+    const fixture = await createRepository();
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_DELETE.txt"),
+      "PRIVATE_DELETE_BEFORE\n",
+    );
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_UNCHANGED.txt"),
+      "PRIVATE_UNCHANGED\n",
+    );
+    await git(fixture.workspaceRoot, [
+      "add",
+      "PRIVATE_DELETE.txt",
+      "PRIVATE_UNCHANGED.txt",
+    ]);
+    await git(fixture.workspaceRoot, [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "multi-path baseline",
+    ]);
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
+      "PRIVATE_MODIFIED\n",
+    );
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_NEW.txt"),
+      "PRIVATE_NEW\n",
+    );
+    await unlink(path.join(fixture.workspaceRoot, "PRIVATE_DELETE.txt"));
+    const sandbox = directSandbox();
+    const manager = managerFor(fixture, sandbox);
+    const indexPath = path.join(fixture.workspaceRoot, ".git/index");
+    const indexBefore = await sha256File(indexPath);
+    const objectsBefore = await objectSet(fixture.workspaceRoot);
+
+    await expect(
+      manager.preview("thread_multi_invalid", "run_multi_invalid", {
+        paths: ["PRIVATE_TRACKED.txt", "PRIVATE_UNCHANGED.txt"],
+      }),
+    ).rejects.toThrow("Every Git stage target");
+    await expect(
+      manager.preview("thread_multi_invalid", "run_multi_invalid", {
+        paths: ["PRIVATE_TRACKED.txt", "sub/../PRIVATE_TRACKED.txt"],
+      }),
+    ).rejects.toThrow("paths collide");
+    await expect(
+      manager.preview("thread_multi_invalid", "run_multi_invalid", {
+        path: "PRIVATE_TRACKED.txt",
+        paths: ["PRIVATE_NEW.txt"],
+      }),
+    ).rejects.toThrow("exactly one path");
+    await expect(
+      manager.preview("thread_multi_invalid", "run_multi_invalid", {
+        paths: ["PRIVATE_NEW.txt", "PRIVATE_TRACKED.txt"],
+        hunkIndexes: [1],
+      }),
+    ).rejects.toThrow("single path input");
+    await expect(
+      manager.preview("thread_multi_invalid", "run_multi_invalid", {
+        paths: Array.from({ length: 17 }, (_, index) => `file-${index}.txt`),
+      }),
+    ).rejects.toThrow("bounded path list");
+    expect(await sha256File(indexPath)).toBe(indexBefore);
+    expect(await objectSet(fixture.workspaceRoot)).toEqual(objectsBefore);
+
+    const preview = await manager.preview("thread_multi", "run_multi", {
+      paths: ["PRIVATE_TRACKED.txt", "PRIVATE_NEW.txt", "PRIVATE_DELETE.txt"],
+      contextLines: 1,
+    });
+
+    expect(preview.paths).toEqual([
+      "PRIVATE_DELETE.txt",
+      "PRIVATE_NEW.txt",
+      "PRIVATE_TRACKED.txt",
+    ]);
+    expect(preview.details).toEqual(
+      expect.objectContaining({
+        fileCount: 3,
+        pathSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(preview.details.pathSha256).not.toBe(sha256("PRIVATE_DELETE.txt"));
+    expect(preview.patch).toContain("-PRIVATE_DELETE_BEFORE");
+    expect(preview.patch).toContain("+PRIVATE_NEW");
+    expect(preview.patch).toContain("+PRIVATE_MODIFIED");
+    expect(await sha256File(indexPath)).toBe(indexBefore);
+    expect(await objectSet(fixture.workspaceRoot)).toEqual(objectsBefore);
+
+    const applied = await manager.apply(
+      "thread_multi",
+      "run_multi",
+      preview.id,
+    );
+
+    expect(applied).toEqual(
+      expect.objectContaining({
+        paths: preview.paths,
+        selectionMode: "path",
+        selectedHunkCount: 0,
+        details: expect.objectContaining({
+          status: "applied",
+          postcondition: "verified",
+          durable: true,
+        }),
+      }),
+    );
+    const staged = await gitOutput(fixture.workspaceRoot, ["diff", "--cached"]);
+    expect(staged).toContain("-PRIVATE_DELETE_BEFORE");
+    expect(staged).toContain("+PRIVATE_NEW");
+    expect(staged).toContain("+PRIVATE_MODIFIED");
+    await expect(gitOutput(fixture.workspaceRoot, ["diff"])).resolves.toBe("");
+    expect(
+      sandbox.launches
+        .filter((launch) => launch.args.includes("add"))
+        .slice(-3)
+        .map((launch) => launch.args.at(-1)),
+    ).toEqual(preview.paths);
+    await expect(
+      readdir(path.join(fixture.workspaceRoot, ".git/napier-stage")),
+    ).resolves.toEqual([]);
+
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_NEW.txt"),
+      "PRIVATE_NEW_STALE\n",
+    );
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
+      "PRIVATE_MODIFIED_STALE\n",
+    );
+    const stalePreview = await manager.preview(
+      "thread_multi_stale",
+      "run_multi_stale",
+      { paths: ["PRIVATE_NEW.txt", "PRIVATE_TRACKED.txt"] },
+    );
+    const indexBeforeStale = await sha256File(indexPath);
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_NEW.txt"),
+      "PRIVATE_EXTERNAL_DRIFT\n",
+    );
+    await expect(
+      manager.apply("thread_multi_stale", "run_multi_stale", stalePreview.id),
+    ).rejects.toThrow("stale");
+    expect(await sha256File(indexPath)).toBe(indexBeforeStale);
+  }, 30_000);
+
   it("supports untracked and deleted files while rejecting stale or unsafe state", async () => {
     const fixture = await createRepository();
     const sandbox = directSandbox();
@@ -502,6 +652,22 @@ describe("preview-bound Git staging", () => {
         reason: "private-index Git stage preview",
       }),
     );
+    expect(
+      assessToolCall(
+        "workspace",
+        "git_stage_preview",
+        { paths: ["src/a.ts", "src/b.ts"] },
+        workspace,
+      ).allowed,
+    ).toBe(true);
+    expect(
+      assessToolCall(
+        "workspace",
+        "git_stage_preview",
+        { paths: ["src/a.ts", ".git/config"] },
+        workspace,
+      ).allowed,
+    ).toBe(false);
     expect(
       assessToolCall(
         "workspace",

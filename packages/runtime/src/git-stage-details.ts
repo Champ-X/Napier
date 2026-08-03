@@ -2,7 +2,13 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { gitStageOperationArgumentsSha256 } from "./git-stage-hunk-arguments.js";
 import type { GitRepository, GitRepositoryState } from "./git-repository.js";
 import type { PreparedGitStage } from "./git-stage-private-index.js";
-import type { GitStageDetails, GitStagePathState } from "./git-stage-model.js";
+import type { GitStageDetails } from "./git-stage-model.js";
+import {
+  gitStageTargetAttributesSha256,
+  gitStageTargetPathsSha256,
+  gitStageTargetStatesSha256,
+  type GitStageTarget,
+} from "./git-stage-targets.js";
 
 export function createGitStageDetails(input: {
   action: "preview" | "apply";
@@ -12,9 +18,7 @@ export function createGitStageDetails(input: {
   expiresAt?: string;
   repository: GitRepository;
   repositoryState: GitRepositoryState;
-  path: string;
-  pathState: GitStagePathState;
-  attributesStateSha256: string;
+  targets: readonly GitStageTarget[];
   contextLines: number;
   prepared: PreparedGitStage;
   afterIndexSha256?: string;
@@ -30,9 +34,9 @@ export function createGitStageDetails(input: {
     postcondition: input.postcondition,
     ...(input.previewId ? { previewId: input.previewId } : {}),
     ...(input.expiresAt ? { expiresAt: input.expiresAt } : {}),
-    pathSha256: sha256(input.path),
-    pathStateSha256: input.pathState.stateSha256,
-    attributesStateSha256: input.attributesStateSha256,
+    pathSha256: gitStageTargetPathsSha256(input.targets),
+    pathStateSha256: gitStageTargetStatesSha256(input.targets),
+    attributesStateSha256: gitStageTargetAttributesSha256(input.targets),
     contextLines: input.contextLines,
     ...input.prepared.counts,
     patchSha256: sha256(input.prepared.patch),
@@ -51,7 +55,7 @@ export function createGitStageDetails(input: {
     gitExecutableSha256: input.prepared.executableSha256,
     gitArgumentsSha256: gitStageOperationArgumentsSha256(
       input.repository,
-      input.path,
+      input.targets.map((target) => target.path),
       input.contextLines,
       input.prepared.selectionMode,
       input.prepared.hunkSelectionSha256,
