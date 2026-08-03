@@ -422,6 +422,10 @@ tests lower `app.ts` to 18,950 lines before the review routes move.
 `evaluation-review-http-response.ts` owns adjudication, ballot, consensus
 preview, and resolution list/result evidence headers on shared hash
 primitives, lowering `app.ts` to 18,803 lines.
+`evaluation-review-http.ts` owns all six adjudication, ballot, consensus
+preview/resolve, and resolution-history routes behind a nine-method Store port.
+Ledger event payloads, idempotent 200/201 behavior, 404/409 errors, and every
+response hash remain unchanged. This lowers `app.ts` to 18,534 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
