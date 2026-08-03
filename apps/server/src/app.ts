@@ -201,13 +201,10 @@ import type {
   RunControlMessage,
   RunEvent,
   RunEvaluationRecord,
-  SubagentOutcomeEvidenceVerification,
-  SubagentOutcomeReview,
   EvaluationReviewerBallot,
   EvaluationConsensusReport,
   EvaluationConsensusResolution,
   ResumeRunRequest,
-  ReviewSubagentOutcomeRequest,
   ReviewExtensionRequest,
   ReviewMcpToolRequest,
   ReviewExecutionPlanBlueprintRecordOutcomesRequest,
@@ -327,7 +324,6 @@ import {
   receiptTrustAnchorsFromDirectory,
   reviewExecutionPlanBlueprintRecordOutcomes,
   reviewExecutionPlanReplanDraft,
-  reviewSubagentOutcome,
   RUN_STREAM_ERROR_CODE,
   RUN_STREAM_ERROR_MESSAGE,
   RunEvaluationService,
@@ -346,7 +342,6 @@ import {
   verifyTrustedReceiptEnvelope,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
-  verifySubagentOutcomeEvidence,
   verifyUsagePriceTableCatalog,
   type WorkspaceFileMutationManager,
   type WorkspaceProcessManager,
@@ -406,6 +401,7 @@ import { registerMemoryHttp } from "./memory-http.js";
 import { registerThreadEvidenceHttp } from "./thread-evidence-http.js";
 import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
 import { setThreadDetailProjectionHeaders } from "./thread-lifecycle-http-response.js";
+import { registerThreadOperationsHttp } from "./thread-operations-http.js";
 import {
   automationScheduleListSha256,
   registerScheduleHttp,
@@ -4203,93 +4199,7 @@ export function createApp(services: NapierServices): Hono {
   });
 
   registerThreadLifecycleHttp(app, services);
-
-  app.post(
-    "/api/threads/:threadId/subagents/:taskId/outcome/verify",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const taskId = context.req.param("taskId");
-      services.store.getThread(threadId);
-      const task = services.store
-        .listSubagentTasks(threadId)
-        .find((candidate) => candidate.id === taskId);
-      if (!task) {
-        return jsonError(context, "Subagent task not found", 404);
-      }
-      if (!task.outcome) {
-        return jsonError(context, "Subagent outcome is unavailable", 409);
-      }
-      const verification = await verifySubagentOutcomeEvidence(
-        task.outcome,
-        services.store.workspaceRoot,
-      );
-      setSubagentOutcomeEvidenceVerificationHeaders(context, verification);
-      return context.json(verification);
-    },
-  );
-
-  app.post(
-    "/api/threads/:threadId/subagents/:taskId/outcome/review",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const taskId = context.req.param("taskId");
-      services.store.getThread(threadId);
-      const task = services.store
-        .listSubagentTasks(threadId)
-        .find((candidate) => candidate.id === taskId);
-      if (!task) {
-        return jsonError(context, "Subagent task not found", 404);
-      }
-      if (!task.outcome) {
-        return jsonError(context, "Subagent outcome is unavailable", 409);
-      }
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          8 * 1024,
-          "Subagent outcome review request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const request = parseReviewSubagentOutcomeRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Subagent outcome review request is invalid",
-          400,
-        );
-      }
-      try {
-        await assertAvailableModel(services, request.model);
-        const review = await reviewSubagentOutcome(
-          services.models,
-          task,
-          request.model,
-        );
-        setSubagentOutcomeReviewHeaders(context, review);
-        return context.json(review);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 400);
-      }
-    },
-  );
-
-  app.get("/api/threads/:threadId/recovery", (context) => {
-    const threadId = context.req.param("threadId");
-    services.store.getThread(threadId);
-    const recovery = {
-      assessments: services.store.listAutomaticRecoveryAssessments(threadId),
-      attempts: services.store.listAutomaticRecoveryAttempts(threadId),
-    };
-    setAutomaticRecoveryProjectionHeaders(context, recovery);
-    return context.json(recovery);
-  });
+  registerThreadOperationsHttp(app, services);
 
   registerWorkspaceProcessHttp(app, services.workspaceProcesses, {
     jsonError,
@@ -4299,48 +4209,6 @@ export function createApp(services: NapierServices): Hono {
     requestRecord: (input, keys) => requestRecord(input, [...keys]),
     setProjectionHeaders: setWorkspaceProcessProjectionHeaders,
   });
-
-  app.get("/api/threads/:threadId/workspace-trash", async (context) => {
-    const threadId = context.req.param("threadId");
-    try {
-      const list = await services.workspaceFileMutations.listTrash(threadId);
-      setWorkspaceFileProjectionHeaders(context, list);
-      return context.json(list);
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 404);
-    }
-  });
-
-  app.post(
-    "/api/threads/:threadId/workspace-trash/:trashId/restore",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const trashId = context.req.param("trashId");
-      if (!validWorkspaceTrashId(trashId)) {
-        return jsonError(context, "Workspace trash ID is invalid", 400);
-      }
-      try {
-        const result = await services.workspaceFileMutations.restoreTrash(
-          threadId,
-          trashId,
-          context.req.raw.signal,
-        );
-        setWorkspaceFileProjectionHeaders(context, result);
-        return context.json(result);
-      } catch (error) {
-        const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("already exists") ||
-            message.includes("drifted") ||
-            message.includes("stale")
-            ? 409
-            : 404,
-        );
-      }
-    },
-  );
 
   registerScheduleHttp(app, services);
 
@@ -9451,14 +9319,6 @@ function parseAnswerOperatorDecisionRequest(
   };
 }
 
-function parseReviewSubagentOutcomeRequest(
-  input: unknown,
-): ReviewSubagentOutcomeRequest | undefined {
-  const record = requestRecord(input, ["model"]);
-  const model = parseModelRef(record?.["model"]);
-  return record && model ? { model } : undefined;
-}
-
 function parseCreateMcpExtensionRequest(
   input: unknown,
 ): CreateMcpExtensionRequest | undefined {
@@ -14254,10 +14114,6 @@ function validRunId(value: unknown): value is string {
   return typeof value === "string" && /^run_[a-z0-9]{8,80}$/.test(value);
 }
 
-function validWorkspaceTrashId(value: unknown): value is string {
-  return typeof value === "string" && /^trash_[a-z0-9]{8,80}$/.test(value);
-}
-
 function setOptionalHeader(
   context: Context,
   name: string,
@@ -17232,76 +17088,6 @@ function setWorkspaceProcessProjectionHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, projection);
-}
-
-function setWorkspaceFileProjectionHeaders(
-  context: Context,
-  projection: unknown,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, projection);
-}
-
-function setSubagentOutcomeEvidenceVerificationHeaders(
-  context: Context,
-  verification: SubagentOutcomeEvidenceVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, verification.contentSha256);
-  context.header("X-Napier-Evidence-Verification-Status", verification.status);
-  context.header("X-Napier-Subagent-Task-Id", verification.taskId);
-  context.header(
-    "X-Napier-Subagent-Outcome-SHA256",
-    verification.outcomeSha256,
-  );
-  context.header("X-Napier-Evidence-Count", String(verification.evidenceCount));
-  context.header(
-    "X-Napier-Evidence-Aligned-Count",
-    String(verification.alignedCount),
-  );
-  context.header(
-    "X-Napier-Evidence-Divergent-Count",
-    String(verification.divergentCount),
-  );
-  context.header(
-    "X-Napier-Evidence-Missing-Count",
-    String(verification.missingCount),
-  );
-}
-
-function setSubagentOutcomeReviewHeaders(
-  context: Context,
-  review: SubagentOutcomeReview,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, review.reviewSha256);
-  context.header("X-Napier-Subagent-Task-Id", review.taskId);
-  context.header("X-Napier-Subagent-Outcome-SHA256", review.outcomeSha256);
-  context.header("X-Napier-Subagent-Review-Verdict", review.verdict);
-  context.header("X-Napier-Subagent-Review-Score", String(review.score));
-  context.header("X-Napier-Subagent-Review-Risk", review.risk);
-  context.header(
-    "X-Napier-Subagent-Review-Concern-Count",
-    String(review.concerns.length),
-  );
-  context.header(
-    "X-Napier-Subagent-Review-Input-Tokens",
-    String(review.usage.inputTokens),
-  );
-  context.header(
-    "X-Napier-Subagent-Review-Output-Tokens",
-    String(review.usage.outputTokens),
-  );
-  context.header(
-    "X-Napier-Subagent-Review-Cost-USD",
-    String(review.usage.costUsd),
-  );
-  if (review.modelContextEnvelope) {
-    context.header(
-      "X-Napier-Subagent-Review-Model-Context-Envelope-SHA256",
-      review.modelContextEnvelope.contentSha256,
-    );
-  }
 }
 
 function setRunControlMessageHeaders(
@@ -21091,25 +20877,6 @@ function setExtensionPublisherTrustAnchorHeaders(
   context.header(
     "X-Napier-Extension-Publisher-Trust-Signing-Capable",
     String(Boolean(anchor.signingSource)),
-  );
-}
-
-function setAutomaticRecoveryProjectionHeaders(
-  context: Context,
-  recovery: {
-    assessments: readonly unknown[];
-    attempts: readonly unknown[];
-  },
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, recovery);
-  context.header(
-    "X-Napier-Recovery-Assessment-Count",
-    String(recovery.assessments.length),
-  );
-  context.header(
-    "X-Napier-Recovery-Attempt-Count",
-    String(recovery.attempts.length),
   );
 }
 

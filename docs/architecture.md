@@ -320,6 +320,16 @@ The composition root now only registers the adapter, decreasing `app.ts` to
 22,120 lines. The generated contract remains 255 routes with the same route-set
 digest and all 244 compatibility operations.
 
+Thread-scoped operational evidence follows an adjacent boundary.
+`thread-operations-http.ts` owns Subagent outcome verify/review, automatic
+Recovery projection, and Workspace Trash list/restore behind a five-member
+Store port plus the existing model catalog and file-mutation manager.
+Leaf validation preserves exact reviewer `ModelRef` and Trash ID grammar;
+the response module retains stable outcome hashes, review usage, recovery
+counts, and body-bound file evidence. No execution or state moved out of the
+Runtime. This extraction reduces `app.ts` again to 21,887 lines while the
+route set and compatibility baseline remain unchanged.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 
