@@ -34,16 +34,16 @@ export function assessGitBranchSwitchCall(
   if (mode === "observe") {
     return {
       allowed: false,
-      risk: toolName === "git_branch_switch_apply" ? "high" : "medium",
+      risk: "high",
       reason: "the active agent policy does not allow Git branch switching",
     };
   }
   return {
     allowed: true,
-    risk: toolName === "git_branch_switch_apply" ? "high" : "medium",
+    risk: "high",
     reason:
       toolName === "git_branch_switch_preview"
-        ? "same-commit Git branch switch preview"
-        : "fresh preview-bound HEAD symref transaction",
+        ? "bounded local Git branch switch preview"
+        : "fresh preview-bound worktree/index/HEAD transaction",
   };
 }

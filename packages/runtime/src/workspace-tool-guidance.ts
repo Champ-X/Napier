@@ -285,13 +285,13 @@ function gitToolGuidance(toolNames: ReadonlySet<string>): string[] {
     ...(toolNames.has("git_branch_switch_preview")
       ? [
           toolNames.has("git_branch_switch_apply")
-            ? "Use git_branch_switch_preview only to attach HEAD to an existing local branch at the exact current commit. Review the source/target hashes, then pass only its execution-scoped ID to git_branch_switch_apply."
-            : "git_branch_switch_preview verifies a same-commit target without changing HEAD because git_branch_switch_apply is disabled.",
+            ? "Use git_branch_switch_preview for an existing local branch. Same-tree targets preserve dirty state; a divergent target requires a clean bounded text worktree. Review the source/target hashes and complete checkout patch, then pass only its execution-scoped ID to git_branch_switch_apply."
+            : "git_branch_switch_preview verifies the target and any bounded checkout patch without changing HEAD because git_branch_switch_apply is disabled.",
         ]
       : []),
     ...(toolNames.has("git_branch_switch_apply")
       ? [
-          "git_branch_switch_apply atomically verifies the target OID and source HEAD before changing only HEAD plus its reflog. Divergent branches, checkout, index/worktree writes, hooks, remotes, and history rewriting remain unavailable.",
+          "git_branch_switch_apply commits a reviewed bounded divergent worktree and target index before an exact source/target HEAD transaction, with durable private rollback/recovery. Binary, symlink, attribute-converted, directory-lifecycle, remote, hook, and history-rewrite operations remain unavailable.",
         ]
       : []),
   ];

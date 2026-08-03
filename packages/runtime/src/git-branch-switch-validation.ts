@@ -19,6 +19,9 @@ import { snapshotGitHeadReflog } from "./git-ref-files.js";
 import type { GitBranchSwitchProcessEvidence } from "./git-branch-switch-model.js";
 
 export interface PreparedGitBranchSwitch {
+  sourceCommitSha1: string;
+  targetCommitSha1: string;
+  configProcess: GitInspectProcessResult;
   evidence: GitBranchSwitchProcessEvidence;
   processes: GitInspectProcessResult[];
 }
@@ -27,7 +30,8 @@ export async function prepareGitBranchSwitch(input: {
   options: GitInspectProcessOptions;
   repository: GitRepository;
   targetRef: string;
-  expectedCommitSha1?: string;
+  expectedSourceCommitSha1?: string;
+  expectedTargetCommitSha1?: string;
   deadline: number;
   signal?: AbortSignal;
 }): Promise<PreparedGitBranchSwitch> {
@@ -55,16 +59,23 @@ export async function prepareGitBranchSwitch(input: {
   const headCommitSha1 = requireCommit(head, "current HEAD");
   const targetCommitSha1 = requireCommit(target, "target branch");
   if (
-    headCommitSha1 !== targetCommitSha1 ||
-    (input.expectedCommitSha1 && headCommitSha1 !== input.expectedCommitSha1)
+    (input.expectedSourceCommitSha1 &&
+      headCommitSha1 !== input.expectedSourceCommitSha1) ||
+    (input.expectedTargetCommitSha1 &&
+      targetCommitSha1 !== input.expectedTargetCommitSha1)
   ) {
-    throw new Error(
-      "Git branch switch requires the target at the exact current HEAD",
-    );
+    throw new Error("Git branch switch commit state changed");
   }
   const processes = [config, head, target];
   return {
-    evidence: gitBranchSwitchProcessEvidence(headCommitSha1, processes),
+    sourceCommitSha1: headCommitSha1,
+    targetCommitSha1,
+    configProcess: config,
+    evidence: gitBranchSwitchProcessEvidence(
+      headCommitSha1,
+      targetCommitSha1,
+      processes,
+    ),
     processes,
   };
 }
@@ -101,11 +112,13 @@ function boundFileStateSha256(value: GitBoundFile): string {
 }
 
 export function gitBranchSwitchProcessEvidence(
-  commitSha1: string,
+  sourceCommitSha1: string,
+  targetCommitSha1: string,
   processes: GitInspectProcessResult[],
 ): GitBranchSwitchProcessEvidence {
   return {
-    commitSha1,
+    sourceCommitSha1,
+    commitSha1: targetCommitSha1,
     sandboxSha256: sha256(
       canonicalJson(processes.map((item) => item.sandboxSha256)),
     ),

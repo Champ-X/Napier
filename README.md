@@ -209,8 +209,9 @@ Version `0.1.0` includes:
   create and fsync only that ref/reflog without switching HEAD or touching the
   index/worktree;
 - `git_branch_switch_preview` and `git_branch_switch_apply` tools that attach
-  HEAD to an existing same-commit local branch through one target-OID/current-
-  HEAD-OID ref transaction, preserving dirty index/worktree state;
+  HEAD to an existing local branch through an exact source/target ref
+  transaction; same-tree switches preserve dirty state, while bounded
+  divergent text trees use durable worktree/index backup and recovery;
 - a `workspace_process` tool and lazy Processes Workbench for bounded
   background Node sessions with cursor-based stdout/stderr observation,
   explicit interactive stdin, cancellation, lifecycle settlement, graceful
@@ -2362,7 +2363,7 @@ read-only; Process Sessions add only the preview-bound scoped write mode
 described below. Hard per-command CPU/memory quotas remain explicit next-stage
 work. Python remains a separate restricted Kernel protocol. Generic
 `run_command` stays Node-only; Git uses the purpose-built inspection, staging,
-commit, branch-creation, and same-commit branch-switch surfaces below rather
+commit, branch-creation, and branch-switch surfaces below rather
 than exposing arbitrary Git argv.
 
 ## Controlled Git Inspection, Staging, Commit, And Branch Operations
@@ -2498,34 +2499,53 @@ commit while HEAD, index, worktree, and objects remain unchanged. A concurrent
 HEAD switch or uncertain ref process is returned as `indeterminate`; the
 created ref, if present, is never hidden as a safe failure.
 
-`git_branch_switch_preview` accepts one existing local target and requires its
-commit to equal the exact current `HEAD^{commit}`. Preview binds target,
-repository/index state, HEAD reflog content/mode/bytes, fixed runtime evidence,
-and a one-use Run/Plan capability. It rejects current, missing, divergent,
-unsafe, non-canonical, linked/shared/reftable/SHA-256/alternate, and OCI
-targets. Dirty index and worktree state is allowed because a same-commit
-attachment does not rewrite either.
+`git_branch_switch_preview` accepts one existing local target and binds exact
+source/target commits, repository/index state, HEAD reflog content/mode/bytes,
+fixed runtime evidence, and a one-use Run/Plan capability. Same-tree targets
+need no checkout and preserve dirty index/worktree state. A target with a
+different tree requires a globally clean repository and returns the complete
+bounded checkout patch for review. That path accepts at most 32 existing-parent
+regular UTF-8 files, 64 KiB per file, 512 KiB total source/target bytes, and a
+128 KiB patch. It rejects binary, symlink, gitlink, directory-lifecycle,
+attribute-converted, `core.autocrlf/eol/safecrlf`, unsafe, non-canonical,
+linked/shared/reftable/SHA-256/alternate, and OCI state.
+Both branch-switch tools are conservatively classified as high-risk writes:
+preview normally leaves Git state unchanged, but it must be authorized and
+serialized because it may reconcile one interrupted checkout transaction.
 
-`git_branch_switch_apply` uses a fixed
-`update-ref --no-deref --stdin` transaction. The transaction atomically
-verifies both target OID and current dereferenced HEAD OID before updating the
-HEAD symref; hooks are disabled and the transaction body is hash-bound stdin.
-Apply then proves that target/HEAD remain at the reviewed commit, index/static
-repository state stayed fixed, and the HEAD reflog is exactly the previewed
-prefix plus one same-OID `napier switch branch` record. HEAD and reflog files
-are fsynced before a second settlement. Timeout, post-transaction cancellation,
-adapter uncertainty, extra reflog writes, or any state drift returns
-`indeterminate`.
+For a divergent tree, `git_branch_switch_apply` first reconstructs the exact
+target index and target blobs, then writes/fsyncs a 0700 private manifest,
+source index, target index, staged files, and independently copied source
+backups. Under
+one root/index/HEAD/ref/changed-path lock it commits the reviewed worktree,
+atomically installs the target index through `index.lock`, and changes HEAD
+last. The fixed `update-ref --no-deref --stdin` transaction verifies the target
+OID and old dereferenced HEAD OID before attaching HEAD; hooks are disabled and
+the transaction body is hash-bound stdin.
+
+Apply proves target/HEAD, exact index, bounded worktree files, static repository
+state, and an exact old-to-new `napier switch branch` HEAD reflog append before
+an fsynced `.complete` boundary. Before that boundary, a source-HEAD state
+restores worktree then index from immutable backup; a fully verified target-HEAD
+state is completed on the next preview/apply. Corrupt, unknown, multiply
+active, or lock-set-drifting recovery state fails closed and retains private
+evidence. Same-tree switches retain the ref-only fast path. Timeout,
+cancellation, process ambiguity, extra reflog writes, or any postcondition
+uncertainty returns `indeterminate`.
+Receipt/Trace expose `recoveryAction=none|rolled_back|completed`; patch, paths,
+branch names, file content, and recovery locations remain live/private.
 
 These slices do not stage directories, symlinks, or multiple paths in one
 staging transaction, and do not support repositories without an existing
 index/HEAD, linked worktrees, split/sparse indexes, SHA-256 objects, reftable
 refs, alternates, staged submodule/gitlink changes, shared repository ACLs, or
-OCI execution. They also do not switch to divergent branches, checkout/reset/
-clean worktree files, execute merges, complete octopus/squash/autostash merges,
-resolve binary/symlink/multi-file conflicts as one transaction, sign commits,
-run hooks, or promote Review outcomes. Those operations remain separate
-preview-bound transactions;
+OCI execution. Divergent switching remains limited to clean bounded UTF-8
+regular files with existing canonical parent directories; it does not support
+binary/symlink/gitlink files, attribute conversion, directory lifecycle,
+general checkout/reset/clean, merge execution, octopus/squash/autostash merge
+completion, multi-file conflict resolution as one transaction, signing, hooks,
+or Review promotion. Those operations remain separate preview-bound
+transactions;
 arbitrary Git argv and dangerous history rewriting remain unavailable.
 Preview capabilities are process-local and intentionally non-resumable:
 expiry or Runtime restart requires a fresh preview rather than replaying a

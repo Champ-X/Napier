@@ -110,10 +110,9 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain("never runs hooks, signing, checkout");
     expect(guidance).toContain("bind one new local branch name");
     expect(guidance).toContain("does not switch HEAD");
-    expect(guidance).toContain(
-      "existing local branch at the exact current commit",
-    );
-    expect(guidance).toContain("target OID and source HEAD");
+    expect(guidance).toContain("existing local branch");
+    expect(guidance).toContain("complete checkout patch");
+    expect(guidance).toContain("source/target HEAD transaction");
   });
 
   it("describes the restricted Python state boundary", () => {

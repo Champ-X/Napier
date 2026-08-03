@@ -1,5 +1,12 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { gitBranchSwitchArgumentsSha256 } from "./git-inspect-arguments.js";
+import { gitBranchSwitchArgumentsSha256 } from "./git-branch-switch-arguments.js";
+import { gitBranchCheckoutArgumentsSha256 } from "./git-branch-switch-checkout-arguments.js";
+import { GIT_BRANCH_CHECKOUT_RECOVERY_SHA256 } from "./git-branch-switch-checkout-recovery.js";
+import {
+  GIT_BRANCH_CHECKOUT_CONTEXT_LINES,
+  GIT_BRANCH_CHECKOUT_LIMITS_SHA256,
+  type GitBranchCheckoutPlan,
+} from "./git-branch-switch-checkout-model.js";
 import type {
   GitBoundFile,
   GitRepository,
@@ -23,6 +30,8 @@ export function createGitBranchSwitchDetails(input: {
   repositoryState: GitRepositoryState;
   headReflogState: GitBoundFile;
   evidence: GitBranchSwitchProcessEvidence;
+  checkout?: GitBranchCheckoutPlan;
+  recoveryAction: GitBranchSwitchDetails["recoveryAction"];
   afterRepositoryStateSha256?: string;
   afterHeadReflogState?: GitBoundFile;
   sourcePreviewResultSha256?: string;
@@ -41,7 +50,19 @@ export function createGitBranchSwitchDetails(input: {
     ...(input.expiresAt ? { expiresAt: input.expiresAt } : {}),
     targetRefSha256: sha256(input.targetRef),
     targetBranchNameBytes: Buffer.byteLength(input.targetBranchName, "utf8"),
+    sourceCommitSha1: input.evidence.sourceCommitSha1,
     commitSha1: input.evidence.commitSha1,
+    checkoutRequired: Boolean(input.checkout),
+    fileCount: input.checkout?.counts.fileCount ?? 0,
+    recoveryAction: input.recoveryAction,
+    addedLineCount: input.checkout?.counts.addedLineCount ?? 0,
+    deletedLineCount: input.checkout?.counts.deletedLineCount ?? 0,
+    patchSha256: input.checkout?.patchSha256 ?? sha256(""),
+    patchBytes: input.checkout?.patchBytes ?? 0,
+    worktreeTransitionSha256:
+      input.checkout?.worktreeTransitionSha256 ?? sha256(canonicalJson([])),
+    proposedIndexSha256:
+      input.checkout?.targetIndexSha256 ?? input.repositoryState.index.sha256,
     beforeRepositoryStateSha256: input.repositoryState.stateSha256,
     beforeHeadReflogStateSha256: boundFileStateSha256(input.headReflogState),
     ...(input.afterRepositoryStateSha256
@@ -66,6 +87,16 @@ export function createGitBranchSwitchDetails(input: {
         sandboxSha256: input.evidence.sandboxSha256,
         executableSha256: input.evidence.executableSha256,
         argumentsSha256: gitBranchSwitchArgumentsSha256(input.repository),
+        recoveryProtocolSha256: GIT_BRANCH_CHECKOUT_RECOVERY_SHA256,
+        ...(input.evidence.sourceCommitSha1 !== input.evidence.commitSha1
+          ? {
+              checkoutArgumentsSha256: gitBranchCheckoutArgumentsSha256(
+                input.repository,
+                GIT_BRANCH_CHECKOUT_CONTEXT_LINES,
+              ),
+              checkoutLimitsSha256: GIT_BRANCH_CHECKOUT_LIMITS_SHA256,
+            }
+          : {}),
         environmentSha256: input.evidence.environmentSha256,
         resourceLimitsSha256: input.evidence.resourceLimitsSha256,
       }),

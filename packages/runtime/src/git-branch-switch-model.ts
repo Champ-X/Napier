@@ -1,6 +1,7 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
 
 export interface GitBranchSwitchProcessEvidence {
+  sourceCommitSha1: string;
   commitSha1: string;
   sandboxSha256: string;
   executableSha256: string;
@@ -19,7 +20,17 @@ export interface GitBranchSwitchDetails {
   expiresAt?: string;
   targetRefSha256: string;
   targetBranchNameBytes: number;
+  sourceCommitSha1: string;
   commitSha1: string;
+  checkoutRequired: boolean;
+  fileCount: number;
+  recoveryAction: "none" | "rolled_back" | "completed";
+  addedLineCount: number;
+  deletedLineCount: number;
+  patchSha256: string;
+  patchBytes: number;
+  worktreeTransitionSha256: string;
+  proposedIndexSha256: string;
   beforeRepositoryStateSha256: string;
   beforeHeadReflogStateSha256: string;
   afterRepositoryStateSha256?: string;
@@ -43,11 +54,13 @@ export interface GitBranchSwitchPreview {
   id: string;
   expiresAt: string;
   targetBranchName: string;
+  patch: string;
   details: GitBranchSwitchDetails;
 }
 
 export interface GitBranchSwitchApplyResult {
   targetBranchName: string;
+  patch: string;
   details: GitBranchSwitchDetails;
 }
 

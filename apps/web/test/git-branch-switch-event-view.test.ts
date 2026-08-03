@@ -57,6 +57,31 @@ describe("Git branch switch Trace evidence", () => {
       }),
     );
     expect(JSON.stringify(apply)).not.toContain("feature/private");
+
+    const divergent = toolEventTraceView(
+      event("git_branch_switch_preview", {
+        ...previewDetails(),
+        action: "preview",
+        status: "ready",
+        postcondition: "not_applied",
+        durable: false,
+        sourceCommitSha1: "c".repeat(40),
+        checkoutRequired: true,
+        fileCount: 1,
+        recoveryAction: "rolled_back",
+        addedLineCount: 1,
+        patchSha256: "9".repeat(64),
+        patchBytes: 24,
+        worktreeTransitionSha256: "a".repeat(64),
+      }),
+    );
+    expect(divergent).toEqual(
+      expect.objectContaining({
+        gitBranchSwitchCheckoutRequired: true,
+        gitBranchSwitchFileCount: 1,
+        gitBranchSwitchRecoveryAction: "rolled_back",
+      }),
+    );
   });
 
   it("rejects impossible outcomes, capabilities, bounds, and object IDs", () => {
@@ -72,6 +97,19 @@ describe("Git branch switch Trace evidence", () => {
           afterRepositoryStateSha256: "6".repeat(64),
           afterHeadReflogStateSha256: "7".repeat(64),
           sourcePreviewResultSha256: "8".repeat(64),
+        }),
+      )?.gitBranchSwitchAction,
+    ).toBeUndefined();
+    expect(
+      toolEventTraceView(
+        event("git_branch_switch_preview", {
+          ...previewDetails(),
+          action: "preview",
+          status: "ready",
+          postcondition: "not_applied",
+          durable: false,
+          checkoutRequired: true,
+          fileCount: 0,
         }),
       )?.gitBranchSwitchAction,
     ).toBeUndefined();
@@ -152,7 +190,19 @@ function baseDetails(): Record<string, JsonValue> {
     schemaVersion: 1,
     ...SHA256_FIELDS,
     targetBranchNameBytes: 24,
+    sourceCommitSha1: "d".repeat(40),
     commitSha1: "d".repeat(40),
+    checkoutRequired: false,
+    fileCount: 0,
+    recoveryAction: "none",
+    addedLineCount: 0,
+    deletedLineCount: 0,
+    patchSha256:
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    patchBytes: 0,
+    worktreeTransitionSha256:
+      "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    proposedIndexSha256: "b".repeat(64),
     durationMs: 75,
     cancellationObserved: false,
   };

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 96,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CGR4nMuA.js",
+    "path": "apps/web/dist/assets/index-BZp_Ttyo.js",
     "sizeBytes": 118213,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "1d498be1e31f709a81ede2b62d6a360435f741562f161e5e06c4866624cfbac5"
+    "sha256": "f2852ae581721f9c6a586a116b369f695a441de338c4e8fdc915f575d7fe84bb"
   },
-  "distContentSha256": "1d498be1e31f709a81ede2b62d6a360435f741562f161e5e06c4866624cfbac5",
+  "distContentSha256": "f2852ae581721f9c6a586a116b369f695a441de338c4e8fdc915f575d7fe84bb",
   "errors": []
 }

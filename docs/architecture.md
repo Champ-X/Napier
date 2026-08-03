@@ -4390,38 +4390,57 @@ Apply creates one local branch ref only: it does not change symbolic HEAD,
 checkout files, update the index/worktree, create objects, run hooks, contact a
 remote, or rewrite history. A concurrent HEAD switch can leave the exact
 previewed branch created, but the result is `indeterminate` because the
-unchanged-HEAD postcondition no longer holds. Same-commit attachment is the
-separate transaction below; divergent-tree checkout remains unavailable.
+unchanged-HEAD postcondition no longer holds. Branch attachment and bounded
+divergent switching are the separate transaction below.
 
-## Git Same-Commit Branch Switch Transaction
+## Git Branch Switch Transactions
 
 ```text
 git_branch_switch_preview(targetBranchName)
   -> validate one existing conservative ASCII local branch name
+  -> acquire private-root/index/HEAD/reflog/target/recovery-path locks
+  -> recover one exact unfinished checkout or fail closed
   -> snapshot repository/index + HEAD reflog content/mode/bytes
-  -> require target^{commit} == current HEAD^{commit}
+  -> resolve exact source HEAD^{commit} and target^{commit}
   -> validate target/ref/reflog canonical no-symlink storage
-  -> bind fixed argv + hash-bound transaction stdin + Sandbox evidence
-  -> return one-use Run/Plan capability without changing repository bytes
+  -> if source tree == target tree:
+     - preserve dirty index/worktree and bind a zero-file transition
+  -> otherwise require globally clean repository and no conversion attributes
+  -> parse fixed --raw -z --abbrev=40 A/M/D regular-file transitions
+  -> require <=32 existing-parent UTF-8 files, <=64 KiB each/512 KiB total
+  -> read and Git-SHA-1 verify every target blob
+  -> construct target index through private read-tree/write-tree
+  -> return complete <=128 KiB patch + one-use Run/Plan capability
 
 git_branch_switch_apply(previewId)
-  -> consume capability; lock HEAD + HEAD reflog + exact target ref
-  -> revalidate repository/index/reflog and same-commit target
+  -> consume capability; lock root/index/HEAD/reflog/target/all changed paths
+  -> recover, then reconstruct and revalidate the complete preview
+  -> if divergent:
+     - write/fsync manifest + source/target index + staged files
+     - copy/fsync every existing source file into immutable backup
+     - atomically commit each bounded target file; fsync parent directories
+     - atomically install the exact target index through index.lock
   -> run fixed update-ref --no-deref --stdin with hooks disabled
      - verify target ref == previewed commit
-     - verify dereferenced HEAD == previewed commit
-     - symref-update HEAD -> target using the same OID precondition
+     - verify dereferenced HEAD == previewed source commit
+     - symref-update HEAD -> target
   -> settle target/HEAD/index/static state within the original deadline
   -> fsync HEAD + HEAD reflog
-  -> require reflog == previewed prefix + one fixed same-OID switch record
-  -> settle target/HEAD/index/static state again
+  -> require reflog == previewed prefix + one exact old->new switch record
+  -> settle target/HEAD/index/static/worktree state again
+  -> commit checkout recovery via .complete rename + parent fsync
   -> return applied or indeterminate hash-only evidence
 ```
 
 `git-branch-switch.ts` owns process-local capability scope, multi-path locks,
-fixed ref transaction execution, durability, and unknown-outcome
-classification. `git-branch-switch-validation.ts` performs config/runtime/
-same-commit preflight and complete repository/reflog freshness.
+recovery entry, and preview/apply reconstruction.
+`git-branch-switch-checkout-prepare.ts` owns clean-tree/raw/patch/blob/private-
+index proof. `git-branch-switch-checkout-transaction.ts` owns durable backup,
+worktree/index commit, rollback, and `.complete`; the recovery and
+recovery-files modules reconcile only exact source or target outcomes.
+`git-branch-switch-apply.ts` owns fixed ref execution, durability, and
+unknown-outcome classification. `git-branch-switch-validation.ts` performs
+config/runtime/source/target preflight and repository/reflog freshness.
 `git-branch-switch-settlement.ts` observes HEAD, target, index/static state,
 and bounded reflog state after mutation. `git-ref-files.ts` supplies the shared
 no-follow ref/reflog snapshots, exact single-record append proof, fsync, and
@@ -4429,21 +4448,30 @@ canonical path checks. Fixed transaction stdin is capped, control-checked, and
 bound into runtime resource evidence; no model-selected Git input reaches the
 process.
 
-Branch names remain live-only. Ledger/Replay/Web Trace retain target-ref hash,
-name bytes, commit, repository/reflog state hashes, runtime/process status,
-durability, cancellation, and postcondition. Attached or detached HEAD is
-supported. A source branch-name change at the same commit is not capability
-authority; target OID and current HEAD OID are the atomic safety conditions.
-An extra Git-mediated HEAD movement still changes the reflog prefix/suffix and
-therefore makes the outcome `indeterminate`.
+Both tools are statically high-risk write effects. Preview's ordinary path is
+non-mutating, but the same call may reconcile one interrupted checkout; the
+write classification keeps Workflow scheduling, side-effect confirmation,
+automatic-recovery denial, Policy, and Ledger evidence truthful.
 
-This transaction deliberately allows dirty index/worktree state because target
-and HEAD must name the same commit and the fixed transaction writes only HEAD
-plus its reflog. It does not perform checkout, refresh the index, write
-worktree files, run hooks, contact remotes, accept arbitrary revisions, or
-rewrite history. Switching to a divergent tree requires a future bounded
-worktree-delta preview, backup/rollback transaction, diagnostics, and final
-checkout evidence.
+Branch names remain live-only. Ledger/Replay/Web Trace retain target-ref hash,
+name bytes, source/target commits, checkout flag/counts, recovery action,
+patch/index/worktree hashes, repository/reflog state, runtime/process status,
+durability, cancellation, and postcondition. Patch, paths, target content,
+branch name, and private recovery locations stay live/private. Same-tree
+switches deliberately allow dirty state because no file/index write is needed.
+A source branch-name change at the same OID is not capability authority;
+source/target OIDs and the exact reflog suffix are.
+
+Divergent switching is intentionally not a general checkout. It rejects dirty
+repositories, missing parent directories, binary/control-NUL text, symlinks,
+gitlinks, attributes, EOL conversion config, filters, >32 files, >64 KiB files,
+
+> 512 KiB aggregate bytes, and >128 KiB patches. HEAD moves only after worktree
+> and index are target-exact. A crash with source HEAD restores worktree then
+> index; a crash with target HEAD completes only after target ref, index,
+> worktree, static state, and old-to-new reflog all verify. Unknown or drifted
+> state preserves backup and fails closed. Hooks, remotes, arbitrary revisions,
+> merge execution, reset/clean, and history rewriting remain unavailable.
 
 ## Workspace Process Session Flow
 

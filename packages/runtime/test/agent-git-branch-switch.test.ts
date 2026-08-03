@@ -34,6 +34,30 @@ describe("Agent preview-bound Git branch switch", () => {
       await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])
     ).trim();
     await git(fixture.workspaceRoot, ["branch", "feature/PRIVATE_SWITCH"]);
+    await git(fixture.workspaceRoot, [
+      "checkout",
+      "--quiet",
+      "feature/PRIVATE_SWITCH",
+    ]);
+    await writeFile(
+      path.join(fixture.workspaceRoot, "TRACKED.txt"),
+      "PRIVATE_SWITCH_TARGET\n",
+    );
+    await git(fixture.workspaceRoot, ["add", "TRACKED.txt"]);
+    await git(fixture.workspaceRoot, [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "target",
+    ]);
+    const target = (
+      await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])
+    ).trim();
+    await git(fixture.workspaceRoot, ["checkout", "--quiet", "main"]);
     const agent = await fixture.store.updateAgent(
       fixture.store.listAgents()[0]!.id,
       {
@@ -56,7 +80,8 @@ describe("Agent preview-bound Git branch switch", () => {
       (context) => {
         const messages = JSON.stringify(context.messages);
         expect(messages).toContain("feature/PRIVATE_SWITCH");
-        expect(messages).toContain(parent);
+        expect(messages).toContain(target);
+        expect(messages).toContain("PRIVATE_SWITCH_TARGET");
         const previewId = messages.match(
           /gitswitchpreview_[a-z0-9]{8,80}/u,
         )?.[0];
@@ -68,7 +93,7 @@ describe("Agent preview-bound Git branch switch", () => {
       },
       (context) => {
         expect(JSON.stringify(context.messages)).toContain(
-          "HEAD is durably attached",
+          "durably aligned with the target branch",
         );
         return fauxAssistantMessage("The reviewed branch is active.");
       },
@@ -85,7 +110,7 @@ describe("Agent preview-bound Git branch switch", () => {
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
-      text: "Preview and attach HEAD to the reviewed same-commit branch.",
+      text: "Preview and switch to the reviewed divergent branch.",
       model: { provider: "faux-git-switch", id: "faux-1" },
     });
 
@@ -101,7 +126,7 @@ describe("Agent preview-bound Git branch switch", () => {
     ).toBe("feature/PRIVATE_SWITCH");
     expect(
       (await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])).trim(),
-    ).toBe(parent);
+    ).toBe(target);
     const events = await fixture.store.listEvents(thread.id);
     const gitEvents = events.filter((event) =>
       ["git_branch_switch_preview", "git_branch_switch_apply"].includes(
@@ -115,7 +140,7 @@ describe("Agent preview-bound Git branch switch", () => {
       "tool.completed",
     ]);
     expect(gitEvents[0]?.payload).toEqual(
-      expect.objectContaining({ effect: "read", inputRedacted: true }),
+      expect.objectContaining({ effect: "write", inputRedacted: true }),
     );
     expect(gitEvents[2]?.payload).toEqual(
       expect.objectContaining({ effect: "write", inputRedacted: true }),
@@ -127,12 +152,15 @@ describe("Agent preview-bound Git branch switch", () => {
           kind: "napier.git-branch-switch",
           action: "apply",
           status: "applied",
-          commitSha1: parent,
+          sourceCommitSha1: parent,
+          commitSha1: target,
+          checkoutRequired: true,
         }),
       }),
     );
     const durable = JSON.stringify(gitEvents);
     expect(durable).not.toContain("PRIVATE_SWITCH");
+    expect(durable).not.toContain("PRIVATE_SWITCH_TARGET");
     expect(durable).not.toContain("feature/");
     expect(
       verifyThreadReplayBundle(

@@ -1,5 +1,5 @@
+import { GIT_BRANCH_SWITCH_REFLOG_MESSAGE } from "./git-branch-switch-arguments.js";
 import {
-  GIT_BRANCH_SWITCH_REFLOG_MESSAGE,
   gitHeadCommitArguments,
   gitRefCommitArguments,
 } from "./git-inspect-arguments.js";
@@ -36,7 +36,9 @@ export async function settleGitBranchSwitch(input: {
   options: GitInspectProcessOptions;
   repository: GitRepository;
   targetRef: string;
-  commitSha1: string;
+  sourceCommitSha1: string;
+  targetCommitSha1: string;
+  expectedIndexSha256: string;
   repositoryState: GitRepositoryState;
   headReflogState: GitBoundFile;
   deadline: number;
@@ -48,7 +50,8 @@ export async function settleGitBranchSwitch(input: {
       verifyGitHeadSwitchReflog({
         repository: input.repository,
         beforeHeadReflog: input.headReflogState,
-        commitSha1: input.commitSha1,
+        oldCommitSha1: input.sourceCommitSha1,
+        newCommitSha1: input.targetCommitSha1,
         message: GIT_BRANCH_SWITCH_REFLOG_MESSAGE,
       }).catch(() => undefined),
       runGitInspectProcess(
@@ -77,13 +80,13 @@ export async function settleGitBranchSwitch(input: {
     canonicalStorage &&
     afterState?.currentRef === input.targetRef &&
     afterState.staticStateSha256 === input.repositoryState.staticStateSha256 &&
-    afterState.index.sha256 === input.repositoryState.index.sha256 &&
+    afterState.index.sha256 === input.expectedIndexSha256 &&
     afterHeadReflog !== undefined &&
     afterHeadReflog.sha256 !== input.headReflogState.sha256 &&
     afterHeadReflog.bytes > input.headReflogState.bytes &&
     afterHeadReflog.mode === input.headReflogState.mode &&
-    headCommitSha1 === input.commitSha1 &&
-    targetCommitSha1 === input.commitSha1;
+    headCommitSha1 === input.targetCommitSha1 &&
+    targetCommitSha1 === input.targetCommitSha1;
   return {
     ...(headCommitSha1 ? { headCommitSha1 } : {}),
     ...(targetCommitSha1 ? { targetCommitSha1 } : {}),

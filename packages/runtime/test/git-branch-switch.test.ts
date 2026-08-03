@@ -138,7 +138,140 @@ describe("preview-bound same-commit Git branch switch", () => {
     ]);
   }, 30_000);
 
-  it("rejects current, missing, divergent, stale, unsafe, and symlinked targets", async () => {
+  it("switches one bounded clean worktree to a divergent local branch", async () => {
+    const fixture = await createRepository();
+    await writeFile(path.join(fixture.workspaceRoot, "DELETE.txt"), "delete\n");
+    await git(fixture.workspaceRoot, ["add", "DELETE.txt"]);
+    await git(fixture.workspaceRoot, [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "source",
+    ]);
+    const sourceCommit = (
+      await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])
+    ).trim();
+    await git(fixture.workspaceRoot, ["branch", "feature/divergent"]);
+    await git(fixture.workspaceRoot, [
+      "checkout",
+      "--quiet",
+      "feature/divergent",
+    ]);
+    await writeFile(
+      path.join(fixture.workspaceRoot, "TRACKED.txt"),
+      "target\n",
+    );
+    await writeFile(path.join(fixture.workspaceRoot, "ADDED.txt"), "added\n");
+    await git(fixture.workspaceRoot, ["add", "TRACKED.txt", "ADDED.txt"]);
+    await git(fixture.workspaceRoot, ["rm", "--quiet", "DELETE.txt"]);
+    await git(fixture.workspaceRoot, [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "target",
+    ]);
+    const targetCommit = (
+      await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])
+    ).trim();
+    const targetTree = (
+      await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD^{tree}"])
+    ).trim();
+    await git(fixture.workspaceRoot, ["checkout", "--quiet", "main"]);
+    const sandbox = directSandbox();
+    const manager = managerFor(fixture, sandbox);
+    const before = await workspaceState(fixture.workspaceRoot);
+
+    const preview = await manager.preview("thread_divergent", "run_divergent", {
+      targetBranchName: "feature/divergent",
+    });
+
+    expect(preview.details).toEqual(
+      expect.objectContaining({
+        status: "ready",
+        sourceCommitSha1: sourceCommit,
+        commitSha1: targetCommit,
+        checkoutRequired: true,
+        fileCount: 3,
+        proposedIndexSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(preview.patch).toContain("diff --git");
+    expect(preview.patch).toContain("+target");
+    expect(preview.patch).toContain("+added");
+    expect(await workspaceState(fixture.workspaceRoot)).toEqual(before);
+
+    const applied = await manager.apply(
+      "thread_divergent",
+      "run_divergent",
+      preview.id,
+    );
+
+    expect(applied.details).toEqual(
+      expect.objectContaining({
+        status: "applied",
+        postcondition: "verified",
+        sourceCommitSha1: sourceCommit,
+        commitSha1: targetCommit,
+        checkoutRequired: true,
+        durable: true,
+      }),
+    );
+    expect(
+      (
+        await gitOutput(fixture.workspaceRoot, [
+          "symbolic-ref",
+          "--short",
+          "HEAD",
+        ])
+      ).trim(),
+    ).toBe("feature/divergent");
+    expect(
+      (await gitOutput(fixture.workspaceRoot, ["write-tree"])).trim(),
+    ).toBe(targetTree);
+    expect(
+      await gitOutput(fixture.workspaceRoot, [
+        "status",
+        "--porcelain=v2",
+        "--untracked-files=all",
+      ]),
+    ).toBe("");
+    await expect(
+      readFile(path.join(fixture.workspaceRoot, "TRACKED.txt"), "utf8"),
+    ).resolves.toBe("target\n");
+    await expect(
+      readFile(path.join(fixture.workspaceRoot, "ADDED.txt"), "utf8"),
+    ).resolves.toBe("added\n");
+    await expect(
+      readFile(path.join(fixture.workspaceRoot, "DELETE.txt")),
+    ).rejects.toThrow();
+    await expect(
+      readdir(path.join(fixture.workspaceRoot, ".git/napier-switch")),
+    ).resolves.toEqual([]);
+    expect(
+      (
+        await gitOutput(fixture.workspaceRoot, ["rev-parse", "refs/heads/main"])
+      ).trim(),
+    ).toBe(sourceCommit);
+    expect(
+      sandbox.launches.some(
+        (request) =>
+          request.args.includes("read-tree") &&
+          request.workspaceWritePaths?.some((value) =>
+            value.includes("/.git/napier-switch/preview-"),
+          ),
+      ),
+    ).toBe(true);
+  }, 30_000);
+
+  it("rejects current, missing, stale, unsafe, and symlinked targets", async () => {
     const fixture = await createRepository();
     const manager = managerFor(fixture, directSandbox());
     await expect(
@@ -183,7 +316,16 @@ describe("preview-bound same-commit Git branch switch", () => {
       manager.preview("thread_a", "run_a", {
         targetBranchName: "divergent",
       }),
-    ).rejects.toThrow("target at the exact current HEAD");
+    ).resolves.toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          sourceCommitSha1: parent,
+          commitSha1: divergent,
+          checkoutRequired: false,
+          fileCount: 0,
+        }),
+      }),
+    );
 
     await git(fixture.workspaceRoot, ["branch", "feature/stale"]);
     const headPath = path.join(fixture.workspaceRoot, ".git/HEAD");
@@ -569,7 +711,7 @@ describe("preview-bound same-commit Git branch switch", () => {
         { targetBranchName: "feature/policy" },
         fixture.workspaceRoot,
       ),
-    ).toEqual(expect.objectContaining({ allowed: true, risk: "medium" }));
+    ).toEqual(expect.objectContaining({ allowed: true, risk: "high" }));
     expect(
       assessToolCall(
         "workspace",
@@ -586,7 +728,7 @@ describe("preview-bound same-commit Git branch switch", () => {
         fixture.workspaceRoot,
       ).allowed,
     ).toBe(false);
-    expect(builtInToolEffect("git_branch_switch_preview")).toBe("read");
+    expect(builtInToolEffect("git_branch_switch_preview")).toBe("write");
     expect(builtInToolEffect("git_branch_switch_apply")).toBe("write");
     expect(DEFAULT_AGENT_ENABLED_TOOLS).toEqual(
       expect.arrayContaining([

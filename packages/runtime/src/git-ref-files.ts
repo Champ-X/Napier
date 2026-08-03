@@ -155,7 +155,8 @@ export async function syncGitBranchRefTransition(input: {
 
 export async function syncGitHeadSwitch(input: {
   repository: GitRepository;
-  commitSha1: string;
+  oldCommitSha1: string;
+  newCommitSha1: string;
   message: string;
   beforeHeadReflog: GitBoundFile;
 }): Promise<boolean> {
@@ -176,7 +177,8 @@ export async function syncGitHeadSwitch(input: {
 export async function verifyGitHeadSwitchReflog(input: {
   repository: GitRepository;
   beforeHeadReflog: GitBoundFile;
-  commitSha1: string;
+  oldCommitSha1: string;
+  newCommitSha1: string;
   message: string;
 }): Promise<GitBoundFile> {
   const filePath = path.join(input.repository.gitDirectory, "logs/HEAD");
@@ -212,7 +214,7 @@ export async function verifyGitHeadSwitchReflog(input: {
     if (
       !text.endsWith("\n") ||
       text.slice(0, -1).includes("\n") ||
-      !text.startsWith(`${input.commitSha1} ${input.commitSha1} `) ||
+      !text.startsWith(`${input.oldCommitSha1} ${input.newCommitSha1} `) ||
       !text.endsWith(`\t${input.message}\n`)
     ) {
       throw new Error("Git HEAD reflog transition is invalid");

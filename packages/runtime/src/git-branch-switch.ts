@@ -1,6 +1,5 @@
 import path from "node:path";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   DEFAULT_GIT_BRANCH_TIMEOUT_MS,
   GIT_BRANCH_PREVIEW_TTL_MS,
@@ -8,29 +7,26 @@ import {
   MAX_GIT_BRANCH_TIMEOUT_MS,
   normalizeGitBranchName,
 } from "./git-branch-model.js";
+import { applyPreparedGitBranchSwitch } from "./git-branch-switch-apply.js";
+import { cleanupGitBranchCheckoutDirectory } from "./git-branch-switch-checkout-files.js";
+import type { GitBranchCheckoutPlan } from "./git-branch-switch-checkout-model.js";
+import { prepareGitBranchCheckout } from "./git-branch-switch-checkout-prepare.js";
+import {
+  gitBranchCheckoutRecoveryLockPaths,
+  recoverGitBranchCheckoutTransactions,
+} from "./git-branch-switch-checkout-recovery.js";
 import { createGitBranchSwitchDetails } from "./git-branch-switch-details.js";
 import {
   type GitBranchSwitchApplyResult,
   type GitBranchSwitchDetails,
   type GitBranchSwitchPreview,
 } from "./git-branch-switch-model.js";
-import { settleGitBranchSwitch } from "./git-branch-switch-settlement.js";
 import {
   assertGitBranchSwitchState,
   gitBranchSwitchProcessEvidence,
   prepareGitBranchSwitch,
-  type PreparedGitBranchSwitch,
 } from "./git-branch-switch-validation.js";
-import {
-  GIT_BRANCH_SWITCH_REFLOG_MESSAGE,
-  gitBranchSwitchTransactionInput,
-  gitSwitchBranchArguments,
-} from "./git-inspect-arguments.js";
-import {
-  runGitProcess,
-  type GitInspectProcessOptions,
-  type GitInspectProcessResult,
-} from "./git-inspect-process.js";
+import type { GitInspectProcessOptions } from "./git-inspect-process.js";
 import {
   resolveGitRepository,
   snapshotGitRepository,
@@ -42,7 +38,6 @@ import {
   gitBranchRefWritePaths,
   gitHeadSwitchWritePaths,
   snapshotGitHeadReflog,
-  syncGitHeadSwitch,
 } from "./git-ref-files.js";
 import { createId } from "./ids.js";
 import { withWorkspacePathLocks } from "./workspace-write-lock.js";
@@ -63,7 +58,10 @@ interface StoredGitBranchSwitchPreview {
   scopeId: string;
   targetBranchName: string;
   targetRef: string;
-  commitSha1: string;
+  sourceCommitSha1: string;
+  targetCommitSha1: string;
+  checkoutPlan?: GitBranchCheckoutPlan;
+  patch: string;
   repositoryState: GitRepositoryState;
   headReflogState: GitBoundFile;
   details: GitBranchSwitchDetails;
@@ -115,62 +113,136 @@ export class GitBranchSwitchMutationManager {
     const now = this.validNow();
     const deadline = Date.now() + validated.timeoutMs;
     const repository = await resolveGitRepository(this.options.workspaceRoot);
-    const [repositoryState, headReflogState] = await Promise.all([
-      snapshotGitRepository(repository),
-      snapshotGitHeadReflog(repository),
-    ]);
     const targetRef = `refs/heads/${validated.targetBranchName}`;
-    if (repositoryState.currentRef === targetRef) {
+    const recoveryLocks = await gitBranchCheckoutRecoveryLockPaths(repository);
+    return withWorkspacePathLocks(
+      this.options.dataRoot,
+      [...recoveryLocks, path.join(repository.gitDirectory, targetRef)],
+      "Git branch switch preview",
+      () =>
+        this.previewUnderLock({
+          threadId,
+          scopeId,
+          targetBranchName: validated.targetBranchName,
+          targetRef,
+          now,
+          deadline,
+          repository,
+          recoveryLocks,
+          ...(signal ? { signal } : {}),
+        }),
+    );
+  }
+
+  private async previewUnderLock(input: {
+    threadId: string;
+    scopeId: string;
+    targetBranchName: string;
+    targetRef: string;
+    now: Date;
+    deadline: number;
+    repository: GitRepository;
+    recoveryLocks: string[];
+    signal?: AbortSignal;
+  }): Promise<GitBranchSwitchPreview> {
+    const recovery = await recoverGitBranchCheckoutTransactions({
+      options: this.options,
+      repository: input.repository,
+      deadline: input.deadline,
+      lockedPaths: input.recoveryLocks,
+    });
+    const [repositoryState, headReflogState] = await Promise.all([
+      snapshotGitRepository(input.repository),
+      snapshotGitHeadReflog(input.repository),
+    ]);
+    if (repositoryState.currentRef === input.targetRef) {
       throw new Error("Git branch switch target is already current");
     }
-    await validateSwitchStorage(repository, targetRef);
+    await validateSwitchStorage(input.repository, input.targetRef);
     const prepared = await prepareGitBranchSwitch({
       options: this.options,
-      repository,
-      targetRef,
-      deadline,
-      ...(signal ? { signal } : {}),
+      repository: input.repository,
+      targetRef: input.targetRef,
+      deadline: input.deadline,
+      ...(input.signal ? { signal: input.signal } : {}),
     });
-    await assertGitBranchSwitchState(
-      repository,
-      repositoryState,
-      headReflogState,
-    );
-    const id = createId("gitswitchpreview");
-    const expiresAt = new Date(
-      now.getTime() + GIT_BRANCH_PREVIEW_TTL_MS,
-    ).toISOString();
-    const details = createGitBranchSwitchDetails({
-      action: "preview",
-      status: "ready",
-      postcondition: "not_applied",
-      previewId: id,
-      expiresAt,
-      targetRef,
-      targetBranchName: validated.targetBranchName,
-      repository,
-      repositoryState,
-      headReflogState,
-      evidence: prepared.evidence,
-      durable: false,
-      cancellationObserved: signal?.aborted === true,
-    });
-    const stored: StoredGitBranchSwitchPreview = {
-      id,
-      threadId,
-      scopeId,
-      targetBranchName: validated.targetBranchName,
-      targetRef,
-      commitSha1: prepared.evidence.commitSha1,
-      repositoryState,
-      headReflogState,
-      details,
-      expiresAt,
-      createdAtMs: now.getTime(),
-    };
-    this.previews.set(id, stored);
-    this.prune();
-    return publicPreview(stored);
+    const checkoutPreparation =
+      prepared.sourceCommitSha1 !== prepared.targetCommitSha1
+        ? await prepareGitBranchCheckout({
+            options: this.options,
+            repository: input.repository,
+            repositoryState,
+            configOutput: prepared.configProcess.stdout,
+            sourceCommitSha1: prepared.sourceCommitSha1,
+            targetCommitSha1: prepared.targetCommitSha1,
+            deadline: input.deadline,
+            ...(input.signal ? { signal: input.signal } : {}),
+          })
+        : undefined;
+    const checkout = checkoutPreparation?.checkout;
+    try {
+      await assertGitBranchSwitchState(
+        input.repository,
+        repositoryState,
+        headReflogState,
+      );
+      const id = createId("gitswitchpreview");
+      const expiresAt = new Date(
+        input.now.getTime() + GIT_BRANCH_PREVIEW_TTL_MS,
+      ).toISOString();
+      const evidence =
+        checkoutPreparation || recovery.processes.length > 0
+          ? gitBranchSwitchProcessEvidence(
+              prepared.sourceCommitSha1,
+              prepared.targetCommitSha1,
+              [
+                ...recovery.processes,
+                ...prepared.processes,
+                ...(checkoutPreparation?.processes ?? []),
+              ],
+            )
+          : prepared.evidence;
+      const details = createGitBranchSwitchDetails({
+        action: "preview",
+        status: "ready",
+        postcondition: "not_applied",
+        previewId: id,
+        expiresAt,
+        targetRef: input.targetRef,
+        targetBranchName: input.targetBranchName,
+        repository: input.repository,
+        repositoryState,
+        headReflogState,
+        evidence,
+        ...(checkout ? { checkout: checkout.plan } : {}),
+        recoveryAction: recovery.action,
+        durable: false,
+        cancellationObserved: input.signal?.aborted === true,
+      });
+      const stored: StoredGitBranchSwitchPreview = {
+        id,
+        threadId: input.threadId,
+        scopeId: input.scopeId,
+        targetBranchName: input.targetBranchName,
+        targetRef: input.targetRef,
+        sourceCommitSha1: prepared.sourceCommitSha1,
+        targetCommitSha1: prepared.targetCommitSha1,
+        ...(checkout ? { checkoutPlan: checkout.plan } : {}),
+        patch: checkout?.patch ?? "",
+        repositoryState,
+        headReflogState,
+        details,
+        expiresAt,
+        createdAtMs: input.now.getTime(),
+      };
+      this.previews.set(id, stored);
+      this.prune();
+      return publicPreview(stored);
+    } finally {
+      if (checkout) {
+        await cleanupGitBranchCheckoutDirectory(checkout.temporaryDirectory);
+      }
+    }
   }
 
   async apply(
@@ -196,25 +268,42 @@ export class GitBranchSwitchMutationManager {
     }
     abort(signal);
     const repository = await resolveGitRepository(this.options.workspaceRoot);
+    const recoveryLocks = await gitBranchCheckoutRecoveryLockPaths(repository);
     return withWorkspacePathLocks(
       this.options.dataRoot,
       [
-        path.join(repository.gitDirectory, "HEAD"),
-        path.join(repository.gitDirectory, "logs/HEAD"),
+        ...recoveryLocks,
         path.join(repository.gitDirectory, preview.targetRef),
+        ...(preview.checkoutPlan?.files.map((file) =>
+          path.join(repository.root, file.path),
+        ) ?? []),
       ],
       "Git branch switch apply",
-      () => this.applyUnderLock(repository, preview, timeoutMs, signal),
+      () =>
+        this.applyUnderLock(
+          repository,
+          preview,
+          recoveryLocks,
+          timeoutMs,
+          signal,
+        ),
     );
   }
 
   private async applyUnderLock(
     repository: GitRepository,
     preview: StoredGitBranchSwitchPreview,
+    recoveryLocks: string[],
     timeoutMs: number,
     signal?: AbortSignal,
   ): Promise<GitBranchSwitchApplyResult> {
     const deadline = Date.now() + timeoutMs;
+    const recovery = await recoverGitBranchCheckoutTransactions({
+      options: this.options,
+      repository,
+      deadline,
+      lockedPaths: recoveryLocks,
+    });
     await assertGitBranchSwitchState(
       repository,
       preview.repositoryState,
@@ -224,129 +313,62 @@ export class GitBranchSwitchMutationManager {
       options: this.options,
       repository,
       targetRef: preview.targetRef,
-      expectedCommitSha1: preview.commitSha1,
+      expectedSourceCommitSha1: preview.sourceCommitSha1,
+      expectedTargetCommitSha1: preview.targetCommitSha1,
       deadline,
       ...(signal ? { signal } : {}),
     });
-    await assertGitBranchSwitchState(
-      repository,
-      preview.repositoryState,
-      preview.headReflogState,
-    );
-    abort(signal);
-    return this.switchHead(repository, preview, prepared, deadline, signal);
-  }
-
-  private async switchHead(
-    repository: GitRepository,
-    preview: StoredGitBranchSwitchPreview,
-    prepared: PreparedGitBranchSwitch,
-    deadline: number,
-    signal?: AbortSignal,
-  ): Promise<GitBranchSwitchApplyResult> {
-    let switched: GitInspectProcessResult | undefined;
-    let switchError: unknown;
-    try {
-      switched = await runGitProcess(
-        this.options,
-        gitSwitchBranchArguments(repository),
-        remainingTime(deadline),
-        signal,
-        {
-          operation: "switch",
-          workspaceWritePaths: await validateSwitchStorage(
+    const checkoutPreparation =
+      preview.sourceCommitSha1 !== preview.targetCommitSha1
+        ? await prepareGitBranchCheckout({
+            options: this.options,
             repository,
-            preview.targetRef,
-          ),
-          stdin: gitBranchSwitchTransactionInput(
-            preview.targetRef,
-            preview.commitSha1,
-          ),
-        },
+            repositoryState: preview.repositoryState,
+            configOutput: prepared.configProcess.stdout,
+            sourceCommitSha1: preview.sourceCommitSha1,
+            targetCommitSha1: preview.targetCommitSha1,
+            ...(preview.checkoutPlan
+              ? { expectedPlanSha256: preview.checkoutPlan.planSha256 }
+              : {}),
+            deadline,
+            ...(signal ? { signal } : {}),
+          })
+        : undefined;
+    const checkout = checkoutPreparation?.checkout;
+    try {
+      await assertGitBranchSwitchState(
+        repository,
+        preview.repositoryState,
+        preview.headReflogState,
       );
-    } catch (error) {
-      switchError = error;
-    }
-    const switchClean =
-      switched?.status === "succeeded" &&
-      switched.stdout === "start: ok\nprepare: ok\ncommit: ok\n" &&
-      switched.stderr.length === 0;
-    const initial = await settleGitBranchSwitch({
-      options: this.options,
-      repository,
-      targetRef: preview.targetRef,
-      commitSha1: preview.commitSha1,
-      repositoryState: preview.repositoryState,
-      headReflogState: preview.headReflogState,
-      deadline,
-    });
-    const headSwitched =
-      initial.afterState?.currentRef === preview.targetRef &&
-      initial.headCommitSha1 === preview.commitSha1;
-    const durable = headSwitched
-      ? await syncGitHeadSwitch({
-          repository,
-          commitSha1: preview.commitSha1,
-          message: GIT_BRANCH_SWITCH_REFLOG_MESSAGE,
-          beforeHeadReflog: preview.headReflogState,
-        })
-      : false;
-    const final = headSwitched
-      ? await settleGitBranchSwitch({
-          options: this.options,
-          repository,
-          targetRef: preview.targetRef,
-          commitSha1: preview.commitSha1,
-          repositoryState: preview.repositoryState,
-          headReflogState: preview.headReflogState,
-          deadline,
-        })
-      : undefined;
-    const verified =
-      headSwitched &&
-      initial.verified &&
-      final?.verified === true &&
-      switchClean &&
-      durable;
-    const observed = final ?? initial;
-    const processes = [
-      ...prepared.processes,
-      ...(switched ? [switched] : []),
-      ...initial.processes,
-      ...(final?.processes ?? []),
-    ];
-    const details = createGitBranchSwitchDetails({
-      action: "apply",
-      status: verified ? "applied" : "indeterminate",
-      postcondition: verified ? "verified" : "indeterminate",
-      targetRef: preview.targetRef,
-      targetBranchName: preview.targetBranchName,
-      repository,
-      repositoryState: preview.repositoryState,
-      headReflogState: preview.headReflogState,
-      evidence: gitBranchSwitchProcessEvidence(preview.commitSha1, processes),
-      ...(observed.afterState
-        ? {
-            afterRepositoryStateSha256: observed.afterState.stateSha256,
-          }
-        : {}),
-      ...(observed.afterHeadReflog
-        ? { afterHeadReflogState: observed.afterHeadReflog }
-        : {}),
-      sourcePreviewResultSha256: preview.details.resultSha256,
-      switchStatus: switched?.status ?? "unknown",
-      ...(switchError
-        ? { errorSha256: sha256(errorText(switchError)) }
-        : !switchClean && switched
-          ? { errorSha256: sha256(canonicalJson(switched)) }
+      abort(signal);
+      return await applyPreparedGitBranchSwitch({
+        options: this.options,
+        repository,
+        preview,
+        prepared,
+        recoveryAction: recovery.action,
+        ...(checkout
+          ? {
+              preparedCheckout: checkout,
+            }
           : {}),
-      durable: verified,
-      cancellationObserved: signal?.aborted === true,
-    });
-    return {
-      targetBranchName: preview.targetBranchName,
-      details,
-    };
+        ...(checkoutPreparation || recovery.processes.length > 0
+          ? {
+              checkoutProcesses: [
+                ...recovery.processes,
+                ...(checkoutPreparation?.processes ?? []),
+              ],
+            }
+          : {}),
+        deadline,
+        ...(signal ? { signal } : {}),
+      });
+    } finally {
+      if (checkout) {
+        await cleanupGitBranchCheckoutDirectory(checkout.temporaryDirectory);
+      }
+    }
   }
 
   private prune(): void {
@@ -415,18 +437,9 @@ function publicPreview(
     id: stored.id,
     expiresAt: stored.expiresAt,
     targetBranchName: stored.targetBranchName,
+    patch: stored.patch,
     details: structuredClone(stored.details),
   };
-}
-
-function remainingTime(deadline: number): number {
-  const remaining = deadline - Date.now();
-  if (remaining <= 0) throw new Error("Git branch switch timed out");
-  return remaining;
-}
-
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 function abort(signal?: AbortSignal): void {

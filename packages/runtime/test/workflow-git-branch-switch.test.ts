@@ -1,5 +1,5 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -36,12 +36,38 @@ describe("Workflow preview-bound Git branch switch Tool nodes", () => {
       "branch",
       "feature/PRIVATE_WORKFLOW_SWITCH",
     ]);
+    await git(fixture.workspaceRoot, [
+      "checkout",
+      "--quiet",
+      "feature/PRIVATE_WORKFLOW_SWITCH",
+    ]);
+    await writeFile(
+      path.join(fixture.workspaceRoot, "TRACKED.txt"),
+      "PRIVATE_WORKFLOW_TARGET\n",
+    );
+    await git(fixture.workspaceRoot, ["add", "TRACKED.txt"]);
+    await git(fixture.workspaceRoot, [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "target",
+    ]);
+    const target = (
+      await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])
+    ).trim();
+    await git(fixture.workspaceRoot, ["checkout", "--quiet", "main"]);
     const previewReceipt = receiptSchema("preview");
     const applyReceipt = receiptSchema("apply");
+    expect(Object.keys(previewReceipt.properties)).toHaveLength(32);
+    expect(Object.keys(applyReceipt.properties)).toHaveLength(32);
     const manifest = defineExecutionPlanWorkflow({
-      name: "Attach reviewed local branch",
+      name: "Switch reviewed local branch",
       version: 1,
-      description: "Preview and switch to one same-commit branch.",
+      description: "Preview and switch to one divergent branch.",
       blueprint: fixture.blueprint,
       inputSchema: requestSchema(),
       outputSchema: applyReceipt,
@@ -52,7 +78,7 @@ describe("Workflow preview-bound Git branch switch Tool nodes", () => {
           id: "preview",
           type: "tool",
           tool: "git_branch_switch_preview",
-          effect: "read",
+          effect: "write",
           inputBindings: {
             targetBranchName: {
               source: "literal",
@@ -95,7 +121,7 @@ describe("Workflow preview-bound Git branch switch Tool nodes", () => {
       threadId: fixture.threadId,
       request: {
         manifest,
-        input: { request: "Attach the reviewed local branch." },
+        input: { request: "Switch to the reviewed local branch." },
       },
     });
 
@@ -107,7 +133,9 @@ describe("Workflow preview-bound Git branch switch Tool nodes", () => {
         status: "applied",
         postcondition: "verified",
         switchStatus: "succeeded",
-        commitSha1: parent,
+        sourceCommitSha1: parent,
+        commitSha1: target,
+        checkoutRequired: true,
         sourcePreviewResultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
@@ -120,6 +148,9 @@ describe("Workflow preview-bound Git branch switch Tool nodes", () => {
         ])
       ).trim(),
     ).toBe("feature/PRIVATE_WORKFLOW_SWITCH");
+    await expect(
+      readFile(path.join(fixture.workspaceRoot, "TRACKED.txt"), "utf8"),
+    ).resolves.toBe("PRIVATE_WORKFLOW_TARGET\n");
     const events = await fixture.store.listEvents(fixture.threadId);
     const completed = events.filter(
       (event) =>
@@ -131,6 +162,7 @@ describe("Workflow preview-bound Git branch switch Tool nodes", () => {
     expect(completed).toHaveLength(2);
     const durable = JSON.stringify(completed);
     expect(durable).not.toContain("PRIVATE_WORKFLOW_SWITCH");
+    expect(durable).not.toContain("PRIVATE_WORKFLOW_TARGET");
     expect(durable).not.toContain("feature/");
     expect(
       verifyThreadReplayBundle(
@@ -249,7 +281,20 @@ function receiptSchema(action: "preview" | "apply"): WorkflowObjectSchema {
     expiresAt: { type: "string" } as const,
     targetRefSha256: digest,
     targetBranchNameBytes: count,
+    sourceCommitSha1: objectId,
     commitSha1: objectId,
+    checkoutRequired: { type: "boolean" } as const,
+    fileCount: count,
+    recoveryAction: {
+      type: "string",
+      enum: ["none", "rolled_back", "completed"],
+    } as const,
+    addedLineCount: count,
+    deletedLineCount: count,
+    patchSha256: digest,
+    patchBytes: count,
+    worktreeTransitionSha256: digest,
+    proposedIndexSha256: digest,
     beforeRepositoryStateSha256: digest,
     beforeHeadReflogStateSha256: digest,
     afterRepositoryStateSha256: digest,
@@ -274,7 +319,17 @@ function receiptSchema(action: "preview" | "apply"): WorkflowObjectSchema {
     "postcondition",
     "targetRefSha256",
     "targetBranchNameBytes",
+    "sourceCommitSha1",
     "commitSha1",
+    "checkoutRequired",
+    "fileCount",
+    "recoveryAction",
+    "addedLineCount",
+    "deletedLineCount",
+    "patchSha256",
+    "patchBytes",
+    "worktreeTransitionSha256",
+    "proposedIndexSha256",
     "beforeRepositoryStateSha256",
     "beforeHeadReflogStateSha256",
     "runtimeEvidenceSha256",

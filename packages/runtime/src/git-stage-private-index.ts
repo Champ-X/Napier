@@ -204,7 +204,7 @@ export async function promotePreparedGitObjects(
 }
 
 export async function installPreparedGitIndex(input: {
-  prepared: PreparedGitStage;
+  prepared: Pick<PreparedGitStage, "indexBytes">;
   repository: GitRepository;
   indexMode: number;
   verifyCurrentState: () => Promise<void>;
