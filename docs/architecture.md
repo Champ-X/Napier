@@ -459,6 +459,12 @@ objectives, policy-template bounds, and exact status requests. Its response
 module owns Record, qualification, save, and selection evidence headers while
 exporting the shared Record metadata projections used by record-based Plan
 creation. This lowers `app.ts` to 16,110 lines.
+Direct Blueprint instantiation plus preview-bound Blueprint Record
+instantiation use `plan-blueprint-instantiation-http.ts` behind a five-method
+Store port. Separate validation and response modules preserve raw objective
+text, exact preview digest binding, portable Blueprint verification,
+Plan-created Ledger events, replay-event hashes, and all source/qualification
+headers. This lowers `app.ts` to 15,810 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

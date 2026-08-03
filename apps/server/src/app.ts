@@ -20,14 +20,7 @@ import type {
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
   CreateMcpExtensionRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
-  CreateExecutionPlanFromBlueprintRequest,
-  CreateExecutionPlanFromBlueprintRecordRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
-  ExecutionPlan,
-  ExecutionPlanBlueprint,
-  ExecutionPlanBlueprintRecord,
-  ExecutionPlanBlueprintRecordPreview,
-  ExecutionPlanBlueprintRecordQualification,
   ExecutionPlanBlueprintRecordReplayEventVerification,
   ExecutionPlanBlueprintRecordReplayHistory,
   ExecutionPlanBlueprintRecordReplayHistoryVerification,
@@ -176,7 +169,6 @@ import type {
   QualifySkillPackageRequest,
   PromptPackageQualification,
   PromptPackageVerification,
-  RunEvent,
   ReviewExtensionRequest,
   ReviewMcpToolRequest,
   ReviewExecutionPlanBlueprintRecordOutcomesRequest,
@@ -272,14 +264,12 @@ import {
   verifySignedExtensionPackageEnvelope,
   verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceiptEnvelope,
-  verifyExecutionPlanBlueprint,
   verifyUsagePriceTableCatalog,
   type WorkspaceFileMutationManager,
   type WorkspaceProcessManager,
   type AgentMessageExperimentRuntime,
   type ExecutionPlanWorkflowExperimentRuntime,
   type ExecutionPlanWorkflowRuntime,
-  executionPlanRequestFromBlueprint,
 } from "@napier/runtime";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
@@ -330,22 +320,14 @@ import { setEvaluationCasebookProjectionHeaders } from "./evaluation-admin-http-
 import { registerEvaluationReviewHttp } from "./evaluation-review-http.js";
 import { registerEvaluationSuiteAdminHttp } from "./evaluation-suite-admin-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
+import { registerPlanBlueprintInstantiationHttp } from "./plan-blueprint-instantiation-http.js";
 import { registerPlanBlueprintLibraryHttp } from "./plan-blueprint-library-http.js";
-import {
-  setExecutionPlanBlueprintRecordMetadataHeaders,
-  setExecutionPlanBlueprintRecordQualificationMetadataHeaders,
-} from "./plan-blueprint-library-http-response.js";
 import { registerPlanArtifactDataHttp } from "./plan-artifact-data-http.js";
 import { registerPlanArtifactDirectoryHttp } from "./plan-artifact-directory-http.js";
 import { registerPlanArtifactFileHttp } from "./plan-artifact-file-http.js";
 import { registerPlanArtifactInspectionHttp } from "./plan-artifact-inspection-http.js";
 import { registerPlanLifecycleHttp } from "./plan-lifecycle-http.js";
 import { registerPlanProgressHttp } from "./plan-progress-http.js";
-import {
-  setExecutionPlanBlueprintSourceHeaders,
-  setExecutionPlanBlueprintVerificationHeaders,
-  setExecutionPlanHeaders,
-} from "./plan-lifecycle-http-response.js";
 import { registerThreadEvidenceHttp } from "./thread-evidence-http.js";
 import { registerThreadEvaluationHttp } from "./thread-evaluation-http.js";
 import { registerThreadExecutionHttp } from "./thread-execution-http.js";
@@ -4965,169 +4947,7 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.post("/api/threads/:threadId/plans/from-blueprint", async (context) => {
-    const threadId = context.req.param("threadId");
-    services.store.getThread(threadId);
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-        "Execution plan blueprint request",
-      );
-    } catch (error) {
-      if (error instanceof RequestBodyTooLargeError) {
-        return jsonError(context, error.message, 413);
-      }
-      return jsonError(
-        context,
-        "Execution plan blueprint request is invalid",
-        400,
-      );
-    }
-    const request = parseCreateExecutionPlanFromBlueprintRequest(input);
-    if (!request) {
-      return jsonError(
-        context,
-        "Execution plan blueprint request is invalid",
-        400,
-      );
-    }
-    const verification = verifyExecutionPlanBlueprint(request.blueprint);
-    if (verification.status !== "valid") {
-      setExecutionPlanBlueprintVerificationHeaders(context, verification);
-      return context.json(verification, 400);
-    }
-    const planRequest = executionPlanRequestFromBlueprint(
-      request.blueprint,
-      request.objective,
-    );
-    const plan = await services.store.createPlan(threadId, planRequest);
-    await services.store.appendEvent({
-      threadId,
-      runId: createId("runctl"),
-      type: "plan.created",
-      category: "plan",
-      visibility: "user",
-      payload: {
-        planId: plan.id,
-        objective: plan.objective,
-        status: plan.status,
-        stepCount: plan.steps.length,
-        artifactCount: plan.artifacts.length,
-        criticalPathStepIds: plan.criticalPathStepIds,
-        readyStepIds: plan.readyStepIds,
-        blockedStepIds: plan.blockedStepIds,
-        blueprintSha256: request.blueprint.contentSha256,
-        blueprintSourcePlanId: request.blueprint.source.planId,
-        blueprintSourcePlanRevision: request.blueprint.source.planRevision,
-        blueprintSourceArchiveSha256:
-          request.blueprint.source.planArchiveSha256,
-      },
-    });
-    setExecutionPlanFromBlueprintHeaders(context, plan, request.blueprint);
-    return context.json(plan, 201);
-  });
-
-  app.post(
-    "/api/threads/:threadId/plans/from-blueprint-record/preview",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      services.store.getThread(threadId);
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          16 * 1024,
-          "Execution plan blueprint record preview request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint record preview request is invalid",
-          400,
-        );
-      }
-      const request = parseCreateExecutionPlanFromBlueprintRecordRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint record preview request is invalid",
-          400,
-        );
-      }
-      const preview = await services.store.previewPlanFromBlueprintRecord(
-        threadId,
-        request,
-      );
-      setExecutionPlanBlueprintRecordPreviewHeaders(context, preview);
-      return context.json(preview);
-    },
-  );
-
-  app.post(
-    "/api/threads/:threadId/plans/from-blueprint-record",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      services.store.getThread(threadId);
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          16 * 1024,
-          "Execution plan blueprint record request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint record request is invalid",
-          400,
-        );
-      }
-      const request = parseCreateExecutionPlanFromBlueprintRecordRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint record request is invalid",
-          400,
-        );
-      }
-      const preview = await services.store.previewPlanFromBlueprintRecord(
-        threadId,
-        request,
-      );
-      if (
-        preview.status !== "ready" ||
-        (request.expectedPreviewSha256 !== undefined &&
-          request.expectedPreviewSha256 !== preview.previewSha256)
-      ) {
-        setExecutionPlanBlueprintRecordPreviewHeaders(context, preview);
-        return context.json(preview, 409);
-      }
-      const {
-        plan,
-        record,
-        qualification: creationQualification,
-        event,
-        previewSha256,
-      } = await services.store.createPlanFromBlueprintRecord(threadId, request);
-      setExecutionPlanFromBlueprintRecordHeaders(
-        context,
-        plan,
-        record,
-        creationQualification,
-        previewSha256,
-        event,
-      );
-      return context.json(plan, 201);
-    },
-  );
+  registerPlanBlueprintInstantiationHttp(app, services.store);
 
   registerPlanProgressHttp(app, services.store);
 
@@ -7443,23 +7263,6 @@ function parseVerifyExecutionPlanBlueprintRecordReplayEventRequest(
   };
 }
 
-function parseCreateExecutionPlanFromBlueprintRequest(
-  input: unknown,
-): CreateExecutionPlanFromBlueprintRequest | undefined {
-  const record = requestRecord(input, ["blueprint", "objective"]);
-  if (!record || record["blueprint"] === undefined) return undefined;
-  const objective =
-    record["objective"] === undefined ||
-    !boundedString(record["objective"], 1, 4_000)
-      ? undefined
-      : record["objective"];
-  if (record["objective"] !== undefined && !objective) return undefined;
-  return {
-    blueprint: record["blueprint"] as ExecutionPlanBlueprint,
-    ...(objective ? { objective } : {}),
-  };
-}
-
 function parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
   input: unknown,
 ): SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest | undefined {
@@ -7520,38 +7323,6 @@ function parseRetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
     expectedOverrideSetSha256,
     expectedDriftReviewSetSha256,
     expectedPortfolioSetSha256,
-  };
-}
-
-function parseCreateExecutionPlanFromBlueprintRecordRequest(
-  input: unknown,
-): CreateExecutionPlanFromBlueprintRecordRequest | undefined {
-  const record = requestRecord(input, [
-    "recordId",
-    "objective",
-    "expectedPreviewSha256",
-  ]);
-  if (!record || !boundedString(record["recordId"], 1, 100)) {
-    return undefined;
-  }
-  const objective =
-    record["objective"] === undefined ||
-    !boundedString(record["objective"], 1, 4_000)
-      ? undefined
-      : record["objective"];
-  if (record["objective"] !== undefined && !objective) return undefined;
-  const expectedPreviewSha256 = record["expectedPreviewSha256"];
-  if (
-    expectedPreviewSha256 !== undefined &&
-    (typeof expectedPreviewSha256 !== "string" ||
-      !/^[a-f0-9]{64}$/.test(expectedPreviewSha256))
-  ) {
-    return undefined;
-  }
-  return {
-    recordId: record["recordId"],
-    ...(objective ? { objective } : {}),
-    ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
   };
 }
 
@@ -10855,51 +10626,6 @@ function createHealthRuntimeProjection() {
   } satisfies HealthResponse["runtime"];
 }
 
-function setExecutionPlanFromBlueprintHeaders(
-  context: Context,
-  plan: ExecutionPlan,
-  blueprint: ExecutionPlanBlueprint,
-): void {
-  setExecutionPlanHeaders(context, plan);
-  setExecutionPlanBlueprintSourceHeaders(context, blueprint);
-}
-
-function setExecutionPlanBlueprintRecordPreviewHeaders(
-  context: Context,
-  preview: ExecutionPlanBlueprintRecordPreview,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, preview);
-  context.header("X-Napier-Plan-Blueprint-Preview-Status", preview.status);
-  context.header("X-Napier-Blueprint-Preview-SHA256", preview.previewSha256);
-  context.header("X-Napier-Plan-Blueprint-Record-Id", preview.recordId);
-  context.header("X-Napier-Thread-Id", preview.threadId);
-  context.header("X-Napier-Has-Open-Plan", String(preview.hasOpenPlan));
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(preview.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(preview.diagnostics),
-  );
-  setExecutionPlanBlueprintRecordQualificationMetadataHeaders(
-    context,
-    preview.qualification,
-  );
-  if (preview.plan) {
-    context.header("X-Napier-Plan-Id", preview.plan.id);
-    context.header(
-      "X-Napier-Plan-Step-Count",
-      String(preview.plan.steps.length),
-    );
-    context.header(
-      "X-Napier-Plan-Artifact-Count",
-      String(preview.plan.artifacts.length),
-    );
-  }
-}
-
 function setExecutionPlanBlueprintRecordReplayHistoryHeaders(
   context: Context,
   history: ExecutionPlanBlueprintRecordReplayHistory,
@@ -11926,32 +11652,6 @@ function setExecutionPlanBlueprintRecordReplayEventVerificationHeaders(
       verification.observedReplay.previewSha256,
     );
   }
-}
-
-function setExecutionPlanFromBlueprintRecordHeaders(
-  context: Context,
-  plan: ExecutionPlan,
-  record: ExecutionPlanBlueprintRecord,
-  qualification: ExecutionPlanBlueprintRecordQualification,
-  previewSha256: string,
-  replayEvent: RunEvent,
-): void {
-  setExecutionPlanHeaders(context, plan);
-  setExecutionPlanBlueprintRecordMetadataHeaders(context, record);
-  setExecutionPlanBlueprintRecordQualificationMetadataHeaders(
-    context,
-    qualification,
-  );
-  context.header("X-Napier-Blueprint-Preview-SHA256", previewSha256);
-  context.header("X-Napier-Blueprint-Replay-Event-Id", replayEvent.id);
-  context.header(
-    "X-Napier-Blueprint-Replay-Event-Seq",
-    String(replayEvent.seq),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Event-SHA256",
-    sha256Json(replayEvent as unknown as JsonValue),
-  );
 }
 
 function setExtensionListHeaders(
