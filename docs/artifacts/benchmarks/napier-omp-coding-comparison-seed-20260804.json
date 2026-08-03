@@ -52,7 +52,19 @@
         "agentExitCode": 0,
         "hiddenOutcomePassed": true,
         "durationMs": 9658
-      }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "napier": { "status": "passed", "durationMs": 8543 },
+          "omp": { "hiddenOutcomePassed": true, "durationMs": 9658 }
+        },
+        {
+          "trial": 2,
+          "napier": { "status": "passed", "durationMs": 9206 },
+          "omp": { "hiddenOutcomePassed": true, "durationMs": 9741 }
+        }
+      ]
     },
     {
       "caseId": "coding_seed_20260804_migration",
@@ -80,7 +92,19 @@
         "agentExitCode": 0,
         "hiddenOutcomePassed": true,
         "durationMs": 33286
-      }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "napier": { "status": "passed", "durationMs": 22253 },
+          "omp": { "hiddenOutcomePassed": true, "durationMs": 33286 }
+        },
+        {
+          "trial": 2,
+          "napier": { "status": "passed", "durationMs": 25946 },
+          "omp": { "hiddenOutcomePassed": true, "durationMs": 35548 }
+        }
+      ]
     },
     {
       "caseId": "coding_seed_20260804_debugger",
@@ -110,6 +134,28 @@
         "agentExitCode": 0,
         "hiddenOutcomePassed": true,
         "durationMs": 38628
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "napier": { "status": "passed", "durationMs": 21599 },
+          "omp": { "hiddenOutcomePassed": true, "durationMs": 38628 }
+        },
+        {
+          "trial": 2,
+          "napier": { "status": "failed", "durationMs": 39707 },
+          "omp": { "hiddenOutcomePassed": true, "durationMs": 62073 }
+        }
+      ],
+      "remediation": {
+        "status": "unresolved",
+        "failedTool": "apply_patch",
+        "debuggerActionsCompletedBeforeFailure": 10,
+        "promptVariantsRetained": false,
+        "notes": [
+          "Retry guidance reduced repeated debugger failures but did not make the patch transition deterministic.",
+          "Mandatory cancel guidance regressed latency and still passed only one of two attempts."
+        ]
       }
     }
   ],
@@ -122,10 +168,14 @@
     "ompHiddenOutcomeFailed": 0,
     "napierOuterHiddenOutcomePassed": 3,
     "napierOuterHiddenOutcomeFailed": 0,
+    "trialCount": 6,
+    "napierTrialPassed": 5,
+    "ompTrialPassed": 6,
+    "napierTrialLatencyWins": 5,
     "outerOutcomeVerdict": "napier_not_worse",
-    "verdict": "napier_not_worse",
+    "verdict": "napier_worse",
     "requiredFollowUps": [
-      "Repeat the seeded suite for multiple trials and additional seeds.",
+      "Diagnose and fix the debugger-to-patch transition before making a not-worse stability claim.",
       "Capture OMP token and cost evidence when its machine output exposes stable usage fields.",
       "Run the same suite outside nested TRAE isolation before making a production Sandbox release claim."
     ]

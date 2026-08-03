@@ -57,6 +57,12 @@ export async function verifyCodingExecutorComparison(input, options = {}) {
       calculated.napierCanonicalTargetMatches ||
     summary.ompHiddenOutcomePassed !== calculated.ompHiddenOutcomePassed ||
     summary.ompHiddenOutcomeFailed !== calculated.ompHiddenOutcomeFailed ||
+    ("trialCount" in summary &&
+      (summary.trialCount !== calculated.trialCount ||
+        summary.napierTrialPassed !== calculated.napierTrialPassed ||
+        summary.ompTrialPassed !== calculated.ompTrialPassed ||
+        summary.napierTrialLatencyWins !==
+          calculated.napierTrialLatencyWins)) ||
     summary.napierOuterHiddenOutcomePassed !==
       calculated.napierOuterHiddenOutcomePassed ||
     summary.napierOuterHiddenOutcomeFailed !==
@@ -91,6 +97,7 @@ export async function verifyCodingExecutorComparisonSet(reports) {
   );
   const seeds = seededReports.map((report) => report.taskSelection.seed);
   const cases = seededReports.flatMap((report) => report.cases ?? []);
+  const trials = cases.flatMap(caseTrials);
   const caseIds = cases.map((entry) => entry?.caseId);
   const errors = [];
   if (seededReports.length === 0) errors.push("seeded_report_missing");
@@ -99,17 +106,17 @@ export async function verifyCodingExecutorComparisonSet(reports) {
   if (results.some((result) => !result.valid)) {
     errors.push("report_invalid");
   }
-  const napierPassed = cases.filter(
-    (entry) => entry?.napier?.officialStatus === "passed",
+  const napierPassed = trials.filter(
+    (entry) => entry?.napierStatus === "passed",
   ).length;
-  const ompPassed = cases.filter(
-    (entry) => entry?.omp?.hiddenOutcomePassed === true,
-  ).length;
-  const napierLatencyWins = cases.filter(
+  const ompPassed = trials.filter((entry) => entry?.ompPassed === true).length;
+  const napierLatencyWins = trials.filter(
     (entry) =>
-      typeof entry?.napier?.durationMs === "number" &&
-      typeof entry?.omp?.durationMs === "number" &&
-      entry.napier.durationMs < entry.omp.durationMs,
+      entry?.napierStatus === "passed" &&
+      entry?.ompPassed === true &&
+      typeof entry?.napierDurationMs === "number" &&
+      typeof entry?.ompDurationMs === "number" &&
+      entry.napierDurationMs < entry.ompDurationMs,
   ).length;
   const valid = errors.length === 0;
   return {
@@ -117,6 +124,7 @@ export async function verifyCodingExecutorComparisonSet(reports) {
     errors,
     seededReportCount: seededReports.length,
     caseCount: cases.length,
+    trialCount: trials.length,
     napierPassed,
     ompPassed,
     napierLatencyWins,
@@ -156,6 +164,32 @@ function validateCase(entry, errors) {
   ) {
     errors.push(`case_metrics_invalid:${entry.caseId}`);
   }
+  if (entry.trials !== undefined) {
+    if (
+      !Array.isArray(entry.trials) ||
+      entry.trials.length < 2 ||
+      entry.trials.length > 10 ||
+      new Set(entry.trials.map((trial) => trial?.trial)).size !==
+        entry.trials.length
+    ) {
+      errors.push(`case_trials_invalid:${entry.caseId}`);
+      return;
+    }
+    for (const trial of entry.trials) {
+      if (
+        !positiveInteger(trial?.trial) ||
+        !["passed", "inconclusive", "failed"].includes(trial?.napier?.status) ||
+        typeof trial?.napier?.durationMs !== "number" ||
+        trial.napier.durationMs < 0 ||
+        typeof trial?.omp?.hiddenOutcomePassed !== "boolean" ||
+        typeof trial?.omp?.durationMs !== "number" ||
+        trial.omp.durationMs < 0
+      ) {
+        errors.push(`case_trials_invalid:${entry.caseId}`);
+        break;
+      }
+    }
+  }
 }
 
 function calculateSummary(environment, cases) {
@@ -189,18 +223,52 @@ function calculateSummary(environment, cases) {
   const infrastructureUnavailable =
     environment?.nestedSandboxAvailable !== true ||
     summary.napierOfficialInconclusive > 0;
+  const trials = cases.flatMap(caseTrials);
+  const napierTrialPassed = trials.filter(
+    (trial) => trial.napierStatus === "passed",
+  ).length;
+  const ompTrialPassed = trials.filter((trial) => trial.ompPassed).length;
+  const napierTrialLatencyWins = trials.filter(
+    (trial) =>
+      trial.napierStatus === "passed" &&
+      trial.ompPassed &&
+      trial.napierDurationMs < trial.ompDurationMs,
+  ).length;
   return {
     ...summary,
+    trialCount: trials.length,
+    napierTrialPassed,
+    ompTrialPassed,
+    napierTrialLatencyWins,
     outerOutcomeVerdict:
       summary.napierOuterHiddenOutcomePassed >= summary.ompHiddenOutcomePassed
         ? "napier_not_worse"
         : "napier_worse",
     verdict: infrastructureUnavailable
       ? "not_proven"
-      : summary.napierOfficialPassed >= summary.ompHiddenOutcomePassed
+      : napierTrialPassed >= ompTrialPassed
         ? "napier_not_worse"
         : "napier_worse",
   };
+}
+
+function caseTrials(entry) {
+  if (Array.isArray(entry?.trials) && entry.trials.length > 0) {
+    return entry.trials.map((trial) => ({
+      napierStatus: trial?.napier?.status,
+      napierDurationMs: trial?.napier?.durationMs,
+      ompPassed: trial?.omp?.hiddenOutcomePassed === true,
+      ompDurationMs: trial?.omp?.durationMs,
+    }));
+  }
+  return [
+    {
+      napierStatus: entry?.napier?.officialStatus,
+      napierDurationMs: entry?.napier?.durationMs,
+      ompPassed: entry?.omp?.hiddenOutcomePassed === true,
+      ompDurationMs: entry?.omp?.durationMs,
+    },
+  ];
 }
 
 function containsSensitiveKey(value) {

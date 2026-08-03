@@ -66,16 +66,18 @@ stateful-tool stop guidance was tightened, and was faster in every case:
 8.54/22.25/21.60 seconds versus OMP's 9.66/33.29/38.63 seconds. The verified
 report is
 `docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260804.json`.
-This proves `napier_not_worse` for this seeded batch, while broader multi-seed,
-multi-trial evidence remains open.
+This proved `napier_not_worse` for the first trial only. A second trial kept
+both executors passing on low and medium cases, but Napier failed the debugger
+case while OMP passed. Prompt-only remediation was not stable and was reverted;
+the report now records Napier 5/6 versus OMP 6/6 and verdict `napier_worse`.
 
 Independent seed `20260805` produced a different suite
 (`0ebb706b95865453`) and repeated the result: both executors passed 3/3, while
 Napier was faster in all three cases at 8.88/21.87/21.93 seconds versus
-9.27/32.17/44.25 seconds. Across the two generated seeds Napier is 6/6 on
-official Runs with zero failed tools, both executors are 6/6 on hidden
-outcomes, and Napier has lower wall time in 6/6 matched cases. This remains a
-small template-bound sample, not a general superiority claim.
+9.27/32.17/44.25 seconds. Across all retained trials Napier is 8/9 and OMP is
+9/9; Napier has lower wall time in all eight matched passing trials. Success
+rate takes precedence over latency, so the aggregate gate now records
+`napier_worse` until the debugger-to-patch transition is fixed and repeated.
 
 Observed on 2026-08-02 with `deepseek-v4-flash` loaded from the local
 environment:

@@ -67,15 +67,17 @@ describe("coding executor comparison verifier", () => {
     );
   });
 
-  it("verifies the seeded comparison as Napier not worse", async () => {
+  it("keeps a seeded multi-trial regression fail-visible", async () => {
     await expect(
       verifyCodingExecutorComparison(seededArtifact),
     ).resolves.toEqual(
       expect.objectContaining({
         valid: true,
         caseCount: 3,
-        verdict: "napier_not_worse",
+        verdict: "napier_worse",
         napierOfficialPassed: 3,
+        napierTrialPassed: 5,
+        ompTrialPassed: 6,
         ompHiddenOutcomePassed: 3,
       }),
     );
@@ -106,10 +108,11 @@ describe("coding executor comparison verifier", () => {
       errors: [],
       seededReportCount: 2,
       caseCount: 6,
-      napierPassed: 6,
-      ompPassed: 6,
-      napierLatencyWins: 6,
-      verdict: "napier_not_worse",
+      trialCount: 9,
+      napierPassed: 8,
+      ompPassed: 9,
+      napierLatencyWins: 8,
+      verdict: "napier_worse",
     });
   });
 
