@@ -414,6 +414,12 @@ Revision event emission, Thread ownership, model availability, response
 headers, and bounded-body errors are unchanged. This lowers `app.ts` to 19,061
 lines and completes the Casebook/Suite administration split.
 
+Evaluation adjudication, reviewer ballot, and consensus gate requests use
+`evaluation-review-http-validation.ts`. It preserves the distinct normalized
+adjudication-note and raw ballot-note contracts, exact reviewer identity and
+verdict bounds, and consensus quorum/rate limits. Dedicated malformed-input
+tests lower `app.ts` to 18,950 lines before the review routes move.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 

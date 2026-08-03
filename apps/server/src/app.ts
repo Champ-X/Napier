@@ -152,7 +152,6 @@ import type {
   SignPromptPackageRequest,
   SignSkillPackageRequest,
   SignTrustedReceiptRequest,
-  EvaluationConsensusGate,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest,
   ImportSignedExtensionPackageRequest,
   InstallSkillPackageRequest,
@@ -187,9 +186,7 @@ import type {
   ReviewExtensionRequest,
   ReviewMcpToolRequest,
   ReviewExecutionPlanBlueprintRecordOutcomesRequest,
-  ReviewRunEvaluationRequest,
   ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest,
-  ResolveEvaluationConsensusRequest,
   ResolveEvaluationConsensusResult,
   SetExtensionEnabledRequest,
   SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
@@ -205,7 +202,6 @@ import type {
   SaveExecutionPlanBlueprintResult,
   SignExtensionPackageChannelIndexRequest,
   SignInspectorPackageRequest,
-  SubmitEvaluationReviewerBallotRequest,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
   TransitionPlanStepRequest,
@@ -356,6 +352,11 @@ import { registerEvaluationCasebookAdminHttp } from "./evaluation-casebook-admin
 import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
 import { setEvaluationCasebookProjectionHeaders } from "./evaluation-admin-http-response.js";
 import { parseCreateRunEvaluationRequest } from "./evaluation-http-validation.js";
+import {
+  parseResolveEvaluationConsensusRequest,
+  parseReviewRunEvaluationRequest,
+  parseSubmitEvaluationReviewerBallotRequest,
+} from "./evaluation-review-http-validation.js";
 import { registerEvaluationSuiteAdminHttp } from "./evaluation-suite-admin-http.js";
 import { registerMemoryHttp } from "./memory-http.js";
 import { registerPlanLifecycleHttp } from "./plan-lifecycle-http.js";
@@ -8305,38 +8306,6 @@ function parseReviewedRoutingHint(input: unknown): string | undefined {
     : undefined;
 }
 
-function parseReviewRunEvaluationRequest(
-  input: unknown,
-): ReviewRunEvaluationRequest | undefined {
-  const record = requestRecord(input, ["expectedVerdict", "note"]);
-  const expectedVerdict = parseRunEvaluationVerdict(
-    record?.["expectedVerdict"],
-  );
-  const note = parseOptionalBoundedText(record?.["note"], 1_000);
-  if (
-    !record ||
-    !expectedVerdict ||
-    (record["note"] !== undefined && note === undefined)
-  ) {
-    return undefined;
-  }
-  return {
-    expectedVerdict,
-    ...(note ? { note } : {}),
-  };
-}
-
-function parseRunEvaluationVerdict(
-  input: unknown,
-): ReviewRunEvaluationRequest["expectedVerdict"] | undefined {
-  return input === "left_better" ||
-    input === "right_better" ||
-    input === "tie" ||
-    input === "inconclusive"
-    ? input
-    : undefined;
-}
-
 function parseOptionalBoundedText(
   input: unknown,
   maxLength: number,
@@ -8908,86 +8877,6 @@ function boundedString(
 
 function isSha256Hex(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-}
-
-function parseSubmitEvaluationReviewerBallotRequest(
-  input: unknown,
-): SubmitEvaluationReviewerBallotRequest | undefined {
-  const record = requestRecord(input, [
-    "reviewerId",
-    "reviewerName",
-    "expectedVerdict",
-    "note",
-  ]);
-  const reviewerId = record?.["reviewerId"];
-  const reviewerName = record?.["reviewerName"];
-  const expectedVerdict = record?.["expectedVerdict"];
-  const note = record?.["note"];
-  if (
-    !record ||
-    typeof reviewerId !== "string" ||
-    !/^[a-z][a-z0-9_-]{1,63}$/i.test(reviewerId.trim()) ||
-    typeof reviewerName !== "string" ||
-    !reviewerName.replace(/\s+/g, " ").trim() ||
-    reviewerName.replace(/\s+/g, " ").trim().length > 80 ||
-    typeof expectedVerdict !== "string" ||
-    !["left_better", "right_better", "tie", "inconclusive"].includes(
-      expectedVerdict,
-    ) ||
-    (note !== undefined && typeof note !== "string") ||
-    (typeof note === "string" &&
-      note.replace(/\s+/g, " ").trim().length > 1_000)
-  ) {
-    return undefined;
-  }
-  return {
-    reviewerId,
-    reviewerName,
-    expectedVerdict:
-      expectedVerdict as SubmitEvaluationReviewerBallotRequest["expectedVerdict"],
-    ...(typeof note === "string" ? { note } : {}),
-  };
-}
-
-function parseResolveEvaluationConsensusRequest(
-  input: unknown,
-): ResolveEvaluationConsensusRequest | undefined {
-  const record = requestRecord(input, ["gate"]);
-  const gate =
-    record?.["gate"] === undefined
-      ? undefined
-      : requestRecord(record["gate"], [
-          "minimumReviewers",
-          "minimumAgreementRate",
-          "allowInconclusive",
-        ]);
-  const minimumReviewers = gate?.["minimumReviewers"];
-  const minimumAgreementRate = gate?.["minimumAgreementRate"];
-  const allowInconclusive = gate?.["allowInconclusive"];
-  if (
-    !record ||
-    (record["gate"] !== undefined && !gate) ||
-    (minimumReviewers !== undefined &&
-      (!Number.isInteger(minimumReviewers) ||
-        Number(minimumReviewers) < 2 ||
-        Number(minimumReviewers) > 9)) ||
-    (minimumAgreementRate !== undefined &&
-      (typeof minimumAgreementRate !== "number" ||
-        !Number.isFinite(minimumAgreementRate) ||
-        minimumAgreementRate < 0.5 ||
-        minimumAgreementRate > 1)) ||
-    (allowInconclusive !== undefined && typeof allowInconclusive !== "boolean")
-  ) {
-    return undefined;
-  }
-  const normalizedGate: Partial<EvaluationConsensusGate> = {
-    ...(typeof minimumReviewers === "number" ? { minimumReviewers } : {}),
-    ...(typeof minimumAgreementRate === "number"
-      ? { minimumAgreementRate }
-      : {}),
-    ...(typeof allowInconclusive === "boolean" ? { allowInconclusive } : {}),
-  };
-  return gate ? { gate: normalizedGate } : {};
 }
 
 function parseCreateReceiptTrustAnchorRequest(
