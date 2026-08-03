@@ -1,7 +1,6 @@
 import {
   createId,
   inspectWorkspaceArtifactDrift,
-  type LocalStore,
   previewWorkspaceTextArtifact,
 } from "@napier/runtime";
 import { Hono } from "hono";
@@ -16,15 +15,14 @@ import {
   setPlanArtifactDriftCheckHeaders,
   setPlanArtifactTextPreviewHeaders,
 } from "./plan-artifact-http-response.js";
-
-export type PlanArtifactInspectionHttpStore = Pick<
-  LocalStore,
-  "appendEvent" | "getPlan" | "workspaceRoot"
->;
+import {
+  getThreadPlan,
+  type PlanArtifactHttpStore,
+} from "./plan-artifact-http-store.js";
 
 export function registerPlanArtifactInspectionHttp(
   app: Hono,
-  store: PlanArtifactInspectionHttpStore,
+  store: PlanArtifactHttpStore,
 ): void {
   registerPlanArtifactDriftCheckHttp(app, store);
   registerPlanArtifactTextPreviewHttp(app, store);
@@ -32,7 +30,7 @@ export function registerPlanArtifactInspectionHttp(
 
 function registerPlanArtifactDriftCheckHttp(
   app: Hono,
-  store: PlanArtifactInspectionHttpStore,
+  store: PlanArtifactHttpStore,
 ): void {
   app.post(
     "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/drift-check",
@@ -106,7 +104,7 @@ function registerPlanArtifactDriftCheckHttp(
 
 function registerPlanArtifactTextPreviewHttp(
   app: Hono,
-  store: PlanArtifactInspectionHttpStore,
+  store: PlanArtifactHttpStore,
 ): void {
   app.get(
     "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/preview",
@@ -169,16 +167,4 @@ function registerPlanArtifactTextPreviewHttp(
       }
     },
   );
-}
-
-function getThreadPlan(
-  store: PlanArtifactInspectionHttpStore,
-  planId: string,
-  threadId: string,
-) {
-  const plan = store.getPlan(planId);
-  if (plan.threadId !== threadId) {
-    throw new Error(`Plan not found in thread: ${planId}`);
-  }
-  return plan;
 }

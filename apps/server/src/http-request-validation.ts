@@ -17,6 +17,20 @@ export function validThreadId(value: unknown): value is string {
   return typeof value === "string" && /^thread_[a-z0-9]{8,80}$/u.test(value);
 }
 
+export function nonNegativeSafeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+export function isSha256String(value: unknown): value is string {
+  return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value);
+}
+
+export function isStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
+}
+
 export function normalizeBoundedText(
   input: unknown,
   minLength: number,

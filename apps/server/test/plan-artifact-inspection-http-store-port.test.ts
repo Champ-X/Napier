@@ -1,9 +1,9 @@
 import { expectTypeOf, it } from "vitest";
 
-import type { PlanArtifactInspectionHttpStore } from "../src/plan-artifact-inspection-http.js";
+import type { PlanArtifactHttpStore } from "../src/plan-artifact-http-store.js";
 
-it("keeps Plan Artifact inspection HTTP on a three-capability Store port", () => {
-  expectTypeOf<keyof PlanArtifactInspectionHttpStore>().toEqualTypeOf<
+it("keeps Plan Artifact HTTP on a three-capability Store port", () => {
+  expectTypeOf<keyof PlanArtifactHttpStore>().toEqualTypeOf<
     "appendEvent" | "getPlan" | "workspaceRoot"
   >();
 });

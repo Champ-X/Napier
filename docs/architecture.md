@@ -437,6 +437,14 @@ body hashes, receipt headers, and Artifact evidence headers are owned by
 `plan-artifact-http-response.ts`; the reusable Ledger event receipt projection
 now lives with the common HTTP evidence primitives. This lowers `app.ts` to
 18,225 lines without changing the 255-route contract.
+File export/verification, directory manifest/verification, and data
+profile/verification now use three additional Plan Artifact HTTP modules on
+the same three-capability Store port. Data and directory verification modules
+own strict request parsing, portable digest recomputation, ordered diagnostics,
+and hash-only Ledger event projections. Shared response helpers preserve binary
+download, body/stable hash, Artifact identity, count, and receipt headers.
+This completes the Plan Artifact inspection/verification boundary and lowers
+`app.ts` to 16,894 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
