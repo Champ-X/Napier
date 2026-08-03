@@ -8,6 +8,11 @@ import {
   createGitBranchPreviewTool,
 } from "./git-branch-tool.js";
 import { gitBranchMutationManagerFor } from "./git-branch.js";
+import {
+  createGitBranchSwitchApplyTool,
+  createGitBranchSwitchPreviewTool,
+} from "./git-branch-switch-tool.js";
+import { gitBranchSwitchMutationManagerFor } from "./git-branch-switch.js";
 import { createGitInspectTool } from "./git-inspect-tool.js";
 import {
   createGitCommitApplyTool,
@@ -59,6 +64,7 @@ export interface CreateStatelessAgentToolsOptions {
   gitStageScopeId?: string;
   gitCommitScopeId?: string;
   gitBranchScopeId?: string;
+  gitBranchSwitchScopeId?: string;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
 }
@@ -171,6 +177,7 @@ export function createStatelessAgentTools(
   appendGitStageTools(tools, options, processAllowed);
   appendGitCommitTools(tools, options, processAllowed);
   appendGitBranchTools(tools, options, processAllowed);
+  appendGitBranchSwitchTools(tools, options, processAllowed);
   if (processAllowed && profile.enabledTools.includes("verify_workspace")) {
     tools.push(
       createVerificationTool({
@@ -286,6 +293,28 @@ function appendGitBranchTools(
   }
   if (options.profile.enabledTools.includes("git_branch_create_apply")) {
     tools.push(createGitBranchApplyTool(manager, context));
+  }
+}
+
+function appendGitBranchSwitchTools(
+  tools: AgentTool[],
+  options: CreateStatelessAgentToolsOptions,
+  processAllowed: boolean,
+): void {
+  if (!processAllowed) return;
+  const manager = gitBranchSwitchMutationManagerFor(
+    options.store,
+    options.sandbox,
+  );
+  const context = {
+    threadId: options.threadId,
+    scopeId: options.gitBranchSwitchScopeId ?? options.runId,
+  };
+  if (options.profile.enabledTools.includes("git_branch_switch_preview")) {
+    tools.push(createGitBranchSwitchPreviewTool(manager, context));
+  }
+  if (options.profile.enabledTools.includes("git_branch_switch_apply")) {
+    tools.push(createGitBranchSwitchApplyTool(manager, context));
   }
 }
 

@@ -205,6 +205,9 @@ Version `0.1.0` includes:
   validated local branch name to the exact current HEAD, then zero-old-CAS
   create and fsync only that ref/reflog without switching HEAD or touching the
   index/worktree;
+- `git_branch_switch_preview` and `git_branch_switch_apply` tools that attach
+  HEAD to an existing same-commit local branch through one target-OID/current-
+  HEAD-OID ref transaction, preserving dirty index/worktree state;
 - a `workspace_process` tool and lazy Processes Workbench for bounded
   background Node sessions with cursor-based stdout/stderr observation,
   explicit interactive stdin, cancellation, lifecycle settlement, graceful
@@ -2356,10 +2359,10 @@ read-only; Process Sessions add only the preview-bound scoped write mode
 described below. Hard per-command CPU/memory quotas remain explicit next-stage
 work. Python remains a separate restricted Kernel protocol. Generic
 `run_command` stays Node-only; Git uses the purpose-built inspection, staging,
-commit, and branch-creation surfaces below rather than exposing arbitrary Git
-argv.
+commit, branch-creation, and same-commit branch-switch surfaces below rather
+than exposing arbitrary Git argv.
 
-## Controlled Git Inspection, Staging, Commit, And Branch Creation
+## Controlled Git Inspection, Staging, Commit, And Branch Operations
 
 `git_inspect` reads the workspace-root repository through fixed
 `/usr/bin/git` execution in the same local read-only, denied-network OS
@@ -2460,13 +2463,33 @@ commit while HEAD, index, worktree, and objects remain unchanged. A concurrent
 HEAD switch or uncertain ref process is returned as `indeterminate`; the
 created ref, if present, is never hidden as a safe failure.
 
+`git_branch_switch_preview` accepts one existing local target and requires its
+commit to equal the exact current `HEAD^{commit}`. Preview binds target,
+repository/index state, HEAD reflog content/mode/bytes, fixed runtime evidence,
+and a one-use Run/Plan capability. It rejects current, missing, divergent,
+unsafe, non-canonical, linked/shared/reftable/SHA-256/alternate, and OCI
+targets. Dirty index and worktree state is allowed because a same-commit
+attachment does not rewrite either.
+
+`git_branch_switch_apply` uses a fixed
+`update-ref --no-deref --stdin` transaction. The transaction atomically
+verifies both target OID and current dereferenced HEAD OID before updating the
+HEAD symref; hooks are disabled and the transaction body is hash-bound stdin.
+Apply then proves that target/HEAD remain at the reviewed commit, index/static
+repository state stayed fixed, and the HEAD reflog is exactly the previewed
+prefix plus one same-OID `napier switch branch` record. HEAD and reflog files
+are fsynced before a second settlement. Timeout, post-transaction cancellation,
+adapter uncertainty, extra reflog writes, or any state drift returns
+`indeterminate`.
+
 These slices do not stage directories, symlinks, or multiple paths in one
 staging transaction, and do not support repositories without an existing
 index/HEAD, linked worktrees, split/sparse indexes, SHA-256 objects, reftable
 refs, alternates, staged submodule/gitlink changes, shared repository ACLs, or
-OCI execution. They also do not switch branches, checkout, reset, clean, merge,
-resolve conflicts, sign commits, run hooks, or promote Review outcomes. Those
-operations remain separate preview-bound transactions;
+OCI execution. They also do not switch to divergent branches, checkout/reset/
+clean worktree files, merge, resolve conflicts, sign commits, run hooks, or
+promote Review outcomes. Those operations remain separate preview-bound
+transactions;
 arbitrary Git argv and dangerous history rewriting remain unavailable.
 Preview capabilities are process-local and intentionally non-resumable:
 expiry or Runtime restart requires a fresh preview rather than replaying a

@@ -98,6 +98,8 @@ describe("workspace tool guidance", () => {
       { name: "git_commit_apply" } as AgentTool,
       { name: "git_branch_create_preview" } as AgentTool,
       { name: "git_branch_create_apply" } as AgentTool,
+      { name: "git_branch_switch_preview" } as AgentTool,
+      { name: "git_branch_switch_apply" } as AgentTool,
     ]);
 
     expect(guidance).toContain("exact working or staged hunks");
@@ -108,6 +110,10 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain("never runs hooks, signing, checkout");
     expect(guidance).toContain("bind one new local branch name");
     expect(guidance).toContain("does not switch HEAD");
+    expect(guidance).toContain(
+      "existing local branch at the exact current commit",
+    );
+    expect(guidance).toContain("target OID and source HEAD");
   });
 
   it("describes the restricted Python state boundary", () => {

@@ -11,6 +11,7 @@ const DEFAULT_GIT_EXECUTABLE = "/usr/bin/git";
 const MAX_GIT_ARGUMENTS = 32;
 const MAX_GIT_ARGUMENT_CHARS = 2_048;
 const MAX_GIT_TOTAL_ARGUMENT_CHARS = 16_384;
+const MAX_GIT_STDIN_BYTES = 4 * 1024;
 export const MAX_GIT_PROCESS_OUTPUT_CHARS = 128 * 1024;
 const GIT_ARGUMENT_PATTERN = /^[^\u0000-\u001f\u007f]*$/u;
 const GIT_ENVIRONMENT = {
@@ -59,10 +60,11 @@ export interface GitPrivateProcessFiles {
 }
 
 export interface GitProcessIsolation {
-  operation?: "stage" | "commit" | "branch";
+  operation?: "stage" | "commit" | "branch" | "switch";
   privateFiles?: GitPrivateProcessFiles;
   workspaceWritePaths: string[];
   commitTimestampSeconds?: number;
+  stdin?: string;
 }
 
 export async function runGitInspectProcess(
@@ -82,12 +84,15 @@ export async function runGitProcess(
   isolation?: GitProcessIsolation,
 ): Promise<GitInspectProcessResult> {
   validateGitArguments(args);
+  validateGitStdin(isolation);
   const operation = isolation
     ? isolation.operation === "commit"
       ? "Git commit"
       : isolation.operation === "branch"
         ? "Git branch creation"
-        : "Git stage preparation"
+        : isolation.operation === "switch"
+          ? "Git branch switch"
+          : "Git stage preparation"
     : "Git inspection";
   if (options.sandbox.id === "oci-container") {
     throw new Error(
@@ -122,6 +127,12 @@ export async function runGitProcess(
     workspaceWritePathSha256: (isolation?.workspaceWritePaths ?? []).map(
       (value) => sha256(path.resolve(value)),
     ),
+    ...(isolation?.stdin !== undefined
+      ? {
+          stdinBytes: Buffer.byteLength(isolation.stdin, "utf8"),
+          stdinSha256: sha256(isolation.stdin),
+        }
+      : {}),
   };
   let execution;
   try {
@@ -140,6 +151,7 @@ export async function runGitProcess(
       },
       timeoutMs,
       maxOutputChars: MAX_GIT_PROCESS_OUTPUT_CHARS,
+      ...(isolation?.stdin !== undefined ? { stdin: isolation.stdin } : {}),
       ...(signal ? { signal } : {}),
       abortedMessage: `${operation} was aborted`,
     });
@@ -168,6 +180,17 @@ export async function runGitProcess(
     environmentSha256: sha256(canonicalJson(environment)),
     resourceLimitsSha256: sha256(canonicalJson(resourceLimits)),
   };
+}
+
+function validateGitStdin(isolation: GitProcessIsolation | undefined): void {
+  if (isolation?.stdin === undefined) return;
+  if (
+    isolation.operation !== "switch" ||
+    Buffer.byteLength(isolation.stdin, "utf8") > MAX_GIT_STDIN_BYTES ||
+    /[\u0000-\u0009\u000b-\u001f\u007f]/u.test(isolation.stdin)
+  ) {
+    throw new Error("Git standard input is invalid");
+  }
 }
 
 function commitIdentityEnvironment(

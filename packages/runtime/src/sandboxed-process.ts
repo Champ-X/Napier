@@ -18,6 +18,7 @@ export interface SandboxedProcessResult {
 export interface RunSandboxedProcessOptions {
   sandbox: OsSandboxAdapter;
   launch: SandboxLaunchRequest;
+  stdin?: string | Buffer;
   timeoutMs: number;
   maxOutputChars: number;
   signal?: AbortSignal;
@@ -35,7 +36,8 @@ export async function runSandboxedProcess(
 ): Promise<SandboxedProcessResult> {
   const startedAt = Date.now();
   const child = await options.sandbox.launch(options.launch);
-  child.stdin.end();
+  child.stdin.on("error", () => undefined);
+  child.stdin.end(options.stdin);
 
   let forcedStatus: Exclude<SandboxedProcessStatus, "exited"> | undefined;
   let termination: Promise<void> | undefined;

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 96,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DREB8_Xb.js",
+    "path": "apps/web/dist/assets/index-BGvN1WLf.js",
     "sizeBytes": 118213,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "e7a8b626a15b03e46ed37163b85d1eaecacaf978202261d272036862e8364009"
+    "sha256": "d0a339c50c0546efd3ad738301a412243a8eddc3e95ae6f2a42f49cf49c4fb81"
   },
-  "distContentSha256": "e7a8b626a15b03e46ed37163b85d1eaecacaf978202261d272036862e8364009",
+  "distContentSha256": "d0a339c50c0546efd3ad738301a412243a8eddc3e95ae6f2a42f49cf49c4fb81",
   "errors": []
 }

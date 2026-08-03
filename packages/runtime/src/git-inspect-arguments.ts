@@ -1,6 +1,7 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
 
 const ZERO_GIT_OBJECT_ID = "0000000000000000000000000000000000000000";
+export const GIT_BRANCH_SWITCH_REFLOG_MESSAGE = "napier switch branch";
 
 const CONFIG_POLICY_EXACT_KEYS = [
   "include.path",
@@ -291,6 +292,64 @@ export function gitBranchArgumentsSha256(
   );
 }
 
+export function gitSwitchBranchArguments(
+  repository: GitArgumentRepository,
+): string[] {
+  return [
+    ...commonGitArguments(repository),
+    "-c",
+    "core.logAllRefUpdates=true",
+    "update-ref",
+    "--no-deref",
+    "-m",
+    GIT_BRANCH_SWITCH_REFLOG_MESSAGE,
+    "--stdin",
+  ];
+}
+
+export function gitBranchSwitchTransactionInput(
+  targetBranchRef: string,
+  commitSha1: string,
+): string {
+  for (const branchRef of [targetBranchRef]) {
+    if (
+      (!branchRef.startsWith("refs/heads/") && !branchRef.startsWith("$")) ||
+      /\s/u.test(branchRef)
+    ) {
+      throw new Error("Git branch switch transaction ref is invalid");
+    }
+  }
+  if (commitSha1 !== "$COMMIT_SHA1" && !/^[a-f0-9]{40}$/u.test(commitSha1)) {
+    throw new Error("Git branch switch transaction commit is invalid");
+  }
+  return [
+    "start",
+    `verify ${targetBranchRef} ${commitSha1}`,
+    `symref-update HEAD ${targetBranchRef} oid ${commitSha1}`,
+    "prepare",
+    "commit",
+    "",
+  ].join("\n");
+}
+
+export function gitBranchSwitchArgumentsSha256(
+  repository: GitArgumentRepository,
+): string {
+  return sha256(
+    canonicalJson({
+      configPolicyArguments: gitConfigPolicyArguments(repository),
+      configPolicySha256: gitConfigPolicySha256("switch"),
+      head: gitHeadCommitArguments(repository),
+      target: gitRefCommitArguments(repository, "$TARGET_BRANCH_REF"),
+      switch: gitSwitchBranchArguments(repository),
+      transaction: gitBranchSwitchTransactionInput(
+        "$TARGET_BRANCH_REF",
+        "$COMMIT_SHA1",
+      ),
+    }),
+  );
+}
+
 export function gitCommitArgumentsSha256(
   repository: GitArgumentRepository,
   contextLines: number,
@@ -341,7 +400,7 @@ export function gitConfigKeysPermitStage(output: string): boolean {
 }
 
 export function gitConfigPolicySha256(
-  operation: "inspection" | "stage" | "commit" | "branch",
+  operation: "inspection" | "stage" | "commit" | "branch" | "switch",
 ): string {
   return sha256(
     canonicalJson({

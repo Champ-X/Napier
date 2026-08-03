@@ -4337,8 +4337,60 @@ Apply creates one local branch ref only: it does not change symbolic HEAD,
 checkout files, update the index/worktree, create objects, run hooks, contact a
 remote, or rewrite history. A concurrent HEAD switch can leave the exact
 previewed branch created, but the result is `indeterminate` because the
-unchanged-HEAD postcondition no longer holds. Branch switch remains a separate
-whole-worktree transaction.
+unchanged-HEAD postcondition no longer holds. Same-commit attachment is the
+separate transaction below; divergent-tree checkout remains unavailable.
+
+## Git Same-Commit Branch Switch Transaction
+
+```text
+git_branch_switch_preview(targetBranchName)
+  -> validate one existing conservative ASCII local branch name
+  -> snapshot repository/index + HEAD reflog content/mode/bytes
+  -> require target^{commit} == current HEAD^{commit}
+  -> validate target/ref/reflog canonical no-symlink storage
+  -> bind fixed argv + hash-bound transaction stdin + Sandbox evidence
+  -> return one-use Run/Plan capability without changing repository bytes
+
+git_branch_switch_apply(previewId)
+  -> consume capability; lock HEAD + HEAD reflog + exact target ref
+  -> revalidate repository/index/reflog and same-commit target
+  -> run fixed update-ref --no-deref --stdin with hooks disabled
+     - verify target ref == previewed commit
+     - verify dereferenced HEAD == previewed commit
+     - symref-update HEAD -> target using the same OID precondition
+  -> settle target/HEAD/index/static state within the original deadline
+  -> fsync HEAD + HEAD reflog
+  -> require reflog == previewed prefix + one fixed same-OID switch record
+  -> settle target/HEAD/index/static state again
+  -> return applied or indeterminate hash-only evidence
+```
+
+`git-branch-switch.ts` owns process-local capability scope, multi-path locks,
+fixed ref transaction execution, durability, and unknown-outcome
+classification. `git-branch-switch-validation.ts` performs config/runtime/
+same-commit preflight and complete repository/reflog freshness.
+`git-branch-switch-settlement.ts` observes HEAD, target, index/static state,
+and bounded reflog state after mutation. `git-ref-files.ts` supplies the shared
+no-follow ref/reflog snapshots, exact single-record append proof, fsync, and
+canonical path checks. Fixed transaction stdin is capped, control-checked, and
+bound into runtime resource evidence; no model-selected Git input reaches the
+process.
+
+Branch names remain live-only. Ledger/Replay/Web Trace retain target-ref hash,
+name bytes, commit, repository/reflog state hashes, runtime/process status,
+durability, cancellation, and postcondition. Attached or detached HEAD is
+supported. A source branch-name change at the same commit is not capability
+authority; target OID and current HEAD OID are the atomic safety conditions.
+An extra Git-mediated HEAD movement still changes the reflog prefix/suffix and
+therefore makes the outcome `indeterminate`.
+
+This transaction deliberately allows dirty index/worktree state because target
+and HEAD must name the same commit and the fixed transaction writes only HEAD
+plus its reflog. It does not perform checkout, refresh the index, write
+worktree files, run hooks, contact remotes, accept arbitrary revisions, or
+rewrite history. Switching to a divergent tree requires a future bounded
+worktree-delta preview, backup/rollback transaction, diagnostics, and final
+checkout evidence.
 
 ## Workspace Process Session Flow
 

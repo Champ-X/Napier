@@ -15,7 +15,12 @@ export async function assertGitConfigPolicy(
   repository: GitRepository,
   timeoutMs: number,
   signal?: AbortSignal,
-  operation: "inspection" | "stage" | "commit" | "branch" = "inspection",
+  operation:
+    | "inspection"
+    | "stage"
+    | "commit"
+    | "branch"
+    | "switch" = "inspection",
 ): Promise<GitInspectProcessResult> {
   const result = await runGitInspectProcess(
     options,

@@ -11,6 +11,11 @@ import {
   gitBranchToolOutputLedgerProjection,
 } from "./git-branch-tool.js";
 import {
+  gitBranchSwitchToolCallArgumentsLedgerProjection,
+  gitBranchSwitchToolInputLedgerProjection,
+  gitBranchSwitchToolOutputLedgerProjection,
+} from "./git-branch-switch-tool.js";
+import {
   gitInspectToolCallArgumentsLedgerProjection,
   gitInspectToolInputLedgerProjection,
   gitInspectToolOutputLedgerProjection,
@@ -39,6 +44,12 @@ export function agentProcessToolCallProjection(
   ) {
     return gitBranchToolCallArgumentsLedgerProjection(toolName, args);
   }
+  if (
+    toolName === "git_branch_switch_preview" ||
+    toolName === "git_branch_switch_apply"
+  ) {
+    return gitBranchSwitchToolCallArgumentsLedgerProjection(toolName, args);
+  }
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitToolCallArgumentsLedgerProjection(toolName, args);
   }
@@ -62,6 +73,12 @@ export function agentProcessToolInputProjection(
     toolName === "git_branch_create_apply"
   ) {
     return gitBranchToolInputLedgerProjection(toolName, args);
+  }
+  if (
+    toolName === "git_branch_switch_preview" ||
+    toolName === "git_branch_switch_apply"
+  ) {
+    return gitBranchSwitchToolInputLedgerProjection(toolName, args);
   }
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitToolInputLedgerProjection(toolName, args);
@@ -87,6 +104,12 @@ export function agentProcessToolOutputProjection(
     toolName === "git_branch_create_apply"
   ) {
     return gitBranchToolOutputLedgerProjection(output, result);
+  }
+  if (
+    toolName === "git_branch_switch_preview" ||
+    toolName === "git_branch_switch_apply"
+  ) {
+    return gitBranchSwitchToolOutputLedgerProjection(output, result);
   }
   if (toolName === "git_commit_preview" || toolName === "git_commit_apply") {
     return gitCommitToolOutputLedgerProjection(output, result);

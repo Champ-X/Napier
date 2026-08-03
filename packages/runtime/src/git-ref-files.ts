@@ -5,24 +5,21 @@ import path from "node:path";
 import {
   gitErrorCode,
   gitPathExists,
+  type GitBoundFile,
   type GitRepository,
 } from "./git-repository.js";
+import { sha256 } from "./ed25519.js";
 import { syncDirectory } from "./workspace-file-scope.js";
 
 export const ZERO_GIT_OBJECT_ID = "0".repeat(40);
+const MAX_GIT_REFLOG_BYTES = 8 * 1024 * 1024;
 
 export async function gitBranchRefWritePaths(
   repository: GitRepository,
   branchRef: string,
 ): Promise<string[]> {
   const relativeRef = branchRelativePath(branchRef);
-  if (
-    await gitPathExists(
-      path.join(repository.gitDirectory, "objects/info/alternates"),
-    )
-  ) {
-    throw new Error("Git object alternates are unsupported");
-  }
+  await assertNoGitObjectAlternates(repository);
   const candidates = [
     path.join(repository.gitDirectory, "refs/heads"),
     path.join(repository.gitDirectory, "logs"),
@@ -43,8 +40,78 @@ export async function gitBranchRefWritePaths(
       path.join(repository.gitDirectory, "logs/refs/heads"),
       relativeRef,
     ),
+    assertCanonicalOptionalRefFile(
+      path.join(repository.gitDirectory, "refs/heads", relativeRef),
+    ),
+    assertCanonicalOptionalRefFile(
+      path.join(repository.gitDirectory, "logs/refs/heads", relativeRef),
+    ),
   ]);
   return candidates;
+}
+
+export async function gitHeadSwitchWritePaths(
+  repository: GitRepository,
+): Promise<string[]> {
+  await assertNoGitObjectAlternates(repository);
+  const logsDirectory = path.join(repository.gitDirectory, "logs");
+  for (const directory of [repository.gitDirectory, logsDirectory]) {
+    const info = await lstat(directory);
+    if (
+      !info.isDirectory() ||
+      info.isSymbolicLink() ||
+      (await realpath(directory)) !== directory
+    ) {
+      throw new Error("Git HEAD ref storage is unsupported");
+    }
+  }
+  await Promise.all([
+    assertCanonicalFile(path.join(repository.gitDirectory, "HEAD")),
+    snapshotGitHeadReflog(repository),
+  ]);
+  return [repository.gitDirectory];
+}
+
+export async function snapshotGitHeadReflog(
+  repository: GitRepository,
+): Promise<GitBoundFile> {
+  const filePath = path.join(repository.gitDirectory, "logs/HEAD");
+  const handle = await open(
+    filePath,
+    fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0),
+  );
+  try {
+    const info = await handle.stat();
+    if (!info.isFile() || info.size > MAX_GIT_REFLOG_BYTES) {
+      throw new Error("Git HEAD reflog is invalid");
+    }
+    const content = Buffer.alloc(info.size);
+    let offset = 0;
+    while (offset < info.size) {
+      const result = await handle.read(
+        content,
+        offset,
+        info.size - offset,
+        offset,
+      );
+      if (result.bytesRead === 0) {
+        throw new Error("Git HEAD reflog changed while it was read");
+      }
+      offset += result.bytesRead;
+    }
+    const probe = Buffer.alloc(1);
+    if ((await handle.read(probe, 0, 1, info.size)).bytesRead > 0) {
+      throw new Error("Git HEAD reflog changed while it was read");
+    }
+    return {
+      present: true,
+      sha256: sha256(content),
+      bytes: content.length,
+      mode: info.mode & 0o777,
+    };
+  } finally {
+    await handle.close();
+  }
 }
 
 export async function syncGitBranchRefTransition(input: {
@@ -86,6 +153,101 @@ export async function syncGitBranchRefTransition(input: {
   }
 }
 
+export async function syncGitHeadSwitch(input: {
+  repository: GitRepository;
+  commitSha1: string;
+  message: string;
+  beforeHeadReflog: GitBoundFile;
+}): Promise<boolean> {
+  const files = [
+    path.join(input.repository.gitDirectory, "HEAD"),
+    path.join(input.repository.gitDirectory, "logs/HEAD"),
+  ];
+  try {
+    for (const file of files) await syncExactFile(file);
+    await verifyGitHeadSwitchReflog(input);
+    await syncParentDirectories(input.repository, files);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function verifyGitHeadSwitchReflog(input: {
+  repository: GitRepository;
+  beforeHeadReflog: GitBoundFile;
+  commitSha1: string;
+  message: string;
+}): Promise<GitBoundFile> {
+  const filePath = path.join(input.repository.gitDirectory, "logs/HEAD");
+  const handle = await open(
+    filePath,
+    fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0),
+  );
+  try {
+    const info = await handle.stat();
+    const suffixBytes = info.size - input.beforeHeadReflog.bytes;
+    if (
+      !input.beforeHeadReflog.present ||
+      !info.isFile() ||
+      info.size > MAX_GIT_REFLOG_BYTES ||
+      (info.mode & 0o777) !== input.beforeHeadReflog.mode ||
+      suffixBytes < 1 ||
+      suffixBytes > 4 * 1024
+    ) {
+      throw new Error("Git HEAD reflog append is invalid");
+    }
+    const prefix = Buffer.alloc(input.beforeHeadReflog.bytes);
+    await readExact(handle, prefix, 0);
+    if (sha256(prefix) !== input.beforeHeadReflog.sha256) {
+      throw new Error("Git HEAD reflog prefix changed");
+    }
+    const suffix = Buffer.alloc(suffixBytes);
+    await readExact(handle, suffix, input.beforeHeadReflog.bytes);
+    const probe = Buffer.alloc(1);
+    if ((await handle.read(probe, 0, 1, info.size)).bytesRead > 0) {
+      throw new Error("Git HEAD reflog changed while it was read");
+    }
+    const text = suffix.toString("utf8");
+    if (
+      !text.endsWith("\n") ||
+      text.slice(0, -1).includes("\n") ||
+      !text.startsWith(`${input.commitSha1} ${input.commitSha1} `) ||
+      !text.endsWith(`\t${input.message}\n`)
+    ) {
+      throw new Error("Git HEAD reflog transition is invalid");
+    }
+    return {
+      present: true,
+      sha256: sha256(Buffer.concat([prefix, suffix])),
+      bytes: info.size,
+      mode: info.mode & 0o777,
+    };
+  } finally {
+    await handle.close();
+  }
+}
+
+async function readExact(
+  handle: Awaited<ReturnType<typeof open>>,
+  buffer: Buffer,
+  position: number,
+): Promise<void> {
+  let offset = 0;
+  while (offset < buffer.length) {
+    const result = await handle.read(
+      buffer,
+      offset,
+      buffer.length - offset,
+      position + offset,
+    );
+    if (result.bytesRead === 0) {
+      throw new Error("Git reflog changed while it was read");
+    }
+    offset += result.bytesRead;
+  }
+}
+
 function branchRelativePath(branchRef: string): string {
   const prefix = "refs/heads/";
   const relative = branchRef.startsWith(prefix)
@@ -97,10 +259,28 @@ function branchRelativePath(branchRef: string): string {
   return relative;
 }
 
+async function assertCanonicalOptionalRefFile(filePath: string): Promise<void> {
+  let info;
+  try {
+    info = await lstat(filePath);
+  } catch (error) {
+    if (gitErrorCode(error) === "ENOENT") return;
+    throw new Error("Git branch ref file is unavailable");
+  }
+  if (
+    !info.isFile() ||
+    info.isSymbolicLink() ||
+    (await realpath(filePath)) !== filePath
+  ) {
+    throw new Error("Git branch ref file is not canonical");
+  }
+}
+
 async function verifyReflogTail(
   filePath: string,
   oldObjectId: string,
   newObjectId: string,
+  message?: string,
 ): Promise<void> {
   const handle = await open(
     filePath,
@@ -120,11 +300,37 @@ async function verifyReflogTail(
       .trimEnd()
       .split("\n")
       .at(-1);
-    if (!last?.startsWith(`${oldObjectId} ${newObjectId} `)) {
+    if (
+      !last?.startsWith(`${oldObjectId} ${newObjectId} `) ||
+      (message !== undefined && !last.endsWith(`\t${message}`))
+    ) {
       throw new Error("Git branch reflog does not bind the ref update");
     }
   } finally {
     await handle.close();
+  }
+}
+
+async function assertNoGitObjectAlternates(
+  repository: GitRepository,
+): Promise<void> {
+  if (
+    await gitPathExists(
+      path.join(repository.gitDirectory, "objects/info/alternates"),
+    )
+  ) {
+    throw new Error("Git object alternates are unsupported");
+  }
+}
+
+async function assertCanonicalFile(filePath: string): Promise<void> {
+  const info = await lstat(filePath);
+  if (
+    !info.isFile() ||
+    info.isSymbolicLink() ||
+    (await realpath(filePath)) !== filePath
+  ) {
+    throw new Error("Git ref file is not canonical");
   }
 }
 

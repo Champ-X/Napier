@@ -4,6 +4,11 @@ import {
   type GitBranchToolEventTraceView,
 } from "./git-branch-event-view";
 import {
+  gitBranchSwitchEventEvidence,
+  gitBranchSwitchSummaryParts,
+  type GitBranchSwitchToolEventTraceView,
+} from "./git-branch-switch-event-view";
+import {
   gitInspectEventEvidence,
   gitInspectSummaryParts,
   type GitInspectToolEventTraceView,
@@ -24,7 +29,8 @@ export interface GitToolEventTraceView
     GitInspectToolEventTraceView,
     GitStageToolEventTraceView,
     GitCommitToolEventTraceView,
-    GitBranchToolEventTraceView {}
+    GitBranchToolEventTraceView,
+    GitBranchSwitchToolEventTraceView {}
 
 export function gitToolEventEvidence(
   toolName: string,
@@ -43,6 +49,12 @@ export function gitToolEventEvidence(
   ) {
     return gitBranchEventEvidence(details);
   }
+  if (
+    toolName === "git_branch_switch_preview" ||
+    toolName === "git_branch_switch_apply"
+  ) {
+    return gitBranchSwitchEventEvidence(details);
+  }
   return undefined;
 }
 
@@ -52,5 +64,6 @@ export function gitToolSummaryParts(view: GitToolEventTraceView): string[] {
     ...gitStageSummaryParts(view),
     ...gitCommitSummaryParts(view),
     ...gitBranchSummaryParts(view),
+    ...gitBranchSwitchSummaryParts(view),
   ];
 }

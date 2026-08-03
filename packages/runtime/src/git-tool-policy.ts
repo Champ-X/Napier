@@ -1,6 +1,7 @@
 import type { JsonValue, ToolPolicyMode } from "@napier/contracts";
 
 import { assessGitBranchCall } from "./git-branch-policy.js";
+import { assessGitBranchSwitchCall } from "./git-branch-switch-policy.js";
 import { assessGitCommitCall } from "./git-commit-policy.js";
 import { assessGitStageCall } from "./git-stage-policy.js";
 
@@ -19,6 +20,7 @@ export function assessGitToolCall(
   return (
     assessGitStageCall(mode, toolName, input, workspaceRoot) ??
     assessGitCommitCall(mode, toolName, input) ??
-    assessGitBranchCall(mode, toolName, input)
+    assessGitBranchCall(mode, toolName, input) ??
+    assessGitBranchSwitchCall(mode, toolName, input)
   );
 }

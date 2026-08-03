@@ -128,6 +128,8 @@ export const contextCopy = {
     git_commit_apply: "Apply Git commit",
     git_branch_create_preview: "Preview Git branch",
     git_branch_create_apply: "Create Git branch",
+    git_branch_switch_preview: "Preview Git branch switch",
+    git_branch_switch_apply: "Switch Git branch",
     inspect_code: "Inspect code",
     read_symbol: "Read symbol",
     ast_query: "AST query",

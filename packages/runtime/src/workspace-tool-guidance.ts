@@ -32,6 +32,8 @@ export function formatWorkspaceToolGuidance(
     "git_commit_apply",
     "git_branch_create_preview",
     "git_branch_create_apply",
+    "git_branch_switch_preview",
+    "git_branch_switch_apply",
   ].some((name) => toolNames.has(name));
   const hasCommand = toolNames.has("run_command");
   const hasJavascriptKernel = toolNames.has("javascript_kernel");
@@ -278,6 +280,18 @@ function gitToolGuidance(toolNames: ReadonlySet<string>): string[] {
     ...(toolNames.has("git_branch_create_apply")
       ? [
           "git_branch_create_apply creates only the previewed ref with a zero-old CAS. It does not switch HEAD, checkout files, change the index/worktree, run hooks, contact remotes, or rewrite history.",
+        ]
+      : []),
+    ...(toolNames.has("git_branch_switch_preview")
+      ? [
+          toolNames.has("git_branch_switch_apply")
+            ? "Use git_branch_switch_preview only to attach HEAD to an existing local branch at the exact current commit. Review the source/target hashes, then pass only its execution-scoped ID to git_branch_switch_apply."
+            : "git_branch_switch_preview verifies a same-commit target without changing HEAD because git_branch_switch_apply is disabled.",
+        ]
+      : []),
+    ...(toolNames.has("git_branch_switch_apply")
+      ? [
+          "git_branch_switch_apply atomically verifies the target OID and source HEAD before changing only HEAD plus its reflog. Divergent branches, checkout, index/worktree writes, hooks, remotes, and history rewriting remain unavailable.",
         ]
       : []),
   ];

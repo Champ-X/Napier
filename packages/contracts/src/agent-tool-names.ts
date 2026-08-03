@@ -13,6 +13,8 @@ export const AGENT_TOOL_NAMES = [
   "git_commit_apply",
   "git_branch_create_preview",
   "git_branch_create_apply",
+  "git_branch_switch_preview",
+  "git_branch_switch_apply",
   "inspect_code",
   "read_symbol",
   "ast_query",
