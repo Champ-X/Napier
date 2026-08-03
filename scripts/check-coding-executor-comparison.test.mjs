@@ -22,7 +22,9 @@ describe("coding executor comparison verifier", () => {
         errors: [],
         caseCount: 3,
         verdict: "not_proven",
+        outerOutcomeVerdict: "napier_not_worse",
         napierOfficialPassed: 0,
+        napierOuterHiddenOutcomePassed: 3,
         ompHiddenOutcomePassed: 2,
       }),
     );

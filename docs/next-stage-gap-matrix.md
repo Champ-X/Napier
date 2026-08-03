@@ -48,7 +48,12 @@ repair on the debugger case. Napier produced canonical repairs on the low and
 debugger cases, but nested macOS Sandbox unavailability made outcome tests,
 LSP, and DAP unavailable, yielding two inconclusive results and one evidence
 failure rather than a defensible pass. The comparison therefore records
-`not_proven`, not a superiority claim. The structured calibration artifact is
+`not_proven`, not a superiority claim. Under an explicit test-only adapter
+inside TRAE's outer Sandbox, Napier passed the same hidden outcomes 3/3 versus
+OMP 2/3 and was faster on the low and medium cases; this supports
+`napier_not_worse` for final outcomes, while the failed terminal Run after a
+correct debugger repair still blocks a release-quality claim. The structured
+calibration artifact is
 `docs/artifacts/benchmarks/napier-omp-coding-comparison-calibration-20260804.json`.
 The next benchmark iteration must repair LSP/DAP/outcome execution, shuffle
 multiple trials, and rerun before using this evidence as a release claim.

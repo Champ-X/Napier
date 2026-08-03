@@ -54,6 +54,11 @@ export async function verifyCodingExecutorComparison(input, options = {}) {
       calculated.napierCanonicalTargetMatches ||
     summary.ompHiddenOutcomePassed !== calculated.ompHiddenOutcomePassed ||
     summary.ompHiddenOutcomeFailed !== calculated.ompHiddenOutcomeFailed ||
+    summary.napierOuterHiddenOutcomePassed !==
+      calculated.napierOuterHiddenOutcomePassed ||
+    summary.napierOuterHiddenOutcomeFailed !==
+      calculated.napierOuterHiddenOutcomeFailed ||
+    summary.outerOutcomeVerdict !== calculated.outerOutcomeVerdict ||
     summary.verdict !== calculated.verdict
   ) {
     errors.push("summary_mismatch");
@@ -79,6 +84,7 @@ function validateCase(entry, errors) {
     !record(entry) ||
     typeof entry.caseId !== "string" ||
     !record(entry.napier) ||
+    !record(entry.napierOuterSandbox) ||
     !record(entry.omp)
   ) {
     errors.push("case_invalid");
@@ -91,6 +97,9 @@ function validateCase(entry, errors) {
     typeof entry.napier.targetSemanticMatch !== "boolean" ||
     typeof entry.napier.durationMs !== "number" ||
     entry.napier.durationMs < 0 ||
+    typeof entry.napierOuterSandbox.hiddenOutcomePassed !== "boolean" ||
+    typeof entry.napierOuterSandbox.durationMs !== "number" ||
+    entry.napierOuterSandbox.durationMs < 0 ||
     typeof entry.omp.hiddenOutcomePassed !== "boolean" ||
     typeof entry.omp.durationMs !== "number" ||
     entry.omp.durationMs < 0
@@ -120,12 +129,22 @@ function calculateSummary(environment, cases) {
     ompHiddenOutcomeFailed: count(
       (entry) => entry?.omp?.hiddenOutcomePassed === false,
     ),
+    napierOuterHiddenOutcomePassed: count(
+      (entry) => entry?.napierOuterSandbox?.hiddenOutcomePassed === true,
+    ),
+    napierOuterHiddenOutcomeFailed: count(
+      (entry) => entry?.napierOuterSandbox?.hiddenOutcomePassed === false,
+    ),
   };
   const infrastructureUnavailable =
     environment?.nestedSandboxAvailable !== true ||
     summary.napierOfficialInconclusive > 0;
   return {
     ...summary,
+    outerOutcomeVerdict:
+      summary.napierOuterHiddenOutcomePassed >= summary.ompHiddenOutcomePassed
+        ? "napier_not_worse"
+        : "napier_worse",
     verdict: infrastructureUnavailable
       ? "not_proven"
       : summary.napierOfficialPassed >= summary.ompHiddenOutcomePassed

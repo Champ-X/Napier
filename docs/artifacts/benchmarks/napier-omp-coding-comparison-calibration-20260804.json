@@ -17,6 +17,7 @@
     "platform": "darwin",
     "architecture": "arm64",
     "nestedSandboxAvailable": false,
+    "trustedOuterSandboxCalibration": true,
     "ompVersion": "17.2.1",
     "notes": [
       "Napier outcome tests, LSP, and DAP were affected by nested macOS sandbox unavailability.",
@@ -36,6 +37,13 @@
         "durationMs": 10064,
         "costUsd": 0.0011099816,
         "toolStarted": 3,
+        "toolFailed": 0
+      },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 8395,
+        "costUsd": 0.0010704568,
         "toolFailed": 0
       },
       "omp": {
@@ -59,6 +67,14 @@
         "toolFailed": 2,
         "failedTools": ["lsp_references", "update_plan_step"]
       },
+      "napierOuterSandbox": {
+        "officialStatus": "passed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 18962,
+        "costUsd": 0.0021868616,
+        "toolFailed": 0,
+        "lspReferencesCompleted": true
+      },
       "omp": {
         "agentExitCode": 0,
         "hiddenOutcomePassed": true,
@@ -80,6 +96,15 @@
         "toolFailed": 1,
         "failedTools": ["node_debugger"]
       },
+      "napierOuterSandbox": {
+        "officialStatus": "failed",
+        "hiddenOutcomePassed": true,
+        "durationMs": 32662,
+        "costUsd": 0.0024612672,
+        "requiredDebuggerCompleted": true,
+        "runStatus": "failed",
+        "failureReason": "model continued debugger calls after the correct repair"
+      },
       "omp": {
         "agentExitCode": 1,
         "hiddenOutcomePassed": false,
@@ -96,11 +121,15 @@
     "napierCanonicalTargetMatches": 2,
     "ompHiddenOutcomePassed": 2,
     "ompHiddenOutcomeFailed": 1,
+    "napierOuterHiddenOutcomePassed": 3,
+    "napierOuterHiddenOutcomeFailed": 0,
+    "outerOutcomeVerdict": "napier_not_worse",
     "verdict": "not_proven",
     "requiredFollowUps": [
       "Make Coding Benchmark outcome execution reliable under the supported outer-sandbox environment.",
       "Fix benchmark-workspace LSP startup and record actionable diagnostics.",
       "Fix benchmark-workspace DAP startup or classify unavailable debugger infrastructure separately from model task failure.",
+      "Stop the Agent after verified task completion instead of allowing later debugger calls to fail the Run.",
       "Repeat multiple shuffled trials after infrastructure repair before making a competitiveness claim."
     ]
   }
