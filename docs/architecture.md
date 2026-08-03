@@ -4264,42 +4264,62 @@ flow above; staging is not a general Git shell.
 ```text
 git_commit_preview(message)
   -> require attached existing branch + existing HEAD/index
-  -> reject merge/rebase/cherry-pick/revert/bisect/sequencer state
+  -> lock private commit root; recover one verified unfinished marker transaction
+  -> garbage-collect durable .complete transactions best-effort
+  -> accept ordinary state or one exact MERGE_HEAD + MERGE_MSG
+  -> bind optional MERGE_MODE/AUTO_MERGE/MERGE_RR; reject every other operation
   -> normalize <=4 KiB message; fix Napier identity and current UTC second
   -> copy index and message into 0700 .git/napier-stage/<ephemeral>
   -> redirect GIT_INDEX_FILE and GIT_OBJECT_DIRECTORY
   -> read HEAD commit; inspect complete raw staged entries and staged patch
   -> reject empty/>32-file patches and every old/new gitlink mode
-  -> run fixed write-tree and commit-tree in the private object directory
-  -> bind parent/tree/proposed commit/message/patch/runtime/repository hashes
+  -> run fixed write-tree and commit-tree with one or two ordered parents
+  -> bind parent set/tree/proposed commit/message/patch/operation/runtime hashes
   -> delete private data and return one-use Run/Plan-scoped capability
 
 git_commit_apply(previewId)
-  -> consume capability; lock index + exact attached branch ref
+  -> consume capability; lock private root + index + exact attached branch ref
+  -> recover one verified unfinished marker transaction or fail closed
   -> revalidate branch/repository/index/config/executable/operation markers
   -> reconstruct exact tree and commit; require every preview binding
   -> SHA-1 verify and no-overwrite promote private loose objects
+  -> remove private construction bytes before any ref mutation
   -> validate canonical non-symlink refs/heads and reflog ancestors
   -> disable hooks and update exact previewed branch <proposed> <parent>
-  -> settle HEAD after success, failure, timeout, cancellation, or uncertainty
+  -> settle HEAD + exact operation state after every ref outcome
   -> require attached branch, unchanged index/static state, empty staged diff
-  -> fsync exact loose ref + HEAD/branch reflogs and verify both old->new tails
-  -> settle HEAD/branch/index again after durability checks
+  -> fsync exact loose ref + HEAD/branch reflogs; verify both old->new tails
+  -> if merge and update clean:
+     - write/fsync immutable marker backups under 0700 private storage
+     - isolate optional markers, MERGE_MSG, then MERGE_HEAD by rename
+     - settle cleared operation state within the original deadline
+     - rollback from backup on failure, or fsync an atomic .complete boundary
+  -> settle ordinary HEAD/branch/index again after durability checks
   -> delete private data and return applied or indeterminate hash-only evidence
 ```
 
 `git-commit.ts` owns process-local capabilities, scope, locks, reconstruction,
-ref-CAS orchestration, and unknown-outcome classification.
+and the pre-CAS barrier. `git-commit-ref-update.ts` owns ref CAS, deadline-bound
+settlement, durability, merge cleanup orchestration, and result classification.
+`git-commit-operation.ts` owns no-follow operation snapshots, merge topology,
+immutable marker backup, ordered isolation, rollback, and the durable
+`.complete` boundary.
+`git-commit-recovery.ts` scans only canonical 0700
+`merge-cleanup-<nonce>` directories under the locked private root, reconstructs
+the expected operation state from content/mode-verified immutable backups,
+requires each marker to exist in exactly one of the root or isolated locations,
+and performs restore-plus-directory-fsync before a new preview/apply proceeds.
 `git-commit-private.ts` owns private index/message/object construction, staged
 raw-entry validation, and operation-marker checks. `git-ref-files.ts` owns
 shared canonical ref-path confinement, exact ref/reflog fsync, transition-tail
 verification, and parent-directory durability. `git-commit-settlement.ts`
 independently re-observes HEAD, repository/index state, and the empty
 post-commit staged diff.
-`git-commit-details.ts` compresses executable/argv/environment/limit/Sandbox
-evidence into one runtime digest so typed Workflow output remains within the
-shared schema budget. Agent Runs scope the one-use capability by Run ID; typed
-Workflow Tool nodes share it through Plan ID. Message, branch, patch, paths,
+`git-commit-details.ts` compresses identity/operation/executable/argv/
+environment/limit/Sandbox evidence into one runtime digest so the added merge
+parent and error evidence still fit the 32-property Workflow schema budget.
+Agent Runs scope the one-use capability by Run ID; typed Workflow Tool nodes
+share it through Plan ID. Message, branch, patch, marker content, paths,
 errors, and capability arguments are live-only or hash-projected through
 Ledger/Replay/Web Trace.
 
@@ -4319,10 +4339,17 @@ false failure.
 This transaction intentionally excludes unborn/detached HEAD, linked
 worktrees, shared repositories, alternates, split/sparse indexes, SHA-256
 objects, reftable refs, submodules/gitlinks, signing, user-selected identity,
-hooks, merge commits, amend, checkout, reset, remotes, and history rewriting.
-It commits the complete current index, up to 32 changed entries and a 128 KiB
-patch. Capabilities are memory-only and expire after five minutes; recovery
-must inspect current state and create a new preview.
+hooks, octopus/squash/autostash merge completion, merge execution, amend,
+checkout, reset, remotes, and history rewriting. It commits the complete
+current stage-0 index, up to 32 changed entries and a 128 KiB patch. Marker
+isolation begins only after ref/reflog durability; `MERGE_HEAD` moves last and
+restores first, while a 0700 backup survives incomplete in-process or
+cross-restart rollback. Rename failure and parent-fsync failure remain
+pre-boundary and restore markers; once `.complete` plus parent fsync succeeds,
+later private-directory removal failure cannot invalidate the commit. Corrupt,
+ambiguous, or multiple active recovery transactions fail closed. Capabilities
+are memory-only and expire after five minutes; recovery must inspect current
+state and create a new preview.
 
 ## Git Branch Create Transaction
 

@@ -133,7 +133,164 @@ describe("Workflow preview-bound Git commit Tool nodes", () => {
     ).toEqual(expect.objectContaining({ status: "valid" }));
     fixture.store.close();
   }, 30_000);
+
+  it("passes a resolved merge topology through one Plan-scoped preview", async () => {
+    const fixture = await createFixture();
+    const topology = await createResolvedMerge(fixture.workspaceRoot);
+    const previewReceipt = receiptSchema("preview");
+    const applyReceipt = receiptSchema("apply");
+    const manifest = defineExecutionPlanWorkflow({
+      name: "Commit reviewed merge",
+      version: 1,
+      description: "Preview and atomically complete a resolved merge.",
+      blueprint: fixture.blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: applyReceipt,
+      outputNodeId: "apply",
+      maxConcurrency: 1,
+      nodes: [
+        {
+          id: "preview",
+          type: "tool",
+          tool: "git_commit_preview",
+          effect: "read",
+          inputBindings: {
+            message: {
+              source: "literal",
+              value: "merge: PRIVATE_WORKFLOW_MERGE",
+            },
+          },
+          inputSchema: previewInputSchema(),
+          outputSchema: previewReceipt,
+          timeoutMs: 15_000,
+          maxAttempts: 1,
+        },
+        {
+          id: "apply",
+          type: "tool",
+          tool: "git_commit_apply",
+          effect: "write",
+          inputBindings: {
+            previewId: {
+              source: "node",
+              nodeId: "preview",
+              path: ["previewId"],
+            },
+          },
+          inputSchema: applyInputSchema(),
+          outputSchema: applyReceipt,
+          timeoutMs: 15_000,
+          maxAttempts: 1,
+        },
+      ],
+    });
+    const runtime = new AgentRuntime(
+      fixture.store,
+      new ModelRegistry(),
+      undefined,
+      directSandbox(),
+    );
+    const workflows = new ExecutionPlanWorkflowRuntime(fixture.store, runtime);
+
+    const result = await workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest,
+        input: { request: "Complete resolved merge." },
+      },
+    });
+
+    expect(result).toEqual(expect.objectContaining({ status: "completed" }));
+    expect(result.output).toEqual(
+      expect.objectContaining({
+        status: "applied",
+        parentCommitSha1: topology.firstParent,
+        mergeParentCommitSha1: topology.mergeParent,
+      }),
+    );
+    const parents = (
+      await gitOutput(fixture.workspaceRoot, [
+        "rev-list",
+        "--parents",
+        "-n",
+        "1",
+        "HEAD",
+      ])
+    )
+      .trim()
+      .split(" ");
+    expect(parents.slice(1)).toEqual([
+      topology.firstParent,
+      topology.mergeParent,
+    ]);
+    const events = await fixture.store.listEvents(fixture.threadId);
+    expect(JSON.stringify(events)).not.toContain("PRIVATE_WORKFLOW_MERGE");
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(fixture.store, fixture.threadId),
+      ),
+    ).toEqual(expect.objectContaining({ status: "valid" }));
+    fixture.store.close();
+  }, 30_000);
 });
+
+async function createResolvedMerge(workspaceRoot: string): Promise<{
+  firstParent: string;
+  mergeParent: string;
+}> {
+  await git(workspaceRoot, ["branch", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
+    "PRIVATE_OURS\n",
+  );
+  await git(workspaceRoot, ["add", "PRIVATE_WORKFLOW.txt"]);
+  await fixtureCommit(workspaceRoot, "ours");
+  await git(workspaceRoot, ["checkout", "--quiet", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
+    "PRIVATE_THEIRS\n",
+  );
+  await git(workspaceRoot, ["add", "PRIVATE_WORKFLOW.txt"]);
+  await fixtureCommit(workspaceRoot, "theirs");
+  const mergeParent = (
+    await gitOutput(workspaceRoot, ["rev-parse", "HEAD"])
+  ).trim();
+  await git(workspaceRoot, ["checkout", "--quiet", "main"]);
+  const firstParent = (
+    await gitOutput(workspaceRoot, ["rev-parse", "HEAD"])
+  ).trim();
+  await execFileAsync(
+    "/usr/bin/git",
+    [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "merge",
+      "feature",
+    ],
+    { cwd: workspaceRoot, env: gitEnvironment() },
+  ).catch(() => undefined);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_WORKFLOW.txt"),
+    "PRIVATE_RESOLVED\n",
+  );
+  await git(workspaceRoot, ["add", "PRIVATE_WORKFLOW.txt"]);
+  return { firstParent, mergeParent };
+}
+
+async function fixtureCommit(cwd: string, message: string): Promise<void> {
+  await git(cwd, [
+    "-c",
+    "user.name=Napier Test",
+    "-c",
+    "user.email=napier@example.invalid",
+    "commit",
+    "--quiet",
+    "-m",
+    message,
+  ]);
+}
 
 async function createFixture() {
   const root = await mkdtemp(
@@ -248,10 +405,10 @@ function receiptSchema(action: "preview" | "apply"): WorkflowObjectSchema {
     messageBytes: count,
     branchRefSha256: digest,
     parentCommitSha1: objectId,
+    mergeParentCommitSha1: objectId,
     treeSha1: objectId,
     proposedCommitSha1: objectId,
     commitTimestampSeconds: count,
-    identitySha256: digest,
     contextLines: count,
     fileCount: count,
     hunkCount: count,
@@ -286,7 +443,6 @@ function receiptSchema(action: "preview" | "apply"): WorkflowObjectSchema {
     "treeSha1",
     "proposedCommitSha1",
     "commitTimestampSeconds",
-    "identitySha256",
     "contextLines",
     "fileCount",
     "hunkCount",
@@ -320,7 +476,7 @@ function receiptSchema(action: "preview" | "apply"): WorkflowObjectSchema {
 async function git(cwd: string, args: string[]): Promise<void> {
   await execFileAsync("/usr/bin/git", args, {
     cwd,
-    env: { ...process.env, GIT_CONFIG_NOSYSTEM: "1" },
+    env: gitEnvironment(),
   });
 }
 
@@ -328,9 +484,17 @@ async function gitOutput(cwd: string, args: string[]): Promise<string> {
   return (
     await execFileAsync("/usr/bin/git", args, {
       cwd,
-      env: { ...process.env, GIT_CONFIG_NOSYSTEM: "1" },
+      env: gitEnvironment(),
     })
   ).stdout;
+}
+
+function gitEnvironment(): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_TERMINAL_PROMPT: "0",
+  };
 }
 
 function directSandbox(): OsSandboxAdapter {

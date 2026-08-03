@@ -1,5 +1,5 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -146,7 +146,154 @@ describe("Agent preview-bound Git commit", () => {
     ).toEqual(expect.objectContaining({ status: "valid" }));
     fixture.store.close();
   }, 30_000);
+
+  it("reviews and completes a resolved merge without durable private text", async () => {
+    const fixture = await createFixture();
+    const { firstParent, mergeParent } = await createResolvedMerge(
+      fixture.workspaceRoot,
+    );
+    const agent = await fixture.store.updateAgent(
+      fixture.store.listAgents()[0]!.id,
+      {
+        toolPolicy: "workspace",
+        enabledTools: ["git_commit_preview", "git_commit_apply"],
+      },
+    );
+    const thread = await fixture.store.createThread({
+      title: "Private Git merge commit",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "faux-git-merge-commit" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("git_commit_preview", {
+          message: "merge: PRIVATE_MERGE_MESSAGE",
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("PRIVATE_RESOLVED");
+        expect(messages).toContain(mergeParent);
+        const previewId = messages.match(
+          /gitcommitpreview_[a-z0-9]{8,80}/u,
+        )?.[0];
+        return fauxAssistantMessage(
+          fauxToolCall("git_commit_apply", { previewId }),
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage("The reviewed merge commit is applied."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const models = new ModelRegistry();
+    models.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      fixture.store,
+      models,
+      undefined,
+      directSandbox(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Complete the reviewed merge.",
+      model: { provider: "faux-git-merge-commit", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const parents = (
+      await gitOutput(fixture.workspaceRoot, [
+        "rev-list",
+        "--parents",
+        "-n",
+        "1",
+        "HEAD",
+      ])
+    )
+      .trim()
+      .split(" ");
+    expect(parents.slice(1)).toEqual([firstParent, mergeParent]);
+    await expect(
+      readFile(path.join(fixture.workspaceRoot, ".git/MERGE_HEAD")),
+    ).rejects.toThrow();
+    const events = await fixture.store.listEvents(thread.id);
+    const durable = JSON.stringify(events);
+    for (const privateValue of [
+      "PRIVATE_SOURCE",
+      "PRIVATE_OURS",
+      "PRIVATE_THEIRS",
+      "PRIVATE_RESOLVED",
+      "PRIVATE_MERGE_MESSAGE",
+    ]) {
+      expect(durable).not.toContain(privateValue);
+    }
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(fixture.store, thread.id),
+      ),
+    ).toEqual(expect.objectContaining({ status: "valid" }));
+    fixture.store.close();
+  }, 30_000);
 });
+
+async function createResolvedMerge(workspaceRoot: string): Promise<{
+  firstParent: string;
+  mergeParent: string;
+}> {
+  await git(workspaceRoot, ["branch", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_SOURCE.txt"),
+    "PRIVATE_OURS\n",
+  );
+  await git(workspaceRoot, ["add", "PRIVATE_SOURCE.txt"]);
+  await fixtureCommit(workspaceRoot, "ours");
+  await git(workspaceRoot, ["checkout", "--quiet", "feature"]);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_SOURCE.txt"),
+    "PRIVATE_THEIRS\n",
+  );
+  await git(workspaceRoot, ["add", "PRIVATE_SOURCE.txt"]);
+  await fixtureCommit(workspaceRoot, "theirs");
+  const mergeParent = (
+    await gitOutput(workspaceRoot, ["rev-parse", "HEAD"])
+  ).trim();
+  await git(workspaceRoot, ["checkout", "--quiet", "main"]);
+  const firstParent = (
+    await gitOutput(workspaceRoot, ["rev-parse", "HEAD"])
+  ).trim();
+  await execFileAsync(
+    "/usr/bin/git",
+    [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "merge",
+      "feature",
+    ],
+    { cwd: workspaceRoot, env: gitEnvironment() },
+  ).catch(() => undefined);
+  await writeFile(
+    path.join(workspaceRoot, "PRIVATE_SOURCE.txt"),
+    "PRIVATE_RESOLVED\n",
+  );
+  await git(workspaceRoot, ["add", "PRIVATE_SOURCE.txt"]);
+  return { firstParent, mergeParent };
+}
+
+async function fixtureCommit(cwd: string, message: string): Promise<void> {
+  await git(cwd, [
+    "-c",
+    "user.name=Napier Test",
+    "-c",
+    "user.email=napier@example.invalid",
+    "commit",
+    "--quiet",
+    "-m",
+    message,
+  ]);
+}
 
 async function createFixture(): Promise<{
   root: string;
@@ -184,11 +331,7 @@ async function createFixture(): Promise<{
 async function git(cwd: string, args: string[]): Promise<void> {
   await execFileAsync("/usr/bin/git", args, {
     cwd,
-    env: {
-      ...process.env,
-      GIT_CONFIG_NOSYSTEM: "1",
-      GIT_TERMINAL_PROMPT: "0",
-    },
+    env: gitEnvironment(),
   });
 }
 
@@ -196,13 +339,17 @@ async function gitOutput(cwd: string, args: string[]): Promise<string> {
   return (
     await execFileAsync("/usr/bin/git", args, {
       cwd,
-      env: {
-        ...process.env,
-        GIT_CONFIG_NOSYSTEM: "1",
-        GIT_TERMINAL_PROMPT: "0",
-      },
+      env: gitEnvironment(),
     })
   ).stdout;
+}
+
+function gitEnvironment(): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_TERMINAL_PROMPT: "0",
+  };
 }
 
 function directSandbox(): OsSandboxAdapter {

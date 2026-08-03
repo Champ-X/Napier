@@ -1,4 +1,8 @@
 import { sha256 } from "./ed25519.js";
+import {
+  assertGitCommitOperationState,
+  type GitCommitOperationState,
+} from "./git-commit-operation.js";
 import type { GitCommitDetails } from "./git-commit-model.js";
 import type { PreparedGitCommit } from "./git-commit-private.js";
 import {
@@ -12,8 +16,12 @@ export async function assertGitCommitPreviewState(
   repository: GitRepository,
   expected: GitRepositoryState,
   branchRef: string,
+  operationState: GitCommitOperationState,
 ): Promise<void> {
-  const current = await snapshotGitRepository(repository);
+  const [current] = await Promise.all([
+    snapshotGitRepository(repository),
+    assertGitCommitOperationState(repository, operationState),
+  ]);
   if (
     current.stateSha256 !== expected.stateSha256 ||
     current.currentRef !== branchRef
@@ -37,10 +45,13 @@ export function assertPreparedGitCommitMatches(
   prepared: PreparedGitCommit,
   preview: {
     details: GitCommitDetails;
+    operationState: GitCommitOperationState;
   },
 ): void {
   if (
     prepared.parentCommitSha1 !== preview.details.parentCommitSha1 ||
+    prepared.mergeParentCommitSha1 !== preview.details.mergeParentCommitSha1 ||
+    prepared.operationStateSha256 !== preview.operationState.stateSha256 ||
     prepared.treeSha1 !== preview.details.treeSha1 ||
     prepared.commitSha1 !== preview.details.proposedCommitSha1 ||
     sha256(prepared.stagedPatch) !== preview.details.stagedPatchSha256

@@ -199,9 +199,11 @@ Version `0.1.0` includes:
   repository state, then promote verified objects and atomically install only
   the reviewed index through `index.lock`;
 - `git_commit_preview` and `git_commit_apply` tools that reconstruct the
-  complete staged tree in a private object directory, bind a normalized message
-  plus fixed identity/timestamp to the proposed commit, then promote verified
-  objects and CAS-update only the attached branch with durable reflog evidence;
+  complete staged tree in a private object directory, bind an ordinary or
+  exact two-parent merge topology plus normalized message and fixed identity/
+  timestamp, then promote verified objects and CAS-update only the attached
+  branch with durable reflog, restart-safe merge-state cleanup, and recovery
+  evidence;
 - `git_branch_create_preview` and `git_branch_create_apply` tools that bind one
   validated local branch name to the exact current HEAD, then zero-old-CAS
   create and fsync only that ref/reflog without switching HEAD or touching the
@@ -2436,29 +2438,47 @@ hash.
 `git_commit_preview` consumes the complete existing staged index without
 changing refs, the real index, worktree, or object database. It rejects empty
 staging, more than 32 changed entries, staged gitlinks, detached or unborn
-HEAD, and active merge/rebase/cherry-pick/revert/bisect/sequencer state. The
-Runtime writes a normalized message, copied index, and new objects only under
-`.git/napier-stage/<ephemeral>`, then runs fixed `write-tree` and
-`commit-tree` operations with the `Napier Agent <napier@localhost>` identity
-and preview timestamp. The returned five-minute one-use Run/Plan capability
-binds the branch, parent, tree, exact proposed commit SHA-1, message, staged
-patch, repository state, executable, Sandbox, environment, and limits.
+HEAD, and rebase/cherry-pick/revert/bisect/sequencer/squash/autostash state.
+An ordinary commit requires no operation markers. A merge commit requires
+exactly one bounded `MERGE_HEAD`, a bound `MERGE_MSG`, an already resolved
+stage-0 index, and optional bound `MERGE_MODE`, `AUTO_MERGE`, and `MERGE_RR`
+files. Octopus merge heads are rejected. The Runtime writes a normalized
+message, copied index, and new objects only under
+`.git/napier-stage/<ephemeral>`, then runs fixed `write-tree` and `commit-tree`
+with one or two ordered `-p` arguments, the
+`Napier Agent <napier@localhost>` identity, and preview timestamp. The
+five-minute one-use Run/Plan capability binds both parents when present, tree,
+exact proposed commit SHA-1, message, staged patch, operation state,
+repository, executable, Sandbox, environment, and limits.
+Before reading operation state, preview takes the private commit lock and scans
+for one unfinished Napier marker-isolation transaction. It restores only
+content/mode-verified backup bytes, verifies the complete original operation
+hash, and removes the transaction durably; malformed, multiple, or corrupted
+transactions fail closed. A durable `.complete` directory is private garbage
+only and is removed best-effort.
 
 `git_commit_apply` consumes that capability under index and branch-ref locks,
 reconstructs the same commit, requires every bound hash to match, and promotes
 only SHA-1-verified loose objects. A fixed
 `update-ref <previewed-branch> <new> <old>` CAS is the sole ref mutation;
 `core.hooksPath=/dev/null` disables reference hooks, and no editor, signing,
-checkout, merge, remote, or arbitrary revision is exposed to the model. Apply
-settles HEAD after failures, timeout, cancellation, or process uncertainty. A
-result is `applied` only when HEAD and the attached branch equal the proposed
-commit, the index remains unchanged, the staged diff becomes empty, operation
-markers remain absent, the exact ref plus HEAD/branch reflog files are fsynced,
-both reflog tails bind the parent-to-commit transition, and a final settlement
-still proves the same state. Any outcome that cannot prove those postconditions
-is reported as `indeterminate`, never as a safe failure. Messages and patches
-remain live-only; durable evidence retains bounded counts and
+checkout, merge execution, remote, or arbitrary revision is exposed to the
+model. Private construction files must be removed before ref CAS. Apply settles
+HEAD after failures, timeout, cancellation, or process uncertainty and uses
+only the original deadline's remaining budget. A merge isolates immutable
+backups of every exact marker only after a clean ref result and durable
+ref/reflog transition; final settlement failure restores the original marker
+bytes, while success commits the isolation through an fsynced `.complete`
+directory rename. A result is `applied` only when HEAD and the attached branch
+equal the proposed commit, the index remains unchanged, staged diff is empty,
+operation state is cleared, both reflog tails bind the parent-to-commit
+transition, and final settlement proves the same state. Any uncertainty is
+`indeterminate`. Messages, patches, and operation-file content remain
+live/private-only; durable evidence retains topology plus bounded
 content/state/runtime hashes.
+Apply holds the same private commit lock, so preview, apply, crash recovery, and
+completion garbage collection cannot classify the same marker transaction
+concurrently.
 
 `git_branch_create_preview` accepts one bounded ASCII local branch name and
 binds it to the exact current `HEAD^{commit}` plus repository/config/index
@@ -2502,9 +2522,10 @@ staging transaction, and do not support repositories without an existing
 index/HEAD, linked worktrees, split/sparse indexes, SHA-256 objects, reftable
 refs, alternates, staged submodule/gitlink changes, shared repository ACLs, or
 OCI execution. They also do not switch to divergent branches, checkout/reset/
-clean worktree files, complete merges or merge commits, resolve binary/symlink/
-multi-file conflicts as one transaction, sign commits, run hooks, or promote
-Review outcomes. Those operations remain separate preview-bound transactions;
+clean worktree files, execute merges, complete octopus/squash/autostash merges,
+resolve binary/symlink/multi-file conflicts as one transaction, sign commits,
+run hooks, or promote Review outcomes. Those operations remain separate
+preview-bound transactions;
 arbitrary Git argv and dangerous history rewriting remain unavailable.
 Preview capabilities are process-local and intentionally non-resumable:
 expiry or Runtime restart requires a fresh preview rather than replaying a

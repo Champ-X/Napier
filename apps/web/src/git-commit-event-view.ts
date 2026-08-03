@@ -22,6 +22,7 @@ export interface GitCommitToolEventTraceView {
   gitCommitMessageSha256?: string;
   gitCommitBranchRefSha256?: string;
   gitCommitParentSha1?: string;
+  gitCommitMergeParentSha1?: string;
   gitCommitTreeSha1?: string;
   gitCommitProposedSha1?: string;
   gitCommitIdentitySha256?: string;
@@ -54,7 +55,6 @@ export function gitCommitEventEvidence(
   const sha256Values = [
     value["messageSha256"],
     value["branchRefSha256"],
-    value["identitySha256"],
     value["stagedPatchSha256"],
     value["beforeRepositoryStateSha256"],
     value["runtimeEvidenceSha256"],
@@ -102,12 +102,19 @@ export function gitCommitEventEvidence(
     ...(refUpdateStatus ? { gitCommitRefUpdateStatus: refUpdateStatus } : {}),
     gitCommitMessageSha256: hashes[0]!,
     gitCommitBranchRefSha256: hashes[1]!,
-    gitCommitIdentitySha256: hashes[2]!,
-    gitCommitPatchSha256: hashes[3]!,
-    gitCommitBeforeRepositoryStateSha256: hashes[4]!,
-    gitCommitRuntimeEvidenceSha256: hashes[5]!,
-    gitCommitResultSha256: hashes[6]!,
+    ...(typeof value["identitySha256"] === "string"
+      ? { gitCommitIdentitySha256: value["identitySha256"] }
+      : {}),
+    gitCommitPatchSha256: hashes[2]!,
+    gitCommitBeforeRepositoryStateSha256: hashes[3]!,
+    gitCommitRuntimeEvidenceSha256: hashes[4]!,
+    gitCommitResultSha256: hashes[5]!,
     gitCommitParentSha1: value["parentCommitSha1"] as string,
+    ...(typeof value["mergeParentCommitSha1"] === "string"
+      ? {
+          gitCommitMergeParentSha1: value["mergeParentCommitSha1"],
+        }
+      : {}),
     gitCommitTreeSha1: value["treeSha1"] as string,
     gitCommitProposedSha1: value["proposedCommitSha1"] as string,
     ...(typeof value["afterHeadStateSha256"] === "string"
@@ -169,9 +176,12 @@ function validDigests(
 ): boolean {
   return (
     sha1(value["parentCommitSha1"]) &&
+    optionalSha1(value["mergeParentCommitSha1"]) &&
+    value["mergeParentCommitSha1"] !== value["parentCommitSha1"] &&
     sha1(value["treeSha1"]) &&
     sha1(value["proposedCommitSha1"]) &&
     sha256Values.every(sha256) &&
+    optionalSha256(value["identitySha256"]) &&
     optionalSha256(value["afterHeadStateSha256"]) &&
     optionalSha256(value["sourcePreviewResultSha256"]) &&
     optionalSha256(value["errorSha256"])
@@ -199,6 +209,7 @@ export function gitCommitSummaryParts(
     ...(view.gitCommitProposedSha1
       ? [`commit ${view.gitCommitProposedSha1.slice(0, 12)}`]
       : []),
+    ...(view.gitCommitMergeParentSha1 ? ["merge-parents 2"] : []),
     ...hash("commit-result", view.gitCommitResultSha256),
   ];
 }
@@ -292,6 +303,10 @@ function refStatus(value: unknown) {
 
 function sha1(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{40}$/u.test(value);
+}
+
+function optionalSha1(value: unknown): boolean {
+  return value === undefined || sha1(value);
 }
 
 function sha256(value: unknown): value is string {

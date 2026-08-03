@@ -14,12 +14,13 @@ import {
   type GitRepositoryState,
 } from "./git-repository.js";
 import {
-  assertSimpleGitCommitState,
-  type PreparedGitCommit,
-} from "./git-commit-private.js";
+  snapshotGitCommitOperationState,
+  type GitCommitOperationState,
+} from "./git-commit-operation.js";
+import { type PreparedGitCommit } from "./git-commit-private.js";
 
 const SHA1 = /^[a-f0-9]{40}$/u;
-const SETTLEMENT_TIMEOUT_MS = 5_000;
+const MAX_SETTLEMENT_TIMEOUT_MS = 5_000;
 
 export interface GitCommitSettlement {
   headCommitSha1?: string;
@@ -38,20 +39,24 @@ export async function settleGitCommit(input: {
     branchRef: string;
     contextLines: number;
     repositoryState: GitRepositoryState;
+    operationState: GitCommitOperationState;
   };
   prepared: PreparedGitCommit;
+  operationCleared: boolean;
+  deadline: number;
 }): Promise<GitCommitSettlement> {
   const processes: GitInspectProcessResult[] = [];
+  const timeoutMs = settlementTimeout(input.deadline);
   const [head, branch] = await Promise.all([
     runGitInspectProcess(
       input.options,
       gitHeadCommitArguments(input.repository),
-      SETTLEMENT_TIMEOUT_MS,
+      timeoutMs,
     ).catch(() => undefined),
     runGitInspectProcess(
       input.options,
       gitRefCommitArguments(input.repository, input.preview.branchRef),
-      SETTLEMENT_TIMEOUT_MS,
+      timeoutMs,
     ).catch(() => undefined),
   ]);
   if (head) processes.push(head);
@@ -67,14 +72,15 @@ export async function settleGitCommit(input: {
     );
   }
   try {
-    const [afterState, diff] = await Promise.all([
+    const verificationTimeoutMs = settlementTimeout(input.deadline);
+    const [afterState, diff, operationState] = await Promise.all([
       snapshotGitRepository(input.repository),
       runGitInspectProcess(
         input.options,
         gitStagedDiffArguments(input.repository, input.preview.contextLines),
-        SETTLEMENT_TIMEOUT_MS,
+        verificationTimeoutMs,
       ),
-      assertSimpleGitCommitState(input.repository),
+      snapshotGitCommitOperationState(input.repository),
     ]);
     processes.push(diff);
     const verified =
@@ -85,7 +91,11 @@ export async function settleGitCommit(input: {
       afterState.index.sha256 === input.preview.repositoryState.index.sha256 &&
       diff.status === "succeeded" &&
       diff.stderr.length === 0 &&
-      diff.stdout.length === 0;
+      diff.stdout.length === 0 &&
+      (input.operationCleared
+        ? operationState.kind === "ordinary"
+        : operationState.stateSha256 ===
+          input.preview.operationState.stateSha256);
     return {
       ...processSettlement(
         processes,
@@ -103,6 +113,13 @@ export async function settleGitCommit(input: {
       false,
     );
   }
+}
+
+function settlementTimeout(deadline: number): number {
+  return Math.max(
+    1,
+    Math.min(MAX_SETTLEMENT_TIMEOUT_MS, deadline - Date.now()),
+  );
 }
 
 function processSettlement(

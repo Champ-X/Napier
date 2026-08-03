@@ -20,10 +20,10 @@ export interface GitCommitDetails extends GitDiffCounts {
   messageBytes: number;
   branchRefSha256: string;
   parentCommitSha1: string;
+  mergeParentCommitSha1?: string;
   treeSha1: string;
   proposedCommitSha1: string;
   commitTimestampSeconds: number;
-  identitySha256: string;
   contextLines: number;
   stagedPatchSha256: string;
   stagedPatchBytes: number;

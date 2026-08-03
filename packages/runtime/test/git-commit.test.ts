@@ -177,6 +177,137 @@ describe("preview-bound atomic Git commit", () => {
     }
   }, 30_000);
 
+  it("constructs and atomically completes one resolved two-parent merge", async () => {
+    const fixture = await createRepository();
+    await git(fixture.workspaceRoot, ["branch", "feature"]);
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
+      "PRIVATE_OURS\n",
+    );
+    await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+    await fixtureCommit(fixture.workspaceRoot, "ours");
+    await git(fixture.workspaceRoot, ["checkout", "--quiet", "feature"]);
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
+      "PRIVATE_THEIRS\n",
+    );
+    await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+    await fixtureCommit(fixture.workspaceRoot, "theirs");
+    const mergeParent = (
+      await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])
+    ).trim();
+    await git(fixture.workspaceRoot, ["checkout", "--quiet", "main"]);
+    const firstParent = (
+      await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])
+    ).trim();
+    await expect(
+      execFileAsync(
+        "/usr/bin/git",
+        [
+          "-c",
+          "user.name=Napier Test",
+          "-c",
+          "user.email=napier@example.invalid",
+          "merge",
+          "feature",
+        ],
+        { cwd: fixture.workspaceRoot, env: gitEnvironment() },
+      ),
+    ).rejects.toThrow();
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
+      "PRIVATE_RESOLVED\n",
+    );
+    await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+    const indexBefore = await sha256File(
+      path.join(fixture.workspaceRoot, ".git/index"),
+    );
+    const mergeHeadBefore = await readFile(
+      path.join(fixture.workspaceRoot, ".git/MERGE_HEAD"),
+    );
+    const objectsBefore = await objectSet(fixture.workspaceRoot);
+    const sandbox = directSandbox();
+    const manager = managerFor(fixture, sandbox);
+
+    const preview = await manager.preview("thread_merge", "run_merge", {
+      message: "merge: reviewed resolution",
+    });
+
+    expect(preview.details).toEqual(
+      expect.objectContaining({
+        parentCommitSha1: firstParent,
+        mergeParentCommitSha1: mergeParent,
+        status: "ready",
+      }),
+    );
+    expect(preview.stagedPatch).toContain("PRIVATE_RESOLVED");
+    expect(
+      await readFile(path.join(fixture.workspaceRoot, ".git/MERGE_HEAD")),
+    ).toEqual(mergeHeadBefore);
+    expect(await objectSet(fixture.workspaceRoot)).toEqual(objectsBefore);
+
+    const applied = await manager.apply(
+      "thread_merge",
+      "run_merge",
+      preview.id,
+    );
+
+    expect(applied.details).toEqual(
+      expect.objectContaining({
+        status: "applied",
+        postcondition: "verified",
+        parentCommitSha1: firstParent,
+        mergeParentCommitSha1: mergeParent,
+        durable: true,
+      }),
+    );
+    const parents = (
+      await gitOutput(fixture.workspaceRoot, [
+        "rev-list",
+        "--parents",
+        "-n",
+        "1",
+        "HEAD",
+      ])
+    )
+      .trim()
+      .split(" ");
+    expect(parents).toEqual([
+      preview.details.proposedCommitSha1,
+      firstParent,
+      mergeParent,
+    ]);
+    expect(
+      await sha256File(path.join(fixture.workspaceRoot, ".git/index")),
+    ).toBe(indexBefore);
+    for (const marker of [
+      "MERGE_HEAD",
+      "MERGE_MSG",
+      "MERGE_MODE",
+      "AUTO_MERGE",
+      "MERGE_RR",
+    ]) {
+      await expect(
+        readFile(path.join(fixture.workspaceRoot, ".git", marker)),
+      ).rejects.toThrow();
+    }
+    await expect(
+      readdir(path.join(fixture.workspaceRoot, ".git/napier-stage")),
+    ).resolves.toEqual([]);
+    const commitTree = sandbox.launches.find((request) =>
+      request.args.includes("commit-tree"),
+    );
+    expect(commitTree?.args).toEqual(
+      expect.arrayContaining([
+        "commit-tree",
+        "-p",
+        firstParent,
+        "-p",
+        mergeParent,
+      ]),
+    );
+  }, 30_000);
+
   it("rejects empty, stale, detached, active-operation, and unsafe previews", async () => {
     const fixture = await createRepository();
     const sandbox = directSandbox();
@@ -241,13 +372,13 @@ describe("preview-bound atomic Git commit", () => {
       "core.sharedRepository",
     ]);
     await writeFile(
-      path.join(fixture.workspaceRoot, ".git/MERGE_HEAD"),
+      path.join(fixture.workspaceRoot, ".git/CHERRY_PICK_HEAD"),
       headBefore.trim(),
     );
     await expect(
       manager.preview("thread_a", "run_a", { message: "feat: merge" }),
     ).rejects.toThrow("another Git operation");
-    await unlink(path.join(fixture.workspaceRoot, ".git/MERGE_HEAD"));
+    await unlink(path.join(fixture.workspaceRoot, ".git/CHERRY_PICK_HEAD"));
     await git(fixture.workspaceRoot, ["checkout", "--detach", "--quiet"]);
     await expect(
       manager.preview("thread_a", "run_a", { message: "feat: detached" }),
@@ -348,6 +479,153 @@ describe("preview-bound atomic Git commit", () => {
     ).toBe("other");
   }, 30_000);
 
+  it("settles uncertain merge updates without hiding operation-state drift", async () => {
+    const reportedFixture = await createRepository();
+    const reportedTopology = await prepareResolvedMerge(reportedFixture);
+    const reportedManager = managerFor(
+      reportedFixture,
+      directSandbox({ reportUpdateFailure: true }),
+    );
+    const reportedPreview = await reportedManager.preview(
+      "thread_merge",
+      "run_merge",
+      { message: "merge: uncertain update" },
+    );
+
+    const reported = await reportedManager.apply(
+      "thread_merge",
+      "run_merge",
+      reportedPreview.id,
+    );
+
+    expect(reported.details).toEqual(
+      expect.objectContaining({
+        status: "indeterminate",
+        postcondition: "indeterminate",
+        refUpdateStatus: "failed",
+        mergeParentCommitSha1: reportedTopology.mergeParent,
+        durable: false,
+      }),
+    );
+    await expect(
+      readFile(path.join(reportedFixture.workspaceRoot, ".git/MERGE_HEAD")),
+    ).resolves.toBeDefined();
+
+    const driftFixture = await createRepository();
+    await prepareResolvedMerge(driftFixture);
+    const driftManager = managerFor(
+      driftFixture,
+      directSandbox({
+        beforeUpdate: async () => {
+          await writeFile(
+            path.join(driftFixture.workspaceRoot, ".git/MERGE_MSG"),
+            "PRIVATE_DRIFT\n",
+          );
+        },
+      }),
+    );
+    const driftPreview = await driftManager.preview(
+      "thread_drift",
+      "run_drift",
+      { message: "merge: marker drift" },
+    );
+
+    const drift = await driftManager.apply(
+      "thread_drift",
+      "run_drift",
+      driftPreview.id,
+    );
+
+    expect(drift.details).toEqual(
+      expect.objectContaining({
+        status: "indeterminate",
+        postcondition: "indeterminate",
+        refUpdateStatus: "succeeded",
+        durable: false,
+      }),
+    );
+    await expect(
+      readFile(path.join(driftFixture.workspaceRoot, ".git/MERGE_HEAD")),
+    ).resolves.toBeDefined();
+    await expect(
+      readFile(path.join(driftFixture.workspaceRoot, ".git/MERGE_MSG"), "utf8"),
+    ).resolves.toBe("PRIVATE_DRIFT\n");
+
+    const rollbackFixture = await createRepository();
+    await prepareResolvedMerge(rollbackFixture);
+    const markerNames = [
+      "MERGE_HEAD",
+      "MERGE_MSG",
+      "MERGE_MODE",
+      "AUTO_MERGE",
+      "MERGE_RR",
+    ];
+    const markerBytes = new Map<string, Buffer>();
+    for (const marker of markerNames) {
+      await readFile(path.join(rollbackFixture.workspaceRoot, ".git", marker))
+        .then((value) => markerBytes.set(marker, value))
+        .catch(() => undefined);
+    }
+    const rollbackManager = managerFor(
+      rollbackFixture,
+      directSandbox({ failFinalSettlement: true }),
+    );
+    const rollbackPreview = await rollbackManager.preview(
+      "thread_rollback",
+      "run_rollback",
+      { message: "merge: rollback cleanup" },
+    );
+
+    const rollback = await rollbackManager.apply(
+      "thread_rollback",
+      "run_rollback",
+      rollbackPreview.id,
+    );
+
+    expect(rollback.details.status).toBe("indeterminate");
+    for (const [marker, expected] of markerBytes) {
+      await expect(
+        readFile(path.join(rollbackFixture.workspaceRoot, ".git", marker)),
+      ).resolves.toEqual(expected);
+    }
+    await expect(
+      readdir(path.join(rollbackFixture.workspaceRoot, ".git/napier-stage")),
+    ).resolves.toEqual([]);
+  }, 30_000);
+
+  it("bounds post-CAS settlement by the original apply deadline", async () => {
+    const fixture = await createRepository();
+    await writeFile(
+      path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
+      "PRIVATE_AFTER\n",
+    );
+    await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+    const manager = managerFor(
+      fixture,
+      directSandbox({ stallSettlementAfterUpdate: true }),
+    );
+    const preview = await manager.preview("thread_deadline", "run_deadline", {
+      message: "feat: bounded settlement",
+    });
+    const startedAt = Date.now();
+
+    const result = await manager.apply(
+      "thread_deadline",
+      "run_deadline",
+      preview.id,
+      1_000,
+    );
+
+    expect(Date.now() - startedAt).toBeLessThan(3_000);
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        status: "indeterminate",
+        postcondition: "indeterminate",
+        durable: false,
+      }),
+    );
+  }, 30_000);
+
   it("requires non-observe policy and marks ref application high risk", () => {
     const workspace = path.resolve("/workspace");
     expect(
@@ -409,6 +687,50 @@ function managerFor(
   });
 }
 
+async function prepareResolvedMerge(fixture: {
+  workspaceRoot: string;
+}): Promise<{ firstParent: string; mergeParent: string }> {
+  await git(fixture.workspaceRoot, ["branch", "feature"]);
+  await writeFile(
+    path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
+    "PRIVATE_OURS\n",
+  );
+  await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+  await fixtureCommit(fixture.workspaceRoot, "ours");
+  await git(fixture.workspaceRoot, ["checkout", "--quiet", "feature"]);
+  await writeFile(
+    path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
+    "PRIVATE_THEIRS\n",
+  );
+  await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+  await fixtureCommit(fixture.workspaceRoot, "theirs");
+  const mergeParent = (
+    await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])
+  ).trim();
+  await git(fixture.workspaceRoot, ["checkout", "--quiet", "main"]);
+  const firstParent = (
+    await gitOutput(fixture.workspaceRoot, ["rev-parse", "HEAD"])
+  ).trim();
+  await execFileAsync(
+    "/usr/bin/git",
+    [
+      "-c",
+      "user.name=Napier Test",
+      "-c",
+      "user.email=napier@example.invalid",
+      "merge",
+      "feature",
+    ],
+    { cwd: fixture.workspaceRoot, env: gitEnvironment() },
+  ).catch(() => undefined);
+  await writeFile(
+    path.join(fixture.workspaceRoot, "PRIVATE_TRACKED.txt"),
+    "PRIVATE_RESOLVED\n",
+  );
+  await git(fixture.workspaceRoot, ["add", "PRIVATE_TRACKED.txt"]);
+  return { firstParent, mergeParent };
+}
+
 async function createRepository(): Promise<{
   root: string;
   workspaceRoot: string;
@@ -439,11 +761,7 @@ async function createRepository(): Promise<{
 async function git(cwd: string, args: string[]): Promise<void> {
   await execFileAsync("/usr/bin/git", args, {
     cwd,
-    env: {
-      ...process.env,
-      GIT_CONFIG_NOSYSTEM: "1",
-      GIT_TERMINAL_PROMPT: "0",
-    },
+    env: gitEnvironment(),
   });
 }
 
@@ -451,22 +769,43 @@ async function gitOutput(cwd: string, args: string[]): Promise<string> {
   return (
     await execFileAsync("/usr/bin/git", args, {
       cwd,
-      env: {
-        ...process.env,
-        GIT_CONFIG_NOSYSTEM: "1",
-        GIT_TERMINAL_PROMPT: "0",
-      },
+      env: gitEnvironment(),
     })
   ).stdout;
+}
+
+async function fixtureCommit(cwd: string, message: string): Promise<void> {
+  await git(cwd, [
+    "-c",
+    "user.name=Napier Test",
+    "-c",
+    "user.email=napier@example.invalid",
+    "commit",
+    "--quiet",
+    "-m",
+    message,
+  ]);
+}
+
+function gitEnvironment(): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_TERMINAL_PROMPT: "0",
+  };
 }
 
 function directSandbox(
   options: {
     reportUpdateFailure?: boolean;
     beforeUpdate?: () => Promise<void>;
+    stallSettlementAfterUpdate?: boolean;
+    failFinalSettlement?: boolean;
   } = {},
 ): OsSandboxAdapter & { launches: SandboxLaunchRequest[] } {
   const launches: SandboxLaunchRequest[] = [];
+  let updateSeen = false;
+  let postUpdateLaunchCount = 0;
   return {
     id: "direct-git-commit-test",
     launches,
@@ -474,18 +813,32 @@ function directSandbox(
       launches.push(structuredClone(request));
       if (request.args.includes("update-ref")) {
         await options.beforeUpdate?.();
+        updateSeen = true;
       }
-      const child = spawn(request.command, request.args, {
-        cwd: request.cwd,
-        env: {
-          ...request.env,
-          HOME: path.join(request.workspaceRoot, ".napier-test-home"),
-          TMPDIR: request.workspaceRoot,
+      const stall =
+        options.stallSettlementAfterUpdate &&
+        updateSeen &&
+        !request.args.includes("update-ref");
+      if (updateSeen && !request.args.includes("update-ref")) {
+        postUpdateLaunchCount += 1;
+      }
+      const failFinal =
+        options.failFinalSettlement && postUpdateLaunchCount > 3;
+      const child = spawn(
+        stall ? "/bin/sleep" : failFinal ? "/usr/bin/false" : request.command,
+        stall || failFinal ? (stall ? ["10"] : []) : request.args,
+        {
+          cwd: request.cwd,
+          env: {
+            ...request.env,
+            HOME: path.join(request.workspaceRoot, ".napier-test-home"),
+            TMPDIR: request.workspaceRoot,
+          },
+          detached: true,
+          shell: false,
+          stdio: ["pipe", "pipe", "pipe"],
         },
-        detached: true,
-        shell: false,
-        stdio: ["pipe", "pipe", "pipe"],
-      });
+      );
       const process = childProcess(child);
       if (options.reportUpdateFailure && request.args.includes("update-ref")) {
         return {

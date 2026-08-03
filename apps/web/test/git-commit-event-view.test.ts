@@ -20,6 +20,7 @@ describe("Git commit Trace evidence", () => {
   it("projects valid preview and apply receipts without message or patch text", () => {
     const previewEvent = event("git_commit_preview", {
       ...previewDetails(),
+      mergeParentCommitSha1: "a".repeat(40),
       action: "preview",
       status: "ready",
       postcondition: "not_applied",
@@ -32,15 +33,18 @@ describe("Git commit Trace evidence", () => {
         gitCommitStatus: "ready",
         gitCommitFileCount: 2,
         gitCommitProposedSha1: "e".repeat(40),
+        gitCommitMergeParentSha1: "a".repeat(40),
       }),
     );
     expect(toolEventTraceSummary(previewEvent)).toContain(
       "git commit preview / commit ready",
     );
 
+    const currentApplyDetails = baseDetails();
+    delete currentApplyDetails["identitySha256"];
     const apply = toolEventTraceView(
       event("git_commit_apply", {
-        ...baseDetails(),
+        ...currentApplyDetails,
         action: "apply",
         status: "applied",
         postcondition: "verified",
@@ -73,6 +77,18 @@ describe("Git commit Trace evidence", () => {
           refUpdateStatus: "succeeded",
           afterHeadStateSha256: "d".repeat(64),
           sourcePreviewResultSha256: "e".repeat(64),
+        }),
+      )?.gitCommitAction,
+    ).toBeUndefined();
+    expect(
+      toolEventTraceView(
+        event("git_commit_preview", {
+          ...previewDetails(),
+          action: "preview",
+          status: "ready",
+          postcondition: "not_applied",
+          durable: false,
+          mergeParentCommitSha1: "d".repeat(40),
         }),
       )?.gitCommitAction,
     ).toBeUndefined();

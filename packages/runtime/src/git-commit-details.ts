@@ -42,10 +42,14 @@ export function createGitCommitDetails(input: {
     ...gitCommitMessageEvidence(input.message),
     branchRefSha256: sha256(input.branchRef),
     parentCommitSha1: input.prepared.parentCommitSha1,
+    ...(input.prepared.mergeParentCommitSha1
+      ? {
+          mergeParentCommitSha1: input.prepared.mergeParentCommitSha1,
+        }
+      : {}),
     treeSha1: input.prepared.treeSha1,
     proposedCommitSha1: input.prepared.commitSha1,
     commitTimestampSeconds: input.timestampSeconds,
-    identitySha256: input.prepared.identitySha256,
     contextLines: input.contextLines,
     ...input.prepared.counts,
     stagedPatchSha256: sha256(input.prepared.stagedPatch),
@@ -65,6 +69,8 @@ export function createGitCommitDetails(input: {
       canonicalJson({
         sandboxSha256: input.prepared.sandboxSha256,
         executableSha256: input.prepared.executableSha256,
+        identitySha256: input.prepared.identitySha256,
+        operationStateSha256: input.prepared.operationStateSha256,
         argumentsSha256: gitCommitArgumentsSha256(
           input.repository,
           input.contextLines,

@@ -1,9 +1,14 @@
 import path from "node:path";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
 import { assertGitConfigPolicy } from "./git-config-policy.js";
+import {
+  assertGitCommitOperationState,
+  snapshotGitCommitOperationState,
+  type GitCommitOperationState,
+} from "./git-commit-operation.js";
+import { recoverGitMergeOperationTransactions } from "./git-commit-recovery.js";
 import { createGitCommitDetails } from "./git-commit-details.js";
-import { settleGitCommit } from "./git-commit-settlement.js";
+import { applyGitCommitRefUpdate } from "./git-commit-ref-update.js";
 import {
   assertGitCommitPreviewState,
   assertPreparedGitCommitMatches,
@@ -11,10 +16,8 @@ import {
   requireGitCurrentBranch,
 } from "./git-commit-validation.js";
 import {
-  assertSimpleGitCommitState,
   cleanupGitCommitDirectory,
   preparePrivateGitCommit,
-  type PreparedGitCommit,
 } from "./git-commit-private.js";
 import {
   DEFAULT_GIT_COMMIT_TIMEOUT_MS,
@@ -26,22 +29,13 @@ import {
   MAX_GIT_COMMIT_TIMEOUT_MS,
   normalizeGitCommitMessage,
 } from "./git-commit-model.js";
-import { gitUpdateBranchArguments } from "./git-inspect-arguments.js";
-import {
-  runGitProcess,
-  type GitInspectProcessOptions,
-  type GitInspectProcessResult,
-} from "./git-inspect-process.js";
+import type { GitInspectProcessOptions } from "./git-inspect-process.js";
 import {
   resolveGitRepository,
   snapshotGitRepository,
   type GitRepository,
   type GitRepositoryState,
 } from "./git-repository.js";
-import {
-  gitBranchRefWritePaths,
-  syncGitBranchRefTransition,
-} from "./git-ref-files.js";
 import { promotePreparedGitObjects } from "./git-stage-private-index.js";
 import { createId } from "./ids.js";
 import { withWorkspacePathLocks } from "./workspace-write-lock.js";
@@ -66,6 +60,7 @@ interface StoredGitCommitPreview {
   timestampSeconds: number;
   contextLines: number;
   repositoryState: GitRepositoryState;
+  operationState: GitCommitOperationState;
   stagedPatch: string;
   details: GitCommitDetails;
   expiresAt: string;
@@ -117,73 +112,90 @@ export class GitCommitMutationManager {
     const timestampSeconds = Math.floor(now.getTime() / 1_000);
     const deadline = Date.now() + validated.timeoutMs;
     const repository = await resolveGitRepository(this.options.workspaceRoot);
-    const repositoryState = await snapshotGitRepository(repository);
-    const branchRef = requireGitCurrentBranch(repositoryState);
-    const indexBytes = await boundGitCommitIndexBytes(
-      repository,
-      repositoryState,
+    return withWorkspacePathLocks(
+      this.options.dataRoot,
+      [path.join(repository.gitDirectory, "napier-stage")],
+      "Git commit preview",
+      async () => {
+        await recoverGitMergeOperationTransactions(repository);
+        const repositoryState = await snapshotGitRepository(repository);
+        const operationState =
+          await snapshotGitCommitOperationState(repository);
+        const branchRef = requireGitCurrentBranch(repositoryState);
+        const indexBytes = await boundGitCommitIndexBytes(
+          repository,
+          repositoryState,
+        );
+        const config = await assertGitConfigPolicy(
+          this.options,
+          repository,
+          remainingTime(deadline),
+          signal,
+          "commit",
+        );
+        const prepared = await preparePrivateGitCommit({
+          processOptions: this.options,
+          repository,
+          indexBytes,
+          message: validated.message,
+          timestampSeconds,
+          contextLines: validated.contextLines,
+          deadline,
+          configProcess: config,
+          operationState,
+          ...(signal ? { signal } : {}),
+        });
+        let stored: StoredGitCommitPreview;
+        try {
+          await assertGitCommitPreviewState(
+            repository,
+            repositoryState,
+            branchRef,
+            operationState,
+          );
+          const id = createId("gitcommitpreview");
+          const expiresAt = new Date(
+            now.getTime() + GIT_COMMIT_PREVIEW_TTL_MS,
+          ).toISOString();
+          const details = createGitCommitDetails({
+            action: "preview",
+            status: "ready",
+            postcondition: "not_applied",
+            previewId: id,
+            expiresAt,
+            message: validated.message,
+            branchRef,
+            timestampSeconds,
+            contextLines: validated.contextLines,
+            repository,
+            repositoryState,
+            prepared,
+            durable: false,
+            cancellationObserved: signal?.aborted === true,
+          });
+          stored = {
+            id,
+            threadId,
+            scopeId,
+            message: validated.message,
+            branchRef,
+            timestampSeconds,
+            contextLines: validated.contextLines,
+            repositoryState,
+            operationState,
+            stagedPatch: prepared.stagedPatch,
+            details,
+            expiresAt,
+            createdAtMs: now.getTime(),
+          };
+        } finally {
+          await cleanupGitCommitDirectory(prepared.temporaryDirectory);
+        }
+        this.previews.set(stored.id, stored);
+        this.prune();
+        return publicPreview(stored);
+      },
     );
-    const config = await assertGitConfigPolicy(
-      this.options,
-      repository,
-      remainingTime(deadline),
-      signal,
-      "commit",
-    );
-    const prepared = await preparePrivateGitCommit({
-      processOptions: this.options,
-      repository,
-      indexBytes,
-      message: validated.message,
-      timestampSeconds,
-      contextLines: validated.contextLines,
-      deadline,
-      configProcess: config,
-      ...(signal ? { signal } : {}),
-    });
-    let stored: StoredGitCommitPreview;
-    try {
-      await assertGitCommitPreviewState(repository, repositoryState, branchRef);
-      const id = createId("gitcommitpreview");
-      const expiresAt = new Date(
-        now.getTime() + GIT_COMMIT_PREVIEW_TTL_MS,
-      ).toISOString();
-      const details = createGitCommitDetails({
-        action: "preview",
-        status: "ready",
-        postcondition: "not_applied",
-        previewId: id,
-        expiresAt,
-        message: validated.message,
-        branchRef,
-        timestampSeconds,
-        contextLines: validated.contextLines,
-        repository,
-        repositoryState,
-        prepared,
-        durable: false,
-        cancellationObserved: signal?.aborted === true,
-      });
-      stored = {
-        id,
-        threadId,
-        scopeId,
-        message: validated.message,
-        branchRef,
-        timestampSeconds,
-        contextLines: validated.contextLines,
-        repositoryState,
-        stagedPatch: prepared.stagedPatch,
-        details,
-        expiresAt,
-        createdAtMs: now.getTime(),
-      };
-    } finally {
-      await cleanupGitCommitDirectory(prepared.temporaryDirectory);
-    }
-    this.previews.set(stored.id, stored);
-    this.prune();
-    return publicPreview(stored);
   }
 
   async apply(
@@ -212,8 +224,12 @@ export class GitCommitMutationManager {
     return withWorkspacePathLocks(
       this.options.dataRoot,
       [
+        path.join(repository.gitDirectory, "napier-stage"),
         path.join(repository.gitDirectory, "index"),
         path.join(repository.gitDirectory, preview.branchRef),
+        ...Object.entries(preview.operationState.files)
+          .filter(([, file]) => file.present)
+          .map(([name]) => path.join(repository.gitDirectory, name)),
       ],
       "Git commit apply",
       () => this.applyUnderLock(repository, preview, timeoutMs, signal),
@@ -227,10 +243,12 @@ export class GitCommitMutationManager {
     signal?: AbortSignal,
   ): Promise<GitCommitApplyResult> {
     const deadline = Date.now() + timeoutMs;
+    await recoverGitMergeOperationTransactions(repository);
     await assertGitCommitPreviewState(
       repository,
       preview.repositoryState,
       preview.branchRef,
+      preview.operationState,
     );
     const config = await assertGitConfigPolicy(
       this.options,
@@ -252,6 +270,7 @@ export class GitCommitMutationManager {
       contextLines: preview.contextLines,
       deadline,
       configProcess: config,
+      operationState: preview.operationState,
       ...(signal ? { signal } : {}),
     });
     try {
@@ -260,156 +279,30 @@ export class GitCommitMutationManager {
         repository,
         preview.repositoryState,
         preview.branchRef,
+        preview.operationState,
       );
       await promotePreparedGitObjects(prepared, repository);
       await assertGitCommitPreviewState(
         repository,
         preview.repositoryState,
         preview.branchRef,
+        preview.operationState,
       );
-      await assertSimpleGitCommitState(repository);
+      await assertGitCommitOperationState(repository, preview.operationState);
+      await cleanupGitCommitDirectory(prepared.temporaryDirectory);
       abort(signal);
-      return await this.updateHead(
+      return await applyGitCommitRefUpdate({
+        options: this.options,
         repository,
-        preview,
         prepared,
         deadline,
-        signal,
-      );
+        preview,
+        ...(signal ? { signal } : {}),
+      });
     } catch (error) {
       await cleanupGitCommitDirectory(prepared.temporaryDirectory);
       throw error;
     }
-  }
-
-  private async updateHead(
-    repository: GitRepository,
-    preview: StoredGitCommitPreview,
-    prepared: PreparedGitCommit,
-    deadline: number,
-    signal?: AbortSignal,
-  ): Promise<GitCommitApplyResult> {
-    let update: GitInspectProcessResult | undefined;
-    let updateError: unknown;
-    try {
-      update = await runGitProcess(
-        this.options,
-        gitUpdateBranchArguments(
-          repository,
-          preview.branchRef,
-          prepared.commitSha1,
-          prepared.parentCommitSha1,
-        ),
-        remainingTime(deadline),
-        signal,
-        {
-          operation: "commit",
-          workspaceWritePaths: await gitBranchRefWritePaths(
-            repository,
-            preview.branchRef,
-          ),
-          commitTimestampSeconds: preview.timestampSeconds,
-        },
-      );
-    } catch (error) {
-      updateError = error;
-    }
-    const updateStatus = update?.status ?? "unknown";
-    const updateClean =
-      update?.status === "succeeded" &&
-      update.stdout.length === 0 &&
-      update.stderr.length === 0;
-    const initialSettlement = await settleGitCommit({
-      options: this.options,
-      repository,
-      preview,
-      prepared,
-    });
-    const committed =
-      initialSettlement.branchCommitSha1 === prepared.commitSha1;
-    const durable = committed
-      ? await syncGitBranchRefTransition({
-          repository,
-          branchRef: preview.branchRef,
-          oldObjectId: prepared.parentCommitSha1,
-          newObjectId: prepared.commitSha1,
-          includeHeadReflog: true,
-        })
-      : false;
-    const finalSettlement = committed
-      ? await settleGitCommit({
-          options: this.options,
-          repository,
-          preview,
-          prepared,
-        })
-      : undefined;
-    const cleanupComplete = await cleanupGitCommitDirectory(
-      prepared.temporaryDirectory,
-    )
-      .then(() => true)
-      .catch(() => false);
-    const verified =
-      committed &&
-      initialSettlement.verified &&
-      finalSettlement?.verified === true &&
-      updateClean &&
-      durable &&
-      cleanupComplete;
-    const observedSettlement = finalSettlement ?? initialSettlement;
-    const details = createGitCommitDetails({
-      action: "apply",
-      status: verified ? "applied" : "indeterminate",
-      postcondition: verified ? "verified" : "indeterminate",
-      message: preview.message,
-      branchRef: preview.branchRef,
-      timestampSeconds: preview.timestampSeconds,
-      contextLines: preview.contextLines,
-      repository,
-      repositoryState: preview.repositoryState,
-      prepared,
-      ...(observedSettlement.afterState
-        ? {
-            afterHeadStateSha256: observedSettlement.afterState.headStateSha256,
-          }
-        : {}),
-      sourcePreviewResultSha256: preview.details.resultSha256,
-      refUpdateStatus: updateStatus,
-      ...(updateError
-        ? { errorSha256: sha256(errorText(updateError)) }
-        : !updateClean && update
-          ? { errorSha256: sha256(canonicalJson(update)) }
-          : {}),
-      durationMs:
-        prepared.durationMs +
-        (update?.durationMs ?? 0) +
-        initialSettlement.durationMs +
-        (finalSettlement?.durationMs ?? 0),
-      environmentSha256: sha256(
-        canonicalJson([
-          prepared.environmentSha256,
-          update?.environmentSha256 ?? null,
-          ...initialSettlement.environmentSha256,
-          ...(finalSettlement?.environmentSha256 ?? []),
-        ]),
-      ),
-      resourceLimitsSha256: sha256(
-        canonicalJson([
-          prepared.resourceLimitsSha256,
-          update?.resourceLimitsSha256 ?? null,
-          ...initialSettlement.resourceLimitsSha256,
-          ...(finalSettlement?.resourceLimitsSha256 ?? []),
-        ]),
-      ),
-      durable: verified,
-      cancellationObserved: signal?.aborted === true,
-    });
-    return {
-      branchRef: preview.branchRef,
-      message: preview.message,
-      stagedPatch: prepared.stagedPatch,
-      details,
-    };
   }
 
   private prune(): void {
@@ -488,10 +381,6 @@ function remainingTime(deadline: number): number {
   const remaining = deadline - Date.now();
   if (remaining <= 0) throw new Error("Git commit operation timed out");
   return remaining;
-}
-
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 function abort(signal?: AbortSignal): void {

@@ -11,7 +11,12 @@ import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
-  gitCommitTreeArguments,
+  assertGitCommitOperationState,
+  snapshotGitCommitOperationState,
+  type GitCommitOperationState,
+} from "./git-commit-operation.js";
+import {
+  gitCommitTreeWithParentsArguments,
   gitHeadCommitArguments,
   gitStagedDiffArguments,
   gitStagedRawArguments,
@@ -36,22 +41,13 @@ import { MAX_GIT_COMMIT_FILES } from "./git-commit-model.js";
 import { gitDiffCounts, type GitDiffCounts } from "./git-stage-model.js";
 
 const SHA1 = /^[a-f0-9]{40}$/u;
-const COMMIT_STATE_MARKERS = [
-  "MERGE_HEAD",
-  "CHERRY_PICK_HEAD",
-  "REVERT_HEAD",
-  "REBASE_HEAD",
-  "AUTO_MERGE",
-  "BISECT_LOG",
-  "rebase-apply",
-  "rebase-merge",
-  "sequencer",
-] as const;
 
 export interface PreparedGitCommit {
   temporaryDirectory: string;
   objectDirectory: string;
   parentCommitSha1: string;
+  mergeParentCommitSha1?: string;
+  operationStateSha256: string;
   treeSha1: string;
   commitSha1: string;
   stagedPatch: string;
@@ -73,9 +69,10 @@ export async function preparePrivateGitCommit(input: {
   contextLines: number;
   deadline: number;
   configProcess: GitInspectProcessResult;
+  operationState: GitCommitOperationState;
   signal?: AbortSignal;
 }): Promise<PreparedGitCommit> {
-  await assertSimpleGitCommitState(input.repository);
+  await assertGitCommitOperationState(input.repository, input.operationState);
   const stageRoot = await ensurePrivateRoot(input.repository);
   const temporaryDirectory = await mkdtemp(path.join(stageRoot, "commit-"));
   await chmod(temporaryDirectory, 0o700);
@@ -93,6 +90,9 @@ export async function preparePrivateGitCommit(input: {
       input.signal,
     );
     const parentCommitSha1 = parseSha1(parent, "Git HEAD commit");
+    if (input.operationState.mergeParentCommitSha1 === parentCommitSha1) {
+      throw new Error("Git merge parent must differ from current HEAD");
+    }
     const isolation: GitProcessIsolation = {
       operation: "commit",
       privateFiles: {
@@ -139,10 +139,15 @@ export async function preparePrivateGitCommit(input: {
     const treeSha1 = parseSha1(tree, "Git commit tree");
     const commit = await runGitProcess(
       input.processOptions,
-      gitCommitTreeArguments(
+      gitCommitTreeWithParentsArguments(
         input.repository,
         treeSha1,
-        parentCommitSha1,
+        [
+          parentCommitSha1,
+          ...(input.operationState.mergeParentCommitSha1
+            ? [input.operationState.mergeParentCommitSha1]
+            : []),
+        ],
         messageFile,
       ),
       remainingTime(input.deadline),
@@ -156,6 +161,12 @@ export async function preparePrivateGitCommit(input: {
       temporaryDirectory,
       objectDirectory,
       parentCommitSha1,
+      ...(input.operationState.mergeParentCommitSha1
+        ? {
+            mergeParentCommitSha1: input.operationState.mergeParentCommitSha1,
+          }
+        : {}),
+      operationStateSha256: input.operationState.stateSha256,
       treeSha1,
       commitSha1,
       stagedPatch: diff.stdout,
@@ -205,10 +216,8 @@ function validateRawStagedEntries(result: GitInspectProcessResult): number {
 export async function assertSimpleGitCommitState(
   repository: GitRepository,
 ): Promise<void> {
-  for (const marker of COMMIT_STATE_MARKERS) {
-    if (await gitPathExists(path.join(repository.gitDirectory, marker))) {
-      throw new Error("Git commit cannot run during another Git operation");
-    }
+  if ((await snapshotGitCommitOperationState(repository)).kind !== "ordinary") {
+    throw new Error("Git commit operation state is not cleared");
   }
 }
 

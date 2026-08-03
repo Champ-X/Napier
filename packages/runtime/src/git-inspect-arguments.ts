@@ -173,7 +173,6 @@ export function gitStageArgumentsSha256(
     }),
   );
 }
-
 export function gitHeadCommitArguments(
   repository: GitArgumentRepository,
 ): string[] {
@@ -184,7 +183,6 @@ export function gitHeadCommitArguments(
     "HEAD^{commit}",
   ];
 }
-
 export function gitRefCommitArguments(
   repository: GitArgumentRepository,
   branchRef: string,
@@ -196,7 +194,6 @@ export function gitRefCommitArguments(
     `${branchRef}^{commit}`,
   ];
 }
-
 export function gitStagedDiffArguments(
   repository: GitArgumentRepository,
   contextLines: number,
@@ -215,7 +212,6 @@ export function gitStagedDiffArguments(
     "--",
   ];
 }
-
 export function gitStagedRawArguments(
   repository: GitArgumentRepository,
 ): string[] {
@@ -230,7 +226,6 @@ export function gitStagedRawArguments(
     "--",
   ];
 }
-
 export function gitWriteTreeArguments(
   repository: GitArgumentRepository,
 ): string[] {
@@ -243,12 +238,37 @@ export function gitCommitTreeArguments(
   parentCommitSha1: string,
   messageFile: string,
 ): string[] {
+  return gitCommitTreeWithParentsArguments(
+    repository,
+    treeSha1,
+    [parentCommitSha1],
+    messageFile,
+  );
+}
+
+export function gitCommitTreeWithParentsArguments(
+  repository: GitArgumentRepository,
+  treeSha1: string,
+  parentCommitSha1s: string[],
+  messageFile: string,
+): string[] {
+  if (
+    parentCommitSha1s.length < 1 ||
+    parentCommitSha1s.length > 2 ||
+    parentCommitSha1s.some(
+      (parent) =>
+        parent !== "$PARENT_SHA1" &&
+        parent !== "$MERGE_PARENT_SHA1" &&
+        !/^[a-f0-9]{40}$/u.test(parent),
+    )
+  ) {
+    throw new Error("Git commit parent set is invalid");
+  }
   return [
     ...commonGitArguments(repository),
     "commit-tree",
     treeSha1,
-    "-p",
-    parentCommitSha1,
+    ...parentCommitSha1s.flatMap((parent) => ["-p", parent]),
     "-F",
     messageFile,
   ];
@@ -398,6 +418,12 @@ export function gitCommitArgumentsSha256(
         repository,
         "$TREE_SHA1",
         "$PARENT_SHA1",
+        "$PRIVATE_MESSAGE_FILE",
+      ),
+      mergeCommitTree: gitCommitTreeWithParentsArguments(
+        repository,
+        "$TREE_SHA1",
+        ["$PARENT_SHA1", "$MERGE_PARENT_SHA1"],
         "$PRIVATE_MESSAGE_FILE",
       ),
       updateBranch: gitUpdateBranchArguments(
