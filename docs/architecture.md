@@ -373,6 +373,12 @@ Artifact operations remain separate follow-up domains. This extraction lowers
 `app.ts` to 20,130 lines while preserving the generated contracts and the sole
 Runtime/Store implementations.
 
+Thread Evaluation projections now use a dedicated read-only HTTP boundary.
+`thread-evaluation-http.ts` owns Evaluation and Adjudication lists plus
+Evaluation and Context Checkpoint calibration behind a five-method Store port;
+its response module preserves body/stable hashes and all count headers. This
+lowers `app.ts` to 19,987 lines without changing the 255-route contract.
+
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
 

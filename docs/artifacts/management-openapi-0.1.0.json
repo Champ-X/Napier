@@ -14553,6 +14553,7 @@
     "apps/server/src/plan-lifecycle-http.ts",
     "apps/server/src/schedule-http.ts",
     "apps/server/src/thread-control-http.ts",
+    "apps/server/src/thread-evaluation-http.ts",
     "apps/server/src/thread-evidence-http.ts",
     "apps/server/src/thread-execution-http.ts",
     "apps/server/src/thread-lifecycle-http.ts",
@@ -14560,7 +14561,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "7aa6e4e279b064928eb4cedf2dfeb2d43736c38e9f771e9e43a74fce34fb4bc0",
+  "x-napier-source-sha256": "57578cc94557c82a12eeece76aab366470bd73e9c154a3ec31e62254c40e564f",
   "x-napier-route-count": 255,
   "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }

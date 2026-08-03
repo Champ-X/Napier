@@ -23,7 +23,6 @@ import type {
   CreateMcpExtensionRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
   CreateRunEvaluationRequest,
-  ContextCheckpointCalibrationReport,
   CreateExecutionPlanFromBlueprintRequest,
   CreateExecutionPlanFromBlueprintRecordRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
@@ -62,7 +61,6 @@ import type {
   EvaluationCasebookQualificationExecution,
   EvaluationCasebookQualificationReceipt,
   EvaluationAdjudication,
-  EvaluationCalibrationReport,
   EvaluationQualificationBaseline,
   ExportExtensionPackageLockfileRequest,
   HealthResponse,
@@ -370,6 +368,7 @@ import {
   setExecutionPlanHeaders,
 } from "./plan-lifecycle-http-response.js";
 import { registerThreadEvidenceHttp } from "./thread-evidence-http.js";
+import { registerThreadEvaluationHttp } from "./thread-evaluation-http.js";
 import { registerThreadExecutionHttp } from "./thread-execution-http.js";
 import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
 import { registerThreadControlHttp } from "./thread-control-http.js";
@@ -4173,40 +4172,7 @@ export function createApp(services: NapierServices): Hono {
 
   registerThreadEvidenceHttp(app, services);
 
-  app.get("/api/threads/:threadId/evaluations", (context) => {
-    const threadId = context.req.param("threadId");
-    services.store.getThread(threadId);
-    const evaluations = services.store.listRunEvaluations(threadId);
-    setRunEvaluationListHeaders(context, threadId, evaluations);
-    return context.json(evaluations);
-  });
-
-  app.get("/api/threads/:threadId/evaluation-adjudications", (context) => {
-    const threadId = context.req.param("threadId");
-    services.store.getThread(threadId);
-    const adjudications = services.store.listEvaluationAdjudications(threadId);
-    setEvaluationAdjudicationListHeaders(context, threadId, adjudications);
-    return context.json(adjudications);
-  });
-
-  app.get("/api/threads/:threadId/evaluation-calibration", (context) => {
-    const report = services.store.getEvaluationCalibration(
-      context.req.param("threadId"),
-    );
-    setEvaluationCalibrationHeaders(context, report);
-    return context.json(report);
-  });
-
-  app.get(
-    "/api/threads/:threadId/context-checkpoint-calibration",
-    async (context) => {
-      const report = await services.store.getContextCheckpointCalibration(
-        context.req.param("threadId"),
-      );
-      setContextCheckpointCalibrationHeaders(context, report);
-      return context.json(report);
-    },
-  );
+  registerThreadEvaluationHttp(app, services.store);
 
   app.get("/api/evaluation-casebooks", (context) => {
     const casebooks = services.store.listEvaluationCasebooks();
@@ -15622,17 +15588,6 @@ function setWorkspaceProcessProjectionHeaders(
   setBodyContentSha256Header(context, projection);
 }
 
-function setRunEvaluationListHeaders(
-  context: Context,
-  threadId: string,
-  evaluations: readonly RunEvaluationRecord[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, evaluations);
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Evaluation-Count", String(evaluations.length));
-}
-
 function setRunEvaluationRecordHeaders(
   context: Context,
   evaluation: RunEvaluationRecord,
@@ -15683,26 +15638,6 @@ function setRunEvaluationRecordHeaders(
       );
     }
   }
-}
-
-function setEvaluationAdjudicationListHeaders(
-  context: Context,
-  threadId: string,
-  adjudications: readonly EvaluationAdjudication[],
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, adjudications);
-  context.header("X-Napier-Thread-Id", threadId);
-  context.header("X-Napier-Adjudication-Count", String(adjudications.length));
-  context.header(
-    "X-Napier-Adjudication-Revision-Count",
-    String(
-      adjudications.reduce(
-        (total, adjudication) => total + adjudication.revisions.length,
-        0,
-      ),
-    ),
-  );
 }
 
 function setEvaluationAdjudicationHeaders(
@@ -16021,84 +15956,6 @@ function evaluationSuiteGateReceiptFilename(
 ): string {
   const safeSuiteId = safeFilenameSegment(receipt.suite.id, "suite");
   return `napier-gate-${safeSuiteId}-r${receipt.suite.revision}-${receipt.contentSha256.slice(0, 12)}.json`;
-}
-
-function setEvaluationCalibrationHeaders(
-  context: Context,
-  report: EvaluationCalibrationReport,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, report.contentSha256);
-  context.header("X-Napier-Thread-Id", report.threadId);
-  context.header(
-    "X-Napier-Calibration-Sample-Count",
-    String(report.sampleCount),
-  );
-  context.header(
-    "X-Napier-Calibration-Agreement-Count",
-    String(report.agreementCount),
-  );
-  context.header(
-    "X-Napier-Calibration-Agreement-Rate",
-    String(report.agreementRate),
-  );
-  context.header(
-    "X-Napier-Calibration-Group-Count",
-    String(report.groups.length),
-  );
-}
-
-function setContextCheckpointCalibrationHeaders(
-  context: Context,
-  report: ContextCheckpointCalibrationReport,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, report.contentSha256);
-  context.header("X-Napier-Thread-Id", report.threadId);
-  context.header("X-Napier-Event-Stream-SHA256", report.eventStreamSha256);
-  context.header(
-    "X-Napier-Message-Event-Count",
-    String(report.messageEventCount),
-  );
-  context.header("X-Napier-Checkpoint-Count", String(report.checkpointCount));
-  context.header(
-    "X-Napier-Verified-Checkpoint-Count",
-    String(report.verifiedCheckpointCount),
-  );
-  context.header(
-    "X-Napier-Drifted-Checkpoint-Count",
-    String(report.driftedCheckpointCount),
-  );
-  context.header(
-    "X-Napier-Malformed-Checkpoint-Count",
-    String(report.malformedCheckpointCount),
-  );
-  context.header(
-    "X-Napier-Context-Compaction-Failure-Count",
-    String(report.failureCount),
-  );
-  context.header(
-    "X-Napier-Covered-Message-Count",
-    String(report.coveredMessageCount),
-  );
-  context.header("X-Napier-Coverage-Rate", String(report.coverageRate));
-  context.header("X-Napier-Compression-Ratio", String(report.compressionRatio));
-  context.header(
-    "X-Napier-Fallback-Omitted-Message-Count",
-    String(report.fallbackOmittedMessageCount),
-  );
-  if (report.latestValidCheckpointId) {
-    context.header(
-      "X-Napier-Latest-Checkpoint-Id",
-      report.latestValidCheckpointId,
-    );
-  }
-  if (report.latestValidCheckpointSampleSha256) {
-    context.header(
-      "X-Napier-Latest-Checkpoint-Sample-SHA256",
-      report.latestValidCheckpointSampleSha256,
-    );
-  }
 }
 
 function setEvaluationCasebookListHeaders(
