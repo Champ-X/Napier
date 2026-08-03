@@ -39,6 +39,20 @@ Audit date: 2026-08-03
 
 ## Dogfood Evidence: Real DeepSeek Outcomes
 
+### Napier vs Oh My Pi Coding Calibration
+
+The first same-model calibration used `deepseek-v4-flash`, identical fixtures,
+prompts, 120-second limits, and hidden outcome tests across three ordered
+complexity levels. OMP passed the low and medium cases and timed out without a
+repair on the debugger case. Napier produced canonical repairs on the low and
+debugger cases, but nested macOS Sandbox unavailability made outcome tests,
+LSP, and DAP unavailable, yielding two inconclusive results and one evidence
+failure rather than a defensible pass. The comparison therefore records
+`not_proven`, not a superiority claim. The structured calibration artifact is
+`docs/artifacts/benchmarks/napier-omp-coding-comparison-calibration-20260804.json`.
+The next benchmark iteration must repair LSP/DAP/outcome execution, shuffle
+multiple trials, and rerun before using this evidence as a release claim.
+
 Observed on 2026-08-02 with `deepseek-v4-flash` loaded from the local
 environment:
 

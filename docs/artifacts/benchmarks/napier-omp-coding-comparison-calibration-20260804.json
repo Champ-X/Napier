@@ -1,0 +1,107 @@
+{
+  "type": "napier.executor-comparison-calibration",
+  "schemaVersion": 1,
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "taskSelection": {
+    "source": "napier hash-bound coding benchmark cases",
+    "complexityOrder": ["low", "medium", "high"],
+    "samePrompt": true,
+    "sameFixture": true,
+    "sameHiddenOutcomeTest": true,
+    "externalTimeoutMs": 120000
+  },
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nestedSandboxAvailable": false,
+    "ompVersion": "17.2.1",
+    "notes": [
+      "Napier outcome tests, LSP, and DAP were affected by nested macOS sandbox unavailability.",
+      "OMP used isolated profiles because its default agent database was locked.",
+      "OMP reported outer TRAE sandbox denials for unrelated user-level plugin paths."
+    ]
+  },
+  "cases": [
+    {
+      "caseId": "coding_shipping_boundary_v1",
+      "complexity": "low",
+      "napier": {
+        "officialStatus": "inconclusive",
+        "targetSemanticMatch": true,
+        "allowedChangeSetMatch": true,
+        "outcomeTestStatus": "unavailable",
+        "durationMs": 10064,
+        "costUsd": 0.0011099816,
+        "toolStarted": 3,
+        "toolFailed": 0
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 11600
+      }
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "complexity": "medium",
+      "napier": {
+        "officialStatus": "inconclusive",
+        "targetSemanticMatch": false,
+        "allowedChangeSetMatch": true,
+        "changedFileCount": 3,
+        "outcomeTestStatus": "unavailable",
+        "durationMs": 54161,
+        "costUsd": 0.0041065472,
+        "toolStarted": 23,
+        "toolFailed": 2,
+        "failedTools": ["lsp_references", "update_plan_step"]
+      },
+      "omp": {
+        "agentExitCode": 0,
+        "hiddenOutcomePassed": true,
+        "durationMs": 28243,
+        "lspAvailable": false
+      }
+    },
+    {
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "complexity": "high",
+      "napier": {
+        "officialStatus": "failed",
+        "targetSemanticMatch": true,
+        "allowedChangeSetMatch": true,
+        "outcomeTestStatus": "unavailable",
+        "durationMs": 23953,
+        "costUsd": 0.0020960688,
+        "toolStarted": 4,
+        "toolFailed": 1,
+        "failedTools": ["node_debugger"]
+      },
+      "omp": {
+        "agentExitCode": 1,
+        "hiddenOutcomePassed": false,
+        "durationMs": 121429,
+        "timedOut": true,
+        "workspaceChanged": false
+      }
+    }
+  ],
+  "summary": {
+    "napierOfficialPassed": 0,
+    "napierOfficialInconclusive": 2,
+    "napierOfficialFailed": 1,
+    "napierCanonicalTargetMatches": 2,
+    "ompHiddenOutcomePassed": 2,
+    "ompHiddenOutcomeFailed": 1,
+    "verdict": "not_proven",
+    "requiredFollowUps": [
+      "Make Coding Benchmark outcome execution reliable under the supported outer-sandbox environment.",
+      "Fix benchmark-workspace LSP startup and record actionable diagnostics.",
+      "Fix benchmark-workspace DAP startup or classify unavailable debugger infrastructure separately from model task failure.",
+      "Repeat multiple shuffled trials after infrastructure repair before making a competitiveness claim."
+    ]
+  }
+}
