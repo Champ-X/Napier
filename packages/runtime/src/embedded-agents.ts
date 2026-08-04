@@ -1,4 +1,5 @@
 import type { ModelRef, RunEvent, RunRecord } from "@napier/contracts";
+import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
 import type { AgentRuntime } from "./agent-runtime.js";
 import type { EventSink } from "./event-sink.js";
@@ -16,6 +17,7 @@ export interface RunEmbeddedAgentOptions {
   agentId?: string;
   title?: string;
   model?: ModelRef;
+  capabilityPreset?: AgentCapabilityPresetId;
   signal?: AbortSignal;
   onEvent?: EventSink;
 }
@@ -59,6 +61,9 @@ export class EmbeddedAgentService {
         threadId,
         text: prompt,
         ...(model !== undefined ? { model } : {}),
+        ...(options.capabilityPreset
+          ? { capabilityPreset: options.capabilityPreset }
+          : {}),
         ...(options.signal ? { signal: options.signal } : {}),
         onEvent,
       }),

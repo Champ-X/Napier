@@ -111,6 +111,8 @@ describe("Napier full-screen TUI", () => {
         "tui-bootstrap/faux-1",
         "--credential-env",
         "TUI_BOOTSTRAP_KEY",
+        "--preset",
+        "browser",
       ],
       {
         ...tuiIo(fixture.root, input, stdout, stderr),
@@ -119,6 +121,7 @@ describe("Napier full-screen TUI", () => {
       providersDependencies([provider]),
     );
     await ready(stdout);
+    expect(stdout.lastFrame()).toContain("preset Browser");
     input.write("Complete the first TUI task.\r");
     await waitForFrame(stdout, "TUI_BOOTSTRAP_RESULT");
     await waitForRunStatus(stdout, "completed");
@@ -147,6 +150,24 @@ describe("Napier full-screen TUI", () => {
         }),
       ]);
       expect(reopened.store.listThreads()).toHaveLength(2);
+      const thread = reopened.store
+        .listThreads()
+        .find((candidate) => candidate.title === "SDK Agent run");
+      expect(thread).toBeDefined();
+      expect(reopened.store.listRuns(thread!.id)[0]?.configuration).toEqual(
+        expect.objectContaining({
+          toolPolicy: "observe",
+          enabledTools: [
+            "browser",
+            "research_source",
+            "web_fetch",
+            "web_search",
+          ],
+        }),
+      );
+      expect(reopened.store.listAgentRevisions(thread!.agentId)).toHaveLength(
+        1,
+      );
     } finally {
       await reopened.shutdown();
     }

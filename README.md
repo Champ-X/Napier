@@ -529,6 +529,28 @@ grants `unrestricted`, and Web preset selection only fills the existing form
 until the user saves it. Chat/TUI `/status` and the Web composer display the
 same preset and permission labels.
 
+For one task or interactive session, pass the same strict preset ID directly
+to `run`, `chat`, or `tui`:
+
+```bash
+npm run --silent napier -- run \
+  --workspace . \
+  --prompt "Research the current behavior." \
+  --preset research
+npm run --silent napier -- chat --workspace . --preset browser
+npm run --silent napier -- tui --workspace . --preset safe_automation
+```
+
+This is a temporary per-Run projection. It freezes the selected policy, tools,
+Skills, and Subagents into each Run configuration and records the preset ID in
+the private `run.started` lifecycle evidence, but it does not update the Agent
+or append a profile revision. Chat and TUI apply the selected preset to every
+new prompt in that process and report the effective temporary status.
+`/resume`, recovery, schedules, channels, Workflows, and experiments cannot
+select a temporary preset. An operator-decision continuation reuses the origin
+Run's recorded preset and fails closed if its revision, model, or capabilities
+drift.
+
 For a production build served by the API process:
 
 ```bash

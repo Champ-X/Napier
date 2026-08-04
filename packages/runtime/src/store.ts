@@ -244,7 +244,12 @@ import {
   type VerifyPromptPackageRequest,
   type VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
+import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
+import {
+  assertOperatorDecisionCapabilityContinuation,
+  resolveAgentCapabilityProfile,
+} from "./agent-capability-override.js";
 import { createId, nowIso } from "./ids.js";
 import { DEFAULT_AGENT_ENABLED_TOOLS } from "./read-only-tool-names.js";
 import type { ChannelDeliveryExecution } from "./store-port.js";
@@ -787,6 +792,7 @@ export interface CreateRunInput {
   agentId: string;
   model?: AgentProfile["model"];
   agentRevision?: number;
+  capabilityPreset?: AgentCapabilityPresetId;
   executionMode?: RunExecutionMode;
   skillCatalogSha256?: string;
   promptVariables?: PromptVariableFingerprintInput;
@@ -11039,23 +11045,16 @@ export class LocalStore {
     if (thread.agentId !== input.agentId) {
       throw new Error("Run agent must match the thread agent");
     }
-    const agent = this.state.agents.find(
-      (candidate) => candidate.id === input.agentId,
-    );
-    if (!agent) throw new Error(`Agent not found: ${input.agentId}`);
-    const runAgent =
-      input.agentRevision === undefined
-        ? agent
-        : this.state.agentRevisions.find(
-            (revision) =>
-              revision.agentId === input.agentId &&
-              revision.revision === input.agentRevision,
-          )?.profile;
-    if (!runAgent) {
-      throw new Error(
-        `Agent revision not found: ${input.agentId}@${String(input.agentRevision)}`,
-      );
-    }
+    const effectiveRunAgent = resolveAgentCapabilityProfile({
+      agents: this.state.agents,
+      revisions: this.state.agentRevisions,
+      agentId: input.agentId,
+      ...(input.agentRevision !== undefined
+        ? { agentRevision: input.agentRevision }
+        : {}),
+      ...(input.capabilityPreset ? { presetId: input.capabilityPreset } : {}),
+      source: input.source ?? "user",
+    });
     const executionMode = input.executionMode ?? "standard";
     if (openOperatorDecision) {
       const originRun = this.state.runs.find(
@@ -11064,27 +11063,17 @@ export class LocalStore {
       if (
         !originRun ||
         originRun.threadId !== thread.id ||
-        originRun.agentId !== input.agentId ||
-        !originRun.configuration
+        originRun.agentId !== input.agentId
       ) {
         throw new Error(
           "Operator decision origin Run configuration is unavailable",
         );
       }
-      if (runAgent.revision !== originRun.agentRevision) {
-        throw new Error(
-          "Operator decision continuation must reuse the origin Agent revision",
-        );
-      }
-      const continuationModel = input.model ?? runAgent.model;
-      if (
-        continuationModel.provider !== originRun.configuration.model.provider ||
-        continuationModel.id !== originRun.configuration.model.id
-      ) {
-        throw new Error(
-          "Operator decision continuation must reuse the origin model",
-        );
-      }
+      assertOperatorDecisionCapabilityContinuation(
+        effectiveRunAgent,
+        originRun,
+        input.model,
+      );
     }
     const messageExperiment = input[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
     const modelInvocationExperiment =
@@ -11101,8 +11090,8 @@ export class LocalStore {
         executionMode,
         targetThreadId: input.threadId,
         targetAgentId: input.agentId,
-        targetAgentRevision: runAgent.revision,
-        targetModel: input.model ?? runAgent.model,
+        targetAgentRevision: effectiveRunAgent.revision,
+        targetModel: input.model ?? effectiveRunAgent.model,
         execution: modelInvocationExperiment,
         runs: this.state.runs,
         sourceEvents: modelInvocationExperiment
@@ -11122,8 +11111,8 @@ export class LocalStore {
         executionMode,
         targetThreadId: input.threadId,
         targetAgentId: input.agentId,
-        targetAgentRevision: runAgent.revision,
-        targetModel: input.model ?? runAgent.model,
+        targetAgentRevision: effectiveRunAgent.revision,
+        targetModel: input.model ?? effectiveRunAgent.model,
         execution: toolInvocationExperiment,
         runs: this.state.runs,
         sourceEvents: toolInvocationExperiment
@@ -11228,7 +11217,7 @@ export class LocalStore {
         !Number.isFinite(
           Date.parse(messageExperiment.sourcePromptVariableResolvedAt),
         ) ||
-        sourceRun.agentRevision !== runAgent.revision ||
+        sourceRun.agentRevision !== effectiveRunAgent.revision ||
         typeof sourceMessageText !== "string" ||
         sha256(sourceMessageText) !== messageExperiment.sourcePromptSha256 ||
         !/^[a-f0-9]{64}$/u.test(messageExperiment.previewSha256) ||
@@ -11294,13 +11283,13 @@ export class LocalStore {
       ...(input.triggerId ? { triggerId: input.triggerId } : {}),
       startedAt: nowIso(),
       usage: emptyUsage(),
-      agentRevision: runAgent.revision,
+      agentRevision: effectiveRunAgent.revision,
       limits: normalizeRunLimits(
-        runAgent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
+        effectiveRunAgent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
       ),
       configuration: createRunConfigurationFingerprint(
-        runAgent,
-        input.model ?? runAgent.model,
+        effectiveRunAgent,
+        input.model ?? effectiveRunAgent.model,
         executionMode,
         {
           ...(input.skillCatalogSha256

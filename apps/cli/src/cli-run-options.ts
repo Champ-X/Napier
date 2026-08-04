@@ -4,8 +4,10 @@ import {
   parseTimeout,
   requiredValue,
 } from "./cli-option-values.js";
+import { optionalCapabilityPreset } from "./cli-capability-options.js";
 import { parseCredentialEnvironment } from "./cli-credential-options.js";
 import type { CliExecutionOptions } from "./cli-execution-options.js";
+import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
 const MAX_PROMPT_BYTES = 64 * 1_024;
 const MAX_TITLE_CHARS = 160;
@@ -16,6 +18,7 @@ export interface CliRunOptions extends CliExecutionOptions {
   threadId?: string;
   title?: string;
   credentialEnv?: string;
+  capabilityPreset?: AgentCapabilityPresetId;
 }
 
 export const RUN_VALUE_OPTIONS = new Set([
@@ -25,6 +28,7 @@ export const RUN_VALUE_OPTIONS = new Set([
   "--model",
   "--credential-env",
   "--agent",
+  "--preset",
   "--thread",
   "--title",
   "--timeout-ms",
@@ -51,6 +55,7 @@ export function parseRunOptions(
   }
   const model = optionalModelRef(values);
   const credentialEnv = parseCredentialEnvironment(values, model);
+  const capabilityPreset = optionalCapabilityPreset(values);
   return {
     kind: "run",
     options: {
@@ -63,6 +68,7 @@ export function parseRunOptions(
         : {}),
       ...(model ? { model } : {}),
       ...(credentialEnv ? { credentialEnv } : {}),
+      ...(capabilityPreset ? { capabilityPreset } : {}),
       ...(agentId ? { agentId } : {}),
       ...(threadId ? { threadId } : {}),
       ...(title ? { title } : {}),

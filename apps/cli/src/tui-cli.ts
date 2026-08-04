@@ -6,7 +6,6 @@ import {
   type EmbeddedAgentExecution,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
-import { agentCapabilityStatus } from "@napier/contracts/agent-capabilities";
 
 import type { CliChatOptions } from "./cli-chat-options.js";
 import { configureCliModelCredential } from "./cli-model-credential.js";
@@ -20,6 +19,7 @@ import { TuiInputController, type TuiInputAction } from "./tui-input.js";
 import { TuiSessionState } from "./tui-state.js";
 import { TuiOutputError, TuiTerminal } from "./tui-terminal.js";
 import { canonicalWorkspace } from "./workspace-path.js";
+import { interactiveCapabilityStatus } from "./interactive-capability-status.js";
 
 const INTERRUPT_DEBOUNCE_MS = 100;
 
@@ -245,15 +245,17 @@ export async function executeTui(
         } else if (command.kind === "thread") {
           state.setThread(command.threadId);
           state.setCapabilities(
-            agentCapabilityStatus(
+            interactiveCapabilityStatus(
               activeTuiAgent(services!, undefined, command.threadId),
+              options.capabilityPreset,
             ),
           );
         } else if (command.kind === "new") {
           state.setNewThread(command.title);
           state.setCapabilities(
-            agentCapabilityStatus(
+            interactiveCapabilityStatus(
               activeTuiAgent(services!, options.agentId, undefined),
+              options.capabilityPreset,
             ),
           );
         } else if (command.kind === "clear") {
@@ -290,6 +292,9 @@ export async function executeTui(
           ? { title: state.pendingTitle()! }
           : {}),
         ...(state.currentModel() ? { model: state.currentModel()! } : {}),
+        ...(options.capabilityPreset
+          ? { capabilityPreset: options.capabilityPreset }
+          : {}),
         signal,
         onEvent,
       }),
@@ -324,8 +329,9 @@ export async function executeTui(
     sessionController.signal.throwIfAborted();
     await configureCliModelCredential(services, options, io.env);
     state.setCapabilities(
-      agentCapabilityStatus(
+      interactiveCapabilityStatus(
         activeTuiAgent(services, options.agentId, state.currentThreadId()),
+        options.capabilityPreset,
       ),
     );
     sessionController.signal.throwIfAborted();

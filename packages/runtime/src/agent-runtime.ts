@@ -60,9 +60,15 @@ import {
 } from "./agent-tool-ledger.js";
 import { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
 import type { AgentNetworkCapabilities } from "./agent-capability-runtime.js";
+import {
+  resolveOperatorDecisionCapabilityContinuation,
+  resolveAgentCapabilityProfileFromStore,
+} from "./agent-capability-override.js";
+import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
+import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
@@ -169,6 +175,7 @@ export interface RunPromptOptions {
   text: string;
   model?: ModelRef;
   agentRevision?: number;
+  capabilityPreset?: AgentCapabilityPresetId | undefined;
   executionMode?: RunExecutionMode;
   signal?: AbortSignal;
   onEvent?: EventSink;
@@ -293,14 +300,15 @@ export class AgentRuntime {
     }
 
     const thread = this.store.getThread(options.threadId);
-    const currentAgent = this.store.getAgent(thread.agentId);
-    const agentSnapshot =
-      options.agentRevision === undefined
-        ? currentAgent
-        : this.store.getAgentRevision(currentAgent.id, options.agentRevision)
-            .profile;
-    const modelRef = options.model ?? agentSnapshot.model;
     const invocationSource = requestedSource ?? "user";
+    const effectiveAgentSnapshot = resolveAgentCapabilityProfileFromStore(
+      this.store,
+      thread.agentId,
+      options.agentRevision,
+      options.capabilityPreset,
+      invocationSource,
+    );
+    const modelRef = options.model ?? effectiveAgentSnapshot.model;
     const workflowInvocation = isWorkflowRunSource(invocationSource);
     const messageExperiment = options[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
     const toolResultReplay = options[AGENT_MESSAGE_TOOL_RESULT_REPLAY];
@@ -320,11 +328,11 @@ export class AgentRuntime {
     }
     const skillCatalog = await loadWorkspaceSkills(
       this.store.workspaceRoot,
-      agentSnapshot.enabledSkills,
+      effectiveAgentSnapshot.enabledSkills,
     );
     const promptVariables = resolvePromptVariables({
-      systemPrompt: agentSnapshot.systemPrompt,
-      definitions: agentSnapshot.promptVariables,
+      systemPrompt: effectiveAgentSnapshot.systemPrompt,
+      definitions: effectiveAgentSnapshot.promptVariables,
       skillCatalogText: formatSkillCatalog(skillCatalog.skills),
       ...(messageExperiment
         ? {
@@ -335,14 +343,17 @@ export class AgentRuntime {
         : {}),
     });
     const toolLoopGuardContext = createToolLoopGuardContextReceipt(
-      agentSnapshot.toolLoopGuard,
+      effectiveAgentSnapshot.toolLoopGuard,
     );
     const leasedRun = await this.store.createLeasedRun(
       {
         threadId: thread.id,
-        agentId: agentSnapshot.id,
+        agentId: effectiveAgentSnapshot.id,
         model: modelRef,
         source: invocationSource,
+        ...(options.capabilityPreset
+          ? { capabilityPreset: options.capabilityPreset }
+          : {}),
         skillCatalogSha256: skillCatalog.fingerprint.contentSha256,
         promptVariables: {
           catalogSha256: promptVariables.snapshot.catalogSha256,
@@ -379,7 +390,7 @@ export class AgentRuntime {
       },
     );
     const run = leasedRun.run;
-    const agentProfile = effectiveRunProfile(agentSnapshot, run);
+    const agentProfile = effectiveRunProfile(effectiveAgentSnapshot, run);
     const restrictedReadOnlyExecution =
       modernRunConfiguration(run.configuration) &&
       run.configuration.executionMode !== "standard";
@@ -424,35 +435,16 @@ export class AgentRuntime {
           type: "run.started",
           category: "lifecycle",
           visibility: "debug",
-          payload: toJsonValue({
-            agentId: agentProfile.id,
-            model: `${modelRef.provider}/${modelRef.id}`,
+          payload: createAgentRunStartedPayload({
+            agent: agentProfile,
+            model: modelRef,
             source: invocationSource,
-            agentRevision: run.agentRevision ?? agentProfile.revision,
+            run,
             limits: run.limits ?? budget.limits,
-            ...(run.configuration
-              ? {
-                  configurationSha256: run.configuration.contentSha256,
-                }
-              : {}),
-            ...(options.triggerId ? { triggerId: options.triggerId } : {}),
-            ...(options.parentRunId
-              ? { parentRunId: options.parentRunId }
-              : {}),
-            ...(options.recovery
-              ? {
-                  recoveryMode: options.recovery.mode,
-                  ...(options.recovery.attemptId
-                    ? { recoveryAttemptId: options.recovery.attemptId }
-                    : {}),
-                  ...(options.recovery.assessmentSha256
-                    ? {
-                        recoveryAssessmentSha256:
-                          options.recovery.assessmentSha256,
-                      }
-                    : {}),
-                }
-              : {}),
+            triggerId: options.triggerId,
+            capabilityPreset: options.capabilityPreset,
+            parentRunId: options.parentRunId,
+            recovery: options.recovery,
           }),
         },
         options.onEvent,
@@ -943,29 +935,16 @@ export class AgentRuntime {
         `Operator decision cannot continue in ${decision.status} state`,
       );
     }
-    const originRun = this.store
-      .listRuns(options.threadId)
-      .find((run) => run.id === decision.runId);
-    if (!originRun) {
-      throw new Error(
-        `Operator decision origin Run not found: ${decision.runId}`,
-      );
-    }
-    if (isWorkflowRunSource(originRun.source)) {
-      throw new Error(
-        "Workflow operator decisions must continue through their Workflow Plan",
-      );
-    }
+    const continuation = await resolveOperatorDecisionCapabilityContinuation(
+      this.store,
+      options.threadId,
+      decision.runId,
+    );
     return this.runPrompt({
       threadId: options.threadId,
       text: formatOperatorDecisionContinuation(decision),
-      ...(originRun.configuration
-        ? { model: originRun.configuration.model }
-        : {}),
-      ...(originRun.agentRevision !== undefined
-        ? { agentRevision: originRun.agentRevision }
-        : {}),
-      parentRunId: originRun.id,
+      ...continuation.runOptions,
+      parentRunId: continuation.originRun.id,
       operatorDecisionId: decision.id,
       source: "user",
       ...(options.signal ? { signal: options.signal } : {}),

@@ -60,6 +60,7 @@ Chat options:
   --agent <agent-id>     Agent for the first new Thread
   --thread <thread-id>   Continue this existing Thread
   --title <text>         Title for the first new Thread
+  --preset <id>          Temporary preset for each new Run; Agent stays unchanged
   --model <provider/id>  Initial model; --credential-env <var> bootstraps it
 
 TUI options:
@@ -71,6 +72,7 @@ Run options:
   --agent <agent-id>     Agent for a new Thread
   --thread <thread-id>   Append to an existing Thread
   --title <text>         Title for a new Thread
+  --preset <id>          Temporary capability preset for this Run only
 
 Resume options:
   --thread <thread-id>   Waiting Thread containing an interrupted Run

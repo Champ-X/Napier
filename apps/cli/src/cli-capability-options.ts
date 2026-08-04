@@ -20,20 +20,27 @@ export const CAPABILITY_VALUE_OPTIONS = new Set([
 ]);
 export const CAPABILITY_FLAG_OPTIONS = new Set(["--apply"]);
 
-export function parseCapabilityOptions(
+export function optionalCapabilityPreset(
   values: Map<string, string>,
-  flags: ReadonlySet<string>,
-  jsonl: boolean,
-): { kind: "capabilities"; options: CliCapabilityOptions } {
-  const preset = values.get("--preset")?.trim();
+): AgentCapabilityPresetId | undefined {
+  if (!values.has("--preset")) return undefined;
+  const preset = requiredValue(values, "--preset");
   if (
-    preset !== undefined &&
     !AGENT_CAPABILITY_PRESET_IDS.includes(preset as AgentCapabilityPresetId)
   ) {
     throw new Error(
       `--preset must be one of ${AGENT_CAPABILITY_PRESET_IDS.join(", ")}`,
     );
   }
+  return preset as AgentCapabilityPresetId;
+}
+
+export function parseCapabilityOptions(
+  values: Map<string, string>,
+  flags: ReadonlySet<string>,
+  jsonl: boolean,
+): { kind: "capabilities"; options: CliCapabilityOptions } {
+  const preset = optionalCapabilityPreset(values);
   if (flags.has("--apply") && !preset) {
     throw new Error("--apply requires --preset");
   }
@@ -49,7 +56,7 @@ export function parseCapabilityOptions(
       ...(optionalResourceId(values, "--agent")
         ? { agentId: optionalResourceId(values, "--agent")! }
         : {}),
-      ...(preset ? { presetId: preset as AgentCapabilityPresetId } : {}),
+      ...(preset ? { presetId: preset } : {}),
     },
   };
 }

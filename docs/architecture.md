@@ -585,9 +585,15 @@ napier capabilities
   -> preview overlays a preset in memory; revision remains unchanged
   -> --apply calls LocalStore.updateAgent with the exact projection
   -> ordinary validation, semantic no-op behavior, and immutable history apply
+napier run/chat/tui --preset <id>
+  -> strict CLI parsing accepts only the five shared preset IDs
+  -> AgentRuntime overlays the selected preset on the requested Agent revision
+  -> LocalStore fingerprints the effective policy/tools/Skills/Subagents
+  -> run.started records the preset ID beside the configuration SHA-256
+  -> the stored Agent profile and immutable revision history remain unchanged
 Chat/TUI /status
   -> resolve the current Thread Agent or requested default Agent
-  -> render the same shared projection
+  -> overlay the process preset, when present, and render effective Run truth
 Web
   -> composer badge renders the same projection
   -> Context preset selector fills existing form fields only
@@ -608,8 +614,17 @@ unavailable. Coding and Safe Automation use `workspace`, so they can use
 preview-bound workspace writes and sandboxed process tools while Browser
 interaction remains denied. Raw custom profile editing remains available and
 is truthfully labeled `Custom`. Doctor remains the separate source of truth for
-live model, network, Browser, and Sandbox readiness. The complete repository
-gate passes 2,160 regular tests.
+live model, network, Browser, and Sandbox readiness.
+
+Temporary presets are admitted only for standard `user` Runs. Recovery,
+schedules, channels, Workflows, and model/tool/Agent experiments fail closed if
+a preset is supplied. Resume intentionally has no `--preset` option.
+Operator-decision continuations resolve the origin preset from durable
+`run.started` evidence and Store rechecks exact revision, model, policy, tools,
+Skills, and Subagents against the origin fingerprint before creating the
+linked Run. Preset identity remains evidence metadata rather than a second Run
+configuration schema; the existing fingerprint already freezes the effective
+authority.
 
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate

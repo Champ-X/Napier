@@ -50,9 +50,10 @@ Audit date: 2026-08-04
   Browser, and Safe Automation labels onto the existing revisioned Agent
   fields. `napier capabilities` supports status, non-mutating preview, and
   revisioned apply; Chat/TUI `/status` and Web show the same permission truth.
-  Browser remains read-only and reports interaction unavailable. Guided
-  credential Setup, dependency remediation, temporary per-Run overrides, and
-  confirmed Browser interaction remain P0.
+  `run`, `chat`, and `tui` also accept temporary per-Run presets without
+  revising the Agent. Browser remains read-only and reports interaction
+  unavailable. Guided credential Setup, dependency remediation, and confirmed
+  Browser interaction remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
@@ -1095,8 +1096,8 @@ Threat boundary:
 - capability status reports configured authority, not live dependency health.
   Doctor remains authoritative for model, network, Chrome, and Sandbox
   readiness;
-- action-bound Browser confirmation, temporary per-Run overrides, and Setup
-  Wizard remediation remain separate P0 work.
+- action-bound Browser confirmation and Setup Wizard remediation remain
+  separate P0 work.
 
 Observed result:
 
@@ -1123,10 +1124,69 @@ Observed result:
   cycles with reduced CLI/App/Context budgets and no root-barrel growth;
 - the complete regular suite passes 2,160 tests: Root 105, CLI 181, Server
   183, Web 490, Runtime 1,173, and SDK 28;
-- P0 remains in progress pending guided credential/dependency Setup, temporary
-  run overrides, cross-entry live readiness, Browser action preview and
-  effect-specific confirmation, Browser Live/takeover, and five-minute
-  onboarding proof.
+- P0 remains in progress pending guided credential/dependency Setup,
+  cross-entry live readiness, Browser action preview and effect-specific
+  confirmation, Browser Live/takeover, and five-minute onboarding proof.
+
+## Implemented Slice: Temporary per-Run Capability Presets
+
+User scenario: a user can choose a safe task mode for one CLI Run or one
+Chat/TUI process without permanently changing the selected Agent profile.
+
+Acceptance:
+
+- accept `--preset coding|research|data|browser|safe_automation` on `run`,
+  `chat`, and `tui`;
+- project the preset before Skill loading, prompt-variable resolution, tool
+  assembly, policy checks, limits, and Run fingerprint creation;
+- freeze exact effective policy, tools, Skills, and Subagents into the existing
+  Run configuration fingerprint and record the selected preset ID in
+  `run.started`;
+- leave the Agent profile and revision history unchanged;
+- apply a Chat/TUI process preset to each new prompt and show its effective
+  read/write/Browser truth in `/status` and the persistent TUI line;
+- reject temporary presets for recovery, schedules, channels, Workflows, and
+  experiments; do not expose the option on resume;
+- preserve the origin preset across an operator-decision continuation and
+  reject revision, model, or capability drift.
+
+Threat boundary:
+
+- a preset remains a deterministic projection over the existing Agent fields;
+  Runtime policy remains authoritative before every tool call;
+- only standard `user` Runs accept the override. Internal invocation sources
+  cannot silently widen authority;
+- preset identity is lifecycle evidence, not a second authority schema. The
+  existing hash-bound Run fingerprint remains the source of truth for exact
+  effective capabilities;
+- Browser remains read-only under Browser, Research, and Safe Automation
+  presets. No temporary preset grants `unrestricted` or action confirmation;
+- continuation preset recovery reads the trusted origin `run.started` event,
+  then Store compares revision, model, policy, tools, Skills, and Subagents
+  against the origin fingerprint before admitting the linked Run.
+
+Observed result:
+
+- focused Runtime and CLI tests cover strict parsing, `unrestricted`
+  rejection, effective fingerprint projection, lifecycle evidence, Agent
+  non-mutation, source rejection, default one-shot execution, Chat status,
+  TUI status, and operator-decision continuation preservation;
+- built-binary Dogfood ran one-shot CLI, Chat, and TUI against isolated state.
+  All three Runs recorded Browser read-only fingerprints and
+  `capabilityPreset=browser`; the Agent remained revision 1 with exactly one
+  immutable revision;
+- Chat reported
+  `Capabilities: Browser / Read only / browser read / interact no`, while TUI
+  showed `preset Browser`;
+- architecture lowered `agent-runtime.ts` from 3,703 to 3,682 lines, Store from
+  14,473 to 14,462 lines, and Agent Runtime maximum complexity from 77 to 70;
+- the complete gate passes 925 production source files, 453 test files, zero
+  cycles, and 2,165 regular tests: Root 105, CLI 184, Server 183, Web 490,
+  Runtime 1,175, and SDK 28;
+- P0 remains in progress pending guided Setup/live readiness, action-bound
+  Browser preview and confirmation, Browser Live/takeover/resume, generic
+  login/CAPTCHA fallback, cross-restart Sources, and repeated open-web
+  Research/Security reliability.
 
 ## Implemented Slice: Research Outcome Benchmark
 

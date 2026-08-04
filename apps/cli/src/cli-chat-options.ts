@@ -1,5 +1,7 @@
 import type { ModelRef } from "@napier/contracts";
+import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
+import { optionalCapabilityPreset } from "./cli-capability-options.js";
 import {
   optionalModelRef,
   optionalResourceId,
@@ -20,6 +22,7 @@ export interface CliChatOptions {
   threadId?: string;
   title?: string;
   credentialEnv?: string;
+  capabilityPreset?: AgentCapabilityPresetId;
 }
 
 export interface CliChatAction {
@@ -38,6 +41,7 @@ export const CHAT_VALUE_OPTIONS = new Set([
   "--model",
   "--credential-env",
   "--agent",
+  "--preset",
   "--thread",
   "--title",
   "--timeout-ms",
@@ -81,6 +85,7 @@ function parseInteractiveOptions(
   }
   const model = optionalModelRef(values);
   const credentialEnv = parseCredentialEnvironment(values, model);
+  const capabilityPreset = optionalCapabilityPreset(values);
   return {
     workspace: requiredValue(values, "--workspace"),
     timeoutMs: parseTimeout(values.get("--timeout-ms")),
@@ -90,6 +95,7 @@ function parseInteractiveOptions(
       : {}),
     ...(model ? { model } : {}),
     ...(credentialEnv ? { credentialEnv } : {}),
+    ...(capabilityPreset ? { capabilityPreset } : {}),
     ...(agentId ? { agentId } : {}),
     ...(threadId ? { threadId } : {}),
     ...(title ? { title } : {}),

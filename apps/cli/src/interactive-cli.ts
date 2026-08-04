@@ -3,7 +3,6 @@ import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 
 import type { RunRecord } from "@napier/contracts";
-import { agentCapabilityStatus } from "@napier/contracts/agent-capabilities";
 import {
   streamRunErrorFrame,
   type EmbeddedAgentExecution,
@@ -26,6 +25,7 @@ import {
   InteractiveOutputError,
 } from "./interactive-renderer.js";
 import { canonicalWorkspace } from "./workspace-path.js";
+import { interactiveCapabilityStatus } from "./interactive-capability-status.js";
 
 const INTERRUPT_DEBOUNCE_MS = 100;
 
@@ -102,8 +102,9 @@ export async function executeInteractive(
     });
     parentSignal?.throwIfAborted();
     await configureCliModelCredential(services, options, io.env);
-    capabilities = agentCapabilityStatus(
+    capabilities = interactiveCapabilityStatus(
       activeInteractiveAgent(services, options.agentId, threadId),
+      options.capabilityPreset,
     );
     parentSignal?.throwIfAborted();
     const inputLoop = createInterface({
@@ -178,16 +179,18 @@ export async function executeInteractive(
             threadId = command.threadId;
             nextTitle = undefined;
             lastRun = undefined;
-            capabilities = agentCapabilityStatus(
+            capabilities = interactiveCapabilityStatus(
               activeInteractiveAgent(services, undefined, threadId),
+              options.capabilityPreset,
             );
             await writeLine(io.stderr, `Thread: ${threadId}`);
           } else if (command.kind === "new") {
             nextTitle = command.title;
             threadId = undefined;
             lastRun = undefined;
-            capabilities = agentCapabilityStatus(
+            capabilities = interactiveCapabilityStatus(
               activeInteractiveAgent(services, options.agentId, undefined),
+              options.capabilityPreset,
             );
             await writeLine(
               io.stderr,
@@ -240,6 +243,9 @@ export async function executeInteractive(
               ...(options.agentId ? { agentId: options.agentId } : {}),
               ...(!threadId && nextTitle ? { title: nextTitle } : {}),
               ...(model ? { model } : {}),
+              ...(options.capabilityPreset
+                ? { capabilityPreset: options.capabilityPreset }
+                : {}),
               signal,
               onEvent: (event) => renderer.render(event),
             }),
@@ -257,8 +263,9 @@ export async function executeInteractive(
           threadId = execution.threadId;
           nextTitle = undefined;
           lastRun = execution.run;
-          capabilities = agentCapabilityStatus(
+          capabilities = interactiveCapabilityStatus(
             activeInteractiveAgent(services, undefined, threadId),
+            options.capabilityPreset,
           );
         }
       }

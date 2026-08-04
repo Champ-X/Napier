@@ -123,7 +123,6 @@ export async function runCli(
   }
   return executeWorkflow(action.options, io, dependencies, parentSignal);
 }
-
 async function executeRun(
   options: CliRunOptions,
   io: CliIo,
@@ -148,6 +147,7 @@ async function executeRun(
             threadId: thread.id,
             text: options.prompt,
             ...(options.model ? { model: options.model } : {}),
+            capabilityPreset: options.capabilityPreset,
             signal,
             ...(onEvent ? { onEvent } : {}),
           }),
