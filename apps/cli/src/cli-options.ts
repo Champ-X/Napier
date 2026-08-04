@@ -1,29 +1,21 @@
 import type { AgentMessageExperimentToolResultMode } from "@napier/contracts";
 
 import {
-  CHAT_VALUE_OPTIONS,
   parseChatOptions,
   parseTuiOptions,
   type CliChatAction,
   type CliTuiAction,
 } from "./cli-chat-options.js";
 import {
-  CAPABILITY_FLAG_OPTIONS,
-  CAPABILITY_VALUE_OPTIONS,
-  parseCapabilityOptions,
-  type CliCapabilityOptions,
-} from "./cli-capability-options.js";
+  commandFlagOptions,
+  commandValueOptions,
+  knownCliCommand,
+} from "./cli-command-options.js";
 import {
   parseCliOptions,
   parseNonNegativeInteger,
   parsePositiveInteger,
 } from "./cli-option-parser.js";
-import {
-  DOCTOR_FLAG_OPTIONS,
-  DOCTOR_VALUE_OPTIONS,
-  parseDoctorOptions,
-  type CliDoctorOptions,
-} from "./cli-doctor-options.js";
 import { CLI_HELP, CLI_VERSION } from "./cli-help.js";
 import type {
   CliExecutionOptions,
@@ -38,15 +30,14 @@ import {
 } from "./cli-option-values.js";
 import {
   parseWorkflowOptions as parseWorkflowOptionsDomain,
-  WORKFLOW_FLAG_OPTIONS,
-  WORKFLOW_VALUE_OPTIONS,
   type CliWorkflowOptions,
 } from "./cli-workflow-options.js";
 import {
   parseRunOptions,
-  RUN_VALUE_OPTIONS,
   type CliRunOptions,
 } from "./cli-run-options.js";
+import { parseFirstUseCliAction } from "./cli-first-use.js";
+import type { CliFirstUseAction } from "./cli-first-use-model.js";
 
 export type { CliWorkflowOptions };
 export type { CliRunOptions };
@@ -106,8 +97,7 @@ export interface CliRpcOptions {
 export type CliAction =
   | { kind: "help" }
   | { kind: "version" }
-  | { kind: "capabilities"; options: CliCapabilityOptions }
-  | { kind: "doctor"; options: CliDoctorOptions }
+  | CliFirstUseAction
   | { kind: "run"; options: CliRunOptions }
   | CliChatAction
   | CliTuiAction
@@ -180,20 +170,6 @@ const TOOL_EXPERIMENT_VALUE_OPTIONS = new Set([
 ]);
 const TOOL_EXPERIMENT_FLAG_OPTIONS = new Set(["--preview"]);
 const RPC_VALUE_OPTIONS = new Set(["--workspace", "--data-root"]);
-const CLI_COMMANDS = new Set([
-  "run",
-  "chat",
-  "tui",
-  "capabilities",
-  "doctor",
-  "resume",
-  "branch",
-  "experiment",
-  "model-experiment",
-  "tool-experiment",
-  "rpc",
-  "workflow",
-]);
 export function parseCliArgs(argv: string[]): CliAction {
   if (argv.length === 0 || argv[0] === "--help" || argv[0] === "-h") {
     return { kind: "help" };
@@ -203,19 +179,28 @@ export function parseCliArgs(argv: string[]): CliAction {
     return { kind: "version" };
   }
   const command = argv[0]!;
-  if (!CLI_COMMANDS.has(command)) throw new Error("Unknown command");
+  if (!knownCliCommand(command)) throw new Error("Unknown command");
   if (argv.length === 2 && (argv[1] === "--help" || argv[1] === "-h")) {
     return { kind: "help" };
   }
   const { values, flags, jsonl } = parseCliOptions(
     argv.slice(1),
-    commandValueOptions(command),
-    commandFlagOptions(command),
+    commandValueOptions(command, {
+      resume: RESUME_VALUE_OPTIONS,
+      branch: BRANCH_VALUE_OPTIONS,
+      experiment: EXPERIMENT_VALUE_OPTIONS,
+      modelExperiment: MODEL_EXPERIMENT_VALUE_OPTIONS,
+      toolExperiment: TOOL_EXPERIMENT_VALUE_OPTIONS,
+      rpc: RPC_VALUE_OPTIONS,
+    }),
+    commandFlagOptions(command, {
+      experiment: EXPERIMENT_FLAG_OPTIONS,
+      modelExperiment: MODEL_EXPERIMENT_FLAG_OPTIONS,
+      toolExperiment: TOOL_EXPERIMENT_FLAG_OPTIONS,
+    }),
   );
-  if (command === "doctor") return parseDoctorOptions(values, flags, jsonl);
-  if (command === "capabilities") {
-    return parseCapabilityOptions(values, flags, jsonl);
-  }
+  const firstUse = parseFirstUseCliAction(command, values, flags, jsonl);
+  if (firstUse) return firstUse;
   if (command === "run") return parseRunOptions(values, jsonl);
   if (command === "chat") return parseChatOptions(values, jsonl);
   if (command === "tui") return parseTuiOptions(values, jsonl);
@@ -232,30 +217,6 @@ export function parseCliArgs(argv: string[]): CliAction {
   }
   if (command === "rpc") return parseRpcOptions(values, jsonl);
   return parseWorkflowOptions(values, flags, jsonl);
-}
-
-function commandValueOptions(command: string): ReadonlySet<string> {
-  if (command === "run") return RUN_VALUE_OPTIONS;
-  if (command === "capabilities") return CAPABILITY_VALUE_OPTIONS;
-  if (command === "doctor") return DOCTOR_VALUE_OPTIONS;
-  if (command === "chat" || command === "tui") return CHAT_VALUE_OPTIONS;
-  if (command === "resume") return RESUME_VALUE_OPTIONS;
-  if (command === "branch") return BRANCH_VALUE_OPTIONS;
-  if (command === "experiment") return EXPERIMENT_VALUE_OPTIONS;
-  if (command === "model-experiment") return MODEL_EXPERIMENT_VALUE_OPTIONS;
-  if (command === "tool-experiment") return TOOL_EXPERIMENT_VALUE_OPTIONS;
-  if (command === "rpc") return RPC_VALUE_OPTIONS;
-  return WORKFLOW_VALUE_OPTIONS;
-}
-
-function commandFlagOptions(command: string): ReadonlySet<string> {
-  if (command === "doctor") return DOCTOR_FLAG_OPTIONS;
-  if (command === "capabilities") return CAPABILITY_FLAG_OPTIONS;
-  if (command === "workflow") return WORKFLOW_FLAG_OPTIONS;
-  if (command === "experiment") return EXPERIMENT_FLAG_OPTIONS;
-  if (command === "model-experiment") return MODEL_EXPERIMENT_FLAG_OPTIONS;
-  if (command === "tool-experiment") return TOOL_EXPERIMENT_FLAG_OPTIONS;
-  return new Set();
 }
 
 function parseResumeOptions(

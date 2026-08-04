@@ -46,8 +46,11 @@ Audit date: 2026-08-04
 - The formal `napier doctor` CLI now diagnoses canonical workspace/runtime,
   optional model credential presence, keyless Search, HTML Fetch, sandboxed
   Chrome, and the OS process Sandbox without creating `.napier` state.
-  Setup Wizard, guided credential creation, Web/TUI capability status, and
-  broader LSP/DAP/Python/onboarding remediation remain P0.
+  `napier setup` and the first-use Web Live Provider docket now preview five
+  known environment locators, require exact-hash explicit apply, verify the
+  credential and pinned model, and preserve the onboarding ledger and Agent
+  revision. Dependency remediation, broader TUI guidance, and broader
+  LSP/DAP/Python/onboarding remediation remain P0.
 - Five shared capability presets now map user-facing Coding, Research, Data,
   Browser, and Safe Automation labels onto the existing revisioned Agent
   fields. `napier capabilities` supports status, non-mutating preview, and
@@ -55,9 +58,8 @@ Audit date: 2026-08-04
   `run`, `chat`, and `tui` also accept temporary per-Run presets without
   revising the Agent. Browser and Research remain read-only. Safe Automation
   now exposes Browser interaction in Web only through exact one-use
-  confirmations; CLI/TUI remain read-only. Guided credential Setup, dependency
-  remediation, direct Browser takeover, and broader interaction reliability
-  remain P0.
+  confirmations; CLI/TUI remain read-only. Dependency remediation, direct
+  Browser takeover, and broader interaction reliability remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
@@ -74,11 +76,76 @@ Audit date: 2026-08-04
   unchanged.
 - General host shell execution remains unavailable.
 
+## Implemented Slice: Preview-Bound Live Provider Setup
+
+User scenario: a first-time user can discover and explicitly enable one known
+Provider environment locator from CLI or the first-use Web ledger, then use the
+untouched live-ready default without opening advanced Context configuration.
+
+Acceptance:
+
+- preview only five named standard environment locators and pinned stable
+  models; environment presence reports `available` but grants no authority;
+- require exact preview SHA-256 plus selected Provider for every apply;
+- create or re-enable only the matching credential reference, verify the
+  locator and model through the shared Runtime, and disable a newly changed
+  reference when verification fails;
+- preserve the existing onboarding ledger, Agent profile, and Agent revision;
+- return no-store hash-bound HTTP evidence and expose no secret value,
+  credential ID, workspace path, or raw provider error;
+- expose the same preview/apply semantics through `napier setup` and the
+  first-use Web Live Provider docket;
+- refresh Web Bootstrap after success so an untouched demo selection follows
+  the live-ready recommendation while an explicit model choice remains intact;
+- keep setup code in leaf Contracts, Runtime, Server, CLI, and Web modules,
+  lower stale central-file budgets, and add no root-barrel export.
+
+Threat boundary:
+
+- setup recognizes only the fixed DeepSeek, OpenRouter, Anthropic, OpenAI, and
+  Google environment-variable names. Custom variables and Keychain locators
+  remain explicit advanced Context operations;
+- the preview hash is a compare-and-swap guard, not proof that a secret stays
+  valid forever. Normal model admission rechecks the active reference;
+- credential availability verifies that the locator resolves to a non-empty
+  value. The model check verifies current Provider authentication metadata; a
+  later network outage remains a normal classified Run failure;
+- setup changes credential-reference state only. It does not create a task
+  Thread, mutate the Agent, choose a capability preset, or authorize ambient
+  variables not selected by the operator.
+
+Observed result:
+
+- focused Runtime, HTTP, CLI, and Web suites cover non-mutating preview,
+  stale-hash rejection, conflict refusal, rollback to disabled, secret
+  omission, formal two-step CLI apply, Bootstrap live-default refresh, and
+  first-use visibility through the onboarding assistant message;
+- management OpenAPI now publishes 263 routes including both setup operations,
+  and the regenerated compatibility fixture verifies all 263 operations;
+- clean-state built CLI Dogfood previewed `DEEPSEEK_API_KEY`, applied the exact
+  SHA-256, reached `ready`, then omitted both `--model` and
+  `--credential-env`; the unchanged default Agent completed Search + Fetch
+  against the official RFC Editor page and returned `HTTP/3`;
+- isolated production Web Dogfood rendered **Enable DeepSeek** on the existing
+  onboarding ledger, exposed all five locator names with zero password inputs,
+  applied once, refreshed to `deepseek-v4-flash`, and completed Search + Fetch
+  against the official RFC Editor page with `HTTP/1.1`;
+- the Web run retained exactly one onboarding Thread, one credential
+  reference, Agent model `napier/demo`, and one Agent revision. Desktop and
+  390 px mobile checks had no horizontal overflow or browser console/page
+  errors; the audited production Web main chunk remained 136.70 KiB under
+  150 KiB;
+- the complete repository gate passes 2,228 regular tests: Root 105, CLI 190,
+  Server 193, Web 507, Contracts 3, Runtime 1,202, and SDK 28. Architecture
+  audits 965 production source files and 475 test files with zero cycles;
+  current performance, 263/263 OpenAPI compatibility operations, 82-file Web
+  distribution evidence, and the 119-artifact release receipt all pass.
+
 ## Priority Matrix
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 web connectivity               | In progress    | Default Search, Fetch, Browser, and Research Source now cover keyless discovery, bounded HTML/Markdown/JSON/text/PDF reading, conservative automatic rendering of eligible script shells, JavaScript Browser reading, exact same-Run captures, and claim-bound citations under `observe`. After one explicit credential-locator registration, untouched default Agents choose an executable live model automatically across CLI, Chat, TUI, Web, SDK, and RPC standard user Runs; ambient `.env` secrets alone remain unauthorized. Web Safe Automation additionally provides exact one-use interaction confirmation, a privacy-bounded Browser Live viewport, and same-Run operator pause/resume without interrupting the current action. A retained real DeepSeek benchmark proves the unchanged default Agent can combine official HTML, PDF, and dynamic Browser sources with valid Replay and privacy-bounded evidence. `napier doctor` performs Store-free Search/Fetch/Browser/model/runtime/Sandbox readiness checks, while shared presets/status expose configured authority across CLI, Chat, TUI, and Web. Remaining P0 work is guided first-time locator setup, multi-tab/history, direct Browser takeover and login/CAPTCHA handoff, CLI/TUI interaction confirmation, cross-restart Sources/Sessions, open-web Security and repeated Research reliability, and repeated same-model OMP comparison. One passing Research trial and bounded page navigation do not establish complete automation, onboarding, or reliability.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| P0 web connectivity               | In progress    | Default Search, Fetch, Browser, and Research Source now cover keyless discovery, bounded HTML/Markdown/JSON/text/PDF reading, conservative automatic rendering of eligible script shells, JavaScript Browser reading, exact same-Run captures, and claim-bound citations under `observe`. `napier setup` and the first-use Web Live Provider docket now provide preview-bound explicit registration for five known environment locators; ambient `.env` secrets alone remain unauthorized, while successful apply refreshes the untouched live-ready default without changing the Agent. Web Safe Automation additionally provides exact one-use interaction confirmation, a privacy-bounded Browser Live viewport, and same-Run operator pause/resume without interrupting the current action. A retained real DeepSeek benchmark proves the unchanged default Agent can combine official HTML, PDF, and dynamic Browser sources with valid Replay and privacy-bounded evidence. `napier doctor` performs Store-free Search/Fetch/Browser/model/runtime/Sandbox readiness checks, while shared presets/status expose configured authority across CLI, Chat, TUI, and Web. Remaining P0 work is dependency remediation, multi-tab/history, direct Browser takeover and login/CAPTCHA handoff, CLI/TUI interaction confirmation, cross-restart Sources/Sessions, open-web Security and repeated Research reliability, and repeated same-model OMP comparison. One passing Research trial and bounded page navigation do not establish complete automation, onboarding, or reliability.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |

@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "37ef2c73ad85f9029d8f384d8b8f4aab0c3f07db52837d22def91557cab42d14",
-    "routeCount": 244,
-    "routeSetSha256": "edb22718413138107deb0275890962d56d2b1344a58d103f90f6a8aa19273932"
+    "sha256": "3870f2d32e1d109df2f2bf1bc3aad3f69cd0b4dce3cb682bd088538e02f0a5a9",
+    "routeCount": 263,
+    "routeSetSha256": "4f308c39b61a8c2932e4c42f0bb432bc52606665518a46c4307fe92cec3fbb66"
   },
-  "operationCount": 244,
-  "operationSetSha256": "73f11a625df3f7c9acf649eb84c542696c4c85f4a09ee204000404459c597f61",
+  "operationCount": 263,
+  "operationSetSha256": "7e2c168dcaedc8c30c2bd9d14313a7a062dbb1a424ff04a469239717579f5c1d",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -974,6 +974,26 @@
       ]
     },
     {
+      "key": "GET /api/setup/providers",
+      "method": "get",
+      "path": "/api/setup/providers",
+      "operationId": "get-setup-providers",
+      "tags": [
+        "setup"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
       "key": "GET /api/skills/packages/installations",
       "method": "get",
       "path": "/api/skills/packages/installations",
@@ -1549,6 +1569,75 @@
         "threads"
       ],
       "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/runs/{runId}/browser-interaction-confirmations",
+      "method": "get",
+      "path": "/api/threads/{threadId}/runs/{runId}/browser-interaction-confirmations",
+      "operationId": "get-threads-by-threadId-runs-by-runId-browser-interaction-confirmations",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/runs/{runId}/browser-live-view",
+      "method": "get",
+      "path": "/api/threads/{threadId}/runs/{runId}/browser-live-view",
+      "operationId": "get-threads-by-threadId-runs-by-runId-browser-live-view",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/runs/{runId}/browser-session-control",
+      "method": "get",
+      "path": "/api/threads/{threadId}/runs/{runId}/browser-session-control",
+      "operationId": "get-threads-by-threadId-runs-by-runId-browser-session-control",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
@@ -3984,6 +4073,26 @@
       ]
     },
     {
+      "key": "POST /api/setup/providers",
+      "method": "post",
+      "path": "/api/setup/providers",
+      "operationId": "post-setup-providers",
+      "tags": [
+        "setup"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
       "key": "POST /api/skills/content/apply",
       "method": "post",
       "path": "/api/skills/content/apply",
@@ -4112,6 +4221,50 @@
         "threads"
       ],
       "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/agent-experiments",
+      "method": "post",
+      "path": "/api/threads/{threadId}/agent-experiments",
+      "operationId": "post-threads-by-threadId-agent-experiments",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/agent-experiments/preview",
+      "method": "post",
+      "path": "/api/threads/{threadId}/agent-experiments/preview",
+      "operationId": "post-threads-by-threadId-agent-experiments-preview",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
       "acceptsJsonRequestBody": true,
       "jsonRequestSchemaRef": null,
       "jsonResponseSchemaRefs": {},
@@ -4332,6 +4485,50 @@
       "method": "post",
       "path": "/api/threads/{threadId}/messages",
       "operationId": "post-threads-by-threadId-messages",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/model-invocation-experiments",
+      "method": "post",
+      "path": "/api/threads/{threadId}/model-invocation-experiments",
+      "operationId": "post-threads-by-threadId-model-invocation-experiments",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/model-invocation-experiments/preview",
+      "method": "post",
+      "path": "/api/threads/{threadId}/model-invocation-experiments/preview",
+      "operationId": "post-threads-by-threadId-model-invocation-experiments-preview",
       "tags": [
         "threads"
       ],
@@ -4840,6 +5037,52 @@
       ]
     },
     {
+      "key": "POST /api/threads/{threadId}/processes/{processId}/rollback",
+      "method": "post",
+      "path": "/api/threads/{threadId}/processes/{processId}/rollback",
+      "operationId": "post-threads-by-threadId-processes-by-processId-rollback",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "processId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/processes/{processId}/rollback/preview",
+      "method": "post",
+      "path": "/api/threads/{threadId}/processes/{processId}/rollback/preview",
+      "operationId": "post-threads-by-threadId-processes-by-processId-rollback-preview",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "processId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
       "key": "POST /api/threads/{threadId}/resume",
       "method": "post",
       "path": "/api/threads/{threadId}/resume",
@@ -4848,6 +5091,76 @@
         "threads"
       ],
       "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/runs/{runId}/browser-interaction-confirmations/{confirmationId}/decision",
+      "method": "post",
+      "path": "/api/threads/{threadId}/runs/{runId}/browser-interaction-confirmations/{confirmationId}/decision",
+      "operationId": "post-threads-by-threadId-runs-by-runId-browser-interaction-confirmations-by-confirmationId-decision",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "confirmationId",
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/runs/{runId}/browser-session-control/pause",
+      "method": "post",
+      "path": "/api/threads/{threadId}/runs/{runId}/browser-session-control/pause",
+      "operationId": "post-threads-by-threadId-runs-by-runId-browser-session-control-pause",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/runs/{runId}/browser-session-control/resume",
+      "method": "post",
+      "path": "/api/threads/{threadId}/runs/{runId}/browser-session-control/resume",
+      "operationId": "post-threads-by-threadId-runs-by-runId-browser-session-control-resume",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
@@ -5009,6 +5322,50 @@
       ]
     },
     {
+      "key": "POST /api/threads/{threadId}/tool-invocation-experiments",
+      "method": "post",
+      "path": "/api/threads/{threadId}/tool-invocation-experiments",
+      "operationId": "post-threads-by-threadId-tool-invocation-experiments",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/tool-invocation-experiments/preview",
+      "method": "post",
+      "path": "/api/threads/{threadId}/tool-invocation-experiments/preview",
+      "operationId": "post-threads-by-threadId-tool-invocation-experiments-preview",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
       "key": "POST /api/threads/{threadId}/trace/otlp",
       "method": "post",
       "path": "/api/threads/{threadId}/trace/otlp",
@@ -5039,6 +5396,74 @@
         "threads"
       ],
       "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/workflows",
+      "method": "post",
+      "path": "/api/threads/{threadId}/workflows",
+      "operationId": "post-threads-by-threadId-workflows",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/workflows/{planId}/experiments",
+      "method": "post",
+      "path": "/api/threads/{threadId}/workflows/{planId}/experiments",
+      "operationId": "post-threads-by-threadId-workflows-by-planId-experiments",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/workflows/{planId}/experiments/preview",
+      "method": "post",
+      "path": "/api/threads/{threadId}/workflows/{planId}/experiments/preview",
+      "operationId": "post-threads-by-threadId-workflows-by-planId-experiments-preview",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "planId",
         "threadId"
       ],
       "acceptsJsonRequestBody": true,

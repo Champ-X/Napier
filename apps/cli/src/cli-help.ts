@@ -14,6 +14,7 @@ Usage:
   napier tui --workspace <path> [options]
   napier capabilities --workspace <path> [options]
   napier doctor --workspace <path> [options]
+  napier setup --workspace <path> [options]
   napier resume --workspace <path> --thread <thread-id> [options]
   napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
   napier experiment --workspace <path> --thread <thread-id> --run <run-id> --message-seq <n> [options]
@@ -28,6 +29,7 @@ Commands:
   tui                    Open the full-screen local Agent terminal
   capabilities           Inspect, preview, or apply an Agent capability preset
   doctor                 Diagnose first-use model, network, Browser, and Sandbox readiness
+  setup                  Preview or apply a standard live Provider locator
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
   experiment             Re-run a historical Agent message read-only
@@ -49,6 +51,12 @@ Doctor options:
   --credential-env <var> Check this environment variable without printing its value
   --offline              Skip public Search, Fetch, and Browser probes
   --timeout-ms <ms>      Total Doctor time budget (default ${DEFAULT_DOCTOR_TIMEOUT_MS}, max ${MAX_DOCTOR_TIMEOUT_MS})
+
+Setup options:
+  --provider <id>        Standard Provider selected from setup preview
+  --expected-preview     Exact setup preview SHA-256 required for apply
+  --apply                Register/check the selected environment locator
+  --jsonl                Emit one setup preview or result JSON object
 
 Capability options:
   --agent <agent-id>     Agent profile (default: first local Agent)

@@ -6854,6 +6854,76 @@
         "x-napier-source-route": "PUT /api/schedules/:scheduleId"
       }
     },
+    "/api/setup/providers": {
+      "get": {
+        "operationId": "get-setup-providers",
+        "tags": [
+          "setup"
+        ],
+        "summary": "GET /api/setup/providers",
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/setup/providers"
+      },
+      "post": {
+        "operationId": "post-setup-providers",
+        "tags": [
+          "setup"
+        ],
+        "summary": "POST /api/setup/providers",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/setup/providers"
+      }
+    },
     "/api/skills/content/apply": {
       "post": {
         "operationId": "post-skills-content-apply",
@@ -14900,6 +14970,7 @@
     "apps/server/src/plan-blueprint-replay-http.ts",
     "apps/server/src/plan-lifecycle-http.ts",
     "apps/server/src/plan-progress-http.ts",
+    "apps/server/src/provider-setup-http.ts",
     "apps/server/src/run-evaluation-http.ts",
     "apps/server/src/schedule-http.ts",
     "apps/server/src/thread-control-http.ts",
@@ -14911,7 +14982,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "6726ef3005aa9966e7d6272354373f0bae560c87fa8145e648d75e166adb2ea7",
-  "x-napier-route-count": 261,
-  "x-napier-route-set-sha256": "f16bc9bb341429dbcae445dee3636938e53edc7375226824f9c049a4b8efd48a"
+  "x-napier-source-sha256": "f675a0fc3f4d92889a89606b092ebe0b5a45d43458488cd74d2fd5628848b162",
+  "x-napier-route-count": 263,
+  "x-napier-route-set-sha256": "4f308c39b61a8c2932e4c42f0bb432bc52606665518a46c4307fe92cec3fbb66"
 }

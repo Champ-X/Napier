@@ -6,7 +6,6 @@ import {
   Brain,
   Cable,
   CalendarClock,
-  ChevronRight,
   Circle,
   ClipboardList,
   Command,
@@ -19,13 +18,11 @@ import {
   Scale,
   Send,
   ShieldCheck,
-  Sparkles,
   Square,
   Target,
 } from "lucide-react";
 
 import type { GoalState, RunRecord, ThreadStatus } from "@napier/contracts";
-
 import { AgentCapabilityStatusBadge } from "./AgentCapabilityStatusBadge";
 import { copy } from "./copy";
 import { RunDecisionDockets } from "./RunDecisionDockets";
@@ -34,6 +31,7 @@ import {
   type MessageView,
   useWorkspaceViewModel,
 } from "./use-workspace-view-model";
+import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
 
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
@@ -200,10 +198,12 @@ export function App() {
         </div>
 
         <section className="conversation" aria-label="Conversation">
-          {vm.messages.length === 0 ? (
+          {shouldShowWelcomePanel(vm.messages) ? (
             <WelcomePanel
               canStart={activeModel.configured}
+              onBootstrapUpdated={vm.commitConfigurationBootstrap}
               onPrompt={(prompt) => void vm.submit(prompt)}
+              threadId={vm.detail?.thread.id}
             />
           ) : (
             <div className="message-ledger">
@@ -766,40 +766,6 @@ function RecoveryBanner({
         </button>
       </div>
     </section>
-  );
-}
-
-function WelcomePanel({
-  canStart,
-  onPrompt,
-}: {
-  canStart: boolean;
-  onPrompt: (prompt: string) => void;
-}) {
-  return (
-    <div className="welcome-panel">
-      <div className="welcome-seal" aria-hidden="true">
-        <Sparkles size={24} />
-      </div>
-      <span className="eyebrow">{copy.welcome.eyebrow}</span>
-      <h2>{copy.welcome.title}</h2>
-      <p>{copy.welcome.body}</p>
-      <button
-        type="button"
-        className="prompt-card"
-        disabled={!canStart}
-        onClick={() => onPrompt(copy.welcome.firstPrompt)}
-      >
-        <span>01</span>
-        <strong>{copy.welcome.firstPrompt}</strong>
-        <ChevronRight size={16} aria-hidden="true" />
-      </button>
-      <div className="principle-row" aria-label="Napier principles">
-        <span>LOCAL FIRST</span>
-        <span>EVENT SOURCED</span>
-        <span>POLICY BOUND</span>
-      </div>
-    </div>
   );
 }
 

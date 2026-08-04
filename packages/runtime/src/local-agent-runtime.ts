@@ -13,6 +13,7 @@ import { EmbeddedWorkflowService } from "./embedded-workflows.js";
 import { McpExtensionManager } from "./mcp.js";
 import { ModelRegistry } from "./models.js";
 import { ModelInvocationExperimentRuntime } from "./model-invocation-experiments.js";
+import { ProviderSetupService } from "./provider-setup.js";
 import { ToolInvocationExperimentRuntime } from "./tool-invocation-experiments.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 import {
@@ -58,6 +59,7 @@ export interface LocalAgentRuntimeServices {
   workspaceFileMutations: WorkspaceFileMutationManager;
   browserInteractionConfirmations: BrowserInteractionConfirmationManager;
   browserSessionPauses: BrowserSessionPauseManager;
+  providerSetup: ProviderSetupService;
   runtime: AgentRuntime;
   embeddedAgents: EmbeddedAgentService;
   agentMessageExperiments: AgentMessageExperimentRuntime;
@@ -112,6 +114,12 @@ export async function createLocalAgentRuntime(
         options.browserInteractionConfirmation,
       );
     const browserSessionPauses = new BrowserSessionPauseManager(store);
+    const providerSetup = new ProviderSetupService(
+      store,
+      credentials,
+      models,
+      options.env ?? process.env,
+    );
     const runtime = new AgentRuntime(
       store,
       models,
@@ -170,6 +178,7 @@ export async function createLocalAgentRuntime(
       workspaceFileMutations,
       browserInteractionConfirmations,
       browserSessionPauses,
+      providerSetup,
       runtime,
       embeddedAgents,
       agentMessageExperiments,

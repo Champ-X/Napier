@@ -1,12 +1,35 @@
-import type { CliAction } from "./cli-options.js";
 import { executeCapabilities } from "./capability-cli.js";
+import { parseCapabilityOptions } from "./cli-capability-options.js";
+import { parseDoctorOptions } from "./cli-doctor-options.js";
+import { parseSetupOptions } from "./cli-setup-options.js";
 import { executeDoctor } from "./doctor-cli.js";
+import type { CliFirstUseAction } from "./cli-first-use-model.js";
+import { executeSetup } from "./setup-cli.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 
-type CliFirstUseAction = Extract<
-  CliAction,
-  { kind: "doctor" | "capabilities" }
->;
+export function isFirstUseCliAction(
+  action: { kind: string },
+): action is CliFirstUseAction {
+  return (
+    action.kind === "doctor" ||
+    action.kind === "capabilities" ||
+    action.kind === "setup"
+  );
+}
+
+export function parseFirstUseCliAction(
+  command: string,
+  values: Map<string, string>,
+  flags: ReadonlySet<string>,
+  jsonl: boolean,
+): CliFirstUseAction | undefined {
+  if (command === "doctor") return parseDoctorOptions(values, flags, jsonl);
+  if (command === "capabilities") {
+    return parseCapabilityOptions(values, flags, jsonl);
+  }
+  if (command === "setup") return parseSetupOptions(values, flags, jsonl);
+  return undefined;
+}
 
 export async function executeFirstUseCliAction(
   action: CliFirstUseAction,
@@ -16,6 +39,9 @@ export async function executeFirstUseCliAction(
 ): Promise<number> {
   if (action.kind === "doctor") {
     return executeDoctor(action.options, io, dependencies.doctor, signal);
+  }
+  if (action.kind === "setup") {
+    return executeSetup(action.options, io, dependencies, signal);
   }
   return executeCapabilities(action.options, io, dependencies, signal);
 }

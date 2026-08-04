@@ -254,6 +254,7 @@ import {
   type ExecutionPlanWorkflowExperimentRuntime,
   type ExecutionPlanWorkflowRuntime,
 } from "@napier/runtime";
+import type { ProviderSetupService } from "@napier/runtime/provider-setup";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 
@@ -332,6 +333,8 @@ import {
 } from "./receipt-trust-directory-subscriptions.js";
 import { registerAgentProfileHttp } from "./agent-profile-http.js";
 import { registerWorkspaceProcessHttp } from "./workspace-process-http.js";
+import { inferWorkspaceRoot } from "./workspace-root.js";
+export { inferWorkspaceRoot } from "./workspace-root.js";
 
 export interface NapierServices {
   store: LocalStore;
@@ -352,14 +355,13 @@ export interface NapierServices {
   recovery: RecoveryService;
   workspaceFileMutations: WorkspaceFileMutationManager;
   workspaceProcesses: WorkspaceProcessManager;
+  providerSetup: ProviderSetupService;
   receiptTrustDirectories: ReceiptTrustAnchorDirectoryDiscoveryService;
   receiptTrustDirectorySubscriptions: ReceiptTrustAnchorDirectorySubscriptionService;
   shutdownLocalRuntime(): Promise<void>;
 }
 const MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT = 1_000;
-
 const HEALTH_RUNTIME_COMPONENTS = ["sqlite", "openssl", "uv", "v8"] as const;
-
 const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
 const MAX_EXTENSION_ADMIN_REQUEST_BYTES = 64 * 1024;
 const MAX_TRUST_ADMIN_REQUEST_BYTES = 8 * 1024;
@@ -367,6 +369,7 @@ const MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES = 64 * 1024;
 export async function createServices(options?: {
   dataRoot?: string;
   workspaceRoot?: string;
+  env?: Readonly<Record<string, string | undefined>>;
   startAutomation?: boolean;
   keychain?: KeychainSecretStore;
   sandbox?: OsSandboxAdapter;
@@ -386,6 +389,7 @@ export async function createServices(options?: {
   const local = await createLocalAgentRuntime({
     workspaceRoot,
     dataRoot,
+    env: options?.env ?? process.env,
     browserInteractionConfirmation: { available: true },
     ...(options?.keychain ? { keychain: options.keychain } : {}),
     ...(options?.sandbox ? { sandbox: options.sandbox } : {}),
@@ -403,6 +407,7 @@ export async function createServices(options?: {
     agentMessageExperiments,
     modelInvocationExperiments,
     toolInvocationExperiments,
+    providerSetup,
   } = local;
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
@@ -446,18 +451,11 @@ export async function createServices(options?: {
     recovery,
     workspaceFileMutations,
     workspaceProcesses,
+    providerSetup,
     receiptTrustDirectories,
     receiptTrustDirectorySubscriptions,
     shutdownLocalRuntime: local.shutdown,
   };
-}
-
-export function inferWorkspaceRoot(cwd: string): string {
-  const resolved = path.resolve(cwd);
-  return path.basename(resolved) === "server" &&
-    path.basename(path.dirname(resolved)) === "apps"
-    ? path.resolve(resolved, "../..")
-    : resolved;
 }
 
 export function createApp(services: NapierServices): Hono {

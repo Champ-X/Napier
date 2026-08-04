@@ -486,11 +486,34 @@ npm run dev
 Open `http://127.0.0.1:5173`. The demo model works without credentials.
 The root `dev` command loads a repository `.env` only when present before it
 starts Server and Web, so both child processes inherit the same environment
-without putting secret values in command arguments. Live Providers still
-require an explicit locator registration in **Context → Provider credentials**.
+without putting secret values in command arguments. On the first-use ledger,
+the **Live Provider** docket lists only standard environment-variable names and
+their status. Choose **Enable** to explicitly register one available locator;
+the secret value never leaves the Server and ambient variables alone remain
+unauthorized. Advanced and Keychain locators remain available in
+**Context → Provider credentials**.
 The explicit root `postinstall` prepares only the current-platform native PTY
 helper after the dependency install; it rejects missing, non-regular, or
 symlinked helpers.
+
+The CLI exposes the same preview-bound setup without creating another task
+Thread or revising the Agent:
+
+```bash
+npm run --silent napier -- setup --workspace . --jsonl
+
+# Copy providerId and contentSha256 from that preview:
+npm run --silent napier -- setup \
+  --workspace . \
+  --provider deepseek \
+  --expected-preview <sha256> \
+  --apply
+```
+
+Apply succeeds only while the exact preview is current. Napier creates or
+re-enables the known locator, checks credential availability and the pinned
+stable model, and rolls a newly changed reference back to disabled if
+verification fails. It never prints or persists the environment value.
 
 Before the first live task, run the Store-free readiness diagnostic:
 
@@ -1890,6 +1913,15 @@ may instead name an existing Keychain service and account, or write a secret
 to that Keychain item once through the bounded vault-write API. Napier stores
 only the locator and clears the submitted secret from the web form after the
 request completes.
+
+For the five standard Providers, `napier setup` and the first-use Web
+**Live Provider** docket provide a shorter explicit path. Preview reports
+`ready`, `available`, `missing`, `conflict`, or `unavailable` for DeepSeek,
+OpenRouter, Anthropic, OpenAI, and Google. Apply requires the selected Provider
+plus the exact preview SHA-256, verifies the credential and pinned model, and
+then refreshes Web Bootstrap so an untouched demo selection moves to the
+live-ready default. Existing explicit model choices and the revisioned Agent
+profile are not changed.
 
 For a CLI first task, explicit `run`, `chat`, and `tui`
 `--credential-env <variable>` options perform the same environment-locator

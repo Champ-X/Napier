@@ -27,6 +27,10 @@
     "./default-run-model": {
       "types": "./dist/default-run-model.d.ts",
       "import": "./dist/default-run-model.js"
+    },
+    "./provider-setup": {
+      "types": "./dist/provider-setup.d.ts",
+      "import": "./dist/provider-setup.js"
     }
   },
   "files": [

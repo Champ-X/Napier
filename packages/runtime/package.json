@@ -23,6 +23,10 @@
     "./browser-session-control": {
       "types": "./dist/browser-session-control.d.ts",
       "import": "./dist/browser-session-control.js"
+    },
+    "./provider-setup": {
+      "types": "./dist/provider-setup.d.ts",
+      "import": "./dist/provider-setup.js"
     }
   },
   "files": [

@@ -595,6 +595,16 @@ napier run/chat/tui --preset <id>
   -> LocalStore fingerprints the effective policy/tools/Skills/Subagents
   -> run.started records the preset ID beside the configuration SHA-256
   -> the stored Agent profile and immutable revision history remain unchanged
+napier setup / Web first-use Live Provider
+  -> preview only five known environment locators and pinned stable models
+  -> expose locator names, status, and SHA-256 evidence; never secret values
+  -> ambient environment presence reports available but grants no authority
+  -> apply requires selected Provider plus the exact preview SHA-256
+  -> create or re-enable only the matching credential reference
+  -> check credential availability and model readiness through shared Runtime
+  -> disable a newly changed reference if either verification step fails
+  -> preserve the onboarding ledger and Agent revision
+  -> refresh Web Bootstrap; only an untouched demo selection follows the live default
 Chat/TUI /status
   -> resolve the current Thread Agent or requested default Agent
   -> overlay the process preset, when present, and render effective Run truth

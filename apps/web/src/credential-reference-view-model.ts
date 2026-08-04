@@ -1,3 +1,5 @@
+import { STANDARD_PROVIDER_SETUP_DEFINITIONS } from "@napier/contracts/provider-setup";
+
 export interface CredentialReferenceDraft {
   providerId: string;
   label: string;
@@ -18,33 +20,16 @@ export interface CredentialReferenceDraftInput {
 const PROVIDER_DEFAULTS: Record<
   string,
   Omit<CredentialReferenceDraft, "providerId" | "keychainAccount">
-> = {
-  anthropic: {
-    label: "Anthropic key",
-    environmentVariable: "ANTHROPIC_API_KEY",
-    keychainService: "napier.anthropic",
-  },
-  deepseek: {
-    label: "DeepSeek key",
-    environmentVariable: "DEEPSEEK_API_KEY",
-    keychainService: "napier.deepseek",
-  },
-  google: {
-    label: "Google Gemini key",
-    environmentVariable: "GEMINI_API_KEY",
-    keychainService: "napier.google",
-  },
-  openai: {
-    label: "OpenAI key",
-    environmentVariable: "OPENAI_API_KEY",
-    keychainService: "napier.openai",
-  },
-  openrouter: {
-    label: "OpenRouter key",
-    environmentVariable: "OPENROUTER_API_KEY",
-    keychainService: "napier.openrouter",
-  },
-};
+> = Object.fromEntries(
+  STANDARD_PROVIDER_SETUP_DEFINITIONS.map((definition) => [
+    definition.providerId,
+    {
+      label: definition.credentialLabel,
+      environmentVariable: definition.environmentVariable,
+      keychainService: `napier.${definition.providerId}`,
+    },
+  ]),
+);
 
 export function credentialReferenceDraft(
   providerId: string,
