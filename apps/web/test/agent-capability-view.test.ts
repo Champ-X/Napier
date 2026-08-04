@@ -18,6 +18,17 @@ describe("Agent capability Web surfaces", () => {
     );
     expect(agentCapabilityBadgeText(agent)).not.toContain("interact yes");
   });
+
+  it("renders Safe Automation interaction as confirmation-bound", () => {
+    const agent = profile("safe_automation");
+    expect(agentCapabilityBadgeText(agent)).toBe(
+      "Safe Automation · Workspace changes · interact confirm",
+    );
+    expect(agentCapabilityDetailText(agent)).toContain(
+      "Browser interact confirm",
+    );
+    expect(agentCapabilityBadgeText(agent)).not.toContain("interact yes");
+  });
 });
 
 function profile(

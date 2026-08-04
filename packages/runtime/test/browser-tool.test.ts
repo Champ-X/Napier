@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { builtInToolEffect } from "../src/agent-tool-effects.js";
 import {
   browserToolCallArgumentsLedgerProjection,
+  browserInteractionConfirmationPreview,
   browserToolInputLedgerProjection,
   browserToolOutputLedgerProjection,
   createBrowserTool,
@@ -83,7 +84,21 @@ describe("browser Agent tool", () => {
       expect.objectContaining({
         allowed: false,
         risk: "high",
-        reason: "interactive Browser actions require unrestricted policy",
+        reason: "interactive Browser actions require a writable Agent policy",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "workspace",
+        "browser",
+        { action: "click", target: { ref: "e1" } },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "high",
+        reason: expect.stringContaining("action-bound confirmation"),
       }),
     );
     expect(
@@ -93,7 +108,13 @@ describe("browser Agent tool", () => {
         { action: "click", target: { ref: "e1" } },
         workspace,
       ),
-    ).toEqual(expect.objectContaining({ allowed: true, risk: "high" }));
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "high",
+        reason: expect.stringContaining("action-bound confirmation"),
+      }),
+    );
     expect(
       assessToolCall(
         "unrestricted",
@@ -184,6 +205,37 @@ describe("browser Agent tool", () => {
         outputBytes: 22,
       }),
     );
+  });
+
+  it("runs Browser calls sequentially and previews interaction effects by hash", () => {
+    const tool = createBrowserTool(
+      { execute: vi.fn() } as unknown as RunBrowserSessionManager,
+      { threadId: "thread_preview", runId: "run_preview" },
+    );
+    expect(tool.executionMode).toBe("sequential");
+    expect(
+      browserInteractionConfirmationPreview({
+        action: "type",
+        target: { selector: "#PRIVATE_TARGET" },
+        text: "PRIVATE_TEXT",
+      }),
+    ).toEqual({
+      targetKind: "selector",
+      targetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      textSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      textBytes: 12,
+      crossOriginAuthorized: false,
+    });
+    expect(
+      JSON.stringify(
+        browserInteractionConfirmationPreview({
+          action: "download",
+          target: { ref: "e1" },
+          path: "PRIVATE_PATH",
+          allowCrossOrigin: true,
+        }),
+      ),
+    ).not.toContain("PRIVATE");
   });
 
   it("returns screenshots as live image content while details remain bounded", async () => {

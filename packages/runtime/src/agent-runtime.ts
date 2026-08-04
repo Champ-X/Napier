@@ -65,8 +65,10 @@ import {
   resolveAgentCapabilityProfileFromStore,
 } from "./agent-capability-override.js";
 import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
+import { preflightAgentToolPolicy } from "./agent-tool-policy-preflight.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
+import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
@@ -134,7 +136,6 @@ import { ModelRegistry } from "./models.js";
 import { createId } from "./ids.js";
 import { createOperatorDecisionTool } from "./operator-decision-tool.js";
 import { formatOperatorDecisionContinuation } from "./operator-decisions.js";
-import { assessToolCall } from "./policy.js";
 import { createPlanTools } from "./plan-tools.js";
 import {
   PROMPT_VARIABLES_RESOLVED_EVENT,
@@ -261,12 +262,16 @@ export class AgentRuntime {
       store.dataRoot,
     ),
     readonly networkCapabilities: AgentNetworkCapabilities = {},
+    readonly browserInteractionConfirmations = new BrowserInteractionConfirmationManager(
+      store,
+    ),
   ) {
     this.capabilities = new AgentCapabilityRuntime(
       store,
       verificationSandbox,
       workspaceProcesses,
       workspaceFileMutations,
+      browserInteractionConfirmations,
       browserSessions,
       researchSourceCaptures,
       networkCapabilities,
@@ -1177,7 +1182,6 @@ export class AgentRuntime {
     budget.throwIfExhausted();
     return response;
   }
-
   private async runLive(
     run: RunRecord,
     profile: AgentProfile,
@@ -1276,6 +1280,7 @@ export class AgentRuntime {
       runId: run.id,
       restrictedReadOnlyExecution,
       advisorCorrection,
+      browserInteractionConfirmationAllowed: run.source === "user",
     });
     let pendingOperatorDecisionId: string | undefined;
     if (
@@ -1520,45 +1525,21 @@ export class AgentRuntime {
         );
         return { block: true, reason };
       }
-      if (toolCall.name === "delegate_task") return undefined;
-      const decision = restrictedReadOnlyExecution
-        ? assessToolCall(
-            "observe",
-            toolCall.name,
-            toJsonValue(args),
-            this.store.workspaceRoot,
-          )
-        : (this.extensionManager?.assessToolCall(
-            profile.toolPolicy,
-            toolCall.name,
-            profile.id,
-          ) ??
-          assessToolCall(
-            profile.toolPolicy,
-            toolCall.name,
-            toJsonValue(args),
-            this.store.workspaceRoot,
-          ));
-      if (!decision.allowed) {
-        await this.record(
-          {
-            threadId: run.threadId,
-            runId: run.id,
-            type: "tool.blocked",
-            category: "tool",
-            visibility: "user",
-            payload: {
-              callId: toolCall.id,
-              toolName: toolCall.name,
-              status: "blocked",
-              ...toolInputLedgerProjection(toolCall.name, args),
-              policyReason: decision.reason,
-            },
-          },
-          onEvent,
-        );
-        return { block: true, reason: decision.reason };
-      }
+      const policyBlock = await preflightAgentToolPolicy({
+        store: this.store,
+        run,
+        profile,
+        ...(this.extensionManager
+          ? { extensionManager: this.extensionManager }
+          : {}),
+        confirmations: this.browserInteractionConfirmations,
+        restrictedReadOnlyExecution,
+        toolCall,
+        args,
+        ...(toolSignal ? { signal: toolSignal } : {}),
+        ...(onEvent ? { onEvent } : {}),
+      });
+      if (policyBlock) return policyBlock;
       return toolResultLifecycle.preflight(toolCall.id, toolCall.name, args);
     };
     const afterToolCall = async ({

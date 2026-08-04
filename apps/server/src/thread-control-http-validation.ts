@@ -3,6 +3,7 @@ import type {
   CreateBranchRequest,
   QueueRunControlMessageRequest,
 } from "@napier/contracts";
+import type { DecideBrowserInteractionConfirmationRequest } from "@napier/contracts/browser-interaction-confirmation";
 import { MAX_RUN_CONTROL_MESSAGE_BYTES } from "@napier/runtime";
 
 import { requestRecord } from "./http-request-validation.js";
@@ -45,6 +46,22 @@ export function parseQueueRunControlMessageRequest(
     return undefined;
   }
   return { mode, text };
+}
+
+export function parseBrowserInteractionConfirmationDecision(
+  input: unknown,
+): DecideBrowserInteractionConfirmationRequest | undefined {
+  const record = requestRecord(input, ["decision", "expectedRequestSha256"]);
+  const decision = record?.["decision"];
+  const expectedRequestSha256 = record?.["expectedRequestSha256"];
+  if (
+    (decision !== "approve" && decision !== "reject") ||
+    typeof expectedRequestSha256 !== "string" ||
+    !/^[a-f0-9]{64}$/u.test(expectedRequestSha256)
+  ) {
+    return undefined;
+  }
+  return { decision, expectedRequestSha256 };
 }
 
 export function parseAnswerOperatorDecisionRequest(

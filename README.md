@@ -529,6 +529,19 @@ grants `unrestricted`, and Web preset selection only fills the existing form
 until the user saves it. Chat/TUI `/status` and the Web composer display the
 same preset and permission labels.
 
+Safe Automation and custom writable profiles can expose Browser
+`click`/`type`/`select`/`upload`/`download` only in the Web entry. Every such
+action pauses before execution and shows a hash-only confirmation docket with
+**Approve once** and **Reject**. Approval is bound to the exact Run, tool call,
+action, validated argument SHA-256, and 60-second expiry; it cannot be reused.
+The docket previews only redacted effects such as target kind/hash, text byte
+count/hash, selected-value count/set hash, workspace-path hash, and
+cross-origin intent.
+Neither `workspace` nor `unrestricted` bypasses this gate. The confirmed action
+continues in the same Run-owned Browser Session. CLI, Chat, and TUI continue to
+expose the read-only Browser schema because they do not yet have a confirmation
+surface.
+
 For one task or interactive session, pass the same strict preset ID directly
 to `run`, `chat`, or `tui`:
 
@@ -550,6 +563,14 @@ new prompt in that process and report the effective temporary status.
 select a temporary preset. An operator-decision continuation reuses the origin
 Run's recorded preset and fails closed if its revision, model, or capabilities
 drift.
+
+Browser interaction confirmation is a separate process-local authority. The
+Contracts and Runtime narrow subpaths share only action, hashes, timestamps,
+status, and receipt digests. Selector, text, values, URLs, upload paths, and
+download paths never enter confirmation events or the Web docket. Pending and
+terminal confirmation events remain durable, while the one-use resolver is
+intentionally non-resumable across Server restart. Restart, timeout, rejection,
+or Run cancellation fails closed.
 
 For a production build served by the API process:
 

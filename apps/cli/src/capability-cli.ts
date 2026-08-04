@@ -98,7 +98,7 @@ function formatCapabilities(result: CapabilityCliResult): string {
     `Preset: ${status.label} (${status.presetId})`,
     `Permissions: ${status.policyLabel}`,
     `Tools: ${status.enabledToolCount} enabled / ${status.blockedEnabledToolCount} blocked by policy`,
-    `Capabilities: network ${yesNo(status.networkRead)} · browser read ${yesNo(status.browserRead)} · browser interact ${yesNo(status.browserInteract)} · workspace write ${yesNo(status.workspaceWrite)} · process ${yesNo(status.processExecution)}`,
+    `Capabilities: network ${yesNo(status.networkRead)} · browser read ${yesNo(status.browserRead)} · browser interact ${browserInteractionLabel(status)} · workspace write ${yesNo(status.workspaceWrite)} · process ${yesNo(status.processExecution)}`,
     ...(result.action === "status"
       ? [
           "Available presets:",
@@ -108,6 +108,16 @@ function formatCapabilities(result: CapabilityCliResult): string {
         ]
       : []),
   ].join("\n");
+}
+
+function browserInteractionLabel(
+  status: AgentCapabilityStatus,
+): "yes" | "confirm in Web" | "no" {
+  return status.browserInteract
+    ? "yes"
+    : status.browserInteractWithConfirmation
+      ? "confirm in Web"
+      : "no";
 }
 
 function yesNo(value: boolean): string {

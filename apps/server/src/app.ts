@@ -371,7 +371,6 @@ export interface NapierServices {
   receiptTrustDirectorySubscriptions: ReceiptTrustAnchorDirectorySubscriptionService;
   shutdownLocalRuntime(): Promise<void>;
 }
-
 const MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT = 1_000;
 
 const HEALTH_RUNTIME_COMPONENTS = ["sqlite", "openssl", "uv", "v8"] as const;
@@ -402,6 +401,7 @@ export async function createServices(options?: {
   const local = await createLocalAgentRuntime({
     workspaceRoot,
     dataRoot,
+    browserInteractionConfirmation: { available: true },
     ...(options?.keychain ? { keychain: options.keychain } : {}),
     ...(options?.sandbox ? { sandbox: options.sandbox } : {}),
   });

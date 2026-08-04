@@ -28,6 +28,7 @@ import type { GoalState, RunRecord, ThreadStatus } from "@napier/contracts";
 
 import { AgentCapabilityStatusBadge } from "./AgentCapabilityStatusBadge";
 import { copy } from "./copy";
+import { RunDecisionDockets } from "./RunDecisionDockets";
 import {
   type InspectorTab,
   type MessageView,
@@ -39,7 +40,6 @@ const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
 const LazyFilesPanel = lazy(() => import("./FilesPanel"));
 const LazyMemoryPanel = lazy(() => import("./MemoryPanel"));
-const LazyOperatorDecisionPanel = lazy(() => import("./OperatorDecisionPanel"));
 const LazyProcessPanel = lazy(() => import("./ProcessPanel"));
 const LazyRunLabPanel = lazy(() => import("./RunLabPanel"));
 const LazyPlanPanel = lazy(() => import("./PlanPanel"));
@@ -224,18 +224,7 @@ export function App() {
           )}
         </section>
 
-        {vm.openOperatorDecision ? (
-          <Suspense fallback={null}>
-            <LazyOperatorDecisionPanel
-              decision={vm.openOperatorDecision}
-              workflowOwned={vm.openOperatorDecisionWorkflowOwned}
-              busy={vm.operatorDecisionBusy}
-              onAnswer={vm.answerOperatorDecision}
-              onContinue={vm.continueOperatorDecision}
-              onCancel={vm.cancelOperatorDecision}
-            />
-          </Suspense>
-        ) : null}
+        <RunDecisionDockets vm={vm} />
 
         <form
           className="composer"
@@ -264,7 +253,11 @@ export function App() {
             }
             value={vm.composer}
             rows={3}
-            disabled={!vm.detail || Boolean(vm.openOperatorDecision)}
+            disabled={
+              !vm.detail ||
+              Boolean(vm.openOperatorDecision) ||
+              Boolean(vm.browserInteractionConfirmation)
+            }
             onChange={(event) => vm.setComposer(event.target.value)}
             onKeyDown={(event) =>
               handleComposerKeys(event, () => void vm.submit())

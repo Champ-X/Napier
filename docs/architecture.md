@@ -598,6 +598,10 @@ Web
   -> composer badge renders the same projection
   -> Context preset selector fills existing form fields only
   -> Save Agent profile uses the existing HTTP validation/revision path
+  -> writable Browser calls pause inside beforeToolCall
+  -> hash-only pending evidence opens a one-use confirmation docket
+  -> exact request-hash approval resumes the same Run and Browser Session
+  -> rejection, timeout, cancellation, mismatch, or restart fails closed
 ```
 
 The shared catalog is published as the narrow
@@ -609,11 +613,13 @@ preset controls are leaf components, reducing `App.tsx` to 1,082 lines and
 maximum complexity 60, and `ContextPanel.tsx` to 3,537 lines.
 
 Presets are convenience, not escalation. None sets `unrestricted`; the Browser
-preset remains `observe` and reports Browser read available but interaction
-unavailable. Coding and Safe Automation use `workspace`, so they can use
-preview-bound workspace writes and sandboxed process tools while Browser
-interaction remains denied. Raw custom profile editing remains available and
-is truthfully labeled `Custom`. Doctor remains the separate source of truth for
+and Research presets remain `observe` and report Browser read available but
+interaction unavailable. Coding has no Browser tool. Safe Automation uses
+`workspace`; in Web it reports `interact confirm` and exposes the interactive
+schema only because the Server supplies a confirmation manager. CLI, Chat, and
+TUI supply no confirmation manager, receive the read-only schema, and report
+interaction unavailable. Raw custom profile editing remains available and is
+truthfully labeled `Custom`. Doctor remains the separate source of truth for
 live model, network, Browser, and Sandbox readiness.
 
 Temporary presets are admitted only for standard `user` Runs. Recovery,
@@ -625,6 +631,17 @@ Skills, and Subagents against the origin fingerprint before creating the
 linked Run. Preset identity remains evidence metadata rather than a second Run
 configuration schema; the existing fingerprint already freezes the effective
 authority.
+
+`BrowserInteractionConfirmationManager` is process-local and one-use. It
+accepts one pending interactive Browser call per Run, appends a hash-only
+`browser.interaction_confirmation.pending` event, and awaits an exact
+request-SHA decision while the SSE stream and Browser Session remain live.
+The Server decision route binds Thread, Run, confirmation ID, and expected
+request hash. A terminal `approved | rejected | expired | cancelled` event is
+appended before the waiting tool proceeds. Runtime policy still validates
+public-network and workspace-file scope before confirmation; confirmation
+cannot authorize an otherwise denied call. Raw tool arguments stay in the
+private live call/capsule boundary and never enter the confirmation protocol.
 
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate

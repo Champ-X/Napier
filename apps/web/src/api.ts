@@ -132,7 +132,6 @@ import type {
   ThreadReplayBundleVerification,
   TrustedReceiptEnvelope,
 } from "@napier/contracts";
-
 import { requestJson, requestJsonWithResponse } from "./api-client";
 import {
   NapierStreamDoneEventCountError,

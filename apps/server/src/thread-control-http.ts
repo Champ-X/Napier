@@ -6,6 +6,7 @@ import {
 } from "@napier/runtime";
 import { Hono } from "hono";
 
+import { registerBrowserInteractionConfirmationHttp } from "./browser-interaction-confirmation-http.js";
 import { errorMessage, jsonError } from "./http-response-evidence.js";
 import {
   readLimitedJson,
@@ -48,6 +49,11 @@ type ThreadControlHttpStore = ThreadBranchStore &
 
 export interface ThreadControlHttpServices {
   store: ThreadControlHttpStore;
+  runtime: {
+    browserInteractionConfirmations: Parameters<
+      typeof registerBrowserInteractionConfirmationHttp
+    >[1];
+  };
 }
 
 export function registerThreadControlHttp(
@@ -56,6 +62,10 @@ export function registerThreadControlHttp(
 ): void {
   registerThreadBranchHttp(app, services.store);
   registerRunControlMessageHttp(app, services.store);
+  registerBrowserInteractionConfirmationHttp(
+    app,
+    services.runtime.browserInteractionConfirmations,
+  );
   registerOperatorDecisionHttp(app, services.store);
   registerAgentMilestoneHttp(app, services.store);
 }

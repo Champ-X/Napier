@@ -48,11 +48,11 @@ export function assessBrowserToolCall(
       reason: "read-only isolated public-network Browser Session",
     };
   }
-  if (mode !== "unrestricted") {
+  if (mode === "observe") {
     return {
       allowed: false,
       risk: "high",
-      reason: "interactive Browser actions require unrestricted policy",
+      reason: "interactive Browser actions require a writable Agent policy",
     };
   }
   if (action === "upload" || action === "download") {
@@ -63,7 +63,8 @@ export function assessBrowserToolCall(
   return {
     allowed: true,
     risk: "high",
-    reason: "interactive isolated public-network Browser Session",
+    reason:
+      "interactive isolated public-network Browser Session requires action-bound confirmation",
   };
 }
 

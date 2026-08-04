@@ -4,6 +4,7 @@ import path from "node:path";
 import type { KeychainSecretStore } from "./credentials.js";
 import { CredentialReferenceStore } from "./credentials.js";
 import { AgentRuntime } from "./agent-runtime.js";
+import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
 import { AgentMessageExperimentRuntime } from "./agent-message-experiments.js";
 import { EmbeddedAgentService } from "./embedded-agents.js";
@@ -34,6 +35,10 @@ export interface LocalAgentRuntimeOptions {
   keychain?: KeychainSecretStore;
   sandbox?: OsSandboxAdapter;
   browserSessions?: RunBrowserSessionManager;
+  browserInteractionConfirmation?: {
+    available?: boolean;
+    timeoutMs?: number;
+  };
   researchSourceCaptures?: BrowserSourceCaptureProvider;
   webSearch?: WebSearchExecutor;
   webFetch?: WebFetchExecutor;
@@ -50,6 +55,7 @@ export interface LocalAgentRuntimeServices {
   sandbox: OsSandboxAdapter;
   workspaceProcesses: WorkspaceProcessManager;
   workspaceFileMutations: WorkspaceFileMutationManager;
+  browserInteractionConfirmations: BrowserInteractionConfirmationManager;
   runtime: AgentRuntime;
   embeddedAgents: EmbeddedAgentService;
   agentMessageExperiments: AgentMessageExperimentRuntime;
@@ -98,6 +104,11 @@ export async function createLocalAgentRuntime(
       dataRoot,
     });
     await workspaceFileMutations.initialize();
+    const browserInteractionConfirmations =
+      new BrowserInteractionConfirmationManager(
+        store,
+        options.browserInteractionConfirmation,
+      );
     const runtime = new AgentRuntime(
       store,
       models,
@@ -119,6 +130,7 @@ export async function createLocalAgentRuntime(
         ...(options.webFetch ? { webFetch: options.webFetch } : {}),
         ...(options.webFetchHttp ? { webFetchHttp: options.webFetchHttp } : {}),
       },
+      browserInteractionConfirmations,
     );
     const embeddedAgents = new EmbeddedAgentService(store, runtime);
     const agentMessageExperiments = new AgentMessageExperimentRuntime(
@@ -152,6 +164,7 @@ export async function createLocalAgentRuntime(
       sandbox,
       workspaceProcesses: initializedProcesses,
       workspaceFileMutations,
+      browserInteractionConfirmations,
       runtime,
       embeddedAgents,
       agentMessageExperiments,

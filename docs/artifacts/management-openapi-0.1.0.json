@@ -10625,6 +10625,122 @@
         "x-napier-source-route": "POST /api/threads/:threadId/resume"
       }
     },
+    "/api/threads/{threadId}/runs/{runId}/browser-interaction-confirmations": {
+      "get": {
+        "operationId": "get-threads-by-threadId-runs-by-runId-browser-interaction-confirmations",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/runs/{runId}/browser-interaction-confirmations",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/runs/:runId/browser-interaction-confirmations"
+      }
+    },
+    "/api/threads/{threadId}/runs/{runId}/browser-interaction-confirmations/{confirmationId}/decision": {
+      "post": {
+        "operationId": "post-threads-by-threadId-runs-by-runId-browser-interaction-confirmations-by-confirmationId-decision",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/runs/{runId}/browser-interaction-confirmations/{confirmationId}/decision",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "confirmationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/runs/:runId/browser-interaction-confirmations/:confirmationId/decision"
+      }
+    },
     "/api/threads/{threadId}/runs/{runId}/control-messages": {
       "get": {
         "operationId": "get-threads-by-threadId-runs-by-runId-control-messages",
@@ -14544,6 +14660,7 @@
   "x-napier-source-paths": [
     "apps/server/src/agent-profile-http.ts",
     "apps/server/src/app.ts",
+    "apps/server/src/browser-interaction-confirmation-http.ts",
     "apps/server/src/credential-http.ts",
     "apps/server/src/evaluation-casebook-admin-http.ts",
     "apps/server/src/evaluation-catalog-http.ts",
@@ -14575,7 +14692,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "d72bd310d31caae1bfe9ea5a7813462586b42f62f430fbda1c7afea0967f7976",
-  "x-napier-route-count": 255,
-  "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
+  "x-napier-source-sha256": "b3206d116424f2aac48046eb72a7e4e0189893a6757dd16566c2801a33549220",
+  "x-napier-route-count": 257,
+  "x-napier-route-set-sha256": "eb3a60d123ce034df170adc0f97f0f25bfd09e60e5d664306a061c410f752376"
 }

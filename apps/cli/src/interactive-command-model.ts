@@ -107,10 +107,20 @@ export function interactiveStatusLine(
     `Last Run: ${run ? `${run.id} ${run.status}` : "none"}`,
     ...(capabilities
       ? [
-          `Capabilities: ${capabilities.label} / ${capabilities.policyLabel} / browser ${capabilities.browserRead ? "read" : "off"} / interact ${capabilities.browserInteract ? "yes" : "no"}`,
+          `Capabilities: ${capabilities.label} / ${capabilities.policyLabel} / browser ${capabilities.browserRead ? "read" : "off"} / interact ${browserInteractionLabel(capabilities)}`,
         ]
       : []),
   ].join(" | ");
+}
+
+function browserInteractionLabel(
+  capabilities: AgentCapabilityStatus,
+): "yes" | "confirm" | "no" {
+  return capabilities.browserInteract
+    ? "yes"
+    : capabilities.browserInteractWithConfirmation
+      ? "confirm"
+      : "no";
 }
 
 export function interactiveModelLabel(model: ModelRef | undefined): string {

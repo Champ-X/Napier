@@ -11,6 +11,10 @@
     "./agent-capabilities": {
       "types": "./dist/agent-capabilities.d.ts",
       "import": "./dist/agent-capabilities.js"
+    },
+    "./browser-interaction-confirmation": {
+      "types": "./dist/browser-interaction-confirmation.d.ts",
+      "import": "./dist/browser-interaction-confirmation.js"
     }
   },
   "files": [

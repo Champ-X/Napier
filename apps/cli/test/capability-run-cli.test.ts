@@ -73,6 +73,40 @@ describe("temporary capability preset CLI", () => {
     );
   });
 
+  it("does not advertise Web-only Browser confirmation in Chat status", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-chat-safe-status-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const stdin = ttyInput();
+    const stderr = new CaptureWritable();
+    const running = runCli(
+      [
+        "chat",
+        "--workspace",
+        workspaceRoot,
+        "--preset",
+        "safe_automation",
+      ],
+      {
+        cwd: root,
+        env: {},
+        stdin,
+        stdout: new CaptureWritable(),
+        stderr,
+      },
+      dependencies(),
+    );
+    await vi.waitFor(() => expect(stderr.text()).toContain("chat ready"));
+    stdin.end("/status\n/exit\n");
+
+    expect(await running).toBe(0);
+    expect(stderr.text()).toContain(
+      "Capabilities: Safe Automation / Workspace changes / browser read / interact no",
+    );
+    expect(stderr.text()).not.toContain("interact confirm");
+  });
+
   it("runs the default one-shot entry with a non-persistent Browser preset", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-cli-run-preset-"));
     roots.push(root);

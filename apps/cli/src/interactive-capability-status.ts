@@ -10,9 +10,13 @@ export function interactiveCapabilityStatus(
   profile: AgentProfile,
   presetId: AgentCapabilityPresetId | undefined,
 ): AgentCapabilityStatus {
-  return agentCapabilityStatus(
+  const status = agentCapabilityStatus(
     presetId
       ? { ...profile, ...agentCapabilityPresetUpdate(presetId) }
       : profile,
   );
+  return {
+    ...status,
+    browserInteractWithConfirmation: false,
+  };
 }

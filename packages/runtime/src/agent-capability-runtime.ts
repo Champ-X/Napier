@@ -2,6 +2,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { AgentProfile } from "@napier/contracts";
 
 import { AgentSessionRuntime } from "./agent-sessions.js";
+import type { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import { RunBrowserSessionManager } from "./browser-session.js";
 import { gitStageMutationManagerFor } from "./git-stage.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
@@ -29,6 +30,7 @@ interface AgentCapabilityOwner {
 
 export interface CreateAgentCapabilityToolsOptions extends AgentCapabilityOwner {
   profile: AgentProfile;
+  browserInteractionConfirmationAllowed?: boolean;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
 }
@@ -49,6 +51,7 @@ export class AgentCapabilityRuntime {
     private readonly sandbox: OsSandboxAdapter,
     private readonly processes?: WorkspaceProcessManager,
     private readonly workspaceFileMutations?: WorkspaceFileMutationManager,
+    private readonly browserInteractionConfirmations?: BrowserInteractionConfirmationManager,
     browserSessions?: RunBrowserSessionManager,
     researchSourceCaptures?: BrowserSourceCaptureProvider,
     network: AgentNetworkCapabilities = {},
@@ -123,7 +126,12 @@ export class AgentCapabilityRuntime {
         ...this.sessions.createNetworkTools(
           options.profile.enabledTools,
           owner,
-          { readOnlyBrowser: options.profile.toolPolicy === "observe" },
+          {
+            readOnlyBrowser:
+              options.profile.toolPolicy === "observe" ||
+              options.browserInteractionConfirmationAllowed !== true ||
+              this.browserInteractionConfirmations?.available !== true,
+          },
         ),
       );
     }
@@ -149,6 +157,9 @@ export class AgentCapabilityRuntime {
     const settlements = await Promise.allSettled([
       this.sessions.cancelRun(owner),
       this.webFetch.cancelRun(owner),
+      ...(this.browserInteractionConfirmations
+        ? [this.browserInteractionConfirmations.cancelRun(owner)]
+        : []),
     ]);
     const failure = settlements.find(
       (settlement): settlement is PromiseRejectedResult =>

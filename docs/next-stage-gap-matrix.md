@@ -51,9 +51,11 @@ Audit date: 2026-08-04
   fields. `napier capabilities` supports status, non-mutating preview, and
   revisioned apply; Chat/TUI `/status` and Web show the same permission truth.
   `run`, `chat`, and `tui` also accept temporary per-Run presets without
-  revising the Agent. Browser remains read-only and reports interaction
-  unavailable. Guided credential Setup, dependency remediation, and confirmed
-  Browser interaction remain P0.
+  revising the Agent. Browser and Research remain read-only. Safe Automation
+  now exposes Browser interaction in Web only through exact one-use
+  confirmations; CLI/TUI remain read-only. Guided credential Setup, dependency
+  remediation, Browser Live/takeover, and broader interaction reliability
+  remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
@@ -1183,10 +1185,81 @@ Observed result:
 - the complete gate passes 925 production source files, 453 test files, zero
   cycles, and 2,165 regular tests: Root 105, CLI 184, Server 183, Web 490,
   Runtime 1,175, and SDK 28;
-- P0 remains in progress pending guided Setup/live readiness, action-bound
-  Browser preview and confirmation, Browser Live/takeover/resume, generic
-  login/CAPTCHA fallback, cross-restart Sources, and repeated open-web
-  Research/Security reliability.
+- P0 remains in progress pending guided Setup/live readiness, Browser
+  Live/takeover/resume, generic login/CAPTCHA fallback, cross-restart Sources,
+  broader confirmed-action reliability, and repeated open-web Research/Security
+  reliability.
+
+## Implemented Slice: Action-Bound Browser Interaction Confirmation
+
+User scenario: a user can let a writable Agent operate a public page without
+granting broad autonomous Browser authority or losing the active Browser
+Session at an operator boundary.
+
+Acceptance:
+
+- expose `click`, `type`, `select`, `upload`, and `download` only when the
+  active entry has an explicit confirmation channel and the Agent policy is
+  writable;
+- keep Browser and Research presets read-only; show Safe Automation as
+  `interact confirm`, never autonomous `yes`;
+- pause the validated tool call before execution and keep the SSE Run plus
+  Run-owned Browser Session alive;
+- bind approval to exact Thread, Run, call ID, action, argument SHA-256,
+  request SHA-256, and a bounded expiry;
+- consume approval once; reject wrong hashes, cross-Run IDs, replay, timeout,
+  cancellation, and restart;
+- append hash-only pending and terminal evidence without selector, text,
+  values, URL, upload path, download path, or page content;
+- preview target kind/hash, text bytes/hash, value count/set hash, path hash,
+  and cross-origin intent without exposing their raw values;
+- leave CLI, Chat, and TUI on the read-only Browser schema until they have
+  their own confirmation surfaces;
+- preserve existing public-network, cross-origin, protected-path, upload
+  freshness, download atomicity, popup/dialog, and unsolicited-download
+  controls.
+
+Threat boundary:
+
+- confirmation is not a policy bypass. Runtime first applies ordinary Browser
+  URL/file scope and Agent policy checks, then asks for one action grant;
+- neither `workspace` nor `unrestricted` bypasses confirmation;
+- the resolver is process-local and non-resumable. Durable events prove what
+  was requested and decided, but cannot recreate authority after restart;
+- one Run may have only one pending Browser confirmation. Decisions are exact
+  request-hash compare-and-set operations and disappear after settlement;
+- the Web parser accepts exact keys only and renders action plus bounded hash
+  prefixes and expiry. Extra content-bearing fields fail closed;
+- a disconnected SSE observer cannot erase durable evidence; rejection,
+  expiry, or cancellation returns a blocked tool result without execution.
+
+Observed result:
+
+- focused Runtime, policy, Server validation/HTTP, CLI status, and Web
+  parser/panel tests cover approval, rejection, wrong-hash denial, replay
+  denial, unavailable-entry denial, redaction, entry-specific schemas, and
+  confirmation-bound capability truth;
+- built Web Dogfood used a deterministic Agent with the real production
+  Browser manager against `https://example.com/`. The UI displayed a
+  hash-only `Confirm click` docket and disabled free-form steering while the
+  action waited;
+- approving once completed `start -> click -> close` in one Run and one
+  Browser Session with operations `1 -> 2 -> 3`. Ledger evidence was
+  `pending -> approved`; the confirmed cross-origin click completed and raw
+  arguments were absent;
+- a second mobile Dogfood at 390x844 displayed both Reject and Approve once,
+  kept the composer disabled, and had no horizontal overflow. Reject produced
+  `pending -> rejected`, no click completion, one blocked tool result, and a
+  completed Run;
+- desktop QA at 1440x900 had no horizontal overflow or console errors; the
+  confirmation docket disappeared after settlement and the final result
+  rendered;
+- the complete gate covers 934 production source files, 457 test files, zero
+  cycles, and 2,180 regular tests: Root 105, CLI 185, Server 185, Web 494,
+  Runtime 1,183, and SDK 28;
+- Browser Live viewport streaming, pause/takeover, tabs/history, login/CAPTCHA
+  remediation, cross-restart interaction recovery, CLI/TUI confirmation, and
+  repeated open-web interaction benchmarks remain P0.
 
 ## Implemented Slice: Research Outcome Benchmark
 

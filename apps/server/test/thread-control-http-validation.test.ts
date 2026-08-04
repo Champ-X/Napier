@@ -4,6 +4,7 @@ import { MAX_RUN_CONTROL_MESSAGE_BYTES } from "@napier/runtime";
 
 import {
   parseAnswerOperatorDecisionRequest,
+  parseBrowserInteractionConfirmationDecision,
   parseCreateBranchRequest,
   parseQueueRunControlMessageRequest,
 } from "../src/thread-control-http-validation.js";
@@ -49,6 +50,30 @@ describe("Thread control HTTP validation", () => {
     ).toBeUndefined();
     expect(
       parseAnswerOperatorDecisionRequest({ selectedOptionIds: [] }),
+    ).toBeUndefined();
+  });
+
+  it("requires an exact Browser decision and request hash", () => {
+    expect(
+      parseBrowserInteractionConfirmationDecision({
+        decision: "approve",
+        expectedRequestSha256: "a".repeat(64),
+      }),
+    ).toEqual({
+      decision: "approve",
+      expectedRequestSha256: "a".repeat(64),
+    });
+    expect(
+      parseBrowserInteractionConfirmationDecision({
+        decision: "allow",
+        expectedRequestSha256: "a".repeat(64),
+      }),
+    ).toBeUndefined();
+    expect(
+      parseBrowserInteractionConfirmationDecision({
+        decision: "reject",
+        expectedRequestSha256: "not-a-hash",
+      }),
     ).toBeUndefined();
   });
 });

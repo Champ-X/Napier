@@ -27,7 +27,7 @@ afterEach(async () => {
 });
 
 describe("Agent capability presets", () => {
-  it("defines five honest presets without granting Browser interaction", () => {
+  it("defines five honest presets without autonomous Browser interaction", () => {
     expect(AGENT_CAPABILITY_PRESETS.map((preset) => preset.id)).toEqual([
       "coding",
       "research",
@@ -41,6 +41,9 @@ describe("Agent capability presets", () => {
       });
       expect(status.presetId).toBe(preset.id);
       expect(status.browserInteract).toBe(false);
+      expect(status.browserInteractWithConfirmation).toBe(
+        preset.id === "safe_automation",
+      );
       expect(new Set(preset.enabledTools).size).toBe(
         preset.enabledTools.length,
       );
@@ -54,6 +57,7 @@ describe("Agent capability presets", () => {
         networkRead: true,
         browserRead: true,
         browserInteract: false,
+        browserInteractWithConfirmation: false,
         workspaceWrite: false,
         processExecution: false,
       }),
@@ -66,6 +70,7 @@ describe("Agent capability presets", () => {
         toolPolicy: "workspace",
         browserRead: true,
         browserInteract: false,
+        browserInteractWithConfirmation: true,
         workspaceWrite: true,
         processExecution: true,
       }),

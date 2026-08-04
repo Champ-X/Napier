@@ -33,6 +33,7 @@ export interface AgentCapabilityStatus {
   networkRead: boolean;
   browserRead: boolean;
   browserInteract: boolean;
+  browserInteractWithConfirmation: boolean;
   workspaceRead: boolean;
   workspaceWrite: boolean;
   processExecution: boolean;
@@ -221,8 +222,9 @@ export function agentCapabilityStatus(
     blockedEnabledToolCount,
     networkRead: tools.has("web_search") || tools.has("web_fetch"),
     browserRead: tools.has("browser"),
-    browserInteract:
-      tools.has("browser") && profile.toolPolicy === "unrestricted",
+    browserInteract: false,
+    browserInteractWithConfirmation:
+      tools.has("browser") && profile.toolPolicy !== "observe",
     workspaceRead: [...tools].some((tool) =>
       WORKSPACE_READ_TOOLS.includes(tool),
     ),

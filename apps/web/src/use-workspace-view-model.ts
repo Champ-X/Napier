@@ -33,7 +33,6 @@ import type {
   ThreadReplayBundleVerification,
   ThreadSummary,
 } from "@napier/contracts";
-
 import {
   answerOperatorDecision as answerOperatorDecisionApi,
   applyExtensionPackageDeployment as applyExtensionPackageDeploymentApi,
@@ -100,6 +99,7 @@ import {
   runReplaySnapshotFilename,
   threadReplayBundleFilename,
 } from "./run-replay-view-model";
+import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
 
 export type InspectorTab =
   | "trace"
@@ -352,7 +352,6 @@ export function useWorkspaceViewModel() {
   useEffect(() => {
     void loadBootstrap();
   }, [loadBootstrap]);
-
   const messages = useMemo<MessageView[]>(() => {
     return (detail?.events ?? []).flatMap((event): MessageView[] => {
       if (event.type !== "message.user" && event.type !== "message.assistant")
@@ -406,6 +405,10 @@ export function useWorkspaceViewModel() {
         ?.source === "workflow",
     [detail?.runs, openOperatorDecision],
   );
+  const browserInteraction = useBrowserInteractionConfirmation(
+    detail,
+    setError,
+  );
   const terminalRuns = useMemo(
     () =>
       (detail?.runs ?? []).filter(
@@ -433,7 +436,6 @@ export function useWorkspaceViewModel() {
   const terminalRunKey = terminalRuns
     .map((run) => `${run.id}:${run.status}`)
     .join("|");
-
   useEffect(() => {
     const ids = new Set(terminalRuns.map((run) => run.id));
     const fallbackLeft = terminalRuns.at(-2)?.id ?? "";
@@ -446,7 +448,6 @@ export function useWorkspaceViewModel() {
     );
     setRunComparison(undefined);
   }, [detail?.thread.id, terminalRunKey]);
-
   const selectThread = useCallback(async (threadId: string) => {
     setSelectedThreadId(threadId);
     setStreamingText("");
@@ -463,7 +464,6 @@ export function useWorkspaceViewModel() {
       setError(toErrorMessage(loadError));
     }
   }, []);
-
   const newThread = useCallback(async () => {
     setLabFixtureReceipt(undefined);
     setRunReplayVerificationReceipt(undefined);
@@ -536,7 +536,6 @@ export function useWorkspaceViewModel() {
       );
     }
   }, []);
-
   const refreshBootstrap = useCallback(async (threadId: string) => {
     const refreshed = await getBootstrap(threadId);
     setBootstrap(refreshed);
@@ -2134,6 +2133,7 @@ export function useWorkspaceViewModel() {
     labBusyAction,
     labFixtureReceipt,
     operatorDecisionBusy,
+    ...browserInteraction,
     streamingText,
     messages,
     visibleTrace,
