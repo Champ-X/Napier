@@ -1,0 +1,916 @@
+{
+  "kind": "napier.workflow-benchmark-ledger",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T03:05:13.871Z",
+  "caseId": "long_horizon_multi_restart_approval_v1",
+  "caseSha256": "71b5885b79b36b423959f6c9e0da27ab8cd3b53827167fe33858127e67424d2e",
+  "threadId": "thread_ec35108117f14acd9fe4",
+  "workflow": {
+    "manifestSha256": "b5f3a4a826099ee5959d74a3f11c2451ff46f5e5200dc33bc2a26e15d5bc6c99",
+    "blueprintSha256": "e5adb9c1ba2db9c0dce8f015eff822e25b25604c6c4fdedd841fcc2747d58f9e",
+    "resultSha256": "fb080a6b14df12f199f37db4a4d1693f92d73a8f7cd08e53ed450ccfce85264b",
+    "nodeResultCount": 1,
+    "completedNodeResultCount": 0,
+    "planId": "plan_1cc2c26c003e4de5b6a2",
+    "status": "blocked",
+    "mapRunIds": [],
+    "modelResponseEvidenceEvent": {
+      "id": "event_e2526bf36020425092df",
+      "threadId": "thread_ec35108117f14acd9fe4",
+      "runId": "run_6b60d9d44e4a4f85ba39",
+      "seq": 52,
+      "type": "benchmark.workflow.model-responses.observed",
+      "category": "evaluation",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.865Z",
+      "payload": {
+        "schemaVersion": 1,
+        "sourceReplaySha256": "c37c56c0eebd5af926385eee6217771a9a614b03d2eeb1386fe21fe021d7c6f1",
+        "sourceEventCount": 51,
+        "modelResponseCount": 3,
+        "modelResponseErrorCount": 3,
+        "modelResponseUsageSampleCount": 3,
+        "responseSetSha256": "c7c21b38a8a54a042dd2027355da14346243d2d1844dc988c7732ae76d6c7a2d"
+      }
+    }
+  },
+  "runs": [
+    {
+      "id": "run_612ec379f86643dab7e0",
+      "status": "failed",
+      "parentRunId": "run_6b60d9d44e4a4f85ba39",
+      "executionMode": "workflow_map_read_only",
+      "configurationSha256": "fe275b3f81dcab6008bc426c051df2b65f11f30d5a94acac6618269843ae0a99",
+      "durationMs": 159,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0
+      }
+    },
+    {
+      "id": "run_6b60d9d44e4a4f85ba39",
+      "status": "failed",
+      "executionMode": "standard",
+      "configurationSha256": "036b881b994c9918b9de46bb31f8784f0f6ab30e61b5c5bbfb357208981da541",
+      "durationMs": 190,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0
+      }
+    },
+    {
+      "id": "run_7b19cf22b3f64984a475",
+      "status": "cancelled",
+      "parentRunId": "run_6b60d9d44e4a4f85ba39",
+      "executionMode": "workflow_map_read_only",
+      "configurationSha256": "fe275b3f81dcab6008bc426c051df2b65f11f30d5a94acac6618269843ae0a99",
+      "durationMs": 174,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0
+      }
+    },
+    {
+      "id": "run_d3373c22e3144500ab3c",
+      "status": "cancelled",
+      "parentRunId": "run_6b60d9d44e4a4f85ba39",
+      "executionMode": "workflow_map_read_only",
+      "configurationSha256": "fe275b3f81dcab6008bc426c051df2b65f11f30d5a94acac6618269843ae0a99",
+      "durationMs": 173,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0
+      }
+    }
+  ],
+  "evaluationEvent": {
+    "id": "event_606c6e188dca4b68b8d9",
+    "threadId": "thread_ec35108117f14acd9fe4",
+    "runId": "run_6b60d9d44e4a4f85ba39",
+    "seq": 53,
+    "type": "benchmark.workflow.evaluated",
+    "category": "evaluation",
+    "visibility": "user",
+    "createdAt": "2026-08-04T03:05:13.869Z",
+    "payload": {
+      "kind": "napier.workflow-benchmark-evaluation",
+      "schemaVersion": 6,
+      "caseId": "long_horizon_multi_restart_approval_v1",
+      "caseSha256": "71b5885b79b36b423959f6c9e0da27ab8cd3b53827167fe33858127e67424d2e",
+      "status": "inconclusive",
+      "workflowStatus": "blocked",
+      "criteriaSha256": "9ce9c6c25352b06e9840afad58ae1d62944b29a6a7fef64c29d9932acf987268",
+      "expectedOutputSha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+      "expectedMapOutputSha256": "c0a3b197e158c3e6cf1b2db325da5646c7c88fee920f5726fc46f5c56bbbe33d",
+      "outputMatch": false,
+      "mapOutputMatch": false,
+      "expectedNodeResultCount": 3,
+      "completedNodeResultCount": 0,
+      "expectedMapItemCount": 3,
+      "completedMapRunCount": 0,
+      "mapCompletedEventCount": 0,
+      "reduceCompletedEventCount": 0,
+      "reduceModelOrToolEventCount": 0,
+      "replayValid": true,
+      "credentialLeakDetected": false,
+      "runtimeRestartCount": 0,
+      "approvalRecovered": false,
+      "completedMapRunsReused": false,
+      "postRestartModelResponseCount": 0,
+      "modelResponseCount": 3,
+      "modelResponseErrorCount": 3,
+      "modelResponseUsageSampleCount": 3,
+      "diagnostics": [
+        "workflow_not_completed",
+        "output_mismatch",
+        "map_output_mismatch",
+        "node_result_mismatch",
+        "map_run_mismatch",
+        "map_event_mismatch",
+        "reduce_event_mismatch",
+        "runtime_restart_mismatch",
+        "approval_recovery_mismatch",
+        "map_reuse_mismatch"
+      ],
+      "contentSha256": "c1eddecff87c93fdf50c38696161123bb56fd9a40aef670e5ebf4888d6026202"
+    }
+  },
+  "terminalEvent": {
+    "id": "event_b707b0f10ecd4e2c86a1",
+    "threadId": "thread_ec35108117f14acd9fe4",
+    "runId": "runctl_4cac273657f44fc7a09d",
+    "seq": 51,
+    "type": "workflow.blocked",
+    "category": "plan",
+    "visibility": "user",
+    "createdAt": "2026-08-04T03:05:13.858Z",
+    "payload": {
+      "schemaVersion": 1,
+      "planId": "plan_1cc2c26c003e4de5b6a2",
+      "manifestSha256": "b5f3a4a826099ee5959d74a3f11c2451ff46f5e5200dc33bc2a26e15d5bc6c99",
+      "blueprintSha256": "e5adb9c1ba2db9c0dce8f015eff822e25b25604c6c4fdedd841fcc2747d58f9e",
+      "status": "blocked",
+      "planRevision": 3,
+      "nodeResultCount": 1,
+      "completedNodeCount": 0,
+      "skippedNodeCount": 0,
+      "resultSha256": "fb080a6b14df12f199f37db4a4d1693f92d73a8f7cd08e53ed450ccfce85264b"
+    }
+  },
+  "eventCount": 53,
+  "retainedEventCount": 53,
+  "omittedEventCount": 0,
+  "eventTypeCounts": [
+    {
+      "type": "benchmark.workflow.evaluated",
+      "count": 1
+    },
+    {
+      "type": "benchmark.workflow.model-responses.observed",
+      "count": 1
+    },
+    {
+      "type": "context.memory",
+      "count": 3
+    },
+    {
+      "type": "context.model_envelope",
+      "count": 3
+    },
+    {
+      "type": "context.model_invocation",
+      "count": 3
+    },
+    {
+      "type": "context.prepared",
+      "count": 3
+    },
+    {
+      "type": "context.prompt_variables",
+      "count": 3
+    },
+    {
+      "type": "context.skills",
+      "count": 3
+    },
+    {
+      "type": "context.tool_loop_guard",
+      "count": 3
+    },
+    {
+      "type": "model.response",
+      "count": 3
+    },
+    {
+      "type": "plan.created",
+      "count": 1
+    },
+    {
+      "type": "plan.step.blocked",
+      "count": 1
+    },
+    {
+      "type": "plan.step.started",
+      "count": 1
+    },
+    {
+      "type": "run.cancelled",
+      "count": 2
+    },
+    {
+      "type": "run.failed",
+      "count": 2
+    },
+    {
+      "type": "run.started",
+      "count": 4
+    },
+    {
+      "type": "turn.started",
+      "count": 3
+    },
+    {
+      "type": "workflow.blocked",
+      "count": 1
+    },
+    {
+      "type": "workflow.map.item.failed",
+      "count": 3
+    },
+    {
+      "type": "workflow.map.item.started",
+      "count": 3
+    },
+    {
+      "type": "workflow.node.failed",
+      "count": 1
+    },
+    {
+      "type": "workflow.node.prompt",
+      "count": 3
+    },
+    {
+      "type": "workflow.node.started",
+      "count": 1
+    },
+    {
+      "type": "workflow.started",
+      "count": 1
+    }
+  ],
+  "eventTypeSetSha256": "dad5e55a18b31f206db1322ab0e4276c73c1c60c1ff64f06e8c3f15fc1bb14db",
+  "sourceEventStreamSha256": "aef7cc45e2d63d7d03dcfc249e6cfd46de412187609c2fa4656761a9dbd17bae",
+  "sourceReplaySha256": "d33633328ade716397f5ed0d22da9cccb4066d5275e093cba46db08edecb9b38",
+  "eventReceipts": [
+    {
+      "id": "event_a1a6cb4579534d7e81de",
+      "seq": 1,
+      "runId": "runctl_fcc4421b0b9c40ec97f8",
+      "type": "plan.created",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.659Z",
+      "payloadSha256": "70a70fccd09d22ff1266dec810502b8ccab4054ebbda7d2e9814b72f34d01cba",
+      "previousReceiptSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "receiptSha256": "620ac4c7873bbe7d8033ae03d15b4af5e04111a8c6d15304a9db1c1f39076589"
+    },
+    {
+      "id": "event_94ce57f216214b1c9a14",
+      "seq": 2,
+      "runId": "runctl_031bd6a6d9e44bf7a4d2",
+      "type": "workflow.started",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.660Z",
+      "payloadSha256": "e9218202962aa8f35f19678ab019567eabb1aabd2271e641c9253e59794fd1f3",
+      "previousReceiptSha256": "620ac4c7873bbe7d8033ae03d15b4af5e04111a8c6d15304a9db1c1f39076589",
+      "receiptSha256": "4c1b5da6cf93a0251c5a479d064957c524cd64eec4203c6c16f769406defab82"
+    },
+    {
+      "id": "event_6d1042dfddc14dcaa95a",
+      "seq": 3,
+      "runId": "run_6b60d9d44e4a4f85ba39",
+      "type": "plan.step.started",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.664Z",
+      "payloadSha256": "c723e8808d4a916bea45d1493d25e4c82165b62d556f787668a8b5615b8faaad",
+      "previousReceiptSha256": "4c1b5da6cf93a0251c5a479d064957c524cd64eec4203c6c16f769406defab82",
+      "receiptSha256": "e6b6d2f339aaf8ad51fa8c73d7a4f5bc4d25fc1f17f6278a16b8e6411d85e4ee"
+    },
+    {
+      "id": "event_7c7150f6b51641c79ce2",
+      "seq": 4,
+      "runId": "run_6b60d9d44e4a4f85ba39",
+      "type": "workflow.node.started",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.665Z",
+      "payloadSha256": "e82ea5c43a5300712146d7ceec45f395cce8af78d2ad0680f1af6a480b208294",
+      "previousReceiptSha256": "e6b6d2f339aaf8ad51fa8c73d7a4f5bc4d25fc1f17f6278a16b8e6411d85e4ee",
+      "receiptSha256": "5b5814847794dcc99e39624f8dc4d34ed5c3279e2e63f79f6d07cece7b8d705f"
+    },
+    {
+      "id": "event_8283f68928dc48488fe0",
+      "seq": 5,
+      "runId": "run_6b60d9d44e4a4f85ba39",
+      "type": "run.started",
+      "category": "lifecycle",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.666Z",
+      "payloadSha256": "8d6b7a979d8716bda3ffea394408a783d28dd283f75a5594aaeccb26b1a2d84f",
+      "previousReceiptSha256": "5b5814847794dcc99e39624f8dc4d34ed5c3279e2e63f79f6d07cece7b8d705f",
+      "receiptSha256": "30b89b501a2ff2d4de6403622946ef5caa39da8aebb1e254d7eeb5e42ffca59d"
+    },
+    {
+      "id": "event_34c2524d348e4851b997",
+      "seq": 6,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "workflow.map.item.started",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.671Z",
+      "payloadSha256": "b6c10d41dd34ca6c25d7bdb0266d0e9cd066e9d9f108d66ebf5d9d0bdb37c6f4",
+      "previousReceiptSha256": "30b89b501a2ff2d4de6403622946ef5caa39da8aebb1e254d7eeb5e42ffca59d",
+      "receiptSha256": "b1906b929dde67fae1ca990e2c432072a88a3b3384a6dcae300ba263fad4acf0"
+    },
+    {
+      "id": "event_2958c088b3a64151a0fc",
+      "seq": 7,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "workflow.map.item.started",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.672Z",
+      "payloadSha256": "9d7bd45ff075a6dd629722206431650154fa049ad6df5efe51b9aa0d006c3c7a",
+      "previousReceiptSha256": "b1906b929dde67fae1ca990e2c432072a88a3b3384a6dcae300ba263fad4acf0",
+      "receiptSha256": "cca7fea6518ebfe9559041050e2b5058cc308c2217ad77f4bfac59db92a24300"
+    },
+    {
+      "id": "event_3c9c46812b42436fb822",
+      "seq": 8,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "workflow.map.item.started",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.673Z",
+      "payloadSha256": "158615b79e969a77239198a5c7cf0c2edc0d23d3145a39b2079c80773b9a26a0",
+      "previousReceiptSha256": "cca7fea6518ebfe9559041050e2b5058cc308c2217ad77f4bfac59db92a24300",
+      "receiptSha256": "bab9a59b2339cef4cdca1184767e5047766fe6ecb8eca74fadb812fff74c009a"
+    },
+    {
+      "id": "event_a502f85af1874ef29987",
+      "seq": 9,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "run.started",
+      "category": "lifecycle",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.674Z",
+      "payloadSha256": "2ce4a82823be558f1fe26ded56bd856eeeb272fb0afaa3896edd0a694462b660",
+      "previousReceiptSha256": "bab9a59b2339cef4cdca1184767e5047766fe6ecb8eca74fadb812fff74c009a",
+      "receiptSha256": "e3ab28d2d1d597962051ca18028d8ab23fb4b7b7660ab83c0adc31f74e6a7e23"
+    },
+    {
+      "id": "event_81a88565e7d84a5c9f16",
+      "seq": 10,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "run.started",
+      "category": "lifecycle",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.674Z",
+      "payloadSha256": "2ce4a82823be558f1fe26ded56bd856eeeb272fb0afaa3896edd0a694462b660",
+      "previousReceiptSha256": "e3ab28d2d1d597962051ca18028d8ab23fb4b7b7660ab83c0adc31f74e6a7e23",
+      "receiptSha256": "5ead855a49d3db9194f29983631cf5c0cf5d554acd92760689c9f88df3d6f7e6"
+    },
+    {
+      "id": "event_a3b7968ed4a8480eb41a",
+      "seq": 11,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "run.started",
+      "category": "lifecycle",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.675Z",
+      "payloadSha256": "2ce4a82823be558f1fe26ded56bd856eeeb272fb0afaa3896edd0a694462b660",
+      "previousReceiptSha256": "5ead855a49d3db9194f29983631cf5c0cf5d554acd92760689c9f88df3d6f7e6",
+      "receiptSha256": "2d4b2a68e8a3698b1c62efc5fddb182cf5f2266051ff6ee3d65b9869e2891f06"
+    },
+    {
+      "id": "event_376eaaa95bf04bbca3af",
+      "seq": 12,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "context.skills",
+      "category": "system",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.676Z",
+      "payloadSha256": "30b90165fa868efc78aea945b6ccf8bb5655a71047c58aad73bbeacc925e0350",
+      "previousReceiptSha256": "2d4b2a68e8a3698b1c62efc5fddb182cf5f2266051ff6ee3d65b9869e2891f06",
+      "receiptSha256": "07f4e8a8f23a220942c690634c721ffdabeb3403e36654fc07b380224a5fc242"
+    },
+    {
+      "id": "event_e2bd009430c945f59294",
+      "seq": 13,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "context.skills",
+      "category": "system",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.677Z",
+      "payloadSha256": "30b90165fa868efc78aea945b6ccf8bb5655a71047c58aad73bbeacc925e0350",
+      "previousReceiptSha256": "07f4e8a8f23a220942c690634c721ffdabeb3403e36654fc07b380224a5fc242",
+      "receiptSha256": "dfb8c21750af4e0c72eb9e491cc278b716f97cdd04b83ba063f1c5c2057f2037"
+    },
+    {
+      "id": "event_30a669454e6a47778fb6",
+      "seq": 14,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "context.skills",
+      "category": "system",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.678Z",
+      "payloadSha256": "30b90165fa868efc78aea945b6ccf8bb5655a71047c58aad73bbeacc925e0350",
+      "previousReceiptSha256": "dfb8c21750af4e0c72eb9e491cc278b716f97cdd04b83ba063f1c5c2057f2037",
+      "receiptSha256": "1b588bbf75eb1777e8e13d192772a3d22189326d8f872dd14037eb99fc58083f"
+    },
+    {
+      "id": "event_8a0830481c83428097ea",
+      "seq": 15,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "context.prompt_variables",
+      "category": "system",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.679Z",
+      "payloadSha256": "27406c146d3fa3a1582a3e3db6ce90118633d2abdc28580522167dfd66700c63",
+      "previousReceiptSha256": "1b588bbf75eb1777e8e13d192772a3d22189326d8f872dd14037eb99fc58083f",
+      "receiptSha256": "ea50252ec2fe4564759fec02973647eea933b43cf9e4fe3bffe46b57dfbde511"
+    },
+    {
+      "id": "event_2f66210703e348fc8786",
+      "seq": 16,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "context.prompt_variables",
+      "category": "system",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.680Z",
+      "payloadSha256": "27406c146d3fa3a1582a3e3db6ce90118633d2abdc28580522167dfd66700c63",
+      "previousReceiptSha256": "ea50252ec2fe4564759fec02973647eea933b43cf9e4fe3bffe46b57dfbde511",
+      "receiptSha256": "c7edd520cb09f7c98d540cbee17eba92e9ce2137a354d7445c4425196a6e1adb"
+    },
+    {
+      "id": "event_31c548cdbd9244d48c7a",
+      "seq": 17,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "context.prompt_variables",
+      "category": "system",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.681Z",
+      "payloadSha256": "27406c146d3fa3a1582a3e3db6ce90118633d2abdc28580522167dfd66700c63",
+      "previousReceiptSha256": "c7edd520cb09f7c98d540cbee17eba92e9ce2137a354d7445c4425196a6e1adb",
+      "receiptSha256": "b8f2d2141e607f0dea2de82df2a937777238f3d27ffff81a6775d4996238fb2c"
+    },
+    {
+      "id": "event_34841c6ba46b4f5cbeaa",
+      "seq": 18,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "context.tool_loop_guard",
+      "category": "system",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.682Z",
+      "payloadSha256": "47a9268e10d074943180d3d8fde6005be08fa9c1a6f58fb6f22df376ba6104f9",
+      "previousReceiptSha256": "b8f2d2141e607f0dea2de82df2a937777238f3d27ffff81a6775d4996238fb2c",
+      "receiptSha256": "5c7e49505d5a49ab5882b793afddfe317608c8ca7f11c4466d22a2f551b37f40"
+    },
+    {
+      "id": "event_eae1a0ec0aaf46ceb737",
+      "seq": 19,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "context.tool_loop_guard",
+      "category": "system",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.683Z",
+      "payloadSha256": "47a9268e10d074943180d3d8fde6005be08fa9c1a6f58fb6f22df376ba6104f9",
+      "previousReceiptSha256": "5c7e49505d5a49ab5882b793afddfe317608c8ca7f11c4466d22a2f551b37f40",
+      "receiptSha256": "eb266f74f080f2b9bc301c9ce8ba94611ce8181f5ce20eceb315ddf675fbcf53"
+    },
+    {
+      "id": "event_5f9c433ef25a48328988",
+      "seq": 20,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "context.tool_loop_guard",
+      "category": "system",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.684Z",
+      "payloadSha256": "47a9268e10d074943180d3d8fde6005be08fa9c1a6f58fb6f22df376ba6104f9",
+      "previousReceiptSha256": "eb266f74f080f2b9bc301c9ce8ba94611ce8181f5ce20eceb315ddf675fbcf53",
+      "receiptSha256": "72e4229a3b39b928fe74de8ce3a3e5f14eaf313350b072207738947bba3375f4"
+    },
+    {
+      "id": "event_7ab062427eaa4cdf8e22",
+      "seq": 21,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "context.memory",
+      "category": "memory",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.685Z",
+      "payloadSha256": "29c08c56f026043f995c03fbffecab4321780f9f9a9cd4de32f30cc3e765a321",
+      "previousReceiptSha256": "72e4229a3b39b928fe74de8ce3a3e5f14eaf313350b072207738947bba3375f4",
+      "receiptSha256": "93c86592fb7c22477dc21d1fcbd4bd93e25663b3258e08bb11fe6c58a8aff3d6"
+    },
+    {
+      "id": "event_846c4b5f1ff8411b810c",
+      "seq": 22,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "context.memory",
+      "category": "memory",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.686Z",
+      "payloadSha256": "29c08c56f026043f995c03fbffecab4321780f9f9a9cd4de32f30cc3e765a321",
+      "previousReceiptSha256": "93c86592fb7c22477dc21d1fcbd4bd93e25663b3258e08bb11fe6c58a8aff3d6",
+      "receiptSha256": "c9b2a4fa670d2e1314c0c54baae9c787057435484b5c2ce9d779666a8b5a6f42"
+    },
+    {
+      "id": "event_6a34fd270f504efbb311",
+      "seq": 23,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "context.memory",
+      "category": "memory",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.687Z",
+      "payloadSha256": "29c08c56f026043f995c03fbffecab4321780f9f9a9cd4de32f30cc3e765a321",
+      "previousReceiptSha256": "c9b2a4fa670d2e1314c0c54baae9c787057435484b5c2ce9d779666a8b5a6f42",
+      "receiptSha256": "455f9486d4343bc9fc011a43b10803c6254d86283c9a770c3cf42bd024815c61"
+    },
+    {
+      "id": "event_aee694068bcf42bd8e00",
+      "seq": 24,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "context.prepared",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.688Z",
+      "payloadSha256": "a650a3432cbb818629caeebdf9d40b1df6b945b6be1dda0937688ef678674bd3",
+      "previousReceiptSha256": "455f9486d4343bc9fc011a43b10803c6254d86283c9a770c3cf42bd024815c61",
+      "receiptSha256": "e98164b051306deff653b4581889d1786104dbc08d6d993f9f5d7acb0432780f"
+    },
+    {
+      "id": "event_29f62cbbb5c14d9881c9",
+      "seq": 25,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "context.prepared",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.689Z",
+      "payloadSha256": "a650a3432cbb818629caeebdf9d40b1df6b945b6be1dda0937688ef678674bd3",
+      "previousReceiptSha256": "e98164b051306deff653b4581889d1786104dbc08d6d993f9f5d7acb0432780f",
+      "receiptSha256": "7e89b869434b3ca16bbc7d31b1b57d75371fe6543cf551f961b9c18e217fcb2e"
+    },
+    {
+      "id": "event_e358e6f32cc64f9188af",
+      "seq": 26,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "context.prepared",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.690Z",
+      "payloadSha256": "a650a3432cbb818629caeebdf9d40b1df6b945b6be1dda0937688ef678674bd3",
+      "previousReceiptSha256": "7e89b869434b3ca16bbc7d31b1b57d75371fe6543cf551f961b9c18e217fcb2e",
+      "receiptSha256": "335afc0b27d57dd0a75e474dbde92523859a72925c9dc02a6df19c1c20025368"
+    },
+    {
+      "id": "event_652bcb8bbb404af289d9",
+      "seq": 27,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "turn.started",
+      "category": "lifecycle",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.691Z",
+      "payloadSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "previousReceiptSha256": "335afc0b27d57dd0a75e474dbde92523859a72925c9dc02a6df19c1c20025368",
+      "receiptSha256": "1a1a2075fa4b5acad9f089d6c2cc045766d7833db44280b82f0f12ecd2845f92"
+    },
+    {
+      "id": "event_cbc3d09ad4d4471b9441",
+      "seq": 28,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "turn.started",
+      "category": "lifecycle",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.692Z",
+      "payloadSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "previousReceiptSha256": "1a1a2075fa4b5acad9f089d6c2cc045766d7833db44280b82f0f12ecd2845f92",
+      "receiptSha256": "f35b284eb391461e399170388e24d85cab7933118761063c7dfc0f863ed02f33"
+    },
+    {
+      "id": "event_07e7072b1a9e41d6970d",
+      "seq": 29,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "turn.started",
+      "category": "lifecycle",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.693Z",
+      "payloadSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "previousReceiptSha256": "f35b284eb391461e399170388e24d85cab7933118761063c7dfc0f863ed02f33",
+      "receiptSha256": "c43379b26d8984cbe669999cc8b53cbe33e14cb80d6682574bdfa5d3ef26ba3f"
+    },
+    {
+      "id": "event_91e003e94cd44830bb68",
+      "seq": 30,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "workflow.node.prompt",
+      "category": "plan",
+      "visibility": "hidden",
+      "createdAt": "2026-08-04T03:05:13.694Z",
+      "payloadSha256": "4901d68e89bb67b8c97a9e305ef63a0ba5b45b85e1b21f812e801a6e13169867",
+      "previousReceiptSha256": "c43379b26d8984cbe669999cc8b53cbe33e14cb80d6682574bdfa5d3ef26ba3f",
+      "receiptSha256": "067ee1a19d212b123b396f25c451298b6603f0ed93b9ccad3a5aefbdb3e4f8e8"
+    },
+    {
+      "id": "event_0c4e8ef3d96748fba00e",
+      "seq": 31,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "workflow.node.prompt",
+      "category": "plan",
+      "visibility": "hidden",
+      "createdAt": "2026-08-04T03:05:13.695Z",
+      "payloadSha256": "4a0aaf8afde2d7fa9466b8193c75cc4c2904c0e7cd4864b8e7d71ec8cdc98d9c",
+      "previousReceiptSha256": "067ee1a19d212b123b396f25c451298b6603f0ed93b9ccad3a5aefbdb3e4f8e8",
+      "receiptSha256": "d20197c65f0d8af89476f282ca022850caa781930187271655d81c6d289aa4df"
+    },
+    {
+      "id": "event_15b1ae8390464b21bdeb",
+      "seq": 32,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "workflow.node.prompt",
+      "category": "plan",
+      "visibility": "hidden",
+      "createdAt": "2026-08-04T03:05:13.696Z",
+      "payloadSha256": "8c07fd2550d6e084c503e69c8a6acac3cca4b5e86bdb8c4fd5d01edb6b0ade63",
+      "previousReceiptSha256": "d20197c65f0d8af89476f282ca022850caa781930187271655d81c6d289aa4df",
+      "receiptSha256": "24e2656a3d52a55e6e1543b39d83ebe3a32f85a8fae507b850a95afca157d7e5"
+    },
+    {
+      "id": "event_555a5bca835c43ee8889",
+      "seq": 33,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "context.model_envelope",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.697Z",
+      "payloadSha256": "f208d3b6020e35c34b84a7256cb96eb144071c39f35dd2c6463f079ffb2aa2e2",
+      "previousReceiptSha256": "24e2656a3d52a55e6e1543b39d83ebe3a32f85a8fae507b850a95afca157d7e5",
+      "receiptSha256": "92d683149e680fbde65aa0ef5582dfd3b02ef4b30e90169cfb1ed6eca4296f91"
+    },
+    {
+      "id": "event_2d7e40aa74904bf2abd0",
+      "seq": 34,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "context.model_envelope",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.700Z",
+      "payloadSha256": "b1e2d664edf7c61fbd3408c52b89d5d242bc4b4320c19af0f34751a27b9ccc1a",
+      "previousReceiptSha256": "92d683149e680fbde65aa0ef5582dfd3b02ef4b30e90169cfb1ed6eca4296f91",
+      "receiptSha256": "d8fc7c8d05d0752f487b4463019a8b2e00065c710e41c8ba5f3cfad03e6fe3b1"
+    },
+    {
+      "id": "event_69943977ab6944b7a40d",
+      "seq": 35,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "context.model_envelope",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.703Z",
+      "payloadSha256": "0bf402a1fff3a7c6993f4fd1816a1632ccd3893200a0dde2e03b1fd191542de7",
+      "previousReceiptSha256": "d8fc7c8d05d0752f487b4463019a8b2e00065c710e41c8ba5f3cfad03e6fe3b1",
+      "receiptSha256": "368d8258456ae283163d8b028b76352f2f5be914a6b8cfdd30a7980df3f77b24"
+    },
+    {
+      "id": "event_cd763832169d4f879a10",
+      "seq": 36,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "context.model_invocation",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.713Z",
+      "payloadSha256": "63f4105a7f2862df0307d89ce03d362c2c3a90318c667340184e02f2762be5de",
+      "previousReceiptSha256": "368d8258456ae283163d8b028b76352f2f5be914a6b8cfdd30a7980df3f77b24",
+      "receiptSha256": "e1bcff5065c6e4100ad916824b984d752253e715033abfd5b452a5fcc429ba06"
+    },
+    {
+      "id": "event_ec57d879e9f546d08386",
+      "seq": 37,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "context.model_invocation",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.720Z",
+      "payloadSha256": "0b2afce16ff3ab1044c4417696d21d8f55e51409ecab8b8a586f79d01f280c93",
+      "previousReceiptSha256": "e1bcff5065c6e4100ad916824b984d752253e715033abfd5b452a5fcc429ba06",
+      "receiptSha256": "2e22fddbf916cd207af4204e14547a574375b214c4dffdd32d86141c64484ada"
+    },
+    {
+      "id": "event_fdccbcb8f6304382b3e9",
+      "seq": 38,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "context.model_invocation",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.726Z",
+      "payloadSha256": "8e8b7db1ac9dc66d917fbfe8dc25711cf75be7c678ca4cc7d59704abd2be5a13",
+      "previousReceiptSha256": "2e22fddbf916cd207af4204e14547a574375b214c4dffdd32d86141c64484ada",
+      "receiptSha256": "0b89290a15a90453671b9eb8b5b71fe9f817322297b04dd92e5a0f89eb9d901d"
+    },
+    {
+      "id": "event_e53e672e569a4136b07f",
+      "seq": 39,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "model.response",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.823Z",
+      "payloadSha256": "b218f2f843f90f6c526ac649291114e8370a3ae5c326d85f8528cdf1477930e5",
+      "previousReceiptSha256": "0b89290a15a90453671b9eb8b5b71fe9f817322297b04dd92e5a0f89eb9d901d",
+      "receiptSha256": "c966dacac000f088704560385fbfe6da9b9c0c3533d52a4404d92e5aebcfd6fe"
+    },
+    {
+      "id": "event_2972acbbee7041e88737",
+      "seq": 40,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "run.failed",
+      "category": "lifecycle",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.825Z",
+      "payloadSha256": "3e99ec8986cffa0dc1c689273bbe9cf9a3f105b9c80a72cf4498737abdb3b7e9",
+      "previousReceiptSha256": "c966dacac000f088704560385fbfe6da9b9c0c3533d52a4404d92e5aebcfd6fe",
+      "receiptSha256": "42d4f9b9332c8c19650f31b5d20e05d04efda6ed290d071b96be3ce6043ddff9"
+    },
+    {
+      "id": "event_7fce5936405c4cb788b7",
+      "seq": 41,
+      "runId": "run_612ec379f86643dab7e0",
+      "type": "workflow.map.item.failed",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.829Z",
+      "payloadSha256": "2cc1e7c8271d6fcbe65de1b75e5d7285dfa4b3ae1b4a1610d14499dcfe2737f8",
+      "previousReceiptSha256": "42d4f9b9332c8c19650f31b5d20e05d04efda6ed290d071b96be3ce6043ddff9",
+      "receiptSha256": "aa4cb947b9ffdf9cc0d9c1d2e04a4b3b00714d68a35e6936cbad848b62ff0b84"
+    },
+    {
+      "id": "event_766244a9e18143978452",
+      "seq": 42,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "model.response",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.832Z",
+      "payloadSha256": "73529276ec9ee2288ff588d8c2edb01811fd106e30223833b88022b7ac0735f9",
+      "previousReceiptSha256": "aa4cb947b9ffdf9cc0d9c1d2e04a4b3b00714d68a35e6936cbad848b62ff0b84",
+      "receiptSha256": "d9c8765393094ca5bf5b8ea3af1886fb6c3c746b961f33c9e4e8ef6148e8370a"
+    },
+    {
+      "id": "event_747c16cec9ab4d368b42",
+      "seq": 43,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "model.response",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.834Z",
+      "payloadSha256": "4145953502ca5733e00a4025138952a13728bab93d542c12699dbcb73d252a80",
+      "previousReceiptSha256": "d9c8765393094ca5bf5b8ea3af1886fb6c3c746b961f33c9e4e8ef6148e8370a",
+      "receiptSha256": "1a681d7559d6c2def2387e4f117a768d757cb2fe8c5129cd290839f7fb1de363"
+    },
+    {
+      "id": "event_d141f407518442f4982e",
+      "seq": 44,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "run.cancelled",
+      "category": "lifecycle",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.836Z",
+      "payloadSha256": "18d204823fea8192fd3cf6fbaa5d10f99a9d0f6305d0526d7243d5d1b4a6e4ab",
+      "previousReceiptSha256": "1a681d7559d6c2def2387e4f117a768d757cb2fe8c5129cd290839f7fb1de363",
+      "receiptSha256": "5bd9f90708a7c3cfc92fa90679fe0a067cb428212a7741e80d86b809b90319ad"
+    },
+    {
+      "id": "event_00297b91acbc44c2b14b",
+      "seq": 45,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "run.cancelled",
+      "category": "lifecycle",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.840Z",
+      "payloadSha256": "18d204823fea8192fd3cf6fbaa5d10f99a9d0f6305d0526d7243d5d1b4a6e4ab",
+      "previousReceiptSha256": "5bd9f90708a7c3cfc92fa90679fe0a067cb428212a7741e80d86b809b90319ad",
+      "receiptSha256": "39b808ed81140ea80775b591b0a947d6e9c2ef7012f886a3486ac1c49ea0c978"
+    },
+    {
+      "id": "event_c361586c1d904a848d2d",
+      "seq": 46,
+      "runId": "run_d3373c22e3144500ab3c",
+      "type": "workflow.map.item.failed",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.847Z",
+      "payloadSha256": "45a2bdbb0c3146897f290cac8e1d20c879791dfef5d6122f21810a516a0ea70d",
+      "previousReceiptSha256": "39b808ed81140ea80775b591b0a947d6e9c2ef7012f886a3486ac1c49ea0c978",
+      "receiptSha256": "954bf49282e6dd2d029777dd167f9cde8e18fa0caac4e314c1252b1205b16583"
+    },
+    {
+      "id": "event_8ce2757010504ab5a0e7",
+      "seq": 47,
+      "runId": "run_7b19cf22b3f64984a475",
+      "type": "workflow.map.item.failed",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.850Z",
+      "payloadSha256": "8a81472cf2c94445a853f0c018dd80d7a64f4841af6b30f1d07aae8a175354e0",
+      "previousReceiptSha256": "954bf49282e6dd2d029777dd167f9cde8e18fa0caac4e314c1252b1205b16583",
+      "receiptSha256": "b3fc41a5451ec457f7eb2443ea54005a270915ca000bdd609ccbf481530708f2"
+    },
+    {
+      "id": "event_64750c995dc24ac6bad8",
+      "seq": 48,
+      "runId": "run_6b60d9d44e4a4f85ba39",
+      "type": "run.failed",
+      "category": "lifecycle",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.851Z",
+      "payloadSha256": "d27a59a605072859136b15776728c9f8cd65bfabe0dcd6f380b2ab1c4be8dcc8",
+      "previousReceiptSha256": "b3fc41a5451ec457f7eb2443ea54005a270915ca000bdd609ccbf481530708f2",
+      "receiptSha256": "187387ca296275904c307bdd9fc2108e8891e5784ed6ab2b66f29b4ea72b3d78"
+    },
+    {
+      "id": "event_40a8f8663cf64311a3b4",
+      "seq": 49,
+      "runId": "run_6b60d9d44e4a4f85ba39",
+      "type": "plan.step.blocked",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.855Z",
+      "payloadSha256": "3c31a5000082bc130980382e0b8fb12f427f3beb56f8509548d5953346a85470",
+      "previousReceiptSha256": "187387ca296275904c307bdd9fc2108e8891e5784ed6ab2b66f29b4ea72b3d78",
+      "receiptSha256": "44019f1639ad45a3c840ffc377d790c9d4d9d206282bf051bba7f7eed235a8a1"
+    },
+    {
+      "id": "event_530b0bf5f38d4583b8b8",
+      "seq": 50,
+      "runId": "run_6b60d9d44e4a4f85ba39",
+      "type": "workflow.node.failed",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.856Z",
+      "payloadSha256": "f68c1c31c701a683d1bcca45b6a265a964aea3ab33845f18edbac431253e857d",
+      "previousReceiptSha256": "44019f1639ad45a3c840ffc377d790c9d4d9d206282bf051bba7f7eed235a8a1",
+      "receiptSha256": "93ec7b74158bfc058e18192a3d59ba0cb3f6d67161bc9f8e9a80cd4b9f29c9ea"
+    },
+    {
+      "id": "event_b707b0f10ecd4e2c86a1",
+      "seq": 51,
+      "runId": "runctl_4cac273657f44fc7a09d",
+      "type": "workflow.blocked",
+      "category": "plan",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.858Z",
+      "payloadSha256": "c670091cb9bb05462a9692734668906ddc35ceed8c8322b22a3c7ba346f84cca",
+      "previousReceiptSha256": "93ec7b74158bfc058e18192a3d59ba0cb3f6d67161bc9f8e9a80cd4b9f29c9ea",
+      "receiptSha256": "75320955106a835d7eabb75a86ace8e56af7aab354446c513fe2ab0f9d439a29"
+    },
+    {
+      "id": "event_e2526bf36020425092df",
+      "seq": 52,
+      "runId": "run_6b60d9d44e4a4f85ba39",
+      "type": "benchmark.workflow.model-responses.observed",
+      "category": "evaluation",
+      "visibility": "debug",
+      "createdAt": "2026-08-04T03:05:13.865Z",
+      "payloadSha256": "00149220d6d20e081025199c67ce03bd1ebc12ca76dbd46108d20cdb32153686",
+      "previousReceiptSha256": "75320955106a835d7eabb75a86ace8e56af7aab354446c513fe2ab0f9d439a29",
+      "receiptSha256": "4c8027b528b5486b11d0c9de3f307e45a4ad0f8f78416a6a611a7faa02768dca"
+    },
+    {
+      "id": "event_606c6e188dca4b68b8d9",
+      "seq": 53,
+      "runId": "run_6b60d9d44e4a4f85ba39",
+      "type": "benchmark.workflow.evaluated",
+      "category": "evaluation",
+      "visibility": "user",
+      "createdAt": "2026-08-04T03:05:13.869Z",
+      "payloadSha256": "1befa7c6e93663f3784caafcd3343771452d4d0b7e81bf3001f7bacf6b2828b7",
+      "previousReceiptSha256": "4c8027b528b5486b11d0c9de3f307e45a4ad0f8f78416a6a611a7faa02768dca",
+      "receiptSha256": "afa9f0c8b7eacd2c01ae508382bfc2a733c7c8920c26b5604a3834a613ae2b9b"
+    }
+  ],
+  "receiptSetSha256": "e92655d8be7ed96c74638994df4aeb2a98f971fc333d6269d3fba75cf23cfa31",
+  "contentSha256": "c535d13ba52363bf6c1fd90d22b3d5077f459e9223b20535622e5b9bc41fc6e7"
+}

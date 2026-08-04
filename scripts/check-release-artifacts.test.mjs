@@ -81,11 +81,28 @@ describe("release artifacts audit", () => {
       "long-horizon-benchmark-ledger-1",
       "long-horizon-benchmark-result-2",
       "long-horizon-benchmark-ledger-2",
-      "long-horizon-multi-restart-benchmark-series",
-      "long-horizon-multi-restart-benchmark-result-1",
-      "long-horizon-multi-restart-benchmark-ledger-1",
-      "long-horizon-multi-restart-benchmark-result-2",
-      "long-horizon-multi-restart-benchmark-ledger-2",
+      "long-horizon-multi-restart-variance-series",
+      "long-horizon-multi-restart-variance-result-1",
+      "long-horizon-multi-restart-variance-ledger-1",
+      "long-horizon-multi-restart-variance-result-2",
+      "long-horizon-multi-restart-variance-ledger-2",
+      "long-horizon-multi-restart-variance-result-3",
+      "long-horizon-multi-restart-variance-ledger-3",
+      "long-horizon-multi-restart-variance-result-4",
+      "long-horizon-multi-restart-variance-ledger-4",
+      "long-horizon-multi-restart-variance-result-5",
+      "long-horizon-multi-restart-variance-ledger-5",
+      "long-horizon-multi-restart-confirmation-series",
+      "long-horizon-multi-restart-confirmation-result-1",
+      "long-horizon-multi-restart-confirmation-ledger-1",
+      "long-horizon-multi-restart-confirmation-result-2",
+      "long-horizon-multi-restart-confirmation-ledger-2",
+      "long-horizon-multi-restart-confirmation-result-3",
+      "long-horizon-multi-restart-confirmation-ledger-3",
+      "long-horizon-multi-restart-confirmation-result-4",
+      "long-horizon-multi-restart-confirmation-ledger-4",
+      "long-horizon-multi-restart-confirmation-result-5",
+      "long-horizon-multi-restart-confirmation-ledger-5",
       "research-benchmark-series",
       "research-benchmark-result-1",
       "research-benchmark-ledger-1",
@@ -393,7 +410,7 @@ describe("release artifacts audit", () => {
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
     const seriesName = (await readdir(benchmarkRoot)).find((name) =>
       name.startsWith(
-        "napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-75a221bd99a84710",
+        "napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-42d4d77a9581f02a",
       ),
     );
     const series = JSON.parse(
@@ -412,9 +429,40 @@ describe("release artifacts audit", () => {
     expect(audit.ok).toBe(false);
     expect(audit.errors).toEqual(
       expect.arrayContaining([
-        "long-horizon multi-restart benchmark series: series_trial_invalid",
-        "long-horizon multi-restart benchmark trial 1: ledger:ledger_restart_evidence_invalid",
-        "long-horizon multi-restart benchmark trial 1: trial_binding_mismatch",
+        "long-horizon multi-restart confirmation series: series_trial_invalid",
+        "long-horizon multi-restart confirmation trial 1: ledger:ledger_restart_evidence_invalid",
+        "long-horizon multi-restart confirmation trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
+  it("fails when retained Provider outcome evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const seriesName = (await readdir(benchmarkRoot)).find((name) =>
+      name.startsWith(
+        "napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-c99798474740bc5a",
+      ),
+    );
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const ledgerPath = path.join(
+      benchmarkRoot,
+      series.trials[0].ledgerFileName,
+    );
+    const ledger = JSON.parse(await readFile(ledgerPath, "utf8"));
+    ledger.workflow.modelResponseEvidenceEvent.payload.modelResponseErrorCount = 0;
+    await writeJson(ledgerPath, ledger);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "long-horizon multi-restart variance series: series_trial_invalid",
+        "long-horizon multi-restart variance trial 1: ledger:ledger_model_response_evidence_invalid",
+        "long-horizon multi-restart variance trial 1: trial_binding_mismatch",
       ]),
     );
   });

@@ -1490,18 +1490,33 @@ npm run bench:workflow -- \
   --trials 2
 ```
 
-The retained
-[two-trial multi-restart series](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-75a221bd99a84710.json)
-passed 2/2 trials in 2.831–2.859 seconds. Each trial retained two individually
-receipt-bound restart events, reused all three Map Runs, and recorded one
-answered/continued pair with zero model responses after the first restart.
-Mean cost was `$0.0019834108`; mean input/output tokens were
-13,457.5/339.5. One earlier live attempt ended before the first Approval gate
-and produced no scored artifact. The runner now retains blocked, waiting,
-paused, or cancelled pre-gate outcomes with their matching Workflow terminal
-receipt, optional output/Reduce evidence, usage, and failed or inconclusive
-evaluation. The retained retry predates that fix, so it proves the
-repeated-recovery invariants but is not evidence of zero model-side variance.
+Two retained five-trial DeepSeek Series preserve the observed variance:
+
+- the
+  [variance series](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-c99798474740bc5a.json)
+  completed 5/5 trials with one pass and four Provider-error inconclusive
+  outcomes, for an overall success rate of 0.2 and no scored failure;
+- the subsequent
+  [confirmation series](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-42d4d77a9581f02a.json)
+  passed 5/5 in 2.425–7.147 seconds, at mean cost `$0.00203473536` and mean
+  input/output usage 13,464/508.8.
+
+Across both retained Series, 6/10 trials completed both restarts and 4/10 were
+inconclusive Provider responses before the first gate; no trial reached the
+recovery path and then failed its recovery invariants. Every successful trial
+retained two individually receipt-bound restart events, reused all three Map
+Runs, and recorded one answered/continued pair with zero model responses after
+the first restart.
+
+The runner retains blocked, waiting, paused, or cancelled pre-gate outcomes
+with their matching Workflow terminal receipt and optional output/Reduce
+evidence. Schema-6 trials also append a body-free, Replay-bound model-response
+observation containing counts, error/usage presence, and a response-set hash.
+Provider-error outcomes are inconclusive; normal responses with invalid typed
+output remain failed. Series report both overall `successRate`, conditional
+`passRate`, and `usageSampleCount`. The variance Series predates the optional
+persisted `successRate`; its 0.2 value is derived from its receipt-bound
+`passedTrialCount=1` and `completedTrialCount=5`.
 
 ### Research Outcome Benchmark
 
@@ -5502,7 +5517,9 @@ receipt, runtime-environment receipt, product-performance baseline, management
 OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
 Web dist manifest, and the semantically verified Workflow, Data, DataFrame,
 Security, single- and multi-restart Long-horizon, Research, and UX Benchmark
-Series plus all sixteen Result/Ledger pairs by SHA-256;
+Series plus all twenty-four Result/Ledger pairs by SHA-256;
+the current 65-artifact set is bound by
+`9e3dc5318bdf3200...`;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract

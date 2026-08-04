@@ -1,0 +1,118 @@
+{
+  "kind": "napier.workflow-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T03:12:29.030Z",
+  "caseId": "long_horizon_multi_restart_approval_v1",
+  "caseSha256": "71b5885b79b36b423959f6c9e0da27ab8cd3b53827167fe33858127e67424d2e",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 5,
+  "completedTrialCount": 5,
+  "scoredTrialCount": 5,
+  "passedTrialCount": 5,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 0,
+  "usageSampleCount": 5,
+  "metrics": {
+    "durationMs": {
+      "total": 20757,
+      "min": 2425,
+      "p50": 3761,
+      "p95": 7147,
+      "max": 7147,
+      "mean": 4151.4
+    },
+    "costUsd": {
+      "total": 0.010173676800000002,
+      "min": 0.0019595408,
+      "p50": 0.0020408808,
+      "p95": 0.0021467936000000003,
+      "max": 0.0021467936000000003,
+      "mean": 0.0020347353600000005
+    },
+    "inputTokens": {
+      "total": 67320,
+      "min": 13426,
+      "p50": 13441,
+      "p95": 13556,
+      "max": 13556,
+      "mean": 13464
+    },
+    "outputTokens": {
+      "total": 2544,
+      "min": 270,
+      "p50": 544,
+      "p95": 820,
+      "max": 820,
+      "mean": 508.8
+    },
+    "runCount": {
+      "total": 35,
+      "min": 7,
+      "p50": 7,
+      "p95": 7,
+      "max": 7,
+      "mean": 7
+    }
+  },
+  "successRate": 1,
+  "completionRate": 1,
+  "passRate": 1,
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_06ccd3af98374022b9ab",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-2c837482387d3622.json",
+      "resultSha256": "2c837482387d362209fb7ecc104a8b43d0680ddfb881ea6bbb68932472641010",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-86e4f19413d93576.json",
+      "ledgerSha256": "86e4f19413d9357656cbac91394ee36299024478e9786e06a5c66c22566cb71a"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_2931887926764114926e",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-e6d6e771d2f083e5.json",
+      "resultSha256": "e6d6e771d2f083e5565dfcd639282641c96650eb2ef396a2aa9b51f17f318306",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-70248840823db6de.json",
+      "ledgerSha256": "70248840823db6de32a9b21e6bfcc1fe9d7ff2c9e6e6dd12af217c4f553b2f4e"
+    },
+    {
+      "index": 3,
+      "threadId": "thread_f626a2609cb5412cb9d8",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-a8a4e37c9942f403.json",
+      "resultSha256": "a8a4e37c9942f4039427be9e5b218259598344062a02d3a5204fcbae9978338a",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-fc58a6c9568189e5.json",
+      "ledgerSha256": "fc58a6c9568189e5787df852801e838bee31ee6e3f48911a6b3d9e15311cd450"
+    },
+    {
+      "index": 4,
+      "threadId": "thread_5cd8be6c6efa496faded",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-3be75a41976061e6.json",
+      "resultSha256": "3be75a41976061e65af50ac0d093ac4e5595f800fc0a5428a44455bfa67cd8d9",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-aba66ff44d8e510b.json",
+      "ledgerSha256": "aba66ff44d8e510b00f9c1eed68c0ae2f6882d338b989dd314eb1dbe93847a56"
+    },
+    {
+      "index": 5,
+      "threadId": "thread_bf23cd79c9594340af51",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-ee8d3afc0aaed750.json",
+      "resultSha256": "ee8d3afc0aaed750a723ea957200764b0f31877f134e0c4a4e67df7d38da6ed6",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-910d762a02282ca3.json",
+      "ledgerSha256": "910d762a02282ca357c9cdf4c8c37d2b442dafd8bb30cd3bef85e66076807949"
+    }
+  ],
+  "contentSha256": "42d4d77a9581f02a86afd26d3b182f944e7aa280a655b996444ca7ce5bdcf2a8"
+}

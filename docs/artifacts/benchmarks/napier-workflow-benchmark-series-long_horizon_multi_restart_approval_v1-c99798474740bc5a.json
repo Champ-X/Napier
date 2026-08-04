@@ -1,0 +1,117 @@
+{
+  "kind": "napier.workflow-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T03:05:14.257Z",
+  "caseId": "long_horizon_multi_restart_approval_v1",
+  "caseSha256": "71b5885b79b36b423959f6c9e0da27ab8cd3b53827167fe33858127e67424d2e",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 5,
+  "completedTrialCount": 5,
+  "scoredTrialCount": 1,
+  "passedTrialCount": 1,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 4,
+  "usageSampleCount": 5,
+  "metrics": {
+    "durationMs": {
+      "total": 4893,
+      "min": 190,
+      "p50": 364,
+      "p95": 2673,
+      "max": 2673,
+      "mean": 978.6
+    },
+    "costUsd": {
+      "total": 0.0019841808,
+      "min": 0,
+      "p50": 0,
+      "p95": 0.0019841808,
+      "max": 0.0019841808,
+      "mean": 0.00039683616000000003
+    },
+    "inputTokens": {
+      "total": 13468,
+      "min": 0,
+      "p50": 0,
+      "p95": 13468,
+      "max": 13468,
+      "mean": 2693.6
+    },
+    "outputTokens": {
+      "total": 337,
+      "min": 0,
+      "p50": 0,
+      "p95": 337,
+      "max": 337,
+      "mean": 67.4
+    },
+    "runCount": {
+      "total": 23,
+      "min": 4,
+      "p50": 4,
+      "p95": 7,
+      "max": 7,
+      "mean": 4.6
+    }
+  },
+  "completionRate": 1,
+  "passRate": 1,
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_85907adfe4214cddb1ea",
+      "status": "inconclusive",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-11cc3abe7ad9a907.json",
+      "resultSha256": "11cc3abe7ad9a9079bfc95d0c4eb607c2c5412f48b0c64ae94baeb0f97d43587",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-cf302015b8b6ce14.json",
+      "ledgerSha256": "cf302015b8b6ce146ed099e56e7516889c71246e68b73a8bd8d1c17a177572c5"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_528abf2cef424043a9be",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-377952714a1f0dfc.json",
+      "resultSha256": "377952714a1f0dfc8a7bb44aa227250eeb22286da8d9cee103a13226446438e5",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-8f42d8ca6ae75f08.json",
+      "ledgerSha256": "8f42d8ca6ae75f08b4d3c641fb4b03003b8874cb1edaf5922dd3a3ead4a940ef"
+    },
+    {
+      "index": 3,
+      "threadId": "thread_8625c753a9f149d8a3e4",
+      "status": "inconclusive",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-89acbbc901d942d4.json",
+      "resultSha256": "89acbbc901d942d43817ec425d455eee2dac0d25c9ad5978e61d2b17f047ca11",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-cb55b79c3c77d77c.json",
+      "ledgerSha256": "cb55b79c3c77d77c23bdb2024922bd7cb8aadd51a385100dd53970c7873b1fdd"
+    },
+    {
+      "index": 4,
+      "threadId": "thread_ec35108117f14acd9fe4",
+      "status": "inconclusive",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-187befb6002f1659.json",
+      "resultSha256": "187befb6002f165942be5a34ef17731adfb2afec2c00bae67419f628bcb61527",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-c535d13ba52363bf.json",
+      "ledgerSha256": "c535d13ba52363bf6c1fd90d22b3d5077f459e9223b20535622e5b9bc41fc6e7"
+    },
+    {
+      "index": 5,
+      "threadId": "thread_8fc4cc30f0ec481fa8b4",
+      "status": "inconclusive",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-71d73dd521d330fd.json",
+      "resultSha256": "71d73dd521d330fdd20ec1b68dc7e266f809ae9e2d0fdd750b757a1e28693458",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-226ff386aba6a306.json",
+      "ledgerSha256": "226ff386aba6a306216ecded2bde6bd15296f529646c9c846384da2bac1d8442"
+    }
+  ],
+  "contentSha256": "c99798474740bc5af34bb33b28f7c0fb07b22716274700f7d4976f3944c7ec77"
+}

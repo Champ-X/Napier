@@ -50,7 +50,9 @@ const defaultSecurityBenchmarkSeriesPath =
 const defaultLongHorizonBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-6ae542a21fc5f485.json";
 const defaultMultiRestartBenchmarkSeriesPath =
-  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-75a221bd99a84710.json";
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-c99798474740bc5a.json";
+const defaultMultiRestartConfirmationBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-42d4d77a9581f02a.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json";
 const defaultUxBenchmarkSeriesPath =
@@ -94,6 +96,9 @@ export async function auditReleaseArtifacts(options = {}) {
   const multiRestartBenchmarkSeriesPath =
     options.multiRestartBenchmarkSeriesPath ??
     defaultMultiRestartBenchmarkSeriesPath;
+  const multiRestartConfirmationBenchmarkSeriesPath =
+    options.multiRestartConfirmationBenchmarkSeriesPath ??
+    defaultMultiRestartConfirmationBenchmarkSeriesPath;
   const researchBenchmarkSeriesPath =
     options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
   const uxBenchmarkSeriesPath =
@@ -223,11 +228,21 @@ export async function auditReleaseArtifacts(options = {}) {
     repoRoot,
     seriesPath: multiRestartBenchmarkSeriesPath,
     errors,
-    artifactKindPrefix: "long-horizon-multi-restart-benchmark",
-    diagnosticLabel: "long-horizon multi-restart benchmark",
+    artifactKindPrefix: "long-horizon-multi-restart-variance",
+    diagnosticLabel: "long-horizon multi-restart variance",
     artifactReferences: workflowBenchmarkSeriesArtifactReferences,
     verifySeries: verifyWorkflowBenchmarkSeries,
   });
+  const multiRestartConfirmationBenchmarkArtifacts =
+    await verifyBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: multiRestartConfirmationBenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "long-horizon-multi-restart-confirmation",
+      diagnosticLabel: "long-horizon multi-restart confirmation",
+      artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+      verifySeries: verifyWorkflowBenchmarkSeries,
+    });
   const researchBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: researchBenchmarkSeriesPath,
@@ -323,6 +338,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...securityBenchmarkArtifacts,
     ...longHorizonBenchmarkArtifacts,
     ...multiRestartBenchmarkArtifacts,
+    ...multiRestartConfirmationBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
     ...uxBenchmarkArtifacts,
   ];
@@ -577,6 +593,15 @@ function parseCliOptions(args) {
     }
     if (arg === "--multi-restart-benchmark-series-path") {
       options.multiRestartBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--multi-restart-confirmation-series-path") {
+      options.multiRestartConfirmationBenchmarkSeriesPath = readCliValue(
+        args,
+        index,
+        arg,
+      );
       index += 1;
       continue;
     }

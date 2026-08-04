@@ -1,0 +1,84 @@
+{
+  "kind": "napier.workflow-benchmark-result",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T03:12:21.457Z",
+  "caseId": "long_horizon_multi_restart_approval_v1",
+  "caseSha256": "71b5885b79b36b423959f6c9e0da27ab8cd3b53827167fe33858127e67424d2e",
+  "status": "passed",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "run": {
+    "threadId": "thread_f626a2609cb5412cb9d8",
+    "planId": "plan_c2263fdbc9b24f85bfe7",
+    "status": "completed",
+    "durationMs": 2425,
+    "runCount": 7,
+    "completedRunCount": 7,
+    "usage": {
+      "inputTokens": 13426,
+      "outputTokens": 270,
+      "cacheReadTokens": 1536,
+      "cacheWriteTokens": 0,
+      "costUsd": 0.0019595408
+    }
+  },
+  "workflow": {
+    "manifestSha256": "5d7b0113a0f51e4ad91100dad58507b4938c78425efb10ff08b07ad522c0e7cf",
+    "blueprintSha256": "d2dd896492e9c6dfe3168268db8ff054d72357aaf4450e38a35f5ee5c6b3214f",
+    "resultSha256": "a2fd6eaaf336ccb82f73bc588e430bd8cf3650493270dbc4d9128512653e3920",
+    "outputSha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+    "nodeResultCount": 3,
+    "completedNodeResultCount": 3
+  },
+  "evaluation": {
+    "kind": "napier.workflow-benchmark-evaluation",
+    "schemaVersion": 6,
+    "caseId": "long_horizon_multi_restart_approval_v1",
+    "caseSha256": "71b5885b79b36b423959f6c9e0da27ab8cd3b53827167fe33858127e67424d2e",
+    "status": "passed",
+    "workflowStatus": "completed",
+    "criteriaSha256": "9ce9c6c25352b06e9840afad58ae1d62944b29a6a7fef64c29d9932acf987268",
+    "expectedOutputSha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+    "actualOutputSha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+    "expectedMapOutputSha256": "c0a3b197e158c3e6cf1b2db325da5646c7c88fee920f5726fc46f5c56bbbe33d",
+    "actualMapOutputSha256": "c0a3b197e158c3e6cf1b2db325da5646c7c88fee920f5726fc46f5c56bbbe33d",
+    "outputMatch": true,
+    "mapOutputMatch": true,
+    "expectedNodeResultCount": 3,
+    "completedNodeResultCount": 3,
+    "expectedMapItemCount": 3,
+    "completedMapRunCount": 3,
+    "mapCompletedEventCount": 3,
+    "reduceCompletedEventCount": 1,
+    "reduceModelOrToolEventCount": 0,
+    "replayValid": true,
+    "credentialLeakDetected": false,
+    "runtimeRestartCount": 2,
+    "approvalRecovered": true,
+    "completedMapRunsReused": true,
+    "postRestartModelResponseCount": 0,
+    "modelResponseCount": 3,
+    "modelResponseErrorCount": 0,
+    "modelResponseUsageSampleCount": 3,
+    "diagnostics": [],
+    "contentSha256": "5686b66b804f2e3bdbc7244ddf64f01774ca2ffd0b790f2e3a1a762765840cfe"
+  },
+  "ledger": {
+    "eventId": "event_5fba10e3f35c4549b772",
+    "eventSeq": 351,
+    "eventSha256": "ea108dfbf4e30ad63519871934007901faf0b9498250bfa24efce9317dc602ce",
+    "eventStreamSha256": "33cb845625025f73a7016001d48db007747ae61f44bca21544a4554f4af3cd59",
+    "bundleFileName": "napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-fc58a6c9568189e5.json",
+    "bundleSha256": "fc58a6c9568189e5787df852801e838bee31ee6e3f48911a6b3d9e15311cd450",
+    "bundleBytes": 58990
+  },
+  "contentSha256": "a8a4e37c9942f4039427be9e5b218259598344062a02d3a5204fcbae9978338a"
+}
