@@ -48,7 +48,7 @@ describe("Goal no-progress outcome benchmark", () => {
         expectedPrimaryResponseCount: 3,
         expectedModelResponseCount: 7,
         contentSha256:
-          "2fd201eaf6587e96a37a15192ab5e8b2da456636744dcf9fdc25c59860c48472",
+          "b41964b9e96f539ad1feb16ac8bf6dd592531d9a90b47f060430a8c6ce711c07",
       }),
     );
   });
@@ -220,7 +220,9 @@ function dependencies(
 }
 
 function repeatedEvidence() {
-  return fauxAssistantMessage("NO_PROGRESS_EVIDENCE_V1");
+  return fauxAssistantMessage(
+    "Evidence: alpha marker completed. Beta and gamma remain unfinished; autonomous work can continue.",
+  );
 }
 
 function continueEvaluation() {
@@ -229,7 +231,8 @@ function continueEvaluation() {
       satisfied: false,
       blocker: "goal_not_met_yet",
       reason: "The fixture cannot produce new evidence.",
-      evidence: "NO_PROGRESS_EVIDENCE_V1",
+      evidence:
+        "Evidence: alpha marker completed. Beta and gamma remain unfinished; autonomous work can continue.",
     }),
   );
 }

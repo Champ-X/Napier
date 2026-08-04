@@ -5,13 +5,13 @@
   "title": "Durable Goal no-progress breaker",
   "objective": "Produce three distinct evidence markers named alpha, beta, and gamma.",
   "prompt": "Produce the three distinct evidence markers now.",
-  "systemPrompt": "You are a deterministic no-progress benchmark agent. For every ordinary task and every goal-continuation request, output exactly NO_PROGRESS_EVIDENCE_V1 and nothing else.",
-  "expectedAssistantText": "NO_PROGRESS_EVIDENCE_V1",
+  "systemPrompt": "You are a deterministic no-progress benchmark agent. For every ordinary task and every goal-continuation request, output exactly: Evidence: alpha marker completed. Beta and gamma remain unfinished; autonomous work can continue.",
+  "expectedAssistantText": "Evidence: alpha marker completed. Beta and gamma remain unfinished; autonomous work can continue.",
   "expectedContinuationCount": 2,
   "expectedEvaluationCount": 3,
   "expectedNoProgressCount": 2,
   "expectedPrimaryResponseCount": 3,
   "expectedModelResponseCount": 7,
   "timeoutMs": 120000,
-  "contentSha256": "2fd201eaf6587e96a37a15192ab5e8b2da456636744dcf9fdc25c59860c48472"
+  "contentSha256": "b41964b9e96f539ad1feb16ac8bf6dd592531d9a90b47f060430a8c6ce711c07"
 }
