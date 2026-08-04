@@ -193,6 +193,10 @@ export class TuiSessionState {
     this.notice = `Model: ${interactiveModelLabel(this.model)}`;
   }
 
+  setModelSilently(model: ModelRef | undefined): void {
+    this.model = model ? structuredClone(model) : undefined;
+  }
+
   setThread(threadId: string): void {
     this.threadId = threadId;
     this.nextTitle = undefined;

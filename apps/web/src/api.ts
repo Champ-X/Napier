@@ -6,7 +6,6 @@ import type {
   ApplyExtensionPackageRolloutChannelResult,
   ApplyExtensionPackageUpdateRequest,
   ApplyExtensionPackageUpdateResult,
-  BootstrapResponse,
   CreateBranchRequest,
   ContextCheckpointCalibrationReport,
   CreateExecutionPlanFromBlueprintRequest,
@@ -224,11 +223,6 @@ const THREAD_DETAIL_ARRAY_FIELDS = [
 const SHA256 = /^[a-f0-9]{64}$/;
 const RUN_STREAM_ERROR_MESSAGE = "Run failed while streaming.";
 const RUN_STREAM_ERROR_CODE = "run_failed";
-
-export function getBootstrap(threadId?: string): Promise<BootstrapResponse> {
-  const query = threadId ? `?thread=${encodeURIComponent(threadId)}` : "";
-  return requestJson(`/api/bootstrap${query}`);
-}
 
 export function getHealth(): Promise<HealthResponse> {
   return requestJson("/api/health");

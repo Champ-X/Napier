@@ -588,6 +588,10 @@ napier capabilities
 napier run/chat/tui --preset <id>
   -> strict CLI parsing accepts only the five shared preset IDs
   -> AgentRuntime overlays the selected preset on the requested Agent revision
+  -> explicit model wins; otherwise standard user Runs resolve one live-ready model
+  -> ModelRegistry admits only active credential references, never ambient process.env
+  -> untouched built-in demo Agent chooses the first executable referenced live model
+  -> Agent profile/revision remains unchanged; non-user Runs keep frozen model semantics
   -> LocalStore fingerprints the effective policy/tools/Skills/Subagents
   -> run.started records the preset ID beside the configuration SHA-256
   -> the stored Agent profile and immutable revision history remain unchanged

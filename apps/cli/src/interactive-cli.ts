@@ -11,6 +11,10 @@ import {
 
 import type { CliChatOptions } from "./cli-chat-options.js";
 import { configureCliModelCredential } from "./cli-model-credential.js";
+import {
+  contextualCliRunModel,
+  recommendedCliRunModel,
+} from "./cli-default-run-model.js";
 import { writeLine, writeText } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import {
@@ -85,6 +89,7 @@ export async function executeInteractive(
   let threadId = options.threadId;
   let nextTitle = options.title;
   let model = options.model;
+  let automaticModel = options.model === undefined;
   let lastRun: RunRecord | undefined;
   let capabilities;
   const renderer = new InteractiveEventRenderer(io.stdout, io.stderr);
@@ -102,8 +107,14 @@ export async function executeInteractive(
     });
     parentSignal?.throwIfAborted();
     await configureCliModelCredential(services, options, io.env);
+    const initialAgent = activeInteractiveAgent(
+      services,
+      options.agentId,
+      threadId,
+    );
+    model ??= await recommendedCliRunModel(services, initialAgent);
     capabilities = interactiveCapabilityStatus(
-      activeInteractiveAgent(services, options.agentId, threadId),
+      initialAgent,
       options.capabilityPreset,
     );
     parentSignal?.throwIfAborted();
@@ -167,9 +178,17 @@ export async function executeInteractive(
               `Model: ${interactiveModelLabel(model)}`,
             );
           } else if (command.kind === "model_default") {
-            model = undefined;
-            await writeLine(io.stderr, "Model: agent default");
+            automaticModel = true;
+            model = await recommendedCliRunModel(
+              services,
+              activeInteractiveAgent(services, options.agentId, threadId),
+            );
+            await writeLine(
+              io.stderr,
+              `Model: ${interactiveModelLabel(model)}`,
+            );
           } else if (command.kind === "model_set") {
+            automaticModel = false;
             model = command.model;
             await writeLine(
               io.stderr,
@@ -183,6 +202,12 @@ export async function executeInteractive(
               activeInteractiveAgent(services, undefined, threadId),
               options.capabilityPreset,
             );
+            model = await contextualCliRunModel(
+              services,
+              activeInteractiveAgent(services, undefined, threadId),
+              automaticModel,
+              model,
+            );
             await writeLine(io.stderr, `Thread: ${threadId}`);
           } else if (command.kind === "new") {
             nextTitle = command.title;
@@ -191,6 +216,12 @@ export async function executeInteractive(
             capabilities = interactiveCapabilityStatus(
               activeInteractiveAgent(services, options.agentId, undefined),
               options.capabilityPreset,
+            );
+            model = await contextualCliRunModel(
+              services,
+              activeInteractiveAgent(services, options.agentId, undefined),
+              automaticModel,
+              model,
             );
             await writeLine(
               io.stderr,

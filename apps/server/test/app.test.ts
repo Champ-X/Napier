@@ -325,9 +325,6 @@ describe("Napier HTTP goal flow", () => {
       .filter(({ body }) => !bodyCallsContentHashHelper(body))
       .map(({ line, name }) => `${name}:${line}`);
 
-    expect(noStoreHelpers.map(({ name }) => name)).toContain(
-      "setBootstrapProjectionHeaders",
-    );
     expect(missingContentHash).toEqual([]);
   });
 

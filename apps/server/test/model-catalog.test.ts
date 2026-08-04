@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { getBuiltinModels } from "@earendil-works/pi-ai/providers/all";
 import type { BootstrapResponse, CredentialReference } from "@napier/contracts";
+import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { UnsupportedSandboxAdapter } from "@napier/runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -14,6 +15,7 @@ const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
 
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   for (const services of openServices.splice(0)) {
     await services.workspaceProcesses.shutdown();
     await services.extensions.shutdown();
@@ -26,6 +28,7 @@ afterEach(async () => {
 
 describe("Pi built-in model catalog HTTP projection", () => {
   it("exposes bounded Provider choices while missing credentials fail closed", async () => {
+    vi.stubEnv("DEEPSEEK_API_KEY", "PRIVATE_AMBIENT_SERVER_KEY");
     const root = await mkdtemp(path.join(tmpdir(), "napier-model-catalog-"));
     roots.push(root);
     const fetch = vi
@@ -42,7 +45,8 @@ describe("Pi built-in model catalog HTTP projection", () => {
     const app = createApp(services);
 
     const bootstrapResponse = await app.request("/api/bootstrap");
-    const bootstrap = (await bootstrapResponse.json()) as BootstrapResponse;
+    const bootstrap =
+      (await bootstrapResponse.json()) as LiveReadyBootstrapResponse;
 
     expect(bootstrapResponse.status).toBe(200);
     expect(
@@ -68,7 +72,47 @@ describe("Pi built-in model catalog HTTP projection", () => {
       ).toBe(true);
     }
     expect(fetch).not.toHaveBeenCalled();
+    expect(
+      bootstrap.models.find(
+        (model) =>
+          model.provider === "deepseek" && model.id === "deepseek-v4-flash",
+      ),
+    ).toEqual(expect.objectContaining({ configured: false }));
+    expect(bootstrap.recommendedRunModel).toEqual({
+      provider: "napier",
+      id: "demo",
+    });
     fetch.mockRestore();
+
+    const deepSeekCredential = await app.request("/api/credentials", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        providerId: "deepseek",
+        label: "DeepSeek environment",
+        source: {
+          type: "environment",
+          variable: "DEEPSEEK_API_KEY",
+        },
+      }),
+    });
+    expect(deepSeekCredential.status).toBe(201);
+    const liveReady = (await (
+      await app.request("/api/bootstrap")
+    ).json()) as LiveReadyBootstrapResponse;
+    expect(
+      liveReady.models.find(
+        (model) =>
+          model.provider === "deepseek" && model.id === "deepseek-v4-flash",
+      ),
+    ).toEqual(expect.objectContaining({ configured: true }));
+    expect(liveReady.recommendedRunModel).toEqual({
+      provider: "deepseek",
+      id: "deepseek-v4-flash",
+    });
+    expect(JSON.stringify(liveReady)).not.toContain(
+      "PRIVATE_AMBIENT_SERVER_KEY",
+    );
 
     const credentialResponse = await app.request("/api/credentials", {
       method: "POST",

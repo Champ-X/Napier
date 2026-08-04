@@ -14876,6 +14876,7 @@
   "x-napier-source-paths": [
     "apps/server/src/agent-profile-http.ts",
     "apps/server/src/app.ts",
+    "apps/server/src/bootstrap-http.ts",
     "apps/server/src/browser-interaction-confirmation-http.ts",
     "apps/server/src/browser-live-view-http.ts",
     "apps/server/src/browser-session-control-http.ts",
@@ -14910,7 +14911,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "aad1ad3fc77b6fc1e9c2f65fa44c4e2206c57a5a87466cc879a9dac325c8c7ca",
+  "x-napier-source-sha256": "6726ef3005aa9966e7d6272354373f0bae560c87fa8145e648d75e166adb2ea7",
   "x-napier-route-count": 261,
   "x-napier-route-set-sha256": "f16bc9bb341429dbcae445dee3636938e53edc7375226824f9c049a4b8efd48a"
 }

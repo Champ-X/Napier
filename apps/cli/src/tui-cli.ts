@@ -9,6 +9,7 @@ import {
 
 import type { CliChatOptions } from "./cli-chat-options.js";
 import { configureCliModelCredential } from "./cli-model-credential.js";
+import { recommendedCliRunModel } from "./cli-default-run-model.js";
 import { writeLine } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import {
@@ -74,6 +75,7 @@ export async function executeTui(
   let activePromise: Promise<void> | undefined;
   let sessionFailure: unknown;
   let lastInterruptAt = 0;
+  let automaticModel = options.model === undefined;
 
   const requestExit = (code: number): void => {
     if (exiting) return;
@@ -239,11 +241,30 @@ export async function executeTui(
             `Model: ${interactiveModelLabel(state.currentModel())}`,
           );
         } else if (command.kind === "model_default") {
-          state.setModel(undefined);
+          automaticModel = true;
+          state.setModel(
+            await recommendedCliRunModel(
+              services!,
+              activeTuiAgent(
+                services!,
+                options.agentId,
+                state.currentThreadId(),
+              ),
+            ),
+          );
         } else if (command.kind === "model_set") {
+          automaticModel = false;
           state.setModel(command.model);
         } else if (command.kind === "thread") {
           state.setThread(command.threadId);
+          if (automaticModel) {
+            state.setModelSilently(
+              await recommendedCliRunModel(
+                services!,
+                activeTuiAgent(services!, undefined, command.threadId),
+              ),
+            );
+          }
           state.setCapabilities(
             interactiveCapabilityStatus(
               activeTuiAgent(services!, undefined, command.threadId),
@@ -252,6 +273,14 @@ export async function executeTui(
           );
         } else if (command.kind === "new") {
           state.setNewThread(command.title);
+          if (automaticModel) {
+            state.setModelSilently(
+              await recommendedCliRunModel(
+                services!,
+                activeTuiAgent(services!, options.agentId, undefined),
+              ),
+            );
+          }
           state.setCapabilities(
             interactiveCapabilityStatus(
               activeTuiAgent(services!, options.agentId, undefined),
@@ -328,6 +357,13 @@ export async function executeTui(
     });
     sessionController.signal.throwIfAborted();
     await configureCliModelCredential(services, options, io.env);
+    state.setModelSilently(
+      options.model ??
+        (await recommendedCliRunModel(
+          services,
+          activeTuiAgent(services, options.agentId, state.currentThreadId()),
+        )),
+    );
     state.setCapabilities(
       interactiveCapabilityStatus(
         activeTuiAgent(services, options.agentId, state.currentThreadId()),

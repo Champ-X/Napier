@@ -13,7 +13,6 @@ import type {
   CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
-  BootstrapResponse,
   CreateExtensionPublisherTrustAnchorRequest,
   CreateReceiptTrustAnchorRequest,
   CreateReceiptTrustAnchorDirectorySubscriptionRequest,
@@ -265,7 +264,6 @@ import {
 } from "./receipt-trust-directory-discovery.js";
 import {
   errorMessage,
-  jsonByteLength,
   jsonError,
   safeFilenameSegment,
   setBodyContentSha256Header,
@@ -284,19 +282,11 @@ import {
   validThreadId,
 } from "./http-request-validation.js";
 import { registerInboundChannelAdminHttp } from "./inbound-channel-admin-http.js";
-import {
-  inboundChannelListSha256,
-  setInboundChannelCountHeaders,
-} from "./inbound-channel-admin-http-response.js";
-import {
-  inboundChannelAdapterCatalog,
-  inboundChannelAdapterCatalogSha256,
-  inboundChannelAdapterIdsSha256,
-} from "./inbound-channel-adapter-catalog.js";
 import { registerInboundChannelDeadLetterHttp } from "./inbound-channel-dead-letter-http.js";
 import { registerInboundChannelDeliveryHttp } from "./inbound-channel-delivery-http.js";
 import { registerInboundChannelIngressHttp } from "./inbound-channel-ingress-http.js";
 import { registerCredentialHttp } from "./credential-http.js";
+import { registerBootstrapHttp } from "./bootstrap-http.js";
 import { registerEvaluationCasebookAdminHttp } from "./evaluation-casebook-admin-http.js";
 import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
 import { setEvaluationCasebookProjectionHeaders } from "./evaluation-admin-http-response.js";
@@ -320,11 +310,7 @@ import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
 import { registerThreadControlHttp } from "./thread-control-http.js";
 import { registerThreadOperationsHttp } from "./thread-operations-http.js";
 import { registerThreadWorkflowHttp } from "./thread-workflow-http.js";
-import {
-  automationScheduleListSha256,
-  registerScheduleHttp,
-  setAutomationScheduleCountHeaders,
-} from "./schedule-http.js";
+import { registerScheduleHttp } from "./schedule-http.js";
 import { registerRunEvaluationHttp } from "./run-evaluation-http.js";
 import {
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyQueueResult,
@@ -344,7 +330,6 @@ import {
   ReceiptTrustAnchorDirectorySubscriptionService,
   type ReceiptTrustAnchorDirectorySubscriptionServiceOptions,
 } from "./receipt-trust-directory-subscriptions.js";
-import { BUNDLED_SKILLS } from "./bundled-skills.js";
 import { registerAgentProfileHttp } from "./agent-profile-http.js";
 import { registerWorkspaceProcessHttp } from "./workspace-process-http.js";
 
@@ -4025,37 +4010,7 @@ export function createApp(services: NapierServices): Hono {
     return context.json(verifiedWithDirectory);
   });
 
-  app.get("/api/bootstrap", async (context) => {
-    const threads = services.store.listThreads();
-    const requestedThreadId = context.req.query("thread");
-    const activeThreadId = requestedThreadId ?? threads[0]?.id;
-    const response: BootstrapResponse = {
-      apiVersion: "2026-07-25",
-      workspace: services.store.getWorkspaceSummary(),
-      agents: services.store.listAgents(),
-      threads,
-      skills: BUNDLED_SKILLS,
-      models: await services.models.list(),
-      memories: services.store.listMemories(),
-      extensions: services.store.listExtensions(),
-      extensionPublisherTrustAnchors:
-        services.store.listExtensionPublisherTrustAnchors(),
-      extensionPackageRolloutChannels:
-        services.store.listExtensionPackageRolloutChannels(),
-      skillPackageInstallations: services.store.listSkillPackageInstallations(),
-      credentials: services.store.listCredentialReferences(),
-      usagePriceTableCatalog: builtinUsagePriceTableCatalog(),
-      schedules: services.store.listSchedules(),
-      channels: services.store.listInboundChannels(),
-      inboundChannelAdapters: inboundChannelAdapterCatalog(),
-      inboundChannelAdapterCatalogSha256: inboundChannelAdapterCatalogSha256(),
-      ...(activeThreadId
-        ? { activeThread: await services.store.getDetail(activeThreadId) }
-        : {}),
-    };
-    setBootstrapProjectionHeaders(context, response);
-    return context.json(response);
-  });
+  registerBootstrapHttp(app, services);
 
   app.get("/api/usage-price-tables", (context) => {
     const catalog = builtinUsagePriceTableCatalog();
@@ -13634,47 +13589,6 @@ function setExtensionPublisherTrustAnchorHeaders(
   context.header(
     "X-Napier-Extension-Publisher-Trust-Signing-Capable",
     String(Boolean(anchor.signingSource)),
-  );
-}
-
-function setBootstrapProjectionHeaders(
-  context: Context,
-  response: BootstrapResponse,
-): void {
-  context.header("Cache-Control", "no-store");
-  setBodyContentSha256Header(context, response);
-  context.header("X-Napier-Bootstrap-Bytes", String(jsonByteLength(response)));
-  if (response.activeThread) {
-    context.header(
-      "X-Napier-Bootstrap-Active-Thread-Bytes",
-      String(jsonByteLength(response.activeThread)),
-    );
-    context.header(
-      "X-Napier-Bootstrap-Active-Thread-Event-Bytes",
-      String(jsonByteLength(response.activeThread.events)),
-    );
-  }
-  context.header(
-    "X-Napier-Schedule-List-SHA256",
-    automationScheduleListSha256(response.schedules),
-  );
-  setAutomationScheduleCountHeaders(context, response.schedules);
-  context.header(
-    "X-Napier-Channel-List-SHA256",
-    inboundChannelListSha256(response.channels),
-  );
-  setInboundChannelCountHeaders(context, response.channels);
-  context.header(
-    "X-Napier-Adapter-Catalog-SHA256",
-    response.inboundChannelAdapterCatalogSha256,
-  );
-  context.header(
-    "X-Napier-Adapter-Count",
-    String(response.inboundChannelAdapters.length),
-  );
-  context.header(
-    "X-Napier-Adapter-Ids-SHA256",
-    inboundChannelAdapterIdsSha256(response.inboundChannelAdapters),
   );
 }
 

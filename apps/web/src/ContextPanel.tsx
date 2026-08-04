@@ -20,7 +20,6 @@ import type {
   AgentProfileField,
   AgentProfileRevision,
   AutomaticRecoveryMode,
-  BootstrapResponse,
   ContextCheckpointCalibrationReport,
   ContextCheckpointSnapshot,
   CredentialReference,
@@ -43,6 +42,7 @@ import type {
   ToolLoopGuardPolicy,
   UsagePriceTableCatalog,
 } from "@napier/contracts";
+import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { AGENT_TOOL_NAMES } from "@napier/contracts";
 
 import {
@@ -203,7 +203,7 @@ export interface ContextPanelProps {
   checkpointCalibration?: ContextCheckpointCalibrationReport;
   onModel: (value: string) => void;
   onAgentUpdated: (agent: AgentProfile) => void;
-  onBootstrapUpdated: (bootstrap: BootstrapResponse) => void;
+  onBootstrapUpdated: (bootstrap: LiveReadyBootstrapResponse) => void;
 }
 
 export default function ContextPanel({

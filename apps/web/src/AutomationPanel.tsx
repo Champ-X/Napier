@@ -18,7 +18,6 @@ import type {
   AutomaticRecoveryAssessment,
   AutomaticRecoveryAttempt,
   AutomationSchedule,
-  BootstrapResponse,
   CreatedInboundChannel,
   InboundChannel,
   InboundChannelAdapter,
@@ -37,6 +36,7 @@ import type {
   PreviewInboundChannelAdapterRequest,
   UpdateInboundSignaturePolicyRequest,
 } from "@napier/contracts";
+import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 
 import {
   deadLetterExportFilename,
@@ -102,7 +102,7 @@ export interface AutomationPanelProps {
   recoveryAssessments: AutomaticRecoveryAssessment[];
   recoveryAttempts: AutomaticRecoveryAttempt[];
   recoveryPending: boolean;
-  onBootstrapUpdated: (bootstrap: BootstrapResponse) => void;
+  onBootstrapUpdated: (bootstrap: LiveReadyBootstrapResponse) => void;
 }
 
 export default function AutomationPanel({

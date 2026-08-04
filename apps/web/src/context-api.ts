@@ -4,7 +4,6 @@ import type {
   AgentProfileRollbackResult,
   ApplySkillContentRequest,
   ApplySkillContentResult,
-  BootstrapResponse,
   CreateCredentialReferenceRequest,
   CreateMacOsKeychainCredentialRequest,
   CredentialReference,
@@ -28,6 +27,7 @@ import type {
   VerifyPromptPackageRequest,
   VerifySkillPackageRequest,
 } from "@napier/contracts";
+import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 
 import { requestJson } from "./api-client";
 
@@ -59,7 +59,7 @@ export function rollbackAgentProfileRevision(
 
 export function getContextBootstrap(
   threadId: string,
-): Promise<BootstrapResponse> {
+): Promise<LiveReadyBootstrapResponse> {
   return requestJson(`/api/bootstrap?thread=${encodeURIComponent(threadId)}`);
 }
 

@@ -649,6 +649,22 @@ conflicting locator fails before the session becomes ready or calls the model.
 Later `/model` changes reuse already configured Provider references and do not
 implicitly authorize another environment variable.
 
+After one explicit credential locator is active, the untouched built-in Napier
+Agent becomes **live-ready by default** across one-shot CLI, Chat, TUI, Web,
+SDK, and RPC standard user Runs. Omitting `--model` or leaving the Web model
+selector untouched chooses the first executable live model from the bounded
+catalog; an explicit CLI/Web/SDK model still wins. This is a per-Run choice:
+the Agent remains `napier/demo`, no profile revision is created, and
+Workflow/recovery/experiment Runs retain their frozen model semantics.
+
+Ambient environment variables alone never mark a Provider configured. Napier's
+model registry uses only active credential references (environment-variable
+names or Keychain locators) and never falls back to `process.env` during auth
+resolution. This preserves the explicit-locator trust boundary while removing
+the need to repeat model flags or discover Context before every task. If no
+live reference is configured, all entries continue to use the zero-key demo
+model.
+
 Human mode writes only the final assistant result to stdout and a concise Run
 status to stderr. Use the same Runtime as a line-delimited automation stream:
 

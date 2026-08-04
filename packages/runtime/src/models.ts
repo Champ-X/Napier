@@ -1,13 +1,21 @@
 import {
   createModels,
   type Api,
+  type AuthContext,
   type CredentialStore,
   type Model,
   type MutableModels,
   type Provider,
 } from "@earendil-works/pi-ai";
 import { builtinProviders } from "@earendil-works/pi-ai/providers/all";
-import type { ModelRef, ModelSummary } from "@napier/contracts";
+import type {
+  AgentProfile,
+  AgentProfileRevision,
+  CredentialReference,
+  ModelRef,
+  ModelSummary,
+} from "@napier/contracts";
+import { recommendedDefaultRunModel } from "@napier/contracts/default-run-model";
 
 export const MAX_MODELS_PER_PROVIDER = 18;
 export const MAX_PROJECTED_LIVE_MODELS = 512;
@@ -16,7 +24,10 @@ export class ModelRegistry {
   readonly models: MutableModels;
 
   constructor(credentials?: CredentialStore) {
-    const models = createModels(credentials ? { credentials } : undefined);
+    const models = createModels({
+      ...(credentials ? { credentials } : {}),
+      authContext: explicitCredentialAuthContext(),
+    });
     for (const provider of builtinProviders()) models.setProvider(provider);
     this.models = models;
   }
@@ -52,6 +63,22 @@ export class ModelRegistry {
       throw new Error(`Model provider is not configured: ${ref.provider}`);
     }
     return model;
+  }
+
+  async recommendDefaultRunModel(
+    agent: Pick<AgentProfile, "id" | "model">,
+    credentials: readonly CredentialReference[],
+    revisions: readonly Pick<
+      AgentProfileRevision,
+      "revision" | "changedFields"
+    >[],
+  ): Promise<ModelRef> {
+    return recommendedDefaultRunModel(
+      await this.list(),
+      credentials,
+      agent,
+      revisions,
+    );
   }
 
   async list(): Promise<ModelSummary[]> {
@@ -102,6 +129,13 @@ export class ModelRegistry {
       }),
     ];
   }
+}
+
+function explicitCredentialAuthContext(): AuthContext {
+  return {
+    env: async () => undefined,
+    fileExists: async () => false,
+  };
 }
 
 function projectedProviderModels(

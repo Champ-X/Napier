@@ -41,6 +41,32 @@ describe("Model registry", () => {
     );
   });
 
+  it("does not treat ambient environment secrets as configured credentials", async () => {
+    const previous = process.env["DEEPSEEK_API_KEY"];
+    process.env["DEEPSEEK_API_KEY"] = "PRIVATE_AMBIENT_DEEPSEEK_KEY";
+    try {
+      const registry = new ModelRegistry();
+
+      await expect(
+        registry.isConfigured({
+          provider: "deepseek",
+          id: "deepseek-v4-flash",
+        }),
+      ).resolves.toBe(false);
+      await expect(registry.list()).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            provider: "deepseek",
+            configured: false,
+          }),
+        ]),
+      );
+    } finally {
+      if (previous === undefined) delete process.env["DEEPSEEK_API_KEY"];
+      else process.env["DEEPSEEK_API_KEY"] = previous;
+    }
+  });
+
   it("registers the complete pinned Pi provider catalog with a bounded fair projection", async () => {
     const fetch = vi
       .spyOn(globalThis, "fetch")
@@ -124,6 +150,44 @@ describe("Model registry", () => {
         }),
       ]),
     );
+  });
+
+  it("recommends an active referenced live model without changing the Agent", async () => {
+    const credentials = credentialStore({
+      deepseek: { type: "api_key", key: "PRIVATE_DEEPSEEK_KEY" },
+    });
+    const registry = new ModelRegistry(credentials);
+    const agent = {
+      id: "agent_napier",
+      model: { provider: "napier", id: "demo" },
+    };
+
+    await expect(
+      registry.recommendDefaultRunModel(
+        agent,
+        [
+          {
+            id: "credential_deepseek_12345678",
+            providerId: "deepseek",
+            label: "DeepSeek",
+            source: {
+              type: "environment",
+              variable: "DEEPSEEK_API_KEY",
+            },
+            status: "active",
+            availability: "available",
+            revision: 1,
+            createdAt: "2026-08-05T00:00:00.000Z",
+            updatedAt: "2026-08-05T00:00:00.000Z",
+          },
+        ],
+        [{ revision: 1, changedFields: [] }],
+      ),
+    ).resolves.toEqual({
+      provider: "deepseek",
+      id: "deepseek-v4-flash",
+    });
+    expect(agent.model).toEqual({ provider: "napier", id: "demo" });
   });
 
   it("projects executable model availability without model calls", async () => {

@@ -8,6 +8,7 @@ import {
   reviewerModelAvailability,
   selectedModelAvailability,
 } from "../src/model-selection-view-model";
+import { recommendedDefaultRunModel } from "@napier/contracts/default-run-model";
 
 describe("model selection view model", () => {
   it("groups models by provider with configured counts", () => {
@@ -111,11 +112,7 @@ describe("model selection view model", () => {
       available: true,
     });
     expect(
-      reviewerModelAvailability(
-        models,
-        "openai/gpt-4.1",
-        "openai/gpt-4.1",
-      ),
+      reviewerModelAvailability(models, "openai/gpt-4.1", "openai/gpt-4.1"),
     ).toEqual({
       available: false,
       model: expect.objectContaining({ key: "openai/gpt-4.1" }),
@@ -148,6 +145,38 @@ describe("model selection view model", () => {
       available: true,
       model: expect.objectContaining({ key: "openai/gpt-4.1" }),
     });
+  });
+
+  it("projects the same live-ready default used by Runtime", () => {
+    expect(
+      recommendedDefaultRunModel(
+        [
+          model("napier", "demo", "Deterministic demo", true),
+          model("deepseek", "deepseek-v4-flash", "DeepSeek V4 Flash", true),
+        ],
+        [
+          {
+            id: "credential_deepseek_12345678",
+            providerId: "deepseek",
+            label: "DeepSeek",
+            source: {
+              type: "environment",
+              variable: "DEEPSEEK_API_KEY",
+            },
+            status: "active",
+            availability: "available",
+            revision: 1,
+            createdAt: "2026-08-05T00:00:00.000Z",
+            updatedAt: "2026-08-05T00:00:00.000Z",
+          },
+        ],
+        {
+          id: "agent_napier",
+          model: { provider: "napier", id: "demo" },
+        },
+        [{ revision: 1, changedFields: [] }],
+      ),
+    ).toEqual({ provider: "deepseek", id: "deepseek-v4-flash" });
   });
 });
 

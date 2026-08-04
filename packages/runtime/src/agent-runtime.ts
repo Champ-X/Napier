@@ -9,13 +9,11 @@ import {
 } from "@earendil-works/pi-agent-core";
 import {
   type Api,
-  contentText,
   type AssistantMessage,
-  type Message,
+  contentText,
   type Model,
   type SimpleStreamOptions,
   type ThinkingLevel,
-  type Usage as PiUsage,
   type UserMessage,
 } from "@earendil-works/pi-ai";
 import {
@@ -65,6 +63,14 @@ import {
   resolveAgentCapabilityProfileFromStore,
 } from "./agent-capability-override.js";
 import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
+import { resolveAgentRunModel } from "./agent-run-model.js";
+import {
+  contextHistoryCharacterBudget,
+  extractAssistantReasoning,
+  isProviderMessage,
+  mapModelUsage,
+  modelRefFromModel,
+} from "./agent-model-projection.js";
 import { preflightAgentToolPolicy } from "./agent-tool-policy-preflight.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
@@ -329,7 +335,13 @@ export class AgentRuntime {
       options.capabilityPreset,
       invocationSource,
     );
-    const modelRef = options.model ?? effectiveAgentSnapshot.model;
+    const modelRef = await resolveAgentRunModel(
+      this.store,
+      this.modelRegistry,
+      effectiveAgentSnapshot,
+      invocationSource,
+      options.model,
+    );
     const workflowInvocation = isWorkflowRunSource(invocationSource);
     const messageExperiment = options[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
     const toolResultReplay = options[AGENT_MESSAGE_TOOL_RESULT_REPLAY];
@@ -2003,8 +2015,8 @@ export class AgentRuntime {
       }
       if (event.message.role === "assistant") {
         const text = contentText(event.message.content);
-        const reasoning = extractReasoning(event.message);
-        const usage = mapUsage(event.message.usage);
+        const reasoning = extractAssistantReasoning(event.message);
+        const usage = mapModelUsage(event.message.usage);
         const usageAccounting = createUsageAccounting(
           { provider: event.message.provider, id: event.message.model },
           usage,
@@ -2485,7 +2497,7 @@ export class AgentRuntime {
           },
           onEvent,
         );
-        compactorUsage = mapUsage(response.usage);
+        compactorUsage = mapModelUsage(response.usage);
         compactorUsageAccounting = createUsageAccounting(
           modelRefFromModel(model),
           compactorUsage,
@@ -2659,7 +2671,7 @@ export class AgentRuntime {
           nextModelContextEnvelopeTurnIndex,
           onEvent,
         );
-        evaluationUsage = mapUsage(response.usage);
+        evaluationUsage = mapModelUsage(response.usage);
         evaluationUsageAccounting = createUsageAccounting(
           modelRefFromModel(model),
           evaluationUsage,
@@ -3026,7 +3038,7 @@ export class AgentRuntime {
         },
         onEvent,
       );
-      extractionUsage = mapUsage(response.usage);
+      extractionUsage = mapModelUsage(response.usage);
       extractionUsageAccounting = createUsageAccounting(
         modelRefFromModel(model),
         extractionUsage,
@@ -3526,13 +3538,6 @@ function modernRunConfiguration(
   );
 }
 
-function modelRefFromModel(model: Model<Api>): ModelRef {
-  return {
-    provider: model.provider,
-    id: model.id,
-  };
-}
-
 function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
   const toolNames = new Set(tools.map((tool) => tool.name));
   const hasCreatePlan = toolNames.has("create_plan");
@@ -3572,38 +3577,6 @@ function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
   }
   lines.push("</plan_tool_protocol>");
   return lines.join("\n");
-}
-
-function mapUsage(usage: PiUsage): Usage {
-  return {
-    inputTokens: usage.input,
-    outputTokens: usage.output,
-    cacheReadTokens: usage.cacheRead,
-    cacheWriteTokens: usage.cacheWrite,
-    costUsd: usage.cost.total,
-  };
-}
-
-function isProviderMessage(message: AgentMessage): message is Message {
-  return (
-    message.role === "user" ||
-    message.role === "assistant" ||
-    message.role === "toolResult"
-  );
-}
-
-function contextHistoryCharacterBudget(model: Model<Api>): number {
-  return Math.max(
-    16_000,
-    Math.min(96_000, Math.floor(model.contextWindow * 1.5)),
-  );
-}
-
-function extractReasoning(message: AssistantMessage): string {
-  return message.content
-    .filter((block) => block.type === "thinking")
-    .map((block) => block.thinking)
-    .join("\n");
 }
 
 function toJsonValue(value: unknown): JsonValue {

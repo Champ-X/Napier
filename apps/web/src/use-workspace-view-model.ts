@@ -33,6 +33,7 @@ import type {
   ThreadReplayBundleVerification,
   ThreadSummary,
 } from "@napier/contracts";
+import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import {
   answerOperatorDecision as answerOperatorDecisionApi,
   applyExtensionPackageDeployment as applyExtensionPackageDeploymentApi,
@@ -51,7 +52,6 @@ import {
   disconnectExtension,
   exportExtensionPackageLockfile as exportExtensionPackageLockfileApi,
   exportOpenTelemetryTrace as exportOpenTelemetryTraceApi,
-  getBootstrap,
   getRunReplay,
   getThreadReplayBundle,
   getThread,
@@ -82,6 +82,7 @@ import {
   verifyThreadReplayBundle as verifyThreadReplayBundleApi,
   type WebThreadDetail,
 } from "./api";
+import { getBootstrap } from "./bootstrap-api";
 import { copy } from "./copy";
 import { extensionCopy } from "./extension-copy";
 import type {
@@ -277,7 +278,7 @@ function countEmbeddedModelContextEnvelopes(value: unknown): number {
 }
 
 export function useWorkspaceViewModel() {
-  const [bootstrap, setBootstrap] = useState<BootstrapResponse>();
+  const [bootstrap, setBootstrap] = useState<LiveReadyBootstrapResponse>();
   const [detail, setDetail] = useState<WebThreadDetail>();
   const [selectedThreadId, setSelectedThreadId] = useState<string>();
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("trace");
@@ -341,7 +342,7 @@ export function useWorkspaceViewModel() {
       setBootstrap(result);
       setDetail(result.activeThread);
       setSelectedThreadId(result.activeThread?.thread.id);
-      setSelectedModelKey(modelKey(result.activeThread?.agent.model));
+      setSelectedModelKey(modelKey(result.recommendedRunModel));
     } catch (loadError) {
       setError(toErrorMessage(loadError));
     } finally {
@@ -457,9 +458,10 @@ export function useWorkspaceViewModel() {
     setTraceVerificationReceipt(undefined);
     setError(undefined);
     try {
-      const selected = await getThread(threadId);
-      setDetail(selected);
-      setSelectedModelKey(modelKey(selected.agent.model));
+      const selected = await getBootstrap(threadId);
+      setBootstrap(selected);
+      setDetail(selected.activeThread);
+      setSelectedModelKey(modelKey(selected.recommendedRunModel));
     } catch (loadError) {
       setError(toErrorMessage(loadError));
     }
@@ -472,18 +474,11 @@ export function useWorkspaceViewModel() {
     setError(undefined);
     try {
       const created = await createThread();
-      setDetail(created);
+      const refreshed = await getBootstrap(created.thread.id);
+      setBootstrap(refreshed);
+      setDetail(refreshed.activeThread);
       setSelectedThreadId(created.thread.id);
-      setSelectedModelKey(modelKey(created.agent.model));
-      setBootstrap((current) =>
-        current
-          ? {
-              ...current,
-              threads: [created.thread, ...current.threads],
-              activeThread: created,
-            }
-          : current,
-      );
+      setSelectedModelKey(modelKey(refreshed.recommendedRunModel));
     } catch (createError) {
       setError(toErrorMessage(createError));
     }
@@ -810,18 +805,11 @@ export function useWorkspaceViewModel() {
       if (!detail) return;
       try {
         const branch = await createBranch(detail.thread.id, { fromSeq: seq });
-        setDetail(branch);
+        const refreshed = await getBootstrap(branch.thread.id);
+        setBootstrap(refreshed);
+        setDetail(refreshed.activeThread);
         setSelectedThreadId(branch.thread.id);
-        setSelectedModelKey(modelKey(branch.agent.model));
-        setBootstrap((current) =>
-          current
-            ? {
-                ...current,
-                threads: [branch.thread, ...current.threads],
-                activeThread: branch,
-              }
-            : current,
-        );
+        setSelectedModelKey(modelKey(refreshed.recommendedRunModel));
       } catch (branchError) {
         setError(toErrorMessage(branchError));
       }
@@ -1992,21 +1980,13 @@ export function useWorkspaceViewModel() {
       const sourceCoverage = summarizeThreadReplayBundleCoverage(bundle);
       const imported = await importThreadReplayBundle({ bundle });
       const provenance = imported.thread.importProvenance;
-      setDetail(imported);
+      const refreshed = await getBootstrap(imported.thread.id);
+      setBootstrap(refreshed);
+      setDetail(refreshed.activeThread);
       setSelectedThreadId(imported.thread.id);
-      setSelectedModelKey(modelKey(imported.agent.model));
+      setSelectedModelKey(modelKey(refreshed.recommendedRunModel));
       setRunComparison(undefined);
       setInspectorTab("lab");
-      setBootstrap((current) =>
-        current
-          ? {
-              ...current,
-              agents: [imported.agent, ...current.agents],
-              threads: [imported.thread, ...current.threads],
-              activeThread: imported,
-            }
-          : current,
-      );
       setLabFixtureReceipt({
         action: "imported",
         contentSha256: provenance?.sourceContentSha256 ?? bundle.contentSha256,
@@ -2093,9 +2073,14 @@ export function useWorkspaceViewModel() {
   }, []);
 
   const commitConfigurationBootstrap = useCallback(
-    (refreshed: BootstrapResponse): void => {
+    (refreshed: LiveReadyBootstrapResponse): void => {
       setBootstrap(refreshed);
       setDetail(refreshed.activeThread);
+      setSelectedModelKey((current) =>
+        current === "napier/demo"
+          ? modelKey(refreshed.recommendedRunModel)
+          : current,
+      );
     },
     [],
   );

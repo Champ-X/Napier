@@ -13,7 +13,7 @@ export const INTERACTIVE_COMMAND_HELP = [
   "  /status                Show current Thread, model, and last Run",
   "  /model                 Show the current model",
   "  /model <provider/id>   Switch model for later turns",
-  "  /model default         Use the Agent's configured default model",
+  "  /model default         Use the current live-ready default model",
   "  /thread <thread-id>    Continue another existing Thread",
   "  /new [title]           Start a new Thread on the next prompt",
   "  /resume [run-id]       Resume an interrupted Run on the current Thread",

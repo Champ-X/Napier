@@ -1,6 +1,5 @@
 import type {
   AutomationSchedule,
-  BootstrapResponse,
   CreateAutomationScheduleRequest,
   CreatedInboundChannel,
   CreateInboundChannelRequest,
@@ -24,12 +23,13 @@ import type {
   VerifyInboundDeadLetterExportRequest,
   VerifyInboundDeadLetterRetryHistoryRequest,
 } from "@napier/contracts";
+import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 
 import { requestJson } from "./api-client";
 
 export function getAutomationBootstrap(
   threadId: string,
-): Promise<BootstrapResponse> {
+): Promise<LiveReadyBootstrapResponse> {
   return requestJson(`/api/bootstrap?thread=${encodeURIComponent(threadId)}`);
 }
 

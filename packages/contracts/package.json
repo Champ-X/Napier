@@ -23,6 +23,10 @@
     "./browser-session-control": {
       "types": "./dist/browser-session-control.d.ts",
       "import": "./dist/browser-session-control.js"
+    },
+    "./default-run-model": {
+      "types": "./dist/default-run-model.d.ts",
+      "import": "./dist/default-run-model.js"
     }
   },
   "files": [
@@ -30,6 +34,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   }
 }
