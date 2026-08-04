@@ -7,7 +7,7 @@ import type {
 } from "./workflow-benchmark-types.js";
 
 const EVALUATION_KEYS = keySet(
-  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged inspectDataCompletedCount dataFrameCompletedCount dataFrameProtocolValid dataFrameEvidenceMatch dataSourceUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount diagnostics contentSha256",
+  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged inspectDataCompletedCount dataFrameCompletedCount dataFrameProtocolValid dataFrameEvidenceMatch dataSourceUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount modelResponseCount modelResponseErrorCount modelResponseUsageSampleCount diagnostics contentSha256",
 );
 const RESULT_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 status model environment run workflow evaluation ledger contentSha256",
@@ -74,6 +74,9 @@ function evaluationKeys(
     "approvalRecovered",
     "completedMapRunsReused",
     "postRestartModelResponseCount",
+    "modelResponseCount",
+    "modelResponseErrorCount",
+    "modelResponseUsageSampleCount",
   ]);
   const keys = EVALUATION_KEYS.filter((key) => !optional.has(key));
   if (evaluation["actualOutputSha256"] !== undefined) {
@@ -101,6 +104,16 @@ function evaluationKeys(
       "completedMapRunsReused",
       "postRestartModelResponseCount",
     );
+    if (
+      evaluation["schemaVersion"] === 6 &&
+      evaluation["modelResponseCount"] !== undefined
+    ) {
+      keys.push(
+        "modelResponseCount",
+        "modelResponseErrorCount",
+        "modelResponseUsageSampleCount",
+      );
+    }
   }
   if (evaluation["schemaVersion"] === 5) {
     keys.push(
@@ -151,12 +164,7 @@ function validEvaluationEvidence(evaluation: Record<string, unknown>): boolean {
     return false;
   }
   if (evaluation["schemaVersion"] === 4 || evaluation["schemaVersion"] === 6) {
-    return (
-      nonNegativeInteger(evaluation["runtimeRestartCount"]) &&
-      typeof evaluation["approvalRecovered"] === "boolean" &&
-      typeof evaluation["completedMapRunsReused"] === "boolean" &&
-      nonNegativeInteger(evaluation["postRestartModelResponseCount"])
-    );
+    return validRestartEvaluationEvidence(evaluation);
   }
   if (evaluation["schemaVersion"] === 5) {
     return (
@@ -179,6 +187,26 @@ function validEvaluationEvidence(evaluation: Record<string, unknown>): boolean {
         (typeof evaluation["sqliteEvidenceMatch"] === "boolean" &&
           typeof evaluation["promptInjectionLeakDetected"] === "boolean")))
   );
+}
+
+function validRestartEvaluationEvidence(
+  evaluation: Record<string, unknown>,
+): boolean {
+  const restartEvidenceValid =
+    nonNegativeInteger(evaluation["runtimeRestartCount"]) &&
+    typeof evaluation["approvalRecovered"] === "boolean" &&
+    typeof evaluation["completedMapRunsReused"] === "boolean" &&
+    nonNegativeInteger(evaluation["postRestartModelResponseCount"]);
+  const modelEvidenceAbsent =
+    evaluation["modelResponseCount"] === undefined &&
+    evaluation["modelResponseErrorCount"] === undefined &&
+    evaluation["modelResponseUsageSampleCount"] === undefined;
+  return evaluation["schemaVersion"] === 4 || modelEvidenceAbsent
+    ? restartEvidenceValid
+    : restartEvidenceValid &&
+        nonNegativeInteger(evaluation["modelResponseCount"]) &&
+        nonNegativeInteger(evaluation["modelResponseErrorCount"]) &&
+        nonNegativeInteger(evaluation["modelResponseUsageSampleCount"]);
 }
 
 function validModel(value: unknown): boolean {

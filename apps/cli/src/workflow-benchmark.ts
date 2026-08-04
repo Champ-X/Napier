@@ -2,14 +2,7 @@ import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import {
-  emptyUsage,
-  type JsonValue,
-  type ModelRef,
-  type RunEvent,
-  type RunRecord,
-  type Usage,
-} from "@napier/contracts";
+import { type JsonValue, type ModelRef } from "@napier/contracts";
 import {
   canonicalJson,
   createLocalAgentRuntime,
@@ -39,6 +32,11 @@ import {
 import { setupWorkflowBenchmarkDataFrameSource } from "./workflow-benchmark-data-frame-setup.js";
 import { createWorkflowBenchmarkLedgerBundle } from "./workflow-benchmark-ledger.js";
 import {
+  appendWorkflowBenchmarkModelResponseObservation,
+  workflowBenchmarkModelEvaluationEvidence,
+  workflowBenchmarkModelLedgerEvidence,
+} from "./workflow-benchmark-model-evidence.js";
+import {
   workflowBenchmarkRestartEvaluationEvidence,
   workflowBenchmarkRestartLedgerEvidence,
 } from "./workflow-benchmark-restart-evidence.js";
@@ -48,6 +46,10 @@ import {
   workflowBenchmarkSqliteEvaluationEvidence,
   workflowBenchmarkSqliteLedgerEvidence,
 } from "./workflow-benchmark-run-evidence.js";
+import {
+  countWorkflowBenchmarkEvents,
+  workflowBenchmarkRunEvidence,
+} from "./workflow-benchmark-run-summary.js";
 import { collectWorkflowBenchmarkSqliteActionEvents } from "./workflow-benchmark-sqlite-evidence.js";
 import { setupWorkflowBenchmarkDatabase } from "./workflow-benchmark-sqlite-setup.js";
 import { findWorkflowBenchmarkTerminalEvent } from "./workflow-benchmark-terminal-event.js";
@@ -216,6 +218,16 @@ export async function runWorkflowBenchmark(
       loaded.benchmarkCase,
       injectionOutputProjection,
     );
+    const { event: modelResponseEvidenceEvent, runId: evidenceRunId } =
+      await appendWorkflowBenchmarkModelResponseObservation({
+        store: runtime.store,
+        threadId: thread.id,
+        workflowResult,
+        runs,
+        benchmarkCase: loaded.benchmarkCase,
+        events: eventsBeforeEvaluation,
+        sourceReplaySha256: replayBeforeEvaluation.contentSha256,
+      });
     const evaluation = createWorkflowBenchmarkEvaluation({
       benchmarkCase: loaded.benchmarkCase,
       workflowStatus: workflowResult.status,
@@ -227,21 +239,21 @@ export async function runWorkflowBenchmark(
       ...(mapOutputSha256 !== undefined
         ? { actualMapOutputSha256: mapOutputSha256 }
         : {}),
-      expectedNodeResultCount:
-        loaded.benchmarkCase.schemaVersion === 4 ||
-        loaded.benchmarkCase.schemaVersion === 6
-          ? 3
-          : 2,
+      expectedNodeResultCount: [4, 6].includes(
+        loaded.benchmarkCase.schemaVersion,
+      )
+        ? 3
+        : 2,
       completedNodeResultCount: workflowResult.nodeResults.filter(
         (result) => result.status === "completed",
       ).length,
       expectedMapItemCount: loaded.input.documents.length,
       completedMapRunCount: mapRuns.length,
-      mapCompletedEventCount: countEvents(
+      mapCompletedEventCount: countWorkflowBenchmarkEvents(
         eventsBeforeEvaluation,
         "workflow.map.item.completed",
       ),
-      reduceCompletedEventCount: countEvents(
+      reduceCompletedEventCount: countWorkflowBenchmarkEvents(
         eventsBeforeEvaluation,
         "workflow.reduce.completed",
       ),
@@ -270,15 +282,8 @@ export async function runWorkflowBenchmark(
         mapRunIds: mapRuns.map((run) => run.id),
         restartEvidence: execution.restartEvidence,
       }),
+      ...workflowBenchmarkModelEvaluationEvidence(modelResponseEvidenceEvent),
     });
-    const evidenceRunId =
-      workflowResult.nodeResults.find((result) => result.runId)?.runId ??
-      runs[0]?.id ??
-      findWorkflowBenchmarkTerminalEvent(eventsBeforeEvaluation, workflowResult)
-        ?.runId;
-    if (!evidenceRunId) {
-      throw new Error("Workflow benchmark has no Run for evaluation evidence");
-    }
     const evaluationEvent = await runtime.store.appendEvent({
       threadId: thread.id,
       runId: evidenceRunId,
@@ -345,6 +350,7 @@ export async function runWorkflowBenchmark(
         injectionLeakDetected,
       }),
       ...workflowBenchmarkRestartLedgerEvidence(execution.restartEvidence),
+      ...workflowBenchmarkModelLedgerEvidence(modelResponseEvidenceEvent),
       runs,
       evaluationEvent,
       terminalEvent,
@@ -374,7 +380,7 @@ export async function runWorkflowBenchmark(
         arch: process.arch,
         cliVersion: CLI_VERSION,
       },
-      run: workflowRunEvidence(workflowResult, runs),
+      run: workflowBenchmarkRunEvidence(workflowResult, runs),
       workflow: workflowEvidence,
       evaluation,
       ledger: {
@@ -452,44 +458,4 @@ async function configureWorkflowBenchmarkAgent(
   await runtime.store.updateAgent(agent.id, {
     enabledTools: tools,
   });
-}
-
-function workflowRunEvidence(
-  workflowResult: {
-    threadId: string;
-    planId: string;
-    status: WorkflowBenchmarkResult["run"]["status"];
-  },
-  runs: RunRecord[],
-): WorkflowBenchmarkResult["run"] {
-  const starts = runs.map((run) => Date.parse(run.startedAt));
-  const finishes = runs.flatMap((run) =>
-    run.finishedAt ? [Date.parse(run.finishedAt)] : [],
-  );
-  return {
-    threadId: workflowResult.threadId,
-    planId: workflowResult.planId,
-    status: workflowResult.status,
-    durationMs:
-      starts.length > 0 && finishes.length > 0
-        ? Math.max(0, Math.max(...finishes) - Math.min(...starts))
-        : 0,
-    runCount: runs.length,
-    completedRunCount: runs.filter((run) => run.status === "completed").length,
-    usage: runs.map((run) => run.usage).reduce(addUsage, emptyUsage()),
-  };
-}
-
-function addUsage(left: Usage, right: Usage): Usage {
-  return {
-    inputTokens: left.inputTokens + right.inputTokens,
-    outputTokens: left.outputTokens + right.outputTokens,
-    cacheReadTokens: left.cacheReadTokens + right.cacheReadTokens,
-    cacheWriteTokens: left.cacheWriteTokens + right.cacheWriteTokens,
-    costUsd: left.costUsd + right.costUsd,
-  };
-}
-
-function countEvents(events: RunEvent[], type: string): number {
-  return events.filter((event) => event.type === type).length;
 }

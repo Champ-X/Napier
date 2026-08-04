@@ -31,6 +31,9 @@ export interface WorkflowBenchmarkLedgerWorkflowInput {
   restartEvent?: RunEvent;
   restartEvents?: RunEvent[];
   preRestartMapRunIds?: string[];
+  modelResponseEvidenceEvent?: NonNullable<
+    WorkflowBenchmarkLedgerBundle["workflow"]["modelResponseEvidenceEvent"]
+  >;
 }
 
 export function createWorkflowBenchmarkLedgerWorkflow(
@@ -104,6 +107,13 @@ export function createWorkflowBenchmarkLedgerWorkflow(
       : {}),
     ...(input.preRestartMapRunIds
       ? { preRestartMapRunIds: [...input.preRestartMapRunIds].sort() }
+      : {}),
+    ...(input.modelResponseEvidenceEvent
+      ? {
+          modelResponseEvidenceEvent: structuredClone(
+            input.modelResponseEvidenceEvent,
+          ),
+        }
       : {}),
   };
 }

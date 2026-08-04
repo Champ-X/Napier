@@ -13,9 +13,12 @@ import {
   type RunWorkflowBenchmarkOptions,
   type WorkflowBenchmarkDependencies,
 } from "./workflow-benchmark.js";
+import {
+  createWorkflowBenchmarkSeriesMetrics,
+  validWorkflowBenchmarkSeriesMetrics,
+} from "./workflow-benchmark-series-metrics.js";
 import type {
   WorkflowBenchmarkArtifacts,
-  WorkflowBenchmarkMetricSummary,
   WorkflowBenchmarkResult,
   WorkflowBenchmarkSeries,
   WorkflowBenchmarkSeriesVerification,
@@ -27,10 +30,6 @@ const SERIES_KEYS = keySet(
 const TRIAL_KEYS = keySet(
   "index threadId status resultFileName resultSha256 ledgerFileName ledgerSha256",
 );
-const METRIC_KEYS = keySet(
-  "durationMs costUsd inputTokens outputTokens runCount",
-);
-const SUMMARY_KEYS = keySet("total min p50 p95 max mean");
 
 export interface RunWorkflowBenchmarkSeriesOptions extends RunWorkflowBenchmarkOptions {
   trialCount: number;
@@ -94,6 +93,8 @@ export async function runWorkflowBenchmarkSeries(
 export function createWorkflowBenchmarkSeries(input: {
   generatedAt: string;
   requestedTrialCount: number;
+  includeUsageSampleCount?: boolean;
+  includeSuccessRate?: boolean;
   trials: Array<{
     resultFileName: string;
     result: WorkflowBenchmarkResult;
@@ -137,6 +138,12 @@ export function createWorkflowBenchmarkSeries(input: {
   const inconclusiveTrialCount = countStatus(results, "inconclusive");
   const scoredTrialCount = passedTrialCount + failedTrialCount;
   const completedTrialCount = results.length;
+  const includeUsageSampleCount = input.includeUsageSampleCount ?? true;
+  const includeSuccessRate = input.includeSuccessRate ?? true;
+  const metricEvidence = createWorkflowBenchmarkSeriesMetrics(
+    results,
+    includeUsageSampleCount,
+  );
   const content = {
     kind: "napier.workflow-benchmark-series" as const,
     schemaVersion: 1 as const,
@@ -155,20 +162,13 @@ export function createWorkflowBenchmarkSeries(input: {
     passedTrialCount,
     failedTrialCount,
     inconclusiveTrialCount,
+    ...metricEvidence,
+    ...(includeSuccessRate
+      ? { successRate: passedTrialCount / completedTrialCount }
+      : {}),
     completionRate: completedTrialCount / input.requestedTrialCount,
     passRate:
       scoredTrialCount === 0 ? null : passedTrialCount / scoredTrialCount,
-    metrics: {
-      durationMs: summarize(results.map((result) => result.run.durationMs)),
-      costUsd: summarize(results.map((result) => result.run.usage.costUsd)),
-      inputTokens: summarize(
-        results.map((result) => result.run.usage.inputTokens),
-      ),
-      outputTokens: summarize(
-        results.map((result) => result.run.usage.outputTokens),
-      ),
-      runCount: summarize(results.map((result) => result.run.runCount)),
-    },
     trials: input.trials.map(({ result, resultFileName }, index) => ({
       index: index + 1,
       threadId: result.run.threadId,
@@ -256,6 +256,8 @@ export function verifyWorkflowBenchmarkSeries(
     const recreated = createWorkflowBenchmarkSeries({
       generatedAt: series.generatedAt,
       requestedTrialCount: series.requestedTrialCount,
+      includeUsageSampleCount: series.usageSampleCount !== undefined,
+      includeSuccessRate: series.successRate !== undefined,
       trials: artifacts.map((artifact) => ({
         resultFileName: artifact.resultFileName,
         result: artifact.result as WorkflowBenchmarkResult,
@@ -275,7 +277,17 @@ export function verifyWorkflowBenchmarkSeries(
 }
 
 function validSeriesShape(value: unknown): value is WorkflowBenchmarkSeries {
-  if (!exactRecord(value, SERIES_KEYS)) return false;
+  const hasUsageSampleCount = recordHasOwn(value, "usageSampleCount");
+  const hasSuccessRate = recordHasOwn(value, "successRate");
+  if (
+    !exactRecord(value, [
+      ...SERIES_KEYS,
+      ...(hasUsageSampleCount ? ["usageSampleCount"] : []),
+      ...(hasSuccessRate ? ["successRate"] : []),
+    ])
+  ) {
+    return false;
+  }
   const trials = value["trials"];
   return (
     value["kind"] === "napier.workflow-benchmark-series" &&
@@ -288,14 +300,24 @@ function validSeriesShape(value: unknown): value is WorkflowBenchmarkSeries {
     (value["status"] === "completed" || value["status"] === "cancelled") &&
     validSeriesCounts(value) &&
     rate(value["completionRate"]) &&
+    (value["successRate"] === undefined || rate(value["successRate"])) &&
     (value["passRate"] === null || rate(value["passRate"])) &&
-    validMetrics(value["metrics"]) &&
+    validWorkflowBenchmarkSeriesMetrics(value["metrics"]) &&
     Array.isArray(trials) &&
     trials.length === value["completedTrialCount"] &&
     trials.every((trial, index) =>
       validTrial(trial, index, String(value["caseId"])),
     ) &&
     digest(value["contentSha256"])
+  );
+}
+
+function recordHasOwn(value: unknown, key: string): boolean {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.hasOwn(value, key)
   );
 }
 
@@ -335,6 +357,7 @@ function validSeriesCounts(series: Record<string, unknown>): boolean {
         Number(series["inconclusiveTrialCount"]) &&
     Number(series["completedTrialCount"]) <=
       Number(series["requestedTrialCount"]) &&
+    validSeriesCompleteness(series) &&
     ((series["status"] === "completed" &&
       series["completedTrialCount"] === series["requestedTrialCount"]) ||
       (series["status"] === "cancelled" &&
@@ -343,38 +366,18 @@ function validSeriesCounts(series: Record<string, unknown>): boolean {
   );
 }
 
-function validMetrics(value: unknown): boolean {
+function validSeriesCompleteness(series: Record<string, unknown>): boolean {
+  const usageSamples = series["usageSampleCount"];
+  const successRate = series["successRate"];
   return (
-    exactRecord(value, METRIC_KEYS) &&
-    METRIC_KEYS.every((key) => validMetricSummary(value[key]))
+    (usageSamples === undefined ||
+      integerBetween(usageSamples, 0, Number(series["completedTrialCount"]))) &&
+    (successRate === undefined ||
+      (rate(successRate) &&
+        Number(successRate) ===
+          Number(series["passedTrialCount"]) /
+            Number(series["completedTrialCount"])))
   );
-}
-
-function validMetricSummary(value: unknown): boolean {
-  return (
-    exactRecord(value, SUMMARY_KEYS) &&
-    SUMMARY_KEYS.every((key) => nonNegativeNumber(value[key])) &&
-    Number(value["min"]) <= Number(value["p50"]) &&
-    Number(value["p50"]) <= Number(value["p95"]) &&
-    Number(value["p95"]) <= Number(value["max"])
-  );
-}
-
-function summarize(values: number[]): WorkflowBenchmarkMetricSummary {
-  const sorted = [...values].sort((left, right) => left - right);
-  const total = sorted.reduce((sum, value) => sum + value, 0);
-  return {
-    total,
-    min: sorted[0]!,
-    p50: percentile(sorted, 0.5),
-    p95: percentile(sorted, 0.95),
-    max: sorted.at(-1)!,
-    mean: total / sorted.length,
-  };
-}
-
-function percentile(sorted: number[], rate: number): number {
-  return sorted[Math.ceil(sorted.length * rate) - 1]!;
 }
 
 function countStatus(

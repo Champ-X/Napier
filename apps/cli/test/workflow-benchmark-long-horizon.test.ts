@@ -108,6 +108,8 @@ describe("Long-horizon outcome benchmark", () => {
         status: "completed",
         completedTrialCount: 2,
         passedTrialCount: 2,
+        usageSampleCount: 2,
+        successRate: 1,
         passRate: 1,
       }),
     );
@@ -203,6 +205,8 @@ describe("Long-horizon outcome benchmark", () => {
       expect.objectContaining({
         status: "completed",
         passedTrialCount: 2,
+        usageSampleCount: 2,
+        successRate: 1,
         passRate: 1,
       }),
     );
@@ -280,6 +284,8 @@ describe("Long-horizon outcome benchmark", () => {
         scoredTrialCount: 2,
         passedTrialCount: 0,
         failedTrialCount: 2,
+        usageSampleCount: 2,
+        successRate: 0,
         passRate: 0,
       }),
     );
@@ -294,6 +300,9 @@ describe("Long-horizon outcome benchmark", () => {
             approvalRecovered: false,
             completedMapRunsReused: false,
             postRestartModelResponseCount: 0,
+            modelResponseCount: 3,
+            modelResponseErrorCount: 0,
+            modelResponseUsageSampleCount: 3,
             diagnostics: expect.arrayContaining([
               "workflow_not_completed",
               "runtime_restart_mismatch",
@@ -307,8 +316,54 @@ describe("Long-horizon outcome benchmark", () => {
       expect(trial.bundle.workflow).not.toHaveProperty("outputSha256");
       expect(trial.bundle.workflow).not.toHaveProperty("reduceRunId");
       expect(trial.bundle.workflow).not.toHaveProperty("restartEvent");
+      expect(trial.bundle.workflow.modelResponseEvidenceEvent?.type).toBe(
+        "benchmark.workflow.model-responses.observed",
+      );
       expect(trial.result.evaluation.diagnostics).not.toContain(
         "post_restart_model_called",
+      );
+      expect(
+        verifyWorkflowBenchmarkArtifacts(trial.result, trial.bundle),
+      ).toEqual(expect.objectContaining({ valid: true, diagnostics: [] }));
+    }
+  }, 30_000);
+
+  it("classifies pre-gate Provider response errors as inconclusive", async () => {
+    const outputDir = await temporaryOutput();
+    const dependencies = longHorizonDependencies(errorLongHorizonProvider());
+    const artifacts = await runWorkflowBenchmarkSeries(
+      {
+        caseRoot: MULTI_RESTART_CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-long-horizon", id: "faux-1" },
+        env: {},
+        trialCount: 2,
+      },
+      dependencies,
+    );
+
+    expect(artifacts.series).toEqual(
+      expect.objectContaining({
+        completedTrialCount: 2,
+        scoredTrialCount: 0,
+        failedTrialCount: 0,
+        inconclusiveTrialCount: 2,
+        usageSampleCount: 2,
+        successRate: 0,
+        passRate: null,
+      }),
+    );
+    for (const trial of artifacts.trials) {
+      expect(trial.result).toEqual(
+        expect.objectContaining({
+          status: "inconclusive",
+          evaluation: expect.objectContaining({
+            workflowStatus: "blocked",
+            modelResponseCount: 3,
+            modelResponseErrorCount: 3,
+            modelResponseUsageSampleCount: 3,
+          }),
+        }),
       );
       expect(
         verifyWorkflowBenchmarkArtifacts(trial.result, trial.bundle),
@@ -340,6 +395,19 @@ function blockedLongHorizonProvider() {
   const provider = fauxProvider({ provider: "faux-long-horizon" });
   provider.setResponses(
     Array.from({ length: 6 }, () => fauxAssistantMessage("not typed JSON")),
+  );
+  return provider;
+}
+
+function errorLongHorizonProvider() {
+  const provider = fauxProvider({ provider: "faux-long-horizon" });
+  provider.setResponses(
+    Array.from({ length: 6 }, () =>
+      fauxAssistantMessage("", {
+        stopReason: "error",
+        errorMessage: "private provider failure",
+      }),
+    ),
   );
   return provider;
 }

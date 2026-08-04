@@ -1,8 +1,4 @@
-import type {
-  ExecutionPlanWorkflowResult,
-  JsonValue,
-  RunEvent,
-} from "@napier/contracts";
+import type { JsonValue, RunEvent } from "@napier/contracts";
 import { canonicalJson, sha256 } from "@napier/runtime";
 
 import {
@@ -13,10 +9,15 @@ import {
   workflowBenchmarkDataFrameDiagnostics,
   workflowBenchmarkDataFrameEvaluationFromBundle,
   workflowBenchmarkDataFrameEvaluationProjection,
-  type WorkflowBenchmarkDataFrameEvaluationInput,
 } from "./workflow-benchmark-data-frame-evaluation.js";
 import { workflowBenchmarkCriteria } from "./workflow-benchmark-evaluation-criteria.js";
+import type { CreateWorkflowBenchmarkEvaluationInput } from "./workflow-benchmark-evaluation-input.js";
 import { verifyWorkflowBenchmarkLedgerBundle } from "./workflow-benchmark-ledger.js";
+import {
+  workflowBenchmarkModelEvaluationFromBundle,
+  workflowBenchmarkModelEvaluationProjection,
+  workflowBenchmarkModelOutcomeInconclusive,
+} from "./workflow-benchmark-model-evidence.js";
 import {
   workflowBenchmarkRestartDiagnostics,
   workflowBenchmarkRestartEvaluationFromBundle,
@@ -29,7 +30,6 @@ import {
 } from "./workflow-benchmark-sqlite-evidence.js";
 import type {
   WorkflowBenchmarkArtifactVerification,
-  WorkflowBenchmarkCase,
   WorkflowBenchmarkDiagnostic,
   WorkflowBenchmarkEvaluation,
   WorkflowBenchmarkLedgerBundle,
@@ -37,38 +37,6 @@ import type {
 } from "./workflow-benchmark-types.js";
 
 export { createWorkflowBenchmarkResult } from "./workflow-benchmark-result.js";
-
-interface CreateWorkflowBenchmarkEvaluationInput extends WorkflowBenchmarkDataFrameEvaluationInput {
-  benchmarkCase: Pick<
-    WorkflowBenchmarkCase,
-    "id" | "schemaVersion" | "contentSha256"
-  >;
-  workflowStatus: ExecutionPlanWorkflowResult["status"];
-  expectedOutputSha256: string;
-  actualOutputSha256?: string;
-  expectedMapOutputSha256: string;
-  actualMapOutputSha256?: string;
-  expectedNodeResultCount: number;
-  completedNodeResultCount: number;
-  expectedMapItemCount: number;
-  completedMapRunCount: number;
-  mapCompletedEventCount: number;
-  reduceCompletedEventCount: number;
-  reduceModelOrToolEventCount: number;
-  replayValid: boolean;
-  credentialLeakDetected: boolean;
-  sqliteSchemaCompletedCount?: number;
-  sqliteQueryCompletedCount?: number;
-  sqliteChartCompletedCount?: number;
-  sqliteProtocolValid?: boolean;
-  sqliteEvidenceMatch?: boolean;
-  promptInjectionLeakDetected?: boolean;
-  databaseUnchanged?: boolean;
-  runtimeRestartCount?: number;
-  approvalRecovered?: boolean;
-  completedMapRunsReused?: boolean;
-  postRestartModelResponseCount?: number;
-}
 
 export function createWorkflowBenchmarkEvaluation(
   input: CreateWorkflowBenchmarkEvaluationInput,
@@ -85,12 +53,11 @@ export function createWorkflowBenchmarkEvaluation(
     outputMatch,
     mapOutputMatch,
   );
-  const status =
-    input.workflowStatus === "cancelled"
-      ? ("inconclusive" as const)
-      : diagnostics.length === 0
-        ? ("passed" as const)
-        : ("failed" as const);
+  const status = workflowBenchmarkModelOutcomeInconclusive(input)
+    ? ("inconclusive" as const)
+    : diagnostics.length === 0
+      ? ("passed" as const)
+      : ("failed" as const);
   const content = {
     kind: "napier.workflow-benchmark-evaluation" as const,
     schemaVersion: input.benchmarkCase.schemaVersion,
@@ -125,6 +92,7 @@ export function createWorkflowBenchmarkEvaluation(
     ...(sqliteCase ? sqliteEvaluationEvidence(input) : {}),
     ...workflowBenchmarkDataFrameEvaluationProjection(input),
     ...(restartCase ? workflowBenchmarkRestartEvaluationProjection(input) : {}),
+    ...workflowBenchmarkModelEvaluationProjection(input),
     diagnostics,
   };
   return {
@@ -402,6 +370,9 @@ function benchmarkOutcomeMatches(
     ...(result.evaluation.schemaVersion === 4 ||
     result.evaluation.schemaVersion === 6
       ? workflowBenchmarkRestartEvaluationFromBundle(bundle)
+      : {}),
+    ...(result.evaluation.schemaVersion === 6
+      ? workflowBenchmarkModelEvaluationFromBundle(bundle)
       : {}),
     ...(result.evaluation.schemaVersion === 5
       ? workflowBenchmarkDataFrameEvaluationFromBundle(bundle)

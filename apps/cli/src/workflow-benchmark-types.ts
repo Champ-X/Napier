@@ -165,6 +165,9 @@ export interface WorkflowBenchmarkEvaluation {
   approvalRecovered?: boolean;
   completedMapRunsReused?: boolean;
   postRestartModelResponseCount?: number;
+  modelResponseCount?: number;
+  modelResponseErrorCount?: number;
+  modelResponseUsageSampleCount?: number;
   diagnostics: WorkflowBenchmarkDiagnostic[];
   contentSha256: string;
 }
@@ -259,6 +262,7 @@ export interface WorkflowBenchmarkLedgerBundle {
     restartEvent?: RunEvent;
     restartEvents?: RunEvent[];
     preRestartMapRunIds?: string[];
+    modelResponseEvidenceEvent?: RunEvent;
   };
   runs: Array<{
     id: string;
@@ -321,7 +325,9 @@ export interface WorkflowBenchmarkSeries {
   passedTrialCount: number;
   failedTrialCount: number;
   inconclusiveTrialCount: number;
+  usageSampleCount?: number;
   completionRate: number;
+  successRate?: number;
   passRate: number | null;
   metrics: {
     durationMs: WorkflowBenchmarkMetricSummary;

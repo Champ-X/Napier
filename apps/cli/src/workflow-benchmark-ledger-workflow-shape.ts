@@ -2,6 +2,7 @@ import {
   validWorkflowBenchmarkDataFrameFields,
   workflowBenchmarkDataFrameFieldDiagnostics,
 } from "./workflow-benchmark-data-frame-evidence.js";
+import { validWorkflowBenchmarkModelResponseFields } from "./workflow-benchmark-model-evidence.js";
 import { validWorkflowBenchmarkRestartFields } from "./workflow-benchmark-restart-evidence.js";
 import { validWorkflowBenchmarkSecurityFields } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteFields } from "./workflow-benchmark-sqlite-evidence.js";
@@ -57,6 +58,9 @@ export function workflowBenchmarkLedgerWorkflowDiagnostics(
   if (!validWorkflowBenchmarkRestartFields(workflow)) {
     diagnostics.push("workflow_restart_fields_invalid");
   }
+  if (!validWorkflowBenchmarkModelResponseFields(workflow)) {
+    diagnostics.push("workflow_model_response_fields_invalid");
+  }
   if (
     !nonNegativeInteger(workflow["nodeResultCount"]) ||
     !nonNegativeInteger(workflow["completedNodeResultCount"])
@@ -111,6 +115,9 @@ function workflowKeys(workflow: Record<string, unknown>): readonly string[] {
     ...(workflow["preRestartMapRunIds"] === undefined
       ? []
       : ["preRestartMapRunIds"]),
+    ...(workflow["modelResponseEvidenceEvent"] === undefined
+      ? []
+      : ["modelResponseEvidenceEvent"]),
   ];
 }
 

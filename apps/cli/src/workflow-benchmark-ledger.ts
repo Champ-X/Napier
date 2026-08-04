@@ -14,6 +14,7 @@ import {
   validWorkflowBenchmarkLedgerWorkflow,
   workflowBenchmarkLedgerWorkflowDiagnostics,
 } from "./workflow-benchmark-ledger-workflow-shape.js";
+import { validWorkflowBenchmarkModelResponseBinding } from "./workflow-benchmark-model-evidence.js";
 import { validWorkflowBenchmarkRestartBinding } from "./workflow-benchmark-restart-evidence.js";
 import { workflowBenchmarkPromptInjectionScanMatches } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteEvidenceBinding } from "./workflow-benchmark-sqlite-evidence.js";
@@ -172,6 +173,9 @@ export function verifyWorkflowBenchmarkLedgerBundle(input: unknown): {
   }
   if (!validWorkflowBenchmarkRestartBinding(input)) {
     diagnostics.push("ledger_restart_evidence_invalid");
+  }
+  if (!validWorkflowBenchmarkModelResponseBinding(input)) {
+    diagnostics.push("ledger_model_response_evidence_invalid");
   }
   return {
     valid: diagnostics.length === 0,

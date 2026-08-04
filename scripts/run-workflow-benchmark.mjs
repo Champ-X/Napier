@@ -81,6 +81,8 @@ if (args.verifySeries) {
             passedTrialCount: artifacts.series.passedTrialCount,
             failedTrialCount: artifacts.series.failedTrialCount,
             inconclusiveTrialCount: artifacts.series.inconclusiveTrialCount,
+            usageSampleCount: artifacts.series.usageSampleCount,
+            successRate: artifacts.series.successRate,
             passRate: artifacts.series.passRate,
             metrics: artifacts.series.metrics,
             seriesSha256: artifacts.series.contentSha256,
