@@ -465,6 +465,13 @@ Store port. Separate validation and response modules preserve raw objective
 text, exact preview digest binding, portable Blueprint verification,
 Plan-created Ledger events, replay-event hashes, and all source/qualification
 headers. This lowers `app.ts` to 15,810 lines.
+Blueprint Record replay history, replay outcomes, and single-event
+verification use `plan-blueprint-replay-http.ts` behind a six-method Store
+port. Separate validation and response modules preserve exact portable
+artifact requests, Record prechecks, body bounds, stable content hashes,
+ordered diagnostics, count headers, and observed-versus-declared evidence.
+This lowers `app.ts` to 15,282 lines while leaving model review and baseline
+promotion in a separate outcome-governance boundary.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

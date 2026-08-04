@@ -21,11 +21,6 @@ import type {
   CreateMcpExtensionRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
-  ExecutionPlanBlueprintRecordReplayEventVerification,
-  ExecutionPlanBlueprintRecordReplayHistory,
-  ExecutionPlanBlueprintRecordReplayHistoryVerification,
-  ExecutionPlanBlueprintRecordReplayOutcomes,
-  ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintOutcomeReviewCriteria,
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
@@ -192,9 +187,6 @@ import type {
   VerifyExtensionPackageChannelIndexRequest,
   VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest,
   VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest,
-  VerifyExecutionPlanBlueprintRecordReplayEventRequest,
-  VerifyExecutionPlanBlueprintRecordReplayHistoryRequest,
-  VerifyExecutionPlanBlueprintRecordReplayOutcomesRequest,
   VerifyInspectorPackageRequest,
   VerifyPromptPackageRequest,
   VerifyUsagePriceTableCatalogRequest,
@@ -322,6 +314,7 @@ import { registerEvaluationSuiteAdminHttp } from "./evaluation-suite-admin-http.
 import { registerMemoryHttp } from "./memory-http.js";
 import { registerPlanBlueprintInstantiationHttp } from "./plan-blueprint-instantiation-http.js";
 import { registerPlanBlueprintLibraryHttp } from "./plan-blueprint-library-http.js";
+import { registerPlanBlueprintReplayHttp } from "./plan-blueprint-replay-http.js";
 import { registerPlanArtifactDataHttp } from "./plan-artifact-data-http.js";
 import { registerPlanArtifactDirectoryHttp } from "./plan-artifact-directory-http.js";
 import { registerPlanArtifactFileHttp } from "./plan-artifact-file-http.js";
@@ -4666,111 +4659,7 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
-  app.get("/api/plan-blueprints/:recordId/replays", async (context) => {
-    const history =
-      await services.store.getExecutionPlanBlueprintRecordReplayHistory(
-        context.req.param("recordId"),
-      );
-    setExecutionPlanBlueprintRecordReplayHistoryHeaders(context, history);
-    return context.json(history);
-  });
-
-  app.post("/api/plan-blueprints/:recordId/replays/verify", async (context) => {
-    const recordId = context.req.param("recordId");
-    services.store.getExecutionPlanBlueprintRecord(recordId);
-    let input: unknown;
-    try {
-      input = await readLimitedJson(
-        context.req.raw,
-        MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-        "Execution plan blueprint replay history verification request",
-      );
-    } catch (error) {
-      if (error instanceof RequestBodyTooLargeError) {
-        return jsonError(context, error.message, 413);
-      }
-      return jsonError(
-        context,
-        "Execution plan blueprint replay history verification request is invalid",
-        400,
-      );
-    }
-    const request =
-      parseVerifyExecutionPlanBlueprintRecordReplayHistoryRequest(input);
-    if (!request) {
-      return jsonError(
-        context,
-        "Execution plan blueprint replay history verification request is invalid",
-        400,
-      );
-    }
-    const verification =
-      await services.store.verifyExecutionPlanBlueprintRecordReplayHistory(
-        recordId,
-        request.history,
-      );
-    setExecutionPlanBlueprintRecordReplayHistoryVerificationHeaders(
-      context,
-      verification,
-    );
-    return context.json(verification);
-  });
-
-  app.get(
-    "/api/plan-blueprints/:recordId/replays/outcomes",
-    async (context) => {
-      const outcomes =
-        await services.store.getExecutionPlanBlueprintRecordReplayOutcomes(
-          context.req.param("recordId"),
-        );
-      setExecutionPlanBlueprintRecordReplayOutcomesHeaders(context, outcomes);
-      return context.json(outcomes);
-    },
-  );
-
-  app.post(
-    "/api/plan-blueprints/:recordId/replays/outcomes/verify",
-    async (context) => {
-      const recordId = context.req.param("recordId");
-      services.store.getExecutionPlanBlueprintRecord(recordId);
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-          "Execution plan blueprint replay outcomes verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint replay outcomes verification request is invalid",
-          400,
-        );
-      }
-      const request =
-        parseVerifyExecutionPlanBlueprintRecordReplayOutcomesRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint replay outcomes verification request is invalid",
-          400,
-        );
-      }
-      const verification =
-        await services.store.verifyExecutionPlanBlueprintRecordReplayOutcomes(
-          recordId,
-          request.outcomes,
-        );
-      setExecutionPlanBlueprintRecordReplayOutcomesVerificationHeaders(
-        context,
-        verification,
-      );
-      return context.json(verification);
-    },
-  );
+  registerPlanBlueprintReplayHttp(app, services.store);
 
   app.post(
     "/api/plan-blueprints/:recordId/replays/outcomes/review",
@@ -4900,50 +4789,6 @@ export function createApp(services: NapierServices): Hono {
         qualification,
       );
       return context.json(qualification);
-    },
-  );
-
-  app.post(
-    "/api/plan-blueprints/:recordId/replays/events/verify",
-    async (context) => {
-      const recordId = context.req.param("recordId");
-      services.store.getExecutionPlanBlueprintRecord(recordId);
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
-          "Execution plan blueprint replay event verification request",
-        );
-      } catch (error) {
-        if (error instanceof RequestBodyTooLargeError) {
-          return jsonError(context, error.message, 413);
-        }
-        return jsonError(
-          context,
-          "Execution plan blueprint replay event verification request is invalid",
-          400,
-        );
-      }
-      const request =
-        parseVerifyExecutionPlanBlueprintRecordReplayEventRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Execution plan blueprint replay event verification request is invalid",
-          400,
-        );
-      }
-      const verification =
-        await services.store.verifyExecutionPlanBlueprintRecordReplayEvent(
-          recordId,
-          request,
-        );
-      setExecutionPlanBlueprintRecordReplayEventVerificationHeaders(
-        context,
-        verification,
-      );
-      return context.json(verification);
     },
   );
 
@@ -6983,16 +6828,6 @@ function parseOptionalBoundedText(
   return normalized.length <= maxLength ? normalized : undefined;
 }
 
-function parseVerifyExecutionPlanBlueprintRecordReplayHistoryRequest(
-  input: unknown,
-): VerifyExecutionPlanBlueprintRecordReplayHistoryRequest | undefined {
-  const record = requestRecord(input, ["history"]);
-  if (!record || record["history"] === undefined) return undefined;
-  return {
-    history: record["history"],
-  };
-}
-
 function parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest(
   input: unknown,
 ):
@@ -7040,16 +6875,6 @@ function parseSignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHi
         trustAnchorId,
       }
     : undefined;
-}
-
-function parseVerifyExecutionPlanBlueprintRecordReplayOutcomesRequest(
-  input: unknown,
-): VerifyExecutionPlanBlueprintRecordReplayOutcomesRequest | undefined {
-  const record = requestRecord(input, ["outcomes"]);
-  if (!record || record["outcomes"] === undefined) return undefined;
-  return {
-    outcomes: record["outcomes"],
-  };
 }
 
 function parsePromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest(
@@ -7233,34 +7058,6 @@ function optionalBoundedInteger(
     value <= max
     ? value
     : false;
-}
-
-function parseVerifyExecutionPlanBlueprintRecordReplayEventRequest(
-  input: unknown,
-): VerifyExecutionPlanBlueprintRecordReplayEventRequest | undefined {
-  const record = requestRecord(input, [
-    "threadId",
-    "eventId",
-    "seq",
-    "eventSha256",
-  ]);
-  if (
-    !record ||
-    !boundedString(record["threadId"], 1, 100) ||
-    !boundedString(record["eventId"], 1, 100) ||
-    typeof record["seq"] !== "number" ||
-    !Number.isSafeInteger(record["seq"]) ||
-    record["seq"] < 1 ||
-    !isSha256Hex(record["eventSha256"])
-  ) {
-    return undefined;
-  }
-  return {
-    threadId: record["threadId"],
-    eventId: record["eventId"],
-    seq: record["seq"],
-    eventSha256: record["eventSha256"],
-  };
 }
 
 function parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
@@ -10626,279 +10423,6 @@ function createHealthRuntimeProjection() {
   } satisfies HealthResponse["runtime"];
 }
 
-function setExecutionPlanBlueprintRecordReplayHistoryHeaders(
-  context: Context,
-  history: ExecutionPlanBlueprintRecordReplayHistory,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, history.contentSha256);
-  context.header("X-Napier-Plan-Blueprint-Record-Id", history.recordId);
-  context.header(
-    "X-Napier-Blueprint-Replay-Count",
-    String(history.replayCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Thread-Count",
-    String(history.threadCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Plan-Count",
-    String(history.planCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Event-Set-SHA256",
-    history.eventSetSha256,
-  );
-  if (history.firstSeq !== undefined) {
-    context.header("X-Napier-First-Event-Seq", String(history.firstSeq));
-  }
-  if (history.lastSeq !== undefined) {
-    context.header("X-Napier-Last-Event-Seq", String(history.lastSeq));
-  }
-  if (history.replays[0]?.blueprintSha256) {
-    context.header(
-      "X-Napier-Plan-Blueprint-SHA256",
-      history.replays[0].blueprintSha256,
-    );
-  }
-  const latestReplay = history.replays.at(-1);
-  if (latestReplay?.previewSha256) {
-    context.header(
-      "X-Napier-Blueprint-Latest-Preview-SHA256",
-      latestReplay.previewSha256,
-    );
-  }
-}
-
-function setExecutionPlanBlueprintRecordReplayHistoryVerificationHeaders(
-  context: Context,
-  verification: ExecutionPlanBlueprintRecordReplayHistoryVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, verification.contentSha256);
-  context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  if (verification.recordId) {
-    context.header("X-Napier-Plan-Blueprint-Record-Id", verification.recordId);
-  }
-  if (verification.expectedRecordId) {
-    context.header(
-      "X-Napier-Expected-Plan-Blueprint-Record-Id",
-      verification.expectedRecordId,
-    );
-  }
-  if (verification.declaredContentSha256) {
-    context.header(
-      "X-Napier-Declared-Content-SHA256",
-      verification.declaredContentSha256,
-    );
-  }
-  if (verification.recomputedContentSha256) {
-    context.header(
-      "X-Napier-Recomputed-Content-SHA256",
-      verification.recomputedContentSha256,
-    );
-  }
-  if (verification.observedContentSha256) {
-    context.header(
-      "X-Napier-Observed-Content-SHA256",
-      verification.observedContentSha256,
-    );
-  }
-  if (verification.declaredEventSetSha256) {
-    context.header(
-      "X-Napier-Declared-Event-Set-SHA256",
-      verification.declaredEventSetSha256,
-    );
-  }
-  if (verification.observedEventSetSha256) {
-    context.header(
-      "X-Napier-Observed-Event-Set-SHA256",
-      verification.observedEventSetSha256,
-    );
-  }
-  if (verification.replayCount !== undefined) {
-    context.header("X-Napier-Replay-Count", String(verification.replayCount));
-  }
-  if (verification.observedReplayCount !== undefined) {
-    context.header(
-      "X-Napier-Observed-Replay-Count",
-      String(verification.observedReplayCount),
-    );
-  }
-  if (verification.threadCount !== undefined) {
-    context.header("X-Napier-Thread-Count", String(verification.threadCount));
-  }
-  if (verification.observedThreadCount !== undefined) {
-    context.header(
-      "X-Napier-Observed-Thread-Count",
-      String(verification.observedThreadCount),
-    );
-  }
-  if (verification.planCount !== undefined) {
-    context.header("X-Napier-Plan-Count", String(verification.planCount));
-  }
-  if (verification.observedPlanCount !== undefined) {
-    context.header(
-      "X-Napier-Observed-Plan-Count",
-      String(verification.observedPlanCount),
-    );
-  }
-}
-
-function setExecutionPlanBlueprintRecordReplayOutcomesHeaders(
-  context: Context,
-  outcomes: ExecutionPlanBlueprintRecordReplayOutcomes,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, outcomes.contentSha256);
-  context.header("X-Napier-Plan-Blueprint-Record-Id", outcomes.recordId);
-  context.header(
-    "X-Napier-Blueprint-Replay-History-SHA256",
-    outcomes.replayHistorySha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Outcome-Set-SHA256",
-    outcomes.outcomeSetSha256,
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Count",
-    String(outcomes.replayCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Active-Count",
-    String(outcomes.activeCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Completed-Count",
-    String(outcomes.completedCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Blocked-Count",
-    String(outcomes.blockedCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Cancelled-Count",
-    String(outcomes.cancelledCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Invalid-Count",
-    String(outcomes.invalidCount),
-  );
-  context.header(
-    "X-Napier-Blueprint-Replay-Completion-Rate-BPS",
-    String(outcomes.completionRateBps),
-  );
-}
-
-function setExecutionPlanBlueprintRecordReplayOutcomesVerificationHeaders(
-  context: Context,
-  verification: ExecutionPlanBlueprintRecordReplayOutcomesVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, verification.contentSha256);
-  context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  if (verification.recordId) {
-    context.header("X-Napier-Plan-Blueprint-Record-Id", verification.recordId);
-  }
-  if (verification.expectedRecordId) {
-    context.header(
-      "X-Napier-Expected-Plan-Blueprint-Record-Id",
-      verification.expectedRecordId,
-    );
-  }
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Content-SHA256",
-    verification.declaredContentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Recomputed-Content-SHA256",
-    verification.recomputedContentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Observed-Content-SHA256",
-    verification.observedContentSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Replay-History-SHA256",
-    verification.declaredReplayHistorySha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Observed-Replay-History-SHA256",
-    verification.observedReplayHistorySha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Declared-Outcome-Set-SHA256",
-    verification.declaredOutcomeSetSha256,
-  );
-  setOptionalHeader(
-    context,
-    "X-Napier-Observed-Outcome-Set-SHA256",
-    verification.observedOutcomeSetSha256,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Replay-Count",
-    verification.replayCount,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Observed-Replay-Count",
-    verification.observedReplayCount,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Completed-Count",
-    verification.completedCount,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Observed-Completed-Count",
-    verification.observedCompletedCount,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Blocked-Count",
-    verification.blockedCount,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Observed-Blocked-Count",
-    verification.observedBlockedCount,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Invalid-Count",
-    verification.invalidCount,
-  );
-  setOptionalNumberHeader(
-    context,
-    "X-Napier-Observed-Invalid-Count",
-    verification.observedInvalidCount,
-  );
-}
-
 function setExecutionPlanBlueprintRecordOutcomeReviewHeaders(
   context: Context,
   review: ExecutionPlanBlueprintRecordOutcomeReview,
@@ -11600,58 +11124,6 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryP
     "X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-Bundle-SHA256",
     proofBundle.retirementSetBundleSha256,
   );
-}
-
-function setExecutionPlanBlueprintRecordReplayEventVerificationHeaders(
-  context: Context,
-  verification: ExecutionPlanBlueprintRecordReplayEventVerification,
-): void {
-  context.header("Cache-Control", "no-store");
-  setStableContentSha256Header(context, verification.contentSha256);
-  context.header("X-Napier-Verification-Status", verification.status);
-  context.header(
-    "X-Napier-Diagnostic-Count",
-    String(verification.diagnostics.length),
-  );
-  context.header(
-    "X-Napier-Diagnostics-SHA256",
-    sha256Json(verification.diagnostics),
-  );
-  context.header(
-    "X-Napier-Expected-Plan-Blueprint-Record-Id",
-    verification.expectedRecordId,
-  );
-  context.header("X-Napier-Thread-Id", verification.threadId);
-  context.header("X-Napier-Blueprint-Replay-Event-Id", verification.eventId);
-  context.header(
-    "X-Napier-Blueprint-Replay-Event-Seq",
-    String(verification.seq),
-  );
-  context.header(
-    "X-Napier-Declared-Event-SHA256",
-    verification.declaredEventSha256,
-  );
-  if (verification.observedEventSha256) {
-    context.header(
-      "X-Napier-Observed-Event-SHA256",
-      verification.observedEventSha256,
-    );
-  }
-  if (verification.observedReplay) {
-    context.header(
-      "X-Napier-Plan-Blueprint-Record-Id",
-      verification.observedReplay.recordId,
-    );
-    context.header("X-Napier-Plan-Id", verification.observedReplay.planId);
-    context.header(
-      "X-Napier-Plan-Blueprint-SHA256",
-      verification.observedReplay.blueprintSha256,
-    );
-    context.header(
-      "X-Napier-Blueprint-Preview-SHA256",
-      verification.observedReplay.previewSha256,
-    );
-  }
 }
 
 function setExtensionListHeaders(

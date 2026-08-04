@@ -14560,6 +14560,7 @@
     "apps/server/src/plan-artifact-inspection-http.ts",
     "apps/server/src/plan-blueprint-instantiation-http.ts",
     "apps/server/src/plan-blueprint-library-http.ts",
+    "apps/server/src/plan-blueprint-replay-http.ts",
     "apps/server/src/plan-lifecycle-http.ts",
     "apps/server/src/plan-progress-http.ts",
     "apps/server/src/run-evaluation-http.ts",
@@ -14573,7 +14574,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "3829e8a117ef2069aebb2bc8bf06247e9047dd178fdadda5f9cad0d5407ba41e",
+  "x-napier-source-sha256": "3e95eb0468d705e4de373f4653596c8f0a6b28f6bdd5736319051b10cb056847",
   "x-napier-route-count": 255,
   "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }
