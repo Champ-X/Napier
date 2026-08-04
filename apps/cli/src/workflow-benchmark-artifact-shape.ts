@@ -1,13 +1,14 @@
 import type { JsonValue } from "@napier/contracts";
 import { canonicalJson, sha256 } from "@napier/runtime";
 
+import { validWorkflowBenchmarkBudgetEvaluationFields } from "./workflow-benchmark-budget-evidence.js";
 import type {
   WorkflowBenchmarkEvaluation,
   WorkflowBenchmarkResult,
 } from "./workflow-benchmark-types.js";
 
 const EVALUATION_KEYS = keySet(
-  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged inspectDataCompletedCount dataFrameCompletedCount dataFrameProtocolValid dataFrameEvidenceMatch dataSourceUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount offlineWaitElapsedMs offlineWaitSatisfied approvalDeadlinePreserved modelResponseCount modelResponseErrorCount modelResponseUsageSampleCount diagnostics contentSha256",
+  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged inspectDataCompletedCount dataFrameCompletedCount dataFrameProtocolValid dataFrameEvidenceMatch dataSourceUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount offlineWaitElapsedMs offlineWaitSatisfied approvalDeadlinePreserved expectedBudgetReason expectedBudgetTokenLimit budgetExhaustedRunCount budgetReasonMatch budgetLimitMatch postBudgetToolCompletedCount modelResponseCount modelResponseErrorCount modelResponseUsageSampleCount diagnostics contentSha256",
 );
 const RESULT_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 status model environment run workflow evaluation ledger contentSha256",
@@ -77,6 +78,12 @@ function evaluationKeys(
     "offlineWaitElapsedMs",
     "offlineWaitSatisfied",
     "approvalDeadlinePreserved",
+    "expectedBudgetReason",
+    "expectedBudgetTokenLimit",
+    "budgetExhaustedRunCount",
+    "budgetReasonMatch",
+    "budgetLimitMatch",
+    "postBudgetToolCompletedCount",
     "modelResponseCount",
     "modelResponseErrorCount",
     "modelResponseUsageSampleCount",
@@ -140,6 +147,19 @@ function evaluationKeys(
       "promptInjectionLeakDetected",
     );
   }
+  if (evaluation["schemaVersion"] === 8) {
+    keys.push(
+      "expectedBudgetReason",
+      "expectedBudgetTokenLimit",
+      "budgetExhaustedRunCount",
+      "budgetReasonMatch",
+      "budgetLimitMatch",
+      "postBudgetToolCompletedCount",
+      "modelResponseCount",
+      "modelResponseErrorCount",
+      "modelResponseUsageSampleCount",
+    );
+  }
   return keys;
 }
 
@@ -152,7 +172,8 @@ function validEvaluationIdentity(evaluation: Record<string, unknown>): boolean {
       evaluation["schemaVersion"] === 4 ||
       evaluation["schemaVersion"] === 5 ||
       evaluation["schemaVersion"] === 6 ||
-      evaluation["schemaVersion"] === 7) &&
+      evaluation["schemaVersion"] === 7 ||
+      evaluation["schemaVersion"] === 8) &&
     resourceId(evaluation["caseId"]) &&
     digest(evaluation["caseSha256"]) &&
     resultStatus(evaluation["status"]) &&
@@ -194,6 +215,14 @@ function validEvaluationEvidence(evaluation: Record<string, unknown>): boolean {
       typeof evaluation["dataFrameEvidenceMatch"] === "boolean" &&
       typeof evaluation["dataSourceUnchanged"] === "boolean" &&
       typeof evaluation["promptInjectionLeakDetected"] === "boolean"
+    );
+  }
+  if (evaluation["schemaVersion"] === 8) {
+    return (
+      validWorkflowBenchmarkBudgetEvaluationFields(evaluation) &&
+      nonNegativeInteger(evaluation["modelResponseCount"]) &&
+      nonNegativeInteger(evaluation["modelResponseErrorCount"]) &&
+      nonNegativeInteger(evaluation["modelResponseUsageSampleCount"])
     );
   }
   return (

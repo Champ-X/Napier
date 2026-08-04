@@ -6,28 +6,25 @@ import {
   validWorkflowBenchmarkResultShape,
 } from "./workflow-benchmark-artifact-shape.js";
 import {
+  workflowBenchmarkBudgetDiagnostics,
+  workflowBenchmarkBudgetEvaluationProjection,
+} from "./workflow-benchmark-budget-evidence.js";
+import { workflowBenchmarkEvaluationEvidenceFromBundle } from "./workflow-benchmark-bundle-evaluation.js";
+import {
   workflowBenchmarkDataFrameDiagnostics,
-  workflowBenchmarkDataFrameEvaluationFromBundle,
   workflowBenchmarkDataFrameEvaluationProjection,
 } from "./workflow-benchmark-data-frame-evaluation.js";
 import { workflowBenchmarkCriteria } from "./workflow-benchmark-evaluation-criteria.js";
 import type { CreateWorkflowBenchmarkEvaluationInput } from "./workflow-benchmark-evaluation-input.js";
 import { verifyWorkflowBenchmarkLedgerBundle } from "./workflow-benchmark-ledger.js";
 import {
-  workflowBenchmarkModelEvaluationFromBundle,
   workflowBenchmarkModelEvaluationProjection,
   workflowBenchmarkModelOutcomeInconclusive,
 } from "./workflow-benchmark-model-evidence.js";
 import {
   workflowBenchmarkRestartDiagnostics,
-  workflowBenchmarkRestartEvaluationFromBundle,
   workflowBenchmarkRestartEvaluationProjection,
 } from "./workflow-benchmark-restart-evidence.js";
-import { workflowBenchmarkSqliteEvidenceMatches } from "./workflow-benchmark-security-evidence.js";
-import {
-  workflowBenchmarkSqliteActionCounts,
-  workflowBenchmarkSqliteProtocolValid,
-} from "./workflow-benchmark-sqlite-evidence.js";
 import type {
   WorkflowBenchmarkArtifactVerification,
   WorkflowBenchmarkDiagnostic,
@@ -92,6 +89,7 @@ export function createWorkflowBenchmarkEvaluation(
     ...(sqliteCase ? sqliteEvaluationEvidence(input) : {}),
     ...workflowBenchmarkDataFrameEvaluationProjection(input),
     ...(restartCase ? workflowBenchmarkRestartEvaluationProjection(input) : {}),
+    ...workflowBenchmarkBudgetEvaluationProjection(input),
     ...workflowBenchmarkModelEvaluationProjection(input),
     diagnostics,
   };
@@ -106,6 +104,9 @@ function workflowBenchmarkDiagnostics(
   outputMatch: boolean,
   mapOutputMatch: boolean,
 ): WorkflowBenchmarkDiagnostic[] {
+  if (input.benchmarkCase.schemaVersion === 8) {
+    return workflowBenchmarkBudgetDiagnostics(input);
+  }
   const diagnostics: WorkflowBenchmarkDiagnostic[] = [];
   if (input.workflowStatus !== "completed") {
     diagnostics.push("workflow_not_completed");
@@ -308,9 +309,6 @@ function benchmarkOutcomeMatches(
       receipt.runId === bundle.workflow.reduceRunId &&
       (receipt.type === "model.response" || receipt.type.startsWith("tool.")),
   ).length;
-  const sqliteCounts = workflowBenchmarkSqliteActionCounts(
-    bundle.workflow.sqliteActionEvents ?? [],
-  );
   const expectedEvaluation = createWorkflowBenchmarkEvaluation({
     benchmarkCase: {
       id: result.caseId,
@@ -341,44 +339,7 @@ function benchmarkOutcomeMatches(
     reduceModelOrToolEventCount,
     replayValid: result.evaluation.replayValid,
     credentialLeakDetected: result.evaluation.credentialLeakDetected,
-    ...(result.evaluation.schemaVersion === 2 ||
-    result.evaluation.schemaVersion === 3
-      ? {
-          sqliteSchemaCompletedCount: sqliteCounts.schema,
-          sqliteQueryCompletedCount: sqliteCounts.query,
-          sqliteChartCompletedCount: sqliteCounts.chart,
-          sqliteProtocolValid: workflowBenchmarkSqliteProtocolValid(
-            bundle.workflow.sqliteActionEvents ?? [],
-            new Set(bundle.workflow.mapRunIds),
-          ),
-          databaseUnchanged:
-            bundle.workflow.databaseBeforeSha256 !== undefined &&
-            bundle.workflow.databaseBeforeSha256 ===
-              bundle.workflow.databaseAfterSha256,
-          ...(result.evaluation.schemaVersion === 3
-            ? {
-                sqliteEvidenceMatch: workflowBenchmarkSqliteEvidenceMatches(
-                  bundle.workflow.sqliteActionEvents ?? [],
-                  bundle.workflow.requiredSqliteEvidence ?? [],
-                ),
-                promptInjectionLeakDetected:
-                  bundle.workflow.promptInjectionScan?.leakDetected ?? true,
-              }
-            : {}),
-        }
-      : {}),
-    ...(result.evaluation.schemaVersion === 4 ||
-    result.evaluation.schemaVersion === 6 ||
-    result.evaluation.schemaVersion === 7
-      ? workflowBenchmarkRestartEvaluationFromBundle(bundle)
-      : {}),
-    ...(result.evaluation.schemaVersion === 6 ||
-    result.evaluation.schemaVersion === 7
-      ? workflowBenchmarkModelEvaluationFromBundle(bundle)
-      : {}),
-    ...(result.evaluation.schemaVersion === 5
-      ? workflowBenchmarkDataFrameEvaluationFromBundle(bundle)
-      : {}),
+    ...workflowBenchmarkEvaluationEvidenceFromBundle(result, bundle),
   });
   return (
     canonicalJson(expectedEvaluation as unknown as JsonValue) ===

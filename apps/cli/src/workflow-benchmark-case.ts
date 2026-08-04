@@ -32,6 +32,9 @@ const CASE_KEYS_V6 = CASE_KEYS_V4;
 const CASE_KEYS_V7 = keySet(
   "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario requiredRestartCount requiredOfflineWaitMs approvalCustomText contentSha256",
 );
+const CASE_KEYS_V8 = keySet(
+  "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario runTokenLimit requiredBudgetReason contentSha256",
+);
 
 export interface LoadedWorkflowBenchmarkCase {
   benchmarkCase: WorkflowBenchmarkCase;
@@ -130,19 +133,21 @@ function workflowBenchmarkCaseKeys(input: unknown): readonly string[] {
     input !== null && typeof input === "object" && !Array.isArray(input)
       ? (input as Record<string, unknown>)["schemaVersion"]
       : undefined;
-  return version === 7
-    ? CASE_KEYS_V7
-    : version === 6
-      ? CASE_KEYS_V6
-      : version === 5
-        ? CASE_KEYS_V5
-        : version === 4
-          ? CASE_KEYS_V4
-          : version === 3
-            ? CASE_KEYS_V3
-            : version === 2
-              ? CASE_KEYS_V2
-              : CASE_KEYS_V1;
+  return version === 8
+    ? CASE_KEYS_V8
+    : version === 7
+      ? CASE_KEYS_V7
+      : version === 6
+        ? CASE_KEYS_V6
+        : version === 5
+          ? CASE_KEYS_V5
+          : version === 4
+            ? CASE_KEYS_V4
+            : version === 3
+              ? CASE_KEYS_V3
+              : version === 2
+                ? CASE_KEYS_V2
+                : CASE_KEYS_V1;
 }
 
 function validWorkflowBenchmarkCaseBase(
@@ -156,7 +161,8 @@ function validWorkflowBenchmarkCaseBase(
       input["schemaVersion"] === 4 ||
       input["schemaVersion"] === 5 ||
       input["schemaVersion"] === 6 ||
-      input["schemaVersion"] === 7) &&
+      input["schemaVersion"] === 7 ||
+      input["schemaVersion"] === 8) &&
     resourceId(input["id"]) &&
     boundedText(input["title"], 1, 160) &&
     boundedText(input["objective"], 1, 500) &&
@@ -174,6 +180,13 @@ function validWorkflowBenchmarkScenarioCase(
   input: Record<string, unknown>,
 ): boolean {
   if (input["schemaVersion"] === 1) return true;
+  if (input["schemaVersion"] === 8) {
+    return (
+      input["scenario"] === "workflow_map_token_budget_exhaustion" &&
+      input["runTokenLimit"] === 1_000 &&
+      input["requiredBudgetReason"] === "tokens"
+    );
+  }
   if (
     input["schemaVersion"] === 4 ||
     input["schemaVersion"] === 6 ||

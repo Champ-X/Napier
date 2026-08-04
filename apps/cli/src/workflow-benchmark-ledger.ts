@@ -9,6 +9,7 @@ import {
   createWorkflowBenchmarkLedgerWorkflow,
   type WorkflowBenchmarkLedgerWorkflowInput,
 } from "./workflow-benchmark-ledger-workflow.js";
+import { validWorkflowBenchmarkBudgetBinding } from "./workflow-benchmark-budget-evidence.js";
 import { validWorkflowBenchmarkDataFrameEvidenceBinding } from "./workflow-benchmark-data-frame-evidence.js";
 import {
   validWorkflowBenchmarkLedgerWorkflow,
@@ -173,6 +174,9 @@ export function verifyWorkflowBenchmarkLedgerBundle(input: unknown): {
   }
   if (!validWorkflowBenchmarkRestartBinding(input)) {
     diagnostics.push("ledger_restart_evidence_invalid");
+  }
+  if (!validWorkflowBenchmarkBudgetBinding(input)) {
+    diagnostics.push("ledger_budget_evidence_invalid");
   }
   if (!validWorkflowBenchmarkModelResponseBinding(input)) {
     diagnostics.push("ledger_model_response_evidence_invalid");

@@ -86,6 +86,13 @@ export interface WorkflowBenchmarkCaseV7 extends WorkflowBenchmarkCaseBase {
   approvalCustomText: string;
 }
 
+export interface WorkflowBenchmarkCaseV8 extends WorkflowBenchmarkCaseBase {
+  schemaVersion: 8;
+  scenario: "workflow_map_token_budget_exhaustion";
+  runTokenLimit: number;
+  requiredBudgetReason: "tokens";
+}
+
 export interface WorkflowBenchmarkDataFrameEvidenceExpectation {
   rowsSha256: string;
   rowCount: number;
@@ -110,7 +117,8 @@ export type WorkflowBenchmarkCase =
   | WorkflowBenchmarkCaseV4
   | WorkflowBenchmarkCaseV5
   | WorkflowBenchmarkCaseV6
-  | WorkflowBenchmarkCaseV7;
+  | WorkflowBenchmarkCaseV7
+  | WorkflowBenchmarkCaseV8;
 
 export type WorkflowBenchmarkDiagnostic =
   | "workflow_not_completed"
@@ -134,12 +142,18 @@ export type WorkflowBenchmarkDiagnostic =
   | "post_restart_model_called"
   | "offline_wait_too_short"
   | "approval_deadline_changed"
+  | "workflow_not_blocked"
+  | "budget_exhaustion_mismatch"
+  | "budget_reason_mismatch"
+  | "budget_limit_mismatch"
+  | "budget_side_effect_executed"
+  | "budget_reduce_executed"
   | "replay_invalid"
   | "credential_leaked";
 
 export interface WorkflowBenchmarkEvaluation {
   kind: "napier.workflow-benchmark-evaluation";
-  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
   caseId: string;
   caseSha256: string;
   status: "passed" | "failed" | "inconclusive";
@@ -179,6 +193,12 @@ export interface WorkflowBenchmarkEvaluation {
   offlineWaitElapsedMs?: number;
   offlineWaitSatisfied?: boolean;
   approvalDeadlinePreserved?: boolean;
+  expectedBudgetReason?: "tokens";
+  expectedBudgetTokenLimit?: number;
+  budgetExhaustedRunCount?: number;
+  budgetReasonMatch?: boolean;
+  budgetLimitMatch?: boolean;
+  postBudgetToolCompletedCount?: number;
   modelResponseCount?: number;
   modelResponseErrorCount?: number;
   modelResponseUsageSampleCount?: number;
@@ -276,6 +296,7 @@ export interface WorkflowBenchmarkLedgerBundle {
     restartEvent?: RunEvent;
     restartEvents?: RunEvent[];
     preRestartMapRunIds?: string[];
+    budgetExhaustionEvents?: RunEvent[];
     modelResponseEvidenceEvent?: RunEvent;
   };
   runs: Array<{

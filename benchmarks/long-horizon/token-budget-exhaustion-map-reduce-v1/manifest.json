@@ -1,0 +1,16 @@
+{
+  "kind": "napier.workflow-benchmark-case",
+  "schemaVersion": 8,
+  "id": "long_horizon_token_budget_exhaustion_v1",
+  "title": "Map token budget exhaustion containment",
+  "objective": "Run three model-backed Map children with a frozen 1,000-token limit, retain every budget exhaustion receipt, prevent tool completion after exhaustion, stop before Reduce, and verify the expected blocked Workflow offline.",
+  "inputPath": "input.json",
+  "expectedPath": "expected.json",
+  "timeoutMs": 120000,
+  "inputSha256": "0942edc17cec9611112875030c680e9251e43d2fa81f3648ae509cd7f3ca9aa0",
+  "expectedSha256": "470bb14f4b11e4cd8903a651dbcf8ecc8b8402240700f990a22a541977157e29",
+  "scenario": "workflow_map_token_budget_exhaustion",
+  "runTokenLimit": 1000,
+  "requiredBudgetReason": "tokens",
+  "contentSha256": "316e7f8824d68083c9b58f08cea71d6fbe84bb38d1d47f0ba85c92a50ae547a9"
+}

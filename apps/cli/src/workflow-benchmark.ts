@@ -24,6 +24,10 @@ import {
   workflowBenchmarkResultFileName,
 } from "./workflow-benchmark-contract.js";
 import { executeWorkflowBenchmark } from "./workflow-benchmark-execution.js";
+import {
+  workflowBenchmarkBudgetEvaluationEvidence,
+  workflowBenchmarkBudgetLedgerEvidence,
+} from "./workflow-benchmark-budget-evidence.js";
 import { collectWorkflowBenchmarkDataFrameActionEvents } from "./workflow-benchmark-data-frame-evidence.js";
 import {
   workflowBenchmarkDataFrameEvaluationEvidence,
@@ -282,6 +286,10 @@ export async function runWorkflowBenchmark(
         mapRunIds: mapRuns.map((run) => run.id),
         restartEvidence: execution.restartEvidence,
       }),
+      ...workflowBenchmarkBudgetEvaluationEvidence({
+        benchmarkCase: loaded.benchmarkCase,
+        events: eventsBeforeEvaluation,
+      }),
       ...workflowBenchmarkModelEvaluationEvidence(modelResponseEvidenceEvent),
     });
     const evaluationEvent = await runtime.store.appendEvent({
@@ -350,6 +358,10 @@ export async function runWorkflowBenchmark(
         injectionLeakDetected,
       }),
       ...workflowBenchmarkRestartLedgerEvidence(execution.restartEvidence),
+      ...workflowBenchmarkBudgetLedgerEvidence({
+        benchmarkCase: loaded.benchmarkCase,
+        events: eventsBeforeEvaluation,
+      }),
       ...workflowBenchmarkModelLedgerEvidence(modelResponseEvidenceEvent),
       runs,
       evaluationEvent,
@@ -452,10 +464,22 @@ async function configureWorkflowBenchmarkAgent(
       ? ["sqlite_query"]
       : benchmarkCase.schemaVersion === 5
         ? ["inspect_data", "data_frame"]
-        : undefined;
+        : benchmarkCase.schemaVersion === 8
+          ? ["list_files"]
+          : undefined;
   if (!tools) return;
   const agent = runtime.store.listAgents()[0]!;
   await runtime.store.updateAgent(agent.id, {
     enabledTools: tools,
+    ...(benchmarkCase.schemaVersion === 8
+      ? {
+          runLimits: {
+            maxTurns: 24,
+            maxTotalTokens: benchmarkCase.runTokenLimit,
+            maxCostUsd: 10,
+            timeoutMs: benchmarkCase.timeoutMs,
+          },
+        }
+      : {}),
   });
 }

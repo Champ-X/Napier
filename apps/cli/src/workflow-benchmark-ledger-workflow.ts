@@ -31,6 +31,7 @@ export interface WorkflowBenchmarkLedgerWorkflowInput {
   restartEvent?: RunEvent;
   restartEvents?: RunEvent[];
   preRestartMapRunIds?: string[];
+  budgetExhaustionEvents?: RunEvent[];
   modelResponseEvidenceEvent?: NonNullable<
     WorkflowBenchmarkLedgerBundle["workflow"]["modelResponseEvidenceEvent"]
   >;
@@ -107,6 +108,13 @@ export function createWorkflowBenchmarkLedgerWorkflow(
       : {}),
     ...(input.preRestartMapRunIds
       ? { preRestartMapRunIds: [...input.preRestartMapRunIds].sort() }
+      : {}),
+    ...(input.budgetExhaustionEvents
+      ? {
+          budgetExhaustionEvents: input.budgetExhaustionEvents
+            .map((event) => structuredClone(event))
+            .sort((left, right) => left.seq - right.seq),
+        }
       : {}),
     ...(input.modelResponseEvidenceEvent
       ? {

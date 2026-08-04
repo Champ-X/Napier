@@ -15,6 +15,17 @@ const BASE_CRITERIA = [
 export function workflowBenchmarkCriteria(
   schemaVersion: WorkflowBenchmarkEvaluation["schemaVersion"],
 ): readonly string[] {
+  if (schemaVersion === 8) {
+    return [
+      "workflow_blocked",
+      "map_run_budget_exhausted",
+      "token_limit_matched",
+      "post_budget_side_effect_absent",
+      "reduce_absent",
+      "portable_replay",
+      "credential_absent",
+    ];
+  }
   const sqliteCriteria =
     schemaVersion === 2 || schemaVersion === 3
       ? [

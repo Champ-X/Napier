@@ -27,7 +27,8 @@ export function createWorkflowBenchmarkModelResponseObservation(input: {
 }): JsonValue | undefined {
   if (
     input.benchmarkCase.schemaVersion !== 6 &&
-    input.benchmarkCase.schemaVersion !== 7
+    input.benchmarkCase.schemaVersion !== 7 &&
+    input.benchmarkCase.schemaVersion !== 8
   ) {
     return undefined;
   }
@@ -129,7 +130,8 @@ export function workflowBenchmarkModelEvaluationProjection(input: {
   modelResponseUsageSampleCount?: number;
 }) {
   return (input.benchmarkCase.schemaVersion === 6 ||
-    input.benchmarkCase.schemaVersion === 7) &&
+    input.benchmarkCase.schemaVersion === 7 ||
+    input.benchmarkCase.schemaVersion === 8) &&
     input.modelResponseCount !== undefined &&
     input.modelResponseErrorCount !== undefined &&
     input.modelResponseUsageSampleCount !== undefined
@@ -149,7 +151,8 @@ export function workflowBenchmarkModelOutcomeInconclusive(input: {
   return (
     input.workflowStatus === "cancelled" ||
     ((input.benchmarkCase.schemaVersion === 6 ||
-      input.benchmarkCase.schemaVersion === 7) &&
+      input.benchmarkCase.schemaVersion === 7 ||
+      input.benchmarkCase.schemaVersion === 8) &&
       input.workflowStatus !== "completed" &&
       (input.modelResponseErrorCount ?? 0) > 0)
   );

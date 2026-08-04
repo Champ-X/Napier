@@ -2,7 +2,12 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
+import {
+  fauxAssistantMessage,
+  fauxProvider,
+  fauxThinking,
+  fauxToolCall,
+} from "@earendil-works/pi-ai";
 import {
   canonicalJson,
   createLocalAgentRuntime,
@@ -33,6 +38,10 @@ const MULTI_RESTART_CASE_ROOT = path.resolve(
 const OFFLINE_WAIT_CASE_ROOT = path.resolve(
   import.meta.dirname,
   "../../../benchmarks/long-horizon/offline-wait-approval-map-reduce-v1",
+);
+const BUDGET_EXHAUSTION_CASE_ROOT = path.resolve(
+  import.meta.dirname,
+  "../../../benchmarks/long-horizon/token-budget-exhaustion-map-reduce-v1",
 );
 const roots: string[] = [];
 
@@ -113,6 +122,30 @@ describe("Long-horizon outcome benchmark", () => {
       approvalCustomText: "Resume after the verified offline wall-clock wait.",
       contentSha256:
         "c7dd56229d4e433308f13f9ad552ac2ce880c6e86c60baf9a6075291b4ce429d",
+    });
+  });
+
+  it("loads a hash-bound token budget exhaustion case", async () => {
+    const loaded = await loadWorkflowBenchmarkCase(BUDGET_EXHAUSTION_CASE_ROOT);
+    expect(loaded.benchmarkCase).toEqual({
+      kind: "napier.workflow-benchmark-case",
+      schemaVersion: 8,
+      id: "long_horizon_token_budget_exhaustion_v1",
+      title: "Map token budget exhaustion containment",
+      objective:
+        "Run three model-backed Map children with a frozen 1,000-token limit, retain every budget exhaustion receipt, prevent tool completion after exhaustion, stop before Reduce, and verify the expected blocked Workflow offline.",
+      inputPath: "input.json",
+      expectedPath: "expected.json",
+      timeoutMs: 120000,
+      inputSha256:
+        "0942edc17cec9611112875030c680e9251e43d2fa81f3648ae509cd7f3ca9aa0",
+      expectedSha256:
+        "470bb14f4b11e4cd8903a651dbcf8ecc8b8402240700f990a22a541977157e29",
+      scenario: "workflow_map_token_budget_exhaustion",
+      runTokenLimit: 1000,
+      requiredBudgetReason: "tokens",
+      contentSha256:
+        "316e7f8824d68083c9b58f08cea71d6fbe84bb38d1d47f0ba85c92a50ae547a9",
     });
   });
 
@@ -372,6 +405,123 @@ describe("Long-horizon outcome benchmark", () => {
     );
   }, 30_000);
 
+  it("contains Map token budget exhaustion before later side effects", async () => {
+    const outputDir = await temporaryOutput();
+    const provider = budgetExhaustionProvider(6);
+    const dependencies = longHorizonDependencies(provider);
+    const artifacts = await runWorkflowBenchmarkSeries(
+      {
+        caseRoot: BUDGET_EXHAUSTION_CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-long-horizon", id: "faux-1" },
+        env: {},
+        trialCount: 2,
+      },
+      dependencies,
+    );
+
+    expect(provider.state.callCount).toBe(6);
+    expect(artifacts.series).toEqual(
+      expect.objectContaining({
+        completedTrialCount: 2,
+        passedTrialCount: 2,
+        successRate: 1,
+        passRate: 1,
+      }),
+    );
+    for (const trial of artifacts.trials) {
+      expect(trial.result).toEqual(
+        expect.objectContaining({
+          status: "passed",
+          run: expect.objectContaining({ status: "blocked" }),
+          evaluation: expect.objectContaining({
+            schemaVersion: 8,
+            expectedBudgetReason: "tokens",
+            expectedBudgetTokenLimit: 1000,
+            budgetExhaustedRunCount: 3,
+            budgetReasonMatch: true,
+            budgetLimitMatch: true,
+            postBudgetToolCompletedCount: 0,
+            reduceCompletedEventCount: 0,
+            modelResponseCount: expect.any(Number),
+            modelResponseErrorCount: 0,
+            diagnostics: [],
+          }),
+        }),
+      );
+      expect(trial.result.evaluation.modelResponseCount).toBeGreaterThanOrEqual(
+        3,
+      );
+      expect(trial.result.evaluation.modelResponseCount).toBeLessThanOrEqual(6);
+      expect(trial.bundle.workflow.budgetExhaustionEvents).toHaveLength(3);
+      expect(trial.bundle.workflow).not.toHaveProperty("reduceRunId");
+      expect(
+        verifyWorkflowBenchmarkArtifacts(trial.result, trial.bundle),
+      ).toEqual(expect.objectContaining({ valid: true, diagnostics: [] }));
+    }
+
+    const tampered = structuredClone(
+      artifacts.trials[0]!.bundle,
+    ) as WorkflowBenchmarkLedgerBundle;
+    tampered.workflow.budgetExhaustionEvents![0]!.payload["reason"] = "cost";
+    tampered.contentSha256 = sha256(
+      canonicalJson(withoutHash(tampered) as never),
+    );
+    expect(verifyWorkflowBenchmarkLedgerBundle(tampered)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["ledger_budget_evidence_invalid"],
+      }),
+    );
+  }, 30_000);
+
+  it("keeps budget-case Provider errors inconclusive", async () => {
+    const outputDir = await temporaryOutput();
+    const artifacts = await runWorkflowBenchmarkSeries(
+      {
+        caseRoot: BUDGET_EXHAUSTION_CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-long-horizon", id: "faux-1" },
+        env: {},
+        trialCount: 2,
+      },
+      longHorizonDependencies(errorLongHorizonProvider()),
+    );
+
+    expect(artifacts.series).toEqual(
+      expect.objectContaining({
+        scoredTrialCount: 0,
+        failedTrialCount: 0,
+        inconclusiveTrialCount: 2,
+        successRate: 0,
+        passRate: null,
+      }),
+    );
+    for (const trial of artifacts.trials) {
+      expect(trial.result.evaluation).toEqual(
+        expect.objectContaining({
+          schemaVersion: 8,
+          budgetExhaustedRunCount: expect.any(Number),
+          postBudgetToolCompletedCount: 0,
+          modelResponseCount: 3,
+          modelResponseErrorCount: 3,
+        }),
+      );
+      expect(
+        trial.result.evaluation.budgetExhaustedRunCount,
+      ).toBeGreaterThanOrEqual(0);
+      expect(
+        trial.result.evaluation.budgetExhaustedRunCount,
+      ).toBeLessThanOrEqual(3);
+      expect(trial.bundle.workflow.budgetExhaustionEvents?.length ?? 0).toBe(
+        trial.result.evaluation.budgetExhaustedRunCount,
+      );
+      expect(
+        verifyWorkflowBenchmarkArtifacts(trial.result, trial.bundle),
+      ).toEqual(expect.objectContaining({ valid: true, diagnostics: [] }));
+    }
+  }, 30_000);
+
   it("retains pre-gate Workflow failures as verifiable failed trials", async () => {
     const outputDir = await temporaryOutput();
     const dependencies = longHorizonDependencies(blockedLongHorizonProvider());
@@ -517,6 +667,26 @@ function errorLongHorizonProvider() {
         errorMessage: "private provider failure",
       }),
     ),
+  );
+  return provider;
+}
+
+function budgetExhaustionProvider(responseCount: number) {
+  const provider = fauxProvider({
+    provider: "faux-long-horizon",
+    tokensPerSecond: 1_000_000,
+    tokenSize: { min: 10_000, max: 10_000 },
+  });
+  provider.setResponses(
+    Array.from({ length: responseCount }, () => () => ({
+      ...fauxAssistantMessage(
+        [
+          fauxThinking("budget calibration ".repeat(1_000)),
+          fauxToolCall("list_files", { path: "." }),
+        ],
+        { stopReason: "toolUse" },
+      ),
+    })),
   );
   return provider;
 }

@@ -36,6 +36,12 @@ export interface CreateWorkflowBenchmarkEvaluationInput extends WorkflowBenchmar
   offlineWaitElapsedMs?: number;
   offlineWaitSatisfied?: boolean;
   approvalDeadlinePreserved?: boolean;
+  expectedBudgetReason?: "tokens";
+  expectedBudgetTokenLimit?: number;
+  budgetExhaustedRunCount?: number;
+  budgetReasonMatch?: boolean;
+  budgetLimitMatch?: boolean;
+  postBudgetToolCompletedCount?: number;
   modelResponseCount?: number;
   modelResponseErrorCount?: number;
   modelResponseUsageSampleCount?: number;
