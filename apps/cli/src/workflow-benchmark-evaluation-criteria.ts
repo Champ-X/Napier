@@ -23,13 +23,16 @@ export function workflowBenchmarkCriteria(
           "receipt_bound_sqlite_actions",
         ]
       : [];
-  if (schemaVersion === 4 || schemaVersion === 6) {
+  if (schemaVersion === 4 || schemaVersion === 6 || schemaVersion === 7) {
     return [
       ...BASE_CRITERIA,
       schemaVersion === 6 ? "runtime_restarted_twice" : "runtime_restarted",
       "approval_recovered",
       "completed_map_runs_reused",
       "post_restart_model_free",
+      ...(schemaVersion === 7
+        ? ["offline_wait_elapsed", "approval_deadline_preserved"]
+        : []),
     ];
   }
   if (schemaVersion === 5) {

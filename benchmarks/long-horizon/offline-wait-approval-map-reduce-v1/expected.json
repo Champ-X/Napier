@@ -1,0 +1,8 @@
+{
+  "mapItems": [
+    { "id": "doc_alpha", "length": 5 },
+    { "id": "doc_beta", "length": 4 },
+    { "id": "doc_gamma", "length": 6 }
+  ],
+  "output": 15
+}

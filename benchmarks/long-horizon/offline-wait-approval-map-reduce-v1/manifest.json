@@ -1,0 +1,17 @@
+{
+  "kind": "napier.workflow-benchmark-case",
+  "schemaVersion": 7,
+  "id": "long_horizon_offline_wait_approval_v1",
+  "title": "Offline wall-clock wait and Approval recovery",
+  "objective": "Complete model-backed Map work, close the Runtime for a bounded wall-clock interval, reopen before the original Approval deadline, recover the same decision, reuse every completed Map Run, and finish through model-free Reduce.",
+  "inputPath": "input.json",
+  "expectedPath": "expected.json",
+  "timeoutMs": 120000,
+  "inputSha256": "0942edc17cec9611112875030c680e9251e43d2fa81f3648ae509cd7f3ca9aa0",
+  "expectedSha256": "470bb14f4b11e4cd8903a651dbcf8ecc8b8402240700f990a22a541977157e29",
+  "scenario": "workflow_offline_wait_approval_resume",
+  "requiredRestartCount": 1,
+  "requiredOfflineWaitMs": 1000,
+  "approvalCustomText": "Resume after the verified offline wall-clock wait.",
+  "contentSha256": "c7dd56229d4e433308f13f9ad552ac2ce880c6e86c60baf9a6075291b4ce429d"
+}

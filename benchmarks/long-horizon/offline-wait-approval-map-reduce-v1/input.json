@@ -1,0 +1,7 @@
+{
+  "documents": [
+    { "id": "doc_alpha", "text": "alpha" },
+    { "id": "doc_beta", "text": "beta" },
+    { "id": "doc_gamma", "text": "gamma!" }
+  ]
+}

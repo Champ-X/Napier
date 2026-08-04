@@ -30,6 +30,10 @@ const MULTI_RESTART_CASE_ROOT = path.resolve(
   import.meta.dirname,
   "../../../benchmarks/long-horizon/multi-restart-approval-map-reduce-v1",
 );
+const OFFLINE_WAIT_CASE_ROOT = path.resolve(
+  import.meta.dirname,
+  "../../../benchmarks/long-horizon/offline-wait-approval-map-reduce-v1",
+);
 const roots: string[] = [];
 
 afterEach(async () => {
@@ -84,6 +88,31 @@ describe("Long-horizon outcome benchmark", () => {
       approvalCustomText: "Resume after both verified Runtime restarts.",
       contentSha256:
         "71b5885b79b36b423959f6c9e0da27ab8cd3b53827167fe33858127e67424d2e",
+    });
+  });
+
+  it("loads a hash-bound offline wall-clock wait case", async () => {
+    const loaded = await loadWorkflowBenchmarkCase(OFFLINE_WAIT_CASE_ROOT);
+    expect(loaded.benchmarkCase).toEqual({
+      kind: "napier.workflow-benchmark-case",
+      schemaVersion: 7,
+      id: "long_horizon_offline_wait_approval_v1",
+      title: "Offline wall-clock wait and Approval recovery",
+      objective:
+        "Complete model-backed Map work, close the Runtime for a bounded wall-clock interval, reopen before the original Approval deadline, recover the same decision, reuse every completed Map Run, and finish through model-free Reduce.",
+      inputPath: "input.json",
+      expectedPath: "expected.json",
+      timeoutMs: 120000,
+      inputSha256:
+        "0942edc17cec9611112875030c680e9251e43d2fa81f3648ae509cd7f3ca9aa0",
+      expectedSha256:
+        "470bb14f4b11e4cd8903a651dbcf8ecc8b8402240700f990a22a541977157e29",
+      scenario: "workflow_offline_wait_approval_resume",
+      requiredRestartCount: 1,
+      requiredOfflineWaitMs: 1000,
+      approvalCustomText: "Resume after the verified offline wall-clock wait.",
+      contentSha256:
+        "c7dd56229d4e433308f13f9ad552ac2ce880c6e86c60baf9a6075291b4ce429d",
     });
   });
 
@@ -256,6 +285,86 @@ describe("Long-horizon outcome benchmark", () => {
       canonicalJson(withoutHash(tampered) as never),
     );
     expect(verifyWorkflowBenchmarkLedgerBundle(tampered)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["ledger_restart_evidence_invalid"],
+      }),
+    );
+  }, 30_000);
+
+  it("preserves Approval deadline across a real offline wait", async () => {
+    const outputDir = await temporaryOutput();
+    const dependencies = longHorizonDependencies(longHorizonProvider(6));
+    const artifacts = await runWorkflowBenchmarkSeries(
+      {
+        caseRoot: OFFLINE_WAIT_CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-long-horizon", id: "faux-1" },
+        env: {},
+        trialCount: 2,
+      },
+      dependencies,
+    );
+
+    expect(dependencies.runtimeCreateCount()).toBe(4);
+    expect(artifacts.series).toEqual(
+      expect.objectContaining({
+        completedTrialCount: 2,
+        passedTrialCount: 2,
+        usageSampleCount: 2,
+        successRate: 1,
+        passRate: 1,
+      }),
+    );
+    for (const trial of artifacts.trials) {
+      expect(trial.result.evaluation).toEqual(
+        expect.objectContaining({
+          schemaVersion: 7,
+          runtimeRestartCount: 1,
+          approvalRecovered: true,
+          completedMapRunsReused: true,
+          postRestartModelResponseCount: 0,
+          offlineWaitElapsedMs: expect.any(Number),
+          offlineWaitSatisfied: true,
+          approvalDeadlinePreserved: true,
+          modelResponseCount: 3,
+          diagnostics: [],
+        }),
+      );
+      expect(
+        trial.result.evaluation.offlineWaitElapsedMs,
+      ).toBeGreaterThanOrEqual(1000);
+      expect(trial.bundle.workflow.restartEvent?.payload).toEqual(
+        expect.objectContaining({
+          schemaVersion: 2,
+          requiredOfflineWaitMs: 1000,
+          approvalTimeoutMs: 120000,
+        }),
+      );
+      expect(
+        verifyWorkflowBenchmarkArtifacts(trial.result, trial.bundle),
+      ).toEqual(expect.objectContaining({ valid: true, diagnostics: [] }));
+    }
+
+    const shortWait = tamperedRestartBundle(artifacts.trials[0]!.bundle);
+    shortWait.workflow.restartEvent!.payload["requiredOfflineWaitMs"] = 30_000;
+    shortWait.contentSha256 = sha256(
+      canonicalJson(withoutHash(shortWait) as never),
+    );
+    expect(verifyWorkflowBenchmarkLedgerBundle(shortWait)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["ledger_restart_evidence_invalid"],
+      }),
+    );
+
+    const changedDeadline = tamperedRestartBundle(artifacts.trials[0]!.bundle);
+    changedDeadline.workflow.restartEvent!.payload["approvalExpiresAt"] =
+      "2026-08-02T00:00:01.000Z";
+    changedDeadline.contentSha256 = sha256(
+      canonicalJson(withoutHash(changedDeadline) as never),
+    );
+    expect(verifyWorkflowBenchmarkLedgerBundle(changedDeadline)).toEqual(
       expect.objectContaining({
         valid: false,
         diagnostics: ["ledger_restart_evidence_invalid"],
@@ -444,4 +553,18 @@ function withoutHash<T extends { contentSha256: string }>(
 ): Omit<T, "contentSha256"> {
   const { contentSha256: _contentSha256, ...content } = value;
   return content;
+}
+
+function tamperedRestartBundle(
+  bundle: WorkflowBenchmarkLedgerBundle,
+): WorkflowBenchmarkLedgerBundle {
+  const tampered = structuredClone(bundle);
+  if (
+    !tampered.workflow.restartEvent?.payload ||
+    typeof tampered.workflow.restartEvent.payload !== "object" ||
+    Array.isArray(tampered.workflow.restartEvent.payload)
+  ) {
+    throw new Error("Offline wait restart evidence is unavailable");
+  }
+  return tampered;
 }

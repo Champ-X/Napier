@@ -29,7 +29,8 @@ export async function createWorkflowBenchmarkManifest(input: {
   const securityCase = input.benchmarkCase.schemaVersion === 3;
   const restartCase =
     input.benchmarkCase.schemaVersion === 4 ||
-    input.benchmarkCase.schemaVersion === 6;
+    input.benchmarkCase.schemaVersion === 6 ||
+    input.benchmarkCase.schemaVersion === 7;
   const dataFrameCase = input.benchmarkCase.schemaVersion === 5;
   const databasePath =
     input.benchmarkCase.schemaVersion === 2 ||

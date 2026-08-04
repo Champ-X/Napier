@@ -78,6 +78,14 @@ export interface WorkflowBenchmarkCaseV6 extends WorkflowBenchmarkCaseBase {
   approvalCustomText: string;
 }
 
+export interface WorkflowBenchmarkCaseV7 extends WorkflowBenchmarkCaseBase {
+  schemaVersion: 7;
+  scenario: "workflow_offline_wait_approval_resume";
+  requiredRestartCount: 1;
+  requiredOfflineWaitMs: number;
+  approvalCustomText: string;
+}
+
 export interface WorkflowBenchmarkDataFrameEvidenceExpectation {
   rowsSha256: string;
   rowCount: number;
@@ -101,7 +109,8 @@ export type WorkflowBenchmarkCase =
   | WorkflowBenchmarkCaseV3
   | WorkflowBenchmarkCaseV4
   | WorkflowBenchmarkCaseV5
-  | WorkflowBenchmarkCaseV6;
+  | WorkflowBenchmarkCaseV6
+  | WorkflowBenchmarkCaseV7;
 
 export type WorkflowBenchmarkDiagnostic =
   | "workflow_not_completed"
@@ -123,12 +132,14 @@ export type WorkflowBenchmarkDiagnostic =
   | "approval_recovery_mismatch"
   | "map_reuse_mismatch"
   | "post_restart_model_called"
+  | "offline_wait_too_short"
+  | "approval_deadline_changed"
   | "replay_invalid"
   | "credential_leaked";
 
 export interface WorkflowBenchmarkEvaluation {
   kind: "napier.workflow-benchmark-evaluation";
-  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   caseId: string;
   caseSha256: string;
   status: "passed" | "failed" | "inconclusive";
@@ -165,6 +176,9 @@ export interface WorkflowBenchmarkEvaluation {
   approvalRecovered?: boolean;
   completedMapRunsReused?: boolean;
   postRestartModelResponseCount?: number;
+  offlineWaitElapsedMs?: number;
+  offlineWaitSatisfied?: boolean;
+  approvalDeadlinePreserved?: boolean;
   modelResponseCount?: number;
   modelResponseErrorCount?: number;
   modelResponseUsageSampleCount?: number;

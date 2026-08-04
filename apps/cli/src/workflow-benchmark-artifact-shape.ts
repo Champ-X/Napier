@@ -7,7 +7,7 @@ import type {
 } from "./workflow-benchmark-types.js";
 
 const EVALUATION_KEYS = keySet(
-  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged inspectDataCompletedCount dataFrameCompletedCount dataFrameProtocolValid dataFrameEvidenceMatch dataSourceUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount modelResponseCount modelResponseErrorCount modelResponseUsageSampleCount diagnostics contentSha256",
+  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged inspectDataCompletedCount dataFrameCompletedCount dataFrameProtocolValid dataFrameEvidenceMatch dataSourceUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount offlineWaitElapsedMs offlineWaitSatisfied approvalDeadlinePreserved modelResponseCount modelResponseErrorCount modelResponseUsageSampleCount diagnostics contentSha256",
 );
 const RESULT_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 status model environment run workflow evaluation ledger contentSha256",
@@ -74,6 +74,9 @@ function evaluationKeys(
     "approvalRecovered",
     "completedMapRunsReused",
     "postRestartModelResponseCount",
+    "offlineWaitElapsedMs",
+    "offlineWaitSatisfied",
+    "approvalDeadlinePreserved",
     "modelResponseCount",
     "modelResponseErrorCount",
     "modelResponseUsageSampleCount",
@@ -97,15 +100,27 @@ function evaluationKeys(
   if (evaluation["schemaVersion"] === 3) {
     keys.push("sqliteEvidenceMatch", "promptInjectionLeakDetected");
   }
-  if (evaluation["schemaVersion"] === 4 || evaluation["schemaVersion"] === 6) {
+  if (
+    evaluation["schemaVersion"] === 4 ||
+    evaluation["schemaVersion"] === 6 ||
+    evaluation["schemaVersion"] === 7
+  ) {
     keys.push(
       "runtimeRestartCount",
       "approvalRecovered",
       "completedMapRunsReused",
       "postRestartModelResponseCount",
     );
+    if (evaluation["schemaVersion"] === 7) {
+      keys.push(
+        "offlineWaitElapsedMs",
+        "offlineWaitSatisfied",
+        "approvalDeadlinePreserved",
+      );
+    }
     if (
-      evaluation["schemaVersion"] === 6 &&
+      (evaluation["schemaVersion"] === 6 ||
+        evaluation["schemaVersion"] === 7) &&
       evaluation["modelResponseCount"] !== undefined
     ) {
       keys.push(
@@ -136,7 +151,8 @@ function validEvaluationIdentity(evaluation: Record<string, unknown>): boolean {
       evaluation["schemaVersion"] === 3 ||
       evaluation["schemaVersion"] === 4 ||
       evaluation["schemaVersion"] === 5 ||
-      evaluation["schemaVersion"] === 6) &&
+      evaluation["schemaVersion"] === 6 ||
+      evaluation["schemaVersion"] === 7) &&
     resourceId(evaluation["caseId"]) &&
     digest(evaluation["caseSha256"]) &&
     resultStatus(evaluation["status"]) &&
@@ -163,7 +179,11 @@ function validEvaluationEvidence(evaluation: Record<string, unknown>): boolean {
   ) {
     return false;
   }
-  if (evaluation["schemaVersion"] === 4 || evaluation["schemaVersion"] === 6) {
+  if (
+    evaluation["schemaVersion"] === 4 ||
+    evaluation["schemaVersion"] === 6 ||
+    evaluation["schemaVersion"] === 7
+  ) {
     return validRestartEvaluationEvidence(evaluation);
   }
   if (evaluation["schemaVersion"] === 5) {
@@ -201,12 +221,25 @@ function validRestartEvaluationEvidence(
     evaluation["modelResponseCount"] === undefined &&
     evaluation["modelResponseErrorCount"] === undefined &&
     evaluation["modelResponseUsageSampleCount"] === undefined;
-  return evaluation["schemaVersion"] === 4 || modelEvidenceAbsent
-    ? restartEvidenceValid
-    : restartEvidenceValid &&
-        nonNegativeInteger(evaluation["modelResponseCount"]) &&
-        nonNegativeInteger(evaluation["modelResponseErrorCount"]) &&
-        nonNegativeInteger(evaluation["modelResponseUsageSampleCount"]);
+  const offlineWaitEvidenceValid =
+    evaluation["schemaVersion"] !== 7 ||
+    (nonNegativeInteger(evaluation["offlineWaitElapsedMs"]) &&
+      typeof evaluation["offlineWaitSatisfied"] === "boolean" &&
+      typeof evaluation["approvalDeadlinePreserved"] === "boolean");
+  if (evaluation["schemaVersion"] === 4) {
+    return restartEvidenceValid && modelEvidenceAbsent;
+  }
+  if (evaluation["schemaVersion"] === 6 && modelEvidenceAbsent) {
+    return restartEvidenceValid;
+  }
+  return (
+    restartEvidenceValid &&
+    offlineWaitEvidenceValid &&
+    !modelEvidenceAbsent &&
+    nonNegativeInteger(evaluation["modelResponseCount"]) &&
+    nonNegativeInteger(evaluation["modelResponseErrorCount"]) &&
+    nonNegativeInteger(evaluation["modelResponseUsageSampleCount"])
+  );
 }
 
 function validModel(value: unknown): boolean {

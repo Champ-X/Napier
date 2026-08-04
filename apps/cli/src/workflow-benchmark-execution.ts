@@ -47,7 +47,8 @@ export async function executeWorkflowBenchmark(input: {
   });
   if (
     input.benchmarkCase.schemaVersion !== 4 &&
-    input.benchmarkCase.schemaVersion !== 6
+    input.benchmarkCase.schemaVersion !== 6 &&
+    input.benchmarkCase.schemaVersion !== 7
   ) {
     return { runtime: input.runtime, result: first };
   }
@@ -55,8 +56,16 @@ export async function executeWorkflowBenchmark(input: {
   const prepared = await prepareRestart(input.runtime, first, input);
   if (!prepared) return { runtime: input.runtime, result: first };
   await input.runtime.shutdown();
+  const offlineWaitStartedAt =
+    restartCase.schemaVersion === 7 ? new Date().toISOString() : undefined;
   let reopened: LocalAgentRuntimeServices | undefined;
   try {
+    if (restartCase.schemaVersion === 7) {
+      await waitForOfflineInterval(
+        restartCase.requiredOfflineWaitMs,
+        input.signal,
+      );
+    }
     reopened = await reopenConfiguredRuntime(input);
     const recovered = await recoveredDecision(
       reopened,
@@ -70,6 +79,7 @@ export async function executeWorkflowBenchmark(input: {
       input,
       prepared,
       recovered,
+      offlineWaitStartedAt,
     );
     const restartEvents = [restartEvent];
     const answered = await reopened.store.answerOperatorDecision(
@@ -134,6 +144,10 @@ interface RestartCheckpoint {
   replaySha256: string;
   eventCount: number;
   mapRunIds: string[];
+  requiredOfflineWaitMs?: number;
+  decisionRequestedEventSeq?: number;
+  approvalTimeoutMs?: number;
+  approvalExpiresAt?: string;
 }
 
 async function reopenConfiguredRuntime(input: {
@@ -162,23 +176,31 @@ async function appendRestartEvent(
   },
   checkpoint: RestartCheckpoint,
   decision: BenchmarkDecision,
+  offlineWaitStartedAt?: string,
 ): Promise<RunEvent> {
+  const common = {
+    planId,
+    manifestSha256: input.manifest.contentSha256,
+    preRestartReplaySha256: checkpoint.replaySha256,
+    preRestartEventCount: checkpoint.eventCount,
+    preRestartMapRunIds: checkpoint.mapRunIds,
+    decisionId: decision.id,
+    decisionSha256: decision.contentSha256,
+  };
   return runtime.store.appendEvent({
     threadId: input.threadId,
     runId: decision.runId,
     type: "benchmark.workflow.runtime.restarted",
     category: "system",
     visibility: "user",
-    payload: {
-      schemaVersion: 1,
-      planId,
-      manifestSha256: input.manifest.contentSha256,
-      preRestartReplaySha256: checkpoint.replaySha256,
-      preRestartEventCount: checkpoint.eventCount,
-      preRestartMapRunIds: checkpoint.mapRunIds,
-      decisionId: decision.id,
-      decisionSha256: decision.contentSha256,
-    },
+    payload: offlineWaitStartedAt
+      ? {
+          schemaVersion: 2,
+          ...common,
+          offlineWaitStartedAt,
+          ...offlineWaitCheckpointPayload(checkpoint),
+        }
+      : { schemaVersion: 1, ...common },
   });
 }
 
@@ -188,6 +210,7 @@ async function prepareRestart(
   input: {
     threadId: string;
     manifest: ExecutionPlanWorkflowManifest;
+    benchmarkCase: WorkflowBenchmarkCase;
   },
 ): Promise<RestartCheckpoint | undefined> {
   if (
@@ -218,6 +241,7 @@ async function prepareRestart(
     replaySha256: replay.contentSha256,
     eventCount: replay.events.length,
     mapRunIds,
+    ...offlineWaitCheckpoint(input, decisions[0]!),
   };
 }
 
@@ -303,4 +327,71 @@ function completedMapRunIds(
     )
     .map((run) => run.id)
     .sort();
+}
+
+function offlineWaitCheckpoint(
+  input: {
+    benchmarkCase: WorkflowBenchmarkCase;
+    manifest: ExecutionPlanWorkflowManifest;
+  },
+  decision: BenchmarkDecision,
+): Pick<
+  RestartCheckpoint,
+  | "requiredOfflineWaitMs"
+  | "decisionRequestedEventSeq"
+  | "approvalTimeoutMs"
+  | "approvalExpiresAt"
+> {
+  if (input.benchmarkCase.schemaVersion !== 7) return {};
+  const approval = input.manifest.nodes.find(
+    (node) => node.id === "restart_gate" && node.type === "approval",
+  );
+  if (!approval) {
+    throw new Error("Long-horizon Approval node is unavailable");
+  }
+  return {
+    requiredOfflineWaitMs: input.benchmarkCase.requiredOfflineWaitMs,
+    decisionRequestedEventSeq: decision.requestedEventSeq,
+    approvalTimeoutMs: approval.timeoutMs,
+    approvalExpiresAt: new Date(
+      Date.parse(decision.requestedAt) + approval.timeoutMs,
+    ).toISOString(),
+  };
+}
+
+function offlineWaitCheckpointPayload(checkpoint: RestartCheckpoint) {
+  if (
+    checkpoint.requiredOfflineWaitMs === undefined ||
+    checkpoint.decisionRequestedEventSeq === undefined ||
+    checkpoint.approvalTimeoutMs === undefined ||
+    checkpoint.approvalExpiresAt === undefined
+  ) {
+    throw new Error("Long-horizon offline wait evidence is unavailable");
+  }
+  return {
+    requiredOfflineWaitMs: checkpoint.requiredOfflineWaitMs,
+    decisionRequestedEventSeq: checkpoint.decisionRequestedEventSeq,
+    approvalTimeoutMs: checkpoint.approvalTimeoutMs,
+    approvalExpiresAt: checkpoint.approvalExpiresAt,
+  };
+}
+
+async function waitForOfflineInterval(
+  durationMs: number,
+  signal: AbortSignal,
+): Promise<void> {
+  signal.throwIfAborted();
+  await new Promise<void>((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", onAbort);
+      reject(signal.reason);
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, durationMs);
+    signal.addEventListener("abort", onAbort, { once: true });
+    if (signal.aborted) onAbort();
+  });
 }

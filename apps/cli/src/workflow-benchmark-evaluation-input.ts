@@ -33,6 +33,9 @@ export interface CreateWorkflowBenchmarkEvaluationInput extends WorkflowBenchmar
   approvalRecovered?: boolean;
   completedMapRunsReused?: boolean;
   postRestartModelResponseCount?: number;
+  offlineWaitElapsedMs?: number;
+  offlineWaitSatisfied?: boolean;
+  approvalDeadlinePreserved?: boolean;
   modelResponseCount?: number;
   modelResponseErrorCount?: number;
   modelResponseUsageSampleCount?: number;

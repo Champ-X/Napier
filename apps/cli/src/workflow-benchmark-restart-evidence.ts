@@ -12,8 +12,11 @@ import type {
 const RESTART_EVENT_KEYS = keySet(
   "id threadId runId seq type category visibility createdAt payload",
 );
-const RESTART_PAYLOAD_KEYS = keySet(
+const RESTART_PAYLOAD_V1_KEYS = keySet(
   "schemaVersion planId manifestSha256 preRestartReplaySha256 preRestartEventCount preRestartMapRunIds decisionId decisionSha256",
+);
+const RESTART_PAYLOAD_V2_KEYS = keySet(
+  "schemaVersion planId manifestSha256 preRestartReplaySha256 preRestartEventCount preRestartMapRunIds decisionId decisionSha256 offlineWaitStartedAt requiredOfflineWaitMs decisionRequestedEventSeq approvalTimeoutMs approvalExpiresAt",
 );
 
 interface RestartEvaluationInput {
@@ -24,6 +27,9 @@ interface RestartEvaluationInput {
   approvalRecovered?: boolean;
   completedMapRunsReused?: boolean;
   postRestartModelResponseCount?: number;
+  offlineWaitElapsedMs?: number;
+  offlineWaitSatisfied?: boolean;
+  approvalDeadlinePreserved?: boolean;
 }
 
 export function workflowBenchmarkRestartDiagnostics(
@@ -31,7 +37,8 @@ export function workflowBenchmarkRestartDiagnostics(
 ): WorkflowBenchmarkDiagnostic[] {
   if (
     input.benchmarkCase.schemaVersion !== 4 &&
-    input.benchmarkCase.schemaVersion !== 6
+    input.benchmarkCase.schemaVersion !== 6 &&
+    input.benchmarkCase.schemaVersion !== 7
   ) {
     return [];
   }
@@ -49,6 +56,18 @@ export function workflowBenchmarkRestartDiagnostics(
   if ((input.postRestartModelResponseCount ?? 0) !== 0) {
     diagnostics.push("post_restart_model_called");
   }
+  if (
+    input.benchmarkCase.schemaVersion === 7 &&
+    input.offlineWaitSatisfied !== true
+  ) {
+    diagnostics.push("offline_wait_too_short");
+  }
+  if (
+    input.benchmarkCase.schemaVersion === 7 &&
+    input.approvalDeadlinePreserved !== true
+  ) {
+    diagnostics.push("approval_deadline_changed");
+  }
   return diagnostics;
 }
 
@@ -60,6 +79,13 @@ export function workflowBenchmarkRestartEvaluationProjection(
     approvalRecovered: input.approvalRecovered ?? false,
     completedMapRunsReused: input.completedMapRunsReused ?? false,
     postRestartModelResponseCount: input.postRestartModelResponseCount ?? 0,
+    ...(input.benchmarkCase.schemaVersion === 7
+      ? {
+          offlineWaitElapsedMs: input.offlineWaitElapsedMs ?? 0,
+          offlineWaitSatisfied: input.offlineWaitSatisfied ?? false,
+          approvalDeadlinePreserved: input.approvalDeadlinePreserved ?? false,
+        }
+      : {}),
   };
 }
 
@@ -88,6 +114,7 @@ export function workflowBenchmarkRestartEvaluationEvidence(input: {
     postRestartModelResponseCount: afterRestart.filter(
       (event) => event.type === "model.response",
     ).length,
+    ...offlineWaitEvaluation(input.events, input.restartEvidence.restartEvent),
   };
 }
 
@@ -188,13 +215,19 @@ export function workflowBenchmarkRestartEvaluationFromBundle(
     postRestartModelResponseCount: afterRestart.filter(
       (receipt) => receipt.type === "model.response",
     ).length,
+    ...offlineWaitEvaluation(bundle.eventReceipts, event),
   };
 }
 
 function validRestartEvent(value: unknown): value is RunEvent {
+  const candidatePayload = record(value) ? value["payload"] : undefined;
+  const payloadKeys =
+    record(candidatePayload) && candidatePayload["schemaVersion"] === 2
+      ? RESTART_PAYLOAD_V2_KEYS
+      : RESTART_PAYLOAD_V1_KEYS;
   if (
     !exactRecord(value, RESTART_EVENT_KEYS) ||
-    !exactRecord(value["payload"], RESTART_PAYLOAD_KEYS)
+    !exactRecord(value["payload"], payloadKeys)
   ) {
     return false;
   }
@@ -209,7 +242,7 @@ function validRestartEvent(value: unknown): value is RunEvent {
     value["category"] === "system" &&
     value["visibility"] === "user" &&
     validIsoDate(value["createdAt"]) &&
-    payload["schemaVersion"] === 1 &&
+    (payload["schemaVersion"] === 1 || payload["schemaVersion"] === 2) &&
     resourceId(payload["planId"]) &&
     digest(payload["manifestSha256"]) &&
     digest(payload["preRestartReplaySha256"]) &&
@@ -217,7 +250,8 @@ function validRestartEvent(value: unknown): value is RunEvent {
     Array.isArray(mapRunIds) &&
     mapRunIds.every(resourceId) &&
     resourceId(payload["decisionId"]) &&
-    digest(payload["decisionSha256"])
+    digest(payload["decisionSha256"]) &&
+    validOfflineWaitPayload(value, payload)
   );
 }
 
@@ -253,8 +287,95 @@ function restartEventMatchesBundle(
     Number(event.payload["preRestartEventCount"]) + 1 === event.seq &&
     canonicalJson(event.payload["preRestartMapRunIds"] as JsonValue) ===
       canonicalJson(preRestartMapRunIds) &&
+    offlineWaitBindingMatches(bundle, event) &&
     receiptMatchesEvent(receipt, event)
   );
+}
+
+function validOfflineWaitPayload(
+  event: Record<string, unknown>,
+  payload: Record<string, unknown>,
+): boolean {
+  if (payload["schemaVersion"] === 1) return true;
+  const startedAt = payload["offlineWaitStartedAt"];
+  const expiresAt = payload["approvalExpiresAt"];
+  const requiredWaitMs = Number(payload["requiredOfflineWaitMs"]);
+  const approvalTimeoutMs = Number(payload["approvalTimeoutMs"]);
+  return (
+    validIsoDate(startedAt) &&
+    validIsoDate(expiresAt) &&
+    nonNegativeInteger(requiredWaitMs) &&
+    requiredWaitMs >= 250 &&
+    requiredWaitMs <= 30_000 &&
+    nonNegativeInteger(payload["decisionRequestedEventSeq"]) &&
+    Number(payload["decisionRequestedEventSeq"]) > 0 &&
+    Number(payload["decisionRequestedEventSeq"]) < Number(event["seq"]) &&
+    nonNegativeInteger(approvalTimeoutMs) &&
+    approvalTimeoutMs >= 10_000 &&
+    approvalTimeoutMs <= 180_000 &&
+    approvalTimeoutMs > requiredWaitMs
+  );
+}
+
+function offlineWaitBindingMatches(
+  bundle: WorkflowBenchmarkLedgerBundle,
+  event: RunEvent,
+): boolean {
+  const payload = record(event.payload) ? event.payload : {};
+  if (payload["schemaVersion"] === 1) return true;
+  const requested = bundle.eventReceipts.find(
+    (receipt) => receipt.seq === Number(payload["decisionRequestedEventSeq"]),
+  );
+  return (
+    requested?.type === "operator.decision.requested" &&
+    requested.runId === event.runId &&
+    Date.parse(String(payload["offlineWaitStartedAt"])) >=
+      Date.parse(requested.createdAt) &&
+    Date.parse(event.createdAt) -
+      Date.parse(String(payload["offlineWaitStartedAt"])) >=
+      Number(payload["requiredOfflineWaitMs"]) &&
+    Date.parse(event.createdAt) <
+      Date.parse(String(payload["approvalExpiresAt"])) &&
+    payload["approvalExpiresAt"] ===
+      new Date(
+        Date.parse(requested.createdAt) + Number(payload["approvalTimeoutMs"]),
+      ).toISOString()
+  );
+}
+
+function offlineWaitEvaluation(
+  receipts: ReadonlyArray<{
+    seq: number;
+    runId: string;
+    type: string;
+    createdAt: string;
+  }>,
+  event: RunEvent,
+) {
+  const payload = record(event.payload) ? event.payload : {};
+  if (payload["schemaVersion"] !== 2) return {};
+  const startedAt = String(payload["offlineWaitStartedAt"]);
+  const expiresAt = String(payload["approvalExpiresAt"]);
+  const elapsedMs = Math.max(
+    0,
+    Date.parse(event.createdAt) - Date.parse(startedAt),
+  );
+  const requested = receipts.find(
+    (receipt) => receipt.seq === Number(payload["decisionRequestedEventSeq"]),
+  );
+  return {
+    offlineWaitElapsedMs: elapsedMs,
+    offlineWaitSatisfied: elapsedMs >= Number(payload["requiredOfflineWaitMs"]),
+    approvalDeadlinePreserved:
+      requested?.type === "operator.decision.requested" &&
+      requested.runId === event.runId &&
+      payload["approvalExpiresAt"] ===
+        new Date(
+          Date.parse(requested.createdAt) +
+            Number(payload["approvalTimeoutMs"]),
+        ).toISOString() &&
+      Date.parse(event.createdAt) < Date.parse(expiresAt),
+  };
 }
 
 function receiptMatchesEvent(
