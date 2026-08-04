@@ -48,7 +48,7 @@ const defaultDataFrameBenchmarkSeriesPath =
 const defaultSecurityBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json";
 const defaultLongHorizonBenchmarkSeriesPath =
-  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-523f1f822968ad1c.json";
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-6ae542a21fc5f485.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json";
 const defaultUxBenchmarkSeriesPath =

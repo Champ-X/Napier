@@ -1871,10 +1871,14 @@ event count, and Map ID binding. Evaluation independently recomputes one
 restart event, one answered/continued decision pair after restart, equality of
 pre/final Map Run IDs, and zero post-restart `model.response` receipts.
 
-The retained DeepSeek two-trial Series passed 2/2 in 2.162–2.365 seconds at a
-mean cost of `$0.0013498856`. Each trial used seven Runs, preserved all three
+The retained DeepSeek two-trial Series passed 2/2 in 2.540–2.925 seconds at a
+mean cost of `$0.0020458732`. Each trial used seven Runs, preserved all three
 Map child Runs across one full Runtime restart, recovered the Approval, and
-performed only model-free Reduce afterward. This case does not yet cover
+performed only model-free Reduce afterward; mean input/output usage was
+13,652.5/467 tokens. Oh My Pi v17.2.1 has resumable sessions but no equivalent
+typed Workflow Manifest, durable Approval, or completed-Map reuse protocol.
+The case is therefore capability evidence with cross-executor comparability
+marked unsupported, not a synthetic OMP loss. This case does not yet cover
 multiple restarts, long wall-clock waits, budget exhaustion, no-progress
 detection, or recovery from uncertain write side effects.
 

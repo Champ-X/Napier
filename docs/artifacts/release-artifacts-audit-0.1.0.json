@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "f33bcc453a62ce6090bb54d9920bb777841a7a9dade8e24f7bd32a4525bcb662",
+  "artifactSetSha256": "8deb207034b59cf49b8092ea041e1c348e96000318b163e836f2f867fde1dd97",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "a1116d39dc4a560e3f35e1fd9afb9f2d8f09984add0453a5ad98c056a762533f",
+      "sha256": "c0b6774256ac02c4c0d1bc1ff3da26fd4ab8e2bfe9df6306896736c42175125f",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "447e2402521e23e068ac1e33ab24a193aeacb5f3437933830523215b004b4c3f",
+      "sha256": "b7eb4948b6e2a48c2f3cfb3238adb447cbdedae9e93fecfe2345675a95b91f8c",
       "valid": true
     },
     {
@@ -178,32 +178,32 @@
     },
     {
       "kind": "long-horizon-benchmark-series",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-523f1f822968ad1c.json",
-      "sha256": "62c0cde7b64a272c2f42d14923b9aacc5188b779444f746fb9e45506be7677d8",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-6ae542a21fc5f485.json",
+      "sha256": "015cdd3ea0f1ca96c15907935c588057740a8f091693004c08b5199edc34606d",
       "valid": true
     },
     {
       "kind": "long-horizon-benchmark-result-1",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_restart_approval_v1-359292e0a20992f2.json",
-      "sha256": "11c504d0b2b7b3f00c28a1d17a8631a9da1143f1c3bd5f6c67e001215568cd28",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_restart_approval_v1-fffb9c7ff6b4d21b.json",
+      "sha256": "fa15359e16be07caf351ab145da805ab1edf41770855f1ee9c8dcbb089d7865c",
       "valid": true
     },
     {
       "kind": "long-horizon-benchmark-ledger-1",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_restart_approval_v1-2a88b8fdc0e1923c.json",
-      "sha256": "1878b85b9cc032104a663ec9b4cfce61f22a4386600041a5ffc9b778a99bbcd8",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_restart_approval_v1-500bfa8fa269a739.json",
+      "sha256": "92b8c8eafe3e9f0ddb798de72e06e2498ce2369a7c80dbe215e87feb5d60ff98",
       "valid": true
     },
     {
       "kind": "long-horizon-benchmark-result-2",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_restart_approval_v1-c1caad18a2c30c43.json",
-      "sha256": "b33f15122b96dc8b1cd60947e158bde2a77e2a6835718e699803f23c7da97190",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_restart_approval_v1-b71b61df60d71737.json",
+      "sha256": "2a8df90b0a019f0394b90983cfa3a0944361d13d789a45b5a17d568b73597437",
       "valid": true
     },
     {
       "kind": "long-horizon-benchmark-ledger-2",
-      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_restart_approval_v1-4fac417a7d02f704.json",
-      "sha256": "7410d372b7adbc20f7d79416b9421ae20f835e31e3f9116506dbe8e9957b420a",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_restart_approval_v1-fd0c43f4442608c3.json",
+      "sha256": "bee1031aaa2dc3027290af13eed0948041a5417e174bb1f9b52b701b3da76b7c",
       "valid": true
     },
     {

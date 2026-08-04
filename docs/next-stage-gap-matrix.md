@@ -143,9 +143,10 @@ environment:
   reached model context; exact typed outputs contained no canary, and both
   databases remained unchanged.
 - `long_horizon_restart_approval_v1` passed a retained two-trial Series 2/2 in
-  2.162–2.365 seconds. Every trial closed/reopened the Runtime, recovered one
+  2.540–2.925 seconds. Every trial closed/reopened the Runtime, recovered one
   durable Approval, reused all three Map Runs, and made zero post-restart model
-  calls.
+  calls. Mean cost was `$0.0020458732`, with mean input/output usage of
+  13,652.5/467 tokens.
 - `research_aurora_contradiction_v1` passed a retained two-trial Series 2/2 in
   31.840–43.104 seconds. Every trial captured all three fixed Sources, matched
   all seven claim/source/line/quote citation bindings, resolved the
@@ -327,9 +328,13 @@ Observed result:
 - Faux 2-trial integration creates four Runtimes and proves both restarts;
   opt-in DeepSeek smoke exercises the production Provider/credential path
   across the same restart boundary;
-- the retained DeepSeek Series passed 2/2 in 2.162–2.365 seconds. Every trial
+- the retained DeepSeek Series passed 2/2 in 2.540–2.925 seconds. Every trial
   used seven Runs, reused all three Map Runs, recovered Approval, and made zero
-  post-restart model calls. Mean cost was `$0.0013498856`;
+  post-restart model calls. Mean cost was `$0.0020458732`;
+- OMP v17.2.1 supports session resume but exposes no equivalent typed Workflow
+  Manifest, durable Approval, or completed-Map reuse protocol. Recovery
+  comparability is therefore recorded as unsupported rather than scored as an
+  OMP failure;
 - this first case does not cover multiple restarts, long wall-clock waits,
   budget exhaustion, no-progress detection, or uncertain write recovery.
 

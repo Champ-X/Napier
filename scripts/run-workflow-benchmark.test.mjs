@@ -3,12 +3,22 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import rootPackage from "../package.json" with { type: "json" };
+
 const scriptPath = path.resolve(
   import.meta.dirname,
   "run-workflow-benchmark.mjs",
 );
 
 describe("Workflow benchmark CLI", () => {
+  it("loads the optional repository environment for live benchmark commands", () => {
+    for (const name of ["bench:coding", "bench:research", "bench:workflow"]) {
+      expect(rootPackage.scripts[name]).toContain(
+        "node --env-file-if-exists=.env scripts/",
+      );
+    }
+  });
+
   it("accepts bounded trial counts independently from timeout parsing", async () => {
     const accepted = await runScript([
       "--trials",

@@ -1467,10 +1467,14 @@ that event to the general receipt chain and independently recomputes Approval
 recovery, Map reuse, and post-restart model-call count.
 
 The checked-in DeepSeek
-[two-trial Long-horizon series](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-523f1f822968ad1c.json)
-passed 2/2 trials in 2.162–2.365 seconds. Every trial used seven Runs, one
+[two-trial Long-horizon series](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-6ae542a21fc5f485.json)
+passed 2/2 trials in 2.540–2.925 seconds. Every trial used seven Runs, one
 Runtime restart, three reused Map Runs, and zero post-restart model calls.
-Mean cost was `$0.0013498856`; mean input/output tokens were 8,563/528.
+Mean cost was `$0.0020458732`; mean input/output tokens were 13,652.5/467.
+Oh My Pi v17.2.1 exposes session continuation but no equivalent typed Workflow
+Manifest, durable Approval, or completed-Map reuse contract, so this capability
+case is recorded as not directly comparable rather than an OMP failure. The
+same-task Coding comparison remains the cross-executor evidence.
 
 ### Research Outcome Benchmark
 

@@ -11,11 +11,11 @@
     "node": ">=22.19.0"
   },
   "scripts": {
-    "bench:coding": "npm run build:core && npm run build -w @napier/cli && node scripts/run-coding-benchmark.mjs",
+    "bench:coding": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-coding-benchmark.mjs",
     "bench:coding:compare": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-coding-executor-comparison.mjs",
-    "bench:research": "npm run build:core && npm run build -w @napier/cli && node scripts/run-research-benchmark.mjs",
+    "bench:research": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-research-benchmark.mjs",
     "bench:ux": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-ux-benchmark.mjs",
-    "bench:workflow": "npm run build:core && npm run build -w @napier/cli && node scripts/run-workflow-benchmark.mjs",
+    "bench:workflow": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-workflow-benchmark.mjs",
     "bench:product-performance": "npm run build:core && npm run build -w @napier/cli && node scripts/benchmark-product-performance.mjs --output benchmark-results/product-performance.json",
     "bench:store-scale": "npm run build:core && node scripts/benchmark-store-scale.mjs",
     "build": "npm run build:core && npm run build -w @napier/sdk && npm run build -w @napier/cli && npm run build -w @napier/server && npm run build -w @napier/web",

@@ -357,13 +357,15 @@ describe("release artifacts audit", () => {
   it("fails when retained Long-horizon evidence is tampered", async () => {
     const { root } = await createFixture();
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
-    const resultName = (await readdir(benchmarkRoot))
-      .filter((name) =>
-        name.startsWith(
-          "napier-workflow-benchmark-result-long_horizon_restart_approval_v1-",
-        ),
-      )
-      .sort()[0];
+    const seriesName = (await readdir(benchmarkRoot)).find((name) =>
+      name.startsWith(
+        "napier-workflow-benchmark-series-long_horizon_restart_approval_v1-6ae542a21fc5f485",
+      ),
+    );
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const resultName = series.trials[0].resultFileName;
     const resultPath = path.join(benchmarkRoot, resultName);
     const result = JSON.parse(await readFile(resultPath, "utf8"));
     result.evaluation.completedMapRunsReused = false;
