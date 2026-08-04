@@ -9,6 +9,7 @@ import {
 export function interactiveCapabilityStatus(
   profile: AgentProfile,
   presetId: AgentCapabilityPresetId | undefined,
+  confirmationAvailable = false,
 ): AgentCapabilityStatus {
   const status = agentCapabilityStatus(
     presetId
@@ -17,6 +18,7 @@ export function interactiveCapabilityStatus(
   );
   return {
     ...status,
-    browserInteractWithConfirmation: false,
+    browserInteractWithConfirmation:
+      confirmationAvailable && status.browserInteractWithConfirmation,
   };
 }

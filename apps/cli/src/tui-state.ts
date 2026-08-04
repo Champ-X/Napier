@@ -1,5 +1,6 @@
 import type { ModelRef, RunEvent, RunRecord } from "@napier/contracts";
 import type { AgentCapabilityStatus } from "@napier/contracts/agent-capabilities";
+import type { BrowserInteractionConfirmation } from "@napier/contracts/browser-interaction-confirmation";
 import type { EmbeddedAgentExecution } from "@napier/runtime";
 
 import {
@@ -40,6 +41,7 @@ export interface TuiStateSnapshot {
   notice?: string;
   helpVisible: boolean;
   scrollOffset: number;
+  browserInteractionConfirmation?: BrowserInteractionConfirmation;
   transcript: TuiTranscriptEntry[];
   tools: TuiToolCard[];
 }
@@ -56,6 +58,9 @@ export class TuiSessionState {
   private notice: string | undefined;
   private helpVisible = false;
   private scrollOffset = 0;
+  private browserInteractionConfirmation:
+    | BrowserInteractionConfirmation
+    | undefined;
   private nextEntryId = 1;
   private transcript: TuiTranscriptEntry[] = [];
   private tools: TuiToolCard[] = [];
@@ -88,6 +93,13 @@ export class TuiSessionState {
       ...(this.notice ? { notice: this.notice } : {}),
       helpVisible: this.helpVisible,
       scrollOffset: this.scrollOffset,
+      ...(this.browserInteractionConfirmation
+        ? {
+            browserInteractionConfirmation: structuredClone(
+              this.browserInteractionConfirmation,
+            ),
+          }
+        : {}),
       transcript: this.transcript.map((entry) => ({ ...entry })),
       tools: this.tools.map((tool) => ({ ...tool })),
     };
@@ -156,6 +168,24 @@ export class TuiSessionState {
     return false;
   }
 
+  applyBrowserInteractionConfirmation(
+    confirmation: BrowserInteractionConfirmation,
+  ): void {
+    if (confirmation.status === "pending") {
+      this.browserInteractionConfirmation = structuredClone(confirmation);
+      this.waiting = true;
+      this.activeLabel = "waiting for browser confirmation";
+      this.notice = `Browser ${confirmation.action} paused; type approve or reject`;
+      return;
+    }
+    if (this.browserInteractionConfirmation?.id === confirmation.id) {
+      this.browserInteractionConfirmation = undefined;
+    }
+    this.waiting = false;
+    if (this.active) this.activeLabel = "running";
+    this.notice = `Browser ${confirmation.action} ${confirmation.status}`;
+  }
+
   finish(execution: EmbeddedAgentExecution): void {
     if (
       this.currentAssistantId === undefined &&
@@ -169,6 +199,7 @@ export class TuiSessionState {
     this.lastRun = structuredClone(execution.run);
     this.active = false;
     this.activeLabel = execution.run.status;
+    this.browserInteractionConfirmation = undefined;
     this.notice = `Run ${execution.run.id} ${execution.run.status}`;
   }
 
@@ -176,6 +207,7 @@ export class TuiSessionState {
     this.finishStreamingEntry();
     this.active = false;
     this.activeLabel = "failed";
+    this.browserInteractionConfirmation = undefined;
     this.notice = bounded(message, MAX_NOTICE_CHARS);
   }
 
@@ -202,6 +234,7 @@ export class TuiSessionState {
     this.nextTitle = undefined;
     this.lastRun = undefined;
     this.waiting = false;
+    this.browserInteractionConfirmation = undefined;
     this.tools = [];
     this.notice = `Thread: ${threadId}`;
     this.scrollOffset = 0;
@@ -212,6 +245,7 @@ export class TuiSessionState {
     this.nextTitle = title;
     this.lastRun = undefined;
     this.waiting = false;
+    this.browserInteractionConfirmation = undefined;
     this.tools = [];
     this.notice = `Thread: new${title ? ` (${title})` : ""}`;
     this.scrollOffset = 0;

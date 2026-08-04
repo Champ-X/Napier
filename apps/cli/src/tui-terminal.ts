@@ -10,6 +10,7 @@ import {
 } from "./terminal-safe-text.js";
 import type { TuiInputSnapshot } from "./tui-input.js";
 import type { TuiStateSnapshot, TuiToolCard } from "./tui-state.js";
+import { terminalBrowserInteractionConfirmationLines } from "./terminal-browser-confirmation.js";
 
 const ALT_SCREEN_ENTER = "\u001b[?1049h";
 const ALT_SCREEN_EXIT = "\u001b[?1049l";
@@ -134,8 +135,19 @@ function renderFrame(
       `${CLEAR_FRAME}${STYLE_HEADER}${truncateTerminalText("Napier TUI", columns)}${STYLE_RESET}\n${truncateTerminalText("Terminal too small; resize to at least 40x10 or Ctrl-C to exit.", columns)}`,
     );
   }
-  const tools = state.tools.slice(-Math.min(4, Math.max(0, rows - 9)));
-  const fixedRows = 6 + tools.length;
+  const confirmations = state.browserInteractionConfirmation
+    ? terminalBrowserInteractionConfirmationLines(
+        state.browserInteractionConfirmation,
+      )
+    : [];
+  const visibleConfirmations = fitConfirmationLines(
+    confirmations,
+    Math.max(0, rows - 7),
+  );
+  const tools = state.tools.slice(
+    -Math.min(4, Math.max(0, rows - 9 - visibleConfirmations.length)),
+  );
+  const fixedRows = 6 + tools.length + visibleConfirmations.length;
   const bodyRows = Math.max(1, rows - fixedRows);
   const lines = [
     headerLine(state, columns),
@@ -143,6 +155,7 @@ function renderFrame(
     divider(columns),
     ...transcriptLines(state, columns, bodyRows),
     ...toolLines(tools, columns),
+    ...confirmationLines(visibleConfirmations, columns),
     noticeLine(state, columns),
     inputLine(input, columns),
     footerLine(state, input, columns),
@@ -168,8 +181,20 @@ function statusLine(state: TuiStateSnapshot, columns: number): string {
     : "agent default";
   const run = state.lastRun ? state.lastRun.id : "none";
   const capability = state.capabilities?.label ?? "custom";
+  const browserInteraction = state.capabilities?.browserInteractWithConfirmation
+    ? "confirm"
+    : state.capabilities?.browserInteract
+      ? "yes"
+      : "no";
+  const activity = state.waiting
+    ? state.browserInteractionConfirmation
+      ? "browser confirmation"
+      : "operator waiting"
+    : state.active
+      ? "active"
+      : "ready";
   return `${STYLE_DIM}${truncateTerminalText(
-    `model ${model} · preset ${capability} · last run ${run} · ${state.waiting ? "operator waiting" : state.active ? "active" : "ready"}`,
+    `${activity} · model ${model} · preset ${capability} · browser interact ${browserInteraction} · last run ${run}`,
     columns,
   )}${STYLE_RESET}`;
 }
@@ -251,6 +276,20 @@ function toolLines(tools: TuiToolCard[], columns: number): string[] {
   });
 }
 
+function confirmationLines(lines: string[], columns: number): string[] {
+  return lines.map(
+    (line) =>
+      `${STYLE_RUNNING}${truncateTerminalText(line, columns)}${STYLE_RESET}`,
+  );
+}
+
+function fitConfirmationLines(lines: string[], maximum: number): string[] {
+  if (lines.length <= maximum) return lines;
+  if (maximum <= 0) return [];
+  if (maximum === 1) return [lines.at(-1)!];
+  return [...lines.slice(0, maximum - 1), lines.at(-1)!];
+}
+
 function noticeLine(state: TuiStateSnapshot, columns: number): string {
   const notice =
     state.notice ??
@@ -278,7 +317,9 @@ function footerLine(
 ): string {
   return `${STYLE_DIM}${truncateTerminalText(
     [
-      "Enter send",
+      state.browserInteractionConfirmation
+        ? "Enter approve/reject"
+        : "Enter send",
       "Ctrl-C cancel/exit",
       "Ctrl-D exit",
       "PgUp/PgDn scroll",

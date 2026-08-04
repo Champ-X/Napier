@@ -19,6 +19,7 @@ import {
 import { TuiInputController, type TuiInputAction } from "./tui-input.js";
 import { TuiSessionState } from "./tui-state.js";
 import { TuiOutputError, TuiTerminal } from "./tui-terminal.js";
+import { TerminalBrowserInteractionConfirmationController } from "./terminal-browser-confirmation.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 import { interactiveCapabilityStatus } from "./interactive-capability-status.js";
 
@@ -76,6 +77,9 @@ export async function executeTui(
   let sessionFailure: unknown;
   let lastInterruptAt = 0;
   let automaticModel = options.model === undefined;
+  let confirmations:
+    | TerminalBrowserInteractionConfirmationController
+    | undefined;
 
   const requestExit = (code: number): void => {
     if (exiting) return;
@@ -182,6 +186,12 @@ export async function executeTui(
       try {
         await render();
         const execution = await operation(controller.signal, async (event) => {
+          const confirmation = confirmations?.applyEvent(event);
+          if (confirmation) {
+            state.applyBrowserInteractionConfirmation(confirmation);
+            await render();
+            return;
+          }
           if (state.applyEvent(event)) await render();
         });
         state.finish(execution);
@@ -223,7 +233,21 @@ export async function executeTui(
       return;
     }
     if (state.snapshot().active) {
-      state.setNotice("A Run is already active; Ctrl-C cancels it");
+      if (confirmations?.hasPending()) {
+        const result = await confirmations.submit(raw);
+        if (result === "invalid") {
+          state.setNotice("Type approve or reject; Ctrl-C cancels the Run");
+        } else if (result === "settling") {
+          state.setNotice("Browser confirmation decision is already settling");
+        } else if (result === "failed") {
+          state.setNotice(
+            "Browser confirmation failed closed; cancelling the Run",
+          );
+        }
+        if (result === "failed") activeController?.abort();
+      } else {
+        state.setNotice("A Run is already active; Ctrl-C cancels it");
+      }
       await render();
       return;
     }
@@ -269,6 +293,7 @@ export async function executeTui(
             interactiveCapabilityStatus(
               activeTuiAgent(services!, undefined, command.threadId),
               options.capabilityPreset,
+              services!.browserInteractionConfirmations.available,
             ),
           );
         } else if (command.kind === "new") {
@@ -285,6 +310,7 @@ export async function executeTui(
             interactiveCapabilityStatus(
               activeTuiAgent(services!, options.agentId, undefined),
               options.capabilityPreset,
+              services!.browserInteractionConfirmations.available,
             ),
           );
         } else if (command.kind === "clear") {
@@ -354,7 +380,11 @@ export async function executeTui(
       workspaceRoot,
       dataRoot,
       env: io.env,
+      browserInteractionConfirmation: { available: true },
     });
+    confirmations = new TerminalBrowserInteractionConfirmationController(
+      services.browserInteractionConfirmations,
+    );
     sessionController.signal.throwIfAborted();
     await configureCliModelCredential(services, options, io.env);
     state.setModelSilently(
@@ -368,6 +398,7 @@ export async function executeTui(
       interactiveCapabilityStatus(
         activeTuiAgent(services, options.agentId, state.currentThreadId()),
         options.capabilityPreset,
+        services.browserInteractionConfirmations.available,
       ),
     );
     sessionController.signal.throwIfAborted();

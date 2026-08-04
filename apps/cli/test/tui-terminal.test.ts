@@ -2,6 +2,7 @@ import { Writable } from "node:stream";
 
 import type { RunEvent } from "@napier/contracts";
 import { agentCapabilityStatus } from "@napier/contracts/agent-capabilities";
+import type { BrowserInteractionConfirmation } from "@napier/contracts/browser-interaction-confirmation";
 import { describe, expect, it } from "vitest";
 
 import { TuiSessionState } from "../src/tui-state.js";
@@ -108,6 +109,27 @@ describe("TUI terminal projection", () => {
     );
   });
 
+  it("keeps Browser confirmation input visible at the minimum terminal size", async () => {
+    const output = new TerminalCapture(40, 10);
+    const terminal = new TuiTerminal(output);
+    const state = new TuiSessionState({});
+    state.beginPrompt("Confirm a Browser action.");
+    state.applyBrowserInteractionConfirmation(confirmation());
+
+    await terminal.enter();
+    await terminal.render(state.snapshot(), {
+      text: "",
+      cursor: 0,
+      byteLength: 0,
+      pasting: false,
+    });
+    await terminal.restore();
+
+    expect(output.text()).toContain("Type approve or reject");
+    expect(output.text()).toContain("Enter approve/reject");
+    expect(output.text()).not.toContain("PRIVATE_CONFIRMATION");
+  });
+
   it("coalesces rapid updates to one bounded pending frame", async () => {
     const output = new TerminalCapture(80, 24, 5);
     const terminal = new TuiTerminal(output);
@@ -144,6 +166,30 @@ function event(type: string, payload: RunEvent["payload"]): RunEvent {
     visibility: "user",
     createdAt: "2026-08-02T00:00:00.000Z",
     payload,
+  };
+}
+
+function confirmation(): BrowserInteractionConfirmation {
+  return {
+    kind: "napier.browser-interaction-confirmation",
+    schemaVersion: 1,
+    id: "browser_confirm_terminal123",
+    threadId: "thread_1234567890",
+    runId: "run_1234567890",
+    callId: "call_terminal123",
+    action: "upload",
+    argumentsSha256: "a".repeat(64),
+    preview: {
+      targetKind: "ref",
+      targetSha256: "b".repeat(64),
+      pathSha256: "c".repeat(64),
+      crossOriginAuthorized: false,
+    },
+    status: "pending",
+    requestedAt: "2026-08-05T00:00:00.000Z",
+    expiresAt: "2026-08-05T00:01:00.000Z",
+    requestSha256: "d".repeat(64),
+    contentSha256: "e".repeat(64),
   };
 }
 

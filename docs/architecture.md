@@ -657,12 +657,16 @@ authority.
 accepts one pending interactive Browser call per Run, appends a hash-only
 `browser.interaction_confirmation.pending` event, and awaits an exact
 request-SHA decision while the SSE stream and Browser Session remain live.
-The Server decision route binds Thread, Run, confirmation ID, and expected
-request hash. A terminal `approved | rejected | expired | cancelled` event is
+The Server decision route and local Chat/TUI controllers bind Thread, Run,
+confirmation ID, and expected request hash. Web uses explicit buttons; Chat
+and TUI accept only `approve | reject` while the matching Run is paused.
+Invalid terminal input is consumed locally and cannot become a queued user
+message. A terminal `approved | rejected | expired | cancelled` event is
 appended before the waiting tool proceeds. Runtime policy still validates
 public-network and workspace-file scope before confirmation; confirmation
 cannot authorize an otherwise denied call. Raw tool arguments stay in the
 private live call/capsule boundary and never enter the confirmation protocol.
+Web and terminal entries parse the same exact Contracts shape.
 
 `BrowserLiveViewService` authorizes only the active standard user Run. It asks
 the same serialized `RunBrowserSessionManager` for a viewport screenshot using

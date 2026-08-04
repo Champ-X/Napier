@@ -28,6 +28,11 @@ import {
   InteractiveEventRenderer,
   InteractiveOutputError,
 } from "./interactive-renderer.js";
+import { InteractiveLineQueue } from "./interactive-line-queue.js";
+import {
+  TerminalBrowserInteractionConfirmationController,
+  terminalBrowserInteractionConfirmationLines,
+} from "./terminal-browser-confirmation.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 import { interactiveCapabilityStatus } from "./interactive-capability-status.js";
 
@@ -104,6 +109,7 @@ export async function executeInteractive(
       workspaceRoot,
       dataRoot,
       env: io.env,
+      browserInteractionConfirmation: { available: true },
     });
     parentSignal?.throwIfAborted();
     await configureCliModelCredential(services, options, io.env);
@@ -116,6 +122,7 @@ export async function executeInteractive(
     capabilities = interactiveCapabilityStatus(
       initialAgent,
       options.capabilityPreset,
+      services.browserInteractionConfirmations.available,
     );
     parentSignal?.throwIfAborted();
     const inputLoop = createInterface({
@@ -128,8 +135,62 @@ export async function executeInteractive(
     });
     readline = inputLoop;
     inputLoop.on("SIGINT", interrupt);
-    const inputIterator = inputLoop[Symbol.asyncIterator]();
-    let nextInput = inputIterator.next();
+    const inputQueue = new InteractiveLineQueue();
+    const confirmations =
+      new TerminalBrowserInteractionConfirmationController(
+        services.browserInteractionConfirmations,
+      );
+    const submitConfirmation = async (line: string): Promise<void> => {
+      const result = await confirmations.submit(line);
+      if (result === "invalid") {
+        await writeLine(
+          io.stderr,
+          "[confirm] Type approve or reject; Ctrl-C cancels the Run.",
+        );
+      } else if (result === "settling") {
+        await writeLine(
+          io.stderr,
+          "[confirm] Decision is already settling.",
+        );
+      } else if (result === "failed") {
+        await writeLine(
+          io.stderr,
+          "[confirm] Decision failed closed; cancelling the Run.",
+        );
+        activeController?.abort();
+      }
+    };
+    inputLoop.on("line", (line) => {
+      if (confirmations.hasPending()) {
+        void submitConfirmation(line).catch(() => activeController?.abort());
+      } else {
+        inputQueue.push(line);
+      }
+    });
+    inputLoop.once("close", () => {
+      inputQueue.close();
+      if (confirmations.hasPending()) activeController?.abort();
+    });
+    const renderEvent = async (event: Parameters<typeof renderer.render>[0]) => {
+      const confirmation = confirmations.applyEvent(event);
+      if (!confirmation) {
+        await renderer.render(event);
+        return;
+      }
+      if (confirmation.status !== "pending") {
+        await writeLine(
+          io.stderr,
+          `[confirm] Browser ${confirmation.action} ${confirmation.status}`,
+        );
+        return;
+      }
+      for (const line of terminalBrowserInteractionConfirmationLines(
+        confirmation,
+      )) {
+        await writeLine(io.stderr, line);
+      }
+      await prompt(inputLoop, io.stderr, terminal, threadId, "confirm> ");
+    };
     unsubscribeInterrupt = io.subscribeInterrupt?.(interrupt);
     parentSignal?.addEventListener("abort", parentAbort, { once: true });
     if (parentSignal?.aborted) parentAbort();
@@ -140,9 +201,8 @@ export async function executeInteractive(
     await prompt(inputLoop, io.stderr, terminal, threadId);
 
     while (true) {
-      const input = await nextInput;
+      const input = await inputQueue.next();
       if (input.done) break;
-      nextInput = inputIterator.next();
       const rawLine = input.value;
       if (exitRequested || sessionController.signal.aborted) break;
       const trimmedLine = rawLine.trim();
@@ -201,6 +261,7 @@ export async function executeInteractive(
             capabilities = interactiveCapabilityStatus(
               activeInteractiveAgent(services, undefined, threadId),
               options.capabilityPreset,
+              services.browserInteractionConfirmations.available,
             );
             model = await contextualCliRunModel(
               services,
@@ -216,6 +277,7 @@ export async function executeInteractive(
             capabilities = interactiveCapabilityStatus(
               activeInteractiveAgent(services, options.agentId, undefined),
               options.capabilityPreset,
+              services.browserInteractionConfirmations.available,
             );
             model = await contextualCliRunModel(
               services,
@@ -237,7 +299,7 @@ export async function executeInteractive(
                   ...(command.runId ? { runId: command.runId } : {}),
                   ...(model ? { model } : {}),
                   signal,
-                  onEvent: (event) => renderer.render(event),
+                  onEvent: renderEvent,
                 }),
               (controller) => {
                 activeController = controller;
@@ -278,7 +340,7 @@ export async function executeInteractive(
                 ? { capabilityPreset: options.capabilityPreset }
                 : {}),
               signal,
-              onEvent: (event) => renderer.render(event),
+              onEvent: renderEvent,
             }),
           (controller) => {
             activeController = controller;
@@ -297,6 +359,7 @@ export async function executeInteractive(
           capabilities = interactiveCapabilityStatus(
             activeInteractiveAgent(services, undefined, threadId),
             options.capabilityPreset,
+            services.browserInteractionConfirmations.available,
           );
         }
       }
@@ -394,8 +457,11 @@ async function prompt(
   stderr: Writable,
   terminal: boolean,
   threadId: string | undefined,
+  overrideLabel?: string,
 ): Promise<void> {
-  const label = threadId ? `napier:${threadId.slice(-8)}> ` : "napier:new> ";
+  const label =
+    overrideLabel ??
+    (threadId ? `napier:${threadId.slice(-8)}> ` : "napier:new> ");
   if (terminal) {
     readline.setPrompt(label);
     readline.prompt();

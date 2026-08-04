@@ -590,10 +590,13 @@ drift.
 Browser interaction confirmation is a separate process-local authority. The
 Contracts and Runtime narrow subpaths share only action, hashes, timestamps,
 status, and receipt digests. Selector, text, values, URLs, upload paths, and
-download paths never enter confirmation events or the Web docket. Pending and
-terminal confirmation events remain durable, while the one-use resolver is
-intentionally non-resumable across Server restart. Restart, timeout, rejection,
-or Run cancellation fails closed.
+download paths never enter confirmation events or the Web/Chat/TUI docket.
+Web uses buttons; Chat and TUI accept only the exact words `approve` or
+`reject` while the Run is paused. Invalid terminal input is consumed locally,
+is not queued as a prompt, and does not enter Ledger evidence. `Ctrl-C`,
+timeout, EOF during a pending Chat decision, rejection, or Run cancellation
+fails closed. Pending and terminal confirmation events remain durable, while
+the one-use resolver is intentionally non-resumable across process restart.
 
 While an active user Run owns a Browser Session, Web also shows **Browser
 Live**. The panel polls a network-closed viewport PNG every 1.5 seconds through
@@ -718,9 +721,11 @@ keeping the session open; at an idle prompt it exits. EOF closes the Runtime.
 `chat` requires TTY stdin and rejects `--jsonl`; scripts should use `run
 --jsonl` or `rpc`. Assistant text goes to stdout, while stderr receives prompts,
 bounded Run status, and metadata-only tool cards without tool arguments or
-result bodies. Model-provided terminal controls and bidirectional-formatting
-characters are rendered as visible `\uXXXX` escapes rather than executed by the
-terminal.
+result bodies. When a writable Browser action pauses, stderr shows only its
+action, hash prefixes, bounded byte/count metadata, cross-origin status, and
+expiry; type `approve` or `reject` at `confirm>`. Model-provided terminal
+controls and bidirectional-formatting characters are rendered as visible
+`\uXXXX` escapes rather than executed by the terminal.
 
 For the full-screen local terminal over the same Runtime and Ledger:
 
@@ -735,13 +740,16 @@ npm run --silent napier -- tui \
 streaming assistant text, body-free live tool cards, operator-waiting status,
 UTF-8 editing and history, PageUp/PageDown scrolling, bracketed paste, resize
 reflow, and the same slash commands as `chat`; `/clear` clears only the local
-viewport. `Ctrl-C` cancels an active Run or exits with status 130 while idle,
-and `Ctrl-D` exits while idle. Alternate-screen, cursor, paste, and raw-mode
-state are restored on normal exit, EOF, cancellation, parent termination, and
-recoverable failures. If a destroyed output channel makes restoration
-unconfirmable, TUI cancels active work and exits non-zero. Dynamic content
-cannot issue terminal controls, and tool arguments/results, diagnostics,
-credentials, hidden messages, and raw event JSON are never rendered.
+viewport. A pending Browser action opens a bounded hash-only confirmation
+docket and changes Enter to `approve/reject`; other text is rejected locally
+rather than queued. `Ctrl-C` cancels an active Run or exits with status 130
+while idle, and `Ctrl-D` exits while idle. Alternate-screen, cursor, paste, and
+raw-mode state are restored on normal exit, EOF, cancellation, parent
+termination, and recoverable failures. If a destroyed output channel makes
+restoration unconfirmable, TUI cancels active work and exits non-zero. Dynamic
+content cannot issue terminal controls, and tool arguments/results,
+diagnostics, credentials, hidden messages, and raw event JSON are never
+rendered.
 
 Continue an existing Thread by passing its explicit ID and the same state
 directory:
