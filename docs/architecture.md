@@ -510,6 +510,13 @@ Outcome review artifact validation and promotion evidence binding use
 outcome, qualification, gate, and hash predicates preserve ordered fail-closed
 diagnostics without carrying Store state. This lowers `store.ts` to 14,860
 lines.
+Automatic Recovery attempt construction, claim reissue, terminal Run
+settlement, chain-root validation, public secret stripping, and bounded error
+normalization use `automatic-recovery-store-records.ts`. The module preserves
+the Store's existing claim-token digest and attempt hash semantics;
+`LocalStore` still owns SQLite revision CAS, state queues, event access, and
+persistence. This lowers `store.ts` to 14,699 lines without changing Recovery
+Service or Replay behavior.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
