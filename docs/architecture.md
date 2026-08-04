@@ -494,6 +494,12 @@ shape guards, stable diagnostic ordering, declared-versus-observed evidence,
 and event identity/hash binding while Store supplies only the current
 projection or bounded event list. This lowers `store.ts` further to 15,298
 lines.
+Outcome baseline defaults, bounded policy/review-gate normalization, ordered
+policy diagnostics, and qualification projection use
+`execution-plan-blueprint-outcome-policy.ts`. Store retains baseline
+persistence and model-review evidence binding while the pure policy module
+owns reusable qualification semantics. This lowers `store.ts` to 15,160
+lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

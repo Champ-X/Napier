@@ -488,6 +488,13 @@ import {
   withExecutionPlanBlueprintRecordPreviewHash,
 } from "./execution-plan-blueprint-replay-projection.js";
 import {
+  createExecutionPlanBlueprintOutcomeQualification,
+  DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE,
+  executionPlanBlueprintOutcomePolicyDiagnostics,
+  normalizeExecutionPlanBlueprintOutcomeBaselinePolicy,
+  normalizeExecutionPlanBlueprintOutcomeBaselineReviewGate,
+} from "./execution-plan-blueprint-outcome-policy.js";
+import {
   verifyExecutionPlanBlueprintRecordReplayEventProjection,
   verifyExecutionPlanBlueprintRecordReplayHistoryProjection,
   verifyExecutionPlanBlueprintRecordReplayOutcomesProjection,
@@ -883,20 +890,6 @@ const EMPTY_STATE: PersistedState = {
   channels: [],
   inboundDeliveries: [],
 };
-
-const DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy =
-  {
-    minReplayCount: 1,
-    minCompletionRateBps: 10_000,
-    maxBlockedCount: 0,
-    maxInvalidCount: 0,
-  };
-
-const DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE: ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate =
-  {
-    minScore: 80,
-    maxRisk: "medium",
-  };
 
 const EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICIES: Record<
   ExecutionPlanBlueprintRecommendationPolicyTemplateId,
@@ -13031,72 +13024,6 @@ function normalizeOptionalSha256(
   return normalized;
 }
 
-function normalizeExecutionPlanBlueprintOutcomeBaselinePolicy(
-  policy:
-    | Partial<ExecutionPlanBlueprintRecordOutcomeBaselinePolicy>
-    | undefined,
-): ExecutionPlanBlueprintRecordOutcomeBaselinePolicy {
-  const minReplayCount =
-    policy?.minReplayCount ??
-    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY.minReplayCount;
-  const minCompletionRateBps =
-    policy?.minCompletionRateBps ??
-    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY.minCompletionRateBps;
-  const maxBlockedCount =
-    policy?.maxBlockedCount ??
-    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY.maxBlockedCount;
-  const maxInvalidCount =
-    policy?.maxInvalidCount ??
-    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY.maxInvalidCount;
-  if (
-    !isNonNegativeInteger(minReplayCount) ||
-    minReplayCount < 1 ||
-    minReplayCount > 10_000 ||
-    !isNonNegativeInteger(minCompletionRateBps) ||
-    minCompletionRateBps > 10_000 ||
-    !isNonNegativeInteger(maxBlockedCount) ||
-    maxBlockedCount > 10_000 ||
-    !isNonNegativeInteger(maxInvalidCount) ||
-    maxInvalidCount > 10_000
-  ) {
-    throw new Error(
-      "Execution plan blueprint outcome baseline policy is invalid",
-    );
-  }
-  return {
-    minReplayCount,
-    minCompletionRateBps,
-    maxBlockedCount,
-    maxInvalidCount,
-  };
-}
-
-function normalizeExecutionPlanBlueprintOutcomeBaselineReviewGate(
-  gate:
-    | Partial<ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate>
-    | undefined,
-): ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate {
-  const minScore =
-    gate?.minScore ??
-    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE.minScore;
-  const maxRisk =
-    gate?.maxRisk ??
-    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE.maxRisk;
-  if (
-    !isNonNegativeInteger(minScore) ||
-    minScore > 100 ||
-    (maxRisk !== "low" && maxRisk !== "medium" && maxRisk !== "high")
-  ) {
-    throw new Error(
-      "Execution plan blueprint outcome baseline review gate is invalid",
-    );
-  }
-  return {
-    minScore,
-    maxRisk,
-  };
-}
-
 interface ExecutionPlanBlueprintOutcomeBaselineReviewEvidence {
   reviewGate: ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate;
   reviewSha256: string;
@@ -13258,29 +13185,6 @@ function outcomeReviewRiskRank(
   risk: NonNullable<ExecutionPlanBlueprintRecordOutcomeBaseline["reviewRisk"]>,
 ): number {
   return risk === "low" ? 0 : risk === "medium" ? 1 : 2;
-}
-
-function executionPlanBlueprintOutcomePolicyDiagnostics(
-  outcomes: Pick<
-    ExecutionPlanBlueprintRecordReplayOutcomes,
-    "replayCount" | "completionRateBps" | "blockedCount" | "invalidCount"
-  >,
-  policy: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy,
-): string[] {
-  const diagnostics: string[] = [];
-  if (outcomes.replayCount < policy.minReplayCount) {
-    diagnostics.push("replay_count_below_min");
-  }
-  if (outcomes.completionRateBps < policy.minCompletionRateBps) {
-    diagnostics.push("completion_rate_below_min");
-  }
-  if (outcomes.blockedCount > policy.maxBlockedCount) {
-    diagnostics.push("blocked_count_above_max");
-  }
-  if (outcomes.invalidCount > policy.maxInvalidCount) {
-    diagnostics.push("invalid_count_above_max");
-  }
-  return diagnostics;
 }
 
 function createExecutionPlanBlueprintOutcomeBaseline(input: {
@@ -13496,48 +13400,6 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideList(input: {
   return {
     ...content,
     generatedAt: nowIso(),
-    contentSha256: sha256(canonicalJson(content)),
-  };
-}
-
-function createExecutionPlanBlueprintOutcomeQualification(
-  recordId: string,
-  outcomes: ExecutionPlanBlueprintRecordReplayOutcomes,
-  baseline: ExecutionPlanBlueprintRecordOutcomeBaseline | undefined,
-): ExecutionPlanBlueprintRecordOutcomeQualification {
-  const diagnostics = baseline
-    ? executionPlanBlueprintOutcomePolicyDiagnostics(outcomes, baseline.policy)
-    : ["baseline_missing"];
-  const status: ExecutionPlanBlueprintRecordOutcomeQualification["status"] =
-    !baseline
-      ? "missing_baseline"
-      : diagnostics.length === 0
-        ? "qualified"
-        : "policy_failed";
-  const content = {
-    schemaVersion: 1 as const,
-    status,
-    diagnostics,
-    recordId,
-    ...(baseline
-      ? {
-          baselineId: baseline.id,
-          baselineSha256: baseline.contentSha256,
-          baselineOutcomesSha256: baseline.replayOutcomesSha256,
-          policy: baseline.policy,
-        }
-      : {}),
-    currentOutcomesSha256: outcomes.contentSha256,
-    currentReplayHistorySha256: outcomes.replayHistorySha256,
-    currentOutcomeSetSha256: outcomes.outcomeSetSha256,
-    replayCount: outcomes.replayCount,
-    completedCount: outcomes.completedCount,
-    blockedCount: outcomes.blockedCount,
-    invalidCount: outcomes.invalidCount,
-    completionRateBps: outcomes.completionRateBps,
-  };
-  return {
-    ...content,
     contentSha256: sha256(canonicalJson(content)),
   };
 }
