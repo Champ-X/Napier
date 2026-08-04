@@ -15,7 +15,7 @@ const TOOL_PAYLOAD_KEYS = keySet(
   "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details",
 );
 const CAPTURE_DETAILS_KEYS = keySet(
-  "kind schemaVersion action sourceId sourceContentSha256 sourceUrlSha256 sourceOriginSha256 sourceTitleSha256 sourceTextSha256 sourceLineCount sourceTextChars sourceTruncated sourceCount citationCount sourceSetSha256 browserSessionOperation browserSessionIdSha256 browserExecutableSha256 browserVersionSha256 browserLimitsSha256 browserNetworkDestinationsSha256",
+  "kind schemaVersion action sourceKind sourceId sourceContentSha256 sourceUrlSha256 sourceOriginSha256 sourceTitleSha256 sourceTextSha256 sourceLineCount sourceTextChars sourceTruncated sourceCount citationCount sourceSetSha256 browserSessionOperation browserSessionIdSha256 browserExecutableSha256 browserVersionSha256 browserLimitsSha256 browserNetworkDestinationsSha256",
 );
 const CITE_DETAILS_KEYS = [
   ...CAPTURE_DETAILS_KEYS,
@@ -208,6 +208,7 @@ function validCapturedSourceDetails(value: Record<string, unknown>): boolean {
     value["action"] === "capture" ? CAPTURE_DETAILS_KEYS : CITE_DETAILS_KEYS;
   return (
     exactKeys(value, keys) &&
+    value["sourceKind"] === "browser" &&
     resourceId(value["sourceId"]) &&
     digest(value["sourceContentSha256"]) &&
     digest(value["sourceUrlSha256"]) &&

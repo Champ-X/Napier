@@ -11,6 +11,7 @@ import type { LocalStore } from "./store.js";
 import type { WebSearchExecutor } from "./web-search-model.js";
 import { WebSearchProviderRegistry } from "./web-search-providers.js";
 import type { WebFetchExecutor } from "./web-fetch-model.js";
+import type { WebFetchResearchCaptureProvider } from "./web-fetch-model.js";
 import { RunWebFetchSourceManager } from "./web-fetch-sources.js";
 import { createWebFetchTool } from "./web-fetch-tool.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
@@ -49,12 +50,14 @@ export class AgentCapabilityRuntime {
   ) {
     this.webSearch = network.webSearch ?? new WebSearchProviderRegistry();
     this.webFetch = network.webFetch ?? new RunWebFetchSourceManager();
+    const webFetchCapture = webFetchResearchCaptureProvider(this.webFetch);
     this.sessions = new AgentSessionRuntime(
       processes,
       store.workspaceRoot,
       sandbox,
       browserSessions,
       researchSourceCaptures,
+      webFetchCapture,
     );
   }
 
@@ -132,6 +135,16 @@ export class AgentCapabilityRuntime {
     );
     if (failure) throw failure.reason;
   }
+}
+
+function webFetchResearchCaptureProvider(
+  executor: WebFetchExecutor,
+): WebFetchResearchCaptureProvider | undefined {
+  if (!executor.captureWebSource) return undefined;
+  return {
+    captureWebSource: (owner, request, signal) =>
+      executor.captureWebSource!(owner, request, signal),
+  };
 }
 
 function sessionToolsAllowed(

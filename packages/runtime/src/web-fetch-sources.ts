@@ -2,6 +2,7 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import { PublicHttpClient } from "./public-http-client.js";
 import { parseWebFetchBody } from "./web-fetch-content.js";
+import { createWebFetchResearchCapture } from "./web-fetch-research-capture.js";
 import {
   MAX_WEB_FETCH_BODY_BYTES,
   MAX_WEB_FETCH_FIND_RESULTS,
@@ -9,6 +10,8 @@ import {
   MAX_WEB_FETCH_READ_LINES,
   MAX_WEB_FETCH_SOURCES_PER_RUN,
   type WebFetchExecutor,
+  type WebFetchResearchCapture,
+  type WebFetchResearchCaptureProvider,
   type WebFetchRequest,
   type WebFetchResult,
   type WebFetchSource,
@@ -27,7 +30,9 @@ interface RunWebFetchSources {
   sources: Map<string, WebFetchSource>;
 }
 
-export class RunWebFetchSourceManager implements WebFetchExecutor {
+export class RunWebFetchSourceManager
+  implements WebFetchExecutor, WebFetchResearchCaptureProvider
+{
   private readonly runs = new Map<string, RunWebFetchSources>();
   private readonly tails = new Map<string, Promise<void>>();
   private readonly cancellations = new Map<string, AbortController>();
@@ -75,6 +80,34 @@ export class RunWebFetchSourceManager implements WebFetchExecutor {
     await this.tails.get(key)?.catch(() => undefined);
     this.runs.delete(key);
     this.cancellations.delete(key);
+  }
+
+  async captureWebSource(
+    owner: { threadId: string; runId: string },
+    request: {
+      webSourceId: string;
+      webSourceContentSha256: string;
+      maxChars: number;
+    },
+    signal?: AbortSignal,
+  ): Promise<WebFetchResearchCapture> {
+    const key = ownerKey(owner);
+    const cancellation = this.runCancellation(key);
+    const operationSignal = signal
+      ? AbortSignal.any([signal, cancellation.signal])
+      : cancellation.signal;
+    return this.serialized(
+      key,
+      async () => {
+        throwIfAborted(operationSignal);
+        const { source } = this.source(key, {
+          sourceId: request.webSourceId,
+          sourceContentSha256: request.webSourceContentSha256,
+        });
+        return createWebFetchResearchCapture(source, request.maxChars);
+      },
+      operationSignal,
+    );
   }
 
   private async fetch(

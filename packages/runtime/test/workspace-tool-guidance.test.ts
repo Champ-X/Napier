@@ -162,6 +162,9 @@ describe("workspace tool guidance", () => {
       "call research_source capture to freeze bounded visible text",
     );
     expect(guidance).toContain(
+      "call research_source capture_fetch with its exact Web Source ID",
+    );
+    expect(guidance).toContain(
       "A citation token proves only the captured range-to-claim binding",
     );
     expect(guidance).toContain("capture disconfirming evidence");

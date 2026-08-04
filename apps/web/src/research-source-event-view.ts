@@ -1,5 +1,11 @@
 export interface ResearchSourceToolEventTraceView {
-  researchSourceAction?: "capture" | "cite" | "verify_report" | "list";
+  researchSourceAction?:
+    | "capture"
+    | "capture_fetch"
+    | "cite"
+    | "verify_report"
+    | "list";
+  researchSourceKind?: "browser" | "web_fetch";
   researchSourceId?: string;
   researchCitationId?: string;
   researchCitationTokenSha256?: string;
@@ -29,11 +35,15 @@ export interface ResearchSourceToolEventTraceView {
   researchBrowserVersionSha256?: string;
   researchBrowserLimitsSha256?: string;
   researchBrowserNetworkDestinationsSha256?: string;
+  researchWebSourceContentSha256?: string;
+  researchWebSourceBodySha256?: string;
+  researchWebSourceFormat?: "html" | "markdown" | "json" | "text" | "pdf";
+  researchWebSourceLineCount?: number;
 }
 
 const ACTIONS = new Set<
   ResearchSourceToolEventTraceView["researchSourceAction"]
->(["capture", "cite", "verify_report", "list"]);
+>(["capture", "capture_fetch", "cite", "verify_report", "list"]);
 const SOURCE_ID = /^source_[a-z0-9]{8,80}$/u;
 const CITATION_ID = /^citation_[a-z0-9]{8,80}$/u;
 const SOURCE_FIELDS = [
@@ -60,6 +70,20 @@ const CITATION_FIELDS = [
   "citationEndLine",
   "citationQuoteSha256",
   "citationClaimSha256",
+] as const;
+const BROWSER_FIELDS = [
+  "browserSessionOperation",
+  "browserSessionIdSha256",
+  "browserExecutableSha256",
+  "browserVersionSha256",
+  "browserLimitsSha256",
+  "browserNetworkDestinationsSha256",
+] as const;
+const WEB_FETCH_FIELDS = [
+  "webSourceContentSha256",
+  "webSourceBodySha256",
+  "webSourceFormat",
+  "webSourceLineCount",
 ] as const;
 const REPORT_FIELDS = [
   "reportPathSha256",
@@ -93,64 +117,32 @@ export function researchSourceEventEvidence(
   ) {
     return undefined;
   }
-  if (action === "list") {
-    if (
-      SOURCE_FIELDS.some((field) => value[field] !== undefined) ||
-      CITATION_FIELDS.some((field) => value[field] !== undefined) ||
-      REPORT_FIELDS.some((field) => value[field] !== undefined)
-    ) {
-      return undefined;
-    }
-    return {
-      researchSourceAction: action,
-      researchSourceCount: sourceCount,
-      researchCitationCount: citationCount,
-      researchSourceSetSha256: value["sourceSetSha256"],
-    };
-  }
+  const counts = { sourceCount, citationCount };
+  if (action === "list") return listEvidence(value, counts);
   if (action === "verify_report") {
-    const reportFileBytes = integer(value["reportFileBytes"], 1, 256 * 1024);
-    const reportCitationCount = integer(value["reportCitationCount"], 1, 64);
-    if (
-      SOURCE_FIELDS.some((field) => value[field] !== undefined) ||
-      CITATION_FIELDS.some((field) => value[field] !== undefined) ||
-      sourceCount < 1 ||
-      citationCount < 1 ||
-      !sha256(value["reportPathSha256"]) ||
-      !sha256(value["reportFileSha256"]) ||
-      reportFileBytes === undefined ||
-      reportCitationCount === undefined ||
-      reportCitationCount > citationCount ||
-      !sha256(value["reportCitationSetSha256"])
-    ) {
-      return undefined;
-    }
-    return {
-      researchSourceAction: action,
-      researchSourceCount: sourceCount,
-      researchCitationCount: citationCount,
-      researchSourceSetSha256: value["sourceSetSha256"],
-      researchReportPathSha256: value["reportPathSha256"],
-      researchReportFileSha256: value["reportFileSha256"],
-      researchReportFileBytes: reportFileBytes,
-      researchReportCitationCount: reportCitationCount,
-      researchReportCitationSetSha256: value["reportCitationSetSha256"],
-    };
+    return reportEvidence(value, counts);
   }
+  return sourceOrCitationEvidence(value, action, counts);
+}
 
+function sourceOrCitationEvidence(
+  value: Record<string, unknown>,
+  action: "capture" | "capture_fetch" | "cite",
+  counts: { sourceCount: number; citationCount: number },
+): ResearchSourceToolEventTraceView | undefined {
   const sourceId =
     typeof value["sourceId"] === "string" && SOURCE_ID.test(value["sourceId"])
       ? value["sourceId"]
       : undefined;
+  const sourceKind =
+    value["sourceKind"] === "browser" || value["sourceKind"] === "web_fetch"
+      ? value["sourceKind"]
+      : undefined;
   const sourceLineCount = integer(value["sourceLineCount"], 1, 400);
   const sourceTextChars = integer(value["sourceTextChars"], 1, 24_000);
-  const browserSessionOperation = integer(
-    value["browserSessionOperation"],
-    1,
-    64,
-  );
   if (
     !sourceId ||
+    !sourceKind ||
     !sha256(value["sourceContentSha256"]) ||
     !sha256(value["sourceUrlSha256"]) ||
     !sha256(value["sourceOriginSha256"]) ||
@@ -160,18 +152,15 @@ export function researchSourceEventEvidence(
     sourceTextChars === undefined ||
     sourceTextChars < sourceLineCount * 2 - 1 ||
     typeof value["sourceTruncated"] !== "boolean" ||
-    sourceCount < 1 ||
-    browserSessionOperation === undefined ||
-    !sha256(value["browserSessionIdSha256"]) ||
-    !sha256(value["browserExecutableSha256"]) ||
-    !sha256(value["browserVersionSha256"]) ||
-    !sha256(value["browserLimitsSha256"]) ||
-    !sha256(value["browserNetworkDestinationsSha256"])
+    counts.sourceCount < 1
   ) {
     return undefined;
   }
+  const provenance = sourceProvenance(value, sourceKind);
+  if (!provenance) return undefined;
   const sourceEvidence: ResearchSourceToolEventTraceView = {
     researchSourceAction: action,
+    researchSourceKind: sourceKind,
     researchSourceId: sourceId,
     researchSourceContentSha256: value["sourceContentSha256"],
     researchSourceUrlSha256: value["sourceUrlSha256"],
@@ -181,18 +170,18 @@ export function researchSourceEventEvidence(
     researchSourceLineCount: sourceLineCount,
     researchSourceTextChars: sourceTextChars,
     researchSourceTruncated: value["sourceTruncated"],
-    researchSourceCount: sourceCount,
-    researchCitationCount: citationCount,
-    researchSourceSetSha256: value["sourceSetSha256"],
-    researchBrowserSessionOperation: browserSessionOperation,
-    researchBrowserSessionIdSha256: value["browserSessionIdSha256"],
-    researchBrowserExecutableSha256: value["browserExecutableSha256"],
-    researchBrowserVersionSha256: value["browserVersionSha256"],
-    researchBrowserLimitsSha256: value["browserLimitsSha256"],
-    researchBrowserNetworkDestinationsSha256:
-      value["browserNetworkDestinationsSha256"],
+    researchSourceCount: counts.sourceCount,
+    researchCitationCount: counts.citationCount,
+    researchSourceSetSha256: value["sourceSetSha256"] as string,
+    ...provenance,
   };
-  if (action === "capture") {
+  if (action === "capture" || action === "capture_fetch") {
+    if (
+      (action === "capture" && sourceKind !== "browser") ||
+      (action === "capture_fetch" && sourceKind !== "web_fetch")
+    ) {
+      return undefined;
+    }
     return CITATION_FIELDS.some((field) => value[field] !== undefined) ||
       REPORT_FIELDS.some((field) => value[field] !== undefined)
       ? undefined
@@ -216,7 +205,7 @@ export function researchSourceEventEvidence(
     endLine - startLine + 1 > 40 ||
     !sha256(value["citationQuoteSha256"]) ||
     !sha256(value["citationClaimSha256"]) ||
-    citationCount < 1 ||
+    counts.citationCount < 1 ||
     REPORT_FIELDS.some((field) => value[field] !== undefined)
   ) {
     return undefined;
@@ -232,12 +221,71 @@ export function researchSourceEventEvidence(
   };
 }
 
+function listEvidence(
+  value: Record<string, unknown>,
+  counts: { sourceCount: number; citationCount: number },
+): ResearchSourceToolEventTraceView | undefined {
+  if (
+    SOURCE_FIELDS.some((field) => value[field] !== undefined) ||
+    CITATION_FIELDS.some((field) => value[field] !== undefined) ||
+    value["sourceKind"] !== undefined ||
+    WEB_FETCH_FIELDS.some((field) => value[field] !== undefined) ||
+    REPORT_FIELDS.some((field) => value[field] !== undefined)
+  ) {
+    return undefined;
+  }
+  return {
+    researchSourceAction: "list",
+    researchSourceCount: counts.sourceCount,
+    researchCitationCount: counts.citationCount,
+    researchSourceSetSha256: value["sourceSetSha256"] as string,
+  };
+}
+
+function reportEvidence(
+  value: Record<string, unknown>,
+  counts: { sourceCount: number; citationCount: number },
+): ResearchSourceToolEventTraceView | undefined {
+  const reportFileBytes = integer(value["reportFileBytes"], 1, 256 * 1024);
+  const reportCitationCount = integer(value["reportCitationCount"], 1, 64);
+  if (
+    SOURCE_FIELDS.some((field) => value[field] !== undefined) ||
+    CITATION_FIELDS.some((field) => value[field] !== undefined) ||
+    value["sourceKind"] !== undefined ||
+    WEB_FETCH_FIELDS.some((field) => value[field] !== undefined) ||
+    counts.sourceCount < 1 ||
+    counts.citationCount < 1 ||
+    !sha256(value["reportPathSha256"]) ||
+    !sha256(value["reportFileSha256"]) ||
+    reportFileBytes === undefined ||
+    reportCitationCount === undefined ||
+    reportCitationCount > counts.citationCount ||
+    !sha256(value["reportCitationSetSha256"])
+  ) {
+    return undefined;
+  }
+  return {
+    researchSourceAction: "verify_report",
+    researchSourceCount: counts.sourceCount,
+    researchCitationCount: counts.citationCount,
+    researchSourceSetSha256: value["sourceSetSha256"] as string,
+    researchReportPathSha256: value["reportPathSha256"] as string,
+    researchReportFileSha256: value["reportFileSha256"] as string,
+    researchReportFileBytes: reportFileBytes,
+    researchReportCitationCount: reportCitationCount,
+    researchReportCitationSetSha256: value["reportCitationSetSha256"] as string,
+  };
+}
+
 export function researchSourceSummaryParts(
   view: ResearchSourceToolEventTraceView,
 ): string[] {
   return [
     ...(view.researchSourceAction
       ? [`research-source ${view.researchSourceAction}`]
+      : []),
+    ...(view.researchSourceKind
+      ? [`source-kind ${view.researchSourceKind}`]
       : []),
     ...(view.researchSourceCount !== undefined
       ? [`sources ${view.researchSourceCount}`]
@@ -267,6 +315,12 @@ export function researchSourceSummaryParts(
     ...(view.researchBrowserSessionOperation !== undefined
       ? [`browser-operation ${view.researchBrowserSessionOperation}`]
       : []),
+    ...(view.researchWebSourceFormat
+      ? [`web-source-format ${view.researchWebSourceFormat}`]
+      : []),
+    ...(view.researchWebSourceLineCount !== undefined
+      ? [`web-source-lines ${view.researchWebSourceLineCount}`]
+      : []),
     ...hash("source-content", view.researchSourceContentSha256),
     ...hash("source-set", view.researchSourceSetSha256),
     ...hash("citation-quote", view.researchCitationQuoteSha256),
@@ -279,7 +333,63 @@ export function researchSourceSummaryParts(
       "browser-destinations",
       view.researchBrowserNetworkDestinationsSha256,
     ),
+    ...hash("web-source-content", view.researchWebSourceContentSha256),
+    ...hash("web-source-body", view.researchWebSourceBodySha256),
   ];
+}
+
+function sourceProvenance(
+  value: Record<string, unknown>,
+  sourceKind: "browser" | "web_fetch",
+): ResearchSourceToolEventTraceView | undefined {
+  if (sourceKind === "browser") {
+    const operation = integer(value["browserSessionOperation"], 1, 64);
+    if (
+      operation === undefined ||
+      !sha256(value["browserSessionIdSha256"]) ||
+      !sha256(value["browserExecutableSha256"]) ||
+      !sha256(value["browserVersionSha256"]) ||
+      !sha256(value["browserLimitsSha256"]) ||
+      !sha256(value["browserNetworkDestinationsSha256"]) ||
+      WEB_FETCH_FIELDS.some((field) => value[field] !== undefined)
+    ) {
+      return undefined;
+    }
+    return {
+      researchBrowserSessionOperation: operation,
+      researchBrowserSessionIdSha256: value["browserSessionIdSha256"],
+      researchBrowserExecutableSha256: value["browserExecutableSha256"],
+      researchBrowserVersionSha256: value["browserVersionSha256"],
+      researchBrowserLimitsSha256: value["browserLimitsSha256"],
+      researchBrowserNetworkDestinationsSha256:
+        value["browserNetworkDestinationsSha256"],
+    };
+  }
+  const format = value["webSourceFormat"];
+  const lineCount = integer(value["webSourceLineCount"], 1, 20_000);
+  if (
+    !isWebSourceFormat(format) ||
+    lineCount === undefined ||
+    !sha256(value["webSourceContentSha256"]) ||
+    !sha256(value["webSourceBodySha256"]) ||
+    BROWSER_FIELDS.some((field) => value[field] !== undefined)
+  ) {
+    return undefined;
+  }
+  return {
+    researchWebSourceContentSha256: value["webSourceContentSha256"],
+    researchWebSourceBodySha256: value["webSourceBodySha256"],
+    researchWebSourceFormat: format,
+    researchWebSourceLineCount: lineCount,
+  };
+}
+
+function isWebSourceFormat(
+  value: unknown,
+): value is NonNullable<
+  ResearchSourceToolEventTraceView["researchWebSourceFormat"]
+> {
+  return ["html", "markdown", "json", "text", "pdf"].includes(String(value));
 }
 
 function record(value: unknown): value is Record<string, unknown> {

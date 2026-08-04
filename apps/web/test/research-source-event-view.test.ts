@@ -17,6 +17,7 @@ describe("Research Source Trace projection", () => {
     expect(view).toEqual(
       expect.objectContaining({
         researchSourceAction: "cite",
+        researchSourceKind: "browser",
         researchSourceId: "source_fixture0001",
         researchCitationId: "citation_fixture0001",
         researchSourceLineCount: 8,
@@ -31,6 +32,58 @@ describe("Research Source Trace projection", () => {
     expect(researchSourceSummaryParts(view!)).toContain("research-source cite");
     expect(researchSourceSummaryParts(view!)).toContain("citation-range 2-4");
     expect(JSON.stringify(view)).not.toContain("PRIVATE_RESEARCH");
+  });
+
+  it("projects Web Fetch Source provenance without Source bodies or IDs", () => {
+    const details = {
+      ...citationDetails(),
+      action: "capture_fetch",
+      sourceKind: "web_fetch",
+      citationId: undefined,
+      citationTokenSha256: undefined,
+      citationStartLine: undefined,
+      citationEndLine: undefined,
+      citationQuoteSha256: undefined,
+      citationClaimSha256: undefined,
+      browserSessionOperation: undefined,
+      browserSessionIdSha256: undefined,
+      browserExecutableSha256: undefined,
+      browserVersionSha256: undefined,
+      browserLimitsSha256: undefined,
+      browserNetworkDestinationsSha256: undefined,
+      webSourceContentSha256: "a".repeat(64),
+      webSourceBodySha256: "b".repeat(64),
+      webSourceFormat: "pdf",
+      webSourceLineCount: 20,
+      webSourceId: "websource_private",
+      sourceBody: "PRIVATE_FETCH_SOURCE_BODY",
+    };
+    const view = researchSourceEventEvidence(details);
+
+    expect(view).toEqual(
+      expect.objectContaining({
+        researchSourceAction: "capture_fetch",
+        researchSourceKind: "web_fetch",
+        researchWebSourceFormat: "pdf",
+        researchWebSourceLineCount: 20,
+        researchWebSourceContentSha256: "a".repeat(64),
+        researchWebSourceBodySha256: "b".repeat(64),
+      }),
+    );
+    expect(researchSourceSummaryParts(view!)).toContain(
+      "research-source capture_fetch",
+    );
+    expect(researchSourceSummaryParts(view!)).toContain(
+      "source-kind web_fetch",
+    );
+    expect(JSON.stringify(view)).not.toContain("websource_private");
+    expect(JSON.stringify(view)).not.toContain("PRIVATE_FETCH_SOURCE_BODY");
+    expect(
+      researchSourceEventEvidence({
+        ...details,
+        browserSessionOperation: 2,
+      }),
+    ).toBeUndefined();
   });
 
   it("integrates Research Source evidence into generic tool summaries", () => {
@@ -169,6 +222,7 @@ function citationDetails() {
     kind: "napier.research-source",
     schemaVersion: 1,
     action: "cite",
+    sourceKind: "browser",
     sourceId: "source_fixture0001",
     citationId: "citation_fixture0001",
     citationTokenSha256: "1".repeat(64),

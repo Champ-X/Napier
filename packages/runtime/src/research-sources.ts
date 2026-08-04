@@ -1,11 +1,34 @@
-import type {
-  BrowserPageSourceCapture,
-  BrowserSessionOwner,
-} from "./browser-session-model.js";
-import { canonicalJson, sha256 } from "./ed25519.js";
+import type { BrowserSessionOwner } from "./browser-session-model.js";
+import { sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
+import {
+  researchRunCounts,
+  researchSourceDetails,
+  type ResearchSourceEvidenceRecord,
+} from "./research-source-evidence.js";
 import { verifyResearchReport } from "./research-report-verification.js";
-import { validateResearchBrowserCapture } from "./research-source-capture.js";
+import {
+  browserResearchCapture,
+  captureContentSha256,
+  validateResearchBrowserCapture,
+  validateResearchWebFetchCapture,
+} from "./research-source-capture.js";
+import type {
+  BrowserSourceCaptureProvider,
+  ResearchSourceCapture,
+  ResearchSourceRequest,
+  ResearchSourceResult,
+  ResearchSourceToolDetails,
+  WebFetchResearchSourceCapture,
+} from "./research-source-model.js";
+import type { WebFetchResearchCaptureProvider } from "./web-fetch-model.js";
+
+export type {
+  BrowserSourceCaptureProvider,
+  ResearchSourceRequest,
+  ResearchSourceResult,
+  ResearchSourceToolDetails,
+} from "./research-source-model.js";
 
 export const MAX_RESEARCH_SOURCES_PER_RUN = 16;
 export const MAX_RESEARCH_CITATIONS_PER_RUN = 64;
@@ -16,73 +39,7 @@ export const DEFAULT_RESEARCH_SOURCE_CHARS = 12_000;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const SOURCE_ID = /^source_[a-z0-9]{8,80}$/u;
 
-export interface BrowserSourceCaptureProvider {
-  capturePage(
-    owner: BrowserSessionOwner,
-    maxChars: number,
-    signal?: AbortSignal,
-  ): Promise<BrowserPageSourceCapture>;
-}
-
-export type ResearchSourceRequest =
-  | { action: "capture"; maxChars?: number }
-  | {
-      action: "cite";
-      sourceId: string;
-      sourceContentSha256: string;
-      startLine: number;
-      endLine: number;
-      claim: string;
-    }
-  | { action: "verify_report"; path: string; expectedSha256: string }
-  | { action: "list" };
-
-export interface ResearchSourceToolDetails {
-  kind: "napier.research-source";
-  schemaVersion: 1;
-  action: ResearchSourceRequest["action"];
-  sourceId?: string;
-  citationId?: string;
-  citationTokenSha256?: string;
-  sourceContentSha256?: string;
-  sourceUrlSha256?: string;
-  sourceOriginSha256?: string;
-  sourceTitleSha256?: string;
-  sourceTextSha256?: string;
-  sourceLineCount?: number;
-  sourceTextChars?: number;
-  sourceTruncated?: boolean;
-  citationStartLine?: number;
-  citationEndLine?: number;
-  citationQuoteSha256?: string;
-  citationClaimSha256?: string;
-  reportPathSha256?: string;
-  reportFileSha256?: string;
-  reportFileBytes?: number;
-  reportCitationCount?: number;
-  reportCitationSetSha256?: string;
-  sourceCount: number;
-  citationCount: number;
-  sourceSetSha256: string;
-  browserSessionOperation?: number;
-  browserSessionIdSha256?: string;
-  browserExecutableSha256?: string;
-  browserVersionSha256?: string;
-  browserLimitsSha256?: string;
-  browserNetworkDestinationsSha256?: string;
-}
-
-export interface ResearchSourceResult {
-  output: string;
-  details: ResearchSourceToolDetails;
-}
-
-interface StoredResearchSource {
-  id: string;
-  capture: BrowserPageSourceCapture;
-  origin: string;
-  textSha256: string;
-}
+type StoredResearchSource = ResearchSourceEvidenceRecord;
 
 interface StoredCitation {
   id: string;
@@ -108,6 +65,7 @@ export class RunResearchSourceManager {
   constructor(
     private readonly browser: BrowserSourceCaptureProvider,
     private readonly workspaceRoot?: string,
+    private readonly webFetch?: WebFetchResearchCaptureProvider,
   ) {}
 
   async execute(
@@ -126,7 +84,15 @@ export class RunResearchSourceManager {
         async () => {
           assertNotAborted(operationSignal);
           if (request.action === "capture") {
-            return this.capture(key, owner, request.maxChars, operationSignal);
+            return this.captureBrowser(
+              key,
+              owner,
+              request.maxChars,
+              operationSignal,
+            );
+          }
+          if (request.action === "capture_fetch") {
+            return this.captureFetch(key, owner, request, operationSignal);
           }
           if (request.action === "cite") {
             return this.cite(key, request);
@@ -154,7 +120,7 @@ export class RunResearchSourceManager {
     this.cancellations.delete(key);
   }
 
-  private async capture(
+  private async captureBrowser(
     key: string,
     owner: BrowserSessionOwner,
     requestedMaxChars: number | undefined,
@@ -165,9 +131,70 @@ export class RunResearchSourceManager {
       throw new Error("Research Source limit reached for this Run");
     }
     const maxChars = normalizeCaptureLimit(requestedMaxChars);
-    const capture = await this.browser.capturePage(owner, maxChars, signal);
+    const browserCapture = await this.browser.capturePage(
+      owner,
+      maxChars,
+      signal,
+    );
     assertNotAborted(signal);
-    const url = validateResearchBrowserCapture(capture, maxChars);
+    const url = validateResearchBrowserCapture(browserCapture, maxChars);
+    return this.storeCapture(
+      key,
+      "capture",
+      browserResearchCapture(browserCapture),
+      url,
+    );
+  }
+
+  private async captureFetch(
+    key: string,
+    owner: BrowserSessionOwner,
+    request: Extract<ResearchSourceRequest, { action: "capture_fetch" }>,
+    signal?: AbortSignal,
+  ): Promise<ResearchSourceResult> {
+    if (!this.webFetch) {
+      throw new Error("Web Fetch Research Source capture is unavailable");
+    }
+    const maxChars = normalizeCaptureLimit(request.maxChars);
+    const fetched = await this.webFetch.captureWebSource(
+      owner,
+      {
+        webSourceId: request.webSourceId,
+        webSourceContentSha256: request.webSourceContentSha256,
+        maxChars,
+      },
+      signal,
+    );
+    assertNotAborted(signal);
+    const capture: WebFetchResearchSourceCapture = {
+      kind: "web_fetch",
+      url: fetched.url,
+      title: fetched.title,
+      lines: [...fetched.lines],
+      textChars: fetched.textChars,
+      truncated: fetched.truncated,
+      capturedContentSha256: captureContentSha256(fetched),
+      webFetch: {
+        sourceContentSha256: fetched.webSourceContentSha256,
+        sourceBodySha256: fetched.webSourceBodySha256,
+        sourceFormat: fetched.webSourceFormat,
+        sourceLineCount: fetched.webSourceLineCount,
+      },
+    };
+    const url = validateResearchWebFetchCapture(capture, maxChars);
+    return this.storeCapture(key, "capture_fetch", capture, url);
+  }
+
+  private storeCapture(
+    key: string,
+    action: "capture" | "capture_fetch",
+    capture: ResearchSourceCapture,
+    url: URL,
+  ): ResearchSourceResult {
+    const run = this.runSources(key);
+    if (run.sources.size >= MAX_RESEARCH_SOURCES_PER_RUN) {
+      throw new Error("Research Source limit reached for this Run");
+    }
     const source: StoredResearchSource = {
       id: createId("source"),
       capture: structuredClone(capture),
@@ -177,7 +204,7 @@ export class RunResearchSourceManager {
     run.sources.set(source.id, source);
     return {
       output: formatCapture(source),
-      details: sourceDetails("capture", run, source),
+      details: researchSourceDetails(action, runCounts(run), source),
     };
   }
 
@@ -224,7 +251,7 @@ export class RunResearchSourceManager {
     return {
       output: formatCitation(source, citation, claim, quote),
       details: {
-        ...sourceDetails("cite", run, source),
+        ...researchSourceDetails("cite", runCounts(run), source),
         citationId,
         citationTokenSha256: sha256(token),
         citationStartLine: startLine,
@@ -327,49 +354,13 @@ export class RunResearchSourceManager {
   }
 }
 
-function sourceDetails(
-  action: "capture" | "cite",
-  run: RunResearchSources,
-  source: StoredResearchSource,
-): ResearchSourceToolDetails {
-  return {
-    kind: "napier.research-source",
-    schemaVersion: 1,
-    action,
-    sourceId: source.id,
-    sourceContentSha256: source.capture.capturedContentSha256,
-    sourceUrlSha256: sha256(source.capture.url),
-    sourceOriginSha256: sha256(source.origin),
-    sourceTitleSha256: sha256(source.capture.title),
-    sourceTextSha256: source.textSha256,
-    sourceLineCount: source.capture.lines.length,
-    sourceTextChars: source.capture.textChars,
-    sourceTruncated: source.capture.truncated,
-    ...runCounts(run),
-    browserSessionOperation: source.capture.sessionOperation,
-    browserSessionIdSha256: source.capture.sessionIdSha256,
-    browserExecutableSha256: source.capture.browserExecutableSha256,
-    browserVersionSha256: source.capture.browserVersionSha256,
-    browserLimitsSha256: source.capture.limitsSha256,
-    browserNetworkDestinationsSha256: source.capture.network.destinationsSha256,
-  };
-}
-
 function runCounts(
   run: RunResearchSources,
 ): Pick<
   ResearchSourceToolDetails,
   "sourceCount" | "citationCount" | "sourceSetSha256"
 > {
-  const sources = [...run.sources.values()].map((source) => ({
-    id: source.id,
-    contentSha256: source.capture.capturedContentSha256,
-  }));
-  return {
-    sourceCount: sources.length,
-    citationCount: run.citations.length,
-    sourceSetSha256: sha256(canonicalJson(sources)),
-  };
+  return researchRunCounts(run.sources.values(), run.citations.length);
 }
 
 function formatCapture(source: StoredResearchSource): string {
@@ -504,7 +495,6 @@ async function waitForTurn(
 }
 
 function assertNotAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
+  if (signal?.aborted)
     throw new Error("Research Source operation was cancelled");
-  }
 }

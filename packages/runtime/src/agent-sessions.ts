@@ -13,6 +13,7 @@ import {
   RunResearchSourceManager,
 } from "./research-sources.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
+import type { WebFetchResearchCaptureProvider } from "./web-fetch-model.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 
 export class AgentSessionRuntime {
@@ -28,6 +29,7 @@ export class AgentSessionRuntime {
     sandbox: OsSandboxAdapter,
     browserSessions?: RunBrowserSessionManager,
     researchSourceCaptures?: BrowserSourceCaptureProvider,
+    webFetchCaptures?: WebFetchResearchCaptureProvider,
   ) {
     this.kernels = new AgentKernelRuntime(processes);
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
@@ -36,6 +38,7 @@ export class AgentSessionRuntime {
     this.researchSources = new RunResearchSourceManager(
       researchSourceCaptures ?? this.browsers,
       workspaceRoot,
+      webFetchCaptures,
     );
     this.debuggerManager = processes
       ? new NodeDebuggerManager(processes, workspaceRoot)

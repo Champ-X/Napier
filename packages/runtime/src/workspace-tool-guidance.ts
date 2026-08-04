@@ -232,6 +232,7 @@ export function formatWorkspaceToolGuidance(
   if (hasResearchSource) {
     lines.push(
       "After inspecting a relevant Browser page, call research_source capture to freeze bounded visible text for this Run. Use cite with the exact Source ID, capture SHA-256, smallest sufficient line range, and the precise claim it supports.",
+      "After web_fetch returns a relevant static Source, call research_source capture_fetch with its exact Web Source ID and content SHA-256 instead of refetching or copying text. Then cite the imported Research Source normally.",
       "A citation token proves only the captured range-to-claim binding. It does not establish source authority or logical sufficiency. Prefer primary sources, capture disconfirming evidence, and place each returned citation token immediately after its supported claim.",
       "After writing a Markdown report, call research_source verify_report with its actual complete-file SHA-256. Put each token once at the end of its exact claim line; list citation IDs rather than repeating tokens in the evidence ledger.",
     );

@@ -114,6 +114,25 @@ describe("Research outcome benchmark", () => {
       expect(serialized).not.toContain(raw);
     }
 
+    const wrongSourceKind = structuredClone(
+      artifacts.bundle,
+    ) as ResearchBenchmarkLedgerBundle;
+    const wrongKindCapture = wrongSourceKind.researchEvents.find(
+      (event) =>
+        record(record(event.payload)?.["details"])?.["action"] === "capture",
+    )!;
+    record(record(wrongKindCapture.payload)?.["details"])!["sourceKind"] =
+      "web_fetch";
+    wrongSourceKind.contentSha256 = sha256(
+      canonicalJson(withoutHash(wrongSourceKind) as never),
+    );
+    expect(verifyResearchBenchmarkLedgerBundle(wrongSourceKind)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: expect.arrayContaining(["ledger_shape_invalid"]),
+      }),
+    );
+
     const tampered = structuredClone(
       artifacts.bundle,
     ) as ResearchBenchmarkLedgerBundle;

@@ -42,6 +42,11 @@ describe("RunWebFetchSourceManager", () => {
       endLine: fetched.details.sourceLineCount!,
     });
     const listed = await manager.execute(OWNER, { action: "list" });
+    const research = await manager.captureWebSource(OWNER, {
+      webSourceId: sourceId,
+      webSourceContentSha256: contentSha256,
+      maxChars: 12_000,
+    });
 
     expect(http.request).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -65,6 +70,16 @@ describe("RunWebFetchSourceManager", () => {
     expect(found.details.findMatchCount).toBe(1);
     expect(read.output).toContain("Alpha evidence line");
     expect(listed.output).toContain(sourceId);
+    expect(research).toEqual(
+      expect.objectContaining({
+        url: "https://example.com/source",
+        title: "Source title",
+        webSourceContentSha256: contentSha256,
+        webSourceFormat: "html",
+        webSourceLineCount: fetched.details.sourceLineCount,
+      }),
+    );
+    expect(research.lines.join("\n")).toContain("Beta evidence line");
 
     await expect(
       manager.execute(OWNER, {
@@ -84,6 +99,16 @@ describe("RunWebFetchSourceManager", () => {
           sourceContentSha256: contentSha256,
           startLine: 1,
           endLine: 1,
+        },
+      ),
+    ).rejects.toThrow("not found for this Run");
+    await expect(
+      manager.captureWebSource(
+        { threadId: OWNER.threadId, runId: "run_other" },
+        {
+          webSourceId: sourceId,
+          webSourceContentSha256: contentSha256,
+          maxChars: 12_000,
         },
       ),
     ).rejects.toThrow("not found for this Run");

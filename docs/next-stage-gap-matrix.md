@@ -26,14 +26,17 @@ Audit date: 2026-08-04
   the same capability assembly and privacy-bounded Tool events. Configured
   Brave/Tavily providers fall back to credential-free Bing RSS and DuckDuckGo
   HTML through DNS-pinned, redirect-revalidated public HTTP. A sibling default
-  `web_fetch` reads public HTML/Markdown/JSON/text/PDF
-  into bounded Run-local Sources with progressive read/find. Dynamic Browser
-  fallback, cross-restart Source retention, citation-backed open-web Research,
-  default Browser interaction, and Browser Live remain P0.
+  `web_fetch` reads public HTML/Markdown/JSON/text/PDF into bounded Run-local
+  Sources with progressive read/find. `research_source capture_fetch` imports
+  an exact same-Run Web Source by ID/hash into the existing claim-bound
+  citation and report-verification chain. Dynamic Browser fallback,
+  cross-restart Source retention, default Browser interaction, and Browser
+  Live remain P0.
 - A fresh default Agent also receives a read-only Browser schema plus
-  `research_source`. Dynamic pages can `start -> wait -> capture -> cite ->
-close` without `unrestricted`; click/type/select/upload/download remain
-  absent and policy-denied. Full interaction presets, Browser Live/takeover,
+  `research_source`. Dynamic pages can use Browser `start -> wait`, call
+  `research_source capture -> cite`, then close the Browser without
+  `unrestricted`; click/type/select/upload/download remain absent and
+  policy-denied. Full interaction presets, Browser Live/takeover,
   tabs/history/scroll/find, and effect-specific confirmations remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
@@ -55,7 +58,7 @@ close` without `unrestricted`; click/type/select/upload/download remain
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 web connectivity               | In progress    | Default `web_search` and `web_fetch` cover source discovery plus bounded HTML/Markdown/JSON/text/PDF reading through DNS-pinned transport. A default read-only Browser now covers dynamic rendering with start/navigate/back/wait/snapshot/screenshot/close and `research_source` capture/cite; a real DeepSeek run captured and cited JavaScript-rendered content while interactive actions stayed absent and policy-denied. Remaining P0 work is full interaction presets and effect confirmations, scroll/find/multi-tab/history, Browser Live/takeover/resume, Fetch/Browser Source unification and cross-restart retention, open-web Research/Security benchmarks, setup/doctor diagnostics, and repeated same-model OMP Search/Fetch/Research/Browser comparison. This row remains in progress because dynamic reading is not complete Browser automation or product UX.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| P0 web connectivity               | In progress    | Default `web_search` and `web_fetch` cover source discovery plus bounded HTML/Markdown/JSON/text/PDF reading through DNS-pinned transport. `research_source capture_fetch` now imports an exact same-Run Web Source into the ordinary capture/cite/report-verification chain, while the default read-only Browser covers dynamic rendering with start/navigate/back/wait/snapshot/screenshot/close and Browser capture/cite. Real DeepSeek runs cited both public HTML/PDF Fetch Sources and JavaScript-rendered Browser content while interactive actions stayed absent and policy-denied. Remaining P0 work is full interaction presets and effect confirmations, scroll/find/multi-tab/history, Browser Live/takeover/resume, automatic Fetch/Browser fallback, cross-restart Source retention, open-web Research/Security benchmarks, setup/doctor diagnostics, and repeated same-model OMP Search/Fetch/Research/Browser comparison. This row remains in progress because static/dynamic citation unification does not provide complete Browser automation or product UX.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
@@ -663,6 +666,77 @@ Observed result:
   scroll/find/multi-tab/history, Browser Live/takeover/resume, Source
   unification and cross-restart strategy, open-web Research/Security
   benchmarks, Setup/Doctor diagnostics, and repeated OMP comparison.
+
+## Implemented Slice: Static Fetch Source Citation Unification
+
+User scenario: after reading a public static HTML page or PDF through the
+default `web_fetch` tool, the Agent can bind exact fetched lines to claims and
+reuse the existing verified Markdown report chain without refetching, copying
+untrusted text into a tool request, or enabling unrestricted Browser access.
+
+Acceptance:
+
+- add `research_source capture_fetch` with an exact same-Run Web Source ID,
+  Web Source content SHA-256, and bounded Research capture size;
+- import through the authoritative `RunWebFetchSourceManager` rather than a
+  second network request or a model-supplied quote;
+- derive a separate immutable Research capture hash over URL, title, selected
+  lines, and truncation, then reuse the existing `cite`, `list`, and
+  `verify_report` semantics unchanged;
+- preserve distinct `browser` and `web_fetch` Source provenance in Runtime
+  evidence and Web Trace, rejecting mixed or impossible provenance;
+- hash the Web Source ID in call evidence while retaining exact content/body
+  hashes, format, and bounded line counts; keep URL, title, Source text, quote,
+  claim, report content, citation token, and Web Source ID live-only;
+- keep both registries Run-local, serialized, cancellation-aware, and unsafe
+  for automatic restart recovery;
+- keep the Runtime root barrel and oversized composition modules fixed while
+  removing historical Research registry/capture architecture exceptions.
+
+Threat boundary:
+
+- `capture_fetch` accepts only a Source already admitted by the same Run's
+  DNS-pinned `web_fetch` path. A foreign Run, missing Source, stale hash,
+  invalid format/line/hash binding, empty text, cancellation, or settled Run
+  fails closed;
+- fetched content remains untrusted data. Import and citation do not grant
+  authority, entailment, or permission to act; the Agent guidance still
+  requires primary sources and disconfirming evidence;
+- Browser and Fetch provenance are not interchangeable. Browser-only
+  benchmark evidence requires `sourceKind=browser`, while Web Trace validates
+  only the provenance fields appropriate to each Source kind;
+- process-local source bodies are deliberately not reconstructed from durable
+  hashes. Cross-restart Source retention and automatic Fetch-to-Browser
+  fallback remain separate P0 work.
+
+Observed result:
+
+- focused Runtime/Web suites pass 32 tests covering same-Run Fetch capture,
+  cross-Run denial, static capture/cite/report verification, actual default
+  Agent sequencing, Web Source ID redaction, exact content-hash retention,
+  guidance, Web Trace provenance, and mixed-provenance rejection;
+- the fixed-source Research Outcome benchmark initially exposed an exact-shape
+  compatibility regression from the new `sourceKind` field. Its Browser-only
+  verifier now requires `sourceKind=browser`, rejects Fetch provenance, and
+  passes all four focused benchmark tests;
+- two clean temporary Workspace/Data Root runs used the built CLI with
+  `deepseek/deepseek-v4-flash`. One fetched the public Node.js v24 release HTML
+  and one fetched the W3C dummy PDF; both completed
+  `web_fetch fetch -> research_source capture_fetch -> cite`, created one
+  claim-bound citation, returned their required exact marker, and exposed no
+  credential, URL, body, or `websource_` identifier in Tool events;
+- Architecture passes 896 production source files, 447 test files, and zero
+  cycles. `research-sources.ts` is exactly 500 lines and leaves the historical
+  line override; `research-source-capture.ts` leaves its complexity override;
+  Web Research Trace maximum function complexity drops from 61 to 39;
+- full TypeScript typechecking passes and the complete regular suite passes
+  2,134 tests: Root 104, CLI 170, Server 183, Web 486, Runtime 1,163, and SDK
+  28;
+- P0 remains in progress pending full interaction presets/confirmations,
+  scroll/find/multi-tab/history, Browser Live/takeover/resume, automatic
+  Fetch-to-Browser fallback, cross-restart Source retention, open-web
+  Research/Security benchmarks, Setup/Doctor diagnostics, and repeated
+  same-model OMP comparison.
 
 ## Implemented Slice: Research Outcome Benchmark
 

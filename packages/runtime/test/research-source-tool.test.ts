@@ -123,6 +123,26 @@ describe("research_source Agent tool", () => {
     );
   });
 
+  it("redacts Web Fetch Source IDs while retaining exact content bindings", () => {
+    const projection = researchSourceToolCallArgumentsLedgerProjection({
+      action: "capture_fetch",
+      webSourceId: "websource_private0001",
+      webSourceContentSha256: "a".repeat(64),
+      maxChars: 12_000,
+    });
+    const serialized = JSON.stringify(projection);
+
+    expect(serialized).not.toContain("websource_private0001");
+    expect(projection).toEqual(
+      expect.objectContaining({
+        action: "capture_fetch",
+        webSourceIdSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        webSourceContentSha256: "a".repeat(64),
+        maxChars: 12_000,
+      }),
+    );
+  });
+
   it("returns Source text only as live tool content", async () => {
     const execute = vi.fn(async () => ({
       output: "SOURCE_TEXT_SECRET",

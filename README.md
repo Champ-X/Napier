@@ -257,11 +257,15 @@ Version `0.1.0` includes:
   `read`, `find`, and `list` progressively recover exact line ranges without
   refetching. Downloads stop at 8 MiB, PDF parsing stops at 200 pages/15
   seconds, normalized content stops at 2 million characters/20,000 lines, and
-  Source URLs/bodies remain outside Ledger and Trace;
+  Source URLs/bodies remain outside Ledger and Trace.
+  `research_source capture_fetch` can import that exact same-Run Source by ID
+  and content hash, then reuse the ordinary claim-bound citation and Markdown
+  report verifier;
 - Run-owned controlled Chrome Sessions plus a `research_source` tool that
-  freezes bounded visible page text, binds exact line ranges to report claims,
-  returns citation tokens to the live Agent, and retains only privacy-bounded
-  hashes, ranges, counts, and Browser provenance in Ledger and Trace;
+  freezes bounded Browser or imported Fetch text, binds exact line ranges to
+  report claims, returns citation tokens to the live Agent, and retains only
+  privacy-bounded hashes, ranges, counts, and source-specific provenance in
+  Ledger and Trace;
 - fresh default `observe` Agents expose a read-only Browser schema with
   `start`, `navigate`, `back`, bounded `wait`, `snapshot`, `screenshot`, and
   `close`, plus `research_source` capture/cite/list/report verification.
@@ -3637,15 +3641,19 @@ falling back to `--no-sandbox`.
 
 ### Research Source Capture and Citations
 
-An Agent profile can enable `research_source` alongside `browser` under the
-`unrestricted` policy. After inspecting the active Browser page, `capture`
-freezes up to 24,000 normalized visible characters as an immutable Run-local
-Source. The result includes numbered lines, a Source ID, and a capture
-SHA-256. `cite` requires that exact Source ID and hash, an inclusive range of
-at most 40 lines, and the exact single-line report claim. It recomputes the
-quote and returns a `[citation:citation_...]` token for placement immediately
-after the claim. `list` recovers the current Run's Source and citation tokens
-during a long task.
+The default `observe` Agent exposes `research_source` alongside `web_fetch` and
+its read-only Browser surface. After inspecting the active Browser page,
+`capture` freezes up to 24,000 normalized visible characters as an immutable
+Run-local Source. After reading a static Web Source, `capture_fetch` requires
+the exact same-Run Web Source ID and content SHA-256, imports bounded lines
+without refetching or trusting model-copied text, and freezes a separate
+Research Source capture hash. Both paths return numbered lines, a Research
+Source ID, and a capture SHA-256. `cite` requires that exact Research Source ID
+and hash, an inclusive range of at most 40 lines, and the exact single-line
+report claim. It recomputes the quote and returns a
+`[citation:citation_...]` token for placement immediately after the claim.
+`list` recovers the current Run's Source and citation tokens during a long
+task.
 
 After the Agent writes a report, `verify_report` accepts a workspace-relative
 `.md` or `.markdown` path plus the actual complete-file SHA-256. It reads at
@@ -3656,15 +3664,17 @@ file before returning. Unknown, malformed, duplicated, moved, stale-hash, or
 claim-drifted citations fail closed. Evidence ledgers list citation IDs rather
 than repeating tokens.
 
-Capture happens with Browser network access closed and fails if the page URL
-changes or the page has no visible text. Source and citation operations are
-serialized per Run, isolated across Runs, bounded to 16 Sources and 64
+Browser capture happens with Browser network access closed and fails if the
+page URL changes or the page has no visible text. Fetch import reuses only the
+already-normalized same-Run Source and fails on a foreign Run, stale content
+hash, invalid provenance, or empty bounded text. Source and citation operations
+are serialized per Run, isolated across Runs, bounded to 16 Sources and 64
 citations, and cancelled with Run settlement. Source text, title, URL, quote,
-and claim are available to the live Agent only. Durable events retain the
-capture, source-set, claim, quote, Browser executable/Session/network hashes,
-line range, character/line counts, and truncation state. Because Source text
-is deliberately not restart-adopted, automatic recovery treats
-`research_source` as unsafe even though its tool effect is read.
+claim, and Web Source ID are available to the live Agent only. Durable events
+retain the capture, source-set, claim, quote, source-specific Browser or Web
+Fetch hashes, line range, format, character/line counts, and truncation state.
+Because Source text is deliberately not restart-adopted, automatic recovery
+treats `research_source` as unsafe even though its tool effect is read.
 
 The bundled `research-brief` Skill requires primary-source preference,
 disconfirming evidence, exact claim-to-range binding, adjacent one-use
@@ -3672,6 +3682,13 @@ citation tokens, runtime report verification, an evidence ledger, and a
 verified workspace artifact when the task requests a report. A citation proves
 the captured range and claim binding; it does not prove source authority or
 logical entailment.
+
+The static citation bridge is covered through the real default Agent path and
+the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
+completed `web_fetch fetch -> research_source capture_fetch -> cite` against
+both public Node.js release HTML and the W3C dummy PDF while Tool events
+retained neither URL, body, Web Source ID, nor credential. The complete regular
+suite currently passes 2,134 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
@@ -5818,13 +5835,15 @@ bounded Source preview plus Source ID/content hash; later `read` and `find`
 calls reuse the exact Run-local normalized Source. HTML, JSON, text, and PDF
 content is explicitly labeled untrusted and may never authorize actions.
 Fetched Sources are process-local and automatic recovery blocks after their
-use rather than pretending an in-memory Source survived restart. Dynamic
-JavaScript pages can instead use the default read-only Browser followed by
-`research_source capture/cite`; static pages should still prefer `web_fetch`.
+use rather than pretending an in-memory Source survived restart. For a static
+claim, call `research_source capture_fetch` with the exact Web Source ID and
+content hash, then use the same `cite` and `verify_report` protocol as Browser
+evidence. Dynamic JavaScript pages instead use the default read-only Browser
+followed by `research_source capture/cite`; static pages should still prefer
+`web_fetch`.
 Authenticated content, CAPTCHA/login-wall recovery, scanned PDF OCR, automatic
 Fetch-to-Browser fallback, full Browser interaction, Browser Live/takeover,
-cross-restart Source retention, and unified static/dynamic claim citation
-remain open P0 work.
+and cross-restart Source retention remain open P0 work.
 
 Selecting `workspace` exposes only individually enabled structured tools:
 **Atomic patch** is hash-preconditioned and supports Hashline-style line

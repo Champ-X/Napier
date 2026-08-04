@@ -100,6 +100,39 @@ export interface WebFetchExecutor {
     signal?: AbortSignal,
   ): Promise<WebFetchResult>;
   cancelRun(owner: { threadId: string; runId: string }): Promise<void>;
+  captureWebSource?(
+    owner: { threadId: string; runId: string },
+    request: {
+      webSourceId: string;
+      webSourceContentSha256: string;
+      maxChars: number;
+    },
+    signal?: AbortSignal,
+  ): Promise<WebFetchResearchCapture>;
+}
+
+export interface WebFetchResearchCapture {
+  url: string;
+  title: string;
+  lines: string[];
+  textChars: number;
+  truncated: boolean;
+  webSourceContentSha256: string;
+  webSourceBodySha256: string;
+  webSourceFormat: WebFetchSourceFormat;
+  webSourceLineCount: number;
+}
+
+export interface WebFetchResearchCaptureProvider {
+  captureWebSource(
+    owner: { threadId: string; runId: string },
+    request: {
+      webSourceId: string;
+      webSourceContentSha256: string;
+      maxChars: number;
+    },
+    signal?: AbortSignal,
+  ): Promise<WebFetchResearchCapture>;
 }
 
 export const MAX_WEB_FETCH_SOURCES_PER_RUN = 16;

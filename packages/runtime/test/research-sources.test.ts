@@ -1,4 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type {
   BrowserPageSourceCapture,
@@ -9,8 +13,16 @@ import {
   type BrowserSourceCaptureProvider,
   RunResearchSourceManager,
 } from "../src/research-sources.js";
+import type { WebFetchResearchCaptureProvider } from "../src/web-fetch-model.js";
 
 const OWNER = { threadId: "thread_research", runId: "run_research" };
+const roots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
+  );
+});
 
 describe("RunResearchSourceManager", () => {
   it("captures immutable page text and binds an exact range to a claim", async () => {
@@ -76,6 +88,133 @@ describe("RunResearchSourceManager", () => {
     expect(listed.output).toContain(`[citation:${cited.details.citationId!}]`);
     expect(listed.output).toContain(
       "Napier binds claims to captured source ranges.",
+    );
+  });
+
+  it("imports an exact same-Run Web Fetch Source and reuses citation semantics", async () => {
+    const fetchedLines = [
+      "## Page 1",
+      "Napier imports static Source evidence.",
+    ];
+    const webFetch: WebFetchResearchCaptureProvider = {
+      captureWebSource: vi.fn(async () => ({
+        url: "https://example.com/report.pdf",
+        title: "Fetched PDF",
+        lines: fetchedLines,
+        textChars: fetchedLines.join("\n").length,
+        truncated: false,
+        webSourceContentSha256: "6".repeat(64),
+        webSourceBodySha256: "7".repeat(64),
+        webSourceFormat: "pdf",
+        webSourceLineCount: 2,
+      })),
+    };
+    const manager = new RunResearchSourceManager(
+      { capturePage: vi.fn() },
+      undefined,
+      webFetch,
+    );
+
+    const captured = await manager.execute(OWNER, {
+      action: "capture_fetch",
+      webSourceId: "websource_fixture0001",
+      webSourceContentSha256: "6".repeat(64),
+      maxChars: 12_000,
+    });
+    const cited = await manager.execute(OWNER, {
+      action: "cite",
+      sourceId: captured.details.sourceId!,
+      sourceContentSha256: captured.details.sourceContentSha256!,
+      startLine: 2,
+      endLine: 2,
+      claim: "Napier imports static Source evidence.",
+    });
+
+    expect(webFetch.captureWebSource).toHaveBeenCalledWith(
+      OWNER,
+      {
+        webSourceId: "websource_fixture0001",
+        webSourceContentSha256: "6".repeat(64),
+        maxChars: 12_000,
+      },
+      expect.any(AbortSignal),
+    );
+    expect(captured.details).toEqual(
+      expect.objectContaining({
+        action: "capture_fetch",
+        sourceKind: "web_fetch",
+        webSourceContentSha256: "6".repeat(64),
+        webSourceBodySha256: "7".repeat(64),
+        webSourceFormat: "pdf",
+        webSourceLineCount: 2,
+      }),
+    );
+    expect(cited.details).toEqual(
+      expect.objectContaining({
+        action: "cite",
+        sourceKind: "web_fetch",
+        citationStartLine: 2,
+        citationEndLine: 2,
+        webSourceFormat: "pdf",
+      }),
+    );
+    expect(cited.output).toContain("Napier imports static Source evidence.");
+  });
+
+  it("verifies one Markdown report against a Web Fetch-backed citation", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-fetch-report-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const claim = "Static Fetch evidence is citation-bound.";
+    const webFetch: WebFetchResearchCaptureProvider = {
+      captureWebSource: vi.fn(async () => ({
+        url: "https://example.com/evidence.html",
+        title: "Fetched HTML",
+        lines: [claim],
+        textChars: claim.length,
+        truncated: false,
+        webSourceContentSha256: "6".repeat(64),
+        webSourceBodySha256: "7".repeat(64),
+        webSourceFormat: "html",
+        webSourceLineCount: 1,
+      })),
+    };
+    const manager = new RunResearchSourceManager(
+      { capturePage: vi.fn() },
+      workspaceRoot,
+      webFetch,
+    );
+    const captured = await manager.execute(OWNER, {
+      action: "capture_fetch",
+      webSourceId: "websource_fixture0002",
+      webSourceContentSha256: "6".repeat(64),
+    });
+    const cited = await manager.execute(OWNER, {
+      action: "cite",
+      sourceId: captured.details.sourceId!,
+      sourceContentSha256: captured.details.sourceContentSha256!,
+      startLine: 1,
+      endLine: 1,
+      claim,
+    });
+    const report = `${claim} [citation:${cited.details.citationId!}]\n`;
+    await writeFile(path.join(workspaceRoot, "brief.md"), report);
+
+    const verified = await manager.execute(OWNER, {
+      action: "verify_report",
+      path: "brief.md",
+      expectedSha256: sha256(report),
+    });
+
+    expect(verified.details).toEqual(
+      expect.objectContaining({
+        action: "verify_report",
+        reportFileSha256: sha256(report),
+        reportCitationCount: 1,
+        sourceCount: 1,
+        citationCount: 1,
+      }),
     );
   });
 

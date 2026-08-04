@@ -10,7 +10,9 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
+import type { PublicHttpResponse } from "../src/public-http-client.js";
 import type { WebFetchExecutor } from "../src/web-fetch-model.js";
+import { RunWebFetchSourceManager } from "../src/web-fetch-sources.js";
 
 const roots: string[] = [];
 
@@ -143,6 +145,142 @@ describe("default Agent web fetch integration", () => {
       expect(durable).not.toContain("PRIVATE_FETCH_BODY_MARKER");
       expect(durable).not.toContain(sourceId);
       expect(durable).toContain("FETCH_PATH_COMPLETED");
+    } finally {
+      await services.shutdown();
+    }
+  });
+
+  it("imports one fetched Source into the shared Research citation chain", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-agent-fetch-cite-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const webFetch = new RunWebFetchSourceManager({
+      http: {
+        request: vi.fn(
+          async (): Promise<PublicHttpResponse> => ({
+            status: 200,
+            headers: { "content-type": "text/plain" },
+            body: Buffer.from("Static Source citation evidence."),
+            finalUrl: "https://example.com/evidence.txt",
+            redirectCount: 0,
+          }),
+        ),
+      },
+    });
+    const services = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot: path.join(root, "state"),
+      env: {},
+      webFetch,
+    });
+    try {
+      const agent = services.store.listAgents()[0]!;
+      const thread = await services.store.createThread({
+        title: "Fetch citation bridge",
+        agentId: agent.id,
+      });
+      const provider = fauxProvider({ provider: "faux-web-fetch-citation" });
+      provider.setResponses([
+        fauxAssistantMessage(
+          fauxToolCall("web_fetch", {
+            action: "fetch",
+            url: "https://example.com/evidence.txt",
+          }),
+          { stopReason: "toolUse" },
+        ),
+        (context) => {
+          const messages = JSON.stringify(context.messages);
+          const sourceId = /Web Source: (websource_[a-z0-9]+)/u.exec(
+            messages,
+          )?.[1];
+          const contentSha256 = /Content SHA-256: ([a-f0-9]{64})/u.exec(
+            messages,
+          )?.[1];
+          expect(sourceId).toMatch(/^websource_/u);
+          expect(contentSha256).toMatch(/^[a-f0-9]{64}$/u);
+          return fauxAssistantMessage(
+            fauxToolCall("research_source", {
+              action: "capture_fetch",
+              webSourceId: sourceId!,
+              webSourceContentSha256: contentSha256!,
+              maxChars: 12_000,
+            }),
+            { stopReason: "toolUse" },
+          );
+        },
+        (context) => {
+          const messages = JSON.stringify(context.messages);
+          const sourceId = /Research Source: (source_[a-z0-9]+)/u.exec(
+            messages,
+          )?.[1];
+          const contentSha256 = /Capture SHA-256: ([a-f0-9]{64})/u.exec(
+            messages,
+          )?.[1];
+          expect(sourceId).toMatch(/^source_/u);
+          expect(contentSha256).toMatch(/^[a-f0-9]{64}$/u);
+          return fauxAssistantMessage(
+            fauxToolCall("research_source", {
+              action: "cite",
+              sourceId: sourceId!,
+              sourceContentSha256: contentSha256!,
+              startLine: 1,
+              endLine: 1,
+              claim: "Static Source citation evidence.",
+            }),
+            { stopReason: "toolUse" },
+          );
+        },
+        fauxAssistantMessage("FETCH_CITATION_COMPLETED"),
+        fauxAssistantMessage('{"facts":[]}'),
+      ]);
+      services.models.registerProvider(provider.provider);
+
+      const run = await services.runtime.runPrompt({
+        threadId: thread.id,
+        text: "Fetch and cite the static source.",
+        model: { provider: "faux-web-fetch-citation", id: "faux-1" },
+      });
+
+      expect(run.status, run.error).toBe("completed");
+      const events = await services.store.listEvents(thread.id);
+      const completed = events.filter(
+        (event) => event.type === "tool.completed",
+      );
+      expect(
+        completed.map((event) => ({
+          tool: record(event.payload)?.["toolName"],
+          action: record(record(event.payload)?.["details"])?.["action"],
+        })),
+      ).toEqual(
+        expect.arrayContaining([
+          { tool: "web_fetch", action: "fetch" },
+          { tool: "research_source", action: "capture_fetch" },
+          { tool: "research_source", action: "cite" },
+        ]),
+      );
+      expect(
+        record(
+          record(
+            completed.find(
+              (event) =>
+                record(event.payload)?.["toolName"] === "research_source" &&
+                record(record(event.payload)?.["details"])?.["action"] ===
+                  "capture_fetch",
+            )?.payload,
+          )?.["details"],
+        ),
+      ).toEqual(
+        expect.objectContaining({
+          sourceKind: "web_fetch",
+          webSourceFormat: "text",
+        }),
+      );
+      const durable = JSON.stringify(events);
+      expect(durable).not.toContain("https://example.com/evidence.txt");
+      expect(durable).not.toContain("Static Source citation evidence.");
+      expect(durable).not.toContain("websource_");
+      expect(durable).toContain("FETCH_CITATION_COMPLETED");
     } finally {
       await services.shutdown();
     }

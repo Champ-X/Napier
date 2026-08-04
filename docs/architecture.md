@@ -4006,7 +4006,8 @@ deliberately process-local. Automatic recovery therefore treats any completed
 `web_fetch` call as unsafe, matching `research_source`. Dynamic rendering can
 use the following default read-only Browser surface; automatic fallback,
 authentication, CAPTCHAs, scanned-PDF OCR, cross-restart Source retention, and
-static Source citation binding remain outside this slice.
+Browser interaction remain outside this slice. Static Source citation uses the
+shared Research Source flow below.
 
 ## Controlled Browser Session Flow
 
@@ -4083,23 +4084,27 @@ P0.
 
 ### Research Source and Citation Flow
 
-Research Source capture extends the existing Browser Session rather than
-creating another network client or evidence store:
+Research Source capture accepts either the existing Browser Session or an
+already-normalized same-Run Web Fetch Source. It does not create another
+network client or evidence store:
 
 ```text
-Agent inspects an active Run-owned Browser page
-  -> research_source capture serializes behind Browser actions
-  -> keep proxy outbound closed and evaluate one fixed visible-text extractor
-  -> reject empty text, URL drift, malformed bounds, or invalid Browser binding
-  -> normalize controls/whitespace into <=400 numbered lines and <=24,000 chars
-  -> bind URL + title + lines + truncation to one capture SHA-256
-  -> retain Source text only in a Run-local registry
+Agent selects one same-Run evidence source
+  -> Browser: research_source capture serializes behind Browser actions
+     -> keep proxy outbound closed and evaluate one fixed visible-text extractor
+     -> reject empty text, URL drift, malformed bounds, or invalid Browser binding
+  -> Fetch: research_source capture_fetch supplies exact Web Source ID/hash
+     -> serialize through the Web Fetch manager without another HTTP request
+     -> reject foreign Run, stale hash, malformed provenance, or empty text
+  -> normalize/select <=400 numbered lines and <=24,000 characters
+  -> bind URL + title + lines + truncation to one Research capture SHA-256
+  -> retain Source text only in the shared Run-local Research registry
 Agent selects an exact line range and exact report claim
   -> require the current Source ID and capture SHA-256
   -> recompute the <=40-line quote
   -> bind quote and normalized single-line claim hashes to a citation ID
   -> return a citation token to the live Agent
-  -> persist only counts, ranges, hashes, and Browser provenance
+  -> persist only counts, ranges, hashes, and source-specific provenance
 Agent writes a Markdown report
   -> verify_report requires the actual complete-file SHA-256
   -> read canonical non-symlink workspace bytes <=256 KiB
@@ -4112,22 +4117,32 @@ Run settles
 ```
 
 `browser-source-capture.ts` owns fixed page extraction and normalization.
-`research-source-capture.ts` independently validates the returned capture
-contract. `research-sources.ts` owns Run isolation, serialization,
-cancellation, and the ephemeral registry. `research-source-tool.ts` owns the
-Agent schema and redacted call/input/output projections.
+`web-fetch-sources.ts` owns the authoritative Web Source registry and exposes a
+narrow same-Run capture provider; `web-fetch-research-capture.ts` selects its
+bounded Research lines. `research-source-capture.ts` independently validates
+both returned capture contracts and binds them to one immutable Research
+capture hash. `research-source-model.ts` and `research-source-evidence.ts`
+separate the shared contract/evidence projection from the registry.
+`research-sources.ts` owns Run isolation, serialization, cancellation, and the
+ephemeral Research registry. `research-source-tool.ts` owns the Agent schema
+and redacted call/input/output projections.
 `research-report-verification.ts` owns canonical Markdown loading, exact
 claim-line parsing, current-Run token validation, and post-read freshness.
 `research-source-event-view.ts` independently validates the bounded Trace
-projection. Browser page capture uses `browser-page-session.ts`, so Source
-extraction inherits the existing public-network, executable freshness,
-Session ownership, operation budget, and uncertain-state closure rules.
+projection and rejects mixed Browser/Web Fetch provenance. Browser page
+capture uses `browser-page-session.ts`, so Source extraction inherits the
+existing public-network, executable freshness, Session ownership, operation
+budget, and uncertain-state closure rules. Fetch capture inherits the exact
+Web Source content/body hashes, normalized format/line bounds, and same-Run
+ownership from `RunWebFetchSourceManager`.
 
 The citation is evidence of an immutable capture-range-to-claim binding, not
 an authority or entailment judgment. The `research-brief` Skill therefore
 still requires primary sources, contradicting evidence, caveats, and adjacent
-citation tokens. Raw Source text, URL, title, quote, claim, report path, and
-report Markdown do not enter Ledger, Replay, SSE, or Trace. The final
+citation tokens. Raw Source text, URL, title, Web Source ID, quote, claim,
+report path, and report Markdown do not enter Ledger, Replay, SSE, or Trace.
+The `capture_fetch` call projection hashes the Web Source ID while retaining
+the supplied content hash needed to audit the exact import. The final
 user-visible report may intentionally contain the report claim, source URL,
 and citation token. `verify_report` proves the token/claim/current-Run binding
 against actual workspace bytes; a verified Plan artifact independently binds
@@ -4136,8 +4151,17 @@ the delivered artifact lifecycle.
 The registry is process-local by design. An interrupted `research_source`
 operation cannot be reconstructed from hash-only evidence, so automatic
 recovery marks it unsafe even though capture, cite, and list have read effects.
-No Source is visible across Runs, and cancellation waits for the serialized
-queue before deleting registry state.
+No Web Fetch or Research Source is visible across Runs, and cancellation waits
+for both serialized queues before deleting registry state.
+
+The checked bridge gates cover same-Run import and cross-Run denial, stale
+hashes, Browser/Fetch provenance separation, Agent tool sequencing, redacted
+call projections, Trace validation, Browser-only benchmark compatibility, and
+real report verification against workspace bytes. Real built-CLI DeepSeek
+Dogfood completed the Fetch/capture/cite chain for public HTML and PDF without
+retaining credential, URL, body, or Web Source ID in Tool events. Architecture
+passes with 896 production source files, 447 test files, and zero cycles; the
+complete regular suite passes 2,134 tests.
 
 ## TypeScript LSP Code Intelligence Flow
 
