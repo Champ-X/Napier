@@ -472,6 +472,14 @@ artifact requests, Record prechecks, body bounds, stable content hashes,
 ordered diagnostics, count headers, and observed-versus-declared evidence.
 This lowers `app.ts` to 15,282 lines while leaving model review and baseline
 promotion in a separate outcome-governance boundary.
+Blueprint Record outcome review, baseline promotion, baseline listing, and
+qualification use `plan-blueprint-outcome-http.ts` behind a six-method Store
+port. The Runtime reviewer itself accepts a four-method read port instead of
+the concrete Store. Dedicated validation and response modules preserve model
+availability checks, exact criteria and policy bounds, review-gate
+requirements, conflict semantics, stable review hashes, baseline metadata,
+and current-outcome qualification evidence. This lowers `app.ts` to 14,616
+lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

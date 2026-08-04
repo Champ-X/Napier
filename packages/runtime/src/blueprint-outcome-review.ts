@@ -15,7 +15,10 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { nowIso } from "./ids.js";
 import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import type { ModelRegistry } from "./models.js";
-import type { LocalStore } from "./store.js";
+import type {
+  BlueprintOutcomeQualification,
+  BlueprintOutcomeReviewStorePort,
+} from "./blueprint-outcome-review-store-port.js";
 
 const BLUEPRINT_OUTCOME_REVIEW_POLICY_ID = "napier.blueprint-outcome-review.v1";
 const BLUEPRINT_OUTCOME_REVIEW_KIND =
@@ -73,7 +76,7 @@ export const DEFAULT_BLUEPRINT_OUTCOME_REVIEW_CRITERIA: ExecutionPlanBlueprintOu
   };
 
 export async function reviewExecutionPlanBlueprintRecordOutcomes(
-  store: LocalStore,
+  store: BlueprintOutcomeReviewStorePort,
   models: ModelRegistry,
   recordId: string,
   request: ReviewExecutionPlanBlueprintRecordOutcomesRequest,
@@ -151,9 +154,7 @@ interface BlueprintOutcomeReviewPromptInput {
   blueprintSha256: string;
   sourceQualificationStatus: ExecutionPlanBlueprintRecordOutcomeReview["sourceQualificationStatus"];
   sourceQualificationDiagnostics: string[];
-  outcomeQualification: Awaited<
-    ReturnType<LocalStore["qualifyExecutionPlanBlueprintRecordOutcomes"]>
-  >;
+  outcomeQualification: BlueprintOutcomeQualification;
   outcomes: ExecutionPlanBlueprintRecordReplayOutcomes;
   criteria: ExecutionPlanBlueprintOutcomeReviewCriteria;
 }
@@ -415,9 +416,7 @@ function createBlueprintOutcomeReview(input: {
   criteria: ExecutionPlanBlueprintOutcomeReviewCriteria;
   sourceQualificationStatus: ExecutionPlanBlueprintRecordOutcomeReview["sourceQualificationStatus"];
   outcomeQualificationStatus: ExecutionPlanBlueprintRecordOutcomeReview["outcomeQualificationStatus"];
-  outcomeQualification: Awaited<
-    ReturnType<LocalStore["qualifyExecutionPlanBlueprintRecordOutcomes"]>
-  >;
+  outcomeQualification: BlueprintOutcomeQualification;
   outcomes: ExecutionPlanBlueprintRecordReplayOutcomes;
   prompt: BlueprintOutcomeReviewPrompt;
   response: ParsedBlueprintOutcomeReview;
