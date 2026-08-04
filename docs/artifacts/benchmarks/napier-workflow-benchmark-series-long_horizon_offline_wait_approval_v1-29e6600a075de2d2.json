@@ -1,0 +1,91 @@
+{
+  "kind": "napier.workflow-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T03:51:17.824Z",
+  "caseId": "long_horizon_offline_wait_approval_v1",
+  "caseSha256": "c7dd56229d4e433308f13f9ad552ac2ce880c6e86c60baf9a6075291b4ce429d",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 2,
+  "completedTrialCount": 2,
+  "scoredTrialCount": 1,
+  "passedTrialCount": 1,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 1,
+  "usageSampleCount": 2,
+  "metrics": {
+    "durationMs": {
+      "total": 3761,
+      "min": 513,
+      "p50": 513,
+      "p95": 3248,
+      "max": 3248,
+      "mean": 1880.5
+    },
+    "costUsd": {
+      "total": 0.0020390608000000004,
+      "min": 0,
+      "p50": 0,
+      "p95": 0.0020390608000000004,
+      "max": 0.0020390608000000004,
+      "mean": 0.0010195304000000002
+    },
+    "inputTokens": {
+      "total": 13492,
+      "min": 0,
+      "p50": 0,
+      "p95": 13492,
+      "max": 13492,
+      "mean": 6746
+    },
+    "outputTokens": {
+      "total": 521,
+      "min": 0,
+      "p50": 0,
+      "p95": 521,
+      "max": 521,
+      "mean": 260.5
+    },
+    "runCount": {
+      "total": 11,
+      "min": 4,
+      "p50": 4,
+      "p95": 7,
+      "max": 7,
+      "mean": 5.5
+    }
+  },
+  "successRate": 0.5,
+  "completionRate": 1,
+  "passRate": 1,
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_877fd51c0908427d9ff5",
+      "status": "inconclusive",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-830ee6e03f9a32a0.json",
+      "resultSha256": "830ee6e03f9a32a0fec7129c24f947c1efa08371b72d6c25c722b37c43d0e736",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-219f2169cca44b59.json",
+      "ledgerSha256": "219f2169cca44b5957358ac2f3f4c09d674f8df12e6438d5f838d86f850a1b02"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_7f7b924172f1435b8325",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-e3976f23771b3f18.json",
+      "resultSha256": "e3976f23771b3f189d2159e36f043b034cc5cb4ae598d579864a2a63496a42e1",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-90934bd8292d4d03.json",
+      "ledgerSha256": "90934bd8292d4d03d87e51da5b9dd7267b73830a88f22ef5c71522acb55abeef"
+    }
+  ],
+  "contentSha256": "29e6600a075de2d2587b1f811fee9f4daa9f109e558c8a600b389d8d072a7191"
+}

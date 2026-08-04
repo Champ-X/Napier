@@ -1899,7 +1899,7 @@ had mean cost `$0.00203473536` and mean input/output usage 13,464/508.8.
 The runner retains non-completed pre-gate results instead of throwing: Ledger
 validation accepts the matching `workflow.blocked`, `workflow.waiting`,
 `workflow.paused`, or `workflow.cancelled` terminal shape, while output and
-Reduce IDs remain absent unless produced. Schema-6 runs append a debug-visible,
+Reduce IDs remain absent unless produced. Schema-6/7 runs append a debug-visible,
 body-free `benchmark.workflow.model-responses.observed` event before
 evaluation. It binds the pre-observation Replay hash/event count, response,
 error, and usage-sample counts, and a hash of per-response identities,
@@ -1910,8 +1910,24 @@ errors are inconclusive; schema-valid transport with bad typed output remains
 failed. Series expose overall success, conditional pass rate, and usage sample
 completeness. The variance Series predates persisted `successRate`; its 0.2
 value is derived from its bound one-pass/five-completed counters. Long
-wall-clock waits, budget exhaustion, no-progress detection, and uncertain
-write recovery remain.
+wall-clock waits are covered by schema 7.
+
+`long_horizon_offline_wait_approval_v1` shuts down the complete Runtime after
+Map and pending Approval, records the offline interval start, waits one real
+second without a Runtime instance, and reopens before the original absolute
+expiry. Restart receipt schema 2 adds the required wait, original decision
+request sequence, Approval timeout, and expiry. The verifier recomputes elapsed
+time from the restart event timestamp, binds the decision request receipt, and
+requires the expiry to equal request time plus the original timeout.
+
+Three retained DeepSeek Series contain all nine requested trials: 4 passed, 0
+failed, and 5 were Provider-error inconclusive before the restart gate. Overall
+success is 4/9 and conditional pass rate is 1. Every reached recovery path
+passed: elapsed wait was 1009–1013 ms, the deadline was preserved, all three
+Map Runs were reused, and no model response occurred after restart. Successful
+trials completed in 3.248–3.767 seconds at mean cost `$0.0020105008`; mean
+input/output usage was 13,469.5/430.25. Budget exhaustion, no-progress
+detection, and uncertain write recovery remain.
 
 ### Research Outcome Benchmark
 
@@ -2092,14 +2108,14 @@ The top-level release artifact audit binds the package-lock receipt,
 runtime-environment receipt, management OpenAPI artifact, management OpenAPI
 compatibility fixture, product-performance baseline, Web dist receipt, Web
 dist manifest, and retained Workflow, Data, DataFrame, Security, single- and
-multi-restart Long-horizon, Research, and UX Benchmark Series plus all
-twenty-four Result/Ledger pairs into one `napier.release-artifacts-audit`
+multi-restart/offline-wait Long-horizon, Research, and UX Benchmark Series plus
+all thirty-three Result/Ledger pairs into one `napier.release-artifacts-audit`
 receipt. Before
-hashing the 57 Benchmark files, the gate performs full semantic verification
-for nine Series across eight cases. It stores only artifact kinds,
+hashing the 78 Benchmark files, the gate performs full semantic verification
+for twelve Series across nine cases. It stores only artifact kinds,
 repo-relative paths, SHA-256 values, validity booleans, package name/version,
-and a canonical artifact-set digest. The current receipt contains 65 artifacts
-and binds set SHA-256 `9e3dc5318bdf3200...`.
+and a canonical artifact-set digest. The current receipt contains 86 artifacts
+and binds set SHA-256 `f83d0736c3eb81d5...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 

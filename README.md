@@ -1510,13 +1510,43 @@ the first restart.
 
 The runner retains blocked, waiting, paused, or cancelled pre-gate outcomes
 with their matching Workflow terminal receipt and optional output/Reduce
-evidence. Schema-6 trials also append a body-free, Replay-bound model-response
+evidence. Schema-6/7 trials also append a body-free, Replay-bound model-response
 observation containing counts, error/usage presence, and a response-set hash.
 Provider-error outcomes are inconclusive; normal responses with invalid typed
 output remain failed. Series report both overall `successRate`, conditional
 `passRate`, and `usageSampleCount`. The variance Series predates the optional
 persisted `successRate`; its 0.2 value is derived from its receipt-bound
 `passedTrialCount=1` and `completedTrialCount=5`.
+
+Schema 7 adds `long_horizon_offline_wait_approval_v1`. It completes the Map,
+closes the Runtime, waits one real wall-clock second with no Runtime instance,
+reopens before the original Approval deadline, recovers the exact pending
+decision, answers it, and resumes model-free Reduce.
+
+```bash
+npm run bench:workflow -- \
+  --case benchmarks/long-horizon/offline-wait-approval-map-reduce-v1 \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 5
+```
+
+Restart receipt schema 2 binds the offline interval start, required duration,
+original decision request sequence, Approval timeout, and absolute expiry.
+Offline verification recomputes elapsed time from the restart event timestamp,
+binds the request receipt, and rejects a shortened wait or reset deadline.
+
+Three retained DeepSeek Series preserve all nine requested trials:
+[sample A](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-29e6600a075de2d2.json),
+[sample B](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-f9763a9fb75404b4.json),
+and the
+[five-trial distribution](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-8fbd6eba325a0839.json).
+Combined outcome was 4 pass, 0 failed, and 5 Provider-error inconclusive, for
+overall success 4/9 and conditional pass rate 1. Every trial that reached the
+recovery path waited 1009–1013 ms, preserved the original deadline, reused all
+three Map Runs, and made zero post-restart model calls. Those four successful
+trials completed in 3.248–3.767 seconds at mean cost `$0.0020105008`; mean
+input/output usage was 13,469.5/430.25.
 
 ### Research Outcome Benchmark
 
@@ -5516,10 +5546,10 @@ top-level `napier.release-artifacts-audit` receipt that binds the package-lock
 receipt, runtime-environment receipt, product-performance baseline, management
 OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
 Web dist manifest, and the semantically verified Workflow, Data, DataFrame,
-Security, single- and multi-restart Long-horizon, Research, and UX Benchmark
-Series plus all twenty-four Result/Ledger pairs by SHA-256;
-the current 65-artifact set is bound by
-`9e3dc5318bdf3200...`;
+Security, restart/offline-wait Long-horizon, Research, and UX Benchmark Series
+plus all thirty-three Result/Ledger pairs by SHA-256;
+the current 86-artifact set is bound by
+`f83d0736c3eb81d5...`;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
@@ -5527,7 +5557,7 @@ tests before running workspace suites, so package-lock drift, runtime version
 drift, missing runtime components, OpenAPI route drift, manifest drift, extra
 dist files, malformed manifests, stale receipts, compatibility regressions,
 aggregate artifact drift, Workflow Benchmark trial substitution/tampering, and
-Data/Security/single- or multi-restart Long-horizon/Research Benchmark evidence
+Data/Security/restart or offline-wait Long-horizon/Research Benchmark evidence
 tampering and entry-budget regressions are covered without mutating the real
 build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with

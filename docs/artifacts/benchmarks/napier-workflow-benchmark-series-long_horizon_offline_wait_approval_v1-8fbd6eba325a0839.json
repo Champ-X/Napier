@@ -1,0 +1,118 @@
+{
+  "kind": "napier.workflow-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T03:52:21.153Z",
+  "caseId": "long_horizon_offline_wait_approval_v1",
+  "caseSha256": "c7dd56229d4e433308f13f9ad552ac2ce880c6e86c60baf9a6075291b4ce429d",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 5,
+  "completedTrialCount": 5,
+  "scoredTrialCount": 2,
+  "passedTrialCount": 2,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 3,
+  "usageSampleCount": 5,
+  "metrics": {
+    "durationMs": {
+      "total": 7727,
+      "min": 197,
+      "p50": 270,
+      "p95": 3578,
+      "max": 3578,
+      "mean": 1545.4
+    },
+    "costUsd": {
+      "total": 0.0040061616000000005,
+      "min": 0,
+      "p50": 0,
+      "p95": 0.0020427008,
+      "max": 0.0020427008,
+      "mean": 0.00080123232
+    },
+    "inputTokens": {
+      "total": 26936,
+      "min": 0,
+      "p50": 0,
+      "p95": 13480,
+      "max": 13480,
+      "mean": 5387.2
+    },
+    "outputTokens": {
+      "total": 809,
+      "min": 0,
+      "p50": 0,
+      "p95": 540,
+      "max": 540,
+      "mean": 161.8
+    },
+    "runCount": {
+      "total": 26,
+      "min": 4,
+      "p50": 4,
+      "p95": 7,
+      "max": 7,
+      "mean": 5.2
+    }
+  },
+  "successRate": 0.4,
+  "completionRate": 1,
+  "passRate": 1,
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_c9dbbc4d7c5e46dbb560",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-f238909652d8a4b0.json",
+      "resultSha256": "f238909652d8a4b05b9dc334c3549c88f81b1d19a3e54cbb984602cc9ba233d9",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-a99430ea0c61b767.json",
+      "ledgerSha256": "a99430ea0c61b7677d639e82c81be7127c7f1f07f14a8e6a4b713717f88ea075"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_52312e85323641d485dd",
+      "status": "inconclusive",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-f0523fb633329eaf.json",
+      "resultSha256": "f0523fb633329eafb3333ca6747b631a27003412c7d23e30d1af5945f529c851",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-0b38182282e523b9.json",
+      "ledgerSha256": "0b38182282e523b91b23569121edf7c68e701459193c97d375e91258c239416f"
+    },
+    {
+      "index": 3,
+      "threadId": "thread_6b708a1dd0424528810b",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-037c6fa4869b74c2.json",
+      "resultSha256": "037c6fa4869b74c2d0225f3d489d1a71c031587bb34413be94b47b2c1cda1dda",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-0a21d550cd14860e.json",
+      "ledgerSha256": "0a21d550cd14860ee31793b38996a65372457b7e6848f58a2b0eca42180fe0fa"
+    },
+    {
+      "index": 4,
+      "threadId": "thread_3423d32d95eb42b2be37",
+      "status": "inconclusive",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-11597f7103ddc31d.json",
+      "resultSha256": "11597f7103ddc31d26013c08e9ad4d1cd0baf058b5ea828e230460b82463ad5d",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-1c70cdc158da2fe7.json",
+      "ledgerSha256": "1c70cdc158da2fe7077f5cd238e9ceb3fba3d358ab83456a00f4e94c120ec08e"
+    },
+    {
+      "index": 5,
+      "threadId": "thread_7a6f3fc9283a482ebd96",
+      "status": "inconclusive",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-d0060aee59242fa1.json",
+      "resultSha256": "d0060aee59242fa15f1dadca95eca9068a1c63fe6a36959f64f3ec61d925a2fa",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-5599a254b69fc316.json",
+      "ledgerSha256": "5599a254b69fc316bbd3923dfc091ea77e101873ec1f12e02ce95b4ff9d42664"
+    }
+  ],
+  "contentSha256": "8fbd6eba325a0839c0ee5f11ba13b2316d68b085f76dc9036a3d01f680e46ca3"
+}

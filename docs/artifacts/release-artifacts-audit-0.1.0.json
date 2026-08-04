@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "9e3dc5318bdf3200a422725036bd6259c372ac208dda8f4bb31bfab213a441a2",
+  "artifactSetSha256": "f83d0736c3eb81d59e28099048a56e747f70101b9c19292bd8220a2e770e9953",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -336,6 +336,132 @@
       "kind": "long-horizon-multi-restart-confirmation-ledger-5",
       "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-910d762a02282ca3.json",
       "sha256": "b9d6e8ea5bad424156fa1ce6ae35628036651b1216987d9cf0d31bfbe22b08bb",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-a-series",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-29e6600a075de2d2.json",
+      "sha256": "b9861c648fe0f933771ac54306e0eb8ad0439a071d92c275e1057565eced0ccb",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-a-result-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-830ee6e03f9a32a0.json",
+      "sha256": "58290f665dc4c1000be5e4c33164c54e8109d412b8e41518c39e3fb7a13aa85f",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-a-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-219f2169cca44b59.json",
+      "sha256": "eb9b2336d877a24c1f5b4cfbd00016716d7d8fa4fee73f96b2ae5d3bc2a8f5d6",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-a-result-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-e3976f23771b3f18.json",
+      "sha256": "a705d8cf856a8e8fa359752cb10e1f4008e0b8d6124fe6e5d1bf1ecc1664b79a",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-a-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-90934bd8292d4d03.json",
+      "sha256": "b3857d45fb81fdbd0d275cd054ee0b0bdd54c65a75ff0ece64db183907903204",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-b-series",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-f9763a9fb75404b4.json",
+      "sha256": "c995e5c61fc072858f0676466e002ebea2272cedbbd5343f3ad58009ea4b4f0e",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-b-result-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-36c8a27f68c7450f.json",
+      "sha256": "540b7ae886d228018a3e5db4914f8c4420333d606f0b4808a8eefe686f495ebb",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-b-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-a86da62e1b8fcba6.json",
+      "sha256": "13e3168e091b2cbe9ab26a56a9e0c9bad03732c93013294cf7a4c345491b2bae",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-b-result-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-fabc3b5387866219.json",
+      "sha256": "9f72e5a6beaabc08eb458d7b224b6574b43afb13f13266e1b9ef187da612e916",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-sample-b-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-c1b64ef94144d0f6.json",
+      "sha256": "d6ceb289d5a91715e8ca9cc0430e40380f96ef01f8b26a39912cc40219d93e5f",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-series",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-8fbd6eba325a0839.json",
+      "sha256": "be23367c7fa9b0773db87654539bd695e463791b912ae785b7c5c7c7b155ee91",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-result-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-f238909652d8a4b0.json",
+      "sha256": "f6aca5a68506cbaac548472e8e7d7a593bdead22a2c0bc26fd933a9449d971c6",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-a99430ea0c61b767.json",
+      "sha256": "d2f7e3f5cfb1278504738f3953f4bd2fbdb57bffe6d0b5e50c37067df935c6c5",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-result-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-f0523fb633329eaf.json",
+      "sha256": "f4d1324145efe18c6c9cec02e9cc92276f30ae1c0bc8b2d04ef60c286de41cbe",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-0b38182282e523b9.json",
+      "sha256": "a18cc1e69a7240796898caa0aa5a82c2423581c5bd2eae22a744230ef13c4a39",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-result-3",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-037c6fa4869b74c2.json",
+      "sha256": "30c1d188c4d6811e0436419572938196a2ee5005c1d1359206a5321175c04707",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-ledger-3",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-0a21d550cd14860e.json",
+      "sha256": "d6ba1efc2be5f784e9a10ed3e2f00788de5442209994f868aa1a4dc43fdc9d2e",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-result-4",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-11597f7103ddc31d.json",
+      "sha256": "a55b8d4691112497f4eeefb43990e986dd15bba4553c87a9368654a3fcddffae",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-ledger-4",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-1c70cdc158da2fe7.json",
+      "sha256": "9979242effcefdb5ce36fe3131d20ba8930c6fc63883a52f7ec4b6b8242ccc80",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-result-5",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_offline_wait_approval_v1-d0060aee59242fa1.json",
+      "sha256": "660ad2dbd9744f9291d13d7b3bdec77c50560c76b180288b79cad95e8c075c12",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-offline-wait-distribution-ledger-5",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_offline_wait_approval_v1-5599a254b69fc316.json",
+      "sha256": "0afc7651bcbdb0db2dd6292449b4ad482afb04e2214922977c70640ee7d3104c",
       "valid": true
     },
     {

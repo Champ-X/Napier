@@ -53,6 +53,12 @@ const defaultMultiRestartBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-c99798474740bc5a.json";
 const defaultMultiRestartConfirmationBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-42d4d77a9581f02a.json";
+const defaultOfflineWaitSampleABenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-29e6600a075de2d2.json";
+const defaultOfflineWaitSampleBBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-f9763a9fb75404b4.json";
+const defaultOfflineWaitDistributionBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-8fbd6eba325a0839.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json";
 const defaultUxBenchmarkSeriesPath =
@@ -99,6 +105,15 @@ export async function auditReleaseArtifacts(options = {}) {
   const multiRestartConfirmationBenchmarkSeriesPath =
     options.multiRestartConfirmationBenchmarkSeriesPath ??
     defaultMultiRestartConfirmationBenchmarkSeriesPath;
+  const offlineWaitSampleABenchmarkSeriesPath =
+    options.offlineWaitSampleABenchmarkSeriesPath ??
+    defaultOfflineWaitSampleABenchmarkSeriesPath;
+  const offlineWaitSampleBBenchmarkSeriesPath =
+    options.offlineWaitSampleBBenchmarkSeriesPath ??
+    defaultOfflineWaitSampleBBenchmarkSeriesPath;
+  const offlineWaitDistributionBenchmarkSeriesPath =
+    options.offlineWaitDistributionBenchmarkSeriesPath ??
+    defaultOfflineWaitDistributionBenchmarkSeriesPath;
   const researchBenchmarkSeriesPath =
     options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
   const uxBenchmarkSeriesPath =
@@ -243,6 +258,36 @@ export async function auditReleaseArtifacts(options = {}) {
       artifactReferences: workflowBenchmarkSeriesArtifactReferences,
       verifySeries: verifyWorkflowBenchmarkSeries,
     });
+  const offlineWaitSampleABenchmarkArtifacts =
+    await verifyBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: offlineWaitSampleABenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "long-horizon-offline-wait-sample-a",
+      diagnosticLabel: "long-horizon offline wait sample A",
+      artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+      verifySeries: verifyWorkflowBenchmarkSeries,
+    });
+  const offlineWaitSampleBBenchmarkArtifacts =
+    await verifyBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: offlineWaitSampleBBenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "long-horizon-offline-wait-sample-b",
+      diagnosticLabel: "long-horizon offline wait sample B",
+      artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+      verifySeries: verifyWorkflowBenchmarkSeries,
+    });
+  const offlineWaitDistributionBenchmarkArtifacts =
+    await verifyBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: offlineWaitDistributionBenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "long-horizon-offline-wait-distribution",
+      diagnosticLabel: "long-horizon offline wait distribution",
+      artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+      verifySeries: verifyWorkflowBenchmarkSeries,
+    });
   const researchBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: researchBenchmarkSeriesPath,
@@ -339,6 +384,9 @@ export async function auditReleaseArtifacts(options = {}) {
     ...longHorizonBenchmarkArtifacts,
     ...multiRestartBenchmarkArtifacts,
     ...multiRestartConfirmationBenchmarkArtifacts,
+    ...offlineWaitSampleABenchmarkArtifacts,
+    ...offlineWaitSampleBBenchmarkArtifacts,
+    ...offlineWaitDistributionBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
     ...uxBenchmarkArtifacts,
   ];

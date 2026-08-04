@@ -103,6 +103,27 @@ describe("release artifacts audit", () => {
       "long-horizon-multi-restart-confirmation-ledger-4",
       "long-horizon-multi-restart-confirmation-result-5",
       "long-horizon-multi-restart-confirmation-ledger-5",
+      "long-horizon-offline-wait-sample-a-series",
+      "long-horizon-offline-wait-sample-a-result-1",
+      "long-horizon-offline-wait-sample-a-ledger-1",
+      "long-horizon-offline-wait-sample-a-result-2",
+      "long-horizon-offline-wait-sample-a-ledger-2",
+      "long-horizon-offline-wait-sample-b-series",
+      "long-horizon-offline-wait-sample-b-result-1",
+      "long-horizon-offline-wait-sample-b-ledger-1",
+      "long-horizon-offline-wait-sample-b-result-2",
+      "long-horizon-offline-wait-sample-b-ledger-2",
+      "long-horizon-offline-wait-distribution-series",
+      "long-horizon-offline-wait-distribution-result-1",
+      "long-horizon-offline-wait-distribution-ledger-1",
+      "long-horizon-offline-wait-distribution-result-2",
+      "long-horizon-offline-wait-distribution-ledger-2",
+      "long-horizon-offline-wait-distribution-result-3",
+      "long-horizon-offline-wait-distribution-ledger-3",
+      "long-horizon-offline-wait-distribution-result-4",
+      "long-horizon-offline-wait-distribution-ledger-4",
+      "long-horizon-offline-wait-distribution-result-5",
+      "long-horizon-offline-wait-distribution-ledger-5",
       "research-benchmark-series",
       "research-benchmark-result-1",
       "research-benchmark-ledger-1",
@@ -463,6 +484,36 @@ describe("release artifacts audit", () => {
         "long-horizon multi-restart variance series: series_trial_invalid",
         "long-horizon multi-restart variance trial 1: ledger:ledger_model_response_evidence_invalid",
         "long-horizon multi-restart variance trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
+  it("fails when retained offline wait deadline evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const seriesName = (await readdir(benchmarkRoot)).find((name) =>
+      name.startsWith(
+        "napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-8fbd6eba325a0839",
+      ),
+    );
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const passed = series.trials.find((trial) => trial.status === "passed");
+    const ledgerPath = path.join(benchmarkRoot, passed.ledgerFileName);
+    const ledger = JSON.parse(await readFile(ledgerPath, "utf8"));
+    ledger.workflow.restartEvent.payload.approvalExpiresAt =
+      "2026-08-04T00:00:00.000Z";
+    await writeJson(ledgerPath, ledger);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "long-horizon offline wait distribution series: series_trial_invalid",
+        `long-horizon offline wait distribution trial ${passed.index}: ledger:ledger_restart_evidence_invalid`,
+        `long-horizon offline wait distribution trial ${passed.index}: trial_binding_mismatch`,
       ]),
     );
   });
