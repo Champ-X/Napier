@@ -17,12 +17,22 @@ import {
 import { validWorkflowBenchmarkRestartBinding } from "./workflow-benchmark-restart-evidence.js";
 import { workflowBenchmarkPromptInjectionScanMatches } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteEvidenceBinding } from "./workflow-benchmark-sqlite-evidence.js";
+import {
+  isWorkflowBenchmarkStatus,
+  workflowBenchmarkTerminalEventType,
+} from "./workflow-benchmark-terminal-event.js";
 
 const TOP_LEVEL_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 threadId workflow runs evaluationEvent terminalEvent eventCount retainedEventCount omittedEventCount eventTypeCounts eventTypeSetSha256 sourceEventStreamSha256 sourceReplaySha256 eventReceipts receiptSetSha256 contentSha256",
 );
 const RECEIPT_KEYS = keySet(
   "id seq runId type category visibility createdAt payloadSha256 previousReceiptSha256 receiptSha256",
+);
+const TERMINAL_PAYLOAD_KEYS = keySet(
+  "schemaVersion planId manifestSha256 blueprintSha256 status planRevision nodeResultCount completedNodeCount skippedNodeCount resultSha256",
+);
+const TERMINAL_BREAKPOINT_KEYS = keySet(
+  "breakpointNodeId breakpointIndex breakpointCount breakpointReachedEventSeq breakpointBindingContextSha256",
 );
 const EMPTY_SHA256 = sha256("");
 const OMITTED_RECEIPT_TYPES = new Set([
@@ -146,7 +156,8 @@ export function verifyWorkflowBenchmarkLedgerBundle(input: unknown): {
     input.omittedEventCount !== omittedCount ||
     input.eventCount !== input.retainedEventCount + input.omittedEventCount ||
     input.evaluationEvent.type !== "benchmark.workflow.evaluated" ||
-    input.terminalEvent.type !== "workflow.completed"
+    input.terminalEvent.type !==
+      workflowBenchmarkTerminalEventType(input.workflow.status)
   ) {
     diagnostics.push("ledger_event_binding_invalid");
   }
@@ -297,44 +308,54 @@ function validEvaluationEvent(value: unknown): value is RunEvent {
 function validTerminalEvent(value: unknown): value is RunEvent {
   if (
     !validEvent(value) ||
-    value.type !== "workflow.completed" ||
     value.category !== "plan" ||
     value.visibility !== "user"
   ) {
     return false;
   }
-  const payload = value.payload;
-  if (
-    !exactRecord(payload, [
-      "schemaVersion",
-      "planId",
-      "manifestSha256",
-      "blueprintSha256",
-      "status",
-      "planRevision",
-      "nodeResultCount",
-      "completedNodeCount",
-      "skippedNodeCount",
-      "outputSha256",
-      "resultSha256",
-    ])
-  ) {
-    return false;
-  }
+  const payload = recordValue(value.payload);
+  const status = payload["status"];
   return (
+    isWorkflowBenchmarkStatus(status) &&
+    value.type === workflowBenchmarkTerminalEventType(status) &&
+    exactRecord(value.payload, terminalPayloadKeys(status)) &&
     payload["schemaVersion"] === 1 &&
     resourceId(payload["planId"]) &&
-    payload["status"] === "completed" &&
     digest(payload["manifestSha256"]) &&
     digest(payload["blueprintSha256"]) &&
-    digest(payload["outputSha256"]) &&
+    (status === "completed"
+      ? digest(payload["outputSha256"])
+      : payload["outputSha256"] === undefined) &&
     digest(payload["resultSha256"]) &&
     [
       "planRevision",
       "nodeResultCount",
       "completedNodeCount",
       "skippedNodeCount",
-    ].every((key) => nonNegativeInteger(payload[key]))
+    ].every((key) => nonNegativeInteger(payload[key])) &&
+    validTerminalBreakpoint(payload, status)
+  );
+}
+
+function terminalPayloadKeys(status: unknown): readonly string[] {
+  return [
+    ...TERMINAL_PAYLOAD_KEYS,
+    ...(status === "completed" ? ["outputSha256"] : []),
+    ...(status === "paused" ? TERMINAL_BREAKPOINT_KEYS : []),
+  ];
+}
+
+function validTerminalBreakpoint(
+  payload: Record<string, unknown>,
+  status: unknown,
+): boolean {
+  if (status !== "paused") return true;
+  return (
+    resourceId(payload["breakpointNodeId"]) &&
+    nonNegativeInteger(payload["breakpointIndex"]) &&
+    nonNegativeInteger(payload["breakpointCount"]) &&
+    nonNegativeInteger(payload["breakpointReachedEventSeq"]) &&
+    digest(payload["breakpointBindingContextSha256"])
   );
 }
 

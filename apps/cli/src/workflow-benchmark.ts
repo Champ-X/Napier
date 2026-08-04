@@ -50,6 +50,7 @@ import {
 } from "./workflow-benchmark-run-evidence.js";
 import { collectWorkflowBenchmarkSqliteActionEvents } from "./workflow-benchmark-sqlite-evidence.js";
 import { setupWorkflowBenchmarkDatabase } from "./workflow-benchmark-sqlite-setup.js";
+import { findWorkflowBenchmarkTerminalEvent } from "./workflow-benchmark-terminal-event.js";
 import type {
   WorkflowBenchmarkArtifacts,
   WorkflowBenchmarkCase,
@@ -272,7 +273,9 @@ export async function runWorkflowBenchmark(
     });
     const evidenceRunId =
       workflowResult.nodeResults.find((result) => result.runId)?.runId ??
-      runs[0]?.id;
+      runs[0]?.id ??
+      findWorkflowBenchmarkTerminalEvent(eventsBeforeEvaluation, workflowResult)
+        ?.runId;
     if (!evidenceRunId) {
       throw new Error("Workflow benchmark has no Run for evaluation evidence");
     }
@@ -289,13 +292,9 @@ export async function runWorkflowBenchmark(
       runtime.store,
       thread.id,
     );
-    const terminalEvent = finalReplay.events.find(
-      (event) =>
-        event.type === "workflow.completed" &&
-        event.payload &&
-        !Array.isArray(event.payload) &&
-        typeof event.payload === "object" &&
-        event.payload["planId"] === workflowResult.planId,
+    const terminalEvent = findWorkflowBenchmarkTerminalEvent(
+      finalReplay.events,
+      workflowResult,
     );
     if (!terminalEvent) {
       throw new Error("Workflow benchmark terminal event is unavailable");
@@ -322,7 +321,7 @@ export async function runWorkflowBenchmark(
       threadId: thread.id,
       ...(mapOutputSha256 ? { mapOutputSha256 } : {}),
       mapRunIds: mapRuns.map((run) => run.id),
-      reduceRunId: reduceResult?.runId ?? evidenceRunId,
+      ...(reduceResult?.runId ? { reduceRunId: reduceResult.runId } : {}),
       ...workflowBenchmarkSqliteLedgerEvidence({
         benchmarkCase: loaded.benchmarkCase,
         sqliteActionEvents,

@@ -53,6 +53,7 @@ export async function executeWorkflowBenchmark(input: {
   }
   const restartCase = input.benchmarkCase;
   const prepared = await prepareRestart(input.runtime, first, input);
+  if (!prepared) return { runtime: input.runtime, result: first };
   await input.runtime.shutdown();
   let reopened: LocalAgentRuntimeServices | undefined;
   try {
@@ -188,7 +189,7 @@ async function prepareRestart(
     threadId: string;
     manifest: ExecutionPlanWorkflowManifest;
   },
-): Promise<RestartCheckpoint> {
+): Promise<RestartCheckpoint | undefined> {
   if (
     result.status !== "waiting" ||
     result.nodeResults.find((node) => node.nodeId === "extract")?.status !==
@@ -196,21 +197,21 @@ async function prepareRestart(
     result.nodeResults.find((node) => node.nodeId === "restart_gate")
       ?.status !== "waiting"
   ) {
-    throw new Error("Long-horizon benchmark did not reach its restart gate");
+    return undefined;
   }
   const decisions = (
     await runtime.store.listOperatorDecisions(input.threadId)
   ).filter((decision) => decision.status === "pending");
   if (decisions.length !== 1) {
-    throw new Error("Long-horizon benchmark has no single pending decision");
+    return undefined;
   }
   const replay = await exportThreadReplayBundle(runtime.store, input.threadId);
   if (verifyThreadReplayBundle(replay).status !== "valid") {
-    throw new Error("Long-horizon pre-restart Replay is invalid");
+    return undefined;
   }
   const mapRunIds = completedMapRunIds(runtime, input.threadId);
   if (mapRunIds.length === 0) {
-    throw new Error("Long-horizon benchmark has no completed Map Runs");
+    return undefined;
   }
   return {
     decision: decisions[0]!,

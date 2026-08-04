@@ -238,7 +238,7 @@ export interface WorkflowBenchmarkLedgerBundle {
     status: ExecutionPlanWorkflowResult["status"];
     mapOutputSha256?: string;
     mapRunIds: string[];
-    reduceRunId: string;
+    reduceRunId?: string;
     sqliteActionEvents?: RunEvent[];
     databaseBeforeSha256?: string;
     databaseAfterSha256?: string;

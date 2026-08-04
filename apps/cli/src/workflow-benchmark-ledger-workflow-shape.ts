@@ -5,6 +5,7 @@ import {
 import { validWorkflowBenchmarkRestartFields } from "./workflow-benchmark-restart-evidence.js";
 import { validWorkflowBenchmarkSecurityFields } from "./workflow-benchmark-security-evidence.js";
 import { validWorkflowBenchmarkSqliteFields } from "./workflow-benchmark-sqlite-evidence.js";
+import { isWorkflowBenchmarkStatus } from "./workflow-benchmark-terminal-event.js";
 
 export function validWorkflowBenchmarkLedgerWorkflow(value: unknown): boolean {
   return workflowBenchmarkLedgerWorkflowDiagnostics(value).length === 0;
@@ -30,7 +31,13 @@ export function workflowBenchmarkLedgerWorkflowDiagnostics(
   ) {
     diagnostics.push("workflow_map_runs_invalid");
   }
-  if (!resourceId(workflow["reduceRunId"])) {
+  if (
+    (workflow["status"] === "completed" &&
+      !resourceId(workflow["reduceRunId"])) ||
+    (workflow["status"] !== "completed" &&
+      workflow["reduceRunId"] !== undefined &&
+      !resourceId(workflow["reduceRunId"]))
+  ) {
     diagnostics.push("workflow_reduce_run_invalid");
   }
   if (!validWorkflowBenchmarkSqliteFields(workflow)) {
@@ -64,14 +71,14 @@ function workflowKeys(workflow: Record<string, unknown>): readonly string[] {
     "manifestSha256",
     "blueprintSha256",
     "resultSha256",
-    "outputSha256",
+    ...(workflow["outputSha256"] === undefined ? [] : ["outputSha256"]),
     "nodeResultCount",
     "completedNodeResultCount",
     "planId",
     "status",
     ...(workflow["mapOutputSha256"] === undefined ? [] : ["mapOutputSha256"]),
     "mapRunIds",
-    "reduceRunId",
+    ...(workflow["reduceRunId"] === undefined ? [] : ["reduceRunId"]),
     ...(workflow["sqliteActionEvents"] === undefined
       ? []
       : ["sqliteActionEvents"]),
@@ -110,11 +117,13 @@ function workflowKeys(workflow: Record<string, unknown>): readonly string[] {
 function validWorkflowIdentity(workflow: Record<string, unknown>): boolean {
   return (
     resourceId(workflow["planId"]) &&
-    workflow["status"] === "completed" &&
+    isWorkflowBenchmarkStatus(workflow["status"]) &&
     digest(workflow["manifestSha256"]) &&
     digest(workflow["blueprintSha256"]) &&
     digest(workflow["resultSha256"]) &&
-    digest(workflow["outputSha256"]) &&
+    (workflow["status"] === "completed"
+      ? digest(workflow["outputSha256"])
+      : workflow["outputSha256"] === undefined) &&
     (workflow["mapOutputSha256"] === undefined ||
       digest(workflow["mapOutputSha256"]))
   );

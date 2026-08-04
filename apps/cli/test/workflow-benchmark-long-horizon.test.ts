@@ -258,6 +258,60 @@ describe("Long-horizon outcome benchmark", () => {
       }),
     );
   }, 30_000);
+
+  it("retains pre-gate Workflow failures as verifiable failed trials", async () => {
+    const outputDir = await temporaryOutput();
+    const dependencies = longHorizonDependencies(blockedLongHorizonProvider());
+    const artifacts = await runWorkflowBenchmarkSeries(
+      {
+        caseRoot: MULTI_RESTART_CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-long-horizon", id: "faux-1" },
+        env: {},
+        trialCount: 2,
+      },
+      dependencies,
+    );
+
+    expect(dependencies.runtimeCreateCount()).toBe(2);
+    expect(artifacts.series).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        scoredTrialCount: 2,
+        passedTrialCount: 0,
+        failedTrialCount: 2,
+        passRate: 0,
+      }),
+    );
+    for (const trial of artifacts.trials) {
+      expect(trial.result).toEqual(
+        expect.objectContaining({
+          status: "failed",
+          run: expect.objectContaining({ status: "blocked" }),
+          evaluation: expect.objectContaining({
+            workflowStatus: "blocked",
+            runtimeRestartCount: 0,
+            approvalRecovered: false,
+            completedMapRunsReused: false,
+            postRestartModelResponseCount: 0,
+            diagnostics: expect.arrayContaining([
+              "workflow_not_completed",
+              "runtime_restart_mismatch",
+              "approval_recovery_mismatch",
+              "map_reuse_mismatch",
+            ]),
+          }),
+        }),
+      );
+      expect(trial.bundle.terminalEvent.type).toBe("workflow.blocked");
+      expect(trial.bundle.workflow).not.toHaveProperty("outputSha256");
+      expect(trial.bundle.workflow).not.toHaveProperty("reduceRunId");
+      expect(trial.bundle.workflow).not.toHaveProperty("restartEvent");
+      expect(
+        verifyWorkflowBenchmarkArtifacts(trial.result, trial.bundle),
+      ).toEqual(expect.objectContaining({ valid: true, diagnostics: [] }));
+    }
+  }, 30_000);
 });
 
 function longHorizonProvider(responseCount: number) {
@@ -276,6 +330,14 @@ function longHorizonProvider(responseCount: number) {
     throw new Error("Long-horizon prompt has no known document");
   };
   provider.setResponses(Array.from({ length: responseCount }, () => respond));
+  return provider;
+}
+
+function blockedLongHorizonProvider() {
+  const provider = fauxProvider({ provider: "faux-long-horizon" });
+  provider.setResponses(
+    Array.from({ length: 6 }, () => fauxAssistantMessage("not typed JSON")),
+  );
   return provider;
 }
 

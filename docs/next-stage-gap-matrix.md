@@ -347,8 +347,12 @@ Observed result:
   zero model calls after the first restart; mean cost was `$0.0019834108` and
   mean input/output usage was 13,457.5/339.5;
 - an earlier live execution ended before the first gate without a scored
-  artifact. Capturing pre-gate failures, long wall-clock waits, budget
-  exhaustion, no-progress detection, and uncertain write recovery remain.
+  artifact. The runner now retains matching blocked/waiting/paused/cancelled
+  terminal receipts with optional output/Reduce evidence; two invalid-output
+  trials complete as an offline-verifiable `failed=2` Series instead of
+  aborting collection;
+- long wall-clock waits, budget exhaustion, no-progress detection, and
+  uncertain write recovery remain.
 
 ## Implemented Slice: Research Outcome Benchmark
 

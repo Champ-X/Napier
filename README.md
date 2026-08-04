@@ -1497,9 +1497,11 @@ receipt-bound restart events, reused all three Map Runs, and recorded one
 answered/continued pair with zero model responses after the first restart.
 Mean cost was `$0.0019834108`; mean input/output tokens were
 13,457.5/339.5. One earlier live attempt ended before the first Approval gate
-and produced no scored artifact, exposing a remaining runner gap for pre-gate
-failure capture. The retained retry proves the repeated-recovery invariants
-but is not evidence of zero model-side variance.
+and produced no scored artifact. The runner now retains blocked, waiting,
+paused, or cancelled pre-gate outcomes with their matching Workflow terminal
+receipt, optional output/Reduce evidence, usage, and failed or inconclusive
+evaluation. The retained retry predates that fix, so it proves the
+repeated-recovery invariants but is not evidence of zero model-side variance.
 
 ### Research Outcome Benchmark
 

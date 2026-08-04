@@ -1894,9 +1894,13 @@ mean cost of `$0.0019834108`; mean input/output usage was 13,457.5/339.5.
 Every trial created three Runtime instances, retained two restart events,
 recovered one pending then answered Approval, reused all three Map Runs, and
 had zero model responses after the first restart. One earlier live execution
-ended before the gate and was not scored, so pre-gate failure capture remains
-an explicit Benchmark runner gap. Long wall-clock waits, budget exhaustion,
-no-progress detection, and uncertain write recovery also remain.
+ended before the gate and was not scored. The runner now retains non-completed
+pre-gate results instead of throwing: Ledger validation accepts the matching
+`workflow.blocked`, `workflow.waiting`, `workflow.paused`, or
+`workflow.cancelled` terminal shape, while output and Reduce IDs remain absent
+unless produced. A two-trial invalid-output test reconstructs both failed
+evaluations offline. Long wall-clock waits, budget exhaustion, no-progress
+detection, and uncertain write recovery remain.
 
 ### Research Outcome Benchmark
 

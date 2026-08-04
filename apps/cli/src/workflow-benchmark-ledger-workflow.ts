@@ -12,7 +12,7 @@ export interface WorkflowBenchmarkLedgerWorkflowInput {
   planId: string;
   mapOutputSha256?: string;
   mapRunIds: string[];
-  reduceRunId: string;
+  reduceRunId?: string;
   sqliteActionEvents?: RunEvent[];
   databaseBeforeSha256?: string;
   databaseAfterSha256?: string;
@@ -44,7 +44,7 @@ export function createWorkflowBenchmarkLedgerWorkflow(
       ? { mapOutputSha256: input.mapOutputSha256 }
       : {}),
     mapRunIds: [...input.mapRunIds].sort(),
-    reduceRunId: input.reduceRunId,
+    ...(input.reduceRunId ? { reduceRunId: input.reduceRunId } : {}),
     ...(input.sqliteActionEvents
       ? {
           sqliteActionEvents: input.sqliteActionEvents
