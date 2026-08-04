@@ -8,6 +8,10 @@ import type {
 } from "./goal-no-progress-benchmark-types.js";
 
 const EMPTY_SHA256 = sha256("");
+const OMITTED_RECEIPT_TYPES = new Set([
+  "model.text.delta",
+  "model.thinking.delta",
+]);
 
 export async function appendGoalModelObservation(input: {
   store: Pick<LocalStore, "appendEvent">;
@@ -137,25 +141,27 @@ export function recordValue(value: unknown): Record<string, unknown> {
 
 function createEventReceipts(events: RunEvent[]): GoalNoProgressEventReceipt[] {
   let previousReceiptSha256 = EMPTY_SHA256;
-  return events.map((event) => {
-    const content = {
-      id: event.id,
-      seq: event.seq,
-      runId: event.runId,
-      type: event.type,
-      category: event.category,
-      visibility: event.visibility,
-      createdAt: event.createdAt,
-      payloadSha256: sha256(canonicalJson(event.payload)),
-      previousReceiptSha256,
-    };
-    const receipt = {
-      ...content,
-      receiptSha256: sha256(canonicalJson(content)),
-    };
-    previousReceiptSha256 = receipt.receiptSha256;
-    return receipt;
-  });
+  return events
+    .filter((event) => !OMITTED_RECEIPT_TYPES.has(event.type))
+    .map((event) => {
+      const content = {
+        id: event.id,
+        seq: event.seq,
+        runId: event.runId,
+        type: event.type,
+        category: event.category,
+        visibility: event.visibility,
+        createdAt: event.createdAt,
+        payloadSha256: sha256(canonicalJson(event.payload)),
+        previousReceiptSha256,
+      };
+      const receipt = {
+        ...content,
+        receiptSha256: sha256(canonicalJson(content)),
+      };
+      previousReceiptSha256 = receipt.receiptSha256;
+      return receipt;
+    });
 }
 
 function validUsage(value: unknown): boolean {
