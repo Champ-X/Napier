@@ -6,7 +6,7 @@ benchmarks.
 
 ## Baseline
 
-Audit date: 2026-08-03
+Audit date: 2026-08-04
 
 - The Work Ledger, replay artifacts, Plans, evaluation, recovery, and
   extension governance are substantially ahead of the execution surface.
@@ -26,7 +26,11 @@ Audit date: 2026-08-03
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
   Blueprint Library controls, shared action/receipt types, and Record rendering
   are now separate bounded modules as well, reducing the panel to 4,078 lines
-  while retaining API orchestration and outer docket order.
+  while retaining API orchestration and outer docket order. Receipt header
+  projection plus replay/outcome/selection/policy detail rendering now occupy
+  bounded modules too, reducing the panel to 3,183 lines and maximum function
+  complexity 59. The Plan lazy chunk is 121.52 kB and the 118.21 kB main entry
+  remains unchanged.
 - General host shell execution remains unavailable.
 
 ## Priority Matrix
@@ -418,9 +422,9 @@ Observed result:
   OS Sandbox evidence and has no isomorphic OMP score;
 - all restart, offline-wait, current budget, Goal no-progress, and Process
   recovery artifacts are in the 118-artifact release set
-  `202d58fcc780ef88...`;
-- complete `npm run check` passes 2,093 tests: 104 root, 168 CLI, 183 Server,
-  473 Web, 1,137 Runtime, and 28 SDK.
+  `ca1977e51fbd9334...`;
+- complete `npm run check` passes 2,098 tests: 104 root, 168 CLI, 183 Server,
+  478 Web, 1,137 Runtime, and 28 SDK.
 
 ## Implemented Slice: Research Outcome Benchmark
 

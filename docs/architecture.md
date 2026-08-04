@@ -2134,6 +2134,14 @@ availability, and Record rendering now use
 and outer docket order. Focused model tests bind policy apply/retire
 availability and active/archive counts. This lowers the panel to 4,078 lines;
 the Plan lazy chunk is 120.91 kB and the 118.21 kB main entry is unchanged.
+Blueprint Library receipt title/status/hash/summary/identity projection now
+uses `plan-blueprint-library-receipt-model.ts`, while replay, outcome,
+selection, policy-drift, retirement, and proof details use bounded view
+components behind `PlanBlueprintLibraryReceiptView.tsx`. `PlanPanel.tsx`
+continues to own receipt creation and API orchestration, but falls to 3,183
+lines and maximum function complexity 59. Five focused tests bind core and
+policy projection semantics. The additional module boundaries increase the
+Plan lazy chunk to 121.52 kB; the 118.21 kB main entry remains unchanged.
 
 An open Operator Decision is a separate lazy Workbench docket between the
 Ledger and composer. It owns accessible option selection, custom answer,
@@ -2195,7 +2203,7 @@ hashing the 110 Benchmark files, the gate performs full semantic verification
 for sixteen Series across twelve cases. It stores only artifact kinds,
 repo-relative paths, SHA-256 values, validity booleans, package name/version,
 and a canonical artifact-set digest. The current receipt contains 118 artifacts
-and binds set SHA-256 `202d58fcc780ef88...`.
+and binds set SHA-256 `ca1977e51fbd9334...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
@@ -5029,7 +5037,7 @@ reconstructs reopen runtime state, and rejects a forged final hash even after
 outer Ledger hashes are recomputed. The opt-in direct adapter is explicitly
 recorded as `trusted_outer_test`; only the default platform adapter constitutes
 an OS Sandbox attempt. The retained five-trial Series passes in 104-121 ms per
-trial, and the complete repository gate passes 2,093 tests.
+trial, and the complete repository gate passes 2,098 tests.
 
 `WorkspaceProcessManager` is a Capability Plane service outside `LocalStore`
 and the Server router. The Work Ledger remains authoritative across restarts:
