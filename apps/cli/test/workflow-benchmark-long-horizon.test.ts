@@ -307,6 +307,9 @@ describe("Long-horizon outcome benchmark", () => {
       expect(trial.bundle.workflow).not.toHaveProperty("outputSha256");
       expect(trial.bundle.workflow).not.toHaveProperty("reduceRunId");
       expect(trial.bundle.workflow).not.toHaveProperty("restartEvent");
+      expect(trial.result.evaluation.diagnostics).not.toContain(
+        "post_restart_model_called",
+      );
       expect(
         verifyWorkflowBenchmarkArtifacts(trial.result, trial.bundle),
       ).toEqual(expect.objectContaining({ valid: true, diagnostics: [] }));

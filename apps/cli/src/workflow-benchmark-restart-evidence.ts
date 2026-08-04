@@ -46,7 +46,7 @@ export function workflowBenchmarkRestartDiagnostics(
   if (input.completedMapRunsReused !== true) {
     diagnostics.push("map_reuse_mismatch");
   }
-  if (input.postRestartModelResponseCount !== 0) {
+  if ((input.postRestartModelResponseCount ?? 0) !== 0) {
     diagnostics.push("post_restart_model_called");
   }
   return diagnostics;
