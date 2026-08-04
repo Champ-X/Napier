@@ -21,6 +21,9 @@ Audit date: 2026-08-03
   `ChannelService` consumes a 12-method Store SPI instead of concrete
   `LocalStore`; the Contracts root remains the compatibility export surface.
 - The Web main entry remains subject to the 150 KiB release gate.
+- Plan Blueprint record ordering, signer selection, replay ownership, and
+  conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
+  lazy Workbench panel to 4,513 lines without moving its API orchestration.
 - General host shell execution remains unavailable.
 
 ## Priority Matrix
@@ -401,7 +404,7 @@ Observed result:
   Goal completion after one continuation. This is evidence of model variance,
   not a protocol pass;
 - all restart, offline-wait, current budget, and Goal no-progress artifacts are
-  in the 107-artifact release set `6a08ce697f124d5e...`;
+  in the 107-artifact release set `f28d1a7aabacc1f1...`;
 - uncertain write recovery remains.
 
 ## Implemented Slice: Research Outcome Benchmark

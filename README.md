@@ -5614,7 +5614,7 @@ Web dist manifest, and the semantically verified Workflow, Data, DataFrame,
 Security, restart/offline-wait/budget Long-horizon, Research, and UX Benchmark
 Series, the durable Goal no-progress Series, and all forty-two Result/Ledger
 pairs by SHA-256; the current 107-artifact set is bound by
-`6a08ce697f124d5e...`;
+`f28d1a7aabacc1f1...`;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract

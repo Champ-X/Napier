@@ -2120,6 +2120,12 @@ controls and receipt projections while `PlanPanel.tsx` retains orchestration
 against the shared API clients. Pure receipt projections have focused tests for
 status, digest truncation, diagnostics, counts, and Plan identity. This lowers
 `PlanPanel.tsx` from 4,939 to 4,655 lines without changing its lazy chunk.
+Blueprint Record upsert ordering, signing-anchor selection, replay artifact
+ownership parsing, and conflict-preview shape validation use
+`plan-blueprint-panel-model.ts`. Focused tests cover active/archived ordering,
+signing eligibility, malformed replay ownership, and fail-closed 409 payloads.
+This lowers `PlanPanel.tsx` further to 4,513 lines while leaving API
+orchestration and component state in the lazy Plan chunk.
 
 An open Operator Decision is a separate lazy Workbench docket between the
 Ledger and composer. It owns accessible option selection, custom answer,
@@ -2180,7 +2186,7 @@ hashing the 99 Benchmark files, the gate performs full semantic verification
 for fifteen Series across eleven cases. It stores only artifact kinds,
 repo-relative paths, SHA-256 values, validity booleans, package name/version,
 and a canonical artifact-set digest. The current receipt contains 107 artifacts
-and binds set SHA-256 `6a08ce697f124d5e...`.
+and binds set SHA-256 `f28d1a7aabacc1f1...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
