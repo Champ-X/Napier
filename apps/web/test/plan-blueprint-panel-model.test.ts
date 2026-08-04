@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 
 import { NapierApiError } from "../src/api-error";
 import {
+  blueprintLibraryControlAvailability,
+  blueprintLibraryRecordCounts,
   firstSigningAnchor,
   planBlueprintPreviewFromError,
   replayHistoryRecordId,
@@ -14,6 +16,7 @@ import {
   signingAnchorAvailable,
   upsertBlueprintRecord,
 } from "../src/plan-blueprint-panel-model";
+import type { PlanBlueprintLibraryReceipt } from "../src/plan-blueprint-library-panel-types";
 
 describe("Plan blueprint panel model", () => {
   it("upserts records in active, recency, and name order", () => {
@@ -53,6 +56,56 @@ describe("Plan blueprint panel model", () => {
     expect(signingAnchorAvailable(anchors, signer.id)).toBe(true);
     expect(signingAnchorAvailable(anchors, publicOnly.id)).toBe(false);
     expect(signingAnchorAvailable(anchors, revoked.id)).toBe(false);
+  });
+
+  it("derives policy control availability from the latest receipt", () => {
+    expect(
+      blueprintLibraryControlAvailability({
+        busyAction: "backtestPolicy",
+        receipt: {
+          action: "policyBacktested",
+          topSelectedFamilySha256: "a".repeat(64),
+        } as PlanBlueprintLibraryReceipt,
+      }),
+    ).toEqual({
+      busy: true,
+      canApplyPolicyOverride: true,
+      canRetirePolicyOverride: false,
+    });
+    expect(
+      blueprintLibraryControlAvailability({
+        busyAction: undefined,
+        receipt: {
+          action: "policyOverrideDriftReviewed",
+          reviewedRecommendation: "retire",
+          reviewedFamilySha256: "b".repeat(64),
+          reviewedOverrideSha256: "c".repeat(64),
+        } as PlanBlueprintLibraryReceipt,
+      }),
+    ).toEqual({
+      busy: false,
+      canApplyPolicyOverride: false,
+      canRetirePolicyOverride: true,
+    });
+  });
+
+  it("counts active and archived Blueprint records", () => {
+    expect(
+      blueprintLibraryRecordCounts([
+        blueprintRecord({
+          id: "blueprint_active",
+          name: "Active",
+          status: "active",
+          updatedAt: "2026-08-04T00:00:00.000Z",
+        }),
+        blueprintRecord({
+          id: "blueprint_archived",
+          name: "Archived",
+          status: "archived",
+          updatedAt: "2026-08-04T00:00:01.000Z",
+        }),
+      ]),
+    ).toEqual({ active: 1, archived: 1 });
   });
 
   it("reads replay ownership without accepting malformed outcomes", () => {

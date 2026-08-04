@@ -1,12 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  Brain,
-  ChevronRight,
-  Download,
-  KeyRound,
-  ShieldCheck,
-  Upload,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Brain, ChevronRight, Download, ShieldCheck } from "lucide-react";
 
 import type {
   ArtifactManifestEntry,
@@ -92,6 +85,7 @@ import {
   executionPlanBlueprintFilename,
 } from "./plan-archive-artifact-view-model";
 import {
+  blueprintLibraryRecordCounts,
   firstSigningAnchor,
   planBlueprintPreviewFromError,
   replayHistoryRecordId,
@@ -99,7 +93,13 @@ import {
   signingAnchorAvailable,
   upsertBlueprintRecord,
 } from "./plan-blueprint-panel-model";
+import type {
+  PlanBlueprintLibraryBusyAction,
+  PlanBlueprintLibraryReceipt,
+} from "./plan-blueprint-library-panel-types";
 import { planCopy } from "./plan-copy";
+import { PlanBlueprintLibraryControls } from "./PlanBlueprintLibraryControls";
+import { PlanBlueprintRecordList } from "./PlanBlueprintRecordList";
 import {
   PlanArchiveCard,
   type PlanArchiveReceipt,
@@ -108,47 +108,27 @@ import {
 } from "./PlanPortableEvidenceCards";
 import {
   planBlueprintCreatedReceipt,
-  type PlanBlueprintLibraryCreatedReceipt,
   planBlueprintOutcomeBaselineReceipt,
-  type PlanBlueprintLibraryOutcomeBaselineReceipt,
   planBlueprintOutcomeQualificationReceipt,
-  type PlanBlueprintLibraryOutcomeQualificationReceipt,
   planBlueprintOutcomeReviewReceipt,
-  type PlanBlueprintLibraryOutcomeReviewReceipt,
   planBlueprintPortfolioCalibrationReceipt,
-  type PlanBlueprintLibraryPortfolioCalibrationReceipt,
   planBlueprintPreviewReceipt,
-  type PlanBlueprintLibraryPreviewReceipt,
   planBlueprintQualificationReceipt,
-  type PlanBlueprintLibraryQualificationReceipt,
   planBlueprintReplayHistoryFilename,
   planBlueprintRecommendationPolicyBacktestReceipt,
-  type PlanBlueprintLibraryRecommendationPolicyBacktestReceipt,
   planBlueprintRecommendationPolicyOverrideReceipt,
   planBlueprintRecommendationPolicyOverrideDriftReviewReceipt,
-  type PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewReceipt,
-  type PlanBlueprintLibraryRecommendationPolicyOverrideReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementHistoryReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementProofBundleReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementProofBundleSignedReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
-  type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryReceipt,
-  type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleReceipt,
-  type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleSignedReceipt,
-  type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementReceipt,
   planBlueprintReplayOutcomesFilename,
-  type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementReceipt,
   planBlueprintReplayHistoryReceipt,
-  type PlanBlueprintLibraryReplayHistoryReceipt,
   planBlueprintReplayHistoryVerificationReceipt,
-  type PlanBlueprintLibraryReplayHistoryVerificationReceipt,
   planBlueprintReplayOutcomesReceipt,
-  type PlanBlueprintLibraryReplayOutcomesReceipt,
   planBlueprintReplayOutcomesVerificationReceipt,
-  type PlanBlueprintLibraryReplayOutcomesVerificationReceipt,
   planBlueprintSelectionReceipt,
-  type PlanBlueprintLibrarySelectionReceipt,
 } from "./plan-blueprint-library-view-model";
 import { listReceiptTrustAnchors } from "./receipt-trust-api";
 import {
@@ -168,62 +148,6 @@ const MAX_PLAN_BLUEPRINT_REPLAY_HISTORY_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_REPLAY_OUTCOMES_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_POLICY_OVERRIDE_RETIREMENT_HISTORY_FILE_BYTES =
   2 * 1024 * 1024;
-
-type PlanBlueprintLibraryBusyAction =
-  | "load"
-  | "save"
-  | "status"
-  | "create"
-  | "qualify"
-  | "preview"
-  | "history"
-  | "verifyHistory"
-  | "outcomes"
-  | "verifyOutcomes"
-  | "promoteOutcomeBaseline"
-  | "promoteReviewedOutcomeBaseline"
-  | "qualifyOutcomes"
-  | "reviewOutcomes"
-  | "calibratePortfolio"
-  | "backtestPolicy"
-  | "applyPolicyOverride"
-  | "reviewPolicyOverrideDrift"
-  | "retirePolicyOverride"
-  | "auditPolicyOverrideRetirements"
-  | "verifyPolicyOverrideRetirements"
-  | "verifyPolicyOverrideRetirementProofBundle"
-  | "signPolicyOverrideRetirementProofBundle"
-  | "select";
-
-type PlanBlueprintLibraryReceipt =
-  | {
-      action: "saved" | "reused" | "archived" | "restored";
-      recordId: string;
-      blueprintSha256: string;
-      status: ExecutionPlanBlueprintRecord["status"];
-      stepCount: number;
-      artifactCount: number;
-    }
-  | PlanBlueprintLibraryCreatedReceipt
-  | PlanBlueprintLibraryQualificationReceipt
-  | PlanBlueprintLibraryPreviewReceipt
-  | PlanBlueprintLibraryReplayHistoryReceipt
-  | PlanBlueprintLibraryReplayHistoryVerificationReceipt
-  | PlanBlueprintLibraryReplayOutcomesReceipt
-  | PlanBlueprintLibraryReplayOutcomesVerificationReceipt
-  | PlanBlueprintLibraryOutcomeBaselineReceipt
-  | PlanBlueprintLibraryOutcomeQualificationReceipt
-  | PlanBlueprintLibraryOutcomeReviewReceipt
-  | PlanBlueprintLibraryPortfolioCalibrationReceipt
-  | PlanBlueprintLibraryRecommendationPolicyBacktestReceipt
-  | PlanBlueprintLibraryRecommendationPolicyOverrideReceipt
-  | PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewReceipt
-  | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementReceipt
-  | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryReceipt
-  | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryVerificationReceipt
-  | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleReceipt
-  | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleSignedReceipt
-  | PlanBlueprintLibrarySelectionReceipt;
 
 export default function PlanPanel({
   threadId,
@@ -3113,26 +3037,8 @@ function PlanBlueprintLibraryCard({
   onReviewOutcomes: (record: ExecutionPlanBlueprintRecord) => void;
   onCreate: (record: ExecutionPlanBlueprintRecord) => void;
 }) {
-  const historyInput = useRef<HTMLInputElement>(null);
-  const outcomesInput = useRef<HTMLInputElement>(null);
-  const policyOverrideRetirementsInput = useRef<HTMLInputElement>(null);
-  const policyOverrideRetirementProofBundleInput =
-    useRef<HTMLInputElement>(null);
-  const policyOverrideRetirementProofBundleSignInput =
-    useRef<HTMLInputElement>(null);
-  const busy = Boolean(busyAction);
-  const activeCount = records.filter(
-    (record) => record.status === "active",
-  ).length;
+  const recordCounts = blueprintLibraryRecordCounts(records);
   const modelReviewWarningId = "plan-blueprint-model-unavailable";
-  const archivedCount = records.length - activeCount;
-  const canApplyPolicyOverride =
-    receipt?.action === "policyBacktested" &&
-    Boolean(receipt.topSelectedFamilySha256);
-  const canRetirePolicyOverride =
-    receipt?.action === "policyOverrideDriftReviewed" &&
-    receipt.reviewedRecommendation === "retire" &&
-    Boolean(receipt.reviewedFamilySha256 && receipt.reviewedOverrideSha256);
   return (
     <section
       className="fixture-docket plan-blueprint-library-card"
@@ -3157,230 +3063,34 @@ function PlanBlueprintLibraryCard({
           {planCopy.modelUnavailableHint}
         </p>
       ) : null}
-      <div className="fixture-actions">
-        <button type="button" disabled={busy} onClick={onRefresh}>
-          <Download size={12} aria-hidden="true" />
-          {busyAction === "load"
-            ? planCopy.blueprint.library.refreshing
-            : planCopy.blueprint.library.refresh}
-        </button>
-        <button
-          className="fixture-verify"
-          type="button"
-          disabled={busy || !canSelect || records.length === 0}
-          onClick={onSelect}
-        >
-          <ShieldCheck size={12} aria-hidden="true" />
-          {busyAction === "select"
-            ? planCopy.blueprint.library.selecting
-            : planCopy.blueprint.library.select}
-        </button>
-        <button type="button" disabled={busy} onClick={onCalibrate}>
-          <ShieldCheck size={12} aria-hidden="true" />
-          {busyAction === "calibratePortfolio"
-            ? planCopy.blueprint.library.calibrating
-            : planCopy.blueprint.library.calibrate}
-        </button>
-        <button type="button" disabled={busy} onClick={onBacktestPolicy}>
-          <ShieldCheck size={12} aria-hidden="true" />
-          {busyAction === "backtestPolicy"
-            ? planCopy.blueprint.library.backtestingPolicy
-            : planCopy.blueprint.library.backtestPolicy}
-        </button>
-        <button
-          type="button"
-          disabled={busy || !canApplyPolicyOverride}
-          onClick={onApplyPolicyOverride}
-        >
-          <ShieldCheck size={12} aria-hidden="true" />
-          {busyAction === "applyPolicyOverride"
-            ? planCopy.blueprint.library.applyingPolicyOverride
-            : planCopy.blueprint.library.applyPolicyOverride}
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onReviewPolicyOverrideDrift}
-        >
-          <ShieldCheck size={12} aria-hidden="true" />
-          {busyAction === "reviewPolicyOverrideDrift"
-            ? planCopy.blueprint.library.reviewingPolicyOverrideDrift
-            : planCopy.blueprint.library.reviewPolicyOverrideDrift}
-        </button>
-        <button
-          type="button"
-          disabled={busy || !canRetirePolicyOverride}
-          onClick={onRetirePolicyOverride}
-        >
-          <ShieldCheck size={12} aria-hidden="true" />
-          {busyAction === "retirePolicyOverride"
-            ? planCopy.blueprint.library.retiringPolicyOverride
-            : planCopy.blueprint.library.retirePolicyOverride}
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onAuditPolicyOverrideRetirements}
-        >
-          <ShieldCheck size={12} aria-hidden="true" />
-          {busyAction === "auditPolicyOverrideRetirements"
-            ? planCopy.blueprint.library.auditingPolicyOverrideRetirements
-            : planCopy.blueprint.library.auditPolicyOverrideRetirements}
-        </button>
-        <button
-          className="fixture-verify"
-          type="button"
-          disabled={busy}
-          onClick={() => policyOverrideRetirementsInput.current?.click()}
-        >
-          <Upload size={12} aria-hidden="true" />
-          {busyAction === "verifyPolicyOverrideRetirements"
-            ? planCopy.blueprint.library.verifyingPolicyOverrideRetirements
-            : planCopy.blueprint.library.verifyPolicyOverrideRetirements}
-        </button>
-        <button
-          className="fixture-verify"
-          type="button"
-          disabled={busy}
-          onClick={() =>
-            policyOverrideRetirementProofBundleInput.current?.click()
-          }
-        >
-          <Upload size={12} aria-hidden="true" />
-          {busyAction === "verifyPolicyOverrideRetirementProofBundle"
-            ? planCopy.blueprint.library
-                .verifyingPolicyOverrideRetirementProofBundle
-            : planCopy.blueprint.library
-                .verifyPolicyOverrideRetirementProofBundle}
-        </button>
-        <button
-          className="fixture-verify"
-          type="button"
-          disabled={busy}
-          title={
-            canSignPolicyOverrideRetirementProofBundle
-              ? planCopy.blueprint.library
-                  .signPolicyOverrideRetirementProofBundle
-              : planCopy.blueprint.library.errors
-                  .policyOverrideProofBundleNoSigner
-          }
-          onClick={() =>
-            policyOverrideRetirementProofBundleSignInput.current?.click()
-          }
-        >
-          <KeyRound size={12} aria-hidden="true" />
-          {busyAction === "signPolicyOverrideRetirementProofBundle"
-            ? planCopy.blueprint.library
-                .signingPolicyOverrideRetirementProofBundle
-            : planCopy.blueprint.library
-                .signPolicyOverrideRetirementProofBundle}
-        </button>
-        <button
-          className="fixture-verify"
-          type="button"
-          disabled={busy}
-          onClick={() => historyInput.current?.click()}
-        >
-          <Upload size={12} aria-hidden="true" />
-          {busyAction === "verifyHistory"
-            ? planCopy.blueprint.library.verifyingHistory
-            : planCopy.blueprint.library.verifyHistory}
-        </button>
-        <button
-          className="fixture-import"
-          type="button"
-          disabled={busy || !canSave}
-          onClick={onSave}
-        >
-          <Upload size={12} aria-hidden="true" />
-          {busyAction === "save"
-            ? planCopy.blueprint.library.saving
-            : planCopy.blueprint.library.save}
-        </button>
-        <button
-          className="fixture-verify"
-          type="button"
-          disabled={busy}
-          onClick={() => outcomesInput.current?.click()}
-        >
-          <Upload size={12} aria-hidden="true" />
-          {busyAction === "verifyOutcomes"
-            ? planCopy.blueprint.library.verifyingOutcomes
-            : planCopy.blueprint.library.verifyOutcomes}
-        </button>
-        <input
-          ref={historyInput}
-          className="fixture-file-input"
-          type="file"
-          accept="application/json,.json"
-          aria-label={planCopy.blueprint.library.verifyHistory}
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            event.currentTarget.value = "";
-            if (file) onVerifyHistory(file);
-          }}
-        />
-        <input
-          ref={policyOverrideRetirementsInput}
-          className="fixture-file-input"
-          type="file"
-          accept="application/json,.json"
-          aria-label={
-            planCopy.blueprint.library.verifyPolicyOverrideRetirements
-          }
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            event.currentTarget.value = "";
-            if (file) onVerifyPolicyOverrideRetirements(file);
-          }}
-        />
-        <input
-          ref={policyOverrideRetirementProofBundleInput}
-          className="fixture-file-input"
-          type="file"
-          accept="application/json,.json"
-          multiple
-          aria-label={
-            planCopy.blueprint.library.verifyPolicyOverrideRetirementProofBundle
-          }
-          onChange={(event) => {
-            const files = Array.from(event.currentTarget.files ?? []);
-            event.currentTarget.value = "";
-            if (files.length > 0) {
-              onVerifyPolicyOverrideRetirementProofBundle(files);
-            }
-          }}
-        />
-        <input
-          ref={policyOverrideRetirementProofBundleSignInput}
-          className="fixture-file-input"
-          type="file"
-          accept="application/json,.json"
-          multiple
-          aria-label={
-            planCopy.blueprint.library.signPolicyOverrideRetirementProofBundle
-          }
-          onChange={(event) => {
-            const files = Array.from(event.currentTarget.files ?? []);
-            event.currentTarget.value = "";
-            if (files.length > 0) {
-              onSignPolicyOverrideRetirementProofBundle(files);
-            }
-          }}
-        />
-        <input
-          ref={outcomesInput}
-          className="fixture-file-input"
-          type="file"
-          accept="application/json,.json"
-          aria-label={planCopy.blueprint.library.verifyOutcomes}
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            event.currentTarget.value = "";
-            if (file) onVerifyOutcomes(file);
-          }}
-        />
-      </div>
+      <PlanBlueprintLibraryControls
+        recordCount={records.length}
+        canSave={canSave}
+        canSelect={canSelect}
+        canSignPolicyOverrideRetirementProofBundle={
+          canSignPolicyOverrideRetirementProofBundle
+        }
+        busyAction={busyAction}
+        receipt={receipt}
+        onRefresh={onRefresh}
+        onSave={onSave}
+        onSelect={onSelect}
+        onCalibrate={onCalibrate}
+        onBacktestPolicy={onBacktestPolicy}
+        onApplyPolicyOverride={onApplyPolicyOverride}
+        onReviewPolicyOverrideDrift={onReviewPolicyOverrideDrift}
+        onRetirePolicyOverride={onRetirePolicyOverride}
+        onAuditPolicyOverrideRetirements={onAuditPolicyOverrideRetirements}
+        onVerifyPolicyOverrideRetirements={onVerifyPolicyOverrideRetirements}
+        onVerifyPolicyOverrideRetirementProofBundle={
+          onVerifyPolicyOverrideRetirementProofBundle
+        }
+        onSignPolicyOverrideRetirementProofBundle={
+          onSignPolicyOverrideRetirementProofBundle
+        }
+        onVerifyHistory={onVerifyHistory}
+        onVerifyOutcomes={onVerifyOutcomes}
+      />
       {!hasVerifiedBlueprint ? (
         <small className="blueprint-library-hint">
           {planCopy.blueprint.library.noVerified}
@@ -3393,182 +3103,37 @@ function PlanBlueprintLibraryCard({
             {planCopy.blueprint.library.records}
           </span>
           <span>
-            {activeCount.toLocaleString()} {planCopy.blueprint.library.active}
+            {recordCounts.active.toLocaleString()}{" "}
+            {planCopy.blueprint.library.active}
           </span>
           <span>
-            {archivedCount.toLocaleString()}{" "}
+            {recordCounts.archived.toLocaleString()}{" "}
             {planCopy.blueprint.library.archived}
           </span>
         </div>
       ) : null}
       {receipt ? <PlanBlueprintLibraryReceiptView receipt={receipt} /> : null}
       {error ? <p className="plan-review-error">{error}</p> : null}
-      {loaded && records.length === 0 ? (
-        <p className="blueprint-library-empty">
-          {planCopy.blueprint.library.empty}
-        </p>
-      ) : null}
-      {records.length > 0 ? (
-        <div className="blueprint-record-list">
-          {records.map((record) => (
-            <article
-              key={record.id}
-              className={`blueprint-record blueprint-record-${record.status}`}
-            >
-              <header>
-                <div>
-                  <strong>{record.name}</strong>
-                  <span>
-                    {planCopy.blueprint.library.statuses[record.status]}
-                  </span>
-                </div>
-                <code>{record.blueprintSha256.slice(0, 16)}</code>
-              </header>
-              {record.description ? <p>{record.description}</p> : null}
-              <dl>
-                <div>
-                  <dt>{planCopy.blueprint.library.source}</dt>
-                  <dd>
-                    {shortId(record.sourcePlanId)} r{record.sourcePlanRevision}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{planCopy.blueprint.library.shape}</dt>
-                  <dd>
-                    {record.blueprint.stepCount.toLocaleString()}{" "}
-                    {planCopy.blueprint.steps}
-                    {" / "}
-                    {record.blueprint.artifactCount.toLocaleString()}{" "}
-                    {planCopy.blueprint.artifacts}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{planCopy.blueprint.library.updated}</dt>
-                  <dd>{new Date(record.updatedAt).toLocaleDateString()}</dd>
-                </div>
-              </dl>
-              <div className="blueprint-record-actions">
-                <button
-                  type="button"
-                  disabled={
-                    busy || !canCreateRecord || record.status !== "active"
-                  }
-                  onClick={() => onCreate(record)}
-                >
-                  {busyAction === "create"
-                    ? planCopy.blueprint.library.creating
-                    : planCopy.blueprint.library.create}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onQualify(record)}
-                >
-                  {busyAction === "qualify"
-                    ? planCopy.blueprint.library.qualifying
-                    : planCopy.blueprint.library.qualify}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onPreview(record)}
-                >
-                  {busyAction === "preview"
-                    ? planCopy.blueprint.library.previewing
-                    : planCopy.blueprint.library.preview}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onHistory(record)}
-                >
-                  {busyAction === "history"
-                    ? planCopy.blueprint.library.loadingHistory
-                    : planCopy.blueprint.library.history}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onOutcomes(record)}
-                >
-                  {busyAction === "outcomes"
-                    ? planCopy.blueprint.library.loadingOutcomes
-                    : planCopy.blueprint.library.outcomes}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onPromoteOutcomeBaseline(record)}
-                >
-                  {busyAction === "promoteOutcomeBaseline"
-                    ? planCopy.blueprint.library.promotingOutcomeBaseline
-                    : planCopy.blueprint.library.promoteOutcomeBaseline}
-                </button>
-                {latestOutcomeReview?.recordId === record.id ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onPromoteReviewedOutcomeBaseline(record)}
-                  >
-                    {busyAction === "promoteReviewedOutcomeBaseline"
-                      ? planCopy.blueprint.library
-                          .promotingReviewedOutcomeBaseline
-                      : planCopy.blueprint.library
-                          .promoteReviewedOutcomeBaseline}
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onQualifyOutcomes(record)}
-                >
-                  {busyAction === "qualifyOutcomes"
-                    ? planCopy.blueprint.library.qualifyingOutcomes
-                    : planCopy.blueprint.library.qualifyOutcomes}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy || !selectedModelConfigured}
-                  aria-describedby={
-                    !selectedModelConfigured ? modelReviewWarningId : undefined
-                  }
-                  onClick={() => onReviewOutcomes(record)}
-                >
-                  {busyAction === "reviewOutcomes"
-                    ? planCopy.blueprint.library.reviewingOutcomes
-                    : planCopy.blueprint.library.reviewOutcomes}
-                </button>
-                {record.status === "active" ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onArchive(record)}
-                  >
-                    {busyAction === "status"
-                      ? planCopy.blueprint.library.archiving
-                      : planCopy.blueprint.library.archive}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onRestore(record)}
-                  >
-                    {busyAction === "status"
-                      ? planCopy.blueprint.library.restoring
-                      : planCopy.blueprint.library.restore}
-                  </button>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : null}
-      {!canCreateRecord ? (
-        <small className="blueprint-library-hint">
-          {planCopy.blueprint.library.locked}
-        </small>
-      ) : null}
+      <PlanBlueprintRecordList
+        records={records}
+        loaded={loaded}
+        canCreateRecord={canCreateRecord}
+        busyAction={busyAction}
+        latestOutcomeReview={latestOutcomeReview}
+        selectedModelConfigured={selectedModelConfigured}
+        modelReviewWarningId={modelReviewWarningId}
+        onArchive={onArchive}
+        onRestore={onRestore}
+        onQualify={onQualify}
+        onPreview={onPreview}
+        onHistory={onHistory}
+        onOutcomes={onOutcomes}
+        onPromoteOutcomeBaseline={onPromoteOutcomeBaseline}
+        onPromoteReviewedOutcomeBaseline={onPromoteReviewedOutcomeBaseline}
+        onQualifyOutcomes={onQualifyOutcomes}
+        onReviewOutcomes={onReviewOutcomes}
+        onCreate={onCreate}
+      />
       <p className="fixture-safety">
         <ShieldCheck size={13} aria-hidden="true" />
         {planCopy.blueprint.library.safety}

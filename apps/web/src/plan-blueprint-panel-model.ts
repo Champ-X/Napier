@@ -7,6 +7,42 @@ import type {
 } from "@napier/contracts";
 
 import { NapierApiError } from "./api-error";
+import type {
+  PlanBlueprintLibraryBusyAction,
+  PlanBlueprintLibraryReceipt,
+} from "./plan-blueprint-library-panel-types";
+
+export interface BlueprintLibraryControlAvailability {
+  busy: boolean;
+  canApplyPolicyOverride: boolean;
+  canRetirePolicyOverride: boolean;
+}
+
+export function blueprintLibraryControlAvailability(input: {
+  busyAction: PlanBlueprintLibraryBusyAction | undefined;
+  receipt: PlanBlueprintLibraryReceipt | undefined;
+}): BlueprintLibraryControlAvailability {
+  return {
+    busy: Boolean(input.busyAction),
+    canApplyPolicyOverride:
+      input.receipt?.action === "policyBacktested" &&
+      Boolean(input.receipt.topSelectedFamilySha256),
+    canRetirePolicyOverride:
+      input.receipt?.action === "policyOverrideDriftReviewed" &&
+      input.receipt.reviewedRecommendation === "retire" &&
+      Boolean(
+        input.receipt.reviewedFamilySha256 &&
+        input.receipt.reviewedOverrideSha256,
+      ),
+  };
+}
+
+export function blueprintLibraryRecordCounts(
+  records: ExecutionPlanBlueprintRecord[],
+): { active: number; archived: number } {
+  const active = records.filter((record) => record.status === "active").length;
+  return { active, archived: records.length - active };
+}
 
 export function upsertBlueprintRecord(
   records: ExecutionPlanBlueprintRecord[],

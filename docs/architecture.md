@@ -2126,6 +2126,14 @@ ownership parsing, and conflict-preview shape validation use
 signing eligibility, malformed replay ownership, and fail-closed 409 payloads.
 This lowers `PlanPanel.tsx` further to 4,513 lines while leaving API
 orchestration and component state in the lazy Plan chunk.
+Blueprint Library busy/receipt types, upload controls, policy-action
+availability, and Record rendering now use
+`plan-blueprint-library-panel-types.ts`,
+`PlanBlueprintLibraryControls.tsx`, and `PlanBlueprintRecordList.tsx`.
+`PlanPanel.tsx` retains every API callback, state transition, receipt choice,
+and outer docket order. Focused model tests bind policy apply/retire
+availability and active/archive counts. This lowers the panel to 4,078 lines;
+the Plan lazy chunk is 120.91 kB and the 118.21 kB main entry is unchanged.
 
 An open Operator Decision is a separate lazy Workbench docket between the
 Ledger and composer. It owns accessible option selection, custom answer,
@@ -2187,7 +2195,7 @@ hashing the 110 Benchmark files, the gate performs full semantic verification
 for sixteen Series across twelve cases. It stores only artifact kinds,
 repo-relative paths, SHA-256 values, validity booleans, package name/version,
 and a canonical artifact-set digest. The current receipt contains 118 artifacts
-and binds set SHA-256 `c2592dd63b545d37...`.
+and binds set SHA-256 `202d58fcc780ef88...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
@@ -5021,7 +5029,7 @@ reconstructs reopen runtime state, and rejects a forged final hash even after
 outer Ledger hashes are recomputed. The opt-in direct adapter is explicitly
 recorded as `trusted_outer_test`; only the default platform adapter constitutes
 an OS Sandbox attempt. The retained five-trial Series passes in 104-121 ms per
-trial, and the complete repository gate passes 2,091 tests.
+trial, and the complete repository gate passes 2,093 tests.
 
 `WorkspaceProcessManager` is a Capability Plane service outside `LocalStore`
 and the Server router. The Work Ledger remains authoritative across restarts:

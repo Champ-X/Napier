@@ -24,6 +24,9 @@ Audit date: 2026-08-03
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
+  Blueprint Library controls, shared action/receipt types, and Record rendering
+  are now separate bounded modules as well, reducing the panel to 4,078 lines
+  while retaining API orchestration and outer docket order.
 - General host shell execution remains unavailable.
 
 ## Priority Matrix
@@ -415,9 +418,9 @@ Observed result:
   OS Sandbox evidence and has no isomorphic OMP score;
 - all restart, offline-wait, current budget, Goal no-progress, and Process
   recovery artifacts are in the 118-artifact release set
-  `c2592dd63b545d37...`;
-- complete `npm run check` passes 2,091 tests: 104 root, 168 CLI, 183 Server,
-  471 Web, 1,137 Runtime, and 28 SDK.
+  `202d58fcc780ef88...`;
+- complete `npm run check` passes 2,093 tests: 104 root, 168 CLI, 183 Server,
+  473 Web, 1,137 Runtime, and 28 SDK.
 
 ## Implemented Slice: Research Outcome Benchmark
 
