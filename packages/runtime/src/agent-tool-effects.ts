@@ -52,6 +52,8 @@ export function builtInToolEffect(
         "navigate",
         "back",
         "wait",
+        "find",
+        "scroll",
         "snapshot",
         "screenshot",
         "close",

@@ -4032,8 +4032,9 @@ Agent selects Browser capability
 ```
 
 Under `observe`, `AgentCapabilityRuntime` requests a read-only Browser tool
-whose schema contains only `start`, `navigate`, `back`, `wait`, `snapshot`,
-`screenshot`, and `close`; it also exposes `research_source`.
+whose schema contains only `start`, `navigate`, `back`, `wait`, `find`,
+`scroll`, `snapshot`, `screenshot`, and `close`; it also exposes
+`research_source`.
 `browser-tool-policy.ts` independently permits those public-network read
 actions while denying `click`, `type`, `select`, `upload`, and `download`
 unless policy is `unrestricted`. The schema is a usability boundary, not the
@@ -4046,6 +4047,15 @@ without granting selector actions. Static pages should use `web_fetch`; the
 Browser path is for dynamic rendering, and `research_source capture/cite`
 freezes the visible result into the existing claim-bound citation protocol.
 
+`find` and `scroll` are page-observation actions rather than network actions.
+`browser-page-observation.ts` normalizes literal case-insensitive find results,
+caps scan/result text, performs bounded vertical scrolling, and selects bounded
+visible viewport text while proxy outbound remains closed. `find` durable
+evidence retains only query/match hashes plus counts and truncation; `scroll`
+retains numeric delta/position/viewport/document bounds plus viewport text
+hash/count/truncation. Query text and matching or viewport page text stay
+live-only.
+
 `public-network.ts` owns shared CIDR and DNS classification; MCP reuses it
 while retaining its explicit loopback development exception.
 `fixed-ip-http-proxy.ts` owns authenticated HTTP/CONNECT transport and transfer
@@ -4057,6 +4067,7 @@ navigation grants; bounded presentation text lives in
 `browser-page-output.ts`; `browser-session.ts` owns same-Run serialization,
 cross-Run isolation, admission, and cancellation.
 `browser-workspace-files.ts` owns upload/download path and byte confinement;
+`browser-session-details.ts` owns bounded operation evidence;
 `browser-tool.ts` owns Agent schema and privacy projection.
 
 The proxy permits public subresource origins so ordinary pages can load, but
@@ -4077,7 +4088,7 @@ credentials, and random Session IDs remain live-only. Portable Replay carries
 only redacted tool arguments plus bounded operation evidence.
 
 The default surface is dynamic-page reading, not product-complete Browser
-automation. It has one tab per Run and no scroll/find primitives, user takeover
+automation. It has one tab per Run and no multi-tab/history UX, user takeover
 or resume, Browser Live stream, local Chrome relay, download Artifact UX,
 effect-specific confirmation, or safe preset for form actions. Those remain
 P0.

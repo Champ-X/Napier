@@ -55,6 +55,59 @@ describe("Browser Trace projection", () => {
         browserScreenshotBytes: 12_345,
       }),
     );
+
+    const find = browserEventEvidence({
+      ...details,
+      action: "find",
+      snapshotSha256: undefined,
+      snapshotChars: undefined,
+      snapshotTruncated: undefined,
+      file: undefined,
+      suggestedFilenameSha256: undefined,
+      findQuerySha256: "e".repeat(64),
+      findQueryChars: 15,
+      findMatchCount: 2,
+      findMatchesSha256: "f".repeat(64),
+      findScannedChars: 12_345,
+      findTruncated: false,
+    });
+    expect(find).toEqual(
+      expect.objectContaining({
+        browserAction: "find",
+        browserFindQueryChars: 15,
+        browserFindMatchCount: 2,
+        browserFindScannedChars: 12_345,
+      }),
+    );
+    expect(browserSummaryParts(find!)).toContain("find-matches 2");
+
+    const scroll = browserEventEvidence({
+      ...details,
+      action: "scroll",
+      snapshotSha256: undefined,
+      snapshotChars: undefined,
+      snapshotTruncated: undefined,
+      file: undefined,
+      suggestedFilenameSha256: undefined,
+      scrollDeltaY: 720,
+      scrollPositionY: 720,
+      scrollViewportHeight: 900,
+      scrollDocumentHeight: 3_000,
+      scrollAtStart: false,
+      scrollAtEnd: false,
+      viewportTextSha256: "e".repeat(64),
+      viewportTextChars: 321,
+      viewportTextTruncated: false,
+    });
+    expect(scroll).toEqual(
+      expect.objectContaining({
+        browserAction: "scroll",
+        browserScrollDeltaY: 720,
+        browserScrollPositionY: 720,
+        browserViewportTextChars: 321,
+      }),
+    );
+    expect(browserSummaryParts(scroll!)).toContain("scroll-position 720");
   });
 
   it("integrates browser evidence into generic tool summaries without raw content", () => {
@@ -112,6 +165,44 @@ describe("Browser Trace projection", () => {
           ...browserDetails().network,
           transferredBytes: 999_999_999,
         },
+      }),
+    ).toBeUndefined();
+    expect(
+      browserEventEvidence({
+        ...browserDetails(),
+        action: "find",
+        snapshotSha256: undefined,
+        snapshotChars: undefined,
+        snapshotTruncated: undefined,
+        file: undefined,
+        suggestedFilenameSha256: undefined,
+        findQuerySha256: "e".repeat(64),
+      }),
+    ).toBeUndefined();
+    expect(
+      browserEventEvidence({
+        ...browserDetails(),
+        action: "scroll",
+        snapshotSha256: undefined,
+        snapshotChars: undefined,
+        snapshotTruncated: undefined,
+        file: undefined,
+        suggestedFilenameSha256: undefined,
+        scrollDeltaY: 720,
+        scrollPositionY: 720,
+        scrollViewportHeight: 900,
+        scrollDocumentHeight: 3_000,
+        scrollAtStart: false,
+        scrollAtEnd: false,
+        viewportTextSha256: "e".repeat(64),
+        viewportTextChars: 321,
+        viewportTextTruncated: false,
+        findQuerySha256: "f".repeat(64),
+        findQueryChars: 3,
+        findMatchCount: 1,
+        findMatchesSha256: "1".repeat(64),
+        findScannedChars: 100,
+        findTruncated: false,
       }),
     ).toBeUndefined();
   });

@@ -157,6 +157,7 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain(
       "Use browser for dynamic public pages through one Run-owned Session",
     );
+    expect(guidance).toContain("literal find and bounded scroll");
     expect(guidance).toContain("Default read-only Agents cannot click");
     expect(guidance).toContain(
       "call research_source capture to freeze bounded visible text",

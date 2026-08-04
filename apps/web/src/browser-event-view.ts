@@ -1,8 +1,17 @@
-export interface BrowserToolEventTraceView {
+import {
+  browserObservationEvidence,
+  browserObservationSummaryParts,
+  type BrowserObservationTraceView,
+} from "./browser-observation-event-view";
+
+export interface BrowserToolEventTraceView extends BrowserObservationTraceView {
   browserAction?:
     | "start"
     | "navigate"
     | "back"
+    | "wait"
+    | "find"
+    | "scroll"
     | "snapshot"
     | "click"
     | "type"
@@ -44,6 +53,9 @@ const ACTIONS = new Set<BrowserToolEventTraceView["browserAction"]>([
   "start",
   "navigate",
   "back",
+  "wait",
+  "find",
+  "scroll",
   "snapshot",
   "click",
   "type",
@@ -58,10 +70,100 @@ export function browserEventEvidence(
   value: unknown,
 ): BrowserToolEventTraceView | undefined {
   if (!record(value)) return undefined;
+  const envelope = browserEventEnvelope(value);
+  if (!envelope) return undefined;
+  const { action, operation, blockedRequestCount, network } = envelope;
+  const snapshot = optionalSnapshot(value);
+  const observation = browserObservationEvidence(
+    action === "find" || action === "scroll" ? action : "other",
+    value,
+  );
+  const screenshot = optionalScreenshot(value);
+  const file = optionalFile(value["file"]);
+  if (
+    snapshot === null ||
+    observation === null ||
+    screenshot === null ||
+    file === null
+  ) {
+    return undefined;
+  }
+  const suggestedFilenameSha256 =
+    value["suggestedFilenameSha256"] === undefined
+      ? undefined
+      : sha256(value["suggestedFilenameSha256"])
+        ? value["suggestedFilenameSha256"]
+        : null;
+  const snapshotExpected =
+    action !== "screenshot" &&
+    action !== "close" &&
+    action !== "find" &&
+    action !== "scroll";
+  const screenshotExpected = action === "screenshot";
+  const fileExpected = action === "upload" || action === "download";
+  if (
+    suggestedFilenameSha256 === null ||
+    Boolean(snapshot) !== snapshotExpected ||
+    Boolean(screenshot) !== screenshotExpected ||
+    Boolean(file) !== fileExpected ||
+    Boolean(suggestedFilenameSha256) !== (action === "download") ||
+    network.connectCount > network.requestCount ||
+    network.rejectedCount > network.requestCount ||
+    network.destinationCount > network.requestCount
+  ) {
+    return undefined;
+  }
+  return {
+    browserAction: action,
+    browserSessionMode: "run_persistent",
+    browserSessionReused: value["sessionReused"] as boolean,
+    browserSessionOperation: operation,
+    browserSessionIdSha256: value["sessionIdSha256"] as string,
+    browserExecutableSha256: value["browserExecutableSha256"] as string,
+    browserVersionSha256: value["browserVersionSha256"] as string,
+    browserLimitsSha256: value["limitsSha256"] as string,
+    browserCurrentUrlSha256: value["currentUrlSha256"] as string,
+    browserCurrentOriginSha256: value["currentOriginSha256"] as string,
+    browserTitleSha256: value["titleSha256"] as string,
+    ...(snapshot ?? {}),
+    ...(observation ?? {}),
+    ...(screenshot ?? {}),
+    ...(file ?? {}),
+    ...(suggestedFilenameSha256
+      ? { browserSuggestedFilenameSha256: suggestedFilenameSha256 }
+      : {}),
+    browserBlockedRequestCount: blockedRequestCount,
+    browserNetworkRequestCount: network.requestCount,
+    browserNetworkConnectCount: network.connectCount,
+    browserNetworkRejectedCount: network.rejectedCount,
+    browserNetworkTransferredBytes: network.transferredBytes,
+    browserNetworkDestinationCount: network.destinationCount,
+    browserNetworkDestinationsSha256: network.destinationsSha256,
+    browserCrossOriginAuthorized: value["crossOriginAuthorized"] as boolean,
+  };
+}
+
+function browserEventEnvelope(value: Record<string, unknown>):
+  | {
+      action: NonNullable<BrowserToolEventTraceView["browserAction"]>;
+      operation: number;
+      blockedRequestCount: number;
+      network: {
+        requestCount: number;
+        connectCount: number;
+        rejectedCount: number;
+        transferredBytes: number;
+        destinationCount: number;
+        destinationsSha256: string;
+      };
+    }
+  | undefined {
   const action = ACTIONS.has(
     value["action"] as BrowserToolEventTraceView["browserAction"],
   )
-    ? (value["action"] as BrowserToolEventTraceView["browserAction"])
+    ? (value["action"] as NonNullable<
+        BrowserToolEventTraceView["browserAction"]
+      >)
     : undefined;
   const operation = integer(value["sessionOperation"], 1, 64);
   const blockedRequestCount = integer(value["blockedRequestCount"], 0, 10_000);
@@ -83,13 +185,7 @@ export function browserEventEvidence(
     typeof value["sessionReused"] !== "boolean" ||
     operation === undefined ||
     value["sessionReused"] !== operation > 1 ||
-    !sha256(value["sessionIdSha256"]) ||
-    !sha256(value["browserExecutableSha256"]) ||
-    !sha256(value["browserVersionSha256"]) ||
-    !sha256(value["limitsSha256"]) ||
-    !sha256(value["currentUrlSha256"]) ||
-    !sha256(value["currentOriginSha256"]) ||
-    !sha256(value["titleSha256"]) ||
+    !validBrowserHashes(value) ||
     blockedRequestCount === undefined ||
     !network ||
     requestCount === undefined ||
@@ -102,60 +198,31 @@ export function browserEventEvidence(
   ) {
     return undefined;
   }
-  const snapshot = optionalSnapshot(value);
-  const screenshot = optionalScreenshot(value);
-  const file = optionalFile(value["file"]);
-  if (snapshot === null || screenshot === null || file === null) {
-    return undefined;
-  }
-  const suggestedFilenameSha256 =
-    value["suggestedFilenameSha256"] === undefined
-      ? undefined
-      : sha256(value["suggestedFilenameSha256"])
-        ? value["suggestedFilenameSha256"]
-        : null;
-  const snapshotExpected = action !== "screenshot" && action !== "close";
-  const screenshotExpected = action === "screenshot";
-  const fileExpected = action === "upload" || action === "download";
-  if (
-    suggestedFilenameSha256 === null ||
-    Boolean(snapshot) !== snapshotExpected ||
-    Boolean(screenshot) !== screenshotExpected ||
-    Boolean(file) !== fileExpected ||
-    Boolean(suggestedFilenameSha256) !== (action === "download") ||
-    connectCount > requestCount ||
-    rejectedCount > requestCount ||
-    destinationCount > requestCount
-  ) {
-    return undefined;
-  }
   return {
-    browserAction: action,
-    browserSessionMode: "run_persistent",
-    browserSessionReused: value["sessionReused"],
-    browserSessionOperation: operation,
-    browserSessionIdSha256: value["sessionIdSha256"],
-    browserExecutableSha256: value["browserExecutableSha256"],
-    browserVersionSha256: value["browserVersionSha256"],
-    browserLimitsSha256: value["limitsSha256"],
-    browserCurrentUrlSha256: value["currentUrlSha256"],
-    browserCurrentOriginSha256: value["currentOriginSha256"],
-    browserTitleSha256: value["titleSha256"],
-    ...(snapshot ?? {}),
-    ...(screenshot ?? {}),
-    ...(file ?? {}),
-    ...(suggestedFilenameSha256
-      ? { browserSuggestedFilenameSha256: suggestedFilenameSha256 }
-      : {}),
-    browserBlockedRequestCount: blockedRequestCount,
-    browserNetworkRequestCount: requestCount,
-    browserNetworkConnectCount: connectCount,
-    browserNetworkRejectedCount: rejectedCount,
-    browserNetworkTransferredBytes: transferredBytes,
-    browserNetworkDestinationCount: destinationCount,
-    browserNetworkDestinationsSha256: network["destinationsSha256"],
-    browserCrossOriginAuthorized: value["crossOriginAuthorized"],
+    action,
+    operation,
+    blockedRequestCount,
+    network: {
+      requestCount,
+      connectCount,
+      rejectedCount,
+      transferredBytes,
+      destinationCount,
+      destinationsSha256: network["destinationsSha256"],
+    },
   };
+}
+
+function validBrowserHashes(value: Record<string, unknown>): boolean {
+  return [
+    "sessionIdSha256",
+    "browserExecutableSha256",
+    "browserVersionSha256",
+    "limitsSha256",
+    "currentUrlSha256",
+    "currentOriginSha256",
+    "titleSha256",
+  ].every((field) => sha256(value[field]));
 }
 
 export function browserSummaryParts(view: BrowserToolEventTraceView): string[] {
@@ -188,6 +255,7 @@ export function browserSummaryParts(view: BrowserToolEventTraceView): string[] {
       ? [`snapshot-chars ${view.browserSnapshotChars}`]
       : []),
     ...(view.browserSnapshotTruncated ? ["snapshot-truncated"] : []),
+    ...browserObservationSummaryParts(view),
     ...(view.browserScreenshotBytes !== undefined
       ? [`screenshot-bytes ${view.browserScreenshotBytes}`]
       : []),
@@ -197,6 +265,9 @@ export function browserSummaryParts(view: BrowserToolEventTraceView): string[] {
     ...hash("browser-session", view.browserSessionIdSha256),
     ...hash("browser-origin", view.browserCurrentOriginSha256),
     ...hash("browser-snapshot", view.browserSnapshotSha256),
+    ...hash("browser-find-query", view.browserFindQuerySha256),
+    ...hash("browser-find-matches", view.browserFindMatchesSha256),
+    ...hash("browser-viewport", view.browserViewportTextSha256),
     ...hash("browser-screenshot", view.browserScreenshotSha256),
     ...hash("browser-file", view.browserFileSha256),
     ...hash("browser-destinations", view.browserNetworkDestinationsSha256),

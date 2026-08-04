@@ -12,6 +12,8 @@ const READ_ONLY_BROWSER_ACTIONS = new Set([
   "navigate",
   "back",
   "wait",
+  "find",
+  "scroll",
   "snapshot",
   "screenshot",
   "close",

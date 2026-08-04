@@ -50,6 +50,32 @@ describe("browser Agent tool", () => {
       assessToolCall(
         "observe",
         "browser",
+        { action: "find", query: "private query" },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "observe",
+        "browser",
+        { action: "scroll", direction: "down", pixels: 720 },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "observe",
+        "browser",
         { action: "click", target: { ref: "e1" } },
         workspace,
       ),
@@ -115,10 +141,11 @@ describe("browser Agent tool", () => {
 
   it("redacts URLs, selectors, text, paths, values, and live output", () => {
     const args = {
-      action: "type",
+      action: "find",
       url: "https://example.com/?token=raw-url-secret",
       target: { selector: "#raw-selector-secret" },
       text: "raw-text-secret",
+      query: "raw-find-secret",
       path: "raw-path-secret.txt",
       values: ["raw-value-secret"],
       allowCrossOrigin: true,
@@ -134,6 +161,7 @@ describe("browser Agent tool", () => {
       "raw-url-secret",
       "raw-selector-secret",
       "raw-text-secret",
+      "raw-find-secret",
       "raw-path-secret",
       "raw-value-secret",
       "raw-page-output-secret",
@@ -142,8 +170,9 @@ describe("browser Agent tool", () => {
     }
     expect(call).toEqual(
       expect.objectContaining({
-        action: "type",
+        action: "find",
         textBytes: 15,
+        queryChars: 15,
         valueCount: 1,
         crossOriginAuthorized: true,
         redacted: true,
@@ -190,6 +219,8 @@ describe("browser Agent tool", () => {
     expect(builtInToolEffect("browser", { action: "navigate" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "back" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "wait" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "find" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "scroll" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "snapshot" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "screenshot" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "close" })).toBe("read");

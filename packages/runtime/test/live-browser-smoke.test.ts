@@ -37,6 +37,15 @@ describeLive("live controlled Browser Session smoke", () => {
         action: "start",
         url: "https://example.com/",
       });
+      const found = await manager.execute(owner, {
+        action: "find",
+        query: "Example Domain",
+      });
+      const scrolled = await manager.execute(owner, {
+        action: "scroll",
+        direction: "down",
+        pixels: 400,
+      });
       const snapshot = await manager.execute(owner, { action: "snapshot" });
       const captured = await research.execute(owner, {
         action: "capture",
@@ -86,10 +95,29 @@ describeLive("live controlled Browser Session smoke", () => {
       expect(started.details.sessionReused).toBe(false);
       expect(started.details.network.destinationCount).toBeGreaterThan(0);
       expect(started.output).toContain("Example Domain");
+      expect(found.details).toEqual(
+        expect.objectContaining({
+          action: "find",
+          sessionReused: true,
+          sessionOperation: 2,
+          findMatchCount: 1,
+        }),
+      );
+      expect(found.details.network).toEqual(started.details.network);
+      expect(scrolled.details).toEqual(
+        expect.objectContaining({
+          action: "scroll",
+          sessionReused: true,
+          sessionOperation: 3,
+          scrollAtStart: true,
+          scrollAtEnd: true,
+        }),
+      );
+      expect(scrolled.details.network).toEqual(started.details.network);
       expect(snapshot.details).toEqual(
         expect.objectContaining({
           sessionReused: true,
-          sessionOperation: 2,
+          sessionOperation: 4,
           sessionIdSha256: started.details.sessionIdSha256,
         }),
       );
@@ -99,7 +127,7 @@ describeLive("live controlled Browser Session smoke", () => {
           action: "capture",
           sourceCount: 1,
           citationCount: 0,
-          browserSessionOperation: 3,
+          browserSessionOperation: 5,
           browserSessionIdSha256: started.details.sessionIdSha256,
         }),
       );
@@ -121,7 +149,7 @@ describeLive("live controlled Browser Session smoke", () => {
       expect(await readFile(reportPath, "utf8")).toContain(citationToken);
       expect(screenshot.details.screenshotBytes).toBeGreaterThan(0);
       expect(screenshot.screenshot?.mimeType).toBe("image/png");
-      expect(closed.details.sessionOperation).toBe(5);
+      expect(closed.details.sessionOperation).toBe(7);
     } catch (error) {
       if (nestedSandboxDenied(error)) {
         skip(

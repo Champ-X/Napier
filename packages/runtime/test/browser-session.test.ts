@@ -142,6 +142,110 @@ describe("RunBrowserSessionManager", () => {
     await harness.manager.cancelRun(owner);
   });
 
+  it("finds and scrolls long pages without reopening network access", async () => {
+    const harness = await createHarness({
+      sourceText: [
+        "Long page introduction",
+        "Target evidence appears here",
+        "Long page conclusion",
+      ].join("\n"),
+    });
+    const owner = { threadId: "thread_observe", runId: "run_observe" };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/long",
+    });
+
+    const found = await harness.manager.execute(owner, {
+      action: "find",
+      query: "target evidence",
+    });
+    const scrolled = await harness.manager.execute(owner, {
+      action: "scroll",
+      direction: "down",
+      pixels: 800,
+    });
+    const returned = await harness.manager.execute(owner, {
+      action: "scroll",
+      direction: "up",
+      pixels: 200,
+    });
+
+    expect(found.output).toContain("2 | Target evidence appears here");
+    expect(found.details).toEqual(
+      expect.objectContaining({
+        action: "find",
+        sessionOperation: 2,
+        findQuerySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        findQueryChars: 15,
+        findMatchCount: 1,
+        findScannedChars: 72,
+        findTruncated: false,
+      }),
+    );
+    expect(scrolled.output).toContain("Viewport evidence at 800");
+    expect(scrolled.details).toEqual(
+      expect.objectContaining({
+        action: "scroll",
+        sessionOperation: 3,
+        scrollDeltaY: 800,
+        scrollPositionY: 800,
+        scrollViewportHeight: 900,
+        scrollDocumentHeight: 3_000,
+        scrollAtStart: false,
+        scrollAtEnd: false,
+        viewportTextChars: 24,
+      }),
+    );
+    expect(returned.details).toEqual(
+      expect.objectContaining({
+        action: "scroll",
+        sessionOperation: 4,
+        scrollDeltaY: -200,
+        scrollPositionY: 600,
+      }),
+    );
+    expect(harness.proxies[0]?.outboundTransitions).toEqual([true, false]);
+    await harness.manager.cancelRun(owner);
+  });
+
+  it("rejects invalid find and scroll bounds before page evaluation", async () => {
+    const findHarness = await createHarness();
+    const findOwner = {
+      threadId: "thread_invalid_find",
+      runId: "run_invalid_find",
+    };
+    await findHarness.manager.execute(findOwner, {
+      action: "start",
+      url: "https://one.example/long",
+    });
+    await expect(
+      findHarness.manager.execute(findOwner, {
+        action: "find",
+        query: " \u0000 ",
+      }),
+    ).rejects.toThrow("find query is invalid");
+    expect(findHarness.browsers[0]?.closed).toBe(true);
+
+    const scrollHarness = await createHarness();
+    const scrollOwner = {
+      threadId: "thread_invalid_scroll",
+      runId: "run_invalid_scroll",
+    };
+    await scrollHarness.manager.execute(scrollOwner, {
+      action: "start",
+      url: "https://one.example/long",
+    });
+    await expect(
+      scrollHarness.manager.execute(scrollOwner, {
+        action: "scroll",
+        direction: "down",
+        pixels: 5_001,
+      }),
+    ).rejects.toThrow("scroll distance is invalid");
+    expect(scrollHarness.browsers[0]?.closed).toBe(true);
+  });
+
   it("closes an uncertain Session when the page URL drifts during capture", async () => {
     const harness = await createHarness({ sourceUrlDriftDuringCapture: true });
     const owner = {
@@ -574,6 +678,7 @@ class FakePage {
   blockClicks = false;
   closed = false;
   private currentUrl = "about:blank";
+  private scrollY = 0;
   private readonly history: string[] = [];
 
   constructor(
@@ -643,7 +748,42 @@ class FakePage {
       async setInputFiles(filePath: string) {
         page.uploaded.push({ selector, path: filePath });
       },
-      async evaluate(_callback: unknown, limit: number, _options: unknown) {
+      async evaluate(
+        _callback: unknown,
+        request:
+          | number
+          | { kind: "find"; limit: number }
+          | {
+              kind: "scroll";
+              deltaY: number;
+              textLimit: number;
+            },
+        _options: unknown,
+      ) {
+        if (typeof request !== "number") {
+          if (request.kind === "find") {
+            return {
+              text: page.sourceText.slice(0, request.limit),
+              truncated: page.sourceText.length > request.limit,
+            };
+          }
+          const before = page.scrollY;
+          page.scrollY = Math.max(
+            0,
+            Math.min(2_100, page.scrollY + request.deltaY),
+          );
+          const text = `Viewport evidence at ${String(page.scrollY)}`;
+          return {
+            deltaY: page.scrollY - before,
+            positionY: page.scrollY,
+            viewportHeight: 900,
+            documentHeight: 3_000,
+            atStart: page.scrollY === 0,
+            atEnd: page.scrollY === 2_100,
+            text: text.slice(0, request.textLimit),
+            textTruncated: text.length > request.textLimit,
+          };
+        }
         const capturedUrl = page.currentUrl;
         const extracted = {
           url: capturedUrl,
@@ -652,7 +792,7 @@ class FakePage {
             (capturedUrl === "about:blank"
               ? ""
               : `Page ${new URL(capturedUrl).hostname}`),
-          text: page.sourceText.slice(0, limit + 1),
+          text: page.sourceText.slice(0, request + 1),
         };
         if (page.sourceUrlDriftDuringCapture) {
           page.currentUrl = "https://two.example/drifted";

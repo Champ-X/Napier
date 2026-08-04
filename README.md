@@ -267,11 +267,12 @@ Version `0.1.0` includes:
   privacy-bounded hashes, ranges, counts, and source-specific provenance in
   Ledger and Trace;
 - fresh default `observe` Agents expose a read-only Browser schema with
-  `start`, `navigate`, `back`, bounded `wait`, `snapshot`, `screenshot`, and
-  `close`, plus `research_source` capture/cite/list/report verification.
-  Interactive `click`, `type`, `select`, `upload`, and `download` are omitted
-  from that schema and remain policy-denied unless an Agent explicitly uses
-  `unrestricted`; forged calls never reach Playwright;
+  `start`, `navigate`, `back`, bounded `wait`, literal `find`, bounded vertical
+  `scroll`, `snapshot`, `screenshot`, and `close`, plus `research_source`
+  capture/cite/list/report verification. Find and scroll keep Browser network
+  access closed. Interactive `click`, `type`, `select`, `upload`, and
+  `download` are omitted from that schema and remain policy-denied unless an
+  Agent explicitly uses `unrestricted`; forged calls never reach Playwright;
 - a fail-closed tool policy that blocks host escape and destructive commands;
 - Agent Skills discovery through standard `SKILL.md` packages;
 - frozen Agent Prompt Variables with strict `literal`, `current_date`, and
@@ -3596,14 +3597,24 @@ unsandboxed language server.
 
 ## Controlled Browser Sessions
 
-An Agent profile can enable `browser` under the `unrestricted` policy to use
-one isolated, persistent Chrome Session owned by its current Run. `start`
-creates a fresh ephemeral browser profile; `navigate`, `back`, `snapshot`,
-`click`, `type`, `select`, `upload`, `download`, and `screenshot` reuse it;
-`close`, cancellation, failure, the 64-operation bound, or Run settlement
-destroys the browser, context, authenticated proxy, temporary HOME, and active
-tunnels. AI-mode ARIA snapshots include short `ref` values that later actions
-can target without injecting page JavaScript.
+The default `observe` Agent can read through one isolated, persistent Chrome
+Session owned by its current Run; an explicitly `unrestricted` profile can
+add interactive and file actions to that same contract. `start` creates a
+fresh ephemeral browser profile; `navigate`, `back`, bounded `wait`, literal
+`find`, bounded vertical `scroll`, `snapshot`, `click`, `type`, `select`,
+`upload`, `download`, and `screenshot` reuse it according to the active
+schema/Policy. `close`, cancellation, failure, the 64-operation bound, or Run
+settlement destroys the browser, context, authenticated proxy, temporary HOME,
+and active tunnels. AI-mode ARIA snapshots include short `ref` values that
+later interactive actions can target without injecting page JavaScript.
+
+`find` scans at most two million visible-text characters, returns at most 20
+literal case-insensitive matching lines, and stores only query/match hashes and
+counts. `scroll` moves vertically by at most 5,000 pixels, returns bounded
+currently visible text, and records only numeric viewport/document positions
+plus a text hash/count. Neither action opens the authenticated proxy; page
+scripts therefore cannot turn a read-only observation into a hidden network
+window.
 
 Chrome never connects to an existing user profile or debugging endpoint.
 Every HTTP request and CONNECT tunnel goes through a loopback-only,
@@ -5817,7 +5828,7 @@ The default Agent policy is `observe`:
 - `apply_patch`, `verify_workspace`, `run_command`, `javascript_kernel`,
   `python_kernel`, `node_debugger`, and `workspace_process` are not exposed;
 - Browser interaction and file transfer actions are not exposed, even though
-  read-only navigation/snapshot/capture actions are available;
+  read-only navigation/find/scroll/snapshot/capture actions are available;
 - workspace writes and process execution are blocked;
 - shell execution is blocked;
 - destructive shell patterns remain blocked even under the future

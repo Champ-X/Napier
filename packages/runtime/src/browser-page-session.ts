@@ -19,6 +19,10 @@ import {
   preflightBrowserDownload,
   writeBrowserDownload,
 } from "./browser-workspace-files.js";
+import {
+  isBrowserObservationRequest,
+  performBrowserPageObservation,
+} from "./browser-page-observation.js";
 import { captureBrowserPageSource } from "./browser-source-capture.js";
 import {
   BROWSER_ACTION_TIMEOUT_MS,
@@ -29,7 +33,6 @@ import {
   type BrowserNetworkProxy,
   type BrowserPageSourceCapture,
   type BrowserRuntimeBinding,
-  type BrowserSessionDetails,
   type BrowserSessionOperationResult,
   type BrowserSessionRequest,
   MAX_BROWSER_SCREENSHOT_BYTES,
@@ -38,14 +41,15 @@ import {
   type RunBrowserSessionManagerOptions,
 } from "./browser-session-model.js";
 import {
+  createBrowserSessionDetails,
+  type BrowserSessionPageState,
+} from "./browser-session-details.js";
+import {
   assertBrowserRuntimeCurrent,
   browserLaunchOptions,
   resolveBrowserRuntime,
 } from "./browser-runtime.js";
-import {
-  formatBrowserPageState,
-  formatBrowserScreenshot,
-} from "./browser-page-output.js";
+import { formatBrowserOperationOutput } from "./browser-page-output.js";
 import { sha256 } from "./ed25519.js";
 import { FixedIpHttpProxy } from "./fixed-ip-http-proxy.js";
 import {
@@ -60,14 +64,7 @@ interface NavigationGrant {
   initialOrigin?: string;
 }
 
-interface PageState {
-  url: string;
-  origin: string;
-  title: string;
-  snapshot?: string;
-  snapshotTruncated?: boolean;
-}
-
+type PageState = BrowserSessionPageState;
 export class PersistentBrowserSession {
   readonly idSha256 = sha256(`browser-session:${randomUUID()}`);
   operationCount = 0;
@@ -228,6 +225,20 @@ export class PersistentBrowserSession {
     reused: boolean,
     signal?: AbortSignal,
   ): Promise<BrowserSessionOperationResult> {
+    if (isBrowserObservationRequest(request)) {
+      return performBrowserPageObservation({
+        page: this.page,
+        request,
+        reused,
+        operation: this.operationCount,
+        sessionIdSha256: this.idSha256,
+        executableSha256: this.runtime.executableSha256,
+        browserVersionSha256: this.browserVersionSha256,
+        blockedRequestCount: this.blockedRequestCount,
+        network: this.proxy.snapshot(),
+        ...(signal ? { signal } : {}),
+      });
+    }
     let state: PageState;
     let file: BrowserWorkspaceFile | undefined;
     let suggestedFilenameSha256: string | undefined;
@@ -374,22 +385,27 @@ export class PersistentBrowserSession {
         break;
     }
 
-    const details = this.details(
-      request.action,
+    const details = createBrowserSessionDetails({
+      action: request.action,
       reused,
+      operation: this.operationCount,
+      sessionIdSha256: this.idSha256,
+      executableSha256: this.runtime.executableSha256,
+      browserVersionSha256: this.browserVersionSha256,
       state,
       crossOriginAuthorized,
-      file,
-      suggestedFilenameSha256,
-      screenshot,
-    );
+      blockedRequestCount: this.blockedRequestCount,
+      network: this.proxy.snapshot(),
+      ...(file ? { file } : {}),
+      ...(suggestedFilenameSha256 ? { suggestedFilenameSha256 } : {}),
+      ...(screenshot ? { screenshot } : {}),
+    });
     return {
-      output:
-        request.action === "screenshot"
-          ? formatBrowserScreenshot(state)
-          : request.action === "close"
-            ? "Browser Session closed."
-            : formatBrowserPageState(request.action, state, file),
+      output: formatBrowserOperationOutput({
+        action: request.action,
+        state,
+        ...(file ? { file } : {}),
+      }),
       details,
       ...(screenshot
         ? {
@@ -560,58 +576,6 @@ export class PersistentBrowserSession {
       url,
       origin: pageOrigin(url) ?? "",
       title,
-    };
-  }
-
-  private details(
-    action: BrowserSessionRequest["action"],
-    reused: boolean,
-    state: PageState,
-    crossOriginAuthorized: boolean,
-    file?: BrowserWorkspaceFile,
-    suggestedFilenameSha256?: string,
-    screenshot?: Buffer,
-  ): BrowserSessionDetails {
-    return {
-      kind: "napier.browser-session-operation",
-      schemaVersion: 1,
-      action,
-      sessionMode: "run_persistent",
-      sessionReused: reused,
-      sessionOperation: this.operationCount,
-      sessionIdSha256: this.idSha256,
-      browserExecutableSha256: this.runtime.executableSha256,
-      browserVersionSha256: this.browserVersionSha256,
-      limitsSha256: BROWSER_LIMITS_SHA256,
-      currentUrlSha256: sha256(state.url),
-      currentOriginSha256: sha256(state.origin),
-      titleSha256: sha256(state.title),
-      ...(state.snapshot !== undefined
-        ? {
-            snapshotSha256: sha256(state.snapshot),
-            snapshotChars: state.snapshot.length,
-            snapshotTruncated: state.snapshotTruncated === true,
-          }
-        : {}),
-      ...(screenshot
-        ? {
-            screenshotSha256: sha256(screenshot),
-            screenshotBytes: screenshot.byteLength,
-          }
-        : {}),
-      ...(file
-        ? {
-            file: {
-              pathSha256: file.pathSha256,
-              fileSha256: file.fileSha256,
-              fileBytes: file.fileBytes,
-            },
-          }
-        : {}),
-      ...(suggestedFilenameSha256 ? { suggestedFilenameSha256 } : {}),
-      blockedRequestCount: this.blockedRequestCount,
-      network: this.proxy.snapshot(),
-      crossOriginAuthorized,
     };
   }
 }

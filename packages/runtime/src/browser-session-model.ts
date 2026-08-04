@@ -15,6 +15,11 @@ export const BROWSER_ACTION_TIMEOUT_MS = 15_000;
 export const BROWSER_NAVIGATION_TIMEOUT_MS = 30_000;
 export const BROWSER_LAUNCH_TIMEOUT_MS = 20_000;
 export const MAX_BROWSER_WAIT_MS = 10_000;
+export const MAX_BROWSER_FIND_QUERY_CHARS = 256;
+export const MAX_BROWSER_FIND_MATCHES = 20;
+export const MAX_BROWSER_FIND_SCAN_CHARS = 2_000_000;
+export const MAX_BROWSER_SCROLL_PIXELS = 5_000;
+export const MAX_BROWSER_VIEWPORT_TEXT_CHARS = 12_000;
 
 export const BROWSER_LIMITS_SHA256 = sha256(
   canonicalJson({
@@ -26,6 +31,11 @@ export const BROWSER_LIMITS_SHA256 = sha256(
     navigationTimeoutMs: BROWSER_NAVIGATION_TIMEOUT_MS,
     launchTimeoutMs: BROWSER_LAUNCH_TIMEOUT_MS,
     maxWaitMs: MAX_BROWSER_WAIT_MS,
+    maxFindQueryChars: MAX_BROWSER_FIND_QUERY_CHARS,
+    maxFindMatches: MAX_BROWSER_FIND_MATCHES,
+    maxFindScanChars: MAX_BROWSER_FIND_SCAN_CHARS,
+    maxScrollPixels: MAX_BROWSER_SCROLL_PIXELS,
+    maxViewportTextChars: MAX_BROWSER_VIEWPORT_TEXT_CHARS,
     proxy: "authenticated_fixed_ip_public_http",
     proxyOutbound: "action_scoped_default_deny",
     executableFreshness: "device_inode_size_mtime_before_after_launch",
@@ -64,6 +74,12 @@ export type BrowserSessionRequest =
       allowCrossOrigin?: boolean;
     }
   | { action: "wait"; durationMs?: number }
+  | { action: "find"; query: string }
+  | {
+      action: "scroll";
+      direction: "up" | "down";
+      pixels?: number;
+    }
   | { action: "snapshot" }
   | {
       action: "click";
@@ -100,6 +116,29 @@ export interface BrowserSessionFileEvidence {
   fileBytes: number;
 }
 
+export interface BrowserFindObservation {
+  querySha256: string;
+  queryChars: number;
+  matchCount: number;
+  matchesSha256: string;
+  scannedChars: number;
+  truncated: boolean;
+  output: string;
+}
+
+export interface BrowserScrollObservation {
+  deltaY: number;
+  positionY: number;
+  viewportHeight: number;
+  documentHeight: number;
+  atStart: boolean;
+  atEnd: boolean;
+  viewportTextSha256: string;
+  viewportTextChars: number;
+  viewportTextTruncated: boolean;
+  output: string;
+}
+
 export interface BrowserSessionDetails {
   kind: "napier.browser-session-operation";
   schemaVersion: 1;
@@ -117,6 +156,21 @@ export interface BrowserSessionDetails {
   snapshotSha256?: string;
   snapshotChars?: number;
   snapshotTruncated?: boolean;
+  findQuerySha256?: string;
+  findQueryChars?: number;
+  findMatchCount?: number;
+  findMatchesSha256?: string;
+  findScannedChars?: number;
+  findTruncated?: boolean;
+  scrollDeltaY?: number;
+  scrollPositionY?: number;
+  scrollViewportHeight?: number;
+  scrollDocumentHeight?: number;
+  scrollAtStart?: boolean;
+  scrollAtEnd?: boolean;
+  viewportTextSha256?: string;
+  viewportTextChars?: number;
+  viewportTextTruncated?: boolean;
   screenshotSha256?: string;
   screenshotBytes?: number;
   file?: BrowserSessionFileEvidence;

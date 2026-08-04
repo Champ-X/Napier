@@ -158,10 +158,19 @@ describe("Agent Browser Session integration", () => {
 
   it("runs read-only Browser navigation under workspace policy", async () => {
     const fixture = await createFixture("workspace");
-    const execute = vi.fn(async () => ({
-      output: "PAGE_READ_ONLY",
-      details: details("start", 1),
-    }));
+    let operation = 0;
+    const execute = vi.fn(
+      async (
+        _owner: { threadId: string; runId: string },
+        request: { action: BrowserSessionDetails["action"] },
+      ) => {
+        operation += 1;
+        return {
+          output: "PAGE_READ_ONLY",
+          details: details(request.action, operation),
+        };
+      },
+    );
     const browserSessions = {
       execute,
       cancelRun: vi.fn(async () => undefined),
@@ -172,6 +181,21 @@ describe("Agent Browser Session integration", () => {
         fauxToolCall("browser", {
           action: "start",
           url: "https://example.com/",
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("browser", {
+          action: "find",
+          query: "PRIVATE_FIND_QUERY",
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("browser", {
+          action: "scroll",
+          direction: "down",
+          pixels: 720,
         }),
         { stopReason: "toolUse" },
       ),
@@ -196,9 +220,25 @@ describe("Agent Browser Session integration", () => {
     });
 
     expect(run.status, run.error).toBe("completed");
-    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledTimes(3);
+    expect(execute.mock.calls.map((call) => call[1])).toEqual([
+      {
+        action: "start",
+        url: "https://example.com/",
+      },
+      {
+        action: "find",
+        query: "PRIVATE_FIND_QUERY",
+      },
+      {
+        action: "scroll",
+        direction: "down",
+        pixels: 720,
+      },
+    ]);
+    const events = await fixture.store.listEvents(fixture.threadId);
     expect(
-      (await fixture.store.listEvents(fixture.threadId)).find(
+      events.find(
         (event) =>
           event.type === "tool.completed" &&
           record(event.payload)?.["toolName"] === "browser",
@@ -208,6 +248,16 @@ describe("Agent Browser Session integration", () => {
         outputRedacted: true,
       }),
     );
+    expect(JSON.stringify(events)).not.toContain("PRIVATE_FIND_QUERY");
+    expect(
+      events
+        .filter(
+          (event) =>
+            event.type === "tool.started" &&
+            record(event.payload)?.["toolName"] === "browser",
+        )
+        .map((event) => record(event.payload)?.["effect"]),
+    ).toEqual(["read", "read", "read"]);
   });
 
   it("does not expose interactive Browser actions under observe policy", async () => {
@@ -262,6 +312,8 @@ describe("Agent Browser Session integration", () => {
       "navigate",
       "back",
       "wait",
+      "find",
+      "scroll",
       "snapshot",
       "screenshot",
       "close",

@@ -35,9 +35,10 @@ Audit date: 2026-08-04
 - A fresh default Agent also receives a read-only Browser schema plus
   `research_source`. Dynamic pages can use Browser `start -> wait`, call
   `research_source capture -> cite`, then close the Browser without
-  `unrestricted`; click/type/select/upload/download remain absent and
-  policy-denied. Full interaction presets, Browser Live/takeover,
-  tabs/history/scroll/find, and effect-specific confirmations remain P0.
+  `unrestricted`; literal find and bounded vertical scroll are also available
+  with proxy outbound closed. Click/type/select/upload/download remain absent
+  and policy-denied. Full interaction presets, Browser Live/takeover,
+  tabs/history, and effect-specific confirmations remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
@@ -58,7 +59,7 @@ Audit date: 2026-08-04
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 web connectivity               | In progress    | Default `web_search` and `web_fetch` cover source discovery plus bounded HTML/Markdown/JSON/text/PDF reading through DNS-pinned transport. `research_source capture_fetch` now imports an exact same-Run Web Source into the ordinary capture/cite/report-verification chain, while the default read-only Browser covers dynamic rendering with start/navigate/back/wait/snapshot/screenshot/close and Browser capture/cite. Real DeepSeek runs cited both public HTML/PDF Fetch Sources and JavaScript-rendered Browser content while interactive actions stayed absent and policy-denied. Remaining P0 work is full interaction presets and effect confirmations, scroll/find/multi-tab/history, Browser Live/takeover/resume, automatic Fetch/Browser fallback, cross-restart Source retention, open-web Research/Security benchmarks, setup/doctor diagnostics, and repeated same-model OMP Search/Fetch/Research/Browser comparison. This row remains in progress because static/dynamic citation unification does not provide complete Browser automation or product UX.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| P0 web connectivity               | In progress    | Default `web_search` and `web_fetch` cover source discovery plus bounded HTML/Markdown/JSON/text/PDF reading through DNS-pinned transport. `research_source capture_fetch` imports an exact same-Run Web Source into the ordinary capture/cite/report-verification chain, while the default read-only Browser covers dynamic rendering with start/navigate/back/wait/find/scroll/snapshot/screenshot/close and Browser capture/cite. Find and scroll keep proxy outbound closed, and a real DeepSeek CLI run completed both on a long public page while interactive actions stayed absent and policy-denied. Remaining P0 work is full interaction presets and effect confirmations, multi-tab/history, Browser Live/takeover/resume, automatic Fetch/Browser fallback, cross-restart Source retention, open-web Research/Security benchmarks, setup/doctor diagnostics, and repeated same-model OMP Search/Fetch/Research/Browser comparison. This row remains in progress because bounded page navigation does not provide complete Browser automation or product UX.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
@@ -635,9 +636,10 @@ Threat boundary:
   `research_source capture/cite` creates claim-bound citation evidence;
 - Browser and Research Source state remains process-local and unsafe for
   automatic restart replay;
-- multi-tab/history UX, scroll/find, Browser Live, user takeover/resume, local
-  Chrome relay, complete form automation, effect confirmation, and Artifact
-  delivery remain outside this slice.
+- multi-tab/history UX, Browser Live, user takeover/resume, local Chrome relay,
+  complete form automation, effect confirmation, and Artifact delivery remain
+  outside this original slice. Find/scroll are implemented in the later slice
+  below.
 
 Observed result:
 
@@ -663,9 +665,9 @@ Observed result:
   2,129 tests: Root 104, CLI 170, Server 183, Web 485, Runtime 1,159, and SDK 28. The real production Chrome smoke also passes with Chromium sandboxing
   enabled;
 - P0 remains in progress pending full interaction presets/confirmations,
-  scroll/find/multi-tab/history, Browser Live/takeover/resume, Source
-  unification and cross-restart strategy, open-web Research/Security
-  benchmarks, Setup/Doctor diagnostics, and repeated OMP comparison.
+  multi-tab/history, Browser Live/takeover/resume, cross-restart strategy,
+  open-web Research/Security benchmarks, Setup/Doctor diagnostics, and repeated
+  OMP comparison.
 
 ## Implemented Slice: Static Fetch Source Citation Unification
 
@@ -733,10 +735,78 @@ Observed result:
   2,134 tests: Root 104, CLI 170, Server 183, Web 486, Runtime 1,163, and SDK
   28;
 - P0 remains in progress pending full interaction presets/confirmations,
-  scroll/find/multi-tab/history, Browser Live/takeover/resume, automatic
-  Fetch-to-Browser fallback, cross-restart Source retention, open-web
+  multi-tab/history, Browser Live/takeover/resume, automatic Fetch-to-Browser
+  fallback, cross-restart Source retention, open-web
   Research/Security benchmarks, Setup/Doctor diagnostics, and repeated
   same-model OMP comparison.
+
+## Implemented Slice: Default Read-Only Browser Find and Scroll
+
+User scenario: a fresh default Agent can locate literal evidence in a long
+dynamic page and move through that page without enabling unrestricted Browser
+interaction or opening a hidden network window during observation.
+
+Acceptance:
+
+- expose `find` and `scroll` in both read-only and unrestricted Browser schemas
+  through the same Run-owned Session;
+- normalize one literal case-insensitive find query up to 256 characters, scan
+  at most two million visible-text characters, return at most 20 matching
+  numbered lines, and mark bounded truncation;
+- scroll only vertically, default to 720 pixels, cap each move at 5,000 pixels,
+  and return exact delta/position/viewport/document bounds plus bounded visible
+  viewport text;
+- keep the authenticated Browser proxy closed for both actions and retain
+  unchanged network counters after the page has loaded;
+- classify both actions as read effects under `observe`, while
+  click/type/select/upload/download remain schema-hidden and Policy-denied;
+- keep find query, matching text, and viewport text live-only. Durable Tool
+  evidence retains only hashes, counts, truncation, and numeric scroll bounds;
+- validate complete action-specific evidence in Web Trace and reject partial or
+  mixed find/scroll fields.
+
+Threat boundary:
+
+- find is literal text matching rather than selector, regex, script, or DOM
+  execution supplied by the model. Control characters, empty queries, and
+  oversized queries fail closed;
+- scroll accepts only `up`/`down` with a bounded positive integer. Oversized or
+  malformed distances fail closed and tear down the uncertain Session;
+- page text remains untrusted external data and cannot authorize interaction.
+  Neither action can click, type, select, upload, download, navigate, submit a
+  form, or open Browser proxy outbound;
+- this slice does not add multi-tab/history UX, Browser Live, takeover/resume,
+  form presets, effect confirmations, or cross-restart Session adoption.
+
+Observed result:
+
+- focused Runtime/Web suites pass 32 tests covering observe Policy, read/write
+  effect classification, exact default schema actions, forged interactive
+  denial, query redaction, bounded find matches, bidirectional scroll
+  positions, invalid bounds, proxy-closed observation, guidance, complete Trace
+  projection, and partial/mixed evidence rejection;
+- a real sandboxed Chrome manager opened the public Node.js v24 release page,
+  completed `start -> find -> scroll down -> scroll up -> close`, found three
+  `V8 13.6` matches, moved +1,200/-300 pixels, and retained identical network
+  request/byte counters across find and scroll;
+- a clean temporary Workspace/Data Root ran the built default CLI with
+  `deepseek/deepseek-v4-flash` on the same page. The Agent completed the same
+  five actions, all five were read effects, zero tools were blocked, the find
+  returned three matches, and Tool events contained no credential, URL, or raw
+  query;
+- the checked production Chrome smoke passes find/scroll, Research capture and
+  citation, screenshot, and close with Chromium sandboxing enabled;
+- Architecture passes 899 production source files, 447 test files, and zero
+  cycles. Browser observation/details leave the central page Session, reducing
+  `browser-page-session.ts` from 670 to 634 lines; Web Browser Trace maximum
+  function complexity drops from 46 to 28;
+- full TypeScript typechecking passes and the complete regular suite passes
+  2,136 tests: Root 104, CLI 170, Server 183, Web 486, Runtime 1,165, and SDK
+  28;
+- P0 remains in progress pending full interaction presets/confirmations,
+  multi-tab/history, Browser Live/takeover/resume, automatic Fetch-to-Browser
+  fallback, cross-restart Source retention, open-web Research/Security
+  benchmarks, Setup/Doctor diagnostics, and repeated same-model OMP comparison.
 
 ## Implemented Slice: Research Outcome Benchmark
 
