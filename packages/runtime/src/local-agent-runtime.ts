@@ -19,6 +19,7 @@ import {
 import { LocalStore } from "./store.js";
 import type { WebSearchExecutor } from "./web-search-model.js";
 import { WebSearchProviderRegistry } from "./web-search-providers.js";
+import type { WebFetchExecutor } from "./web-fetch-model.js";
 import { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { WorkspaceProcessManager } from "./workspace-processes.js";
 import { ExecutionPlanWorkflowExperimentRuntime } from "./workflow-experiments.js";
@@ -32,6 +33,7 @@ export interface LocalAgentRuntimeOptions {
   sandbox?: OsSandboxAdapter;
   researchSourceCaptures?: BrowserSourceCaptureProvider;
   webSearch?: WebSearchExecutor;
+  webFetch?: WebFetchExecutor;
 }
 
 export interface LocalAgentRuntimeServices {
@@ -104,10 +106,14 @@ export async function createLocalAgentRuntime(
       undefined,
       undefined,
       undefined,
-      options.webSearch ??
-        new WebSearchProviderRegistry({
-          ...(options.env ? { env: options.env } : {}),
-        }),
+      {
+        webSearch:
+          options.webSearch ??
+          new WebSearchProviderRegistry({
+            ...(options.env ? { env: options.env } : {}),
+          }),
+        ...(options.webFetch ? { webFetch: options.webFetch } : {}),
+      },
     );
     const embeddedAgents = new EmbeddedAgentService(store, runtime);
     const agentMessageExperiments = new AgentMessageExperimentRuntime(

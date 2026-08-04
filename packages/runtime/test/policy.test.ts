@@ -35,6 +35,20 @@ describe("workspace policy", () => {
     expect(
       assessToolCall(
         "observe",
+        "web_fetch",
+        { action: "fetch", url: "https://example.com/report.pdf" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+        reason: "read-only public-network operation",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "observe",
         "ast_query",
         { path: "src/index.ts", selector: { kind: "function" } },
         "/workspace",

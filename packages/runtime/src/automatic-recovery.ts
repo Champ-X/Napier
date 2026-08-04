@@ -32,7 +32,6 @@ const SAFE_READ_ONLY_TOOLS = new Set([
   "run_command",
   "workspace_file_preview",
   "verify_workspace",
-  "web_fetch",
   "web_search",
 ]);
 const UNSAFE_TOOLS = new Set([
@@ -46,6 +45,7 @@ const UNSAFE_TOOLS = new Set([
   "node_debugger",
   "workspace_process",
   "browser",
+  "web_fetch",
   "research_source",
   "create_plan",
   "update_plan_step",

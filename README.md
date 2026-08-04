@@ -250,6 +250,14 @@ Version `0.1.0` includes:
   connected address, revalidates bounded redirects, strips credentials across
   origins, and caps time and bytes. Queries, result URLs/snippets, and
   credentials remain outside Ledger and Trace;
+- a default-enabled `web_fetch` Source reader under the same `observe` policy.
+  It reads public HTML through Mozilla Readability, pretty-prints JSON, retains
+  Markdown/plain text, and extracts text from PDF bytes with Apache-licensed
+  PDF.js. Each fetch creates a Run-local hash-bound Source with bounded preview;
+  `read`, `find`, and `list` progressively recover exact line ranges without
+  refetching. Downloads stop at 8 MiB, PDF parsing stops at 200 pages/15
+  seconds, normalized content stops at 2 million characters/20,000 lines, and
+  Source URLs/bodies remain outside Ledger and Trace;
 - Run-owned controlled Chrome Sessions plus a `research_source` tool that
   freezes bounded visible page text, binds exact line ranges to report claims,
   returns citation tokens to the live Agent, and retains only privacy-bounded
@@ -5795,9 +5803,17 @@ The default Agent policy is `observe`:
 those entries share the same Agent profile and Runtime. CLI/TUI/Web render
 metadata-only tool events; the live model sees bounded titles, public URLs,
 snippets, dates, source labels, and provider fallback diagnostics. Search
-snippets remain untrusted discovery leads, not citation evidence. This slice
-does not yet provide `web_fetch`, URL/PDF reading, dynamic Browser fallback,
-default Browser interaction, or an open-web citation benchmark.
+snippets remain untrusted discovery leads, not citation evidence.
+
+`web_fetch` is available through those same entries. Its first call returns a
+bounded Source preview plus Source ID/content hash; later `read` and `find`
+calls reuse the exact Run-local normalized Source. HTML, JSON, text, and PDF
+content is explicitly labeled untrusted and may never authorize actions.
+Fetched Sources are process-local and automatic recovery blocks after their
+use rather than pretending an in-memory Source survived restart. Dynamic
+JavaScript pages, authenticated content, CAPTCHA/login-wall recovery, scanned
+PDF OCR, Browser fallback/Live, cross-restart Source retention, and adjacent
+claim citation remain open P0 work.
 
 Selecting `workspace` exposes only individually enabled structured tools:
 **Atomic patch** is hash-preconditioned and supports Hashline-style line

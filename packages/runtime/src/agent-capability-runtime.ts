@@ -10,6 +10,9 @@ import { createStatelessAgentTools } from "./stateless-agent-tools.js";
 import type { LocalStore } from "./store.js";
 import type { WebSearchExecutor } from "./web-search-model.js";
 import { WebSearchProviderRegistry } from "./web-search-providers.js";
+import type { WebFetchExecutor } from "./web-fetch-model.js";
+import { RunWebFetchSourceManager } from "./web-fetch-sources.js";
+import { createWebFetchTool } from "./web-fetch-tool.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
@@ -25,9 +28,15 @@ export interface CreateAgentCapabilityToolsOptions extends AgentCapabilityOwner 
   advisorCorrection?: boolean;
 }
 
+export interface AgentNetworkCapabilities {
+  webSearch?: WebSearchExecutor;
+  webFetch?: WebFetchExecutor;
+}
+
 export class AgentCapabilityRuntime {
   private readonly sessions: AgentSessionRuntime;
   private readonly webSearch: WebSearchExecutor;
+  private readonly webFetch: WebFetchExecutor;
 
   constructor(
     private readonly store: LocalStore,
@@ -36,9 +45,10 @@ export class AgentCapabilityRuntime {
     private readonly workspaceFileMutations?: WorkspaceFileMutationManager,
     browserSessions?: RunBrowserSessionManager,
     researchSourceCaptures?: BrowserSourceCaptureProvider,
-    webSearch: WebSearchExecutor = new WebSearchProviderRegistry(),
+    network: AgentNetworkCapabilities = {},
   ) {
-    this.webSearch = webSearch;
+    this.webSearch = network.webSearch ?? new WebSearchProviderRegistry();
+    this.webFetch = network.webFetch ?? new RunWebFetchSourceManager();
     this.sessions = new AgentSessionRuntime(
       processes,
       store.workspaceRoot,
@@ -78,6 +88,12 @@ export class AgentCapabilityRuntime {
         : {}),
       webSearch: this.webSearch,
     });
+    if (
+      !options.advisorCorrection &&
+      options.profile.enabledTools.includes("web_fetch")
+    ) {
+      tools.push(createWebFetchTool(this.webFetch, owner));
+    }
     if (sessionToolsAllowed(options)) {
       tools.push(
         ...this.sessions.createTools(options.profile.enabledTools, owner),
@@ -93,8 +109,16 @@ export class AgentCapabilityRuntime {
     return tools;
   }
 
-  cancelRun(owner: AgentCapabilityOwner): Promise<void> {
-    return this.sessions.cancelRun(owner);
+  async cancelRun(owner: AgentCapabilityOwner): Promise<void> {
+    const settlements = await Promise.allSettled([
+      this.sessions.cancelRun(owner),
+      this.webFetch.cancelRun(owner),
+    ]);
+    const failure = settlements.find(
+      (settlement): settlement is PromiseRejectedResult =>
+        settlement.status === "rejected",
+    );
+    if (failure) throw failure.reason;
   }
 }
 

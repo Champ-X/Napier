@@ -38,6 +38,7 @@ export const AGENT_TOOL_NAMES = [
   "node_debugger",
   "workspace_process",
   "web_search",
+  "web_fetch",
   "browser",
   "research_source",
   "verify_workspace",

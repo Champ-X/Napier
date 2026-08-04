@@ -39,6 +39,42 @@ describe("Web search event view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
     expect(toolEventTraceSummary(event)).not.toContain("secret.example");
   });
+
+  it("renders web fetch metadata without URL, Source ID, or body", () => {
+    const event = toolEvent({
+      callId: "call_fetch",
+      toolName: "web_fetch",
+      status: "completed",
+      effect: "read",
+      inputSha256: "b".repeat(64),
+      url: "https://secret.example/report.pdf",
+      sourceId: "websource_private",
+      output: "TOP_SECRET_FETCH_BODY",
+      details: {
+        kind: "napier.web-fetch",
+        schemaVersion: 1,
+        action: "fetch",
+        sourceFormat: "pdf",
+        sourceLineCount: 20,
+        sourcePageCount: 2,
+        sourceUrl: "https://secret.example/report.pdf",
+        sourceBody: "TOP_SECRET_FETCH_BODY",
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "web_fetch",
+      status: "completed",
+      effect: "read",
+      inputSha256: "b".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / web_fetch / completed / effect read / input ${"b".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+    expect(toolEventTraceSummary(event)).not.toContain("secret.example");
+    expect(toolEventTraceSummary(event)).not.toContain("websource");
+  });
 });
 
 function toolEvent(payload: RunEvent["payload"]): RunEvent {

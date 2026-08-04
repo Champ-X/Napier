@@ -153,6 +153,7 @@ export const contextCopy = {
     node_debugger: "Node debugger",
     workspace_process: "Background process",
     web_search: "Web Search",
+    web_fetch: "Web Fetch",
     browser: "Browser Session",
     research_source: "Research Source",
     verify_workspace: "Sandbox verify",

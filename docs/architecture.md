@@ -3962,8 +3962,50 @@ discovery data and tells the model to read primary pages before relying on
 important claims.
 
 This boundary currently discovers sources only. It does not fetch source
-bodies, parse URLs or PDFs, start a Browser fallback, create Research Sources,
-or prove citation accuracy. Those remain the next P0 vertical slices.
+bodies or prove citation accuracy. Fetch and progressive Source reading use the
+following sibling capability.
+
+### Web Fetch and Progressive Source Flow
+
+```text
+Agent calls web_fetch fetch with one public URL
+  -> reuse PublicHttpClient DNS pinning, redirect validation, timeout, and bytes
+  -> detect HTML/Markdown/JSON/text/PDF from MIME, extension, and safe sniffing
+  -> lazy-load Readability/DOM or PDF.js only for the selected format
+  -> remove active HTML, normalize readable text, or extract bounded PDF pages
+  -> cap body at 8 MiB, parse at 15 s, PDF at 200 pages
+  -> cap normalized Source at 2M characters and 20k lines
+  -> bind final URL/title/author/date/body/content/format to one Source ID/hash
+  -> return only a <=24k-character numbered preview to the live Agent
+Agent calls web_fetch find/read/list in the same Run
+  -> require exact Source ID and content hash
+  -> return literal matches or <=400 exact numbered lines
+Run settles
+  -> cancel active/queued fetches and drop every Source body from memory
+```
+
+`web-fetch-content.ts` owns format detection plus bounded HTML/JSON/text/PDF
+normalization. Mozilla Readability and LinkeDOM are lazy imports; PDF.js is
+also lazy and uses only downloaded bytes, so no parser performs an independent
+network request. `web-fetch-sources.ts` owns Run isolation, serialization,
+progressive reads, cancellation, and ephemeral Source storage.
+`web-fetch-tool.ts` owns the Agent schema and body-free Ledger projection.
+`AgentCapabilityRuntime` assembles Search and Fetch behind one
+`AgentNetworkCapabilities` boundary, so `agent-runtime.ts` does not grow a new
+constructor field per network tool.
+
+Source URL, title, author, publication date, raw body, normalized lines, Source
+ID, read query, and returned text stay live-only. Ledger/Replay/SSE/TUI/Web
+Trace retain action, format, byte/line/character/page counts, truncation,
+redirect count, retrieval time, and hashes. The original user prompt and model
+reasoning remain ordinary message evidence and may intentionally mention the
+requested URL or quoted facts; that is distinct from Tool receipt leakage.
+
+Fetch is read-only but not restart-adoptable because its Source body is
+deliberately process-local. Automatic recovery therefore treats any completed
+`web_fetch` call as unsafe, matching `research_source`. Dynamic rendering,
+authentication, CAPTCHAs, scanned-PDF OCR, Browser fallback, cross-restart
+Source retention, and citation binding remain outside this slice.
 
 ## Controlled Browser Session Flow
 

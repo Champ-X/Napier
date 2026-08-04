@@ -26,8 +26,10 @@ Audit date: 2026-08-04
   the same capability assembly and privacy-bounded Tool events. Configured
   Brave/Tavily providers fall back to credential-free Bing RSS and DuckDuckGo
   HTML through DNS-pinned, redirect-revalidated public HTTP. This is source
-  discovery only: `web_fetch`, URL/PDF reading, default Browser interaction,
-  citation-backed open-web Research, and Browser Live remain P0.
+  A sibling default `web_fetch` now reads public HTML/Markdown/JSON/text/PDF
+  into bounded Run-local Sources with progressive read/find. Dynamic Browser
+  fallback, cross-restart Source retention, citation-backed open-web Research,
+  default Browser interaction, and Browser Live remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
@@ -48,7 +50,7 @@ Audit date: 2026-08-04
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 web connectivity               | In progress    | Default `web_search` now works under the low-risk read-only `observe` policy with Brave, Tavily, credential-free Bing RSS, and DuckDuckGo HTML; bounded provider fallback, DNS-pinned public transport, redirect credential stripping, strict site filtering, CLI/TUI/Web event privacy, and a real DeepSeek CLI open-internet task are verified. The next required slices are `web_fetch` and unified URL/PDF Source reading, then default safe Browser discovery/interaction, adjacent claim citations, Browser Live/takeover, open-web Research/Security benchmarks, setup/doctor diagnostics, and repeated same-model OMP Search/Fetch/Research/Browser comparison. This row remains in progress because Search discovery alone does not satisfy the P0 acceptance gate.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| P0 web connectivity               | In progress    | Default `web_search` works under the low-risk read-only `observe` policy with Brave, Tavily, credential-free Bing RSS, and DuckDuckGo HTML. Default `web_fetch` now uses the same DNS-pinned public transport to read HTML/Markdown/JSON/text/PDF into bounded Run-local Sources with progressive line reads and literal find; real Node.js HTML/JSON, W3C PDF, and DeepSeek CLI PDF tasks pass without Tool-event URL/body leakage. The next required slices are safe dynamic Browser fallback/default interaction, Source-to-citation unification, cross-restart Source strategy, Browser Live/takeover, open-web Research/Security benchmarks, setup/doctor diagnostics, and repeated same-model OMP Search/Fetch/Research/Browser comparison. This row remains in progress because static source reading alone does not satisfy the P0 acceptance gate.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
@@ -507,6 +509,86 @@ Observed result:
   pending Fetch/URL/PDF, safe default Browser,
   citation-backed open-web Research, Browser Live, diagnostics, Security
   benchmarks, and repeated OMP comparison.
+
+## Implemented Slice: Default URL and PDF Source Reading
+
+User scenario: a fresh default Agent can open an original public URL or PDF,
+inspect a bounded preview, and progressively read or search the same immutable
+Run-local Source without changing Profile policy or enabling Browser.
+
+Acceptance:
+
+- add default `web_fetch` under the read-only `observe` policy and expose the
+  same implementation through CLI, TUI, HTTP/Web, RPC, SDK, Workflow Agent
+  nodes, and the `@napier/runtime/web-search` subpath;
+- reuse the DNS-pinned public HTTP client for every request and redirect, with
+  the existing private/mixed-DNS, credential, protocol, port, timeout,
+  redirect, and response-byte denials;
+- detect and normalize HTML, Markdown, JSON, UTF-8 text, and PDF bytes;
+- remove active HTML and extract article text/metadata, pretty-print JSON, and
+  extract PDF text without introducing AGPL code or an external conversion
+  process;
+- freeze each successful fetch into a Run-local Source ID and content hash,
+  return a bounded preview, and support exact `read`, literal `find`, and
+  recoverable `list` actions;
+- cap downloads at 8 MiB, parsing at 15 seconds, PDF at 200 pages, normalized
+  content at 2 million characters/20,000 lines, reads at 400 lines, and each
+  Run at 16 Sources;
+- keep URL, Source ID, title/author/date, body, normalized text, queries, and
+  results out of Tool Ledger/Replay/TUI/Web Trace while retaining bounded
+  hashes, format, counts, truncation, redirect, and retrieval evidence;
+- block automatic recovery after Fetch because the normalized Source is
+  intentionally process-local.
+
+Threat boundary:
+
+- fetched bytes and normalized Source text are untrusted external data.
+  Readability removes active markup, but content remains data rather than
+  authorization or instructions;
+- PDF.js receives only already-downloaded bounded bytes. Parser modules are
+  lazy imports and perform no independent URL fetch; active/queued operations
+  cancel with Run settlement;
+- `read` and `find` require the exact same-Run Source ID and content hash.
+  Cross-Run, stale-hash, oversized-range, and post-settlement reads fail;
+- user prompts and model reasoning remain ordinary message evidence and may
+  intentionally mention requested URLs or quoted source facts. The privacy
+  guarantee applies to Tool receipt/Trace projections, not to user-authored
+  prompts or model-authored prose;
+- dynamic JavaScript rendering, authentication, login walls, CAPTCHAs,
+  scanned-PDF OCR, Browser fallback, cross-restart Source bodies, and claim
+  citations remain outside this slice.
+
+Observed result:
+
+- focused Runtime/CLI/TUI/Web suites cover real HTML metadata/body extraction,
+  active-tag removal, JSON pretty-printing, MIME-less text/JSON detection,
+  genuine PDF byte parsing, unsupported binary/invalid UTF-8, progressive
+  read/find/list, hash and Run isolation, active/queued cancellation, HTTP
+  failure, default `observe` Agent/CLI execution, Advisor zero-tool isolation,
+  automatic-recovery denial, and metadata-only Web/TUI projection;
+- real open-internet probes fetched the Node.js v24.0.0 release HTML (505
+  normalized lines, 565,687 bytes, 1,057 ms), Node.js distribution JSON
+  (20,000-line bounded Source, 328,088 bytes, 139 ms), and the W3C dummy PDF
+  (one page, three normalized lines, 13,264 bytes, 691 ms);
+- a clean temporary Workspace/Data Root ran the built CLI with
+  `deepseek/deepseek-v4-flash`. The default Agent called `web_fetch` once on
+  the real W3C PDF, produced `format=pdf`, `pageCount=1`, `lineCount=3`,
+  completed successfully, returned the required exact marker, wrote zero
+  stderr bytes, and exposed neither API key, URL, nor PDF body in the two
+  `web_fetch` Tool events;
+- Mozilla Readability 0.6.0 and PDF.js 6.2.108 are Apache-2.0; LinkeDOM
+  0.18.13 is ISC. All are lazy-loaded and the checked default product
+  performance remains within budget. `npm audit --omit=dev` reports one
+  moderate Hono CORS advisory already present outside this dependency chain;
+  no new parser dependency carries an advisory in the current lock;
+- Architecture passes 890 production source files, 447 test files, zero
+  cycles, and lowers the `agent-runtime.ts` line override from 3,704 to 3,703
+  by aggregating Search/Fetch injection behind `AgentNetworkCapabilities`.
+  Full TypeScript typechecking passes and the complete regular suite passes
+  2,127 tests: Root 104, CLI 170, Server 183, Web 485, Runtime 1,157, and SDK 28. P0 remains in progress pending dynamic/default Browser, Browser Live
+  and takeover, Source/Citation unification, cross-restart Source strategy,
+  open-web Research/Security benchmarks, diagnostics, and repeated OMP
+  comparison.
 
 ## Implemented Slice: Research Outcome Benchmark
 

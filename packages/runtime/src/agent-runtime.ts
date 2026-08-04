@@ -59,12 +59,11 @@ import {
   agentToolOutputLedgerProjection as toolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
 import { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
+import type { AgentNetworkCapabilities } from "./agent-capability-runtime.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
-import type { WebSearchExecutor } from "./web-search-model.js";
-import { WebSearchProviderRegistry } from "./web-search-providers.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
@@ -254,7 +253,7 @@ export class AgentRuntime {
     readonly toolInvocationResultCapsules = new ToolInvocationResultCapsuleStore(
       store.dataRoot,
     ),
-    readonly webSearch: WebSearchExecutor = new WebSearchProviderRegistry(),
+    readonly networkCapabilities: AgentNetworkCapabilities = {},
   ) {
     this.capabilities = new AgentCapabilityRuntime(
       store,
@@ -263,7 +262,7 @@ export class AgentRuntime {
       workspaceFileMutations,
       browserSessions,
       researchSourceCaptures,
-      webSearch,
+      networkCapabilities,
     );
   }
 

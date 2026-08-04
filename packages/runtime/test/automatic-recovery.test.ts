@@ -177,6 +177,25 @@ describe("safe automatic recovery", () => {
     });
     expect(researchSource.blockReasons).toContain("unsafe_tool_effect");
 
+    const webFetch = assessAutomaticRecovery({
+      run,
+      events: [
+        event(1, "tool.started", {
+          callId: "web-fetch-1",
+          toolName: "web_fetch",
+          status: "started",
+          effect: "read",
+        }),
+        event(2, "tool.completed", {
+          callId: "web-fetch-1",
+          toolName: "web_fetch",
+          status: "completed",
+          effect: "read",
+        }),
+      ],
+    });
+    expect(webFetch.blockReasons).toContain("unsafe_tool_effect");
+
     const filePreview = assessAutomaticRecovery({
       run,
       events: [

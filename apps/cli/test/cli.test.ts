@@ -18,7 +18,10 @@ import {
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
-import type { WebSearchExecutor } from "@napier/runtime/web-search";
+import type {
+  WebFetchExecutor,
+  WebSearchExecutor,
+} from "@napier/runtime/web-search";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -244,7 +247,7 @@ describe("Napier one-shot CLI", () => {
         "--jsonl",
       ],
       cliIo(fixture.root, stdout, stderr),
-      providerDependencies(provider, webSearch),
+      providerDependencies(provider, { webSearch }),
     );
 
     expect(code).toBe(0);
@@ -279,6 +282,88 @@ describe("Napier one-shot CLI", () => {
       }),
     );
     expect(stdout.text()).toContain("CLI_SEARCH_RESULT");
+  });
+
+  it("exposes progressive web_fetch through the clean-state default Agent CLI path", async () => {
+    const fixture = await createFixture();
+    const provider = fauxProvider({ provider: "faux-cli-fetch" });
+    const sourceId = "websource_12345678";
+    const sourceContentSha256 = "a".repeat(64);
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("web_fetch", {
+          action: "fetch",
+          url: "https://example.com/report.pdf",
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("web_fetch", {
+          action: "read",
+          sourceId,
+          sourceContentSha256,
+          startLine: 1,
+          endLine: 1,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage("CLI_FETCH_RESULT"),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const webFetch: WebFetchExecutor = {
+      execute: vi
+        .fn()
+        .mockResolvedValueOnce({
+          output: "1 | PRIVATE_CLI_FETCH_BODY",
+          details: webFetchDetails("fetch", sourceId, sourceContentSha256),
+        })
+        .mockResolvedValueOnce({
+          output: "1 | PRIVATE_CLI_FETCH_BODY",
+          details: {
+            ...webFetchDetails("read", sourceId, sourceContentSha256),
+            readStartLine: 1,
+            readEndLine: 1,
+            readLineCount: 1,
+          },
+        }),
+      cancelRun: vi.fn(async () => undefined),
+    };
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "run",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--prompt",
+        "Read the public PDF.",
+        "--model",
+        "faux-cli-fetch/faux-1",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, stderr),
+      providerDependencies(provider, { webFetch }),
+    );
+
+    expect(code).toBe(0);
+    expect(stderr.text()).toBe("");
+    expect(webFetch.execute).toHaveBeenCalledTimes(2);
+    const frames = parseFrames(stdout.text());
+    const events = frames.flatMap((frame) =>
+      frame.type === "event" ? [frame.event] : [],
+    );
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "tool.completed" &&
+          record(event.payload)?.["toolName"] === "web_fetch",
+      ),
+    ).toHaveLength(2);
+    expect(stdout.text()).toContain("CLI_FETCH_RESULT");
+    expect(stdout.text()).not.toContain("PRIVATE_CLI_FETCH_BODY");
   });
 
   it("appends to an existing Thread and prints a human result", async () => {
@@ -710,18 +795,50 @@ describe("Napier one-shot CLI", () => {
 
 function providerDependencies(
   provider: ReturnType<typeof fauxProvider>,
-  webSearch?: WebSearchExecutor,
+  network: {
+    webSearch?: WebSearchExecutor;
+    webFetch?: WebFetchExecutor;
+  } = {},
 ): RunCliDependencies {
   return {
     async createRuntime(options: LocalAgentRuntimeOptions) {
       const services = await createLocalAgentRuntime({
         ...options,
         sandbox: new UnsupportedSandboxAdapter("cli-faux"),
-        ...(webSearch ? { webSearch } : {}),
+        ...(network.webSearch ? { webSearch: network.webSearch } : {}),
+        ...(network.webFetch ? { webFetch: network.webFetch } : {}),
       });
       services.models.registerProvider(provider.provider);
       return services;
     },
+  };
+}
+
+function webFetchDetails(
+  action: "fetch" | "read",
+  sourceId: string,
+  sourceContentSha256: string,
+) {
+  return {
+    kind: "napier.web-fetch" as const,
+    schemaVersion: 1 as const,
+    action,
+    sourceId,
+    sourceFormat: "pdf" as const,
+    sourceContentSha256,
+    sourceUrlSha256: "b".repeat(64),
+    sourceOriginSha256: "c".repeat(64),
+    sourceTitleSha256: "d".repeat(64),
+    sourceBodySha256: "e".repeat(64),
+    sourceBodyBytes: 100,
+    sourceLineCount: 1,
+    sourceTextChars: 22,
+    sourceTruncated: false,
+    sourcePageCount: 1,
+    redirectCount: 0,
+    sourceCount: 1,
+    sourceSetSha256: "f".repeat(64),
+    retrievedAt: "2026-08-04T12:00:00.000Z",
   };
 }
 

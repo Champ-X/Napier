@@ -11,6 +11,11 @@ import {
   researchSourceToolOutputLedgerProjection,
 } from "./research-source-tool.js";
 import {
+  webFetchToolCallArgumentsLedgerProjection,
+  webFetchToolInputLedgerProjection,
+  webFetchToolOutputLedgerProjection,
+} from "./web-fetch-tool.js";
+import {
   webSearchToolCallArgumentsLedgerProjection,
   webSearchToolInputLedgerProjection,
   webSearchToolOutputLedgerProjection,
@@ -22,6 +27,9 @@ export function agentNetworkToolCallProjection(
 ): JsonValue | undefined {
   if (toolName === "web_search") {
     return webSearchToolCallArgumentsLedgerProjection(args);
+  }
+  if (toolName === "web_fetch") {
+    return webFetchToolCallArgumentsLedgerProjection(args);
   }
   if (toolName === "research_source") {
     return researchSourceToolCallArgumentsLedgerProjection(args);
@@ -39,6 +47,9 @@ export function agentNetworkToolInputProjection(
   if (toolName === "web_search") {
     return webSearchToolInputLedgerProjection(args);
   }
+  if (toolName === "web_fetch") {
+    return webFetchToolInputLedgerProjection(args);
+  }
   if (toolName === "research_source") {
     return researchSourceToolInputLedgerProjection(args);
   }
@@ -55,6 +66,9 @@ export function agentNetworkToolOutputProjection(
 ): Record<string, JsonValue> | undefined {
   if (toolName === "web_search") {
     return webSearchToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "web_fetch") {
+    return webFetchToolOutputLedgerProjection(output, result);
   }
   if (toolName === "research_source") {
     return researchSourceToolOutputLedgerProjection(output, result);
