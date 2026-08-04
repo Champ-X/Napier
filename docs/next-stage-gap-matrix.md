@@ -29,9 +29,11 @@ Audit date: 2026-08-04
   `web_fetch` reads public HTML/Markdown/JSON/text/PDF into bounded Run-local
   Sources with progressive read/find. `research_source capture_fetch` imports
   an exact same-Run Web Source by ID/hash into the existing claim-bound
-  citation and report-verification chain. Dynamic Browser fallback,
-  cross-restart Source retention, default Browser interaction, and Browser
-  Live remain P0.
+  citation and report-verification chain. Eligible successful
+  `document.write` HTML shells now automatically render through the same
+  controlled read-only Browser with bounded provenance and fail-visible
+  degradation. Generic SPA/login/CAPTCHA fallback, cross-restart Source
+  retention, default Browser interaction, and Browser Live remain P0.
 - A fresh default Agent also receives a read-only Browser schema plus
   `research_source`. Dynamic pages can use Browser `start -> wait`, call
   `research_source capture -> cite`, then close the Browser without
@@ -603,6 +605,95 @@ Observed result:
   and takeover, Source/Citation unification, cross-restart Source strategy,
   open-web Research/Security benchmarks, diagnostics, and repeated OMP
   comparison.
+
+## Implemented Slice: Automatic Fetch-to-Browser Fallback
+
+User scenario: a fresh default Agent can call `web_fetch` on a public HTML
+script shell and receive the rendered visible content as the same progressive
+Web Source, without knowing that a Browser is required or making separate
+Browser tool calls.
+
+Acceptance:
+
+- keep `web_fetch` as the only model-authored URL-read call and preserve its
+  same-Run Source ID, `read`/`find`/`list`, Research import, and cancellation
+  semantics;
+- reuse the exact default Run-owned controlled Browser manager internally;
+  perform bounded `start -> wait -> capture -> close` with the ordinary
+  public-network, executable freshness, proxy, operation, and cancellation
+  boundaries;
+- trigger only after successful HTML parsing when static normalized text is
+  at most 1,000 characters and raw HTML explicitly uses
+  `document.write`/`document.writeln`;
+- never trigger for HTTP errors, unsupported binary content, PDF, ordinary
+  static HTML, password forms, arbitrary parser failures, or when Browser is
+  not enabled for the active execution mode;
+- require the Browser capture to retain the exact final URL, valid content and
+  Browser hashes, and at least 80 characters of useful visible-text growth;
+- cap automatic fallback at two attempts per Run;
+- on Chrome/render/limit failure, return the static Source with only
+  `browser_unavailable`, `browser_render_not_useful`, or
+  `fallback_limit_reached` rather than a private exception;
+- preserve `static` versus `browser_fallback` renderer provenance through Web
+  Fetch receipts, `capture_fetch`, citations, Replay, and Web Trace.
+
+Threat boundary:
+
+- fallback remains a read effect under `observe`; it does not expose or invoke
+  click, type, select, upload, download, existing user profiles, cookies, or
+  authentication state;
+- the static HTTP path remains authoritative for final URL, raw body hash,
+  content type, redirect count, and byte bounds. Browser may replace only the
+  normalized title/visible lines after exact validation;
+- password-form detection prevents an automatic login-page Browser path.
+  Generic login-wall, CAPTCHA, authentication, and anti-bot recovery remain
+  explicit future work;
+- Browser-rendered content remains untrusted data. Fallback does not create a
+  citation; the Agent must still import the exact Web Source and bind a
+  sufficient line range to its claim;
+- Browser fallback failure cannot silently masquerade as rendered content.
+  Partial, mixed, wrong-format, wrong-URL, or self-inconsistent fallback
+  provenance fails Research/Web Trace validation. Historical schema-1 Fetch
+  events with no fallback fields remain readable as legacy static evidence;
+- this conservative detector is not general SPA inference and intentionally
+  prefers false negatives over unexpected Browser launches.
+
+Observed result:
+
+- focused Runtime/Web/CLI tests pass 40 cases covering successful rendering,
+  default-Agent composition, static/PDF/password/binary/HTTP exclusions,
+  Chrome-unavailable and low-value-render degradation, wrong-URL capture,
+  per-Run fallback cap, Research import/citation provenance, partial/impossible
+  evidence rejection, Web Trace parsing, privacy, and unchanged open-web
+  benchmark semantics;
+- full Runtime, Web, and CLI suites pass 1,173, 489, and 178 tests
+  respectively;
+- Architecture passes 914 production source files, 449 test files, and zero
+  cycles. Fallback execution, Source presentation, fetched-capture
+  construction, and Web Trace parsing occupy leaf modules; no architecture
+  budget increased. `web-fetch-sources.ts` is 426 lines,
+  `research-sources.ts` is 485, and `research-source-event-view.ts` is 389;
+- a clean temporary Workspace/Data Root ran the built CLI with
+  `deepseek/deepseek-v4-flash` against `quotes.toscrape.com/js/`. The default
+  `observe` Agent completed exactly
+  `web_fetch fetch -> research_source capture_fetch -> research_source cite`;
+  there were zero model-authored Browser calls and zero failed tools;
+- Fetch recorded `sourceRenderMode=browser_fallback`, one bounded fallback,
+  35 visible lines/1,495 characters, exact Browser runtime/network hashes, and
+  a 5,808-byte authoritative HTML body. Research preserved the same Browser
+  provenance while retaining `sourceKind=web_fetch`;
+- the Run completed in about 35 seconds with 12,268 input, 1,020 output, and
+  36,224 cache-read tokens at `$0.0021045472`; Replay verified as valid and
+  stderr was empty;
+- Tool events contained no raw target URL, rendered quote, Browser output, or
+  credential. A byte scan of the complete temporary Workspace/Data Root found
+  no credential value;
+- the complete regular suite passes 2,156 tests: Root 105, CLI 178, Server
+  183, Web 489, Runtime 1,173, and SDK 28;
+- P0 remains in progress pending generic SPA/login/CAPTCHA diagnostics,
+  cross-restart Sources, Browser Live/takeover, full interaction presets and
+  effect confirmation, repeated fallback reliability, open-web Security, and
+  same-model OMP comparison.
 
 ## Implemented Slice: Default Read-Only Dynamic Browser Research
 

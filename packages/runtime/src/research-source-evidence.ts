@@ -49,6 +49,32 @@ export function researchSourceDetails(
           webSourceBodySha256: source.capture.webFetch.sourceBodySha256,
           webSourceFormat: source.capture.webFetch.sourceFormat,
           webSourceLineCount: source.capture.webFetch.sourceLineCount,
+          webSourceRenderMode: source.capture.webFetch.renderMode,
+          browserFallbackStatus: source.capture.webFetch.browserFallbackStatus,
+          ...(source.capture.webFetch.browserFallbackDiagnostic
+            ? {
+                browserFallbackDiagnostic:
+                  source.capture.webFetch.browserFallbackDiagnostic,
+              }
+            : {}),
+          ...(source.capture.webFetch.browserFallback
+            ? {
+                webFetchBrowserSessionOperation:
+                  source.capture.webFetch.browserFallback.sessionOperation,
+                webFetchBrowserSessionIdSha256:
+                  source.capture.webFetch.browserFallback.sessionIdSha256,
+                webFetchBrowserExecutableSha256:
+                  source.capture.webFetch.browserFallback
+                    .browserExecutableSha256,
+                webFetchBrowserVersionSha256:
+                  source.capture.webFetch.browserFallback.browserVersionSha256,
+                webFetchBrowserLimitsSha256:
+                  source.capture.webFetch.browserFallback.limitsSha256,
+                webFetchBrowserNetworkDestinationsSha256:
+                  source.capture.webFetch.browserFallback.network
+                    .destinationsSha256,
+              }
+            : {}),
         }),
   };
 }

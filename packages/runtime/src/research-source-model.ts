@@ -1,6 +1,12 @@
 import type { BrowserSessionOwner } from "./browser-session-model.js";
 import type { FixedIpProxySnapshot } from "./fixed-ip-http-proxy.js";
 import type { WebFetchSourceFormat } from "./web-fetch-model.js";
+import type {
+  WebFetchBrowserFallbackDiagnostic,
+  WebFetchBrowserFallbackEvidence,
+  WebFetchBrowserFallbackStatus,
+  WebFetchRenderMode,
+} from "./web-fetch-model.js";
 
 export type ResearchSourceRequest =
   | { action: "capture"; maxChars?: number }
@@ -59,6 +65,15 @@ export interface ResearchSourceToolDetails {
   webSourceBodySha256?: string;
   webSourceFormat?: WebFetchSourceFormat;
   webSourceLineCount?: number;
+  webSourceRenderMode?: WebFetchRenderMode;
+  browserFallbackStatus?: WebFetchBrowserFallbackStatus;
+  browserFallbackDiagnostic?: WebFetchBrowserFallbackDiagnostic;
+  webFetchBrowserSessionOperation?: number;
+  webFetchBrowserSessionIdSha256?: string;
+  webFetchBrowserExecutableSha256?: string;
+  webFetchBrowserVersionSha256?: string;
+  webFetchBrowserLimitsSha256?: string;
+  webFetchBrowserNetworkDestinationsSha256?: string;
 }
 
 export interface ResearchSourceResult {
@@ -102,6 +117,10 @@ export interface WebFetchResearchSourceCapture extends ResearchSourceCaptureBase
     sourceBodySha256: string;
     sourceFormat: WebFetchSourceFormat;
     sourceLineCount: number;
+    renderMode: WebFetchRenderMode;
+    browserFallbackStatus: WebFetchBrowserFallbackStatus;
+    browserFallbackDiagnostic?: WebFetchBrowserFallbackDiagnostic;
+    browserFallback?: WebFetchBrowserFallbackEvidence;
   };
 }
 

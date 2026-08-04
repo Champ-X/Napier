@@ -2,7 +2,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { AgentProfile } from "@napier/contracts";
 
 import { AgentSessionRuntime } from "./agent-sessions.js";
-import type { RunBrowserSessionManager } from "./browser-session.js";
+import { RunBrowserSessionManager } from "./browser-session.js";
 import { gitStageMutationManagerFor } from "./git-stage.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
@@ -12,7 +12,11 @@ import type { WebSearchExecutor } from "./web-search-model.js";
 import { WebSearchProviderRegistry } from "./web-search-providers.js";
 import type { WebFetchExecutor } from "./web-fetch-model.js";
 import type { WebFetchResearchCaptureProvider } from "./web-fetch-model.js";
-import { RunWebFetchSourceManager } from "./web-fetch-sources.js";
+import { createWebFetchBrowserFallbackProvider } from "./web-fetch-browser-fallback.js";
+import {
+  RunWebFetchSourceManager,
+  type RunWebFetchSourceManagerOptions,
+} from "./web-fetch-sources.js";
 import { createWebFetchTool } from "./web-fetch-tool.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
@@ -32,6 +36,7 @@ export interface CreateAgentCapabilityToolsOptions extends AgentCapabilityOwner 
 export interface AgentNetworkCapabilities {
   webSearch?: WebSearchExecutor;
   webFetch?: WebFetchExecutor;
+  webFetchHttp?: RunWebFetchSourceManagerOptions["http"];
 }
 
 export class AgentCapabilityRuntime {
@@ -49,13 +54,23 @@ export class AgentCapabilityRuntime {
     network: AgentNetworkCapabilities = {},
   ) {
     this.webSearch = network.webSearch ?? new WebSearchProviderRegistry();
-    this.webFetch = network.webFetch ?? new RunWebFetchSourceManager();
+    const resolvedBrowserSessions =
+      browserSessions ??
+      new RunBrowserSessionManager({ workspaceRoot: store.workspaceRoot });
+    this.webFetch =
+      network.webFetch ??
+      new RunWebFetchSourceManager({
+        ...(network.webFetchHttp ? { http: network.webFetchHttp } : {}),
+        browserFallback: createWebFetchBrowserFallbackProvider(
+          resolvedBrowserSessions,
+        ),
+      });
     const webFetchCapture = webFetchResearchCaptureProvider(this.webFetch);
     this.sessions = new AgentSessionRuntime(
       processes,
       store.workspaceRoot,
       sandbox,
-      browserSessions,
+      resolvedBrowserSessions,
       researchSourceCaptures,
       webFetchCapture,
     );
@@ -95,7 +110,13 @@ export class AgentCapabilityRuntime {
       !options.advisorCorrection &&
       options.profile.enabledTools.includes("web_fetch")
     ) {
-      tools.push(createWebFetchTool(this.webFetch, owner));
+      tools.push(
+        createWebFetchTool(this.webFetch, owner, {
+          browserFallbackAllowed:
+            networkSessionToolsAllowed(options) &&
+            options.profile.enabledTools.includes("browser"),
+        }),
+      );
     }
     if (networkSessionToolsAllowed(options)) {
       tools.push(

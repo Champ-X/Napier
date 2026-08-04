@@ -107,6 +107,8 @@ describe("RunResearchSourceManager", () => {
         webSourceBodySha256: "7".repeat(64),
         webSourceFormat: "pdf",
         webSourceLineCount: 2,
+        webSourceRenderMode: "static",
+        browserFallbackStatus: "not_needed",
       })),
     };
     const manager = new RunResearchSourceManager(
@@ -161,6 +163,117 @@ describe("RunResearchSourceManager", () => {
     expect(cited.output).toContain("Napier imports static Source evidence.");
   });
 
+  it("retains validated Browser fallback provenance on a fetched Research Source", async () => {
+    const claim =
+      "Dynamic Fetch evidence came from controlled Browser rendering.";
+    const webFetch: WebFetchResearchCaptureProvider = {
+      captureWebSource: vi.fn(async () => ({
+        url: "https://example.com/dynamic",
+        title: "Dynamic Fetch",
+        lines: [claim],
+        textChars: claim.length,
+        truncated: false,
+        webSourceContentSha256: "6".repeat(64),
+        webSourceBodySha256: "7".repeat(64),
+        webSourceFormat: "html",
+        webSourceLineCount: 1,
+        webSourceRenderMode: "browser_fallback",
+        browserFallbackStatus: "used",
+        browserFallback: {
+          sessionOperation: 3,
+          sessionIdSha256: "1".repeat(64),
+          browserExecutableSha256: "2".repeat(64),
+          browserVersionSha256: "3".repeat(64),
+          limitsSha256: "4".repeat(64),
+          network: {
+            requestCount: 2,
+            connectCount: 1,
+            rejectedCount: 0,
+            transferredBytes: 1_024,
+            destinationCount: 1,
+            destinationsSha256: "5".repeat(64),
+          },
+        },
+      })),
+    };
+    const manager = new RunResearchSourceManager(
+      { capturePage: vi.fn() },
+      undefined,
+      webFetch,
+    );
+
+    const captured = await manager.execute(OWNER, {
+      action: "capture_fetch",
+      webSourceId: "websource_dynamic001",
+      webSourceContentSha256: "6".repeat(64),
+    });
+
+    expect(captured.details).toEqual(
+      expect.objectContaining({
+        action: "capture_fetch",
+        sourceKind: "web_fetch",
+        webSourceRenderMode: "browser_fallback",
+        browserFallbackStatus: "used",
+        webFetchBrowserSessionOperation: 3,
+        webFetchBrowserSessionIdSha256: "1".repeat(64),
+        webFetchBrowserNetworkDestinationsSha256: "5".repeat(64),
+      }),
+    );
+  });
+
+  it("rejects incomplete or impossible Web Fetch fallback provenance", async () => {
+    const base = {
+      url: "https://example.com/dynamic",
+      title: "Dynamic Fetch",
+      lines: ["Dynamic evidence."],
+      textChars: "Dynamic evidence.".length,
+      truncated: false,
+      webSourceContentSha256: "6".repeat(64),
+      webSourceBodySha256: "7".repeat(64),
+      webSourceFormat: "html" as const,
+      webSourceLineCount: 1,
+    };
+    const missingEvidence = new RunResearchSourceManager(
+      { capturePage: vi.fn() },
+      undefined,
+      {
+        captureWebSource: vi.fn(async () => ({
+          ...base,
+          webSourceRenderMode: "browser_fallback" as const,
+          browserFallbackStatus: "used" as const,
+        })),
+      },
+    );
+    const impossiblePdf = new RunResearchSourceManager(
+      { capturePage: vi.fn() },
+      undefined,
+      {
+        captureWebSource: vi.fn(async () => ({
+          ...base,
+          webSourceFormat: "pdf" as const,
+          webSourceRenderMode: "static" as const,
+          browserFallbackStatus: "unavailable" as const,
+          browserFallbackDiagnostic: "browser_unavailable" as const,
+        })),
+      },
+    );
+
+    await expect(
+      missingEvidence.execute(OWNER, {
+        action: "capture_fetch",
+        webSourceId: "websource_dynamic002",
+        webSourceContentSha256: "6".repeat(64),
+      }),
+    ).rejects.toThrow("Web Fetch Source capture binding is invalid");
+    await expect(
+      impossiblePdf.execute(OWNER, {
+        action: "capture_fetch",
+        webSourceId: "websource_dynamic003",
+        webSourceContentSha256: "6".repeat(64),
+      }),
+    ).rejects.toThrow("Web Fetch Source capture binding is invalid");
+  });
+
   it("verifies one Markdown report against a Web Fetch-backed citation", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-fetch-report-"));
     roots.push(root);
@@ -178,6 +291,8 @@ describe("RunResearchSourceManager", () => {
         webSourceBodySha256: "7".repeat(64),
         webSourceFormat: "html",
         webSourceLineCount: 1,
+        webSourceRenderMode: "static",
+        browserFallbackStatus: "not_needed",
       })),
     };
     const manager = new RunResearchSourceManager(

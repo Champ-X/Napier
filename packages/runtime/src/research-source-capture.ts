@@ -8,12 +8,16 @@ import {
   MAX_PROXY_TRANSFER_BYTES,
 } from "./fixed-ip-http-proxy.js";
 import { validatePublicHttpUrl } from "./public-network.js";
+import { validBrowserFallbackEvidence } from "./web-fetch-browser-fallback.js";
 import type {
   BrowserResearchCapture,
   ResearchSourceCapture,
   WebFetchResearchSourceCapture,
 } from "./research-source-model.js";
-import { WEB_FETCH_SOURCE_FORMATS } from "./web-fetch-model.js";
+import {
+  WEB_FETCH_SOURCE_FORMATS,
+  type WebFetchResearchCapture,
+} from "./web-fetch-model.js";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 
@@ -80,11 +84,71 @@ export function validateResearchWebFetchCapture(
     !WEB_FETCH_SOURCE_FORMATS.includes(capture.webFetch.sourceFormat) ||
     !Number.isSafeInteger(capture.webFetch.sourceLineCount) ||
     capture.webFetch.sourceLineCount < capture.lines.length ||
-    capture.webFetch.sourceLineCount > 20_000
+    capture.webFetch.sourceLineCount > 20_000 ||
+    !validWebFetchRenderProvenance(capture)
   ) {
     throw new Error("Web Fetch Source capture binding is invalid");
   }
   return url;
+}
+
+export function webFetchResearchSourceCapture(
+  fetched: WebFetchResearchCapture,
+): WebFetchResearchSourceCapture {
+  return {
+    kind: "web_fetch",
+    url: fetched.url,
+    title: fetched.title,
+    lines: [...fetched.lines],
+    textChars: fetched.textChars,
+    truncated: fetched.truncated,
+    capturedContentSha256: captureContentSha256(fetched),
+    webFetch: {
+      sourceContentSha256: fetched.webSourceContentSha256,
+      sourceBodySha256: fetched.webSourceBodySha256,
+      sourceFormat: fetched.webSourceFormat,
+      sourceLineCount: fetched.webSourceLineCount,
+      renderMode: fetched.webSourceRenderMode,
+      browserFallbackStatus: fetched.browserFallbackStatus,
+      ...(fetched.browserFallbackDiagnostic
+        ? { browserFallbackDiagnostic: fetched.browserFallbackDiagnostic }
+        : {}),
+      ...(fetched.browserFallback
+        ? { browserFallback: structuredClone(fetched.browserFallback) }
+        : {}),
+    },
+  };
+}
+
+function validWebFetchRenderProvenance(
+  capture: WebFetchResearchSourceCapture,
+): boolean {
+  const webFetch = capture.webFetch;
+  if (webFetch.browserFallbackStatus === "used") {
+    return (
+      webFetch.sourceFormat === "html" &&
+      webFetch.renderMode === "browser_fallback" &&
+      webFetch.browserFallbackDiagnostic === undefined &&
+      webFetch.browserFallback !== undefined &&
+      validBrowserFallbackEvidence(webFetch.browserFallback)
+    );
+  }
+  if (webFetch.browserFallbackStatus === "unavailable") {
+    return (
+      webFetch.sourceFormat === "html" &&
+      webFetch.renderMode === "static" &&
+      webFetch.browserFallback === undefined &&
+      (webFetch.browserFallbackDiagnostic === "browser_unavailable" ||
+        webFetch.browserFallbackDiagnostic === "browser_render_not_useful" ||
+        webFetch.browserFallbackDiagnostic === "fallback_limit_reached")
+    );
+  }
+  return (
+    webFetch.browserFallbackStatus === "not_needed" &&
+    webFetch.renderMode === "static" &&
+    webFetch.browserFallbackDiagnostic === undefined &&
+    webFetch.browserFallback === undefined
+  );
 }
 
 export function validateResearchSourceCapture(

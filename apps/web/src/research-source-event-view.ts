@@ -1,45 +1,7 @@
-export interface ResearchSourceToolEventTraceView {
-  researchSourceAction?:
-    | "capture"
-    | "capture_fetch"
-    | "cite"
-    | "verify_report"
-    | "list";
-  researchSourceKind?: "browser" | "web_fetch";
-  researchSourceId?: string;
-  researchCitationId?: string;
-  researchCitationTokenSha256?: string;
-  researchSourceContentSha256?: string;
-  researchSourceUrlSha256?: string;
-  researchSourceOriginSha256?: string;
-  researchSourceTitleSha256?: string;
-  researchSourceTextSha256?: string;
-  researchSourceLineCount?: number;
-  researchSourceTextChars?: number;
-  researchSourceTruncated?: boolean;
-  researchCitationStartLine?: number;
-  researchCitationEndLine?: number;
-  researchCitationQuoteSha256?: string;
-  researchCitationClaimSha256?: string;
-  researchReportPathSha256?: string;
-  researchReportFileSha256?: string;
-  researchReportFileBytes?: number;
-  researchReportCitationCount?: number;
-  researchReportCitationSetSha256?: string;
-  researchSourceCount?: number;
-  researchCitationCount?: number;
-  researchSourceSetSha256?: string;
-  researchBrowserSessionOperation?: number;
-  researchBrowserSessionIdSha256?: string;
-  researchBrowserExecutableSha256?: string;
-  researchBrowserVersionSha256?: string;
-  researchBrowserLimitsSha256?: string;
-  researchBrowserNetworkDestinationsSha256?: string;
-  researchWebSourceContentSha256?: string;
-  researchWebSourceBodySha256?: string;
-  researchWebSourceFormat?: "html" | "markdown" | "json" | "text" | "pdf";
-  researchWebSourceLineCount?: number;
-}
+import type { ResearchSourceToolEventTraceView } from "./research-source-event-model";
+import { researchWebFetchProvenance } from "./research-web-fetch-event-view";
+
+export type { ResearchSourceToolEventTraceView } from "./research-source-event-model";
 
 const ACTIONS = new Set<
   ResearchSourceToolEventTraceView["researchSourceAction"]
@@ -84,6 +46,15 @@ const WEB_FETCH_FIELDS = [
   "webSourceBodySha256",
   "webSourceFormat",
   "webSourceLineCount",
+  "webSourceRenderMode",
+  "browserFallbackStatus",
+  "browserFallbackDiagnostic",
+  "webFetchBrowserSessionOperation",
+  "webFetchBrowserSessionIdSha256",
+  "webFetchBrowserExecutableSha256",
+  "webFetchBrowserVersionSha256",
+  "webFetchBrowserLimitsSha256",
+  "webFetchBrowserNetworkDestinationsSha256",
 ] as const;
 const REPORT_FIELDS = [
   "reportPathSha256",
@@ -321,6 +292,20 @@ export function researchSourceSummaryParts(
     ...(view.researchWebSourceLineCount !== undefined
       ? [`web-source-lines ${view.researchWebSourceLineCount}`]
       : []),
+    ...(view.researchWebSourceRenderMode
+      ? [`web-source-render ${view.researchWebSourceRenderMode}`]
+      : []),
+    ...(view.researchBrowserFallbackStatus
+      ? [`browser-fallback ${view.researchBrowserFallbackStatus}`]
+      : []),
+    ...(view.researchBrowserFallbackDiagnostic
+      ? [`fallback-diagnostic ${view.researchBrowserFallbackDiagnostic}`]
+      : []),
+    ...(view.researchWebFetchBrowserSessionOperation !== undefined
+      ? [
+          `fallback-browser-operation ${view.researchWebFetchBrowserSessionOperation}`,
+        ]
+      : []),
     ...hash("source-content", view.researchSourceContentSha256),
     ...hash("source-set", view.researchSourceSetSha256),
     ...hash("citation-quote", view.researchCitationQuoteSha256),
@@ -335,6 +320,14 @@ export function researchSourceSummaryParts(
     ),
     ...hash("web-source-content", view.researchWebSourceContentSha256),
     ...hash("web-source-body", view.researchWebSourceBodySha256),
+    ...hash(
+      "fallback-browser-session",
+      view.researchWebFetchBrowserSessionIdSha256,
+    ),
+    ...hash(
+      "fallback-browser-destinations",
+      view.researchWebFetchBrowserNetworkDestinationsSha256,
+    ),
   ];
 }
 
@@ -365,31 +358,10 @@ function sourceProvenance(
         value["browserNetworkDestinationsSha256"],
     };
   }
-  const format = value["webSourceFormat"];
-  const lineCount = integer(value["webSourceLineCount"], 1, 20_000);
-  if (
-    !isWebSourceFormat(format) ||
-    lineCount === undefined ||
-    !sha256(value["webSourceContentSha256"]) ||
-    !sha256(value["webSourceBodySha256"]) ||
-    BROWSER_FIELDS.some((field) => value[field] !== undefined)
-  ) {
+  if (BROWSER_FIELDS.some((field) => value[field] !== undefined)) {
     return undefined;
   }
-  return {
-    researchWebSourceContentSha256: value["webSourceContentSha256"],
-    researchWebSourceBodySha256: value["webSourceBodySha256"],
-    researchWebSourceFormat: format,
-    researchWebSourceLineCount: lineCount,
-  };
-}
-
-function isWebSourceFormat(
-  value: unknown,
-): value is NonNullable<
-  ResearchSourceToolEventTraceView["researchWebSourceFormat"]
-> {
-  return ["html", "markdown", "json", "text", "pdf"].includes(String(value));
+  return researchWebFetchProvenance(value);
 }
 
 function record(value: unknown): value is Record<string, unknown> {

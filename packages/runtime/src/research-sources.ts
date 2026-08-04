@@ -9,9 +9,9 @@ import {
 import { verifyResearchReport } from "./research-report-verification.js";
 import {
   browserResearchCapture,
-  captureContentSha256,
   validateResearchBrowserCapture,
   validateResearchWebFetchCapture,
+  webFetchResearchSourceCapture,
 } from "./research-source-capture.js";
 import type {
   BrowserSourceCaptureProvider,
@@ -19,7 +19,6 @@ import type {
   ResearchSourceRequest,
   ResearchSourceResult,
   ResearchSourceToolDetails,
-  WebFetchResearchSourceCapture,
 } from "./research-source-model.js";
 import type { WebFetchResearchCaptureProvider } from "./web-fetch-model.js";
 
@@ -166,21 +165,7 @@ export class RunResearchSourceManager {
       signal,
     );
     assertNotAborted(signal);
-    const capture: WebFetchResearchSourceCapture = {
-      kind: "web_fetch",
-      url: fetched.url,
-      title: fetched.title,
-      lines: [...fetched.lines],
-      textChars: fetched.textChars,
-      truncated: fetched.truncated,
-      capturedContentSha256: captureContentSha256(fetched),
-      webFetch: {
-        sourceContentSha256: fetched.webSourceContentSha256,
-        sourceBodySha256: fetched.webSourceBodySha256,
-        sourceFormat: fetched.webSourceFormat,
-        sourceLineCount: fetched.webSourceLineCount,
-      },
-    };
+    const capture = webFetchResearchSourceCapture(fetched);
     const url = validateResearchWebFetchCapture(capture, maxChars);
     return this.storeCapture(key, "capture_fetch", capture, url);
   }

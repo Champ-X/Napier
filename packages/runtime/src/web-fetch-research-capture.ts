@@ -18,6 +18,14 @@ export function createWebFetchResearchCapture(
     webSourceBodySha256: source.bodySha256,
     webSourceFormat: source.format,
     webSourceLineCount: source.lineCount,
+    webSourceRenderMode: source.renderMode,
+    browserFallbackStatus: source.browserFallbackStatus,
+    ...(source.browserFallbackDiagnostic
+      ? { browserFallbackDiagnostic: source.browserFallbackDiagnostic }
+      : {}),
+    ...(source.browserFallback
+      ? { browserFallback: structuredClone(source.browserFallback) }
+      : {}),
   };
 }
 

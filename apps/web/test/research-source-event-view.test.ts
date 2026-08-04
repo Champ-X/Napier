@@ -55,6 +55,8 @@ describe("Research Source Trace projection", () => {
       webSourceBodySha256: "b".repeat(64),
       webSourceFormat: "pdf",
       webSourceLineCount: 20,
+      webSourceRenderMode: "static",
+      browserFallbackStatus: "not_needed",
       webSourceId: "websource_private",
       sourceBody: "PRIVATE_FETCH_SOURCE_BODY",
     };
@@ -82,6 +84,152 @@ describe("Research Source Trace projection", () => {
       researchSourceEventEvidence({
         ...details,
         browserSessionOperation: 2,
+      }),
+    ).toBeUndefined();
+  });
+
+  it("treats pre-fallback Web Fetch evidence as legacy static provenance", () => {
+    const details = {
+      ...citationDetails(),
+      action: "capture_fetch",
+      sourceKind: "web_fetch",
+      citationId: undefined,
+      citationTokenSha256: undefined,
+      citationStartLine: undefined,
+      citationEndLine: undefined,
+      citationQuoteSha256: undefined,
+      citationClaimSha256: undefined,
+      browserSessionOperation: undefined,
+      browserSessionIdSha256: undefined,
+      browserExecutableSha256: undefined,
+      browserVersionSha256: undefined,
+      browserLimitsSha256: undefined,
+      browserNetworkDestinationsSha256: undefined,
+      webSourceContentSha256: "a".repeat(64),
+      webSourceBodySha256: "b".repeat(64),
+      webSourceFormat: "html",
+      webSourceLineCount: 20,
+    };
+
+    expect(researchSourceEventEvidence(details)).toEqual(
+      expect.objectContaining({
+        researchWebSourceRenderMode: "static",
+        researchBrowserFallbackStatus: "not_needed",
+      }),
+    );
+    expect(
+      researchSourceEventEvidence({
+        ...details,
+        browserFallbackStatus: "used",
+      }),
+    ).toBeUndefined();
+  });
+
+  it("projects complete Browser fallback provenance and rejects partial mixtures", () => {
+    const details = {
+      ...citationDetails(),
+      action: "capture_fetch",
+      sourceKind: "web_fetch",
+      citationId: undefined,
+      citationTokenSha256: undefined,
+      citationStartLine: undefined,
+      citationEndLine: undefined,
+      citationQuoteSha256: undefined,
+      citationClaimSha256: undefined,
+      browserSessionOperation: undefined,
+      browserSessionIdSha256: undefined,
+      browserExecutableSha256: undefined,
+      browserVersionSha256: undefined,
+      browserLimitsSha256: undefined,
+      browserNetworkDestinationsSha256: undefined,
+      webSourceContentSha256: "a".repeat(64),
+      webSourceBodySha256: "b".repeat(64),
+      webSourceFormat: "html",
+      webSourceLineCount: 20,
+      webSourceRenderMode: "browser_fallback",
+      browserFallbackStatus: "used",
+      webFetchBrowserSessionOperation: 3,
+      webFetchBrowserSessionIdSha256: "c".repeat(64),
+      webFetchBrowserExecutableSha256: "d".repeat(64),
+      webFetchBrowserVersionSha256: "e".repeat(64),
+      webFetchBrowserLimitsSha256: "f".repeat(64),
+      webFetchBrowserNetworkDestinationsSha256: "1".repeat(64),
+    };
+    const view = researchSourceEventEvidence(details);
+
+    expect(view).toEqual(
+      expect.objectContaining({
+        researchSourceKind: "web_fetch",
+        researchWebSourceRenderMode: "browser_fallback",
+        researchBrowserFallbackStatus: "used",
+        researchWebFetchBrowserSessionOperation: 3,
+        researchWebFetchBrowserSessionIdSha256: "c".repeat(64),
+      }),
+    );
+    expect(researchSourceSummaryParts(view!)).toEqual(
+      expect.arrayContaining([
+        "web-source-render browser_fallback",
+        "browser-fallback used",
+        "fallback-browser-operation 3",
+      ]),
+    );
+    expect(
+      researchSourceEventEvidence({
+        ...details,
+        webFetchBrowserSessionIdSha256: undefined,
+      }),
+    ).toBeUndefined();
+    expect(
+      researchSourceEventEvidence({
+        ...details,
+        webSourceFormat: "pdf",
+      }),
+    ).toBeUndefined();
+    expect(
+      researchSourceEventEvidence({
+        ...details,
+        browserFallbackStatus: "not_needed",
+      }),
+    ).toBeUndefined();
+  });
+
+  it("projects stable unavailable fallback diagnostics without Browser identity", () => {
+    const details = {
+      ...citationDetails(),
+      action: "capture_fetch",
+      sourceKind: "web_fetch",
+      citationId: undefined,
+      citationTokenSha256: undefined,
+      citationStartLine: undefined,
+      citationEndLine: undefined,
+      citationQuoteSha256: undefined,
+      citationClaimSha256: undefined,
+      browserSessionOperation: undefined,
+      browserSessionIdSha256: undefined,
+      browserExecutableSha256: undefined,
+      browserVersionSha256: undefined,
+      browserLimitsSha256: undefined,
+      browserNetworkDestinationsSha256: undefined,
+      webSourceContentSha256: "a".repeat(64),
+      webSourceBodySha256: "b".repeat(64),
+      webSourceFormat: "html",
+      webSourceLineCount: 20,
+      webSourceRenderMode: "static",
+      browserFallbackStatus: "unavailable",
+      browserFallbackDiagnostic: "browser_unavailable",
+    };
+
+    expect(researchSourceEventEvidence(details)).toEqual(
+      expect.objectContaining({
+        researchWebSourceRenderMode: "static",
+        researchBrowserFallbackStatus: "unavailable",
+        researchBrowserFallbackDiagnostic: "browser_unavailable",
+      }),
+    );
+    expect(
+      researchSourceEventEvidence({
+        ...details,
+        browserFallbackDiagnostic: "PRIVATE_BROWSER_FAILURE",
       }),
     ).toBeUndefined();
   });

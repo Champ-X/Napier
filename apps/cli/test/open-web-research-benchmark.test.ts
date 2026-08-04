@@ -493,6 +493,8 @@ function fetchCapture(
     webSourceBodySha256: sha256(`body:${url}`),
     webSourceFormat: format,
     webSourceLineCount: lines.length,
+    webSourceRenderMode: "static",
+    browserFallbackStatus: "not_needed",
   };
 }
 

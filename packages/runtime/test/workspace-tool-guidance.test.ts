@@ -150,12 +150,19 @@ describe("workspace tool guidance", () => {
 
   it("requires exact Browser Source capture and claim-bound citations", () => {
     const guidance = formatWorkspaceToolGuidance([
+      { name: "web_fetch" } as AgentTool,
       { name: "browser" } as AgentTool,
       { name: "research_source" } as AgentTool,
     ]);
 
     expect(guidance).toContain(
       "Use browser for dynamic public pages through one Run-owned Session",
+    );
+    expect(guidance).toContain(
+      "web_fetch may automatically use the same controlled read-only Browser",
+    );
+    expect(guidance).toContain(
+      "do not claim dynamic content was rendered when fallback is unavailable",
     );
     expect(guidance).toContain("literal find and bounded scroll");
     expect(guidance).toContain("Default read-only Agents cannot click");

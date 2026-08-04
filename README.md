@@ -257,7 +257,13 @@ Version `0.1.0` includes:
   `read`, `find`, and `list` progressively recover exact line ranges without
   refetching. Downloads stop at 8 MiB, PDF parsing stops at 200 pages/15
   seconds, normalized content stops at 2 million characters/20,000 lines, and
-  Source URLs/bodies remain outside Ledger and Trace.
+  Source URLs/bodies remain outside Ledger and Trace. When the default
+  read-only Browser is also enabled, a successful HTML `document.write` shell
+  with little static text automatically renders once through the same
+  controlled Chrome manager. HTTP errors, PDFs, binaries, password forms,
+  ordinary static HTML, and arbitrary parse failures never trigger fallback;
+  bounded `Render`, fallback status/diagnostic, and Browser provenance remain
+  auditable without exposing page content.
   `research_source capture_fetch` can import that exact same-Run Source by ID
   and content hash, then reuse the ordinary claim-bound citation and Markdown
   report verifier;

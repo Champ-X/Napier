@@ -1,3 +1,9 @@
+import type {
+  BrowserPageSourceCapture,
+  BrowserSessionOwner,
+} from "./browser-session-model.js";
+import type { FixedIpProxySnapshot } from "./fixed-ip-http-proxy.js";
+
 export const WEB_FETCH_SOURCE_FORMATS = [
   "html",
   "markdown",
@@ -7,6 +13,40 @@ export const WEB_FETCH_SOURCE_FORMATS = [
 ] as const;
 
 export type WebFetchSourceFormat = (typeof WEB_FETCH_SOURCE_FORMATS)[number];
+export type WebFetchRenderMode = "static" | "browser_fallback";
+export type WebFetchBrowserFallbackStatus =
+  | "not_needed"
+  | "used"
+  | "unavailable";
+export type WebFetchBrowserFallbackDiagnostic =
+  | "browser_unavailable"
+  | "browser_render_not_useful"
+  | "fallback_limit_reached";
+
+export interface WebFetchBrowserFallbackEvidence {
+  sessionOperation: number;
+  sessionIdSha256: string;
+  browserExecutableSha256: string;
+  browserVersionSha256: string;
+  limitsSha256: string;
+  network: FixedIpProxySnapshot;
+}
+
+export interface WebFetchBrowserFallbackProvider {
+  captureUrl(
+    owner: BrowserSessionOwner,
+    request: {
+      url: string;
+      maxChars: number;
+      waitMs: number;
+    },
+    signal?: AbortSignal,
+  ): Promise<BrowserPageSourceCapture>;
+}
+
+export interface WebFetchExecutionOptions {
+  browserFallbackAllowed?: boolean;
+}
 
 export type WebFetchRequest =
   | {
@@ -56,6 +96,10 @@ export interface WebFetchSource {
   truncated: boolean;
   redirectCount: number;
   pageCount?: number;
+  renderMode: WebFetchRenderMode;
+  browserFallbackStatus: WebFetchBrowserFallbackStatus;
+  browserFallbackDiagnostic?: WebFetchBrowserFallbackDiagnostic;
+  browserFallback?: WebFetchBrowserFallbackEvidence;
   lines: string[];
 }
 
@@ -77,6 +121,21 @@ export interface WebFetchToolDetails {
   sourceTextChars?: number;
   sourceTruncated?: boolean;
   sourcePageCount?: number;
+  sourceRenderMode?: WebFetchRenderMode;
+  browserFallbackStatus?: WebFetchBrowserFallbackStatus;
+  browserFallbackDiagnostic?: WebFetchBrowserFallbackDiagnostic;
+  browserFallbackCount?: number;
+  browserSessionOperation?: number;
+  browserSessionIdSha256?: string;
+  browserExecutableSha256?: string;
+  browserVersionSha256?: string;
+  browserLimitsSha256?: string;
+  browserNetworkRequestCount?: number;
+  browserNetworkConnectCount?: number;
+  browserNetworkRejectedCount?: number;
+  browserNetworkTransferredBytes?: number;
+  browserNetworkDestinationCount?: number;
+  browserNetworkDestinationsSha256?: string;
   redirectCount?: number;
   readStartLine?: number;
   readEndLine?: number;
@@ -98,6 +157,7 @@ export interface WebFetchExecutor {
     owner: { threadId: string; runId: string },
     request: WebFetchRequest,
     signal?: AbortSignal,
+    options?: WebFetchExecutionOptions,
   ): Promise<WebFetchResult>;
   cancelRun(owner: { threadId: string; runId: string }): Promise<void>;
   captureWebSource?(
@@ -121,6 +181,10 @@ export interface WebFetchResearchCapture {
   webSourceBodySha256: string;
   webSourceFormat: WebFetchSourceFormat;
   webSourceLineCount: number;
+  webSourceRenderMode: WebFetchRenderMode;
+  browserFallbackStatus: WebFetchBrowserFallbackStatus;
+  browserFallbackDiagnostic?: WebFetchBrowserFallbackDiagnostic;
+  browserFallback?: WebFetchBrowserFallbackEvidence;
 }
 
 export interface WebFetchResearchCaptureProvider {
@@ -144,3 +208,5 @@ export const MAX_WEB_FETCH_READ_LINES = 400;
 export const MAX_WEB_FETCH_FIND_RESULTS = 20;
 export const MAX_WEB_FETCH_PDF_PAGES = 200;
 export const WEB_FETCH_PARSE_TIMEOUT_MS = 15_000;
+export const MAX_WEB_FETCH_BROWSER_FALLBACKS_PER_RUN = 2;
+export const WEB_FETCH_BROWSER_FALLBACK_WAIT_MS = 1_000;

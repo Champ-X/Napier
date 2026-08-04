@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 96,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-wKA87wR6.js",
+    "path": "apps/web/dist/assets/index-DwLOACO8.js",
     "sizeBytes": 118213,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "bd809580bab2a36dd29c6e565c36b7fa96b3303cc2114207463e7ce64beb92bd"
+    "sha256": "322ca11e83a0579a24fe4bd8e2d7409b4c45e8ef3eb26ff6a1f2253f1aadff26"
   },
-  "distContentSha256": "bd809580bab2a36dd29c6e565c36b7fa96b3303cc2114207463e7ce64beb92bd",
+  "distContentSha256": "322ca11e83a0579a24fe4bd8e2d7409b4c45e8ef3eb26ff6a1f2253f1aadff26",
   "errors": []
 }

@@ -3993,9 +3993,17 @@ Agent calls web_fetch fetch with one public URL
   -> detect HTML/Markdown/JSON/text/PDF from MIME, extension, and safe sniffing
   -> lazy-load Readability/DOM or PDF.js only for the selected format
   -> remove active HTML, normalize readable text, or extract bounded PDF pages
+  -> for one eligible successful document.write HTML shell:
+     -> require default Browser capability and <=1,000 static normalized chars
+     -> exclude password forms, HTTP errors, PDFs, binaries, and parse failures
+     -> start/wait/capture/close the same Run-owned controlled Browser
+     -> require the exact final URL, useful text growth, and valid Browser binding
+     -> cap automatic fallback at two attempts per Run
+     -> otherwise retain static text plus one stable unavailable diagnostic
   -> cap body at 8 MiB, parse at 15 s, PDF at 200 pages
   -> cap normalized Source at 2M characters and 20k lines
-  -> bind final URL/title/author/date/body/content/format to one Source ID/hash
+  -> bind final URL/title/author/date/body/content/format/render provenance
+     to one Source ID/hash
   -> return only a <=24k-character numbered preview to the live Agent
 Agent calls web_fetch find/read/list in the same Run
   -> require exact Source ID and content hash
@@ -4007,8 +4015,14 @@ Run settles
 `web-fetch-content.ts` owns format detection plus bounded HTML/JSON/text/PDF
 normalization. Mozilla Readability and LinkeDOM are lazy imports; PDF.js is
 also lazy and uses only downloaded bytes, so no parser performs an independent
-network request. `web-fetch-sources.ts` owns Run isolation, serialization,
-progressive reads, cancellation, and ephemeral Source storage.
+network request. `web-fetch-browser-fallback.ts` owns the conservative shell
+detector, exact rendered-capture validation, and the internal
+start/wait/capture/close adapter over the ordinary Browser manager.
+`web-fetch-fallback-execution.ts` owns the per-Run attempt cap and
+used/unavailable/not-needed decision. `web-fetch-source-view.ts` owns live
+preview formatting plus bounded detail receipts. `web-fetch-sources.ts` owns
+Run isolation, serialization, progressive reads, cancellation, and ephemeral
+Source storage.
 `web-fetch-tool.ts` owns the Agent schema and body-free Ledger projection.
 `AgentCapabilityRuntime` assembles Search and Fetch behind one
 `AgentNetworkCapabilities` boundary, so `agent-runtime.ts` does not grow a new
@@ -4016,18 +4030,24 @@ constructor field per network tool.
 
 Source URL, title, author, publication date, raw body, normalized lines, Source
 ID, read query, and returned text stay live-only. Ledger/Replay/SSE/TUI/Web
-Trace retain action, format, byte/line/character/page counts, truncation,
-redirect count, retrieval time, and hashes. The original user prompt and model
-reasoning remain ordinary message evidence and may intentionally mention the
-requested URL or quoted facts; that is distinct from Tool receipt leakage.
+Trace retain action, format, render mode, fallback status/stable diagnostic,
+Browser runtime/network hashes and counts when used, byte/line/character/page
+counts, truncation, redirect count, retrieval time, and hashes. The original
+user prompt and model reasoning remain ordinary message evidence and may
+intentionally mention the requested URL or quoted facts; that is distinct from
+Tool receipt leakage. Browser-rendered Fetch provenance is preserved through
+`capture_fetch` and independently validated by Research capture and Web Trace;
+partial, impossible, or mixed static/Browser evidence fails closed.
+The complete repository gate passes 2,156 regular tests.
 
 Fetch is read-only but not restart-adoptable because its Source body is
 deliberately process-local. Automatic recovery therefore treats any completed
 `web_fetch` call as unsafe, matching `research_source`. Dynamic rendering can
-use the following default read-only Browser surface; automatic fallback,
-authentication, CAPTCHAs, scanned-PDF OCR, cross-restart Source retention, and
-Browser interaction remain outside this slice. Static Source citation uses the
-shared Research Source flow below.
+use the conservative automatic shell fallback above or the following explicit
+default read-only Browser surface. Generic SPA detection, authentication,
+login walls, CAPTCHAs, scanned-PDF OCR, cross-restart Source retention, and
+Browser interaction remain outside this slice. Static or fallback-rendered
+Source citation uses the shared Research Source flow below.
 
 ## Controlled Browser Session Flow
 
