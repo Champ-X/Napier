@@ -524,6 +524,12 @@ Store-owned recovery arrays and returns an explicit `changed` flag;
 `LocalStore` validates public inputs, supplies Ledger events and random claim
 tokens, runs the coordinator inside its state queue, and persists once. This
 lowers `store.ts` further to 14,556 lines.
+Automatic Recovery claim renewal, child-Run binding, terminal settlement, and
+pre-Run abandonment use `automatic-recovery-store-mutations.ts`. Each
+transition receives the Store's constant-time token verifier, mutates only the
+matching attempt record, and returns its public projection; the surrounding
+Store queue remains the transaction and persistence boundary. This lowers
+`store.ts` to 14,473 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

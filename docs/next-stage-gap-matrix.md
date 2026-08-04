@@ -14,9 +14,9 @@ Audit date: 2026-08-03
   largest production modules. Memory, Credential, Schedule, Agent Profile,
   Thread Evidence/Lifecycle/Operations/Control, and complete Channel HTTP
   boundaries are now extracted. Automatic Recovery attempt/claim/settlement
-  records plus candidate/claim sweep coordination are also isolated from Store
-  transaction orchestration, reducing `store.ts` to 14,556 lines; new execution
-  code must stay outside both oversized composition modules.
+  records, candidate sweeps, and lifecycle transitions are also isolated from
+  Store transaction orchestration, reducing `store.ts` to 14,473 lines; new
+  execution code must stay outside both oversized composition modules.
 - Channel Contracts now occupy a bounded 37-declaration leaf domain, and
   `ChannelService` consumes a 12-method Store SPI instead of concrete
   `LocalStore`; the Contracts root remains the compatibility export surface.

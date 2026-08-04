@@ -269,12 +269,15 @@ import {
 } from "./automatic-recovery.js";
 import { claimAutomaticRecoveryState } from "./automatic-recovery-store-claims.js";
 import {
-  normalizeAutomaticRecoveryError,
-  settleAutomaticRecoveryAttemptRecord,
   stripAutomaticRecoverySecrets,
   type PersistedAutomaticRecoveryAttempt,
-  withAutomaticRecoveryAttemptHash,
 } from "./automatic-recovery-store-records.js";
+import {
+  abandonAutomaticRecoveryState,
+  bindAutomaticRecoveryRunState,
+  renewAutomaticRecoveryState,
+  settleAutomaticRecoveryState,
+} from "./automatic-recovery-store-mutations.js";
 import {
   createCredentialReference as createCredentialReferenceRecord,
   credentialSourceKey,
@@ -4446,38 +4449,16 @@ export class LocalStore {
     this.assertInitialized();
     const normalizedTtl = validateLeaseTtl(ttlMs);
     return this.stateQueue.run(async () => {
-      const index = this.state.automaticRecoveryAttempts.findIndex(
-        (candidate) => candidate.id === attemptId,
-      );
-      const current = this.state.automaticRecoveryAttempts[index];
-      if (
-        !current ||
-        (current.status !== "claimed" && current.status !== "running") ||
-        !current.claim
-      ) {
-        throw new Error("Automatic recovery claim is not active");
-      }
-      assertLeaseToken(current.claimTokenSha256, token);
-      if (Date.parse(current.claim.expiresAt) <= Date.now()) {
-        throw new Error("Automatic recovery claim has expired");
-      }
-      const heartbeatAt = nowIso();
-      const updated = withAutomaticRecoveryAttemptHash({
-        ...current,
-        claim: {
-          ...current.claim,
-          heartbeatAt,
-          expiresAt: new Date(
-            Date.parse(heartbeatAt) + normalizedTtl,
-          ).toISOString(),
-          revision: current.claim.revision + 1,
-        },
-        updatedAt: heartbeatAt,
-        revision: current.revision + 1,
+      const attempt = renewAutomaticRecoveryState({
+        state: this.state,
+        attemptId,
+        token,
+        ttlMs: normalizedTtl,
+        now: () => new Date(),
+        assertToken: assertLeaseToken,
       });
-      this.state.automaticRecoveryAttempts[index] = updated;
       await this.persistState();
-      return stripAutomaticRecoverySecrets(updated);
+      return attempt;
     });
   }
 
@@ -4488,39 +4469,16 @@ export class LocalStore {
   ): Promise<AutomaticRecoveryAttempt> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.automaticRecoveryAttempts.findIndex(
-        (candidate) => candidate.id === attemptId,
-      );
-      const current = this.state.automaticRecoveryAttempts[index];
-      if (!current || current.status !== "claimed" || !current.claim) {
-        throw new Error("Automatic recovery attempt cannot bind a Run");
-      }
-      assertLeaseToken(current.claimTokenSha256, token);
-      const run = this.state.runs.find(
-        (candidate) => candidate.id === recoveryRunId,
-      );
-      if (
-        !run ||
-        run.threadId !== current.threadId ||
-        run.agentId !== current.agentId ||
-        run.source !== "recovery" ||
-        run.parentRunId !== current.interruptedRunId ||
-        run.triggerId !== current.triggerId ||
-        (run.status !== "queued" && run.status !== "running")
-      ) {
-        throw new Error("Automatic recovery Run binding is invalid");
-      }
-      const updated = withAutomaticRecoveryAttemptHash({
-        ...current,
-        status: "running",
-        recoveryRunId: run.id,
-        startedAt: run.startedAt,
-        updatedAt: nowIso(),
-        revision: current.revision + 1,
+      const attempt = bindAutomaticRecoveryRunState({
+        state: this.state,
+        attemptId,
+        token,
+        recoveryRunId,
+        now: () => new Date(),
+        assertToken: assertLeaseToken,
       });
-      this.state.automaticRecoveryAttempts[index] = updated;
       await this.persistState();
-      return stripAutomaticRecoverySecrets(updated);
+      return attempt;
     });
   }
 
@@ -4531,37 +4489,16 @@ export class LocalStore {
   ): Promise<AutomaticRecoveryAttempt> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.automaticRecoveryAttempts.findIndex(
-        (candidate) => candidate.id === attemptId,
-      );
-      const current = this.state.automaticRecoveryAttempts[index];
-      if (
-        !current ||
-        (current.status !== "claimed" && current.status !== "running")
-      ) {
-        throw new Error("Automatic recovery attempt is not active");
-      }
-      assertLeaseToken(current.claimTokenSha256, token);
-      const run = this.state.runs.find(
-        (candidate) => candidate.id === recoveryRunId,
-      );
-      if (
-        !run ||
-        run.triggerId !== current.triggerId ||
-        run.parentRunId !== current.interruptedRunId ||
-        run.status === "queued" ||
-        run.status === "running"
-      ) {
-        throw new Error("Automatic recovery Run is not settled");
-      }
-      const updated = settleAutomaticRecoveryAttemptRecord(
-        current,
-        run,
-        nowIso(),
-      );
-      this.state.automaticRecoveryAttempts[index] = updated;
+      const attempt = settleAutomaticRecoveryState({
+        state: this.state,
+        attemptId,
+        token,
+        recoveryRunId,
+        now: () => new Date(),
+        assertToken: assertLeaseToken,
+      });
       await this.persistState();
-      return stripAutomaticRecoverySecrets(updated);
+      return attempt;
     });
   }
 
@@ -4572,36 +4509,16 @@ export class LocalStore {
   ): Promise<AutomaticRecoveryAttempt> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const index = this.state.automaticRecoveryAttempts.findIndex(
-        (candidate) => candidate.id === attemptId,
-      );
-      const current = this.state.automaticRecoveryAttempts[index];
-      if (
-        !current ||
-        current.status !== "claimed" ||
-        current.recoveryRunId ||
-        !current.claim
-      ) {
-        throw new Error("Automatic recovery attempt cannot be abandoned");
-      }
-      assertLeaseToken(current.claimTokenSha256, token);
-      const timestamp = nowIso();
-      const {
-        claim: _claim,
-        claimTokenSha256: _claimTokenSha256,
-        ...withoutClaim
-      } = current;
-      const updated = withAutomaticRecoveryAttemptHash({
-        ...withoutClaim,
-        status: "abandoned",
-        error: normalizeAutomaticRecoveryError(error),
-        updatedAt: timestamp,
-        finishedAt: timestamp,
-        revision: current.revision + 1,
+      const attempt = abandonAutomaticRecoveryState({
+        state: this.state,
+        attemptId,
+        token,
+        error,
+        now: () => new Date(),
+        assertToken: assertLeaseToken,
       });
-      this.state.automaticRecoveryAttempts[index] = updated;
       await this.persistState();
-      return stripAutomaticRecoverySecrets(updated);
+      return attempt;
     });
   }
 
