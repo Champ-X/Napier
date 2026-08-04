@@ -6,6 +6,7 @@ import {
   type EmbeddedAgentExecution,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
+import { agentCapabilityStatus } from "@napier/contracts/agent-capabilities";
 
 import type { CliChatOptions } from "./cli-chat-options.js";
 import { configureCliModelCredential } from "./cli-model-credential.js";
@@ -243,8 +244,18 @@ export async function executeTui(
           state.setModel(command.model);
         } else if (command.kind === "thread") {
           state.setThread(command.threadId);
+          state.setCapabilities(
+            agentCapabilityStatus(
+              activeTuiAgent(services!, undefined, command.threadId),
+            ),
+          );
         } else if (command.kind === "new") {
           state.setNewThread(command.title);
+          state.setCapabilities(
+            agentCapabilityStatus(
+              activeTuiAgent(services!, options.agentId, undefined),
+            ),
+          );
         } else if (command.kind === "clear") {
           state.clearTranscript();
         } else if (command.kind === "resume") {
@@ -312,6 +323,11 @@ export async function executeTui(
     });
     sessionController.signal.throwIfAborted();
     await configureCliModelCredential(services, options, io.env);
+    state.setCapabilities(
+      agentCapabilityStatus(
+        activeTuiAgent(services, options.agentId, state.currentThreadId()),
+      ),
+    );
     sessionController.signal.throwIfAborted();
     ready = true;
     state.setNotice("Ready; type a prompt or /help");
@@ -359,6 +375,19 @@ export async function executeTui(
     return 1;
   }
   return await exit.promise;
+}
+
+function activeTuiAgent(
+  services: LocalAgentRuntimeServices,
+  requestedAgentId: string | undefined,
+  threadId: string | undefined,
+) {
+  if (threadId) {
+    return services.store.getAgent(services.store.getThread(threadId).agentId);
+  }
+  return requestedAgentId
+    ? services.store.getAgent(requestedAgentId)
+    : services.store.listAgents()[0]!;
 }
 
 function deferred<T>(): { promise: Promise<T>; resolve(value: T): void } {

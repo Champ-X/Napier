@@ -41,7 +41,6 @@ import type {
   SkillPackageVerification,
   SubagentRole,
   ToolLoopGuardPolicy,
-  ToolPolicyMode,
   UsagePriceTableCatalog,
 } from "@napier/contracts";
 import { AGENT_TOOL_NAMES } from "@napier/contracts";
@@ -76,6 +75,7 @@ import {
   reviewerModelAvailability,
   selectedModelAvailability,
 } from "./model-selection-view-model";
+import { AgentCapabilityPresetControl } from "./AgentCapabilityPresetControl";
 
 const copy = { context: contextCopy };
 const DEFAULT_RUN_LIMITS = {
@@ -1461,25 +1461,22 @@ export default function ContextPanel({
           ) : null}
         </fieldset>
 
-        <label className="context-field">
-          <span>{copy.context.policy}</span>
-          <select
-            value={agentToolPolicy}
-            disabled={configurationBusy}
-            onChange={(event) =>
-              setAgentToolPolicy(event.target.value as ToolPolicyMode)
-            }
-          >
-            {(["observe", "workspace", "unrestricted"] as const).map(
-              (policy) => (
-                <option key={policy} value={policy}>
-                  {copy.context.policies[policy]}
-                </option>
-              ),
-            )}
-          </select>
-          <small>{copy.context.policyHint}</small>
-        </label>
+        <AgentCapabilityPresetControl
+          profile={{
+            toolPolicy: agentToolPolicy,
+            enabledTools: agentTools,
+            enabledSkills: agentSkills,
+            enabledSubagents: agentSubagents,
+          }}
+          disabled={configurationBusy}
+          onPolicyChange={setAgentToolPolicy}
+          onChange={(update) => {
+            setAgentToolPolicy(update.toolPolicy);
+            setAgentTools(update.enabledTools);
+            setAgentSkills(update.enabledSkills);
+            setAgentSubagents(update.enabledSubagents ?? []);
+          }}
+        />
 
         <fieldset
           className={`context-recovery-policy mode-${agentRecoveryMode}`}

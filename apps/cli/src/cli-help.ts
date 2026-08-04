@@ -12,6 +12,7 @@ Usage:
   napier run --workspace <path> --prompt <text> [options]
   napier chat --workspace <path> [options]
   napier tui --workspace <path> [options]
+  napier capabilities --workspace <path> [options]
   napier doctor --workspace <path> [options]
   napier resume --workspace <path> --thread <thread-id> [options]
   napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
@@ -25,6 +26,7 @@ Commands:
   run                    Start a new Run on a new or existing Thread
   chat                   Open a multi-turn interactive Agent session
   tui                    Open the full-screen local Agent terminal
+  capabilities           Inspect, preview, or apply an Agent capability preset
   doctor                 Diagnose first-use model, network, Browser, and Sandbox readiness
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
@@ -47,6 +49,12 @@ Doctor options:
   --credential-env <var> Check this environment variable without printing its value
   --offline              Skip public Search, Fetch, and Browser probes
   --timeout-ms <ms>      Total Doctor time budget (default ${DEFAULT_DOCTOR_TIMEOUT_MS}, max ${MAX_DOCTOR_TIMEOUT_MS})
+
+Capability options:
+  --agent <agent-id>     Agent profile (default: first local Agent)
+  --preset <id>          coding, research, data, browser, or safe_automation
+  --apply                Persist the selected preset as a new Agent revision
+  --jsonl                Emit one typed capability-status JSON object
 
 Chat options:
   --agent <agent-id>     Agent for the first new Thread

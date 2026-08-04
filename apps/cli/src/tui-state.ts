@@ -1,4 +1,5 @@
 import type { ModelRef, RunEvent, RunRecord } from "@napier/contracts";
+import type { AgentCapabilityStatus } from "@napier/contracts/agent-capabilities";
 import type { EmbeddedAgentExecution } from "@napier/runtime";
 
 import {
@@ -31,6 +32,7 @@ export interface TuiStateSnapshot {
   threadId?: string;
   nextTitle?: string;
   model?: ModelRef;
+  capabilities?: AgentCapabilityStatus;
   lastRun?: RunRecord;
   active: boolean;
   activeLabel?: string;
@@ -46,6 +48,7 @@ export class TuiSessionState {
   private threadId: string | undefined;
   private nextTitle: string | undefined;
   private model: ModelRef | undefined;
+  private capabilities: AgentCapabilityStatus | undefined;
   private lastRun: RunRecord | undefined;
   private active = false;
   private activeLabel: string | undefined;
@@ -58,10 +61,16 @@ export class TuiSessionState {
   private tools: TuiToolCard[] = [];
   private currentAssistantId: number | undefined;
 
-  constructor(input: { threadId?: string; title?: string; model?: ModelRef }) {
+  constructor(input: {
+    threadId?: string;
+    title?: string;
+    model?: ModelRef;
+    capabilities?: AgentCapabilityStatus;
+  }) {
     this.threadId = input.threadId;
     this.nextTitle = input.title;
     this.model = input.model;
+    this.capabilities = input.capabilities;
   }
 
   snapshot(): TuiStateSnapshot {
@@ -69,6 +78,9 @@ export class TuiSessionState {
       ...(this.threadId ? { threadId: this.threadId } : {}),
       ...(this.nextTitle ? { nextTitle: this.nextTitle } : {}),
       ...(this.model ? { model: structuredClone(this.model) } : {}),
+      ...(this.capabilities
+        ? { capabilities: structuredClone(this.capabilities) }
+        : {}),
       ...(this.lastRun ? { lastRun: structuredClone(this.lastRun) } : {}),
       active: this.active,
       ...(this.activeLabel ? { activeLabel: this.activeLabel } : {}),
@@ -206,7 +218,12 @@ export class TuiSessionState {
       this.threadId,
       this.model,
       this.lastRun,
+      this.capabilities,
     );
+  }
+
+  setCapabilities(capabilities: AgentCapabilityStatus): void {
+    this.capabilities = structuredClone(capabilities);
   }
 
   showHelp(): void {

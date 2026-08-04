@@ -65,6 +65,17 @@ export const contextCopy = {
   },
   policyHint:
     "Authorization is checked immediately before every call. Edits require a fresh SHA-256 and can use read_file line anchors; verification runs read-only, offline, and without a shell.",
+  capabilityPreset: "Capability preset",
+  capabilityPresetKicker: "HUMAN LABELS · EXISTING POLICY",
+  capabilityPresetSelect: "Task mode",
+  capabilityPresetCustom: "Custom configuration",
+  capabilityPresetBody:
+    "Selecting a preset only fills the existing policy, tools, skills, and delegation fields. Save Agent profile to create the normal revision; Browser interaction remains unavailable unless policy explicitly permits it.",
+  capabilityTools: "tools",
+  capabilityBrowserRead: "Browser read",
+  capabilityBrowserInteract: "Browser interact",
+  capabilityYes: "yes",
+  capabilityNo: "no",
   recoveryPolicy: "Interruption policy",
   recoveryTitle: "Safe automatic recovery",
   recoveryKicker: "SNAPSHOT-BOUND · FAIL CLOSED",

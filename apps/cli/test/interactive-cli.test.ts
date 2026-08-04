@@ -283,6 +283,9 @@ describe("Napier interactive CLI", () => {
     expect(stderr.text()).toContain("[tool] read_file started (read)");
     expect(stderr.text()).toContain("[tool] read_file completed");
     expect(stderr.text()).toContain("Model: interactive-b/faux-1");
+    expect(stderr.text()).toContain(
+      "Capabilities: Custom / Read only / browser read / interact no",
+    );
     expect(stderr.text()).toContain("Thread: new (Fresh interactive thread)");
     expect(stderr.text()).not.toContain("evidence");
 

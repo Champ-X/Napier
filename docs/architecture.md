@@ -572,6 +572,45 @@ values, URLs, response bodies, Browser page text, process output, and raw
 diagnostics remain absent. Required-check failure returns exit 1; skipped or
 non-required warnings return exit 0 with `degraded`.
 
+Capability presets are deterministic projections over the existing revisioned
+`AgentProfile`; they are not a second authority model or persistence store:
+
+```text
+shared @napier/contracts/agent-capabilities catalog
+  -> coding / research / data / browser / safe_automation
+  -> exact toolPolicy + enabledTools + enabledSkills + enabledSubagents
+  -> shared status projection with human permission labels
+napier capabilities
+  -> status reads the selected Agent; no model call and no profile mutation
+  -> preview overlays a preset in memory; revision remains unchanged
+  -> --apply calls LocalStore.updateAgent with the exact projection
+  -> ordinary validation, semantic no-op behavior, and immutable history apply
+Chat/TUI /status
+  -> resolve the current Thread Agent or requested default Agent
+  -> render the same shared projection
+Web
+  -> composer badge renders the same projection
+  -> Context preset selector fills existing form fields only
+  -> Save Agent profile uses the existing HTTP validation/revision path
+```
+
+The shared catalog is published as the narrow
+`@napier/contracts/agent-capabilities` subpath; the 7,025-line Contracts root
+barrel remains unchanged. CLI option parsing and first-use dispatch occupy leaf
+modules, reducing `cli-options.ts` from 555 to 518 lines and maximum complexity
+from 31 to 22 while keeping `cli.ts` at 682 lines. Web capability status and
+preset controls are leaf components, reducing `App.tsx` to 1,082 lines and
+maximum complexity 60, and `ContextPanel.tsx` to 3,537 lines.
+
+Presets are convenience, not escalation. None sets `unrestricted`; the Browser
+preset remains `observe` and reports Browser read available but interaction
+unavailable. Coding and Safe Automation use `workspace`, so they can use
+preview-bound workspace writes and sandboxed process tools while Browser
+interaction remains denied. Raw custom profile editing remains available and
+is truthfully labeled `Custom`. Doctor remains the separate source of truth for
+live model, network, Browser, and Sandbox readiness. The complete repository
+gate passes 2,160 regular tests.
+
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate
 the environment name and current value, then create or re-enable only the

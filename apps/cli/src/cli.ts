@@ -30,7 +30,7 @@ import {
 } from "./cli-options.js";
 import { createCliWorkflowExperimentRequest } from "./cli-workflow-experiment.js";
 import { executeAgentMessageExperimentCli } from "./agent-message-experiment-cli.js";
-import { executeDoctor } from "./doctor-cli.js";
+import { executeFirstUseCliAction } from "./cli-first-use.js";
 import { executeModelInvocationExperimentCli } from "./model-invocation-experiment-cli.js";
 import { executeToolInvocationExperimentCli } from "./tool-invocation-experiment-cli.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
@@ -76,8 +76,8 @@ export async function runCli(
     await writeLine(io.stdout, CLI_VERSION);
     return 0;
   }
-  if (action.kind === "doctor") {
-    return executeDoctor(action.options, io, dependencies.doctor, parentSignal);
+  if (action.kind === "doctor" || action.kind === "capabilities") {
+    return executeFirstUseCliAction(action, io, dependencies, parentSignal);
   }
   if (action.kind === "run") {
     return executeRun(action.options, io, dependencies, parentSignal);

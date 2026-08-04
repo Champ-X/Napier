@@ -26,6 +26,7 @@ import {
 
 import type { GoalState, RunRecord, ThreadStatus } from "@napier/contracts";
 
+import { AgentCapabilityStatusBadge } from "./AgentCapabilityStatusBadge";
 import { copy } from "./copy";
 import {
   type InspectorTab,
@@ -271,12 +272,7 @@ export function App() {
           />
           <div className="composer-footer">
             <div className="composer-hints">
-              <span>
-                <ShieldCheck size={13} aria-hidden="true" />
-                {activeAgent?.toolPolicy === "observe"
-                  ? copy.context.observe
-                  : activeAgent?.toolPolicy}
-              </span>
+              <AgentCapabilityStatusBadge agent={activeAgent} />
               <span>
                 <Command size={12} aria-hidden="true" />
                 {copy.shortcut}

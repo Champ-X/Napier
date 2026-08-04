@@ -3,6 +3,7 @@ import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 
 import type { RunRecord } from "@napier/contracts";
+import { agentCapabilityStatus } from "@napier/contracts/agent-capabilities";
 import {
   streamRunErrorFrame,
   type EmbeddedAgentExecution,
@@ -85,6 +86,7 @@ export async function executeInteractive(
   let nextTitle = options.title;
   let model = options.model;
   let lastRun: RunRecord | undefined;
+  let capabilities;
   const renderer = new InteractiveEventRenderer(io.stdout, io.stderr);
   try {
     parentSignal?.throwIfAborted();
@@ -100,6 +102,9 @@ export async function executeInteractive(
     });
     parentSignal?.throwIfAborted();
     await configureCliModelCredential(services, options, io.env);
+    capabilities = agentCapabilityStatus(
+      activeInteractiveAgent(services, options.agentId, threadId),
+    );
     parentSignal?.throwIfAborted();
     const inputLoop = createInterface({
       input: io.stdin,
@@ -153,7 +158,7 @@ export async function executeInteractive(
           } else if (command.kind === "status") {
             await writeLine(
               io.stderr,
-              interactiveStatusLine(threadId, model, lastRun),
+              interactiveStatusLine(threadId, model, lastRun, capabilities),
             );
           } else if (command.kind === "model_show") {
             await writeLine(
@@ -173,11 +178,17 @@ export async function executeInteractive(
             threadId = command.threadId;
             nextTitle = undefined;
             lastRun = undefined;
+            capabilities = agentCapabilityStatus(
+              activeInteractiveAgent(services, undefined, threadId),
+            );
             await writeLine(io.stderr, `Thread: ${threadId}`);
           } else if (command.kind === "new") {
             nextTitle = command.title;
             threadId = undefined;
             lastRun = undefined;
+            capabilities = agentCapabilityStatus(
+              activeInteractiveAgent(services, options.agentId, undefined),
+            );
             await writeLine(
               io.stderr,
               `Thread: new${nextTitle ? ` (${nextTitle})` : ""}`,
@@ -246,6 +257,9 @@ export async function executeInteractive(
           threadId = execution.threadId;
           nextTitle = undefined;
           lastRun = execution.run;
+          capabilities = agentCapabilityStatus(
+            activeInteractiveAgent(services, undefined, threadId),
+          );
         }
       }
       if (!exitRequested && !sessionController.signal.aborted) {
@@ -271,6 +285,19 @@ export async function executeInteractive(
     readline?.close();
     await services?.shutdown().catch(() => undefined);
   }
+}
+
+function activeInteractiveAgent(
+  services: LocalAgentRuntimeServices,
+  requestedAgentId: string | undefined,
+  threadId: string | undefined,
+) {
+  if (threadId) {
+    return services.store.getAgent(services.store.getThread(threadId).agentId);
+  }
+  return requestedAgentId
+    ? services.store.getAgent(requestedAgentId)
+    : services.store.listAgents()[0]!;
 }
 
 async function invoke(

@@ -167,8 +167,9 @@ function statusLine(state: TuiStateSnapshot, columns: number): string {
     ? `${state.model.provider}/${state.model.id}`
     : "agent default";
   const run = state.lastRun ? state.lastRun.id : "none";
+  const capability = state.capabilities?.label ?? "custom";
   return `${STYLE_DIM}${truncateTerminalText(
-    `model ${model} · last run ${run} · ${state.waiting ? "operator waiting" : state.active ? "active" : "ready"}`,
+    `model ${model} · preset ${capability} · last run ${run} · ${state.waiting ? "operator waiting" : state.active ? "active" : "ready"}`,
     columns,
   )}${STYLE_RESET}`;
 }

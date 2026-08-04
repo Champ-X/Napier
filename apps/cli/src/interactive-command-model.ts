@@ -1,4 +1,5 @@
 import type { ModelRef, RunRecord } from "@napier/contracts";
+import type { AgentCapabilityStatus } from "@napier/contracts/agent-capabilities";
 
 import { parseCliModelRef } from "./cli-option-values.js";
 
@@ -98,11 +99,17 @@ export function interactiveStatusLine(
   threadId: string | undefined,
   model: ModelRef | undefined,
   run: RunRecord | undefined,
+  capabilities?: AgentCapabilityStatus,
 ): string {
   return [
     `Thread: ${threadId ?? "new"}`,
     `Model: ${interactiveModelLabel(model)}`,
     `Last Run: ${run ? `${run.id} ${run.status}` : "none"}`,
+    ...(capabilities
+      ? [
+          `Capabilities: ${capabilities.label} / ${capabilities.policyLabel} / browser ${capabilities.browserRead ? "read" : "off"} / interact ${capabilities.browserInteract ? "yes" : "no"}`,
+        ]
+      : []),
   ].join(" | ");
 }
 

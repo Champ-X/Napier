@@ -510,6 +510,25 @@ returns one hash-bound `napier.doctor-report` with `ready`, `degraded`, or
 `blocked` status. Workspace paths, credential variable names/values, fetched
 content, URLs, and raw probe errors are absent.
 
+Inspect or change the active Agent's user-facing capability preset without
+editing SQLite or reasoning about raw policy names:
+
+```bash
+npm run --silent napier -- capabilities --workspace .
+npm run --silent napier -- capabilities --workspace . --preset browser
+npm run --silent napier -- capabilities --workspace . --preset browser --apply
+```
+
+The five presets are `coding`, `research`, `data`, `browser`, and
+`safe_automation`. Status is read-only; selecting a preset without `--apply`
+previews the exact policy/tool/Skill/delegation projection; `--apply` persists
+that projection through the existing Agent profile revision path. The Browser
+preset is deliberately **Read only**: it enables Search, Fetch, Browser
+reading, and Research citations but reports **Browser interact: no**. No preset
+grants `unrestricted`, and Web preset selection only fills the existing form
+until the user saves it. Chat/TUI `/status` and the Web composer display the
+same preset and permission labels.
+
 For a production build served by the API process:
 
 ```bash

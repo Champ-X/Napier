@@ -6,7 +6,7 @@
     "maxFunctionComplexity": 25
   },
   "lineOverrides": {
-    "apps/cli/src/cli-options.ts": 555,
+    "apps/cli/src/cli-options.ts": 518,
     "apps/cli/src/cli.ts": 682,
     "apps/cli/test/rpc-cli.test.ts": 1065,
     "apps/cli/test/workflow-cli.test.ts": 2912,
@@ -19,9 +19,9 @@
     "apps/server/test/workflow.test.ts": 1408,
     "apps/web/src/api-error.ts": 986,
     "apps/web/src/api.ts": 2041,
-    "apps/web/src/App.tsx": 1086,
+    "apps/web/src/App.tsx": 1082,
     "apps/web/src/AutomationPanel.tsx": 2293,
-    "apps/web/src/ContextPanel.tsx": 3540,
+    "apps/web/src/ContextPanel.tsx": 3537,
     "apps/web/src/copy.ts": 887,
     "apps/web/src/EvaluationCasebookPanel.tsx": 1251,
     "apps/web/src/EvaluationSuitePanel.tsx": 1631,
@@ -113,7 +113,7 @@
     "packages/sdk/test/sdk-workflow.test.ts": 1089
   },
   "complexityOverrides": {
-    "apps/cli/src/cli-options.ts": 31,
+    "apps/cli/src/cli-options.ts": 22,
     "apps/cli/src/cli-workflow-options.ts": 67,
     "apps/cli/src/cli.ts": 37,
     "apps/cli/src/coding-benchmark-contract.ts": 36,
@@ -130,7 +130,7 @@
     "apps/web/src/agent-message-experiment-event-view.ts": 34,
     "apps/web/src/api-error.ts": 40,
     "apps/web/src/api.ts": 51,
-    "apps/web/src/App.tsx": 61,
+    "apps/web/src/App.tsx": 60,
     "apps/web/src/artifact-event-view.ts": 35,
     "apps/web/src/artifact-manifest-view-model.ts": 30,
     "apps/web/src/AutomationPanel.tsx": 61,

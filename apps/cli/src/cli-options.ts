@@ -8,6 +8,17 @@ import {
   type CliTuiAction,
 } from "./cli-chat-options.js";
 import {
+  CAPABILITY_FLAG_OPTIONS,
+  CAPABILITY_VALUE_OPTIONS,
+  parseCapabilityOptions,
+  type CliCapabilityOptions,
+} from "./cli-capability-options.js";
+import {
+  parseCliOptions,
+  parseNonNegativeInteger,
+  parsePositiveInteger,
+} from "./cli-option-parser.js";
+import {
   DOCTOR_FLAG_OPTIONS,
   DOCTOR_VALUE_OPTIONS,
   parseDoctorOptions,
@@ -95,6 +106,7 @@ export interface CliRpcOptions {
 export type CliAction =
   | { kind: "help" }
   | { kind: "version" }
+  | { kind: "capabilities"; options: CliCapabilityOptions }
   | { kind: "doctor"; options: CliDoctorOptions }
   | { kind: "run"; options: CliRunOptions }
   | CliChatAction
@@ -168,6 +180,20 @@ const TOOL_EXPERIMENT_VALUE_OPTIONS = new Set([
 ]);
 const TOOL_EXPERIMENT_FLAG_OPTIONS = new Set(["--preview"]);
 const RPC_VALUE_OPTIONS = new Set(["--workspace", "--data-root"]);
+const CLI_COMMANDS = new Set([
+  "run",
+  "chat",
+  "tui",
+  "capabilities",
+  "doctor",
+  "resume",
+  "branch",
+  "experiment",
+  "model-experiment",
+  "tool-experiment",
+  "rpc",
+  "workflow",
+]);
 export function parseCliArgs(argv: string[]): CliAction {
   if (argv.length === 0 || argv[0] === "--help" || argv[0] === "-h") {
     return { kind: "help" };
@@ -176,31 +202,20 @@ export function parseCliArgs(argv: string[]): CliAction {
     if (argv.length !== 1) throw new Error("--version accepts no arguments");
     return { kind: "version" };
   }
-  const command = argv[0];
-  if (
-    command !== "run" &&
-    command !== "chat" &&
-    command !== "tui" &&
-    command !== "doctor" &&
-    command !== "resume" &&
-    command !== "branch" &&
-    command !== "experiment" &&
-    command !== "model-experiment" &&
-    command !== "tool-experiment" &&
-    command !== "rpc" &&
-    command !== "workflow"
-  ) {
-    throw new Error("Unknown command");
-  }
+  const command = argv[0]!;
+  if (!CLI_COMMANDS.has(command)) throw new Error("Unknown command");
   if (argv.length === 2 && (argv[1] === "--help" || argv[1] === "-h")) {
     return { kind: "help" };
   }
-  const { values, flags, jsonl } = parseOptions(
+  const { values, flags, jsonl } = parseCliOptions(
     argv.slice(1),
     commandValueOptions(command),
     commandFlagOptions(command),
   );
   if (command === "doctor") return parseDoctorOptions(values, flags, jsonl);
+  if (command === "capabilities") {
+    return parseCapabilityOptions(values, flags, jsonl);
+  }
   if (command === "run") return parseRunOptions(values, jsonl);
   if (command === "chat") return parseChatOptions(values, jsonl);
   if (command === "tui") return parseTuiOptions(values, jsonl);
@@ -221,6 +236,7 @@ export function parseCliArgs(argv: string[]): CliAction {
 
 function commandValueOptions(command: string): ReadonlySet<string> {
   if (command === "run") return RUN_VALUE_OPTIONS;
+  if (command === "capabilities") return CAPABILITY_VALUE_OPTIONS;
   if (command === "doctor") return DOCTOR_VALUE_OPTIONS;
   if (command === "chat" || command === "tui") return CHAT_VALUE_OPTIONS;
   if (command === "resume") return RESUME_VALUE_OPTIONS;
@@ -234,6 +250,7 @@ function commandValueOptions(command: string): ReadonlySet<string> {
 
 function commandFlagOptions(command: string): ReadonlySet<string> {
   if (command === "doctor") return DOCTOR_FLAG_OPTIONS;
+  if (command === "capabilities") return CAPABILITY_FLAG_OPTIONS;
   if (command === "workflow") return WORKFLOW_FLAG_OPTIONS;
   if (command === "experiment") return EXPERIMENT_FLAG_OPTIONS;
   if (command === "model-experiment") return MODEL_EXPERIMENT_FLAG_OPTIONS;
@@ -488,60 +505,6 @@ function parseWorkflowOptions(
   jsonl: boolean,
 ): Extract<CliAction, { kind: "workflow" }> {
   return parseWorkflowOptionsDomain(values, flags, jsonl);
-}
-
-function parseOptions(
-  argv: string[],
-  allowedValues: ReadonlySet<string>,
-  allowedFlags: ReadonlySet<string> = new Set(),
-): {
-  values: Map<string, string>;
-  flags: Set<string>;
-  jsonl: boolean;
-} {
-  const values = new Map<string, string>();
-  const flags = new Set<string>();
-  let jsonl = false;
-  for (let index = 0; index < argv.length; index += 1) {
-    const flag = argv[index]!;
-    if (flag === "--jsonl") {
-      if (jsonl) throw new Error("Duplicate option: --jsonl");
-      jsonl = true;
-      continue;
-    }
-    if (allowedFlags.has(flag)) {
-      if (flags.has(flag)) throw new Error(`Duplicate option: ${flag}`);
-      flags.add(flag);
-      continue;
-    }
-    if (!allowedValues.has(flag)) throw new Error("Unknown option");
-    if (values.has(flag)) throw new Error(`Duplicate option: ${flag}`);
-    const value = argv[index + 1];
-    if (value === undefined || value.startsWith("--")) {
-      throw new Error(`Missing value for ${flag}`);
-    }
-    values.set(flag, value);
-    index += 1;
-  }
-  return { values, flags, jsonl };
-}
-
-function parsePositiveInteger(value: string, flag: string): number {
-  if (!/^[0-9]+$/u.test(value)) throw new Error(`${flag} is invalid`);
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed < 1) {
-    throw new Error(`${flag} must be a positive integer`);
-  }
-  return parsed;
-}
-
-function parseNonNegativeInteger(value: string, flag: string): number {
-  if (!/^[0-9]+$/u.test(value)) throw new Error(`${flag} is invalid`);
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed < 0) {
-    throw new Error(`${flag} must be a non-negative integer`);
-  }
-  return parsed;
 }
 
 function parseToolResultMode(

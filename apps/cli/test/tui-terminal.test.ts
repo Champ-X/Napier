@@ -1,6 +1,7 @@
 import { Writable } from "node:stream";
 
 import type { RunEvent } from "@napier/contracts";
+import { agentCapabilityStatus } from "@napier/contracts/agent-capabilities";
 import { describe, expect, it } from "vitest";
 
 import { TuiSessionState } from "../src/tui-state.js";
@@ -13,6 +14,12 @@ describe("TUI terminal projection", () => {
     const state = new TuiSessionState({
       title: "unsafe\u001b]52;c;TITLE\u0007\u202e",
       model: { provider: "safe", id: "model" },
+      capabilities: agentCapabilityStatus({
+        toolPolicy: "observe",
+        enabledTools: ["web_search", "web_fetch", "browser", "research_source"],
+        enabledSkills: ["research-brief"],
+        enabledSubagents: ["researcher", "reviewer"],
+      }),
     });
     state.beginPrompt("prompt\u001b[2J\u0007");
     state.applyEvent(
@@ -55,6 +62,7 @@ describe("TUI terminal projection", () => {
     expect(rendered).toContain("\\u001b]52;c;PRIVATE\\u0007\\u202e");
     expect(rendered).toContain("tool read_file · running · read");
     expect(rendered).toContain("tool web_search · running · read");
+    expect(rendered).toContain("preset Browser");
     expect(rendered).not.toContain("PRIVATE_TOOL_ARGUMENT");
     expect(rendered).not.toContain("PRIVATE_TOOL_OUTPUT");
     expect(rendered).not.toContain("PRIVATE_SEARCH_QUERY");
