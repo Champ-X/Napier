@@ -480,6 +480,14 @@ availability checks, exact criteria and policy bounds, review-gate
 requirements, conflict semantics, stable review hashes, baseline metadata,
 and current-outcome qualification evidence. This lowers `app.ts` to 14,616
 lines.
+Blueprint Record preview binding, Ledger-event replay projection, replay
+history aggregation, and current Plan outcome aggregation use
+`execution-plan-blueprint-replay-projection.ts`. These pure functions consume
+only Contracts and Plan/Event values; `LocalStore` retains state traversal and
+persistence orchestration. `store-hashing.ts` centralizes the Store's existing
+locale-key canonical JSON and SHA-256 byte semantics so portable verifier
+digests do not silently change. This lowers `store.ts` from 15,918 to 15,575
+lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
