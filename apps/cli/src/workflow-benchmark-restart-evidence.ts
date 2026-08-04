@@ -29,9 +29,15 @@ interface RestartEvaluationInput {
 export function workflowBenchmarkRestartDiagnostics(
   input: RestartEvaluationInput,
 ): WorkflowBenchmarkDiagnostic[] {
-  if (input.benchmarkCase.schemaVersion !== 4) return [];
+  if (
+    input.benchmarkCase.schemaVersion !== 4 &&
+    input.benchmarkCase.schemaVersion !== 6
+  ) {
+    return [];
+  }
   const diagnostics: WorkflowBenchmarkDiagnostic[] = [];
-  if (input.runtimeRestartCount !== 1) {
+  const expectedRestartCount = input.benchmarkCase.schemaVersion === 6 ? 2 : 1;
+  if (input.runtimeRestartCount !== expectedRestartCount) {
     diagnostics.push("runtime_restart_mismatch");
   }
   if (input.approvalRecovered !== true) {
@@ -89,11 +95,18 @@ export function workflowBenchmarkRestartLedgerEvidence(
   restartEvidence: WorkflowBenchmarkRestartEvidence | undefined,
 ): Pick<
   WorkflowBenchmarkLedgerBundle["workflow"],
-  "restartEvent" | "preRestartMapRunIds"
+  "restartEvent" | "restartEvents" | "preRestartMapRunIds"
 > {
   return restartEvidence
     ? {
         restartEvent: structuredClone(restartEvidence.restartEvent),
+        ...(restartEvidence.restartEvents.length > 1
+          ? {
+              restartEvents: restartEvidence.restartEvents.map((event) =>
+                structuredClone(event),
+              ),
+            }
+          : {}),
         preRestartMapRunIds: [...restartEvidence.preRestartMapRunIds],
       }
     : {};
@@ -103,10 +116,14 @@ export function validWorkflowBenchmarkRestartFields(
   workflow: Record<string, unknown>,
 ): boolean {
   const event = workflow["restartEvent"];
+  const events = workflow["restartEvents"];
   const mapRunIds = workflow["preRestartMapRunIds"];
-  if (event === undefined && mapRunIds === undefined) return true;
+  if (event === undefined && events === undefined && mapRunIds === undefined) {
+    return true;
+  }
   return (
     validRestartEvent(event) &&
+    validRestartEvents(events, event) &&
     Array.isArray(mapRunIds) &&
     mapRunIds.length >= 2 &&
     mapRunIds.length <= 8 &&
@@ -122,20 +139,26 @@ export function validWorkflowBenchmarkRestartBinding(
   bundle: WorkflowBenchmarkLedgerBundle,
 ): boolean {
   const event = bundle.workflow.restartEvent;
+  const events = bundle.workflow.restartEvents ?? (event ? [event] : undefined);
   const preRestartMapRunIds = bundle.workflow.preRestartMapRunIds;
-  if (event === undefined && preRestartMapRunIds === undefined) return true;
-  if (!event || !preRestartMapRunIds || !record(event.payload)) return false;
-  const receipt = bundle.eventReceipts.find(
-    (candidate) => candidate.id === event.id,
-  );
+  if (
+    event === undefined &&
+    events === undefined &&
+    preRestartMapRunIds === undefined
+  ) {
+    return true;
+  }
+  if (!event || !events || !preRestartMapRunIds) return false;
   return (
-    event.threadId === bundle.threadId &&
-    event.payload["planId"] === bundle.workflow.planId &&
-    event.payload["manifestSha256"] === bundle.workflow.manifestSha256 &&
-    Number(event.payload["preRestartEventCount"]) + 1 === event.seq &&
-    canonicalJson(event.payload["preRestartMapRunIds"] as JsonValue) ===
-      canonicalJson(preRestartMapRunIds) &&
-    receiptMatchesEvent(receipt, event)
+    canonicalJson(events[0] as unknown as JsonValue) ===
+      canonicalJson(event as unknown as JsonValue) &&
+    events.length ===
+      bundle.eventReceipts.filter(
+        (receipt) => receipt.type === "benchmark.workflow.runtime.restarted",
+      ).length &&
+    events.every((restartEvent) =>
+      restartEventMatchesBundle(bundle, restartEvent, preRestartMapRunIds),
+    )
   );
 }
 
@@ -195,6 +218,42 @@ function validRestartEvent(value: unknown): value is RunEvent {
     mapRunIds.every(resourceId) &&
     resourceId(payload["decisionId"]) &&
     digest(payload["decisionSha256"])
+  );
+}
+
+function validRestartEvents(events: unknown, first: RunEvent): boolean {
+  if (events === undefined) return true;
+  return (
+    Array.isArray(events) &&
+    events.length >= 2 &&
+    events.length <= 4 &&
+    events.every(validRestartEvent) &&
+    new Set(events.map((event) => event.id)).size === events.length &&
+    events.every(
+      (event, index) => index === 0 || events[index - 1]!.seq < event.seq,
+    ) &&
+    canonicalJson(events[0] as unknown as JsonValue) ===
+      canonicalJson(first as unknown as JsonValue)
+  );
+}
+
+function restartEventMatchesBundle(
+  bundle: WorkflowBenchmarkLedgerBundle,
+  event: RunEvent,
+  preRestartMapRunIds: string[],
+): boolean {
+  if (!validRestartEvent(event) || !record(event.payload)) return false;
+  const receipt = bundle.eventReceipts.find(
+    (candidate) => candidate.id === event.id,
+  );
+  return (
+    event.threadId === bundle.threadId &&
+    event.payload["planId"] === bundle.workflow.planId &&
+    event.payload["manifestSha256"] === bundle.workflow.manifestSha256 &&
+    Number(event.payload["preRestartEventCount"]) + 1 === event.seq &&
+    canonicalJson(event.payload["preRestartMapRunIds"] as JsonValue) ===
+      canonicalJson(preRestartMapRunIds) &&
+    receiptMatchesEvent(receipt, event)
   );
 }
 

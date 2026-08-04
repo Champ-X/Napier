@@ -226,7 +226,11 @@ export async function runWorkflowBenchmark(
       ...(mapOutputSha256 !== undefined
         ? { actualMapOutputSha256: mapOutputSha256 }
         : {}),
-      expectedNodeResultCount: loaded.benchmarkCase.schemaVersion === 4 ? 3 : 2,
+      expectedNodeResultCount:
+        loaded.benchmarkCase.schemaVersion === 4 ||
+        loaded.benchmarkCase.schemaVersion === 6
+          ? 3
+          : 2,
       completedNodeResultCount: workflowResult.nodeResults.filter(
         (result) => result.status === "completed",
       ).length,

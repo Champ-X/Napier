@@ -100,6 +100,7 @@ function workflowKeys(workflow: Record<string, unknown>): readonly string[] {
       ? []
       : ["promptInjectionScan"]),
     ...(workflow["restartEvent"] === undefined ? [] : ["restartEvent"]),
+    ...(workflow["restartEvents"] === undefined ? [] : ["restartEvents"]),
     ...(workflow["preRestartMapRunIds"] === undefined
       ? []
       : ["preRestartMapRunIds"]),

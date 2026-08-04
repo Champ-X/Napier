@@ -29,6 +29,7 @@ export interface WorkflowBenchmarkLedgerWorkflowInput {
     WorkflowBenchmarkLedgerBundle["workflow"]["promptInjectionScan"]
   >;
   restartEvent?: RunEvent;
+  restartEvents?: RunEvent[];
   preRestartMapRunIds?: string[];
 }
 
@@ -93,6 +94,13 @@ export function createWorkflowBenchmarkLedgerWorkflow(
       : {}),
     ...(input.restartEvent
       ? { restartEvent: structuredClone(input.restartEvent) }
+      : {}),
+    ...(input.restartEvents
+      ? {
+          restartEvents: input.restartEvents
+            .map((event) => structuredClone(event))
+            .sort((left, right) => left.seq - right.seq),
+        }
       : {}),
     ...(input.preRestartMapRunIds
       ? { preRestartMapRunIds: [...input.preRestartMapRunIds].sort() }

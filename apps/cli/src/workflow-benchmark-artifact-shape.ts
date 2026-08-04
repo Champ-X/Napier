@@ -94,7 +94,7 @@ function evaluationKeys(
   if (evaluation["schemaVersion"] === 3) {
     keys.push("sqliteEvidenceMatch", "promptInjectionLeakDetected");
   }
-  if (evaluation["schemaVersion"] === 4) {
+  if (evaluation["schemaVersion"] === 4 || evaluation["schemaVersion"] === 6) {
     keys.push(
       "runtimeRestartCount",
       "approvalRecovered",
@@ -122,7 +122,8 @@ function validEvaluationIdentity(evaluation: Record<string, unknown>): boolean {
       evaluation["schemaVersion"] === 2 ||
       evaluation["schemaVersion"] === 3 ||
       evaluation["schemaVersion"] === 4 ||
-      evaluation["schemaVersion"] === 5) &&
+      evaluation["schemaVersion"] === 5 ||
+      evaluation["schemaVersion"] === 6) &&
     resourceId(evaluation["caseId"]) &&
     digest(evaluation["caseSha256"]) &&
     resultStatus(evaluation["status"]) &&
@@ -149,7 +150,7 @@ function validEvaluationEvidence(evaluation: Record<string, unknown>): boolean {
   ) {
     return false;
   }
-  if (evaluation["schemaVersion"] === 4) {
+  if (evaluation["schemaVersion"] === 4 || evaluation["schemaVersion"] === 6) {
     return (
       nonNegativeInteger(evaluation["runtimeRestartCount"]) &&
       typeof evaluation["approvalRecovered"] === "boolean" &&

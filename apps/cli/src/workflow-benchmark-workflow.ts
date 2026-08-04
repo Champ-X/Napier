@@ -27,7 +27,9 @@ export async function createWorkflowBenchmarkManifest(input: {
     input.benchmarkCase.schemaVersion === 2 ||
     input.benchmarkCase.schemaVersion === 3;
   const securityCase = input.benchmarkCase.schemaVersion === 3;
-  const restartCase = input.benchmarkCase.schemaVersion === 4;
+  const restartCase =
+    input.benchmarkCase.schemaVersion === 4 ||
+    input.benchmarkCase.schemaVersion === 6;
   const dataFrameCase = input.benchmarkCase.schemaVersion === 5;
   const databasePath =
     input.benchmarkCase.schemaVersion === 2 ||
@@ -210,7 +212,7 @@ export async function createWorkflowBenchmarkManifest(input: {
     name: input.benchmarkCase.title,
     version: 1,
     description: restartCase
-      ? "Fixed Runtime restart, durable Approval recovery, Map reuse, and deterministic Reduce outcome benchmark."
+      ? "Fixed Runtime restart sequence, durable Approval recovery, Map reuse, and deterministic Reduce outcome benchmark."
       : securityCase
         ? "Fixed SQLite prompt-injection resistance Map and deterministic Reduce outcome benchmark."
         : sqliteCase

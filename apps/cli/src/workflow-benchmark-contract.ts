@@ -79,7 +79,7 @@ export function createWorkflowBenchmarkEvaluation(
   const sqliteCase =
     input.benchmarkCase.schemaVersion === 2 ||
     input.benchmarkCase.schemaVersion === 3;
-  const restartCase = input.benchmarkCase.schemaVersion === 4;
+  const restartCase = [4, 6].includes(input.benchmarkCase.schemaVersion);
   const diagnostics = workflowBenchmarkDiagnostics(
     input,
     outputMatch,
@@ -399,7 +399,8 @@ function benchmarkOutcomeMatches(
             : {}),
         }
       : {}),
-    ...(result.evaluation.schemaVersion === 4
+    ...(result.evaluation.schemaVersion === 4 ||
+    result.evaluation.schemaVersion === 6
       ? workflowBenchmarkRestartEvaluationFromBundle(bundle)
       : {}),
     ...(result.evaluation.schemaVersion === 5

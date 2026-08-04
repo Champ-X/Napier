@@ -28,6 +28,7 @@ const CASE_KEYS_V4 = keySet(
 const CASE_KEYS_V5 = keySet(
   "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario sourceDataPath sourceDataSha256 workspaceDataPath requiredDataFrameActions requiredDataFrameEvidence forbiddenOutputStrings contentSha256",
 );
+const CASE_KEYS_V6 = CASE_KEYS_V4;
 
 export interface LoadedWorkflowBenchmarkCase {
   benchmarkCase: WorkflowBenchmarkCase;
@@ -126,15 +127,17 @@ function workflowBenchmarkCaseKeys(input: unknown): readonly string[] {
     input !== null && typeof input === "object" && !Array.isArray(input)
       ? (input as Record<string, unknown>)["schemaVersion"]
       : undefined;
-  return version === 5
-    ? CASE_KEYS_V5
-    : version === 4
-      ? CASE_KEYS_V4
-      : version === 3
-        ? CASE_KEYS_V3
-        : version === 2
-          ? CASE_KEYS_V2
-          : CASE_KEYS_V1;
+  return version === 6
+    ? CASE_KEYS_V6
+    : version === 5
+      ? CASE_KEYS_V5
+      : version === 4
+        ? CASE_KEYS_V4
+        : version === 3
+          ? CASE_KEYS_V3
+          : version === 2
+            ? CASE_KEYS_V2
+            : CASE_KEYS_V1;
 }
 
 function validWorkflowBenchmarkCaseBase(
@@ -146,7 +149,8 @@ function validWorkflowBenchmarkCaseBase(
       input["schemaVersion"] === 2 ||
       input["schemaVersion"] === 3 ||
       input["schemaVersion"] === 4 ||
-      input["schemaVersion"] === 5) &&
+      input["schemaVersion"] === 5 ||
+      input["schemaVersion"] === 6) &&
     resourceId(input["id"]) &&
     boundedText(input["title"], 1, 160) &&
     boundedText(input["objective"], 1, 500) &&
@@ -164,13 +168,8 @@ function validWorkflowBenchmarkScenarioCase(
   input: Record<string, unknown>,
 ): boolean {
   if (input["schemaVersion"] === 1) return true;
-  if (input["schemaVersion"] === 4) {
-    return (
-      input["scenario"] === "workflow_restart_approval_resume" &&
-      input["requiredRestartCount"] === 1 &&
-      typeof input["approvalCustomText"] === "string" &&
-      ASCII_TEXT.test(input["approvalCustomText"])
-    );
+  if (input["schemaVersion"] === 4 || input["schemaVersion"] === 6) {
+    return validWorkflowBenchmarkRestartCase(input);
   }
   if (input["schemaVersion"] === 5) {
     return (
@@ -208,6 +207,21 @@ function validWorkflowBenchmarkScenarioCase(
       canonicalJson(["schema", "query"]) &&
     validSqliteEvidenceExpectations(input["requiredSqliteEvidence"]) &&
     validForbiddenOutputStrings(input["forbiddenOutputStrings"])
+  );
+}
+
+function validWorkflowBenchmarkRestartCase(
+  input: Record<string, unknown>,
+): boolean {
+  const repeated = input["schemaVersion"] === 6;
+  return (
+    input["scenario"] ===
+      (repeated
+        ? "workflow_multi_restart_approval_resume"
+        : "workflow_restart_approval_resume") &&
+    input["requiredRestartCount"] === (repeated ? 2 : 1) &&
+    typeof input["approvalCustomText"] === "string" &&
+    ASCII_TEXT.test(input["approvalCustomText"])
   );
 }
 

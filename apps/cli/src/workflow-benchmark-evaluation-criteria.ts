@@ -23,10 +23,10 @@ export function workflowBenchmarkCriteria(
           "receipt_bound_sqlite_actions",
         ]
       : [];
-  if (schemaVersion === 4) {
+  if (schemaVersion === 4 || schemaVersion === 6) {
     return [
       ...BASE_CRITERIA,
-      "runtime_restarted",
+      schemaVersion === 6 ? "runtime_restarted_twice" : "runtime_restarted",
       "approval_recovered",
       "completed_map_runs_reused",
       "post_restart_model_free",

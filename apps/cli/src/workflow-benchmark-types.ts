@@ -71,6 +71,13 @@ export interface WorkflowBenchmarkCaseV4 extends WorkflowBenchmarkCaseBase {
   approvalCustomText: string;
 }
 
+export interface WorkflowBenchmarkCaseV6 extends WorkflowBenchmarkCaseBase {
+  schemaVersion: 6;
+  scenario: "workflow_multi_restart_approval_resume";
+  requiredRestartCount: 2;
+  approvalCustomText: string;
+}
+
 export interface WorkflowBenchmarkDataFrameEvidenceExpectation {
   rowsSha256: string;
   rowCount: number;
@@ -93,7 +100,8 @@ export type WorkflowBenchmarkCase =
   | WorkflowBenchmarkCaseV2
   | WorkflowBenchmarkCaseV3
   | WorkflowBenchmarkCaseV4
-  | WorkflowBenchmarkCaseV5;
+  | WorkflowBenchmarkCaseV5
+  | WorkflowBenchmarkCaseV6;
 
 export type WorkflowBenchmarkDiagnostic =
   | "workflow_not_completed"
@@ -120,7 +128,7 @@ export type WorkflowBenchmarkDiagnostic =
 
 export interface WorkflowBenchmarkEvaluation {
   kind: "napier.workflow-benchmark-evaluation";
-  schemaVersion: 1 | 2 | 3 | 4 | 5;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
   caseId: string;
   caseSha256: string;
   status: "passed" | "failed" | "inconclusive";
@@ -249,6 +257,7 @@ export interface WorkflowBenchmarkLedgerBundle {
     dataSourceAfterSha256?: string;
     requiredDataFrameEvidence?: WorkflowBenchmarkDataFrameEvidenceExpectation[];
     restartEvent?: RunEvent;
+    restartEvents?: RunEvent[];
     preRestartMapRunIds?: string[];
   };
   runs: Array<{
