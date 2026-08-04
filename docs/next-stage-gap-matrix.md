@@ -58,9 +58,9 @@ Audit date: 2026-08-04
   revisioned apply; Chat/TUI `/status` and Web show the same permission truth.
   `run`, `chat`, and `tui` also accept temporary per-Run presets without
   revising the Agent. Browser and Research remain read-only. Safe Automation
-  now exposes Browser interaction in Web only through exact one-use
-  confirmations; CLI/TUI remain read-only. Dependency remediation, direct
-  Browser takeover, and broader interaction reliability remain P0.
+  now exposes Browser interaction in Web, Chat, and TUI through exact one-use
+  confirmations. Dependency remediation, direct Browser takeover, and broader
+  interaction reliability remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
