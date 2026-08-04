@@ -500,6 +500,11 @@ policy diagnostics, and qualification projection use
 persistence and model-review evidence binding while the pure policy module
 owns reusable qualification semantics. This lowers `store.ts` to 15,160
 lines.
+Outcome baseline creation and persisted-record validation use
+`execution-plan-blueprint-outcome-baseline.ts`. Its core and reviewed-evidence
+validators are independently bounded, while the shared evidence type keeps
+Store's model-review binding explicit. This lowers `store.ts` to 15,031 lines
+without changing baseline hashes or normalized persisted shapes.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

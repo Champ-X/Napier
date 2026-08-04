@@ -51,7 +51,6 @@ import {
   type ExecutionPlanBlueprintRecordReplayOutcomes,
   type ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   type ExecutionPlanBlueprintRecordOutcomeBaseline,
-  type ExecutionPlanBlueprintRecordOutcomeBaselinePolicy,
   type ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate,
   type ExecutionPlanBlueprintRecordOutcomeQualification,
   type ExecutionPlanBlueprintRecordOutcomeReview,
@@ -494,6 +493,11 @@ import {
   normalizeExecutionPlanBlueprintOutcomeBaselinePolicy,
   normalizeExecutionPlanBlueprintOutcomeBaselineReviewGate,
 } from "./execution-plan-blueprint-outcome-policy.js";
+import {
+  createExecutionPlanBlueprintOutcomeBaseline,
+  type ExecutionPlanBlueprintOutcomeBaselineReviewEvidence,
+  validateExecutionPlanBlueprintOutcomeBaseline,
+} from "./execution-plan-blueprint-outcome-baseline.js";
 import {
   verifyExecutionPlanBlueprintRecordReplayEventProjection,
   verifyExecutionPlanBlueprintRecordReplayHistoryProjection,
@@ -13024,23 +13028,6 @@ function normalizeOptionalSha256(
   return normalized;
 }
 
-interface ExecutionPlanBlueprintOutcomeBaselineReviewEvidence {
-  reviewGate: ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate;
-  reviewSha256: string;
-  reviewInputSha256: string;
-  reviewResponseSha256: string;
-  reviewVerdict: NonNullable<
-    ExecutionPlanBlueprintRecordOutcomeBaseline["reviewVerdict"]
-  >;
-  reviewScore: number;
-  reviewRisk: NonNullable<
-    ExecutionPlanBlueprintRecordOutcomeBaseline["reviewRisk"]
-  >;
-  reviewModel: NonNullable<
-    ExecutionPlanBlueprintRecordOutcomeBaseline["reviewModel"]
-  >;
-}
-
 function createExecutionPlanBlueprintOutcomeBaselineReviewEvidence(input: {
   recordId: string;
   review: unknown;
@@ -13185,122 +13172,6 @@ function outcomeReviewRiskRank(
   risk: NonNullable<ExecutionPlanBlueprintRecordOutcomeBaseline["reviewRisk"]>,
 ): number {
   return risk === "low" ? 0 : risk === "medium" ? 1 : 2;
-}
-
-function createExecutionPlanBlueprintOutcomeBaseline(input: {
-  id: string;
-  recordId: string;
-  outcomes: ExecutionPlanBlueprintRecordReplayOutcomes;
-  policy: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy;
-  reviewEvidence?: ExecutionPlanBlueprintOutcomeBaselineReviewEvidence;
-  promotedAt: string;
-  supersedesBaselineId?: string;
-}): ExecutionPlanBlueprintRecordOutcomeBaseline {
-  const content = {
-    id: input.id,
-    recordId: input.recordId,
-    replayOutcomesSha256: input.outcomes.contentSha256,
-    replayHistorySha256: input.outcomes.replayHistorySha256,
-    outcomeSetSha256: input.outcomes.outcomeSetSha256,
-    replayCount: input.outcomes.replayCount,
-    completedCount: input.outcomes.completedCount,
-    blockedCount: input.outcomes.blockedCount,
-    invalidCount: input.outcomes.invalidCount,
-    completionRateBps: input.outcomes.completionRateBps,
-    policy: input.policy,
-    ...(input.reviewEvidence
-      ? {
-          reviewGate: input.reviewEvidence.reviewGate,
-          reviewSha256: input.reviewEvidence.reviewSha256,
-          reviewInputSha256: input.reviewEvidence.reviewInputSha256,
-          reviewResponseSha256: input.reviewEvidence.reviewResponseSha256,
-          reviewVerdict: input.reviewEvidence.reviewVerdict,
-          reviewScore: input.reviewEvidence.reviewScore,
-          reviewRisk: input.reviewEvidence.reviewRisk,
-          reviewModel: input.reviewEvidence.reviewModel,
-        }
-      : {}),
-    promotedAt: input.promotedAt,
-    ...(input.supersedesBaselineId
-      ? { supersedesBaselineId: input.supersedesBaselineId }
-      : {}),
-  };
-  return {
-    ...content,
-    contentSha256: sha256(canonicalJson(content)),
-  };
-}
-
-function validateExecutionPlanBlueprintOutcomeBaseline(
-  value: unknown,
-): ExecutionPlanBlueprintRecordOutcomeBaseline {
-  if (!isRecord(value)) {
-    throw new Error("Execution Plan blueprint outcome baseline is invalid");
-  }
-  const baseline =
-    value as unknown as ExecutionPlanBlueprintRecordOutcomeBaseline;
-  const policy = normalizeExecutionPlanBlueprintOutcomeBaselinePolicy(
-    baseline.policy,
-  );
-  const reviewGate =
-    baseline.reviewGate === undefined
-      ? undefined
-      : normalizeExecutionPlanBlueprintOutcomeBaselineReviewGate(
-          baseline.reviewGate,
-        );
-  const hasReviewEvidence =
-    baseline.reviewSha256 !== undefined ||
-    baseline.reviewInputSha256 !== undefined ||
-    baseline.reviewResponseSha256 !== undefined ||
-    baseline.reviewVerdict !== undefined ||
-    baseline.reviewScore !== undefined ||
-    baseline.reviewRisk !== undefined ||
-    baseline.reviewModel !== undefined ||
-    baseline.reviewGate !== undefined;
-  if (
-    typeof baseline.id !== "string" ||
-    typeof baseline.recordId !== "string" ||
-    !isSha256(baseline.replayOutcomesSha256) ||
-    !isSha256(baseline.replayHistorySha256) ||
-    !isSha256(baseline.outcomeSetSha256) ||
-    !isNonNegativeInteger(baseline.replayCount) ||
-    !isNonNegativeInteger(baseline.completedCount) ||
-    !isNonNegativeInteger(baseline.blockedCount) ||
-    !isNonNegativeInteger(baseline.invalidCount) ||
-    !isNonNegativeInteger(baseline.completionRateBps) ||
-    baseline.completionRateBps > 10_000 ||
-    (hasReviewEvidence &&
-      (!reviewGate ||
-        !isSha256(baseline.reviewSha256) ||
-        !isSha256(baseline.reviewInputSha256) ||
-        !isSha256(baseline.reviewResponseSha256) ||
-        baseline.reviewVerdict !== "promote" ||
-        !isNonNegativeInteger(baseline.reviewScore) ||
-        baseline.reviewScore > 100 ||
-        (baseline.reviewRisk !== "low" &&
-          baseline.reviewRisk !== "medium" &&
-          baseline.reviewRisk !== "high") ||
-        !isModelRef(baseline.reviewModel))) ||
-    !Number.isFinite(Date.parse(baseline.promotedAt)) ||
-    (baseline.supersedesBaselineId !== undefined &&
-      typeof baseline.supersedesBaselineId !== "string") ||
-    !isSha256(baseline.contentSha256)
-  ) {
-    throw new Error("Execution Plan blueprint outcome baseline is invalid");
-  }
-  const { contentSha256: _contentSha256, ...content } = {
-    ...baseline,
-    policy,
-    ...(reviewGate ? { reviewGate } : {}),
-  };
-  if (sha256(canonicalJson(content)) !== baseline.contentSha256) {
-    throw new Error("Execution Plan blueprint outcome baseline hash mismatch");
-  }
-  return structuredClone({
-    ...baseline,
-    policy,
-    ...(reviewGate ? { reviewGate } : {}),
-  });
 }
 
 function createExecutionPlanBlueprintRecommendationPolicyOverride(input: {
