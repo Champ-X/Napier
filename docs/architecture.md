@@ -505,6 +505,11 @@ Outcome baseline creation and persisted-record validation use
 validators are independently bounded, while the shared evidence type keeps
 Store's model-review binding explicit. This lowers `store.ts` to 15,031 lines
 without changing baseline hashes or normalized persisted shapes.
+Outcome review artifact validation and promotion evidence binding use
+`execution-plan-blueprint-outcome-review-evidence.ts`. Separate identity,
+outcome, qualification, gate, and hash predicates preserve ordered fail-closed
+diagnostics without carrying Store state. This lowers `store.ts` to 14,860
+lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

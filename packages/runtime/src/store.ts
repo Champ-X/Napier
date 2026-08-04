@@ -51,9 +51,7 @@ import {
   type ExecutionPlanBlueprintRecordReplayOutcomes,
   type ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   type ExecutionPlanBlueprintRecordOutcomeBaseline,
-  type ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate,
   type ExecutionPlanBlueprintRecordOutcomeQualification,
-  type ExecutionPlanBlueprintRecordOutcomeReview,
   type ExecutionPlanBlueprintRecommendationPolicy,
   type ExecutionPlanBlueprintRecommendationPolicyBacktest,
   type ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate,
@@ -355,7 +353,6 @@ import {
   normalizeEvaluationSuiteGate,
   updateEvaluationSuiteRecord,
 } from "./evaluation-suites.js";
-import { validateModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import {
   MAX_QUALIFICATION_BASELINES_PER_CASEBOOK,
   MAX_RECEIPT_TRUST_ANCHORS,
@@ -495,9 +492,9 @@ import {
 } from "./execution-plan-blueprint-outcome-policy.js";
 import {
   createExecutionPlanBlueprintOutcomeBaseline,
-  type ExecutionPlanBlueprintOutcomeBaselineReviewEvidence,
   validateExecutionPlanBlueprintOutcomeBaseline,
 } from "./execution-plan-blueprint-outcome-baseline.js";
+import { createExecutionPlanBlueprintOutcomeBaselineReviewEvidence } from "./execution-plan-blueprint-outcome-review-evidence.js";
 import {
   verifyExecutionPlanBlueprintRecordReplayEventProjection,
   verifyExecutionPlanBlueprintRecordReplayHistoryProjection,
@@ -13028,152 +13025,6 @@ function normalizeOptionalSha256(
   return normalized;
 }
 
-function createExecutionPlanBlueprintOutcomeBaselineReviewEvidence(input: {
-  recordId: string;
-  review: unknown;
-  outcomes: ExecutionPlanBlueprintRecordReplayOutcomes;
-  sourceQualification: ExecutionPlanBlueprintRecordQualification;
-  outcomeQualification: ExecutionPlanBlueprintRecordOutcomeQualification;
-  reviewGate: ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate;
-}): ExecutionPlanBlueprintOutcomeBaselineReviewEvidence {
-  const review = validateExecutionPlanBlueprintOutcomeReview(input.review);
-  const diagnostics: string[] = [];
-  if (review.recordId !== input.recordId) diagnostics.push("record_mismatch");
-  if (review.blueprintSha256 !== input.sourceQualification.blueprintSha256) {
-    diagnostics.push("blueprint_mismatch");
-  }
-  if (review.replayOutcomesSha256 !== input.outcomes.contentSha256) {
-    diagnostics.push("outcomes_mismatch");
-  }
-  if (review.replayHistorySha256 !== input.outcomes.replayHistorySha256) {
-    diagnostics.push("replay_history_mismatch");
-  }
-  if (review.outcomeSetSha256 !== input.outcomes.outcomeSetSha256) {
-    diagnostics.push("outcome_set_mismatch");
-  }
-  if (review.replayCount !== input.outcomes.replayCount) {
-    diagnostics.push("replay_count_mismatch");
-  }
-  if (review.completedCount !== input.outcomes.completedCount) {
-    diagnostics.push("completed_count_mismatch");
-  }
-  if (review.blockedCount !== input.outcomes.blockedCount) {
-    diagnostics.push("blocked_count_mismatch");
-  }
-  if (review.invalidCount !== input.outcomes.invalidCount) {
-    diagnostics.push("invalid_count_mismatch");
-  }
-  if (review.completionRateBps !== input.outcomes.completionRateBps) {
-    diagnostics.push("completion_rate_mismatch");
-  }
-  if (
-    review.sourceQualificationStatus !== input.sourceQualification.status ||
-    input.sourceQualification.status !== "qualified"
-  ) {
-    diagnostics.push("source_qualification_mismatch");
-  }
-  if (review.outcomeQualificationStatus !== input.outcomeQualification.status) {
-    diagnostics.push("outcome_qualification_mismatch");
-  }
-  if (review.verdict !== "promote") diagnostics.push("review_not_promote");
-  if (review.score < input.reviewGate.minScore) {
-    diagnostics.push("review_score_below_min");
-  }
-  if (
-    outcomeReviewRiskRank(review.risk) >
-    outcomeReviewRiskRank(input.reviewGate.maxRisk)
-  ) {
-    diagnostics.push("review_risk_above_max");
-  }
-  if (diagnostics.length > 0) {
-    throw new Error(
-      `Execution plan blueprint outcome baseline review failed: ${diagnostics.join(",")}`,
-    );
-  }
-  return {
-    reviewGate: input.reviewGate,
-    reviewSha256: review.reviewSha256,
-    reviewInputSha256: review.inputSha256,
-    reviewResponseSha256: review.responseSha256,
-    reviewVerdict: review.verdict,
-    reviewScore: review.score,
-    reviewRisk: review.risk,
-    reviewModel: review.model,
-  };
-}
-
-function validateExecutionPlanBlueprintOutcomeReview(
-  value: unknown,
-): ExecutionPlanBlueprintRecordOutcomeReview {
-  if (!isRecord(value)) {
-    throw new Error("Execution plan blueprint outcome review is invalid");
-  }
-  const review = value as unknown as ExecutionPlanBlueprintRecordOutcomeReview;
-  if (
-    review.kind !== "napier.execution-plan-blueprint-outcome-review" ||
-    review.schemaVersion !== 1 ||
-    typeof review.policyId !== "string" ||
-    typeof review.recordId !== "string" ||
-    !isSha256(review.blueprintSha256) ||
-    !isModelRef(review.model) ||
-    !isRecord(review.criteria) ||
-    (review.verdict !== "promote" &&
-      review.verdict !== "revise" &&
-      review.verdict !== "reject" &&
-      review.verdict !== "inconclusive") ||
-    !isNonNegativeInteger(review.score) ||
-    review.score > 100 ||
-    (review.risk !== "low" &&
-      review.risk !== "medium" &&
-      review.risk !== "high") ||
-    typeof review.reason !== "string" ||
-    !Array.isArray(review.concerns) ||
-    !Array.isArray(review.scores) ||
-    !isExecutionPlanBlueprintRecordQualificationStatus(
-      review.sourceQualificationStatus,
-    ) ||
-    (review.outcomeQualificationStatus !== "qualified" &&
-      review.outcomeQualificationStatus !== "missing_baseline" &&
-      review.outcomeQualificationStatus !== "policy_failed") ||
-    !isSha256(review.replayOutcomesSha256) ||
-    !isSha256(review.replayHistorySha256) ||
-    !isSha256(review.outcomeSetSha256) ||
-    !isNonNegativeInteger(review.replayCount) ||
-    !isNonNegativeInteger(review.completedCount) ||
-    !isNonNegativeInteger(review.blockedCount) ||
-    !isNonNegativeInteger(review.invalidCount) ||
-    !isNonNegativeInteger(review.completionRateBps) ||
-    review.completionRateBps > 10_000 ||
-    (review.baselineId !== undefined &&
-      typeof review.baselineId !== "string") ||
-    (review.baselineSha256 !== undefined && !isSha256(review.baselineSha256)) ||
-    (review.baselineOutcomesSha256 !== undefined &&
-      !isSha256(review.baselineOutcomesSha256)) ||
-    !isSha256(review.inputSha256) ||
-    !isSha256(review.promptSha256) ||
-    !isSha256(review.responseSha256) ||
-    !isSha256(review.reviewSchemaSha256) ||
-    !isSha256(review.reviewSha256) ||
-    !Number.isFinite(Date.parse(review.createdAt))
-  ) {
-    throw new Error("Execution plan blueprint outcome review is invalid");
-  }
-  if (review.modelContextEnvelope !== undefined) {
-    validateModelContextEnvelopeReceipt(review.modelContextEnvelope);
-  }
-  const { reviewSha256: _reviewSha256, ...content } = review;
-  if (sha256(canonicalJson(content)) !== review.reviewSha256) {
-    throw new Error("Execution plan blueprint outcome review hash mismatch");
-  }
-  return structuredClone(review);
-}
-
-function outcomeReviewRiskRank(
-  risk: NonNullable<ExecutionPlanBlueprintRecordOutcomeBaseline["reviewRisk"]>,
-): number {
-  return risk === "low" ? 0 : risk === "medium" ? 1 : 2;
-}
-
 function createExecutionPlanBlueprintRecommendationPolicyOverride(input: {
   family: ExecutionPlanBlueprintPortfolioCalibrationFamily;
   recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
@@ -14936,30 +14787,8 @@ function isSha256(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 }
 
-function isModelRef(value: unknown): value is { provider: string; id: string } {
-  if (!isRecord(value)) return false;
-  return (
-    typeof value["provider"] === "string" &&
-    /^[a-z0-9][a-z0-9._-]{1,80}$/.test(value["provider"]) &&
-    typeof value["id"] === "string" &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/.test(value["id"])
-  );
-}
-
 function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
-}
-
-function isExecutionPlanBlueprintRecordQualificationStatus(
-  value: unknown,
-): value is ExecutionPlanBlueprintRecordQualification["status"] {
-  return (
-    value === "qualified" ||
-    value === "archived" ||
-    value === "source_missing" ||
-    value === "source_drift" ||
-    value === "invalid"
-  );
 }
 
 function inboundDeadLetterQualificationStatus(
