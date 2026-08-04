@@ -488,6 +488,12 @@ persistence orchestration. `store-hashing.ts` centralizes the Store's existing
 locale-key canonical JSON and SHA-256 byte semantics so portable verifier
 digests do not silently change. This lowers `store.ts` from 15,918 to 15,575
 lines.
+Portable replay-history, replay-outcome, and single-event verification use
+`execution-plan-blueprint-replay-verification.ts`. The verifier owns exact
+shape guards, stable diagnostic ordering, declared-versus-observed evidence,
+and event identity/hash binding while Store supplies only the current
+projection or bounded event list. This lowers `store.ts` further to 15,298
+lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
