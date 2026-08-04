@@ -2002,6 +2002,13 @@ Extensions, Context, and Automations are separate browser chunks. Their forms
 and mutation clients remain inside those lazy boundaries so the primary
 Workbench entry stays under its 150 kB budget.
 
+The Plan Workbench's portable archive and Blueprint evidence dockets use
+`PlanPortableEvidenceCards.tsx`. That boundary owns upload/export/create
+controls and receipt projections while `PlanPanel.tsx` retains orchestration
+against the shared API clients. Pure receipt projections have focused tests for
+status, digest truncation, diagnostics, counts, and Plan identity. This lowers
+`PlanPanel.tsx` from 4,939 to 4,655 lines without changing its lazy chunk.
+
 An open Operator Decision is a separate lazy Workbench docket between the
 Ledger and composer. It owns accessible option selection, custom answer,
 answer receipt, Continue, and Cancel actions. The normal composer is disabled

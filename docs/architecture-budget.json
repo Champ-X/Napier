@@ -30,7 +30,7 @@
     "apps/web/src/MemoryPanel.tsx": 592,
     "apps/web/src/model-advisor-event-view.ts": 546,
     "apps/web/src/plan-blueprint-library-view-model.ts": 1058,
-    "apps/web/src/PlanPanel.tsx": 4939,
+    "apps/web/src/PlanPanel.tsx": 4655,
     "apps/web/src/ProcessPanel.tsx": 728,
     "apps/web/src/receipt-trust-api.ts": 580,
     "apps/web/src/ReceiptTrustPanel.tsx": 3508,
