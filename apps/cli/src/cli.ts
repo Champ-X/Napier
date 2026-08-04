@@ -1,13 +1,6 @@
 import path from "node:path";
-import type { Writable } from "node:stream";
 
-import type {
-  ExecutionPlanWorkflowExperimentResultFrame,
-  ExecutionPlanWorkflowResultFrame,
-  RunEvent,
-  RunRecord,
-  StreamFrame,
-} from "@napier/contracts";
+import type { RunEvent, RunRecord } from "@napier/contracts";
 import {
   canonicalJson,
   createExecutionPlanWorkflowExperimentResultFrame,
@@ -37,9 +30,10 @@ import {
 } from "./cli-options.js";
 import { createCliWorkflowExperimentRequest } from "./cli-workflow-experiment.js";
 import { executeAgentMessageExperimentCli } from "./agent-message-experiment-cli.js";
+import { executeDoctor } from "./doctor-cli.js";
 import { executeModelInvocationExperimentCli } from "./model-invocation-experiment-cli.js";
 import { executeToolInvocationExperimentCli } from "./tool-invocation-experiment-cli.js";
-import { writeLine } from "./cli-output.js";
+import { writeJsonLine, writeLine } from "./cli-output.js";
 import { executeInteractive } from "./interactive-cli.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
 import { executeRpc } from "./rpc-cli.js";
@@ -81,6 +75,9 @@ export async function runCli(
   if (action.kind === "version") {
     await writeLine(io.stdout, CLI_VERSION);
     return 0;
+  }
+  if (action.kind === "doctor") {
+    return executeDoctor(action.options, io, dependencies.doctor, parentSignal);
   }
   if (action.kind === "run") {
     return executeRun(action.options, io, dependencies, parentSignal);
@@ -662,17 +659,6 @@ function latestAssistantText(events: RunEvent[], runId: string): string {
     }
   }
   return "";
-}
-
-async function writeJsonLine(
-  stream: Writable,
-  frame:
-    | StreamFrame
-    | ExecutionPlanWorkflowResultFrame
-    | ExecutionPlanWorkflowExperimentResultFrame
-    | unknown,
-): Promise<void> {
-  await writeLine(stream, JSON.stringify(frame));
 }
 
 function signedNumber(value: number, fractionDigits?: number): string {

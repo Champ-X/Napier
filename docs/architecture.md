@@ -552,6 +552,26 @@ resume` selects a waiting Thread plus an optional interrupted Run and calls
 streaming, cancellation, and shutdown path; neither implements a second
 model/tool loop or talks directly to Store for Run execution.
 
+`napier doctor` is a deliberately Store-free preflight command rather than an
+Agent Run. It canonicalizes the workspace without creating a data root, checks
+Node/runtime components and optional installed-model/credential-environment
+presence, and, unless `--offline` is selected, runs bounded real
+`WebSearchProviderRegistry`, `RunWebFetchSourceManager`, and
+`RunBrowserSessionManager` probes plus a network-denied OS Sandbox process.
+One total timeout/cancellation signal bounds every check. Browser and Fetch
+ephemeral state settles before return.
+
+`doctor-report.ts` owns the hash-bound `ready | degraded | blocked` report and
+human rendering. `doctor-probes.ts` maps failures to fixed recovery codes such
+as `credential_missing`, `search_unavailable`, `browser_missing`, and
+`sandbox_unavailable`; it never copies raw exceptions. The report retains only
+bounded status, duration, counts, known provider/adapter identifiers, numeric
+network/content evidence, executable/workspace/credential-locator hashes, and
+the selected public ModelRef. Workspace paths, credential variable names and
+values, URLs, response bodies, Browser page text, process output, and raw
+diagnostics remain absent. Required-check failure returns exit 1; skipped or
+non-required warnings return exit 0 with `degraded`.
+
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate
 the environment name and current value, then create or re-enable only the
@@ -7975,6 +7995,10 @@ The current boundary has seventy-four parts:
     complete 1,000-row/256 KiB table JSON, source-drift rejection,
     Agent/Workflow/Artifact reuse, privacy-bounded Replay/Trace, and no
     expression, package, process, filesystem-write, or network authority.
+75. A Store-free `napier doctor` preflight with canonical workspace/runtime,
+    optional model credential presence, bounded real Search/Fetch/Browser and
+    OS Sandbox probes, fixed privacy-safe recovery codes, total cancellation,
+    hash-bound human/JSONL reports, and no workspace state creation.
 
 `observe` permits only in-process read operations, including bounded DataFrame,
 AST query, and edit preview. `workspace` additionally

@@ -6,8 +6,8 @@
     "maxFunctionComplexity": 25
   },
   "lineOverrides": {
-    "apps/cli/src/cli-options.ts": 671,
-    "apps/cli/src/cli.ts": 696,
+    "apps/cli/src/cli-options.ts": 555,
+    "apps/cli/src/cli.ts": 682,
     "apps/cli/test/rpc-cli.test.ts": 1065,
     "apps/cli/test/workflow-cli.test.ts": 2912,
     "apps/server/src/app.ts": 14616,
@@ -113,7 +113,7 @@
     "packages/sdk/test/sdk-workflow.test.ts": 1089
   },
   "complexityOverrides": {
-    "apps/cli/src/cli-options.ts": 42,
+    "apps/cli/src/cli-options.ts": 31,
     "apps/cli/src/cli-workflow-options.ts": 67,
     "apps/cli/src/cli.ts": 37,
     "apps/cli/src/coding-benchmark-contract.ts": 36,

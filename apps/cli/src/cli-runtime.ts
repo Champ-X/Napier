@@ -5,6 +5,8 @@ import type {
   LocalAgentRuntimeServices,
 } from "@napier/runtime";
 
+import type { DoctorProbeDependencies } from "./doctor-probes.js";
+
 export interface CliIo {
   cwd: string;
   env: Readonly<Record<string, string | undefined>>;
@@ -18,4 +20,5 @@ export interface RunCliDependencies {
   createRuntime(
     options: LocalAgentRuntimeOptions,
   ): Promise<LocalAgentRuntimeServices>;
+  doctor?: DoctorProbeDependencies;
 }

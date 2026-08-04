@@ -34,3 +34,10 @@ export async function writeText(stream: Writable, text: string): Promise<void> {
 export async function writeLine(stream: Writable, text: string): Promise<void> {
   await writeText(stream, `${text}\n`);
 }
+
+export async function writeJsonLine(
+  stream: Writable,
+  value: unknown,
+): Promise<void> {
+  await writeLine(stream, JSON.stringify(value));
+}

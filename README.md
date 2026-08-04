@@ -486,6 +486,24 @@ The explicit root `postinstall` prepares only the current-platform native PTY
 helper after the dependency install; it rejects missing, non-regular, or
 symlinked helpers.
 
+Before the first live task, run the Store-free readiness diagnostic:
+
+```bash
+npm run --silent napier -- doctor \
+  --workspace . \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY
+```
+
+`napier doctor` canonicalizes the workspace without creating `.napier` state,
+checks Node/runtime components and optional model credential presence, then
+uses bounded real production paths for credential-free public Search, HTML Fetch,
+sandboxed Chrome, and the OS process Sandbox. `--offline` skips the three
+public-network/Browser probes. Human output uses fixed recovery codes; `--jsonl`
+returns one hash-bound `napier.doctor-report` with `ready`, `degraded`, or
+`blocked` status. Workspace paths, credential variable names/values, fetched
+content, URLs, and raw probe errors are absent.
+
 For a production build served by the API process:
 
 ```bash

@@ -39,6 +39,11 @@ Audit date: 2026-08-04
   with proxy outbound closed. Click/type/select/upload/download remain absent
   and policy-denied. Full interaction presets, Browser Live/takeover,
   tabs/history, and effect-specific confirmations remain P0.
+- The formal `napier doctor` CLI now diagnoses canonical workspace/runtime,
+  optional model credential presence, keyless Search, HTML Fetch, sandboxed
+  Chrome, and the OS process Sandbox without creating `.napier` state.
+  Setup Wizard, guided credential creation, Web/TUI capability status, and
+  broader LSP/DAP/Python/onboarding remediation remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
@@ -59,7 +64,7 @@ Audit date: 2026-08-04
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 web connectivity               | In progress    | Default `web_search` and `web_fetch` cover source discovery plus bounded HTML/Markdown/JSON/text/PDF reading through DNS-pinned transport. `research_source capture_fetch` imports an exact same-Run Web Source into the ordinary capture/cite/report-verification chain, while the default read-only Browser covers dynamic rendering with start/navigate/back/wait/find/scroll/snapshot/screenshot/close and Browser capture/cite. Find and scroll keep proxy outbound closed, and a real DeepSeek CLI run completed both on a long public page while interactive actions stayed absent and policy-denied. Remaining P0 work is full interaction presets and effect confirmations, multi-tab/history, Browser Live/takeover/resume, automatic Fetch/Browser fallback, cross-restart Source retention, open-web Research/Security benchmarks, setup/doctor diagnostics, and repeated same-model OMP Search/Fetch/Research/Browser comparison. This row remains in progress because bounded page navigation does not provide complete Browser automation or product UX.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| P0 web connectivity               | In progress    | Default `web_search` and `web_fetch` cover source discovery plus bounded HTML/Markdown/JSON/text/PDF reading through DNS-pinned transport. `research_source capture_fetch` imports an exact same-Run Web Source into the ordinary capture/cite/report-verification chain, while the default read-only Browser covers dynamic rendering with start/navigate/back/wait/find/scroll/snapshot/screenshot/close and Browser capture/cite. Find and scroll keep proxy outbound closed, and a real DeepSeek CLI run completed both on a long public page while interactive actions stayed absent and policy-denied. `napier doctor` now performs real Store-free Search/Fetch/Browser/model/runtime/Sandbox readiness checks with privacy-safe recovery codes. Remaining P0 work is full interaction presets and effect confirmations, multi-tab/history, Browser Live/takeover/resume, automatic Fetch/Browser fallback, cross-restart Source retention, open-web Research/Security benchmarks, guided Setup and cross-entry capability status, and repeated same-model OMP Search/Fetch/Research/Browser comparison. This row remains in progress because bounded page navigation and CLI diagnosis do not provide complete Browser automation or onboarding UX.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
@@ -666,8 +671,8 @@ Observed result:
   enabled;
 - P0 remains in progress pending full interaction presets/confirmations,
   multi-tab/history, Browser Live/takeover/resume, cross-restart strategy,
-  open-web Research/Security benchmarks, Setup/Doctor diagnostics, and repeated
-  OMP comparison.
+  open-web Research/Security benchmarks, guided Setup/cross-entry status, and
+  repeated OMP comparison.
 
 ## Implemented Slice: Static Fetch Source Citation Unification
 
@@ -737,7 +742,7 @@ Observed result:
 - P0 remains in progress pending full interaction presets/confirmations,
   multi-tab/history, Browser Live/takeover/resume, automatic Fetch-to-Browser
   fallback, cross-restart Source retention, open-web
-  Research/Security benchmarks, Setup/Doctor diagnostics, and repeated
+  Research/Security benchmarks, guided Setup/cross-entry status, and repeated
   same-model OMP comparison.
 
 ## Implemented Slice: Default Read-Only Browser Find and Scroll
@@ -806,7 +811,76 @@ Observed result:
 - P0 remains in progress pending full interaction presets/confirmations,
   multi-tab/history, Browser Live/takeover/resume, automatic Fetch-to-Browser
   fallback, cross-restart Source retention, open-web Research/Security
-  benchmarks, Setup/Doctor diagnostics, and repeated same-model OMP comparison.
+  benchmarks, guided Setup/cross-entry status, and repeated same-model OMP
+  comparison.
+
+## Implemented Slice: Store-Free First-Use Doctor
+
+User scenario: before creating a Thread or changing workspace state, a user can
+ask the installed CLI whether the selected model, public networking, Browser,
+and OS Sandbox are usable and receive specific recovery guidance.
+
+Acceptance:
+
+- add `napier doctor --workspace <path>` with optional `--model`,
+  `--credential-env`, `--offline`, `--timeout-ms`, and `--jsonl`;
+- canonicalize an existing workspace but never initialize `LocalStore`, create
+  `.napier`, persist credential locators, create Threads/Runs, or call a model;
+- always check Node/runtime components and workspace readiness; inspect the
+  installed model catalog and only the presence of an explicitly named
+  credential environment variable;
+- in online mode, run bounded real production probes through provider-neutral
+  Search, HTML Fetch, sandboxed Chrome, and the network-denied OS process
+  Sandbox; in offline mode skip Search/Fetch/Browser explicitly;
+- bound all probes by one total cancellation/timeout signal and settle
+  ephemeral Browser/Fetch/process state;
+- emit one human report or one JSON object with `ready`, `degraded`, or
+  `blocked`, fixed recovery codes, counts, and a self-hash;
+- omit workspace paths, credential names/values, URLs, source/page/process
+  bodies, and raw exceptions from all output.
+
+Threat boundary:
+
+- Doctor is a local preflight, not an Agent, Setup mutator, or credential
+  registrar. It never stores a secret or treats an ambient key as authority;
+- online probes use fixed public targets and existing DNS-pinned/proxy Browser
+  boundaries. The model cannot choose a URL, query, executable, or process
+  command;
+- OS Sandbox unavailability is a non-blocking warning for networking-only
+  readiness because Browser has its own Chromium sandbox. Search, Fetch,
+  Browser, runtime, workspace, or explicitly requested credential failure is a
+  blocker;
+- fixed codes and messages intentionally trade raw provider/OS diagnostics for
+  privacy. Broader interactive remediation belongs in the future Setup flow.
+
+Observed result:
+
+- the dedicated Doctor suite passes five tests covering parsing, hash-bound
+  ready JSON, no state creation, offline skipped probes, degraded exit 0,
+  blocked exit 1, credential/network/Browser recovery codes, missing workspace,
+  cancellation, and path/credential privacy; the focused CLI suite passes
+  17 tests;
+- a clean built offline command returned `degraded` with three explicit skipped
+  online checks and created no `.napier` directory;
+- a clean built online command checked `deepseek/deepseek-v4-flash` and passed
+  runtime, workspace, credential presence, keyless Search, HTML Fetch, and
+  sandboxed Chrome. The current TRAE host denied nested OS process sandboxing,
+  so Doctor truthfully returned `degraded` with only
+  `sandbox_unavailable`; no check failed;
+- neither built report contained the workspace path, credential variable name,
+  credential value, target URL, or response/page body;
+- Architecture passes 904 production source files, 448 test files, and zero
+  cycles. Help and option routing leave `cli-options.ts`, reducing it from 671
+  to 555 lines and maximum function complexity from 42 to 31; shared JSON-line
+  output reduces `cli.ts` from 696 to 682 lines;
+- full TypeScript typechecking passes and the complete regular suite passes
+  2,141 tests: Root 104, CLI 175, Server 183, Web 486, Runtime 1,165, and SDK
+  28;
+- P0 remains in progress pending guided Setup/credential creation,
+  Web/TUI capability status, CAPTCHA/rate-limit/login-wall remediation,
+  broader LSP/DAP/Python diagnostics, five-minute onboarding proof, full
+  Browser interaction/Live/takeover, open-web Research/Security benchmarks,
+  and repeated same-model OMP comparison.
 
 ## Implemented Slice: Research Outcome Benchmark
 
