@@ -61,7 +61,6 @@ import {
   type PlanArtifactDirectoryManifestReceipt,
   type PlanArtifactDirectoryManifestVerification,
   type PlanArtifactFileVerification,
-  type PlanArtifactLedgerEventReceipt,
   type PlanArtifactTextPreviewReceipt,
   previewPlanArtifactDirectoryManifest,
   verifyPlanArtifactFile,
@@ -69,17 +68,9 @@ import {
   verifyPlanArtifactDirectoryManifest,
 } from "./artifact-file-api";
 import { formatApiErrorMessage } from "./api-error";
-import {
-  artifactDirectoryManifestFilename,
-  formatArtifactSizeBytes,
-  projectArtifactDriftCheckAction,
-  projectArtifactManifestActions,
-  projectArtifactManifestEvidence,
-} from "./artifact-manifest-view-model";
-import {
-  artifactDataProfileFilename,
-  projectArtifactDataProfileView,
-} from "./artifact-data-profile-view-model";
+import { artifactDirectoryManifestFilename } from "./artifact-manifest-view-model";
+import { artifactDataProfileFilename } from "./artifact-data-profile-view-model";
+import type { PlanArtifactFileDownloadReceipt } from "./plan-artifact-manifest-types";
 import {
   executionPlanArchiveFilename,
   executionPlanBlueprintFilename,
@@ -98,6 +89,7 @@ import type {
   PlanBlueprintLibraryReceipt,
 } from "./plan-blueprint-library-panel-types";
 import { planCopy } from "./plan-copy";
+import { PlanArtifactManifest } from "./PlanArtifactManifest";
 import { PlanBlueprintLibraryControls } from "./PlanBlueprintLibraryControls";
 import { PlanBlueprintLibraryReceiptView } from "./PlanBlueprintLibraryReceiptView";
 import { PlanBlueprintRecordList } from "./PlanBlueprintRecordList";
@@ -133,7 +125,6 @@ import {
 } from "./plan-blueprint-library-view-model";
 import { listReceiptTrustAnchors } from "./receipt-trust-api";
 import {
-  projectReplanArtifactRoles,
   projectReplanDraftSummary,
   projectReplanHistorySummary,
   projectReplanRecoveryNextAction,
@@ -225,14 +216,7 @@ export default function PlanPanel({
   const [artifactBusyId, setArtifactBusyId] = useState<string>();
   const [artifactError, setArtifactError] = useState<string>();
   const [artifactFileDownloadReceipt, setArtifactFileDownloadReceipt] =
-    useState<
-      PlanArtifactLedgerEventReceipt & {
-        artifactId: string;
-        filename: string;
-        sha256: string;
-        sizeBytes: number;
-      }
-    >();
+    useState<PlanArtifactFileDownloadReceipt>();
   const [artifactFileVerification, setArtifactFileVerification] =
     useState<PlanArtifactFileVerification>();
   const [artifactPreview, setArtifactPreview] =
@@ -2140,769 +2124,55 @@ export default function PlanPanel({
       />
       {plan ? (
         <>
-          {plan.artifacts.length > 0 ? (
-            <section
-              className="artifact-manifest"
-              aria-labelledby="artifact-manifest-title"
-              aria-busy={Boolean(artifactBusyId)}
-            >
-              <header>
-                <h3 id="artifact-manifest-title">{planCopy.artifacts}</h3>
-                <span>{String(plan.artifacts.length).padStart(2, "0")}</span>
-              </header>
-              {plan.artifacts.map((artifact) => {
-                const evidence = projectArtifactManifestEvidence(artifact);
-                const actions = projectArtifactManifestActions(artifact);
-                const replanRoles = projectReplanArtifactRoles(
-                  artifact.id,
-                  latestReplan,
-                );
-                const verifyLabel =
-                  actions.verifyMode === "recheck"
-                    ? planCopy.artifactActions.recheck
-                    : planCopy.artifactActions.verify;
-                const verifyingLabel =
-                  actions.verifyMode === "recheck"
-                    ? planCopy.artifactActions.rechecking
-                    : planCopy.artifactActions.verifying;
-                const driftCheckAction = projectArtifactDriftCheckAction(
-                  artifact,
-                  artifactDriftCheck,
-                );
-                const dataProfileView =
-                  artifactDataProfile?.artifactId === artifact.id
-                    ? projectArtifactDataProfileView(artifactDataProfile)
-                    : undefined;
-                const dataProfileVerification =
-                  artifactDataProfileVerification?.artifactId === artifact.id
-                    ? artifactDataProfileVerification
-                    : undefined;
-                const missingLabel =
-                  actions.missingMode === "drifted"
-                    ? planCopy.artifactActions.markDrifted
-                    : planCopy.artifactActions.markMissing;
-                const markingMissingLabel =
-                  actions.missingMode === "drifted"
-                    ? planCopy.artifactActions.markingDrifted
-                    : planCopy.artifactActions.markingMissing;
-                return (
-                  <article key={artifact.id}>
-                    <header>
-                      <code>{artifact.path}</code>
-                      <div className="plan-entity-status">
-                        <span className="plan-status-badge">
-                          {planCopy.statuses[artifact.status]}
-                        </span>
-                        {replanRoles.length > 0 ? (
-                          <div
-                            className="plan-replan-entity-badges"
-                            aria-label={planCopy.latestReplanImpact}
-                          >
-                            {replanRoles.map((role) => (
-                              <span key={role}>
-                                {planCopy.replanEntityRoles[role]}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    </header>
-                    <p>{artifact.description}</p>
-                    {artifact.evidence ? (
-                      <small>{artifact.evidence}</small>
-                    ) : null}
-                    {evidence.hasEvidence ? (
-                      <dl>
-                        {evidence.digestShort && evidence.digestFull ? (
-                          <div>
-                            <dt>{planCopy.digest}</dt>
-                            <dd>
-                              <code title={evidence.digestFull}>
-                                {evidence.digestShort}
-                              </code>
-                            </dd>
-                          </div>
-                        ) : null}
-                        {evidence.sizeBytesLabel ? (
-                          <div>
-                            <dt>{planCopy.size}</dt>
-                            <dd>{evidence.sizeBytesLabel}</dd>
-                          </div>
-                        ) : null}
-                        {artifact.sourceRunId ? (
-                          <div>
-                            <dt>{planCopy.source}</dt>
-                            <dd>
-                              <code>{shortId(artifact.sourceRunId)}</code>
-                            </dd>
-                          </div>
-                        ) : null}
-                      </dl>
-                    ) : null}
-                    {actions.hasActions ? (
-                      <div className="artifact-actions">
-                        {actions.canProduce ? (
-                          <button
-                            type="button"
-                            aria-label={`${planCopy.artifactActions.produce}: ${artifact.path}`}
-                            disabled={Boolean(artifactBusyId)}
-                            onClick={() =>
-                              void updateArtifact(artifact, "produced")
-                            }
-                          >
-                            {artifactBusyId === `${artifact.id}:produced`
-                              ? planCopy.artifactActions.producing
-                              : planCopy.artifactActions.produce}
-                          </button>
-                        ) : null}
-                        {actions.canPreview ? (
-                          <button
-                            type="button"
-                            aria-label={`${planCopy.artifactActions.preview}: ${artifact.path}`}
-                            disabled={Boolean(artifactBusyId)}
-                            onClick={() => void previewArtifact(artifact)}
-                          >
-                            {artifactBusyId === `${artifact.id}:preview`
-                              ? planCopy.artifactActions.previewing
-                              : planCopy.artifactActions.preview}
-                          </button>
-                        ) : null}
-                        {actions.canProfileData ? (
-                          <button
-                            type="button"
-                            aria-label={`${planCopy.artifactActions.dataProfile}: ${artifact.path}`}
-                            disabled={Boolean(artifactBusyId)}
-                            onClick={() => void previewDataProfile(artifact)}
-                          >
-                            {artifactBusyId === `${artifact.id}:data`
-                              ? planCopy.artifactActions.dataProfiling
-                              : planCopy.artifactActions.dataProfile}
-                          </button>
-                        ) : null}
-                        {actions.canInspectManifest ? (
-                          <button
-                            type="button"
-                            aria-label={`${planCopy.artifactActions.manifest}: ${artifact.path}`}
-                            disabled={Boolean(artifactBusyId)}
-                            onClick={() =>
-                              void previewDirectoryManifest(artifact)
-                            }
-                          >
-                            {artifactBusyId === `${artifact.id}:manifest`
-                              ? planCopy.artifactActions.manifesting
-                              : planCopy.artifactActions.manifest}
-                          </button>
-                        ) : null}
-                        {actions.canDownload ? (
-                          <button
-                            type="button"
-                            aria-label={`${planCopy.artifactActions.download}: ${artifact.path}`}
-                            disabled={Boolean(artifactBusyId)}
-                            onClick={() => void downloadArtifact(artifact)}
-                          >
-                            {artifactBusyId === `${artifact.id}:download`
-                              ? planCopy.artifactActions.downloading
-                              : planCopy.artifactActions.download}
-                          </button>
-                        ) : null}
-                        {actions.canVerifyFileArchive ? (
-                          <label
-                            className="artifact-profile-file-action"
-                            aria-disabled={Boolean(artifactBusyId)}
-                          >
-                            {artifactBusyId === `${artifact.id}:file-verify`
-                              ? planCopy.artifactActions.verifyingFile
-                              : planCopy.artifactActions.verifyFile}
-                            <input
-                              className="fixture-file-input"
-                              type="file"
-                              disabled={Boolean(artifactBusyId)}
-                              aria-label={planCopy.artifactActions.verifyFile}
-                              onChange={(event) => {
-                                const file = event.currentTarget.files?.[0];
-                                event.currentTarget.value = "";
-                                if (file) {
-                                  void verifyArtifactFile(artifact, file);
-                                }
-                              }}
-                            />
-                          </label>
-                        ) : null}
-                        {actions.canVerify ? (
-                          <button
-                            type="button"
-                            aria-label={`${verifyLabel}: ${artifact.path}`}
-                            disabled={Boolean(artifactBusyId)}
-                            onClick={() =>
-                              void updateArtifact(artifact, "verified")
-                            }
-                          >
-                            {artifactBusyId === `${artifact.id}:verified`
-                              ? verifyingLabel
-                              : verifyLabel}
-                          </button>
-                        ) : null}
-                        {actions.canCheckDrift ? (
-                          <button
-                            type="button"
-                            aria-label={`${planCopy.artifactActions.checkDrift}: ${artifact.path}`}
-                            disabled={Boolean(artifactBusyId)}
-                            onClick={() => void checkArtifactDrift(artifact)}
-                          >
-                            {artifactBusyId === `${artifact.id}:drift-check`
-                              ? planCopy.artifactActions.checkingDrift
-                              : planCopy.artifactActions.checkDrift}
-                          </button>
-                        ) : null}
-                        {actions.canMarkMissing ? (
-                          <button
-                            type="button"
-                            aria-label={`${missingLabel}: ${artifact.path}`}
-                            disabled={Boolean(artifactBusyId)}
-                            onClick={() =>
-                              void updateArtifact(artifact, "missing")
-                            }
-                          >
-                            {artifactBusyId === `${artifact.id}:missing`
-                              ? markingMissingLabel
-                              : missingLabel}
-                          </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    {artifactFileDownloadReceipt?.artifactId === artifact.id ? (
-                      <div
-                        className="artifact-data-profile-verification status-valid"
-                        role="status"
-                      >
-                        <strong>{planCopy.artifactActions.download}</strong>
-                        <small>
-                          {planCopy.digest}:{" "}
-                          <code title={artifactFileDownloadReceipt.sha256}>
-                            {artifactFileDownloadReceipt.sha256.slice(0, 16)}
-                          </code>
-                          {" / "}
-                          {planCopy.size}:{" "}
-                          {formatArtifactSizeBytes(
-                            artifactFileDownloadReceipt.sizeBytes,
-                          )}
-                          {" / "}
-                          {artifactFileDownloadReceipt.filename}
-                        </small>
-                        <PlanArtifactLedgerReceiptLine
-                          receipt={artifactFileDownloadReceipt}
-                        />
-                      </div>
-                    ) : null}
-                    {artifactFileVerification?.artifactId === artifact.id ? (
-                      <div
-                        className={`artifact-data-profile-verification status-${artifactFileVerification.verificationStatus}`}
-                        role="status"
-                      >
-                        <strong>
-                          {
-                            planCopy.artifactActions.fileVerificationStatuses[
-                              artifactFileVerification.verificationStatus
-                            ]
-                          }
-                        </strong>
-                        <small>
-                          {planCopy.expected}:{" "}
-                          <code title={artifactFileVerification.expectedSha256}>
-                            {artifactFileVerification.expectedSha256.slice(
-                              0,
-                              16,
-                            )}
-                          </code>
-                          {" / "}
-                          {planCopy.observed}:{" "}
-                          <code title={artifactFileVerification.observedSha256}>
-                            {artifactFileVerification.observedSha256.slice(
-                              0,
-                              16,
-                            )}
-                          </code>
-                        </small>
-                        <small>
-                          {planCopy.size}:{" "}
-                          {formatArtifactSizeBytes(
-                            artifactFileVerification.expectedSizeBytes,
-                          )}
-                          {" -> "}
-                          {formatArtifactSizeBytes(
-                            artifactFileVerification.observedSizeBytes,
-                          )}
-                        </small>
-                        <PlanArtifactLedgerReceiptLine
-                          receipt={artifactFileVerification}
-                        />
-                        {artifactFileVerification.diagnostics.length > 0 ? (
-                          <small>
-                            {artifactFileVerification.diagnostics.join(", ")}
-                          </small>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    {artifactPreview?.artifactId === artifact.id ? (
-                      <div
-                        className="artifact-preview"
-                        role="region"
-                        aria-label={planCopy.artifactActions.previewTitle}
-                      >
-                        <header>
-                          <strong>
-                            {planCopy.artifactActions.previewTitle}
-                          </strong>
-                          <button
-                            type="button"
-                            aria-label={planCopy.artifactActions.closePreview}
-                            onClick={() => setArtifactPreview(undefined)}
-                          >
-                            {planCopy.artifactActions.closePreview}
-                          </button>
-                        </header>
-                        <small>
-                          {planCopy.digest}:{" "}
-                          <code title={artifactPreview.textSha256}>
-                            {artifactPreview.textSha256.slice(0, 16)}
-                          </code>
-                          {" / "}
-                          {planCopy.size}:{" "}
-                          {formatArtifactSizeBytes(artifactPreview.sizeBytes)}
-                          {" / "}
-                          {planCopy.lineCount}: {artifactPreview.lineCount}
-                        </small>
-                        <PlanArtifactLedgerReceiptLine
-                          receipt={artifactPreview}
-                        />
-                        <pre>{artifactPreview.text}</pre>
-                      </div>
-                    ) : null}
-                    {artifactDataProfile?.artifactId === artifact.id &&
-                    dataProfileView ? (
-                      <div
-                        className="artifact-preview artifact-data-profile"
-                        role="region"
-                        aria-label={planCopy.artifactActions.dataProfileTitle}
-                      >
-                        <header>
-                          <strong>
-                            {planCopy.artifactActions.dataProfileTitle}
-                          </strong>
-                          <button
-                            type="button"
-                            aria-label={
-                              planCopy.artifactActions.downloadDataProfile
-                            }
-                            onClick={() =>
-                              downloadJson(
-                                artifactDataProfile,
-                                artifactDataProfileFilename(
-                                  artifactDataProfile,
-                                ),
-                              )
-                            }
-                          >
-                            {planCopy.artifactActions.downloadDataProfile}
-                          </button>
-                          <label
-                            className="artifact-profile-file-action"
-                            aria-disabled={Boolean(artifactBusyId)}
-                          >
-                            {artifactBusyId === `${artifact.id}:data-verify`
-                              ? planCopy.artifactActions.verifyingDataProfile
-                              : planCopy.artifactActions.verifyDataProfile}
-                            <input
-                              className="fixture-file-input"
-                              type="file"
-                              accept="application/json,.json"
-                              disabled={Boolean(artifactBusyId)}
-                              aria-label={
-                                planCopy.artifactActions.verifyDataProfile
-                              }
-                              onChange={(event) => {
-                                const file = event.currentTarget.files?.[0];
-                                event.currentTarget.value = "";
-                                if (file) {
-                                  void verifyDataProfileFile(artifact, file);
-                                }
-                              }}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            aria-label={planCopy.artifactActions.closePreview}
-                            onClick={() => {
-                              setArtifactDataProfile(undefined);
-                              setArtifactDataProfileVerification(undefined);
-                            }}
-                          >
-                            {planCopy.artifactActions.closePreview}
-                          </button>
-                        </header>
-                        <small>
-                          {planCopy.artifactActions.dataFormat}:{" "}
-                          {dataProfileView.formatLabel}
-                          {" / "}
-                          {planCopy.artifactActions.rows}:{" "}
-                          {artifactDataProfile.rowCount}
-                          {" / "}
-                          {planCopy.artifactActions.columns}:{" "}
-                          {artifactDataProfile.columnCount}
-                          {" / "}
-                          {planCopy.artifactActions.truncated}:{" "}
-                          {String(artifactDataProfile.truncated)}
-                        </small>
-                        <small>
-                          {planCopy.artifactActions.columnSet}:{" "}
-                          <code title={artifactDataProfile.columnSetSha256}>
-                            {dataProfileView.columnSetShortSha256}
-                          </code>
-                          {" / "}
-                          {planCopy.artifactActions.sample}:{" "}
-                          <code title={artifactDataProfile.sampleSha256}>
-                            {dataProfileView.sampleShortSha256}
-                          </code>
-                        </small>
-                        <PlanArtifactLedgerReceiptLine
-                          receipt={artifactDataProfile}
-                        />
-                        {dataProfileVerification ? (
-                          <div
-                            className={`artifact-data-profile-verification status-${dataProfileVerification.verificationStatus}`}
-                          >
-                            <strong>
-                              {
-                                planCopy.artifactActions
-                                  .dataProfileVerificationStatuses[
-                                  dataProfileVerification.verificationStatus
-                                ]
-                              }
-                            </strong>
-                            <small>
-                              {planCopy.artifactActions.observed}:{" "}
-                              <code
-                                title={dataProfileVerification.observedSha256}
-                              >
-                                {dataProfileVerification.observedSha256.slice(
-                                  0,
-                                  16,
-                                )}
-                              </code>
-                              {" / "}
-                              {planCopy.artifactActions.sample}:{" "}
-                              <code
-                                title={
-                                  dataProfileVerification.observedSampleSha256
-                                }
-                              >
-                                {dataProfileVerification.observedSampleSha256.slice(
-                                  0,
-                                  16,
-                                )}
-                              </code>
-                            </small>
-                            <PlanArtifactLedgerReceiptLine
-                              receipt={dataProfileVerification}
-                            />
-                            {dataProfileVerification.diagnostics.length > 0 ? (
-                              <small>
-                                {dataProfileVerification.diagnostics.join(", ")}
-                              </small>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        {dataProfileView.hasColumns ? (
-                          <div className="artifact-data-table">
-                            <table>
-                              <caption>
-                                {planCopy.artifactActions.sampleRowsCaption}
-                              </caption>
-                              <thead>
-                                <tr>
-                                  {dataProfileView.columns.map((column) => (
-                                    <th
-                                      key={column.id}
-                                      scope="col"
-                                      title={column.label}
-                                    >
-                                      {column.label}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {dataProfileView.hasSampleRows ? (
-                                  dataProfileView.rows.map((row) => (
-                                    <tr key={row.id}>
-                                      {row.cells.map((cell) => (
-                                        <td key={cell.id} title={cell.value}>
-                                          {cell.value}
-                                        </td>
-                                      ))}
-                                    </tr>
-                                  ))
-                                ) : (
-                                  <tr>
-                                    <td
-                                      className="artifact-data-table-empty"
-                                      colSpan={dataProfileView.columns.length}
-                                    >
-                                      {planCopy.artifactActions.noRows}
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-                        ) : (
-                          <small>{planCopy.artifactActions.noRows}</small>
-                        )}
-                      </div>
-                    ) : null}
-                    {artifactDirectoryManifest?.artifactId === artifact.id ? (
-                      <div
-                        className="artifact-preview artifact-directory-manifest"
-                        role="region"
-                        aria-label={planCopy.artifactActions.manifestTitle}
-                      >
-                        <header>
-                          <strong>
-                            {planCopy.artifactActions.manifestTitle}
-                          </strong>
-                          <button
-                            type="button"
-                            aria-label={
-                              planCopy.artifactActions.downloadManifest
-                            }
-                            onClick={() =>
-                              downloadJson(
-                                artifactDirectoryManifest,
-                                artifactDirectoryManifestFilename(
-                                  artifactDirectoryManifest,
-                                ),
-                              )
-                            }
-                          >
-                            {planCopy.artifactActions.downloadManifest}
-                          </button>
-                          <label
-                            className="artifact-profile-file-action"
-                            aria-disabled={Boolean(artifactBusyId)}
-                          >
-                            {artifactBusyId === `${artifact.id}:manifest-verify`
-                              ? planCopy.artifactActions.verifyingManifest
-                              : planCopy.artifactActions.verifyManifest}
-                            <input
-                              className="fixture-file-input"
-                              type="file"
-                              accept="application/json,.json"
-                              disabled={Boolean(artifactBusyId)}
-                              aria-label={
-                                planCopy.artifactActions.verifyManifest
-                              }
-                              onChange={(event) => {
-                                const file = event.currentTarget.files?.[0];
-                                event.currentTarget.value = "";
-                                if (file) {
-                                  void verifyDirectoryManifestFile(
-                                    artifact,
-                                    file,
-                                  );
-                                }
-                              }}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            aria-label={planCopy.artifactActions.closePreview}
-                            onClick={() => {
-                              setArtifactDirectoryManifest(undefined);
-                              setArtifactDirectoryManifestVerification(
-                                undefined,
-                              );
-                            }}
-                          >
-                            {planCopy.artifactActions.closePreview}
-                          </button>
-                        </header>
-                        <small>
-                          {planCopy.digest}:{" "}
-                          <code title={artifactDirectoryManifest.sha256}>
-                            {artifactDirectoryManifest.sha256.slice(0, 16)}
-                          </code>
-                          {" / "}
-                          {planCopy.size}:{" "}
-                          {formatArtifactSizeBytes(
-                            artifactDirectoryManifest.sizeBytes,
-                          )}
-                          {" / "}
-                          {planCopy.artifactActions.entries}:{" "}
-                          {artifactDirectoryManifest.entryCount.toLocaleString()}
-                          {" / "}
-                          {planCopy.artifactActions.files}:{" "}
-                          {artifactDirectoryManifest.fileCount.toLocaleString()}
-                          {" / "}
-                          {planCopy.artifactActions.directories}:{" "}
-                          {artifactDirectoryManifest.directoryCount.toLocaleString()}
-                        </small>
-                        <PlanArtifactLedgerReceiptLine
-                          receipt={artifactDirectoryManifest}
-                        />
-                        {artifactDirectoryManifestVerification?.artifactId ===
-                        artifact.id ? (
-                          <div
-                            className={`artifact-data-profile-verification status-${artifactDirectoryManifestVerification.verificationStatus}`}
-                          >
-                            <strong>
-                              {
-                                planCopy.artifactActions
-                                  .manifestVerificationStatuses[
-                                  artifactDirectoryManifestVerification
-                                    .verificationStatus
-                                ]
-                              }
-                            </strong>
-                            <small>
-                              {planCopy.artifactActions.observed}:{" "}
-                              <code
-                                title={
-                                  artifactDirectoryManifestVerification.observedSha256
-                                }
-                              >
-                                {artifactDirectoryManifestVerification.observedSha256.slice(
-                                  0,
-                                  16,
-                                )}
-                              </code>
-                              {" / "}
-                              {planCopy.artifactActions.entries}:{" "}
-                              <code
-                                title={
-                                  artifactDirectoryManifestVerification.observedEntrySetSha256
-                                }
-                              >
-                                {artifactDirectoryManifestVerification.observedEntrySetSha256.slice(
-                                  0,
-                                  16,
-                                )}
-                              </code>
-                            </small>
-                            <PlanArtifactLedgerReceiptLine
-                              receipt={artifactDirectoryManifestVerification}
-                            />
-                            {artifactDirectoryManifestVerification.diagnostics
-                              .length > 0 ? (
-                              <small>
-                                {artifactDirectoryManifestVerification.diagnostics.join(
-                                  ", ",
-                                )}
-                              </small>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        <ol>
-                          {artifactDirectoryManifest.entries.map((entry) => (
-                            <li key={`${entry.kind}:${entry.path}`}>
-                              <code>{entry.path}</code>
-                              <span>{entry.kind}</span>
-                              {entry.sha256 ? (
-                                <code title={entry.sha256}>
-                                  {entry.sha256.slice(0, 16)}
-                                </code>
-                              ) : null}
-                              {entry.sizeBytes !== undefined ? (
-                                <span>
-                                  {formatArtifactSizeBytes(entry.sizeBytes)}
-                                </span>
-                              ) : null}
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-                    ) : null}
-                    {artifactDriftCheck?.artifactId === artifact.id ? (
-                      <div
-                        className={`artifact-drift-check artifact-drift-check--${artifactDriftCheck.result}`}
-                        role="status"
-                      >
-                        <strong>
-                          {planCopy.artifactActions.driftCheckTitle}
-                        </strong>
-                        <span>
-                          {
-                            planCopy.artifactActions.driftResults[
-                              artifactDriftCheck.result
-                            ]
-                          }
-                        </span>
-                        <small>
-                          {planCopy.expected}:{" "}
-                          <code title={artifactDriftCheck.expectedSha256}>
-                            {artifactDriftCheck.expectedSha256.slice(0, 16)}
-                          </code>
-                          {artifactDriftCheck.observedSha256 ? (
-                            <>
-                              {" / "}
-                              {planCopy.observed}:{" "}
-                              <code title={artifactDriftCheck.observedSha256}>
-                                {artifactDriftCheck.observedSha256.slice(0, 16)}
-                              </code>
-                            </>
-                          ) : null}
-                          {artifactDriftCheck.sizeBytes !== undefined ? (
-                            <>
-                              {" / "}
-                              {planCopy.size}:{" "}
-                              {formatArtifactSizeBytes(
-                                artifactDriftCheck.sizeBytes,
-                              )}
-                            </>
-                          ) : null}
-                        </small>
-                        <PlanArtifactLedgerReceiptLine
-                          receipt={artifactDriftCheck}
-                        />
-                        {driftCheckAction.hasAction ? (
-                          <div className="artifact-drift-check__actions">
-                            <button
-                              type="button"
-                              aria-label={`${
-                                driftCheckAction.canRecheck
-                                  ? verifyLabel
-                                  : missingLabel
-                              }: ${artifact.path}`}
-                              disabled={Boolean(artifactBusyId)}
-                              onClick={() =>
-                                void updateArtifact(
-                                  artifact,
-                                  driftCheckAction.nextAction ?? "missing",
-                                )
-                              }
-                            >
-                              {artifactBusyId ===
-                              `${artifact.id}:${driftCheckAction.nextAction}`
-                                ? driftCheckAction.canRecheck
-                                  ? verifyingLabel
-                                  : markingMissingLabel
-                                : driftCheckAction.canRecheck
-                                  ? verifyLabel
-                                  : missingLabel}
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              })}
-              {artifactError ? (
-                <p className="artifact-error" role="alert">
-                  {artifactError}
-                </p>
-              ) : null}
-            </section>
-          ) : null}
+          <PlanArtifactManifest
+            artifacts={plan.artifacts}
+            latestReplan={latestReplan}
+            state={{
+              busyId: artifactBusyId,
+              error: artifactError,
+              fileDownload: artifactFileDownloadReceipt,
+              fileVerification: artifactFileVerification,
+              textPreview: artifactPreview,
+              dataProfile: artifactDataProfile,
+              dataProfileVerification: artifactDataProfileVerification,
+              directoryManifest: artifactDirectoryManifest,
+              directoryManifestVerification:
+                artifactDirectoryManifestVerification,
+              driftCheck: artifactDriftCheck,
+            }}
+            actions={{
+              onUpdate: (artifact, action) =>
+                void updateArtifact(artifact, action),
+              onDownload: (artifact) => void downloadArtifact(artifact),
+              onVerifyFile: (artifact, file) =>
+                void verifyArtifactFile(artifact, file),
+              onPreviewText: (artifact) => void previewArtifact(artifact),
+              onCloseTextPreview: () => setArtifactPreview(undefined),
+              onProfileData: (artifact) => void previewDataProfile(artifact),
+              onDownloadDataProfile: (profile) =>
+                downloadJson(profile, artifactDataProfileFilename(profile)),
+              onVerifyDataProfile: (artifact, file) =>
+                void verifyDataProfileFile(artifact, file),
+              onCloseDataProfile: () => {
+                setArtifactDataProfile(undefined);
+                setArtifactDataProfileVerification(undefined);
+              },
+              onInspectDirectoryManifest: (artifact) =>
+                void previewDirectoryManifest(artifact),
+              onDownloadDirectoryManifest: (manifest) =>
+                downloadJson(
+                  manifest,
+                  artifactDirectoryManifestFilename(manifest),
+                ),
+              onVerifyDirectoryManifest: (artifact, file) =>
+                void verifyDirectoryManifestFile(artifact, file),
+              onCloseDirectoryManifest: () => {
+                setArtifactDirectoryManifest(undefined);
+                setArtifactDirectoryManifestVerification(undefined);
+              },
+              onCheckDrift: (artifact) => void checkArtifactDrift(artifact),
+            }}
+          />
 
           <button
             className="plan-continue"
@@ -2932,31 +2202,6 @@ function parseModelKey(value: string): { provider: string; id: string } {
     provider: value.slice(0, separator),
     id: value.slice(separator + 1),
   };
-}
-
-function shortId(value: string): string {
-  return value.length > 15
-    ? `${value.slice(0, 7)}...${value.slice(-5)}`
-    : value;
-}
-
-function PlanArtifactLedgerReceiptLine({
-  receipt,
-}: {
-  receipt: PlanArtifactLedgerEventReceipt;
-}) {
-  return (
-    <small>
-      {planCopy.receipt}:{" "}
-      <code title={receipt.ledgerEventId}>
-        #{String(receipt.ledgerEventSeq).padStart(3, "0")}
-      </code>
-      {" / "}
-      <code title={receipt.ledgerEventSha256}>
-        {receipt.ledgerEventSha256.slice(0, 16)}
-      </code>
-    </small>
-  );
 }
 
 function PlanBlueprintLibraryCard({

@@ -4091,6 +4091,13 @@ write:management-openapi-compatibility` now emits
 
 ### Changed
 
+- Extracted Plan Artifact Manifest controls, previews, receipts, verification
+  details, and drift follow-up rendering into bounded Web components. API
+  requests, downloads, and state transitions remain in `PlanPanel.tsx`; a
+  typed state/action boundary and pure per-Artifact projection prevent receipts
+  from leaking across Artifact cards. The panel fell from 3,183 to 2,428 lines
+  and maximum function complexity from 59 to 57, with focused ownership and
+  action-projection tests.
 - Made the compatibility `Thread.currentRunId` projection deterministic for
   same-millisecond concurrent Workflow Runs by using persisted Thread Run order
   after start time instead of random Run ID ordering.

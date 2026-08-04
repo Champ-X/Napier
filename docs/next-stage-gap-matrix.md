@@ -29,8 +29,12 @@ Audit date: 2026-08-04
   while retaining API orchestration and outer docket order. Receipt header
   projection plus replay/outcome/selection/policy detail rendering now occupy
   bounded modules too, reducing the panel to 3,183 lines and maximum function
-  complexity 59. The Plan lazy chunk is 121.52 kB and the 118.21 kB main entry
-  remains unchanged.
+  complexity 59. Artifact Manifest controls, previews, receipts, and drift
+  follow-up rendering now occupy a typed component boundary with per-Artifact
+  receipt projection, reducing the panel again to 2,428 lines and maximum
+  function complexity 57 while leaving API and state orchestration in the
+  panel. The Plan lazy chunk is 124.71 kB and the 118.21 kB main entry remains
+  unchanged.
 - General host shell execution remains unavailable.
 
 ## Priority Matrix
@@ -422,9 +426,9 @@ Observed result:
   OS Sandbox evidence and has no isomorphic OMP score;
 - all restart, offline-wait, current budget, Goal no-progress, and Process
   recovery artifacts are in the 118-artifact release set
-  `ca1977e51fbd9334...`;
-- complete `npm run check` passes 2,098 tests: 104 root, 168 CLI, 183 Server,
-  478 Web, 1,137 Runtime, and 28 SDK.
+  `390d817a8d3f8df7...`;
+- complete `npm run check` passes 2,102 tests: 104 root, 168 CLI, 183 Server,
+  482 Web, 1,137 Runtime, and 28 SDK.
 
 ## Implemented Slice: Research Outcome Benchmark
 

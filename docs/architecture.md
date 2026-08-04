@@ -2142,6 +2142,16 @@ continues to own receipt creation and API orchestration, but falls to 3,183
 lines and maximum function complexity 59. Five focused tests bind core and
 policy projection semantics. The additional module boundaries increase the
 Plan lazy chunk to 121.52 kB; the 118.21 kB main entry remains unchanged.
+Plan Artifact Manifest action controls, file receipts, text/data/directory
+previews, verification receipts, and drift follow-up rendering now use bounded
+components behind `PlanArtifactManifest.tsx`. A typed callback/state boundary
+keeps API requests, downloads, and state transitions in `PlanPanel.tsx`, while
+the pure `plan-artifact-manifest-model.ts` projection isolates every receipt by
+Artifact ID before rendering. Four focused tests bind receipt ownership,
+verified-artifact action labels, drift follow-up scope, and source identity
+projection. This lowers `PlanPanel.tsx` to 2,428 lines and maximum function
+complexity 57 without introducing a second Artifact execution path. The Plan
+lazy chunk is 124.71 kB; the 118.21 kB main entry remains unchanged.
 
 An open Operator Decision is a separate lazy Workbench docket between the
 Ledger and composer. It owns accessible option selection, custom answer,
@@ -2203,7 +2213,7 @@ hashing the 110 Benchmark files, the gate performs full semantic verification
 for sixteen Series across twelve cases. It stores only artifact kinds,
 repo-relative paths, SHA-256 values, validity booleans, package name/version,
 and a canonical artifact-set digest. The current receipt contains 118 artifacts
-and binds set SHA-256 `ca1977e51fbd9334...`.
+and binds set SHA-256 `390d817a8d3f8df7...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
@@ -5037,7 +5047,7 @@ reconstructs reopen runtime state, and rejects a forged final hash even after
 outer Ledger hashes are recomputed. The opt-in direct adapter is explicitly
 recorded as `trusted_outer_test`; only the default platform adapter constitutes
 an OS Sandbox attempt. The retained five-trial Series passes in 104-121 ms per
-trial, and the complete repository gate passes 2,098 tests.
+trial, and the complete repository gate passes 2,102 tests.
 
 `WorkspaceProcessManager` is a Capability Plane service outside `LocalStore`
 and the Server router. The Work Ledger remains authoritative across restarts:
