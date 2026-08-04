@@ -82,7 +82,7 @@ export async function runGoalNoProgressBenchmark(
       systemPrompt: benchmarkCase.systemPrompt,
       enabledTools: [],
       runLimits: {
-        maxTurns: 4,
+        maxTurns: 8,
         maxTotalTokens: 250_000,
         maxCostUsd: 10,
         timeoutMs: benchmarkCase.timeoutMs,
