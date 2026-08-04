@@ -81,6 +81,11 @@ describe("release artifacts audit", () => {
       "long-horizon-benchmark-ledger-1",
       "long-horizon-benchmark-result-2",
       "long-horizon-benchmark-ledger-2",
+      "long-horizon-multi-restart-benchmark-series",
+      "long-horizon-multi-restart-benchmark-result-1",
+      "long-horizon-multi-restart-benchmark-ledger-1",
+      "long-horizon-multi-restart-benchmark-result-2",
+      "long-horizon-multi-restart-benchmark-ledger-2",
       "research-benchmark-series",
       "research-benchmark-result-1",
       "research-benchmark-ledger-1",
@@ -379,6 +384,37 @@ describe("release artifacts audit", () => {
         "long-horizon benchmark series: series_trial_invalid",
         "long-horizon benchmark trial 1: result_shape_invalid",
         "long-horizon benchmark trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
+  it("fails when the second retained Runtime restart is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const seriesName = (await readdir(benchmarkRoot)).find((name) =>
+      name.startsWith(
+        "napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-75a221bd99a84710",
+      ),
+    );
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const ledgerPath = path.join(
+      benchmarkRoot,
+      series.trials[0].ledgerFileName,
+    );
+    const ledger = JSON.parse(await readFile(ledgerPath, "utf8"));
+    ledger.workflow.restartEvents[1].payload.decisionSha256 = "0".repeat(64);
+    await writeJson(ledgerPath, ledger);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "long-horizon multi-restart benchmark series: series_trial_invalid",
+        "long-horizon multi-restart benchmark trial 1: ledger:ledger_restart_evidence_invalid",
+        "long-horizon multi-restart benchmark trial 1: trial_binding_mismatch",
       ]),
     );
   });

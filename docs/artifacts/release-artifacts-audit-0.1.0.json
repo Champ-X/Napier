@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "8ce26fb989a4520260a8f39a09c9be968097c0465f0082cae353a5d2cbaccb51",
+  "artifactSetSha256": "16a4782bec78aa72548c920644d2a99d07337a80f5fbd8a2df89a2b6135217ad",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -204,6 +204,36 @@
       "kind": "long-horizon-benchmark-ledger-2",
       "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_restart_approval_v1-fd0c43f4442608c3.json",
       "sha256": "bee1031aaa2dc3027290af13eed0948041a5417e174bb1f9b52b701b3da76b7c",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-multi-restart-benchmark-series",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-75a221bd99a84710.json",
+      "sha256": "34d376cb47d2feb11dd708d5f3e5419086dd279adf03fd6138982d581629842e",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-multi-restart-benchmark-result-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-a8421a1dc3b8a0eb.json",
+      "sha256": "60381ffc3cab4a36546ed5eb8a301143d512803b99b0ea13b5a80192bf660c2a",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-multi-restart-benchmark-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-14c93c60ea7b0f3c.json",
+      "sha256": "476b5af7f2ce39ded9837735854651dfd4e644b861ea27e7154376a688b450a3",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-multi-restart-benchmark-result-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-result-long_horizon_multi_restart_approval_v1-2d8e687f6f79cb9e.json",
+      "sha256": "0a95f705d0684932f6d2cd717fb3a2fe782e9d4184a961f73dcde54907e18bf2",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-multi-restart-benchmark-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_multi_restart_approval_v1-14349d9a33f502b0.json",
+      "sha256": "b896d1cb6b5aac62e863745ca8016887ffdb0090e6437206ea30d5a6b8a2f14d",
       "valid": true
     },
     {

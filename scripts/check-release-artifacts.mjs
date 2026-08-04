@@ -49,6 +49,8 @@ const defaultSecurityBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-security_sqlite_prompt_injection_v1-feaceb9d2fee8ab8.json";
 const defaultLongHorizonBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_restart_approval_v1-6ae542a21fc5f485.json";
+const defaultMultiRestartBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-75a221bd99a84710.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json";
 const defaultUxBenchmarkSeriesPath =
@@ -89,6 +91,9 @@ export async function auditReleaseArtifacts(options = {}) {
   const longHorizonBenchmarkSeriesPath =
     options.longHorizonBenchmarkSeriesPath ??
     defaultLongHorizonBenchmarkSeriesPath;
+  const multiRestartBenchmarkSeriesPath =
+    options.multiRestartBenchmarkSeriesPath ??
+    defaultMultiRestartBenchmarkSeriesPath;
   const researchBenchmarkSeriesPath =
     options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
   const uxBenchmarkSeriesPath =
@@ -214,6 +219,15 @@ export async function auditReleaseArtifacts(options = {}) {
     artifactReferences: workflowBenchmarkSeriesArtifactReferences,
     verifySeries: verifyWorkflowBenchmarkSeries,
   });
+  const multiRestartBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
+    repoRoot,
+    seriesPath: multiRestartBenchmarkSeriesPath,
+    errors,
+    artifactKindPrefix: "long-horizon-multi-restart-benchmark",
+    diagnosticLabel: "long-horizon multi-restart benchmark",
+    artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+    verifySeries: verifyWorkflowBenchmarkSeries,
+  });
   const researchBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: researchBenchmarkSeriesPath,
@@ -308,6 +322,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...dataFrameBenchmarkArtifacts,
     ...securityBenchmarkArtifacts,
     ...longHorizonBenchmarkArtifacts,
+    ...multiRestartBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
     ...uxBenchmarkArtifacts,
   ];
@@ -557,6 +572,11 @@ function parseCliOptions(args) {
     }
     if (arg === "--long-horizon-benchmark-series-path") {
       options.longHorizonBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--multi-restart-benchmark-series-path") {
+      options.multiRestartBenchmarkSeriesPath = readCliValue(args, index, arg);
       index += 1;
       continue;
     }

@@ -1476,6 +1476,31 @@ Manifest, durable Approval, or completed-Map reuse contract, so this capability
 case is recorded as not directly comparable rather than an OMP failure. The
 same-task Coding comparison remains the cross-executor evidence.
 
+The schema-6 `long_horizon_multi_restart_approval_v1` case extends the same
+graph across two complete Runtime restarts. The first reopen verifies the
+pending Approval and persists its answer. The runner then exports another
+valid Replay, closes the Runtime again, verifies the exact answered decision
+after the second reopen, and only then resumes Reduce.
+
+```bash
+npm run bench:workflow -- \
+  --case benchmarks/long-horizon/multi-restart-approval-map-reduce-v1 \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 2
+```
+
+The retained
+[two-trial multi-restart series](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_multi_restart_approval_v1-75a221bd99a84710.json)
+passed 2/2 trials in 2.831–2.859 seconds. Each trial retained two individually
+receipt-bound restart events, reused all three Map Runs, and recorded one
+answered/continued pair with zero model responses after the first restart.
+Mean cost was `$0.0019834108`; mean input/output tokens were
+13,457.5/339.5. One earlier live attempt ended before the first Approval gate
+and produced no scored artifact, exposing a remaining runner gap for pre-gate
+failure capture. The retained retry proves the repeated-recovery invariants
+but is not evidence of zero model-side variance.
+
 ### Research Outcome Benchmark
 
 The fixed `research_aurora_contradiction_v1` case injects three immutable
@@ -5473,9 +5498,9 @@ checked-in manifest is stale. `npm run write:release-artifacts` writes a
 top-level `napier.release-artifacts-audit` receipt that binds the package-lock
 receipt, runtime-environment receipt, product-performance baseline, management
 OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
-Web dist manifest, and the semantically verified Workflow, Data, Security,
-Long-horizon, and Research Benchmark Series plus all ten Result/Ledger pairs
-by SHA-256;
+Web dist manifest, and the semantically verified Workflow, Data, DataFrame,
+Security, single- and multi-restart Long-horizon, Research, and UX Benchmark
+Series plus all sixteen Result/Ledger pairs by SHA-256;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
@@ -5483,8 +5508,9 @@ tests before running workspace suites, so package-lock drift, runtime version
 drift, missing runtime components, OpenAPI route drift, manifest drift, extra
 dist files, malformed manifests, stale receipts, compatibility regressions,
 aggregate artifact drift, Workflow Benchmark trial substitution/tampering, and
-Data/Security/Long-horizon/Research Benchmark evidence tampering and
-entry-budget regressions are covered without mutating the real build output.
+Data/Security/single- or multi-restart Long-horizon/Research Benchmark evidence
+tampering and entry-budget regressions are covered without mutating the real
+build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with
 relative paths, file counts, main-entry budget status, the manifest SHA-256,
 the canonical dist-content SHA-256, and any errors for CI capture. Trace, Plan,

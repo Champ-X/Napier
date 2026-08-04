@@ -1878,9 +1878,25 @@ performed only model-free Reduce afterward; mean input/output usage was
 13,652.5/467 tokens. Oh My Pi v17.2.1 has resumable sessions but no equivalent
 typed Workflow Manifest, durable Approval, or completed-Map reuse protocol.
 The case is therefore capability evidence with cross-executor comparability
-marked unsupported, not a synthetic OMP loss. This case does not yet cover
-multiple restarts, long wall-clock waits, budget exhaustion, no-progress
-detection, or recovery from uncertain write side effects.
+marked unsupported, not a synthetic OMP loss.
+
+Schema 6 adds `long_horizon_multi_restart_approval_v1`. After the first reopen
+verifies the pending decision, the runner persists the answer, exports and
+verifies a second Replay checkpoint, shuts down again, and verifies the exact
+answered decision after a second service reconstruction. The Ledger keeps the
+first `restartEvent` as the recovery boundary and adds a sorted
+`restartEvents` set. Every retained restart must have exact payload shape,
+contiguous pre-restart event count, Plan/Manifest/Map binding, a matching event
+receipt, and complete coverage of all restart receipts.
+
+The retained DeepSeek schema-6 Series passed 2/2 in 2.831–2.859 seconds at a
+mean cost of `$0.0019834108`; mean input/output usage was 13,457.5/339.5.
+Every trial created three Runtime instances, retained two restart events,
+recovered one pending then answered Approval, reused all three Map Runs, and
+had zero model responses after the first restart. One earlier live execution
+ended before the gate and was not scored, so pre-gate failure capture remains
+an explicit Benchmark runner gap. Long wall-clock waits, budget exhaustion,
+no-progress detection, and uncertain write recovery also remain.
 
 ### Research Outcome Benchmark
 
@@ -2060,12 +2076,13 @@ dist evidence.
 The top-level release artifact audit binds the package-lock receipt,
 runtime-environment receipt, management OpenAPI artifact, management OpenAPI
 compatibility fixture, product-performance baseline, Web dist receipt, Web
-dist manifest, and retained Workflow, Data, Security, Long-horizon, and
-Research Benchmark Series plus all ten Result/Ledger pairs into one
-`napier.release-artifacts-audit` receipt. Before hashing the 25 Benchmark
-files, the gate performs full Series and trial semantic verification for all
-five cases. It stores only artifact kinds, repo-relative paths, SHA-256 values,
-validity booleans, package name/version, and a canonical artifact-set digest.
+dist manifest, and retained Workflow, Data, DataFrame, Security, single- and
+multi-restart Long-horizon, Research, and UX Benchmark Series plus all sixteen
+Result/Ledger pairs into one `napier.release-artifacts-audit` receipt. Before
+hashing the 40 Benchmark files, the gate performs full Series and trial
+semantic verification for all eight cases. It stores only artifact kinds,
+repo-relative paths, SHA-256 values, validity booleans, package name/version,
+and a canonical artifact-set digest.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
