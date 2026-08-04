@@ -29,6 +29,7 @@ interface BudgetEvaluationInput {
   credentialLeakDetected: boolean;
   expectedBudgetReason?: "tokens";
   expectedBudgetTokenLimit?: number;
+  expectedBudgetExhaustedRunCount?: number;
   budgetExhaustedRunCount?: number;
   budgetReasonMatch?: boolean;
   budgetLimitMatch?: boolean;
@@ -43,7 +44,7 @@ export function workflowBenchmarkBudgetDiagnostics(
   if (input.workflowStatus !== "blocked") {
     diagnostics.push("workflow_not_blocked");
   }
-  if (input.budgetExhaustedRunCount !== input.expectedMapItemCount) {
+  if (input.budgetExhaustedRunCount !== input.expectedBudgetExhaustedRunCount) {
     diagnostics.push("budget_exhaustion_mismatch");
   }
   if (input.budgetReasonMatch !== true) {
@@ -70,6 +71,8 @@ export function workflowBenchmarkBudgetEvaluationProjection(
     ? {
         expectedBudgetReason: input.expectedBudgetReason ?? "tokens",
         expectedBudgetTokenLimit: input.expectedBudgetTokenLimit ?? 0,
+        expectedBudgetExhaustedRunCount:
+          input.expectedBudgetExhaustedRunCount ?? 0,
         budgetExhaustedRunCount: input.budgetExhaustedRunCount ?? 0,
         budgetReasonMatch: input.budgetReasonMatch ?? false,
         budgetLimitMatch: input.budgetLimitMatch ?? false,
@@ -84,6 +87,7 @@ export function validWorkflowBenchmarkBudgetEvaluationFields(
   return (
     evaluation["expectedBudgetReason"] === "tokens" &&
     positiveInteger(evaluation["expectedBudgetTokenLimit"]) &&
+    positiveInteger(evaluation["expectedBudgetExhaustedRunCount"]) &&
     nonNegativeInteger(evaluation["budgetExhaustedRunCount"]) &&
     typeof evaluation["budgetReasonMatch"] === "boolean" &&
     typeof evaluation["budgetLimitMatch"] === "boolean" &&
@@ -101,6 +105,7 @@ export function workflowBenchmarkBudgetEvaluationEvidence(input: {
     input.events,
     input.benchmarkCase.requiredBudgetReason,
     input.benchmarkCase.runTokenLimit,
+    input.benchmarkCase.requiredBudgetExhaustedRunCount,
   );
 }
 
@@ -108,6 +113,7 @@ export function workflowBenchmarkBudgetEvaluationFromBundle(
   bundle: WorkflowBenchmarkLedgerBundle,
   expectedReason: "tokens",
   expectedTokenLimit: number,
+  expectedExhaustedRunCount: number,
 ) {
   const events = bundle.workflow.budgetExhaustionEvents ?? [];
   return budgetEvaluation(
@@ -115,6 +121,7 @@ export function workflowBenchmarkBudgetEvaluationFromBundle(
     bundle.eventReceipts,
     expectedReason,
     expectedTokenLimit,
+    expectedExhaustedRunCount,
   );
 }
 
@@ -185,10 +192,12 @@ function budgetEvaluation(
   receipts: ReadonlyArray<{ runId: string; type: string; seq: number }>,
   expectedReason: "tokens",
   expectedTokenLimit: number,
+  expectedExhaustedRunCount: number,
 ) {
   return {
     expectedBudgetReason: expectedReason,
     expectedBudgetTokenLimit: expectedTokenLimit,
+    expectedBudgetExhaustedRunCount: expectedExhaustedRunCount,
     budgetExhaustedRunCount: budgetEvents.length,
     budgetReasonMatch:
       budgetEvents.length > 0 &&

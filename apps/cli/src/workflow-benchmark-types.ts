@@ -91,6 +91,7 @@ export interface WorkflowBenchmarkCaseV8 extends WorkflowBenchmarkCaseBase {
   scenario: "workflow_map_token_budget_exhaustion";
   runTokenLimit: number;
   requiredBudgetReason: "tokens";
+  requiredBudgetExhaustedRunCount: 1;
 }
 
 export interface WorkflowBenchmarkDataFrameEvidenceExpectation {
@@ -195,6 +196,7 @@ export interface WorkflowBenchmarkEvaluation {
   approvalDeadlinePreserved?: boolean;
   expectedBudgetReason?: "tokens";
   expectedBudgetTokenLimit?: number;
+  expectedBudgetExhaustedRunCount?: number;
   budgetExhaustedRunCount?: number;
   budgetReasonMatch?: boolean;
   budgetLimitMatch?: boolean;

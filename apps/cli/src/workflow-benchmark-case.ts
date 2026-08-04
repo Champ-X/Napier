@@ -33,7 +33,7 @@ const CASE_KEYS_V7 = keySet(
   "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario requiredRestartCount requiredOfflineWaitMs approvalCustomText contentSha256",
 );
 const CASE_KEYS_V8 = keySet(
-  "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario runTokenLimit requiredBudgetReason contentSha256",
+  "kind schemaVersion id title objective inputPath expectedPath timeoutMs inputSha256 expectedSha256 scenario runTokenLimit requiredBudgetReason requiredBudgetExhaustedRunCount contentSha256",
 );
 
 export interface LoadedWorkflowBenchmarkCase {
@@ -181,11 +181,7 @@ function validWorkflowBenchmarkScenarioCase(
 ): boolean {
   if (input["schemaVersion"] === 1) return true;
   if (input["schemaVersion"] === 8) {
-    return (
-      input["scenario"] === "workflow_map_token_budget_exhaustion" &&
-      input["runTokenLimit"] === 1_000 &&
-      input["requiredBudgetReason"] === "tokens"
-    );
+    return validWorkflowBenchmarkBudgetCase(input);
   }
   if (
     input["schemaVersion"] === 4 ||
@@ -230,6 +226,17 @@ function validWorkflowBenchmarkScenarioCase(
       canonicalJson(["schema", "query"]) &&
     validSqliteEvidenceExpectations(input["requiredSqliteEvidence"]) &&
     validForbiddenOutputStrings(input["forbiddenOutputStrings"])
+  );
+}
+
+function validWorkflowBenchmarkBudgetCase(
+  input: Record<string, unknown>,
+): boolean {
+  return (
+    input["scenario"] === "workflow_map_token_budget_exhaustion" &&
+    input["runTokenLimit"] === 1_000 &&
+    input["requiredBudgetReason"] === "tokens" &&
+    input["requiredBudgetExhaustedRunCount"] === 1
   );
 }
 

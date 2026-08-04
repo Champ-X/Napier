@@ -3,7 +3,7 @@
   "schemaVersion": 8,
   "id": "long_horizon_token_budget_exhaustion_v1",
   "title": "Map token budget exhaustion containment",
-  "objective": "Run three model-backed Map children with a frozen 1,000-token limit, retain every budget exhaustion receipt, prevent tool completion after exhaustion, stop before Reduce, and verify the expected blocked Workflow offline.",
+  "objective": "Exhaust the first model-backed Map child at a frozen 1,000-token limit, retain its budget receipt, prevent later tool completion, stop the remaining Map items and Reduce, and verify the expected blocked Workflow offline.",
   "inputPath": "input.json",
   "expectedPath": "expected.json",
   "timeoutMs": 120000,
@@ -12,5 +12,6 @@
   "scenario": "workflow_map_token_budget_exhaustion",
   "runTokenLimit": 1000,
   "requiredBudgetReason": "tokens",
-  "contentSha256": "316e7f8824d68083c9b58f08cea71d6fbe84bb38d1d47f0ba85c92a50ae547a9"
+  "requiredBudgetExhaustedRunCount": 1,
+  "contentSha256": "939ca57c1ba353fd5f35b628c8f615343cc623ac189d8113a3723878b77307c5"
 }

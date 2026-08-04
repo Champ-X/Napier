@@ -122,7 +122,10 @@ export async function createWorkflowBenchmarkManifest(input: {
     outputSchema: mapOutputSchema,
     itemsPath: ["documents"],
     model: structuredClone(input.model),
-    maxConcurrency: Math.min(4, input.benchmarkInput.documents.length),
+    maxConcurrency:
+      input.benchmarkCase.schemaVersion === 8
+        ? 1
+        : Math.min(4, input.benchmarkInput.documents.length),
     itemTimeoutMs: Math.min(60_000, input.benchmarkCase.timeoutMs),
     timeoutMs: input.benchmarkCase.timeoutMs,
     maxAttempts: 1,

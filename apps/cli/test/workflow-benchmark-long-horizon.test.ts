@@ -133,7 +133,7 @@ describe("Long-horizon outcome benchmark", () => {
       id: "long_horizon_token_budget_exhaustion_v1",
       title: "Map token budget exhaustion containment",
       objective:
-        "Run three model-backed Map children with a frozen 1,000-token limit, retain every budget exhaustion receipt, prevent tool completion after exhaustion, stop before Reduce, and verify the expected blocked Workflow offline.",
+        "Exhaust the first model-backed Map child at a frozen 1,000-token limit, retain its budget receipt, prevent later tool completion, stop the remaining Map items and Reduce, and verify the expected blocked Workflow offline.",
       inputPath: "input.json",
       expectedPath: "expected.json",
       timeoutMs: 120000,
@@ -144,8 +144,9 @@ describe("Long-horizon outcome benchmark", () => {
       scenario: "workflow_map_token_budget_exhaustion",
       runTokenLimit: 1000,
       requiredBudgetReason: "tokens",
+      requiredBudgetExhaustedRunCount: 1,
       contentSha256:
-        "316e7f8824d68083c9b58f08cea71d6fbe84bb38d1d47f0ba85c92a50ae547a9",
+        "939ca57c1ba353fd5f35b628c8f615343cc623ac189d8113a3723878b77307c5",
     });
   });
 
@@ -407,7 +408,7 @@ describe("Long-horizon outcome benchmark", () => {
 
   it("contains Map token budget exhaustion before later side effects", async () => {
     const outputDir = await temporaryOutput();
-    const provider = budgetExhaustionProvider(6);
+    const provider = budgetExhaustionProvider(2);
     const dependencies = longHorizonDependencies(provider);
     const artifacts = await runWorkflowBenchmarkSeries(
       {
@@ -420,7 +421,7 @@ describe("Long-horizon outcome benchmark", () => {
       dependencies,
     );
 
-    expect(provider.state.callCount).toBe(6);
+    expect(provider.state.callCount).toBe(2);
     expect(artifacts.series).toEqual(
       expect.objectContaining({
         completedTrialCount: 2,
@@ -438,22 +439,19 @@ describe("Long-horizon outcome benchmark", () => {
             schemaVersion: 8,
             expectedBudgetReason: "tokens",
             expectedBudgetTokenLimit: 1000,
-            budgetExhaustedRunCount: 3,
+            expectedBudgetExhaustedRunCount: 1,
+            budgetExhaustedRunCount: 1,
             budgetReasonMatch: true,
             budgetLimitMatch: true,
             postBudgetToolCompletedCount: 0,
             reduceCompletedEventCount: 0,
-            modelResponseCount: expect.any(Number),
+            modelResponseCount: 1,
             modelResponseErrorCount: 0,
             diagnostics: [],
           }),
         }),
       );
-      expect(trial.result.evaluation.modelResponseCount).toBeGreaterThanOrEqual(
-        3,
-      );
-      expect(trial.result.evaluation.modelResponseCount).toBeLessThanOrEqual(6);
-      expect(trial.bundle.workflow.budgetExhaustionEvents).toHaveLength(3);
+      expect(trial.bundle.workflow.budgetExhaustionEvents).toHaveLength(1);
       expect(trial.bundle.workflow).not.toHaveProperty("reduceRunId");
       expect(
         verifyWorkflowBenchmarkArtifacts(trial.result, trial.bundle),
@@ -501,10 +499,11 @@ describe("Long-horizon outcome benchmark", () => {
       expect(trial.result.evaluation).toEqual(
         expect.objectContaining({
           schemaVersion: 8,
+          expectedBudgetExhaustedRunCount: 1,
           budgetExhaustedRunCount: expect.any(Number),
           postBudgetToolCompletedCount: 0,
-          modelResponseCount: 3,
-          modelResponseErrorCount: 3,
+          modelResponseCount: 1,
+          modelResponseErrorCount: 1,
         }),
       );
       expect(
@@ -512,7 +511,7 @@ describe("Long-horizon outcome benchmark", () => {
       ).toBeGreaterThanOrEqual(0);
       expect(
         trial.result.evaluation.budgetExhaustedRunCount,
-      ).toBeLessThanOrEqual(3);
+      ).toBeLessThanOrEqual(1);
       expect(trial.bundle.workflow.budgetExhaustionEvents?.length ?? 0).toBe(
         trial.result.evaluation.budgetExhaustedRunCount,
       );

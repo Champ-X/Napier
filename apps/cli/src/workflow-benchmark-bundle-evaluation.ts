@@ -30,6 +30,7 @@ export function workflowBenchmarkEvaluationEvidenceFromBundle(
           bundle,
           result.evaluation.expectedBudgetReason ?? "tokens",
           result.evaluation.expectedBudgetTokenLimit ?? 0,
+          result.evaluation.expectedBudgetExhaustedRunCount ?? 0,
         )
       : {}),
     ...(version === 5

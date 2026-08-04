@@ -38,6 +38,7 @@ export interface CreateWorkflowBenchmarkEvaluationInput extends WorkflowBenchmar
   approvalDeadlinePreserved?: boolean;
   expectedBudgetReason?: "tokens";
   expectedBudgetTokenLimit?: number;
+  expectedBudgetExhaustedRunCount?: number;
   budgetExhaustedRunCount?: number;
   budgetReasonMatch?: boolean;
   budgetLimitMatch?: boolean;

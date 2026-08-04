@@ -8,7 +8,7 @@ import type {
 } from "./workflow-benchmark-types.js";
 
 const EVALUATION_KEYS = keySet(
-  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged inspectDataCompletedCount dataFrameCompletedCount dataFrameProtocolValid dataFrameEvidenceMatch dataSourceUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount offlineWaitElapsedMs offlineWaitSatisfied approvalDeadlinePreserved expectedBudgetReason expectedBudgetTokenLimit budgetExhaustedRunCount budgetReasonMatch budgetLimitMatch postBudgetToolCompletedCount modelResponseCount modelResponseErrorCount modelResponseUsageSampleCount diagnostics contentSha256",
+  "kind schemaVersion caseId caseSha256 status workflowStatus criteriaSha256 expectedOutputSha256 actualOutputSha256 expectedMapOutputSha256 actualMapOutputSha256 outputMatch mapOutputMatch expectedNodeResultCount completedNodeResultCount expectedMapItemCount completedMapRunCount mapCompletedEventCount reduceCompletedEventCount reduceModelOrToolEventCount replayValid credentialLeakDetected sqliteSchemaCompletedCount sqliteQueryCompletedCount sqliteChartCompletedCount sqliteProtocolValid sqliteEvidenceMatch promptInjectionLeakDetected databaseUnchanged inspectDataCompletedCount dataFrameCompletedCount dataFrameProtocolValid dataFrameEvidenceMatch dataSourceUnchanged runtimeRestartCount approvalRecovered completedMapRunsReused postRestartModelResponseCount offlineWaitElapsedMs offlineWaitSatisfied approvalDeadlinePreserved expectedBudgetReason expectedBudgetTokenLimit expectedBudgetExhaustedRunCount budgetExhaustedRunCount budgetReasonMatch budgetLimitMatch postBudgetToolCompletedCount modelResponseCount modelResponseErrorCount modelResponseUsageSampleCount diagnostics contentSha256",
 );
 const RESULT_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 status model environment run workflow evaluation ledger contentSha256",
@@ -80,6 +80,7 @@ function evaluationKeys(
     "approvalDeadlinePreserved",
     "expectedBudgetReason",
     "expectedBudgetTokenLimit",
+    "expectedBudgetExhaustedRunCount",
     "budgetExhaustedRunCount",
     "budgetReasonMatch",
     "budgetLimitMatch",
@@ -151,6 +152,7 @@ function evaluationKeys(
     keys.push(
       "expectedBudgetReason",
       "expectedBudgetTokenLimit",
+      "expectedBudgetExhaustedRunCount",
       "budgetExhaustedRunCount",
       "budgetReasonMatch",
       "budgetLimitMatch",
