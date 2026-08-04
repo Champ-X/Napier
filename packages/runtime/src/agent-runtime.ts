@@ -69,6 +69,7 @@ import { preflightAgentToolPolicy } from "./agent-tool-policy-preflight.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
 import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
+import { BrowserLiveViewService } from "./browser-live-view.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
@@ -243,6 +244,7 @@ export class AgentRuntime {
   private readonly activeRuns = new Map<string, Map<string, ActiveRun>>();
   private readonly workerId = createId("worker");
   private readonly capabilities: AgentCapabilityRuntime;
+  readonly browserLiveViews: BrowserLiveViewService;
   constructor(
     readonly store: LocalStore,
     readonly modelRegistry: ModelRegistry,
@@ -276,8 +278,11 @@ export class AgentRuntime {
       researchSourceCaptures,
       networkCapabilities,
     );
+    this.browserLiveViews = new BrowserLiveViewService(
+      store,
+      this.capabilities,
+    );
   }
-
   async runPrompt(options: RunPromptOptions): Promise<RunRecord> {
     const prompt = options.text.trim();
     if (!prompt) throw new Error("Prompt must not be empty");
@@ -871,7 +876,6 @@ export class AgentRuntime {
       if (threadRuns?.size === 0) this.activeRuns.delete(thread.id);
     }
   }
-
   async resumeInterruptedRun(
     options: ResumeInterruptedRunOptions,
   ): Promise<RunRecord> {
@@ -925,7 +929,6 @@ export class AgentRuntime {
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
     });
   }
-
   async continueOperatorDecision(
     options: ContinueOperatorDecisionOptions,
   ): Promise<RunRecord> {
@@ -964,7 +967,6 @@ export class AgentRuntime {
       },
     });
   }
-
   async resumeInterruptedRunAutomatically(
     options: ResumeInterruptedRunAutomaticallyOptions,
   ): Promise<RunRecord> {
@@ -1048,14 +1050,12 @@ export class AgentRuntime {
       ...(options.onRunCreated ? { onRunCreated: options.onRunCreated } : {}),
     });
   }
-
   stop(threadId: string): boolean {
     const activeRuns = this.activeRuns.get(threadId);
     if (!activeRuns || activeRuns.size === 0) return false;
     for (const active of activeRuns.values()) active.abort();
     return true;
   }
-
   private async runDemo(
     run: RunRecord,
     profile: AgentProfile,

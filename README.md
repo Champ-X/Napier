@@ -572,6 +572,15 @@ terminal confirmation events remain durable, while the one-use resolver is
 intentionally non-resumable across Server restart. Restart, timeout, rejection,
 or Run cancellation fails closed.
 
+While an active user Run owns a Browser Session, Web also shows **Browser
+Live**. The panel polls a network-closed viewport PNG every 1.5 seconds through
+a `no-store`, byte-hash-verified endpoint. Live captures reuse the current
+Session and operation number without consuming the Agent's 64-operation budget,
+opening network access, appending Ledger events, creating Artifacts, or storing
+page pixels/text in Napier state. The panel disappears when the Session closes
+or the Run settles. Browser Live is observation only; pause, takeover, tabs,
+history, DevTools, login handoff, and restart recovery remain separate work.
+
 For a production build served by the API process:
 
 ```bash

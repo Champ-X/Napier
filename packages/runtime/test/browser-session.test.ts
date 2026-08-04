@@ -39,6 +39,7 @@ describe("RunBrowserSessionManager", () => {
       action: "start",
       url: "https://one.example/",
     });
+    const live = await harness.manager.captureLiveView(owner);
     const waited = await harness.manager.execute(owner, {
       action: "wait",
       durationMs: 5,
@@ -64,6 +65,20 @@ describe("RunBrowserSessionManager", () => {
       screenshot.details.sessionOperation,
       closed.details.sessionOperation,
     ]).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(live.receipt).toEqual(
+      expect.objectContaining({
+        kind: "napier.browser-live-view",
+        threadId: owner.threadId,
+        runId: owner.runId,
+        sessionIdSha256: started.details.sessionIdSha256,
+        sessionOperation: 1,
+        imageSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        imageBytes: Buffer.byteLength("fake png"),
+        mimeType: "image/png",
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(live.image).toEqual(Buffer.from("fake png"));
     expect(started.details.sessionReused).toBe(false);
     expect(snapshot.details.sessionReused).toBe(true);
     expect(snapshot.details.sessionIdSha256).toBe(

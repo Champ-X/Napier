@@ -1,4 +1,6 @@
 import { PersistentBrowserSession } from "./browser-page-session.js";
+import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
+import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   MAX_ACTIVE_BROWSER_SESSIONS,
   type BrowserPageSourceCapture,
@@ -40,6 +42,59 @@ export class RunBrowserSessionManager {
           await session.close();
           throw error;
         }
+      },
+      signal,
+    );
+  }
+
+  async captureLiveView(
+    owner: BrowserSessionOwner,
+    signal?: AbortSignal,
+  ): Promise<{ image: Buffer; receipt: BrowserLiveViewReceipt }> {
+    const key = ownerKey(owner);
+    return this.serialized(
+      key,
+      async () => {
+        assertNotAborted(signal);
+        const session = this.sessions.get(key);
+        if (!session || !session.healthy) {
+          throw new Error("Browser Session is not active for this Run");
+        }
+        const result = await session.execute(
+          { action: "screenshot" },
+          true,
+          undefined,
+          false,
+        );
+        const image = Buffer.from(result.screenshot!.data, "base64");
+        const details = result.details;
+        const content = {
+          kind: "napier.browser-live-view" as const,
+          schemaVersion: 1 as const,
+          threadId: owner.threadId,
+          runId: owner.runId,
+          sessionIdSha256: details.sessionIdSha256,
+          sessionOperation: details.sessionOperation,
+          imageSha256: details.screenshotSha256!,
+          imageBytes: details.screenshotBytes!,
+          mimeType: "image/png" as const,
+          capturedAt: new Date().toISOString(),
+          currentUrlSha256: details.currentUrlSha256,
+          currentOriginSha256: details.currentOriginSha256,
+          titleSha256: details.titleSha256,
+          browserExecutableSha256: details.browserExecutableSha256,
+          browserVersionSha256: details.browserVersionSha256,
+          limitsSha256: details.limitsSha256,
+          networkRequestCount: details.network.requestCount,
+          blockedRequestCount: details.blockedRequestCount,
+        };
+        return {
+          image,
+          receipt: {
+            ...content,
+            contentSha256: sha256(canonicalJson(content)),
+          },
+        };
       },
       signal,
     );

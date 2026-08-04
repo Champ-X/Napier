@@ -1261,6 +1261,73 @@ Observed result:
   remediation, cross-restart interaction recovery, CLI/TUI confirmation, and
   repeated open-web interaction benchmarks remain P0.
 
+## Implemented Slice: Browser Live Viewport Observation
+
+User scenario: while an Agent is reading or operating a public page, the user
+can see the current isolated Browser viewport in Web without granting new
+actions or persisting page content.
+
+Acceptance:
+
+- show a live viewport only after the active standard user Run has completed a
+  Browser start and before that Session closes;
+- reuse the exact Run-owned Browser Session and serialize capture with Agent
+  operations;
+- keep proxy outbound disabled and avoid incrementing the 64-operation Browser
+  budget;
+- return bounded PNG bytes through a `no-store`, `nosniff`, byte-hash-verified
+  endpoint with hash-only Session/page/runtime/network metadata;
+- append no Ledger event, Artifact, screenshot capsule, page text, URL, title,
+  or pixel bytes for live polling;
+- verify byte length, MIME type, image SHA-256, receipt SHA-256, Thread/Run
+  identity, timestamps, hashes, and counters in Web before rendering;
+- revoke every object URL on replacement, failure, Run/Thread change, and
+  unmount;
+- hide the panel on inactive/non-user Runs, missing Sessions, close, settlement,
+  restart, or verification failure;
+- fit desktop and 390x844 mobile layouts without horizontal overflow, stacking
+  Browser Live and confirmation dockets in one bounded scroll row.
+
+Threat boundary:
+
+- Browser Live is read-only observation. It cannot click, type, upload,
+  download, navigate, approve an action, or extend Session lifetime;
+- observer cancellation may abandon queue waiting but cannot close or mutate
+  the Agent's Browser Session;
+- live captures do not consume operation budget or open network access;
+- the endpoint is available only for the active standard user Run. Schedules,
+  channels, Workflows, experiments, recovery, settled Runs, and arbitrary Run
+  IDs fail closed;
+- raw PNG bytes exist only in the HTTP response and ephemeral browser object
+  URL. Durable evidence remains the ordinary hash-only Browser tool events;
+- restart intentionally loses the live Session and returns conflict rather
+  than reconstructing Browser authority from Ledger hashes.
+
+Observed result:
+
+- focused Runtime/manager/service, binary HTTP, Web API verification, and
+  live-state tests cover Session reuse, operation-count stability, zero Ledger
+  mutation, active-user gating, inactive/non-user denial, byte/receipt
+  tampering, no-store requirements, and start/close visibility;
+- built Web Dogfood opened `https://example.com/` through the production
+  Browser manager and displayed a verified 1280x900 viewport while the same Run
+  waited for click confirmation;
+- after more than two polling intervals, the Browser Session ID stayed fixed,
+  `sessionOperation` stayed `1`, Thread event count stayed `20`, and there were
+  zero Browser Live Ledger events;
+- desktop 1440x900 rendered a 757px-wide live panel with no horizontal overflow
+  or console errors. The endpoint returned `image/png`, `no-store`, a 17,808
+  byte body, image hash, receipt hash, origin hash, and operation `1`;
+- fresh mobile 390x844 rendered Browser Live at 269x285 with a 267x220 image,
+  no horizontal overflow, and a scroll-bounded shared docket row containing
+  the confirmation below it;
+- the complete gate covers 941 production source files, 461 test files, zero
+  cycles, and 2,188 regular tests: Root 105, CLI 185, Server 187, Web 498,
+  Runtime 1,185, and SDK 28;
+- Browser pause/takeover, direct user control, tabs/history, viewport streaming
+  protocols, login/CAPTCHA handoff, cross-restart Session recovery, and
+  long-running live-view reliability remain P0.
+
 ## Implemented Slice: Research Outcome Benchmark
 
 User scenario: a research result must prove which sources were captured and

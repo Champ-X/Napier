@@ -5,7 +5,7 @@ import path from "node:path";
 import { LocalStore } from "@napier/runtime";
 import { BrowserInteractionConfirmationManager } from "@napier/runtime/browser-interaction-confirmations";
 import { Hono } from "hono";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { registerThreadControlHttp } from "../src/thread-control-http.js";
 
@@ -23,7 +23,14 @@ describe("Browser interaction confirmation HTTP", () => {
     const app = new Hono();
     registerThreadControlHttp(app, {
       store: fixture.store,
-      runtime: { browserInteractionConfirmations: fixture.confirmations },
+      runtime: {
+        browserInteractionConfirmations: fixture.confirmations,
+        browserLiveViews: {
+          capture: vi.fn(async () => {
+            throw new Error("Browser Session is not active for this Run");
+          }),
+        },
+      },
     });
     const owner = { threadId: fixture.threadId, runId: fixture.runId };
     const waiting = fixture.confirmations.request({

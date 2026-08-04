@@ -23,6 +23,7 @@ import {
   isBrowserObservationRequest,
   performBrowserPageObservation,
 } from "./browser-page-observation.js";
+import { reserveBrowserOperation } from "./browser-operation-budget.js";
 import { captureBrowserPageSource } from "./browser-source-capture.js";
 import {
   BROWSER_ACTION_TIMEOUT_MS,
@@ -166,22 +167,21 @@ export class PersistentBrowserSession {
       throw error;
     }
   }
-
   async execute(
     request: BrowserSessionRequest,
     reused: boolean,
     signal?: AbortSignal,
+    countOperation = true,
   ): Promise<BrowserSessionOperationResult> {
     if (!this.healthy) throw new Error("Browser Session is unavailable");
-    if (this.operationCount >= MAX_BROWSER_SESSION_OPERATIONS) {
-      throw new Error("Browser Session operation limit reached");
-    }
-    this.operationCount += 1;
+    this.operationCount = reserveBrowserOperation(
+      this.operationCount,
+      countOperation,
+    );
     return abortable(this.perform(request, reused, signal), signal, async () =>
       this.close(),
     );
   }
-
   async capturePage(
     maxChars: number,
     signal?: AbortSignal,

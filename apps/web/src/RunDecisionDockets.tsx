@@ -1,6 +1,8 @@
 import { lazy, Suspense } from "react";
 
 import { BrowserInteractionConfirmationPanel } from "./BrowserInteractionConfirmationPanel";
+import { BrowserLiveViewPanel } from "./BrowserLiveViewPanel";
+import { browserLiveViewExpected } from "./browser-live-view-state";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
 const LazyOperatorDecisionPanel = lazy(() => import("./OperatorDecisionPanel"));
@@ -13,6 +15,7 @@ export function RunDecisionDockets({
   vm: Pick<
     WorkspaceViewModel,
     | "answerOperatorDecision"
+    | "activeRunId"
     | "browserInteractionConfirmation"
     | "browserInteractionConfirmationBusy"
     | "cancelOperatorDecision"
@@ -21,10 +24,28 @@ export function RunDecisionDockets({
     | "openOperatorDecision"
     | "openOperatorDecisionWorkflowOwned"
     | "operatorDecisionBusy"
+    | "detail"
   >;
 }) {
+  const showBrowserLive =
+    vm.activeRunId !== undefined &&
+    vm.detail !== undefined &&
+    browserLiveViewExpected(vm.detail.events, vm.activeRunId);
+  if (
+    !showBrowserLive &&
+    !vm.openOperatorDecision &&
+    !vm.browserInteractionConfirmation
+  ) {
+    return null;
+  }
   return (
-    <>
+    <div className="run-decision-dockets">
+      {showBrowserLive ? (
+        <BrowserLiveViewPanel
+          threadId={vm.detail!.thread.id}
+          runId={vm.activeRunId!}
+        />
+      ) : null}
       {vm.openOperatorDecision ? (
         <Suspense fallback={null}>
           <LazyOperatorDecisionPanel
@@ -44,6 +65,6 @@ export function RunDecisionDockets({
           onDecision={vm.decideBrowserInteractionConfirmation}
         />
       ) : null}
-    </>
+    </div>
   );
 }

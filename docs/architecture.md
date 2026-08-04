@@ -598,6 +598,8 @@ Web
   -> composer badge renders the same projection
   -> Context preset selector fills existing form fields only
   -> Save Agent profile uses the existing HTTP validation/revision path
+  -> active Browser Session exposes a no-store, hash-verified viewport PNG
+  -> Web polls Browser Live without adding a Browser operation or Ledger event
   -> writable Browser calls pause inside beforeToolCall
   -> hash-only pending evidence opens a one-use confirmation docket
   -> exact request-hash approval resumes the same Run and Browser Session
@@ -642,6 +644,18 @@ appended before the waiting tool proceeds. Runtime policy still validates
 public-network and workspace-file scope before confirmation; confirmation
 cannot authorize an otherwise denied call. Raw tool arguments stay in the
 private live call/capsule boundary and never enter the confirmation protocol.
+
+`BrowserLiveViewService` authorizes only the active standard user Run. It asks
+the same serialized `RunBrowserSessionManager` for a viewport screenshot using
+the existing screenshot implementation with operation counting disabled.
+Outbound proxy access remains closed. Runtime returns PNG bytes plus hash-only
+session/operation/URL/origin/title/runtime/network metadata; it writes no
+Ledger event. The Server maps this to a `no-store`, `nosniff`,
+`X-Napier-Content-SHA256-Mode: body` binary response and a reconstructable
+receipt hash. Web verifies byte length, PNG MIME type, image SHA-256, receipt
+SHA-256, Thread/Run identity, and bounded counters before creating an ephemeral
+object URL. Object URLs are revoked on replacement, failure, Thread/Run change,
+and unmount. This is a live observer, not a takeover or durable replay channel.
 
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate

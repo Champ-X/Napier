@@ -946,6 +946,23 @@ button:disabled {
     inset 3px 0 0 var(--vermilion);
 }
 
+.run-decision-dockets {
+  min-height: 0;
+  padding: 0 24px 14px 69px;
+  overflow: auto;
+}
+
+.run-decision-dockets > .operator-decision,
+.run-decision-dockets > .browser-interaction-confirmation,
+.run-decision-dockets > .browser-live-view {
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.run-decision-dockets > :last-child {
+  margin-bottom: 0;
+}
+
 .operator-decision::after {
   position: absolute;
   top: -24px;
@@ -1333,6 +1350,79 @@ button:disabled {
 .browser-interaction-confirmation button:disabled {
   cursor: not-allowed;
   opacity: 0.46;
+}
+
+.browser-live-view {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  grid-template-rows: auto minmax(120px, 300px) auto;
+  margin: 0 24px 14px 69px;
+  overflow: hidden;
+  background: #101713;
+  border: 1px solid rgb(41 76 64 / 62%);
+  border-radius: 4px;
+  box-shadow: 0 12px 34px rgb(24 37 30 / 18%);
+}
+
+.browser-live-view header,
+.browser-live-view footer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: #dce9e0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #19251f;
+}
+
+.browser-live-view header span,
+.browser-live-view header button,
+.browser-live-view footer {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.browser-live-view header button {
+  padding: 4px 7px;
+  font: inherit;
+  color: #dce9e0;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgb(220 233 224 / 24%);
+  border-radius: 2px;
+}
+
+.browser-live-view header button:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.browser-live-view img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  max-height: 300px;
+  object-fit: contain;
+  background:
+    linear-gradient(45deg, #111914 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, #111914 25%, transparent 25%) 0 8px / 16px 16px,
+    linear-gradient(45deg, transparent 75%, #111914 75%) 8px -8px / 16px 16px,
+    linear-gradient(-45deg, transparent 75%, #111914 75%) -8px 0 / 16px 16px,
+    #172019;
+}
+
+.browser-live-view footer {
+  justify-content: flex-start;
+  color: #91aa9b;
+  letter-spacing: 0.04em;
+  text-transform: none;
 }
 
 .composer {
@@ -14196,9 +14286,31 @@ button:disabled {
     margin-left: 41px;
   }
 
+  .run-decision-dockets {
+    padding-right: 12px;
+    padding-left: 41px;
+  }
+
+  .run-decision-dockets > .operator-decision,
+  .run-decision-dockets > .browser-interaction-confirmation,
+  .run-decision-dockets > .browser-live-view {
+    margin-right: 0;
+    margin-left: 0;
+  }
+
   .browser-interaction-confirmation {
     margin-right: 12px;
     margin-left: 41px;
+  }
+
+  .browser-live-view {
+    grid-template-rows: auto minmax(100px, 220px) auto;
+    margin-right: 12px;
+    margin-left: 41px;
+  }
+
+  .browser-live-view img {
+    max-height: 220px;
   }
 
   .browser-interaction-confirmation dl {

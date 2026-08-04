@@ -1,5 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { AgentProfile } from "@napier/contracts";
+import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 
 import { AgentSessionRuntime } from "./agent-sessions.js";
 import type { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
@@ -166,6 +167,13 @@ export class AgentCapabilityRuntime {
         settlement.status === "rejected",
     );
     if (failure) throw failure.reason;
+  }
+
+  captureBrowserLiveView(
+    owner: AgentCapabilityOwner,
+    signal?: AbortSignal,
+  ): Promise<{ image: Buffer; receipt: BrowserLiveViewReceipt }> {
+    return this.sessions.captureBrowserLiveView(owner, signal);
   }
 }
 

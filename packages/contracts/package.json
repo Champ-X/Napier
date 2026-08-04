@@ -15,6 +15,10 @@
     "./browser-interaction-confirmation": {
       "types": "./dist/browser-interaction-confirmation.d.ts",
       "import": "./dist/browser-interaction-confirmation.js"
+    },
+    "./browser-live-view": {
+      "types": "./dist/browser-live-view.d.ts",
+      "import": "./dist/browser-live-view.js"
     }
   },
   "files": [

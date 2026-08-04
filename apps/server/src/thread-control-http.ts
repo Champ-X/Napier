@@ -7,6 +7,7 @@ import {
 import { Hono } from "hono";
 
 import { registerBrowserInteractionConfirmationHttp } from "./browser-interaction-confirmation-http.js";
+import { registerBrowserLiveViewHttp } from "./browser-live-view-http.js";
 import { errorMessage, jsonError } from "./http-response-evidence.js";
 import {
   readLimitedJson,
@@ -53,6 +54,7 @@ export interface ThreadControlHttpServices {
     browserInteractionConfirmations: Parameters<
       typeof registerBrowserInteractionConfirmationHttp
     >[1];
+    browserLiveViews: Parameters<typeof registerBrowserLiveViewHttp>[1];
   };
 }
 
@@ -66,6 +68,7 @@ export function registerThreadControlHttp(
     app,
     services.runtime.browserInteractionConfirmations,
   );
+  registerBrowserLiveViewHttp(app, services.runtime.browserLiveViews);
   registerOperatorDecisionHttp(app, services.store);
   registerAgentMilestoneHttp(app, services.store);
 }

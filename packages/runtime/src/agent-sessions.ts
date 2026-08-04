@@ -1,4 +1,5 @@
 import { AgentKernelRuntime } from "./agent-kernels.js";
+import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 import { RunBrowserSessionManager } from "./browser-session.js";
 import { createBrowserTool } from "./browser-tool.js";
 import {
@@ -106,6 +107,13 @@ export class AgentSessionRuntime {
         settlement.status === "rejected",
     );
     if (failure) throw failure.reason;
+  }
+
+  captureBrowserLiveView(
+    owner: { threadId: string; runId: string },
+    signal?: AbortSignal,
+  ): Promise<{ image: Buffer; receipt: BrowserLiveViewReceipt }> {
+    return this.browsers.captureLiveView(owner, signal);
   }
 
   async cancelDebuggerRun(request: {
