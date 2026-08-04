@@ -1388,6 +1388,40 @@ button:disabled {
   align-items: center;
 }
 
+.browser-live-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.browser-session-state {
+  position: relative;
+  padding-left: 10px;
+  color: #91aa9b;
+}
+
+.browser-session-state::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  content: "";
+  background: #7acb9e;
+  border-radius: 50%;
+  box-shadow: 0 0 7px rgb(122 203 158 / 74%);
+  transform: translateY(-50%);
+}
+
+.browser-session-state.is-paused {
+  color: #f2c975;
+}
+
+.browser-session-state.is-paused::before {
+  background: #f2c975;
+  box-shadow: 0 0 7px rgb(242 201 117 / 68%);
+}
+
 .browser-live-view header button {
   padding: 4px 7px;
   font: inherit;
@@ -1396,6 +1430,22 @@ button:disabled {
   background: transparent;
   border: 1px solid rgb(220 233 224 / 24%);
   border-radius: 2px;
+}
+
+.browser-live-view header .browser-session-toggle {
+  color: #101713;
+  background: #9fd9b7;
+  border-color: #9fd9b7;
+}
+
+.browser-live-view.is-paused {
+  border-color: rgb(177 136 56 / 72%);
+  box-shadow: 0 12px 34px rgb(64 49 22 / 22%);
+}
+
+.browser-live-view.is-paused header .browser-session-toggle {
+  background: #f2c975;
+  border-color: #f2c975;
 }
 
 .browser-live-view header button:disabled {
@@ -14307,6 +14357,20 @@ button:disabled {
     grid-template-rows: auto minmax(100px, 220px) auto;
     margin-right: 12px;
     margin-left: 41px;
+  }
+
+  .browser-live-view header {
+    align-items: flex-start;
+  }
+
+  .browser-live-controls {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .browser-session-state {
+    flex-basis: 100%;
+    margin-left: auto;
   }
 
   .browser-live-view img {

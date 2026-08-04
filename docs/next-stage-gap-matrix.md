@@ -33,14 +33,16 @@ Audit date: 2026-08-04
   `document.write` HTML shells now automatically render through the same
   controlled read-only Browser with bounded provenance and fail-visible
   degradation. Generic SPA/login/CAPTCHA fallback, cross-restart Source
-  retention, default Browser interaction, and Browser Live remain P0.
+  retention, broader interaction entry points, direct Browser takeover, and
+  tabs/history remain P0.
 - A fresh default Agent also receives a read-only Browser schema plus
   `research_source`. Dynamic pages can use Browser `start -> wait`, call
   `research_source capture -> cite`, then close the Browser without
   `unrestricted`; literal find and bounded vertical scroll are also available
   with proxy outbound closed. Click/type/select/upload/download remain absent
-  and policy-denied. Full interaction presets, Browser Live/takeover,
-  tabs/history, and effect-specific confirmations remain P0.
+  and policy-denied. Web Safe Automation now adds effect-specific one-use
+  confirmation, a verified live viewport, and operator pause/resume. CLI/TUI
+  confirmation, direct takeover, tabs/history, and login handoff remain P0.
 - The formal `napier doctor` CLI now diagnoses canonical workspace/runtime,
   optional model credential presence, keyless Search, HTML Fetch, sandboxed
   Chrome, and the OS process Sandbox without creating `.napier` state.
@@ -54,7 +56,7 @@ Audit date: 2026-08-04
   revising the Agent. Browser and Research remain read-only. Safe Automation
   now exposes Browser interaction in Web only through exact one-use
   confirmations; CLI/TUI remain read-only. Guided credential Setup, dependency
-  remediation, Browser Live/takeover, and broader interaction reliability
+  remediation, direct Browser takeover, and broader interaction reliability
   remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
@@ -76,7 +78,7 @@ Audit date: 2026-08-04
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 web connectivity               | In progress    | Default Search, Fetch, Browser, and Research Source now cover keyless discovery, bounded HTML/Markdown/JSON/text/PDF reading, conservative automatic rendering of eligible script shells, JavaScript Browser reading, exact same-Run captures, and claim-bound citations under `observe`. A retained real DeepSeek benchmark proves the unchanged default Agent can combine official HTML, PDF, and dynamic Browser sources with valid Replay and privacy-bounded evidence. `napier doctor` performs Store-free Search/Fetch/Browser/model/runtime/Sandbox readiness checks, while shared presets/status expose configured authority across CLI, Chat, TUI, and Web. Remaining P0 work is confirmed Browser interaction, multi-tab/history, Browser Live/takeover/resume, generic login/CAPTCHA fallback, cross-restart Sources, open-web Security and repeated Research reliability, guided Setup/live readiness, and repeated same-model OMP comparison. One passing Research trial and bounded page navigation do not establish complete automation, onboarding, or reliability.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| P0 web connectivity               | In progress    | Default Search, Fetch, Browser, and Research Source now cover keyless discovery, bounded HTML/Markdown/JSON/text/PDF reading, conservative automatic rendering of eligible script shells, JavaScript Browser reading, exact same-Run captures, and claim-bound citations under `observe`. Web Safe Automation additionally provides exact one-use interaction confirmation, a privacy-bounded Browser Live viewport, and same-Run operator pause/resume without interrupting the current action. A retained real DeepSeek benchmark proves the unchanged default Agent can combine official HTML, PDF, and dynamic Browser sources with valid Replay and privacy-bounded evidence. `napier doctor` performs Store-free Search/Fetch/Browser/model/runtime/Sandbox readiness checks, while shared presets/status expose configured authority across CLI, Chat, TUI, and Web. Remaining P0 work is multi-tab/history, direct Browser takeover and login/CAPTCHA handoff, CLI/TUI interaction confirmation, cross-restart Sources/Sessions, open-web Security and repeated Research reliability, guided Setup/live readiness, and repeated same-model OMP comparison. One passing Research trial and bounded page navigation do not establish complete automation, onboarding, or reliability.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
@@ -770,10 +772,10 @@ Observed result:
 - full TypeScript typechecking passes and the complete regular suite passes
   2,129 tests: Root 104, CLI 170, Server 183, Web 485, Runtime 1,159, and SDK 28. The real production Chrome smoke also passes with Chromium sandboxing
   enabled;
-- P0 remains in progress pending full interaction presets/confirmations,
-  multi-tab/history, Browser Live/takeover/resume, cross-restart strategy,
-  open-web Research/Security benchmarks, guided Setup/cross-entry status, and
-  repeated OMP comparison.
+- P0 remains in progress pending multi-tab/history, direct Browser takeover and
+  login/CAPTCHA handoff, CLI/TUI interaction confirmation, cross-restart
+  strategy, open-web Research/Security reliability, guided Setup, and repeated
+  OMP comparison.
 
 ## Implemented Slice: Static Fetch Source Citation Unification
 
@@ -840,10 +842,9 @@ Observed result:
 - full TypeScript typechecking passes and the complete regular suite passes
   2,134 tests: Root 104, CLI 170, Server 183, Web 486, Runtime 1,163, and SDK
   28;
-- P0 remains in progress pending full interaction presets/confirmations,
-  multi-tab/history, Browser Live/takeover/resume, automatic Fetch-to-Browser
-  fallback, cross-restart Source retention, open-web
-  Research/Security benchmarks, guided Setup/cross-entry status, and repeated
+- P0 remains in progress pending multi-tab/history, direct Browser takeover and
+  login/CAPTCHA handoff, CLI/TUI interaction confirmation, cross-restart Source
+  retention, open-web Research/Security reliability, guided Setup, and repeated
   same-model OMP comparison.
 
 ## Implemented Slice: Default Read-Only Browser Find and Scroll
@@ -909,11 +910,10 @@ Observed result:
 - full TypeScript typechecking passes and the complete regular suite passes
   2,136 tests: Root 104, CLI 170, Server 183, Web 486, Runtime 1,165, and SDK
   28;
-- P0 remains in progress pending full interaction presets/confirmations,
-  multi-tab/history, Browser Live/takeover/resume, automatic Fetch-to-Browser
-  fallback, cross-restart Source retention, open-web Research/Security
-  benchmarks, guided Setup/cross-entry status, and repeated same-model OMP
-  comparison.
+- P0 remains in progress pending multi-tab/history, direct Browser takeover and
+  login/CAPTCHA handoff, CLI/TUI interaction confirmation, cross-restart Source
+  retention, open-web Research/Security reliability, guided Setup, and repeated
+  same-model OMP comparison.
 
 ## Implemented Slice: Store-Free First-Use Doctor
 
@@ -1324,9 +1324,79 @@ Observed result:
 - the complete gate covers 941 production source files, 461 test files, zero
   cycles, and 2,188 regular tests: Root 105, CLI 185, Server 187, Web 498,
   Runtime 1,185, and SDK 28;
-- Browser pause/takeover, direct user control, tabs/history, viewport streaming
-  protocols, login/CAPTCHA handoff, cross-restart Session recovery, and
-  long-running live-view reliability remain P0.
+- Direct Browser takeover, tabs/history, viewport streaming protocols,
+  login/CAPTCHA handoff, cross-restart Session recovery, and long-running
+  live-view reliability remain P0.
+
+## Implemented Slice: Browser Pause and Resume
+
+User scenario: while an active standard user Run owns a Browser Session, the
+Web operator can pause automation after the current Browser action and resume
+the next action without replacing the Run or Session.
+
+Acceptance:
+
+- expose status, pause, and resume only for the active `source=user` Run and a
+  healthy Run-owned Browser Session;
+- make pause authority active before Ledger I/O completes, but never interrupt
+  an already executing Browser action;
+- block the next Browser call in policy preflight before execution while
+  Browser Live remains available;
+- resume only when the request matches the exact current paused-state SHA-256;
+- retain one Run ID and Browser Session ID through pause and resume;
+- append only hash-bound requested, resumed, and cancelled transition
+  evidence, with no page data, URL, title, pixels, selectors, text, values, or
+  paths;
+- release or reject every waiter on Run cancellation, Session loss, abort,
+  close, or settlement;
+- fail closed for schedules, channels, Workflows, experiments, recovery,
+  settled Runs, arbitrary IDs, stale pause hashes, missing Sessions, and
+  Server restart;
+- render compact Running/Paused state plus Pause/Resume controls inside Browser
+  Live without horizontal overflow at 1440x900 or 390x844.
+
+Threat boundary:
+
+- pause is process-local authority and cannot be reconstructed from durable
+  hashes after restart;
+- the status endpoint is read-only, `no-store`, and stable-hash-bound;
+- resume is a compare-and-set operation over the exact paused-state hash, so a
+  delayed tab or replay cannot release a newer pause cycle;
+- Browser Live polling remains observation-only, does not release pause, and
+  does not consume Browser operation budget;
+- Session health is checked while a Browser action waits, so Browser death
+  records cancellation and rejects the waiter instead of stranding the Run.
+
+Observed result:
+
+- focused Runtime manager/service/Agent, Server HTTP, and Web API suites cover
+  immediate gating before Ledger I/O, append rollback, idempotent pause,
+  stale-hash denial, abort/cancel cleanup, Session-death cleanup, active-user
+  authorization, non-user/settled/sessionless denial, no-store stable hashes,
+  request validation, cross-Run rejection, and the same-Run action gate;
+- production-built Web Dogfood used Safe Automation and DeepSeek V4 Flash
+  against `https://example.com/`, then requested Pause at Browser operation 1;
+- pause evidence was appended at sequence 914. The model emitted its next
+  `wait` intent at sequence 928, but after more than the requested ten seconds
+  there was still no Browser execution result and the Run remained `running`;
+- the paused Browser Live endpoint remained `image/png`, `no-store`, 17,808
+  bytes, operation `1`, with stable Session SHA-256
+  `920c93b0f63ad5a30be1aba119449a8859de92b5f38a848fddf799b703af4043`;
+- Resume returned 200 with a new stable state hash and appended sequence 929.
+  The held `wait` then completed as operation 2, followed by `snapshot` 3 and
+  `close` 4 in the original Run `run_88775e5edd4b4111b3c9` and the same
+  Browser Session;
+- desktop 1440x900 rendered a 757x365 paused panel with a 755x300 viewport;
+  mobile 390x844 rendered 269x300 with a 267x220 viewport and visible Resume.
+  Both had zero horizontal overflow and no console errors;
+- after close, Browser Live disappeared and the final assistant result
+  rendered; no manual takeover, new Run, new Session, or persisted page
+  content was involved;
+- the complete gate covers 947 production source files, 465 test files, zero
+  cycles, and 2,202 regular tests: Root 105, CLI 185, Server 190, Web 501,
+  Runtime 1,193, and SDK 28. Management OpenAPI contains 261 routes with
+  244/244 compatibility operations, the Web main entry is 133.09 KiB under
+  the 150 KiB limit, and all 119 release artifacts verify.
 
 ## Implemented Slice: Research Outcome Benchmark
 

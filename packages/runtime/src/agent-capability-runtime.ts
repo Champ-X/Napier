@@ -5,6 +5,7 @@ import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view
 import { AgentSessionRuntime } from "./agent-sessions.js";
 import type { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import { RunBrowserSessionManager } from "./browser-session.js";
+import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import { gitStageMutationManagerFor } from "./git-stage.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
@@ -53,6 +54,7 @@ export class AgentCapabilityRuntime {
     private readonly processes?: WorkspaceProcessManager,
     private readonly workspaceFileMutations?: WorkspaceFileMutationManager,
     private readonly browserInteractionConfirmations?: BrowserInteractionConfirmationManager,
+    private readonly browserSessionPauses?: BrowserSessionPauseManager,
     browserSessions?: RunBrowserSessionManager,
     researchSourceCaptures?: BrowserSourceCaptureProvider,
     network: AgentNetworkCapabilities = {},
@@ -161,6 +163,9 @@ export class AgentCapabilityRuntime {
       ...(this.browserInteractionConfirmations
         ? [this.browserInteractionConfirmations.cancelRun(owner)]
         : []),
+      ...(this.browserSessionPauses
+        ? [this.browserSessionPauses.cancelRun(owner)]
+        : []),
     ]);
     const failure = settlements.find(
       (settlement): settlement is PromiseRejectedResult =>
@@ -174,6 +179,10 @@ export class AgentCapabilityRuntime {
     signal?: AbortSignal,
   ): Promise<{ image: Buffer; receipt: BrowserLiveViewReceipt }> {
     return this.sessions.captureBrowserLiveView(owner, signal);
+  }
+
+  hasActiveBrowserSession(owner: AgentCapabilityOwner): boolean {
+    return this.sessions.hasActiveBrowserSession(owner);
   }
 }
 

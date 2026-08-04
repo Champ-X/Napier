@@ -600,6 +600,11 @@ Web
   -> Save Agent profile uses the existing HTTP validation/revision path
   -> active Browser Session exposes a no-store, hash-verified viewport PNG
   -> Web polls Browser Live without adding a Browser operation or Ledger event
+  -> active user Run may request process-local Browser pause
+  -> pause becomes authoritative immediately without interrupting in-flight work
+  -> the next Browser call waits in beforeToolCall while Session health is watched
+  -> exact paused-state hash resume releases the same Run and Browser Session
+  -> Run cancellation or Session loss records hash-only cancellation and rejects waiters
   -> writable Browser calls pause inside beforeToolCall
   -> hash-only pending evidence opens a one-use confirmation docket
   -> exact request-hash approval resumes the same Run and Browser Session

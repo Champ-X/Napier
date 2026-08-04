@@ -21,6 +21,10 @@ export class RunBrowserSessionManager {
 
   constructor(private readonly options: RunBrowserSessionManagerOptions) {}
 
+  hasActiveSession(owner: BrowserSessionOwner): boolean {
+    return this.sessions.get(ownerKey(owner))?.healthy === true;
+  }
+
   async capturePage(
     owner: BrowserSessionOwner,
     maxChars: number,

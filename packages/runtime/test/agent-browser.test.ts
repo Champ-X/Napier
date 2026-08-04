@@ -17,6 +17,7 @@ import {
   RunBrowserSessionManager,
 } from "../src/index.js";
 import { BrowserInteractionConfirmationManager } from "../src/browser-interaction-confirmations.js";
+import { BrowserSessionPauseManager } from "../src/browser-session-pause.js";
 
 const roots: string[] = [];
 
@@ -295,6 +296,7 @@ describe("Agent Browser Session integration", () => {
         },
       ),
       cancelRun: vi.fn(async () => undefined),
+      hasActiveSession: vi.fn(() => true),
     } as unknown as RunBrowserSessionManager;
     const provider = fauxProvider({ provider: "faux-browser-confirmed" });
     provider.setResponses([
@@ -391,6 +393,127 @@ describe("Agent Browser Session integration", () => {
           record(record(event.payload)?.["details"])?.["action"] === "click",
       ),
     ).toBe(true);
+  });
+
+  it("pauses after the current Browser action and resumes the next in the same Run Session", async () => {
+    const fixture = await createFixture("workspace");
+    let releaseStart!: () => void;
+    const startGate = new Promise<void>((resolve) => {
+      releaseStart = resolve;
+    });
+    const operations: string[] = [];
+    let operation = 0;
+    const browserSessions = {
+      execute: vi.fn(
+        async (
+          _owner: { threadId: string; runId: string },
+          request: { action: BrowserSessionDetails["action"] },
+        ) => {
+          operation += 1;
+          operations.push(request.action);
+          if (request.action === "start") await startGate;
+          return {
+            output: `PAGE_${request.action}`,
+            details: details(request.action, operation),
+          };
+        },
+      ),
+      cancelRun: vi.fn(async () => undefined),
+      hasActiveSession: vi.fn(() => true),
+    } as unknown as RunBrowserSessionManager;
+    const provider = fauxProvider({ provider: "faux-browser-pause" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("browser", {
+          action: "start",
+          url: "https://example.com/",
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(fauxToolCall("browser", { action: "snapshot" }), {
+        stopReason: "toolUse",
+      }),
+      fauxAssistantMessage("Browser pause and resume completed."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    fixture.registry.registerProvider(provider.provider);
+    const pauses = new BrowserSessionPauseManager(fixture.store);
+    const runtime = new AgentRuntime(
+      fixture.store,
+      fixture.registry,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      browserSessions,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {},
+      undefined,
+      pauses,
+    );
+    const running = runtime.runPrompt({
+      threadId: fixture.threadId,
+      text: "Start the Browser, then take a snapshot.",
+      model: { provider: "faux-browser-pause", id: "faux-1" },
+    });
+    await vi.waitFor(() => expect(operations).toEqual(["start"]));
+    const runId = fixture.store.listRuns(fixture.threadId)[0]!.id;
+    const owner = { threadId: fixture.threadId, runId };
+    const paused = await pauses.pause(owner);
+
+    releaseStart();
+    await vi.waitFor(async () => {
+      const events = await fixture.store.listEvents(fixture.threadId);
+      expect(
+        events.some(
+          (event) =>
+            event.type === "tool.completed" &&
+            record(event.payload)?.["toolName"] === "browser" &&
+            record(record(event.payload)?.["details"])?.["action"] === "start",
+        ),
+      ).toBe(true);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(operations).toEqual(["start"]);
+    expect(fixture.store.listRuns(fixture.threadId)[0]?.status).toBe("running");
+
+    await pauses.resume(owner, paused.contentSha256);
+    const run = await running;
+
+    expect(run.status, run.error).toBe("completed");
+    expect(run.id).toBe(runId);
+    expect(operations).toEqual(["start", "snapshot"]);
+    expect(browserSessions.execute).toHaveBeenNthCalledWith(
+      2,
+      owner,
+      { action: "snapshot" },
+      expect.any(AbortSignal),
+    );
+    const events = await fixture.store.listEvents(fixture.threadId);
+    const requested = events.find(
+      (event) => event.type === "browser.session_pause.requested",
+    );
+    const startCompleted = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        record(event.payload)?.["toolName"] === "browser" &&
+        record(record(event.payload)?.["details"])?.["action"] === "start",
+    );
+    const resumed = events.find(
+      (event) => event.type === "browser.session_pause.resumed",
+    );
+    const snapshotCompleted = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        record(event.payload)?.["toolName"] === "browser" &&
+        record(record(event.payload)?.["details"])?.["action"] === "snapshot",
+    );
+    expect(requested?.seq).toBeLessThan(startCompleted!.seq);
+    expect(startCompleted?.seq).toBeLessThan(resumed!.seq);
+    expect(resumed?.seq).toBeLessThan(snapshotCompleted!.seq);
   });
 
   it("does not execute a rejected Browser interaction", async () => {

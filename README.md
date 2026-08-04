@@ -577,9 +577,20 @@ Live**. The panel polls a network-closed viewport PNG every 1.5 seconds through
 a `no-store`, byte-hash-verified endpoint. Live captures reuse the current
 Session and operation number without consuming the Agent's 64-operation budget,
 opening network access, appending Ledger events, creating Artifacts, or storing
-page pixels/text in Napier state. The panel disappears when the Session closes
-or the Run settles. Browser Live is observation only; pause, takeover, tabs,
-history, DevTools, login handoff, and restart recovery remain separate work.
+page pixels/text in Napier state.
+
+The same panel exposes **Pause** and **Resume** only for that active standard
+user Run and active Browser Session. Pause authority becomes active
+immediately, but it never interrupts an in-flight Browser action. Instead, the
+next Browser action waits in policy preflight before execution while Browser
+Live remains observable. Resume compares the exact hash-bound paused state,
+releases that same Run and Session, and cannot replay an older pause cycle.
+Requested, resumed, and cancelled transitions append hash-only Ledger evidence;
+page content, URL, title, pixels, and Browser arguments remain absent. Run
+cancellation, Session loss, close, settlement, or Server restart releases or
+rejects waiters and fails closed. The panel disappears when the Session closes
+or the Run settles. Direct user takeover, tabs/history, DevTools, login
+handoff, and restart recovery remain separate work.
 
 For a production build served by the API process:
 

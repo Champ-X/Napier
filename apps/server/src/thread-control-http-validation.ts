@@ -4,6 +4,7 @@ import type {
   QueueRunControlMessageRequest,
 } from "@napier/contracts";
 import type { DecideBrowserInteractionConfirmationRequest } from "@napier/contracts/browser-interaction-confirmation";
+import type { ResumeBrowserSessionRequest } from "@napier/contracts/browser-session-control";
 import { MAX_RUN_CONTROL_MESSAGE_BYTES } from "@napier/runtime";
 
 import { requestRecord } from "./http-request-validation.js";
@@ -62,6 +63,20 @@ export function parseBrowserInteractionConfirmationDecision(
     return undefined;
   }
   return { decision, expectedRequestSha256 };
+}
+
+export function parseResumeBrowserSessionRequest(
+  input: unknown,
+): ResumeBrowserSessionRequest | undefined {
+  const record = requestRecord(input, ["expectedPauseStateSha256"]);
+  const expectedPauseStateSha256 = record?.["expectedPauseStateSha256"];
+  if (
+    typeof expectedPauseStateSha256 !== "string" ||
+    !/^[a-f0-9]{64}$/u.test(expectedPauseStateSha256)
+  ) {
+    return undefined;
+  }
+  return { expectedPauseStateSha256 };
 }
 
 export function parseAnswerOperatorDecisionRequest(

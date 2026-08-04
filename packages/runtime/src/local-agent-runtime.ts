@@ -6,6 +6,7 @@ import { CredentialReferenceStore } from "./credentials.js";
 import { AgentRuntime } from "./agent-runtime.js";
 import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
+import { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import { AgentMessageExperimentRuntime } from "./agent-message-experiments.js";
 import { EmbeddedAgentService } from "./embedded-agents.js";
 import { EmbeddedWorkflowService } from "./embedded-workflows.js";
@@ -56,6 +57,7 @@ export interface LocalAgentRuntimeServices {
   workspaceProcesses: WorkspaceProcessManager;
   workspaceFileMutations: WorkspaceFileMutationManager;
   browserInteractionConfirmations: BrowserInteractionConfirmationManager;
+  browserSessionPauses: BrowserSessionPauseManager;
   runtime: AgentRuntime;
   embeddedAgents: EmbeddedAgentService;
   agentMessageExperiments: AgentMessageExperimentRuntime;
@@ -109,6 +111,7 @@ export async function createLocalAgentRuntime(
         store,
         options.browserInteractionConfirmation,
       );
+    const browserSessionPauses = new BrowserSessionPauseManager(store);
     const runtime = new AgentRuntime(
       store,
       models,
@@ -131,6 +134,7 @@ export async function createLocalAgentRuntime(
         ...(options.webFetchHttp ? { webFetchHttp: options.webFetchHttp } : {}),
       },
       browserInteractionConfirmations,
+      browserSessionPauses,
     );
     const embeddedAgents = new EmbeddedAgentService(store, runtime);
     const agentMessageExperiments = new AgentMessageExperimentRuntime(
@@ -165,6 +169,7 @@ export async function createLocalAgentRuntime(
       workspaceProcesses: initializedProcesses,
       workspaceFileMutations,
       browserInteractionConfirmations,
+      browserSessionPauses,
       runtime,
       embeddedAgents,
       agentMessageExperiments,

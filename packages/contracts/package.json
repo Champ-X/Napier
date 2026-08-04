@@ -19,6 +19,10 @@
     "./browser-live-view": {
       "types": "./dist/browser-live-view.d.ts",
       "import": "./dist/browser-live-view.js"
+    },
+    "./browser-session-control": {
+      "types": "./dist/browser-session-control.d.ts",
+      "import": "./dist/browser-session-control.js"
     }
   },
   "files": [

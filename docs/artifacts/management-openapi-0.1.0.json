@@ -10791,6 +10791,172 @@
         "x-napier-source-route": "GET /api/threads/:threadId/runs/:runId/browser-live-view"
       }
     },
+    "/api/threads/{threadId}/runs/{runId}/browser-session-control": {
+      "get": {
+        "operationId": "get-threads-by-threadId-runs-by-runId-browser-session-control",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/runs/{runId}/browser-session-control",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/runs/:runId/browser-session-control"
+      }
+    },
+    "/api/threads/{threadId}/runs/{runId}/browser-session-control/pause": {
+      "post": {
+        "operationId": "post-threads-by-threadId-runs-by-runId-browser-session-control-pause",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/runs/{runId}/browser-session-control/pause",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/runs/:runId/browser-session-control/pause"
+      }
+    },
+    "/api/threads/{threadId}/runs/{runId}/browser-session-control/resume": {
+      "post": {
+        "operationId": "post-threads-by-threadId-runs-by-runId-browser-session-control-resume",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/runs/{runId}/browser-session-control/resume",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/runs/:runId/browser-session-control/resume"
+      }
+    },
     "/api/threads/{threadId}/runs/{runId}/control-messages": {
       "get": {
         "operationId": "get-threads-by-threadId-runs-by-runId-control-messages",
@@ -14712,6 +14878,7 @@
     "apps/server/src/app.ts",
     "apps/server/src/browser-interaction-confirmation-http.ts",
     "apps/server/src/browser-live-view-http.ts",
+    "apps/server/src/browser-session-control-http.ts",
     "apps/server/src/credential-http.ts",
     "apps/server/src/evaluation-casebook-admin-http.ts",
     "apps/server/src/evaluation-catalog-http.ts",
@@ -14743,7 +14910,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "4db8a1fc7e130a7fdcc83608797d1e579f5b831fcabc8317c0df6423ec734660",
-  "x-napier-route-count": 258,
-  "x-napier-route-set-sha256": "ebed212c70fc5a36f2b3f4ea89cc066b6760164cf8efa99f59631a0e2cb30d6c"
+  "x-napier-source-sha256": "aad1ad3fc77b6fc1e9c2f65fa44c4e2206c57a5a87466cc879a9dac325c8c7ca",
+  "x-napier-route-count": 261,
+  "x-napier-route-set-sha256": "f16bc9bb341429dbcae445dee3636938e53edc7375226824f9c049a4b8efd48a"
 }

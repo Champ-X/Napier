@@ -68,9 +68,12 @@ import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
 import { preflightAgentToolPolicy } from "./agent-tool-policy-preflight.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
+import { agentToolResultText } from "./agent-tool-result-text.js";
 import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import { BrowserLiveViewService } from "./browser-live-view.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
+import { BrowserSessionControlService } from "./browser-session-control.js";
+import { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
@@ -245,6 +248,7 @@ export class AgentRuntime {
   private readonly workerId = createId("worker");
   private readonly capabilities: AgentCapabilityRuntime;
   readonly browserLiveViews: BrowserLiveViewService;
+  readonly browserSessionControls: BrowserSessionControlService;
   constructor(
     readonly store: LocalStore,
     readonly modelRegistry: ModelRegistry,
@@ -267,6 +271,7 @@ export class AgentRuntime {
     readonly browserInteractionConfirmations = new BrowserInteractionConfirmationManager(
       store,
     ),
+    readonly browserSessionPauses = new BrowserSessionPauseManager(store),
   ) {
     this.capabilities = new AgentCapabilityRuntime(
       store,
@@ -274,6 +279,7 @@ export class AgentRuntime {
       workspaceProcesses,
       workspaceFileMutations,
       browserInteractionConfirmations,
+      browserSessionPauses,
       browserSessions,
       researchSourceCaptures,
       networkCapabilities,
@@ -281,6 +287,11 @@ export class AgentRuntime {
     this.browserLiveViews = new BrowserLiveViewService(
       store,
       this.capabilities,
+    );
+    this.browserSessionControls = new BrowserSessionControlService(
+      store,
+      this.capabilities,
+      browserSessionPauses,
     );
   }
   async runPrompt(options: RunPromptOptions): Promise<RunRecord> {
@@ -1533,6 +1544,9 @@ export class AgentRuntime {
           ? { extensionManager: this.extensionManager }
           : {}),
         confirmations: this.browserInteractionConfirmations,
+        browserPauses: this.browserSessionPauses,
+        browserSessionActive: (owner) =>
+          this.capabilities.hasActiveBrowserSession(owner),
         restrictedReadOnlyExecution,
         toolCall,
         args,
@@ -2132,7 +2146,7 @@ export class AgentRuntime {
       return undefined;
     }
     if (event.type === "tool_execution_end") {
-      const output = resultText(event.result);
+      const output = agentToolResultText(event.result);
       const reusedProjection = toolResultLifecycle.reusedTerminalProjection(
         event.toolCallId,
       );
@@ -3589,28 +3603,6 @@ function extractReasoning(message: AssistantMessage): string {
   return message.content
     .filter((block) => block.type === "thinking")
     .map((block) => block.thinking)
-    .join("\n");
-}
-
-function resultText(result: unknown): string {
-  if (
-    !result ||
-    typeof result !== "object" ||
-    !("content" in result) ||
-    !Array.isArray(result.content)
-  ) {
-    return String(result ?? "");
-  }
-  return result.content
-    .filter((item): item is { type: "text"; text: string } => {
-      return Boolean(
-        item &&
-        typeof item === "object" &&
-        item.type === "text" &&
-        typeof item.text === "string",
-      );
-    })
-    .map((item) => item.text)
     .join("\n");
 }
 

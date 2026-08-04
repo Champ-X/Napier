@@ -116,6 +116,10 @@ export class AgentSessionRuntime {
     return this.browsers.captureLiveView(owner, signal);
   }
 
+  hasActiveBrowserSession(owner: { threadId: string; runId: string }): boolean {
+    return this.browsers.hasActiveSession(owner);
+  }
+
   async cancelDebuggerRun(request: {
     threadId: string;
     runId: string;

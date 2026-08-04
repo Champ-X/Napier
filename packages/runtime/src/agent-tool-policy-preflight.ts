@@ -12,6 +12,7 @@ import {
   isBrowserInteractionAction,
 } from "./browser-interaction-confirmations.js";
 import { browserInteractionConfirmationPreview } from "./browser-tool.js";
+import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import type { EventSink } from "./event-sink.js";
 import type { McpExtensionManager } from "./mcp.js";
 import { assessToolCall } from "./policy.js";
@@ -24,6 +25,8 @@ export async function preflightAgentToolPolicy(input: {
   profile: AgentProfile;
   extensionManager?: McpExtensionManager;
   confirmations: BrowserInteractionConfirmationManager;
+  browserPauses: BrowserSessionPauseManager;
+  browserSessionActive: (owner: { threadId: string; runId: string }) => boolean;
   restrictedReadOnlyExecution: boolean;
   toolCall: { id: string; name: string };
   args: unknown;
@@ -31,6 +34,17 @@ export async function preflightAgentToolPolicy(input: {
   onEvent?: EventSink;
 }): Promise<BeforeToolCallResult | undefined> {
   if (input.toolCall.name === "delegate_task") return undefined;
+  if (input.toolCall.name === "browser") {
+    await input.browserPauses.waitIfPaused(
+      { threadId: input.run.threadId, runId: input.run.id },
+      input.signal,
+      () =>
+        input.browserSessionActive({
+          threadId: input.run.threadId,
+          runId: input.run.id,
+        }),
+    );
+  }
   const mode: ToolPolicyMode = input.restrictedReadOnlyExecution
     ? "observe"
     : input.profile.toolPolicy;
