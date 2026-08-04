@@ -4194,6 +4194,58 @@ retaining credential, URL, body, or Web Source ID in Tool events. Architecture
 passes with 896 production source files, 447 test files, and zero cycles; the
 complete regular suite passes 2,134 tests.
 
+### Open-Web Research Outcome Verification
+
+The open-web benchmark is separate from the deterministic fixed-source
+Research benchmark. It exercises the unchanged default `observe` Agent and the
+production Search, Fetch, Browser, Research Source, Replay, Policy, and model
+paths:
+
+```text
+load hash-bound case + exact expected oracle
+  -> create temporary Workspace and data roots
+  -> create the ordinary local Runtime and default observe Agent
+  -> register only an environment credential reference
+  -> run the case prompt through AgentRuntime.runPrompt
+  -> require bounded Search/Fetch/Browser/capture/cite topology
+  -> derive source URL/kind/format, quote, claim, and token hashes
+  -> bind each exact final claim to its adjacent one-use citation token
+  -> verify portable Replay and scan live Run/Replay state for credential leak
+  -> append one privacy-bounded evaluation event
+  -> create a content-addressed Result with a receipt for every retained event
+  -> independently recompute generic and case-aware verification
+```
+
+`open-web-research-benchmark-case.ts` owns strict case loading, path
+confinement, exact JSON shapes, public URL constraints, and case self-hashes.
+`open-web-research-benchmark-contract.ts` evaluates authoritative Tool
+completion details and final assistant text. The independent
+`open-web-research-benchmark-verifier.ts` validates Result shape/self-hash,
+receipt chain, aggregate bindings, exact case/oracle hashes, bounded tool
+counts, source coverage, accepted quote alternatives, status/diagnostics, and
+claim-to-token adjacency. The CLI runner creates the temporary production
+Runtime, exports Replay, writes one exclusive CAS file, and deletes all
+temporary state.
+
+Deterministic integration injects Search, Fetch, and a Browser Session manager
+at `createLocalAgentRuntime`; it still uses real Agent tool schemas, Policy,
+Research Source capture/citation, Replay, evaluation, and both verifier
+layers. The optional Browser manager injection is a composition seam only:
+production callers omit it and receive the ordinary controlled Chrome
+manager. A self-rehashed aggregate tamper, case-hash substitution, wrong quote,
+or citation-token swap fails verification.
+
+The retained Result contains no raw URL, Source text, quote, claim, citation
+token, model prompt/reasoning, or credential. It keeps only bounded hashes,
+counts, usage, environment metadata, and 74 event receipts. The release audit
+loads the checked case and semantically verifies the retained Result rather
+than trusting its `passed` field or physical file hash. The first final-case
+DeepSeek trial passed with one Search, two Fetches, three Browser actions,
+three captures, three citations, valid Replay, and zero diagnostics in 39.646
+seconds. This proves one real default-entry execution, not repeated
+reliability, automatic fallback, broad open-web quality, or cross-model
+superiority. The complete repository gate passes 2,145 regular tests.
+
 ## TypeScript LSP Code Intelligence Flow
 
 The LSP tools are implemented outside the oversized workspace-tool module.

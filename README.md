@@ -1690,6 +1690,34 @@ mean input/output tokens were 10,061.5/9,145.5. Offline verification recomputes 
 Result/Ledger pair and the Series aggregate. This fixed-source case does not
 measure open-web retrieval, source freshness, or cross-model superiority.
 
+The separate `research_open_web_source_triad_v1` case runs the unchanged
+default `observe` Agent against the real open internet:
+
+```bash
+npm run bench:research:open-web -- \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY
+```
+
+Passing requires keyless Search discovery, the exact official Node.js 24
+release page through Fetch, the W3C dummy PDF through Fetch, the
+JavaScript-rendered Quotes to Scrape page through Browser, three Research
+captures, three exact claims, and one claim-bound adjacent citation per claim.
+The case and accepted quote ranges are content-addressed. The privacy-bounded
+Result retains tool/source/citation/claim hashes, Replay bindings, usage,
+counts, and an event receipt chain while omitting credentials, URLs, source
+text, quotes, claims, citation tokens, assistant text, and reasoning.
+
+The retained
+[DeepSeek open-web Result](benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json)
+passed in 39.646 seconds with one Search, two Fetches, three Browser actions,
+three captures, and three citations at `$0.0054105128`. Offline verification
+recomputes the self-hash, receipt chain, evidence aggregates, exact case hash,
+tool bounds, source URL/kind/format hashes, accepted quote hashes, and
+claim-to-citation-token adjacency. The release audit repeats that semantic
+verification. This is one current-source trial, not a freshness SLA,
+reliability distribution, or cross-model superiority claim.
+
 ### First-Task UX Outcome Benchmark
 
 The fixed `ux_first_task_cli_v1` case measures the clean-state one-shot path

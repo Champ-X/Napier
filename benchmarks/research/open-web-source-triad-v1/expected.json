@@ -1,0 +1,92 @@
+{
+  "claims": [
+    "Node.js 24.0.0 ships with V8 13.6.",
+    "The W3C test PDF identifies itself as Dummy PDF file.",
+    "The JavaScript-rendered quote says: “The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”"
+  ],
+  "expectedUrls": [
+    {
+      "url": "https://nodejs.org/en/blog/release/v24.0.0",
+      "sourceKind": "web_fetch",
+      "format": "html"
+    },
+    {
+      "url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      "sourceKind": "web_fetch",
+      "format": "pdf"
+    },
+    {
+      "url": "https://quotes.toscrape.com/js/",
+      "sourceKind": "browser"
+    }
+  ],
+  "citations": [
+    {
+      "claim": "Node.js 24.0.0 ships with V8 13.6.",
+      "sourceUrl": "https://nodejs.org/en/blog/release/v24.0.0",
+      "sourceKind": "web_fetch",
+      "quotes": [
+        "V8 13.6",
+        "We’re excited to announce the release of Node.js 24! This release brings\nseveral significant updates, including the upgrade of the V8 JavaScript\nengine to version 13.6 and npm to version 11. Starting with",
+        "2025-05-06, Version 24.0.0 (Current), @RafaelGSS and @juanarbol\nWe’re excited to announce the release of Node.js 24! This release brings\nseveral significant updates, including the upgrade of the V8 JavaScript\nengine to version 13.6 and npm to version 11. Starting with",
+        "# Node.js 24.0.0 (Current)\nRafael Gonzaga\n2025-05-06, Version 24.0.0 (Current), @RafaelGSS and @juanarbol\nWe’re excited to announce the release of Node.js 24! This release brings\nseveral significant updates, including the upgrade of the V8 JavaScript\nengine to version 13.6 and npm to version 11. Starting with"
+      ]
+    },
+    {
+      "claim": "The W3C test PDF identifies itself as Dummy PDF file.",
+      "sourceUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      "sourceKind": "web_fetch",
+      "quotes": ["Dummy PDF file"]
+    },
+    {
+      "claim": "The JavaScript-rendered quote says: “The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”",
+      "sourceUrl": "https://quotes.toscrape.com/js/",
+      "sourceKind": "browser",
+      "quotes": [
+        "“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”"
+      ]
+    }
+  ],
+  "requiredToolCounts": [
+    {
+      "toolAction": "web_search:run",
+      "minimum": 1,
+      "maximum": 6
+    },
+    {
+      "toolAction": "web_fetch:fetch",
+      "minimum": 2,
+      "maximum": 4
+    },
+    {
+      "toolAction": "research_source:capture_fetch",
+      "minimum": 2,
+      "maximum": 2
+    },
+    {
+      "toolAction": "research_source:cite",
+      "minimum": 3,
+      "maximum": 3
+    },
+    {
+      "toolAction": "browser:start",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "toolAction": "browser:wait",
+      "minimum": 1,
+      "maximum": 2
+    },
+    {
+      "toolAction": "research_source:capture",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "toolAction": "browser:close",
+      "minimum": 1,
+      "maximum": 1
+    }
+  ]
+}

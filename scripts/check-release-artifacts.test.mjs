@@ -162,6 +162,7 @@ describe("release artifacts audit", () => {
       "research-benchmark-ledger-1",
       "research-benchmark-result-2",
       "research-benchmark-ledger-2",
+      "open-web-research-benchmark-result",
       "ux-benchmark-series",
       "ux-benchmark-result-1",
       "ux-benchmark-ledger-1",
@@ -677,6 +678,26 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when retained open-web Research case binding is tampered", async () => {
+    const { root } = await createFixture();
+    const resultPath = path.join(
+      root,
+      "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
+    );
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.caseSha256 = "0".repeat(64);
+    const { contentSha256: _contentSha256, ...content } = result;
+    result.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toContain(
+      "open-web research benchmark: result_case_binding_invalid",
+    );
+  });
+
   it("fails when retained UX evidence is tampered", async () => {
     const { root } = await createFixture();
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
@@ -742,6 +763,21 @@ async function createFixture() {
   await createManagementOpenApiFixture(root);
   await createManagementOpenApiCompatibilityFixture(root);
   await createWorkflowBenchmarkFixture(root);
+  await mkdir(path.join(root, "benchmark-results"), { recursive: true });
+  await cp(
+    path.resolve(
+      "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
+    ),
+    path.join(
+      root,
+      "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
+    ),
+  );
+  await cp(
+    path.resolve("benchmarks/research/open-web-source-triad-v1"),
+    path.join(root, "benchmarks/research/open-web-source-triad-v1"),
+    { recursive: true },
+  );
   await execFile(process.execPath, [
     packageLockScriptPath,
     "--repo-root",

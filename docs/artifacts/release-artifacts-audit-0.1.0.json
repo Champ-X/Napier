@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "b234df78f820350f2d4d013782f30b8354db72b42df021f36b3b6f8850f071bc",
+  "artifactSetSha256": "c9901d43dc93f79f3f6e5af1fa8b46b2a46734a6ca8abee140bc7bf8ddb6d46b",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "c0d37e81be58e165b01061df5646215113fc3b1876d7ce30da8c28f3582508b7",
+      "sha256": "020977712104141fd507d36962c8676f577e45c06118b5cb4790106ab6a0b2cd",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "ab5b0dc9aa4e960b43d82ee8f5c48cd32fe68648577e31decf9cb971ad5601bc",
+      "sha256": "1fb1ddcf0badff20f91cfae563f26617b1faf21dbaaf2291061fbd61cdbd2506",
       "valid": true
     },
     {
@@ -29,13 +29,13 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "7eda217a9f190cac500bc8024a08a70322e723765a838b5c862d2d02e4399760",
+      "sha256": "c176f52eeee6e3f7eebf40119249de4c11cca52989d70041f93c8dd007a264c2",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "356748a94dd25cafd5387d338a8f7ed756716b12bb273e4eb19096ce67260328",
+      "sha256": "bd809580bab2a36dd29c6e565c36b7fa96b3303cc2114207463e7ce64beb92bd",
       "valid": true
     },
     {
@@ -684,6 +684,12 @@
       "kind": "research-benchmark-ledger-2",
       "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-eda98b40d26b4c65.json",
       "sha256": "3cd5956d3b8694c7f99dfe3b559e1ce1a571104de19c330d11acc61c815e6f5e",
+      "valid": true
+    },
+    {
+      "kind": "open-web-research-benchmark-result",
+      "path": "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
+      "sha256": "f94f77f317411504ad9bba3d108105bba4f1e5d5a40811ca88ae9fd1c2a68139",
       "valid": true
     },
     {

@@ -1,0 +1,13 @@
+{
+  "kind": "napier.open-web-research-benchmark-case",
+  "schemaVersion": 1,
+  "id": "research_open_web_source_triad_v1",
+  "title": "Default-Agent open-web source triad",
+  "objective": "Discover and read one official HTML release page, one public PDF, and one JavaScript-rendered page through default Search, Fetch, Browser, and Research Source capabilities, then return three exact adjacent claim citations.",
+  "promptPath": "prompt.md",
+  "expectedPath": "expected.json",
+  "timeoutMs": 240000,
+  "promptSha256": "39e483cd5cba168a90a052b07ee2e578da767e90ae8909372f10d004f1b3bda7",
+  "expectedSha256": "0352d69904296652b7f873473c3814841d6e024e64afd773f581cd6436a2f049",
+  "contentSha256": "1044633812902cd2a8387a84b8adeed54928b3ca700498c77122a2255290494c"
+}

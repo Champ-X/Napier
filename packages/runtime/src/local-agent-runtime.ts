@@ -4,6 +4,7 @@ import path from "node:path";
 import type { KeychainSecretStore } from "./credentials.js";
 import { CredentialReferenceStore } from "./credentials.js";
 import { AgentRuntime } from "./agent-runtime.js";
+import type { RunBrowserSessionManager } from "./browser-session.js";
 import { AgentMessageExperimentRuntime } from "./agent-message-experiments.js";
 import { EmbeddedAgentService } from "./embedded-agents.js";
 import { EmbeddedWorkflowService } from "./embedded-workflows.js";
@@ -31,6 +32,7 @@ export interface LocalAgentRuntimeOptions {
   env?: Readonly<Record<string, string | undefined>>;
   keychain?: KeychainSecretStore;
   sandbox?: OsSandboxAdapter;
+  browserSessions?: RunBrowserSessionManager;
   researchSourceCaptures?: BrowserSourceCaptureProvider;
   webSearch?: WebSearchExecutor;
   webFetch?: WebFetchExecutor;
@@ -101,7 +103,7 @@ export async function createLocalAgentRuntime(
       sandbox,
       initializedProcesses,
       workspaceFileMutations,
-      undefined,
+      options.browserSessions,
       options.researchSourceCaptures,
       undefined,
       undefined,

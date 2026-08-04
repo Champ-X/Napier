@@ -28,6 +28,8 @@ import {
   processRecoverySeriesArtifactReferences,
   verifyProcessRecoveryBenchmarkSeries,
 } from "../apps/cli/dist/process-recovery-benchmark-series.js";
+import { loadOpenWebResearchBenchmarkCase } from "../apps/cli/dist/open-web-research-benchmark-case.js";
+import { verifyOpenWebResearchBenchmarkAgainstCase } from "../apps/cli/dist/open-web-research-benchmark-verifier.js";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -77,6 +79,10 @@ const defaultProcessRecoveryBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-process-recovery-benchmark-series-long_horizon_process_write_compensation_v1-79f2082920791734.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-7860868b48599ded.json";
+const defaultOpenWebResearchBenchmarkResultPath =
+  "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json";
+const defaultOpenWebResearchBenchmarkCaseRoot =
+  "benchmarks/research/open-web-source-triad-v1";
 const defaultUxBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-ux-benchmark-series-ux_first_task_cli_v1-747782333f3ad3c3.json";
 
@@ -144,6 +150,12 @@ export async function auditReleaseArtifacts(options = {}) {
     defaultProcessRecoveryBenchmarkSeriesPath;
   const researchBenchmarkSeriesPath =
     options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
+  const openWebResearchBenchmarkResultPath =
+    options.openWebResearchBenchmarkResultPath ??
+    defaultOpenWebResearchBenchmarkResultPath;
+  const openWebResearchBenchmarkCaseRoot =
+    options.openWebResearchBenchmarkCaseRoot ??
+    defaultOpenWebResearchBenchmarkCaseRoot;
   const uxBenchmarkSeriesPath =
     options.uxBenchmarkSeriesPath ?? defaultUxBenchmarkSeriesPath;
   const rootPackage = parseJson(
@@ -364,6 +376,13 @@ export async function auditReleaseArtifacts(options = {}) {
     artifactReferences: researchBenchmarkSeriesArtifactReferences,
     verifySeries: verifyResearchBenchmarkSeries,
   });
+  const openWebResearchBenchmarkArtifact =
+    await verifyOpenWebResearchReleaseArtifact({
+      repoRoot,
+      resultPath: openWebResearchBenchmarkResultPath,
+      caseRoot: openWebResearchBenchmarkCaseRoot,
+      errors,
+    });
   const uxBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: uxBenchmarkSeriesPath,
@@ -459,6 +478,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...goalNoProgressBenchmarkArtifacts,
     ...processRecoveryBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
+    openWebResearchBenchmarkArtifact,
     ...uxBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
@@ -729,6 +749,20 @@ function parseCliOptions(args) {
       index += 1;
       continue;
     }
+    if (arg === "--open-web-research-benchmark-result-path") {
+      options.openWebResearchBenchmarkResultPath = readCliValue(
+        args,
+        index,
+        arg,
+      );
+      index += 1;
+      continue;
+    }
+    if (arg === "--open-web-research-benchmark-case-root") {
+      options.openWebResearchBenchmarkCaseRoot = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
     if (arg === "--process-recovery-benchmark-series-path") {
       options.processRecoveryBenchmarkSeriesPath = readCliValue(
         args,
@@ -837,6 +871,50 @@ async function verifyBenchmarkReleaseArtifacts({
     ...artifact,
     valid: artifact.valid && verification.valid,
   }));
+}
+
+async function verifyOpenWebResearchReleaseArtifact({
+  repoRoot,
+  resultPath,
+  caseRoot,
+  errors,
+}) {
+  const evidence = await readArtifactEvidence(repoRoot, resultPath, errors);
+  const result = await readJsonArtifact(repoRoot, resultPath, errors);
+  let valid = false;
+  try {
+    const loaded = await loadOpenWebResearchBenchmarkCase(
+      resolveRepoRelativePath(repoRoot, caseRoot, "openWebResearchCaseRoot"),
+    );
+    const verification = verifyOpenWebResearchBenchmarkAgainstCase(
+      result,
+      loaded.benchmarkCase,
+      loaded.expected,
+    );
+    valid = verification.valid && result?.status === "passed";
+    if (!verification.valid) {
+      errors.push(
+        ...verification.diagnostics.map(
+          (diagnostic) => `open-web research benchmark: ${diagnostic}`,
+        ),
+      );
+    }
+    if (verification.valid && result?.status !== "passed") {
+      errors.push("open-web research benchmark: retained_result_not_passed");
+    }
+  } catch (error) {
+    errors.push(
+      `open-web research benchmark: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const { readable: _readable, ...artifact } = evidence;
+  return {
+    kind: "open-web-research-benchmark-result",
+    ...artifact,
+    valid: evidence.readable && valid,
+  };
 }
 
 async function readJsonArtifact(repoRoot, artifactPath, errors) {
