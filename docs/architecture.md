@@ -517,6 +517,13 @@ the Store's existing claim-token digest and attempt hash semantics;
 `LocalStore` still owns SQLite revision CAS, state queues, event access, and
 persistence. This lowers `store.ts` to 14,699 lines without changing Recovery
 Service or Replay behavior.
+Automatic Recovery candidate ordering, expired-claim takeover, root-chain
+assessment, deferral, and new claim creation use
+`automatic-recovery-store-claims.ts`. The coordinator mutates only the
+Store-owned recovery arrays and returns an explicit `changed` flag;
+`LocalStore` validates public inputs, supplies Ledger events and random claim
+tokens, runs the coordinator inside its state queue, and persists once. This
+lowers `store.ts` further to 14,556 lines.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.

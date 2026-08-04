@@ -261,18 +261,15 @@ import {
   validateAgentProfileRevision,
 } from "./agents.js";
 import {
-  assessAutomaticRecovery,
   hashAutomaticRecoveryAssessment,
   hashAutomaticRecoveryAttempt,
   hashAutomaticRecoveryEventStream,
   validateAutomaticRecoveryAssessment,
   validateAutomaticRecoveryAttempt,
 } from "./automatic-recovery.js";
+import { claimAutomaticRecoveryState } from "./automatic-recovery-store-claims.js";
 import {
-  automaticRecoveryRoot,
-  createAutomaticRecoveryAttemptRecord,
   normalizeAutomaticRecoveryError,
-  reissueAutomaticRecoveryClaim,
   settleAutomaticRecoveryAttemptRecord,
   stripAutomaticRecoverySecrets,
   type PersistedAutomaticRecoveryAttempt,
@@ -4427,157 +4424,17 @@ export class LocalStore {
             32,
           );
     return this.stateQueue.run(async () => {
-      const timestamp = now.toISOString();
-      const claims: AutomaticRecoveryClaim[] = [];
-      const skipped: AutomaticRecoveryAssessment[] = [];
-      const settled: AutomaticRecoveryAttempt[] = [];
-      let deferred = 0;
-      let changed = false;
-
-      for (
-        let index = 0;
-        index < this.state.automaticRecoveryAttempts.length;
-        index += 1
-      ) {
-        const current = this.state.automaticRecoveryAttempts[index]!;
-        if (current.status !== "claimed" && current.status !== "running") {
-          continue;
-        }
-        const recoveryRun = current.recoveryRunId
-          ? this.state.runs.find(
-              (candidate) => candidate.id === current.recoveryRunId,
-            )
-          : undefined;
-        if (
-          recoveryRun &&
-          recoveryRun.status !== "queued" &&
-          recoveryRun.status !== "running"
-        ) {
-          const updated = settleAutomaticRecoveryAttemptRecord(
-            current,
-            recoveryRun,
-            timestamp,
-          );
-          this.state.automaticRecoveryAttempts[index] = updated;
-          settled.push(stripAutomaticRecoverySecrets(updated));
-          changed = true;
-          continue;
-        }
-        if (
-          current.status === "claimed" &&
-          !current.recoveryRunId &&
-          current.claim &&
-          Date.parse(current.claim.expiresAt) <= now.getTime() &&
-          claims.length < limit
-        ) {
-          const assessment = this.state.automaticRecoveryAssessments.find(
-            (candidate) => candidate.contentSha256 === current.assessmentSha256,
-          );
-          if (!assessment) {
-            throw new Error(
-              `Automatic recovery assessment is missing: ${current.id}`,
-            );
-          }
-          const token = createLeaseToken();
-          const updated = reissueAutomaticRecoveryClaim(
-            current,
-            owner,
-            token,
-            timestamp,
-            leaseMs,
-          );
-          this.state.automaticRecoveryAttempts[index] = updated;
-          claims.push({
-            assessment: structuredClone(assessment),
-            attempt: stripAutomaticRecoverySecrets(updated),
-            token,
-          });
-          changed = true;
-        }
-      }
-
-      const candidates = this.state.runs
-        .filter((run) => run.status === "interrupted")
-        .filter(
-          (run) =>
-            !this.state.runs.some(
-              (candidate) =>
-                candidate.threadId === run.threadId &&
-                candidate.source === "recovery" &&
-                candidate.parentRunId === run.id,
-            ),
-        )
-        .filter(
-          (run) =>
-            !this.state.automaticRecoveryAssessments.some(
-              (assessment) => assessment.runId === run.id,
-            ),
-        )
-        .sort((left, right) =>
-          (
-            left.interruptedAt ??
-            left.finishedAt ??
-            left.startedAt
-          ).localeCompare(
-            right.interruptedAt ?? right.finishedAt ?? right.startedAt,
-          ),
-        );
-
-      for (const run of candidates) {
-        if (claims.length >= limit) break;
-        const thread = this.state.threads.find(
-          (candidate) => candidate.id === run.threadId,
-        );
-        if (
-          !thread ||
-          thread.status !== "waiting" ||
-          thread.currentRunId !== undefined
-        ) {
-          continue;
-        }
-        const chain = automaticRecoveryRoot(this.state.runs, run);
-        const priorAttempts = this.state.automaticRecoveryAttempts.filter(
-          (attempt) => attempt.rootRunId === chain.rootRunId,
-        ).length;
-        const events = this.requireLedger().listEvents(run.threadId);
-        const assessment = assessAutomaticRecovery({
-          run: stripRunSecrets(run),
-          events,
-          rootRunId: chain.rootRunId,
-          priorAttempts,
-          chainTrusted: chain.trusted && !thread.importProvenance,
-          assessedAt: now,
-        });
-        if (
-          assessment.eligible &&
-          Date.parse(assessment.eligibleAt) > now.getTime()
-        ) {
-          deferred += 1;
-          continue;
-        }
-        this.state.automaticRecoveryAssessments.push(assessment);
-        changed = true;
-        if (!assessment.eligible) {
-          skipped.push(structuredClone(assessment));
-          continue;
-        }
-        const token = createLeaseToken();
-        const attempt = createAutomaticRecoveryAttemptRecord(
-          assessment,
-          owner,
-          token,
-          timestamp,
-          leaseMs,
-        );
-        this.state.automaticRecoveryAttempts.push(attempt);
-        claims.push({
-          assessment: structuredClone(assessment),
-          attempt: stripAutomaticRecoverySecrets(attempt),
-          token,
-        });
-      }
+      const { changed, ...claims } = claimAutomaticRecoveryState({
+        state: this.state,
+        ownerId: owner,
+        leaseMs,
+        limit,
+        now,
+        createToken: createLeaseToken,
+        listEvents: (threadId) => this.requireLedger().listEvents(threadId),
+      });
       if (changed) await this.persistState();
-      return { claims, skipped, settled, deferred };
+      return claims;
     });
   }
 
