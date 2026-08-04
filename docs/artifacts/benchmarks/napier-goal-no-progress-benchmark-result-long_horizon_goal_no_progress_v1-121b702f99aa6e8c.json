@@ -1,0 +1,71 @@
+{
+  "kind": "napier.goal-no-progress-benchmark-result",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T05:41:53.230Z",
+  "caseId": "long_horizon_goal_no_progress_v1",
+  "caseSha256": "b41964b9e96f539ad1feb16ac8bf6dd592531d9a90b47f060430a8c6ce711c07",
+  "status": "failed",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "run": {
+    "threadId": "thread_87183be7a40242989b13",
+    "runId": "run_ed9d7c44d8f94293a717",
+    "status": "completed",
+    "durationMs": 52874,
+    "usage": {
+      "inputTokens": 17484,
+      "outputTokens": 5438,
+      "cacheReadTokens": 32768,
+      "cacheWriteTokens": 0,
+      "costUsd": 0.004062150400000001
+    }
+  },
+  "evaluation": {
+    "kind": "napier.goal-no-progress-benchmark-evaluation",
+    "schemaVersion": 1,
+    "caseId": "long_horizon_goal_no_progress_v1",
+    "caseSha256": "b41964b9e96f539ad1feb16ac8bf6dd592531d9a90b47f060430a8c6ce711c07",
+    "status": "failed",
+    "runStatus": "completed",
+    "goalStatus": "completed",
+    "goalBlocker": "none",
+    "continuationCount": 1,
+    "noProgressCount": 0,
+    "maxNoProgressContinuations": 2,
+    "goalEvaluationCount": 2,
+    "continuationStartedCount": 1,
+    "primaryResponseCount": 2,
+    "repeatedResponseCount": 1,
+    "modelResponseCount": 10,
+    "modelResponseErrorCount": 0,
+    "modelResponseUsageSampleCount": 7,
+    "postBlockContinuationCount": 0,
+    "goalRecovered": false,
+    "replayValid": true,
+    "credentialLeakDetected": false,
+    "diagnostics": [
+      "goal_not_blocked",
+      "goal_blocker_mismatch",
+      "continuation_count_mismatch",
+      "no_progress_count_mismatch",
+      "evaluation_count_mismatch",
+      "continuation_event_mismatch",
+      "repeated_response_mismatch"
+    ],
+    "contentSha256": "417e04e6de8f9528a2a4330a0944dcba65af86e71703792baac19fa8a9926fa3"
+  },
+  "ledger": {
+    "bundleFileName": "napier-goal-no-progress-benchmark-ledger-long_horizon_goal_no_progress_v1-ac6144af9664c405.json",
+    "bundleSha256": "ac6144af9664c405045db683f6ca40a850baf00e58e153e66dfc74d952669fbd",
+    "bundleBytes": 72669
+  },
+  "contentSha256": "121b702f99aa6e8c1c37b1f9414f500eaa16aa149ceaf633bea51969a77ddeb3"
+}

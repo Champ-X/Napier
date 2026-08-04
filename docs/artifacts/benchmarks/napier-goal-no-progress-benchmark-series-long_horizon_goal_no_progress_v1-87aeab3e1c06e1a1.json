@@ -1,0 +1,88 @@
+{
+  "kind": "napier.goal-no-progress-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T05:43:12.443Z",
+  "caseId": "long_horizon_goal_no_progress_v1",
+  "caseSha256": "b41964b9e96f539ad1feb16ac8bf6dd592531d9a90b47f060430a8c6ce711c07",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 2,
+  "completedTrialCount": 2,
+  "passedTrialCount": 1,
+  "failedTrialCount": 1,
+  "inconclusiveTrialCount": 0,
+  "successRate": 0.5,
+  "passRate": 0.5,
+  "metrics": {
+    "durationMs": {
+      "total": 64315,
+      "min": 11441,
+      "p50": 11441,
+      "p95": 52874,
+      "max": 52874,
+      "mean": 32157.5
+    },
+    "costUsd": {
+      "total": 0.004794591200000001,
+      "min": 0.0007324408000000002,
+      "p50": 0.0007324408000000002,
+      "p95": 0.004062150400000001,
+      "max": 0.004062150400000001,
+      "mean": 0.0023972956000000004
+    },
+    "inputTokens": {
+      "total": 21349,
+      "min": 3865,
+      "p50": 3865,
+      "p95": 17484,
+      "max": 17484,
+      "mean": 10674.5
+    },
+    "outputTokens": {
+      "total": 6042,
+      "min": 604,
+      "p50": 604,
+      "p95": 5438,
+      "max": 5438,
+      "mean": 3021
+    },
+    "modelResponseCount": {
+      "total": 17,
+      "min": 7,
+      "p50": 7,
+      "p95": 10,
+      "max": 10,
+      "mean": 8.5
+    }
+  },
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_87183be7a40242989b13",
+      "status": "failed",
+      "resultFileName": "napier-goal-no-progress-benchmark-result-long_horizon_goal_no_progress_v1-121b702f99aa6e8c.json",
+      "resultSha256": "121b702f99aa6e8c1c37b1f9414f500eaa16aa149ceaf633bea51969a77ddeb3",
+      "ledgerFileName": "napier-goal-no-progress-benchmark-ledger-long_horizon_goal_no_progress_v1-ac6144af9664c405.json",
+      "ledgerSha256": "ac6144af9664c405045db683f6ca40a850baf00e58e153e66dfc74d952669fbd"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_af60bfcab9584c8494fe",
+      "status": "passed",
+      "resultFileName": "napier-goal-no-progress-benchmark-result-long_horizon_goal_no_progress_v1-88ad12c3af81e7b6.json",
+      "resultSha256": "88ad12c3af81e7b66dadece031bced2a86bbbaeccda9b14b439658c5404e5929",
+      "ledgerFileName": "napier-goal-no-progress-benchmark-ledger-long_horizon_goal_no_progress_v1-f36e7dc427fee31a.json",
+      "ledgerSha256": "f36e7dc427fee31afaf708e678ea19eb0175010ce97bfaf8acb3bcb9a34fd21c"
+    }
+  ],
+  "contentSha256": "87aeab3e1c06e1a1d67b9ca969d435b8342419fb8337710d93634c3aa4f19463"
+}

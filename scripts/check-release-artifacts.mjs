@@ -20,6 +20,10 @@ import {
   uxBenchmarkSeriesArtifactReferences,
   verifyUxBenchmarkSeries,
 } from "../apps/cli/dist/ux-benchmark-series.js";
+import {
+  goalNoProgressSeriesArtifactReferences,
+  verifyGoalNoProgressBenchmarkSeries,
+} from "../apps/cli/dist/goal-no-progress-benchmark-series.js";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -63,6 +67,8 @@ const defaultBudgetSampleBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_token_budget_exhaustion_v1-3661f272968004ae.json";
 const defaultBudgetDistributionBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_token_budget_exhaustion_v1-ee23f61783f8c111.json";
+const defaultGoalNoProgressBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-goal-no-progress-benchmark-series-long_horizon_goal_no_progress_v1-87aeab3e1c06e1a1.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json";
 const defaultUxBenchmarkSeriesPath =
@@ -124,6 +130,9 @@ export async function auditReleaseArtifacts(options = {}) {
   const budgetDistributionBenchmarkSeriesPath =
     options.budgetDistributionBenchmarkSeriesPath ??
     defaultBudgetDistributionBenchmarkSeriesPath;
+  const goalNoProgressBenchmarkSeriesPath =
+    options.goalNoProgressBenchmarkSeriesPath ??
+    defaultGoalNoProgressBenchmarkSeriesPath;
   const researchBenchmarkSeriesPath =
     options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
   const uxBenchmarkSeriesPath =
@@ -317,6 +326,16 @@ export async function auditReleaseArtifacts(options = {}) {
       artifactReferences: workflowBenchmarkSeriesArtifactReferences,
       verifySeries: verifyWorkflowBenchmarkSeries,
     });
+  const goalNoProgressBenchmarkArtifacts =
+    await verifyBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: goalNoProgressBenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "long-horizon-goal-no-progress",
+      diagnosticLabel: "long-horizon Goal no-progress",
+      artifactReferences: goalNoProgressSeriesArtifactReferences,
+      verifySeries: verifyGoalNoProgressBenchmarkSeries,
+    });
   const researchBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: researchBenchmarkSeriesPath,
@@ -418,6 +437,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...offlineWaitDistributionBenchmarkArtifacts,
     ...budgetSampleBenchmarkArtifacts,
     ...budgetDistributionBenchmarkArtifacts,
+    ...goalNoProgressBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
     ...uxBenchmarkArtifacts,
   ];

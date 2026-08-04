@@ -12,6 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import { canonicalJson } from "../packages/runtime/dist/index.js";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -140,6 +141,11 @@ describe("release artifacts audit", () => {
       "long-horizon-budget-distribution-ledger-4",
       "long-horizon-budget-distribution-result-5",
       "long-horizon-budget-distribution-ledger-5",
+      "long-horizon-goal-no-progress-series",
+      "long-horizon-goal-no-progress-result-1",
+      "long-horizon-goal-no-progress-ledger-1",
+      "long-horizon-goal-no-progress-result-2",
+      "long-horizon-goal-no-progress-ledger-2",
       "research-benchmark-series",
       "research-benchmark-result-1",
       "research-benchmark-ledger-1",
@@ -565,6 +571,40 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when retained Goal no-progress evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const seriesName = (await readdir(benchmarkRoot)).find((name) =>
+      name.startsWith(
+        "napier-goal-no-progress-benchmark-series-long_horizon_goal_no_progress_v1-",
+      ),
+    );
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const passed = series.trials.find((trial) => trial.status === "passed");
+    const ledgerPath = path.join(benchmarkRoot, passed.ledgerFileName);
+    const ledger = JSON.parse(await readFile(ledgerPath, "utf8"));
+    const finalEvaluation = ledger.goalEvents
+      .filter((event) => event.type === "goal.evaluated")
+      .at(-1);
+    finalEvaluation.payload.noProgressCount = 1;
+    const { contentSha256: _contentSha256, ...content } = ledger;
+    ledger.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(ledgerPath, ledger);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "long-horizon Goal no-progress series: series_trial_invalid",
+        `long-horizon Goal no-progress trial ${passed.index}: ledger_binding_mismatch`,
+        `long-horizon Goal no-progress trial ${passed.index}: evaluation_evidence_mismatch`,
+      ]),
+    );
+  });
+
   it("fails when retained Research evidence is tampered", async () => {
     const { root } = await createFixture();
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
@@ -688,6 +728,7 @@ async function createWorkflowBenchmarkFixture(root) {
   const names = (await readdir(sourceRoot)).filter(
     (name) =>
       name.startsWith("napier-workflow-benchmark-") ||
+      name.startsWith("napier-goal-no-progress-benchmark-") ||
       name.startsWith("napier-research-benchmark-") ||
       name.startsWith("napier-ux-benchmark-") ||
       name === "napier-omp-coding-comparison-seed-20260806.json",

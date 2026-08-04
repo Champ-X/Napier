@@ -1,0 +1,63 @@
+{
+  "kind": "napier.goal-no-progress-benchmark-result",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T05:41:00.075Z",
+  "caseId": "long_horizon_goal_no_progress_v1",
+  "caseSha256": "b41964b9e96f539ad1feb16ac8bf6dd592531d9a90b47f060430a8c6ce711c07",
+  "status": "passed",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "run": {
+    "threadId": "thread_af60bfcab9584c8494fe",
+    "runId": "run_d1b2475418434ea6b2f3",
+    "status": "completed",
+    "durationMs": 11441,
+    "usage": {
+      "inputTokens": 3865,
+      "outputTokens": 604,
+      "cacheReadTokens": 7936,
+      "cacheWriteTokens": 0,
+      "costUsd": 0.0007324408000000002
+    }
+  },
+  "evaluation": {
+    "kind": "napier.goal-no-progress-benchmark-evaluation",
+    "schemaVersion": 1,
+    "caseId": "long_horizon_goal_no_progress_v1",
+    "caseSha256": "b41964b9e96f539ad1feb16ac8bf6dd592531d9a90b47f060430a8c6ce711c07",
+    "status": "passed",
+    "runStatus": "completed",
+    "goalStatus": "blocked",
+    "goalBlocker": "goal_not_met_yet",
+    "continuationCount": 2,
+    "noProgressCount": 2,
+    "maxNoProgressContinuations": 2,
+    "goalEvaluationCount": 3,
+    "continuationStartedCount": 2,
+    "primaryResponseCount": 3,
+    "repeatedResponseCount": 3,
+    "modelResponseCount": 7,
+    "modelResponseErrorCount": 0,
+    "modelResponseUsageSampleCount": 3,
+    "postBlockContinuationCount": 0,
+    "goalRecovered": true,
+    "replayValid": true,
+    "credentialLeakDetected": false,
+    "diagnostics": [],
+    "contentSha256": "d09979852097ad4849e88c7da4e62f9027d52fecc174845d3e4969ef59c8424f"
+  },
+  "ledger": {
+    "bundleFileName": "napier-goal-no-progress-benchmark-ledger-long_horizon_goal_no_progress_v1-f36e7dc427fee31a.json",
+    "bundleSha256": "f36e7dc427fee31afaf708e678ea19eb0175010ce97bfaf8acb3bcb9a34fd21c",
+    "bundleBytes": 49615
+  },
+  "contentSha256": "88ad12c3af81e7b66dadece031bced2a86bbbaeccda9b14b439658c5404e5929"
+}

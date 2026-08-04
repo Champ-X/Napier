@@ -1577,6 +1577,42 @@ item nor Reduce, and recorded zero post-exhaustion tool completions. Duration
 was 2.182–3.121 seconds; mean cost was `$0.0001877784`, and mean input/output
 usage was 795.86/266.86.
 
+### Durable Goal No-Progress Benchmark
+
+`long_horizon_goal_no_progress_v1` exercises the ordinary durable Goal loop
+against a hash-bound objective requiring three distinct evidence markers. The
+fixed Agent response completes only `alpha` and explicitly leaves `beta` and
+`gamma` unfinished. A pass requires three primary responses, three
+`goal.evaluated` events, two `goal.continuation.started` events, a final
+`goal_not_met_yet` block at `noProgressCount=2`, no continuation after that
+block, valid Replay, and the same Goal state after complete Runtime shutdown
+and reopen.
+
+```bash
+npm run bench:goal-no-progress -- \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 2
+```
+
+The Result/Ledger pair binds the final Goal projection, selected Goal and
+assistant events, a body-free model-response observation, terminal and
+evaluation events, and a bounded receipt chain. High-volume text/thinking
+deltas are omitted from receipts, while the full source Replay hash and event
+count remain bound. Offline verification reconstructs all counters and
+bindings; changing the final no-progress count, assistant evidence, or a
+Result/Ledger reference fails the release gate.
+
+The retained
+[two-trial DeepSeek Series](docs/artifacts/benchmarks/napier-goal-no-progress-benchmark-series-long_horizon_goal_no_progress_v1-87aeab3e1c06e1a1.json)
+contains one pass and one ordinary failure. The passing trial blocked after
+exactly two no-progress continuations, recovered the same Goal after reopen,
+and made no post-block continuation. In the failed trial, the model deviated
+from the fixed continuation response and claimed all markers were complete;
+the evaluator completed the Goal after one continuation, and the benchmark
+correctly scored that divergence as failed. This 1/2 sample proves the
+protocol and its fail-closed evidence path, not stable model adherence.
+
 ### Research Outcome Benchmark
 
 The fixed `research_aurora_contradiction_v1` case injects three immutable
@@ -5576,9 +5612,9 @@ receipt, runtime-environment receipt, product-performance baseline, management
 OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
 Web dist manifest, and the semantically verified Workflow, Data, DataFrame,
 Security, restart/offline-wait/budget Long-horizon, Research, and UX Benchmark
-Series plus all forty Result/Ledger pairs by SHA-256;
-the current 102-artifact set is bound by
-`6381085af3c9e19d...`;
+Series, the durable Goal no-progress Series, and all forty-two Result/Ledger
+pairs by SHA-256; the current 107-artifact set is bound by
+`6a08ce697f124d5e...`;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
@@ -5587,8 +5623,8 @@ drift, missing runtime components, OpenAPI route drift, manifest drift, extra
 dist files, malformed manifests, stale receipts, compatibility regressions,
 aggregate artifact drift, Workflow Benchmark trial substitution/tampering, and
 Data/Security/restart, offline-wait, or budget Long-horizon/Research Benchmark evidence
-tampering and entry-budget regressions are covered without mutating the real
-build output.
+tampering, Goal no-progress counter/evidence substitution, and entry-budget
+regressions are covered without mutating the real build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with
 relative paths, file counts, main-entry budget status, the manifest SHA-256,
 the canonical dist-content SHA-256, and any errors for CI capture. Trace, Plan,

@@ -1942,8 +1942,37 @@ the current release set because calibration changed the case hash. The retained
 current-case two- and five-trial Series passed 7/7: every trial used two Runs,
 retained one exhaustion event, had zero post-exhaustion tool completions, and
 left Reduce absent. Duration was 2.182–3.121 seconds; mean cost was
-`$0.0001877784`, and mean input/output usage was 795.86/266.86. No-progress
-detection and uncertain write recovery remain.
+`$0.0001877784`, and mean input/output usage was 795.86/266.86.
+
+`long_horizon_goal_no_progress_v1` measures the durable Goal breaker's
+production semantics separately from Workflow recovery. Its hash-bound
+objective requires three evidence markers, while the fixed Agent response
+reports only `alpha` complete. A passing trial must produce three identical
+primary responses, three `goal.evaluated` events, two
+`goal.continuation.started` events, and a final `goal_not_met_yet` block with
+`continuationCount=2` and `noProgressCount=2`. The runner then closes the
+complete Runtime, reopens the same Store, and requires the recovered Goal's
+last evaluated Run and evidence hash to match.
+
+The Goal Ledger retains the final privacy-bounded Goal projection, selected
+Goal/assistant/model-observation/evaluation/terminal events, total source
+event count and Replay hash, plus chained receipts for bounded evidence.
+High-volume text and thinking deltas are omitted from the receipt set. Offline
+verification reconstructs every counter, repeated-response count,
+post-block-continuation count, recovery binding, event receipt, and
+Result/Ledger/Series reference. The release tamper test changes a final
+no-progress count, rehashes the Ledger, and still detects both evaluation
+evidence and Result/Ledger binding mismatches.
+
+The retained two-trial DeepSeek Series contains one pass and one failed trial.
+The pass reached the expected block after two continuations, survived Runtime
+reopen, and emitted no post-block continuation. In the failure, the model
+departed from the fixed continuation instruction and asserted that all markers
+were complete, so the evaluator completed the Goal after one continuation.
+This is retained as an ordinary semantic failure rather than rewritten as a
+protocol pass or Provider error. The 1/2 distribution proves one complete
+breaker path and fail-closed divergent-outcome evidence, not stable model
+adherence. Uncertain write recovery remains.
 
 ### Research Outcome Benchmark
 
@@ -2124,14 +2153,14 @@ The top-level release artifact audit binds the package-lock receipt,
 runtime-environment receipt, management OpenAPI artifact, management OpenAPI
 compatibility fixture, product-performance baseline, Web dist receipt, Web
 dist manifest, and retained Workflow, Data, DataFrame, Security, single- and
-multi-restart/offline-wait/budget Long-horizon, Research, and UX Benchmark
-Series plus all forty Result/Ledger pairs into one
+multi-restart/offline-wait/budget Long-horizon, durable Goal no-progress,
+Research, and UX Benchmark Series plus all forty-two Result/Ledger pairs into one
 `napier.release-artifacts-audit` receipt. Before
-hashing the 94 Benchmark files, the gate performs full semantic verification
-for fourteen Series across ten cases. It stores only artifact kinds,
+hashing the 99 Benchmark files, the gate performs full semantic verification
+for fifteen Series across eleven cases. It stores only artifact kinds,
 repo-relative paths, SHA-256 values, validity booleans, package name/version,
-and a canonical artifact-set digest. The current receipt contains 102 artifacts
-and binds set SHA-256 `6381085af3c9e19d...`.
+and a canonical artifact-set digest. The current receipt contains 107 artifacts
+and binds set SHA-256 `6a08ce697f124d5e...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 

@@ -166,6 +166,7 @@ describe("Goal no-progress outcome benchmark", () => {
       valid: true,
       diagnostics: [],
       seriesSha256: artifacts.series.contentSha256,
+      trialDiagnostics: [],
     });
 
     const substituted = structuredClone(artifacts.series);

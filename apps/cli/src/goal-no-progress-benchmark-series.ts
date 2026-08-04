@@ -145,39 +145,85 @@ export function createGoalNoProgressBenchmarkSeries(input: {
 
 export function verifyGoalNoProgressBenchmarkSeries(
   input: unknown,
-  trials: GoalNoProgressBenchmarkArtifacts[],
-): { valid: boolean; diagnostics: string[]; seriesSha256: string } {
+  trialInputs: Array<{
+    resultFileName?: string;
+    result: GoalNoProgressBenchmarkArtifacts["result"];
+    bundle: GoalNoProgressBenchmarkArtifacts["bundle"];
+    resultPath?: string;
+    ledgerPath?: string;
+  }>,
+): {
+  valid: boolean;
+  diagnostics: string[];
+  seriesSha256: string;
+  trialDiagnostics: Array<{ index: number; diagnostics: string[] }>;
+} {
   if (!record(input)) {
     return {
       valid: false,
       diagnostics: ["series_shape_invalid"],
       seriesSha256: sha256(String(input)),
+      trialDiagnostics: [],
     };
   }
   const series = input as unknown as GoalNoProgressBenchmarkSeries;
   const diagnostics: string[] = [];
   if (
-    series.kind !== "napier.goal-no-progress-benchmark-series" ||
-    series.schemaVersion !== 1 ||
-    !digest(series.contentSha256) ||
+    !validSeriesIdentity(series) ||
     sha256(canonicalJson(withoutHash(series) as unknown as JsonValue)) !==
       series.contentSha256
   ) {
     diagnostics.push("series_shape_invalid");
   }
-  if (
-    trials.length !== series.trials.length ||
-    trials.some(
-      (trial, index) =>
-        !verifyGoalNoProgressBenchmarkArtifacts(trial.result, trial.bundle)
-          .valid ||
-        trial.result.contentSha256 !== series.trials[index]?.resultSha256 ||
-        trial.bundle.contentSha256 !== series.trials[index]?.ledgerSha256,
-    )
-  ) {
-    diagnostics.push("series_trial_invalid");
+  if (!validSeriesIdentity(series)) {
+    return {
+      valid: false,
+      diagnostics,
+      seriesSha256: digest(series.contentSha256)
+        ? series.contentSha256
+        : sha256(String(input)),
+      trialDiagnostics: [],
+    };
   }
-  if (diagnostics.length === 0) {
+  const trials = trialInputs.map((trial) => ({
+    resultFileName:
+      trial.resultFileName ??
+      path.basename(trial.resultPath ?? "missing-result.json"),
+    result: trial.result,
+    bundle: trial.bundle,
+    resultPath:
+      trial.resultPath ?? trial.resultFileName ?? "missing-result.json",
+    ledgerPath: trial.ledgerPath ?? trial.result.ledger.bundleFileName,
+  }));
+  if (trials.length !== series.trials.length) {
+    diagnostics.push("series_artifact_count_mismatch");
+  }
+  const trialDiagnostics = series.trials.flatMap((entry) => {
+    const trial = trials[entry.index - 1];
+    const verification = trial
+      ? verifyGoalNoProgressBenchmarkArtifacts(trial.result, trial.bundle)
+      : { valid: false, diagnostics: ["trial_artifact_missing"] };
+    const issues = [...verification.diagnostics];
+    if (
+      !trial ||
+      !verification.valid ||
+      trial.resultFileName !== entry.resultFileName ||
+      trial.result.contentSha256 !== entry.resultSha256 ||
+      trial.bundle.contentSha256 !== entry.ledgerSha256 ||
+      trial.result.run.threadId !== entry.threadId ||
+      trial.result.status !== entry.status ||
+      path.basename(trial.ledgerPath) !== entry.ledgerFileName ||
+      trial.result.ledger.bundleFileName !== entry.ledgerFileName ||
+      trial.result.ledger.bundleSha256 !== entry.ledgerSha256
+    ) {
+      issues.push("trial_binding_mismatch");
+    }
+    return issues.length > 0
+      ? [{ index: entry.index, diagnostics: issues }]
+      : [];
+  });
+  if (trialDiagnostics.length > 0) diagnostics.push("series_trial_invalid");
+  if (diagnostics.length === 0 && trials.length === series.trials.length) {
     const recreated = createGoalNoProgressBenchmarkSeries({
       generatedAt: series.generatedAt,
       requestedTrialCount: series.requestedTrialCount,
@@ -193,7 +239,26 @@ export function verifyGoalNoProgressBenchmarkSeries(
     seriesSha256: digest(series.contentSha256)
       ? series.contentSha256
       : sha256(String(input)),
+    trialDiagnostics,
   };
+}
+
+export function goalNoProgressSeriesArtifactReferences(input: unknown) {
+  if (!record(input)) {
+    throw new Error("Goal no-progress Series is invalid");
+  }
+  const series = input as unknown as GoalNoProgressBenchmarkSeries;
+  if (
+    series.kind !== "napier.goal-no-progress-benchmark-series" ||
+    !Array.isArray(series.trials)
+  ) {
+    throw new Error("Goal no-progress Series is invalid");
+  }
+  return series.trials.map((trial) => ({
+    index: trial.index,
+    resultFileName: trial.resultFileName,
+    ledgerFileName: trial.ledgerFileName,
+  }));
 }
 
 export function goalNoProgressSeriesFileName(
@@ -240,4 +305,25 @@ function record(value: unknown): value is Record<string, unknown> {
 
 function digest(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value);
+}
+
+function validSeriesIdentity(value: GoalNoProgressBenchmarkSeries): boolean {
+  return (
+    value.kind === "napier.goal-no-progress-benchmark-series" &&
+    value.schemaVersion === 1 &&
+    typeof value.generatedAt === "string" &&
+    typeof value.caseId === "string" &&
+    digest(value.caseSha256) &&
+    digest(value.contentSha256) &&
+    Array.isArray(value.trials) &&
+    value.trials.every(
+      (trial, index) =>
+        trial.index === index + 1 &&
+        typeof trial.threadId === "string" &&
+        typeof trial.resultFileName === "string" &&
+        digest(trial.resultSha256) &&
+        typeof trial.ledgerFileName === "string" &&
+        digest(trial.ledgerSha256),
+    )
+  );
 }

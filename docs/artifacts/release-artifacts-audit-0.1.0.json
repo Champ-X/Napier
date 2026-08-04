@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "6381085af3c9e19db1cddba90510bcb9efb322c50bab361f0acbe29dc67c7d8e",
+  "artifactSetSha256": "6a08ce697f124d5eaa2753294492532a8e0a34242f0e1cb26312230c30fe423d",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "c0b6774256ac02c4c0d1bc1ff3da26fd4ab8e2bfe9df6306896736c42175125f",
+      "sha256": "6ad22cccbd18b671e5a2072af54330c902dfde87d87dfc10fb18c46fb480c232",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "b7eb4948b6e2a48c2f3cfb3238adb447cbdedae9e93fecfe2345675a95b91f8c",
+      "sha256": "f67933bd26339b56cbd9766e0d35d9e783fe53000603f897959dddb7467cd617",
       "valid": true
     },
     {
@@ -558,6 +558,36 @@
       "kind": "long-horizon-budget-distribution-ledger-5",
       "path": "docs/artifacts/benchmarks/napier-workflow-benchmark-ledger-long_horizon_token_budget_exhaustion_v1-0cc875178880cf48.json",
       "sha256": "89763b8e383088a55beb824add0c4a52c697eb096b56a215b106cdba75a88ecc",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-goal-no-progress-series",
+      "path": "docs/artifacts/benchmarks/napier-goal-no-progress-benchmark-series-long_horizon_goal_no_progress_v1-87aeab3e1c06e1a1.json",
+      "sha256": "111f1b7127c87e84462022b2d97c443209cc102fd1ea9f8e99cbec1e43a292bc",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-goal-no-progress-result-1",
+      "path": "docs/artifacts/benchmarks/napier-goal-no-progress-benchmark-result-long_horizon_goal_no_progress_v1-121b702f99aa6e8c.json",
+      "sha256": "b64b9722141053b740dfaa4434f6591a583ad39bd33f155a4cabe35d8f225115",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-goal-no-progress-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-goal-no-progress-benchmark-ledger-long_horizon_goal_no_progress_v1-ac6144af9664c405.json",
+      "sha256": "ace8d18a3326ec4c0cea7b1d4305ac38c0af1eba9d875f48d7eb9455e749cb00",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-goal-no-progress-result-2",
+      "path": "docs/artifacts/benchmarks/napier-goal-no-progress-benchmark-result-long_horizon_goal_no_progress_v1-88ad12c3af81e7b6.json",
+      "sha256": "61ad3e348c472026e1e78dd7bcb13cd2031c6eea960ade7fe66516b8cb798fb7",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-goal-no-progress-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-goal-no-progress-benchmark-ledger-long_horizon_goal_no_progress_v1-f36e7dc427fee31a.json",
+      "sha256": "a121d7b9e56db7b49a30b287ea5edb2dc9f460b02caad4f706f2123910f11329",
       "valid": true
     },
     {
