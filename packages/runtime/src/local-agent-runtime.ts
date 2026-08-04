@@ -17,6 +17,8 @@ import {
   type OsSandboxAdapter,
 } from "./sandbox.js";
 import { LocalStore } from "./store.js";
+import type { WebSearchExecutor } from "./web-search-model.js";
+import { WebSearchProviderRegistry } from "./web-search-providers.js";
 import { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { WorkspaceProcessManager } from "./workspace-processes.js";
 import { ExecutionPlanWorkflowExperimentRuntime } from "./workflow-experiments.js";
@@ -29,6 +31,7 @@ export interface LocalAgentRuntimeOptions {
   keychain?: KeychainSecretStore;
   sandbox?: OsSandboxAdapter;
   researchSourceCaptures?: BrowserSourceCaptureProvider;
+  webSearch?: WebSearchExecutor;
 }
 
 export interface LocalAgentRuntimeServices {
@@ -98,6 +101,13 @@ export async function createLocalAgentRuntime(
       workspaceFileMutations,
       undefined,
       options.researchSourceCaptures,
+      undefined,
+      undefined,
+      undefined,
+      options.webSearch ??
+        new WebSearchProviderRegistry({
+          ...(options.env ? { env: options.env } : {}),
+        }),
     );
     const embeddedAgents = new EmbeddedAgentService(store, runtime);
     const agentMessageExperiments = new AgentMessageExperimentRuntime(

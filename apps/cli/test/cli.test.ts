@@ -4,7 +4,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { Writable } from "node:stream";
 
-import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
+import {
+  fauxAssistantMessage,
+  fauxProvider,
+  fauxToolCall,
+} from "@earendil-works/pi-ai";
 import type { StreamFrame } from "@napier/contracts";
 import {
   createLocalAgentRuntime,
@@ -14,7 +18,8 @@ import {
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
-import { afterEach, describe, expect, it } from "vitest";
+import type { WebSearchExecutor } from "@napier/runtime/web-search";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   CLI_HELP,
@@ -190,6 +195,90 @@ describe("Napier one-shot CLI", () => {
       }),
     );
     expect(JSON.stringify(snapshot.detail)).toContain("CLI_JSONL_RESULT");
+  });
+
+  it("exposes web_search through the clean-state default Agent CLI path", async () => {
+    const fixture = await createFixture();
+    const provider = fauxProvider({ provider: "faux-cli-search" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("web_search", {
+          query: "current official release",
+          site: "example.com",
+          count: 2,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage("CLI_SEARCH_RESULT"),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const webSearch: WebSearchExecutor = {
+      search: vi.fn(async () => ({
+        provider: "bing" as const,
+        results: [
+          {
+            title: "Official release",
+            url: "https://example.com/release",
+            snippet: "Current release information.",
+            source: "Bing",
+          },
+        ],
+        attempts: [{ provider: "bing" as const, status: "succeeded" as const }],
+        retrievedAt: "2026-08-04T12:00:00.000Z",
+      })),
+    };
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "run",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--prompt",
+        "Find the current official release.",
+        "--model",
+        "faux-cli-search/faux-1",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, stderr),
+      providerDependencies(provider, webSearch),
+    );
+
+    expect(code).toBe(0);
+    expect(stderr.text()).toBe("");
+    expect(webSearch.search).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: "current official release",
+        site: "example.com",
+        count: 2,
+        provider: "auto",
+      }),
+      expect.any(AbortSignal),
+    );
+    const frames = parseFrames(stdout.text());
+    const events = frames.flatMap((frame) =>
+      frame.type === "event" ? [frame.event] : [],
+    );
+    expect(
+      events.find(
+        (event) =>
+          event.type === "tool.completed" &&
+          record(event.payload)?.["toolName"] === "web_search",
+      )?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        outputRedacted: true,
+        details: expect.objectContaining({
+          kind: "napier.web-search",
+          provider: "bing",
+          resultCount: 1,
+        }),
+      }),
+    );
+    expect(stdout.text()).toContain("CLI_SEARCH_RESULT");
   });
 
   it("appends to an existing Thread and prints a human result", async () => {
@@ -621,17 +710,25 @@ describe("Napier one-shot CLI", () => {
 
 function providerDependencies(
   provider: ReturnType<typeof fauxProvider>,
+  webSearch?: WebSearchExecutor,
 ): RunCliDependencies {
   return {
     async createRuntime(options: LocalAgentRuntimeOptions) {
       const services = await createLocalAgentRuntime({
         ...options,
         sandbox: new UnsupportedSandboxAdapter("cli-faux"),
+        ...(webSearch ? { webSearch } : {}),
       });
       services.models.registerProvider(provider.provider);
       return services;
     },
   };
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }
 
 async function createFixture(): Promise<{

@@ -5,12 +5,12 @@ import {
   agentDataToolInputProjection,
   agentDataToolOutputProjection,
 } from "./agent-data-tool-ledger.js";
-import { canonicalJson, sha256 } from "./ed25519.js";
 import {
-  browserToolCallArgumentsLedgerProjection,
-  browserToolInputLedgerProjection,
-  browserToolOutputLedgerProjection,
-} from "./browser-tool.js";
+  agentNetworkToolCallProjection,
+  agentNetworkToolInputProjection,
+  agentNetworkToolOutputProjection,
+} from "./agent-network-tool-ledger.js";
+import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   javascriptKernelToolCallArgumentsLedgerProjection,
   javascriptKernelToolInputLedgerProjection,
@@ -21,11 +21,6 @@ import {
   pythonKernelToolInputLedgerProjection,
   pythonKernelToolOutputLedgerProjection,
 } from "./python-kernel-tool.js";
-import {
-  researchSourceToolCallArgumentsLedgerProjection,
-  researchSourceToolInputLedgerProjection,
-  researchSourceToolOutputLedgerProjection,
-} from "./research-source-tool.js";
 import {
   nodeDebuggerToolCallArgumentsLedgerProjection,
   nodeDebuggerToolInputLedgerProjection,
@@ -130,12 +125,8 @@ export function agentToolCallArgumentsLedgerProjection(
   if (dataProjection !== undefined) return dataProjection;
   const processProjection = agentProcessToolCallProjection(toolName, args);
   if (processProjection !== undefined) return processProjection;
-  if (toolName === "research_source") {
-    return researchSourceToolCallArgumentsLedgerProjection(args);
-  }
-  if (toolName === "browser") {
-    return browserToolCallArgumentsLedgerProjection(args);
-  }
+  const networkProjection = agentNetworkToolCallProjection(toolName, args);
+  if (networkProjection !== undefined) return networkProjection;
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolCallArgumentsLedgerProjection(args);
   }
@@ -207,12 +198,8 @@ export function agentToolInputLedgerProjection(
   if (dataProjection !== undefined) return dataProjection;
   const processProjection = agentProcessToolInputProjection(toolName, args);
   if (processProjection !== undefined) return processProjection;
-  if (toolName === "research_source") {
-    return researchSourceToolInputLedgerProjection(args);
-  }
-  if (toolName === "browser") {
-    return browserToolInputLedgerProjection(args);
-  }
+  const networkProjection = agentNetworkToolInputProjection(toolName, args);
+  if (networkProjection !== undefined) return networkProjection;
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolInputLedgerProjection(args);
   }
@@ -297,12 +284,12 @@ export function agentToolOutputLedgerProjection(
     result,
   );
   if (processProjection !== undefined) return processProjection;
-  if (toolName === "research_source") {
-    return researchSourceToolOutputLedgerProjection(output, result);
-  }
-  if (toolName === "browser") {
-    return browserToolOutputLedgerProjection(output, result);
-  }
+  const networkProjection = agentNetworkToolOutputProjection(
+    toolName,
+    output,
+    result,
+  );
+  if (networkProjection !== undefined) return networkProjection;
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolOutputLedgerProjection(output, result);
   }

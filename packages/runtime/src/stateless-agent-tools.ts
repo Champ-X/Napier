@@ -54,6 +54,8 @@ import {
   createWorkspaceFilePreviewTool,
 } from "./workspace-file-tools.js";
 import { createVerificationTool } from "./verification.js";
+import type { WebSearchExecutor } from "./web-search-model.js";
+import { createWebSearchTool } from "./web-search-tool.js";
 import { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
 import { WriteLinkedWorkspacePatchObserver } from "./write-linked-workspace-patch.js";
 
@@ -65,6 +67,7 @@ export interface CreateStatelessAgentToolsOptions {
   sandbox: OsSandboxAdapter;
   lspSession?: LspProtocolExecutor;
   workspaceFileMutations?: WorkspaceFileMutationManager;
+  webSearch?: WebSearchExecutor;
   gitStageMutations?: GitStageMutationManager;
   gitStageScopeId?: string;
   gitCommitScopeId?: string;
@@ -153,6 +156,7 @@ export function createStatelessAgentTools(
     ...(patchObserver ? { patchObserver } : {}),
   }).filter((tool) => profile.enabledTools.includes(tool.name));
   appendDataTools(tools, profile, options.store.workspaceRoot);
+  appendWebTools(tools, profile, options.webSearch);
 
   tools.push(
     ...createTypescriptAstTools(options.store.workspaceRoot).filter((tool) =>
@@ -356,5 +360,15 @@ function appendDataTools(
   }
   if (profile.enabledTools.includes("data_frame")) {
     tools.push(createDataFrameTool(workspaceRoot));
+  }
+}
+
+function appendWebTools(
+  tools: AgentTool[],
+  profile: AgentProfile,
+  webSearch: WebSearchExecutor | undefined,
+): void {
+  if (profile.enabledTools.includes("web_search") && webSearch) {
+    tools.push(createWebSearchTool(webSearch));
   }
 }

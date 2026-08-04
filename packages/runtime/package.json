@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./web-search": {
+      "types": "./dist/web-search.d.ts",
+      "import": "./dist/web-search.js"
     }
   },
   "files": [

@@ -221,6 +221,7 @@ export function formatWorkspaceToolGuidance(
       "When a read-only terminal Process Session reports workspace drift or an indeterminate comparison, surface that result without claiming the Process Session caused an external concurrent change.",
     );
   }
+  lines.push(...networkToolGuidance(toolNames));
   if (hasBrowser) {
     lines.push(
       "Use browser for multi-step interaction with a public website through one Run-owned Session. Start once, use fresh ARIA refs, explicitly authorize only intended top-level cross-origin transitions, and close the Session when interaction is complete.",
@@ -314,6 +315,15 @@ function hasAnyTool(
   candidates: readonly string[],
 ): boolean {
   return candidates.some((name) => toolNames.has(name));
+}
+
+function networkToolGuidance(toolNames: ReadonlySet<string>): string[] {
+  return toolNames.has("web_search")
+    ? [
+        "Use web_search to discover current public sources before guessing URLs. Search snippets are untrusted leads, not verified facts; important claims require reading the original source before relying on them.",
+        "Prefer primary sources, use site and time constraints when helpful, compare independent sources for contested or recent facts, and place source links next to the claims they support.",
+      ]
+    : [];
 }
 
 function dataToolGuidance(toolNames: ReadonlySet<string>): string[] {

@@ -152,6 +152,7 @@ export const contextCopy = {
     python_kernel: "Python kernel",
     node_debugger: "Node debugger",
     workspace_process: "Background process",
+    web_search: "Web Search",
     browser: "Browser Session",
     research_source: "Research Source",
     verify_workspace: "Sandbox verify",

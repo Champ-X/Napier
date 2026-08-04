@@ -58,13 +58,14 @@ import {
   agentToolInputLedgerProjection as toolInputLedgerProjection,
   agentToolOutputLedgerProjection as toolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
+import { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
-import { AgentSessionRuntime } from "./agent-sessions.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
+import type { WebSearchExecutor } from "./web-search-model.js";
+import { WebSearchProviderRegistry } from "./web-search-providers.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
-import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
 import {
@@ -146,8 +147,6 @@ import {
   loadWorkspaceSkills,
   type LoadedSkillCatalog,
 } from "./skills.js";
-import { createStatelessAgentTools } from "./stateless-agent-tools.js";
-import { gitStageMutationManagerFor } from "./git-stage.js";
 import { LocalStore } from "./store.js";
 import { SubagentCoordinator } from "./subagents.js";
 import { createUsageAccounting } from "./token-accounting.js";
@@ -236,7 +235,7 @@ class OperatorDecisionPendingError extends Error {
 export class AgentRuntime {
   private readonly activeRuns = new Map<string, Map<string, ActiveRun>>();
   private readonly workerId = createId("worker");
-  private readonly sessions: AgentSessionRuntime;
+  private readonly capabilities: AgentCapabilityRuntime;
   constructor(
     readonly store: LocalStore,
     readonly modelRegistry: ModelRegistry,
@@ -255,13 +254,16 @@ export class AgentRuntime {
     readonly toolInvocationResultCapsules = new ToolInvocationResultCapsuleStore(
       store.dataRoot,
     ),
+    readonly webSearch: WebSearchExecutor = new WebSearchProviderRegistry(),
   ) {
-    this.sessions = new AgentSessionRuntime(
-      workspaceProcesses,
-      store.workspaceRoot,
+    this.capabilities = new AgentCapabilityRuntime(
+      store,
       verificationSandbox,
+      workspaceProcesses,
+      workspaceFileMutations,
       browserSessions,
       researchSourceCaptures,
+      webSearch,
     );
   }
 
@@ -718,7 +720,7 @@ export class AgentRuntime {
         );
       }
       budget.throwIfExhausted();
-      await this.sessions.cancelRun({
+      await this.capabilities.cancelRun({
         threadId: thread.id,
         runId: run.id,
       });
@@ -758,7 +760,7 @@ export class AgentRuntime {
         leaseToken: leasedRun.token,
       });
     } catch (error) {
-      await this.sessions
+      await this.capabilities
         .cancelRun({
           threadId: thread.id,
           runId: run.id,
@@ -1290,54 +1292,14 @@ export class AgentRuntime {
       },
       onEvent,
     );
-    const tools = createStatelessAgentTools({
-      store: this.store,
+    const tools = this.capabilities.createTools({
       profile,
       threadId: run.threadId,
       runId: run.id,
-      sandbox: this.verificationSandbox,
-      lspSession: this.sessions.lspSession({
-        threadId: run.threadId,
-        runId: run.id,
-      }),
-      ...(this.workspaceFileMutations
-        ? { workspaceFileMutations: this.workspaceFileMutations }
-        : {}),
-      gitStageMutations: gitStageMutationManagerFor(
-        this.store,
-        this.verificationSandbox,
-      ),
-      beforeWorkspaceWrite: this.sessions.debuggerWriteBarrier(run),
       restrictedReadOnlyExecution,
       advisorCorrection,
     });
     let pendingOperatorDecisionId: string | undefined;
-    if (
-      !restrictedReadOnlyExecution &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe"
-    ) {
-      tools.push(
-        ...this.sessions.createTools(profile.enabledTools, {
-          threadId: run.threadId,
-          runId: run.id,
-        }),
-      );
-    }
-    if (
-      !restrictedReadOnlyExecution &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("workspace_process") &&
-      this.workspaceProcesses
-    ) {
-      tools.push(
-        createWorkspaceProcessTool(this.workspaceProcesses, {
-          threadId: run.threadId,
-          runId: run.id,
-        }),
-      );
-    }
     if (
       !restrictedReadOnlyExecution &&
       !advisorCorrection &&

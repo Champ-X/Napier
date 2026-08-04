@@ -29,6 +29,15 @@ describe("TUI terminal projection", () => {
         output: "PRIVATE_TOOL_OUTPUT",
       }),
     );
+    state.applyEvent(
+      event("tool.started", {
+        callId: "call_2",
+        toolName: "web_search",
+        effect: "read",
+        query: "PRIVATE_SEARCH_QUERY",
+        output: "PRIVATE_SEARCH_RESULT",
+      }),
+    );
 
     await terminal.enter();
     await terminal.render(state.snapshot(), {
@@ -45,8 +54,11 @@ describe("TUI terminal projection", () => {
     expect(rendered).toContain("answer\\u0009");
     expect(rendered).toContain("\\u001b]52;c;PRIVATE\\u0007\\u202e");
     expect(rendered).toContain("tool read_file · running · read");
+    expect(rendered).toContain("tool web_search · running · read");
     expect(rendered).not.toContain("PRIVATE_TOOL_ARGUMENT");
     expect(rendered).not.toContain("PRIVATE_TOOL_OUTPUT");
+    expect(rendered).not.toContain("PRIVATE_SEARCH_QUERY");
+    expect(rendered).not.toContain("PRIVATE_SEARCH_RESULT");
     expect(rendered).toContain("\u001b[?2004l");
     expect(rendered).toContain("\u001b[?1049l");
 

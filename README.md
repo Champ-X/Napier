@@ -242,6 +242,14 @@ Version `0.1.0` includes:
   table transformations through explicit typed casts, filters, selection,
   stable sorting, grouping, aggregation, and limits, with complete JSON output,
   Agent/Workflow reuse, and body-free Replay/Trace evidence;
+- a default-enabled, provider-neutral `web_search` tool under the read-only
+  `observe` policy. It supports general/news/image discovery plus time,
+  language, region, site, count, and safe-search constraints; prefers
+  configured Brave or Tavily credentials, then falls back to credential-free
+  Bing RSS and DuckDuckGo HTML. Every request validates public DNS, pins the
+  connected address, revalidates bounded redirects, strips credentials across
+  origins, and caps time and bytes. Queries, result URLs/snippets, and
+  credentials remain outside Ledger and Trace;
 - Run-owned controlled Chrome Sessions plus a `research_source` tool that
   freezes bounded visible page text, binds exact line ranges to report claims,
   returns citation tokens to the live Agent, and retains only privacy-bounded
@@ -5772,8 +5780,8 @@ channels should accept only intended operational data.
 
 The default Agent policy is `observe`:
 
-- in-process read/list/search and AST preview operations inside the workspace
-  are allowed;
+- in-process read/list/search and AST preview operations inside the workspace,
+  plus read-only public `web_search`, are allowed;
 - `apply_patch`, `verify_workspace`, `run_command`, `javascript_kernel`,
   `python_kernel`, `node_debugger`, `workspace_process`, and `browser` are not
   exposed;
@@ -5781,6 +5789,15 @@ The default Agent policy is `observe`:
 - shell execution is blocked;
 - destructive shell patterns remain blocked even under the future
   `unrestricted` policy.
+
+`web_search` is available from a fresh default Agent through `napier run`,
+`napier chat`, `napier tui`, HTTP/Web, RPC, and the TypeScript SDK because
+those entries share the same Agent profile and Runtime. CLI/TUI/Web render
+metadata-only tool events; the live model sees bounded titles, public URLs,
+snippets, dates, source labels, and provider fallback diagnostics. Search
+snippets remain untrusted discovery leads, not citation evidence. This slice
+does not yet provide `web_fetch`, URL/PDF reading, dynamic Browser fallback,
+default Browser interaction, or an open-web citation benchmark.
 
 Selecting `workspace` exposes only individually enabled structured tools:
 **Atomic patch** is hash-preconditioned and supports Hashline-style line

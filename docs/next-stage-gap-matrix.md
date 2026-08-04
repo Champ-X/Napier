@@ -21,6 +21,13 @@ Audit date: 2026-08-04
   `ChannelService` consumes a 12-method Store SPI instead of concrete
   `LocalStore`; the Contracts root remains the compatibility export surface.
 - The Web main entry remains subject to the 150 KiB release gate.
+- A fresh default `observe` Agent now includes provider-neutral
+  `web_search`; CLI, TUI, HTTP/Web, RPC, SDK, and Workflow Agent nodes share
+  the same capability assembly and privacy-bounded Tool events. Configured
+  Brave/Tavily providers fall back to credential-free Bing RSS and DuckDuckGo
+  HTML through DNS-pinned, redirect-revalidated public HTTP. This is source
+  discovery only: `web_fetch`, URL/PDF reading, default Browser interaction,
+  citation-backed open-web Research, and Browser Live remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
   lazy Workbench panel to 4,513 lines without moving its API orchestration.
@@ -41,6 +48,7 @@ Audit date: 2026-08-04
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P0 web connectivity               | In progress    | Default `web_search` now works under the low-risk read-only `observe` policy with Brave, Tavily, credential-free Bing RSS, and DuckDuckGo HTML; bounded provider fallback, DNS-pinned public transport, redirect credential stripping, strict site filtering, CLI/TUI/Web event privacy, and a real DeepSeek CLI open-internet task are verified. The next required slices are `web_fetch` and unified URL/PDF Source reading, then default safe Browser discovery/interaction, adjacent claim citations, Browser Live/takeover, open-web Research/Security benchmarks, setup/doctor diagnostics, and repeated same-model OMP Search/Fetch/Research/Browser comparison. This row remains in progress because Search discovery alone does not satisfy the P0 acceptance gate.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
@@ -429,6 +437,76 @@ Observed result:
   `390d817a8d3f8df7...`;
 - complete `npm run check` passes 2,102 tests: 104 root, 168 CLI, 183 Server,
   482 Web, 1,137 Runtime, and 28 SDK.
+
+## Implemented Slice: Default Provider-Neutral Web Search
+
+User scenario: a new default Agent can discover current public sources from
+CLI, TUI, or Web without editing an Agent Profile or enabling unrestricted
+Browser access.
+
+Acceptance:
+
+- add one provider-neutral `web_search` contract for general, news, and image
+  discovery with bounded time, language, region, site, result count, and
+  safe-search constraints;
+- enable it in the clean-state default Agent under `observe`, classify it as a
+  low-risk read effect, and route every formal entry through the same Runtime
+  capability assembly;
+- prefer configured Brave and Tavily credentials, then provide keyless Bing
+  RSS and DuckDuckGo HTML fallback with visible provider diagnostics;
+- validate every target and redirect as credential-free public HTTP(S), reject
+  mixed/private DNS, pin the connected address, strip credentials on
+  redirects, and cap redirects, bytes, and wall time;
+- validate, site-filter, deduplicate, and cap returned public URLs rather than
+  treating a Provider's transport success as task success;
+- expose bounded live titles, URLs, snippets, dates, and source labels to the
+  model while keeping query/result bodies and credentials out of Ledger,
+  Replay, TUI cards, and Web Trace;
+- keep the Runtime root barrel fixed and expose stable search APIs through
+  `@napier/runtime/web-search`.
+
+Threat boundary:
+
+- Search results and snippets are untrusted discovery leads, not instructions
+  or citation evidence. The system guidance requires reading original primary
+  pages before relying on important claims;
+- Provider credentials originate only from process environment, are sent only
+  to the configured Provider origin, and are dropped before following any
+  redirect;
+- public-address validation happens before every network hop. Mixed public and
+  private DNS, localhost, link-local, reserved ranges, URL credentials,
+  non-HTTP(S), and non-80/443 ports fail before transport;
+- this slice does not read source bodies, parse PDF, create a Research Source,
+  operate dynamic pages, make Browser interaction default, or prove adjacent
+  claim citations.
+
+Observed result:
+
+- focused Runtime/CLI/TUI/Web suites pass 58 tests covering default-Profile
+  exposure, `observe` policy, Agent execution, CLI JSONL, metadata-only TUI/Web
+  projection, Provider parsing/fallback, strict site enforcement, explicit
+  Provider failure, cancellation, DNS pinning, mixed/private DNS, unsafe
+  redirects, credential stripping, and credential-safe diagnostics;
+- a real keyless open-internet probe searched for official Node.js 24 release
+  notes with `site=nodejs.org`; Bing returned three results in 572 ms and all
+  three final hosts were `nodejs.org`;
+- a clean temporary Workspace and Data Root ran the built CLI with
+  `deepseek/deepseek-v4-flash`. The default Agent called `web_search` exactly
+  once, completed exactly once through Bing with three results, finished the
+  Run successfully, returned the required exact marker, wrote zero stderr
+  bytes, and exposed no `DEEPSEEK_API_KEY` bytes;
+- the Architecture gate passes 886 production source files, 444 test files,
+  and zero cycles. `AgentCapabilityRuntime` removes tool/session assembly from
+  `agent-runtime.ts`, lowering its line override from 3,742 to 3,704;
+  network Ledger routing removes the `agent-tool-ledger.ts` complexity
+  override, and the prior `policy.ts` and `agent-tool-effects.ts` line/complexity
+  exceptions also leave the baseline;
+- full TypeScript typechecking passes across Runtime, SDK, CLI, Server, and
+  Web. The complete regular suite passes 2,116 tests: Root 104, CLI 169,
+  Server 183, Web 484, Runtime 1,148, and SDK 28. P0 remains in progress
+  pending Fetch/URL/PDF, safe default Browser,
+  citation-backed open-web Research, Browser Live, diagnostics, Security
+  benchmarks, and repeated OMP comparison.
 
 ## Implemented Slice: Research Outcome Benchmark
 

@@ -32,6 +32,13 @@ export function assessReadOnlyToolCall(
       reason: "path escapes the configured workspace",
     };
   }
+  if (toolName === "web_search" || toolName === "web_fetch") {
+    return {
+      allowed: true,
+      risk: "low",
+      reason: "read-only public-network operation",
+    };
+  }
   return {
     allowed: true,
     risk: "low",
@@ -39,7 +46,10 @@ export function assessReadOnlyToolCall(
   };
 }
 
-function pathInsideWorkspace(candidate: string, workspaceRoot: string): boolean {
+function pathInsideWorkspace(
+  candidate: string,
+  workspaceRoot: string,
+): boolean {
   const root = path.resolve(workspaceRoot);
   const resolved = path.resolve(root, candidate);
   return resolved === root || resolved.startsWith(`${root}${path.sep}`);

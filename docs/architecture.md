@@ -3924,6 +3924,47 @@ admission, timeout/cancellation, protocol validation, and result binding.
 Node.js 24.12+ is required for SQLite authorizer and defensive mode; older
 runtimes fail this tool closed.
 
+## Default Web Search Flow
+
+Read-only public discovery is a stateless capability rather than a Browser
+Session:
+
+```text
+Fresh default Agent includes web_search under observe policy
+  -> normalize bounded query/category/time/language/region/site/count/safety
+  -> choose configured Brave, then Tavily, then keyless Bing RSS/DDG HTML
+  -> validate credential-free HTTP(S) URL and ports
+  -> resolve every DNS answer and reject mixed or non-public results
+  -> pin the request connection to one validated address
+  -> revalidate each bounded redirect and strip credentials across origins
+  -> parse, normalize, public-URL validate, site-filter, deduplicate, and cap
+  -> return live untrusted discovery results to the model
+  -> persist only hashes, counts, provider/category, and retrieval time
+```
+
+`agent-capability-runtime.ts` owns shared stateless/session capability
+assembly, so CLI, TUI, HTTP/Web, RPC, SDK, Workflow Agent nodes, and future
+entries do not create a second search runtime. `public-http-client.ts` owns
+request timeout, response-byte and redirect bounds plus DNS-pinned transport.
+`web-search-model.ts` owns the provider-neutral request/result contract;
+`web-search-providers.ts` owns provider ordering and fallback while focused
+helpers own parsing and result normalization. `web-search-tool.ts` owns the
+Agent schema and privacy projections. Stable external imports use
+`@napier/runtime/web-search` rather than widening the Runtime root barrel.
+
+Search is low-risk read-only network access and remains available under
+`observe`; Browser interaction is still separately capability-gated. Provider
+credentials are sourced from the Runtime environment, sent only to their
+origin, and removed before redirects. Query text, result URLs, snippets,
+provider diagnostics, and credentials are absent from Ledger, Replay, SSE,
+TUI cards, and Web Trace. The live tool result labels snippets as untrusted
+discovery data and tells the model to read primary pages before relying on
+important claims.
+
+This boundary currently discovers sources only. It does not fetch source
+bodies, parse URLs or PDFs, start a Browser fallback, create Research Sources,
+or prove citation accuracy. Those remain the next P0 vertical slices.
+
 ## Controlled Browser Session Flow
 
 Browser capability is separate from Store, MCP, and the Web Workbench's own
