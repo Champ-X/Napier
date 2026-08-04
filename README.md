@@ -1665,9 +1665,9 @@ URLs, titles, source text, quotes, claim text, citation tokens, report
 path/content, assistant text, reasoning, and credentials are omitted.
 
 The checked-in DeepSeek
-[two-trial Research series](docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json)
-passed 2/2 trials in 31.840–43.104 seconds. Mean cost was `$0.0025401852`;
-mean input/output tokens were 7,628.5/4,758. Offline verification recomputes each
+[two-trial Research series](docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-7860868b48599ded.json)
+passed 2/2 trials in 49.443–103.865 seconds. Mean cost was `$0.0042888636`;
+mean input/output tokens were 10,061.5/9,145.5. Offline verification recomputes each
 Result/Ledger pair and the Series aggregate. This fixed-source case does not
 measure open-web retrieval, source freshness, or cross-model superiority.
 

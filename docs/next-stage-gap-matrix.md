@@ -182,7 +182,7 @@ environment:
   calls. Mean cost was `$0.0020458732`, with mean input/output usage of
   13,652.5/467 tokens.
 - `research_aurora_contradiction_v1` passed a retained two-trial Series 2/2 in
-  31.840–43.104 seconds. Every trial captured all three fixed Sources, matched
+  49.443–103.865 seconds. Every trial captured all three fixed Sources, matched
   all seven claim/source/line/quote citation bindings, resolved the
   primary/secondary date conflict, and passed the production Markdown report
   verifier.
@@ -770,8 +770,8 @@ Observed result:
   all five retained files found zero matches;
 - Faux single/2-trial integration and the opt-in live DeepSeek smoke pass. The
   wrong-Source negative case keeps all counts/report checks green but fails the
-  citation oracle. The retained Series passed 2/2 in 31.840–43.104 seconds at
-  mean cost `$0.0025401852` and mean input/output tokens 7,628.5/4,758;
+  citation oracle. The retained Series passed 2/2 in 49.443–103.865 seconds at
+  mean cost `$0.0042888636` and mean input/output tokens 10,061.5/9,145.5;
 - this fixed-source case does not establish open-web retrieval quality,
   freshness, broad contradiction automation, or cross-model superiority.
 

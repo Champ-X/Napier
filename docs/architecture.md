@@ -2024,8 +2024,8 @@ reaggregation reject self-rehashed field injection or valid-Ledger
 substitution.
 
 Each trial creates a fresh workspace, data root, Thread, and Run. The retained
-DeepSeek two-trial Series passed 2/2 in 31.840–43.104 seconds at a mean cost of
-`$0.0025401852`; mean input/output tokens were 7,628.5/4,758. A direct reverse
+DeepSeek two-trial Series passed 2/2 in 49.443–103.865 seconds at a mean cost of
+`$0.0042888636`; mean input/output tokens were 10,061.5/9,145.5. A direct reverse
 scan of all five retained files found none of the 23 source/claim/report/key
 values. This case measures fixed-source synthesis and citation discipline, not
 open-web retrieval, source freshness, or cross-model superiority.
