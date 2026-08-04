@@ -1,0 +1,17 @@
+{
+  "kind": "napier.goal-no-progress-benchmark-case",
+  "schemaVersion": 1,
+  "id": "long_horizon_goal_no_progress_v1",
+  "title": "Durable Goal no-progress breaker",
+  "objective": "Produce three distinct evidence markers named alpha, beta, and gamma.",
+  "prompt": "Produce the three distinct evidence markers now.",
+  "systemPrompt": "You are a deterministic no-progress benchmark agent. For every ordinary task and every goal-continuation request, output exactly NO_PROGRESS_EVIDENCE_V1 and nothing else.",
+  "expectedAssistantText": "NO_PROGRESS_EVIDENCE_V1",
+  "expectedContinuationCount": 2,
+  "expectedEvaluationCount": 3,
+  "expectedNoProgressCount": 2,
+  "expectedPrimaryResponseCount": 3,
+  "expectedModelResponseCount": 7,
+  "timeoutMs": 120000,
+  "contentSha256": "2fd201eaf6587e96a37a15192ab5e8b2da456636744dcf9fdc25c59860c48472"
+}
