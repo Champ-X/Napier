@@ -162,8 +162,9 @@ function evaluationMatchesEvidence(
       evaluation.modelResponseUsageSampleCount &&
     continuations.filter((event) => event.seq > finalEvaluationSeq).length ===
       evaluation.postBlockContinuationCount &&
-    bundle.goal.lastEvaluatedRunId === bundle.runId &&
-    bundle.goal.lastEvidenceHash === sha256(assistantTexts[0] ?? "");
+    evaluation.goalRecovered ===
+      (bundle.goal.lastEvaluatedRunId === bundle.runId &&
+        bundle.goal.lastEvidenceHash === sha256(assistantTexts[0] ?? ""));
   return (
     evidenceMatches &&
     validSelectedEventBindings(bundle) &&
