@@ -2,16 +2,13 @@ import path from "node:path";
 
 import type { JsonValue, ToolPolicyMode } from "@napier/contracts";
 
+import { assessBrowserToolCall } from "./browser-tool-policy.js";
 import { assessGitToolCall } from "./git-tool-policy.js";
-import { validatePublicHttpUrl } from "./public-network.js";
+import type { PolicyDecision } from "./policy-model.js";
 import { assessReadOnlyToolCall } from "./read-only-tool-policy.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 
-export interface PolicyDecision {
-  allowed: boolean;
-  risk: "low" | "medium" | "high" | "critical";
-  reason: string;
-}
+export type { PolicyDecision } from "./policy-model.js";
 
 const WRITE_TOOLS = new Set(["apply_patch"]);
 const WORKSPACE_FILE_PREVIEW_TOOLS = new Set(["workspace_file_preview"]);
@@ -33,7 +30,6 @@ const LSP_TOOLS = new Set([
 const PROCESS_TOOL_NAMES =
   "run_command javascript_kernel python_kernel node_debugger workspace_process";
 const PROCESS_TOOLS = new Set(PROCESS_TOOL_NAMES.split(" "));
-const BROWSER_TOOLS = new Set(["browser", "research_source"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
   "update_plan_step",
@@ -106,8 +102,19 @@ export function assessToolCall(
   }
   const gitDecision = assessGitToolCall(mode, toolName, input, workspaceRoot);
   if (gitDecision) return gitDecision;
-  const readOnlyDecision = assessReadOnlyToolCall(toolName, input, workspaceRoot);
+  const readOnlyDecision = assessReadOnlyToolCall(
+    toolName,
+    input,
+    workspaceRoot,
+  );
   if (readOnlyDecision) return readOnlyDecision;
+  const browserDecision = assessBrowserToolCall(
+    mode,
+    toolName,
+    input,
+    workspaceRoot,
+  );
+  if (browserDecision) return browserDecision;
 
   if (WORKSPACE_FILE_PREVIEW_TOOLS.has(toolName)) {
     for (const key of ["path", "sourcePath", "destinationPath"]) {
@@ -248,77 +255,6 @@ export function assessToolCall(
                 : toolName === "lsp_rename"
                   ? "read-only sandboxed language-server rename preview"
                   : "read-only sandboxed language-server quick-fix preview",
-    };
-  }
-
-  if (BROWSER_TOOLS.has(toolName)) {
-    if (mode !== "unrestricted") {
-      return {
-        allowed: false,
-        risk: "high",
-        reason: "external Browser Sessions require unrestricted policy",
-      };
-    }
-    const action = getStringField(input, "action");
-    if (action === "start" || action === "navigate") {
-      const url = getStringField(input, "url");
-      try {
-        validatePublicHttpUrl(url ?? "");
-      } catch {
-        return {
-          allowed: false,
-          risk: "critical",
-          reason: "browser URL is outside the public HTTP(S) boundary",
-        };
-      }
-    }
-    if (toolName === "research_source" && action === "verify_report") {
-      const candidate = getStringField(input, "path");
-      if (
-        !candidate ||
-        path.isAbsolute(candidate) ||
-        !isPathInsideWorkspace(candidate, workspaceRoot)
-      ) {
-        return {
-          allowed: false,
-          risk: "high",
-          reason: "research reports must be inside the workspace",
-        };
-      }
-      const relative = path.relative(
-        path.resolve(workspaceRoot),
-        path.resolve(workspaceRoot, candidate),
-      );
-      const protectedSegment = relative
-        .split(path.sep)
-        .find(isProtectedWorkspacePathSegment);
-      if (protectedSegment) {
-        return {
-          allowed: false,
-          risk: "high",
-          reason: `research reports cannot read protected path segment: ${protectedSegment}`,
-        };
-      }
-    }
-    if (action === "upload" || action === "download") {
-      const candidate = getStringField(input, "path");
-      if (!candidate) {
-        return {
-          allowed: false,
-          risk: "high",
-          reason: "browser file action requires a workspace-relative path",
-        };
-      }
-      const denial = workspaceWritePathDenial(candidate, workspaceRoot);
-      if (denial) return denial;
-    }
-    return {
-      allowed: true,
-      risk: "high",
-      reason:
-        toolName === "research_source"
-          ? "Run-local Browser Source and report verification"
-          : "isolated public-network Browser Session",
     };
   }
 

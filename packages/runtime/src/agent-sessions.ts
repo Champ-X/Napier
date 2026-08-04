@@ -46,29 +46,44 @@ export class AgentSessionRuntime {
     return this.languageServers.forRun(owner);
   }
 
-  createTools(
+  createProcessTools(
     enabledTools: readonly string[],
     context: { threadId: string; runId: string },
   ): Array<
     | ReturnType<AgentKernelRuntime["createTools"]>[number]
-    | ReturnType<typeof createBrowserTool>
-    | ReturnType<typeof createResearchSourceTool>
     | ReturnType<typeof createNodeDebuggerTool>
   > {
     const tools: Array<
       | ReturnType<AgentKernelRuntime["createTools"]>[number]
-      | ReturnType<typeof createBrowserTool>
-      | ReturnType<typeof createResearchSourceTool>
       | ReturnType<typeof createNodeDebuggerTool>
     > = [...this.kernels.createTools(enabledTools, context)];
+    if (enabledTools.includes("node_debugger") && this.debuggerManager) {
+      tools.push(createNodeDebuggerTool(this.debuggerManager, context));
+    }
+    return tools;
+  }
+
+  createNetworkTools(
+    enabledTools: readonly string[],
+    context: { threadId: string; runId: string },
+    options: { readOnlyBrowser: boolean },
+  ): Array<
+    | ReturnType<typeof createBrowserTool>
+    | ReturnType<typeof createResearchSourceTool>
+  > {
+    const tools: Array<
+      | ReturnType<typeof createBrowserTool>
+      | ReturnType<typeof createResearchSourceTool>
+    > = [];
     if (enabledTools.includes("browser")) {
-      tools.push(createBrowserTool(this.browsers, context));
+      tools.push(
+        createBrowserTool(this.browsers, context, {
+          readOnly: options.readOnlyBrowser,
+        }),
+      );
     }
     if (enabledTools.includes("research_source")) {
       tools.push(createResearchSourceTool(this.researchSources, context));
-    }
-    if (enabledTools.includes("node_debugger") && this.debuggerManager) {
-      tools.push(createNodeDebuggerTool(this.debuggerManager, context));
     }
     return tools;
   }

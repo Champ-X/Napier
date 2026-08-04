@@ -39,6 +39,10 @@ describe("RunBrowserSessionManager", () => {
       action: "start",
       url: "https://one.example/",
     });
+    const waited = await harness.manager.execute(owner, {
+      action: "wait",
+      durationMs: 5,
+    });
     const snapshot = await harness.manager.execute(owner, {
       action: "snapshot",
     });
@@ -54,17 +58,19 @@ describe("RunBrowserSessionManager", () => {
 
     expect([
       started.details.sessionOperation,
+      waited.details.sessionOperation,
       snapshot.details.sessionOperation,
       typed.details.sessionOperation,
       screenshot.details.sessionOperation,
       closed.details.sessionOperation,
-    ]).toEqual([1, 2, 3, 4, 5]);
+    ]).toEqual([1, 2, 3, 4, 5, 6]);
     expect(started.details.sessionReused).toBe(false);
     expect(snapshot.details.sessionReused).toBe(true);
     expect(snapshot.details.sessionIdSha256).toBe(
       started.details.sessionIdSha256,
     );
     expect(snapshot.output).toContain("[ref=e2]");
+    expect(waited.output).toContain("[ref=e2]");
     expect(screenshot.screenshot).toEqual({
       data: Buffer.from("fake png").toString("base64"),
       mimeType: "image/png",
@@ -90,6 +96,8 @@ describe("RunBrowserSessionManager", () => {
       "--disable-crash-reporter",
     );
     expect(harness.proxies[0]?.outboundTransitions).toEqual([
+      true,
+      false,
       true,
       false,
       true,
@@ -656,6 +664,12 @@ class FakePage {
 
   async screenshot() {
     return Buffer.from("fake png");
+  }
+
+  async waitForTimeout(durationMs: number) {
+    await new Promise<void>((resolve) =>
+      setTimeout(resolve, Math.min(durationMs, 1)),
+    );
   }
 
   async waitForEvent(event: string) {

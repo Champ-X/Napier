@@ -14,21 +14,23 @@ import {
   RunBrowserSessionManager,
 } from "../src/browser-session.js";
 import { assessToolCall } from "../src/policy.js";
+import { DEFAULT_AGENT_ENABLED_TOOLS } from "../src/read-only-tool-names.js";
 
 describe("browser Agent tool", () => {
-  it("requires unrestricted policy and preserves workspace and URL boundaries", () => {
+  it("allows read-only Browser actions by default and confines interactive actions", () => {
     const workspace = path.resolve("/workspace");
     expect(
       assessToolCall(
-        "workspace",
+        "observe",
         "browser",
         { action: "start", url: "https://example.com" },
         workspace,
       ),
     ).toEqual(
       expect.objectContaining({
-        allowed: false,
-        reason: "external Browser Sessions require unrestricted policy",
+        allowed: true,
+        risk: "low",
+        reason: "read-only isolated public-network Browser Session",
       }),
     );
     expect(
@@ -46,17 +48,26 @@ describe("browser Agent tool", () => {
     );
     expect(
       assessToolCall(
-        "unrestricted",
+        "observe",
         "browser",
-        { action: "start", url: "https://example.com" },
+        { action: "click", target: { ref: "e1" } },
         workspace,
       ),
     ).toEqual(
       expect.objectContaining({
-        allowed: true,
+        allowed: false,
         risk: "high",
+        reason: "interactive Browser actions require unrestricted policy",
       }),
     );
+    expect(
+      assessToolCall(
+        "unrestricted",
+        "browser",
+        { action: "click", target: { ref: "e1" } },
+        workspace,
+      ),
+    ).toEqual(expect.objectContaining({ allowed: true, risk: "high" }));
     expect(
       assessToolCall(
         "unrestricted",
@@ -82,6 +93,23 @@ describe("browser Agent tool", () => {
         allowed: false,
         reason: expect.stringContaining("protected"),
       }),
+    );
+    expect(
+      assessToolCall(
+        "observe",
+        "research_source",
+        { action: "capture", maxChars: 12_000 },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+        reason: "Run-local Browser Source and report verification",
+      }),
+    );
+    expect(DEFAULT_AGENT_ENABLED_TOOLS).toEqual(
+      expect.arrayContaining(["browser", "research_source"]),
     );
   });
 
@@ -157,10 +185,15 @@ describe("browser Agent tool", () => {
     );
   });
 
-  it("marks only snapshot and screenshot operations read-only", () => {
+  it("classifies navigation/read lifecycle separately from interaction", () => {
+    expect(builtInToolEffect("browser", { action: "start" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "navigate" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "back" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "wait" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "snapshot" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "screenshot" })).toBe("read");
-    expect(builtInToolEffect("browser", { action: "navigate" })).toBe("write");
+    expect(builtInToolEffect("browser", { action: "close" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "click" })).toBe("write");
     expect(builtInToolEffect("browser", { action: "download" })).toBe("write");
   });
 });

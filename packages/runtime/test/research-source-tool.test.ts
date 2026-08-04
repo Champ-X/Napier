@@ -16,7 +16,7 @@ import {
 import { assessToolCall } from "../src/policy.js";
 
 describe("research_source Agent tool", () => {
-  it("requires unrestricted policy while remaining a read effect", () => {
+  it("is available under read-only policy while preserving report boundaries", () => {
     const workspace = path.resolve("/workspace");
     expect(
       assessToolCall(
@@ -27,8 +27,9 @@ describe("research_source Agent tool", () => {
       ),
     ).toEqual(
       expect.objectContaining({
-        allowed: false,
-        reason: "external Browser Sessions require unrestricted policy",
+        allowed: true,
+        risk: "low",
+        reason: "Run-local Browser Source and report verification",
       }),
     );
     expect(
@@ -41,7 +42,7 @@ describe("research_source Agent tool", () => {
     ).toEqual(
       expect.objectContaining({
         allowed: true,
-        risk: "high",
+        risk: "low",
       }),
     );
     expect(
@@ -55,7 +56,7 @@ describe("research_source Agent tool", () => {
         },
         workspace,
       ),
-    ).toEqual(expect.objectContaining({ allowed: true, risk: "high" }));
+    ).toEqual(expect.objectContaining({ allowed: true, risk: "low" }));
     expect(
       assessToolCall(
         "unrestricted",

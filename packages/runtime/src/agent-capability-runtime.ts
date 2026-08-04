@@ -94,9 +94,21 @@ export class AgentCapabilityRuntime {
     ) {
       tools.push(createWebFetchTool(this.webFetch, owner));
     }
+    if (networkSessionToolsAllowed(options)) {
+      tools.push(
+        ...this.sessions.createNetworkTools(
+          options.profile.enabledTools,
+          owner,
+          { readOnlyBrowser: options.profile.toolPolicy === "observe" },
+        ),
+      );
+    }
     if (sessionToolsAllowed(options)) {
       tools.push(
-        ...this.sessions.createTools(options.profile.enabledTools, owner),
+        ...this.sessions.createProcessTools(
+          options.profile.enabledTools,
+          owner,
+        ),
       );
     }
     if (
@@ -130,4 +142,10 @@ function sessionToolsAllowed(
     !options.advisorCorrection &&
     options.profile.toolPolicy !== "observe"
   );
+}
+
+function networkSessionToolsAllowed(
+  options: CreateAgentCapabilityToolsOptions,
+): boolean {
+  return !options.restrictedReadOnlyExecution && !options.advisorCorrection;
 }

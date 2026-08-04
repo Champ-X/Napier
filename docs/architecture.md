@@ -4003,9 +4003,10 @@ requested URL or quoted facts; that is distinct from Tool receipt leakage.
 
 Fetch is read-only but not restart-adoptable because its Source body is
 deliberately process-local. Automatic recovery therefore treats any completed
-`web_fetch` call as unsafe, matching `research_source`. Dynamic rendering,
-authentication, CAPTCHAs, scanned-PDF OCR, Browser fallback, cross-restart
-Source retention, and citation binding remain outside this slice.
+`web_fetch` call as unsafe, matching `research_source`. Dynamic rendering can
+use the following default read-only Browser surface; automatic fallback,
+authentication, CAPTCHAs, scanned-PDF OCR, cross-restart Source retention, and
+static Source citation binding remain outside this slice.
 
 ## Controlled Browser Session Flow
 
@@ -4013,7 +4014,7 @@ Browser capability is separate from Store, MCP, and the Web Workbench's own
 browser process:
 
 ```text
-Agent selects browser under unrestricted policy
+Agent selects Browser capability
   -> create one Run-owned ephemeral Chrome process and context
   -> create a loopback-only proxy with random per-Session credentials
   -> keep proxy outbound closed during startup, idle time, and read-only views
@@ -4029,15 +4030,31 @@ Agent selects browser under unrestricted policy
   -> close context, browser, proxy, tunnels, and temporary HOME on settlement
 ```
 
+Under `observe`, `AgentCapabilityRuntime` requests a read-only Browser tool
+whose schema contains only `start`, `navigate`, `back`, `wait`, `snapshot`,
+`screenshot`, and `close`; it also exposes `research_source`.
+`browser-tool-policy.ts` independently permits those public-network read
+actions while denying `click`, `type`, `select`, `upload`, and `download`
+unless policy is `unrestricted`. The schema is a usability boundary, not the
+authority boundary: a forged interactive call is still classified as a write
+attempt and cannot reach the Browser manager.
+
+`wait` opens the authenticated public-network proxy for at most ten seconds,
+then returns a fresh ARIA snapshot. This supports SPAs and delayed rendering
+without granting selector actions. Static pages should use `web_fetch`; the
+Browser path is for dynamic rendering, and `research_source capture/cite`
+freezes the visible result into the existing claim-bound citation protocol.
+
 `public-network.ts` owns shared CIDR and DNS classification; MCP reuses it
 while retaining its explicit loopback development exception.
 `fixed-ip-http-proxy.ts` owns authenticated HTTP/CONNECT transport and transfer
 bounds. `browser-runtime.ts` admits only detected/configured Chrome, Chromium,
 or Edge executables and launches with Chromium sandboxing enabled, a minimal
 environment, temporary HOME, and pre/post-launch device/inode/size/mtime
-freshness checks. `browser-page-session.ts` owns Playwright
-interaction and navigation grants; `browser-session.ts` owns same-Run
-serialization, cross-Run isolation, admission, and cancellation.
+freshness checks. `browser-page-session.ts` owns Playwright interaction and
+navigation grants; bounded presentation text lives in
+`browser-page-output.ts`; `browser-session.ts` owns same-Run serialization,
+cross-Run isolation, admission, and cancellation.
 `browser-workspace-files.ts` owns upload/download path and byte confinement;
 `browser-tool.ts` owns Agent schema and privacy projection.
 
@@ -4057,6 +4074,12 @@ recovery treats it as unsafe rather than silently repeating it. Page bodies,
 URLs, selectors, typed values, paths, downloaded names, screenshots, proxy
 credentials, and random Session IDs remain live-only. Portable Replay carries
 only redacted tool arguments plus bounded operation evidence.
+
+The default surface is dynamic-page reading, not product-complete Browser
+automation. It has one tab per Run and no scroll/find primitives, user takeover
+or resume, Browser Live stream, local Chrome relay, download Artifact UX,
+effect-specific confirmation, or safe preset for form actions. Those remain
+P0.
 
 ### Research Source and Citation Flow
 

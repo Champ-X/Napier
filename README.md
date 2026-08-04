@@ -262,6 +262,12 @@ Version `0.1.0` includes:
   freezes bounded visible page text, binds exact line ranges to report claims,
   returns citation tokens to the live Agent, and retains only privacy-bounded
   hashes, ranges, counts, and Browser provenance in Ledger and Trace;
+- fresh default `observe` Agents expose a read-only Browser schema with
+  `start`, `navigate`, `back`, bounded `wait`, `snapshot`, `screenshot`, and
+  `close`, plus `research_source` capture/cite/list/report verification.
+  Interactive `click`, `type`, `select`, `upload`, and `download` are omitted
+  from that schema and remain policy-denied unless an Agent explicitly uses
+  `unrestricted`; forged calls never reach Playwright;
 - a fail-closed tool policy that blocks host escape and destructive commands;
 - Agent Skills discovery through standard `SKILL.md` packages;
 - frozen Agent Prompt Variables with strict `literal`, `current_date`, and
@@ -5789,10 +5795,12 @@ channels should accept only intended operational data.
 The default Agent policy is `observe`:
 
 - in-process read/list/search and AST preview operations inside the workspace,
-  plus read-only public `web_search`, are allowed;
+  plus read-only public `web_search`, `web_fetch`, dynamic Browser reading, and
+  Research Source citation, are allowed;
 - `apply_patch`, `verify_workspace`, `run_command`, `javascript_kernel`,
-  `python_kernel`, `node_debugger`, `workspace_process`, and `browser` are not
-  exposed;
+  `python_kernel`, `node_debugger`, and `workspace_process` are not exposed;
+- Browser interaction and file transfer actions are not exposed, even though
+  read-only navigation/snapshot/capture actions are available;
 - workspace writes and process execution are blocked;
 - shell execution is blocked;
 - destructive shell patterns remain blocked even under the future
@@ -5811,9 +5819,12 @@ calls reuse the exact Run-local normalized Source. HTML, JSON, text, and PDF
 content is explicitly labeled untrusted and may never authorize actions.
 Fetched Sources are process-local and automatic recovery blocks after their
 use rather than pretending an in-memory Source survived restart. Dynamic
-JavaScript pages, authenticated content, CAPTCHA/login-wall recovery, scanned
-PDF OCR, Browser fallback/Live, cross-restart Source retention, and adjacent
-claim citation remain open P0 work.
+JavaScript pages can instead use the default read-only Browser followed by
+`research_source capture/cite`; static pages should still prefer `web_fetch`.
+Authenticated content, CAPTCHA/login-wall recovery, scanned PDF OCR, automatic
+Fetch-to-Browser fallback, full Browser interaction, Browser Live/takeover,
+cross-restart Source retention, and unified static/dynamic claim citation
+remain open P0 work.
 
 Selecting `workspace` exposes only individually enabled structured tools:
 **Atomic patch** is hash-preconditioned and supports Hashline-style line

@@ -125,7 +125,7 @@ describe("Agent Browser Session integration", () => {
             record(event.payload)?.["toolName"] === "browser",
         )
         .map((event) => record(event.payload)?.["effect"]),
-    ).toEqual(["write", "read", "write", "read", "write"]);
+    ).toEqual(["read", "read", "write", "read", "read"]);
     const completed = events.filter(
       (event) =>
         event.type === "tool.completed" &&
@@ -156,9 +156,12 @@ describe("Agent Browser Session integration", () => {
     }
   });
 
-  it("blocks browser execution before launch without unrestricted policy", async () => {
+  it("runs read-only Browser navigation under workspace policy", async () => {
     const fixture = await createFixture("workspace");
-    const execute = vi.fn();
+    const execute = vi.fn(async () => ({
+      output: "PAGE_READ_ONLY",
+      details: details("start", 1),
+    }));
     const browserSessions = {
       execute,
       cancelRun: vi.fn(async () => undefined),
@@ -172,7 +175,7 @@ describe("Agent Browser Session integration", () => {
         }),
         { stopReason: "toolUse" },
       ),
-      fauxAssistantMessage("Browser access was blocked by policy."),
+      fauxAssistantMessage("Browser read completed."),
       fauxAssistantMessage('{"facts":[]}'),
     ]);
     fixture.registry.registerProvider(provider.provider);
@@ -193,22 +196,137 @@ describe("Agent Browser Session integration", () => {
     });
 
     expect(run.status, run.error).toBe("completed");
-    expect(execute).not.toHaveBeenCalled();
+    expect(execute).toHaveBeenCalledTimes(1);
     expect(
       (await fixture.store.listEvents(fixture.threadId)).find(
         (event) =>
-          event.type === "tool.blocked" &&
+          event.type === "tool.completed" &&
           record(event.payload)?.["toolName"] === "browser",
       )?.payload,
     ).toEqual(
       expect.objectContaining({
-        policyReason: "external Browser Sessions require unrestricted policy",
+        outputRedacted: true,
       }),
+    );
+  });
+
+  it("does not expose interactive Browser actions under observe policy", async () => {
+    const fixture = await createFixture("observe");
+    const browserSessions = {
+      execute: vi.fn(),
+      cancelRun: vi.fn(async () => undefined),
+    } as unknown as RunBrowserSessionManager;
+    const provider = fauxProvider({
+      provider: "faux-browser-read-only-schema",
+    });
+    let browserActions: string[] = [];
+    provider.setResponses([
+      (context) => {
+        const parameters = context.tools?.find(
+          (tool) => tool.name === "browser",
+        )?.parameters as
+          | { anyOf?: Array<{ properties?: { action?: { const?: string } } }> }
+          | undefined;
+        browserActions = (parameters?.anyOf ?? []).flatMap((branch) =>
+          typeof branch.properties?.action?.const === "string"
+            ? [branch.properties.action.const]
+            : [],
+        );
+        return fauxAssistantMessage(
+          "No interactive Browser action was available.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    fixture.registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      fixture.store,
+      fixture.registry,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      browserSessions,
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: fixture.threadId,
+      text: "Inspect the available Browser tools.",
+      model: { provider: "faux-browser-read-only-schema", id: "faux-1" },
+    });
+
+    expect(run.status, run.error).toBe("completed");
+    expect(browserSessions.execute).not.toHaveBeenCalled();
+    expect(browserActions).toEqual([
+      "start",
+      "navigate",
+      "back",
+      "wait",
+      "snapshot",
+      "screenshot",
+      "close",
+    ]);
+    for (const action of ["click", "type", "select", "upload", "download"]) {
+      expect(browserActions).not.toContain(action);
+    }
+  });
+
+  it("rejects a forged interactive Browser call before execution in observe mode", async () => {
+    const fixture = await createFixture("observe");
+    const browserSessions = {
+      execute: vi.fn(),
+      cancelRun: vi.fn(async () => undefined),
+    } as unknown as RunBrowserSessionManager;
+    const provider = fauxProvider({ provider: "faux-browser-forged-click" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("browser", {
+          action: "click",
+          target: { ref: "e1" },
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage("The interactive action was blocked."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    fixture.registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      fixture.store,
+      fixture.registry,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      browserSessions,
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: fixture.threadId,
+      text: "Attempt a forged interactive Browser action.",
+      model: { provider: "faux-browser-forged-click", id: "faux-1" },
+    });
+
+    expect(run.status, run.error).toBe("completed");
+    expect(browserSessions.execute).not.toHaveBeenCalled();
+    const browserEvents = (
+      await fixture.store.listEvents(fixture.threadId)
+    ).filter(
+      (event) =>
+        event.type.startsWith("tool.") &&
+        record(event.payload)?.["toolName"] === "browser",
+    );
+    expect(
+      browserEvents.find((event) => event.type === "tool.started")?.payload,
+    ).toEqual(expect.objectContaining({ action: "click", effect: "write" }));
+    expect(browserEvents.some((event) => event.type === "tool.completed")).toBe(
+      false,
     );
   });
 });
 
-async function createFixture(toolPolicy: "workspace" | "unrestricted") {
+async function createFixture(
+  toolPolicy: "observe" | "workspace" | "unrestricted",
+) {
   const root = await mkdtemp(path.join(tmpdir(), "napier-agent-browser-"));
   roots.push(root);
   const workspaceRoot = path.join(root, "workspace");

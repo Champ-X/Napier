@@ -7,7 +7,7 @@ import type {
 } from "@napier/contracts";
 import { Type } from "typebox";
 
-import type { PolicyDecision } from "./policy.js";
+import type { PolicyDecision } from "./policy-model.js";
 import {
   extensionPackageDependencyFailure,
   verifyBoundExtensionPackage,

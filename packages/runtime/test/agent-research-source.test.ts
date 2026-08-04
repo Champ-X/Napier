@@ -244,7 +244,7 @@ describe("Agent Research Source integration", () => {
       toolEvents
         .filter((event) => event.type === "tool.started")
         .map((event) => record(event.payload)?.["effect"]),
-    ).toEqual(["write", "read", "read", "read"]);
+    ).toEqual(["read", "read", "read", "read"]);
     expect(
       toolEvents
         .filter(
@@ -287,7 +287,7 @@ async function createFixture() {
   });
   await store.initialize();
   const agent = await store.updateAgent(store.listAgents()[0]!.id, {
-    toolPolicy: "unrestricted",
+    toolPolicy: "workspace",
     enabledTools: ["browser", "research_source", "apply_patch"],
     enabledSkills: ["research-brief"],
   });

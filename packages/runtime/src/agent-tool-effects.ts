@@ -47,7 +47,15 @@ export function builtInToolEffect(
   }
   if (toolName === "browser") {
     return record(args) &&
-      (args["action"] === "snapshot" || args["action"] === "screenshot")
+      [
+        "start",
+        "navigate",
+        "back",
+        "wait",
+        "snapshot",
+        "screenshot",
+        "close",
+      ].includes(String(args["action"]))
       ? "read"
       : "write";
   }

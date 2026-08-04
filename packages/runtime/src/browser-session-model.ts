@@ -14,6 +14,7 @@ export const MAX_BROWSER_SCREENSHOT_BYTES = 8 * 1024 * 1024;
 export const BROWSER_ACTION_TIMEOUT_MS = 15_000;
 export const BROWSER_NAVIGATION_TIMEOUT_MS = 30_000;
 export const BROWSER_LAUNCH_TIMEOUT_MS = 20_000;
+export const MAX_BROWSER_WAIT_MS = 10_000;
 
 export const BROWSER_LIMITS_SHA256 = sha256(
   canonicalJson({
@@ -24,6 +25,7 @@ export const BROWSER_LIMITS_SHA256 = sha256(
     actionTimeoutMs: BROWSER_ACTION_TIMEOUT_MS,
     navigationTimeoutMs: BROWSER_NAVIGATION_TIMEOUT_MS,
     launchTimeoutMs: BROWSER_LAUNCH_TIMEOUT_MS,
+    maxWaitMs: MAX_BROWSER_WAIT_MS,
     proxy: "authenticated_fixed_ip_public_http",
     proxyOutbound: "action_scoped_default_deny",
     executableFreshness: "device_inode_size_mtime_before_after_launch",
@@ -61,6 +63,7 @@ export type BrowserSessionRequest =
       action: "back";
       allowCrossOrigin?: boolean;
     }
+  | { action: "wait"; durationMs?: number }
   | { action: "snapshot" }
   | {
       action: "click";

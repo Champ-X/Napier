@@ -20,6 +20,8 @@ export const DEFAULT_AGENT_ENABLED_TOOLS = [
   ...WORKSPACE_STATELESS_READ_TOOL_NAMES,
   "web_search",
   "web_fetch",
+  "browser",
+  "research_source",
   "git_inspect",
   "git_stage_preview",
   "git_stage_apply",
