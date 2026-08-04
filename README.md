@@ -2812,6 +2812,20 @@ restart never invents or retries a missing compensation attempt. Operator
 rollback remains available when the automatic attempt was not safe or was
 fully reverted.
 
+`npm run bench:process-recovery -- --trials 5
+--trusted-outer-sandbox` runs the fixed
+`long_horizon_process_write_compensation_v1` Outcome benchmark. Each trial
+launches a real temporary Node process, changes one preview-authorized file,
+exits with code 17, requires automatic byte restoration, closes and reopens
+the Store and Process Manager, and verifies Replay plus the ordered
+`started -> settled -> rollback_started -> rolled_back` evidence. Result and
+Ledger artifacts retain only hashes, counts, statuses, and bounded Process
+events. The explicit trusted-outer adapter is for an already isolated test
+host and is recorded as `trusted_outer_test`; it is not evidence that
+`sandbox-exec`, Bubblewrap, or OCI enforced the child boundary. The default
+command remains fail-closed on the platform Sandbox. This capability has no
+isomorphic OMP operation and is therefore excluded from Napier/OMP scoring.
+
 Before a scoped write launches, Napier copies only the approved scopes into a
 mode-checked private recovery directory under the local data root. A changed,
 fully settled schema-v6 session exposes operator-only rollback through
@@ -5612,9 +5626,9 @@ receipt, runtime-environment receipt, product-performance baseline, management
 OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
 Web dist manifest, and the semantically verified Workflow, Data, DataFrame,
 Security, restart/offline-wait/budget Long-horizon, Research, and UX Benchmark
-Series, the durable Goal no-progress Series, and all forty-two Result/Ledger
-pairs by SHA-256; the current 107-artifact set is bound by
-`f28d1a7aabacc1f1...`;
+Series, the durable Goal no-progress Series, the Process recovery Series, and
+all forty-seven Result/Ledger pairs by SHA-256; the current 118-artifact set is
+bound by `c2592dd63b545d37...`;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
@@ -5623,8 +5637,9 @@ drift, missing runtime components, OpenAPI route drift, manifest drift, extra
 dist files, malformed manifests, stale receipts, compatibility regressions,
 aggregate artifact drift, Workflow Benchmark trial substitution/tampering, and
 Data/Security/restart, offline-wait, or budget Long-horizon/Research Benchmark evidence
-tampering, Goal no-progress counter/evidence substitution, and entry-budget
-regressions are covered without mutating the real build output.
+tampering, Goal no-progress counter/evidence substitution, Process recovery
+substitution, and entry-budget regressions are covered without mutating the
+real build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with
 relative paths, file counts, main-entry budget status, the manifest SHA-256,
 the canonical dist-content SHA-256, and any errors for CI capture. Trace, Plan,

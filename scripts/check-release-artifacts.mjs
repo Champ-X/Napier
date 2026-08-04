@@ -24,6 +24,10 @@ import {
   goalNoProgressSeriesArtifactReferences,
   verifyGoalNoProgressBenchmarkSeries,
 } from "../apps/cli/dist/goal-no-progress-benchmark-series.js";
+import {
+  processRecoverySeriesArtifactReferences,
+  verifyProcessRecoveryBenchmarkSeries,
+} from "../apps/cli/dist/process-recovery-benchmark-series.js";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -69,6 +73,8 @@ const defaultBudgetDistributionBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_token_budget_exhaustion_v1-ee23f61783f8c111.json";
 const defaultGoalNoProgressBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-goal-no-progress-benchmark-series-long_horizon_goal_no_progress_v1-87aeab3e1c06e1a1.json";
+const defaultProcessRecoveryBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-process-recovery-benchmark-series-long_horizon_process_write_compensation_v1-79f2082920791734.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json";
 const defaultUxBenchmarkSeriesPath =
@@ -133,6 +139,9 @@ export async function auditReleaseArtifacts(options = {}) {
   const goalNoProgressBenchmarkSeriesPath =
     options.goalNoProgressBenchmarkSeriesPath ??
     defaultGoalNoProgressBenchmarkSeriesPath;
+  const processRecoveryBenchmarkSeriesPath =
+    options.processRecoveryBenchmarkSeriesPath ??
+    defaultProcessRecoveryBenchmarkSeriesPath;
   const researchBenchmarkSeriesPath =
     options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
   const uxBenchmarkSeriesPath =
@@ -336,6 +345,16 @@ export async function auditReleaseArtifacts(options = {}) {
       artifactReferences: goalNoProgressSeriesArtifactReferences,
       verifySeries: verifyGoalNoProgressBenchmarkSeries,
     });
+  const processRecoveryBenchmarkArtifacts =
+    await verifyBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: processRecoveryBenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "long-horizon-process-recovery",
+      diagnosticLabel: "long-horizon Process recovery",
+      artifactReferences: processRecoverySeriesArtifactReferences,
+      verifySeries: verifyProcessRecoveryBenchmarkSeries,
+    });
   const researchBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: researchBenchmarkSeriesPath,
@@ -438,6 +457,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...budgetSampleBenchmarkArtifacts,
     ...budgetDistributionBenchmarkArtifacts,
     ...goalNoProgressBenchmarkArtifacts,
+    ...processRecoveryBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
     ...uxBenchmarkArtifacts,
   ];
@@ -706,6 +726,15 @@ function parseCliOptions(args) {
     }
     if (arg === "--research-benchmark-series-path") {
       options.researchBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--process-recovery-benchmark-series-path") {
+      options.processRecoveryBenchmarkSeriesPath = readCliValue(
+        args,
+        index,
+        arg,
+      );
       index += 1;
       continue;
     }

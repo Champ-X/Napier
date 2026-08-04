@@ -1,0 +1,56 @@
+{
+  "kind": "napier.process-recovery-benchmark-result",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T06:56:23.516Z",
+  "caseId": "long_horizon_process_write_compensation_v1",
+  "caseSha256": "9ff1d45ab8c86d4c6de108ed4abe7c49bc39fdf3232122a2c96d14c5b82f2ea1",
+  "status": "passed",
+  "executor": {
+    "kind": "napier",
+    "capability": "workspace_process",
+    "sandboxId": "trusted-outer-process-benchmark",
+    "sandboxBoundary": "trusted_outer_test"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "run": {
+    "threadId": "thread_d17b3cdcd3ac48dba1cc",
+    "runId": "run_24cf3a4b61154338b679",
+    "processId": "process_e7b85a61683c4bff91e0",
+    "durationMs": 104
+  },
+  "evaluation": {
+    "kind": "napier.process-recovery-benchmark-evaluation",
+    "schemaVersion": 1,
+    "caseId": "long_horizon_process_write_compensation_v1",
+    "caseSha256": "9ff1d45ab8c86d4c6de108ed4abe7c49bc39fdf3232122a2c96d14c5b82f2ea1",
+    "status": "passed",
+    "sandboxId": "trusted-outer-process-benchmark",
+    "sandboxBoundary": "trusted_outer_test",
+    "processSchemaVersion": 7,
+    "processStatus": "failed",
+    "processExitCode": 17,
+    "workspaceDeltaStatus": "changed",
+    "workspaceWriteScopeStatus": "within_scope",
+    "workspaceCompensationStatus": "restored",
+    "workspaceRollbackAvailable": false,
+    "targetRestored": true,
+    "recoverySnapshotPresent": true,
+    "processEventCount": 4,
+    "processEventOrderValid": true,
+    "recoveredAfterReopen": true,
+    "replayValid": true,
+    "diagnostics": [],
+    "contentSha256": "0a869676896aa92316f15593107f064bd70b88097009aa96ca304f9dc8abd205"
+  },
+  "ledger": {
+    "bundleFileName": "napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-07911ed8c805cffb.json",
+    "bundleSha256": "07911ed8c805cffbc346ad1ad59ea1a54078b7b25fe45280dff0e5798339ce21",
+    "bundleBytes": 17011
+  },
+  "contentSha256": "3cf7a33d5edeeac4ddbb3318d14f61b4c220eff1c1f8fb47df5cf8935844e9d1"
+}

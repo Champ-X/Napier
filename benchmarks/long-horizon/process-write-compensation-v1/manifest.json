@@ -1,0 +1,21 @@
+{
+  "kind": "napier.process-recovery-benchmark-case",
+  "schemaVersion": 1,
+  "id": "long_horizon_process_write_compensation_v1",
+  "title": "Scoped Process write failure compensation",
+  "writeScope": "generated",
+  "targetPath": "generated/result.txt",
+  "initialText": "baseline-v1\n",
+  "mutatedText": "uncommitted-v2\n",
+  "expectedProcessStatus": "failed",
+  "expectedCompensationStatus": "restored",
+  "expectedExitCode": 17,
+  "expectedProcessEventTypes": [
+    "workspace.process.started",
+    "workspace.process.settled",
+    "workspace.process.rollback_started",
+    "workspace.process.rolled_back"
+  ],
+  "timeoutMs": 30000,
+  "contentSha256": "9ff1d45ab8c86d4c6de108ed4abe7c49bc39fdf3232122a2c96d14c5b82f2ea1"
+}

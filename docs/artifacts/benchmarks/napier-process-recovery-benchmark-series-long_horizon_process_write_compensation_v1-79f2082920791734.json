@@ -1,0 +1,98 @@
+{
+  "kind": "napier.process-recovery-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T06:56:23.521Z",
+  "caseId": "long_horizon_process_write_compensation_v1",
+  "caseSha256": "9ff1d45ab8c86d4c6de108ed4abe7c49bc39fdf3232122a2c96d14c5b82f2ea1",
+  "executor": {
+    "kind": "napier",
+    "capability": "workspace_process",
+    "sandboxId": "trusted-outer-process-benchmark",
+    "sandboxBoundary": "trusted_outer_test"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 5,
+  "completedTrialCount": 5,
+  "passedTrialCount": 5,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 0,
+  "successRate": 1,
+  "passRate": 1,
+  "metrics": {
+    "durationMs": {
+      "total": 557,
+      "min": 104,
+      "p50": 107,
+      "p95": 121,
+      "max": 121,
+      "mean": 111.4
+    },
+    "processEventCount": {
+      "total": 20,
+      "min": 4,
+      "p50": 4,
+      "p95": 4,
+      "max": 4,
+      "mean": 4
+    }
+  },
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_dcbbef9e11d545628dc2",
+      "processId": "process_a3a9c2500f1042a7b379",
+      "status": "passed",
+      "resultFileName": "napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-89f5b0e3ad0ac557.json",
+      "resultSha256": "89f5b0e3ad0ac557d8fe6a1d1f0019a699f3f78301a97f5a9ac135ced12f705f",
+      "ledgerFileName": "napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-2a5a7a45f4e95677.json",
+      "ledgerSha256": "2a5a7a45f4e9567776a8b155b33caab18058e789a280980c66927137ea2ac758"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_ee7c8ec9348947338798",
+      "processId": "process_69323b4fc2d44477a7f3",
+      "status": "passed",
+      "resultFileName": "napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-b22be74e72b135b1.json",
+      "resultSha256": "b22be74e72b135b1e6c772c798565676ff97d93c9912d35adb2fc0418ef20748",
+      "ledgerFileName": "napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-712e4c4f0fcf9455.json",
+      "ledgerSha256": "712e4c4f0fcf945586c45cd7eb4fd7ad23b0f53423a8ebed5c0ef2298e65da29"
+    },
+    {
+      "index": 3,
+      "threadId": "thread_e7fafeb808084446aceb",
+      "processId": "process_458afc5ffd1a4cf584e4",
+      "status": "passed",
+      "resultFileName": "napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-f5ec206cf807909b.json",
+      "resultSha256": "f5ec206cf807909ba0d682208fd208392e1ab70cff44d5c75e824f4772bb2f2b",
+      "ledgerFileName": "napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-cb06d8d4d61d069d.json",
+      "ledgerSha256": "cb06d8d4d61d069d8220475b5ad07816c8321ae6ac3b3aa2cffb6696412d3914"
+    },
+    {
+      "index": 4,
+      "threadId": "thread_672d9cf90a8a47b9b292",
+      "processId": "process_7390f6d349ab4f2288a3",
+      "status": "passed",
+      "resultFileName": "napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-452d336e9e0d6603.json",
+      "resultSha256": "452d336e9e0d6603b328975d6e006df7ee2c3351208747ddf114715d382e5e00",
+      "ledgerFileName": "napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-17cc3184634ff6ef.json",
+      "ledgerSha256": "17cc3184634ff6ef6d85160efc188bc8d9ddde68bea6c041fba6ed9f9fceaf27"
+    },
+    {
+      "index": 5,
+      "threadId": "thread_d17b3cdcd3ac48dba1cc",
+      "processId": "process_e7b85a61683c4bff91e0",
+      "status": "passed",
+      "resultFileName": "napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-3cf7a33d5edeeac4.json",
+      "resultSha256": "3cf7a33d5edeeac4ddbb3318d14f61b4c220eff1c1f8fb47df5cf8935844e9d1",
+      "ledgerFileName": "napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-07911ed8c805cffb.json",
+      "ledgerSha256": "07911ed8c805cffbc346ad1ad59ea1a54078b7b25fe45280dff0e5798339ce21"
+    }
+  ],
+  "contentSha256": "79f2082920791734115b363fbb96ae7ad8a28012ef279a78d5d76d9e4ce0a3fd"
+}

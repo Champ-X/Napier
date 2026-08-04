@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "f28d1a7aabacc1f12523b6885fd50f6ac140a6393ef84573f8d221a4ec333f94",
+  "artifactSetSha256": "c2592dd63b545d37cdaa73756a5ddd28bf077d64935e34ddfcdf65166459df92",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "6ad22cccbd18b671e5a2072af54330c902dfde87d87dfc10fb18c46fb480c232",
+      "sha256": "79567a20d325dc609562dba9eaa1361937a0e4697409c620750deedf54030ca7",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "f67933bd26339b56cbd9766e0d35d9e783fe53000603f897959dddb7467cd617",
+      "sha256": "ab5b0dc9aa4e960b43d82ee8f5c48cd32fe68648577e31decf9cb971ad5601bc",
       "valid": true
     },
     {
@@ -588,6 +588,72 @@
       "kind": "long-horizon-goal-no-progress-ledger-2",
       "path": "docs/artifacts/benchmarks/napier-goal-no-progress-benchmark-ledger-long_horizon_goal_no_progress_v1-f36e7dc427fee31a.json",
       "sha256": "a121d7b9e56db7b49a30b287ea5edb2dc9f460b02caad4f706f2123910f11329",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-series",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-series-long_horizon_process_write_compensation_v1-79f2082920791734.json",
+      "sha256": "911880aeae4d54f78ac697ca917c0bbb1141c2b02557be1d844d7cce5aa92e26",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-result-1",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-89f5b0e3ad0ac557.json",
+      "sha256": "5decb80b9cf00807d315bde75c697a14ea420e8e4f914fe50bb598ab3780a3c6",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-ledger-1",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-2a5a7a45f4e95677.json",
+      "sha256": "7272a3dd9ecbd1ac2cea083364e1eaf84bef5ce3a8f97f60b39083fe841f1d38",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-result-2",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-b22be74e72b135b1.json",
+      "sha256": "4b40819404d0c8caef724f05558b6042a5117fb344c6efa69b2cf70a1db3dcd7",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-ledger-2",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-712e4c4f0fcf9455.json",
+      "sha256": "b066dd23c137f7891ab4c89e3519a6e28d34a82122b0ad33c1a7a72b9a628f55",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-result-3",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-f5ec206cf807909b.json",
+      "sha256": "d4d6407a65263f7867b82f4a0343f2d10d1b29808039e46271ebb7cf59aeb831",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-ledger-3",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-cb06d8d4d61d069d.json",
+      "sha256": "d686dfd7b815965cd9a65c79cee20016236c00c70801626778d40ed882238ef1",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-result-4",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-452d336e9e0d6603.json",
+      "sha256": "5d65e4942f128aff99516dbda6c2ef5974f2efdcea45e84a505eb0109121737f",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-ledger-4",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-17cc3184634ff6ef.json",
+      "sha256": "76b9644de33ccae5b94d6774bebdea833898f49a6295255181869951ceebcfb9",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-result-5",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-result-long_horizon_process_write_compensation_v1-3cf7a33d5edeeac4.json",
+      "sha256": "65258c9197984bae6dee42bbd9cc55f8fe30ced238d7440017f87cc796f5a75c",
+      "valid": true
+    },
+    {
+      "kind": "long-horizon-process-recovery-ledger-5",
+      "path": "docs/artifacts/benchmarks/napier-process-recovery-benchmark-ledger-long_horizon_process_write_compensation_v1-07911ed8c805cffb.json",
+      "sha256": "f459030aff74b1925ce429c3cd6af4aa41f9bc6245ef154412276fb95d459c68",
       "valid": true
     },
     {

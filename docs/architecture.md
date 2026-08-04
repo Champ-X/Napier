@@ -2180,13 +2180,14 @@ runtime-environment receipt, management OpenAPI artifact, management OpenAPI
 compatibility fixture, product-performance baseline, Web dist receipt, Web
 dist manifest, and retained Workflow, Data, DataFrame, Security, single- and
 multi-restart/offline-wait/budget Long-horizon, durable Goal no-progress,
-Research, and UX Benchmark Series plus all forty-two Result/Ledger pairs into one
+Process recovery, Research, and UX Benchmark Series plus all forty-seven
+Result/Ledger pairs into one
 `napier.release-artifacts-audit` receipt. Before
-hashing the 99 Benchmark files, the gate performs full semantic verification
-for fifteen Series across eleven cases. It stores only artifact kinds,
+hashing the 110 Benchmark files, the gate performs full semantic verification
+for sixteen Series across twelve cases. It stores only artifact kinds,
 repo-relative paths, SHA-256 values, validity booleans, package name/version,
-and a canonical artifact-set digest. The current receipt contains 107 artifacts
-and binds set SHA-256 `f28d1a7aabacc1f1...`.
+and a canonical artifact-set digest. The current receipt contains 118 artifacts
+and binds set SHA-256 `c2592dd63b545d37...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
@@ -5006,6 +5007,21 @@ and retains private recovery for manual inspection. Private Process recovery
 directories are checked with `lstat` before every read, and strict manifest,
 attempt, and result parsers reject unknown fields even when an attacker
 recomputes their unkeyed content hashes.
+
+The fixed Process recovery Outcome benchmark exercises this production path
+without involving a model. A real temporary Node child changes one
+preview-bound scope and exits 17; the runner requires failed, changed,
+within-scope settlement, automatic restoration, four ordered Process events,
+valid Replay, and the same restored projection after closing and reopening the
+Store and Manager. Its Ledger binds the preview, terminal session, automatic
+rollback attempt/result, target before/mutated/final hashes, all event
+receipts, and source Replay hash without retaining argv, paths, or file bytes.
+The offline verifier replays Process events with the production projector,
+reconstructs reopen runtime state, and rejects a forged final hash even after
+outer Ledger hashes are recomputed. The opt-in direct adapter is explicitly
+recorded as `trusted_outer_test`; only the default platform adapter constitutes
+an OS Sandbox attempt. The retained five-trial Series passes in 104-121 ms per
+trial, and the complete repository gate passes 2,091 tests.
 
 `WorkspaceProcessManager` is a Capability Plane service outside `LocalStore`
 and the Server router. The Work Ledger remains authoritative across restarts:

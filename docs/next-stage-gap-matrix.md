@@ -403,9 +403,21 @@ Observed result:
   records the model departing from its fixed response and causing premature
   Goal completion after one continuation. This is evidence of model variance,
   not a protocol pass;
-- all restart, offline-wait, current budget, and Goal no-progress artifacts are
-  in the 107-artifact release set `f28d1a7aabacc1f1...`;
-- uncertain write recovery remains.
+- `long_horizon_process_write_compensation_v1` launches a real temporary Node
+  child that changes one preview-authorized file and exits 17. Passing requires
+  failed/changed/within-scope settlement, automatic byte restoration, four
+  ordered Process events, valid Replay, and the same restored projection after
+  closing and reopening Store/Manager;
+- the Process Result/Ledger verifier replays production Process and automatic
+  rollback evidence, reconstructs reopen runtime state, and rejects a forged
+  final hash even when the outer Ledger hash is recomputed. The retained
+  trusted-outer Series passed 5/5 at 104-121 ms; this explicit boundary is not
+  OS Sandbox evidence and has no isomorphic OMP score;
+- all restart, offline-wait, current budget, Goal no-progress, and Process
+  recovery artifacts are in the 118-artifact release set
+  `c2592dd63b545d37...`;
+- complete `npm run check` passes 2,091 tests: 104 root, 168 CLI, 183 Server,
+  471 Web, 1,137 Runtime, and 28 SDK.
 
 ## Implemented Slice: Research Outcome Benchmark
 
@@ -2840,6 +2852,12 @@ Observed result:
   Delta was `unchanged`, compensation was truthfully `not_needed`, the original
   file remained intact, and there was no host fallback. The same smoke remains
   available from an unsandboxed Terminal;
+- the independent Process recovery Outcome Series ran five real temporary Node
+  writes through the explicitly trusted outer test adapter. All 5/5 exited 17,
+  restored the original bytes, retained the four-event automatic-compensation
+  chain, survived Store/Manager reopen, and passed offline Result/Ledger/Series
+  verification in 104-121 ms. This non-isomorphic capability is excluded from
+  OMP scoring and does not claim OS Sandbox enforcement;
 - compensation projection, transaction execution, automatic orchestration, and
   Session finalization live in focused modules. `workspace-processes.ts`
   remains 940 lines and recovery falls below its preceding 495-line state;

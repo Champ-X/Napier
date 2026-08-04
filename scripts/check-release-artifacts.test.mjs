@@ -146,6 +146,17 @@ describe("release artifacts audit", () => {
       "long-horizon-goal-no-progress-ledger-1",
       "long-horizon-goal-no-progress-result-2",
       "long-horizon-goal-no-progress-ledger-2",
+      "long-horizon-process-recovery-series",
+      "long-horizon-process-recovery-result-1",
+      "long-horizon-process-recovery-ledger-1",
+      "long-horizon-process-recovery-result-2",
+      "long-horizon-process-recovery-ledger-2",
+      "long-horizon-process-recovery-result-3",
+      "long-horizon-process-recovery-ledger-3",
+      "long-horizon-process-recovery-result-4",
+      "long-horizon-process-recovery-ledger-4",
+      "long-horizon-process-recovery-result-5",
+      "long-horizon-process-recovery-ledger-5",
       "research-benchmark-series",
       "research-benchmark-result-1",
       "research-benchmark-ledger-1",
@@ -605,6 +616,40 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when retained Process compensation evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const seriesName = (await readdir(benchmarkRoot)).find((name) =>
+      name.startsWith(
+        "napier-process-recovery-benchmark-series-long_horizon_process_write_compensation_v1-",
+      ),
+    );
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const ledgerPath = path.join(
+      benchmarkRoot,
+      series.trials[0].ledgerFileName,
+    );
+    const ledger = JSON.parse(await readFile(ledgerPath, "utf8"));
+    ledger.target.finalSha256 = ledger.target.mutatedSha256;
+    const { contentSha256: _contentSha256, ...content } = ledger;
+    ledger.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(ledgerPath, ledger);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "long-horizon Process recovery series: series_trial_invalid",
+        "long-horizon Process recovery trial 1: ledger_binding_mismatch",
+        "long-horizon Process recovery trial 1: evaluation_evidence_mismatch",
+        "long-horizon Process recovery trial 1: target_binding_mismatch",
+      ]),
+    );
+  });
+
   it("fails when retained Research evidence is tampered", async () => {
     const { root } = await createFixture();
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
@@ -729,6 +774,7 @@ async function createWorkflowBenchmarkFixture(root) {
     (name) =>
       name.startsWith("napier-workflow-benchmark-") ||
       name.startsWith("napier-goal-no-progress-benchmark-") ||
+      name.startsWith("napier-process-recovery-benchmark-") ||
       name.startsWith("napier-research-benchmark-") ||
       name.startsWith("napier-ux-benchmark-") ||
       name === "napier-omp-coding-comparison-seed-20260806.json",
