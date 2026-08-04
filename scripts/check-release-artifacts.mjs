@@ -59,6 +59,10 @@ const defaultOfflineWaitSampleBBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-f9763a9fb75404b4.json";
 const defaultOfflineWaitDistributionBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_offline_wait_approval_v1-8fbd6eba325a0839.json";
+const defaultBudgetSampleBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_token_budget_exhaustion_v1-3661f272968004ae.json";
+const defaultBudgetDistributionBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_token_budget_exhaustion_v1-ee23f61783f8c111.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json";
 const defaultUxBenchmarkSeriesPath =
@@ -114,6 +118,12 @@ export async function auditReleaseArtifacts(options = {}) {
   const offlineWaitDistributionBenchmarkSeriesPath =
     options.offlineWaitDistributionBenchmarkSeriesPath ??
     defaultOfflineWaitDistributionBenchmarkSeriesPath;
+  const budgetSampleBenchmarkSeriesPath =
+    options.budgetSampleBenchmarkSeriesPath ??
+    defaultBudgetSampleBenchmarkSeriesPath;
+  const budgetDistributionBenchmarkSeriesPath =
+    options.budgetDistributionBenchmarkSeriesPath ??
+    defaultBudgetDistributionBenchmarkSeriesPath;
   const researchBenchmarkSeriesPath =
     options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
   const uxBenchmarkSeriesPath =
@@ -288,6 +298,25 @@ export async function auditReleaseArtifacts(options = {}) {
       artifactReferences: workflowBenchmarkSeriesArtifactReferences,
       verifySeries: verifyWorkflowBenchmarkSeries,
     });
+  const budgetSampleBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
+    repoRoot,
+    seriesPath: budgetSampleBenchmarkSeriesPath,
+    errors,
+    artifactKindPrefix: "long-horizon-budget-sample",
+    diagnosticLabel: "long-horizon budget sample",
+    artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+    verifySeries: verifyWorkflowBenchmarkSeries,
+  });
+  const budgetDistributionBenchmarkArtifacts =
+    await verifyBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: budgetDistributionBenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "long-horizon-budget-distribution",
+      diagnosticLabel: "long-horizon budget distribution",
+      artifactReferences: workflowBenchmarkSeriesArtifactReferences,
+      verifySeries: verifyWorkflowBenchmarkSeries,
+    });
   const researchBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: researchBenchmarkSeriesPath,
@@ -387,6 +416,8 @@ export async function auditReleaseArtifacts(options = {}) {
     ...offlineWaitSampleABenchmarkArtifacts,
     ...offlineWaitSampleBBenchmarkArtifacts,
     ...offlineWaitDistributionBenchmarkArtifacts,
+    ...budgetSampleBenchmarkArtifacts,
+    ...budgetDistributionBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
     ...uxBenchmarkArtifacts,
   ];

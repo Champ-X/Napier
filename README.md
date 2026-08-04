@@ -1548,6 +1548,35 @@ three Map Runs, and made zero post-restart model calls. Those four successful
 trials completed in 3.248–3.767 seconds at mean cost `$0.0020105008`; mean
 input/output usage was 13,469.5/430.25.
 
+Schema 8 adds `long_horizon_token_budget_exhaustion_v1`. Its Map is
+intentionally sequential: the first child has a frozen 1,000-token Run limit,
+and expected exhaustion must stop the remaining two items and Reduce. A
+business `workflow.blocked` result is a benchmark pass only when exactly one
+receipt-bound `run.budget.exhausted` event reports `tokens`/`1000`, no
+`tool.completed` occurs after that event, Replay is valid, and credentials are
+absent.
+
+```bash
+npm run bench:workflow -- \
+  --case benchmarks/long-horizon/token-budget-exhaustion-map-reduce-v1 \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 5
+```
+
+An initial concurrent calibration produced two Provider-error inconclusive
+trials, each with one valid budget event and two Provider errors; it is
+documented as calibration rather than included in the current release set.
+The retained
+[two-trial sample](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_token_budget_exhaustion_v1-3661f272968004ae.json)
+and
+[five-trial distribution](docs/artifacts/benchmarks/napier-workflow-benchmark-series-long_horizon_token_budget_exhaustion_v1-ee23f61783f8c111.json)
+passed 7/7 with no failed or inconclusive current-case trial. Every trial used
+two Runs, retained exactly one token exhaustion, started neither remaining Map
+item nor Reduce, and recorded zero post-exhaustion tool completions. Duration
+was 2.182–3.121 seconds; mean cost was `$0.0001877784`, and mean input/output
+usage was 795.86/266.86.
+
 ### Research Outcome Benchmark
 
 The fixed `research_aurora_contradiction_v1` case injects three immutable
@@ -5546,10 +5575,10 @@ top-level `napier.release-artifacts-audit` receipt that binds the package-lock
 receipt, runtime-environment receipt, product-performance baseline, management
 OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
 Web dist manifest, and the semantically verified Workflow, Data, DataFrame,
-Security, restart/offline-wait Long-horizon, Research, and UX Benchmark Series
-plus all thirty-three Result/Ledger pairs by SHA-256;
-the current 86-artifact set is bound by
-`f83d0736c3eb81d5...`;
+Security, restart/offline-wait/budget Long-horizon, Research, and UX Benchmark
+Series plus all forty Result/Ledger pairs by SHA-256;
+the current 102-artifact set is bound by
+`6381085af3c9e19d...`;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
@@ -5557,7 +5586,7 @@ tests before running workspace suites, so package-lock drift, runtime version
 drift, missing runtime components, OpenAPI route drift, manifest drift, extra
 dist files, malformed manifests, stale receipts, compatibility regressions,
 aggregate artifact drift, Workflow Benchmark trial substitution/tampering, and
-Data/Security/restart or offline-wait Long-horizon/Research Benchmark evidence
+Data/Security/restart, offline-wait, or budget Long-horizon/Research Benchmark evidence
 tampering and entry-budget regressions are covered without mutating the real
 build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with

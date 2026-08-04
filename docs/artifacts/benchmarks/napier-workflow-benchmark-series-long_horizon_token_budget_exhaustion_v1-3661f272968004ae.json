@@ -1,0 +1,91 @@
+{
+  "kind": "napier.workflow-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T04:36:06.788Z",
+  "caseId": "long_horizon_token_budget_exhaustion_v1",
+  "caseSha256": "939ca57c1ba353fd5f35b628c8f615343cc623ac189d8113a3723878b77307c5",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 2,
+  "completedTrialCount": 2,
+  "scoredTrialCount": 2,
+  "passedTrialCount": 2,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 0,
+  "usageSampleCount": 2,
+  "metrics": {
+    "durationMs": {
+      "total": 5403,
+      "min": 2282,
+      "p50": 2282,
+      "p95": 3121,
+      "max": 3121,
+      "mean": 2701.5
+    },
+    "costUsd": {
+      "total": 0.0003896536,
+      "min": 0.0001789368,
+      "p50": 0.0001789368,
+      "p95": 0.0002107168,
+      "max": 0.0002107168,
+      "mean": 0.0001948268
+    },
+    "inputTokens": {
+      "total": 1551,
+      "min": 768,
+      "p50": 768,
+      "p95": 783,
+      "max": 783,
+      "mean": 775.5
+    },
+    "outputTokens": {
+      "total": 611,
+      "min": 245,
+      "p50": 245,
+      "p95": 366,
+      "max": 366,
+      "mean": 305.5
+    },
+    "runCount": {
+      "total": 4,
+      "min": 2,
+      "p50": 2,
+      "p95": 2,
+      "max": 2,
+      "mean": 2
+    }
+  },
+  "successRate": 1,
+  "completionRate": 1,
+  "passRate": 1,
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_2580239aa20e48288993",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_token_budget_exhaustion_v1-ed8d41aa181bb75a.json",
+      "resultSha256": "ed8d41aa181bb75a804ceac329976046c6650dfa673c010953d8f56f0b35fc65",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_token_budget_exhaustion_v1-d2f3c84243fc47d0.json",
+      "ledgerSha256": "d2f3c84243fc47d00c814a9a3d6e2dd98a07d919b9b50a87c1d53056d21a4178"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_d7ca608dfb2141678bab",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_token_budget_exhaustion_v1-8b0863d5965785a6.json",
+      "resultSha256": "8b0863d5965785a6dba5b0f2ee71fbc4ba127fd4ff9716675dc0ad6e0d3b8f66",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_token_budget_exhaustion_v1-c221f2292b852d21.json",
+      "ledgerSha256": "c221f2292b852d21e32486d0caeb6391ba03e1901911592a26c6cc31696b2034"
+    }
+  ],
+  "contentSha256": "3661f272968004aee6984b2756e47ced44c174d6a6b03570ebab251898bc921b"
+}

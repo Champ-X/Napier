@@ -1,0 +1,118 @@
+{
+  "kind": "napier.workflow-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T04:36:38.190Z",
+  "caseId": "long_horizon_token_budget_exhaustion_v1",
+  "caseSha256": "939ca57c1ba353fd5f35b628c8f615343cc623ac189d8113a3723878b77307c5",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 5,
+  "completedTrialCount": 5,
+  "scoredTrialCount": 5,
+  "passedTrialCount": 5,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 0,
+  "usageSampleCount": 5,
+  "metrics": {
+    "durationMs": {
+      "total": 11604,
+      "min": 2182,
+      "p50": 2352,
+      "p95": 2431,
+      "max": 2431,
+      "mean": 2320.8
+    },
+    "costUsd": {
+      "total": 0.0009247952,
+      "min": 0.0001680224,
+      "p50": 0.0001870568,
+      "p95": 0.0001967168,
+      "max": 0.0001967168,
+      "mean": 0.00018495904
+    },
+    "inputTokens": {
+      "total": 4020,
+      "min": 774,
+      "p50": 793,
+      "p95": 845,
+      "max": 845,
+      "mean": 804
+    },
+    "outputTokens": {
+      "total": 1257,
+      "min": 174,
+      "p50": 269,
+      "p95": 310,
+      "max": 310,
+      "mean": 251.4
+    },
+    "runCount": {
+      "total": 10,
+      "min": 2,
+      "p50": 2,
+      "p95": 2,
+      "max": 2,
+      "mean": 2
+    }
+  },
+  "successRate": 1,
+  "completionRate": 1,
+  "passRate": 1,
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_0c7ddfc5d12446ec8018",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_token_budget_exhaustion_v1-458736cee4ead4f8.json",
+      "resultSha256": "458736cee4ead4f81e11aabdc5fa9dc6eb666131270a7de25be60376b1e05a7d",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_token_budget_exhaustion_v1-7cf0b46f85d90a72.json",
+      "ledgerSha256": "7cf0b46f85d90a72c735fe61d3ff97b819e1c1df2ab1039e7c277fc21e986dc8"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_49325cac671e4c2a9958",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_token_budget_exhaustion_v1-3f1fea87fd19e2a1.json",
+      "resultSha256": "3f1fea87fd19e2a1319be5b40a988874492a88ee663f4b5bf8ee9cf9f3e98551",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_token_budget_exhaustion_v1-d844f6edd85cda7c.json",
+      "ledgerSha256": "d844f6edd85cda7ceb535fda7ccfefa57d9f5f6fa88dd412ab7dbe9fc7ff916e"
+    },
+    {
+      "index": 3,
+      "threadId": "thread_1f249a9a3f074f5fad3b",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_token_budget_exhaustion_v1-97a1a536abdc0d5e.json",
+      "resultSha256": "97a1a536abdc0d5ecfa499e7b4c96072af2aa45559cd9feb9287a7a5d854b244",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_token_budget_exhaustion_v1-ff4537104e0446b4.json",
+      "ledgerSha256": "ff4537104e0446b40df352171e3c0eaf4fe1e13e21a17c7cf86a2294df45ec73"
+    },
+    {
+      "index": 4,
+      "threadId": "thread_f2eecb5ac943408aad7a",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_token_budget_exhaustion_v1-ea36fc9f1b66a505.json",
+      "resultSha256": "ea36fc9f1b66a50565f54125b6f9d9db46b0e306a5a2c004e5901479b4939978",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_token_budget_exhaustion_v1-ea2102261a40b794.json",
+      "ledgerSha256": "ea2102261a40b7946cd7a469c6af1f1f8c7bba86badd88665f8e91c70544b8d3"
+    },
+    {
+      "index": 5,
+      "threadId": "thread_dedf9992eb454a9b9548",
+      "status": "passed",
+      "resultFileName": "napier-workflow-benchmark-result-long_horizon_token_budget_exhaustion_v1-3c47ca35e3f4b919.json",
+      "resultSha256": "3c47ca35e3f4b919ed04871a1a24403161261f6ac90b6475e5cfd01a3f215a8f",
+      "ledgerFileName": "napier-workflow-benchmark-ledger-long_horizon_token_budget_exhaustion_v1-0cc875178880cf48.json",
+      "ledgerSha256": "0cc875178880cf48376b0aa99bfceaabbb2b34cf89fda46dafef856576869828"
+    }
+  ],
+  "contentSha256": "ee23f61783f8c11126c4b8b9048fabba07c75f40d96f3bc13fd641825e7c3d3c"
+}

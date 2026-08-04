@@ -124,6 +124,22 @@ describe("release artifacts audit", () => {
       "long-horizon-offline-wait-distribution-ledger-4",
       "long-horizon-offline-wait-distribution-result-5",
       "long-horizon-offline-wait-distribution-ledger-5",
+      "long-horizon-budget-sample-series",
+      "long-horizon-budget-sample-result-1",
+      "long-horizon-budget-sample-ledger-1",
+      "long-horizon-budget-sample-result-2",
+      "long-horizon-budget-sample-ledger-2",
+      "long-horizon-budget-distribution-series",
+      "long-horizon-budget-distribution-result-1",
+      "long-horizon-budget-distribution-ledger-1",
+      "long-horizon-budget-distribution-result-2",
+      "long-horizon-budget-distribution-ledger-2",
+      "long-horizon-budget-distribution-result-3",
+      "long-horizon-budget-distribution-ledger-3",
+      "long-horizon-budget-distribution-result-4",
+      "long-horizon-budget-distribution-ledger-4",
+      "long-horizon-budget-distribution-result-5",
+      "long-horizon-budget-distribution-ledger-5",
       "research-benchmark-series",
       "research-benchmark-result-1",
       "research-benchmark-ledger-1",
@@ -514,6 +530,37 @@ describe("release artifacts audit", () => {
         "long-horizon offline wait distribution series: series_trial_invalid",
         `long-horizon offline wait distribution trial ${passed.index}: ledger:ledger_restart_evidence_invalid`,
         `long-horizon offline wait distribution trial ${passed.index}: trial_binding_mismatch`,
+      ]),
+    );
+  });
+
+  it("fails when retained budget exhaustion evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
+    const seriesName = (await readdir(benchmarkRoot)).find((name) =>
+      name.startsWith(
+        "napier-workflow-benchmark-series-long_horizon_token_budget_exhaustion_v1-ee23f61783f8c111",
+      ),
+    );
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const ledgerPath = path.join(
+      benchmarkRoot,
+      series.trials[0].ledgerFileName,
+    );
+    const ledger = JSON.parse(await readFile(ledgerPath, "utf8"));
+    ledger.workflow.budgetExhaustionEvents[0].payload.reason = "cost";
+    await writeJson(ledgerPath, ledger);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "long-horizon budget distribution series: series_trial_invalid",
+        "long-horizon budget distribution trial 1: ledger:ledger_budget_evidence_invalid",
+        "long-horizon budget distribution trial 1: trial_binding_mismatch",
       ]),
     );
   });

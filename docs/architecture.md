@@ -1926,8 +1926,24 @@ success is 4/9 and conditional pass rate is 1. Every reached recovery path
 passed: elapsed wait was 1009–1013 ms, the deadline was preserved, all three
 Map Runs were reused, and no model response occurred after restart. Successful
 trials completed in 3.248–3.767 seconds at mean cost `$0.0020105008`; mean
-input/output usage was 13,469.5/430.25. Budget exhaustion, no-progress
-detection, and uncertain write recovery remain.
+input/output usage was 13,469.5/430.25.
+
+Schema 8 adds `long_horizon_token_budget_exhaustion_v1`. The case freezes each
+Map child at 1,000 budget tokens and uses sequential fail-fast Map execution.
+The first child must append one `run.budget.exhausted` event with reason
+`tokens` and limit `1000`; the remaining Map items and Reduce must never start.
+The Ledger retains exact budget events and binds each event to its failed Run
+and receipt. Offline evaluation also rejects reason/limit substitution and any
+`tool.completed` receipt after exhaustion.
+
+An initial concurrent calibration yielded two Provider-error inconclusive
+trials, each with one valid budget event and two Provider errors. It is not in
+the current release set because calibration changed the case hash. The retained
+current-case two- and five-trial Series passed 7/7: every trial used two Runs,
+retained one exhaustion event, had zero post-exhaustion tool completions, and
+left Reduce absent. Duration was 2.182–3.121 seconds; mean cost was
+`$0.0001877784`, and mean input/output usage was 795.86/266.86. No-progress
+detection and uncertain write recovery remain.
 
 ### Research Outcome Benchmark
 
@@ -2108,14 +2124,14 @@ The top-level release artifact audit binds the package-lock receipt,
 runtime-environment receipt, management OpenAPI artifact, management OpenAPI
 compatibility fixture, product-performance baseline, Web dist receipt, Web
 dist manifest, and retained Workflow, Data, DataFrame, Security, single- and
-multi-restart/offline-wait Long-horizon, Research, and UX Benchmark Series plus
-all thirty-three Result/Ledger pairs into one `napier.release-artifacts-audit`
-receipt. Before
-hashing the 78 Benchmark files, the gate performs full semantic verification
-for twelve Series across nine cases. It stores only artifact kinds,
+multi-restart/offline-wait/budget Long-horizon, Research, and UX Benchmark
+Series plus all forty Result/Ledger pairs into one
+`napier.release-artifacts-audit` receipt. Before
+hashing the 94 Benchmark files, the gate performs full semantic verification
+for fourteen Series across ten cases. It stores only artifact kinds,
 repo-relative paths, SHA-256 values, validity booleans, package name/version,
-and a canonical artifact-set digest. The current receipt contains 86 artifacts
-and binds set SHA-256 `f83d0736c3eb81d5...`.
+and a canonical artifact-set digest. The current receipt contains 102 artifacts
+and binds set SHA-256 `6381085af3c9e19d...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
