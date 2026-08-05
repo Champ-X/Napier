@@ -1,0 +1,154 @@
+{
+  "kind": "napier.open-web-research-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-05T19:55:53.679Z",
+  "caseId": "research_open_web_source_triad_v1",
+  "caseSha256": "1044633812902cd2a8387a84b8adeed54928b3ca700498c77122a2255290494c",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 2,
+  "completedTrialCount": 2,
+  "passedTrialCount": 1,
+  "failedTrialCount": 1,
+  "inconclusiveTrialCount": 0,
+  "claimsMatchTrialCount": 2,
+  "toolTopologyMatchTrialCount": 2,
+  "sourceCoverageMatchTrialCount": 2,
+  "citationEvidenceMatchTrialCount": 1,
+  "citationClaimsMatchTrialCount": 2,
+  "replayValidTrialCount": 2,
+  "credentialLeakTrialCount": 0,
+  "completionRate": 1,
+  "passRate": 0.5,
+  "metrics": {
+    "durationMs": {
+      "total": 91707,
+      "min": 39540,
+      "p50": 39540,
+      "p95": 39540,
+      "max": 52167,
+      "mean": 45853.5
+    },
+    "costUsd": {
+      "total": 0.0105906248,
+      "min": 0.0050774136000000004,
+      "p50": 0.0050774136000000004,
+      "p95": 0.0050774136000000004,
+      "max": 0.0055132112,
+      "mean": 0.0052953124
+    },
+    "inputTokens": {
+      "total": 53859,
+      "min": 25369,
+      "p50": 25369,
+      "p95": 25369,
+      "max": 28490,
+      "mean": 26929.5
+    },
+    "outputTokens": {
+      "total": 7890,
+      "min": 3748,
+      "p50": 3748,
+      "p95": 3748,
+      "max": 4142,
+      "mean": 3945
+    },
+    "searchCount": {
+      "total": 2,
+      "min": 1,
+      "p50": 1,
+      "p95": 1,
+      "max": 1,
+      "mean": 1
+    },
+    "fetchCount": {
+      "total": 4,
+      "min": 2,
+      "p50": 2,
+      "p95": 2,
+      "max": 2,
+      "mean": 2
+    },
+    "browserCount": {
+      "total": 6,
+      "min": 3,
+      "p50": 3,
+      "p95": 3,
+      "max": 3,
+      "mean": 3
+    },
+    "researchCaptureCount": {
+      "total": 6,
+      "min": 3,
+      "p50": 3,
+      "p95": 3,
+      "max": 3,
+      "mean": 3
+    },
+    "citationCount": {
+      "total": 6,
+      "min": 3,
+      "p50": 3,
+      "p95": 3,
+      "max": 3,
+      "mean": 3
+    }
+  },
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_5edbbebb51f54662ba97",
+      "status": "passed",
+      "resultFileName": "napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-d7e4f2fd4e284674.json",
+      "resultSha256": "d7e4f2fd4e284674778efaebcb111b956831925a177cb263209e8ac5633683d5",
+      "actualToolSequenceSha256": "4337ae958ec7d2796ff5e331029dd7c84ec2216a97aaf1f92e380efe75b4d2c1",
+      "actualSourceEvidenceSha256": "7d4567367e9b4f96e6bbb9c06a2f1e3cee7d254e598015b54f13f1db1a0ab0d2",
+      "actualCitationEvidenceSha256": "15496536abe088af48bdc97d55fa498f6cf002e5b5fb9c7bb3a7d3583c837c99",
+      "claimsMatch": true,
+      "toolTopologyMatch": true,
+      "sourceCoverageMatch": true,
+      "citationEvidenceMatch": true,
+      "citationClaimsMatch": true,
+      "replayValid": true,
+      "credentialLeakDetected": false,
+      "searchCount": 1,
+      "fetchCount": 2,
+      "browserCount": 3,
+      "researchCaptureCount": 3,
+      "citationCount": 3
+    },
+    {
+      "index": 2,
+      "threadId": "thread_62c385208b174e438c8a",
+      "status": "failed",
+      "resultFileName": "napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b6f353840b7374e9.json",
+      "resultSha256": "b6f353840b7374e91b1832ce886953382ae12ce13f0b2dc11f50f234f3119f85",
+      "actualToolSequenceSha256": "58e88e1af380bbbea503db82256281d7bf59d30965f69399ea89e10d2a4162cf",
+      "actualSourceEvidenceSha256": "7d4567367e9b4f96e6bbb9c06a2f1e3cee7d254e598015b54f13f1db1a0ab0d2",
+      "actualCitationEvidenceSha256": "bdc542a17ee47955506ae4b6e1fe8f6393f7f548680a8901be0619a1a6dfc803",
+      "claimsMatch": true,
+      "toolTopologyMatch": true,
+      "sourceCoverageMatch": true,
+      "citationEvidenceMatch": false,
+      "citationClaimsMatch": true,
+      "replayValid": true,
+      "credentialLeakDetected": false,
+      "searchCount": 1,
+      "fetchCount": 2,
+      "browserCount": 3,
+      "researchCaptureCount": 3,
+      "citationCount": 3
+    }
+  ],
+  "resultSetSha256": "654b544dbec60f61422b3f1c9988642990828415ec4855685f0b865b4589d40c",
+  "contentSha256": "a7b8199e42e133392b8b50f611602cf2d1e8780ae91b6224de980a6e520873af"
+}

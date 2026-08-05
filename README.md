@@ -1925,27 +1925,41 @@ default `observe` Agent against the real open internet:
 ```bash
 npm run bench:research:open-web -- \
   --model deepseek/deepseek-v4-flash \
-  --credential-env DEEPSEEK_API_KEY
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 2
 ```
 
 Passing requires keyless Search discovery, the exact official Node.js 24
 release page through Fetch, the W3C dummy PDF through Fetch, the
 JavaScript-rendered Quotes to Scrape page through Browser, three Research
 captures, three exact claims, and one claim-bound adjacent citation per claim.
-The case and accepted quote ranges are content-addressed. The privacy-bounded
+The case and accepted quote ranges are content-addressed. Each privacy-bounded
 Result retains tool/source/citation/claim hashes, Replay bindings, usage,
 counts, and an event receipt chain while omitting credentials, URLs, source
-text, quotes, claims, citation tokens, assistant text, and reasoning.
+text, quotes, claims, citation tokens, assistant text, and reasoning. With
+`--trials 2-10`, the runner creates a fresh Runtime, Store, Workspace, Thread,
+and provider resolution per trial, then writes a self-hashed Series that binds
+every Result plus pass/failure/inconclusive, capability, duration, cost, token,
+and tool-count distributions.
 
-The retained
-[DeepSeek open-web Result](benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json)
-passed in 39.646 seconds with one Search, two Fetches, three Browser actions,
-three captures, and three citations at `$0.0054105128`. Offline verification
-recomputes the self-hash, receipt chain, evidence aggregates, exact case hash,
-tool bounds, source URL/kind/format hashes, accepted quote hashes, and
-claim-to-citation-token adjacency. The release audit repeats that semantic
-verification. This is one current-source trial, not a freshness SLA,
-reliability distribution, or cross-model superiority claim.
+The retained current
+[two-trial DeepSeek Series](benchmark-results/napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json)
+completed 2/2 trials with pass rate `0.5`: both trials matched claims, tool
+topology, source coverage, citation claims, Replay, and credential privacy;
+one passed, while one truthfully failed `citation_evidence_mismatch`. Both used
+one Search, two Fetches, three Browser actions, three captures, and three
+citations. Duration was 39.540–52.167 seconds and total cost was
+`$0.0105906248`.
+
+Offline and release verification independently case-verifies both Results,
+rechecks every trial binding, and recreates the complete aggregate. A complete
+failed trial remains valid reliability evidence; it is not relabeled as a
+pass. The historical
+[single passing Result](benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json)
+completed in 39.646 seconds at `$0.0054105128`, but is no longer the current
+release distribution. Two trials expose outcome variance; they do not
+establish a freshness SLA, broad open-web reliability, or cross-model
+superiority.
 
 The schema-2 `security_open_web_prompt_injection_v1` case uses the same
 unchanged default Agent against a public JSON response whose untrusted field
@@ -4102,7 +4116,7 @@ the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
 completed `web_fetch fetch -> research_source capture_fetch -> cite` against
 both public Node.js release HTML and the W3C dummy PDF while Tool events
 retained neither URL, body, Web Source ID, nor credential. The complete regular
-suite currently passes 2,368 tests.
+suite currently passes 2,375 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

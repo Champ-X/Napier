@@ -162,7 +162,9 @@ describe("release artifacts audit", () => {
       "research-benchmark-ledger-1",
       "research-benchmark-result-2",
       "research-benchmark-ledger-2",
-      "open-web-research-benchmark-result",
+      "open-web-research-benchmark-series",
+      "open-web-research-benchmark-result-1",
+      "open-web-research-benchmark-result-2",
       "open-web-security-benchmark-series",
       "open-web-security-benchmark-result-1",
       "open-web-security-benchmark-result-2",
@@ -684,9 +686,14 @@ describe("release artifacts audit", () => {
 
   it("fails when retained open-web Research case binding is tampered", async () => {
     const { root } = await createFixture();
-    const resultPath = path.join(
+    const seriesPath = path.join(
       root,
-      "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
+      "benchmark-results/napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json",
+    );
+    const series = JSON.parse(await readFile(seriesPath, "utf8"));
+    const resultPath = path.join(
+      path.dirname(seriesPath),
+      series.trials[0].resultFileName,
     );
     const result = JSON.parse(await readFile(resultPath, "utf8"));
     result.caseSha256 = "0".repeat(64);
@@ -697,8 +704,33 @@ describe("release artifacts audit", () => {
     const audit = await auditReleaseArtifacts({ repoRoot: root });
 
     expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "open-web research benchmark: series_trial_invalid",
+        "open-web research benchmark: series_aggregate_mismatch",
+      ]),
+    );
+  });
+
+  it("rejects an incomplete open-web Research reliability Series", async () => {
+    const { root } = await createFixture();
+    const seriesPath = path.join(
+      root,
+      "benchmark-results/napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json",
+    );
+    const series = JSON.parse(await readFile(seriesPath, "utf8"));
+    series.status = "cancelled";
+    series.requestedTrialCount = 3;
+    series.completionRate = 2 / 3;
+    const { contentSha256: _contentSha256, ...content } = series;
+    series.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(seriesPath, series);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
     expect(audit.errors).toContain(
-      "open-web research benchmark: result_case_binding_invalid",
+      "open-web research benchmark: retained_series_not_complete",
     );
   });
 
@@ -818,15 +850,16 @@ async function createFixture() {
   await createManagementOpenApiCompatibilityFixture(root);
   await createWorkflowBenchmarkFixture(root);
   await mkdir(path.join(root, "benchmark-results"), { recursive: true });
-  await cp(
-    path.resolve(
-      "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
-    ),
-    path.join(
-      root,
-      "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
-    ),
-  );
+  for (const fileName of [
+    "napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json",
+    "napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-d7e4f2fd4e284674.json",
+    "napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b6f353840b7374e9.json",
+  ]) {
+    await cp(
+      path.resolve("benchmark-results", fileName),
+      path.join(root, "benchmark-results", fileName),
+    );
+  }
   await cp(
     path.resolve(
       "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json",

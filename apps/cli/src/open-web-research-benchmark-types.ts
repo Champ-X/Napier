@@ -206,3 +206,76 @@ export interface OpenWebResearchSecuritySeriesVerification {
   seriesSha256: string;
   trialDiagnostics: Array<{ index: number; diagnostics: string[] }>;
 }
+
+export interface OpenWebResearchSeries {
+  kind: "napier.open-web-research-series";
+  schemaVersion: 1;
+  generatedAt: string;
+  caseId: string;
+  caseSha256: string;
+  model: ModelRef;
+  environment: OpenWebResearchBenchmarkResult["environment"];
+  status: "completed" | "cancelled";
+  requestedTrialCount: number;
+  completedTrialCount: number;
+  passedTrialCount: number;
+  failedTrialCount: number;
+  inconclusiveTrialCount: number;
+  claimsMatchTrialCount: number;
+  toolTopologyMatchTrialCount: number;
+  sourceCoverageMatchTrialCount: number;
+  citationEvidenceMatchTrialCount: number;
+  citationClaimsMatchTrialCount: number;
+  replayValidTrialCount: number;
+  credentialLeakTrialCount: number;
+  completionRate: number;
+  passRate: number | null;
+  metrics: {
+    durationMs: OpenWebResearchBenchmarkMetricSummary;
+    costUsd: OpenWebResearchBenchmarkMetricSummary;
+    inputTokens: OpenWebResearchBenchmarkMetricSummary;
+    outputTokens: OpenWebResearchBenchmarkMetricSummary;
+    searchCount: OpenWebResearchBenchmarkMetricSummary;
+    fetchCount: OpenWebResearchBenchmarkMetricSummary;
+    browserCount: OpenWebResearchBenchmarkMetricSummary;
+    researchCaptureCount: OpenWebResearchBenchmarkMetricSummary;
+    citationCount: OpenWebResearchBenchmarkMetricSummary;
+  };
+  trials: Array<{
+    index: number;
+    threadId: string;
+    status: OpenWebResearchBenchmarkResult["status"];
+    resultFileName: string;
+    resultSha256: string;
+    actualToolSequenceSha256: string;
+    actualSourceEvidenceSha256: string;
+    actualCitationEvidenceSha256: string;
+    claimsMatch: boolean;
+    toolTopologyMatch: boolean;
+    sourceCoverageMatch: boolean;
+    citationEvidenceMatch: boolean;
+    citationClaimsMatch: boolean;
+    replayValid: boolean;
+    credentialLeakDetected: boolean;
+    searchCount: number;
+    fetchCount: number;
+    browserCount: number;
+    researchCaptureCount: number;
+    citationCount: number;
+  }>;
+  resultSetSha256: string;
+  contentSha256: string;
+}
+
+export interface OpenWebResearchSeriesArtifacts {
+  series: OpenWebResearchSeries;
+  seriesPath: string;
+  trials: OpenWebResearchBenchmarkArtifacts[];
+}
+
+export interface OpenWebResearchSeriesVerification {
+  valid: boolean;
+  diagnostics: string[];
+  seriesSha256: string;
+  trialDiagnostics: Array<{ index: number; diagnostics: string[] }>;
+}

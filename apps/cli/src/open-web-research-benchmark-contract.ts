@@ -122,7 +122,6 @@ export function evaluateOpenWebResearch(input: {
   const citationClaimsMatch =
     canonicalJson(actualCitationClaimHashes) ===
     canonicalJson(expectedClaimHashes);
-  const adjacentCitationCount = claimEvidence.length;
   const toolTopologyMatch = input.expected.requiredToolCounts.every(
     (required) => {
       const count = actualToolSequence.filter(
@@ -155,6 +154,13 @@ export function evaluateOpenWebResearch(input: {
   const actualCitationEvidenceSha256 = sha256(
     canonicalJson(actualCitationEvidence),
   );
+  const adjacentCitationCount = claimEvidence.filter((claim) =>
+    actualCitationEvidence.some(
+      (citation) =>
+        citation.citationClaimSha256 === claim.claimSha256 &&
+        citation.citationTokenSha256 === claim.citationTokenSha256,
+    ),
+  ).length;
   const citationEvidenceMatch =
     actualCitationEvidence.length === expectedCitationEvidence.length &&
     actualCitationEvidence.every((actual) =>
@@ -215,10 +221,11 @@ export function evaluateOpenWebResearch(input: {
     expectedSourceUrlSetSha256: sha256(canonicalJson(expectedSourceUrls)),
     actualSourceUrlSetSha256: sha256(canonicalJson(actualSourceUrls)),
     sourceCoverageMatch,
-    searchCount: completed.filter((entry) => entry.tool === "web_search")
-      .length,
-    fetchCount: completed.filter((entry) => entry.tool === "web_fetch").length,
-    browserCount: completed.filter((entry) => entry.tool === "browser").length,
+    searchCount: countTool(actualToolSequence, "web_search:run"),
+    fetchCount: countTool(actualToolSequence, "web_fetch:fetch"),
+    browserCount: actualToolSequence.filter((tool) =>
+      tool.startsWith("browser:"),
+    ).length,
     researchCaptureCount: sourceDetails.length,
     citationCount: citations.length,
     citationSourceKindCount: {
@@ -343,6 +350,10 @@ function extractClaims(text: string, expected: string[]): string[] {
     .split(/\r?\n/u)
     .map((line) => line.replace(CITATION_TOKEN, "").trim())
     .filter((line) => expected.includes(line));
+}
+
+function countTool(tools: string[], value: string): number {
+  return tools.filter((tool) => tool === value).length;
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {

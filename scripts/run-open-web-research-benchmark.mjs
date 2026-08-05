@@ -7,6 +7,11 @@ import { fileURLToPath } from "node:url";
 import { loadOpenWebResearchBenchmarkCase } from "../apps/cli/dist/open-web-research-benchmark-case.js";
 import { runOpenWebResearchBenchmark } from "../apps/cli/dist/open-web-research-benchmark.js";
 import {
+  openWebResearchSeriesArtifactReferences,
+  runOpenWebResearchSeries,
+  verifyOpenWebResearchSeries,
+} from "../apps/cli/dist/open-web-research-series.js";
+import {
   openWebResearchSecuritySeriesArtifactReferences,
   runOpenWebResearchSecuritySeries,
   verifyOpenWebResearchSecuritySeries,
@@ -25,10 +30,10 @@ const args = parseArgs(process.argv.slice(2));
 if (args.verifySeries) {
   const series = await readJson(args.verifySeries, 512 * 1024);
   const root = path.dirname(args.verifySeries);
+  const loaded = await loadOpenWebResearchBenchmarkCase(args.caseRoot);
+  const seriesContract = selectSeriesContract(loaded.benchmarkCase);
   const artifacts = [];
-  for (const reference of openWebResearchSecuritySeriesArtifactReferences(
-    series,
-  )) {
+  for (const reference of seriesContract.artifactReferences(series)) {
     artifacts.push({
       resultFileName: reference.resultFileName,
       result: await readJson(
@@ -37,8 +42,7 @@ if (args.verifySeries) {
       ),
     });
   }
-  const loaded = await loadOpenWebResearchBenchmarkCase(args.caseRoot);
-  const verification = verifyOpenWebResearchSecuritySeries(
+  const verification = seriesContract.verify(
     series,
     artifacts,
     loaded.benchmarkCase,
@@ -74,10 +78,37 @@ if (args.verifySeries) {
       signal: controller.signal,
     };
     if ((args.trialCount ?? 1) > 1) {
-      const artifacts = await runOpenWebResearchSecuritySeries({
+      const loaded = await loadOpenWebResearchBenchmarkCase(options.caseRoot);
+      const artifacts = await selectSeriesContract(loaded.benchmarkCase).run({
         ...options,
         trialCount: args.trialCount,
       });
+      const capabilitySummary =
+        artifacts.series.kind === "napier.open-web-research-series"
+          ? {
+              claimsMatchTrialCount: artifacts.series.claimsMatchTrialCount,
+              toolTopologyMatchTrialCount:
+                artifacts.series.toolTopologyMatchTrialCount,
+              sourceCoverageMatchTrialCount:
+                artifacts.series.sourceCoverageMatchTrialCount,
+              citationEvidenceMatchTrialCount:
+                artifacts.series.citationEvidenceMatchTrialCount,
+              citationClaimsMatchTrialCount:
+                artifacts.series.citationClaimsMatchTrialCount,
+              replayValidTrialCount: artifacts.series.replayValidTrialCount,
+              credentialLeakTrialCount:
+                artifacts.series.credentialLeakTrialCount,
+            }
+          : {
+              promptInjectionLeakTrialCount:
+                artifacts.series.promptInjectionLeakTrialCount,
+              forbiddenToolAttemptTrialCount:
+                artifacts.series.forbiddenToolAttemptTrialCount,
+              exactFinalResponseRate: artifacts.series.exactFinalResponseRate,
+              replayValidTrialCount: artifacts.series.replayValidTrialCount,
+              credentialLeakTrialCount:
+                artifacts.series.credentialLeakTrialCount,
+            };
       console.log(
         JSON.stringify(
           {
@@ -88,11 +119,7 @@ if (args.verifySeries) {
             passedTrialCount: artifacts.series.passedTrialCount,
             failedTrialCount: artifacts.series.failedTrialCount,
             inconclusiveTrialCount: artifacts.series.inconclusiveTrialCount,
-            promptInjectionLeakTrialCount:
-              artifacts.series.promptInjectionLeakTrialCount,
-            forbiddenToolAttemptTrialCount:
-              artifacts.series.forbiddenToolAttemptTrialCount,
-            exactFinalResponseRate: artifacts.series.exactFinalResponseRate,
+            ...capabilitySummary,
             passRate: artifacts.series.passRate,
             metrics: artifacts.series.metrics,
             seriesSha256: artifacts.series.contentSha256,
@@ -251,4 +278,19 @@ async function verifyAgainstCase(result, caseRoot) {
     loaded.benchmarkCase,
     loaded.expected,
   );
+}
+
+function selectSeriesContract(benchmarkCase) {
+  if (benchmarkCase.schemaVersion === 1) {
+    return {
+      artifactReferences: openWebResearchSeriesArtifactReferences,
+      run: runOpenWebResearchSeries,
+      verify: verifyOpenWebResearchSeries,
+    };
+  }
+  return {
+    artifactReferences: openWebResearchSecuritySeriesArtifactReferences,
+    run: runOpenWebResearchSecuritySeries,
+    verify: verifyOpenWebResearchSecuritySeries,
+  };
 }

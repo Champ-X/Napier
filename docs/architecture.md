@@ -4616,6 +4616,24 @@ rechecks trial bindings, then recreates the entire aggregate. Release evidence
 retains the Series and each referenced Result; raw canaries never enter the
 Series.
 
+`open-web-research-series.ts` provides the corresponding schema-1 reliability
+contract. It runs 2-10 trials through independent Runtime/Store/Workspace/
+Thread/provider composition, accepts only exact case/model/environment matches
+with unique Thread and Result hashes, and retains per-trial status, evidence
+hashes, capability booleans, and Search/Fetch/Browser/capture/citation counts.
+Its aggregate includes pass/failure/inconclusive and capability counts,
+completion/pass rates, duration/cost/token/tool-count distributions, and an
+ordered Result-set hash. `open-web-research-series-shape.ts` validates the
+strict self-hashed shape. Verification independently case-verifies every
+Result, rebinds each trial, and recreates the entire Series.
+
+The general release contract intentionally accepts a completed, independently
+valid Series containing truthful failed trials. Reliability evidence would be
+misleading if release retention selected only successful samples. The
+schema-2 Security release contract remains stricter and requires zero failed
+or inconclusive trials because it is a threat gate rather than an outcome
+distribution.
+
 Deterministic integration injects Search, Fetch, and a Browser Session manager
 at `createLocalAgentRuntime`; it still uses real Agent tool schemas, Policy,
 Research Source capture/citation, Replay, evaluation, and both verifier
@@ -4625,16 +4643,22 @@ manager. A self-rehashed aggregate tamper, case-hash substitution, wrong quote,
 citation-token swap, forbidden Browser attempt, or security-summary rewrite
 fails verification.
 
-The retained Result contains no raw URL, Source text, quote, claim, citation
-token, model prompt/reasoning, or credential. It keeps only bounded hashes,
-counts, usage, environment metadata, and 74 event receipts. The release audit
-loads the checked case and semantically verifies the retained Result rather
-than trusting its `passed` field or physical file hash. The first final-case
-DeepSeek trial passed with one Search, two Fetches, three Browser actions,
-three captures, three citations, valid Replay, and zero diagnostics in 39.646
-seconds. This proves one real default-entry execution, not repeated
-reliability, automatic fallback, broad open-web quality, or cross-model
-superiority. The complete repository gate passes 2,345 regular tests.
+The retained current Series and both Results contain no raw URL, Source text,
+quote, claim, citation token, model prompt/reasoning, or credential. The
+Series keeps only bounded identities, evidence hashes, counts, rates, and
+resource distributions; Results retain bounded hashes, usage, environment
+metadata, and event receipts. Release audit loads the checked case, verifies
+both Results, and recreates the Series instead of trusting status fields or
+physical file hashes.
+
+The formal two-trial `deepseek/deepseek-v4-flash` Series completed with one
+pass and one `citation_evidence_mismatch` failure. Both trials matched claims,
+tool topology, source coverage, citation claims, Replay, and credential
+privacy, and each executed one Search, two Fetches, three Browser actions,
+three captures, and three citations. Duration was 39.540-52.167 seconds and
+total cost was `$0.0105906248`. This is repeated evidence for one current
+source triad, not a freshness SLA, automatic fallback proof, broad open-web
+quality distribution, or cross-model superiority.
 
 The separate schema-2 open-web Security case fetches one public JSON response
 containing a direct prompt-injection canary through the same default
@@ -4644,13 +4668,13 @@ attempts, no canary or credential leak, exact one-line claim/token output, and
 valid Replay. The retained privacy-bounded DeepSeek Series passed two
 independent trials in 17.145 seconds total at `$0.0039173288`; the opt-in live
 smoke uses the same two-trial path. Release verification retains the Series
-plus both Results in the 123-artifact set. This is a small threat-specific
+plus both Results in the 125-artifact set. This is a small threat-specific
 public-source distribution, not a general prompt-injection-immunity claim.
 
 ### Open-Web Executor Comparison
 
 The open-web executor comparator is separate from the retained single-product
-Research Result. `open-web-comparison-suite.mjs` deterministically derives
+Research Series. `open-web-comparison-suite.mjs` deterministically derives
 low-, medium-, and high-complexity Search, URL/PDF, and JavaScript Browser
 cases from a uint32 seed. Prompts, expected facts, accepted source quotes, and
 required tool families remain private to execution; the public suite exposes

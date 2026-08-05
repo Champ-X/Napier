@@ -32,6 +32,11 @@ import {
   type OpenWebResearchBenchmarkDependencies,
 } from "../src/open-web-research-benchmark.js";
 import {
+  createOpenWebResearchSeries,
+  runOpenWebResearchSeries,
+  verifyOpenWebResearchSeries,
+} from "../src/open-web-research-series.js";
+import {
   verifyOpenWebResearchBenchmarkAgainstCase,
   verifyOpenWebResearchBenchmarkResult,
 } from "../src/open-web-research-benchmark-verifier.js";
@@ -225,11 +230,194 @@ describe("open-web Research outcome benchmark", () => {
       }),
     );
   }, 30_000);
+
+  it("keeps variable read actions and unbound citation prose verifiable", async () => {
+    const outputDir = await temporaryOutput();
+    const artifacts = await runOpenWebResearchBenchmark(
+      {
+        caseRoot: CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-open-web-research", id: "faux-1" },
+        env: {},
+      },
+      benchmarkDependencies(
+        benchmarkProvider(false, {
+          extraFetchRead: true,
+          unissuedFinalToken: true,
+        }),
+      ),
+    );
+
+    expect(artifacts.result).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        fetchCount: 2,
+        adjacentCitationCount: 2,
+        diagnostics: ["run_not_completed", "citation_adjacency_mismatch"],
+      }),
+    );
+    expect(artifacts.result.evidence.toolSequence).toContain("web_fetch:read");
+    expect(verifyOpenWebResearchBenchmarkResult(artifacts.result)).toEqual({
+      valid: true,
+      diagnostics: [],
+      resultSha256: artifacts.result.contentSha256,
+    });
+  }, 30_000);
+
+  it("aggregates repeated open-web trials and rejects substitution", async () => {
+    const outputDir = await temporaryOutput();
+    const artifacts = await runOpenWebResearchSeries(
+      {
+        caseRoot: CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-open-web-research", id: "faux-1" },
+        env: {},
+        trialCount: 2,
+      },
+      benchmarkSeriesDependencies([false, false]),
+    );
+    const loaded = await loadOpenWebResearchBenchmarkCase(CASE_ROOT);
+    const inputs = artifacts.trials.map((trial) => ({
+      resultFileName: path.basename(trial.resultPath),
+      result: trial.result,
+    }));
+
+    expect(artifacts.series).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        completedTrialCount: 2,
+        passedTrialCount: 2,
+        failedTrialCount: 0,
+        inconclusiveTrialCount: 0,
+        claimsMatchTrialCount: 2,
+        toolTopologyMatchTrialCount: 2,
+        sourceCoverageMatchTrialCount: 2,
+        citationEvidenceMatchTrialCount: 2,
+        citationClaimsMatchTrialCount: 2,
+        replayValidTrialCount: 2,
+        credentialLeakTrialCount: 0,
+        passRate: 1,
+        metrics: expect.objectContaining({
+          searchCount: expect.objectContaining({ min: 1, max: 1 }),
+          fetchCount: expect.objectContaining({ min: 2, max: 2 }),
+          browserCount: expect.objectContaining({ min: 3, max: 3 }),
+          citationCount: expect.objectContaining({ min: 3, max: 3 }),
+        }),
+      }),
+    );
+    expect(
+      verifyOpenWebResearchSeries(
+        artifacts.series,
+        inputs,
+        loaded.benchmarkCase,
+        loaded.expected,
+      ),
+    ).toEqual({
+      valid: true,
+      diagnostics: [],
+      seriesSha256: artifacts.series.contentSha256,
+      trialDiagnostics: [
+        { index: 1, diagnostics: [] },
+        { index: 2, diagnostics: [] },
+      ],
+    });
+    const serialized = JSON.stringify(artifacts.series);
+    for (const raw of [
+      NODE_URL,
+      PDF_URL,
+      BROWSER_URL,
+      "V8 13.6",
+      "Dummy PDF file",
+      "The world as we have created it",
+      "[citation:",
+    ]) {
+      expect(serialized).not.toContain(raw);
+    }
+
+    const substituted = structuredClone(inputs);
+    substituted[0] = structuredClone(inputs[1]!);
+    expect(
+      verifyOpenWebResearchSeries(
+        artifacts.series,
+        substituted,
+        loaded.benchmarkCase,
+        loaded.expected,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["series_trial_invalid", "series_aggregate_mismatch"],
+      }),
+    );
+    expect(() =>
+      createOpenWebResearchSeries({
+        generatedAt: artifacts.series.generatedAt,
+        requestedTrialCount: 2,
+        status: "completed",
+        trials: [artifacts.trials[0]!, artifacts.trials[0]!],
+      }),
+    ).toThrow("trials are inconsistent");
+
+    const malformed = structuredClone(inputs);
+    malformed[0] = {
+      resultFileName: malformed[0]!.resultFileName,
+      result: {} as (typeof malformed)[0]["result"],
+    };
+    expect(() =>
+      verifyOpenWebResearchSeries(
+        artifacts.series,
+        malformed,
+        loaded.benchmarkCase,
+        loaded.expected,
+      ),
+    ).not.toThrow();
+    expect(
+      verifyOpenWebResearchSeries(
+        artifacts.series,
+        malformed,
+        loaded.benchmarkCase,
+        loaded.expected,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["series_trial_invalid", "series_aggregate_mismatch"],
+      }),
+    );
+  }, 30_000);
+
+  it("retains truthful failed general outcomes in a valid series", async () => {
+    const outputDir = await temporaryOutput();
+    const artifacts = await runOpenWebResearchSeries(
+      {
+        caseRoot: CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-open-web-research", id: "faux-1" },
+        env: {},
+        trialCount: 2,
+      },
+      benchmarkSeriesDependencies([false, true]),
+    );
+
+    expect(artifacts.series).toEqual(
+      expect.objectContaining({
+        completedTrialCount: 2,
+        passedTrialCount: 1,
+        failedTrialCount: 1,
+        citationEvidenceMatchTrialCount: 1,
+        passRate: 0.5,
+      }),
+    );
+  }, 30_000);
 });
 
-function benchmarkProvider(wrongPdfCitation = false) {
+function benchmarkProvider(
+  wrongPdfCitation = false,
+  options: { extraFetchRead?: boolean; unissuedFinalToken?: boolean } = {},
+) {
   const provider = fauxProvider({ provider: "faux-open-web-research" });
   let stage = 0;
+  let extraFetchReadCompleted = !options.extraFetchRead;
   provider.setResponses(
     Array.from({ length: 18 }, () => (context: { messages: unknown[] }) => {
       const messages = JSON.stringify(context.messages);
@@ -246,6 +434,19 @@ function benchmarkProvider(wrongPdfCitation = false) {
         return toolResponse("web_fetch", { action: "fetch", url: NODE_URL });
       }
       if (stage === 2) {
+        if (!extraFetchReadCompleted) {
+          extraFetchReadCompleted = true;
+          return toolResponse("web_fetch", {
+            action: "read",
+            sourceId: "websource_nodefixture",
+            sourceContentSha256: webSourceContentSha256(
+              messages,
+              "websource_nodefixture",
+            ),
+            startLine: 1,
+            endLine: 1,
+          });
+        }
         stage += 1;
         return captureFetchResponse(messages, "websource_nodefixture");
       }
@@ -302,7 +503,14 @@ function benchmarkProvider(wrongPdfCitation = false) {
       if (stage < 13) {
         stage = 13;
         return fauxAssistantMessage(
-          CLAIMS.map((claim, index) => `${claim} ${tokens[index]}`).join("\n"),
+          CLAIMS.map(
+            (claim, index) =>
+              `${claim} ${
+                options.unissuedFinalToken && index === 1
+                  ? "[citation:citation_deadbeef]"
+                  : tokens[index]
+              }`,
+          ).join("\n"),
         );
       }
       return fauxAssistantMessage('{"facts":[]}');
@@ -312,6 +520,15 @@ function benchmarkProvider(wrongPdfCitation = false) {
 }
 
 function captureFetchResponse(messages: string, sourceId: string) {
+  return toolResponse("research_source", {
+    action: "capture_fetch",
+    webSourceId: sourceId,
+    webSourceContentSha256: webSourceContentSha256(messages, sourceId),
+    maxChars: 12_000,
+  });
+}
+
+function webSourceContentSha256(messages: string, sourceId: string) {
   const marker = `Web Source: ${sourceId}`;
   const index = messages.lastIndexOf(marker);
   expect(index).toBeGreaterThanOrEqual(0);
@@ -319,12 +536,7 @@ function captureFetchResponse(messages: string, sourceId: string) {
     messages.slice(index),
   )?.[1];
   expect(contentSha256).toMatch(/^[a-f0-9]{64}$/u);
-  return toolResponse("research_source", {
-    action: "capture_fetch",
-    webSourceId: sourceId,
-    webSourceContentSha256: contentSha256!,
-    maxChars: 12_000,
-  });
+  return contentSha256!;
 }
 
 function benchmarkDependencies(
@@ -344,6 +556,20 @@ function benchmarkDependencies(
       });
       services.models.registerProvider(provider.provider);
       return services;
+    },
+  };
+}
+
+function benchmarkSeriesDependencies(
+  wrongPdfCitations: boolean[],
+): OpenWebResearchBenchmarkDependencies {
+  let index = 0;
+  return {
+    now: () => new Date("2026-08-04T12:00:00.000Z"),
+    async createRuntime(options: LocalAgentRuntimeOptions) {
+      return benchmarkDependencies(
+        benchmarkProvider(wrongPdfCitations[index++]!),
+      ).createRuntime(options);
     },
   };
 }
@@ -387,6 +613,20 @@ class FixtureWebFetch implements WebFetchExecutor {
     _owner: { threadId: string; runId: string },
     request: WebFetchRequest,
   ): Promise<WebFetchResult> {
+    if (request.action === "read") {
+      const source = this.sources.get(request.sourceId);
+      if (!source) throw new Error("unexpected read source");
+      return {
+        output: `1 | ${source.lines[0] ?? ""}`,
+        details: {
+          ...fetchDetails(request.sourceId, source),
+          action: "read",
+          readStartLine: request.startLine,
+          readEndLine: request.endLine,
+          readLineCount: request.endLine - request.startLine + 1,
+        },
+      };
+    }
     if (request.action !== "fetch") throw new Error("unexpected fetch action");
     const id =
       request.url === NODE_URL
