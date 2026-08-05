@@ -4267,6 +4267,13 @@ unparented `source: user` Run may resolve only the immediately preceding
 completed same-Agent user/recovery Run within 24 hours. Imported Threads,
 parented user Runs, different Agents, expired predecessors, and any
 intermediate Run deny ordinary adoption without scanning older history.
+`source-continuity-pin.ts` extends that policy only when an ordinary current
+user Run explicitly names one prior Run. It requires the same local Thread,
+Agent, completed user/recovery lineage, 24-hour window, and strict earlier-Run
+ordering, then binds the request in `run.started` to child-owned standard
+Research/Web Fetch context receipts. Settled Replay recomputes the same
+lineage and requires each restored context set to match the selected Run's
+latest state receipt. There is no alternate Source status protocol.
 `web-fetch-continuity.ts` restores that one eligible predecessor into the
 verified running current Run, then writes a child-owned manifest before any
 Source call returns.
@@ -4490,6 +4497,19 @@ private capsules must match Thread, predecessor Run, manifest, Source,
 capture, quote, claim, and self-hash bindings. Child-owned contexts bind the
 adopted state to the current Run before model resolution.
 
+Deliberate non-adjacent continuity is a per-Run input, not ambient history
+search. CLI `--source-run` and HTTP `sourceContinuityRunId` select exactly one
+prior eligible Run. Runtime validates lineage before capsule access, restores
+only Source tools enabled by the current Agent or preset, requires at least one
+restored private context, and records the requested ID in `run.started`.
+`research-source-replay.ts` delegates explicit request/context verification to
+`source-continuity-pin.ts`; Replay import strips both private contexts, nested
+state receipts, and the start-event selector. Non-user current Runs, imported
+Threads, foreign Agents, expired, future, or unsettled Runs, missing state, and
+source-set drift fail before provider use or fail Replay validation. Browser
+Sessions, login state, cookies, tabs, and Fetch transport are not part of the
+pin.
+
 `research-source-replay.ts` validates the same lineage against settled bundle
 Runs while live restoration remains restricted to running Runs. Replay export
 carries only receipts; import strips both private continuity contexts and
@@ -4512,6 +4532,15 @@ research_source:cite` with no `web_fetch:fetch` and no model-authored Browser
 call, returned the required terminal result, and wrote child-owned Research
 and Web Fetch contexts. Opaque Source markers appeared only in private Source
 and model-invocation capsules, never non-message JSONL or Ledger events.
+
+Explicit-pin Dogfood used three separate built-CLI DeepSeek processes. The
+first Run executed `web_fetch:fetch -> research_source:capture_fetch ->
+research_source:cite` against public JSON; an unrelated Coding-preset Run
+executed only `list_files`; the third Research-preset Run named the first with
+`--source-run` and executed `web_fetch:list -> research_source:list ->
+research_source:cite`. It completed with no Fetch or Browser call, recorded
+both child-owned Source contexts plus the exact selected Run in `run.started`,
+and returned a fresh valid citation token.
 
 ### Open-Web Research Outcome Verification
 

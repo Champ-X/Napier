@@ -8,6 +8,7 @@ import { optionalCapabilityPreset } from "./cli-capability-options.js";
 import { parseCredentialEnvironment } from "./cli-credential-options.js";
 import type { CliExecutionOptions } from "./cli-execution-options.js";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
+import type { RunEvent } from "@napier/contracts";
 
 const MAX_PROMPT_BYTES = 64 * 1_024;
 const MAX_TITLE_CHARS = 160;
@@ -16,6 +17,7 @@ export interface CliRunOptions extends CliExecutionOptions {
   prompt: string;
   agentId?: string;
   threadId?: string;
+  sourceContinuityRunId?: string;
   title?: string;
   credentialEnv?: string;
   capabilityPreset?: AgentCapabilityPresetId;
@@ -30,6 +32,7 @@ export const RUN_VALUE_OPTIONS = new Set([
   "--agent",
   "--preset",
   "--thread",
+  "--source-run",
   "--title",
   "--timeout-ms",
 ]);
@@ -44,9 +47,13 @@ export function parseRunOptions(
     throw new Error(`--prompt exceeds ${MAX_PROMPT_BYTES} UTF-8 bytes`);
   }
   const threadId = optionalResourceId(values, "--thread");
+  const sourceContinuityRunId = optionalResourceId(values, "--source-run");
   const agentId = optionalResourceId(values, "--agent");
   if (threadId && values.has("--title")) {
     throw new Error("--title cannot be used with an existing --thread");
+  }
+  if (sourceContinuityRunId && !threadId) {
+    throw new Error("--source-run requires an existing --thread");
   }
   const rawTitle = values.get("--title");
   const title = rawTitle?.trim();
@@ -71,7 +78,27 @@ export function parseRunOptions(
       ...(capabilityPreset ? { capabilityPreset } : {}),
       ...(agentId ? { agentId } : {}),
       ...(threadId ? { threadId } : {}),
+      ...(sourceContinuityRunId ? { sourceContinuityRunId } : {}),
       ...(title ? { title } : {}),
     },
+  };
+}
+
+export function cliRunPromptOptions(
+  options: CliRunOptions,
+  threadId: string,
+  signal: AbortSignal,
+  onEvent?: (event: RunEvent) => Promise<void>,
+) {
+  return {
+    threadId,
+    text: options.prompt,
+    ...(options.model ? { model: options.model } : {}),
+    capabilityPreset: options.capabilityPreset,
+    ...(options.sourceContinuityRunId
+      ? { sourceContinuityRunId: options.sourceContinuityRunId }
+      : {}),
+    signal,
+    ...(onEvent ? { onEvent } : {}),
   };
 }

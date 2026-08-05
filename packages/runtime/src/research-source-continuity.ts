@@ -52,6 +52,7 @@ export class ResearchSourceContinuity {
 
   async restore(
     owner: BrowserSessionOwner,
+    explicitRunId?: string,
   ): Promise<
     | { state: ResearchSourceState; receipt: ResearchSourceCapsuleReceipt }
     | undefined
@@ -59,19 +60,22 @@ export class ResearchSourceContinuity {
     const key = ownerKey(owner);
     const existing = this.restorations.get(key);
     if (existing) return existing;
-    const restoration = this.restoreOnce(owner);
+    const restoration = this.restoreOnce(owner, explicitRunId);
     this.restorations.set(key, restoration);
     return restoration;
   }
 
   private async restoreOnce(
     owner: BrowserSessionOwner,
+    explicitRunId?: string,
   ): Promise<
     | { state: ResearchSourceState; receipt: ResearchSourceCapsuleReceipt }
     | undefined
   > {
     if (!this.capsules || !this.store) return undefined;
-    const parent = sourceContinuityPredecessor(this.store, owner);
+    const parent = sourceContinuityPredecessor(this.store, owner, {
+      ...(explicitRunId ? { explicitRunId } : {}),
+    });
     if (!parent) return undefined;
     const events = (await this.store.listEvents(owner.threadId)).filter(
       (event) =>

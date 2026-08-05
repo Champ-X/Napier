@@ -50,9 +50,13 @@ export function setThreadPromptStreamHeaders(
   context: Context,
   threadId: string,
   model: PromptRequest["model"] | undefined,
+  sourceContinuityRunId?: string,
 ): void {
   context.header("X-Napier-Thread-Id", threadId);
   context.header("X-Napier-Prompt-Requested", "true");
+  if (sourceContinuityRunId) {
+    context.header("X-Napier-Source-Continuity-Run-Id", sourceContinuityRunId);
+  }
   setThreadRunStreamErrorHeaders(context);
   setThreadRunStreamModelHeaders(context, model);
 }

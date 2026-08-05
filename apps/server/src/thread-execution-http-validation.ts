@@ -25,7 +25,11 @@ export function parseResumeRunRequest(
 }
 
 export function parsePromptRequest(input: unknown): PromptRequest | undefined {
-  const record = requestRecord(input, ["text", "model"]);
+  const record = requestRecord(input, [
+    "text",
+    "model",
+    "sourceContinuityRunId",
+  ]);
   if (!record) return undefined;
   const text = record?.["text"];
   if (
@@ -39,5 +43,19 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   const model =
     record["model"] === undefined ? undefined : parseModelRef(record["model"]);
   if (record["model"] !== undefined && !model) return undefined;
-  return { text, ...(model ? { model } : {}) };
+  const sourceContinuityRunId = record["sourceContinuityRunId"];
+  if (
+    sourceContinuityRunId !== undefined &&
+    (typeof sourceContinuityRunId !== "string" ||
+      !/^run_[a-z0-9]{8,80}$/u.test(sourceContinuityRunId))
+  ) {
+    return undefined;
+  }
+  return {
+    text,
+    ...(model ? { model } : {}),
+    ...(typeof sourceContinuityRunId === "string"
+      ? { sourceContinuityRunId }
+      : {}),
+  };
 }

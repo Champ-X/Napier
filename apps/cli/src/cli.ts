@@ -28,9 +28,13 @@ import {
   type CliRunOptions,
   type CliWorkflowOptions,
 } from "./cli-options.js";
+import { cliRunPromptOptions } from "./cli-run-options.js";
 import { createCliWorkflowExperimentRequest } from "./cli-workflow-experiment.js";
 import { executeAgentMessageExperimentCli } from "./agent-message-experiment-cli.js";
-import { executeFirstUseCliAction, isFirstUseCliAction } from "./cli-first-use.js";
+import {
+  executeFirstUseCliAction,
+  isFirstUseCliAction,
+} from "./cli-first-use.js";
 import { executeModelInvocationExperimentCli } from "./model-invocation-experiment-cli.js";
 import { executeToolInvocationExperimentCli } from "./tool-invocation-experiment-cli.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
@@ -143,14 +147,9 @@ async function executeRun(
       return {
         threadId: thread.id,
         invoke: (signal, onEvent) =>
-          services.runtime.runPrompt({
-            threadId: thread.id,
-            text: options.prompt,
-            ...(options.model ? { model: options.model } : {}),
-            capabilityPreset: options.capabilityPreset,
-            signal,
-            ...(onEvent ? { onEvent } : {}),
-          }),
+          services.runtime.runPrompt(
+            cliRunPromptOptions(options, thread.id, signal, onEvent),
+          ),
       };
     },
   );

@@ -18,8 +18,6 @@ import {
 } from "@earendil-works/pi-ai";
 import {
   type AgentProfile,
-  type AutomaticRecoveryAssessment,
-  type AutomaticRecoveryAttempt,
   type ContextCheckpointSnapshot,
   type GoalEvaluation,
   type GoalState,
@@ -29,7 +27,6 @@ import {
   type RunEvent,
   type RunInvocationSource,
   type RunControlMessageMode,
-  type RunExecutionMode,
   type RunRecord,
   type ThreadImportProvenance,
   type Usage,
@@ -81,21 +78,14 @@ import { BrowserLiveViewService } from "./browser-live-view.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
 import { BrowserSessionControlService } from "./browser-session-control.js";
 import { BrowserSessionPauseManager } from "./browser-session-pause.js";
-import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 export { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
-import {
-  WORKFLOW_NODE_EXECUTION,
-  type WorkflowNodeExecution,
-} from "./workflow-node-execution.js";
-import {
-  AGENT_MESSAGE_EXPERIMENT_EXECUTION,
-  type AgentMessageExperimentExecution,
-} from "./agent-message-experiment-execution.js";
+import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
+import { AGENT_MESSAGE_EXPERIMENT_EXECUTION } from "./agent-message-experiment-execution.js";
 import {
   AGENT_MESSAGE_TOOL_RESULT_REPLAY,
   type FrozenToolResultReplayController,
@@ -183,57 +173,19 @@ import {
 } from "./tool-loop-guard.js";
 import { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
 import { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
+import type {
+  ContinueOperatorDecisionOptions,
+  ResumeInterruptedRunAutomaticallyOptions,
+  ResumeInterruptedRunOptions,
+  RunPromptOptions,
+} from "./agent-runtime-options.js";
+export type {
+  ContinueOperatorDecisionOptions,
+  ResumeInterruptedRunAutomaticallyOptions,
+  ResumeInterruptedRunOptions,
+  RunPromptOptions,
+} from "./agent-runtime-options.js";
 export type { EventSink } from "./event-sink.js";
-export interface RunPromptOptions {
-  threadId: string;
-  text: string;
-  model?: ModelRef;
-  agentRevision?: number;
-  capabilityPreset?: AgentCapabilityPresetId | undefined;
-  executionMode?: RunExecutionMode;
-  signal?: AbortSignal;
-  onEvent?: EventSink;
-  onRunCreated?: (run: RunRecord) => Promise<void> | void;
-  parentRunId?: string;
-  operatorDecisionId?: string;
-  source?: Exclude<
-    RunInvocationSource,
-    "workflow_reuse" | "workflow_simulation"
-  >;
-  triggerId?: string;
-  [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
-  [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
-  [AGENT_MESSAGE_TOOL_RESULT_REPLAY]?: FrozenToolResultReplayController;
-  recovery?: {
-    mode: "manual" | "automatic";
-    attemptId?: string;
-    assessmentSha256?: string;
-  };
-}
-
-export interface ResumeInterruptedRunOptions {
-  threadId: string;
-  runId?: string;
-  model?: ModelRef;
-  signal?: AbortSignal;
-  onEvent?: EventSink;
-}
-
-export interface ResumeInterruptedRunAutomaticallyOptions {
-  assessment: AutomaticRecoveryAssessment;
-  attempt: AutomaticRecoveryAttempt;
-  signal?: AbortSignal;
-  onEvent?: EventSink;
-  onRunCreated?: (run: RunRecord) => Promise<void> | void;
-}
-
-export interface ContinueOperatorDecisionOptions {
-  threadId: string;
-  decisionId: string;
-  signal?: AbortSignal;
-  onEvent?: EventSink;
-  onRunCreated?: (run: RunRecord) => Promise<void> | void;
-}
 
 interface ActiveRun {
   runId: string;
@@ -480,6 +432,7 @@ export class AgentRuntime {
             triggerId: options.triggerId,
             capabilityPreset: options.capabilityPreset,
             parentRunId: options.parentRunId,
+            sourceContinuityRunId: options.sourceContinuityRunId,
             recovery: options.recovery,
           }),
         },
@@ -555,6 +508,8 @@ export class AgentRuntime {
         owner: { threadId: thread.id, runId: run.id },
         invocationSource,
         automaticRecovery: options.recovery?.mode === "automatic",
+        sourceContinuityRequired: options.sourceContinuityRunId !== undefined,
+        sourceContinuityRunId: options.sourceContinuityRunId,
         enabledTools: effectiveAgentSnapshot.enabledTools,
         systemPrompt: promptVariables.renderedSystemPrompt,
         onEvent: options.onEvent,

@@ -51,4 +51,22 @@ describe("Thread execution HTTP validation", () => {
       }),
     ).toBeUndefined();
   });
+
+  it("accepts only an exact optional Source continuity Run ID", () => {
+    expect(
+      parsePromptRequest({
+        text: "Continue the pinned private Sources.",
+        sourceContinuityRunId: "run_12345678",
+      }),
+    ).toEqual({
+      text: "Continue the pinned private Sources.",
+      sourceContinuityRunId: "run_12345678",
+    });
+    expect(
+      parsePromptRequest({
+        text: "Continue.",
+        sourceContinuityRunId: "runctl_12345678",
+      }),
+    ).toBeUndefined();
+  });
 });

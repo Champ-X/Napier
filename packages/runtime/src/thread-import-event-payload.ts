@@ -15,6 +15,11 @@ export function remapImportedEventPayload(
   payload: JsonValue,
   idMap: ReadonlyMap<string, string>,
 ): JsonValue {
+  if (type === "run.started" && record(payload)) {
+    const cloned = structuredClone(payload);
+    delete cloned["sourceContinuityRunId"];
+    return remapJsonValue(cloned, idMap);
+  }
   if (type === "tool.completed" && privateToolCapsulePayload(payload)) {
     const cloned = structuredClone(payload);
     const details = cloned["details"] as Record<string, JsonValue>;

@@ -128,9 +128,12 @@ export class RunResearchSourceManager {
 
   async prepareRecovery(
     owner: BrowserSessionOwner,
+    explicitRunId?: string,
   ): Promise<ResearchSourceCapsuleReceipt | undefined> {
     const key = ownerKey(owner);
-    await this.serialized(key, () => this.restoreRecoveryState(key, owner));
+    await this.serialized(key, () =>
+      this.restoreRecoveryState(key, owner, explicitRunId),
+    );
     return this.stateCapsules.get(key);
   }
 
@@ -354,9 +357,10 @@ export class RunResearchSourceManager {
   private async restoreRecoveryState(
     key: string,
     owner: BrowserSessionOwner,
+    explicitRunId?: string,
   ): Promise<void> {
     if (this.runs.has(key)) return;
-    const restored = await this.continuity.restore(owner);
+    const restored = await this.continuity.restore(owner, explicitRunId);
     if (restored) {
       this.runs.set(key, restored.state);
       this.stateCapsules.set(key, restored.receipt);

@@ -7,6 +7,10 @@ import type {
 import { validateResearchSourceCapsuleReceipt } from "./research-source-capsule.js";
 import { sourceContinuityPredecessor } from "./source-continuity-lineage.js";
 import { validateWebFetchStateCapsuleReceipt } from "./web-fetch-capsule.js";
+import {
+  assertSourceContinuityPinBindings,
+  sourceContinuityPinRunId,
+} from "./source-continuity-pin.js";
 
 export function assertSourceContinuityContexts(
   events: readonly RunEvent[],
@@ -17,6 +21,7 @@ export function assertSourceContinuityContexts(
   const importProvenance = thread["importProvenance"] as
     | ThreadImportProvenance
     | undefined;
+  assertSourceContinuityPinBindings(events, runsById, thread);
   for (const event of events.filter(
     (candidate) => candidate.type === "context.research_sources",
   )) {
@@ -25,7 +30,7 @@ export function assertSourceContinuityContexts(
       | (Partial<RunRecord> & Record<string, unknown>)
       | undefined;
     if (
-      !continuityRun(run, runsById, runOrder, importProvenance) ||
+      !continuityRun(run, runsById, runOrder, importProvenance, events) ||
       receipt.sourceRunId !== event.runId
     ) {
       throw new Error(
@@ -41,7 +46,7 @@ export function assertSourceContinuityContexts(
       | (Partial<RunRecord> & Record<string, unknown>)
       | undefined;
     if (
-      !continuityRun(run, runsById, runOrder, importProvenance) ||
+      !continuityRun(run, runsById, runOrder, importProvenance, events) ||
       receipt.sourceRunId !== event.runId
     ) {
       throw new Error(
@@ -56,6 +61,7 @@ function continuityRun(
   runsById: ReadonlyMap<string, Record<string, unknown>>,
   runOrder: readonly string[],
   importProvenance: ThreadImportProvenance | undefined,
+  events: readonly RunEvent[],
 ): boolean {
   if (!run?.id || !run.threadId) return false;
   const ordered = runOrder.flatMap((id) => {
@@ -71,7 +77,14 @@ function continuityRun(
         }),
       },
       { threadId: String(run.threadId), runId: String(run.id) },
-      { allowSettledCurrent: true },
+      {
+        allowSettledCurrent: true,
+        ...(sourceContinuityPinRunId(events, String(run.id))
+          ? {
+              explicitRunId: sourceContinuityPinRunId(events, String(run.id))!,
+            }
+          : {}),
+      },
     ),
   );
 }

@@ -170,10 +170,13 @@ export interface WebFetchExecutor {
     options?: WebFetchExecutionOptions,
   ): Promise<WebFetchResult>;
   cancelRun(owner: { threadId: string; runId: string }): Promise<void>;
-  prepareRecovery?(owner: {
-    threadId: string;
-    runId: string;
-  }): Promise<WebFetchStateCapsuleReceipt | undefined>;
+  prepareRecovery?(
+    owner: {
+      threadId: string;
+      runId: string;
+    },
+    explicitRunId?: string,
+  ): Promise<WebFetchStateCapsuleReceipt | undefined>;
   captureWebSource?(
     owner: { threadId: string; runId: string },
     request: {

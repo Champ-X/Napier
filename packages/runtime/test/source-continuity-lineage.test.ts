@@ -54,6 +54,61 @@ describe("Source continuity lineage", () => {
     ).toBeUndefined();
   });
 
+  it("selects an explicit recent completed non-adjacent user lineage", () => {
+    const pinned = run("run_pinned0001", "completed", "user", 0, {
+      finishedAt: iso(0.5),
+    });
+    const intermediate = run("run_middle0001", "completed", "user", 1, {
+      finishedAt: iso(1.5),
+    });
+    const current = run("run_current009", "running", "user", 2);
+
+    expect(
+      predecessor([pinned, intermediate, current], current.id, undefined, {
+        explicitRunId: pinned.id,
+      }),
+    ).toEqual(pinned);
+  });
+
+  it("fails closed for invalid explicit Source continuity pins", () => {
+    const completed = run("run_pinned0002", "completed", "user", 0, {
+      finishedAt: iso(1),
+    });
+    const current = run("run_current010", "running", "user", 2);
+
+    expect(() =>
+      predecessor(
+        [{ ...completed, agentId: "agent_other" }, current],
+        current.id,
+        undefined,
+        { explicitRunId: completed.id },
+      ),
+    ).toThrow("Pinned Source continuity Run is invalid");
+    expect(() =>
+      predecessor([completed, current], current.id, importProvenance(), {
+        explicitRunId: completed.id,
+      }),
+    ).toThrow("Pinned Source continuity Run is not allowed");
+    expect(() =>
+      predecessor(
+        [
+          completed,
+          run("run_recovery09", "running", "recovery", 2, {
+            parentRunId: completed.id,
+          }),
+        ],
+        "run_recovery09",
+        undefined,
+        { explicitRunId: completed.id },
+      ),
+    ).toThrow("Recovery Runs cannot pin Source continuity");
+    expect(() =>
+      predecessor([completed, current], current.id, undefined, {
+        explicitRunId: "run_missing001",
+      }),
+    ).toThrow("Pinned Source continuity Run is invalid");
+  });
+
   it("allows settled current Runs only for Replay validation", () => {
     const previous = run("run_previous03", "completed", "user", 0, {
       finishedAt: iso(1),
@@ -120,7 +175,7 @@ function predecessor(
   runs: RunRecord[],
   runId: string,
   importState?: ThreadImportProvenance,
-  options?: { allowSettledCurrent?: boolean },
+  options?: { allowSettledCurrent?: boolean; explicitRunId?: string },
 ) {
   return sourceContinuityPredecessor(
     {

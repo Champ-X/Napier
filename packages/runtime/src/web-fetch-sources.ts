@@ -120,11 +120,14 @@ export class RunWebFetchSourceManager
     this.cancellations.delete(key);
   }
 
-  async prepareRecovery(owner: { threadId: string; runId: string }) {
+  async prepareRecovery(
+    owner: { threadId: string; runId: string },
+    explicitRunId?: string,
+  ) {
     const key = ownerKey(owner);
     await this.serialized(
       key,
-      () => this.restoreRecoveryState(key, owner),
+      () => this.restoreRecoveryState(key, owner, explicitRunId),
       new AbortController().signal,
     );
     return this.stateCapsules.get(key);
@@ -382,9 +385,10 @@ export class RunWebFetchSourceManager
   private async restoreRecoveryState(
     key: string,
     owner: { threadId: string; runId: string },
+    explicitRunId?: string,
   ): Promise<void> {
     if (this.runs.has(key)) return;
-    const restored = await this.continuity.restore(owner);
+    const restored = await this.continuity.restore(owner, explicitRunId);
     if (restored) {
       this.runs.set(key, restored.state);
       this.stateCapsules.set(key, restored.receipt);

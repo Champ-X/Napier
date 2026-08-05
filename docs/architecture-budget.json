@@ -7,7 +7,7 @@
   },
   "lineOverrides": {
     "apps/cli/src/cli-options.ts": 479,
-    "apps/cli/src/cli.ts": 682,
+    "apps/cli/src/cli.ts": 681,
     "apps/cli/test/rpc-cli.test.ts": 1065,
     "apps/cli/test/workflow-cli.test.ts": 2912,
     "apps/server/src/app.ts": 14528,
@@ -46,7 +46,7 @@
     "apps/web/test/stream-api.test.ts": 2372,
     "apps/web/test/tool-event-view.test.ts": 1690,
     "packages/contracts/src/index.ts": 7025,
-    "packages/runtime/src/agent-runtime.ts": 3532,
+    "packages/runtime/src/agent-runtime.ts": 3487,
     "packages/runtime/src/agents.ts": 817,
     "packages/runtime/src/automatic-recovery.ts": 807,
     "packages/runtime/src/blueprint-outcome-review.ts": 512,

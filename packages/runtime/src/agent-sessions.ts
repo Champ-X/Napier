@@ -119,8 +119,11 @@ export class AgentSessionRuntime {
     if (failure) throw failure.reason;
   }
 
-  prepareResearchSourceRecovery(request: { threadId: string; runId: string }) {
-    return this.researchSources.prepareRecovery(request);
+  prepareResearchSourceRecovery(
+    request: { threadId: string; runId: string },
+    explicitRunId?: string,
+  ) {
+    return this.researchSources.prepareRecovery(request, explicitRunId);
   }
 
   captureBrowserLiveView(

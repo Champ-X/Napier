@@ -79,6 +79,7 @@ Run options:
   --credential-env <var> Register/reuse this model credential environment name
   --agent <agent-id>     Agent for a new Thread
   --thread <thread-id>   Append to an existing Thread
+  --source-run <run-id>  Explicit completed same-Thread Run for private Source continuity
   --title <text>         Title for a new Thread
   --preset <id>          Temporary capability preset for this Run only
 

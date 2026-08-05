@@ -86,6 +86,69 @@ describe("Web Fetch continuity", () => {
     fixture.store.close();
   });
 
+  it("adopts an explicitly pinned non-adjacent completed Run", async () => {
+    const fixture = await continuityFixture();
+    const capsules = new WebFetchCapsuleStore(fixture.dataRoot);
+    const firstOwner = {
+      threadId: fixture.threadId,
+      runId: fixture.parentRunId,
+    };
+    const fetched = await manager(
+      fixture,
+      {
+        request: vi.fn(async () =>
+          response(
+            "PINNED_NON_ADJACENT_FETCH",
+            "text/plain",
+            "https://example.com/pinned.txt",
+          ),
+        ),
+      },
+      capsules,
+    ).execute(firstOwner, {
+      action: "fetch",
+      url: "https://example.com/pinned.txt",
+    });
+    await appendCompletion(fixture.store, firstOwner, fetched.details);
+    await fixture.store.finishRun(fixture.parentRunId, "completed");
+    const intermediate = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: fixture.agentId,
+      source: "user",
+    });
+    await fixture.store.finishRun(intermediate.id, "completed");
+    const continuation = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: fixture.agentId,
+      source: "user",
+    });
+    const deniedHttp = { request: vi.fn() };
+    const reopened = manager(fixture, deniedHttp, capsules);
+    const owner = { threadId: fixture.threadId, runId: continuation.id };
+
+    const checkpoint = await reopened.prepareRecovery(
+      owner,
+      fixture.parentRunId,
+    );
+    const read = await reopened.execute(owner, {
+      action: "read",
+      sourceId: fetched.details.sourceId!,
+      sourceContentSha256: fetched.details.sourceContentSha256!,
+      startLine: 1,
+      endLine: 1,
+    });
+
+    expect(checkpoint).toEqual(
+      expect.objectContaining({
+        sourceRunId: continuation.id,
+        sourceCount: 1,
+      }),
+    );
+    expect(read.output).toContain("PINNED_NON_ADJACENT_FETCH");
+    expect(deniedHttp.request).not.toHaveBeenCalled();
+    fixture.store.close();
+  });
+
   it("restores HTML/PDF Sources for list, read, find, and Research capture", async () => {
     const fixture = await continuityFixture();
     const http = {

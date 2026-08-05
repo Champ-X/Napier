@@ -50,23 +50,28 @@ export class WebFetchContinuity {
     this.restorations.delete(ownerKey(owner));
   }
 
-  restore(owner: { threadId: string; runId: string }) {
+  restore(owner: { threadId: string; runId: string }, explicitRunId?: string) {
     const key = ownerKey(owner);
     const existing = this.restorations.get(key);
     if (existing) return existing;
-    const restoration = this.restoreOnce(owner);
+    const restoration = this.restoreOnce(owner, explicitRunId);
     this.restorations.set(key, restoration);
     return restoration;
   }
 
-  private async restoreOnce(owner: {
-    threadId: string;
-    runId: string;
-  }): Promise<
+  private async restoreOnce(
+    owner: {
+      threadId: string;
+      runId: string;
+    },
+    explicitRunId?: string,
+  ): Promise<
     { state: WebFetchState; receipt: WebFetchStateCapsuleReceipt } | undefined
   > {
     if (!this.capsules || !this.store) return undefined;
-    const parent = sourceContinuityPredecessor(this.store, owner);
+    const parent = sourceContinuityPredecessor(this.store, owner, {
+      ...(explicitRunId ? { explicitRunId } : {}),
+    });
     if (!parent) return undefined;
     const events = (await this.store.listEvents(owner.threadId)).filter(
       (event) =>

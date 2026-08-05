@@ -131,6 +131,40 @@ describe("Napier one-shot CLI", () => {
         "lowercase-key",
       ]),
     ).toThrow("--credential-env is invalid");
+    expect(
+      parseCliArgs([
+        "run",
+        "--workspace",
+        ".",
+        "--prompt",
+        "Continue pinned evidence.",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--source-run",
+        "run_abcdefghijklmnopqrst",
+      ]),
+    ).toEqual({
+      kind: "run",
+      options: {
+        workspace: ".",
+        prompt: "Continue pinned evidence.",
+        timeoutMs: 600_000,
+        jsonl: false,
+        threadId: "thread_abcdefghijklmnopqrst",
+        sourceContinuityRunId: "run_abcdefghijklmnopqrst",
+      },
+    });
+    expect(() =>
+      parseCliArgs([
+        "run",
+        "--workspace",
+        ".",
+        "--prompt",
+        "Continue pinned evidence.",
+        "--source-run",
+        "run_abcdefghijklmnopqrst",
+      ]),
+    ).toThrow("--source-run requires an existing --thread");
   });
 
   it("streams hash-bound JSONL frames through the real Agent Runtime", async () => {

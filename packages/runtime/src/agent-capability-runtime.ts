@@ -184,24 +184,31 @@ export class AgentCapabilityRuntime {
     if (failure) throw failure.reason;
   }
 
-  prepareResearchSourceRecovery(owner: AgentCapabilityOwner) {
-    return this.sessions.prepareResearchSourceRecovery(owner);
+  prepareResearchSourceRecovery(
+    owner: AgentCapabilityOwner,
+    explicitRunId?: string,
+  ) {
+    return this.sessions.prepareResearchSourceRecovery(owner, explicitRunId);
   }
 
-  prepareWebFetchRecovery(owner: AgentCapabilityOwner) {
-    return this.webFetch.prepareRecovery?.(owner) ?? Promise.resolve(undefined);
+  prepareWebFetchRecovery(owner: AgentCapabilityOwner, explicitRunId?: string) {
+    return (
+      this.webFetch.prepareRecovery?.(owner, explicitRunId) ??
+      Promise.resolve(undefined)
+    );
   }
 
   prepareNetworkSourceRecovery(
     owner: AgentCapabilityOwner,
     enabled: { researchSource: boolean; webFetch: boolean },
+    explicitRunId?: string,
   ) {
     return Promise.all([
       enabled.researchSource
-        ? this.prepareResearchSourceRecovery(owner)
+        ? this.prepareResearchSourceRecovery(owner, explicitRunId)
         : Promise.resolve(undefined),
       enabled.webFetch
-        ? this.prepareWebFetchRecovery(owner)
+        ? this.prepareWebFetchRecovery(owner, explicitRunId)
         : Promise.resolve(undefined),
     ]).then(([research, webFetch]) => ({ research, webFetch }));
   }
@@ -210,6 +217,8 @@ export class AgentCapabilityRuntime {
     owner: AgentCapabilityOwner;
     invocationSource: string;
     automaticRecovery: boolean;
+    sourceContinuityRequired: boolean;
+    sourceContinuityRunId: string | undefined;
     enabledTools: readonly string[];
     systemPrompt: string;
     onEvent: EventSink | undefined;
@@ -219,9 +228,14 @@ export class AgentCapabilityRuntime {
       runId: input.owner.runId,
       invocationSource: input.invocationSource,
       automaticRecovery: input.automaticRecovery,
+      sourceContinuityRequired: input.sourceContinuityRequired,
       enabledTools: input.enabledTools,
       prepare: (enabled) =>
-        this.prepareNetworkSourceRecovery(input.owner, enabled),
+        this.prepareNetworkSourceRecovery(
+          input.owner,
+          enabled,
+          input.sourceContinuityRunId,
+        ),
       record: async (event) => {
         const recorded = await this.store.appendEvent(event);
         try {

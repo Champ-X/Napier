@@ -17,6 +17,7 @@ export function createAgentRunStartedPayload(input: {
   triggerId: string | undefined;
   capabilityPreset: AgentCapabilityPresetId | undefined;
   parentRunId: string | undefined;
+  sourceContinuityRunId: string | undefined;
   recovery:
     | {
         mode: "manual" | "automatic";
@@ -40,6 +41,9 @@ export function createAgentRunStartedPayload(input: {
         ? { capabilityPreset: input.capabilityPreset }
         : {}),
       ...(input.parentRunId ? { parentRunId: input.parentRunId } : {}),
+      ...(input.sourceContinuityRunId
+        ? { sourceContinuityRunId: input.sourceContinuityRunId }
+        : {}),
       ...(input.recovery
         ? {
             recoveryMode: input.recovery.mode,

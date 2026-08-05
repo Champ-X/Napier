@@ -78,6 +78,7 @@ export async function prepareNetworkSourceContinuity(input: {
   runId: string;
   invocationSource: string;
   automaticRecovery: boolean;
+  sourceContinuityRequired: boolean;
   enabledTools: readonly string[];
   prepare(enabled: { researchSource: boolean; webFetch: boolean }): Promise<{
     research: ResearchSourceCapsuleReceipt | undefined;
@@ -88,11 +89,25 @@ export async function prepareNetworkSourceContinuity(input: {
   const enabled =
     input.invocationSource === "user" ||
     (input.invocationSource === "recovery" && !input.automaticRecovery);
-  if (!enabled) return "";
+  if (!enabled) {
+    if (input.sourceContinuityRequired) {
+      throw new Error("Pinned Source continuity Run is not allowed");
+    }
+    return "";
+  }
   const prepared = await input.prepare({
     researchSource: input.enabledTools.includes("research_source"),
     webFetch: input.enabledTools.includes("web_fetch"),
   });
+  if (
+    input.sourceContinuityRequired &&
+    !prepared.research &&
+    !prepared.webFetch
+  ) {
+    throw new Error(
+      "Pinned Source continuity Run has no enabled private Source state",
+    );
+  }
   const recorded: RunEvent[] = [];
   await recordNetworkSourceContinuityContexts({
     threadId: input.threadId,

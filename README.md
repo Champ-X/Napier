@@ -4041,6 +4041,20 @@ rules above. Automatic recovery still treats `research_source` as unsafe even
 though its tool effect is read; only explicit linked recovery and an eligible
 ordinary same-Thread continuation can adopt its local capsule.
 
+An ordinary one-shot CLI Run can deliberately select an older eligible
+same-Thread Source state with `--thread <thread-id> --source-run <run-id>`.
+The HTTP prompt request exposes the same bounded input as
+`sourceContinuityRunId`. The selected Run must be completed, local,
+same-Agent, sourced from an ordinary user or recovery Run, earlier than the
+current Run, and no more than 24 hours old. Napier restores only enabled
+Research Source and Web Fetch capsules, checkpoints current-Run-owned context
+receipts before model resolution, and records the requested Run ID in the
+ordinary `run.started` receipt. Missing state, imported Threads, parented or
+non-user current Runs, foreign Agents, expired/future/unsettled Runs, receipt
+drift, and Replay tampering fail closed. Replay import removes the private
+contexts and the pin request. Browser processes, tabs, cookies, login state,
+and network Sessions are never restored or adopted by this option.
+
 The bundled `research-brief` Skill requires primary-source preference,
 disconfirming evidence, exact claim-to-range binding, adjacent one-use
 citation tokens, runtime report verification, an evidence ledger, and a
@@ -4053,7 +4067,7 @@ the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
 completed `web_fetch fetch -> research_source capture_fetch -> cite` against
 both public Node.js release HTML and the W3C dummy PDF while Tool events
 retained neither URL, body, Web Source ID, nor credential. The complete regular
-suite currently passes 2,345 tests.
+suite currently passes 2,354 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

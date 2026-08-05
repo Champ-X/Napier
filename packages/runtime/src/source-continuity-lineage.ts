@@ -9,6 +9,7 @@ export interface SourceContinuityStore {
 
 export interface SourceContinuityPredecessorOptions {
   allowSettledCurrent?: boolean;
+  explicitRunId?: string;
 }
 
 export function sourceContinuityPredecessor(
@@ -27,6 +28,9 @@ export function sourceContinuityPredecessor(
     return undefined;
   }
   if (current.source === "recovery") {
+    if (options.explicitRunId) {
+      throw new Error("Recovery Runs cannot pin Source continuity");
+    }
     const parent = runs.find((run) => run.id === current.parentRunId);
     if (
       !parent ||
@@ -36,6 +40,15 @@ export function sourceContinuityPredecessor(
       throw new Error("Source continuity recovery parent is invalid");
     }
     return parent;
+  }
+  if (options.explicitRunId) {
+    return explicitPredecessor(
+      store,
+      runs,
+      current,
+      currentIndex,
+      options.explicitRunId,
+    );
   }
   if (
     (current.source ?? "user") !== "user" ||
@@ -58,6 +71,48 @@ export function sourceContinuityPredecessor(
     return undefined;
   }
   return predecessor;
+}
+
+function explicitPredecessor(
+  store: SourceContinuityStore,
+  runs: RunRecord[],
+  current: RunRecord,
+  currentIndex: number,
+  explicitRunId: string,
+): RunRecord {
+  if (
+    (current.source ?? "user") !== "user" ||
+    current.parentRunId ||
+    store.getThread(current.threadId).importProvenance
+  ) {
+    throw new Error("Pinned Source continuity Run is not allowed");
+  }
+  const pinned = runs.find((candidate) => candidate.id === explicitRunId);
+  if (!validExplicitPredecessor(pinned, current, runs, currentIndex)) {
+    throw new Error("Pinned Source continuity Run is invalid");
+  }
+  return pinned;
+}
+
+function validExplicitPredecessor(
+  pinned: RunRecord | undefined,
+  current: RunRecord,
+  runs: RunRecord[],
+  currentIndex: number,
+): pinned is RunRecord {
+  return Boolean(
+    pinned &&
+    pinned.id !== current.id &&
+    pinned.threadId === current.threadId &&
+    pinned.agentId === current.agentId &&
+    pinned.status === "completed" &&
+    (pinned.source === undefined ||
+      pinned.source === "user" ||
+      pinned.source === "recovery") &&
+    pinned.finishedAt &&
+    withinRetention(pinned.finishedAt, current.startedAt) &&
+    runs.indexOf(pinned) < currentIndex,
+  );
 }
 
 function withinRetention(finishedAt: string, startedAt: string): boolean {

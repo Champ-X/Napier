@@ -6870,10 +6870,10 @@ export interface CreateThreadRequest {
   title?: string;
   agentId?: string;
 }
-
 export interface PromptRequest {
   text: string;
   model?: ModelRef;
+  sourceContinuityRunId?: string;
 }
 
 export interface ResumeRunRequest {

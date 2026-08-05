@@ -155,12 +155,20 @@ function registerPromptHttp(
         return jsonError(context, errorMessage(error), 400);
       }
     }
-    setThreadPromptStreamHeaders(context, threadId, body.model);
+    setThreadPromptStreamHeaders(
+      context,
+      threadId,
+      body.model,
+      body.sourceContinuityRunId,
+    );
     return streamAgentRun(context, services, threadId, (onEvent) =>
       services.runtime.runPrompt({
         threadId,
         text: body.text,
         ...(body.model ? { model: body.model } : {}),
+        ...(body.sourceContinuityRunId
+          ? { sourceContinuityRunId: body.sourceContinuityRunId }
+          : {}),
         onEvent,
       }),
     );
