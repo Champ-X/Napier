@@ -50,12 +50,13 @@ import {
   BrowserSessionNavigation,
 } from "./browser-session-navigation.js";
 import {
-  isBrowserTabRequest,
-  performBrowserTabOperation,
+  isBrowserPageSpecialRequest,
+  performBrowserPageSpecialOperation,
 } from "./browser-page-tab-operation.js";
 import { BrowserSessionTabs } from "./browser-session-tabs.js";
 import {
   assertBrowserRuntimeCurrent,
+  browserContextOptions,
   browserLaunchOptions,
   resolveBrowserRuntime,
 } from "./browser-runtime.js";
@@ -124,13 +125,7 @@ export class PersistentBrowserSession {
         options.launchBrowser ?? ((launch) => chromium.launch(launch))
       )(browserLaunchOptions(runtime, binding, runtimeRoot));
       await assertBrowserRuntimeCurrent(runtime);
-      context = await browser.newContext({
-        acceptDownloads: true,
-        serviceWorkers: "block",
-        viewport: { width: 1280, height: 900 },
-        ignoreHTTPSErrors: false,
-        permissions: [],
-      });
+      context = await browser.newContext(browserContextOptions());
       context.setDefaultTimeout(BROWSER_ACTION_TIMEOUT_MS);
       context.setDefaultNavigationTimeout(BROWSER_NAVIGATION_TIMEOUT_MS);
       const page = await context.newPage();
@@ -247,8 +242,8 @@ export class PersistentBrowserSession {
     const crossOriginAuthorized =
       "allowCrossOrigin" in request && request.allowCrossOrigin === true;
 
-    if (isBrowserTabRequest(request)) {
-      const tabResult = await performBrowserTabOperation({
+    if (isBrowserPageSpecialRequest(request)) {
+      const tabResult = await performBrowserPageSpecialOperation({
         request,
         tabs: this.tabs,
         navigation: this.navigation,

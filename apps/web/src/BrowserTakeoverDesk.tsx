@@ -1,8 +1,11 @@
 import type {
+  BrowserTakeoverKey,
   BrowserTakeoverActionReceipt,
   BrowserTakeoverSnapshot,
   ExecuteBrowserTakeoverActionRequest,
 } from "@napier/contracts/browser-takeover";
+import { BROWSER_TAKEOVER_KEYS } from "@napier/contracts/browser-takeover";
+import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 import {
   ArrowDown,
   ArrowLeft,
@@ -13,25 +16,40 @@ import {
   Plus,
   RefreshCw,
   Send,
+  Keyboard,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import { formatApiErrorMessage } from "./api-error";
 import {
   executeBrowserTakeoverAction,
   getBrowserTakeoverSnapshot,
 } from "./browser-takeover-api";
+import {
+  browserTakeoverLiveMatchesSnapshot,
+  browserViewportCoordinates,
+} from "./browser-takeover-visual";
 
 type TakeoverMode = "click" | "type" | "select";
 
 export function BrowserTakeoverDesk({
   threadId,
   runId,
+  liveImageUrl,
+  liveReceipt,
   onReturnToAgent,
 }: {
   threadId: string;
   runId: string;
+  liveImageUrl: string;
+  liveReceipt: BrowserLiveViewReceipt;
   onReturnToAgent: () => Promise<void>;
 }) {
   const [snapshot, setSnapshot] = useState<BrowserTakeoverSnapshot>();
@@ -40,6 +58,7 @@ export function BrowserTakeoverDesk({
   const [ref, setRef] = useState("");
   const [value, setValue] = useState("");
   const [newTabUrl, setNewTabUrl] = useState("");
+  const [selectedKey, setSelectedKey] = useState<BrowserTakeoverKey>("Enter");
   const [allowCrossOrigin, setAllowCrossOrigin] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -145,6 +164,31 @@ export function BrowserTakeoverDesk({
     });
   }, [allowCrossOrigin, binding, execute, newTabUrl]);
 
+  const visualClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      if (!binding) return;
+      const image = event.currentTarget.querySelector("img");
+      if (!image) return;
+      const coordinates = browserViewportCoordinates(
+        event.clientX,
+        event.clientY,
+        image.getBoundingClientRect(),
+        liveReceipt,
+      );
+      if (!coordinates) return;
+      void execute({
+        ...binding,
+        action: "visual_click",
+        expectedLiveImageSha256: liveReceipt.imageSha256,
+        expectedViewportWidth: liveReceipt.viewportWidth,
+        expectedViewportHeight: liveReceipt.viewportHeight,
+        ...coordinates,
+        ...(allowCrossOrigin ? { allowCrossOrigin: true } : {}),
+      });
+    },
+    [allowCrossOrigin, binding, execute, liveReceipt],
+  );
+
   return (
     <section className="browser-takeover-desk" aria-label="Browser takeover">
       <header>
@@ -197,6 +241,22 @@ export function BrowserTakeoverDesk({
               </div>
             ))}
           </div>
+          <button
+            className="browser-takeover-viewport"
+            type="button"
+            disabled={
+              busy ||
+              !binding ||
+              !browserTakeoverLiveMatchesSnapshot(liveReceipt, snapshot)
+            }
+            onClick={visualClick}
+            aria-label="Click the verified Browser viewport"
+          >
+            <img
+              src={liveImageUrl}
+              alt="Verified Browser viewport for visual click"
+            />
+          </button>
           <pre aria-label="Untrusted Browser ARIA snapshot">
             {snapshot.snapshot || "(empty page snapshot)"}
           </pre>
@@ -293,6 +353,37 @@ export function BrowserTakeoverDesk({
       </div>
 
       <div className="browser-takeover-quick">
+        <label className="browser-takeover-key">
+          Navigation key
+          <select
+            value={selectedKey}
+            onChange={(event) =>
+              setSelectedKey(event.target.value as BrowserTakeoverKey)
+            }
+          >
+            {BROWSER_TAKEOVER_KEYS.map((key) => (
+              <option value={key} key={key}>
+                {key}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          disabled={busy || !binding}
+          onClick={() =>
+            binding &&
+            void execute({
+              ...binding,
+              action: "keypress",
+              key: selectedKey,
+              ...(allowCrossOrigin ? { allowCrossOrigin: true } : {}),
+            })
+          }
+        >
+          <Keyboard size={12} aria-hidden="true" />
+          Press key
+        </button>
         <button
           type="button"
           disabled={busy || !binding}

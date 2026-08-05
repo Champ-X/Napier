@@ -137,6 +137,8 @@ export class AgentSessionRuntime {
       {
         action:
           | "click"
+          | "visual_click"
+          | "keypress"
           | "type"
           | "select"
           | "scroll"

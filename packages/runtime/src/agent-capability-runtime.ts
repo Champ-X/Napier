@@ -216,6 +216,25 @@ function takeoverSessionRequest(request: ExecuteBrowserTakeoverActionRequest) {
         : {}),
     };
   }
+  if (request.action === "visual_click") {
+    return {
+      action: request.action,
+      x: request.x,
+      y: request.y,
+      ...(request.allowCrossOrigin === true
+        ? { allowCrossOrigin: true as const }
+        : {}),
+    };
+  }
+  if (request.action === "keypress") {
+    return {
+      action: request.action,
+      key: request.key,
+      ...(request.allowCrossOrigin === true
+        ? { allowCrossOrigin: true as const }
+        : {}),
+    };
+  }
   if (request.action === "type") {
     return {
       action: request.action,

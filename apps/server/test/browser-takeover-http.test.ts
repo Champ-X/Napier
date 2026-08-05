@@ -111,6 +111,62 @@ describe("Browser takeover HTTP", () => {
     expect(controls.executeTakeover).not.toHaveBeenCalled();
     expect(JSON.stringify(await response.json())).not.toContain("PRIVATE");
   });
+
+  it("accepts bounded visual clicks and allowlisted keys only", () => {
+    const binding = {
+      expectedPauseStateSha256: "a".repeat(64),
+      expectedSessionIdSha256: "b".repeat(64),
+      expectedSessionOperation: 1,
+      expectedSnapshotSha256: "c".repeat(64),
+      expectedActiveTabId: "tab_1",
+      expectedTabCount: 1,
+      expectedTabSetSha256: "d".repeat(64),
+    };
+    expect(
+      parseBrowserTakeoverActionRequest({
+        ...binding,
+        action: "visual_click",
+        expectedLiveImageSha256: "e".repeat(64),
+        expectedViewportWidth: 1_280,
+        expectedViewportHeight: 900,
+        x: 1_279,
+        y: 899,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        action: "visual_click",
+        x: 1_279,
+        y: 899,
+      }),
+    );
+    expect(
+      parseBrowserTakeoverActionRequest({
+        ...binding,
+        action: "visual_click",
+        expectedLiveImageSha256: "e".repeat(64),
+        expectedViewportWidth: 1_280,
+        expectedViewportHeight: 900,
+        x: 1_280,
+        y: 899,
+      }),
+    ).toBeUndefined();
+    expect(
+      parseBrowserTakeoverActionRequest({
+        ...binding,
+        action: "keypress",
+        key: "Shift+Tab",
+      }),
+    ).toEqual(
+      expect.objectContaining({ action: "keypress", key: "Shift+Tab" }),
+    );
+    expect(
+      parseBrowserTakeoverActionRequest({
+        ...binding,
+        action: "keypress",
+        key: "Control+L",
+      }),
+    ).toBeUndefined();
+  });
 });
 
 function takeoverSnapshot(): BrowserTakeoverSnapshot {

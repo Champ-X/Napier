@@ -204,6 +204,8 @@ export function BrowserLiveViewPanel({
           <LazyBrowserTakeoverDesk
             threadId={threadId}
             runId={runId}
+            liveImageUrl={imageUrl}
+            liveReceipt={receipt}
             onReturnToAgent={returnToAgent}
           />
         </Suspense>

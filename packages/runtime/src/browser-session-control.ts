@@ -23,6 +23,7 @@ export class BrowserSessionControlService {
     private readonly sessions: Pick<
       AgentCapabilityRuntime,
       | "captureBrowserTakeoverSnapshot"
+      | "captureBrowserLiveView"
       | "executeBrowserTakeoverAction"
       | "hasActiveBrowserSession"
     >,

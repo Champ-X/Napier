@@ -33,6 +33,9 @@ export async function getBrowserLiveView(
   if (observedImageSha256 !== receipt.imageSha256) {
     throw new Error(`Browser live view image hash mismatch for ${path}`);
   }
+  if (!pngMatchesViewport(bytes, receipt)) {
+    throw new Error(`Browser live view dimensions mismatch for ${path}`);
+  }
   const { contentSha256: _contentSha256, ...content } = receipt;
   if ((await sha256Text(canonicalJson(content))) !== receipt.contentSha256) {
     throw new Error(`Browser live view receipt hash mismatch for ${path}`);
@@ -49,7 +52,7 @@ function receiptFromHeaders(
 ): BrowserLiveViewReceipt {
   const receipt = {
     kind: "napier.browser-live-view" as const,
-    schemaVersion: 2 as const,
+    schemaVersion: 3 as const,
     threadId: required(response, "X-Napier-Thread-Id"),
     runId: required(response, "X-Napier-Run-Id"),
     sessionIdSha256: digest(response, "X-Napier-Browser-Session-SHA256"),
@@ -65,6 +68,18 @@ function receiptFromHeaders(
     imageSha256: digest(response, "X-Napier-Content-SHA256"),
     imageBytes: integer(response, "Content-Length", 1, MAX_LIVE_VIEW_BYTES),
     mimeType: contentType(response),
+    viewportWidth: integer(
+      response,
+      "X-Napier-Browser-Viewport-Width",
+      1,
+      4_096,
+    ),
+    viewportHeight: integer(
+      response,
+      "X-Napier-Browser-Viewport-Height",
+      1,
+      4_096,
+    ),
     capturedAt: timestamp(response, "X-Napier-Browser-Captured-At"),
     currentUrlSha256: digest(response, "X-Napier-Browser-URL-SHA256"),
     currentOriginSha256: digest(response, "X-Napier-Browser-Origin-SHA256"),
@@ -155,4 +170,19 @@ async function sha256ArrayBuffer(value: ArrayBuffer): Promise<string> {
   return [...new Uint8Array(digest)]
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function pngMatchesViewport(
+  value: ArrayBuffer,
+  receipt: Pick<BrowserLiveViewReceipt, "viewportWidth" | "viewportHeight">,
+): boolean {
+  if (value.byteLength < 24) return false;
+  const bytes = new Uint8Array(value);
+  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (!signature.every((byte, index) => bytes[index] === byte)) return false;
+  const view = new DataView(value);
+  return (
+    view.getUint32(16) === receipt.viewportWidth &&
+    view.getUint32(20) === receipt.viewportHeight
+  );
 }

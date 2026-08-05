@@ -1,8 +1,8 @@
 import type { JsonValue } from "@napier/contracts";
-import type {
-  BrowserTakeoverActionReceipt,
-  BrowserTakeoverSnapshot,
-  ExecuteBrowserTakeoverActionRequest,
+import {
+  type BrowserTakeoverActionReceipt,
+  type BrowserTakeoverSnapshot,
+  type ExecuteBrowserTakeoverActionRequest,
 } from "@napier/contracts/browser-takeover";
 
 import type { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
@@ -12,6 +12,12 @@ import {
 } from "./browser-session-model.js";
 import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import { validateBrowserTakeoverTabResult } from "./browser-takeover-tabs.js";
+import {
+  isBrowserVisualClickRequest,
+  browserVisualActionEvidence,
+  validBrowserVisualTakeoverAction,
+  validateBrowserVisualClickBinding,
+} from "./browser-takeover-visual.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
 import { validatePublicHttpUrl } from "./public-network.js";
@@ -25,6 +31,7 @@ type BrowserTakeoverStore = Pick<
 type BrowserTakeoverCapabilities = Pick<
   AgentCapabilityRuntime,
   | "captureBrowserTakeoverSnapshot"
+  | "captureBrowserLiveView"
   | "executeBrowserTakeoverAction"
   | "hasActiveBrowserSession"
 >;
@@ -146,6 +153,13 @@ export class BrowserTakeoverService {
           >
         >;
         try {
+          if (isBrowserVisualClickRequest(request)) {
+            const live = await this.capabilities.captureBrowserLiveView(
+              owner,
+              signal,
+            );
+            validateBrowserVisualClickBinding(request, live.receipt);
+          }
           result = await this.capabilities.executeBrowserTakeoverAction(
             owner,
             request,
@@ -303,6 +317,8 @@ function createActionReceipt(
 }
 
 function actionEvidence(request: ExecuteBrowserTakeoverActionRequest) {
+  const visual = browserVisualActionEvidence(request);
+  if (visual) return visual;
   if (request.action === "click") {
     return { targetRefSha256: sha256(request.ref) };
   }
@@ -432,6 +448,8 @@ function validTargetAction(
 function validNonTargetAction(
   request: ExecuteBrowserTakeoverActionRequest,
 ): boolean {
+  const visual = validBrowserVisualTakeoverAction(request);
+  if (visual !== undefined) return visual;
   if (request.action === "scroll") {
     return (
       (request.direction === "up" || request.direction === "down") &&

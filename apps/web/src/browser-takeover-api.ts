@@ -194,6 +194,12 @@ const RECEIPT_KEYS = new Set([
   "sourceActiveTabId",
   "sourceTabCount",
   "sourceTabSetSha256",
+  "sourceLiveImageSha256",
+  "viewportWidth",
+  "viewportHeight",
+  "coordinateXSha256",
+  "coordinateYSha256",
+  "key",
   "targetTabIdSha256",
   "targetUrlSha256",
   "targetOriginSha256",
@@ -259,6 +265,18 @@ async function actionReceiptEvidence(
 ): Promise<boolean> {
   if (request.action === "click") {
     return input["targetRefSha256"] === (await sha256Text(request.ref));
+  }
+  if (request.action === "visual_click") {
+    return (
+      input["sourceLiveImageSha256"] === request.expectedLiveImageSha256 &&
+      input["viewportWidth"] === request.expectedViewportWidth &&
+      input["viewportHeight"] === request.expectedViewportHeight &&
+      input["coordinateXSha256"] === (await sha256Text(String(request.x))) &&
+      input["coordinateYSha256"] === (await sha256Text(String(request.y)))
+    );
+  }
+  if (request.action === "keypress") {
+    return input["key"] === request.key;
   }
   if (request.action === "type") {
     return (

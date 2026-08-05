@@ -630,13 +630,21 @@ The takeover desk shows the no-store, hash-verified tab list and supports
 explicit new/switch/close plus click, masked type, select, scroll,
 back/forward, and bounded wait. Requests bind fresh refs plus the exact pause,
 Session, operation, active-tab, tab-count, tab-set, and snapshot evidence.
+For visual-only challenges or keyboard-driven login steps, Web also renders
+the exact verified 1280×900 Live PNG as a clickable viewport and exposes a
+fixed navigation-key allowlist. A visual click binds the displayed image
+SHA-256 and viewport dimensions, then Runtime recaptures and compares the
+current Live image before executing integer coordinates. Keypress never
+accepts arbitrary shortcuts or typed text; credential text remains in the
+password-masked fresh-ref flow.
 Snapshot capture consumes no Browser operation; every operator action consumes
 one and serializes against Agent actions and Resume. Typed text, selected
 values, URLs, and tab titles exist only in the live request/response and are
 cleared or discarded; Ledger retains hashes, counts, action status, and
 before/after Session/tab identity. **Return to Agent** resumes the same Run and
 Session after the operator action settles. Existing-user Chrome relay,
-DevTools, login handoff, and restart recovery remain separate work.
+automated CAPTCHA solving, DevTools, and cross-restart login recovery remain
+separate work.
 
 For a production build served by the API process:
 

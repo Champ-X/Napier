@@ -304,6 +304,113 @@ describe("Browser takeover", () => {
     expect(events.at(-1)?.type).toBe("browser.takeover.failed");
     await fixture.store.close();
   });
+
+  it("binds visual clicks to the exact live image and hashes coordinates", async () => {
+    const fixture = await createFixture();
+    const snapshotText = "- heading [ref=e1]";
+    const executeBrowserTakeoverAction = vi.fn(async () => ({
+      output: "PRIVATE_VISUAL_CLICK_OUTPUT",
+      details: details("visual_click", 2, snapshotText),
+    }));
+    const captureBrowserLiveView = vi.fn(async () => ({
+      image: Buffer.from("live pixels"),
+      receipt: liveReceipt(1, sha256("live pixels")),
+    }));
+    const service = new BrowserSessionControlService(
+      fixture.store,
+      {
+        hasActiveBrowserSession: vi.fn(() => true),
+        captureBrowserTakeoverSnapshot: vi.fn(async () =>
+          captureResult(snapshotText, 1),
+        ),
+        captureBrowserLiveView,
+        executeBrowserTakeoverAction,
+      },
+      new BrowserSessionPauseManager(fixture.store),
+    );
+    await service.pause(fixture.threadId, fixture.runId);
+    const snapshot = await service.snapshot(fixture.threadId, fixture.runId);
+
+    const receipt = await service.executeTakeover(
+      fixture.threadId,
+      fixture.runId,
+      {
+        ...binding(snapshot),
+        action: "visual_click",
+        expectedLiveImageSha256: sha256("live pixels"),
+        expectedViewportWidth: 1_280,
+        expectedViewportHeight: 900,
+        x: 640,
+        y: 450,
+      },
+    );
+
+    expect(receipt).toEqual(
+      expect.objectContaining({
+        action: "visual_click",
+        sourceLiveImageSha256: sha256("live pixels"),
+        viewportWidth: 1_280,
+        viewportHeight: 900,
+        coordinateXSha256: sha256("640"),
+        coordinateYSha256: sha256("450"),
+      }),
+    );
+    expect(captureBrowserLiveView).toHaveBeenCalledOnce();
+    expect(executeBrowserTakeoverAction).toHaveBeenCalledWith(
+      { threadId: fixture.threadId, runId: fixture.runId },
+      expect.objectContaining({
+        action: "visual_click",
+        x: 640,
+        y: 450,
+      }),
+      undefined,
+    );
+    const events = await fixture.store.listEvents(fixture.threadId);
+    expect(JSON.stringify(events)).not.toContain('"x":640');
+    expect(JSON.stringify(events)).not.toContain('"y":450');
+    expect(JSON.stringify(events)).not.toContain("PRIVATE_VISUAL_CLICK_OUTPUT");
+    await fixture.store.close();
+  });
+
+  it("rejects a visual click when the displayed live image is stale", async () => {
+    const fixture = await createFixture();
+    const snapshotText = "- heading [ref=e1]";
+    const executeBrowserTakeoverAction = vi.fn();
+    const service = new BrowserSessionControlService(
+      fixture.store,
+      {
+        hasActiveBrowserSession: vi.fn(() => true),
+        captureBrowserTakeoverSnapshot: vi.fn(async () =>
+          captureResult(snapshotText, 1),
+        ),
+        captureBrowserLiveView: vi.fn(async () => ({
+          image: Buffer.from("new pixels"),
+          receipt: liveReceipt(1, sha256("new pixels")),
+        })),
+        executeBrowserTakeoverAction,
+      },
+      new BrowserSessionPauseManager(fixture.store),
+    );
+    await service.pause(fixture.threadId, fixture.runId);
+    const snapshot = await service.snapshot(fixture.threadId, fixture.runId);
+
+    await expect(
+      service.executeTakeover(fixture.threadId, fixture.runId, {
+        ...binding(snapshot),
+        action: "visual_click",
+        expectedLiveImageSha256: sha256("old pixels"),
+        expectedViewportWidth: 1_280,
+        expectedViewportHeight: 900,
+        x: 100,
+        y: 200,
+      }),
+    ).rejects.toThrow("action failed");
+    expect(executeBrowserTakeoverAction).not.toHaveBeenCalled();
+    expect(
+      (await fixture.store.listEvents(fixture.threadId)).at(-1)?.type,
+    ).toBe("browser.takeover.failed");
+    await fixture.store.close();
+  });
 });
 
 function details(
@@ -382,6 +489,38 @@ function binding(
     expectedActiveTabId: snapshot.activeTabId,
     expectedTabCount: snapshot.tabCount,
     expectedTabSetSha256: snapshot.tabSetSha256,
+  };
+}
+
+function liveReceipt(operation: number, imageSha256: string) {
+  const content = {
+    kind: "napier.browser-live-view" as const,
+    schemaVersion: 3 as const,
+    threadId: "thread_live",
+    runId: "run_live",
+    sessionIdSha256: "a".repeat(64),
+    sessionOperation: operation,
+    activeTabId: "tab_1",
+    tabCount: 1,
+    tabSetSha256: sha256(canonicalJson(["tab_1"])),
+    imageSha256,
+    imageBytes: 11,
+    mimeType: "image/png" as const,
+    viewportWidth: 1_280,
+    viewportHeight: 900,
+    capturedAt: "2026-08-05T00:00:00.000Z",
+    currentUrlSha256: "e".repeat(64),
+    currentOriginSha256: "f".repeat(64),
+    titleSha256: "1".repeat(64),
+    browserExecutableSha256: "b".repeat(64),
+    browserVersionSha256: "c".repeat(64),
+    limitsSha256: "d".repeat(64),
+    networkRequestCount: operation,
+    blockedRequestCount: 0,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
   };
 }
 

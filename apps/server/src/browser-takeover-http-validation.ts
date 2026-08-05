@@ -1,4 +1,11 @@
-import type { ExecuteBrowserTakeoverActionRequest } from "@napier/contracts/browser-takeover";
+import {
+  BROWSER_TAKEOVER_KEYS,
+  type ExecuteBrowserTakeoverActionRequest,
+} from "@napier/contracts/browser-takeover";
+import {
+  BROWSER_LIVE_VIEWPORT_HEIGHT,
+  BROWSER_LIVE_VIEWPORT_WIDTH,
+} from "@napier/contracts/browser-live-view";
 
 export function parseBrowserTakeoverActionRequest(
   input: unknown,
@@ -8,6 +15,8 @@ export function parseBrowserTakeoverActionRequest(
   const binding = takeoverBinding(input);
   if (!binding) return undefined;
   if (action === "click") return parseClick(input, binding);
+  if (action === "visual_click") return parseVisualClick(input, binding);
+  if (action === "keypress") return parseKeypress(input, binding);
   if (action === "type") return parseType(input, binding);
   if (action === "select") return parseSelect(input, binding);
   if (action === "scroll") return parseScroll(input, binding);
@@ -58,6 +67,76 @@ function parseClick(
         ...binding,
         action: "click",
         ref,
+        ...(allowCrossOrigin === true ? { allowCrossOrigin } : {}),
+      }
+    : undefined;
+}
+
+function parseVisualClick(
+  input: Record<string, unknown>,
+  binding: TakeoverBinding,
+): ExecuteBrowserTakeoverActionRequest | undefined {
+  if (
+    !exactKeys(input, [
+      ...bindingKeys,
+      "action",
+      "expectedLiveImageSha256",
+      "expectedViewportWidth",
+      "expectedViewportHeight",
+      "x",
+      "y",
+      "allowCrossOrigin",
+    ])
+  ) {
+    return undefined;
+  }
+  const image = input["expectedLiveImageSha256"];
+  const x = input["x"];
+  const y = input["y"];
+  const allowCrossOrigin = input["allowCrossOrigin"];
+  return hash(image) &&
+    input["expectedViewportWidth"] === BROWSER_LIVE_VIEWPORT_WIDTH &&
+    input["expectedViewportHeight"] === BROWSER_LIVE_VIEWPORT_HEIGHT &&
+    Number.isSafeInteger(x) &&
+    Number(x) >= 0 &&
+    Number(x) < BROWSER_LIVE_VIEWPORT_WIDTH &&
+    Number.isSafeInteger(y) &&
+    Number(y) >= 0 &&
+    Number(y) < BROWSER_LIVE_VIEWPORT_HEIGHT &&
+    (allowCrossOrigin === undefined || typeof allowCrossOrigin === "boolean")
+    ? {
+        ...binding,
+        action: "visual_click",
+        expectedLiveImageSha256: image,
+        expectedViewportWidth: BROWSER_LIVE_VIEWPORT_WIDTH,
+        expectedViewportHeight: BROWSER_LIVE_VIEWPORT_HEIGHT,
+        x: Number(x),
+        y: Number(y),
+        ...(allowCrossOrigin === true ? { allowCrossOrigin } : {}),
+      }
+    : undefined;
+}
+
+function parseKeypress(
+  input: Record<string, unknown>,
+  binding: TakeoverBinding,
+): ExecuteBrowserTakeoverActionRequest | undefined {
+  if (
+    !exactKeys(input, [...bindingKeys, "action", "key", "allowCrossOrigin"])
+  ) {
+    return undefined;
+  }
+  const key = input["key"];
+  const allowCrossOrigin = input["allowCrossOrigin"];
+  return typeof key === "string" &&
+    BROWSER_TAKEOVER_KEYS.includes(
+      key as (typeof BROWSER_TAKEOVER_KEYS)[number],
+    ) &&
+    (allowCrossOrigin === undefined || typeof allowCrossOrigin === "boolean")
+    ? {
+        ...binding,
+        action: "keypress",
+        key: key as (typeof BROWSER_TAKEOVER_KEYS)[number],
         ...(allowCrossOrigin === true ? { allowCrossOrigin } : {}),
       }
     : undefined;

@@ -699,6 +699,17 @@ Web clears private inputs after every attempt. Returning control resumes the
 exact pause state and releases the Agent's next Browser action on the same Run
 and Session.
 
+Visual and keyboard handoff are takeover-only internal actions rather than
+Agent Browser schema actions. `BrowserLiveViewReceipt` binds the PNG hash,
+1280×900 viewport, Session operation, selected tab, URL/origin/title hashes,
+and tab set. Web verifies PNG bytes, dimensions, and stable receipt before
+mapping a rendered image point into integer Browser coordinates. Runtime then
+recaptures Live under the same pause and Session queues and compares image,
+viewport, operation, tab, and tab-set evidence before executing. Durable
+receipts keep only image and coordinate hashes. Keyboard handoff admits only a
+fixed navigation-key enum; it cannot enter text or browser shortcuts such as
+address-bar focus.
+
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate
 the environment name and current value, then create or re-enable only the
@@ -4267,9 +4278,9 @@ only redacted tool arguments plus bounded operation evidence.
 The Browser surface now provides read-only dynamic-page research, bounded
 explicit tabs/history, Browser Live, pause/resume, one-use interaction
 confirmation, and pause-bound operator takeover in the isolated Run profile.
-Existing-user Chrome relay, login/CAPTCHA handoff, download Artifact UX,
-viewport streaming protocols, cross-restart Source/Session recovery, and
-broader automation reliability remain P0.
+Existing-user Chrome relay, automated CAPTCHA/login-wall diagnosis, download
+Artifact UX, viewport streaming protocols, cross-restart Source/Session/login
+recovery, and broader automation reliability remain P0.
 
 ### Research Source and Citation Flow
 

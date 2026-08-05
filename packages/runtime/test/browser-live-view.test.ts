@@ -22,7 +22,7 @@ describe("Browser Live view service", () => {
       image: Buffer.from("live"),
       receipt: {
         kind: "napier.browser-live-view" as const,
-        schemaVersion: 2 as const,
+        schemaVersion: 3 as const,
         threadId: fixture.threadId,
         runId: fixture.runId,
         sessionIdSha256: "a".repeat(64),
@@ -33,6 +33,8 @@ describe("Browser Live view service", () => {
         imageSha256: "b".repeat(64),
         imageBytes: 4,
         mimeType: "image/png" as const,
+        viewportWidth: 1_280,
+        viewportHeight: 900,
         capturedAt: "2026-08-04T00:00:00.000Z",
         currentUrlSha256: "c".repeat(64),
         currentOriginSha256: "d".repeat(64),

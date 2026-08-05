@@ -1809,6 +1809,29 @@ button:disabled {
   letter-spacing: 0.04em;
 }
 
+.browser-takeover-desk .browser-takeover-viewport {
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  cursor: crosshair;
+  background: #050806;
+  border: 0;
+  border-bottom: 1px solid rgb(220 233 224 / 12%);
+  border-radius: 0;
+}
+
+.browser-takeover-desk .browser-takeover-viewport:hover {
+  background: #050806;
+}
+
+.browser-takeover-viewport img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: none;
+}
+
 .browser-takeover-desk pre {
   max-height: 190px;
   padding: 11px 13px;
@@ -1855,6 +1878,23 @@ button:disabled {
   display: flex;
   gap: 5px;
   align-items: center;
+}
+
+.browser-takeover-key {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: #91aa9b;
+}
+
+.browser-takeover-key select {
+  min-height: 27px;
+  color: #f4f0e7;
+  background: #0d1410;
+  border: 1px solid rgb(220 233 224 / 24%);
+  border-radius: 2px;
 }
 
 .browser-takeover-controls label {

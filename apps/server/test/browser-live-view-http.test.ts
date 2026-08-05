@@ -33,6 +33,12 @@ describe("Browser Live view HTTP", () => {
     expect(response.headers.get("x-napier-browser-session-operation")).toBe(
       "2",
     );
+    expect(response.headers.get("x-napier-browser-viewport-width")).toBe(
+      "1280",
+    );
+    expect(response.headers.get("x-napier-browser-viewport-height")).toBe(
+      "900",
+    );
     expect(response.headers.get("x-napier-browser-active-tab-id")).toBe(
       receipt.activeTabId,
     );
@@ -67,7 +73,7 @@ describe("Browser Live view HTTP", () => {
 function liveReceipt(image: Buffer): BrowserLiveViewReceipt {
   const content = {
     kind: "napier.browser-live-view" as const,
-    schemaVersion: 2 as const,
+    schemaVersion: 3 as const,
     threadId: "thread_browser_live",
     runId: "run_browser_live",
     sessionIdSha256: "a".repeat(64),
@@ -78,6 +84,8 @@ function liveReceipt(image: Buffer): BrowserLiveViewReceipt {
     imageSha256: createHash("sha256").update(image).digest("hex"),
     imageBytes: image.byteLength,
     mimeType: "image/png" as const,
+    viewportWidth: 1_280,
+    viewportHeight: 900,
     capturedAt: "2026-08-04T00:00:00.000Z",
     currentUrlSha256: "b".repeat(64),
     currentOriginSha256: "c".repeat(64),

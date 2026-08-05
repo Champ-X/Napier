@@ -1,5 +1,24 @@
+export const BROWSER_TAKEOVER_KEYS = [
+  "Tab",
+  "Shift+Tab",
+  "Enter",
+  "Escape",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "PageUp",
+  "PageDown",
+  "Home",
+  "End",
+] as const;
+
+export type BrowserTakeoverKey = (typeof BROWSER_TAKEOVER_KEYS)[number];
+
 export type BrowserTakeoverAction =
   | "click"
+  | "visual_click"
+  | "keypress"
   | "type"
   | "select"
   | "scroll"
@@ -52,6 +71,12 @@ interface BrowserTakeoverActionBinding {
   expectedTabSetSha256: string;
 }
 
+interface BrowserTakeoverVisualBinding {
+  expectedLiveImageSha256: string;
+  expectedViewportWidth: number;
+  expectedViewportHeight: number;
+}
+
 export type ExecuteBrowserTakeoverActionRequest =
   | (BrowserTakeoverActionBinding & {
       action: "click";
@@ -97,6 +122,18 @@ export type ExecuteBrowserTakeoverActionRequest =
   | (BrowserTakeoverActionBinding & {
       action: "wait";
       durationMs?: number;
+    })
+  | (BrowserTakeoverActionBinding &
+      BrowserTakeoverVisualBinding & {
+        action: "visual_click";
+        x: number;
+        y: number;
+        allowCrossOrigin?: boolean;
+      })
+  | (BrowserTakeoverActionBinding & {
+      action: "keypress";
+      key: BrowserTakeoverKey;
+      allowCrossOrigin?: boolean;
     });
 
 export interface BrowserTakeoverActionReceipt {
@@ -115,6 +152,12 @@ export interface BrowserTakeoverActionReceipt {
   sourceActiveTabId: string;
   sourceTabCount: number;
   sourceTabSetSha256: string;
+  sourceLiveImageSha256?: string;
+  viewportWidth?: number;
+  viewportHeight?: number;
+  coordinateXSha256?: string;
+  coordinateYSha256?: string;
+  key?: BrowserTakeoverKey;
   targetTabIdSha256?: string;
   targetUrlSha256?: string;
   targetOriginSha256?: string;

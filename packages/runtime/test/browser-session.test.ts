@@ -461,7 +461,7 @@ describe("RunBrowserSessionManager", () => {
     );
     expect(live.receipt).toEqual(
       expect.objectContaining({
-        schemaVersion: 2,
+        schemaVersion: 3,
         activeTabId: "tab_2",
         tabCount: 2,
         tabSetSha256: opened.details.tabSetSha256,
@@ -580,6 +580,80 @@ describe("RunBrowserSessionManager", () => {
       }),
     ).rejects.toThrow("final tab");
     expect(finalHarness.browsers[0]?.closed).toBe(true);
+  });
+
+  it("allows visual and keyboard actions only through takeover", async () => {
+    const harness = await createHarness();
+    const owner = {
+      threadId: "thread_visual_takeover",
+      runId: "run_visual_takeover",
+    };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/",
+    });
+
+    await expect(
+      harness.manager.execute(owner, {
+        action: "visual_click",
+        x: 640,
+        y: 450,
+      }),
+    ).rejects.toThrow("pause-bound takeover");
+    expect(harness.browsers[0]?.closed).toBe(false);
+
+    const clicked = await harness.manager.executeTakeoverAction(owner, {
+      action: "visual_click",
+      x: 640,
+      y: 450,
+    });
+    const pressed = await harness.manager.executeTakeoverAction(owner, {
+      action: "keypress",
+      key: "Enter",
+    });
+    expect(clicked.details.sessionOperation).toBe(2);
+    expect(pressed.details.sessionOperation).toBe(3);
+    expect(harness.pages[0]?.visualClicks).toEqual([{ x: 640, y: 450 }]);
+    expect(harness.pages[0]?.pressedKeys).toEqual(["Enter"]);
+    await harness.manager.cancelRun(owner);
+  });
+
+  it("rejects invalid visual coordinates and key names", async () => {
+    const harness = await createHarness();
+    const owner = {
+      threadId: "thread_visual_invalid",
+      runId: "run_visual_invalid",
+    };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/",
+    });
+
+    await expect(
+      harness.manager.executeTakeoverAction(owner, {
+        action: "visual_click",
+        x: 1_280,
+        y: 0,
+      }),
+    ).rejects.toThrow("coordinates are invalid");
+    expect(harness.browsers[0]?.closed).toBe(true);
+
+    const keyHarness = await createHarness();
+    const keyOwner = {
+      threadId: "thread_key_invalid",
+      runId: "run_key_invalid",
+    };
+    await keyHarness.manager.execute(keyOwner, {
+      action: "start",
+      url: "https://one.example/",
+    });
+    await expect(
+      keyHarness.manager.executeTakeoverAction(keyOwner, {
+        action: "keypress",
+        key: "Control+L" as "Enter",
+      }),
+    ).rejects.toThrow("key is invalid");
+    expect(keyHarness.browsers[0]?.closed).toBe(true);
   });
 
   it("closes the Session when its bounded operation budget is exhausted", async () => {

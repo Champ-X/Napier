@@ -50,6 +50,14 @@ function setBrowserLiveViewHeaders(
   context.header("Cache-Control", "no-store");
   context.header("Content-Type", receipt.mimeType);
   context.header("Content-Length", String(receipt.imageBytes));
+  context.header(
+    "X-Napier-Browser-Viewport-Width",
+    String(receipt.viewportWidth),
+  );
+  context.header(
+    "X-Napier-Browser-Viewport-Height",
+    String(receipt.viewportHeight),
+  );
   context.header("X-Content-Type-Options", "nosniff");
   setContentSha256Header(context, receipt.imageSha256, "body");
   context.header("X-Napier-Browser-Live-Receipt-SHA256", receipt.contentSha256);

@@ -1,4 +1,9 @@
 import type { Browser, LaunchOptions } from "playwright-core";
+import {
+  BROWSER_LIVE_VIEWPORT_HEIGHT,
+  BROWSER_LIVE_VIEWPORT_WIDTH,
+} from "@napier/contracts/browser-live-view";
+import { type BrowserTakeoverKey } from "@napier/contracts/browser-takeover";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type {
@@ -10,6 +15,8 @@ import type { PublicHostLookup } from "./public-network.js";
 export const MAX_ACTIVE_BROWSER_SESSIONS = 2;
 export const MAX_BROWSER_SESSION_TABS = 4;
 export const MAX_BROWSER_SESSION_OPERATIONS = 64;
+export const BROWSER_VIEWPORT_WIDTH = BROWSER_LIVE_VIEWPORT_WIDTH;
+export const BROWSER_VIEWPORT_HEIGHT = BROWSER_LIVE_VIEWPORT_HEIGHT;
 export const MAX_BROWSER_SNAPSHOT_CHARS = 32_000;
 export const MAX_BROWSER_SCREENSHOT_BYTES = 8 * 1024 * 1024;
 export const BROWSER_ACTION_TIMEOUT_MS = 15_000;
@@ -27,6 +34,8 @@ export const BROWSER_LIMITS_SHA256 = sha256(
     maxActiveSessions: MAX_ACTIVE_BROWSER_SESSIONS,
     maxTabs: MAX_BROWSER_SESSION_TABS,
     maxOperations: MAX_BROWSER_SESSION_OPERATIONS,
+    viewportWidth: BROWSER_VIEWPORT_WIDTH,
+    viewportHeight: BROWSER_VIEWPORT_HEIGHT,
     maxSnapshotChars: MAX_BROWSER_SNAPSHOT_CHARS,
     maxScreenshotBytes: MAX_BROWSER_SCREENSHOT_BYTES,
     actionTimeoutMs: BROWSER_ACTION_TIMEOUT_MS,
@@ -128,6 +137,17 @@ export type BrowserSessionRequest =
       action: "download";
       target: BrowserElementTarget;
       path: string;
+      allowCrossOrigin?: boolean;
+    }
+  | {
+      action: "visual_click";
+      x: number;
+      y: number;
+      allowCrossOrigin?: boolean;
+    }
+  | {
+      action: "keypress";
+      key: BrowserTakeoverKey;
       allowCrossOrigin?: boolean;
     }
   | { action: "screenshot" }

@@ -231,6 +231,8 @@ export class FakePage {
   readonly filled: Array<{ selector: string; text: string }> = [];
   readonly selected: Array<{ selector: string; values: string[] }> = [];
   readonly uploaded: Array<{ selector: string; path: string }> = [];
+  readonly visualClicks: Array<{ x: number; y: number }> = [];
+  readonly pressedKeys: string[] = [];
   readonly download: FakeDownload;
   blockClicks = false;
   closed = false;
@@ -378,6 +380,18 @@ export class FakePage {
   async screenshot() {
     return Buffer.from("fake png");
   }
+
+  readonly mouse = {
+    click: async (x: number, y: number) => {
+      this.visualClicks.push({ x, y });
+    },
+  };
+
+  readonly keyboard = {
+    press: async (key: string) => {
+      this.pressedKeys.push(key);
+    },
+  };
 
   async waitForTimeout(durationMs: number) {
     await new Promise<void>((resolve) =>

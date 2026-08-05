@@ -3,6 +3,8 @@ import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   MAX_ACTIVE_BROWSER_SESSIONS,
+  BROWSER_VIEWPORT_HEIGHT,
+  BROWSER_VIEWPORT_WIDTH,
   type BrowserPageSourceCapture,
   type BrowserSessionOperationResult,
   type BrowserSessionOwner,
@@ -74,7 +76,7 @@ export class RunBrowserSessionManager {
         const details = result.details;
         const content = {
           kind: "napier.browser-live-view" as const,
-          schemaVersion: 2 as const,
+          schemaVersion: 3 as const,
           threadId: owner.threadId,
           runId: owner.runId,
           sessionIdSha256: details.sessionIdSha256,
@@ -85,6 +87,8 @@ export class RunBrowserSessionManager {
           imageSha256: details.screenshotSha256!,
           imageBytes: details.screenshotBytes!,
           mimeType: "image/png" as const,
+          viewportWidth: BROWSER_VIEWPORT_WIDTH,
+          viewportHeight: BROWSER_VIEWPORT_HEIGHT,
           capturedAt: new Date().toISOString(),
           currentUrlSha256: details.currentUrlSha256,
           currentOriginSha256: details.currentOriginSha256,
@@ -170,6 +174,8 @@ export class RunBrowserSessionManager {
       {
         action:
           | "click"
+          | "visual_click"
+          | "keypress"
           | "type"
           | "select"
           | "scroll"
@@ -183,10 +189,23 @@ export class RunBrowserSessionManager {
     >,
     signal?: AbortSignal,
   ): Promise<BrowserSessionOperationResult> {
-    return await this.execute(owner, request, signal);
+    return await this.executeRequest(owner, request, signal);
   }
 
   async execute(
+    owner: BrowserSessionOwner,
+    request: BrowserSessionRequest,
+    signal?: AbortSignal,
+  ): Promise<BrowserSessionOperationResult> {
+    if (request.action === "visual_click" || request.action === "keypress") {
+      throw new Error(
+        "Browser visual and keyboard actions require pause-bound takeover",
+      );
+    }
+    return await this.executeRequest(owner, request, signal);
+  }
+
+  private async executeRequest(
     owner: BrowserSessionOwner,
     request: BrowserSessionRequest,
     signal?: AbortSignal,

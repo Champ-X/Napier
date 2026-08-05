@@ -5,7 +5,11 @@ import path from "node:path";
 import type { LaunchOptions } from "playwright-core";
 
 import type { BrowserRuntimeBinding } from "./browser-session-model.js";
-import { BROWSER_LAUNCH_TIMEOUT_MS } from "./browser-session-model.js";
+import {
+  BROWSER_LAUNCH_TIMEOUT_MS,
+  BROWSER_VIEWPORT_HEIGHT,
+  BROWSER_VIEWPORT_WIDTH,
+} from "./browser-session-model.js";
 import { sha256File } from "./command-execution.js";
 import type { FixedIpProxyBinding } from "./fixed-ip-http-proxy.js";
 
@@ -113,6 +117,19 @@ export function browserLaunchOptions(
       "--no-first-run",
       "--no-default-browser-check",
     ],
+  };
+}
+
+export function browserContextOptions() {
+  return {
+    acceptDownloads: true,
+    serviceWorkers: "block" as const,
+    viewport: {
+      width: BROWSER_VIEWPORT_WIDTH,
+      height: BROWSER_VIEWPORT_HEIGHT,
+    },
+    ignoreHTTPSErrors: false,
+    permissions: [],
   };
 }
 

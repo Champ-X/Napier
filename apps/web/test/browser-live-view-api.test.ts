@@ -17,7 +17,7 @@ describe("Browser Live view Web API", () => {
 
     const live = await getBrowserLiveView("thread_live", "run_live");
 
-    expect(await live.blob.text()).toBe("PNG_BROWSER_LIVE");
+    expect((await live.blob.arrayBuffer()).byteLength).toBe(24);
     expect(live.blob.type).toBe("image/png");
     expect(live.receipt).toEqual(fixture.receipt);
   });
@@ -30,13 +30,13 @@ describe("Browser Live view Web API", () => {
       vi
         .fn()
         .mockResolvedValueOnce(
-          new Response(Buffer.from("TAMPERED_CONTENT"), {
+          new Response(new Uint8Array(24).buffer, {
             status: 200,
             headers: tamperedHeaders,
           }),
         )
         .mockResolvedValueOnce(
-          new Response(Buffer.from("PNG_BROWSER_LIVE"), {
+          new Response(pngBytes(), {
             status: 200,
             headers: new Headers([
               ...fixture.response.headers,
@@ -62,7 +62,7 @@ describe("Browser Live view Web API", () => {
       "fetch",
       vi.fn(
         async () =>
-          new Response(Buffer.from("PNG_BROWSER_LIVE"), {
+          new Response(pngBytes(), {
             status: 200,
             headers,
           }),
@@ -73,14 +73,30 @@ describe("Browser Live view Web API", () => {
       "identity mismatch",
     );
   });
+
+  it("rejects PNG dimensions that differ from the bound viewport", async () => {
+    const fixture = await responseFixture();
+    const bytes = pngBytes(640, 450);
+    const headers = new Headers(fixture.response.headers);
+    headers.set("Content-Length", String(bytes.byteLength));
+    headers.set("X-Napier-Content-SHA256", await sha256Bytes(bytes));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(bytes, { status: 200, headers })),
+    );
+
+    await expect(getBrowserLiveView("thread_live", "run_live")).rejects.toThrow(
+      "dimensions mismatch",
+    );
+  });
 });
 
 async function responseFixture() {
-  const bytes = new TextEncoder().encode("PNG_BROWSER_LIVE");
+  const bytes = pngBytes();
   const imageSha256 = await sha256Bytes(bytes);
   const content = {
     kind: "napier.browser-live-view" as const,
-    schemaVersion: 2 as const,
+    schemaVersion: 3 as const,
     threadId: "thread_live",
     runId: "run_live",
     sessionIdSha256: "a".repeat(64),
@@ -91,6 +107,8 @@ async function responseFixture() {
     imageSha256,
     imageBytes: bytes.byteLength,
     mimeType: "image/png" as const,
+    viewportWidth: 1_280,
+    viewportHeight: 900,
     capturedAt: "2026-08-04T00:00:00.000Z",
     currentUrlSha256: "b".repeat(64),
     currentOriginSha256: "c".repeat(64),
@@ -117,6 +135,8 @@ async function responseFixture() {
     "X-Napier-Run-Id": receipt.runId,
     "X-Napier-Browser-Session-SHA256": receipt.sessionIdSha256,
     "X-Napier-Browser-Session-Operation": String(receipt.sessionOperation),
+    "X-Napier-Browser-Viewport-Width": String(receipt.viewportWidth),
+    "X-Napier-Browser-Viewport-Height": String(receipt.viewportHeight),
     "X-Napier-Browser-Active-Tab-Id": receipt.activeTabId,
     "X-Napier-Browser-Tab-Count": String(receipt.tabCount),
     "X-Napier-Browser-Tab-Set-SHA256": receipt.tabSetSha256,
@@ -140,12 +160,17 @@ async function responseFixture() {
   };
 }
 
-async function sha256Bytes(value: Uint8Array): Promise<string> {
-  const buffer = value.buffer.slice(
-    value.byteOffset,
-    value.byteOffset + value.byteLength,
-  ) as ArrayBuffer;
-  const digest = await crypto.subtle.digest("SHA-256", buffer);
+function pngBytes(width = 1_280, height = 900): ArrayBuffer {
+  const bytes = new Uint8Array(24);
+  bytes.set([137, 80, 78, 71, 13, 10, 26, 10]);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(16, width);
+  view.setUint32(20, height);
+  return bytes.buffer;
+}
+
+async function sha256Bytes(value: ArrayBuffer): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", value);
   return [...new Uint8Array(digest)]
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");

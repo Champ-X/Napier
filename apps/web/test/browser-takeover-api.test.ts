@@ -124,6 +124,68 @@ describe("Browser takeover Web API", () => {
       getBrowserTakeoverSnapshot(snapshot.threadId, snapshot.runId),
     ).rejects.toThrow("response is invalid");
   });
+
+  it("verifies visual click and keypress evidence", async () => {
+    const snapshot = await snapshotFixture();
+    const visualRequest = {
+      action: "visual_click" as const,
+      expectedPauseStateSha256: snapshot.pauseStateSha256,
+      expectedSessionIdSha256: snapshot.sessionIdSha256,
+      expectedSessionOperation: snapshot.sessionOperation,
+      expectedSnapshotSha256: snapshot.snapshotSha256,
+      expectedActiveTabId: snapshot.activeTabId,
+      expectedTabCount: snapshot.tabCount,
+      expectedTabSetSha256: snapshot.tabSetSha256,
+      expectedLiveImageSha256: "8".repeat(64),
+      expectedViewportWidth: 1_280,
+      expectedViewportHeight: 900,
+      x: 640,
+      y: 450,
+    };
+    const visualReceipt = await actionReceiptFixture(snapshot, visualRequest, {
+      sourceLiveImageSha256: visualRequest.expectedLiveImageSha256,
+      viewportWidth: 1_280,
+      viewportHeight: 900,
+      coordinateXSha256: await sha256Text("640"),
+      coordinateYSha256: await sha256Text("450"),
+    });
+    const keyRequest = {
+      action: "keypress" as const,
+      expectedPauseStateSha256: snapshot.pauseStateSha256,
+      expectedSessionIdSha256: snapshot.sessionIdSha256,
+      expectedSessionOperation: snapshot.sessionOperation,
+      expectedSnapshotSha256: snapshot.snapshotSha256,
+      expectedActiveTabId: snapshot.activeTabId,
+      expectedTabCount: snapshot.tabCount,
+      expectedTabSetSha256: snapshot.tabSetSha256,
+      key: "Enter" as const,
+    };
+    const keyReceipt = await actionReceiptFixture(snapshot, keyRequest, {
+      key: "Enter",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(stableResponse(visualReceipt))
+        .mockResolvedValueOnce(stableResponse(keyReceipt)),
+    );
+
+    await expect(
+      executeBrowserTakeoverAction(
+        snapshot.threadId,
+        snapshot.runId,
+        visualRequest,
+      ),
+    ).resolves.toEqual(visualReceipt);
+    await expect(
+      executeBrowserTakeoverAction(
+        snapshot.threadId,
+        snapshot.runId,
+        keyRequest,
+      ),
+    ).resolves.toEqual(keyReceipt);
+  });
 });
 
 async function snapshotFixture(): Promise<BrowserTakeoverSnapshot> {
@@ -204,6 +266,47 @@ async function receiptFixture(
     snapshotSha256: "3".repeat(64),
     snapshotChars: snapshot.snapshotChars,
     snapshotTruncated: false,
+  };
+  return {
+    ...content,
+    contentSha256: await sha256Text(canonicalJson(content)),
+  };
+}
+
+async function actionReceiptFixture(
+  snapshot: BrowserTakeoverSnapshot,
+  request: Parameters<typeof executeBrowserTakeoverAction>[2],
+  evidence: Record<string, unknown>,
+): Promise<BrowserTakeoverActionReceipt> {
+  const content = {
+    kind: "napier.browser-takeover-action" as const,
+    schemaVersion: 2 as const,
+    id: "browser_takeover_visual01" as const,
+    threadId: snapshot.threadId,
+    runId: snapshot.runId,
+    action: request.action,
+    status: "completed" as const,
+    requestSha256: await sha256Text(canonicalJson(request)),
+    pauseStateSha256: snapshot.pauseStateSha256,
+    sourceSessionIdSha256: snapshot.sessionIdSha256,
+    sourceSessionOperation: snapshot.sessionOperation,
+    sourceSnapshotSha256: snapshot.snapshotSha256,
+    sourceActiveTabId: snapshot.activeTabId,
+    sourceTabCount: snapshot.tabCount,
+    sourceTabSetSha256: snapshot.tabSetSha256,
+    ...evidence,
+    crossOriginAuthorized:
+      "allowCrossOrigin" in request && request.allowCrossOrigin === true,
+    requestedAt: "2026-08-05T00:00:01.000Z",
+    settledAt: "2026-08-05T00:00:02.000Z",
+    sessionIdSha256: snapshot.sessionIdSha256,
+    sessionOperation: snapshot.sessionOperation + 1,
+    activeTabId: snapshot.activeTabId,
+    tabCount: snapshot.tabCount,
+    tabSetSha256: snapshot.tabSetSha256,
+    currentUrlSha256: snapshot.currentUrlSha256,
+    currentOriginSha256: snapshot.currentOriginSha256,
+    titleSha256: snapshot.titleSha256,
   };
   return {
     ...content,

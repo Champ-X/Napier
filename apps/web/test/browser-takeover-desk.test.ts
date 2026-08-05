@@ -15,6 +15,10 @@ describe("Browser takeover desk", () => {
     expect(source).toContain("Scroll down");
     expect(source).toContain("New tab");
     expect(source).toContain("Forward");
+    expect(source).toContain("Click the verified Browser viewport");
+    expect(source).toContain("Navigation key");
+    expect(source).toContain("Press key");
+    expect(source).toContain("expectedLiveImageSha256");
     expect(source).toContain(
       "...(allowCrossOrigin ? { allowCrossOrigin: true } : {})",
     );

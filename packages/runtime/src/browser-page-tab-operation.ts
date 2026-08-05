@@ -1,7 +1,10 @@
 import type { Page } from "playwright-core";
+import { BROWSER_TAKEOVER_KEYS } from "@napier/contracts/browser-takeover";
 
 import {
   BROWSER_NAVIGATION_TIMEOUT_MS,
+  BROWSER_VIEWPORT_HEIGHT,
+  BROWSER_VIEWPORT_WIDTH,
   type BrowserSessionRequest,
   type BrowserSessionTabDescriptor,
 } from "./browser-session-model.js";
@@ -17,19 +20,30 @@ export type BrowserTabRequest = Extract<
   | { action: "tab_close" }
 >;
 
-export function isBrowserTabRequest(
+type BrowserVisualTakeoverRequest = Extract<
+  BrowserSessionRequest,
+  { action: "visual_click" } | { action: "keypress" }
+>;
+
+export type BrowserPageSpecialRequest =
+  | BrowserTabRequest
+  | BrowserVisualTakeoverRequest;
+
+export function isBrowserPageSpecialRequest(
   request: BrowserSessionRequest,
-): request is BrowserTabRequest {
+): request is BrowserPageSpecialRequest {
   return (
     request.action === "tab_new" ||
     request.action === "tab_list" ||
     request.action === "tab_switch" ||
-    request.action === "tab_close"
+    request.action === "tab_close" ||
+    request.action === "visual_click" ||
+    request.action === "keypress"
   );
 }
 
-export async function performBrowserTabOperation(input: {
-  request: BrowserTabRequest;
+export async function performBrowserPageSpecialOperation(input: {
+  request: BrowserPageSpecialRequest;
   tabs: BrowserSessionTabs;
   navigation: BrowserSessionNavigation;
   preflightNavigation: (
@@ -49,6 +63,37 @@ export async function performBrowserTabOperation(input: {
   listedTabs?: BrowserSessionTabDescriptor[];
 }> {
   const request = input.request;
+  if (request.action === "visual_click") {
+    if (
+      !Number.isSafeInteger(request.x) ||
+      request.x < 0 ||
+      request.x >= BROWSER_VIEWPORT_WIDTH ||
+      !Number.isSafeInteger(request.y) ||
+      request.y < 0 ||
+      request.y >= BROWSER_VIEWPORT_HEIGHT
+    ) {
+      throw new Error("Browser visual click coordinates are invalid");
+    }
+    const page = input.tabs.activePage;
+    await input.withNetwork(() =>
+      input.navigation.run(page, request.allowCrossOrigin === true, () =>
+        page.mouse.click(request.x, request.y),
+      ),
+    );
+    return { state: await input.pageState(page, input.signal) };
+  }
+  if (request.action === "keypress") {
+    if (!BROWSER_TAKEOVER_KEYS.includes(request.key)) {
+      throw new Error("Browser takeover key is invalid");
+    }
+    const page = input.tabs.activePage;
+    await input.withNetwork(() =>
+      input.navigation.run(page, request.allowCrossOrigin === true, () =>
+        page.keyboard.press(request.key),
+      ),
+    );
+    return { state: await input.pageState(page, input.signal) };
+  }
   if (request.action === "tab_new") {
     const created = await input.tabs.create();
     input.configurePage(created.page);

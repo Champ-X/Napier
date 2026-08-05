@@ -1,6 +1,9 @@
+export const BROWSER_LIVE_VIEWPORT_WIDTH = 1280;
+export const BROWSER_LIVE_VIEWPORT_HEIGHT = 900;
+
 export interface BrowserLiveViewReceipt {
   kind: "napier.browser-live-view";
-  schemaVersion: 2;
+  schemaVersion: 3;
   threadId: string;
   runId: string;
   sessionIdSha256: string;
@@ -11,6 +14,8 @@ export interface BrowserLiveViewReceipt {
   imageSha256: string;
   imageBytes: number;
   mimeType: "image/png";
+  viewportWidth: number;
+  viewportHeight: number;
   capturedAt: string;
   currentUrlSha256: string;
   currentOriginSha256: string;
