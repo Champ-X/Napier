@@ -18,3 +18,4 @@ benchmark-results/
 !benchmark-results/
 benchmark-results/*
 !benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json
+!benchmark-results/napier-open-web-executor-comparison-seed-20260805.json

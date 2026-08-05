@@ -4474,6 +4474,64 @@ seconds. This proves one real default-entry execution, not repeated
 reliability, automatic fallback, broad open-web quality, or cross-model
 superiority. The complete repository gate passes 2,145 regular tests.
 
+### Open-Web Executor Comparison
+
+The open-web executor comparator is separate from the retained single-product
+Research Result. `open-web-comparison-suite.mjs` deterministically derives
+low-, medium-, and high-complexity Search, URL/PDF, and JavaScript Browser
+cases from a uint32 seed. Prompts, expected facts, accepted source quotes, and
+required tool families remain private to execution; the public suite exposes
+only titles, classifications, and content bindings.
+
+`run-open-web-executor-comparison.mjs` executes default and controlled tracks
+sequentially through fresh Workspace, HOME, profile, and data roots. Controlled
+Napier enables only `web_search`, `web_fetch`, and `browser`; controlled OMP
+disables Skills, Rules, and Extensions and enables its equivalent
+`web_search`, URL `read`, and `browser` tools. The case, track, and trial
+indices jointly counterbalance order.
+
+OMP does not receive the parent credential or ambient user configuration:
+
+```text
+installed OMP entry + package manifest
+  -> APFS clone only the transitive package dependency closure
+  -> verify cloned entry bytes, version, and bounded symlinks
+  -> create fresh HOME/profile/XDG/Bun roots
+  -> run Bun + cloned entry under guarded macOS sandbox-exec
+  -> allow outbound only to three held loopback ports
+       authenticated public proxy -> production FixedIpHttpProxy
+       model proxy -> fixed DeepSeek endpoint with parent-only credential
+       CDP blocker -> honest nested-Chromium infrastructure classification
+  -> stream JSONL into bounded parsers
+  -> discard raw stdout, reasoning, tool arguments, and response bodies
+  -> scan all trial state for parent, child, and proxy credentials
+```
+
+The hidden oracle requires exact answers, original public URLs, supporting
+source quotes, and the required tool families. The stored outcome keeps only
+hashes, counts, timing, usage, tool failures, process state, and security
+receipts. Infrastructure and timeout outcomes remain visible in
+per-executor reliability aggregates but are excluded from head-to-head wins.
+`open-web-comparison-report.mjs` regenerates the suite from the seed, validates
+counterbalanced order and every exact shape, recomputes the aggregate and
+self-hash, and rejects raw evidence markers or sensitive keys. The CLI
+`--verify` path repeats that verification without credentials or network.
+
+Seed `20260805`, one trial, and a 180-second per-executor timeout produced the
+retained privacy-bounded report
+`benchmark-results/napier-open-web-executor-comparison-seed-20260805.json`
+with content hash
+`7467c6b048e21fedd40415d3704b0dcbd5067ba06250181f6df0426938c1236f`.
+Napier passed 3/3 default cases and 1/3 controlled cases; both controlled
+Search and URL/PDF cases completed the product path with zero failed tools but
+violated the exact final JSON oracle. OMP had two decisive default failures:
+Search violated the machine protocol and URL/PDF missed an expected answer
+and quote. Its default Browser outcome plus all three controlled outcomes were
+classified as infrastructure failures and excluded from paired wins. The
+aggregate therefore contains two decisive Napier-only passes and four
+excluded pairs, not six wins. No trial reported a secret leak or manual
+intervention.
+
 ## TypeScript LSP Code Intelligence Flow
 
 The LSP tools are implemented outside the oversized workspace-tool module.

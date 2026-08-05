@@ -8,6 +8,7 @@ import { verifyRuntimeEnvironmentReceipt } from "./check-runtime-environment.mjs
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
+import { verifyOpenWebComparisonReport } from "./open-web-comparison-report.mjs";
 import {
   verifyWorkflowBenchmarkSeries,
   workflowBenchmarkSeriesArtifactReferences,
@@ -83,6 +84,8 @@ const defaultOpenWebResearchBenchmarkResultPath =
   "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json";
 const defaultOpenWebResearchBenchmarkCaseRoot =
   "benchmarks/research/open-web-source-triad-v1";
+const defaultOpenWebExecutorComparisonPath =
+  "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json";
 const defaultUxBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-ux-benchmark-series-ux_first_task_cli_v1-747782333f3ad3c3.json";
 
@@ -156,6 +159,9 @@ export async function auditReleaseArtifacts(options = {}) {
   const openWebResearchBenchmarkCaseRoot =
     options.openWebResearchBenchmarkCaseRoot ??
     defaultOpenWebResearchBenchmarkCaseRoot;
+  const openWebExecutorComparisonPath =
+    options.openWebExecutorComparisonPath ??
+    defaultOpenWebExecutorComparisonPath;
   const uxBenchmarkSeriesPath =
     options.uxBenchmarkSeriesPath ?? defaultUxBenchmarkSeriesPath;
   const rootPackage = parseJson(
@@ -383,6 +389,12 @@ export async function auditReleaseArtifacts(options = {}) {
       caseRoot: openWebResearchBenchmarkCaseRoot,
       errors,
     });
+  const openWebExecutorComparisonArtifact =
+    await verifyOpenWebComparisonReleaseArtifact({
+      repoRoot,
+      reportPath: openWebExecutorComparisonPath,
+      errors,
+    });
   const uxBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: uxBenchmarkSeriesPath,
@@ -479,6 +491,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...processRecoveryBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
     openWebResearchBenchmarkArtifact,
+    openWebExecutorComparisonArtifact,
     ...uxBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
@@ -763,6 +776,11 @@ function parseCliOptions(args) {
       index += 1;
       continue;
     }
+    if (arg === "--open-web-executor-comparison-path") {
+      options.openWebExecutorComparisonPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
     if (arg === "--process-recovery-benchmark-series-path") {
       options.processRecoveryBenchmarkSeriesPath = readCliValue(
         args,
@@ -914,6 +932,29 @@ async function verifyOpenWebResearchReleaseArtifact({
     kind: "open-web-research-benchmark-result",
     ...artifact,
     valid: evidence.readable && valid,
+  };
+}
+
+async function verifyOpenWebComparisonReleaseArtifact({
+  repoRoot,
+  reportPath,
+  errors,
+}) {
+  const evidence = await readArtifactEvidence(repoRoot, reportPath, errors);
+  const report = await readJsonArtifact(repoRoot, reportPath, errors);
+  const verification = verifyOpenWebComparisonReport(report);
+  if (!verification.valid) {
+    errors.push(
+      ...verification.diagnostics.map(
+        (diagnostic) => `open-web executor comparison: ${diagnostic}`,
+      ),
+    );
+  }
+  const { readable: _readable, ...artifact } = evidence;
+  return {
+    kind: "open-web-executor-comparison",
+    ...artifact,
+    valid: evidence.readable && verification.valid,
   };
 }
 

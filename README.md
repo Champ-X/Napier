@@ -1921,6 +1921,55 @@ claim-to-citation-token adjacency. The release audit repeats that semantic
 verification. This is one current-source trial, not a freshness SLA,
 reliability distribution, or cross-model superiority claim.
 
+Compare Napier and the installed Oh My Pi on a seed-derived Search,
+URL/PDF, and JavaScript Browser suite with the same model, prompt, hidden
+oracle, and per-trial timeout:
+
+```bash
+npm run bench:research:open-web:compare -- \
+  --seed 20260805 \
+  --trials 1 \
+  --timeout-ms 180000 \
+  --credential-env DEEPSEEK_API_KEY
+```
+
+The default track preserves each product's isolated built-in capabilities.
+The controlled track disables OMP Skills, Rules, and Extensions and limits
+both products to Search, URL/PDF read, and Browser tools. Case, track, and
+trial indices counterbalance executor order. Every execution receives a fresh
+Workspace, HOME, profile, and state root. OMP runs from a byte-bound,
+dependency-closed copy of the installed v17.2.1 package under guarded macOS
+`sandbox-exec`; it can reach only an authenticated SSRF-safe public proxy, a
+bounded model proxy, and an isolated CDP blocker. The child receives a dummy
+DeepSeek key while the parent-only proxy injects the real credential.
+
+The report retains only hashes, counts, latency, usage, tool failures,
+isolation receipts, and outcome diagnostics. It omits prompts, answers,
+quotes, URLs, tool arguments, transcripts, reasoning, and credentials.
+Infrastructure and timeout outcomes remain in per-executor reliability
+metrics but are excluded from paired wins. Verify a generated report offline:
+
+```bash
+npm run bench:research:open-web:compare -- \
+  --verify benchmark-results/napier-open-web-executor-comparison-seed-20260805.json
+```
+
+A one-seed, one-trial report validates the comparison path and records current
+evidence; it is not a repeated reliability distribution or a general
+superiority claim.
+
+The retained seed-`20260805`
+[comparison report](benchmark-results/napier-open-web-executor-comparison-seed-20260805.json)
+passed offline verification with content hash
+`7467c6b048e21fedd40415d3704b0dcbd5067ba06250181f6df0426938c1236f`.
+Napier passed all three default cases and one of three controlled cases, with
+zero failed tools or manual interventions. OMP had two decisive default
+outcome failures; its other four outcomes were infrastructure failures and
+are excluded from paired wins. The default Browser infrastructure result
+reflects the unavailable isolated OMP Browser path; controlled OMP also
+attempted Browser outside the Browser-only case. The report therefore records
+two decisive Napier-only passes and four excluded pairs, not six product wins.
+
 ### First-Task UX Outcome Benchmark
 
 The fixed `ux_first_task_cli_v1` case measures the clean-state one-shot path

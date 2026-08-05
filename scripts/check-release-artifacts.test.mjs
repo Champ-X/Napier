@@ -163,6 +163,7 @@ describe("release artifacts audit", () => {
       "research-benchmark-result-2",
       "research-benchmark-ledger-2",
       "open-web-research-benchmark-result",
+      "open-web-executor-comparison",
       "ux-benchmark-series",
       "ux-benchmark-result-1",
       "ux-benchmark-ledger-1",
@@ -698,6 +699,26 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when the retained open-web executor comparison is rehashed", async () => {
+    const { root } = await createFixture();
+    const reportPath = path.join(
+      root,
+      "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json",
+    );
+    const report = JSON.parse(await readFile(reportPath, "utf8"));
+    report.summary.overall.pairCount += 1;
+    const { contentSha256: _contentSha256, ...content } = report;
+    report.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(reportPath, report);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toContain(
+      "open-web executor comparison: report_summary_invalid",
+    );
+  });
+
   it("fails when retained UX evidence is tampered", async () => {
     const { root } = await createFixture();
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
@@ -771,6 +792,15 @@ async function createFixture() {
     path.join(
       root,
       "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
+    ),
+  );
+  await cp(
+    path.resolve(
+      "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json",
+    ),
+    path.join(
+      root,
+      "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json",
     ),
   );
   await cp(
