@@ -3,6 +3,7 @@ import type { RunEvent } from "@napier/contracts";
 import type { ResearchSourceCapsuleReceipt } from "./research-source-capsule-model.js";
 import type { LocalStore } from "./store.js";
 import type { WebFetchStateCapsuleReceipt } from "./web-fetch-capsule-model.js";
+import { formatSourceContinuityGuidance } from "./source-continuity-guidance.js";
 
 export async function recordResearchSourceRecoveryContext(input: {
   threadId: string;
@@ -44,7 +45,7 @@ export async function recordWebFetchRecoveryContext(input: {
   });
 }
 
-export async function recordNetworkSourceRecoveryContexts(input: {
+export async function recordNetworkSourceContinuityContexts(input: {
   threadId: string;
   runId: string;
   enabled: boolean;
@@ -70,4 +71,39 @@ export async function recordNetworkSourceRecoveryContexts(input: {
     prepare: () => Promise.resolve(prepared.webFetch),
     record: input.record,
   });
+}
+
+export async function prepareNetworkSourceContinuity(input: {
+  threadId: string;
+  runId: string;
+  invocationSource: string;
+  automaticRecovery: boolean;
+  enabledTools: readonly string[];
+  prepare(enabled: { researchSource: boolean; webFetch: boolean }): Promise<{
+    research: ResearchSourceCapsuleReceipt | undefined;
+    webFetch: WebFetchStateCapsuleReceipt | undefined;
+  }>;
+  record(event: Parameters<LocalStore["appendEvent"]>[0]): Promise<RunEvent>;
+}): Promise<string> {
+  const enabled =
+    input.invocationSource === "user" ||
+    (input.invocationSource === "recovery" && !input.automaticRecovery);
+  if (!enabled) return "";
+  const prepared = await input.prepare({
+    researchSource: input.enabledTools.includes("research_source"),
+    webFetch: input.enabledTools.includes("web_fetch"),
+  });
+  const recorded: RunEvent[] = [];
+  await recordNetworkSourceContinuityContexts({
+    threadId: input.threadId,
+    runId: input.runId,
+    enabled: true,
+    prepare: () => Promise.resolve(prepared),
+    record: async (event) => {
+      const result = await input.record(event);
+      recorded.push(result);
+      return result;
+    },
+  });
+  return formatSourceContinuityGuidance(recorded);
 }

@@ -9,13 +9,14 @@ import {
   validateResearchSourceCapsuleReceipt,
 } from "./research-source-capsule.js";
 import type { LocalStore } from "./store.js";
+import { sourceContinuityPredecessor } from "./source-continuity-lineage.js";
 
 export interface ResearchSourceState {
   sources: Map<string, ResearchSourceEvidenceRecord>;
   citations: ResearchSourceCitationRecord[];
 }
 
-type RecoveryStore = Pick<LocalStore, "listRuns" | "listEvents">;
+type RecoveryStore = Pick<LocalStore, "listRuns" | "listEvents" | "getThread">;
 export type ResearchSourceCapsulePort = Pick<
   ResearchSourceCapsuleStore,
   "put" | "read"
@@ -70,20 +71,8 @@ export class ResearchSourceContinuity {
     | undefined
   > {
     if (!this.capsules || !this.store) return undefined;
-    const runs = this.store.listRuns(owner.threadId);
-    const current = runs.find((run) => run.id === owner.runId);
-    if (
-      !current ||
-      current.source !== "recovery" ||
-      current.status !== "running" ||
-      !current.parentRunId
-    ) {
-      return undefined;
-    }
-    const parent = runs.find((run) => run.id === current.parentRunId);
-    if (!parent || parent.status !== "interrupted") {
-      throw new Error("Research Source recovery parent is invalid");
-    }
+    const parent = sourceContinuityPredecessor(this.store, owner);
+    if (!parent) return undefined;
     const events = (await this.store.listEvents(owner.threadId)).filter(
       (event) =>
         event.runId === parent.id &&
@@ -107,7 +96,7 @@ export class ResearchSourceContinuity {
           details["sourceSetSha256"] !== validated.sourceSetSha256)
       ) {
         throw new Error(
-          "Research Source recovery receipt conflicts with Tool evidence",
+          "Research Source continuity receipt conflicts with Tool evidence",
         );
       }
       return [validated];
@@ -115,7 +104,7 @@ export class ResearchSourceContinuity {
     const receipt = receipts.at(-1);
     if (!receipt) return undefined;
     if (receipt.sourceRunId !== parent.id) {
-      throw new Error("Research Source recovery receipt is invalid");
+      throw new Error("Research Source continuity receipt is invalid");
     }
     const capsule = await this.capsules.read(receipt.capsuleSha256);
     if (
@@ -126,7 +115,9 @@ export class ResearchSourceContinuity {
       capsule.sourceSetSha256 !== receipt.sourceSetSha256 ||
       capsule.contentSha256 !== receipt.capsuleSha256
     ) {
-      throw new Error("Research Source recovery capsule does not match Ledger");
+      throw new Error(
+        "Research Source continuity capsule does not match Ledger",
+      );
     }
     const state = {
       sources: new Map(

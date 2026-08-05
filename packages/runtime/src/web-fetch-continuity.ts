@@ -4,6 +4,7 @@ import type { WebFetchStateCapsuleReceipt } from "./web-fetch-capsule-model.js";
 import type { WebFetchCapsuleStore } from "./web-fetch-capsule-store.js";
 import { validateWebFetchStateCapsuleReceipt } from "./web-fetch-capsule.js";
 import { canonicalJson } from "./ed25519.js";
+import { sourceContinuityPredecessor } from "./source-continuity-lineage.js";
 import type { WebFetchSource } from "./web-fetch-model.js";
 
 export interface WebFetchState {
@@ -14,6 +15,9 @@ export interface WebFetchState {
 type RecoveryStore = {
   listRuns(threadId: string): RunRecord[];
   listEvents(threadId: string): Promise<RunEvent[]>;
+  getThread(threadId: string): {
+    importProvenance?: import("@napier/contracts").ThreadImportProvenance;
+  };
 };
 type CapsulePort = Pick<
   WebFetchCapsuleStore,
@@ -62,20 +66,8 @@ export class WebFetchContinuity {
     { state: WebFetchState; receipt: WebFetchStateCapsuleReceipt } | undefined
   > {
     if (!this.capsules || !this.store) return undefined;
-    const runs = this.store.listRuns(owner.threadId);
-    const current = runs.find((run) => run.id === owner.runId);
-    if (
-      !current ||
-      current.source !== "recovery" ||
-      current.status !== "running" ||
-      !current.parentRunId
-    ) {
-      return undefined;
-    }
-    const parent = runs.find((run) => run.id === current.parentRunId);
-    if (!parent || parent.status !== "interrupted") {
-      throw new Error("Web Fetch recovery parent is invalid");
-    }
+    const parent = sourceContinuityPredecessor(this.store, owner);
+    if (!parent) return undefined;
     const events = (await this.store.listEvents(owner.threadId)).filter(
       (event) =>
         event.runId === parent.id &&
@@ -98,7 +90,7 @@ export class WebFetchContinuity {
           details["sourceSetSha256"] !== receipt.sourceSetSha256)
       ) {
         throw new Error(
-          "Web Fetch recovery receipt conflicts with Tool evidence",
+          "Web Fetch continuity receipt conflicts with Tool evidence",
         );
       }
       return [receipt];
@@ -117,7 +109,7 @@ export class WebFetchContinuity {
       Buffer.byteLength(canonicalJson(manifest), "utf8") !==
         receipt.manifestCapsuleBytes
     ) {
-      throw new Error("Web Fetch recovery manifest does not match Ledger");
+      throw new Error("Web Fetch continuity manifest does not match Ledger");
     }
     const sources = new Map<string, WebFetchSource>();
     for (const binding of manifest.sources) {
@@ -129,7 +121,7 @@ export class WebFetchContinuity {
         sourceCapsule.source.contentSha256 !== binding.contentSha256 ||
         sourceCapsule.contentSha256 !== binding.capsuleSha256
       ) {
-        throw new Error("Web Fetch recovery Source does not match manifest");
+        throw new Error("Web Fetch continuity Source does not match manifest");
       }
       sources.set(binding.id, structuredClone(sourceCapsule.source));
     }

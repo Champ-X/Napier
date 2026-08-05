@@ -3991,8 +3991,10 @@ citations, and cancelled with Run settlement. Source text, title, URL, quote,
 claim, and Web Source ID are available to the live Agent only. Durable events
 retain the capture, source-set, claim, quote, source-specific Browser or Web
 Fetch hashes, line range, format, character/line counts, and truncation state.
-Because Source text is deliberately not restart-adopted, automatic recovery
-treats `research_source` as unsafe even though its tool effect is read.
+Source text is restart-adopted only through the bounded private continuity
+rules above. Automatic recovery still treats `research_source` as unsafe even
+though its tool effect is read; only explicit linked recovery and an eligible
+ordinary same-Thread continuation can adopt its local capsule.
 
 The bundled `research-brief` Skill requires primary-source preference,
 disconfirming evidence, exact claim-to-range binding, adjacent one-use
@@ -4006,7 +4008,7 @@ the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
 completed `web_fetch fetch -> research_source capture_fetch -> cite` against
 both public Node.js release HTML and the W3C dummy PDF while Tool events
 retained neither URL, body, Web Source ID, nor credential. The complete regular
-suite currently passes 2,134 tests.
+suite currently passes 2,335 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
@@ -6152,7 +6154,7 @@ snippets remain untrusted discovery leads, not citation evidence.
 bounded Source preview plus Source ID/content hash; later `read` and `find`
 calls reuse the exact Run-local normalized Source. HTML, JSON, text, and PDF
 content is explicitly labeled untrusted and may never authorize actions.
-Fetched Web Sources stay in process for live use and are transactionally
+Fetched Web Sources stay Run-isolated for live use and are transactionally
 checkpointed into bounded content-addressed private Source capsules plus a
 small ordered manifest. For a static claim, call
 `research_source capture_fetch` with the exact Web Source ID and content hash,
@@ -6164,20 +6166,29 @@ mode `0600`. Ledger, Replay, JSONL/SSE, and Trace retain only local-only
 receipts with hashes, bytes, and counts.
 
 When `napier resume` or another shared Runtime entry creates a verified
-`source: recovery` child of an interrupted immediate parent, Napier restores
-the latest Research Source and Web Fetch manifests, checkpoints child-owned
-copies before the first model call, and tells the model to list before reusing
-IDs. The recovered child can use Web Fetch `list`, `read`, `find`, and
-`research_source capture_fetch` without another network request, then cite and
-`verify_report` normally. Once either private Source tool returns, subsequent
-model thinking and intermediate response content are retained only as
-hash/byte receipts; the final answer remains user-visible but its reasoning
-body is not persisted. Missing, malformed, cross-Thread, wrong-parent,
-ordinary-child, or content-drifted capsules fail closed. Replay import strips
-local-only recovery contexts and nested receipts instead of adopting another
-data root's private state. Completed-Run Source reuse, arbitrary cross-Run
-adoption, automatic recovery after unsafe network tools, and Browser Session
-recovery remain unavailable.
+`source: recovery` child of its interrupted parent, Napier restores the
+parent's latest Research Source and Web Fetch manifests. A fresh ordinary
+`source: user` Run may also continue the immediately preceding persisted Run
+when the current Run is unparented, the Thread is local rather than imported,
+the predecessor completed under the same Agent within 24 hours, and its source
+was `user` or `recovery`. Any intermediate Run, different Agent, parented user
+Run, expired predecessor, or imported Thread blocks ordinary adoption; Napier
+does not scan older history.
+
+For either eligible path, only Source tools enabled on the current Agent are
+prepared. Napier writes child-owned local-only contexts before the first model
+call and adds only Source/citation counts, set hashes, and list-first
+instructions to the system prompt. The current Run can then use Web Fetch
+`list`, `read`, `find`, and `research_source capture_fetch` without another
+network request, then cite and `verify_report` normally. Once either private
+Source tool returns, subsequent model thinking and intermediate response
+content are retained only as hash/byte receipts; the final answer remains
+user-visible but its reasoning body is not persisted. Missing, malformed,
+cross-Thread, wrong-lineage, or content-drifted capsules fail closed. Replay
+validates the same lineage for settled Runs, while import strips local-only
+contexts and nested receipts instead of adopting another data root's private
+state. Arbitrary historical or cross-Thread adoption, automatic recovery after
+unsafe network tools, and Browser Session recovery remain unavailable.
 Authenticated content, CAPTCHA/login-wall recovery, scanned PDF OCR, automatic
 login/CAPTCHA completion, scanned PDF OCR, full Browser interaction,
 Browser Live/takeover, and cross-restart Browser Session/login retention

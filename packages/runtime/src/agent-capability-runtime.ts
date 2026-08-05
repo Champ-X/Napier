@@ -4,6 +4,7 @@ import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view
 import type { ExecuteBrowserTakeoverActionRequest } from "@napier/contracts/browser-takeover";
 
 import { AgentSessionRuntime } from "./agent-sessions.js";
+import type { EventSink } from "./event-sink.js";
 import type { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import { RunBrowserSessionManager } from "./browser-session.js";
 import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
@@ -24,6 +25,8 @@ import {
 } from "./web-fetch-sources.js";
 import { WebFetchCapsuleStore } from "./web-fetch-capsule-store.js";
 import { createWebFetchTool } from "./web-fetch-tool.js";
+import { prepareNetworkSourceContinuity } from "./research-source-recovery-context.js";
+import { appendSourceContinuityGuidance } from "./source-continuity-guidance.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
@@ -189,11 +192,48 @@ export class AgentCapabilityRuntime {
     return this.webFetch.prepareRecovery?.(owner) ?? Promise.resolve(undefined);
   }
 
-  prepareNetworkSourceRecovery(owner: AgentCapabilityOwner) {
+  prepareNetworkSourceRecovery(
+    owner: AgentCapabilityOwner,
+    enabled: { researchSource: boolean; webFetch: boolean },
+  ) {
     return Promise.all([
-      this.prepareResearchSourceRecovery(owner),
-      this.prepareWebFetchRecovery(owner),
+      enabled.researchSource
+        ? this.prepareResearchSourceRecovery(owner)
+        : Promise.resolve(undefined),
+      enabled.webFetch
+        ? this.prepareWebFetchRecovery(owner)
+        : Promise.resolve(undefined),
     ]).then(([research, webFetch]) => ({ research, webFetch }));
+  }
+
+  prepareSourceContinuity(input: {
+    owner: AgentCapabilityOwner;
+    invocationSource: string;
+    automaticRecovery: boolean;
+    enabledTools: readonly string[];
+    systemPrompt: string;
+    onEvent: EventSink | undefined;
+  }): Promise<string> {
+    return prepareNetworkSourceContinuity({
+      threadId: input.owner.threadId,
+      runId: input.owner.runId,
+      invocationSource: input.invocationSource,
+      automaticRecovery: input.automaticRecovery,
+      enabledTools: input.enabledTools,
+      prepare: (enabled) =>
+        this.prepareNetworkSourceRecovery(input.owner, enabled),
+      record: async (event) => {
+        const recorded = await this.store.appendEvent(event);
+        try {
+          await input.onEvent?.(recorded);
+        } catch {
+          // A disconnected stream cannot cancel durable Source continuity.
+        }
+        return recorded;
+      },
+    }).then((guidance) =>
+      appendSourceContinuityGuidance(input.systemPrompt, guidance),
+    );
   }
 
   captureBrowserLiveView(

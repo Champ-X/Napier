@@ -42,6 +42,12 @@ export interface WebFetchResumeFixture extends ResumeFixture {
   sourceSecret: string;
 }
 
+export interface SourceContinuationFixture extends WebFetchResumeFixture {
+  sourceId: string;
+  sourceContentSha256: string;
+  citationId: string;
+}
+
 export async function createInterruptedFixture(
   temporaryRoots: string[],
 ): Promise<ResumeFixture> {
@@ -102,6 +108,108 @@ export async function createInterruptedWebFetchFixture(
       ...fixture,
       webSourceId: fetched.details.sourceId!,
       webSourceContentSha256: fetched.details.sourceContentSha256!,
+      sourceSecret,
+    };
+  } finally {
+    await services.shutdown();
+  }
+}
+
+export async function createCompletedSourceContinuationFixture(
+  temporaryRoots: string[],
+): Promise<SourceContinuationFixture> {
+  const root = await mkdtemp(path.join(tmpdir(), "napier-cli-continuity-"));
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "state");
+  await mkdir(workspaceRoot);
+  const services = await createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot,
+    env: {},
+    sandbox: new UnsupportedSandboxAdapter("cli-continuity-setup"),
+  });
+  try {
+    const agent = services.store.listAgents()[0]!;
+    const thread = await services.store.createThread({
+      title: "CLI Source continuity fixture",
+      agentId: agent.id,
+    });
+    const run = await services.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-prior-continuity", id: "faux-1" },
+    });
+    const sourceSecret = "CLI_PRIVATE_COMPLETED_SOURCE";
+    const webFetch = new RunWebFetchSourceManager({
+      http: {
+        request: async () => ({
+          status: 200,
+          headers: { "content-type": "text/plain" },
+          body: Buffer.from(sourceSecret),
+          finalUrl: "https://example.com/cli-continuity.txt",
+          redirectCount: 0,
+        }),
+      },
+      capsules: new WebFetchCapsuleStore(services.dataRoot),
+      store: services.store,
+      now: () => new Date("2026-08-05T00:00:00.000Z"),
+    });
+    const owner = { threadId: thread.id, runId: run.id };
+    const fetched = await webFetch.execute(owner, {
+      action: "fetch",
+      url: "https://example.com/cli-continuity.txt",
+    });
+    const research = new RunResearchSourceManager(
+      { capturePage: async () => Promise.reject(new Error("not used")) },
+      workspaceRoot,
+      {
+        captureWebSource: (requestOwner, request, signal) =>
+          webFetch.captureWebSource(requestOwner, request, signal),
+      },
+      new ResearchSourceCapsuleStore(dataRoot),
+      services.store,
+    );
+    const captured = await research.execute(owner, {
+      action: "capture_fetch",
+      webSourceId: fetched.details.sourceId!,
+      webSourceContentSha256: fetched.details.sourceContentSha256!,
+    });
+    const cited = await research.execute(owner, {
+      action: "cite",
+      sourceId: captured.details.sourceId!,
+      sourceContentSha256: captured.details.sourceContentSha256!,
+      startLine: 1,
+      endLine: 1,
+      claim: "The completed Source is available.",
+    });
+    for (const [index, result] of [fetched, captured, cited].entries()) {
+      await services.store.appendEvent({
+        threadId: thread.id,
+        runId: run.id,
+        type: "tool.completed",
+        category: "tool",
+        visibility: "user",
+        payload: {
+          callId: `continuity-seed-${String(index + 1)}`,
+          toolName: index === 0 ? "web_fetch" : "research_source",
+          status: "completed",
+          details: result.details,
+        },
+      });
+    }
+    await services.store.finishRun(run.id, "completed");
+    return {
+      root,
+      workspaceRoot,
+      dataRoot,
+      threadId: thread.id,
+      runId: run.id,
+      webSourceId: fetched.details.sourceId!,
+      webSourceContentSha256: fetched.details.sourceContentSha256!,
+      sourceId: captured.details.sourceId!,
+      sourceContentSha256: captured.details.sourceContentSha256!,
+      citationId: cited.details.citationId!,
       sourceSecret,
     };
   } finally {

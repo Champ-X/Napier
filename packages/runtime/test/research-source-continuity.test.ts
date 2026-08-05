@@ -23,7 +23,10 @@ import { browserResearchCapture } from "../src/research-source-capture.js";
 import { RunResearchSourceManager } from "../src/research-sources.js";
 import { buildRunRecoveryPrompt } from "../src/run-recovery-prompt.js";
 import { LocalStore } from "../src/store.js";
-import { createThreadReplayBundle } from "../src/thread-bundles.js";
+import {
+  createThreadReplayBundle,
+  validateThreadReplayBundle,
+} from "../src/thread-bundles.js";
 
 const roots: string[] = [];
 
@@ -34,6 +37,85 @@ afterEach(async () => {
 });
 
 describe("Research Source continuity", () => {
+  it("adopts and Replay-binds an immediate completed user continuation", async () => {
+    const fixture = await continuityFixture();
+    const capsules = new ResearchSourceCapsuleStore(fixture.dataRoot);
+    const first = new RunResearchSourceManager(
+      { capturePage: vi.fn(async () => sourceCapture()) },
+      fixture.workspaceRoot,
+      undefined,
+      capsules,
+      fixture.store,
+    );
+    const firstOwner = {
+      threadId: fixture.threadId,
+      runId: fixture.parentRunId,
+    };
+    const captured = await first.execute(firstOwner, { action: "capture" });
+    const cited = await first.execute(firstOwner, {
+      action: "cite",
+      sourceId: captured.details.sourceId!,
+      sourceContentSha256: captured.details.sourceContentSha256!,
+      startLine: 1,
+      endLine: 1,
+      claim: "Completed continuity preserves exact evidence.",
+    });
+    await appendResearchCompletion(fixture.store, firstOwner, cited.details);
+    await fixture.store.finishRun(fixture.parentRunId, "completed");
+    const continuation = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: fixture.agentId,
+      source: "user",
+    });
+    const reopened = new RunResearchSourceManager(
+      { capturePage: vi.fn() },
+      fixture.workspaceRoot,
+      undefined,
+      capsules,
+      fixture.store,
+    );
+
+    const checkpoint = await reopened.prepareRecovery({
+      threadId: fixture.threadId,
+      runId: continuation.id,
+    });
+    const listed = await reopened.execute(
+      { threadId: fixture.threadId, runId: continuation.id },
+      { action: "list" },
+    );
+
+    expect(checkpoint).toEqual(
+      expect.objectContaining({
+        sourceRunId: continuation.id,
+        sourceCount: 1,
+        citationCount: 1,
+      }),
+    );
+    expect(listed.output).toContain(captured.details.sourceId);
+    expect(listed.output).toContain(cited.details.citationId);
+    expect(
+      JSON.stringify(await fixture.store.listEvents(fixture.threadId)),
+    ).not.toContain("SOURCE_PRIVATE_RESTART_TEXT");
+    await fixture.store.appendEvent({
+      threadId: fixture.threadId,
+      runId: continuation.id,
+      type: "context.research_sources",
+      category: "tool",
+      visibility: "debug",
+      payload: checkpoint!,
+    });
+    await fixture.store.finishRun(continuation.id, "completed");
+    const detail = await fixture.store.getDetail(fixture.threadId);
+    const bundle = createThreadReplayBundle(detail);
+    expect(() => createThreadReplayBundle(detail)).not.toThrow();
+    const reordered = structuredClone(bundle);
+    reordered.thread.runIds.reverse();
+    expect(() => validateThreadReplayBundle(reordered)).toThrow(
+      "thread.runIds do not match runs",
+    );
+    fixture.store.close();
+  });
+
   it("restores private Source state only into an interrupted recovery child", async () => {
     const fixture = await continuityFixture();
     const firstCapsules = new ResearchSourceCapsuleStore(fixture.dataRoot);
@@ -350,7 +432,7 @@ describe("Research Source continuity", () => {
         { threadId: fixture.threadId, runId: child.id },
         { action: "list" },
       ),
-    ).rejects.toThrow(/Research Source recovery (?:receipt|capsule)/u);
+    ).rejects.toThrow(/Research Source continuity (?:receipt|capsule)/u);
     fixture.store.close();
   });
 
@@ -586,7 +668,7 @@ describe("Research Source continuity", () => {
     forged.contentSha256 = sha256(canonicalJson(content));
     event.payload = forged;
     expect(() => createThreadReplayBundle(detail)).toThrow(
-      "Research Source context is not bound to recovery Run",
+      "Research Source context is not bound to a continuity Run",
     );
     fixture.store.close();
   });

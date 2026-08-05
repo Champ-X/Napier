@@ -33,6 +33,59 @@ afterEach(async () => {
 });
 
 describe("Web Fetch continuity", () => {
+  it("adopts the immediately previous completed Run without another request", async () => {
+    const fixture = await continuityFixture();
+    const capsules = new WebFetchCapsuleStore(fixture.dataRoot);
+    const http = {
+      request: vi.fn(async () =>
+        response(
+          "COMPLETED_FETCH_CONTINUITY",
+          "text/plain",
+          "https://example.com/continued.txt",
+        ),
+      ),
+    };
+    const firstOwner = {
+      threadId: fixture.threadId,
+      runId: fixture.parentRunId,
+    };
+    const fetched = await manager(fixture, http, capsules).execute(firstOwner, {
+      action: "fetch",
+      url: "https://example.com/continued.txt",
+    });
+    await appendCompletion(fixture.store, firstOwner, fetched.details);
+    await fixture.store.finishRun(fixture.parentRunId, "completed");
+    const continuation = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: fixture.agentId,
+      source: "user",
+    });
+    const deniedHttp = { request: vi.fn() };
+    const reopened = manager(fixture, deniedHttp, capsules);
+    const owner = { threadId: fixture.threadId, runId: continuation.id };
+
+    const checkpoint = await reopened.prepareRecovery(owner);
+    const listed = await reopened.execute(owner, { action: "list" });
+    const read = await reopened.execute(owner, {
+      action: "read",
+      sourceId: fetched.details.sourceId!,
+      sourceContentSha256: fetched.details.sourceContentSha256!,
+      startLine: 1,
+      endLine: 1,
+    });
+
+    expect(checkpoint).toEqual(
+      expect.objectContaining({
+        sourceRunId: continuation.id,
+        sourceCount: 1,
+      }),
+    );
+    expect(listed.output).toContain(fetched.details.sourceId);
+    expect(read.output).toContain("COMPLETED_FETCH_CONTINUITY");
+    expect(deniedHttp.request).not.toHaveBeenCalled();
+    fixture.store.close();
+  });
+
   it("restores HTML/PDF Sources for list, read, find, and Research capture", async () => {
     const fixture = await continuityFixture();
     const http = {

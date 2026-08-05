@@ -85,7 +85,6 @@ import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabiliti
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 export { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
-import { recordNetworkSourceRecoveryContexts } from "./research-source-recovery-context.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
@@ -551,18 +550,15 @@ export class AgentRuntime {
           },
           options.onEvent,
         );
-        await recordNetworkSourceRecoveryContexts({
-          threadId: thread.id,
-          runId: run.id,
-          enabled: options.recovery?.mode !== "automatic",
-          prepare: () =>
-            this.capabilities.prepareNetworkSourceRecovery({
-              threadId: thread.id,
-              runId: run.id,
-            }),
-          record: (event) => this.record(event, options.onEvent),
-        });
       }
+      const runSystemPrompt = await this.capabilities.prepareSourceContinuity({
+        owner: { threadId: thread.id, runId: run.id },
+        invocationSource,
+        automaticRecovery: options.recovery?.mode === "automatic",
+        enabledTools: effectiveAgentSnapshot.enabledTools,
+        systemPrompt: promptVariables.renderedSystemPrompt,
+        onEvent: options.onEvent,
+      });
       abortController.signal.throwIfAborted();
       const model = await this.modelRegistry.resolveConfigured(modelRef);
       const subagents =
@@ -598,7 +594,7 @@ export class AgentRuntime {
               subagents,
               restrictedReadOnlyExecution,
               skillCatalog,
-              promptVariables.renderedSystemPrompt,
+              runSystemPrompt,
               promptVariables.snapshot.skillCatalogInjected,
               advisorCorrection,
               advisorReviewPrompt,

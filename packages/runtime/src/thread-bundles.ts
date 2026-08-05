@@ -52,7 +52,7 @@ import {
   AGENT_MILESTONE_RECORDED_EVENT,
   projectAgentMilestones,
 } from "./agent-milestones.js";
-import { assertResearchSourceRecoveryContexts } from "./research-source-replay.js";
+import { assertSourceContinuityContexts } from "./research-source-replay.js";
 import { assertIndependentModelAdvisorReviewEvidenceBindings } from "./independent-model-advisor.js";
 import {
   assertModelContextEnvelopeEventBindings,
@@ -663,8 +663,8 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     }
   }
   if (
-    threadRunIds.length !== runIds.size ||
-    threadRunIds.some((runId) => !runIds.has(runId))
+    threadRunIds.length !== runRecords.length ||
+    threadRunIds.some((runId, index) => runId !== runRecords[index]?.["id"])
   ) {
     throw new Error("Thread replay bundle thread.runIds do not match runs");
   }
@@ -865,7 +865,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     knownRunIds: runIds,
     label: "Thread replay bundle Model Context Envelope",
   });
-  assertResearchSourceRecoveryContexts(typedEvents, runsById);
+  assertSourceContinuityContexts(typedEvents, runsById, thread);
   const toolLoopTriggerEvents = typedEvents.filter(
     (event) => event.type === TOOL_LOOP_GUARD_TRIGGERED_EVENT,
   );

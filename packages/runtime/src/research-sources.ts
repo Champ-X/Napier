@@ -76,7 +76,7 @@ export class RunResearchSourceManager {
     private readonly workspaceRoot?: string,
     private readonly webFetch?: WebFetchResearchCaptureProvider,
     capsules?: ResearchSourceCapsulePort,
-    recoveryStore?: Pick<LocalStore, "listRuns" | "listEvents">,
+    recoveryStore?: Pick<LocalStore, "listRuns" | "listEvents" | "getThread">,
   ) {
     this.continuity = new ResearchSourceContinuity(capsules, recoveryStore);
   }

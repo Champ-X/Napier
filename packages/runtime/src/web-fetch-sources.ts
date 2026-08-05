@@ -42,7 +42,7 @@ export interface RunWebFetchSourceManagerOptions {
     WebFetchCapsuleStore,
     "putState" | "readManifest" | "readSource"
   >;
-  store?: Pick<LocalStore, "listRuns" | "listEvents">;
+  store?: Pick<LocalStore, "listRuns" | "listEvents" | "getThread">;
 }
 
 interface RunWebFetchSources {

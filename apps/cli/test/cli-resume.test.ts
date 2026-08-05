@@ -17,6 +17,7 @@ import {
   CaptureWritable,
   cliIo,
   collect,
+  createCompletedSourceContinuationFixture,
   createInterruptedFixture,
   createInterruptedResearchFixture,
   createInterruptedWebFetchFixture,
@@ -402,6 +403,143 @@ describe("Napier CLI interrupted Run resume", () => {
         sourceRunId: done.runId,
         sourceCount: 1,
         storage: "local_only",
+      }),
+    );
+  });
+
+  it("continues completed Sources through a fresh ordinary CLI Run", async () => {
+    const fixture =
+      await createCompletedSourceContinuationFixture(temporaryRoots);
+    const provider = fauxProvider({ provider: "faux-cli-source-continuity" });
+    provider.setResponses([
+      (context) => {
+        expect(context.systemPrompt).toContain(
+          "Private local Research Sources continue into this Run",
+        );
+        expect(context.systemPrompt).toContain(
+          "Private local Web Fetch Sources continue into this Run",
+        );
+        expect(JSON.stringify(context.messages)).not.toContain(
+          fixture.sourceSecret,
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("web_fetch", { action: "list" }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(fixture.webSourceId);
+        return fauxAssistantMessage(
+          fauxToolCall("web_fetch", {
+            action: "read",
+            sourceId: fixture.webSourceId,
+            sourceContentSha256: fixture.webSourceContentSha256,
+            startLine: 1,
+            endLine: 1,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          fixture.sourceSecret,
+        );
+        return fauxAssistantMessage(
+          [
+            fauxThinking(fixture.sourceSecret),
+            fauxToolCall("research_source", { action: "list" }),
+          ],
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain(fixture.sourceId);
+        expect(messages).toContain(fixture.citationId);
+        return fauxAssistantMessage(
+          fauxToolCall("research_source", {
+            action: "cite",
+            sourceId: fixture.sourceId,
+            sourceContentSha256: fixture.sourceContentSha256,
+            startLine: 1,
+            endLine: 1,
+            claim: "The completed Source remains available.",
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage([
+        fauxThinking(fixture.sourceSecret),
+        { type: "text", text: "CLI_SOURCE_CONTINUITY_RESULT" },
+      ]),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "run",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--thread",
+        fixture.threadId,
+        "--prompt",
+        "Continue using the completed local Sources.",
+        "--model",
+        "faux-cli-source-continuity/faux-1",
+        "--jsonl",
+      ],
+      cliIo(fixture, stdout, stderr),
+      providerDependencies(provider),
+    );
+
+    expect(code, stderr.text() || stdout.text()).toBe(0);
+    expect(stdout.text()).not.toContain(fixture.sourceSecret);
+    const frames = parseFrames(stdout.text());
+    const snapshot = frames.findLast((frame) => frame.type === "snapshot");
+    const done = frames.at(-1);
+    if (snapshot?.type !== "snapshot" || done?.type !== "done") {
+      throw new Error("CLI Source continuation snapshot is missing");
+    }
+    const completed = snapshot.detail.events.filter(
+      (event) => event.runId === done.runId && event.type === "tool.completed",
+    );
+    expect(
+      completed.map((event) => ({
+        tool: event.payload["toolName"],
+        action: (event.payload["details"] as Record<string, unknown>)["action"],
+      })),
+    ).toEqual([
+      { tool: "web_fetch", action: "list" },
+      { tool: "web_fetch", action: "read" },
+      { tool: "research_source", action: "list" },
+      { tool: "research_source", action: "cite" },
+    ]);
+    expect(
+      snapshot.detail.events
+        .filter(
+          (event) =>
+            event.runId === done.runId &&
+            (event.type === "context.research_sources" ||
+              event.type === "context.web_fetch_sources"),
+        )
+        .map((event) => event.payload["sourceRunId"]),
+    ).toEqual([done.runId, done.runId]);
+    expect(JSON.stringify(snapshot.detail.events)).not.toContain(
+      fixture.sourceSecret,
+    );
+    expect(
+      snapshot.detail.events.findLast(
+        (event) =>
+          event.runId === done.runId && event.type === "message.assistant",
+      )?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        text: "CLI_SOURCE_CONTINUITY_RESULT",
+        reasoningRedacted: true,
       }),
     );
   });

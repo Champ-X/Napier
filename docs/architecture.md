@@ -4231,9 +4231,15 @@ storage. `web-fetch-capsule.ts` and `web-fetch-source-validation.ts` validate
 exact bounded Source, manifest, and receipt bindings.
 `web-fetch-capsule-store.ts` deduplicates immutable Sources and stores small
 manifests through the shared private `0700`/`0600` CAS.
-`web-fetch-continuity.ts` restores only an interrupted immediate parent into a
-verified running `source: recovery` child, then writes a child-owned manifest
-before any Source call returns.
+`source-continuity-lineage.ts` owns the shared local-Thread predecessor policy.
+Explicit recovery resolves its interrupted `parentRunId`; an ordinary
+unparented `source: user` Run may resolve only the immediately preceding
+completed same-Agent user/recovery Run within 24 hours. Imported Threads,
+parented user Runs, different Agents, expired predecessors, and any
+intermediate Run deny ordinary adoption without scanning older history.
+`web-fetch-continuity.ts` restores that one eligible predecessor into the
+verified running current Run, then writes a child-owned manifest before any
+Source call returns.
 `web-fetch-tool.ts` owns the Agent schema and body-free Ledger projection.
 `AgentCapabilityRuntime` assembles Search and Fetch behind one
 `AgentNetworkCapabilities` boundary, so `agent-runtime.ts` does not grow a new
@@ -4409,15 +4415,17 @@ transactional Source/citation mutation. `research-source-capsule.ts` validates
 the complete private state and hash-only local receipt;
 `research-source-capsule-store.ts` stores content-addressed mode-`0600`
 capsules under a mode-`0700` root with per-object/count/total-byte bounds;
-`research-source-continuity.ts` permits lazy adoption only from an interrupted
-immediate parent into a verified `source: recovery` child. It writes a
-child-owned capsule before returning restored state.
-`research-source-recovery-context.ts` checkpoints that child receipt before
-the first model call, so another restart can continue even when the first
-recovery crashes before calling a Source tool. `run-recovery-prompt.ts`
-includes only Source counts/set hash and instructs the model to list before
-reusing IDs. `research-source-tool.ts` owns the Agent schema and redacted
-call/input/output projections.
+`research-source-continuity.ts` uses the same shared predecessor policy and
+writes a current-Run-owned capsule before returning restored state.
+`research-source-recovery-context.ts` prepares only currently enabled
+`research_source`/`web_fetch` capabilities and checkpoints their current-Run
+receipts before the first model call, so another restart can continue even if
+the current Run crashes before calling a Source tool.
+`source-continuity-guidance.ts` validates those recorded contexts and appends
+only Source/citation counts, set hashes, and list-first instructions to the
+system prompt. `run-recovery-prompt.ts` retains the corresponding manual
+recovery guidance. `research-source-tool.ts` owns the Agent schema and
+redacted call/input/output projections.
 `research-report-verification.ts` owns canonical Markdown loading, exact
 claim-line parsing, current-Run token validation, and post-read freshness.
 `research-source-event-view.ts` independently validates the bounded Trace
@@ -4440,17 +4448,23 @@ and citation token. `verify_report` proves the token/claim/current-Run binding
 against actual workspace bytes; a verified Plan artifact independently binds
 the delivered artifact lifecycle.
 
-Live Browser registries remain process-local. Completed Research Source and
-Web Fetch state is separately checkpointed in private capsules: a manual linked
-recovery Run can restore the latest exact fetched Sources, Source/citation
-state, and continue `list`, `read`, `find`, `capture_fetch`, `cite`, and
-`verify_report` without refetching. Ordinary children and completed-Run reuse
-cannot inherit either registry. The parent must be the interrupted immediate
-parent; receipts must match Tool counts/set hashes; private capsules must match
-Thread, Run, manifest, Source, capture, quote, claim, and self-hash bindings.
-Replay export carries only receipts; import strips both private recovery
-contexts and nested `stateCapsule` fields because a `local_only` capsule cannot
-be adopted into another data root. Automatic recovery remains blocked after
+Live Browser registries remain process-local. Research Source and Web Fetch
+state is separately checkpointed in private capsules: a manual linked recovery
+Run or the narrowly eligible next ordinary user Run can restore exact fetched
+Sources and Source/citation state, then continue `list`, `read`, `find`,
+`capture_fetch`, `cite`, and `verify_report` without refetching. Ordinary
+continuity is limited to the immediately preceding persisted Run, same Agent,
+user/recovery lineage, local Thread, and a 24-hour completion window; it never
+searches arbitrary history. Receipts must match Tool counts/set hashes, and
+private capsules must match Thread, predecessor Run, manifest, Source,
+capture, quote, claim, and self-hash bindings. Child-owned contexts bind the
+adopted state to the current Run before model resolution.
+
+`research-source-replay.ts` validates the same lineage against settled bundle
+Runs while live restoration remains restricted to running Runs. Replay export
+carries only receipts; import strips both private continuity contexts and
+nested `stateCapsule` fields because a `local_only` capsule cannot be adopted
+into another data root. Automatic recovery remains blocked after
 `research_source`, `web_fetch`, or other unsafe network-session tools; this
 slice does not pretend Browser Sessions survived restart.
 
@@ -4460,12 +4474,14 @@ Source/manifest/capture/claim tamper rejection, immediate-parent lineage,
 crash-before-first-tool multi-restart checkpointing, inherited
 list/read/find/capture/cite/report verification, private model-content
 redaction, CLI JSONL/Ledger privacy, Trace validation, and retained benchmark
-compatibility. Real built-CLI DeepSeek Dogfood created a linked recovery child
-in a fresh process, restored HTML and PDF Sources, executed
-`web_fetch:list -> find -> read -> research_source:capture_fetch -> cite`
-without `web_fetch:fetch`, returned the required terminal result, and wrote a
-child-owned manifest. Opaque Source markers appeared only in private Source
-and model-invocation capsules, never JSONL or Ledger events.
+compatibility. Real two-process built-CLI DeepSeek Dogfood completed one
+ordinary Run that fetched and cited TodoMVC, then used a fresh CLI process and
+new ordinary Run on the same Thread. The continuation executed
+`web_fetch:list -> research_source:list -> web_fetch:read ->
+research_source:cite` with no `web_fetch:fetch` and no model-authored Browser
+call, returned the required terminal result, and wrote child-owned Research
+and Web Fetch contexts. Opaque Source markers appeared only in private Source
+and model-invocation capsules, never non-message JSONL or Ledger events.
 
 ### Open-Web Research Outcome Verification
 
@@ -4517,7 +4533,7 @@ DeepSeek trial passed with one Search, two Fetches, three Browser actions,
 three captures, three citations, valid Replay, and zero diagnostics in 39.646
 seconds. This proves one real default-entry execution, not repeated
 reliability, automatic fallback, broad open-web quality, or cross-model
-superiority. The complete repository gate passes 2,145 regular tests.
+superiority. The complete repository gate passes 2,335 regular tests.
 
 ### Open-Web Executor Comparison
 

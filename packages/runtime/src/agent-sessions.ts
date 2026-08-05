@@ -38,7 +38,7 @@ export class AgentSessionRuntime {
     researchSourceCaptures?: BrowserSourceCaptureProvider,
     webFetchCaptures?: WebFetchResearchCaptureProvider,
     researchSourceCapsules?: ResearchSourceCapsuleStore,
-    store?: Pick<LocalStore, "listRuns" | "listEvents">,
+    store?: Pick<LocalStore, "listRuns" | "listEvents" | "getThread">,
   ) {
     this.kernels = new AgentKernelRuntime(processes);
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
