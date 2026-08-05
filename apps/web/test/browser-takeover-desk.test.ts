@@ -3,9 +3,10 @@ import { describe, expect, it } from "vitest";
 
 describe("Browser takeover desk", () => {
   it("keeps bounded actions and private text handling explicit", async () => {
-    const source = await readFile(
-      new URL("../src/BrowserTakeoverDesk.tsx", import.meta.url),
-      "utf8",
+    const [source, output] = await Promise.all(
+      ["BrowserTakeoverDesk.tsx", "BrowserTakeoverOutput.tsx"].map((file) =>
+        readFile(new URL(`../src/${file}`, import.meta.url), "utf8"),
+      ),
     );
 
     expect(source).toContain("Take control of this isolated Browser Session");
@@ -24,6 +25,14 @@ describe("Browser takeover desk", () => {
     );
     expect(source).toContain('setNewTabUrl("")');
     expect(source).toContain("Return to Agent");
+    expect(output).toContain("New workspace output");
+    expect(output).toContain("Save screenshot");
+    expect(output).toContain("Download ref");
+    expect(output).toContain("expectedLiveImageSha256");
+    expect(output).toContain("Screenshot saved");
+    expect(output).toContain("download 32 MiB");
+    expect(output).not.toContain("document.cookie");
+    expect(output).not.toContain("chrome.cookies");
     expect(source).not.toContain("PRIVATE_OPERATOR_SECRET");
   });
 });

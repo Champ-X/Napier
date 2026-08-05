@@ -8,6 +8,11 @@ import {
   type BrowserSessionRequest,
   type BrowserSessionTabDescriptor,
 } from "./browser-session-model.js";
+import {
+  isBrowserPageFileRequest,
+  type BrowserPageFileRequest,
+} from "./browser-page-file-operation.js";
+import type { BrowserWorkspaceFile } from "./browser-workspace-files.js";
 import type { BrowserSessionPageState } from "./browser-session-details.js";
 import type { BrowserSessionNavigation } from "./browser-session-navigation.js";
 import type { BrowserSessionTabs } from "./browser-session-tabs.js";
@@ -27,7 +32,8 @@ type BrowserVisualTakeoverRequest = Extract<
 
 export type BrowserPageSpecialRequest =
   | BrowserTabRequest
-  | BrowserVisualTakeoverRequest;
+  | BrowserVisualTakeoverRequest
+  | BrowserPageFileRequest;
 
 export function isBrowserPageSpecialRequest(
   request: BrowserSessionRequest,
@@ -38,7 +44,8 @@ export function isBrowserPageSpecialRequest(
     request.action === "tab_switch" ||
     request.action === "tab_close" ||
     request.action === "visual_click" ||
-    request.action === "keypress"
+    request.action === "keypress" ||
+    isBrowserPageFileRequest(request)
   );
 }
 
@@ -57,12 +64,30 @@ export async function performBrowserPageSpecialOperation(input: {
     page: Page,
     signal?: AbortSignal,
   ) => Promise<BrowserSessionPageState>;
+  performFileOperation: (
+    page: Page,
+    request: BrowserPageFileRequest,
+    signal?: AbortSignal,
+  ) => Promise<{
+    state: BrowserSessionPageState;
+    file: BrowserWorkspaceFile;
+    suggestedFilenameSha256?: string;
+  }>;
   signal?: AbortSignal;
 }): Promise<{
   state: BrowserSessionPageState;
   listedTabs?: BrowserSessionTabDescriptor[];
+  file?: BrowserWorkspaceFile;
+  suggestedFilenameSha256?: string;
 }> {
   const request = input.request;
+  if (isBrowserPageFileRequest(request)) {
+    return await input.performFileOperation(
+      input.tabs.activePage,
+      request,
+      input.signal,
+    );
+  }
   if (request.action === "visual_click") {
     if (
       !Number.isSafeInteger(request.x) ||

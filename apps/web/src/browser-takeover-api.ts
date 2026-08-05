@@ -5,6 +5,7 @@ import type {
 } from "@napier/contracts/browser-takeover";
 
 import { requestJson } from "./api-client";
+import { verifyBrowserTakeoverOutputEvidence } from "./browser-takeover-output-verification";
 import { canonicalJson, sha256Text } from "./stable-digest";
 
 export async function getBrowserTakeoverSnapshot(
@@ -113,7 +114,7 @@ async function validateReceiptEvidence(
   if (
     Object.keys(input).some((key) => !RECEIPT_KEYS.has(key)) ||
     input["kind"] !== "napier.browser-takeover-action" ||
-    input["schemaVersion"] !== 2 ||
+    input["schemaVersion"] !== 3 ||
     typeof input["id"] !== "string" ||
     !/^browser_takeover_[a-z0-9_-]{8,80}$/u.test(input["id"]) ||
     input["threadId"] !== threadId ||
@@ -208,6 +209,10 @@ const RECEIPT_KEYS = new Set([
   "textBytes",
   "valueSetSha256",
   "valueCount",
+  "outputPathSha256",
+  "outputFileSha256",
+  "outputFileBytes",
+  "suggestedFilenameSha256",
   "direction",
   "pixels",
   "durationMs",
@@ -263,6 +268,8 @@ async function actionReceiptEvidence(
   input: Record<string, unknown>,
   request: ExecuteBrowserTakeoverActionRequest,
 ): Promise<boolean> {
+  const output = await verifyBrowserTakeoverOutputEvidence(input, request);
+  if (output !== undefined) return output;
   if (request.action === "click") {
     return input["targetRefSha256"] === (await sha256Text(request.ref));
   }

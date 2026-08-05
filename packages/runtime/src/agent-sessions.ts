@@ -141,6 +141,8 @@ export class AgentSessionRuntime {
           | "keypress"
           | "type"
           | "select"
+          | "download"
+          | "save_screenshot"
           | "scroll"
           | "back"
           | "forward"

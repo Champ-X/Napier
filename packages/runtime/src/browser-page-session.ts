@@ -16,9 +16,11 @@ import {
   assertBrowserUploadCurrent,
   type BrowserWorkspaceFile,
   inspectBrowserUpload,
-  preflightBrowserDownload,
-  writeBrowserDownload,
 } from "./browser-workspace-files.js";
+import {
+  type BrowserPageFileRequest,
+  performBrowserPageFileOperation,
+} from "./browser-page-file-operation.js";
 import {
   isBrowserObservationRequest,
   performBrowserPageObservation,
@@ -254,10 +256,31 @@ export class PersistentBrowserSession {
         configurePage: (targetPage) => this.configurePage(targetPage),
         pageState: (targetPage, targetSignal) =>
           captureBrowserPageState(targetPage, targetSignal),
+        performFileOperation: (
+          targetPage,
+          fileRequest: BrowserPageFileRequest,
+          targetSignal,
+        ) =>
+          performBrowserPageFileOperation({
+            page: targetPage,
+            request: fileRequest,
+            workspaceRoot: this.workspaceRoot,
+            navigation: this.navigation,
+            locator: (locatorPage, target) => this.locator(locatorPage, target),
+            preflightNavigation: (navigationPage, value, allowed) =>
+              this.preflightNavigation(navigationPage, value, allowed),
+            withNetwork: (operation) => this.withNetwork(operation),
+            setDownloadAuthorized: (authorized) => {
+              this.downloadAuthorized = authorized;
+            },
+            ...(targetSignal ? { signal: targetSignal } : {}),
+          }),
         ...(signal ? { signal } : {}),
       });
       state = tabResult.state;
       listedTabs = tabResult.listedTabs;
+      file = tabResult.file;
+      suggestedFilenameSha256 = tabResult.suggestedFilenameSha256;
     } else
       switch (request.action) {
         case "start":
@@ -361,50 +384,6 @@ export class PersistentBrowserSession {
           await assertBrowserUploadCurrent(file);
           state = await captureBrowserPageState(page, signal);
           break;
-        case "download": {
-          await this.preflightNavigation(
-            page,
-            page.url(),
-            request.allowCrossOrigin === true,
-          );
-          await preflightBrowserDownload(this.workspaceRoot, request.path);
-          assertNotAborted(signal);
-          await this.withNetwork(async () => {
-            this.downloadAuthorized = true;
-            try {
-              const [download] = await Promise.all([
-                page.waitForEvent("download", {
-                  timeout: BROWSER_ACTION_TIMEOUT_MS,
-                  ...(signal ? { signal } : {}),
-                }),
-                this.navigation.run(
-                  page,
-                  request.allowCrossOrigin === true,
-                  () =>
-                    this.locator(page, request.target).click({
-                      timeout: BROWSER_ACTION_TIMEOUT_MS,
-                    }),
-                ),
-              ]);
-              suggestedFilenameSha256 = sha256(download.suggestedFilename());
-              const stream = await download.createReadStream();
-              try {
-                file = await writeBrowserDownload(
-                  this.workspaceRoot,
-                  request.path,
-                  stream,
-                  signal,
-                );
-              } finally {
-                await download.delete().catch(() => undefined);
-              }
-            } finally {
-              this.downloadAuthorized = false;
-            }
-          });
-          state = await captureBrowserPageState(page, signal);
-          break;
-        }
         case "screenshot":
           screenshot = await page.screenshot({
             type: "png",
@@ -436,7 +415,7 @@ export class PersistentBrowserSession {
       network: this.proxy.snapshot(),
       ...(file ? { file } : {}),
       ...(suggestedFilenameSha256 ? { suggestedFilenameSha256 } : {}),
-      ...(screenshot ? { screenshot } : {}),
+      ...(screenshot && request.action === "screenshot" ? { screenshot } : {}),
     });
     return createBrowserPageOperationResult({
       request,
@@ -444,7 +423,7 @@ export class PersistentBrowserSession {
       details,
       file,
       tabs: listedTabs,
-      screenshot,
+      screenshot: request.action === "screenshot" ? screenshot : undefined,
     });
   }
 

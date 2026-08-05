@@ -36,6 +36,7 @@ import {
   browserTakeoverLiveMatchesSnapshot,
   browserViewportCoordinates,
 } from "./browser-takeover-visual";
+import { BrowserTakeoverOutput } from "./BrowserTakeoverOutput";
 
 type TakeoverMode = "click" | "type" | "select";
 
@@ -101,17 +102,22 @@ export function BrowserTakeoverDesk({
       setBusy(true);
       setError(undefined);
       try {
-        setReceipt(
-          await executeBrowserTakeoverAction(threadId, runId, request),
+        const completed = await executeBrowserTakeoverAction(
+          threadId,
+          runId,
+          request,
         );
+        setReceipt(completed);
         setRef("");
         setValue("");
         setNewTabUrl("");
         setAllowCrossOrigin(false);
         setSnapshot(await getBrowserTakeoverSnapshot(threadId, runId));
+        return completed;
       } catch (actionError) {
         setSnapshot(undefined);
         setError(formatApiErrorMessage(actionError));
+        return undefined;
       } finally {
         setValue("");
         setBusy(false);
@@ -458,6 +464,16 @@ export function BrowserTakeoverDesk({
           Wait 1s
         </button>
       </div>
+
+      <BrowserTakeoverOutput
+        binding={binding}
+        snapshot={snapshot}
+        liveReceipt={liveReceipt}
+        targetRef={ref}
+        allowCrossOrigin={allowCrossOrigin}
+        busy={busy}
+        execute={execute}
+      />
 
       <footer>
         <span>

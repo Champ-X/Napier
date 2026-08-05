@@ -639,7 +639,8 @@ an action-scoped outbound grant.
 
 The takeover desk shows the no-store, hash-verified tab list and supports
 explicit new/switch/close plus click, masked type, select, scroll,
-back/forward, and bounded wait. Requests bind fresh refs plus the exact pause,
+back/forward, bounded wait, ref-bound download, and verified viewport capture
+to a new workspace file. Requests bind fresh refs plus the exact pause,
 Session, operation, active-tab, tab-count, tab-set, and snapshot evidence.
 For visual-only challenges or keyboard-driven login steps, Web also renders
 the exact verified 1280×900 Live PNG as a clickable viewport and exposes a
@@ -648,6 +649,15 @@ SHA-256 and viewport dimensions, then Runtime recaptures and compares the
 current Live image before executing integer coordinates. Keypress never
 accepts arbitrary shortcuts or typed text; credential text remains in the
 password-masked fresh-ref flow.
+**Save screenshot** writes only a new `.png` beneath an existing non-symlink
+workspace parent after recapturing the selected viewport and matching its bytes
+to the displayed Live image SHA-256. **Download ref** requires a fresh ARIA ref
+and a new workspace-relative target, streams at most 32 MiB, and reuses the
+existing public-network, cross-origin, exclusive-create, symlink, and protected
+path checks. Web shows the locally entered path only after a completed
+hash/byte receipt; Server responses and durable takeover events retain only
+path/file hashes, bytes, and the suggested-filename hash. These are inspectable
+workspace outputs, not automatic Plan Artifact registrations.
 Snapshot capture consumes no Browser operation; every operator action consumes
 one and serializes against Agent actions and Resume. Typed text, selected
 values, URLs, and tab titles exist only in the live request/response and are

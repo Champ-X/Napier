@@ -336,6 +336,114 @@ describeLive("live controlled Browser Session smoke", () => {
       await manager.cancelRun(owner);
     }
   }, 90_000);
+
+  it("persists the exact verified live viewport as a workspace PNG", async ({
+    skip,
+  }) => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-browser-screenshot-"),
+    );
+    roots.push(workspaceRoot);
+    const manager = new RunBrowserSessionManager({ workspaceRoot });
+    const owner = {
+      threadId: "thread_live_browser_screenshot",
+      runId: "run_live_browser_screenshot",
+    };
+    try {
+      await manager.execute(owner, {
+        action: "start",
+        url: "https://example.com/",
+      });
+      const live = await manager.captureLiveView(owner);
+      const saved = await manager.executeTakeoverAction(owner, {
+        action: "save_screenshot",
+        path: "browser-live.png",
+        expectedLiveImageSha256: live.receipt.imageSha256,
+      });
+      const bytes = await readFile(
+        path.join(workspaceRoot, "browser-live.png"),
+      );
+
+      expect(saved.details).toEqual(
+        expect.objectContaining({
+          action: "save_screenshot",
+          sessionOperation: 2,
+          file: {
+            pathSha256: sha256("browser-live.png"),
+            fileSha256: live.receipt.imageSha256,
+            fileBytes: live.receipt.imageBytes,
+          },
+        }),
+      );
+      expect(sha256(bytes)).toBe(live.receipt.imageSha256);
+      expect(bytes.byteLength).toBe(live.image.byteLength);
+    } catch (error) {
+      if (nestedSandboxDenied(error)) {
+        skip(
+          "inconclusive: the current host denies Chrome's nested production sandbox",
+        );
+      }
+      throw error;
+    } finally {
+      await manager.cancelRun(owner);
+    }
+  }, 60_000);
+
+  it("streams a public archive from a fresh takeover ref into the workspace", async ({
+    skip,
+  }) => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-browser-download-"),
+    );
+    roots.push(workspaceRoot);
+    const manager = new RunBrowserSessionManager({ workspaceRoot });
+    const owner = {
+      threadId: "thread_live_browser_download",
+      runId: "run_live_browser_download",
+    };
+    try {
+      await manager.execute(owner, {
+        action: "start",
+        url: "https://www.w3.org/TR/xhtml1/",
+      });
+      const takeover = await manager.captureTakeoverSnapshot(owner);
+      const ref = /link "ZIP archive" \[ref=([a-z0-9]+)\]/u.exec(
+        takeover.snapshot.snapshot ?? "",
+      )?.[1];
+      expect(ref).toBeDefined();
+
+      const downloaded = await manager.executeTakeoverAction(owner, {
+        action: "download",
+        target: { ref: ref! },
+        path: "xhtml1.zip",
+      });
+      const bytes = await readFile(path.join(workspaceRoot, "xhtml1.zip"));
+
+      expect(downloaded.details).toEqual(
+        expect.objectContaining({
+          action: "download",
+          sessionOperation: 2,
+          file: {
+            pathSha256: sha256("xhtml1.zip"),
+            fileSha256: sha256(bytes),
+            fileBytes: bytes.byteLength,
+          },
+          suggestedFilenameSha256: sha256("xhtml1.zip"),
+        }),
+      );
+      expect(bytes.subarray(0, 2).toString("ascii")).toBe("PK");
+      expect(bytes.byteLength).toBeGreaterThan(200_000);
+    } catch (error) {
+      if (nestedSandboxDenied(error)) {
+        skip(
+          "inconclusive: the current host denies Chrome's nested production sandbox",
+        );
+      }
+      throw error;
+    } finally {
+      await manager.cancelRun(owner);
+    }
+  }, 90_000);
 });
 
 function nestedSandboxDenied(error: unknown): boolean {

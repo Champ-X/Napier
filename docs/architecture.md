@@ -702,17 +702,17 @@ returns the current untrusted ARIA tree plus a bounded ephemeral tab list and
 pause/Session/operation/active-tab/tab-count/tab-set/snapshot hashes. It
 consumes no Browser operation. The process cache retains only binding hashes,
 never page text, URL, title, or raw tab identity. Operator
-click/type/select/scroll/back/forward/wait and explicit tab
-new/switch/close requests bind to the complete snapshot identity, use fresh
-refs where applicable, and run inside the same pause transition queue and
-serialized Browser Session. Runtime validates exact tab-count/set/selection
-transitions before recording completion; inconsistent capture evidence closes
-the uncertain Session. Resume therefore cannot race an operator action. Each
-action consumes one Browser operation and appends requested/completed/failed
-hash-only receipts; private text, values, URLs, and titles remain live-only and
-Web clears private inputs after every attempt. Returning control resumes the
-exact pause state and releases the Agent's next Browser action on the same Run
-and Session.
+click/type/select/scroll/back/forward/wait, ref-bound download, verified
+screenshot save, and explicit tab new/switch/close requests bind to the
+complete snapshot identity, use fresh refs where applicable, and run inside the
+same pause transition queue and serialized Browser Session. Runtime validates
+exact tab-count/set/selection transitions before recording completion;
+inconsistent capture evidence closes the uncertain Session. Resume therefore
+cannot race an operator action. Each action consumes one Browser operation and
+appends requested/completed/failed hash-only receipts; private text, values,
+URLs, titles, workspace paths, and output bytes remain live-only. Web clears
+private inputs after every attempt. Returning control resumes the exact pause
+state and releases the Agent's next Browser action on the same Run and Session.
 
 Visual and keyboard handoff are takeover-only internal actions rather than
 Agent Browser schema actions. `BrowserLiveViewReceipt` binds the PNG hash,
@@ -724,6 +724,23 @@ viewport, operation, tab, and tab-set evidence before executing. Durable
 receipts keep only image and coordinate hashes. Keyboard handoff admits only a
 fixed navigation-key enum; it cannot enter text or browser shortcuts such as
 address-bar focus.
+
+`browser-page-file-operation.ts` owns takeover download and screenshot-save
+execution outside the Browser Session orchestrator. Download preflights the
+selected page and destination before clicking a fresh ref, admits network only
+for that action, captures Playwright's download stream, and writes at most
+32 MiB through the exclusive workspace transaction in
+`browser-workspace-files.ts`. Screenshot save preflights a new `.png`, captures
+the current fixed viewport with network closed, requires its SHA-256 to equal
+the operator-bound Live image, and then writes the exact bytes with the same
+exclusive-create, inode, symlink, protected-path, cancellation, fsync, and
+cleanup checks. `browser-takeover-action.ts` owns request validation and
+hash-only output receipts; `browser-takeover-output-verification.ts` repeats
+the evidence checks at the Web trust boundary. Completed output receipts carry
+only path/file SHA-256, file bytes, and for downloads the suggested-filename
+SHA-256. The raw path is shown from local component state only. Output files
+remain ordinary workspace files until an Agent or user explicitly adds and
+verifies them in a Plan Artifact manifest.
 
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate
@@ -4296,10 +4313,11 @@ only redacted tool arguments plus bounded operation evidence.
 The Browser surface now provides read-only dynamic-page research, bounded
 explicit tabs/history, Browser Live, pause/resume, one-use interaction
 confirmation, structural login/challenge diagnosis, and pause-bound operator
-takeover in the isolated Run profile. Existing-user Chrome relay, autonomous
-CAPTCHA solving or login submission, download Artifact UX, viewport streaming
-protocols, cross-restart Source/Session/login recovery, and broader automation
-reliability remain P0.
+takeover with verified workspace screenshot/download outputs in the isolated
+Run profile. Existing-user Chrome relay, autonomous CAPTCHA solving or login
+submission, automatic Plan Artifact registration and richer file preview,
+viewport streaming protocols, cross-restart Source/Session/login recovery, and
+broader automation reliability remain P0.
 
 ### Research Source and Citation Flow
 

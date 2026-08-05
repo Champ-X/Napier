@@ -7,8 +7,9 @@ import {
   type FileHandle,
 } from "node:fs/promises";
 import path from "node:path";
-import type { Readable } from "node:stream";
+import { Readable } from "node:stream";
 
+import { MAX_BROWSER_SCREENSHOT_BYTES } from "./browser-session-model.js";
 import { sha256 } from "./ed25519.js";
 import { isPathInsideWorkspace } from "./policy.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
@@ -99,12 +100,68 @@ export async function writeBrowserDownload(
   stream: Readable,
   signal?: AbortSignal,
 ): Promise<BrowserWorkspaceFile> {
-  const target = await resolveNewBrowserFile(
+  return await writeNewBrowserFile(
     workspaceRootInput,
     inputPath,
     "download",
+    stream,
+    MAX_BROWSER_DOWNLOAD_BYTES,
+    signal,
   );
-  assertNotAborted(signal);
+}
+
+export async function writeBrowserScreenshot(
+  workspaceRootInput: string,
+  inputPath: string,
+  screenshot: Buffer,
+  signal?: AbortSignal,
+): Promise<BrowserWorkspaceFile> {
+  assertBrowserScreenshotPath(inputPath);
+  if (
+    screenshot.byteLength < 1 ||
+    screenshot.byteLength > MAX_BROWSER_SCREENSHOT_BYTES
+  ) {
+    throw new Error("Browser screenshot exceeds the output limit");
+  }
+  return await writeNewBrowserFile(
+    workspaceRootInput,
+    inputPath,
+    "screenshot",
+    Readable.from([screenshot]),
+    screenshot.byteLength,
+    signal,
+  );
+}
+
+export async function preflightBrowserDownload(
+  workspaceRootInput: string,
+  inputPath: string,
+): Promise<void> {
+  await resolveNewBrowserFile(workspaceRootInput, inputPath, "download");
+}
+
+export async function preflightBrowserScreenshot(
+  workspaceRootInput: string,
+  inputPath: string,
+): Promise<void> {
+  assertBrowserScreenshotPath(inputPath);
+  await resolveNewBrowserFile(workspaceRootInput, inputPath, "screenshot");
+}
+
+async function writeNewBrowserFile(
+  workspaceRootInput: string,
+  inputPath: string,
+  action: string,
+  stream: Readable,
+  maximumBytes: number,
+  signal?: AbortSignal,
+): Promise<BrowserWorkspaceFile> {
+  const target = await resolveNewBrowserFile(
+    workspaceRootInput,
+    inputPath,
+    action,
+  );
+  assertNotAborted(signal, action);
   let handle: FileHandle | undefined;
   let created = false;
   try {
@@ -118,20 +175,20 @@ export async function writeBrowserDownload(
     );
     created = true;
     const opened = await handle.stat();
-    await assertOpenTarget(target, opened.dev, opened.ino);
+    await assertOpenTarget(target, opened.dev, opened.ino, action);
     const chunks: Buffer[] = [];
     let bytes = 0;
     for await (const value of stream) {
-      assertNotAborted(signal);
+      assertNotAborted(signal, action);
       const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value);
       bytes += chunk.byteLength;
-      if (bytes > MAX_BROWSER_DOWNLOAD_BYTES) {
+      if (bytes > maximumBytes) {
         throw new Error(
-          `Browser downloads support files up to ${MAX_BROWSER_DOWNLOAD_BYTES} bytes`,
+          `Browser ${action}s support files up to ${maximumBytes} bytes`,
         );
       }
       chunks.push(chunk);
-      await writeFully(handle, chunk);
+      await writeFully(handle, chunk, action);
     }
     await handle.sync();
     const completed = await handle.stat();
@@ -141,9 +198,9 @@ export async function writeBrowserDownload(
       completed.dev !== opened.dev ||
       completed.ino !== opened.ino
     ) {
-      throw new Error("Browser download target changed during execution");
+      throw new Error(`Browser ${action} target changed during execution`);
     }
-    await assertOpenTarget(target, opened.dev, opened.ino);
+    await assertOpenTarget(target, opened.dev, opened.ino, action);
     return {
       target: target.target,
       path: target.relativePath,
@@ -159,13 +216,6 @@ export async function writeBrowserDownload(
   } finally {
     await handle?.close().catch(() => undefined);
   }
-}
-
-export async function preflightBrowserDownload(
-  workspaceRootInput: string,
-  inputPath: string,
-): Promise<void> {
-  await resolveNewBrowserFile(workspaceRootInput, inputPath, "download");
 }
 
 async function resolveExistingBrowserFile(
@@ -255,12 +305,13 @@ async function assertOpenTarget(
   },
   device: number,
   inode: number,
+  action = "download",
 ): Promise<void> {
   const [canonical, info] = await Promise.all([
     realpath(target.target),
     lstat(target.target),
   ]).catch(() => {
-    throw new Error("Browser download target changed during execution");
+    throw new Error(`Browser ${action} target changed during execution`);
   });
   if (
     canonical !== target.target ||
@@ -270,7 +321,7 @@ async function assertOpenTarget(
     info.dev !== device ||
     info.ino !== inode
   ) {
-    throw new Error("Browser download target changed during execution");
+    throw new Error(`Browser ${action} target changed during execution`);
   }
 }
 
@@ -317,7 +368,17 @@ function normalizeBrowserWorkspacePath(input: string, action: string): string {
   return normalized;
 }
 
-async function writeFully(handle: FileHandle, buffer: Buffer): Promise<void> {
+function assertBrowserScreenshotPath(inputPath: string): void {
+  if (path.extname(inputPath).toLowerCase() !== ".png") {
+    throw new Error("Browser screenshot path must end in .png");
+  }
+}
+
+async function writeFully(
+  handle: FileHandle,
+  buffer: Buffer,
+  action = "download",
+): Promise<void> {
   let offset = 0;
   while (offset < buffer.byteLength) {
     const written = await handle.write(
@@ -327,14 +388,17 @@ async function writeFully(handle: FileHandle, buffer: Buffer): Promise<void> {
       null,
     );
     if (written.bytesWritten <= 0) {
-      throw new Error("Browser download write made no progress");
+      throw new Error(`Browser ${action} write made no progress`);
     }
     offset += written.bytesWritten;
   }
 }
 
-function assertNotAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) throw new Error("Browser download was cancelled");
+function assertNotAborted(
+  signal: AbortSignal | undefined,
+  action = "download",
+): void {
+  if (signal?.aborted) throw new Error(`Browser ${action} was cancelled`);
 }
 
 function errorCode(error: unknown): string | undefined {

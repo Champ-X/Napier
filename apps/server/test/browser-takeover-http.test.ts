@@ -167,6 +167,65 @@ describe("Browser takeover HTTP", () => {
       }),
     ).toBeUndefined();
   });
+
+  it("accepts bounded output actions and rejects unsafe paths", () => {
+    const binding = {
+      expectedPauseStateSha256: "a".repeat(64),
+      expectedSessionIdSha256: "b".repeat(64),
+      expectedSessionOperation: 1,
+      expectedSnapshotSha256: "c".repeat(64),
+      expectedActiveTabId: "tab_1",
+      expectedTabCount: 1,
+      expectedTabSetSha256: "d".repeat(64),
+    };
+
+    expect(
+      parseBrowserTakeoverActionRequest({
+        ...binding,
+        action: "save_screenshot",
+        path: "artifacts/page.png",
+        expectedLiveImageSha256: "e".repeat(64),
+        expectedViewportWidth: 1_280,
+        expectedViewportHeight: 900,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        action: "save_screenshot",
+        path: "artifacts/page.png",
+      }),
+    );
+    expect(
+      parseBrowserTakeoverActionRequest({
+        ...binding,
+        action: "download",
+        ref: "e3",
+        path: "downloads/report.pdf",
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        action: "download",
+        ref: "e3",
+        path: "downloads/report.pdf",
+      }),
+    );
+    for (const unsafe of [
+      "../escape.png",
+      "/absolute.png",
+      "artifacts/../escape.png",
+      "artifacts/page.jpg",
+    ]) {
+      expect(
+        parseBrowserTakeoverActionRequest({
+          ...binding,
+          action: "save_screenshot",
+          path: unsafe,
+          expectedLiveImageSha256: "e".repeat(64),
+          expectedViewportWidth: 1_280,
+          expectedViewportHeight: 900,
+        }),
+      ).toBeUndefined();
+    }
+  });
 });
 
 function takeoverSnapshot(): BrowserTakeoverSnapshot {
@@ -206,7 +265,7 @@ function takeoverSnapshot(): BrowserTakeoverSnapshot {
 function takeoverReceipt(): BrowserTakeoverActionReceipt {
   return {
     kind: "napier.browser-takeover-action",
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: "browser_takeover_12345678",
     threadId: "thread_takeover",
     runId: "run_takeover",

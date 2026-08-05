@@ -411,6 +411,131 @@ describe("Browser takeover", () => {
     ).toBe("browser.takeover.failed");
     await fixture.store.close();
   });
+
+  it("records screenshot output by path and file hash without the raw path", async () => {
+    const fixture = await createFixture();
+    const snapshotText = "- heading [ref=e1]";
+    const imageSha256 = sha256("live pixels");
+    const outputPath = "artifacts/private-browser.png";
+    const service = new BrowserSessionControlService(
+      fixture.store,
+      {
+        hasActiveBrowserSession: vi.fn(() => true),
+        captureBrowserTakeoverSnapshot: vi.fn(async () =>
+          captureResult(snapshotText, 1),
+        ),
+        captureBrowserLiveView: vi.fn(async () => ({
+          image: Buffer.from("live pixels"),
+          receipt: liveReceipt(1, imageSha256),
+        })),
+        executeBrowserTakeoverAction: vi.fn(async () => ({
+          output: `Workspace file: ${outputPath}`,
+          details: details(
+            "save_screenshot",
+            2,
+            snapshotText,
+            "tab_1",
+            ["tab_1"],
+            {
+              file: {
+                pathSha256: sha256(outputPath),
+                fileSha256: imageSha256,
+                fileBytes: 11,
+              },
+            },
+          ),
+        })),
+      },
+      new BrowserSessionPauseManager(fixture.store),
+    );
+    await service.pause(fixture.threadId, fixture.runId);
+    const snapshot = await service.snapshot(fixture.threadId, fixture.runId);
+
+    const receipt = await service.executeTakeover(
+      fixture.threadId,
+      fixture.runId,
+      {
+        ...binding(snapshot),
+        action: "save_screenshot",
+        path: outputPath,
+        expectedLiveImageSha256: imageSha256,
+        expectedViewportWidth: 1_280,
+        expectedViewportHeight: 900,
+      },
+    );
+
+    expect(receipt).toEqual(
+      expect.objectContaining({
+        action: "save_screenshot",
+        outputPathSha256: sha256(outputPath),
+        outputFileSha256: imageSha256,
+        outputFileBytes: 11,
+        sourceLiveImageSha256: imageSha256,
+      }),
+    );
+    expect(
+      JSON.stringify(await fixture.store.listEvents(fixture.threadId)),
+    ).not.toContain(outputPath);
+    await fixture.store.close();
+  });
+
+  it("records downloaded file evidence without target path or content", async () => {
+    const fixture = await createFixture();
+    const snapshotText = '- link "Download" [ref=e3]';
+    const outputPath = "downloads/private-report.pdf";
+    const fileSha256 = sha256("PRIVATE_DOWNLOAD_BODY");
+    const service = new BrowserSessionControlService(
+      fixture.store,
+      {
+        hasActiveBrowserSession: vi.fn(() => true),
+        captureBrowserTakeoverSnapshot: vi.fn(async () =>
+          captureResult(snapshotText, 1),
+        ),
+        executeBrowserTakeoverAction: vi.fn(async () => ({
+          output: `PRIVATE_DOWNLOAD_BODY ${outputPath}`,
+          details: details("download", 2, snapshotText, "tab_1", ["tab_1"], {
+            file: {
+              pathSha256: sha256(outputPath),
+              fileSha256,
+              fileBytes: 21,
+            },
+            suggestedFilenameSha256: sha256("report.pdf"),
+          }),
+        })),
+      },
+      new BrowserSessionPauseManager(fixture.store),
+    );
+    await service.pause(fixture.threadId, fixture.runId);
+    const snapshot = await service.snapshot(fixture.threadId, fixture.runId);
+
+    const receipt = await service.executeTakeover(
+      fixture.threadId,
+      fixture.runId,
+      {
+        ...binding(snapshot),
+        action: "download",
+        ref: "e3",
+        path: outputPath,
+      },
+    );
+
+    expect(receipt).toEqual(
+      expect.objectContaining({
+        action: "download",
+        targetRefSha256: sha256("e3"),
+        outputPathSha256: sha256(outputPath),
+        outputFileSha256: fileSha256,
+        outputFileBytes: 21,
+        suggestedFilenameSha256: sha256("report.pdf"),
+      }),
+    );
+    const durable = JSON.stringify(
+      await fixture.store.listEvents(fixture.threadId),
+    );
+    expect(durable).not.toContain(outputPath);
+    expect(durable).not.toContain("PRIVATE_DOWNLOAD_BODY");
+    await fixture.store.close();
+  });
 });
 
 function details(
@@ -419,10 +544,11 @@ function details(
   snapshot: string,
   activeTabId = "tab_1",
   tabIds = ["tab_1"],
+  extra: Record<string, unknown> = {},
 ) {
   return {
     kind: "napier.browser-session-operation" as const,
-    schemaVersion: 2 as const,
+    schemaVersion: 3 as const,
     action: action as "snapshot",
     sessionMode: "run_persistent" as const,
     sessionReused: true,
@@ -437,6 +563,12 @@ function details(
     currentUrlSha256: "e".repeat(64),
     currentOriginSha256: "f".repeat(64),
     titleSha256: "1".repeat(64),
+    pageDiagnosis: {
+      status: "none" as const,
+      signalCount: 0,
+      signalsSha256: sha256("[]"),
+      takeoverRecommended: false,
+    },
     snapshotSha256: sha256(snapshot),
     snapshotChars: snapshot.length,
     snapshotTruncated: false,
@@ -450,6 +582,7 @@ function details(
       destinationsSha256: sha256(canonicalJson(["example.com"])),
     },
     crossOriginAuthorized: false,
+    ...extra,
   };
 }
 
@@ -495,7 +628,7 @@ function binding(
 function liveReceipt(operation: number, imageSha256: string) {
   const content = {
     kind: "napier.browser-live-view" as const,
-    schemaVersion: 3 as const,
+    schemaVersion: 4 as const,
     threadId: "thread_live",
     runId: "run_live",
     sessionIdSha256: "a".repeat(64),
@@ -517,6 +650,12 @@ function liveReceipt(operation: number, imageSha256: string) {
     limitsSha256: "d".repeat(64),
     networkRequestCount: operation,
     blockedRequestCount: 0,
+    pageDiagnosis: {
+      status: "none" as const,
+      signalCount: 0,
+      signalsSha256: sha256("[]"),
+      takeoverRecommended: false,
+    },
   };
   return {
     ...content,

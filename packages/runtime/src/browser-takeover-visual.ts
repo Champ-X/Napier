@@ -15,6 +15,13 @@ type VisualClickRequest = Extract<
   { action: "visual_click" }
 >;
 
+type SaveScreenshotRequest = Extract<
+  ExecuteBrowserTakeoverActionRequest,
+  { action: "save_screenshot" }
+>;
+
+type LiveBoundRequest = VisualClickRequest | SaveScreenshotRequest;
+
 type KeypressRequest = Extract<
   ExecuteBrowserTakeoverActionRequest,
   { action: "keypress" }
@@ -24,6 +31,12 @@ export function isBrowserVisualClickRequest(
   request: ExecuteBrowserTakeoverActionRequest,
 ): request is VisualClickRequest {
   return request.action === "visual_click";
+}
+
+export function isBrowserSaveScreenshotRequest(
+  request: ExecuteBrowserTakeoverActionRequest,
+): request is SaveScreenshotRequest {
+  return request.action === "save_screenshot";
 }
 
 export function validBrowserVisualClickRequest(
@@ -54,6 +67,13 @@ export function validBrowserVisualTakeoverAction(
   if (request.action === "visual_click") {
     return validBrowserVisualClickRequest(request);
   }
+  if (request.action === "save_screenshot") {
+    return (
+      /^[a-f0-9]{64}$/u.test(request.expectedLiveImageSha256) &&
+      request.expectedViewportWidth === BROWSER_VIEWPORT_WIDTH &&
+      request.expectedViewportHeight === BROWSER_VIEWPORT_HEIGHT
+    );
+  }
   if (request.action === "keypress") {
     return validBrowserTakeoverKeypress(request);
   }
@@ -70,6 +90,11 @@ export function browserVisualActionEvidence(
       coordinateXSha256: string;
       coordinateYSha256: string;
     }
+  | {
+      sourceLiveImageSha256: string;
+      viewportWidth: number;
+      viewportHeight: number;
+    }
   | { key: KeypressRequest["key"] }
   | undefined {
   if (request.action === "visual_click") {
@@ -81,11 +106,18 @@ export function browserVisualActionEvidence(
       coordinateYSha256: sha256(String(request.y)),
     };
   }
+  if (request.action === "save_screenshot") {
+    return {
+      sourceLiveImageSha256: request.expectedLiveImageSha256,
+      viewportWidth: request.expectedViewportWidth,
+      viewportHeight: request.expectedViewportHeight,
+    };
+  }
   return request.action === "keypress" ? { key: request.key } : undefined;
 }
 
 export function validateBrowserVisualClickBinding(
-  request: VisualClickRequest,
+  request: LiveBoundRequest,
   live: BrowserLiveViewReceipt,
 ): void {
   if (

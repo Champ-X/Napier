@@ -6,21 +6,21 @@ import {
 } from "@napier/contracts/browser-takeover";
 
 import type { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
-import {
-  MAX_BROWSER_SCROLL_PIXELS,
-  MAX_BROWSER_WAIT_MS,
-} from "./browser-session-model.js";
 import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
-import { validateBrowserTakeoverTabResult } from "./browser-takeover-tabs.js";
 import {
+  browserTakeoverSnapshotBinding,
+  createBrowserTakeoverActionReceipt,
+  type BrowserTakeoverSnapshotBinding,
+  validateBrowserTakeoverActionRequest,
+  validateBrowserTakeoverActionResult,
+} from "./browser-takeover-action.js";
+import {
+  isBrowserSaveScreenshotRequest,
   isBrowserVisualClickRequest,
-  browserVisualActionEvidence,
-  validBrowserVisualTakeoverAction,
   validateBrowserVisualClickBinding,
 } from "./browser-takeover-visual.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { createId, nowIso } from "./ids.js";
-import { validatePublicHttpUrl } from "./public-network.js";
+import { nowIso } from "./ids.js";
 import type { LocalStore } from "./store.js";
 
 type BrowserTakeoverStore = Pick<
@@ -114,7 +114,7 @@ export class BrowserTakeoverService {
         ...content,
         contentSha256: sha256(canonicalJson(content)),
       };
-      this.remember(owner, snapshotBinding(snapshot));
+      this.remember(owner, browserTakeoverSnapshotBinding(snapshot));
       return structuredClone(snapshot);
     });
   }
@@ -126,7 +126,7 @@ export class BrowserTakeoverService {
     signal?: AbortSignal,
   ): Promise<BrowserTakeoverActionReceipt> {
     const owner = this.authorize(threadId, runId);
-    validateActionRequest(request);
+    validateBrowserTakeoverActionRequest(request);
     return this.pauses.runWhilePaused(
       owner,
       request.expectedPauseStateSha256,
@@ -144,7 +144,11 @@ export class BrowserTakeoverService {
         ) {
           throw new Error("Browser takeover snapshot changed");
         }
-        const requested = createActionReceipt(owner, request, "requested");
+        const requested = createBrowserTakeoverActionReceipt(
+          owner,
+          request,
+          "requested",
+        );
         await this.append(requested);
         this.snapshots.delete(ownerKey(owner));
         let result: Awaited<
@@ -160,23 +164,42 @@ export class BrowserTakeoverService {
             );
             validateBrowserVisualClickBinding(request, live.receipt);
           }
+          if (isBrowserSaveScreenshotRequest(request)) {
+            const live = await this.capabilities.captureBrowserLiveView(
+              owner,
+              signal,
+            );
+            validateBrowserVisualClickBinding(request, live.receipt);
+          }
           result = await this.capabilities.executeBrowserTakeoverAction(
             owner,
             request,
             signal,
           );
-          validateActionResult(request, result.details, snapshot);
+          validateBrowserTakeoverActionResult(
+            request,
+            result.details,
+            snapshot,
+          );
         } catch {
-          const failed = createActionReceipt(owner, request, "failed", {
-            requested,
-          });
+          const failed = createBrowserTakeoverActionReceipt(
+            owner,
+            request,
+            "failed",
+            { requested },
+          );
           await this.append(failed).catch(() => undefined);
           throw new Error("Browser takeover action failed");
         }
-        const completed = createActionReceipt(owner, request, "completed", {
-          requested,
-          details: result.details,
-        });
+        const completed = createBrowserTakeoverActionReceipt(
+          owner,
+          request,
+          "completed",
+          {
+            requested,
+            details: result.details,
+          },
+        );
         await this.append(completed);
         return completed;
       },
@@ -227,268 +250,6 @@ export class BrowserTakeoverService {
       payload: JSON.parse(JSON.stringify(receipt)) as JsonValue,
     });
   }
-}
-
-interface BrowserTakeoverSnapshotBinding {
-  pauseStateSha256: string;
-  sessionIdSha256: string;
-  sessionOperation: number;
-  snapshotSha256: string;
-  activeTabIdSha256: string;
-  tabCount: number;
-  tabSetSha256: string;
-  tabIdSha256s: string[];
-}
-
-function snapshotBinding(
-  snapshot: BrowserTakeoverSnapshot,
-): BrowserTakeoverSnapshotBinding {
-  return {
-    pauseStateSha256: snapshot.pauseStateSha256,
-    sessionIdSha256: snapshot.sessionIdSha256,
-    sessionOperation: snapshot.sessionOperation,
-    snapshotSha256: snapshot.snapshotSha256,
-    activeTabIdSha256: sha256(snapshot.activeTabId),
-    tabCount: snapshot.tabCount,
-    tabSetSha256: snapshot.tabSetSha256,
-    tabIdSha256s: snapshot.tabs.map((tab) => sha256(tab.tabId)),
-  };
-}
-
-function createActionReceipt(
-  owner: { threadId: string; runId: string },
-  request: ExecuteBrowserTakeoverActionRequest,
-  status: BrowserTakeoverActionReceipt["status"],
-  options: {
-    requested?: BrowserTakeoverActionReceipt;
-    details?: Awaited<
-      ReturnType<BrowserTakeoverCapabilities["executeBrowserTakeoverAction"]>
-    >["details"];
-  } = {},
-): BrowserTakeoverActionReceipt {
-  const requestedAt = options.requested?.requestedAt ?? nowIso();
-  const content = {
-    kind: "napier.browser-takeover-action" as const,
-    schemaVersion: 2 as const,
-    id:
-      options.requested?.id ??
-      (createId("browser_takeover") as `browser_takeover_${string}`),
-    ...owner,
-    action: request.action,
-    status,
-    requestSha256:
-      options.requested?.requestSha256 ?? sha256(canonicalJson(request)),
-    pauseStateSha256: request.expectedPauseStateSha256,
-    sourceSessionIdSha256: request.expectedSessionIdSha256,
-    sourceSessionOperation: request.expectedSessionOperation,
-    sourceSnapshotSha256: request.expectedSnapshotSha256,
-    sourceActiveTabId: request.expectedActiveTabId,
-    sourceTabCount: request.expectedTabCount,
-    sourceTabSetSha256: request.expectedTabSetSha256,
-    ...actionEvidence(request),
-    crossOriginAuthorized:
-      "allowCrossOrigin" in request && request.allowCrossOrigin === true,
-    requestedAt,
-    ...(status === "requested" ? {} : { settledAt: nowIso() }),
-    ...(options.details
-      ? {
-          sessionIdSha256: options.details.sessionIdSha256,
-          sessionOperation: options.details.sessionOperation,
-          activeTabId: options.details.activeTabId,
-          tabCount: options.details.tabCount,
-          tabSetSha256: options.details.tabSetSha256,
-          currentUrlSha256: options.details.currentUrlSha256,
-          currentOriginSha256: options.details.currentOriginSha256,
-          titleSha256: options.details.titleSha256,
-          ...(options.details.snapshotSha256
-            ? {
-                snapshotSha256: options.details.snapshotSha256,
-                snapshotChars: options.details.snapshotChars,
-                snapshotTruncated: options.details.snapshotTruncated,
-              }
-            : {}),
-        }
-      : {}),
-    ...(status === "failed"
-      ? { failureCode: "browser_action_failed" as const }
-      : {}),
-  };
-  return { ...content, contentSha256: sha256(canonicalJson(content)) };
-}
-
-function actionEvidence(request: ExecuteBrowserTakeoverActionRequest) {
-  const visual = browserVisualActionEvidence(request);
-  if (visual) return visual;
-  if (request.action === "click") {
-    return { targetRefSha256: sha256(request.ref) };
-  }
-  if (request.action === "type") {
-    return {
-      targetRefSha256: sha256(request.ref),
-      textSha256: sha256(request.text),
-      textBytes: Buffer.byteLength(request.text, "utf8"),
-    };
-  }
-  if (request.action === "select") {
-    return {
-      targetRefSha256: sha256(request.ref),
-      valueSetSha256: sha256(canonicalJson(request.values)),
-      valueCount: request.values.length,
-    };
-  }
-  if (request.action === "scroll") {
-    return {
-      direction: request.direction,
-      ...(request.pixels !== undefined ? { pixels: request.pixels } : {}),
-    };
-  }
-  if (request.action === "wait") {
-    return {
-      ...(request.durationMs !== undefined
-        ? { durationMs: request.durationMs }
-        : {}),
-    };
-  }
-  if (request.action === "tab_new") {
-    const url = validatePublicHttpUrl(request.url);
-    return {
-      targetUrlSha256: sha256(url.href),
-      targetOriginSha256: sha256(url.origin),
-    };
-  }
-  if (request.action === "tab_switch" || request.action === "tab_close") {
-    return { targetTabIdSha256: sha256(request.tabId) };
-  }
-  return {};
-}
-
-function validateActionRequest(
-  request: ExecuteBrowserTakeoverActionRequest,
-): void {
-  if (
-    !isSha256(request.expectedPauseStateSha256) ||
-    !isSha256(request.expectedSessionIdSha256) ||
-    !isSha256(request.expectedSnapshotSha256) ||
-    !isTabId(request.expectedActiveTabId) ||
-    !Number.isSafeInteger(request.expectedTabCount) ||
-    request.expectedTabCount < 1 ||
-    request.expectedTabCount > 4 ||
-    !isSha256(request.expectedTabSetSha256) ||
-    !Number.isSafeInteger(request.expectedSessionOperation) ||
-    request.expectedSessionOperation < 0 ||
-    !validAction(request)
-  ) {
-    throw new Error("Browser takeover request is invalid");
-  }
-}
-
-function validateActionResult(
-  request: ExecuteBrowserTakeoverActionRequest,
-  details: Awaited<
-    ReturnType<BrowserTakeoverCapabilities["executeBrowserTakeoverAction"]>
-  >["details"],
-  snapshot: BrowserTakeoverSnapshotBinding,
-): void {
-  if (
-    details.action !== request.action ||
-    details.sessionIdSha256 !== request.expectedSessionIdSha256 ||
-    details.sessionOperation !== request.expectedSessionOperation + 1
-  ) {
-    throw new Error("Browser takeover action evidence is invalid");
-  }
-  validateBrowserTakeoverTabResult(request, details, {
-    activeTabId: request.expectedActiveTabId,
-    tabCount: snapshot.tabCount,
-    tabSetSha256: snapshot.tabSetSha256,
-    tabIdSha256s: snapshot.tabIdSha256s,
-  });
-}
-
-function validAction(request: ExecuteBrowserTakeoverActionRequest): boolean {
-  if (!validTargetAction(request)) return false;
-  return validNonTargetAction(request);
-}
-
-function validTargetAction(
-  request: ExecuteBrowserTakeoverActionRequest,
-): boolean {
-  if (
-    request.action !== "click" &&
-    request.action !== "type" &&
-    request.action !== "select"
-  ) {
-    return true;
-  }
-  if (
-    typeof request.ref !== "string" ||
-    !/^[a-z0-9]{1,40}$/u.test(request.ref)
-  ) {
-    return false;
-  }
-  if (request.action === "type") {
-    return (
-      typeof request.text === "string" &&
-      Buffer.byteLength(request.text, "utf8") <= 8_000
-    );
-  }
-  if (request.action === "select") {
-    return (
-      Array.isArray(request.values) &&
-      request.values.length >= 1 &&
-      request.values.length <= 20 &&
-      request.values.every(
-        (value) =>
-          typeof value === "string" && Buffer.byteLength(value, "utf8") <= 512,
-      )
-    );
-  }
-  return true;
-}
-
-function validNonTargetAction(
-  request: ExecuteBrowserTakeoverActionRequest,
-): boolean {
-  const visual = validBrowserVisualTakeoverAction(request);
-  if (visual !== undefined) return visual;
-  if (request.action === "scroll") {
-    return (
-      (request.direction === "up" || request.direction === "down") &&
-      (request.pixels === undefined ||
-        (Number.isSafeInteger(request.pixels) &&
-          request.pixels >= 1 &&
-          request.pixels <= MAX_BROWSER_SCROLL_PIXELS))
-    );
-  }
-  if (request.action === "wait") {
-    return (
-      request.durationMs === undefined ||
-      (Number.isSafeInteger(request.durationMs) &&
-        request.durationMs >= 1 &&
-        request.durationMs <= MAX_BROWSER_WAIT_MS)
-    );
-  }
-  if (request.action === "tab_new") {
-    try {
-      return (
-        request.url.length <= 4_096 &&
-        Boolean(validatePublicHttpUrl(request.url))
-      );
-    } catch {
-      return false;
-    }
-  }
-  if (request.action === "tab_switch" || request.action === "tab_close") {
-    return isTabId(request.tabId);
-  }
-  return true;
-}
-
-function isSha256(value: string): boolean {
-  return /^[a-f0-9]{64}$/u.test(value);
-}
-
-function isTabId(value: string): boolean {
-  return /^tab_[1-9][0-9]{0,3}$/u.test(value);
 }
 
 function ownerKey(owner: { threadId: string; runId: string }): string {

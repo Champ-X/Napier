@@ -7,6 +7,7 @@ import {
   MAX_ACTIVE_BROWSER_SESSIONS,
   type BrowserSessionOwner,
 } from "../src/browser-session.js";
+import { sha256 } from "../src/ed25519.js";
 import {
   cleanupBrowserSessionHarnesses,
   createBrowserSessionHarness as createHarness,
@@ -675,7 +676,7 @@ describe("RunBrowserSessionManager", () => {
     expect(finalHarness.browsers[0]?.closed).toBe(true);
   });
 
-  it("allows visual and keyboard actions only through takeover", async () => {
+  it("allows visual, keyboard, and screenshot-save actions only through takeover", async () => {
     const harness = await createHarness();
     const owner = {
       threadId: "thread_visual_takeover",
@@ -693,8 +694,20 @@ describe("RunBrowserSessionManager", () => {
         y: 450,
       }),
     ).rejects.toThrow("pause-bound takeover");
+    await expect(
+      harness.manager.execute(owner, {
+        action: "save_screenshot",
+        path: "takeover.png",
+        expectedLiveImageSha256: sha256("fake png"),
+      }),
+    ).rejects.toThrow("pause-bound takeover");
     expect(harness.browsers[0]?.closed).toBe(false);
 
+    const saved = await harness.manager.executeTakeoverAction(owner, {
+      action: "save_screenshot",
+      path: "takeover.png",
+      expectedLiveImageSha256: sha256("fake png"),
+    });
     const clicked = await harness.manager.executeTakeoverAction(owner, {
       action: "visual_click",
       x: 640,
@@ -704,11 +717,66 @@ describe("RunBrowserSessionManager", () => {
       action: "keypress",
       key: "Enter",
     });
-    expect(clicked.details.sessionOperation).toBe(2);
-    expect(pressed.details.sessionOperation).toBe(3);
+    const downloaded = await harness.manager.executeTakeoverAction(owner, {
+      action: "download",
+      target: { ref: "e3" },
+      path: "takeover-download.txt",
+    });
+    expect(saved.details).toEqual(
+      expect.objectContaining({
+        sessionOperation: 2,
+        file: {
+          pathSha256: sha256("takeover.png"),
+          fileSha256: sha256("fake png"),
+          fileBytes: Buffer.byteLength("fake png"),
+        },
+      }),
+    );
+    await expect(
+      readFile(path.join(harness.workspace, "takeover.png")),
+    ).resolves.toEqual(Buffer.from("fake png"));
+    expect(clicked.details.sessionOperation).toBe(3);
+    expect(pressed.details.sessionOperation).toBe(4);
+    expect(downloaded.details).toEqual(
+      expect.objectContaining({
+        sessionOperation: 5,
+        file: expect.objectContaining({
+          pathSha256: sha256("takeover-download.txt"),
+          fileBytes: Buffer.byteLength("download body"),
+        }),
+        suggestedFilenameSha256: sha256("download.txt"),
+      }),
+    );
+    await expect(
+      readFile(path.join(harness.workspace, "takeover-download.txt"), "utf8"),
+    ).resolves.toBe("download body");
     expect(harness.pages[0]?.visualClicks).toEqual([{ x: 640, y: 450 }]);
     expect(harness.pages[0]?.pressedKeys).toEqual(["Enter"]);
     await harness.manager.cancelRun(owner);
+  });
+
+  it("rejects a stale screenshot image before creating the workspace file", async () => {
+    const harness = await createHarness();
+    const owner = {
+      threadId: "thread_screenshot_stale",
+      runId: "run_screenshot_stale",
+    };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/",
+    });
+
+    await expect(
+      harness.manager.executeTakeoverAction(owner, {
+        action: "save_screenshot",
+        path: "stale.png",
+        expectedLiveImageSha256: sha256("old pixels"),
+      }),
+    ).rejects.toThrow("live viewport changed");
+    await expect(
+      readFile(path.join(harness.workspace, "stale.png")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    expect(harness.browsers[0]?.closed).toBe(true);
   });
 
   it("rejects invalid visual coordinates and key names", async () => {

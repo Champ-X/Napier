@@ -141,6 +141,11 @@ export type BrowserSessionRequest =
       allowCrossOrigin?: boolean;
     }
   | {
+      action: "save_screenshot";
+      path: string;
+      expectedLiveImageSha256: string;
+    }
+  | {
       action: "visual_click";
       x: number;
       y: number;

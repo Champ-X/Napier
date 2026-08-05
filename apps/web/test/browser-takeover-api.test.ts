@@ -186,6 +186,127 @@ describe("Browser takeover Web API", () => {
       ),
     ).resolves.toEqual(keyReceipt);
   });
+
+  it("verifies screenshot and download output evidence", async () => {
+    const snapshot = await snapshotFixture();
+    const screenshotRequest = {
+      action: "save_screenshot" as const,
+      expectedPauseStateSha256: snapshot.pauseStateSha256,
+      expectedSessionIdSha256: snapshot.sessionIdSha256,
+      expectedSessionOperation: snapshot.sessionOperation,
+      expectedSnapshotSha256: snapshot.snapshotSha256,
+      expectedActiveTabId: snapshot.activeTabId,
+      expectedTabCount: snapshot.tabCount,
+      expectedTabSetSha256: snapshot.tabSetSha256,
+      path: "artifacts/page.png",
+      expectedLiveImageSha256: "8".repeat(64),
+      expectedViewportWidth: 1_280,
+      expectedViewportHeight: 900,
+    };
+    const screenshotReceipt = await actionReceiptFixture(
+      snapshot,
+      screenshotRequest,
+      {
+        outputPathSha256: await sha256Text(screenshotRequest.path),
+        outputFileSha256: screenshotRequest.expectedLiveImageSha256,
+        outputFileBytes: 1_024,
+        sourceLiveImageSha256: screenshotRequest.expectedLiveImageSha256,
+        viewportWidth: 1_280,
+        viewportHeight: 900,
+      },
+    );
+    const downloadRequest = {
+      action: "download" as const,
+      expectedPauseStateSha256: snapshot.pauseStateSha256,
+      expectedSessionIdSha256: snapshot.sessionIdSha256,
+      expectedSessionOperation: snapshot.sessionOperation,
+      expectedSnapshotSha256: snapshot.snapshotSha256,
+      expectedActiveTabId: snapshot.activeTabId,
+      expectedTabCount: snapshot.tabCount,
+      expectedTabSetSha256: snapshot.tabSetSha256,
+      ref: "e3",
+      path: "downloads/report.pdf",
+    };
+    const downloadReceipt = await actionReceiptFixture(
+      snapshot,
+      downloadRequest,
+      {
+        targetRefSha256: await sha256Text(downloadRequest.ref),
+        outputPathSha256: await sha256Text(downloadRequest.path),
+        outputFileSha256: "9".repeat(64),
+        outputFileBytes: 2_048,
+        suggestedFilenameSha256: "a".repeat(64),
+      },
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(stableResponse(screenshotReceipt))
+        .mockResolvedValueOnce(stableResponse(downloadReceipt)),
+    );
+
+    await expect(
+      executeBrowserTakeoverAction(
+        snapshot.threadId,
+        snapshot.runId,
+        screenshotRequest,
+      ),
+    ).resolves.toEqual(screenshotReceipt);
+    await expect(
+      executeBrowserTakeoverAction(
+        snapshot.threadId,
+        snapshot.runId,
+        downloadRequest,
+      ),
+    ).resolves.toEqual(downloadReceipt);
+  });
+
+  it("rejects missing or mismatched output evidence", async () => {
+    const snapshot = await snapshotFixture();
+    const request = {
+      action: "save_screenshot" as const,
+      expectedPauseStateSha256: snapshot.pauseStateSha256,
+      expectedSessionIdSha256: snapshot.sessionIdSha256,
+      expectedSessionOperation: snapshot.sessionOperation,
+      expectedSnapshotSha256: snapshot.snapshotSha256,
+      expectedActiveTabId: snapshot.activeTabId,
+      expectedTabCount: snapshot.tabCount,
+      expectedTabSetSha256: snapshot.tabSetSha256,
+      path: "artifacts/page.png",
+      expectedLiveImageSha256: "8".repeat(64),
+      expectedViewportWidth: 1_280,
+      expectedViewportHeight: 900,
+    };
+    const missing = await actionReceiptFixture(snapshot, request, {
+      outputPathSha256: await sha256Text(request.path),
+      sourceLiveImageSha256: request.expectedLiveImageSha256,
+      viewportWidth: 1_280,
+      viewportHeight: 900,
+    });
+    const mismatched = await actionReceiptFixture(snapshot, request, {
+      outputPathSha256: await sha256Text(request.path),
+      outputFileSha256: "9".repeat(64),
+      outputFileBytes: 1_024,
+      sourceLiveImageSha256: request.expectedLiveImageSha256,
+      viewportWidth: 1_280,
+      viewportHeight: 900,
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(stableResponse(missing))
+        .mockResolvedValueOnce(stableResponse(mismatched)),
+    );
+
+    await expect(
+      executeBrowserTakeoverAction(snapshot.threadId, snapshot.runId, request),
+    ).rejects.toThrow("response is invalid");
+    await expect(
+      executeBrowserTakeoverAction(snapshot.threadId, snapshot.runId, request),
+    ).rejects.toThrow("response is invalid");
+  });
 });
 
 async function snapshotFixture(): Promise<BrowserTakeoverSnapshot> {
@@ -235,7 +356,7 @@ async function receiptFixture(
 ): Promise<BrowserTakeoverActionReceipt> {
   const content = {
     kind: "napier.browser-takeover-action" as const,
-    schemaVersion: 2 as const,
+    schemaVersion: 3 as const,
     id: "browser_takeover_12345678" as const,
     threadId: snapshot.threadId,
     runId: snapshot.runId,
@@ -280,7 +401,7 @@ async function actionReceiptFixture(
 ): Promise<BrowserTakeoverActionReceipt> {
   const content = {
     kind: "napier.browser-takeover-action" as const,
-    schemaVersion: 2 as const,
+    schemaVersion: 3 as const,
     id: "browser_takeover_visual01" as const,
     threadId: snapshot.threadId,
     runId: snapshot.runId,

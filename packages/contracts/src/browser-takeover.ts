@@ -21,6 +21,8 @@ export type BrowserTakeoverAction =
   | "keypress"
   | "type"
   | "select"
+  | "download"
+  | "save_screenshot"
   | "scroll"
   | "back"
   | "forward"
@@ -94,6 +96,17 @@ export type ExecuteBrowserTakeoverActionRequest =
       values: string[];
     })
   | (BrowserTakeoverActionBinding & {
+      action: "download";
+      ref: string;
+      path: string;
+      allowCrossOrigin?: boolean;
+    })
+  | (BrowserTakeoverActionBinding &
+      BrowserTakeoverVisualBinding & {
+        action: "save_screenshot";
+        path: string;
+      })
+  | (BrowserTakeoverActionBinding & {
       action: "scroll";
       direction: "up" | "down";
       pixels?: number;
@@ -138,7 +151,7 @@ export type ExecuteBrowserTakeoverActionRequest =
 
 export interface BrowserTakeoverActionReceipt {
   kind: "napier.browser-takeover-action";
-  schemaVersion: 2;
+  schemaVersion: 3;
   id: `browser_takeover_${string}`;
   threadId: string;
   runId: string;
@@ -166,6 +179,10 @@ export interface BrowserTakeoverActionReceipt {
   textBytes?: number;
   valueSetSha256?: string;
   valueCount?: number;
+  outputPathSha256?: string;
+  outputFileSha256?: string;
+  outputFileBytes?: number;
+  suggestedFilenameSha256?: string;
   direction?: "up" | "down";
   pixels?: number;
   durationMs?: number;

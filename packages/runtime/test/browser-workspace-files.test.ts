@@ -17,6 +17,7 @@ import {
   inspectBrowserUpload,
   MAX_BROWSER_DOWNLOAD_BYTES,
   writeBrowserDownload,
+  writeBrowserScreenshot,
 } from "../src/browser-workspace-files.js";
 
 const roots: string[] = [];
@@ -144,6 +145,37 @@ describe("browser workspace files", () => {
     await expect(
       readFile(path.join(workspace, "oversized.bin")),
     ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("writes screenshots only to new PNG files inside safe parents", async () => {
+    const workspace = await createWorkspace();
+    await mkdir(path.join(workspace, "artifacts"));
+    const screenshot = Buffer.from("PNG_SCREENSHOT_BYTES");
+
+    const saved = await writeBrowserScreenshot(
+      workspace,
+      "artifacts/page.png",
+      screenshot,
+    );
+
+    expect(saved).toEqual(
+      expect.objectContaining({
+        path: path.join("artifacts", "page.png"),
+        fileBytes: screenshot.byteLength,
+      }),
+    );
+    await expect(
+      readFile(path.join(workspace, "artifacts/page.png")),
+    ).resolves.toEqual(screenshot);
+    await expect(
+      writeBrowserScreenshot(workspace, "artifacts/page.png", screenshot),
+    ).rejects.toThrow("already exists");
+    await expect(
+      writeBrowserScreenshot(workspace, "artifacts/page.jpg", screenshot),
+    ).rejects.toThrow("end in .png");
+    await expect(
+      writeBrowserScreenshot(workspace, "../page.png", screenshot),
+    ).rejects.toThrow("escapes");
   });
 });
 

@@ -2,6 +2,7 @@ import {
   BROWSER_TAKEOVER_KEYS,
   type ExecuteBrowserTakeoverActionRequest,
 } from "@napier/contracts/browser-takeover";
+import path from "node:path";
 import {
   BROWSER_LIVE_VIEWPORT_HEIGHT,
   BROWSER_LIVE_VIEWPORT_WIDTH,
@@ -19,6 +20,10 @@ export function parseBrowserTakeoverActionRequest(
   if (action === "keypress") return parseKeypress(input, binding);
   if (action === "type") return parseType(input, binding);
   if (action === "select") return parseSelect(input, binding);
+  if (action === "download") return parseDownload(input, binding);
+  if (action === "save_screenshot") {
+    return parseSaveScreenshot(input, binding);
+  }
   if (action === "scroll") return parseScroll(input, binding);
   if (action === "back") return parseBack(input, binding);
   if (action === "forward") return parseForward(input, binding);
@@ -176,6 +181,70 @@ function parseSelect(
         typeof value === "string" && Buffer.byteLength(value, "utf8") <= 512,
     )
     ? { ...binding, action: "select", ref, values }
+    : undefined;
+}
+
+function parseDownload(
+  input: Record<string, unknown>,
+  binding: TakeoverBinding,
+): ExecuteBrowserTakeoverActionRequest | undefined {
+  if (
+    !exactKeys(input, [
+      ...bindingKeys,
+      "action",
+      "ref",
+      "path",
+      "allowCrossOrigin",
+    ])
+  ) {
+    return undefined;
+  }
+  const ref = takeoverRef(input["ref"]);
+  const outputPath = workspaceOutputPath(input["path"]);
+  const allowCrossOrigin = input["allowCrossOrigin"];
+  return ref &&
+    outputPath &&
+    (allowCrossOrigin === undefined || typeof allowCrossOrigin === "boolean")
+    ? {
+        ...binding,
+        action: "download",
+        ref,
+        path: outputPath,
+        ...(allowCrossOrigin === true ? { allowCrossOrigin } : {}),
+      }
+    : undefined;
+}
+
+function parseSaveScreenshot(
+  input: Record<string, unknown>,
+  binding: TakeoverBinding,
+): ExecuteBrowserTakeoverActionRequest | undefined {
+  if (
+    !exactKeys(input, [
+      ...bindingKeys,
+      "action",
+      "path",
+      "expectedLiveImageSha256",
+      "expectedViewportWidth",
+      "expectedViewportHeight",
+    ])
+  ) {
+    return undefined;
+  }
+  const outputPath = workspaceOutputPath(input["path"]);
+  const image = input["expectedLiveImageSha256"];
+  return outputPath?.toLowerCase().endsWith(".png") &&
+    hash(image) &&
+    input["expectedViewportWidth"] === BROWSER_LIVE_VIEWPORT_WIDTH &&
+    input["expectedViewportHeight"] === BROWSER_LIVE_VIEWPORT_HEIGHT
+    ? {
+        ...binding,
+        action: "save_screenshot",
+        path: outputPath,
+        expectedLiveImageSha256: image,
+        expectedViewportWidth: BROWSER_LIVE_VIEWPORT_WIDTH,
+        expectedViewportHeight: BROWSER_LIVE_VIEWPORT_HEIGHT,
+      }
     : undefined;
 }
 
@@ -344,6 +413,23 @@ function takeoverTabId(value: unknown): string | undefined {
   return typeof value === "string" && /^tab_[1-9][0-9]{0,3}$/u.test(value)
     ? value
     : undefined;
+}
+
+function workspaceOutputPath(value: unknown): string | undefined {
+  if (
+    typeof value !== "string" ||
+    value.length < 1 ||
+    value.length > 500 ||
+    path.isAbsolute(value) ||
+    /[\u0000-\u001f\u007f]/u.test(value) ||
+    path.normalize(value) !== value ||
+    value === "." ||
+    value === ".." ||
+    value.startsWith(`..${path.sep}`)
+  ) {
+    return undefined;
+  }
+  return value;
 }
 
 function publicHttpUrl(value: unknown): string | undefined {

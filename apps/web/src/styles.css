@@ -1999,6 +1999,69 @@ button:disabled {
   padding: 0 12px 11px;
 }
 
+.browser-takeover-output {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px 10px;
+  align-items: end;
+  padding: 11px 12px;
+  background: rgb(159 217 183 / 4%);
+  border-top: 1px solid rgb(220 233 224 / 12%);
+}
+
+.browser-takeover-output label {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: #91aa9b;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.browser-takeover-output input {
+  min-width: 0;
+  min-height: 29px;
+  padding: 5px 7px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: #e3ece6;
+  background: #0b110d;
+  border: 1px solid rgb(220 233 224 / 22%);
+  border-radius: 2px;
+  outline: none;
+}
+
+.browser-takeover-output input:focus {
+  border-color: #9fd9b7;
+}
+
+.browser-takeover-output > div {
+  display: flex;
+  gap: 5px;
+}
+
+.browser-takeover-output > span,
+.browser-takeover-output > p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: #91aa9b;
+}
+
+.browser-takeover-output > p {
+  padding: 7px 8px;
+  color: #cfe5d7;
+  background: rgb(159 217 183 / 8%);
+  border-left: 2px solid #9fd9b7;
+}
+
+.browser-takeover-output code {
+  color: #f2c975;
+}
+
 .browser-takeover-desk > footer {
   justify-content: flex-start;
   color: #91aa9b;
@@ -14984,6 +15047,19 @@ button:disabled {
 
   .browser-takeover-mode {
     flex-wrap: wrap;
+  }
+
+  .browser-takeover-output {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .browser-takeover-output > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .browser-takeover-output > div button {
+    width: 100%;
   }
 
   .browser-takeover-primary {

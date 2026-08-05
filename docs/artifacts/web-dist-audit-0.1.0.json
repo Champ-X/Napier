@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 82,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BMVtmApf.js",
-    "sizeBytes": 142880,
+    "path": "apps/web/dist/assets/index-CRWv_KOg.js",
+    "sizeBytes": 142878,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "8352032722a4f5b0297f41d806df2c2455c44f52f52c32e13d90a66619e9b930"
+    "sha256": "48a7ff288812e4ce22180517b657177bf667b76f8c8029b72ae49db54802c115"
   },
-  "distContentSha256": "8352032722a4f5b0297f41d806df2c2455c44f52f52c32e13d90a66619e9b930",
+  "distContentSha256": "48a7ff288812e4ce22180517b657177bf667b76f8c8029b72ae49db54802c115",
   "errors": []
 }
