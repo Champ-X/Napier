@@ -21,6 +21,7 @@ import type { OsSandboxAdapter } from "./sandbox.js";
 import type { WebFetchResearchCaptureProvider } from "./web-fetch-model.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import type { ResearchSourceCapsuleStore } from "./research-source-capsule-store.js";
+import type { RunBoundFileArtifactStore } from "./run-bound-file-artifact.js";
 import type { LocalStore } from "./store.js";
 
 export class AgentSessionRuntime {
@@ -38,7 +39,8 @@ export class AgentSessionRuntime {
     researchSourceCaptures?: BrowserSourceCaptureProvider,
     webFetchCaptures?: WebFetchResearchCaptureProvider,
     researchSourceCapsules?: ResearchSourceCapsuleStore,
-    store?: Pick<LocalStore, "listRuns" | "listEvents" | "getThread">,
+    store?: Pick<LocalStore, "listRuns" | "listEvents" | "getThread"> &
+      RunBoundFileArtifactStore,
   ) {
     this.kernels = new AgentKernelRuntime(processes);
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
@@ -49,6 +51,7 @@ export class AgentSessionRuntime {
       workspaceRoot,
       webFetchCaptures,
       researchSourceCapsules,
+      store,
       store,
     );
     this.debuggerManager = processes

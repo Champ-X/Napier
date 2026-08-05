@@ -42,6 +42,7 @@ const VERIFY_DETAILS_KEYS = keySet(
   "kind schemaVersion action sourceCount citationCount sourceSetSha256 reportPathSha256 reportFileSha256 reportFileBytes reportCitationCount reportCitationSetSha256",
 );
 const STATE_CAPSULE_KEY = "stateCapsule";
+const REPORT_ARTIFACT_REGISTRATION_KEY = "reportArtifactRegistration";
 
 export function validResearchBenchmarkLedgerShape(
   value: unknown,
@@ -208,12 +209,35 @@ function validReportVerificationDetails(
   value: Record<string, unknown>,
 ): boolean {
   return (
-    exactOptionalStateCapsule(value, VERIFY_DETAILS_KEYS) &&
+    exactOptionalReportDetails(value) &&
     digest(value["reportPathSha256"]) &&
     digest(value["reportFileSha256"]) &&
     nonNegativeInteger(value["reportFileBytes"]) &&
     nonNegativeInteger(value["reportCitationCount"]) &&
-    digest(value["reportCitationSetSha256"])
+    digest(value["reportCitationSetSha256"]) &&
+    validReportArtifactRegistration(value[REPORT_ARTIFACT_REGISTRATION_KEY])
+  );
+}
+
+function exactOptionalReportDetails(value: Record<string, unknown>): boolean {
+  const keys = [...VERIFY_DETAILS_KEYS];
+  if (value[REPORT_ARTIFACT_REGISTRATION_KEY] !== undefined) {
+    keys.push(REPORT_ARTIFACT_REGISTRATION_KEY);
+  }
+  if (value[STATE_CAPSULE_KEY] !== undefined) keys.push(STATE_CAPSULE_KEY);
+  return exactKeys(value, keys);
+}
+
+function validReportArtifactRegistration(value: unknown): boolean {
+  return (
+    value === undefined ||
+    [
+      "registered",
+      "no_run_bound_plan",
+      "no_matching_artifact",
+      "artifact_not_expected",
+      "artifact_registration_failed",
+    ].includes(String(value))
   );
 }
 

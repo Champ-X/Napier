@@ -4037,6 +4037,23 @@ file before returning. Unknown, malformed, duplicated, moved, stale-hash, or
 claim-drifted citations fail closed. Evidence ledgers list citation IDs rather
 than repeating tokens.
 
+When the current ordinary user Run already owns the sole active Plan's running
+step and that Plan declares exactly one expected `file` Artifact at the
+canonical verified report path, `verify_report` also settles that Artifact
+through the existing `expected -> produced -> verified` lifecycle. It rereads
+workspace bytes through the canonical Artifact verifier, requires exact
+SHA-256/size equality with the report verifier, and appends only standard
+`plan.artifact.produced` and `plan.artifact.verified` events. Missing or
+ambiguous Plan authority, path mismatch, settled/foreign ownership, and
+ancillary persistence failure never invalidate a successfully verified report.
+The tool reports only a bounded registration status; it never creates a Plan,
+declares a new path, or rolls back report bytes.
+
+The `research` preset remains intentionally read-only and cannot create a
+report file. Use `safe_automation` when one Run must combine public Research
+Sources with preview-bound workspace writes and automatic declared Artifact
+settlement.
+
 Browser capture happens with Browser network access closed and fails if the
 page URL changes or the page has no visible text. Fetch import reuses only the
 already-normalized same-Run Source and fails on a foreign Run, stale content
@@ -4077,7 +4094,7 @@ the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
 completed `web_fetch fetch -> research_source capture_fetch -> cite` against
 both public Node.js release HTML and the W3C dummy PDF while Tool events
 retained neither URL, body, Web Source ID, nor credential. The complete regular
-suite currently passes 2,364 tests.
+suite currently passes 2,366 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

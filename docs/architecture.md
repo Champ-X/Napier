@@ -4524,6 +4524,23 @@ into another data root. Automatic recovery remains blocked after
 `research_source`, `web_fetch`, or other unsafe network-session tools; this
 slice does not pretend Browser Sessions survived restart.
 
+`run-bound-file-artifact.ts` owns strict automatic settlement for already
+declared workspace files. It admits exactly one active Plan with a running step
+bound to the current user Run, exactly one expected `file` Artifact at the
+canonical verified path, and no foreign Run owner. It transitions only through
+the existing Plan lifecycle, rereads actual bytes with
+`createWorkspaceArtifactVerificationRequest`, checks the caller's exact
+SHA-256/size, appends standard Artifact events, and repairs a one-time event
+commit gap idempotently.
+
+`browser-output-artifact.ts` is now an action-specific adapter over that shared
+registrar. `research-report-artifact.ts` is the separate Research adapter: only
+after citation and workspace freshness verification succeeds does it submit
+the canonical Markdown path/hash/size. It returns a bounded registration
+status and catches every ancillary settlement failure, so a valid report never
+becomes failed or loses bytes because Plan authority is absent, ambiguous,
+stale, or unavailable. Neither adapter creates Plans or undeclared Artifacts.
+
 The checked bridge gates cover same-Run import and ordinary cross-Run denial,
 transactional storage failure before mutation, 0700/0600 permissions,
 Source/manifest/capture/claim tamper rejection, immediate-parent lineage,

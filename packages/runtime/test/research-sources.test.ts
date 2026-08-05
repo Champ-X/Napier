@@ -13,6 +13,7 @@ import {
   type BrowserSourceCaptureProvider,
   RunResearchSourceManager,
 } from "../src/research-sources.js";
+import { LocalStore } from "../src/store.js";
 import type { WebFetchResearchCaptureProvider } from "../src/web-fetch-model.js";
 
 const OWNER = { threadId: "thread_research", runId: "run_research" };
@@ -336,6 +337,114 @@ describe("RunResearchSourceManager", () => {
     );
   });
 
+  it("settles only an exact Run-bound declared Markdown Artifact", async () => {
+    const fixture = await reportArtifactFixture("brief.md");
+    const manager = new RunResearchSourceManager(
+      { capturePage: vi.fn(async () => sourceCapture()) },
+      fixture.workspaceRoot,
+      undefined,
+      undefined,
+      undefined,
+      fixture.store,
+    );
+    const captured = await manager.execute(fixture.owner, {
+      action: "capture",
+    });
+    const claim = "Research Source fixture";
+    const cited = await manager.execute(fixture.owner, {
+      action: "cite",
+      sourceId: captured.details.sourceId!,
+      sourceContentSha256: captured.details.sourceContentSha256!,
+      startLine: 1,
+      endLine: 1,
+      claim,
+    });
+    const report = `${claim} [citation:${cited.details.citationId!}]\n`;
+    await writeFile(path.join(fixture.workspaceRoot, "brief.md"), report);
+
+    const verified = await manager.execute(fixture.owner, {
+      action: "verify_report",
+      path: "brief.md",
+      expectedSha256: sha256(report),
+    });
+
+    expect(verified.details.reportArtifactRegistration).toBe("registered");
+    expect(fixture.store.getPlan(fixture.planId).artifacts[0]).toEqual(
+      expect.objectContaining({
+        status: "verified",
+        sourceRunId: fixture.owner.runId,
+        sha256: sha256(report),
+        sizeBytes: Buffer.byteLength(report),
+      }),
+    );
+    expect(
+      (await fixture.store.listEvents(fixture.owner.threadId))
+        .filter((event) => event.type.startsWith("plan.artifact."))
+        .map((event) => event.type),
+    ).toEqual(["plan.artifact.produced", "plan.artifact.verified"]);
+    fixture.store.close();
+  });
+
+  it("keeps report verification successful when Plan settlement cannot apply", async () => {
+    const noPlan = await reportArtifactFixture();
+    const noPlanManager = new RunResearchSourceManager(
+      { capturePage: vi.fn(async () => sourceCapture()) },
+      noPlan.workspaceRoot,
+      undefined,
+      undefined,
+      undefined,
+      noPlan.store,
+    );
+    const noPlanReport = await verifyFixtureReport(noPlanManager, noPlan);
+    expect(noPlanReport.details.reportArtifactRegistration).toBe(
+      "no_run_bound_plan",
+    );
+    noPlan.store.close();
+
+    const mismatch = await reportArtifactFixture("other.md");
+    const mismatchManager = new RunResearchSourceManager(
+      { capturePage: vi.fn(async () => sourceCapture()) },
+      mismatch.workspaceRoot,
+      undefined,
+      undefined,
+      undefined,
+      mismatch.store,
+    );
+    const mismatchReport = await verifyFixtureReport(mismatchManager, mismatch);
+    expect(mismatchReport.details.reportArtifactRegistration).toBe(
+      "no_matching_artifact",
+    );
+    expect(mismatch.store.getPlan(mismatch.planId).artifacts[0]?.status).toBe(
+      "expected",
+    );
+    mismatch.store.close();
+
+    const failing = await reportArtifactFixture("brief.md");
+    const failingManager = new RunResearchSourceManager(
+      { capturePage: vi.fn(async () => sourceCapture()) },
+      failing.workspaceRoot,
+      undefined,
+      undefined,
+      undefined,
+      failing.store,
+    );
+    failing.store.updatePlanArtifact = vi.fn(async () => {
+      throw new Error("Injected report Artifact failure");
+    });
+    const failedRegistration = await verifyFixtureReport(
+      failingManager,
+      failing,
+    );
+    expect(failedRegistration.details).toEqual(
+      expect.objectContaining({
+        action: "verify_report",
+        reportFileSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        reportArtifactRegistration: "artifact_registration_failed",
+      }),
+    );
+    failing.store.close();
+  });
+
   it("rejects forged capture bindings, stale hashes, and invalid ranges", async () => {
     const capture = sourceCapture();
     const forged = {
@@ -558,4 +667,82 @@ function sourceCapture(
     ...overrides,
   };
   return capture;
+}
+
+async function reportArtifactFixture(artifactPath?: string) {
+  const root = await mkdtemp(path.join(tmpdir(), "napier-report-artifact-"));
+  roots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  await mkdir(workspaceRoot);
+  const store = new LocalStore({
+    workspaceRoot,
+    dataRoot: path.join(root, "data"),
+  });
+  await store.initialize();
+  const agent = store.listAgents()[0]!;
+  const thread = await store.createThread({
+    title: "Research report Artifact",
+    agentId: agent.id,
+  });
+  const run = await store.createRun({
+    threadId: thread.id,
+    agentId: agent.id,
+    source: "user",
+  });
+  let planId = "";
+  if (artifactPath) {
+    let plan = await store.createPlan(thread.id, {
+      objective: "Verify one citation-backed report.",
+      steps: [
+        {
+          id: "report",
+          title: "Verify report",
+          description: "Create and verify the report.",
+          verification: "The declared report Artifact is verified.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "report",
+          path: artifactPath,
+          kind: "file",
+          description: "Citation-backed Markdown report.",
+        },
+      ],
+    });
+    plan = await store.transitionPlanStep(plan.id, "report", {
+      action: "start",
+      runId: run.id,
+    });
+    planId = plan.id;
+  }
+  return {
+    store,
+    workspaceRoot,
+    planId,
+    owner: { threadId: thread.id, runId: run.id },
+  };
+}
+
+async function verifyFixtureReport(
+  manager: RunResearchSourceManager,
+  fixture: Awaited<ReturnType<typeof reportArtifactFixture>>,
+) {
+  const captured = await manager.execute(fixture.owner, { action: "capture" });
+  const claim = "Research Source fixture";
+  const cited = await manager.execute(fixture.owner, {
+    action: "cite",
+    sourceId: captured.details.sourceId!,
+    sourceContentSha256: captured.details.sourceContentSha256!,
+    startLine: 1,
+    endLine: 1,
+    claim,
+  });
+  const report = `${claim} [citation:${cited.details.citationId!}]\n`;
+  await writeFile(path.join(fixture.workspaceRoot, "brief.md"), report);
+  return manager.execute(fixture.owner, {
+    action: "verify_report",
+    path: "brief.md",
+    expectedSha256: sha256(report),
+  });
 }

@@ -156,27 +156,6 @@ describe("Agent Research Source integration", () => {
       ),
       () =>
         fauxAssistantMessage(
-          fauxToolCall("update_plan_artifact", {
-            planId,
-            artifactId: "brief",
-            action: "produced",
-            evidence:
-              "The citation-backed Markdown brief was written by apply_patch.",
-          }),
-          { stopReason: "toolUse" },
-        ),
-      () =>
-        fauxAssistantMessage(
-          fauxToolCall("update_plan_artifact", {
-            planId,
-            artifactId: "brief",
-            action: "verify",
-            evidence: "Napier verified the report from workspace bytes.",
-          }),
-          { stopReason: "toolUse" },
-        ),
-      () =>
-        fauxAssistantMessage(
           fauxToolCall("update_plan_step", {
             planId,
             stepId: "research",
@@ -254,6 +233,24 @@ describe("Agent Research Source integration", () => {
         )
         .map((event) => record(record(event.payload)?.["details"])?.["action"]),
     ).toEqual(["capture", "cite", "verify_report"]);
+    expect(
+      record(
+        record(
+          toolEvents.find(
+            (event) =>
+              event.type === "tool.completed" &&
+              record(event.payload)?.["toolName"] === "research_source" &&
+              record(record(event.payload)?.["details"])?.["action"] ===
+                "verify_report",
+          )?.payload,
+        )?.["details"],
+      )?.["reportArtifactRegistration"],
+    ).toBe("registered");
+    expect(
+      events
+        .filter((event) => event.type.startsWith("plan.artifact."))
+        .map((event) => event.type),
+    ).toEqual(["plan.artifact.produced", "plan.artifact.verified"]);
     const durableTools = JSON.stringify(toolEvents);
     for (const secret of [
       "URL_SECRET",

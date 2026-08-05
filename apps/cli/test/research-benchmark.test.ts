@@ -133,6 +133,27 @@ describe("Research outcome benchmark", () => {
       }),
     );
 
+    const invalidRegistration = structuredClone(
+      artifacts.bundle,
+    ) as ResearchBenchmarkLedgerBundle;
+    const verifiedReport = invalidRegistration.researchEvents.find(
+      (event) =>
+        record(record(event.payload)?.["details"])?.["action"] ===
+        "verify_report",
+    )!;
+    record(record(verifiedReport.payload)?.["details"])![
+      "reportArtifactRegistration"
+    ] = "PRIVATE_STATUS";
+    invalidRegistration.contentSha256 = sha256(
+      canonicalJson(withoutHash(invalidRegistration) as never),
+    );
+    expect(verifyResearchBenchmarkLedgerBundle(invalidRegistration)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: expect.arrayContaining(["ledger_shape_invalid"]),
+      }),
+    );
+
     const tampered = structuredClone(
       artifacts.bundle,
     ) as ResearchBenchmarkLedgerBundle;

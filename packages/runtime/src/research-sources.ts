@@ -32,6 +32,11 @@ import type {
   ResearchSourceResult,
   ResearchSourceToolDetails,
 } from "./research-source-model.js";
+import {
+  ResearchReportArtifactRegistrar,
+  verifiedResearchReportResult,
+} from "./research-report-artifact.js";
+import type { RunBoundFileArtifactStore } from "./run-bound-file-artifact.js";
 import type { WebFetchResearchCaptureProvider } from "./web-fetch-model.js";
 import type { LocalStore } from "./store.js";
 
@@ -53,7 +58,6 @@ const SHA256 = /^[a-f0-9]{64}$/u;
 const SOURCE_ID = /^source_[a-z0-9]{8,80}$/u;
 
 type StoredResearchSource = ResearchSourceEvidenceRecord;
-
 type StoredCitation = ResearchSourceCitationRecord;
 
 interface RunResearchSources {
@@ -70,6 +74,7 @@ export class RunResearchSourceManager {
     ResearchSourceCapsuleReceipt
   >();
   private readonly continuity: ResearchSourceContinuity;
+  private readonly reportArtifacts: ResearchReportArtifactRegistrar;
 
   constructor(
     private readonly browser: BrowserSourceCaptureProvider,
@@ -77,8 +82,10 @@ export class RunResearchSourceManager {
     private readonly webFetch?: WebFetchResearchCaptureProvider,
     capsules?: ResearchSourceCapsulePort,
     recoveryStore?: Pick<LocalStore, "listRuns" | "listEvents" | "getThread">,
+    artifactStore?: RunBoundFileArtifactStore,
   ) {
     this.continuity = new ResearchSourceContinuity(capsules, recoveryStore);
+    this.reportArtifacts = new ResearchReportArtifactRegistrar(artifactStore);
   }
 
   async execute(
@@ -112,7 +119,7 @@ export class RunResearchSourceManager {
             return this.cite(key, owner, request);
           }
           if (request.action === "verify_report") {
-            return this.verifyReport(key, request, operationSignal);
+            return this.verifyReport(key, owner, request, operationSignal);
           }
           return this.list(key);
         },
@@ -307,6 +314,7 @@ export class RunResearchSourceManager {
 
   private async verifyReport(
     key: string,
+    owner: BrowserSessionOwner,
     request: Extract<ResearchSourceRequest, { action: "verify_report" }>,
     signal?: AbortSignal,
   ): Promise<ResearchSourceResult> {
@@ -325,25 +333,16 @@ export class RunResearchSourceManager {
       ...(signal ? { signal } : {}),
     });
     const stateCapsule = this.stateCapsules.get(key);
-    return {
-      output: [
-        `Research report verified: ${verification.path}`,
-        `File SHA-256: ${verification.fileSha256}`,
-        `Citations: ${verification.citationCount}`,
-      ].join("\n"),
-      details: {
-        kind: "napier.research-source",
-        schemaVersion: 1,
-        action: "verify_report",
-        ...runCounts(run),
-        reportPathSha256: verification.pathSha256,
-        reportFileSha256: verification.fileSha256,
-        reportFileBytes: verification.fileBytes,
-        reportCitationCount: verification.citationCount,
-        reportCitationSetSha256: verification.citationSetSha256,
-        ...(stateCapsule ? { stateCapsule } : {}),
-      },
-    };
+    const registration = await this.reportArtifacts.register(
+      owner,
+      verification,
+    );
+    return verifiedResearchReportResult({
+      report: verification,
+      registration,
+      counts: runCounts(run),
+      ...(stateCapsule ? { stateCapsule } : {}),
+    });
   }
 
   private runSources(key: string): RunResearchSources {

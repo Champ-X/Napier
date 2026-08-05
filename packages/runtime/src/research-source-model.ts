@@ -28,6 +28,13 @@ export type ResearchSourceRequest =
   | { action: "verify_report"; path: string; expectedSha256: string }
   | { action: "list" };
 
+export type ResearchReportArtifactRegistration =
+  | "registered"
+  | "no_run_bound_plan"
+  | "no_matching_artifact"
+  | "artifact_not_expected"
+  | "artifact_registration_failed";
+
 export interface ResearchSourceToolDetails {
   kind: "napier.research-source";
   schemaVersion: 1;
@@ -53,6 +60,7 @@ export interface ResearchSourceToolDetails {
   reportFileBytes?: number;
   reportCitationCount?: number;
   reportCitationSetSha256?: string;
+  reportArtifactRegistration?: ResearchReportArtifactRegistration;
   sourceCount: number;
   citationCount: number;
   sourceSetSha256: string;
