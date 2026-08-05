@@ -29,6 +29,9 @@ export async function executeSetup(
       env: io.env,
     });
     signal?.throwIfAborted();
+    if (options.component) {
+      throw new Error("Provider setup does not accept a component");
+    }
     const output = options.apply
       ? await services.providerSetup.apply({
           providerId: options.providerId!,

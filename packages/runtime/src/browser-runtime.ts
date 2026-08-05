@@ -2,7 +2,7 @@ import { constants as fsConstants } from "node:fs";
 import { access, lstat, realpath } from "node:fs/promises";
 import path from "node:path";
 
-import type { LaunchOptions } from "playwright-core";
+import { chromium, type LaunchOptions } from "playwright-core";
 
 import type { BrowserRuntimeBinding } from "./browser-session-model.js";
 import {
@@ -12,15 +12,19 @@ import {
 } from "./browser-session-model.js";
 import { sha256File } from "./command-execution.js";
 import type { FixedIpProxyBinding } from "./fixed-ip-http-proxy.js";
+import { verifiedPinnedBrowserRuntimeCandidate } from "./browser-runtime-verification.js";
 
 const ALLOWED_EXECUTABLE_NAMES = new Set([
   "chrome",
+  "chrome.exe",
   "chromium",
   "chromium-browser",
   "google chrome",
+  "google chrome for testing",
   "google-chrome",
   "microsoft edge",
   "msedge",
+  "msedge.exe",
 ]);
 
 export async function resolveBrowserRuntime(
@@ -28,7 +32,7 @@ export async function resolveBrowserRuntime(
 ): Promise<BrowserRuntimeBinding> {
   const candidates = configuredPath
     ? [configuredPath]
-    : browserExecutableCandidates();
+    : await browserExecutableCandidates();
   for (const candidate of candidates) {
     try {
       const executablePath = await realpath(path.resolve(candidate));
@@ -150,11 +154,12 @@ function browserEnvironment(
   return environment;
 }
 
-function browserExecutableCandidates(): string[] {
+async function browserExecutableCandidates(): Promise<string[]> {
   return [
     ...(process.env["NAPIER_BROWSER_EXECUTABLE"]
       ? [process.env["NAPIER_BROWSER_EXECUTABLE"]!]
       : []),
+    ...(await pinnedPlaywrightBrowserCandidates()),
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
@@ -166,4 +171,15 @@ function browserExecutableCandidates(): string[] {
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   ];
+}
+
+async function pinnedPlaywrightBrowserCandidates(): Promise<string[]> {
+  try {
+    const candidate = await verifiedPinnedBrowserRuntimeCandidate(
+      chromium.executablePath(),
+    );
+    return candidate ? [candidate] : [];
+  } catch {
+    return [];
+  }
 }

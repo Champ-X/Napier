@@ -76,8 +76,14 @@ Audit date: 2026-08-05
   `napier setup` and the first-use Web Live Provider docket now preview five
   known environment locators, require exact-hash explicit apply, verify the
   credential and pinned model, and preserve the onboarding ledger and Agent
-  revision. Automatic dependency installation, broader TUI guidance, and
-  broader LSP/DAP/Python/onboarding remediation remain P0.
+  revision. The CLI also previews and explicitly applies exactly one pinned
+  Browser dependency: the installed `playwright-core` Chromium revision.
+  Preview is non-mutating; apply installs no OS package or sibling Browser,
+  passes an allowlisted environment, suppresses and hashes bounded child
+  output, closes the process group on cancellation, binds the expected cache
+  location and executable identity, then requires a successful production
+  sandboxed public navigation before reporting ready. Broader TUI guidance and
+  LSP/DAP/Python/onboarding remediation remain P0.
 - Five shared capability presets now map user-facing Coding, Research, Data,
   Browser, and Safe Automation labels onto the existing revisioned Agent
   fields. `napier capabilities` supports status, non-mutating preview, and
@@ -168,11 +174,111 @@ Observed result:
   current performance, 265/265 OpenAPI compatibility operations, 88-file Web
   distribution evidence, and the 127-artifact release receipt all pass.
 
+## Implemented Slice: Preview-Bound Pinned Browser Runtime Setup
+
+User scenario: after Doctor reports that no supported Browser is installed, a
+user can explicitly install and verify Napier's exact pinned Chromium runtime
+without selecting a package, invoking a system package manager, importing a
+personal Browser profile, or weakening Browser sandboxing.
+
+Acceptance:
+
+- add `napier setup --workspace <path> --component browser` as a Store-free,
+  non-mutating preview and require its exact content SHA-256 plus `--apply`;
+- derive package version, Chromium version/revision, platform, architecture,
+  and expected cache-location hash only from the installed
+  `playwright-core` package and `browsers.json`;
+- install only the exact `chromium` executable from that registry revision;
+  never install Firefox, WebKit, FFmpeg, OS dependencies, or an arbitrary
+  package/browser selected by input;
+- give the child only an allowlisted locale/path/proxy/CA/cache environment,
+  excluding model credentials, `NAPIER_BROWSER_EXECUTABLE`, and unrelated
+  ambient variables;
+- suppress raw child output, cap it at 64 KiB, bind one total timeout/cancel
+  signal, and terminate the detached installer process group on overflow or
+  cancellation;
+- re-inspect the exact package/revision/location after install, bind the
+  executable realpath/mode/identity/byte hash, then require a real fixed-page
+  navigation through the ordinary DNS-pinned `RunBrowserSessionManager` with
+  `chromiumSandbox: true`;
+- commit a self-hashed Napier verification marker only after that navigation;
+  ordinary Browser resolution must ignore downloaded-but-unverified runtimes
+  and reject marker or executable drift;
+- expose installed/reused status and bounded hashes/counts without local
+  paths, download URLs, proxy credentials, page content, installer output, or
+  raw errors;
+- make `resolveBrowserRuntime()` prefer the exact installed Playwright runtime
+  after an explicit operator override and before vendor system browsers.
+
+Threat boundary:
+
+- Doctor remains diagnostic and `automatic: false`; it points to setup but
+  never downloads or applies on the user's behalf;
+- preview performs no download. Apply is an explicit local operator action
+  protected by compare-and-swap, not Agent package authority;
+- setup does not open `LocalStore`, create `.napier`, a Thread, Run,
+  credential reference, Agent revision, Browser Session persistence, or a
+  general package-install capability;
+- installation writes only to Playwright's exact user-cache root derived from
+  the previewed executable location. The low-level child has no dynamic
+  package/browser argument and disables cache GC for the operation;
+- a completed download without a valid marker is reported as `installed` to
+  setup but remains quarantined from Doctor and ordinary Agent Browser use;
+- verification uses a fresh ephemeral Browser HOME/profile, the existing
+  fixed-IP public proxy, production Chromium sandbox, and ordinary Session
+  cleanup. It does not read or relay existing Chrome cookies, profiles, login
+  state, or tabs;
+- an unsupported platform, stale preview, location/version drift, nonzero
+  child exit, output overflow, cancellation, executable mismatch, sandbox
+  failure, or public-navigation failure fails closed with only a diagnostic
+  digest.
+
+Observed result:
+
+- `verified`: before apply, the built CLI reported `installable` for
+  `playwright-core@1.62.1`, Chromium `151.0.7922.34`, revision `1234`, with a
+  self-hashed schema-1 preview and no workspace state;
+- `verified`: exact-hash apply downloaded the pinned Chromium runtime, then
+  passed production sandboxed navigation with one DNS-pinned destination.
+  The executable SHA-256 is
+  `a596b1cfc6353e987fcec8d71a23a28cd6a9e7a6b4e20b908e4c4fcffe51158e`;
+- `verified`: apply emitted no stderr, created no `.napier`, and returned only
+  installed/ready, version/revision, hashes, destination count, and
+  `chromiumSandbox=true`. No raw path, URL, page body, download output, or
+  credential was retained;
+- `verified`: a second exact preview reported `ready`, and exact apply returned
+  `reused` with the same executable identity instead of invoking installation;
+- `verified`: a fresh Store-free `napier doctor --model napier/demo` discovered
+  the installed runtime through the default resolver and returned
+  `browser_ready`, `chromiumSandbox=true`, and a nonzero destination count;
+  the overall report was truthfully `degraded` only for the host's separate OS
+  process Sandbox warning;
+- focused Runtime tests cover pinned target discovery, identity binding/drift,
+  environment allowlisting, exact child entry, output overflow, cancellation,
+  and process-group closure. Focused CLI tests cover parsing, non-mutating
+  preview, Store/state absence, exact-hash apply, verified install, ready
+  reuse, stale-preview refusal, and raw failure/secret/path omission;
+- `verified`: the complete repository gate passes 2,398 regular tests with 46
+  opt-in live tests skipped by default: Root 142, CLI 217, Server 202, Web 532,
+  Contracts 3, Runtime 1,274, and SDK 28;
+- `verified`: architecture audits 1,035 production source files and 502 test
+  files with zero cycles. Setup/installer code lives in bounded Runtime and CLI
+  leaves; no root barrel, Store, Server, Web, Browser Session, or policy module
+  grew;
+- `verified`: current performance, 266 generated OpenAPI routes with 265/265
+  compatibility operations, the 88-file Web distribution, and unchanged
+  127-artifact release receipt all pass;
+- P0 Browser dependency remediation is complete for the pinned Chromium path.
+  Broader LSP/DAP/Python onboarding remediation, existing-user Chrome relay,
+  autonomous login/CAPTCHA submission, restart-safe Browser login state,
+  multiple open-web seeds, and cross-format automatic Artifacts remain open.
+
 ## Priority Matrix
 
+<!-- prettier-ignore -->
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 web connectivity               | In progress    | Default Search, Fetch, Browser, and Research Source cover keyless discovery, bounded HTML/Markdown/JSON/text/PDF reading, conservative script-shell rendering, JavaScript Browser reading, exact captures, and claim-bound citations under `observe`. `napier setup` and Web onboarding provide preview-bound environment locators; ambient `.env` secrets remain unauthorized. Safe Automation adds one-use Browser interaction confirmation; Web adds private Live/takeover, four tabs with history, login/challenge diagnosis, and verified workspace outputs. Research Source and Web Fetch state survive linked interrupted recovery, one bounded adjacent completed-Run continuation, and an explicit eligible non-adjacent Run pin. Private capsules use `0700`/`0600`; Ledger/Replay/streams retain hash-only receipts; current-Run contexts are checkpointed before the first model call. The schema-2 open-web Security Series release-verifies two privacy-bounded DeepSeek passes with zero leak/forbidden-attempt outcomes. A schema-1 reliability Series retains one pass and one truthful citation-evidence failure; an offline campaign adds a historical pass as a second observation window 29.61 hours earlier and recursively verifies all three trials. The same-model comparator now gives OMP a copied, fresh-profile, loopback-CDP, DNS-pinned, separately sandboxed Browser without importing user Chrome state. Imported Threads, parented user Runs, intermediate or expired Runs, arbitrary history, tampered capsules, automatic recovery, and Browser Session adoption remain denied. Browser and Fetch Sessions are not restored. These samples prove bounded paths, not a freshness SLA, broad reliability, or superiority. `napier doctor` covers Store-free network/model/runtime/Sandbox readiness. Remaining P0 work is dependency remediation, existing-Chrome relay for product use, autonomous login/CAPTCHA submission, Browser Session/login recovery, multiple cases/seeds and longer time-separated campaigns, and cross-format automatic Artifacts.  |
+| P0 web connectivity               | In progress    | Default Agents cover Search, URL/PDF Fetch, dynamic Browser reading/fallback, and claim-bound citations. Explicit setup installs only pinned Chromium and quarantines it until sandboxed verification; it uses no system package manager or user Browser state. Web provides confirmed interaction, private Live/takeover, tabs/history, login diagnosis, and verified outputs. Fetch/Research continuity is bounded; Browser login/session state is not restored. Existing benchmark evidence remains sample-limited. Remaining P0 work is LSP/DAP/Python remediation, existing-Chrome relay, login/CAPTCHA automation, restart-safe login, broader trials, and cross-format Artifacts. |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |

@@ -2,6 +2,10 @@ import {
   DEFAULT_DOCTOR_TIMEOUT_MS,
   MAX_DOCTOR_TIMEOUT_MS,
 } from "./cli-doctor-options.js";
+import {
+  DEFAULT_SETUP_TIMEOUT_MS,
+  MAX_SETUP_TIMEOUT_MS,
+} from "./cli-setup-options.js";
 import { MAX_TIMEOUT_MS, MIN_TIMEOUT_MS } from "./cli-option-values.js";
 
 export const CLI_VERSION = "0.1.0";
@@ -29,7 +33,7 @@ Commands:
   tui                    Open the full-screen local Agent terminal
   capabilities           Inspect, preview, or apply an Agent capability preset
   doctor                 Diagnose first-use model, network, Browser, and Sandbox readiness
-  setup                  Preview or apply a standard live Provider locator
+  setup                  Configure a Provider locator or pinned Browser runtime
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
   experiment             Re-run a historical Agent message read-only
@@ -53,9 +57,11 @@ Doctor options:
   --timeout-ms <ms>      Total Doctor time budget (default ${DEFAULT_DOCTOR_TIMEOUT_MS}, max ${MAX_DOCTOR_TIMEOUT_MS})
 
 Setup options:
+  --component browser    Preview or apply the pinned Playwright Chromium runtime
   --provider <id>        Standard Provider selected from setup preview
   --expected-preview     Exact setup preview SHA-256 required for apply
-  --apply                Register/check the selected environment locator
+  --timeout-ms <ms>      Browser install/verification budget (default ${DEFAULT_SETUP_TIMEOUT_MS}, max ${MAX_SETUP_TIMEOUT_MS})
+  --apply                Apply the exact Provider or Browser preview
   --jsonl                Emit one setup preview or result JSON object
 
 Capability options:

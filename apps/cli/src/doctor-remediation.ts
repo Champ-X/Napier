@@ -78,7 +78,7 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   browser_missing: {
     id: "install_supported_browser",
     instruction:
-      "Install Chrome, Chromium, or Edge through a trusted OS or vendor channel; Napier will not install it automatically.",
+      "Run napier setup --workspace 'WORKSPACE_PATH' --component browser, explicitly apply its exact preview, or install a trusted vendor Browser.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH'",
   },
   browser_sandbox_unavailable: {

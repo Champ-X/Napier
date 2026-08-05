@@ -571,7 +571,57 @@ sets, privacy-safe instructions, and quoted-literal verification commands.
 Search, Fetch, and generic Browser transport failures share one public-network
 remediation. Every action is explicitly `automatic: false`: Doctor cannot
 install Node or Chrome, mutate network settings, create a workspace, set
-credentials, or disable Browser/OS sandboxing.
+credentials, or disable Browser/OS sandboxing. `browser_missing` points to the
+separate explicit Browser setup flow rather than executing it.
+
+Pinned Browser dependency setup remains a CLI Experience adapter plus bounded
+Runtime leaf rather than another Browser manager:
+
+```text
+napier setup --component browser
+  -> canonicalize existing workspace; do not open Store
+  -> read installed playwright-core package + browsers.json
+  -> derive exact Chromium version/revision and expected cache location hash
+  -> emit non-mutating self-hashed preview
+  -> require exact preview hash plus --apply
+  -> spawn one fixed child module with an allowlisted proxy/runtime environment
+  -> child asks Playwright registry to install only its chromium executable
+  -> re-inspect exact version/revision/location and bind executable identity
+  -> RunBrowserSessionManager start fixed public URL -> close
+  -> atomically write self-hashed executable/revision verification marker
+  -> emit hash-bound installed/reused result
+```
+
+`browser-runtime-setup.ts` owns pinned metadata validation, cache-root binding,
+the fixed installer child contract, output hashing/64 KiB cap, timeout signal,
+detached process-group termination, and post-install identity comparison.
+`browser-runtime-installer-child.ts` receives no user-selected package/browser
+name and calls the installed Playwright registry for only `chromium`, with
+cache GC disabled for the operation. It cannot install OS dependencies,
+Firefox, WebKit, FFmpeg, or an arbitrary package. The child receives only
+allowlisted locale/path/proxy/CA/cache variables; model credentials,
+`NAPIER_BROWSER_EXECUTABLE`, and unrelated environment variables are absent.
+
+`browser-runtime-setup-cli.ts` owns preview/apply compare-and-swap, Store-free
+workspace admission, real production Browser verification, privacy-safe
+human/JSONL projection, and installed/reused semantics. Raw child output,
+download URLs, cache/executable paths, workspace paths, fixed probe URL/page,
+proxy credentials, and raw errors never enter CLI output. The result reports
+ready only after ordinary `RunBrowserSessionManager` starts the exact bound
+runtime with `chromiumSandbox: true`, DNS-pinned public proxying, fresh
+ephemeral HOME/profile state, then closes it. Browser Session policy,
+operations, persistence denial, and process cleanup remain owned by the
+existing Browser domain.
+
+`resolveBrowserRuntime()` now considers the exact installed Playwright
+Chromium path after an explicit `NAPIER_BROWSER_EXECUTABLE` and before vendor
+system browsers only when `browser-runtime-verification.ts` validates the
+self-hashed marker, executable-location hash, revision directory, platform,
+architecture, and current executable byte hash. A Playwright download without
+that post-navigation marker is `installed` for setup but not a default Browser
+candidate; marker or executable drift quarantines it again. Setup never
+imports user cookies/profile state and does not weaken Browser sandboxing or
+enable Browser interaction.
 
 The report retains only bounded status, duration, counts, known
 provider/adapter identifiers, numeric network/content evidence,
@@ -8588,11 +8638,14 @@ not expose a shell, arbitrary host networking, an existing user browser
 profile, or unrestricted local files; known destructive command patterns
 remain denied.
 
-An in-process policy is not a sandbox. General shell and package installation
-remain disabled. Stdio MCP, workspace verification, the command runner, and
-Workspace Process Sessions, including the JavaScript/Python kernels and Node
-debugger, use narrow macOS sandbox-exec or Linux Bubblewrap adapters; a
-container or VM remains the recommended outer boundary for production
+An in-process policy is not a sandbox. General shell and arbitrary package
+installation remain disabled. The one explicit dependency exception is the
+preview-bound CLI Browser setup above, which can install only the Chromium
+revision already pinned by `playwright-core` and grants no Agent authority.
+Stdio MCP, workspace verification, the command runner, and Workspace Process
+Sessions, including the JavaScript/Python kernels and Node debugger, use narrow
+macOS sandbox-exec or Linux Bubblewrap adapters; a container or VM remains the
+recommended outer boundary for production
 third-party code.
 
 ## Capability Roadmap

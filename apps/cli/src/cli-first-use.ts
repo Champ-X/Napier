@@ -1,4 +1,5 @@
 import { executeCapabilities } from "./capability-cli.js";
+import { executeBrowserRuntimeSetup } from "./browser-runtime-setup-cli.js";
 import { parseCapabilityOptions } from "./cli-capability-options.js";
 import { parseDoctorOptions } from "./cli-doctor-options.js";
 import { parseSetupOptions } from "./cli-setup-options.js";
@@ -7,9 +8,9 @@ import type { CliFirstUseAction } from "./cli-first-use-model.js";
 import { executeSetup } from "./setup-cli.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 
-export function isFirstUseCliAction(
-  action: { kind: string },
-): action is CliFirstUseAction {
+export function isFirstUseCliAction(action: {
+  kind: string;
+}): action is CliFirstUseAction {
   return (
     action.kind === "doctor" ||
     action.kind === "capabilities" ||
@@ -41,6 +42,14 @@ export async function executeFirstUseCliAction(
     return executeDoctor(action.options, io, dependencies.doctor, signal);
   }
   if (action.kind === "setup") {
+    if (action.options.component === "browser") {
+      return executeBrowserRuntimeSetup(
+        action.options,
+        io,
+        dependencies.browserSetup,
+        signal,
+      );
+    }
     return executeSetup(action.options, io, dependencies, signal);
   }
   return executeCapabilities(action.options, io, dependencies, signal);

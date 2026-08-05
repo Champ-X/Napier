@@ -515,6 +515,46 @@ re-enables the known locator, checks credential availability and the pinned
 stable model, and rolls a newly changed reference back to disabled if
 verification fails. It never prints or persists the environment value.
 
+If Doctor reports `browser_missing`, preview the one Browser dependency Napier
+can repair directly:
+
+```bash
+npm run --silent napier -- setup \
+  --workspace . \
+  --component browser
+
+# Run the exact Apply command printed by preview:
+npm run --silent napier -- setup \
+  --workspace . \
+  --component browser \
+  --expected-preview <sha256> \
+  --apply
+```
+
+Browser setup is Store-free and never runs from Doctor or ordinary Agent
+execution. Preview performs no download. Explicit hash-bound apply installs
+only the Chromium revision pinned by the installed `playwright-core` package
+into Playwright's user cache, suppresses downloader output, passes only a
+fixed proxy/runtime environment allowlist, and bounds output, wall time,
+cancellation, and the detached installer process group. It does not invoke an
+OS package manager, request root, install Firefox/WebKit/FFmpeg, import an
+existing browser profile, or disable Chromium sandboxing.
+
+Apply reports ready only after binding the installed executable identity and
+loading a fixed public page through the ordinary DNS-pinned
+`RunBrowserSessionManager` with the production Chromium sandbox. Reapplying an
+unchanged ready preview reuses and reverifies the same runtime rather than
+downloading it again. JSONL exposes package/browser versions, revision,
+platform, hashes, bounded network count, and sandbox truth; local paths,
+download URLs, proxy credentials, installer output, page content, and raw
+errors remain absent.
+
+Successful verification commits a self-hashed Napier marker beside that exact
+Playwright revision. A completed download without a valid marker is shown as
+`installed` to setup but stays unavailable to Doctor and ordinary Agent
+Browser resolution. Marker tampering, executable-byte drift, path drift, or
+revision drift returns it to the unverified state.
+
 Before the first live task, run the Store-free readiness diagnostic:
 
 ```bash
@@ -535,10 +575,12 @@ machine-readable remediation IDs, required/optional priority, affected checks
 and codes, instructions, and quoted-literal verification commands.
 Remediation is always `automatic: false`: Doctor never installs a runtime or
 browser, changes proxy/firewall settings, creates a workspace, sets a secret,
-or disables Browser/OS sandboxing. Commands contain only placeholders such as
-`'WORKSPACE_PATH'` and `'CREDENTIAL_ENV_VAR'`; replace them deliberately before
-running. Workspace paths, credential variable names/values, fetched content,
-URLs, and raw probe errors are absent.
+or disables Browser/OS sandboxing. A missing Browser points to the separate
+preview-bound `setup --component browser` flow, which still requires an exact
+operator apply. Commands contain only placeholders such as `'WORKSPACE_PATH'`
+and `'CREDENTIAL_ENV_VAR'`; replace them deliberately before running.
+Workspace paths, credential variable names/values, fetched content, URLs, and
+raw probe errors are absent.
 
 Inspect or change the active Agent's user-facing capability preset without
 editing SQLite or reasoning about raw policy names:
