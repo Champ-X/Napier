@@ -33,7 +33,7 @@ Audit date: 2026-08-04
   `document.write` HTML shells now automatically render through the same
   controlled read-only Browser with bounded provenance and fail-visible
   degradation. Generic SPA/login/CAPTCHA fallback, cross-restart Source
-  retention, broader interaction entry points, direct Browser takeover, and
+  retention, broader interaction entry points, existing-Chrome relay, and
   tabs/history remain P0.
 - A fresh default Agent also receives a read-only Browser schema plus
   `research_source`. Dynamic pages can use Browser `start -> wait`, call
@@ -60,7 +60,7 @@ Audit date: 2026-08-04
   `run`, `chat`, and `tui` also accept temporary per-Run presets without
   revising the Agent. Browser and Research remain read-only. Safe Automation
   now exposes Browser interaction in Web, Chat, and TUI through exact one-use
-  confirmations. Dependency remediation, direct Browser takeover, and broader
+  confirmations. Dependency remediation, existing-Chrome relay, and broader
   interaction reliability remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
