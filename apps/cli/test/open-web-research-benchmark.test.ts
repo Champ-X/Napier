@@ -454,6 +454,13 @@ class FixtureBrowser {
     return {
       url: BROWSER_URL,
       title: "Quotes to Scrape",
+      pageDiagnosis: {
+        status: "none",
+        signalCount: 0,
+        signalsSha256: sha256(canonicalJson([])),
+        takeoverRecommended: false,
+      },
+      semanticAppControlCount: 0,
       lines,
       textChars: lines.join("\n").length,
       truncated: false,

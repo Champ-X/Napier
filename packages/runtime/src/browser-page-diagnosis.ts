@@ -20,6 +20,21 @@ interface BrowserPageDiagnosisProbe {
   signals: BrowserPageDiagnosisSignal[];
 }
 
+export interface BrowserPageSourceProbe extends BrowserPageDiagnosisProbe {
+  url: string;
+  title: string;
+  text: string;
+  semanticControls: Array<{ line: string; appMount: boolean }>;
+}
+
+type BrowserPageDiagnosisRequest =
+  | { kind: "diagnosis"; href: string }
+  | { kind: "source"; href: string; limit: number };
+type BrowserPageDiagnosisResult<T extends BrowserPageDiagnosisRequest> =
+  T extends { kind: "source" }
+    ? BrowserPageSourceProbe
+    : BrowserPageDiagnosisProbe;
+
 export async function diagnoseBrowserPage(
   page: Page,
   signal?: AbortSignal,
@@ -35,10 +50,9 @@ export async function diagnoseBrowserPage(
   return createBrowserPageDiagnosis(probe);
 }
 
-export function probeBrowserPageDiagnosis(
-  root: HTMLElement,
-  request: { kind: "diagnosis"; href: string },
-): BrowserPageDiagnosisProbe {
+export function probeBrowserPageDiagnosis<
+  T extends BrowserPageDiagnosisRequest,
+>(root: HTMLElement, request: T): BrowserPageDiagnosisResult<T> {
   const signals = new Set<BrowserPageDiagnosisSignal>();
   const document = root.ownerDocument;
   const body = document.body ?? root;
@@ -128,7 +142,105 @@ export function probeBrowserPageDiagnosis(
   if (/^\/cdn-cgi\/challenge-platform(?:\/|$)/u.test(pathname)) {
     signals.add("challenge_path");
   }
-  return { signals: [...signals].sort() };
+  const probe = { signals: [...signals].sort() };
+  return (
+    request.kind === "source"
+      ? {
+          ...probe,
+          url: currentHref,
+          title: document.title.slice(0, 512),
+          text: body.innerText.slice(0, request.limit + 1),
+          semanticControls: sourceSemanticControls(body),
+        }
+      : probe
+  ) as BrowserPageDiagnosisResult<T>;
+
+  function sourceSemanticControls(
+    sourceBody: HTMLElement,
+  ): Array<{ line: string; appMount: boolean }> {
+    const controls: Array<{ line: string; appMount: boolean }> = [];
+    const seen = new Set<string>();
+    for (const control of sourceBody.querySelectorAll<HTMLElement>(
+      [
+        'input:not([type="hidden"])',
+        "textarea",
+        "select",
+        "button",
+        '[role="button"]',
+        '[role="textbox"]',
+        '[contenteditable="true"]',
+      ].join(","),
+    )) {
+      const tagName = control.tagName.toLowerCase();
+      const inputType = (control.getAttribute("type") ?? "text").toLowerCase();
+      if (tagName === "input" && inputType === "password") {
+        continue;
+      }
+      const name = controlName(control);
+      if (!name) continue;
+      const line = `Control: ${controlRole(control)} "${name}"`;
+      if (seen.has(line)) continue;
+      seen.add(line);
+      controls.push({
+        line,
+        appMount: Boolean(
+          control.closest("#root,#app,#application,#__next,#__nuxt"),
+        ),
+      });
+      if (controls.length >= 32) break;
+    }
+    return controls;
+  }
+
+  function controlName(control: HTMLElement): string {
+    const id = control.id;
+    const label = id
+      ? Array.from(document.querySelectorAll<HTMLLabelElement>("label")).find(
+          (candidate) => candidate.getAttribute("for") === id,
+        )?.textContent
+      : undefined;
+    const tagName = control.tagName.toLowerCase();
+    return normalizeControlText(
+      control.getAttribute("aria-label") ??
+        label ??
+        control.closest("label")?.textContent ??
+        control.getAttribute("placeholder") ??
+        (tagName === "button" || controlRole(control) === "button"
+          ? control.textContent
+          : undefined) ??
+        "",
+    );
+  }
+
+  function controlRole(control: HTMLElement): string {
+    const explicit = normalizeControlText(control.getAttribute("role") ?? "");
+    if (
+      ["button", "checkbox", "combobox", "radio", "textbox"].includes(explicit)
+    ) {
+      return explicit;
+    }
+    const tagName = control.tagName.toLowerCase();
+    if (tagName === "textarea") return "textbox";
+    if (tagName === "select") return "combobox";
+    if (tagName === "button") return "button";
+    if (tagName === "input") {
+      const type = (control.getAttribute("type") ?? "text").toLowerCase();
+      if (type === "checkbox" || type === "radio") return type;
+      if (["button", "reset", "submit"].includes(type)) return "button";
+      return "textbox";
+    }
+    return control.getAttribute("contenteditable") === "true"
+      ? "textbox"
+      : "control";
+  }
+
+  function normalizeControlText(value: string): string {
+    return value
+      .replace(/[\u0000-\u001f\u007f-\u009f]+/gu, " ")
+      .replace(/\s+/gu, " ")
+      .trim()
+      .slice(0, 160);
+  }
 
   function safeUrl(value: string, base: string): URL | undefined {
     try {

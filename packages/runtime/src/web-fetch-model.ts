@@ -22,7 +22,9 @@ export type WebFetchBrowserFallbackStatus =
 export type WebFetchBrowserFallbackDiagnostic =
   | "browser_unavailable"
   | "browser_render_not_useful"
-  | "fallback_limit_reached";
+  | "fallback_limit_reached"
+  | "login_required"
+  | "challenge_detected";
 
 export interface WebFetchBrowserFallbackEvidence {
   sessionOperation: number;

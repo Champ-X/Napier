@@ -4185,11 +4185,16 @@ Agent calls web_fetch fetch with one public URL
   -> detect HTML/Markdown/JSON/text/PDF from MIME, extension, and safe sniffing
   -> lazy-load Readability/DOM or PDF.js only for the selected format
   -> remove active HTML, normalize readable text, or extract bounded PDF pages
-  -> for one eligible successful document.write HTML shell:
+  -> for one eligible successful client-rendered HTML shell:
      -> require default Browser capability and <=1,000 static normalized chars
+     -> require document.write or an empty root/app mount plus executable app script
      -> exclude password forms, HTTP errors, PDFs, binaries, and parse failures
      -> start/wait/capture/close the same Run-owned controlled Browser
-     -> require the exact final URL, useful text growth, and valid Browser binding
+     -> atomically capture visible text, structural diagnosis, and controls
+     -> require exact URL/Session/tab/runtime/content bindings and useful text
+        growth, or one bounded control inside the recognized app mount
+     -> never capture input values; app controls become hashed Source lines
+     -> retain static text with login/challenge handoff diagnosis
      -> cap automatic fallback at two attempts per Run
      -> otherwise retain static text plus one stable unavailable diagnostic
   -> cap body at 8 MiB, parse at 15 s, PDF at 200 pages
@@ -4213,9 +4218,11 @@ Run settles
 `web-fetch-content.ts` owns format detection plus bounded HTML/JSON/text/PDF
 normalization. Mozilla Readability and LinkeDOM are lazy imports; PDF.js is
 also lazy and uses only downloaded bytes, so no parser performs an independent
-network request. `web-fetch-browser-fallback.ts` owns the conservative shell
-detector, exact rendered-capture validation, and the internal
-start/wait/capture/close adapter over the ordinary Browser manager.
+network request. `web-fetch-browser-shell.ts` owns conservative
+`document.write` and empty app-mount admission.
+`web-fetch-browser-fallback.ts` owns exact rendered-capture/semantic-control
+validation and the internal start/wait/capture/close adapter over the ordinary
+Browser manager.
 `web-fetch-fallback-execution.ts` owns the per-Run attempt cap and
 used/unavailable/not-needed decision. `web-fetch-source-view.ts` owns live
 preview formatting plus bounded detail receipts. `web-fetch-sources.ts` owns
@@ -4251,10 +4258,10 @@ may restore only the exact private static Source state described above; Replay
 import strips `context.web_fetch_sources` and nested `stateCapsule` receipts
 because another data root cannot adopt local-only state. Dynamic rendering can
 use the conservative automatic shell fallback above or the following explicit
-default read-only Browser surface. Generic SPA detection, authentication,
-login walls, CAPTCHAs, scanned-PDF OCR, and Browser Session recovery remain
-outside this slice. Static or fallback-rendered Source citation uses the shared
-Research Source flow below.
+default read-only Browser surface. Broad framework inference, authentication,
+automated login/CAPTCHA completion, scanned-PDF OCR, and Browser Session
+recovery remain outside this slice. Static or fallback-rendered Source citation
+uses the shared Research Source flow below.
 
 ## Controlled Browser Session Flow
 

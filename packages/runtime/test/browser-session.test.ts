@@ -237,6 +237,47 @@ describe("RunBrowserSessionManager", () => {
     await harness.manager.cancelRun(owner);
   });
 
+  it("captures accessible control labels without input values", async () => {
+    const harness = await createHarness({
+      sourceText: "Public page text",
+      pageHtml: `
+        <html><head><title>Controls</title></head><body>
+          <label for="email">Email address</label>
+          <input id="email" value="PRIVATE_EMAIL_VALUE">
+          <input aria-label="New Todo Input" placeholder="What needs to be done?">
+          <input type="password" value="PRIVATE_PASSWORD">
+          <textarea>PRIVATE_TEXTAREA_VALUE</textarea>
+          <div contenteditable="true">PRIVATE_EDITABLE_VALUE</div>
+          <button>Save changes</button>
+        </body></html>
+      `,
+    });
+    const owner = {
+      threadId: "thread_capture_controls",
+      runId: "run_capture_controls",
+    };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/controls",
+    });
+
+    const capture = await harness.manager.capturePage(owner, 12_000);
+
+    expect(capture.lines).toEqual(
+      expect.arrayContaining([
+        'Control: textbox "Email address"',
+        'Control: textbox "New Todo Input"',
+        'Control: button "Save changes"',
+      ]),
+    );
+    expect(capture.semanticAppControlCount).toBe(0);
+    expect(capture.lines.join("\n")).not.toContain("PRIVATE_EMAIL_VALUE");
+    expect(capture.lines.join("\n")).not.toContain("PRIVATE_PASSWORD");
+    expect(capture.lines.join("\n")).not.toContain("PRIVATE_TEXTAREA_VALUE");
+    expect(capture.lines.join("\n")).not.toContain("PRIVATE_EDITABLE_VALUE");
+    await harness.manager.cancelRun(owner);
+  });
+
   it("finds and scrolls long pages without reopening network access", async () => {
     const harness = await createHarness({
       sourceText: [

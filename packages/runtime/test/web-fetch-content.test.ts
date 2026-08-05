@@ -55,6 +55,23 @@ describe("web fetch content parsing", () => {
     );
   });
 
+  it("retains a title-only empty-root application shell for Browser fallback", async () => {
+    const parsed = await parseWebFetchBody({
+      body: Buffer.from(
+        '<!doctype html><html><head><title>Client App</title><script defer src="app.bundle.js"></script></head><body><div id="root"></div></body></html>',
+      ),
+      contentType: "text/html",
+      finalUrl: "https://example.com/app",
+    });
+
+    expect(parsed).toEqual({
+      format: "html",
+      title: "Client App",
+      lines: ["# Client App"],
+      truncated: false,
+    });
+  });
+
   it("extracts text and page metadata from a real PDF byte stream", async () => {
     const parsed = await parseWebFetchBody({
       body: minimalPdf("Napier PDF extraction works."),

@@ -6,6 +6,7 @@ import {
   type ParsedWebContent,
   type WebFetchSourceFormat,
 } from "./web-fetch-model.js";
+import { hasConservativeBrowserShell } from "./web-fetch-browser-shell.js";
 
 const TEXT_MIMES = new Set([
   "application/javascript",
@@ -177,7 +178,9 @@ async function parseHtmlBody(
   throwIfAborted(operationSignal);
   const title = articleHeading || normalizeText(result?.title) || fallbackTitle;
   const bodyText = readableHtmlText(result?.content ?? "") || fallbackText;
-  if (!bodyText) throw new Error("HTML page contains no readable text");
+  if (!bodyText && !hasConservativeBrowserShell(html)) {
+    throw new Error("HTML page contains no readable text");
+  }
   return finalizeContent({
     format: "html",
     title,
@@ -190,7 +193,7 @@ async function parseHtmlBody(
             normalizeText(result?.publishedTime) || fallbackPublishedAt!,
         }
       : {}),
-    text: `# ${title}\n\n${bodyText}`,
+    text: `# ${title}${bodyText ? `\n\n${bodyText}` : ""}`,
   });
 }
 

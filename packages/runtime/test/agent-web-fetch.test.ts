@@ -300,7 +300,7 @@ describe("default Agent web fetch integration", () => {
     const workspaceRoot = path.join(root, "workspace");
     await mkdir(workspaceRoot);
     const sourceUrl = "https://dynamic.example/page?private=URL_MARKER";
-    const claim = "Browser fallback rendered exact dynamic evidence.";
+    const claim = "The rendered client provides a textbox for new input.";
     let operation = 0;
     const execute = vi.fn(
       async (
@@ -318,12 +318,19 @@ describe("default Agent web fetch integration", () => {
       operation += 1;
       const lines = [
         "Dynamic evidence page",
-        claim,
-        "The controlled Browser renderer supplies visible text without exposing interactive actions.",
+        "The controlled Browser renderer supplies a client application.",
+        'App control: textbox "New Input"',
       ];
       return {
         url: sourceUrl,
         title: "Dynamic evidence page",
+        pageDiagnosis: {
+          status: "none",
+          signalCount: 0,
+          signalsSha256: sha256(canonicalJson([])),
+          takeoverRecommended: false,
+        },
+        semanticAppControlCount: 1,
         lines,
         textChars: lines.join("\n").length,
         truncated: false,
@@ -362,7 +369,7 @@ describe("default Agent web fetch integration", () => {
             status: 200,
             headers: { "content-type": "text/html" },
             body: Buffer.from(
-              `<!doctype html><html><head><title>Dynamic evidence page</title></head><body><h1>Dynamic evidence page</h1><script>document.write(${JSON.stringify(`<p>${claim}</p>`)})</script></body></html>`,
+              '<!doctype html><html><head><title>Dynamic evidence page</title><script defer src="app.bundle.js"></script></head><body><div id="root"></div><footer>Public shell.</footer></body></html>',
             ),
             finalUrl: sourceUrl,
             redirectCount: 0,
@@ -395,7 +402,7 @@ describe("default Agent web fetch integration", () => {
             messages,
           )?.[1];
           expect(messages).toContain("Render: browser_fallback");
-          expect(messages).toContain(claim);
+          expect(messages).toContain("App control: textbox");
           return fauxAssistantMessage(
             fauxToolCall("research_source", {
               action: "capture_fetch",
@@ -419,8 +426,8 @@ describe("default Agent web fetch integration", () => {
               action: "cite",
               sourceId: sourceId!,
               sourceContentSha256: contentSha256!,
-              startLine: 2,
-              endLine: 2,
+              startLine: 3,
+              endLine: 3,
               claim,
             }),
             { stopReason: "toolUse" },
@@ -437,14 +444,39 @@ describe("default Agent web fetch integration", () => {
         model: { provider: "faux-fetch-fallback", id: "faux-1" },
       });
 
-      expect(run.status, run.error).toBe("completed");
+      const events = await services.store.listEvents(thread.id);
+      const toolSummary = events
+        .filter(
+          (event) =>
+            event.type === "tool.completed" || event.type === "tool.failed",
+        )
+        .map((event) => ({
+          type: event.type,
+          tool: record(event.payload)?.["toolName"],
+          action: record(record(event.payload)?.["details"])?.["action"],
+          fallback: record(record(event.payload)?.["details"])?.[
+            "browserFallbackDiagnostic"
+          ],
+          render: record(record(event.payload)?.["details"])?.[
+            "sourceRenderMode"
+          ],
+          fallbackStatus: record(record(event.payload)?.["details"])?.[
+            "browserFallbackStatus"
+          ],
+          sourceLineCount: record(record(event.payload)?.["details"])?.[
+            "sourceLineCount"
+          ],
+        }));
+      expect(
+        run.status,
+        `${run.error ?? "unknown error"}; tools=${JSON.stringify(toolSummary)}`,
+      ).toBe("completed");
       expect(execute.mock.calls.map((call) => call[1].action)).toEqual([
         "start",
         "wait",
         "close",
       ]);
       expect(capturePage).toHaveBeenCalledOnce();
-      const events = await services.store.listEvents(thread.id);
       expect(
         events
           .filter((event) => event.type === "tool.completed")
@@ -530,20 +562,31 @@ function browserDetails(
   action: BrowserSessionDetails["action"],
   operation: number,
 ): BrowserSessionDetails {
+  const sourceUrl = "https://dynamic.example/page?private=URL_MARKER";
+  const title = "Dynamic evidence page";
   return {
     kind: "napier.browser-session-operation",
-    schemaVersion: 1,
+    schemaVersion: 3,
     action,
     sessionMode: "run_persistent",
     sessionReused: operation > 1,
     sessionOperation: operation,
     sessionIdSha256: "1".repeat(64),
+    activeTabId: "tab_1",
+    tabCount: 1,
+    tabSetSha256: sha256(canonicalJson(["tab_1"])),
     browserExecutableSha256: "2".repeat(64),
     browserVersionSha256: "3".repeat(64),
     limitsSha256: "4".repeat(64),
-    currentUrlSha256: "5".repeat(64),
-    currentOriginSha256: "6".repeat(64),
-    titleSha256: "7".repeat(64),
+    currentUrlSha256: sha256(sourceUrl),
+    currentOriginSha256: sha256(new URL(sourceUrl).origin),
+    titleSha256: sha256(title),
+    pageDiagnosis: {
+      status: "none",
+      signalCount: 0,
+      signalsSha256: sha256(canonicalJson([])),
+      takeoverRecommended: false,
+    },
     snapshotSha256: "8".repeat(64),
     snapshotChars: 80,
     snapshotTruncated: false,

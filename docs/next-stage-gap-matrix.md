@@ -30,14 +30,15 @@ Audit date: 2026-08-04
   Sources with progressive read/find. `research_source capture_fetch` imports
   an exact same-Run Web Source by ID/hash into the existing claim-bound
   citation and report-verification chain. Eligible successful
-  `document.write` HTML shells now automatically render through the same
-  controlled read-only Browser with bounded provenance and fail-visible
-  degradation. Research capture/citation state now survives a verified linked
-  interrupted recovery through bounded private capsules while Web Fetch and
-  Browser working Sessions remain process-local. Generic SPA-to-Browser
-  fallback, autonomous login/CAPTCHA recovery, arbitrary completed-Run Source
-  reuse, broader interaction entry points, and existing-Chrome relay remain
-  P0.
+  `document.write` shells and small empty app mounts with executable app scripts
+  automatically render through the same controlled read-only Browser.
+  Same-operation diagnosis and bounded app-mounted accessible controls improve
+  evidence while excluding form values; rendered login/challenge states return
+  stable handoff diagnostics. Research and Web Fetch state now survive verified
+  linked interrupted recovery through bounded private capsules while Browser
+  Sessions remain process-local. Broad framework inference, autonomous
+  login/CAPTCHA completion, arbitrary completed-Run Source reuse, broader
+  interaction entry points, and existing-Chrome relay remain P0.
 - A fresh default Agent also receives a read-only Browser schema plus
   `research_source`. Dynamic pages can use Browser `start -> wait`, call
   `research_source capture -> cite`, then close the Browser without
@@ -719,17 +720,20 @@ Acceptance:
   public-network, executable freshness, proxy, operation, and cancellation
   boundaries;
 - trigger only after successful HTML parsing when static normalized text is
-  at most 1,000 characters and raw HTML explicitly uses
-  `document.write`/`document.writeln`;
+  at most 1,000 characters and raw HTML either uses `document.write` or has an
+  empty recognized app mount plus an executable app script;
 - never trigger for HTTP errors, unsupported binary content, PDF, ordinary
   static HTML, password forms, arbitrary parser failures, or when Browser is
   not enabled for the active execution mode;
-- require the Browser capture to retain the exact final URL, valid content and
-  Browser hashes, and at least 80 characters of useful visible-text growth;
+- atomically capture structural diagnosis, visible text, and at most 32
+  accessible controls without input values;
+- require the exact final URL, Session/tab/runtime/content hashes, and either
+  80 characters of useful growth or one hashed control inside the app mount;
 - cap automatic fallback at two attempts per Run;
-- on Chrome/render/limit failure, return the static Source with only
+- on Chrome/render/limit/login/challenge failure, return the static Source with
   `browser_unavailable`, `browser_render_not_useful`, or
-  `fallback_limit_reached` rather than a private exception;
+  `fallback_limit_reached`, `login_required`, or `challenge_detected` rather
+  than a private exception or rendered credential page;
 - preserve `static` versus `browser_fallback` renderer provenance through Web
   Fetch receipts, `capture_fetch`, citations, Replay, and Web Trace.
 
@@ -741,9 +745,10 @@ Threat boundary:
 - the static HTTP path remains authoritative for final URL, raw body hash,
   content type, redirect count, and byte bounds. Browser may replace only the
   normalized title/visible lines after exact validation;
-- password-form detection prevents an automatic login-page Browser path.
-  Generic login-wall, CAPTCHA, authentication, and anti-bot recovery remain
-  explicit future work;
+- password-form admission blocks obvious login shells before Browser launch;
+  same-operation diagnosis catches rendered password/challenge structures and
+  returns a hash-only handoff diagnostic. Automatic login/CAPTCHA completion
+  and anti-bot circumvention remain explicit future work;
 - Browser-rendered content remains untrusted data. Fallback does not create a
   citation; the Agent must still import the exact Web Source and bind a
   sufficient line range to its claim;
@@ -751,8 +756,9 @@ Threat boundary:
   Partial, mixed, wrong-format, wrong-URL, or self-inconsistent fallback
   provenance fails Research/Web Trace validation. Historical schema-1 Fetch
   events with no fallback fields remain readable as legacy static evidence;
-- this conservative detector is not general SPA inference and intentionally
-  prefers false negatives over unexpected Browser launches.
+- this remains conservative shell inference, not arbitrary framework
+  detection, and intentionally prefers false negatives over unexpected Browser
+  launches.
 
 Observed result:
 
@@ -10443,3 +10449,72 @@ research_source:capture_fetch -> research_source:cite` with no
   current performance, the 82-file Web distribution, and the release-artifact
   receipt all pass. The Web main chunk remains 143.32 KiB under the 150 KiB
   budget.
+
+## Completed Slice: Conservative Generic SPA Fetch Fallback
+
+User scenario: a fresh default Agent can give `web_fetch` a small client-side
+application shell, receive the rendered UI as the same progressive/citable Web
+Source, and get an explicit handoff diagnostic instead of rendered secrets
+when the page is actually a login or human-verification challenge.
+
+Acceptance and threat boundary:
+
+- preserve `web_fetch` as the only model-authored network call and reuse the
+  existing Run-owned isolated Browser for bounded `start -> wait -> capture ->
+close`;
+- retain the existing `document.write` path and additionally admit only small
+  HTML with an empty `root`/`app` mount plus an executable app-like script;
+- reject password shells, ordinary static/SSR pages, analytics-only scripts,
+  JSON scripts, large static pages, wrong URLs, malformed diagnosis, and
+  incomplete Session/tab/runtime/content bindings;
+- atomically capture visible text, existing structural diagnosis, and at most
+  32 deduplicated accessible control names without reading input values;
+- identify app-mounted controls as content-hashed `App control:` Source lines,
+  bind their count to those exact lines, and permit no-growth fallback only
+  when at least one such control exists;
+- keep controls outside the recognized app mount from bypassing the ordinary
+  useful-text-growth threshold;
+- retain static Fetch content with `login_required` or
+  `challenge_detected` when rendered diagnosis recommends takeover; never
+  import the rendered credential/challenge page into the Web Source;
+- preserve Browser fallback provenance through Research capture/citation,
+  Replay, continuity capsules, and independent Web Trace validation;
+- keep URL, HTML, rendered text, control labels, form values, Session IDs, and
+  diagnosis signals out of Tool Ledger/Trace. Deliberate user prompts/final
+  answers remain ordinary message content.
+
+Observed result:
+
+- the original public TodoMVC React shell is 645 bytes and contains an empty
+  `#root` plus `app.bundle.js`; pre-change Fetch returned seven static footer
+  lines and `shouldFallback=false`;
+- a real controlled Browser rendered the same URL with diagnosis `none` and
+  three bounded app-mounted controls: textbox `New Todo Input`, checkbox
+  `Toggle All Input`, and button `Clear completed`. The direct production probe
+  validated exact URL/Session/tab/runtime/content bindings and returned
+  `fullValid=true`;
+- focused affected gates pass 74 Runtime tests, 10 CLI tests, and 10 Web tests;
+  architecture audits 1,006 source files and 491 test files with zero cycles.
+  Tests cover exact TodoMVC admission, title-only shells, SSR/static/password/
+  JSON/analytics exclusions, URL drift, accessible labels without input or
+  password values, forged diagnosis/counts, outside-mount controls,
+  login/challenge handoff, formal default-Agent execution, Research provenance,
+  continuity, CLI benchmark compatibility, and independent Web Trace;
+- real built-CLI `deepseek/deepseek-v4-flash` Dogfood completed
+  `web_fetch:fetch -> research_source:capture_fetch ->
+research_source:cite`, used `browser_fallback` once, produced seven Source
+  lines/194 characters in the final Run, and made zero model-authored
+  `browser` calls or failed/blocked tools;
+- the final answer cited line 5, `App control: textbox "New Todo Input"`, and
+  ended with the required marker;
+- non-message durable events contained neither rendered-only control labels
+  nor Source body text. Web Fetch, manifest, and Research private roots used
+  `0700` directories and `0600` files;
+- the complete repository gate passes 2,327 regular tests with 45 opt-in live
+  tests skipped by default: Root 125, CLI 198, Server 197, Web 528, Contracts
+  3, Runtime 1,248, and SDK 28. Architecture audits 1,006 production source
+  files and 491 test files with zero cycles; 265/265 OpenAPI compatibility,
+  current performance, the 82-file Web distribution, and the release-artifact
+  receipt all pass. The Web main chunk remains 143.32 KiB under the 150 KiB
+  budget; the dist is bound to `a50530dc6a4229d9` and the release set to
+  `8e3c84d9752e7a6e`.

@@ -1,6 +1,11 @@
 import type { Page } from "playwright-core";
 
 import {
+  type BrowserPageSourceProbe,
+  createBrowserPageDiagnosis,
+  probeBrowserPageDiagnosis,
+} from "./browser-page-diagnosis.js";
+import {
   BROWSER_ACTION_TIMEOUT_MS,
   type BrowserPageSourceCapture,
 } from "./browser-session-model.js";
@@ -23,18 +28,14 @@ export async function captureBrowserPageSource(input: {
 }): Promise<BrowserPageSourceCapture> {
   const beforeUrl = input.page.url();
   validatePublicHttpUrl(beforeUrl);
-  const extracted = await input.page.locator("body").evaluate(
-    (body: HTMLElement, limit) => ({
-      url: body.ownerDocument.location.href,
-      title: body.ownerDocument.title.slice(0, 512),
-      text: body.innerText.slice(0, limit + 1),
-    }),
-    input.maxChars,
+  const extracted = (await input.page.locator("html").evaluate(
+    probeBrowserPageDiagnosis,
+    { kind: "source" as const, href: beforeUrl, limit: input.maxChars },
     {
       timeout: BROWSER_ACTION_TIMEOUT_MS,
       ...(input.signal ? { signal: input.signal } : {}),
     },
-  );
+  )) as BrowserPageSourceProbe;
   const afterUrl = input.page.url();
   if (
     extracted.url !== beforeUrl ||
@@ -43,11 +44,17 @@ export async function captureBrowserPageSource(input: {
   ) {
     throw new Error("Browser page changed or became empty during capture");
   }
-  const normalized = normalizeSourceLines(extracted.text, input.maxChars);
+  const normalized = normalizeSourceLines(
+    extracted.text,
+    extracted.semanticControls,
+    input.maxChars,
+  );
   const title = normalizeDisplayText(extracted.title).slice(0, 512);
   return {
     url: extracted.url,
     title,
+    pageDiagnosis: createBrowserPageDiagnosis(extracted),
+    semanticAppControlCount: normalized.semanticAppControlCount,
     lines: normalized.lines,
     textChars: normalized.lines.join("\n").length,
     truncated: normalized.truncated,
@@ -80,12 +87,36 @@ function normalizeDisplayText(input: string): string {
 
 function normalizeSourceLines(
   input: string,
+  semanticControls: ReadonlyArray<{ line: string; appMount: boolean }>,
   maxChars: number,
-): { lines: string[]; truncated: boolean } {
+): {
+  lines: string[];
+  semanticAppControlCount: number;
+  truncated: boolean;
+} {
   const lines: string[] = [];
   let chars = 0;
   let truncated = input.length > maxChars;
-  for (const rawLine of input.slice(0, maxChars).split(/\r?\n/u)) {
+  let semanticAppControlCount = 0;
+  const candidates = [
+    ...input
+      .slice(0, maxChars)
+      .split(/\r?\n/u)
+      .map((line) => ({
+        line,
+        semantic: false,
+        appMount: false,
+      })),
+    ...semanticControls.map((control) => ({
+      line: control.appMount
+        ? control.line.replace(/^Control:/u, "App control:")
+        : control.line,
+      semantic: true,
+      appMount: control.appMount,
+    })),
+  ];
+  for (const candidate of candidates) {
+    const rawLine = candidate.line;
     const line = normalizeDisplayText(rawLine);
     if (!line) continue;
     const bounded = line.slice(0, 1_000);
@@ -95,8 +126,13 @@ function normalizeSourceLines(
       truncated = true;
       break;
     }
+    if (candidate.semantic && bounded.length > remaining) {
+      truncated = true;
+      continue;
+    }
     lines.push(bounded.slice(0, remaining));
     chars += Math.min(bounded.length, remaining);
+    if (candidate.appMount) semanticAppControlCount += 1;
     if (bounded.length > remaining) {
       truncated = true;
       break;
@@ -105,5 +141,5 @@ function normalizeSourceLines(
   if (lines.length === 0) {
     throw new Error("Browser source capture has no visible text");
   }
-  return { lines, truncated };
+  return { lines, semanticAppControlCount, truncated };
 }

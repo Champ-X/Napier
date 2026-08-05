@@ -44,7 +44,9 @@ export interface ResearchSourceToolEventTraceView {
   researchBrowserFallbackDiagnostic?:
     | "browser_unavailable"
     | "browser_render_not_useful"
-    | "fallback_limit_reached";
+    | "fallback_limit_reached"
+    | "login_required"
+    | "challenge_detected";
   researchWebFetchBrowserSessionOperation?: number;
   researchWebFetchBrowserSessionIdSha256?: string;
   researchWebFetchBrowserExecutableSha256?: string;

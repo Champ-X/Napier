@@ -234,6 +234,44 @@ describe("Research Source Trace projection", () => {
     ).toBeUndefined();
   });
 
+  it.each(["login_required", "challenge_detected"] as const)(
+    "projects %s Browser fallback handoff diagnostics",
+    (browserFallbackDiagnostic) => {
+      const details = {
+        ...citationDetails(),
+        action: "capture_fetch",
+        sourceKind: "web_fetch",
+        citationId: undefined,
+        citationTokenSha256: undefined,
+        citationStartLine: undefined,
+        citationEndLine: undefined,
+        citationQuoteSha256: undefined,
+        citationClaimSha256: undefined,
+        browserSessionOperation: undefined,
+        browserSessionIdSha256: undefined,
+        browserExecutableSha256: undefined,
+        browserVersionSha256: undefined,
+        browserLimitsSha256: undefined,
+        browserNetworkDestinationsSha256: undefined,
+        webSourceContentSha256: "a".repeat(64),
+        webSourceBodySha256: "b".repeat(64),
+        webSourceFormat: "html",
+        webSourceLineCount: 20,
+        webSourceRenderMode: "static",
+        browserFallbackStatus: "unavailable",
+        browserFallbackDiagnostic,
+      };
+
+      expect(researchSourceEventEvidence(details)).toEqual(
+        expect.objectContaining({
+          researchWebSourceRenderMode: "static",
+          researchBrowserFallbackStatus: "unavailable",
+          researchBrowserFallbackDiagnostic: browserFallbackDiagnostic,
+        }),
+      );
+    },
+  );
+
   it("integrates Research Source evidence into generic tool summaries", () => {
     const event: RunEvent = {
       id: "event_research",

@@ -299,6 +299,49 @@ describe("RunWebFetchSourceManager", () => {
     expect(research.lines.join("\n")).toContain("Browser-rendered evidence");
   });
 
+  it("falls back for a small empty-root application shell", async () => {
+    const browserFallback = {
+      captureUrl: vi.fn(async () =>
+        browserCapture("https://example.com/source", "TodoMVC: React", [
+          "todos",
+          "0 items left",
+          "All Active Completed",
+          "Double-click to edit a todo",
+          "The rendered client application adds interactive controls and state not present in the static shell.",
+          'App control: textbox "New Todo Input"',
+        ]),
+      ),
+    };
+    const manager = new RunWebFetchSourceManager({
+      http: {
+        request: vi.fn(async () =>
+          response(
+            '<!doctype html><html><head><title>TodoMVC: React</title><script defer src="app.bundle.js"></script></head><body><section id="root"></section><footer>Double-click to edit a todo</footer></body></html>',
+            "text/html",
+          ),
+        ),
+      },
+      browserFallback,
+    });
+
+    const fetched = await manager.execute(
+      OWNER,
+      { action: "fetch", url: "https://example.com/source" },
+      undefined,
+      { browserFallbackAllowed: true },
+    );
+
+    expect(browserFallback.captureUrl).toHaveBeenCalledOnce();
+    expect(fetched.output).toContain("New Todo Input");
+    expect(fetched.details).toEqual(
+      expect.objectContaining({
+        sourceRenderMode: "browser_fallback",
+        browserFallbackStatus: "used",
+        browserFallbackCount: 1,
+      }),
+    );
+  });
+
   it("does not start Browser fallback for static HTML, password forms, or PDF", async () => {
     const browserFallback = { captureUrl: vi.fn() };
     const http = {
@@ -400,6 +443,157 @@ describe("RunWebFetchSourceManager", () => {
     expect(fetched.output).not.toContain("PRIVATE_CHROME_FAILURE");
   });
 
+  it.each([
+    ["login_required", 2],
+    ["challenge_detected", 4],
+  ] as const)(
+    "returns a stable %s handoff diagnostic without rendered content",
+    async (status, signalCount) => {
+      const privateRendered = "PRIVATE_RENDERED_LOGIN_OR_CHALLENGE";
+      const browserFallback = {
+        captureUrl: vi.fn(async () =>
+          browserCapture(
+            "https://example.com/source",
+            "Human handoff",
+            [privateRendered, "Additional private rendered marker."],
+            diagnosis(status, signalCount),
+          ),
+        ),
+      };
+      const manager = new RunWebFetchSourceManager({
+        http: {
+          request: vi.fn(async () =>
+            response(
+              '<html><body><div id="root"></div><script defer src="app.js"></script><footer>Public shell.</footer></body></html>',
+              "text/html",
+            ),
+          ),
+        },
+        browserFallback,
+      });
+
+      const fetched = await manager.execute(
+        OWNER,
+        { action: "fetch", url: "https://example.com/source" },
+        undefined,
+        { browserFallbackAllowed: true },
+      );
+
+      expect(fetched.details).toEqual(
+        expect.objectContaining({
+          sourceRenderMode: "static",
+          browserFallbackStatus: "unavailable",
+          browserFallbackDiagnostic: status,
+          browserFallbackCount: 1,
+        }),
+      );
+      expect(fetched.output).toContain(`Fallback Diagnostic: ${status}`);
+      expect(fetched.output).not.toContain(privateRendered);
+    },
+  );
+
+  it("rejects malformed Browser diagnosis evidence", async () => {
+    const browserFallback = {
+      captureUrl: vi.fn(async () =>
+        browserCapture(
+          "https://example.com/source",
+          "Dynamic",
+          [
+            "Dynamic visible evidence from the controlled Browser fallback.",
+            "Additional visible evidence keeps this capture above the growth threshold.",
+          ],
+          {
+            status: "login_required",
+            signalCount: 0,
+            signalsSha256: "a".repeat(64),
+            takeoverRecommended: true,
+          },
+        ),
+      ),
+    };
+    const manager = new RunWebFetchSourceManager({
+      http: {
+        request: vi.fn(async () =>
+          response(
+            '<html><body><div id="root"></div><script defer src="app.js"></script><footer>Public shell.</footer></body></html>',
+            "text/html",
+          ),
+        ),
+      },
+      browserFallback,
+    });
+
+    const fetched = await manager.execute(
+      OWNER,
+      { action: "fetch", url: "https://example.com/source" },
+      undefined,
+      { browserFallbackAllowed: true },
+    );
+
+    expect(fetched.details.browserFallbackDiagnostic).toBe(
+      "browser_render_not_useful",
+    );
+  });
+
+  it("rejects semantic control counts that do not match captured lines", async () => {
+    const capture = browserCapture("https://example.com/source", "Dynamic", [
+      "Dynamic visible evidence from the controlled Browser fallback.",
+      "Additional visible evidence keeps this capture above the growth threshold.",
+    ]);
+    capture.semanticAppControlCount = 1;
+    const manager = new RunWebFetchSourceManager({
+      http: {
+        request: vi.fn(async () =>
+          response(
+            '<html><body><div id="root"></div><script defer src="app.js"></script><footer>Public shell.</footer></body></html>',
+            "text/html",
+          ),
+        ),
+      },
+      browserFallback: { captureUrl: vi.fn(async () => capture) },
+    });
+
+    const fetched = await manager.execute(
+      OWNER,
+      { action: "fetch", url: "https://example.com/source" },
+      undefined,
+      { browserFallbackAllowed: true },
+    );
+
+    expect(fetched.details.browserFallbackDiagnostic).toBe(
+      "browser_render_not_useful",
+    );
+  });
+
+  it("does not let controls outside the app mount bypass text growth", async () => {
+    const capture = browserCapture("https://example.com/source", "Dynamic", [
+      "Public shell.",
+      'Control: button "Footer action"',
+    ]);
+    const manager = new RunWebFetchSourceManager({
+      http: {
+        request: vi.fn(async () =>
+          response(
+            '<html><body><div id="root"></div><script defer src="app.js"></script><footer><button>Footer action</button></footer></body></html>',
+            "text/html",
+          ),
+        ),
+      },
+      browserFallback: { captureUrl: vi.fn(async () => capture) },
+    });
+
+    const fetched = await manager.execute(
+      OWNER,
+      { action: "fetch", url: "https://example.com/source" },
+      undefined,
+      { browserFallbackAllowed: true },
+    );
+
+    expect(fetched.details.browserFallbackDiagnostic).toBe(
+      "browser_render_not_useful",
+    );
+  });
+
   it("rejects a mismatched Browser result and caps fallback attempts per Run", async () => {
     const browserFallback = {
       captureUrl: vi
@@ -479,10 +673,15 @@ function browserCapture(
   url: string,
   title: string,
   lines: string[],
+  pageDiagnosis = diagnosis("none", 0),
 ): BrowserPageSourceCapture {
   return {
     url,
     title,
+    pageDiagnosis,
+    semanticAppControlCount: lines.filter((line) =>
+      line.startsWith("App control: "),
+    ).length,
     lines,
     textChars: lines.join("\n").length,
     truncated: false,
@@ -505,6 +704,27 @@ function browserCapture(
       destinationCount: 1,
       destinationsSha256: "5".repeat(64),
     },
+  };
+}
+
+function diagnosis(
+  status: "none" | "login_required" | "challenge_detected",
+  signalCount: number,
+) {
+  return {
+    status,
+    signalCount,
+    signalsSha256: sha256(
+      canonicalJson(
+        status === "none"
+          ? []
+          : Array.from(
+              { length: signalCount },
+              (_, index) => `${status}:${String(index)}`,
+            ),
+      ),
+    ),
+    takeoverRecommended: status !== "none",
   };
 }
 

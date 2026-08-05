@@ -156,7 +156,9 @@ function validWebFetchRenderProvenance(
       webFetch.browserFallback === undefined &&
       (webFetch.browserFallbackDiagnostic === "browser_unavailable" ||
         webFetch.browserFallbackDiagnostic === "browser_render_not_useful" ||
-        webFetch.browserFallbackDiagnostic === "fallback_limit_reached")
+        webFetch.browserFallbackDiagnostic === "fallback_limit_reached" ||
+        webFetch.browserFallbackDiagnostic === "login_required" ||
+        webFetch.browserFallbackDiagnostic === "challenge_detected")
     );
   }
   return (

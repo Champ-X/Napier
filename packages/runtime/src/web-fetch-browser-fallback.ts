@@ -3,6 +3,7 @@ import {
   type BrowserPageSourceCapture,
   type BrowserSessionOwner,
 } from "./browser-session-model.js";
+import type { BrowserPageDiagnosisEvidence } from "@napier/contracts/browser-live-view";
 import type { RunBrowserSessionManager } from "./browser-session.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -15,8 +16,10 @@ import type {
   WebFetchBrowserFallbackEvidence,
   WebFetchBrowserFallbackProvider,
 } from "./web-fetch-model.js";
+import { hasConservativeBrowserShell } from "./web-fetch-browser-shell.js";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
+const EMPTY_DIAGNOSIS_SHA256 = sha256(canonicalJson([]));
 const MAX_STATIC_SHELL_TEXT_CHARS = 1_000;
 const MIN_RENDERED_TEXT_CHARS = 80;
 const MIN_RENDERED_GROWTH_CHARS = 80;
@@ -45,11 +48,7 @@ export function shouldUseBrowserFallback(input: {
     return false;
   }
   const html = input.body.toString("utf8");
-  return (
-    /<script\b/iu.test(html) &&
-    /\bdocument\.(?:write|writeln)\s*\(/iu.test(html) &&
-    !/<input\b[^>]*\btype\s*=\s*["']?password\b/iu.test(html)
-  );
+  return hasConservativeBrowserShell(html);
 }
 
 export function validateBrowserFallbackCapture(input: {
@@ -58,7 +57,35 @@ export function validateBrowserFallbackCapture(input: {
   maxChars: number;
   staticTextChars: number;
 }): { evidence: WebFetchBrowserFallbackEvidence } | undefined {
+  const bound = validateBrowserFallbackCaptureBinding(input);
+  const diagnosis = input.capture.pageDiagnosis;
+  const semanticAppControlCount = input.capture.semanticAppControlCount;
+  if (
+    !bound ||
+    !diagnosis ||
+    diagnosis.status !== "none" ||
+    !Number.isSafeInteger(semanticAppControlCount) ||
+    Number(semanticAppControlCount) < 0 ||
+    Number(semanticAppControlCount) > 32 ||
+    input.capture.textChars < MIN_RENDERED_TEXT_CHARS ||
+    (input.capture.textChars - input.staticTextChars <
+      MIN_RENDERED_GROWTH_CHARS &&
+      semanticAppControlCount === 0)
+  ) {
+    return undefined;
+  }
+  return bound;
+}
+
+export function validateBrowserFallbackCaptureBinding(input: {
+  capture: BrowserPageSourceCapture;
+  expectedUrl: string;
+  maxChars: number;
+}): { evidence: WebFetchBrowserFallbackEvidence } | undefined {
   const capture = input.capture;
+  const semanticAppControlCount = capture.lines.filter(
+    isSemanticAppControlLine,
+  ).length;
   const expectedUrl = validatePublicHttpUrl(input.expectedUrl);
   const capturedUrl = validatePublicHttpUrl(capture.url);
   const text = capture.lines.join("\n");
@@ -76,8 +103,11 @@ export function validateBrowserFallbackCapture(input: {
     ) ||
     capture.textChars !== text.length ||
     capture.textChars > input.maxChars ||
-    capture.textChars < MIN_RENDERED_TEXT_CHARS ||
-    capture.textChars - input.staticTextChars < MIN_RENDERED_GROWTH_CHARS ||
+    !Number.isSafeInteger(capture.semanticAppControlCount) ||
+    capture.semanticAppControlCount !== semanticAppControlCount ||
+    semanticAppControlCount > 32 ||
+    !capture.pageDiagnosis ||
+    !validBrowserFallbackDiagnosis(capture.pageDiagnosis) ||
     capture.capturedContentSha256 !==
       sha256(
         canonicalJson({
@@ -116,6 +146,34 @@ export function validateBrowserFallbackCapture(input: {
   };
 }
 
+function isSemanticAppControlLine(value: string): boolean {
+  return /^App control: (?:button|checkbox|combobox|control|radio|textbox) ".{1,160}"$/u.test(
+    value,
+  );
+}
+
+export function validBrowserFallbackDiagnosis(
+  value: BrowserPageDiagnosisEvidence,
+): boolean {
+  const status =
+    value.status === "none" ||
+    value.status === "login_required" ||
+    value.status === "challenge_detected";
+  return (
+    status &&
+    Number.isSafeInteger(value.signalCount) &&
+    value.signalCount >= 0 &&
+    value.signalCount <= 12 &&
+    SHA256.test(value.signalsSha256) &&
+    value.takeoverRecommended === (value.status !== "none") &&
+    (value.status === "none"
+      ? value.signalCount === 0 &&
+        value.signalsSha256 === EMPTY_DIAGNOSIS_SHA256
+      : value.signalCount >= 1 &&
+        value.signalsSha256 !== EMPTY_DIAGNOSIS_SHA256)
+  );
+}
+
 export function validBrowserFallbackEvidence(
   evidence: WebFetchBrowserFallbackEvidence,
 ): boolean {
@@ -150,17 +208,33 @@ async function captureBrowserFallback(
   owner: BrowserSessionOwner,
   request: { url: string; maxChars: number; waitMs: number },
   signal?: AbortSignal,
-): Promise<BrowserPageSourceCapture> {
+): ReturnType<WebFetchBrowserFallbackProvider["captureUrl"]> {
   let started = false;
   try {
     await manager.execute(owner, { action: "start", url: request.url }, signal);
     started = true;
-    await manager.execute(
+    const waited = await manager.execute(
       owner,
       { action: "wait", durationMs: request.waitMs },
       signal,
     );
-    return await manager.capturePage(owner, request.maxChars, signal);
+    const capture = await manager.capturePage(owner, request.maxChars, signal);
+    if (
+      capture.sessionOperation !== waited.details.sessionOperation + 1 ||
+      capture.sessionIdSha256 !== waited.details.sessionIdSha256 ||
+      capture.activeTabId !== waited.details.activeTabId ||
+      capture.tabCount !== waited.details.tabCount ||
+      capture.tabSetSha256 !== waited.details.tabSetSha256 ||
+      capture.browserExecutableSha256 !==
+        waited.details.browserExecutableSha256 ||
+      capture.browserVersionSha256 !== waited.details.browserVersionSha256 ||
+      capture.limitsSha256 !== waited.details.limitsSha256 ||
+      sha256(capture.url) !== waited.details.currentUrlSha256 ||
+      sha256(capture.title) !== waited.details.titleSha256
+    ) {
+      throw new Error("Browser fallback capture changed after diagnosis");
+    }
+    return capture;
   } finally {
     if (started) {
       await manager

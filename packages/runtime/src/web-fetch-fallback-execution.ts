@@ -1,6 +1,8 @@
 import {
   shouldUseBrowserFallback,
   validateBrowserFallbackCapture,
+  validateBrowserFallbackCaptureBinding,
+  validBrowserFallbackDiagnosis,
 } from "./web-fetch-browser-fallback.js";
 import {
   MAX_WEB_FETCH_BROWSER_FALLBACKS_PER_RUN,
@@ -63,9 +65,9 @@ export async function resolveWebFetchBrowserFallback(input: {
     };
   }
   const browserFallbackCount = input.browserFallbackCount + 1;
-  let capture;
+  let rendered;
   try {
-    capture = await input.browserFallback.captureUrl(
+    rendered = await input.browserFallback.captureUrl(
       input.owner,
       {
         url: input.finalUrl,
@@ -83,8 +85,40 @@ export async function resolveWebFetchBrowserFallback(input: {
       browserFallbackCount,
     };
   }
+  if (
+    !rendered.pageDiagnosis ||
+    !validBrowserFallbackDiagnosis(rendered.pageDiagnosis)
+  ) {
+    return {
+      ...staticResult,
+      status: "unavailable",
+      diagnostic: "browser_render_not_useful",
+      browserFallbackCount,
+    };
+  }
+  const bound = validateBrowserFallbackCaptureBinding({
+    capture: rendered,
+    expectedUrl: input.finalUrl,
+    maxChars: MAX_WEB_FETCH_OUTPUT_CHARS,
+  });
+  if (!bound) {
+    return {
+      ...staticResult,
+      status: "unavailable",
+      diagnostic: "browser_render_not_useful",
+      browserFallbackCount,
+    };
+  }
+  if (rendered.pageDiagnosis.status !== "none") {
+    return {
+      ...staticResult,
+      status: "unavailable",
+      diagnostic: rendered.pageDiagnosis.status,
+      browserFallbackCount,
+    };
+  }
   const validated = validateBrowserFallbackCapture({
-    capture,
+    capture: rendered,
     expectedUrl: input.finalUrl,
     maxChars: MAX_WEB_FETCH_OUTPUT_CHARS,
     staticTextChars: input.parsed.lines.join("\n").length,
@@ -98,12 +132,12 @@ export async function resolveWebFetchBrowserFallback(input: {
     };
   }
   return {
-    lines: [...capture.lines],
-    title: capture.title || input.parsed.title,
-    truncated: capture.truncated,
+    lines: [...rendered.lines],
+    title: rendered.title || input.parsed.title,
+    truncated: rendered.truncated,
     renderMode: "browser_fallback",
     status: "used",
-    evidence: validated.evidence,
+    evidence: bound.evidence,
     browserFallbackCount,
   };
 }

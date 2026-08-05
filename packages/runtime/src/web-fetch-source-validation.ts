@@ -135,7 +135,9 @@ function validFallback(source: WebFetchSource): boolean {
       source.renderMode === "static" &&
       (source.browserFallbackDiagnostic === "browser_unavailable" ||
         source.browserFallbackDiagnostic === "browser_render_not_useful" ||
-        source.browserFallbackDiagnostic === "fallback_limit_reached")
+        source.browserFallbackDiagnostic === "fallback_limit_reached" ||
+        source.browserFallbackDiagnostic === "login_required" ||
+        source.browserFallbackDiagnostic === "challenge_detected")
     );
   }
   return (

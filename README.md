@@ -6179,8 +6179,14 @@ data root's private state. Completed-Run Source reuse, arbitrary cross-Run
 adoption, automatic recovery after unsafe network tools, and Browser Session
 recovery remain unavailable.
 Authenticated content, CAPTCHA/login-wall recovery, scanned PDF OCR, automatic
-Fetch-to-Browser fallback, full Browser interaction, Browser Live/takeover,
-and cross-restart Browser Session/login retention remain open P0 work.
+login/CAPTCHA completion, scanned PDF OCR, full Browser interaction,
+Browser Live/takeover, and cross-restart Browser Session/login retention
+remain open P0 work. Automatic Fetch-to-Browser fallback now recognizes both
+bounded `document.write` shells and small empty `root`/`app` mounts with an
+executable app script. Successful captures may append bounded accessible
+`App control:` labels from inside that mount, but never form values; rendered
+login/challenge states retain the static Source and return a stable handoff
+diagnostic instead.
 
 Selecting `workspace` exposes only individually enabled structured tools:
 **Atomic patch** is hash-preconditioned and supports Hashline-style line

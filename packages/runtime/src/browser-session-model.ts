@@ -247,6 +247,8 @@ export interface BrowserSessionOperationResult {
 export interface BrowserPageSourceCapture {
   url: string;
   title: string;
+  pageDiagnosis?: BrowserPageDiagnosisEvidence;
+  semanticAppControlCount?: number;
   lines: string[];
   textChars: number;
   truncated: boolean;

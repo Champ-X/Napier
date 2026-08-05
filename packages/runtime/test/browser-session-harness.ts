@@ -337,23 +337,46 @@ export class FakePage {
         request:
           | number
           | { kind: "diagnosis"; href: string }
+          | { kind: "source"; href: string; limit: number }
           | { kind: "find"; limit: number }
           | { kind: "scroll"; deltaY: number; textLimit: number },
         _options: unknown,
       ) {
         if (typeof request !== "number") {
-          if (request.kind === "diagnosis") {
+          if (request.kind === "diagnosis" || request.kind === "source") {
+            const capturedUrl = page.currentUrl;
             const { document } = parseHTML(
               page.pageHtml ??
                 `<html><head><title>${escapeHtml(
-                  page.currentUrl === "about:blank"
-                    ? ""
-                    : `Page ${new URL(page.currentUrl).hostname}`,
-                )}</title></head><body><p>${escapeHtml(
-                  page.sourceText,
-                )}</p></body></html>`,
+                  page.sourceTitle ??
+                    (capturedUrl === "about:blank"
+                      ? ""
+                      : `Page ${new URL(capturedUrl).hostname}`),
+                )}</title></head><body></body></html>`,
             );
-            return probeBrowserPageDiagnosis(document.documentElement, request);
+            const probed = probeBrowserPageDiagnosis(document.documentElement, {
+              kind: "source",
+              href: capturedUrl,
+              limit: request.kind === "source" ? request.limit : 1,
+            });
+            if (request.kind === "diagnosis") {
+              return { signals: probed.signals };
+            }
+            const extracted = {
+              signals: probed.signals,
+              url: capturedUrl,
+              title:
+                page.sourceTitle ??
+                (capturedUrl === "about:blank"
+                  ? ""
+                  : `Page ${new URL(capturedUrl).hostname}`),
+              text: page.sourceText.slice(0, request.limit + 1),
+              semanticControls: probed.semanticControls,
+            };
+            if (page.sourceUrlDriftDuringCapture) {
+              page.currentUrl = "https://two.example/drifted";
+            }
+            return extracted;
           }
           if (request.kind === "find") {
             return {

@@ -114,7 +114,9 @@ function validFallback(
       renderMode === "static" &&
       (value["browserFallbackDiagnostic"] === "browser_unavailable" ||
         value["browserFallbackDiagnostic"] === "browser_render_not_useful" ||
-        value["browserFallbackDiagnostic"] === "fallback_limit_reached")
+        value["browserFallbackDiagnostic"] === "fallback_limit_reached" ||
+        value["browserFallbackDiagnostic"] === "login_required" ||
+        value["browserFallbackDiagnostic"] === "challenge_detected")
     );
   }
   return (
