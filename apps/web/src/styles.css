@@ -1767,6 +1767,48 @@ button:disabled {
   opacity: 0.42;
 }
 
+.browser-takeover-tabs {
+  display: flex;
+  gap: 5px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  background: #19251f;
+  border-bottom: 1px solid rgb(220 233 224 / 12%);
+}
+
+.browser-takeover-tabs > div {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.browser-takeover-tabs > div > button {
+  border-radius: 0;
+}
+
+.browser-takeover-tabs > div > button:first-child {
+  min-width: 74px;
+  justify-content: space-between;
+}
+
+.browser-takeover-tabs > div > button:last-child {
+  padding-right: 6px;
+  padding-left: 6px;
+  border-left: 0;
+}
+
+.browser-takeover-tabs > div.is-active > button:first-child {
+  color: #101713;
+  background: #f2c975;
+  border-color: #f2c975;
+  opacity: 1;
+}
+
+.browser-takeover-tabs span {
+  font-size: 6px;
+  color: inherit;
+  letter-spacing: 0.04em;
+}
+
 .browser-takeover-desk pre {
   max-height: 190px;
   padding: 11px 13px;
@@ -1795,6 +1837,17 @@ button:disabled {
   gap: 9px;
   align-items: end;
   padding: 11px 12px;
+}
+
+.browser-takeover-new-tab {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 6px;
+  align-items: end;
+}
+
+.browser-takeover-new-tab label {
+  flex: 1 1 auto;
 }
 
 .browser-takeover-mode,
@@ -14800,6 +14853,15 @@ button:disabled {
 
   .browser-takeover-controls {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .browser-takeover-new-tab {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .browser-takeover-new-tab button {
+    width: 100%;
   }
 
   .browser-takeover-mode {

@@ -11,6 +11,11 @@ const READ_ONLY_BROWSER_ACTIONS = new Set([
   "start",
   "navigate",
   "back",
+  "forward",
+  "tab_new",
+  "tab_list",
+  "tab_switch",
+  "tab_close",
   "wait",
   "find",
   "scroll",
@@ -27,7 +32,7 @@ export function assessBrowserToolCall(
 ): PolicyDecision | undefined {
   if (!BROWSER_TOOLS.has(toolName)) return undefined;
   const action = getStringField(input, "action");
-  if (action === "start" || action === "navigate") {
+  if (action === "start" || action === "navigate" || action === "tab_new") {
     try {
       validatePublicHttpUrl(getStringField(input, "url") ?? "");
     } catch {

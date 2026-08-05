@@ -210,6 +210,10 @@ export function BrowserLiveViewPanel({
       ) : null}
       <footer>
         <span>op {String(receipt.sessionOperation)}</span>
+        <span>
+          {receipt.activeTabId} · {String(receipt.tabCount)} tab
+          {receipt.tabCount === 1 ? "" : "s"}
+        </span>
         <span title={receipt.currentOriginSha256}>
           origin {receipt.currentOriginSha256.slice(0, 10)}
         </span>

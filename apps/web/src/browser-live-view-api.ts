@@ -49,7 +49,7 @@ function receiptFromHeaders(
 ): BrowserLiveViewReceipt {
   const receipt = {
     kind: "napier.browser-live-view" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     threadId: required(response, "X-Napier-Thread-Id"),
     runId: required(response, "X-Napier-Run-Id"),
     sessionIdSha256: digest(response, "X-Napier-Browser-Session-SHA256"),
@@ -59,6 +59,9 @@ function receiptFromHeaders(
       0,
       64,
     ),
+    activeTabId: tabId(response, "X-Napier-Browser-Active-Tab-Id"),
+    tabCount: integer(response, "X-Napier-Browser-Tab-Count", 1, 4),
+    tabSetSha256: digest(response, "X-Napier-Browser-Tab-Set-SHA256"),
     imageSha256: digest(response, "X-Napier-Content-SHA256"),
     imageBytes: integer(response, "Content-Length", 1, MAX_LIVE_VIEW_BYTES),
     mimeType: contentType(response),
@@ -95,6 +98,14 @@ function receiptFromHeaders(
     throw new Error("Browser live view response contract is invalid");
   }
   return receipt;
+}
+
+function tabId(response: Response, name: string): string {
+  const value = required(response, name);
+  if (!/^tab_[1-9][0-9]{0,3}$/u.test(value)) {
+    throw new Error(`Browser live view ${name} is invalid`);
+  }
+  return value;
 }
 
 function contentType(response: Response): "image/png" {

@@ -33,6 +33,10 @@ describe("Browser Live view HTTP", () => {
     expect(response.headers.get("x-napier-browser-session-operation")).toBe(
       "2",
     );
+    expect(response.headers.get("x-napier-browser-active-tab-id")).toBe(
+      receipt.activeTabId,
+    );
+    expect(response.headers.get("x-napier-browser-tab-count")).toBe("2");
     expect(JSON.stringify([...response.headers])).not.toContain(
       "PRIVATE_PAGE_CONTENT",
     );
@@ -63,11 +67,14 @@ describe("Browser Live view HTTP", () => {
 function liveReceipt(image: Buffer): BrowserLiveViewReceipt {
   const content = {
     kind: "napier.browser-live-view" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     threadId: "thread_browser_live",
     runId: "run_browser_live",
     sessionIdSha256: "a".repeat(64),
     sessionOperation: 2,
+    activeTabId: "tab_2",
+    tabCount: 2,
+    tabSetSha256: "9".repeat(64),
     imageSha256: createHash("sha256").update(image).digest("hex"),
     imageBytes: image.byteLength,
     mimeType: "image/png" as const,

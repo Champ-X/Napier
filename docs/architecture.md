@@ -672,8 +672,8 @@ Web and terminal entries parse the same exact Contracts shape.
 the same serialized `RunBrowserSessionManager` for a viewport screenshot using
 the existing screenshot implementation with operation counting disabled.
 Outbound proxy access remains closed. Runtime returns PNG bytes plus hash-only
-session/operation/URL/origin/title/runtime/network metadata; it writes no
-Ledger event. The Server maps this to a `no-store`, `nosniff`,
+session/operation/active-tab/tab-set/URL/origin/title/runtime/network metadata;
+it writes no Ledger event. The Server maps this to a `no-store`, `nosniff`,
 `X-Napier-Content-SHA256-Mode: body` binary response and a reconstructable
 receipt hash. Web verifies byte length, PNG MIME type, image SHA-256, receipt
 SHA-256, Thread/Run identity, and bounded counters before creating an ephemeral
@@ -683,16 +683,21 @@ and unmount. This is a live observer, not a takeover or durable replay channel.
 `BrowserTakeoverService` hangs from the existing Browser Session control
 boundary. It accepts only the active standard user Run while
 `BrowserSessionPauseManager` holds an exact paused state. A no-store snapshot
-returns the current untrusted ARIA tree plus pause/Session/operation/snapshot
-hashes and consumes no Browser operation. The process cache retains only those
-binding hashes, never page text. Operator click/type/select/scroll/back/wait
-requests bind to the complete snapshot identity, use fresh refs only, and run
-inside the same pause transition queue and serialized Browser Session. Resume
-therefore cannot race an operator action. Each action consumes one Browser
-operation and appends requested/completed/failed hash-only receipts; private
-text and values remain request-local and Web clears them after every attempt.
-Returning control resumes the exact pause state and releases the Agent's next
-Browser action on the same Run and Session.
+returns the current untrusted ARIA tree plus a bounded ephemeral tab list and
+pause/Session/operation/active-tab/tab-count/tab-set/snapshot hashes. It
+consumes no Browser operation. The process cache retains only binding hashes,
+never page text, URL, title, or raw tab identity. Operator
+click/type/select/scroll/back/forward/wait and explicit tab
+new/switch/close requests bind to the complete snapshot identity, use fresh
+refs where applicable, and run inside the same pause transition queue and
+serialized Browser Session. Runtime validates exact tab-count/set/selection
+transitions before recording completion; inconsistent capture evidence closes
+the uncertain Session. Resume therefore cannot race an operator action. Each
+action consumes one Browser operation and appends requested/completed/failed
+hash-only receipts; private text, values, URLs, and titles remain live-only and
+Web clears private inputs after every attempt. Returning control resumes the
+exact pause state and releases the Agent's next Browser action on the same Run
+and Session.
 
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate
@@ -4228,17 +4233,27 @@ freshness checks. `browser-page-session.ts` owns Playwright interaction and
 navigation grants; bounded presentation text lives in
 `browser-page-output.ts`; `browser-session.ts` owns same-Run serialization,
 cross-Run isolation, admission, and cancellation.
+`browser-session-tabs.ts` owns the explicit four-tab registry and opaque
+session-local `tab_N` identities; `browser-session-navigation.ts` owns
+per-page origin grants; and `browser-page-tab-operation.ts` owns tab lifecycle
+execution. All ordinary actions resolve the selected page at operation start.
+Browser Source capture, find/scroll, screenshots, Live, and takeover use that
+same selected page and carry active-tab/count/set evidence.
 `browser-workspace-files.ts` owns upload/download path and byte confinement;
 `browser-session-details.ts` owns bounded operation evidence;
 `browser-tool.ts` owns Agent schema and privacy projection.
 
 The proxy permits public subresource origins so ordinary pages can load, but
-every top-level origin transition remains action-scoped. Browser Route and
-proxy DNS checks are intentionally duplicated: a target must be public at both
-points, and the proxy's concrete socket address is authoritative for the
-connection. Popups close, dialogs dismiss, service workers stay disabled, and
-downloads without an active explicit action are cancelled. No path connects
-to a user's existing browser, cookies, extensions, or debugging port.
+every top-level origin transition remains action-scoped and tracked per tab.
+Because one proxy is shared by the isolated Session, Browser Route denies
+every inactive or unmanaged page request while the selected tab has outbound
+access. Browser Route and proxy DNS checks are intentionally duplicated: a
+target must be public at both points, and the proxy's concrete socket address
+is authoritative for the connection. Explicit `tab_new` is the only page
+creation admitted into the tab registry; popup pages close. Dialogs dismiss,
+service workers stay disabled, and downloads without an active explicit action
+on the selected tab are cancelled. No path connects to a user's existing
+browser, cookies, extensions, or debugging port.
 The proxy opens only around a preflighted network-capable Agent action and
 destroys active outbound sockets when that action settles.
 
@@ -4249,11 +4264,12 @@ URLs, selectors, typed values, paths, downloaded names, screenshots, proxy
 credentials, and random Session IDs remain live-only. Portable Replay carries
 only redacted tool arguments plus bounded operation evidence.
 
-The default surface is dynamic-page reading, not product-complete Browser
-automation. It has one tab per Run and no multi-tab/history UX, user takeover
-or resume, Browser Live stream, local Chrome relay, download Artifact UX,
-effect-specific confirmation, or safe preset for form actions. Those remain
-P0.
+The Browser surface now provides read-only dynamic-page research, bounded
+explicit tabs/history, Browser Live, pause/resume, one-use interaction
+confirmation, and pause-bound operator takeover in the isolated Run profile.
+Existing-user Chrome relay, login/CAPTCHA handoff, download Artifact UX,
+viewport streaming protocols, cross-restart Source/Session recovery, and
+broader automation reliability remain P0.
 
 ### Research Source and Citation Flow
 

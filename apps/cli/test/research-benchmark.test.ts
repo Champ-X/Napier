@@ -55,7 +55,7 @@ describe("Research outcome benchmark", () => {
         id: "research_aurora_contradiction_v1",
         reportPath: "reports/aurora-brief.md",
         contentSha256:
-          "dbd96a9b2a6a86025a45d61d4830fc544706f5cadc2897ef0a1dc56884560550",
+          "ea32ad0643f15f94529157114a4ebdd5aa6de7c81e03be230d2ce4d3a8e236b9",
       }),
     );
     expect(loaded.sources.sources.map((source) => source.authority)).toEqual([

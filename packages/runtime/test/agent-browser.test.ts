@@ -18,6 +18,7 @@ import {
 } from "../src/index.js";
 import { BrowserInteractionConfirmationManager } from "../src/browser-interaction-confirmations.js";
 import { BrowserSessionPauseManager } from "../src/browser-session-pause.js";
+import { canonicalJson, sha256 } from "../src/ed25519.js";
 
 const roots: string[] = [];
 
@@ -665,6 +666,11 @@ describe("Agent Browser Session integration", () => {
       "start",
       "navigate",
       "back",
+      "forward",
+      "tab_new",
+      "tab_list",
+      "tab_switch",
+      "tab_close",
       "wait",
       "find",
       "scroll",
@@ -730,6 +736,11 @@ describe("Agent Browser Session integration", () => {
       "start",
       "navigate",
       "back",
+      "forward",
+      "tab_new",
+      "tab_list",
+      "tab_switch",
+      "tab_close",
       "wait",
       "find",
       "scroll",
@@ -801,6 +812,11 @@ describe("Agent Browser Session integration", () => {
       "start",
       "navigate",
       "back",
+      "forward",
+      "tab_new",
+      "tab_list",
+      "tab_switch",
+      "tab_close",
       "wait",
       "find",
       "scroll",
@@ -902,12 +918,15 @@ function details(
 ): BrowserSessionDetails {
   return {
     kind: "napier.browser-session-operation",
-    schemaVersion: 1,
+    schemaVersion: 2,
     action,
     sessionMode: "run_persistent",
     sessionReused: operation > 1,
     sessionOperation: operation,
     sessionIdSha256: "a".repeat(64),
+    activeTabId: "tab_1",
+    tabCount: 1,
+    tabSetSha256: sha256(canonicalJson(["tab_1"])),
     browserExecutableSha256: "b".repeat(64),
     browserVersionSha256: "c".repeat(64),
     limitsSha256: "d".repeat(64),

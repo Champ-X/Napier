@@ -48,6 +48,9 @@ export function webFetchSourceDetails(
       ? {
           browserSessionOperation: source.browserFallback.sessionOperation,
           browserSessionIdSha256: source.browserFallback.sessionIdSha256,
+          browserActiveTabId: source.browserFallback.activeTabId,
+          browserTabCount: source.browserFallback.tabCount,
+          browserTabSetSha256: source.browserFallback.tabSetSha256,
           browserExecutableSha256:
             source.browserFallback.browserExecutableSha256,
           browserVersionSha256: source.browserFallback.browserVersionSha256,

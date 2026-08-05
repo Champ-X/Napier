@@ -7,6 +7,7 @@ import {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { FixedIpProxySnapshot } from "./fixed-ip-http-proxy.js";
 import { validatePublicHttpUrl } from "./public-network.js";
+import type { BrowserSessionTabEvidence } from "./browser-session-tabs.js";
 
 export async function captureBrowserPageSource(input: {
   page: Page;
@@ -14,6 +15,7 @@ export async function captureBrowserPageSource(input: {
   signal?: AbortSignal;
   sessionOperation: number;
   sessionIdSha256: string;
+  tabs: BrowserSessionTabEvidence;
   browserExecutableSha256: string;
   browserVersionSha256: string;
   limitsSha256: string;
@@ -59,6 +61,9 @@ export async function captureBrowserPageSource(input: {
     ),
     sessionOperation: input.sessionOperation,
     sessionIdSha256: input.sessionIdSha256,
+    activeTabId: input.tabs.activeTabId,
+    tabCount: input.tabs.tabCount,
+    tabSetSha256: input.tabs.tabSetSha256,
     browserExecutableSha256: input.browserExecutableSha256,
     browserVersionSha256: input.browserVersionSha256,
     limitsSha256: input.limitsSha256,

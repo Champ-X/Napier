@@ -1,10 +1,13 @@
 export interface BrowserLiveViewReceipt {
   kind: "napier.browser-live-view";
-  schemaVersion: 1;
+  schemaVersion: 2;
   threadId: string;
   runId: string;
   sessionIdSha256: string;
   sessionOperation: number;
+  activeTabId: string;
+  tabCount: number;
+  tabSetSha256: string;
   imageSha256: string;
   imageBytes: number;
   mimeType: "image/png";

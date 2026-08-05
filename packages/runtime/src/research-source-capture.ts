@@ -33,6 +33,11 @@ export function validateResearchBrowserCapture(
     capture.sessionOperation < 1 ||
     capture.sessionOperation > MAX_BROWSER_SESSION_OPERATIONS ||
     !SHA256.test(capture.sessionIdSha256) ||
+    !/^tab_[1-9][0-9]{0,3}$/u.test(capture.activeTabId) ||
+    !Number.isSafeInteger(capture.tabCount) ||
+    capture.tabCount < 1 ||
+    capture.tabCount > 4 ||
+    !SHA256.test(capture.tabSetSha256) ||
     !SHA256.test(capture.browserExecutableSha256) ||
     !SHA256.test(capture.browserVersionSha256) ||
     !SHA256.test(capture.limitsSha256) ||
@@ -65,6 +70,9 @@ export function browserResearchCapture(
     browser: {
       sessionOperation: capture.sessionOperation,
       sessionIdSha256: capture.sessionIdSha256,
+      activeTabId: capture.activeTabId,
+      tabCount: capture.tabCount,
+      tabSetSha256: capture.tabSetSha256,
       executableSha256: capture.browserExecutableSha256,
       versionSha256: capture.browserVersionSha256,
       limitsSha256: capture.limitsSha256,

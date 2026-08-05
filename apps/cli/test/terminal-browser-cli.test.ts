@@ -9,8 +9,10 @@ import {
   fauxToolCall,
 } from "@earendil-works/pi-ai";
 import {
+  canonicalJson,
   type BrowserSessionDetails,
   createLocalAgentRuntime,
+  sha256,
   type LocalAgentRuntimeOptions,
   type RunBrowserSessionManager,
   UnsupportedSandboxAdapter,
@@ -108,7 +110,13 @@ describe("terminal Browser interaction confirmation", () => {
         "--preset",
         "safe_automation",
       ],
-      { cwd: fixture.root, env: {}, stdin: input, stdout: output, stderr: new CaptureWritable() },
+      {
+        cwd: fixture.root,
+        env: {},
+        stdin: input,
+        stdout: output,
+        stderr: new CaptureWritable(),
+      },
       browserDependencies(provider, browserSessions(operations), "tui"),
     );
 
@@ -290,12 +298,15 @@ function browserDetails(
 ): BrowserSessionDetails {
   return {
     kind: "napier.browser-session-operation",
-    schemaVersion: 1,
+    schemaVersion: 2,
     action,
     sessionMode: "run_persistent",
     sessionReused: operation > 1,
     sessionOperation: operation,
     sessionIdSha256: "a".repeat(64),
+    activeTabId: "tab_1",
+    tabCount: 1,
+    tabSetSha256: sha256(canonicalJson(["tab_1"])),
     browserExecutableSha256: "b".repeat(64),
     browserVersionSha256: "c".repeat(64),
     limitsSha256: "d".repeat(64),

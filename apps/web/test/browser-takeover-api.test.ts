@@ -79,21 +79,79 @@ describe("Browser takeover Web API", () => {
         expectedSessionIdSha256: snapshot.sessionIdSha256,
         expectedSessionOperation: snapshot.sessionOperation,
         expectedSnapshotSha256: snapshot.snapshotSha256,
+        expectedActiveTabId: snapshot.activeTabId,
+        expectedTabCount: snapshot.tabCount,
+        expectedTabSetSha256: snapshot.tabSetSha256,
       }),
+    ).rejects.toThrow("response is invalid");
+  });
+
+  it("rejects tab label and tab-set tampering", async () => {
+    const snapshot = await snapshotFixture();
+    const tamperedTab = {
+      ...snapshot,
+      tabs: snapshot.tabs.map((tab) => ({
+        ...tab,
+        title: "TAMPERED_TAB_TITLE",
+      })),
+    };
+    const tamperedSet = {
+      ...snapshot,
+      tabSetSha256: "f".repeat(64),
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          stableResponse({
+            ...tamperedTab,
+            contentSha256: await contentSha256(tamperedTab),
+          }),
+        )
+        .mockResolvedValueOnce(
+          stableResponse({
+            ...tamperedSet,
+            contentSha256: await contentSha256(tamperedSet),
+          }),
+        ),
+    );
+
+    await expect(
+      getBrowserTakeoverSnapshot(snapshot.threadId, snapshot.runId),
+    ).rejects.toThrow("response is invalid");
+    await expect(
+      getBrowserTakeoverSnapshot(snapshot.threadId, snapshot.runId),
     ).rejects.toThrow("response is invalid");
   });
 });
 
 async function snapshotFixture(): Promise<BrowserTakeoverSnapshot> {
   const snapshot = '- textbox "Password" [ref=e6]';
+  const tabIds = ["tab_1"];
+  const url = "https://example.com/";
+  const title = "Example";
   const content = {
     kind: "napier.browser-takeover-snapshot" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     threadId: "thread_web_takeover",
     runId: "run_web_takeover",
     pauseStateSha256: "a".repeat(64),
     sessionIdSha256: "b".repeat(64),
     sessionOperation: 2,
+    activeTabId: "tab_1",
+    tabCount: 1,
+    tabSetSha256: await sha256Text(canonicalJson(tabIds)),
+    tabs: [
+      {
+        tabId: "tab_1",
+        active: true,
+        url,
+        currentUrlSha256: await sha256Text(url),
+        title,
+        titleSha256: await sha256Text(title),
+      },
+    ],
     snapshot,
     snapshotSha256: await sha256Text(snapshot),
     snapshotChars: snapshot.length,
@@ -115,7 +173,7 @@ async function receiptFixture(
 ): Promise<BrowserTakeoverActionReceipt> {
   const content = {
     kind: "napier.browser-takeover-action" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     id: "browser_takeover_12345678" as const,
     threadId: snapshot.threadId,
     runId: snapshot.runId,
@@ -126,6 +184,9 @@ async function receiptFixture(
     sourceSessionIdSha256: snapshot.sessionIdSha256,
     sourceSessionOperation: snapshot.sessionOperation,
     sourceSnapshotSha256: snapshot.snapshotSha256,
+    sourceActiveTabId: snapshot.activeTabId,
+    sourceTabCount: snapshot.tabCount,
+    sourceTabSetSha256: snapshot.tabSetSha256,
     targetRefSha256: await sha256Text(request.ref),
     textSha256: await sha256Text(request.text),
     textBytes: new TextEncoder().encode(request.text).byteLength,
@@ -134,6 +195,9 @@ async function receiptFixture(
     settledAt: "2026-08-05T00:00:02.000Z",
     sessionIdSha256: snapshot.sessionIdSha256,
     sessionOperation: 3,
+    activeTabId: snapshot.activeTabId,
+    tabCount: snapshot.tabCount,
+    tabSetSha256: snapshot.tabSetSha256,
     currentUrlSha256: "c".repeat(64),
     currentOriginSha256: "d".repeat(64),
     titleSha256: "e".repeat(64),
@@ -156,6 +220,9 @@ function takeoverRequest(snapshot: BrowserTakeoverSnapshot) {
     expectedSessionIdSha256: snapshot.sessionIdSha256,
     expectedSessionOperation: snapshot.sessionOperation,
     expectedSnapshotSha256: snapshot.snapshotSha256,
+    expectedActiveTabId: snapshot.activeTabId,
+    expectedTabCount: snapshot.tabCount,
+    expectedTabSetSha256: snapshot.tabSetSha256,
   };
 }
 

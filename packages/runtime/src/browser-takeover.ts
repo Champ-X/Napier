@@ -11,8 +11,10 @@ import {
   MAX_BROWSER_WAIT_MS,
 } from "./browser-session-model.js";
 import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
+import { validateBrowserTakeoverTabResult } from "./browser-takeover-tabs.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
+import { validatePublicHttpUrl } from "./public-network.js";
 import type { LocalStore } from "./store.js";
 
 type BrowserTakeoverStore = Pick<
@@ -28,7 +30,10 @@ type BrowserTakeoverCapabilities = Pick<
 >;
 
 export class BrowserTakeoverService {
-  private readonly snapshots = new Map<string, BrowserTakeoverSnapshotBinding>();
+  private readonly snapshots = new Map<
+    string,
+    BrowserTakeoverSnapshotBinding
+  >();
 
   constructor(
     private readonly store: BrowserTakeoverStore,
@@ -47,12 +52,21 @@ export class BrowserTakeoverService {
   ): Promise<BrowserTakeoverSnapshot> {
     const owner = this.authorize(threadId, runId);
     return this.pauses.runWhilePaused(owner, undefined, async (pause) => {
-      const captured =
-        await this.capabilities.captureBrowserTakeoverSnapshot(owner, signal);
-      const details = captured.details;
-      const snapshotText = captured.snapshot;
+      const captured = await this.capabilities.captureBrowserTakeoverSnapshot(
+        owner,
+        signal,
+      );
+      const details = captured.snapshot.details;
+      const snapshotText = captured.snapshot.snapshot;
+      const tabs = captured.tabs.tabs;
       if (
         snapshotText === undefined ||
+        tabs === undefined ||
+        tabs.length !== details.tabCount ||
+        tabs.filter((tab) => tab.active).length !== 1 ||
+        tabs.find((tab) => tab.active)?.tabId !== details.activeTabId ||
+        sha256(canonicalJson(tabs.map((tab) => tab.tabId))) !==
+          details.tabSetSha256 ||
         details.snapshotSha256 === undefined ||
         details.snapshotChars === undefined ||
         details.snapshotTruncated === undefined ||
@@ -63,12 +77,23 @@ export class BrowserTakeoverService {
       }
       const content = {
         kind: "napier.browser-takeover-snapshot" as const,
-        schemaVersion: 1 as const,
+        schemaVersion: 2 as const,
         threadId,
         runId,
         pauseStateSha256: pause.contentSha256,
         sessionIdSha256: details.sessionIdSha256,
         sessionOperation: details.sessionOperation,
+        activeTabId: details.activeTabId,
+        tabCount: details.tabCount,
+        tabSetSha256: details.tabSetSha256,
+        tabs: tabs.map((tab) => ({
+          tabId: tab.tabId,
+          active: tab.active,
+          url: tab.url,
+          currentUrlSha256: sha256(tab.url),
+          title: tab.title,
+          titleSha256: sha256(tab.title),
+        })),
         snapshot: snapshotText,
         snapshotSha256: details.snapshotSha256,
         snapshotChars: details.snapshotChars,
@@ -105,7 +130,10 @@ export class BrowserTakeoverService {
           snapshot.pauseStateSha256 !== request.expectedPauseStateSha256 ||
           snapshot.sessionIdSha256 !== request.expectedSessionIdSha256 ||
           snapshot.sessionOperation !== request.expectedSessionOperation ||
-          snapshot.snapshotSha256 !== request.expectedSnapshotSha256
+          snapshot.snapshotSha256 !== request.expectedSnapshotSha256 ||
+          snapshot.activeTabIdSha256 !== sha256(request.expectedActiveTabId) ||
+          snapshot.tabCount !== request.expectedTabCount ||
+          snapshot.tabSetSha256 !== request.expectedTabSetSha256
         ) {
           throw new Error("Browser takeover snapshot changed");
         }
@@ -123,7 +151,7 @@ export class BrowserTakeoverService {
             request,
             signal,
           );
-          validateActionResult(request, result.details);
+          validateActionResult(request, result.details, snapshot);
         } catch {
           const failed = createActionReceipt(owner, request, "failed", {
             requested,
@@ -192,6 +220,10 @@ interface BrowserTakeoverSnapshotBinding {
   sessionIdSha256: string;
   sessionOperation: number;
   snapshotSha256: string;
+  activeTabIdSha256: string;
+  tabCount: number;
+  tabSetSha256: string;
+  tabIdSha256s: string[];
 }
 
 function snapshotBinding(
@@ -202,6 +234,10 @@ function snapshotBinding(
     sessionIdSha256: snapshot.sessionIdSha256,
     sessionOperation: snapshot.sessionOperation,
     snapshotSha256: snapshot.snapshotSha256,
+    activeTabIdSha256: sha256(snapshot.activeTabId),
+    tabCount: snapshot.tabCount,
+    tabSetSha256: snapshot.tabSetSha256,
+    tabIdSha256s: snapshot.tabs.map((tab) => sha256(tab.tabId)),
   };
 }
 
@@ -219,7 +255,7 @@ function createActionReceipt(
   const requestedAt = options.requested?.requestedAt ?? nowIso();
   const content = {
     kind: "napier.browser-takeover-action" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     id:
       options.requested?.id ??
       (createId("browser_takeover") as `browser_takeover_${string}`),
@@ -232,6 +268,9 @@ function createActionReceipt(
     sourceSessionIdSha256: request.expectedSessionIdSha256,
     sourceSessionOperation: request.expectedSessionOperation,
     sourceSnapshotSha256: request.expectedSnapshotSha256,
+    sourceActiveTabId: request.expectedActiveTabId,
+    sourceTabCount: request.expectedTabCount,
+    sourceTabSetSha256: request.expectedTabSetSha256,
     ...actionEvidence(request),
     crossOriginAuthorized:
       "allowCrossOrigin" in request && request.allowCrossOrigin === true,
@@ -241,6 +280,9 @@ function createActionReceipt(
       ? {
           sessionIdSha256: options.details.sessionIdSha256,
           sessionOperation: options.details.sessionOperation,
+          activeTabId: options.details.activeTabId,
+          tabCount: options.details.tabCount,
+          tabSetSha256: options.details.tabSetSha256,
           currentUrlSha256: options.details.currentUrlSha256,
           currentOriginSha256: options.details.currentOriginSha256,
           titleSha256: options.details.titleSha256,
@@ -291,6 +333,16 @@ function actionEvidence(request: ExecuteBrowserTakeoverActionRequest) {
         : {}),
     };
   }
+  if (request.action === "tab_new") {
+    const url = validatePublicHttpUrl(request.url);
+    return {
+      targetUrlSha256: sha256(url.href),
+      targetOriginSha256: sha256(url.origin),
+    };
+  }
+  if (request.action === "tab_switch" || request.action === "tab_close") {
+    return { targetTabIdSha256: sha256(request.tabId) };
+  }
   return {};
 }
 
@@ -301,6 +353,11 @@ function validateActionRequest(
     !isSha256(request.expectedPauseStateSha256) ||
     !isSha256(request.expectedSessionIdSha256) ||
     !isSha256(request.expectedSnapshotSha256) ||
+    !isTabId(request.expectedActiveTabId) ||
+    !Number.isSafeInteger(request.expectedTabCount) ||
+    request.expectedTabCount < 1 ||
+    request.expectedTabCount > 4 ||
+    !isSha256(request.expectedTabSetSha256) ||
     !Number.isSafeInteger(request.expectedSessionOperation) ||
     request.expectedSessionOperation < 0 ||
     !validAction(request)
@@ -314,6 +371,7 @@ function validateActionResult(
   details: Awaited<
     ReturnType<BrowserTakeoverCapabilities["executeBrowserTakeoverAction"]>
   >["details"],
+  snapshot: BrowserTakeoverSnapshotBinding,
 ): void {
   if (
     details.action !== request.action ||
@@ -322,20 +380,34 @@ function validateActionResult(
   ) {
     throw new Error("Browser takeover action evidence is invalid");
   }
+  validateBrowserTakeoverTabResult(request, details, {
+    activeTabId: request.expectedActiveTabId,
+    tabCount: snapshot.tabCount,
+    tabSetSha256: snapshot.tabSetSha256,
+    tabIdSha256s: snapshot.tabIdSha256s,
+  });
 }
 
 function validAction(request: ExecuteBrowserTakeoverActionRequest): boolean {
+  if (!validTargetAction(request)) return false;
+  return validNonTargetAction(request);
+}
+
+function validTargetAction(
+  request: ExecuteBrowserTakeoverActionRequest,
+): boolean {
   if (
-    request.action === "click" ||
-    request.action === "type" ||
-    request.action === "select"
+    request.action !== "click" &&
+    request.action !== "type" &&
+    request.action !== "select"
   ) {
-    if (
-      typeof request.ref !== "string" ||
-      !/^[a-z0-9]{1,40}$/u.test(request.ref)
-    ) {
-      return false;
-    }
+    return true;
+  }
+  if (
+    typeof request.ref !== "string" ||
+    !/^[a-z0-9]{1,40}$/u.test(request.ref)
+  ) {
+    return false;
   }
   if (request.action === "type") {
     return (
@@ -350,11 +422,16 @@ function validAction(request: ExecuteBrowserTakeoverActionRequest): boolean {
       request.values.length <= 20 &&
       request.values.every(
         (value) =>
-          typeof value === "string" &&
-          Buffer.byteLength(value, "utf8") <= 512,
+          typeof value === "string" && Buffer.byteLength(value, "utf8") <= 512,
       )
     );
   }
+  return true;
+}
+
+function validNonTargetAction(
+  request: ExecuteBrowserTakeoverActionRequest,
+): boolean {
   if (request.action === "scroll") {
     return (
       (request.direction === "up" || request.direction === "down") &&
@@ -372,11 +449,28 @@ function validAction(request: ExecuteBrowserTakeoverActionRequest): boolean {
         request.durationMs <= MAX_BROWSER_WAIT_MS)
     );
   }
+  if (request.action === "tab_new") {
+    try {
+      return (
+        request.url.length <= 4_096 &&
+        Boolean(validatePublicHttpUrl(request.url))
+      );
+    } catch {
+      return false;
+    }
+  }
+  if (request.action === "tab_switch" || request.action === "tab_close") {
+    return isTabId(request.tabId);
+  }
   return true;
 }
 
 function isSha256(value: string): boolean {
   return /^[a-f0-9]{64}$/u.test(value);
+}
+
+function isTabId(value: string): boolean {
+  return /^tab_[1-9][0-9]{0,3}$/u.test(value);
 }
 
 function ownerKey(owner: { threadId: string; runId: string }): string {

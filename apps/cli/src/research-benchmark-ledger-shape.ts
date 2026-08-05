@@ -14,9 +14,21 @@ const RECEIPT_KEYS = keySet(
 const TOOL_PAYLOAD_KEYS = keySet(
   "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details",
 );
-const CAPTURE_DETAILS_KEYS = keySet(
+const LEGACY_CAPTURE_DETAILS_KEYS = keySet(
   "kind schemaVersion action sourceKind sourceId sourceContentSha256 sourceUrlSha256 sourceOriginSha256 sourceTitleSha256 sourceTextSha256 sourceLineCount sourceTextChars sourceTruncated sourceCount citationCount sourceSetSha256 browserSessionOperation browserSessionIdSha256 browserExecutableSha256 browserVersionSha256 browserLimitsSha256 browserNetworkDestinationsSha256",
 );
+const CAPTURE_DETAILS_KEYS = keySet(
+  "kind schemaVersion action sourceKind sourceId sourceContentSha256 sourceUrlSha256 sourceOriginSha256 sourceTitleSha256 sourceTextSha256 sourceLineCount sourceTextChars sourceTruncated sourceCount citationCount sourceSetSha256 browserSessionOperation browserSessionIdSha256 browserActiveTabId browserTabCount browserTabSetSha256 browserExecutableSha256 browserVersionSha256 browserLimitsSha256 browserNetworkDestinationsSha256",
+);
+const LEGACY_CITE_DETAILS_KEYS = [
+  ...LEGACY_CAPTURE_DETAILS_KEYS,
+  "citationId",
+  "citationTokenSha256",
+  "citationStartLine",
+  "citationEndLine",
+  "citationQuoteSha256",
+  "citationClaimSha256",
+];
 const CITE_DETAILS_KEYS = [
   ...CAPTURE_DETAILS_KEYS,
   "citationId",
@@ -204,8 +216,15 @@ function validReportVerificationDetails(
 }
 
 function validCapturedSourceDetails(value: Record<string, unknown>): boolean {
+  const legacy = value["browserActiveTabId"] === undefined;
   const keys =
-    value["action"] === "capture" ? CAPTURE_DETAILS_KEYS : CITE_DETAILS_KEYS;
+    value["action"] === "capture"
+      ? legacy
+        ? LEGACY_CAPTURE_DETAILS_KEYS
+        : CAPTURE_DETAILS_KEYS
+      : legacy
+        ? LEGACY_CITE_DETAILS_KEYS
+        : CITE_DETAILS_KEYS;
   return (
     exactKeys(value, keys) &&
     value["sourceKind"] === "browser" &&
@@ -220,11 +239,31 @@ function validCapturedSourceDetails(value: Record<string, unknown>): boolean {
     typeof value["sourceTruncated"] === "boolean" &&
     nonNegativeInteger(value["browserSessionOperation"]) &&
     digest(value["browserSessionIdSha256"]) &&
+    validOptionalBrowserTabBinding(value) &&
     digest(value["browserExecutableSha256"]) &&
     digest(value["browserVersionSha256"]) &&
     digest(value["browserLimitsSha256"]) &&
     digest(value["browserNetworkDestinationsSha256"])
   );
+}
+
+function validOptionalBrowserTabBinding(
+  value: Record<string, unknown>,
+): boolean {
+  const absent =
+    value["browserActiveTabId"] === undefined &&
+    value["browserTabCount"] === undefined &&
+    value["browserTabSetSha256"] === undefined;
+  return (
+    absent ||
+    (tabId(value["browserActiveTabId"]) &&
+      integerBetween(value["browserTabCount"], 1, 4) &&
+      digest(value["browserTabSetSha256"]))
+  );
+}
+
+function tabId(value: unknown): value is string {
+  return typeof value === "string" && /^tab_[1-9][0-9]{0,3}$/u.test(value);
 }
 
 function validCitationDetails(value: Record<string, unknown>): boolean {
@@ -328,6 +367,18 @@ function resourceId(value: unknown): value is string {
 
 function nonNegativeInteger(value: unknown): boolean {
   return Number.isSafeInteger(value) && Number(value) >= 0;
+}
+
+function integerBetween(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+): boolean {
+  return (
+    Number.isSafeInteger(value) &&
+    Number(value) >= minimum &&
+    Number(value) <= maximum
+  );
 }
 
 function positiveInteger(value: unknown): boolean {

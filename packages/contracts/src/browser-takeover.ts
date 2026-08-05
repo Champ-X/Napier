@@ -4,16 +4,24 @@ export type BrowserTakeoverAction =
   | "select"
   | "scroll"
   | "back"
+  | "forward"
+  | "tab_new"
+  | "tab_switch"
+  | "tab_close"
   | "wait";
 
 export interface BrowserTakeoverSnapshot {
   kind: "napier.browser-takeover-snapshot";
-  schemaVersion: 1;
+  schemaVersion: 2;
   threadId: string;
   runId: string;
   pauseStateSha256: string;
   sessionIdSha256: string;
   sessionOperation: number;
+  activeTabId: string;
+  tabCount: number;
+  tabSetSha256: string;
+  tabs: BrowserTakeoverTab[];
   snapshot: string;
   snapshotSha256: string;
   snapshotChars: number;
@@ -25,11 +33,23 @@ export interface BrowserTakeoverSnapshot {
   contentSha256: string;
 }
 
+export interface BrowserTakeoverTab {
+  tabId: string;
+  active: boolean;
+  url: string;
+  currentUrlSha256: string;
+  title: string;
+  titleSha256: string;
+}
+
 interface BrowserTakeoverActionBinding {
   expectedPauseStateSha256: string;
   expectedSessionIdSha256: string;
   expectedSessionOperation: number;
   expectedSnapshotSha256: string;
+  expectedActiveTabId: string;
+  expectedTabCount: number;
+  expectedTabSetSha256: string;
 }
 
 export type ExecuteBrowserTakeoverActionRequest =
@@ -58,13 +78,30 @@ export type ExecuteBrowserTakeoverActionRequest =
       allowCrossOrigin?: boolean;
     })
   | (BrowserTakeoverActionBinding & {
+      action: "forward";
+      allowCrossOrigin?: boolean;
+    })
+  | (BrowserTakeoverActionBinding & {
+      action: "tab_new";
+      url: string;
+      allowCrossOrigin?: boolean;
+    })
+  | (BrowserTakeoverActionBinding & {
+      action: "tab_switch";
+      tabId: string;
+    })
+  | (BrowserTakeoverActionBinding & {
+      action: "tab_close";
+      tabId: string;
+    })
+  | (BrowserTakeoverActionBinding & {
       action: "wait";
       durationMs?: number;
     });
 
 export interface BrowserTakeoverActionReceipt {
   kind: "napier.browser-takeover-action";
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: `browser_takeover_${string}`;
   threadId: string;
   runId: string;
@@ -75,6 +112,12 @@ export interface BrowserTakeoverActionReceipt {
   sourceSessionIdSha256: string;
   sourceSessionOperation: number;
   sourceSnapshotSha256: string;
+  sourceActiveTabId: string;
+  sourceTabCount: number;
+  sourceTabSetSha256: string;
+  targetTabIdSha256?: string;
+  targetUrlSha256?: string;
+  targetOriginSha256?: string;
   targetRefSha256?: string;
   textSha256?: string;
   textBytes?: number;
@@ -88,6 +131,9 @@ export interface BrowserTakeoverActionReceipt {
   settledAt?: string;
   sessionIdSha256?: string;
   sessionOperation?: number;
+  activeTabId?: string;
+  tabCount?: number;
+  tabSetSha256?: string;
   currentUrlSha256?: string;
   currentOriginSha256?: string;
   titleSha256?: string;

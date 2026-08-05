@@ -617,16 +617,26 @@ cancellation, Session loss, close, settlement, or Server restart releases or
 rejects waiters and fails closed.
 
 While paused, **Take control** opens a no-store ARIA snapshot from that same
-isolated tab. Operator click, masked type, select, scroll, back, and bounded
-wait actions require fresh refs plus the exact pause, Session, operation, and
-snapshot hashes. Snapshot capture consumes no Browser operation; every
-operator action consumes one and serializes against Agent actions and Resume.
-Typed text and selected values exist only in the live request and are cleared
-from Web state; Ledger retains hashes, byte/count metadata, action status, and
-before/after Session identity. **Return to Agent** resumes the same Run and
+isolated Browser Session. One Session owns at most four explicitly created
+tabs with independent back/forward history; unsolicited popup pages still
+close. Agent `tab_new`, `tab_list`, `tab_switch`, `tab_close`, and `forward`
+actions are available under the read-only Browser policy because they manage
+isolated browsing state rather than DOM interaction. Every action, Source
+capture, Browser Live image, and takeover snapshot targets the selected tab,
+while inactive tabs are denied network traffic even when the selected tab has
+an action-scoped outbound grant.
+
+The takeover desk shows the no-store, hash-verified tab list and supports
+explicit new/switch/close plus click, masked type, select, scroll,
+back/forward, and bounded wait. Requests bind fresh refs plus the exact pause,
+Session, operation, active-tab, tab-count, tab-set, and snapshot evidence.
+Snapshot capture consumes no Browser operation; every operator action consumes
+one and serializes against Agent actions and Resume. Typed text, selected
+values, URLs, and tab titles exist only in the live request/response and are
+cleared or discarded; Ledger retains hashes, counts, action status, and
+before/after Session/tab identity. **Return to Agent** resumes the same Run and
 Session after the operator action settles. Existing-user Chrome relay,
-multi-tab/history, DevTools, login handoff, and restart recovery remain
-separate work.
+DevTools, login handoff, and restart recovery remain separate work.
 
 For a production build served by the API process:
 

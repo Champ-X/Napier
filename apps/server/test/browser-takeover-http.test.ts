@@ -39,6 +39,9 @@ describe("Browser takeover HTTP", () => {
       expectedSessionIdSha256: snapshot.sessionIdSha256,
       expectedSessionOperation: snapshot.sessionOperation,
       expectedSnapshotSha256: snapshot.snapshotSha256,
+      expectedActiveTabId: snapshot.activeTabId,
+      expectedTabCount: snapshot.tabCount,
+      expectedTabSetSha256: snapshot.tabSetSha256,
     };
     const actionResponse = await app.request(path, {
       method: "POST",
@@ -72,6 +75,9 @@ describe("Browser takeover HTTP", () => {
       expectedSessionIdSha256: "b".repeat(64),
       expectedSessionOperation: 1,
       expectedSnapshotSha256: "c".repeat(64),
+      expectedActiveTabId: "tab_1",
+      expectedTabCount: 1,
+      expectedTabSetSha256: "d".repeat(64),
     };
 
     expect(
@@ -110,12 +116,25 @@ describe("Browser takeover HTTP", () => {
 function takeoverSnapshot(): BrowserTakeoverSnapshot {
   return {
     kind: "napier.browser-takeover-snapshot",
-    schemaVersion: 1,
+    schemaVersion: 2,
     threadId: "thread_takeover",
     runId: "run_takeover",
     pauseStateSha256: "a".repeat(64),
     sessionIdSha256: "b".repeat(64),
     sessionOperation: 2,
+    activeTabId: "tab_1",
+    tabCount: 1,
+    tabSetSha256: "7".repeat(64),
+    tabs: [
+      {
+        tabId: "tab_1",
+        active: true,
+        url: "https://example.com/",
+        currentUrlSha256: "d".repeat(64),
+        title: "Example",
+        titleSha256: "f".repeat(64),
+      },
+    ],
     snapshot: '- textbox "Password" [ref=e6]',
     snapshotSha256: "c".repeat(64),
     snapshotChars: 30,
@@ -131,7 +150,7 @@ function takeoverSnapshot(): BrowserTakeoverSnapshot {
 function takeoverReceipt(): BrowserTakeoverActionReceipt {
   return {
     kind: "napier.browser-takeover-action",
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: "browser_takeover_12345678",
     threadId: "thread_takeover",
     runId: "run_takeover",
@@ -142,6 +161,9 @@ function takeoverReceipt(): BrowserTakeoverActionReceipt {
     sourceSessionIdSha256: "b".repeat(64),
     sourceSessionOperation: 2,
     sourceSnapshotSha256: "c".repeat(64),
+    sourceActiveTabId: "tab_1",
+    sourceTabCount: 1,
+    sourceTabSetSha256: "7".repeat(64),
     targetRefSha256: "3".repeat(64),
     textSha256: "4".repeat(64),
     textBytes: 21,
@@ -150,6 +172,9 @@ function takeoverReceipt(): BrowserTakeoverActionReceipt {
     settledAt: "2026-08-05T00:00:02.000Z",
     sessionIdSha256: "b".repeat(64),
     sessionOperation: 3,
+    activeTabId: "tab_1",
+    tabCount: 1,
+    tabSetSha256: "7".repeat(64),
     currentUrlSha256: "d".repeat(64),
     currentOriginSha256: "e".repeat(64),
     titleSha256: "f".repeat(64),

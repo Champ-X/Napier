@@ -237,13 +237,25 @@ function takeoverSessionRequest(request: ExecuteBrowserTakeoverActionRequest) {
       ...(request.pixels !== undefined ? { pixels: request.pixels } : {}),
     };
   }
-  if (request.action === "back") {
+  if (request.action === "back" || request.action === "forward") {
     return {
       action: request.action,
       ...(request.allowCrossOrigin === true
         ? { allowCrossOrigin: true as const }
         : {}),
     };
+  }
+  if (request.action === "tab_new") {
+    return {
+      action: request.action,
+      url: request.url,
+      ...(request.allowCrossOrigin === true
+        ? { allowCrossOrigin: true as const }
+        : {}),
+    };
+  }
+  if (request.action === "tab_switch" || request.action === "tab_close") {
+    return { action: request.action, tabId: request.tabId };
   }
   return {
     action: request.action,

@@ -12,6 +12,10 @@ export function parseBrowserTakeoverActionRequest(
   if (action === "select") return parseSelect(input, binding);
   if (action === "scroll") return parseScroll(input, binding);
   if (action === "back") return parseBack(input, binding);
+  if (action === "forward") return parseForward(input, binding);
+  if (action === "tab_new") return parseTabNew(input, binding);
+  if (action === "tab_switch") return parseTabTarget(input, binding, action);
+  if (action === "tab_close") return parseTabTarget(input, binding, action);
   if (action === "wait") return parseWait(input, binding);
   return undefined;
 }
@@ -22,6 +26,9 @@ type TakeoverBinding = Pick<
   | "expectedSessionIdSha256"
   | "expectedSessionOperation"
   | "expectedSnapshotSha256"
+  | "expectedActiveTabId"
+  | "expectedTabCount"
+  | "expectedTabSetSha256"
 >;
 
 const bindingKeys = [
@@ -29,13 +36,18 @@ const bindingKeys = [
   "expectedSessionIdSha256",
   "expectedSessionOperation",
   "expectedSnapshotSha256",
+  "expectedActiveTabId",
+  "expectedTabCount",
+  "expectedTabSetSha256",
 ] as const;
 
 function parseClick(
   input: Record<string, unknown>,
   binding: TakeoverBinding,
 ): ExecuteBrowserTakeoverActionRequest | undefined {
-  if (!exactKeys(input, [...bindingKeys, "action", "ref", "allowCrossOrigin"])) {
+  if (
+    !exactKeys(input, [...bindingKeys, "action", "ref", "allowCrossOrigin"])
+  ) {
     return undefined;
   }
   const ref = takeoverRef(input["ref"]);
@@ -82,8 +94,7 @@ function parseSelect(
     values.length <= 20 &&
     values.every(
       (value) =>
-        typeof value === "string" &&
-        Buffer.byteLength(value, "utf8") <= 512,
+        typeof value === "string" && Buffer.byteLength(value, "utf8") <= 512,
     )
     ? { ...binding, action: "select", ref, values }
     : undefined;
@@ -129,6 +140,53 @@ function parseBack(
     : undefined;
 }
 
+function parseForward(
+  input: Record<string, unknown>,
+  binding: TakeoverBinding,
+): ExecuteBrowserTakeoverActionRequest | undefined {
+  const parsed = parseBack(input, binding);
+  return parsed
+    ? {
+        ...parsed,
+        action: "forward",
+      }
+    : undefined;
+}
+
+function parseTabNew(
+  input: Record<string, unknown>,
+  binding: TakeoverBinding,
+): ExecuteBrowserTakeoverActionRequest | undefined {
+  if (
+    !exactKeys(input, [...bindingKeys, "action", "url", "allowCrossOrigin"])
+  ) {
+    return undefined;
+  }
+  const url = publicHttpUrl(input["url"]);
+  const allowCrossOrigin = input["allowCrossOrigin"];
+  return url &&
+    (allowCrossOrigin === undefined || typeof allowCrossOrigin === "boolean")
+    ? {
+        ...binding,
+        action: "tab_new",
+        url,
+        ...(allowCrossOrigin === true ? { allowCrossOrigin } : {}),
+      }
+    : undefined;
+}
+
+function parseTabTarget(
+  input: Record<string, unknown>,
+  binding: TakeoverBinding,
+  action: "tab_switch" | "tab_close",
+): ExecuteBrowserTakeoverActionRequest | undefined {
+  if (!exactKeys(input, [...bindingKeys, "action", "tabId"])) {
+    return undefined;
+  }
+  const tabId = takeoverTabId(input["tabId"]);
+  return tabId ? { ...binding, action, tabId } : undefined;
+}
+
 function parseWait(
   input: Record<string, unknown>,
   binding: TakeoverBinding,
@@ -144,9 +202,7 @@ function parseWait(
     ? {
         ...binding,
         action: "wait",
-        ...(durationMs !== undefined
-          ? { durationMs: Number(durationMs) }
-          : {}),
+        ...(durationMs !== undefined ? { durationMs: Number(durationMs) } : {}),
       }
     : undefined;
 }
@@ -158,16 +214,27 @@ function takeoverBinding(
   const session = input["expectedSessionIdSha256"];
   const operation = input["expectedSessionOperation"];
   const snapshot = input["expectedSnapshotSha256"];
+  const activeTabId = takeoverTabId(input["expectedActiveTabId"]);
+  const tabCount = input["expectedTabCount"];
+  const tabSet = input["expectedTabSetSha256"];
   return hash(pause) &&
     hash(session) &&
     Number.isSafeInteger(operation) &&
     Number(operation) >= 0 &&
-    hash(snapshot)
+    hash(snapshot) &&
+    activeTabId !== undefined &&
+    Number.isSafeInteger(tabCount) &&
+    Number(tabCount) >= 1 &&
+    Number(tabCount) <= 4 &&
+    hash(tabSet)
     ? {
         expectedPauseStateSha256: pause,
         expectedSessionIdSha256: session,
         expectedSessionOperation: Number(operation),
         expectedSnapshotSha256: snapshot,
+        expectedActiveTabId: activeTabId,
+        expectedTabCount: Number(tabCount),
+        expectedTabSetSha256: tabSet,
       }
     : undefined;
 }
@@ -192,4 +259,26 @@ function takeoverRef(value: unknown): string | undefined {
   return typeof value === "string" && /^[a-z0-9]{1,40}$/u.test(value)
     ? value
     : undefined;
+}
+
+function takeoverTabId(value: unknown): string | undefined {
+  return typeof value === "string" && /^tab_[1-9][0-9]{0,3}$/u.test(value)
+    ? value
+    : undefined;
+}
+
+function publicHttpUrl(value: unknown): string | undefined {
+  if (typeof value !== "string" || value.length < 1 || value.length > 4_096) {
+    return undefined;
+  }
+  try {
+    const parsed = new URL(value);
+    return (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+      !parsed.username &&
+      !parsed.password
+      ? value
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }

@@ -8,11 +8,17 @@ describe("Browser takeover desk", () => {
       "utf8",
     );
 
-    expect(source).toContain("Take control of this isolated tab");
+    expect(source).toContain("Take control of this isolated Browser Session");
     expect(source).toContain('type="password"');
-    expect(source).toContain("autoComplete=\"off\"");
-    expect(source).toContain("setValue(\"\")");
+    expect(source).toContain('autoComplete="off"');
+    expect(source).toContain('setValue("")');
     expect(source).toContain("Scroll down");
+    expect(source).toContain("New tab");
+    expect(source).toContain("Forward");
+    expect(source).toContain(
+      "...(allowCrossOrigin ? { allowCrossOrigin: true } : {})",
+    );
+    expect(source).toContain('setNewTabUrl("")');
     expect(source).toContain("Return to Agent");
     expect(source).not.toContain("PRIVATE_OPERATOR_SECRET");
   });

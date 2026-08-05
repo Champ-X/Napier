@@ -9,6 +9,7 @@ import {
 import type { BrowserWorkspaceFile } from "./browser-workspace-files.js";
 import { sha256 } from "./ed25519.js";
 import type { FixedIpProxySnapshot } from "./fixed-ip-http-proxy.js";
+import type { BrowserSessionTabEvidence } from "./browser-session-tabs.js";
 
 export interface BrowserSessionPageState {
   url: string;
@@ -25,6 +26,7 @@ export function createBrowserSessionDetails(input: {
   sessionIdSha256: string;
   executableSha256: string;
   browserVersionSha256: string;
+  tabs: BrowserSessionTabEvidence;
   state: BrowserSessionPageState;
   crossOriginAuthorized: boolean;
   blockedRequestCount: number;
@@ -37,12 +39,15 @@ export function createBrowserSessionDetails(input: {
 }): BrowserSessionDetails {
   return {
     kind: "napier.browser-session-operation",
-    schemaVersion: 1,
+    schemaVersion: 2,
     action: input.action,
     sessionMode: "run_persistent",
     sessionReused: input.reused,
     sessionOperation: input.operation,
     sessionIdSha256: input.sessionIdSha256,
+    activeTabId: input.tabs.activeTabId,
+    tabCount: input.tabs.tabCount,
+    tabSetSha256: input.tabs.tabSetSha256,
     browserExecutableSha256: input.executableSha256,
     browserVersionSha256: input.browserVersionSha256,
     limitsSha256: BROWSER_LIMITS_SHA256,

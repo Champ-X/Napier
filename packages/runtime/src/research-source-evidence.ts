@@ -38,6 +38,9 @@ export function researchSourceDetails(
       ? {
           browserSessionOperation: source.capture.browser.sessionOperation,
           browserSessionIdSha256: source.capture.browser.sessionIdSha256,
+          browserActiveTabId: source.capture.browser.activeTabId,
+          browserTabCount: source.capture.browser.tabCount,
+          browserTabSetSha256: source.capture.browser.tabSetSha256,
           browserExecutableSha256: source.capture.browser.executableSha256,
           browserVersionSha256: source.capture.browser.versionSha256,
           browserLimitsSha256: source.capture.browser.limitsSha256,
@@ -63,6 +66,12 @@ export function researchSourceDetails(
                   source.capture.webFetch.browserFallback.sessionOperation,
                 webFetchBrowserSessionIdSha256:
                   source.capture.webFetch.browserFallback.sessionIdSha256,
+                webFetchBrowserActiveTabId:
+                  source.capture.webFetch.browserFallback.activeTabId,
+                webFetchBrowserTabCount:
+                  source.capture.webFetch.browserFallback.tabCount,
+                webFetchBrowserTabSetSha256:
+                  source.capture.webFetch.browserFallback.tabSetSha256,
                 webFetchBrowserExecutableSha256:
                   source.capture.webFetch.browserFallback
                     .browserExecutableSha256,

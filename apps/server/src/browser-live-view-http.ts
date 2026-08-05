@@ -60,6 +60,9 @@ function setBrowserLiveViewHeaders(
     "X-Napier-Browser-Session-Operation",
     String(receipt.sessionOperation),
   );
+  context.header("X-Napier-Browser-Active-Tab-Id", receipt.activeTabId);
+  context.header("X-Napier-Browser-Tab-Count", String(receipt.tabCount));
+  context.header("X-Napier-Browser-Tab-Set-SHA256", receipt.tabSetSha256);
   context.header("X-Napier-Browser-Captured-At", receipt.capturedAt);
   context.header("X-Napier-Browser-URL-SHA256", receipt.currentUrlSha256);
   context.header("X-Napier-Browser-Origin-SHA256", receipt.currentOriginSha256);

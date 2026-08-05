@@ -164,6 +164,108 @@ describeLive("live controlled Browser Session smoke", () => {
       ]);
     }
   }, 60_000);
+
+  it("keeps selected-tab history, Source capture, and Live view aligned", async ({
+    skip,
+  }) => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-browser-tabs-"),
+    );
+    roots.push(workspaceRoot);
+    const manager = new RunBrowserSessionManager({ workspaceRoot });
+    const owner = {
+      threadId: "thread_live_browser_tabs",
+      runId: "run_live_browser_tabs",
+    };
+    try {
+      const started = await manager.execute(owner, {
+        action: "start",
+        url: "https://example.com/?tab=first",
+      });
+      await manager.execute(owner, {
+        action: "navigate",
+        url: "https://example.com/?tab=next",
+      });
+      const backed = await manager.execute(owner, { action: "back" });
+      const forwarded = await manager.execute(owner, { action: "forward" });
+      const opened = await manager.execute(owner, {
+        action: "tab_new",
+        url: "https://example.com/?tab=second",
+      });
+      const listed = await manager.execute(owner, { action: "tab_list" });
+      const captured = await manager.capturePage(owner, 12_000);
+      const live = await manager.captureLiveView(owner);
+      const switched = await manager.execute(owner, {
+        action: "tab_switch",
+        tabId: "tab_1",
+      });
+      const closedTab = await manager.execute(owner, {
+        action: "tab_close",
+        tabId: "tab_2",
+      });
+      const closed = await manager.execute(owner, { action: "close" });
+
+      expect(started.details).toEqual(
+        expect.objectContaining({
+          activeTabId: "tab_1",
+          tabCount: 1,
+        }),
+      );
+      expect(backed.output).toContain("?tab=first");
+      expect(forwarded.output).toContain("?tab=next");
+      expect(opened.details).toEqual(
+        expect.objectContaining({
+          activeTabId: "tab_2",
+          tabCount: 2,
+        }),
+      );
+      expect(listed.tabs).toEqual([
+        expect.objectContaining({
+          tabId: "tab_1",
+          active: false,
+          url: "https://example.com/?tab=next",
+        }),
+        expect.objectContaining({
+          tabId: "tab_2",
+          active: true,
+          url: "https://example.com/?tab=second",
+        }),
+      ]);
+      expect(captured).toEqual(
+        expect.objectContaining({
+          url: "https://example.com/?tab=second",
+          activeTabId: "tab_2",
+          tabCount: 2,
+          tabSetSha256: opened.details.tabSetSha256,
+        }),
+      );
+      expect(live.receipt).toEqual(
+        expect.objectContaining({
+          activeTabId: "tab_2",
+          tabCount: 2,
+          tabSetSha256: opened.details.tabSetSha256,
+        }),
+      );
+      expect(live.image.byteLength).toBeGreaterThan(0);
+      expect(switched.output).toContain("?tab=next");
+      expect(closedTab.details).toEqual(
+        expect.objectContaining({
+          activeTabId: "tab_1",
+          tabCount: 1,
+        }),
+      );
+      expect(closed.details.sessionOperation).toBe(10);
+    } catch (error) {
+      if (nestedSandboxDenied(error)) {
+        skip(
+          "inconclusive: the current host denies Chrome's nested production sandbox",
+        );
+      }
+      throw error;
+    } finally {
+      await manager.cancelRun(owner);
+    }
+  }, 60_000);
 });
 
 function nestedSandboxDenied(error: unknown): boolean {

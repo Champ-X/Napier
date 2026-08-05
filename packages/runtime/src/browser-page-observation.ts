@@ -16,6 +16,7 @@ import { formatBrowserOperationOutput } from "./browser-page-output.js";
 import { createBrowserSessionDetails } from "./browser-session-details.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { FixedIpProxySnapshot } from "./fixed-ip-http-proxy.js";
+import type { BrowserSessionTabEvidence } from "./browser-session-tabs.js";
 
 export type BrowserObservationRequest = Extract<
   BrowserSessionRequest,
@@ -46,6 +47,7 @@ export async function performBrowserPageObservation(input: {
   sessionIdSha256: string;
   executableSha256: string;
   browserVersionSha256: string;
+  tabs: BrowserSessionTabEvidence;
   blockedRequestCount: number;
   network: FixedIpProxySnapshot;
   signal?: AbortSignal;
@@ -73,6 +75,7 @@ export async function performBrowserPageObservation(input: {
     output: formatBrowserOperationOutput({
       action: input.request.action,
       state,
+      activeTabId: input.tabs.activeTabId,
       ...(find ? { find } : {}),
       ...(scroll ? { scroll } : {}),
     }),
@@ -83,6 +86,7 @@ export async function performBrowserPageObservation(input: {
       sessionIdSha256: input.sessionIdSha256,
       executableSha256: input.executableSha256,
       browserVersionSha256: input.browserVersionSha256,
+      tabs: input.tabs,
       state,
       crossOriginAuthorized: false,
       blockedRequestCount: input.blockedRequestCount,

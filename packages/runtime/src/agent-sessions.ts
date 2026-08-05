@@ -123,7 +123,10 @@ export class AgentSessionRuntime {
   captureBrowserTakeoverSnapshot(
     owner: { threadId: string; runId: string },
     signal?: AbortSignal,
-  ): Promise<BrowserSessionOperationResult> {
+  ): Promise<{
+    snapshot: BrowserSessionOperationResult;
+    tabs: BrowserSessionOperationResult;
+  }> {
     return this.browsers.captureTakeoverSnapshot(owner, signal);
   }
 
@@ -131,7 +134,19 @@ export class AgentSessionRuntime {
     owner: { threadId: string; runId: string },
     request: Extract<
       BrowserSessionRequest,
-      { action: "click" | "type" | "select" | "scroll" | "back" | "wait" }
+      {
+        action:
+          | "click"
+          | "type"
+          | "select"
+          | "scroll"
+          | "back"
+          | "forward"
+          | "tab_new"
+          | "tab_switch"
+          | "tab_close"
+          | "wait";
+      }
     >,
     signal?: AbortSignal,
   ): Promise<BrowserSessionOperationResult> {

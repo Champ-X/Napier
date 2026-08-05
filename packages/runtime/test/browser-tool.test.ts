@@ -14,6 +14,7 @@ import {
   type BrowserSessionDetails,
   RunBrowserSessionManager,
 } from "../src/browser-session.js";
+import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { assessToolCall } from "../src/policy.js";
 import { DEFAULT_AGENT_ENABLED_TOOLS } from "../src/read-only-tool-names.js";
 
@@ -270,6 +271,11 @@ describe("browser Agent tool", () => {
     expect(builtInToolEffect("browser", { action: "start" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "navigate" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "back" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "forward" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "tab_new" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "tab_list" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "tab_switch" })).toBe("read");
+    expect(builtInToolEffect("browser", { action: "tab_close" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "wait" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "find" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "scroll" })).toBe("read");
@@ -286,12 +292,15 @@ function details(
 ): BrowserSessionDetails {
   return {
     kind: "napier.browser-session-operation",
-    schemaVersion: 1,
+    schemaVersion: 2,
     action,
     sessionMode: "run_persistent",
     sessionReused: true,
     sessionOperation: 2,
     sessionIdSha256: "a".repeat(64),
+    activeTabId: "tab_1",
+    tabCount: 1,
+    tabSetSha256: sha256(canonicalJson(["tab_1"])),
     browserExecutableSha256: "b".repeat(64),
     browserVersionSha256: "c".repeat(64),
     limitsSha256: "d".repeat(64),

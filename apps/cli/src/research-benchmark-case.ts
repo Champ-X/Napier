@@ -14,7 +14,7 @@ const CASE_KEYS = keySet(
   "kind schemaVersion id title objective promptPath sourcesPath expectedPath reportPath timeoutMs promptSha256 sourcesSha256 expectedSha256 contentSha256",
 );
 const CAPTURE_KEYS = keySet(
-  "url title lines textChars truncated capturedContentSha256 sessionOperation sessionIdSha256 browserExecutableSha256 browserVersionSha256 limitsSha256 network",
+  "url title lines textChars truncated capturedContentSha256 sessionOperation sessionIdSha256 activeTabId tabCount tabSetSha256 browserExecutableSha256 browserVersionSha256 limitsSha256 network",
 );
 const NETWORK_KEYS = keySet(
   "requestCount connectCount rejectedCount transferredBytes destinationCount destinationsSha256",
@@ -162,7 +162,6 @@ function validateCapture(value: unknown) {
   }
   const network = value["network"];
   if (
-    !exactRecord(network, NETWORK_KEYS) ||
     !Array.isArray(value["lines"]) ||
     value["lines"].length < 2 ||
     value["lines"].length > 400 ||
@@ -173,17 +172,8 @@ function validateCapture(value: unknown) {
     value["textChars"] !== value["lines"].join("\n").length ||
     value["truncated"] !== false ||
     !digest(value["capturedContentSha256"]) ||
-    !nonNegativeInteger(value["sessionOperation"]) ||
-    !digest(value["sessionIdSha256"]) ||
-    !digest(value["browserExecutableSha256"]) ||
-    !digest(value["browserVersionSha256"]) ||
-    !digest(value["limitsSha256"]) ||
-    !nonNegativeInteger(network["requestCount"]) ||
-    !nonNegativeInteger(network["connectCount"]) ||
-    !nonNegativeInteger(network["rejectedCount"]) ||
-    !nonNegativeInteger(network["transferredBytes"]) ||
-    !nonNegativeInteger(network["destinationCount"]) ||
-    !digest(network["destinationsSha256"])
+    !validCaptureBinding(value) ||
+    !validCaptureNetwork(network)
   ) {
     throw new Error("Research benchmark capture is invalid");
   }
@@ -199,6 +189,35 @@ function validateCapture(value: unknown) {
   return structuredClone(
     value,
   ) as unknown as ResearchBenchmarkSources["sources"][number]["capture"];
+}
+
+function validCaptureBinding(value: Record<string, unknown>): boolean {
+  return (
+    nonNegativeInteger(value["sessionOperation"]) &&
+    digest(value["sessionIdSha256"]) &&
+    tabId(value["activeTabId"]) &&
+    integerBetween(value["tabCount"], 1, 4) &&
+    digest(value["tabSetSha256"]) &&
+    digest(value["browserExecutableSha256"]) &&
+    digest(value["browserVersionSha256"]) &&
+    digest(value["limitsSha256"])
+  );
+}
+
+function validCaptureNetwork(value: unknown): boolean {
+  return (
+    exactRecord(value, NETWORK_KEYS) &&
+    nonNegativeInteger(value["requestCount"]) &&
+    nonNegativeInteger(value["connectCount"]) &&
+    nonNegativeInteger(value["rejectedCount"]) &&
+    nonNegativeInteger(value["transferredBytes"]) &&
+    nonNegativeInteger(value["destinationCount"]) &&
+    digest(value["destinationsSha256"])
+  );
+}
+
+function tabId(value: unknown): value is string {
+  return typeof value === "string" && /^tab_[1-9][0-9]{0,3}$/u.test(value);
 }
 
 function validRequiredCitations(

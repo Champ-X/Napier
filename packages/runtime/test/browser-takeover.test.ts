@@ -21,11 +21,9 @@ describe("Browser takeover", () => {
   it("uses a paused fresh snapshot and records type values by hash only", async () => {
     const fixture = await createFixture();
     const snapshotText = '- textbox "Password" [ref=e6]';
-    const captureBrowserTakeoverSnapshot = vi.fn(async () => ({
-      output: "PRIVATE_FORMATTED_BROWSER_OUTPUT",
-      snapshot: snapshotText,
-      details: details("snapshot", 2, snapshotText),
-    }));
+    const captureBrowserTakeoverSnapshot = vi.fn(async () =>
+      captureResult(snapshotText, 2),
+    );
     const executeBrowserTakeoverAction = vi.fn(async () => ({
       output: "PRIVATE_TYPED_PAGE_OUTPUT",
       details: details("type", 3, '- textbox "Password" [ref=e6]'),
@@ -64,6 +62,9 @@ describe("Browser takeover", () => {
         expectedSessionIdSha256: snapshot.sessionIdSha256,
         expectedSessionOperation: snapshot.sessionOperation,
         expectedSnapshotSha256: snapshot.snapshotSha256,
+        expectedActiveTabId: snapshot.activeTabId,
+        expectedTabCount: snapshot.tabCount,
+        expectedTabSetSha256: snapshot.tabSetSha256,
       },
     );
 
@@ -101,6 +102,9 @@ describe("Browser takeover", () => {
         expectedSessionIdSha256: snapshot.sessionIdSha256,
         expectedSessionOperation: snapshot.sessionOperation,
         expectedSnapshotSha256: snapshot.snapshotSha256,
+        expectedActiveTabId: snapshot.activeTabId,
+        expectedTabCount: snapshot.tabCount,
+        expectedTabSetSha256: snapshot.tabSetSha256,
       }),
     ).rejects.toThrow("snapshot changed");
     await fixture.store.close();
@@ -118,11 +122,9 @@ describe("Browser takeover", () => {
       fixture.store,
       {
         hasActiveBrowserSession: vi.fn(() => true),
-        captureBrowserTakeoverSnapshot: vi.fn(async () => ({
-          output: "snapshot",
-          snapshot: "- button [ref=e1]",
-          details: details("snapshot", 1, "- button [ref=e1]"),
-        })),
+        captureBrowserTakeoverSnapshot: vi.fn(async () =>
+          captureResult("- button [ref=e1]", 1),
+        ),
         executeBrowserTakeoverAction: vi.fn(async () => {
           actionStarted = true;
           await actionGate;
@@ -143,6 +145,9 @@ describe("Browser takeover", () => {
       expectedSessionIdSha256: snapshot.sessionIdSha256,
       expectedSessionOperation: snapshot.sessionOperation,
       expectedSnapshotSha256: snapshot.snapshotSha256,
+      expectedActiveTabId: snapshot.activeTabId,
+      expectedTabCount: snapshot.tabCount,
+      expectedTabSetSha256: snapshot.tabSetSha256,
     });
     await vi.waitFor(() => expect(actionStarted).toBe(true));
     let resumed = false;
@@ -165,17 +170,160 @@ describe("Browser takeover", () => {
     expect(resumed).toBe(true);
     await fixture.store.close();
   });
+
+  it("validates exact tab lifecycle transitions and stale tab bindings", async () => {
+    const fixture = await createFixture();
+    const snapshotText = "- heading [ref=e1]";
+    let activeTabId = "tab_1";
+    let tabIds = ["tab_1"];
+    let operation = 1;
+    const captureBrowserTakeoverSnapshot = vi.fn(async () =>
+      captureResult(snapshotText, operation, activeTabId, tabIds),
+    );
+    const executeBrowserTakeoverAction = vi.fn(async (_owner, request) => {
+      operation += 1;
+      if (request.action === "tab_new") {
+        tabIds = [...tabIds, "tab_2"];
+        activeTabId = "tab_2";
+      } else if (request.action === "tab_switch") {
+        activeTabId = request.tabId;
+      } else if (request.action === "tab_close") {
+        tabIds = tabIds.filter((tabId) => tabId !== request.tabId);
+        if (activeTabId === request.tabId) activeTabId = tabIds[0]!;
+      }
+      return {
+        output: "PRIVATE_TAB_ACTION_OUTPUT",
+        details: details(
+          request.action,
+          operation,
+          snapshotText,
+          activeTabId,
+          tabIds,
+        ),
+      };
+    });
+    const service = new BrowserSessionControlService(
+      fixture.store,
+      {
+        hasActiveBrowserSession: vi.fn(() => true),
+        captureBrowserTakeoverSnapshot,
+        executeBrowserTakeoverAction,
+      },
+      new BrowserSessionPauseManager(fixture.store),
+    );
+    await service.pause(fixture.threadId, fixture.runId);
+
+    const first = await service.snapshot(fixture.threadId, fixture.runId);
+    await expect(
+      service.executeTakeover(fixture.threadId, fixture.runId, {
+        ...binding(first),
+        action: "tab_new",
+        url: "https://two.example/",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        action: "tab_new",
+        activeTabId: "tab_2",
+        tabCount: 2,
+        targetUrlSha256: sha256("https://two.example/"),
+      }),
+    );
+
+    const second = await service.snapshot(fixture.threadId, fixture.runId);
+    await expect(
+      service.executeTakeover(fixture.threadId, fixture.runId, {
+        ...binding(second),
+        action: "tab_switch",
+        tabId: "tab_1",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        action: "tab_switch",
+        activeTabId: "tab_1",
+        tabCount: 2,
+      }),
+    );
+
+    const third = await service.snapshot(fixture.threadId, fixture.runId);
+    await expect(
+      service.executeTakeover(fixture.threadId, fixture.runId, {
+        ...binding(third),
+        expectedTabSetSha256: "f".repeat(64),
+        action: "tab_close",
+        tabId: "tab_2",
+      }),
+    ).rejects.toThrow("snapshot changed");
+    await expect(
+      service.executeTakeover(fixture.threadId, fixture.runId, {
+        ...binding(third),
+        action: "tab_close",
+        tabId: "tab_2",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        action: "tab_close",
+        activeTabId: "tab_1",
+        tabCount: 1,
+      }),
+    );
+    expect(
+      JSON.stringify(await fixture.store.listEvents(fixture.threadId)),
+    ).not.toContain("https://two.example/");
+    await fixture.store.close();
+  });
+
+  it("rejects an inactive-tab close that changes the active tab", async () => {
+    const fixture = await createFixture();
+    const snapshotText = "- heading [ref=e1]";
+    const tabIds = ["tab_1", "tab_2"];
+    const service = new BrowserSessionControlService(
+      fixture.store,
+      {
+        hasActiveBrowserSession: vi.fn(() => true),
+        captureBrowserTakeoverSnapshot: vi.fn(async () =>
+          captureResult(snapshotText, 2, "tab_1", tabIds),
+        ),
+        executeBrowserTakeoverAction: vi.fn(async () => ({
+          output: "invalid close",
+          details: details("tab_close", 3, snapshotText, "tab_3", ["tab_1"]),
+        })),
+      },
+      new BrowserSessionPauseManager(fixture.store),
+    );
+    await service.pause(fixture.threadId, fixture.runId);
+    const snapshot = await service.snapshot(fixture.threadId, fixture.runId);
+
+    await expect(
+      service.executeTakeover(fixture.threadId, fixture.runId, {
+        ...binding(snapshot),
+        action: "tab_close",
+        tabId: "tab_2",
+      }),
+    ).rejects.toThrow("action failed");
+    const events = await fixture.store.listEvents(fixture.threadId);
+    expect(events.at(-1)?.type).toBe("browser.takeover.failed");
+    await fixture.store.close();
+  });
 });
 
-function details(action: string, operation: number, snapshot: string) {
+function details(
+  action: string,
+  operation: number,
+  snapshot: string,
+  activeTabId = "tab_1",
+  tabIds = ["tab_1"],
+) {
   return {
     kind: "napier.browser-session-operation" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     action: action as "snapshot",
     sessionMode: "run_persistent" as const,
     sessionReused: true,
     sessionOperation: operation,
     sessionIdSha256: "a".repeat(64),
+    activeTabId,
+    tabCount: tabIds.length,
+    tabSetSha256: sha256(canonicalJson(tabIds)),
     browserExecutableSha256: "b".repeat(64),
     browserVersionSha256: "c".repeat(64),
     limitsSha256: "d".repeat(64),
@@ -195,6 +343,45 @@ function details(action: string, operation: number, snapshot: string) {
       destinationsSha256: sha256(canonicalJson(["example.com"])),
     },
     crossOriginAuthorized: false,
+  };
+}
+
+function captureResult(
+  snapshot: string,
+  operation: number,
+  activeTabId = "tab_1",
+  tabIds = ["tab_1"],
+) {
+  return {
+    snapshot: {
+      output: "PRIVATE_FORMATTED_BROWSER_OUTPUT",
+      snapshot,
+      details: details("snapshot", operation, snapshot, activeTabId, tabIds),
+    },
+    tabs: {
+      output: "PRIVATE_TAB_LIST",
+      tabs: tabIds.map((tabId) => ({
+        tabId,
+        active: tabId === activeTabId,
+        url: `https://${tabId}.example/`,
+        title: tabId,
+      })),
+      details: details("tab_list", operation, snapshot, activeTabId, tabIds),
+    },
+  };
+}
+
+function binding(
+  snapshot: Awaited<ReturnType<BrowserSessionControlService["snapshot"]>>,
+) {
+  return {
+    expectedPauseStateSha256: snapshot.pauseStateSha256,
+    expectedSessionIdSha256: snapshot.sessionIdSha256,
+    expectedSessionOperation: snapshot.sessionOperation,
+    expectedSnapshotSha256: snapshot.snapshotSha256,
+    expectedActiveTabId: snapshot.activeTabId,
+    expectedTabCount: snapshot.tabCount,
+    expectedTabSetSha256: snapshot.tabSetSha256,
   };
 }
 

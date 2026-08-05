@@ -1,33 +1,19 @@
-import { mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, realpath, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { Readable } from "node:stream";
 
-import type {
-  Browser,
-  BrowserContext,
-  Download,
-  LaunchOptions,
-  Locator,
-  Page,
-  Request,
-  Route,
-} from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   MAX_ACTIVE_BROWSER_SESSIONS,
-  RunBrowserSessionManager,
-  type BrowserNetworkProxy,
   type BrowserSessionOwner,
 } from "../src/browser-session.js";
-
-const roots: string[] = [];
+import {
+  cleanupBrowserSessionHarnesses,
+  createBrowserSessionHarness as createHarness,
+} from "./browser-session-harness.js";
 
 afterEach(async () => {
-  await Promise.all(
-    roots.splice(0).map((root) => rm(root, { force: true, recursive: true })),
-  );
+  await cleanupBrowserSessionHarnesses();
 });
 
 describe("RunBrowserSessionManager", () => {
@@ -419,6 +405,183 @@ describe("RunBrowserSessionManager", () => {
     await harness.manager.execute(owner, { action: "close" });
   });
 
+  it("owns bounded explicit tabs with independent history and selected-tab capture", async () => {
+    const harness = await createHarness();
+    const owner = { threadId: "thread_tabs", runId: "run_tabs" };
+    const started = await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/root",
+    });
+    await harness.manager.execute(owner, {
+      action: "navigate",
+      url: "https://one.example/next",
+    });
+    const backed = await harness.manager.execute(owner, { action: "back" });
+    const forwarded = await harness.manager.execute(owner, {
+      action: "forward",
+    });
+    const opened = await harness.manager.execute(owner, {
+      action: "tab_new",
+      url: "https://two.example/second",
+    });
+    const listed = await harness.manager.execute(owner, {
+      action: "tab_list",
+    });
+    const captured = await harness.manager.capturePage(owner, 12_000);
+    const live = await harness.manager.captureLiveView(owner);
+
+    expect(backed.output).toContain("https://one.example/root");
+    expect(forwarded.output).toContain("https://one.example/next");
+    expect(opened.details).toEqual(
+      expect.objectContaining({
+        activeTabId: "tab_2",
+        tabCount: 2,
+        tabSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(listed.tabs).toEqual([
+      expect.objectContaining({
+        tabId: "tab_1",
+        active: false,
+        url: "https://one.example/next",
+      }),
+      expect.objectContaining({
+        tabId: "tab_2",
+        active: true,
+        url: "https://two.example/second",
+      }),
+    ]);
+    expect(captured).toEqual(
+      expect.objectContaining({
+        url: "https://two.example/second",
+        activeTabId: "tab_2",
+        tabCount: 2,
+        tabSetSha256: opened.details.tabSetSha256,
+      }),
+    );
+    expect(live.receipt).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        activeTabId: "tab_2",
+        tabCount: 2,
+        tabSetSha256: opened.details.tabSetSha256,
+      }),
+    );
+
+    const switched = await harness.manager.execute(owner, {
+      action: "tab_switch",
+      tabId: "tab_1",
+    });
+    const closed = await harness.manager.execute(owner, {
+      action: "tab_close",
+      tabId: "tab_2",
+    });
+    expect(switched.output).toContain("https://one.example/next");
+    expect(closed.details).toEqual(
+      expect.objectContaining({
+        activeTabId: "tab_1",
+        tabCount: 1,
+      }),
+    );
+    expect(closed.details.tabSetSha256).not.toBe(opened.details.tabSetSha256);
+    expect(started.details.activeTabId).toBe("tab_1");
+    await harness.manager.cancelRun(owner);
+  });
+
+  it("closes unsolicited popups and denies inactive-tab network requests", async () => {
+    const harness = await createHarness();
+    const owner = {
+      threadId: "thread_tab_security",
+      runId: "run_tab_security",
+    };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/root",
+    });
+    await harness.manager.execute(owner, {
+      action: "tab_new",
+      url: "https://two.example/active",
+    });
+
+    const popup = harness.browsers[0]!.context.openUnsolicitedPage();
+    await vi.waitFor(() => expect(popup.closed).toBe(true));
+    await expect(
+      harness.browsers[0]!.context.dispatch(
+        "https://one.example/background",
+        harness.pages[0]!,
+      ),
+    ).rejects.toThrow("navigation aborted");
+
+    const listed = await harness.manager.execute(owner, {
+      action: "tab_list",
+    });
+    expect(listed.tabs).toHaveLength(2);
+    expect(listed.details).toEqual(
+      expect.objectContaining({
+        activeTabId: "tab_2",
+        tabCount: 2,
+        blockedRequestCount: 1,
+      }),
+    );
+    expect(harness.pages).toHaveLength(3);
+    await harness.manager.cancelRun(owner);
+  });
+
+  it("rejects takeover capture when tab metadata drifts after snapshot", async () => {
+    const harness = await createHarness();
+    const owner = {
+      threadId: "thread_takeover_tab_drift",
+      runId: "run_takeover_tab_drift",
+    };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/root",
+    });
+    harness.pages[0]!.driftTitleOnNextRead = true;
+
+    await expect(
+      harness.manager.captureTakeoverSnapshot(owner),
+    ).rejects.toThrow("tab evidence changed");
+    expect(harness.browsers[0]?.closed).toBe(true);
+  });
+
+  it("enforces the four-tab bound and preserves a final tab", async () => {
+    const harness = await createHarness();
+    const owner = { threadId: "thread_tab_limit", runId: "run_tab_limit" };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/1",
+    });
+    for (let index = 2; index <= 4; index += 1) {
+      const opened = await harness.manager.execute(owner, {
+        action: "tab_new",
+        url: `https://one.example/${String(index)}`,
+      });
+      expect(opened.details.tabCount).toBe(index);
+    }
+    await expect(
+      harness.manager.execute(owner, {
+        action: "tab_new",
+        url: "https://one.example/5",
+      }),
+    ).rejects.toThrow("tab limit");
+    expect(harness.browsers[0]?.closed).toBe(true);
+
+    const finalHarness = await createHarness();
+    const finalOwner = { threadId: "thread_final_tab", runId: "run_final_tab" };
+    await finalHarness.manager.execute(finalOwner, {
+      action: "start",
+      url: "https://one.example/",
+    });
+    await expect(
+      finalHarness.manager.execute(finalOwner, {
+        action: "tab_close",
+        tabId: "tab_1",
+      }),
+    ).rejects.toThrow("final tab");
+    expect(finalHarness.browsers[0]?.closed).toBe(true);
+  });
+
   it("closes the Session when its bounded operation budget is exhausted", async () => {
     const harness = await createHarness();
     const owner = { threadId: "thread_limit", runId: "run_limit" };
@@ -504,357 +667,3 @@ describe("RunBrowserSessionManager", () => {
     );
   });
 });
-
-interface HarnessOptions {
-  redirects?: Map<string, string>;
-  lookup?: (
-    hostname: string,
-  ) => Promise<Array<{ address: string; family: 4 | 6 }>>;
-  downloadBody?: string;
-  sourceText?: string;
-  sourceTitle?: string;
-  sourceUrlDriftDuringCapture?: boolean;
-}
-
-async function createHarness(options: HarnessOptions = {}) {
-  const workspace = await mkdtemp(
-    path.join(tmpdir(), "napier-browser-session-test-"),
-  );
-  roots.push(workspace);
-  const pages: FakePage[] = [];
-  const browsers: FakeBrowser[] = [];
-  const proxies: FakeProxy[] = [];
-  const downloads: FakeDownload[] = [];
-  const launchOptions: LaunchOptions[] = [];
-  const manager = new RunBrowserSessionManager({
-    workspaceRoot: workspace,
-    lookup:
-      options.lookup ??
-      (async () => [{ address: "1.1.1.1", family: 4 as const }]),
-    resolveRuntime: async () => ({
-      executablePath: "/fake/chrome",
-      executableSha256: "a".repeat(64),
-    }),
-    createProxy: () => {
-      const proxy = new FakeProxy();
-      proxies.push(proxy);
-      return proxy;
-    },
-    launchBrowser: async (launch) => {
-      launchOptions.push(launch);
-      const page = new FakePage(
-        options.redirects ?? new Map(),
-        options.downloadBody ?? "download body",
-        options.sourceText ?? "Default research source text",
-        options.sourceTitle,
-        options.sourceUrlDriftDuringCapture ?? false,
-      );
-      pages.push(page);
-      downloads.push(page.download);
-      const browser = new FakeBrowser(page);
-      browsers.push(browser);
-      return browser as unknown as Browser;
-    },
-  });
-  return {
-    workspace,
-    manager,
-    pages,
-    browsers,
-    proxies,
-    downloads,
-    launchOptions,
-  };
-}
-
-class FakeProxy implements BrowserNetworkProxy {
-  closed = false;
-  outboundEnabled = false;
-  readonly outboundTransitions: boolean[] = [];
-
-  async start() {
-    return {
-      server: "http://127.0.0.1:32100",
-      username: "napier",
-      password: "test-password",
-    };
-  }
-
-  snapshot() {
-    return {
-      requestCount: 1,
-      connectCount: 1,
-      rejectedCount: 0,
-      transferredBytes: 128,
-      destinationCount: 1,
-      destinationsSha256: "b".repeat(64),
-    };
-  }
-
-  setOutboundEnabled(enabled: boolean) {
-    this.outboundEnabled = enabled;
-    this.outboundTransitions.push(enabled);
-  }
-
-  async close() {
-    this.closed = true;
-  }
-}
-
-class FakeBrowser {
-  readonly context: FakeContext;
-  closed = false;
-  private disconnected: ((browser: Browser) => unknown) | undefined;
-
-  constructor(page: FakePage) {
-    this.context = new FakeContext(page);
-  }
-
-  version() {
-    return "Fake Chrome 1";
-  }
-
-  async newContext() {
-    return this.context as unknown as BrowserContext;
-  }
-
-  on(event: string, listener: (browser: Browser) => unknown) {
-    if (event === "disconnected") this.disconnected = listener;
-    return this as unknown as Browser;
-  }
-
-  async close() {
-    this.closed = true;
-  }
-}
-
-class FakeContext {
-  private routeHandler:
-    | ((route: Route) => Promise<unknown> | unknown)
-    | undefined;
-
-  constructor(readonly page: FakePage) {
-    page.context = this;
-  }
-
-  setDefaultTimeout() {}
-  setDefaultNavigationTimeout() {}
-
-  async newPage() {
-    return this.page as unknown as Page;
-  }
-
-  async route(
-    _url: string,
-    handler: (route: Route) => Promise<unknown> | unknown,
-  ) {
-    this.routeHandler = handler;
-  }
-
-  on() {
-    return this as unknown as BrowserContext;
-  }
-
-  async close() {
-    this.page.closed = true;
-  }
-
-  async dispatch(url: string, page: FakePage): Promise<void> {
-    if (!this.routeHandler) throw new Error("route handler is unavailable");
-    let continued = false;
-    let aborted = false;
-    const request = {
-      url: () => url,
-      isNavigationRequest: () => true,
-      frame: () => page.frame,
-    } as unknown as Request;
-    const route = {
-      request: () => request,
-      continue: async () => {
-        continued = true;
-      },
-      abort: async () => {
-        aborted = true;
-      },
-    } as unknown as Route;
-    await this.routeHandler(route);
-    if (aborted || !continued) throw new Error("navigation aborted");
-  }
-}
-
-class FakePage {
-  context!: FakeContext;
-  readonly frame = {};
-  readonly clicked: string[] = [];
-  readonly filled: Array<{ selector: string; text: string }> = [];
-  readonly selected: Array<{ selector: string; values: string[] }> = [];
-  readonly uploaded: Array<{ selector: string; path: string }> = [];
-  readonly download: FakeDownload;
-  blockClicks = false;
-  closed = false;
-  private currentUrl = "about:blank";
-  private scrollY = 0;
-  private readonly history: string[] = [];
-
-  constructor(
-    private readonly redirects: Map<string, string>,
-    downloadBody: string,
-    private readonly sourceText: string,
-    private readonly sourceTitle: string | undefined,
-    private readonly sourceUrlDriftDuringCapture: boolean,
-  ) {
-    this.download = new FakeDownload(downloadBody);
-  }
-
-  url() {
-    return this.currentUrl;
-  }
-
-  async title() {
-    return this.currentUrl === "about:blank"
-      ? ""
-      : `Page ${new URL(this.currentUrl).hostname}`;
-  }
-
-  mainFrame() {
-    return this.frame;
-  }
-
-  async goto(url: string) {
-    await this.context.dispatch(url, this);
-    const redirect = this.redirects.get(url);
-    if (redirect) await this.context.dispatch(redirect, this);
-    if (this.currentUrl !== "about:blank") this.history.push(this.currentUrl);
-    this.currentUrl = redirect ?? url;
-    return {};
-  }
-
-  async goBack() {
-    const prior = this.history.pop();
-    if (!prior) return null;
-    await this.context.dispatch(prior, this);
-    this.currentUrl = prior;
-    return {};
-  }
-
-  locator(selector: string) {
-    const page = this;
-    return {
-      async ariaSnapshot() {
-        return [
-          `- heading "Fake page" [ref=e1]`,
-          `- textbox "Input" [ref=e2]`,
-          `- link "Download" [ref=e3]`,
-        ].join("\n");
-      },
-      async click() {
-        page.clicked.push(selector);
-        if (page.blockClicks) {
-          await new Promise<void>(() => undefined);
-        }
-      },
-      async fill(text: string) {
-        page.filled.push({ selector, text });
-      },
-      async selectOption(values: string[]) {
-        page.selected.push({ selector, values: [...values] });
-        return [];
-      },
-      async setInputFiles(filePath: string) {
-        page.uploaded.push({ selector, path: filePath });
-      },
-      async evaluate(
-        _callback: unknown,
-        request:
-          | number
-          | { kind: "find"; limit: number }
-          | {
-              kind: "scroll";
-              deltaY: number;
-              textLimit: number;
-            },
-        _options: unknown,
-      ) {
-        if (typeof request !== "number") {
-          if (request.kind === "find") {
-            return {
-              text: page.sourceText.slice(0, request.limit),
-              truncated: page.sourceText.length > request.limit,
-            };
-          }
-          const before = page.scrollY;
-          page.scrollY = Math.max(
-            0,
-            Math.min(2_100, page.scrollY + request.deltaY),
-          );
-          const text = `Viewport evidence at ${String(page.scrollY)}`;
-          return {
-            deltaY: page.scrollY - before,
-            positionY: page.scrollY,
-            viewportHeight: 900,
-            documentHeight: 3_000,
-            atStart: page.scrollY === 0,
-            atEnd: page.scrollY === 2_100,
-            text: text.slice(0, request.textLimit),
-            textTruncated: text.length > request.textLimit,
-          };
-        }
-        const capturedUrl = page.currentUrl;
-        const extracted = {
-          url: capturedUrl,
-          title:
-            page.sourceTitle ??
-            (capturedUrl === "about:blank"
-              ? ""
-              : `Page ${new URL(capturedUrl).hostname}`),
-          text: page.sourceText.slice(0, request + 1),
-        };
-        if (page.sourceUrlDriftDuringCapture) {
-          page.currentUrl = "https://two.example/drifted";
-        }
-        return extracted;
-      },
-    } as unknown as Locator;
-  }
-
-  async screenshot() {
-    return Buffer.from("fake png");
-  }
-
-  async waitForTimeout(durationMs: number) {
-    await new Promise<void>((resolve) =>
-      setTimeout(resolve, Math.min(durationMs, 1)),
-    );
-  }
-
-  async waitForEvent(event: string) {
-    if (event !== "download") throw new Error(`Unexpected event: ${event}`);
-    return this.download as unknown as Download;
-  }
-
-  on() {
-    return this as unknown as Page;
-  }
-
-  async close() {
-    this.closed = true;
-  }
-}
-
-class FakeDownload {
-  deleted = false;
-
-  constructor(private readonly body: string) {}
-
-  suggestedFilename() {
-    return "download.txt";
-  }
-
-  async createReadStream() {
-    return Readable.from([this.body]);
-  }
-
-  async delete() {
-    this.deleted = true;
-  }
-}

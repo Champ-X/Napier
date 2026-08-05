@@ -57,6 +57,9 @@ export interface ResearchSourceToolDetails {
   sourceSetSha256: string;
   browserSessionOperation?: number;
   browserSessionIdSha256?: string;
+  browserActiveTabId?: string;
+  browserTabCount?: number;
+  browserTabSetSha256?: string;
   browserExecutableSha256?: string;
   browserVersionSha256?: string;
   browserLimitsSha256?: string;
@@ -70,6 +73,9 @@ export interface ResearchSourceToolDetails {
   browserFallbackDiagnostic?: WebFetchBrowserFallbackDiagnostic;
   webFetchBrowserSessionOperation?: number;
   webFetchBrowserSessionIdSha256?: string;
+  webFetchBrowserActiveTabId?: string;
+  webFetchBrowserTabCount?: number;
+  webFetchBrowserTabSetSha256?: string;
   webFetchBrowserExecutableSha256?: string;
   webFetchBrowserVersionSha256?: string;
   webFetchBrowserLimitsSha256?: string;
@@ -103,6 +109,9 @@ export interface BrowserResearchCapture extends ResearchSourceCaptureBase {
   browser: {
     sessionOperation: number;
     sessionIdSha256: string;
+    activeTabId: string;
+    tabCount: number;
+    tabSetSha256: string;
     executableSha256: string;
     versionSha256: string;
     limitsSha256: string;

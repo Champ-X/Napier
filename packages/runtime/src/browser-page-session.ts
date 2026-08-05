@@ -46,11 +46,20 @@ import {
   type BrowserSessionPageState,
 } from "./browser-session-details.js";
 import {
+  browserPageOrigin,
+  BrowserSessionNavigation,
+} from "./browser-session-navigation.js";
+import {
+  isBrowserTabRequest,
+  performBrowserTabOperation,
+} from "./browser-page-tab-operation.js";
+import { BrowserSessionTabs } from "./browser-session-tabs.js";
+import {
   assertBrowserRuntimeCurrent,
   browserLaunchOptions,
   resolveBrowserRuntime,
 } from "./browser-runtime.js";
-import { browserSnapshotResult, formatBrowserOperationOutput } from "./browser-page-output.js";
+import { createBrowserPageOperationResult } from "./browser-page-output.js";
 import { sha256 } from "./ed25519.js";
 import { FixedIpHttpProxy } from "./fixed-ip-http-proxy.js";
 import {
@@ -58,20 +67,13 @@ import {
   resolvePublicHost,
   validatePublicHttpUrl,
 } from "./public-network.js";
-interface NavigationGrant {
-  allowCrossOrigin: boolean;
-  baselineOrigin?: string;
-  initialOrigin?: string;
-}
 
 type PageState = BrowserSessionPageState;
 export class PersistentBrowserSession {
   readonly idSha256 = sha256(`browser-session:${randomUUID()}`);
   operationCount = 0;
-  private readonly page: Page;
-  private navigationGrant: NavigationGrant | undefined;
-  private committedOrigin: string | undefined;
-  private blockedNavigation: string | undefined;
+  private readonly tabs: BrowserSessionTabs;
+  private readonly navigation = new BrowserSessionNavigation();
   private blockedRequestCount = 0;
   private downloadAuthorized = false;
   private closing = false;
@@ -79,7 +81,9 @@ export class PersistentBrowserSession {
   private disconnected = false;
 
   get healthy(): boolean {
-    return !this.closing && !this.closed && !this.disconnected;
+    return (
+      !this.closing && !this.closed && !this.disconnected && this.tabs.healthy
+    );
   }
 
   private constructor(
@@ -93,7 +97,8 @@ export class PersistentBrowserSession {
     private readonly browserVersionSha256: string,
     private readonly runtimeRoot: string,
   ) {
-    this.page = page;
+    this.tabs = new BrowserSessionTabs(context, page);
+    this.configurePage(page);
   }
 
   static async start(
@@ -145,15 +150,7 @@ export class PersistentBrowserSession {
       });
       await context.route("**/*", (route) => session.handleRoute(route));
       context.on("page", (candidate) => {
-        if (candidate !== page) void candidate.close().catch(() => undefined);
-      });
-      page.on("dialog", (dialog) => {
-        void dialog.dismiss().catch(() => undefined);
-      });
-      page.on("download", (download) => {
-        if (!session.downloadAuthorized) {
-          void download.cancel().catch(() => undefined);
-        }
+        session.tabs.rejectUnmanaged(candidate);
       });
       return session;
     } catch (error) {
@@ -224,15 +221,17 @@ export class PersistentBrowserSession {
     reused: boolean,
     signal?: AbortSignal,
   ): Promise<BrowserSessionOperationResult> {
+    const page = this.tabs.activePage;
     if (isBrowserObservationRequest(request)) {
       return performBrowserPageObservation({
-        page: this.page,
+        page,
         request,
         reused,
         operation: this.operationCount,
         sessionIdSha256: this.idSha256,
         executableSha256: this.runtime.executableSha256,
         browserVersionSha256: this.browserVersionSha256,
+        tabs: this.tabs.evidence(),
         blockedRequestCount: this.blockedRequestCount,
         network: this.proxy.snapshot(),
         ...(signal ? { signal } : {}),
@@ -242,147 +241,190 @@ export class PersistentBrowserSession {
     let file: BrowserWorkspaceFile | undefined;
     let suggestedFilenameSha256: string | undefined;
     let screenshot: Buffer | undefined;
+    let listedTabs:
+      | Awaited<ReturnType<BrowserSessionTabs["descriptors"]>>
+      | undefined;
     const crossOriginAuthorized =
       "allowCrossOrigin" in request && request.allowCrossOrigin === true;
 
-    switch (request.action) {
-      case "start":
-      case "navigate": {
-        const url = await this.preflightNavigation(
-          request.url,
-          request.allowCrossOrigin === true,
-        );
-        await this.withNetwork(() =>
-          this.withNavigationGrant(request.allowCrossOrigin === true, () =>
-            this.page.goto(url.href, {
-              waitUntil: "domcontentloaded",
-              timeout: BROWSER_NAVIGATION_TIMEOUT_MS,
-            }),
-          ),
-        );
-        state = await this.pageState(signal);
-        break;
-      }
-      case "back":
-        await this.withNetwork(() =>
-          this.withNavigationGrant(
+    if (isBrowserTabRequest(request)) {
+      const tabResult = await performBrowserTabOperation({
+        request,
+        tabs: this.tabs,
+        navigation: this.navigation,
+        preflightNavigation: (targetPage, value, allowed) =>
+          this.preflightNavigation(targetPage, value, allowed),
+        withNetwork: (operation) => this.withNetwork(operation),
+        configurePage: (targetPage) => this.configurePage(targetPage),
+        pageState: (targetPage, targetSignal) =>
+          this.pageState(targetPage, targetSignal),
+        ...(signal ? { signal } : {}),
+      });
+      state = tabResult.state;
+      listedTabs = tabResult.listedTabs;
+    } else
+      switch (request.action) {
+        case "start":
+        case "navigate": {
+          const url = await this.preflightNavigation(
+            page,
+            request.url,
             request.allowCrossOrigin === true,
-            async () => {
-              const response = await this.page.goBack({
+          );
+          await this.withNetwork(() =>
+            this.navigation.run(page, request.allowCrossOrigin === true, () =>
+              page.goto(url.href, {
                 waitUntil: "domcontentloaded",
                 timeout: BROWSER_NAVIGATION_TIMEOUT_MS,
-              });
-              if (!response) {
-                throw new Error("Browser Session has no back entry");
-              }
-            },
-          ),
-        );
-        state = await this.pageState(signal);
-        break;
-      case "wait":
-        await this.withNetwork(() =>
-          this.page.waitForTimeout(
-            Math.min(request.durationMs ?? 1_000, MAX_BROWSER_WAIT_MS),
-          ),
-        );
-        state = await this.pageState(signal);
-        break;
-      case "snapshot":
-        state = await this.pageState(signal);
-        break;
-      case "click":
-        await this.withNetwork(() =>
-          this.withNavigationGrant(request.allowCrossOrigin === true, () =>
-            this.locator(request.target).click({
+              }),
+            ),
+          );
+          state = await this.pageState(page, signal);
+          break;
+        }
+        case "back":
+          await this.withNetwork(() =>
+            this.navigation.run(
+              page,
+              request.allowCrossOrigin === true,
+              async () => {
+                const response = await page.goBack({
+                  waitUntil: "domcontentloaded",
+                  timeout: BROWSER_NAVIGATION_TIMEOUT_MS,
+                });
+                if (!response) {
+                  throw new Error("Browser Session has no back entry");
+                }
+              },
+            ),
+          );
+          state = await this.pageState(page, signal);
+          break;
+        case "forward":
+          await this.withNetwork(() =>
+            this.navigation.run(
+              page,
+              request.allowCrossOrigin === true,
+              async () => {
+                const response = await page.goForward({
+                  waitUntil: "domcontentloaded",
+                  timeout: BROWSER_NAVIGATION_TIMEOUT_MS,
+                });
+                if (!response) {
+                  throw new Error("Browser Session has no forward entry");
+                }
+              },
+            ),
+          );
+          state = await this.pageState(page, signal);
+          break;
+        case "wait":
+          await this.withNetwork(() =>
+            page.waitForTimeout(
+              Math.min(request.durationMs ?? 1_000, MAX_BROWSER_WAIT_MS),
+            ),
+          );
+          state = await this.pageState(page, signal);
+          break;
+        case "snapshot":
+          state = await this.pageState(page, signal);
+          break;
+        case "click":
+          await this.withNetwork(() =>
+            this.navigation.run(page, request.allowCrossOrigin === true, () =>
+              this.locator(page, request.target).click({
+                timeout: BROWSER_ACTION_TIMEOUT_MS,
+              }),
+            ),
+          );
+          state = await this.pageState(page, signal);
+          break;
+        case "type":
+          await this.withNetwork(() =>
+            this.locator(page, request.target).fill(request.text, {
               timeout: BROWSER_ACTION_TIMEOUT_MS,
             }),
-          ),
-        );
-        state = await this.pageState(signal);
-        break;
-      case "type":
-        await this.withNetwork(() =>
-          this.locator(request.target).fill(request.text, {
-            timeout: BROWSER_ACTION_TIMEOUT_MS,
-          }),
-        );
-        state = await this.pageState(signal);
-        break;
-      case "select":
-        await this.withNetwork(() =>
-          this.locator(request.target).selectOption(request.values, {
-            timeout: BROWSER_ACTION_TIMEOUT_MS,
-          }),
-        );
-        state = await this.pageState(signal);
-        break;
-      case "upload":
-        file = await inspectBrowserUpload(this.workspaceRoot, request.path);
-        await this.withNetwork(() =>
-          this.locator(request.target).setInputFiles(file!.target, {
-            timeout: BROWSER_ACTION_TIMEOUT_MS,
-          }),
-        );
-        await assertBrowserUploadCurrent(file);
-        state = await this.pageState(signal);
-        break;
-      case "download": {
-        await this.preflightNavigation(
-          this.page.url(),
-          request.allowCrossOrigin === true,
-        );
-        await preflightBrowserDownload(this.workspaceRoot, request.path);
-        assertNotAborted(signal);
-        await this.withNetwork(async () => {
-          this.downloadAuthorized = true;
-          try {
-            const [download] = await Promise.all([
-              this.page.waitForEvent("download", {
-                timeout: BROWSER_ACTION_TIMEOUT_MS,
-                ...(signal ? { signal } : {}),
-              }),
-              this.withNavigationGrant(request.allowCrossOrigin === true, () =>
-                this.locator(request.target).click({
-                  timeout: BROWSER_ACTION_TIMEOUT_MS,
-                }),
-              ),
-            ]);
-            suggestedFilenameSha256 = sha256(download.suggestedFilename());
-            const stream = await download.createReadStream();
+          );
+          state = await this.pageState(page, signal);
+          break;
+        case "select":
+          await this.withNetwork(() =>
+            this.locator(page, request.target).selectOption(request.values, {
+              timeout: BROWSER_ACTION_TIMEOUT_MS,
+            }),
+          );
+          state = await this.pageState(page, signal);
+          break;
+        case "upload":
+          file = await inspectBrowserUpload(this.workspaceRoot, request.path);
+          await this.withNetwork(() =>
+            this.locator(page, request.target).setInputFiles(file!.target, {
+              timeout: BROWSER_ACTION_TIMEOUT_MS,
+            }),
+          );
+          await assertBrowserUploadCurrent(file);
+          state = await this.pageState(page, signal);
+          break;
+        case "download": {
+          await this.preflightNavigation(
+            page,
+            page.url(),
+            request.allowCrossOrigin === true,
+          );
+          await preflightBrowserDownload(this.workspaceRoot, request.path);
+          assertNotAborted(signal);
+          await this.withNetwork(async () => {
+            this.downloadAuthorized = true;
             try {
-              file = await writeBrowserDownload(
-                this.workspaceRoot,
-                request.path,
-                stream,
-                signal,
-              );
+              const [download] = await Promise.all([
+                page.waitForEvent("download", {
+                  timeout: BROWSER_ACTION_TIMEOUT_MS,
+                  ...(signal ? { signal } : {}),
+                }),
+                this.navigation.run(
+                  page,
+                  request.allowCrossOrigin === true,
+                  () =>
+                    this.locator(page, request.target).click({
+                      timeout: BROWSER_ACTION_TIMEOUT_MS,
+                    }),
+                ),
+              ]);
+              suggestedFilenameSha256 = sha256(download.suggestedFilename());
+              const stream = await download.createReadStream();
+              try {
+                file = await writeBrowserDownload(
+                  this.workspaceRoot,
+                  request.path,
+                  stream,
+                  signal,
+                );
+              } finally {
+                await download.delete().catch(() => undefined);
+              }
             } finally {
-              await download.delete().catch(() => undefined);
+              this.downloadAuthorized = false;
             }
-          } finally {
-            this.downloadAuthorized = false;
-          }
-        });
-        state = await this.pageState(signal);
-        break;
-      }
-      case "screenshot":
-        screenshot = await this.page.screenshot({
-          type: "png",
-          fullPage: false,
-          animations: "disabled",
-          timeout: BROWSER_ACTION_TIMEOUT_MS,
-        });
-        if (screenshot.byteLength > MAX_BROWSER_SCREENSHOT_BYTES) {
-          throw new Error("Browser screenshot exceeds the output limit");
+          });
+          state = await this.pageState(page, signal);
+          break;
         }
-        state = await this.pageMetadata();
-        break;
-      case "close":
-        state = await this.pageMetadata();
-        break;
-    }
+        case "screenshot":
+          screenshot = await page.screenshot({
+            type: "png",
+            fullPage: false,
+            animations: "disabled",
+            timeout: BROWSER_ACTION_TIMEOUT_MS,
+          });
+          if (screenshot.byteLength > MAX_BROWSER_SCREENSHOT_BYTES) {
+            throw new Error("Browser screenshot exceeds the output limit");
+          }
+          state = await this.pageMetadata(page);
+          break;
+        case "close":
+          state = await this.pageMetadata(page);
+          break;
+      }
 
     const details = createBrowserSessionDetails({
       action: request.action,
@@ -391,6 +433,7 @@ export class PersistentBrowserSession {
       sessionIdSha256: this.idSha256,
       executableSha256: this.runtime.executableSha256,
       browserVersionSha256: this.browserVersionSha256,
+      tabs: this.tabs.evidence(),
       state,
       crossOriginAuthorized,
       blockedRequestCount: this.blockedRequestCount,
@@ -399,23 +442,14 @@ export class PersistentBrowserSession {
       ...(suggestedFilenameSha256 ? { suggestedFilenameSha256 } : {}),
       ...(screenshot ? { screenshot } : {}),
     });
-    return {
-      output: formatBrowserOperationOutput({
-        action: request.action,
-        state,
-        ...(file ? { file } : {}),
-      }),
+    return createBrowserPageOperationResult({
+      request,
+      state,
       details,
-      ...browserSnapshotResult(request, state),
-      ...(screenshot
-        ? {
-            screenshot: {
-              data: screenshot.toString("base64"),
-              mimeType: "image/png" as const,
-            },
-          }
-        : {}),
-    };
+      file,
+      tabs: listedTabs,
+      screenshot,
+    });
   }
 
   private async handleRoute(route: Route): Promise<void> {
@@ -424,6 +458,12 @@ export class PersistentBrowserSession {
       return;
     }
     const request = route.request();
+    const page = this.tabs.pageForRequest(request);
+    if (!page || !this.tabs.isActive(page)) {
+      this.blockedRequestCount += 1;
+      await route.abort("blockedbyclient").catch(() => undefined);
+      return;
+    }
     let url: URL;
     try {
       url = validatePublicHttpUrl(request.url());
@@ -432,36 +472,19 @@ export class PersistentBrowserSession {
       });
     } catch {
       this.blockedRequestCount += 1;
-      if (isMainNavigation(request, this.page)) {
-        this.blockedNavigation = "Browser navigation target was denied";
-      }
       await route.abort("blockedbyclient").catch(() => undefined);
       return;
     }
-    if (isMainNavigation(request, this.page)) {
-      const grant = this.navigationGrant;
-      const baseline = grant?.baselineOrigin ?? this.committedOrigin;
-      if (!grant?.initialOrigin) {
-        if (grant) grant.initialOrigin = url.origin;
-      }
-      const navigationBaseline =
-        baseline ?? grant?.initialOrigin ?? this.committedOrigin;
-      if (
-        navigationBaseline &&
-        url.origin !== navigationBaseline &&
-        grant?.allowCrossOrigin !== true
-      ) {
-        this.blockedRequestCount += 1;
-        this.blockedNavigation =
-          "Cross-origin navigation requires allowCrossOrigin";
-        await route.abort("blockedbyclient").catch(() => undefined);
-        return;
-      }
+    if (!this.navigation.authorize(request, page, url.origin)) {
+      this.blockedRequestCount += 1;
+      await route.abort("blockedbyclient").catch(() => undefined);
+      return;
     }
     await route.continue();
   }
 
   private async preflightNavigation(
+    page: Page,
     value: string,
     allowCrossOrigin: boolean,
   ): Promise<URL> {
@@ -469,41 +492,8 @@ export class PersistentBrowserSession {
     await resolvePublicHost(url.hostname, {
       ...(this.lookup ? { lookup: this.lookup } : {}),
     });
-    const current = pageOrigin(this.page.url());
-    if (current && current !== url.origin && !allowCrossOrigin) {
-      throw new Error("Cross-origin navigation requires allowCrossOrigin");
-    }
+    await this.navigation.preflight(page, url, allowCrossOrigin);
     return url;
-  }
-
-  private async withNavigationGrant<T>(
-    allowCrossOrigin: boolean,
-    operation: () => Promise<T>,
-  ): Promise<T> {
-    if (this.navigationGrant) {
-      throw new Error("Browser navigation grant is already active");
-    }
-    this.blockedNavigation = undefined;
-    this.navigationGrant = {
-      allowCrossOrigin,
-      ...(this.committedOrigin ? { baselineOrigin: this.committedOrigin } : {}),
-    };
-    try {
-      let result: T;
-      try {
-        result = await operation();
-      } catch (error) {
-        if (this.blockedNavigation) {
-          throw new Error(this.blockedNavigation);
-        }
-        throw error;
-      }
-      if (this.blockedNavigation) throw new Error(this.blockedNavigation);
-      this.committedOrigin = pageOrigin(this.page.url());
-      return result;
-    } finally {
-      this.navigationGrant = undefined;
-    }
   }
 
   private async withNetwork<T>(operation: () => Promise<T>): Promise<T> {
@@ -515,7 +505,7 @@ export class PersistentBrowserSession {
     }
   }
 
-  private locator(target: BrowserElementTarget): Locator {
+  private locator(page: Page, target: BrowserElementTarget): Locator {
     const ref = target.ref?.trim();
     const selector = target.selector?.trim();
     if (Boolean(ref) === Boolean(selector)) {
@@ -525,17 +515,20 @@ export class PersistentBrowserSession {
       if (!/^[a-z0-9]{1,40}$/u.test(ref)) {
         throw new Error("Browser target ref is invalid");
       }
-      return this.page.locator(`aria-ref=${ref}`);
+      return page.locator(`aria-ref=${ref}`);
     }
     if (!selector || selector.length > 1_000) {
       throw new Error("Browser target selector is invalid");
     }
-    return this.page.locator(selector);
+    return page.locator(selector);
   }
 
-  private async pageState(signal?: AbortSignal): Promise<PageState> {
-    const metadata = await this.pageMetadata();
-    const raw = await this.page.locator("body").ariaSnapshot({
+  private async pageState(
+    page: Page,
+    signal?: AbortSignal,
+  ): Promise<PageState> {
+    const metadata = await this.pageMetadata(page);
+    const raw = await page.locator("body").ariaSnapshot({
       mode: "ai",
       depth: 20,
       timeout: BROWSER_ACTION_TIMEOUT_MS,
@@ -557,11 +550,12 @@ export class PersistentBrowserSession {
     signal?: AbortSignal,
   ): Promise<BrowserPageSourceCapture> {
     return captureBrowserPageSource({
-      page: this.page,
+      page: this.tabs.activePage,
       maxChars,
       ...(signal ? { signal } : {}),
       sessionOperation: this.operationCount,
       sessionIdSha256: this.idSha256,
+      tabs: this.tabs.evidence(),
       browserExecutableSha256: this.runtime.executableSha256,
       browserVersionSha256: this.browserVersionSha256,
       limitsSha256: BROWSER_LIMITS_SHA256,
@@ -569,37 +563,25 @@ export class PersistentBrowserSession {
     });
   }
 
-  private async pageMetadata(): Promise<PageState> {
-    const url = this.page.url().slice(0, 4_096);
-    const title = (await this.page.title()).slice(0, 512);
+  private async pageMetadata(page: Page): Promise<PageState> {
+    const url = page.url().slice(0, 4_096);
+    const title = (await page.title()).slice(0, 512);
     return {
       url,
-      origin: pageOrigin(url) ?? "",
+      origin: browserPageOrigin(url) ?? "",
       title,
     };
   }
-}
 
-function pageOrigin(value: string): string | undefined {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:"
-      ? url.origin
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function isMainNavigation(
-  request: ReturnType<Route["request"]>,
-  page: Page,
-): boolean {
-  if (!request.isNavigationRequest()) return false;
-  try {
-    return request.frame() === page.mainFrame();
-  } catch {
-    return false;
+  private configurePage(page: Page): void {
+    page.on("dialog", (dialog) => {
+      void dialog.dismiss().catch(() => undefined);
+    });
+    page.on("download", (download) => {
+      if (!this.downloadAuthorized || !this.tabs.isActive(page)) {
+        void download.cancel().catch(() => undefined);
+      }
+    });
   }
 }
 

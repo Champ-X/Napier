@@ -74,11 +74,14 @@ export class RunBrowserSessionManager {
         const details = result.details;
         const content = {
           kind: "napier.browser-live-view" as const,
-          schemaVersion: 1 as const,
+          schemaVersion: 2 as const,
           threadId: owner.threadId,
           runId: owner.runId,
           sessionIdSha256: details.sessionIdSha256,
           sessionOperation: details.sessionOperation,
+          activeTabId: details.activeTabId,
+          tabCount: details.tabCount,
+          tabSetSha256: details.tabSetSha256,
           imageSha256: details.screenshotSha256!,
           imageBytes: details.screenshotBytes!,
           mimeType: "image/png" as const,
@@ -107,7 +110,10 @@ export class RunBrowserSessionManager {
   async captureTakeoverSnapshot(
     owner: BrowserSessionOwner,
     signal?: AbortSignal,
-  ): Promise<BrowserSessionOperationResult> {
+  ): Promise<{
+    snapshot: BrowserSessionOperationResult;
+    tabs: BrowserSessionOperationResult;
+  }> {
     const key = ownerKey(owner);
     return this.serialized(
       key,
@@ -117,12 +123,41 @@ export class RunBrowserSessionManager {
         if (!session || !session.healthy) {
           throw new Error("Browser Session is not active for this Run");
         }
-        return await session.execute(
-          { action: "snapshot" },
-          true,
-          signal,
-          false,
-        );
+        try {
+          const snapshot = await session.execute(
+            { action: "snapshot" },
+            true,
+            signal,
+            false,
+          );
+          const tabs = await session.execute(
+            { action: "tab_list" },
+            true,
+            signal,
+            false,
+          );
+          if (
+            snapshot.details.sessionIdSha256 !== tabs.details.sessionIdSha256 ||
+            snapshot.details.sessionOperation !==
+              tabs.details.sessionOperation ||
+            snapshot.details.activeTabId !== tabs.details.activeTabId ||
+            snapshot.details.tabCount !== tabs.details.tabCount ||
+            snapshot.details.currentUrlSha256 !==
+              tabs.details.currentUrlSha256 ||
+            snapshot.details.currentOriginSha256 !==
+              tabs.details.currentOriginSha256 ||
+            snapshot.details.titleSha256 !== tabs.details.titleSha256 ||
+            snapshot.details.snapshotSha256 !== tabs.details.snapshotSha256 ||
+            snapshot.details.tabSetSha256 !== tabs.details.tabSetSha256
+          ) {
+            throw new Error("Browser takeover tab evidence changed");
+          }
+          return { snapshot, tabs };
+        } catch (error) {
+          this.sessions.delete(key);
+          await session.close();
+          throw error;
+        }
       },
       signal,
     );
@@ -132,7 +167,19 @@ export class RunBrowserSessionManager {
     owner: BrowserSessionOwner,
     request: Extract<
       BrowserSessionRequest,
-      { action: "click" | "type" | "select" | "scroll" | "back" | "wait" }
+      {
+        action:
+          | "click"
+          | "type"
+          | "select"
+          | "scroll"
+          | "back"
+          | "forward"
+          | "tab_new"
+          | "tab_switch"
+          | "tab_close"
+          | "wait";
+      }
     >,
     signal?: AbortSignal,
   ): Promise<BrowserSessionOperationResult> {

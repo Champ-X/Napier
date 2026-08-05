@@ -26,6 +26,9 @@ export type WebFetchBrowserFallbackDiagnostic =
 export interface WebFetchBrowserFallbackEvidence {
   sessionOperation: number;
   sessionIdSha256: string;
+  activeTabId: string;
+  tabCount: number;
+  tabSetSha256: string;
   browserExecutableSha256: string;
   browserVersionSha256: string;
   limitsSha256: string;
@@ -127,6 +130,9 @@ export interface WebFetchToolDetails {
   browserFallbackCount?: number;
   browserSessionOperation?: number;
   browserSessionIdSha256?: string;
+  browserActiveTabId?: string;
+  browserTabCount?: number;
+  browserTabSetSha256?: string;
   browserExecutableSha256?: string;
   browserVersionSha256?: string;
   browserLimitsSha256?: string;

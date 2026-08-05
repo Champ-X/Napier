@@ -90,6 +90,9 @@ export function validateBrowserFallbackCapture(input: {
     !validBrowserFallbackEvidence({
       sessionOperation: capture.sessionOperation,
       sessionIdSha256: capture.sessionIdSha256,
+      activeTabId: capture.activeTabId,
+      tabCount: capture.tabCount,
+      tabSetSha256: capture.tabSetSha256,
       browserExecutableSha256: capture.browserExecutableSha256,
       browserVersionSha256: capture.browserVersionSha256,
       limitsSha256: capture.limitsSha256,
@@ -102,6 +105,9 @@ export function validateBrowserFallbackCapture(input: {
     evidence: {
       sessionOperation: capture.sessionOperation,
       sessionIdSha256: capture.sessionIdSha256,
+      activeTabId: capture.activeTabId,
+      tabCount: capture.tabCount,
+      tabSetSha256: capture.tabSetSha256,
       browserExecutableSha256: capture.browserExecutableSha256,
       browserVersionSha256: capture.browserVersionSha256,
       limitsSha256: capture.limitsSha256,
@@ -119,6 +125,11 @@ export function validBrowserFallbackEvidence(
     evidence.sessionOperation >= 1 &&
     evidence.sessionOperation <= MAX_BROWSER_SESSION_OPERATIONS &&
     SHA256.test(evidence.sessionIdSha256) &&
+    /^tab_[1-9][0-9]{0,3}$/u.test(evidence.activeTabId) &&
+    Number.isSafeInteger(evidence.tabCount) &&
+    evidence.tabCount >= 1 &&
+    evidence.tabCount <= 4 &&
+    SHA256.test(evidence.tabSetSha256) &&
     SHA256.test(evidence.browserExecutableSha256) &&
     SHA256.test(evidence.browserVersionSha256) &&
     SHA256.test(evidence.limitsSha256) &&
