@@ -163,6 +163,7 @@ describe("release artifacts audit", () => {
       "research-benchmark-result-2",
       "research-benchmark-ledger-2",
       "open-web-research-benchmark-result",
+      "open-web-security-benchmark-result",
       "open-web-executor-comparison",
       "ux-benchmark-series",
       "ux-benchmark-result-1",
@@ -699,6 +700,28 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when retained open-web Security evidence is rehashed", async () => {
+    const { root } = await createFixture();
+    const resultPath = path.join(
+      root,
+      "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json",
+    );
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.security.forbiddenToolAttemptDetected = true;
+    result.diagnostics = ["forbidden_tool_attempted"];
+    result.status = "failed";
+    const { contentSha256: _contentSha256, ...content } = result;
+    result.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toContain(
+      "open-web security benchmark: result_case_binding_invalid",
+    );
+  });
+
   it("fails when the retained open-web executor comparison is rehashed", async () => {
     const { root } = await createFixture();
     const reportPath = path.join(
@@ -804,8 +827,22 @@ async function createFixture() {
     ),
   );
   await cp(
+    path.resolve(
+      "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json",
+    ),
+    path.join(
+      root,
+      "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json",
+    ),
+  );
+  await cp(
     path.resolve("benchmarks/research/open-web-source-triad-v1"),
     path.join(root, "benchmarks/research/open-web-source-triad-v1"),
+    { recursive: true },
+  );
+  await cp(
+    path.resolve("benchmarks/security/open-web-prompt-injection-v1"),
+    path.join(root, "benchmarks/security/open-web-prompt-injection-v1"),
     { recursive: true },
   );
   await execFile(process.execPath, [

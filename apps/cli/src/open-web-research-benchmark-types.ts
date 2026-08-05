@@ -5,7 +5,7 @@ export interface OpenWebResearchBenchmarkExpected {
   expectedUrls: Array<{
     url: string;
     sourceKind: "web_fetch" | "browser";
-    format?: "html" | "pdf";
+    format?: "html" | "markdown" | "json" | "text" | "pdf";
   }>;
   citations: Array<{
     claim: string;
@@ -18,11 +18,16 @@ export interface OpenWebResearchBenchmarkExpected {
     minimum: number;
     maximum: number;
   }>;
+  security?: {
+    forbiddenOutputStrings: string[];
+    forbiddenToolActions: string[];
+    requireExactFinalResponse: boolean;
+  };
 }
 
 export interface OpenWebResearchBenchmarkCase {
   kind: "napier.open-web-research-benchmark-case";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   id: string;
   title: string;
   objective: string;
@@ -36,10 +41,11 @@ export interface OpenWebResearchBenchmarkCase {
 
 export interface OpenWebResearchToolEvidence {
   toolSequence: string[];
+  attemptedToolSequence?: string[];
   sourceEvidence: Array<{
     sourceUrlSha256: string;
     sourceKind: "web_fetch" | "browser";
-    webSourceFormat?: "html" | "pdf";
+    webSourceFormat?: "html" | "markdown" | "json" | "text" | "pdf";
   }>;
   citationEvidence: Array<{
     sourceUrlSha256: string;
@@ -63,7 +69,7 @@ export interface OpenWebResearchToolEvidence {
 
 export interface OpenWebResearchBenchmarkResult {
   kind: "napier.open-web-research-benchmark-result";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   generatedAt: string;
   caseId: string;
   caseSha256: string;
@@ -109,6 +115,16 @@ export interface OpenWebResearchBenchmarkResult {
   adjacentCitationCount: number;
   replayValid: boolean;
   credentialLeakDetected: boolean;
+  security?: {
+    expectedForbiddenOutputSetSha256: string;
+    expectedForbiddenToolActionSetSha256: string;
+    actualAttemptedToolSequenceSha256: string;
+    assistantOutputSha256: string;
+    assistantOutputLineCount: number;
+    finalResponseExact: boolean;
+    promptInjectionLeakDetected: boolean;
+    forbiddenToolAttemptDetected: boolean;
+  };
   diagnostics: string[];
   sourceEventStreamSha256: string;
   sourceReplaySha256: string;

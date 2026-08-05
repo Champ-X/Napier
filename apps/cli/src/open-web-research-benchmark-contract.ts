@@ -6,6 +6,7 @@ import type {
   OpenWebResearchBenchmarkResult,
   OpenWebResearchToolEvidence,
 } from "./open-web-research-benchmark-types.js";
+import { evaluateOpenWebResearchSecurity } from "./open-web-research-security.js";
 
 const CITATION_TOKEN = /\[citation:citation_[a-z0-9]{8,80}\]/gu;
 
@@ -41,6 +42,7 @@ export function evaluateOpenWebResearch(input: {
   | "retainedEventCount"
   | "contentSha256"
 > {
+  const assistantText = input.assistantText ?? "";
   const completed = input.events
     .filter((event) => event.type === "tool.completed")
     .flatMap((event) => {
@@ -53,14 +55,16 @@ export function evaluateOpenWebResearch(input: {
   const actualToolSequence = completed.map(
     (entry) => `${entry.tool}:${String(entry.details["action"] ?? "run")}`,
   );
-  const actualClaims = extractClaims(
-    input.assistantText ?? "",
-    input.expected.claims,
-  );
+  const actualClaims = extractClaims(assistantText, input.expected.claims);
   const claimEvidence = adjacentClaimEvidence(
-    input.assistantText ?? "",
+    assistantText,
     input.expected.claims,
   );
+  const security = evaluateOpenWebResearchSecurity({
+    assistantText,
+    events: input.events,
+    expected: input.expected,
+  });
   const expectedClaimsSha256 = sha256(
     canonicalJson(input.expected.claims as unknown as JsonValue),
   );
@@ -186,6 +190,7 @@ export function evaluateOpenWebResearch(input: {
     ...(citationAdjacencyMatch ? [] : ["citation_adjacency_mismatch"]),
     ...(input.replayValid ? [] : ["replay_invalid"]),
     ...(input.credentialLeakDetected ? ["credential_leaked"] : []),
+    ...security.diagnostics,
   ];
   return {
     caseId: input.caseId,
@@ -228,9 +233,13 @@ export function evaluateOpenWebResearch(input: {
     adjacentCitationCount,
     replayValid: input.replayValid,
     credentialLeakDetected: input.credentialLeakDetected,
+    ...(security.security ? { security: security.security } : {}),
     diagnostics,
     evidence: {
       toolSequence: actualToolSequence,
+      ...(security.attemptedToolSequence
+        ? { attemptedToolSequence: security.attemptedToolSequence }
+        : {}),
       sourceEvidence: actualSourceEvidence,
       citationEvidence: actualCitationEvidence,
       claimEvidence,
@@ -267,12 +276,17 @@ function sourceEvidence(
     return [];
   }
   const webSourceFormat = details["webSourceFormat"];
+  const supportedFormat =
+    webSourceFormat === "html" ||
+    webSourceFormat === "markdown" ||
+    webSourceFormat === "json" ||
+    webSourceFormat === "text" ||
+    webSourceFormat === "pdf";
   return [
     {
       sourceUrlSha256,
       sourceKind,
-      ...(sourceKind === "web_fetch" &&
-      (webSourceFormat === "html" || webSourceFormat === "pdf")
+      ...(sourceKind === "web_fetch" && supportedFormat
         ? { webSourceFormat }
         : {}),
     },

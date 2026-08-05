@@ -29,6 +29,7 @@ export async function loadOpenWebResearchBenchmarkCase(
   const prompt = await readTextEntry(root, benchmarkCase.promptPath);
   const expected = validateExpected(
     await readJsonEntry(root, benchmarkCase.expectedPath),
+    benchmarkCase.schemaVersion,
   );
   if (sha256(prompt) !== benchmarkCase.promptSha256) {
     throw new Error("Open-web Research benchmark prompt hash mismatch");
@@ -42,14 +43,14 @@ export async function loadOpenWebResearchBenchmarkCase(
 export function validateOpenWebResearchBenchmarkExpected(
   value: unknown,
 ): OpenWebResearchBenchmarkExpected {
-  return validateExpected(value);
+  return validateExpected(value, 1);
 }
 
 function validateCase(value: unknown): OpenWebResearchBenchmarkCase {
   if (
     !exactRecord(value, CASE_KEYS) ||
     value["kind"] !== "napier.open-web-research-benchmark-case" ||
-    value["schemaVersion"] !== 1 ||
+    (value["schemaVersion"] !== 1 && value["schemaVersion"] !== 2) ||
     !resourceId(value["id"]) ||
     !boundedText(value["title"], 1, 160) ||
     !boundedText(value["objective"], 1, 500) ||
@@ -73,35 +74,47 @@ function validateCase(value: unknown): OpenWebResearchBenchmarkCase {
   return benchmarkCase;
 }
 
-function validateExpected(value: unknown): OpenWebResearchBenchmarkExpected {
+function validateExpected(
+  value: unknown,
+  schemaVersion: OpenWebResearchBenchmarkCase["schemaVersion"],
+): OpenWebResearchBenchmarkExpected {
+  const expectedKeys =
+    schemaVersion === 2
+      ? [
+          "claims",
+          "expectedUrls",
+          "citations",
+          "requiredToolCounts",
+          "security",
+        ]
+      : ["claims", "expectedUrls", "citations", "requiredToolCounts"];
   if (
-    !exactRecord(value, [
-      "claims",
-      "expectedUrls",
-      "citations",
-      "requiredToolCounts",
-    ]) ||
+    !exactRecord(value, expectedKeys) ||
     !Array.isArray(value["claims"]) ||
-    value["claims"].length !== 3 ||
+    value["claims"].length < 1 ||
+    value["claims"].length > 8 ||
     !value["claims"].every((claim) => boundedText(claim, 1, 500)) ||
-    new Set(value["claims"]).size !== 3 ||
-    !validExpectedUrls(value["expectedUrls"]) ||
+    new Set(value["claims"]).size !== value["claims"].length ||
+    !validExpectedUrls(value["expectedUrls"], value["claims"].length) ||
     !validCitations(
       value["citations"],
       value["claims"],
       value["expectedUrls"],
     ) ||
-    !validToolCounts(value["requiredToolCounts"])
+    !validToolCounts(value["requiredToolCounts"]) ||
+    (schemaVersion === 2
+      ? !validSecurity(value["security"], value["claims"])
+      : value["security"] !== undefined)
   ) {
     throw new Error("Open-web Research benchmark expected outcome is invalid");
   }
   return structuredClone(value) as unknown as OpenWebResearchBenchmarkExpected;
 }
 
-function validExpectedUrls(value: unknown): boolean {
+function validExpectedUrls(value: unknown, expectedCount: number): boolean {
   return (
     Array.isArray(value) &&
-    value.length === 3 &&
+    value.length === expectedCount &&
     value.every(
       (source) =>
         exactRecord(
@@ -115,9 +128,12 @@ function validExpectedUrls(value: unknown): boolean {
           source["sourceKind"] === "browser") &&
         (source["sourceKind"] !== "web_fetch" ||
           source["format"] === "html" ||
+          source["format"] === "markdown" ||
+          source["format"] === "json" ||
+          source["format"] === "text" ||
           source["format"] === "pdf"),
     ) &&
-    new Set(value.map((source) => source.url)).size === 3
+    new Set(value.map((source) => source.url)).size === expectedCount
   );
 }
 
@@ -126,7 +142,11 @@ function validCitations(
   claims: unknown[],
   sources: unknown,
 ): boolean {
-  if (!Array.isArray(value) || value.length !== 3 || !Array.isArray(sources)) {
+  if (
+    !Array.isArray(value) ||
+    value.length !== claims.length ||
+    !Array.isArray(sources)
+  ) {
     return false;
   }
   const sourceByUrl = new Map(
@@ -155,14 +175,15 @@ function validCitations(
       }
       const source = sourceByUrl.get(String(citation["sourceUrl"]));
       return source?.sourceKind === citation["sourceKind"];
-    }) && new Set(value.map((citation) => citation.claim)).size === 3
+    }) &&
+    new Set(value.map((citation) => citation.claim)).size === claims.length
   );
 }
 
 function validToolCounts(value: unknown): boolean {
   return (
     Array.isArray(value) &&
-    value.length >= 8 &&
+    value.length >= 3 &&
     value.length <= 16 &&
     value.every(
       (entry) =>
@@ -174,6 +195,41 @@ function validToolCounts(value: unknown): boolean {
         Number(entry["minimum"]) <= Number(entry["maximum"]),
     ) &&
     new Set(value.map((entry) => entry.toolAction)).size === value.length
+  );
+}
+
+function validSecurity(value: unknown, claims: unknown[]): boolean {
+  if (
+    !exactRecord(value, [
+      "forbiddenOutputStrings",
+      "forbiddenToolActions",
+      "requireExactFinalResponse",
+    ])
+  ) {
+    return false;
+  }
+  const forbiddenOutputStrings = value["forbiddenOutputStrings"];
+  const forbiddenToolActions = value["forbiddenToolActions"];
+  return (
+    Array.isArray(forbiddenOutputStrings) &&
+    forbiddenOutputStrings.length >= 1 &&
+    forbiddenOutputStrings.length <= 8 &&
+    forbiddenOutputStrings.every((entry) => boundedText(entry, 1, 500)) &&
+    new Set(forbiddenOutputStrings).size === forbiddenOutputStrings.length &&
+    forbiddenOutputStrings.every((entry) =>
+      claims.every(
+        (claim) => typeof claim === "string" && !claim.includes(entry),
+      ),
+    ) &&
+    Array.isArray(forbiddenToolActions) &&
+    forbiddenToolActions.length >= 1 &&
+    forbiddenToolActions.length <= 16 &&
+    forbiddenToolActions.every(
+      (entry) =>
+        typeof entry === "string" && /^[a-z_]+:(?:[a-z_]+|\*)$/u.test(entry),
+    ) &&
+    new Set(forbiddenToolActions).size === forbiddenToolActions.length &&
+    value["requireExactFinalResponse"] === true
   );
 }
 

@@ -12,6 +12,7 @@
     "test:live-coding-benchmark": "NAPIER_LIVE_CODING_BENCHMARK=1 vitest run test/live-coding-benchmark-smoke.test.ts --testTimeout=180000",
     "test:live-data-benchmark": "NAPIER_LIVE_DATA_BENCHMARK=1 vitest run test/live-data-benchmark-smoke.test.ts --testTimeout=180000",
     "test:live-long-horizon-benchmark": "NAPIER_LIVE_LONG_HORIZON_BENCHMARK=1 vitest run test/live-long-horizon-benchmark-smoke.test.ts --testTimeout=180000",
+    "test:live-open-web-security-benchmark": "NAPIER_LIVE_OPEN_WEB_SECURITY_BENCHMARK=1 node --env-file-if-exists=../../.env ../../node_modules/vitest/vitest.mjs run test/live-open-web-security-benchmark-smoke.test.ts --testTimeout=180000",
     "test:live-research-benchmark": "NAPIER_LIVE_RESEARCH_BENCHMARK=1 vitest run test/live-research-benchmark-smoke.test.ts --testTimeout=180000",
     "test:live-security-benchmark": "NAPIER_LIVE_SECURITY_BENCHMARK=1 vitest run test/live-security-benchmark-smoke.test.ts --testTimeout=180000",
     "test:live-ux-benchmark": "NAPIER_LIVE_UX_BENCHMARK=1 vitest run test/live-ux-benchmark-smoke.test.ts --testTimeout=180000",

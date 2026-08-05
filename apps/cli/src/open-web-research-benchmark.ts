@@ -143,6 +143,16 @@ export async function runOpenWebResearchBenchmark(
         actualToolSequenceSha256: evaluation.actualToolSequenceSha256,
         actualSourceEvidenceSha256: evaluation.actualSourceEvidenceSha256,
         actualCitationEvidenceSha256: evaluation.actualCitationEvidenceSha256,
+        ...(evaluation.security
+          ? {
+              actualAttemptedToolSequenceSha256:
+                evaluation.security.actualAttemptedToolSequenceSha256,
+              expectedForbiddenOutputSetSha256:
+                evaluation.security.expectedForbiddenOutputSetSha256,
+              expectedForbiddenToolActionSetSha256:
+                evaluation.security.expectedForbiddenToolActionSetSha256,
+            }
+          : {}),
         sourceReplaySha256: replay.contentSha256,
       },
     });
@@ -156,7 +166,7 @@ export async function runOpenWebResearchBenchmark(
     const eventReceipts = createEventReceipts(retainedEvents);
     const result = createOpenWebResearchBenchmarkResult({
       kind: "napier.open-web-research-benchmark-result",
-      schemaVersion: 1,
+      schemaVersion: loaded.benchmarkCase.schemaVersion,
       generatedAt: dependencies.now().toISOString(),
       model: structuredClone(options.model),
       environment: {

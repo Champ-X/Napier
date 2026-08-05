@@ -84,6 +84,10 @@ const defaultOpenWebResearchBenchmarkResultPath =
   "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json";
 const defaultOpenWebResearchBenchmarkCaseRoot =
   "benchmarks/research/open-web-source-triad-v1";
+const defaultOpenWebSecurityBenchmarkResultPath =
+  "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json";
+const defaultOpenWebSecurityBenchmarkCaseRoot =
+  "benchmarks/security/open-web-prompt-injection-v1";
 const defaultOpenWebExecutorComparisonPath =
   "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json";
 const defaultUxBenchmarkSeriesPath =
@@ -159,6 +163,12 @@ export async function auditReleaseArtifacts(options = {}) {
   const openWebResearchBenchmarkCaseRoot =
     options.openWebResearchBenchmarkCaseRoot ??
     defaultOpenWebResearchBenchmarkCaseRoot;
+  const openWebSecurityBenchmarkResultPath =
+    options.openWebSecurityBenchmarkResultPath ??
+    defaultOpenWebSecurityBenchmarkResultPath;
+  const openWebSecurityBenchmarkCaseRoot =
+    options.openWebSecurityBenchmarkCaseRoot ??
+    defaultOpenWebSecurityBenchmarkCaseRoot;
   const openWebExecutorComparisonPath =
     options.openWebExecutorComparisonPath ??
     defaultOpenWebExecutorComparisonPath;
@@ -389,6 +399,15 @@ export async function auditReleaseArtifacts(options = {}) {
       caseRoot: openWebResearchBenchmarkCaseRoot,
       errors,
     });
+  const openWebSecurityBenchmarkArtifact =
+    await verifyOpenWebResearchReleaseArtifact({
+      repoRoot,
+      resultPath: openWebSecurityBenchmarkResultPath,
+      caseRoot: openWebSecurityBenchmarkCaseRoot,
+      errors,
+      artifactKind: "open-web-security-benchmark-result",
+      diagnosticLabel: "open-web security benchmark",
+    });
   const openWebExecutorComparisonArtifact =
     await verifyOpenWebComparisonReleaseArtifact({
       repoRoot,
@@ -491,6 +510,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...processRecoveryBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
     openWebResearchBenchmarkArtifact,
+    openWebSecurityBenchmarkArtifact,
     openWebExecutorComparisonArtifact,
     ...uxBenchmarkArtifacts,
   ];
@@ -776,6 +796,20 @@ function parseCliOptions(args) {
       index += 1;
       continue;
     }
+    if (arg === "--open-web-security-benchmark-result-path") {
+      options.openWebSecurityBenchmarkResultPath = readCliValue(
+        args,
+        index,
+        arg,
+      );
+      index += 1;
+      continue;
+    }
+    if (arg === "--open-web-security-benchmark-case-root") {
+      options.openWebSecurityBenchmarkCaseRoot = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
     if (arg === "--open-web-executor-comparison-path") {
       options.openWebExecutorComparisonPath = readCliValue(args, index, arg);
       index += 1;
@@ -896,6 +930,8 @@ async function verifyOpenWebResearchReleaseArtifact({
   resultPath,
   caseRoot,
   errors,
+  artifactKind = "open-web-research-benchmark-result",
+  diagnosticLabel = "open-web research benchmark",
 }) {
   const evidence = await readArtifactEvidence(repoRoot, resultPath, errors);
   const result = await readJsonArtifact(repoRoot, resultPath, errors);
@@ -913,23 +949,23 @@ async function verifyOpenWebResearchReleaseArtifact({
     if (!verification.valid) {
       errors.push(
         ...verification.diagnostics.map(
-          (diagnostic) => `open-web research benchmark: ${diagnostic}`,
+          (diagnostic) => `${diagnosticLabel}: ${diagnostic}`,
         ),
       );
     }
     if (verification.valid && result?.status !== "passed") {
-      errors.push("open-web research benchmark: retained_result_not_passed");
+      errors.push(`${diagnosticLabel}: retained_result_not_passed`);
     }
   } catch (error) {
     errors.push(
-      `open-web research benchmark: ${
+      `${diagnosticLabel}: ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
   }
   const { readable: _readable, ...artifact } = evidence;
   return {
-    kind: "open-web-research-benchmark-result",
+    kind: artifactKind,
     ...artifact,
     valid: evidence.readable && valid,
   };

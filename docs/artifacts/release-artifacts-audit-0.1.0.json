@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "8e3c84d9752e7a6ec530f80a513944c3df8d8b82fabe816a06bc6d7dac6826a2",
+  "artifactSetSha256": "dfa361500fb1e83681ecf35be652f631b16ab5b7cabcc98400a2ab9ab808d28c",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "6c7a323f084da129dbc95c22c47855344652772312da81d0cf0a726ac4f05c3f",
+      "sha256": "0e1b0c42a9223d5f3e79b28c27dec5aebc123c455f6a6fc96b9c9a00cd35126b",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "7433188cfb3d27f3eb3cd448d3755d109641678c2689b8f68db4162763465e67",
+      "sha256": "5e4d17f292bea790a046fde0b8ff78ac748a6db2420b3090647dda6e27ab343c",
       "valid": true
     },
     {
@@ -690,6 +690,12 @@
       "kind": "open-web-research-benchmark-result",
       "path": "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
       "sha256": "f94f77f317411504ad9bba3d108105bba4f1e5d5a40811ca88ae9fd1c2a68139",
+      "valid": true
+    },
+    {
+      "kind": "open-web-security-benchmark-result",
+      "path": "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json",
+      "sha256": "2a7c4baa3a2e302d4c9f386d6aa51d2f4379cb774e9b696d083dc09bb9788e13",
       "valid": true
     },
     {
