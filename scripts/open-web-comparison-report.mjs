@@ -7,6 +7,7 @@ import {
 } from "./open-web-comparison-suite.mjs";
 import {
   OPEN_WEB_COMPARISON_NOTES,
+  OPEN_WEB_COMPARISON_NOTES_V2,
   validOpenWebComparisonDiagnostics,
   validOpenWebComparisonFailureClass,
 } from "./open-web-comparison-report-policy.mjs";
@@ -61,7 +62,7 @@ export function verifyOpenWebComparisonReport(input) {
       "type",
     ]) ||
     input.type !== REPORT_TYPE ||
-    input.schemaVersion !== 1 ||
+    (input.schemaVersion !== 1 && input.schemaVersion !== 2) ||
     !digest(input.contentSha256) ||
     !isoDate(input.generatedAt)
   ) {
@@ -93,7 +94,7 @@ export function verifyOpenWebComparisonReport(input) {
   ) {
     diagnostics.push("report_suite_invalid");
   }
-  if (!validEnvironment(input.environment)) {
+  if (!validEnvironment(input.environment, input.schemaVersion)) {
     diagnostics.push("report_environment_invalid");
   }
   const cases = Array.isArray(input.cases) ? input.cases : [];
@@ -105,11 +106,18 @@ export function verifyOpenWebComparisonReport(input) {
         entry,
         expectedSuite.cases[caseIndex],
         input.trialCount,
+        input.schemaVersion,
         caseIndex,
       ),
     )
   ) {
     diagnostics.push("report_cases_invalid");
+  }
+  if (
+    input.schemaVersion === 2 &&
+    !validBrowserEnvironmentBindings(cases, input.environment)
+  ) {
+    diagnostics.push("report_browser_binding_invalid");
   }
   const expectedSummary =
     diagnostics.includes("report_cases_invalid") || cases.length === 0
@@ -124,7 +132,12 @@ export function verifyOpenWebComparisonReport(input) {
   if (
     containsSensitiveKey(input) ||
     containsRawEvidence(input) ||
-    canonicalJson(input.notes) !== canonicalJson(OPEN_WEB_COMPARISON_NOTES)
+    canonicalJson(input.notes) !==
+      canonicalJson(
+        input.schemaVersion === 2
+          ? OPEN_WEB_COMPARISON_NOTES_V2
+          : OPEN_WEB_COMPARISON_NOTES,
+      )
   ) {
     diagnostics.push("report_privacy_invalid");
   }
@@ -135,7 +148,7 @@ export function verifyOpenWebComparisonReport(input) {
   };
 }
 
-function validCase(value, expected, trialCount, caseIndex) {
+function validCase(value, expected, trialCount, schemaVersion, caseIndex) {
   if (
     !record(value) ||
     !exactKeys(value, [
@@ -166,12 +179,12 @@ function validCase(value, expected, trialCount, caseIndex) {
       Array.isArray(track.trials) &&
       track.trials.length === trialCount &&
       track.trials.every((trial, trialIndex) =>
-        validPair(trial, trialIndex + 1, trackIndex, caseIndex),
+        validPair(trial, trialIndex + 1, trackIndex, caseIndex, schemaVersion),
       ),
   );
 }
 
-function validPair(value, trial, trackIndex, caseIndex) {
+function validPair(value, trial, trackIndex, caseIndex, schemaVersion) {
   const expectedOrder =
     (trial + trackIndex + caseIndex) % 2 === 0
       ? ["omp", "napier"]
@@ -181,12 +194,12 @@ function validPair(value, trial, trackIndex, caseIndex) {
     exactKeys(value, ["napier", "omp", "order", "trial"]) &&
     value.trial === trial &&
     canonicalJson(value.order) === canonicalJson(expectedOrder) &&
-    validOutcome(value.napier, "napier") &&
-    validOutcome(value.omp, "omp")
+    validOutcome(value.napier, "napier", schemaVersion) &&
+    validOutcome(value.omp, "omp", schemaVersion)
   );
 }
 
-function validOutcome(value, executor) {
+function validOutcome(value, executor, schemaVersion) {
   if (
     !record(value) ||
     !exactKeys(value, [
@@ -232,7 +245,7 @@ function validOutcome(value, executor) {
   if (executor === "omp") {
     return (
       validProxy(value.modelProxy) &&
-      validBrowserIsolation(value.browserIsolation) &&
+      validBrowserIsolation(value.browserIsolation, schemaVersion) &&
       validPublicNetwork(value.publicNetwork) &&
       validSandbox(value.sandbox)
     );
@@ -340,13 +353,72 @@ function validSandbox(value) {
   );
 }
 
-function validBrowserIsolation(value) {
+function validBrowserIsolation(value, schemaVersion) {
+  if (!record(value)) return false;
+  if (schemaVersion === 1) {
+    return (
+      exactKeys(value, ["diagnostic", "requestCount", "status"]) &&
+      value.status === "blocked" &&
+      value.diagnostic === "nested_chromium_sandbox_unavailable" &&
+      nonNegativeInteger(value.requestCount)
+    );
+  }
   return (
-    record(value) &&
-    exactKeys(value, ["diagnostic", "requestCount", "status"]) &&
-    value.status === "blocked" &&
-    value.diagnostic === "nested_chromium_sandbox_unavailable" &&
-    nonNegativeInteger(value.requestCount)
+    exactKeys(value, [
+      "browserExecutableSha256",
+      "browserRuntimeSetSha256",
+      "cdpEndpointSha256",
+      "diagnostic",
+      "launchDurationMs",
+      "loopbackOnly",
+      "network",
+      "processClosed",
+      "profilePersistent",
+      "sandboxProfileSha256",
+      "status",
+      "userStateImported",
+    ]) &&
+    value.status === "ready" &&
+    value.diagnostic === "fresh_profile_loopback_cdp" &&
+    value.profilePersistent === false &&
+    value.userStateImported === false &&
+    value.loopbackOnly === true &&
+    value.processClosed === true &&
+    nonNegativeInteger(value.launchDurationMs) &&
+    digest(value.browserExecutableSha256) &&
+    digest(value.browserRuntimeSetSha256) &&
+    digest(value.sandboxProfileSha256) &&
+    digest(value.cdpEndpointSha256) &&
+    validPublicNetwork(value.network)
+  );
+}
+
+function validBrowserEnvironmentBindings(cases, environment) {
+  if (!record(environment)) return false;
+  const outcomes = cases.flatMap((entry) =>
+    Array.isArray(entry?.tracks)
+      ? entry.tracks.flatMap((track) =>
+          Array.isArray(track?.trials)
+            ? track.trials.map((trial) => trial?.omp)
+            : [],
+        )
+      : [],
+  );
+  return (
+    outcomes.length > 0 &&
+    outcomes.every(
+      (outcome) =>
+        record(outcome) &&
+        record(outcome.browserIsolation) &&
+        outcome.browserIsolation.browserExecutableSha256 ===
+          environment.browserRuntimeExecutableSha256 &&
+        outcome.browserIsolation.browserRuntimeSetSha256 ===
+          environment.browserRuntimeSetSha256 &&
+        record(outcome.toolCounts) &&
+        record(outcome.browserIsolation.network) &&
+        (outcome.toolCounts.browser === 0 ||
+          outcome.browserIsolation.network.requestCount > 0),
+    )
   );
 }
 
@@ -372,11 +444,19 @@ function validPublicNetwork(value) {
   );
 }
 
-function validEnvironment(value) {
+function validEnvironment(value, schemaVersion) {
   return (
     record(value) &&
     exactKeys(value, [
       "architecture",
+      ...(schemaVersion === 2
+        ? [
+            "browserRuntimeBytes",
+            "browserRuntimeExecutableSha256",
+            "browserRuntimeFileCount",
+            "browserRuntimeSetSha256",
+          ]
+        : []),
       "napierVersion",
       "nodeVersion",
       "ompExecutableSha256",
@@ -394,6 +474,12 @@ function validEnvironment(value) {
     digest(value.ompExecutableSha256) &&
     digest(value.ompRuntimeExecutableSha256) &&
     value.ompRuntimeVersion === value.ompVersion &&
+    (schemaVersion === 1 ||
+      (nonNegativeInteger(value.browserRuntimeBytes) &&
+        nonNegativeInteger(value.browserRuntimeFileCount) &&
+        value.browserRuntimeFileCount > 0 &&
+        digest(value.browserRuntimeExecutableSha256) &&
+        digest(value.browserRuntimeSetSha256))) &&
     value.outerSandbox === "macos-sandbox-exec-guarded"
   );
 }

@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "6e34752fe5f213042cae72377f2c5ac447af6cd4aa2f2ab87fd87d62c98eb41a",
+  "artifactSetSha256": "1fb72b44dc2e45fe0e17db5cc3dae33c4d44d25e0e9dfcb92545e87cc6814422",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -737,7 +737,7 @@
     {
       "kind": "open-web-executor-comparison",
       "path": "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json",
-      "sha256": "94888013781c6a7c8e416a9d51d3cefd8eef197aa9535338f7006b11fc0a386d",
+      "sha256": "28e939f5d2c74cb749142d02f6051e82d8e58f4818ffb8d13a5e4ba7ad2651bf",
       "valid": true
     },
     {

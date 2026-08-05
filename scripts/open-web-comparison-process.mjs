@@ -121,19 +121,38 @@ export function createNapierComparisonParser() {
   let usage;
   let infrastructureSignal = false;
   const toolCounts = emptyToolCounts();
+  const toolCalls = new Map();
   let toolFailed = 0;
   let frameCount = 0;
   return {
     accept(line) {
-      infrastructureSignal ||= infrastructureFailureText(line);
       const frame = parseRecord(line);
       frameCount += 1;
       if (frame.type === "event" && record(frame.event)) {
         const event = frame.event;
         if (event.type === "tool.started" && record(event.payload)) {
-          incrementToolFamily(toolCounts, event.payload.toolName);
+          if (typeof event.payload.callId === "string") {
+            toolCalls.set(event.payload.callId, event.payload.toolName);
+          }
+        } else if (event.type === "tool.completed" && record(event.payload)) {
+          const toolName =
+            typeof event.payload.toolName === "string"
+              ? event.payload.toolName
+              : typeof event.payload.callId === "string"
+                ? toolCalls.get(event.payload.callId)
+                : undefined;
+          incrementToolFamily(toolCounts, toolName);
+          if (typeof event.payload.callId === "string") {
+            toolCalls.delete(event.payload.callId);
+          }
         } else if (event.type === "tool.failed") {
           toolFailed += 1;
+          if (
+            record(event.payload) &&
+            typeof event.payload.callId === "string"
+          ) {
+            toolCalls.delete(event.payload.callId);
+          }
         } else if (
           event.type === "message.assistant" &&
           record(event.payload) &&
@@ -148,11 +167,18 @@ export function createNapierComparisonParser() {
         if (record(run)) {
           status = typeof run.status === "string" ? run.status : status;
           usage = normalizedUsage(run.usage) ?? usage;
+          infrastructureSignal ||= trustedInfrastructureSignal(run);
         }
         const events = Array.isArray(frame.detail.events)
           ? frame.detail.events
           : [];
         for (const event of events) {
+          if (
+            record(event) &&
+            (event.type === "run.failed" || event.type === "model.response")
+          ) {
+            infrastructureSignal ||= trustedInfrastructureSignal(event.payload);
+          }
           if (
             record(event) &&
             event.type === "message.assistant" &&
@@ -187,20 +213,37 @@ export function createOmpComparisonParser() {
   let infrastructureSignal = false;
   const usage = zeroUsage();
   const toolCounts = emptyToolCounts();
+  const toolCalls = new Map();
   let toolFailed = 0;
   let frameCount = 0;
   return {
     accept(line) {
-      infrastructureSignal ||= infrastructureFailureText(line);
       const event = parseRecord(line);
       frameCount += 1;
       if (event.type === "tool_execution_start") {
-        incrementOmpToolFamily(toolCounts, event.toolName, event.args);
-      } else if (
-        event.type === "tool_execution_end" &&
-        event.isError === true
-      ) {
-        toolFailed += 1;
+        if (typeof event.toolCallId === "string") {
+          toolCalls.set(event.toolCallId, {
+            toolName: event.toolName,
+            args: event.args,
+          });
+        }
+      } else if (event.type === "tool_execution_end") {
+        const started =
+          typeof event.toolCallId === "string"
+            ? toolCalls.get(event.toolCallId)
+            : undefined;
+        if (typeof event.toolCallId === "string") {
+          toolCalls.delete(event.toolCallId);
+        }
+        if (event.isError === true) {
+          toolFailed += 1;
+        } else {
+          incrementOmpToolFamily(
+            toolCounts,
+            event.toolName ?? started?.toolName,
+            started?.args,
+          );
+        }
       } else if (
         event.type === "message_end" &&
         record(event.message) &&
@@ -213,6 +256,15 @@ export function createOmpComparisonParser() {
           status =
             event.message.stopReason === "error" ? "failed" : "completed";
         }
+        if (event.message.stopReason === "error") {
+          infrastructureSignal ||= trustedInfrastructureSignal(event.message);
+        }
+      } else if (
+        (event.type === "auto_retry_start" ||
+          event.type === "auto_retry_end") &&
+        record(event)
+      ) {
+        infrastructureSignal ||= trustedInfrastructureSignal(event);
       }
     },
     result() {
@@ -230,8 +282,25 @@ export function createOmpComparisonParser() {
 }
 
 export function infrastructureFailureText(value) {
-  return /(?:http(?: status)? 429|http(?: status)? 503|rate.?limit|too many requests|econn(?:refused|reset)|enotfound|eai_again|network is unreachable|temporary failure|cannot find module|browser executable.*(?:missing|not found)|browser.*unavailable|chrome.*(?:missing|not found)|failed to (?:attach|connect|launch).*browser|provider unavailable)/iu.test(
+  return /(?:http(?: status)? 429|http(?: status)? 503|rate.?limit|too many requests|econn(?:refused|reset)|enotfound|eai_again|network is unreachable|temporary failure|provider unavailable)/iu.test(
     String(value),
+  );
+}
+
+export function processInfrastructureFailureText(value) {
+  return (
+    infrastructureFailureText(value) ||
+    /(?:cannot find module|module not found|browser executable.*(?:missing|not found)|chrome.*(?:missing|not found)|failed to (?:attach|connect|launch).*browser)/iu.test(
+      String(value),
+    )
+  );
+}
+
+function trustedInfrastructureSignal(value) {
+  if (!record(value)) return false;
+  return ["error", "errorMessage", "reason", "message", "diagnostic"].some(
+    (key) =>
+      typeof value[key] === "string" && infrastructureFailureText(value[key]),
   );
 }
 

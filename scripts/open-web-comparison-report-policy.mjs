@@ -6,6 +6,12 @@ export const OPEN_WEB_COMPARISON_NOTES = [
   "Raw prompts, answers, quotes, URLs, reasoning, tool arguments, transcripts, and credentials are not retained.",
 ];
 
+export const OPEN_WEB_COMPARISON_NOTES_V2 = [
+  ...OPEN_WEB_COMPARISON_NOTES.slice(0, -1),
+  "OMP Browser attaches only to a benchmark-owned copied HeadlessChrome runtime with a fresh nonpersistent profile, loopback CDP, dedicated DNS-pinned proxy, and separate outer sandbox.",
+  OPEN_WEB_COMPARISON_NOTES.at(-1),
+];
+
 const DIAGNOSTICS = new Set([
   "answer_mismatch",
   "credential_leak_detected",

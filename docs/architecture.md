@@ -4720,12 +4720,17 @@ OMP does not receive the parent credential or ambient user configuration:
 installed OMP entry + package manifest
   -> APFS clone only the transitive package dependency closure
   -> verify cloned entry bytes, version, and bounded symlinks
+installed Playwright HeadlessChrome bundle
+  -> APFS clone one bounded 17-file / 201,473,747-byte runtime image
+  -> verify every copied file and executable hash
   -> create fresh HOME/profile/XDG/Bun roots
   -> run Bun + cloned entry under guarded macOS sandbox-exec
   -> allow outbound only to three held loopback ports
        authenticated public proxy -> production FixedIpHttpProxy
        model proxy -> fixed DeepSeek endpoint with parent-only credential
-       CDP blocker -> honest nested-Chromium infrastructure classification
+       CDP -> separately sandboxed copied HeadlessChrome
+            fresh profile + browser-only FixedIpHttpProxy
+            loopback listener ownership + process-group closure
   -> stream JSONL into bounded parsers
   -> discard raw stdout, reasoning, tool arguments, and response bodies
   -> scan all trial state for parent, child, and proxy credentials
@@ -4745,16 +4750,21 @@ Seed `20260805`, one trial, and a 180-second per-executor timeout produced the
 retained privacy-bounded report
 `benchmark-results/napier-open-web-executor-comparison-seed-20260805.json`
 with content hash
-`7467c6b048e21fedd40415d3704b0dcbd5067ba06250181f6df0426938c1236f`.
-Napier passed 3/3 default cases and 1/3 controlled cases; both controlled
-Search and URL/PDF cases completed the product path with zero failed tools but
-violated the exact final JSON oracle. OMP had two decisive default failures:
-Search violated the machine protocol and URL/PDF missed an expected answer
-and quote. Its default Browser outcome plus all three controlled outcomes were
-classified as infrastructure failures and excluded from paired wins. The
-aggregate therefore contains two decisive Napier-only passes and four
-excluded pairs, not six wins. No trial reported a secret leak or manual
-intervention.
+`2664d9e8b7eff4b7525864f7b52787504ca4595ed79b6d417048ee3784e79d49`.
+All six pairs were decisive. Napier passed three outcomes and OMP passed two;
+paired results were one both-passed, two Napier-only, one OMP-only, and two
+neither. OMP's controlled Search outcome was the OMP-only pass; both products
+passed controlled Browser. Napier also passed default URL/PDF and default
+Browser. OMP accumulated 41 failed tool attempts versus Napier's zero.
+
+Every OMP trial retained one schema-2 Browser isolation receipt with a fresh
+nonpersistent profile, no user-state import, loopback-only CDP, copied
+executable/runtime hashes, browser-only DNS-pinned proxy receipt, and verified
+process closure. Tool family counts now include successful completions rather
+than starts. Infrastructure classification trusts only structured provider/
+retry errors and process stderr; untrusted tool/page text cannot exclude a
+pair. No trial reported a secret leak or manual intervention. This one seed
+proves the isolated comparison path, not broad superiority or stable rates.
 
 ## TypeScript LSP Code Intelligence Flow
 

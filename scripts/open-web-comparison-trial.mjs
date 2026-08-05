@@ -8,13 +8,14 @@ import {
   sha256,
 } from "../packages/runtime/dist/index.js";
 
-import { startOpenWebComparisonBrowserBlocker } from "./open-web-comparison-chrome.mjs";
+import { startOpenWebComparisonIsolatedBrowser } from "./open-web-comparison-isolated-browser.mjs";
 import { evaluateOpenWebComparisonOutcome } from "./open-web-comparison-oracle.mjs";
 import { startOpenWebComparisonModelProxy } from "./open-web-comparison-model-proxy.mjs";
 import {
   createNapierComparisonParser,
   createOmpComparisonParser,
   infrastructureFailureText,
+  processInfrastructureFailureText,
   runOpenWebComparisonProcess,
 } from "./open-web-comparison-process.mjs";
 import { startOpenWebComparisonPublicProxy } from "./open-web-comparison-public-proxy.mjs";
@@ -96,7 +97,7 @@ async function runNapierTrial(input) {
     persistenceScan,
     infrastructureSignal:
       parsed.infrastructureSignal ||
-      infrastructureFailureText(execution.stderr),
+      processInfrastructureFailureText(execution.stderr),
     credentialBoundary: "environment_locator",
   });
 }
@@ -114,10 +115,20 @@ async function runOmpTrial(input) {
     childApiKey,
     timeoutMs: input.timeoutMs,
   });
-  const publicProxy = await startOpenWebComparisonPublicProxy();
-  const browserBlocker = await startOpenWebComparisonBrowserBlocker();
+  let publicProxy;
+  let browserProxy;
+  let browser;
   try {
-    await writeOmpConfig(roots.homeRoot, proxy.baseUrl, browserBlocker.cdpUrl);
+    publicProxy = await startOpenWebComparisonPublicProxy();
+    browserProxy = await startOpenWebComparisonPublicProxy({
+      requireAuthentication: false,
+    });
+    browser = await startOpenWebComparisonIsolatedBrowser({
+      trialRoot: roots.trialRoot,
+      proxyServer: browserProxy.server,
+      runtime: input.browserRuntime,
+    });
+    await writeOmpConfig(roots.homeRoot, proxy.baseUrl, browser.cdpUrl);
     const parser = createOmpComparisonParser();
     const ompArgs = ompArguments(input, roots);
     const modelProxyPort = Number(new URL(proxy.baseUrl).port);
@@ -130,7 +141,7 @@ async function runOmpTrial(input) {
       ompArgs,
       modelProxyPort,
       publicProxyPort: publicProxy.port,
-      cdpPort: browserBlocker.port,
+      cdpPort: browser.port,
     });
     const env = minimalOmpEnv(roots, childApiKey, input, publicProxy.proxyUrl);
     const execution = await runOpenWebComparisonProcess({
@@ -149,6 +160,14 @@ async function runOmpTrial(input) {
       onStdoutLine: (line) => parser.accept(line),
     });
     const parsed = parser.result();
+    const outcome = evaluateOpenWebComparisonOutcome({
+      benchmarkCase: input.benchmarkCase,
+      finalText: parsed.finalText,
+      toolCounts: parsed.toolCounts,
+    });
+    const publicNetwork = publicProxy.snapshot();
+    const browserNetwork = browserProxy.snapshot();
+    await browser.close();
     const persistenceScan = await scanOpenWebComparisonSecrets(
       [roots.trialRoot],
       [
@@ -159,19 +178,12 @@ async function runOmpTrial(input) {
         publicProxy.proxyUrl,
       ],
     );
-    const outcome = evaluateOpenWebComparisonOutcome({
-      benchmarkCase: input.benchmarkCase,
-      finalText: parsed.finalText,
-      toolCounts: parsed.toolCounts,
-    });
-    const publicNetwork = publicProxy.snapshot();
     const browserIsolation = {
-      status: browserBlocker.receipt.status,
-      diagnostic: browserBlocker.receipt.diagnostic,
-      requestCount: browserBlocker.receipt.requestCount,
+      ...structuredClone(browser.receipt),
+      network: browserNetwork,
     };
     await Promise.all([
-      browserBlocker.close(),
+      browserProxy.close(),
       publicProxy.close(),
       proxy.close(),
     ]);
@@ -183,7 +195,7 @@ async function runOmpTrial(input) {
       persistenceScan,
       infrastructureSignal:
         parsed.infrastructureSignal ||
-        infrastructureFailureText(execution.stderr),
+        processInfrastructureFailureText(execution.stderr),
       credentialBoundary: "loopback_proxy_dummy_child_key",
       modelProxy: structuredClone(proxy.receipt),
       publicNetwork,
@@ -195,8 +207,9 @@ async function runOmpTrial(input) {
     });
   } finally {
     await Promise.all([
-      browserBlocker.close().catch(() => undefined),
-      publicProxy.close().catch(() => undefined),
+      browser?.close().catch(() => undefined),
+      browserProxy?.close().catch(() => undefined),
+      publicProxy?.close().catch(() => undefined),
       proxy.close().catch(() => undefined),
     ]);
   }
@@ -206,7 +219,11 @@ export function createOpenWebComparisonTrialOutcome(input) {
   const securityLeak =
     input.execution.secretLeakDetected || input.persistenceScan.leakDetected;
   const browserIsolationFailed =
-    (input.browserIsolation?.requestCount ?? 0) > 0;
+    input.browserIsolation?.status === "blocked" ||
+    input.browserIsolation?.userStateImported === true ||
+    input.browserIsolation?.profilePersistent === true ||
+    input.browserIsolation?.loopbackOnly === false ||
+    input.browserIsolation?.processClosed === false;
   const infrastructureSignal = input.infrastructureSignal;
   const processFailure =
     input.execution.timedOut ||

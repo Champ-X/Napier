@@ -5,7 +5,8 @@ import { FixedIpHttpProxy } from "../packages/runtime/dist/index.js";
 
 const MAX_FRONT_CONNECTIONS = 64;
 
-export async function startOpenWebComparisonPublicProxy() {
+export async function startOpenWebComparisonPublicProxy(options = {}) {
+  const requireAuthentication = options.requireAuthentication !== false;
   const frontToken = randomBytes(32).toString("base64url");
   const frontAuthorization = `Basic ${Buffer.from(
     `comparison:${frontToken}`,
@@ -26,6 +27,7 @@ export async function startOpenWebComparisonPublicProxy() {
   const sockets = new Set();
   const server = createServer((incoming, response) => {
     if (
+      requireAuthentication &&
       !authorized(incoming.headers["proxy-authorization"], frontAuthorization)
     ) {
       response.writeHead(407, {
@@ -60,6 +62,7 @@ export async function startOpenWebComparisonPublicProxy() {
   server.on("connect", (incoming, clientSocket, head) => {
     clientSocket.on("error", () => clientSocket.destroy());
     if (
+      requireAuthentication &&
       !authorized(incoming.headers["proxy-authorization"], frontAuthorization)
     ) {
       clientSocket.end(
@@ -117,9 +120,15 @@ export async function startOpenWebComparisonPublicProxy() {
   }
   return {
     server: `http://127.0.0.1:${String(address.port)}`,
-    proxyUrl: `http://comparison:${encodeURIComponent(frontToken)}@127.0.0.1:${String(address.port)}`,
-    credential: frontToken,
-    proxyAuthorization: frontAuthorization,
+    proxyUrl: requireAuthentication
+      ? `http://comparison:${encodeURIComponent(frontToken)}@127.0.0.1:${String(address.port)}`
+      : `http://127.0.0.1:${String(address.port)}`,
+    ...(requireAuthentication
+      ? {
+          credential: frontToken,
+          proxyAuthorization: frontAuthorization,
+        }
+      : {}),
     port: address.port,
     snapshot: () => backend.snapshot(),
     async close() {

@@ -2044,9 +2044,12 @@ both products to Search, URL/PDF read, and Browser tools. Case, track, and
 trial indices counterbalance executor order. Every execution receives a fresh
 Workspace, HOME, profile, and state root. OMP runs from a byte-bound,
 dependency-closed copy of the installed v17.2.1 package under guarded macOS
-`sandbox-exec`; it can reach only an authenticated SSRF-safe public proxy, a
-bounded model proxy, and an isolated CDP blocker. The child receives a dummy
-DeepSeek key while the parent-only proxy injects the real credential.
+`sandbox-exec`. Its Browser attaches to a separately sandboxed, byte-bound copy
+of Playwright's HeadlessChrome with a fresh nonpersistent profile, loopback-only
+CDP, and a dedicated SSRF-safe proxy unavailable to the OMP process. OMP can
+otherwise reach only its authenticated SSRF-safe public proxy and bounded model
+proxy. The child receives a dummy DeepSeek key while the parent-only proxy
+injects the real credential.
 
 The report retains only hashes, counts, latency, usage, tool failures,
 isolation receipts, and outcome diagnostics. It omits prompts, answers,
@@ -2066,14 +2069,20 @@ superiority claim.
 The retained seed-`20260805`
 [comparison report](benchmark-results/napier-open-web-executor-comparison-seed-20260805.json)
 passed offline verification with content hash
-`7467c6b048e21fedd40415d3704b0dcbd5067ba06250181f6df0426938c1236f`.
-Napier passed all three default cases and one of three controlled cases, with
-zero failed tools or manual interventions. OMP had two decisive default
-outcome failures; its other four outcomes were infrastructure failures and
-are excluded from paired wins. The default Browser infrastructure result
-reflects the unavailable isolated OMP Browser path; controlled OMP also
-attempted Browser outside the Browser-only case. The report therefore records
-two decisive Napier-only passes and four excluded pairs, not six product wins.
+`2664d9e8b7eff4b7525864f7b52787504ca4595ed79b6d417048ee3784e79d49`.
+All six pairs were decisive. Napier passed three outcomes and OMP passed two;
+paired results were one both-passed, two Napier-only passes, one OMP-only pass,
+and two where neither passed. OMP's controlled Search outcome was the OMP-only
+pass, while both products passed controlled Browser. Napier also passed default
+URL/PDF and default Browser. OMP recorded 41 failed tool attempts versus
+Napier's zero.
+
+All six OMP trials retained `ready`, loopback-only, fresh/nonpersistent,
+process-closed Browser isolation with one copied executable/runtime hash, zero
+user-state imports, zero credential leaks, and no manual interventions. This
+one-seed sample proves the isolated OMP Browser comparison path and exposes
+task variance; it does not prove broad Napier superiority or stable Browser
+success rates.
 
 ### First-Task UX Outcome Benchmark
 
@@ -4144,7 +4153,7 @@ the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
 completed `web_fetch fetch -> research_source capture_fetch -> cite` against
 both public Node.js release HTML and the W3C dummy PDF while Tool events
 retained neither URL, body, Web Source ID, nor credential. The complete regular
-suite currently passes 2,380 tests.
+suite currently passes 2,389 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

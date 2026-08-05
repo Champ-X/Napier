@@ -20,7 +20,8 @@ import {
   openWebComparisonSummary,
   verifyOpenWebComparisonReport,
 } from "./open-web-comparison-report.mjs";
-import { OPEN_WEB_COMPARISON_NOTES } from "./open-web-comparison-report-policy.mjs";
+import { OPEN_WEB_COMPARISON_NOTES_V2 } from "./open-web-comparison-report-policy.mjs";
+import { createOpenWebComparisonBrowserRuntime } from "./open-web-comparison-browser-runtime.mjs";
 import { createOpenWebComparisonOmpRuntime } from "./open-web-comparison-omp-runtime.mjs";
 import {
   createOpenWebComparisonSuite,
@@ -58,6 +59,9 @@ export async function runOpenWebExecutorComparison(input) {
       temporaryRoot,
       installedEntry: ompEntry,
     });
+    const browserRuntime = await createOpenWebComparisonBrowserRuntime({
+      temporaryRoot,
+    });
     if (ompRuntime.packageVersion !== ompVersion) {
       throw new Error("OMP version and runtime image version differ");
     }
@@ -88,6 +92,7 @@ export async function runOpenWebExecutorComparison(input) {
               napierEntry,
               ompEntry,
               ompRuntime,
+              browserRuntime,
               bunExecutable,
             });
           }
@@ -113,7 +118,7 @@ export async function runOpenWebExecutorComparison(input) {
     const generatedAt = new Date().toISOString();
     const content = {
       type: "napier.open-web-executor-comparison",
-      schemaVersion: 1,
+      schemaVersion: 2,
       generatedAt,
       seed: input.seed,
       trialCount: input.trialCount,
@@ -129,11 +134,15 @@ export async function runOpenWebExecutorComparison(input) {
         ompExecutableSha256: await fileSha256(ompEntry),
         ompRuntimeExecutableSha256: ompRuntime.executableSha256,
         ompRuntimeVersion: ompRuntime.packageVersion,
+        browserRuntimeExecutableSha256: browserRuntime.executableSha256,
+        browserRuntimeSetSha256: browserRuntime.runtimeSetSha256,
+        browserRuntimeFileCount: browserRuntime.fileCount,
+        browserRuntimeBytes: browserRuntime.totalBytes,
         outerSandbox: "macos-sandbox-exec-guarded",
       },
       cases,
       summary: openWebComparisonSummary(cases),
-      notes: OPEN_WEB_COMPARISON_NOTES,
+      notes: OPEN_WEB_COMPARISON_NOTES_V2,
     };
     const report = createOpenWebComparisonReport(content);
     const outputPath = path.resolve(

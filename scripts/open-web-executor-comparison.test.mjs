@@ -3,6 +3,7 @@ import {
   access,
   mkdtemp,
   mkdir,
+  readFile,
   rm,
   symlink,
   writeFile,
@@ -15,10 +16,17 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { startOpenWebComparisonModelProxy } from "./open-web-comparison-model-proxy.mjs";
+import {
+  assertOpenWebComparisonBrowserRuntimeCurrent,
+  createOpenWebComparisonBrowserRuntime,
+} from "./open-web-comparison-browser-runtime.mjs";
+import { buildOpenWebComparisonBrowserSandboxProfile } from "./open-web-comparison-isolated-browser.mjs";
 import { evaluateOpenWebComparisonOutcome } from "./open-web-comparison-oracle.mjs";
 import {
   createNapierComparisonParser,
   createOmpComparisonParser,
+  infrastructureFailureText,
+  processInfrastructureFailureText,
   runOpenWebComparisonProcess,
 } from "./open-web-comparison-process.mjs";
 import { startOpenWebComparisonPublicProxy } from "./open-web-comparison-public-proxy.mjs";
@@ -28,7 +36,10 @@ import {
   openWebComparisonSummary,
   verifyOpenWebComparisonReport,
 } from "./open-web-comparison-report.mjs";
-import { OPEN_WEB_COMPARISON_NOTES } from "./open-web-comparison-report-policy.mjs";
+import {
+  OPEN_WEB_COMPARISON_NOTES,
+  OPEN_WEB_COMPARISON_NOTES_V2,
+} from "./open-web-comparison-report-policy.mjs";
 import { buildOmpComparisonSandboxProfile } from "./open-web-comparison-sandbox.mjs";
 import { scanOpenWebComparisonSecrets } from "./open-web-comparison-secret-scan.mjs";
 import {
@@ -165,7 +176,7 @@ describe("open-web executor comparison", () => {
         type: "event",
         event: {
           type: "tool.started",
-          payload: { toolName: "web_search" },
+          payload: { callId: "search_1", toolName: "web_search" },
         },
       }),
     );
@@ -174,7 +185,25 @@ describe("open-web executor comparison", () => {
         type: "event",
         event: {
           type: "tool.started",
-          payload: { toolName: "web_fetch" },
+          payload: { callId: "fetch_1", toolName: "web_fetch" },
+        },
+      }),
+    );
+    napier.accept(
+      JSON.stringify({
+        type: "event",
+        event: {
+          type: "tool.completed",
+          payload: { callId: "search_1", toolName: "web_search" },
+        },
+      }),
+    );
+    napier.accept(
+      JSON.stringify({
+        type: "event",
+        event: {
+          type: "tool.completed",
+          payload: { callId: "fetch_1", toolName: "web_fetch" },
         },
       }),
     );
@@ -222,6 +251,7 @@ describe("open-web executor comparison", () => {
     omp.accept(
       JSON.stringify({
         type: "tool_execution_start",
+        toolCallId: "read_1",
         toolName: "read",
         args: { path: "https://example.com/source" },
       }),
@@ -229,8 +259,44 @@ describe("open-web executor comparison", () => {
     omp.accept(
       JSON.stringify({
         type: "tool_execution_start",
+        toolCallId: "failed_browser_1",
+        toolName: "browser",
+        args: { action: "run" },
+      }),
+    );
+    omp.accept(
+      JSON.stringify({
+        type: "tool_execution_end",
+        toolCallId: "failed_browser_1",
+        toolName: "browser",
+        isError: true,
+        result: { content: [] },
+      }),
+    );
+    omp.accept(
+      JSON.stringify({
+        type: "tool_execution_start",
+        toolCallId: "browser_1",
         toolName: "browser",
         args: { action: "open" },
+      }),
+    );
+    omp.accept(
+      JSON.stringify({
+        type: "tool_execution_end",
+        toolCallId: "read_1",
+        toolName: "read",
+        isError: false,
+        result: { content: [] },
+      }),
+    );
+    omp.accept(
+      JSON.stringify({
+        type: "tool_execution_end",
+        toolCallId: "browser_1",
+        toolName: "browser",
+        isError: false,
+        result: { content: [] },
       }),
     );
     omp.accept(
@@ -258,6 +324,7 @@ describe("open-web executor comparison", () => {
         finalText,
         status: "completed",
         toolCounts: { search: 0, fetch: 1, browser: 1 },
+        toolFailed: 1,
         usage: {
           inputTokens: 20,
           outputTokens: 4,
@@ -267,6 +334,80 @@ describe("open-web executor comparison", () => {
         },
       }),
     );
+  });
+
+  it("does not classify product Browser errors as external infrastructure", () => {
+    expect(infrastructureFailureText("Browser is not connected")).toBe(false);
+    expect(
+      infrastructureFailureText("Failed to attach to browser tab worker"),
+    ).toBe(false);
+    expect(infrastructureFailureText("HTTP status 503")).toBe(true);
+    expect(infrastructureFailureText("provider unavailable")).toBe(true);
+    expect(processInfrastructureFailureText("Cannot find module x")).toBe(true);
+    expect(
+      processInfrastructureFailureText("failed to launch browser runtime"),
+    ).toBe(true);
+  });
+
+  it("trusts structured provider errors but not tool-result text", () => {
+    const omp = createOmpComparisonParser();
+    omp.accept(
+      JSON.stringify({
+        type: "tool_execution_start",
+        toolCallId: "browser_error_1",
+        toolName: "browser",
+        args: { action: "run" },
+      }),
+    );
+    omp.accept(
+      JSON.stringify({
+        type: "tool_execution_end",
+        toolCallId: "browser_error_1",
+        toolName: "browser",
+        isError: true,
+        result: {
+          content: [{ type: "text", text: "provider unavailable" }],
+        },
+      }),
+    );
+    expect(omp.result().infrastructureSignal).toBe(false);
+
+    omp.accept(
+      JSON.stringify({
+        type: "message_end",
+        message: {
+          role: "assistant",
+          content: [],
+          stopReason: "error",
+          errorMessage: "HTTP status 503",
+          usage: {
+            input: 0,
+            output: 0,
+            cacheRead: 0,
+            cacheWrite: 0,
+            cost: { total: 0 },
+          },
+        },
+      }),
+    );
+    expect(omp.result().infrastructureSignal).toBe(true);
+
+    const napier = createNapierComparisonParser();
+    napier.accept(
+      JSON.stringify({
+        type: "snapshot",
+        detail: {
+          runs: [{ status: "completed" }],
+          events: [
+            {
+              type: "tool.failed",
+              payload: { diagnostic: "provider unavailable" },
+            },
+          ],
+        },
+      }),
+    );
+    expect(napier.result().infrastructureSignal).toBe(false);
   });
 
   it("injects the parent credential only at the bounded model proxy", async () => {
@@ -393,6 +534,43 @@ describe("open-web executor comparison", () => {
     }
   });
 
+  it("keeps the Browser-only proxy unauthenticated but SSRF-safe", async () => {
+    const local = await new Promise((resolve, reject) => {
+      const server = createServer((_request, response) =>
+        response.end("private"),
+      );
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", () => resolve(server));
+    });
+    const address = local.address();
+    expect(address && typeof address !== "string").toBe(true);
+    const proxy = await startOpenWebComparisonPublicProxy({
+      requireAuthentication: false,
+    });
+    try {
+      const target = new URL(proxy.server);
+      const status = await new Promise((resolve, reject) => {
+        const request = httpRequest({
+          hostname: target.hostname,
+          port: target.port,
+          method: "GET",
+          path: `http://127.0.0.1:${String(address.port)}/private`,
+        });
+        request.once("response", (response) => {
+          response.resume();
+          response.once("end", () => resolve(response.statusCode));
+        });
+        request.once("error", reject);
+        request.end();
+      });
+      expect(status).toBe(502);
+      expect(proxy.snapshot().rejectedCount).toBeGreaterThan(0);
+    } finally {
+      await proxy.close();
+      await new Promise((resolve) => local.close(resolve));
+    }
+  });
+
   it("confines the OMP process to runtime and trial roots", () => {
     const trialRoot = "/private/tmp/comparison/trial";
     const profile = buildOmpComparisonSandboxProfile({
@@ -477,6 +655,110 @@ describe("open-web executor comparison", () => {
     await expect(
       access(path.join(runtime.root, "node_modules", "unrelated-package")),
     ).rejects.toThrow();
+  });
+
+  it("copies a bounded isolated Browser runtime image", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-browser-runtime-fixture-"),
+    );
+    roots.push(root);
+    const sourceRoot = path.join(root, "source");
+    const executable = path.join(sourceRoot, "chrome-headless-shell");
+    await mkdir(sourceRoot);
+    await writeFile(executable, "fixture-headless-shell", { mode: 0o700 });
+
+    const runtime = await createOpenWebComparisonBrowserRuntime({
+      temporaryRoot: root,
+      sourceExecutable: executable,
+    });
+
+    expect(runtime).toEqual(
+      expect.objectContaining({
+        fileCount: 1,
+        totalBytes: Buffer.byteLength("fixture-headless-shell"),
+        executableSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        runtimeSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    await expect(readFile(runtime.executablePath, "utf8")).resolves.toBe(
+      "fixture-headless-shell",
+    );
+  });
+
+  it("rejects an isolated Browser runtime symlink that escapes its image", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-browser-runtime-symlink-"),
+    );
+    roots.push(root);
+    const sourceRoot = path.join(root, "source");
+    const executable = path.join(sourceRoot, "chrome-headless-shell");
+    const outside = path.join(root, "outside.bin");
+    await mkdir(sourceRoot);
+    await writeFile(executable, "fixture-headless-shell", { mode: 0o700 });
+    await writeFile(outside, "outside");
+    await symlink(outside, path.join(sourceRoot, "escape"));
+
+    await expect(
+      createOpenWebComparisonBrowserRuntime({
+        temporaryRoot: root,
+        sourceExecutable: executable,
+      }),
+    ).rejects.toThrow("runtime symlink escapes its image");
+  });
+
+  it("rejects copied Browser runtime drift outside the executable", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-browser-runtime-drift-"),
+    );
+    roots.push(root);
+    const sourceRoot = path.join(root, "source");
+    const executable = path.join(sourceRoot, "chrome-headless-shell");
+    await mkdir(sourceRoot);
+    await writeFile(executable, "fixture-headless-shell", { mode: 0o700 });
+    await writeFile(path.join(sourceRoot, "runtime.pak"), "before");
+    const runtime = await createOpenWebComparisonBrowserRuntime({
+      temporaryRoot: root,
+      sourceExecutable: executable,
+    });
+
+    await writeFile(path.join(runtime.root, "runtime.pak"), "after");
+
+    await expect(
+      assertOpenWebComparisonBrowserRuntimeCurrent(runtime),
+    ).rejects.toThrow("runtime changed");
+  });
+
+  it("confines the isolated Browser to copied runtime, fresh state, proxy, and loopback CDP", () => {
+    const trialRoot = "/private/tmp/comparison/trial";
+    const browserRoot = `${trialRoot}/browser`;
+    const executablePath =
+      "/private/tmp/comparison/browser-runtime/chrome-headless-shell";
+    const profile = buildOpenWebComparisonBrowserSandboxProfile({
+      comparisonRoot: "/private/tmp/comparison",
+      trialRoot,
+      browserRoot,
+      browserRuntimeRoot: "/private/tmp/comparison/browser-runtime",
+      executablePath,
+      proxyPort: 41004,
+    });
+
+    expect(profile).toContain(
+      `(deny file-read-data (subpath ${JSON.stringify(
+        path.resolve(process.env.HOME),
+      )}))`,
+    );
+    expect(profile).toContain(`(subpath ${JSON.stringify(browserRoot)})`);
+    expect(profile).toContain(
+      `(subpath ${JSON.stringify("/private/tmp/comparison/browser-runtime")})`,
+    );
+    expect(profile).toContain(
+      `(deny process-exec (require-not (literal ${JSON.stringify(
+        executablePath,
+      )})))`,
+    );
+    expect(profile).toContain('(remote ip "localhost:41004")');
+    expect(profile).toContain('(local ip "localhost:*")');
+    expect(profile).not.toContain("(allow network*)");
   });
 
   it("retains OMP browser isolation evidence in the assembled outcome", () => {
@@ -614,6 +896,62 @@ describe("open-web executor comparison", () => {
     );
   });
 
+  it("accepts an outcome when the fresh isolated Browser closed cleanly", () => {
+    const assembled = createOpenWebComparisonTrialOutcome({
+      executor: "omp",
+      parsed: {
+        status: "completed",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          costUsd: 0.002,
+        },
+        toolCounts: { search: 0, fetch: 0, browser: 1 },
+        toolFailed: 0,
+        frameCount: 10,
+      },
+      execution: {
+        code: 0,
+        timedOut: false,
+        outputLimitExceeded: false,
+        parseFailed: false,
+        secretLeakDetected: false,
+        durationMs: 120,
+        firstOutputMs: 10,
+        stdoutBytes: 1_000,
+        stderrBytes: 0,
+        stderr: "",
+      },
+      outcome: {
+        passed: true,
+        diagnostics: [],
+        evidence: {
+          finalOutputSha256: "b".repeat(64),
+          finalOutputBytes: 100,
+          factCount: 1,
+          factSetSha256: "c".repeat(64),
+          answerSetSha256: "d".repeat(64),
+          sourceUrlSetSha256: "e".repeat(64),
+          quoteSetSha256: "f".repeat(64),
+        },
+      },
+      persistenceScan: { leakDetected: false, bytes: 1_024, fileCount: 4 },
+      infrastructureSignal: false,
+      credentialBoundary: "loopback_proxy_dummy_child_key",
+      browserIsolation: readyBrowserIsolation(),
+    });
+
+    expect(assembled).toEqual(
+      expect.objectContaining({
+        status: "passed",
+        outcomePassed: true,
+        failureClass: "none",
+      }),
+    );
+  });
+
   it("creates a counterbalanced self-verifying privacy-safe report", () => {
     const suite = createOpenWebComparisonSuite(20260805);
     const cases = suite.cases.map((benchmarkCase, caseIndex) => ({
@@ -692,6 +1030,54 @@ describe("open-web executor comparison", () => {
       valid: false,
       diagnostics: ["report_shape_invalid"],
     });
+  });
+
+  it("verifies schema-2 reports with ready isolated Browser evidence", () => {
+    const suite = createOpenWebComparisonSuite(20260805);
+    const cases = suite.cases.map((benchmarkCase, caseIndex) => ({
+      caseId: benchmarkCase.id,
+      complexity: benchmarkCase.complexity,
+      taskFamily: benchmarkCase.taskFamily,
+      promptSha256: benchmarkCase.promptSha256,
+      oracleSha256: benchmarkCase.oracleSha256,
+      caseSha256: benchmarkCase.caseSha256,
+      tracks: ["default", "controlled"].map((track, trackIndex) => ({
+        track,
+        trials: [
+          pair(
+            1,
+            (1 + trackIndex + caseIndex) % 2 === 0
+              ? ["omp", "napier"]
+              : ["napier", "omp"],
+            outcome("napier", "passed"),
+            outcomeV2("omp", "passed"),
+          ),
+        ],
+      })),
+    }));
+    const content = reportContentV2(suite, cases);
+    content.summary = openWebComparisonSummary(cases);
+    const report = createOpenWebComparisonReport(content);
+
+    expect(verifyOpenWebComparisonReport(report)).toEqual({
+      valid: true,
+      diagnostics: [],
+      reportSha256: report.contentSha256,
+    });
+    expect(report.summary.overall.excludedPairCount).toBe(0);
+    expect(report.cases[0].tracks[0].trials[0].omp.browserIsolation).toEqual(
+      readyBrowserIsolation(),
+    );
+    const substituted = structuredClone(report);
+    substituted.cases[0].tracks[0].trials[0].omp.browserIsolation.browserRuntimeSetSha256 =
+      "6".repeat(64);
+    substituted.contentSha256 = hashWithoutSelf(substituted);
+    expect(verifyOpenWebComparisonReport(substituted)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["report_browser_binding_invalid"],
+      }),
+    );
   });
 
   it("excludes infrastructure and inconclusive outcomes from paired wins", () => {
@@ -864,6 +1250,21 @@ function reportContent(suite, cases) {
   };
 }
 
+function reportContentV2(suite, cases) {
+  return {
+    ...reportContent(suite, cases),
+    schemaVersion: 2,
+    environment: {
+      ...reportContent(suite, cases).environment,
+      browserRuntimeExecutableSha256: "7".repeat(64),
+      browserRuntimeSetSha256: "8".repeat(64),
+      browserRuntimeFileCount: 17,
+      browserRuntimeBytes: 201_473_747,
+    },
+    notes: OPEN_WEB_COMPARISON_NOTES_V2,
+  };
+}
+
 function pair(trial, order, napier, omp) {
   return { trial, order, napier, omp };
 }
@@ -945,6 +1346,36 @@ function outcome(executor, status) {
           },
         }
       : {}),
+  };
+}
+
+function outcomeV2(executor, status) {
+  const value = outcome(executor, status);
+  if (executor === "omp") value.browserIsolation = readyBrowserIsolation();
+  return value;
+}
+
+function readyBrowserIsolation() {
+  return {
+    status: "ready",
+    diagnostic: "fresh_profile_loopback_cdp",
+    profilePersistent: false,
+    userStateImported: false,
+    loopbackOnly: true,
+    processClosed: true,
+    launchDurationMs: 2_000,
+    browserExecutableSha256: "7".repeat(64),
+    browserRuntimeSetSha256: "8".repeat(64),
+    sandboxProfileSha256: "9".repeat(64),
+    cdpEndpointSha256: "a".repeat(64),
+    network: {
+      requestCount: 3,
+      connectCount: 2,
+      rejectedCount: 0,
+      transferredBytes: 1_024,
+      destinationCount: 2,
+      destinationsSha256: "3".repeat(64),
+    },
   };
 }
 
