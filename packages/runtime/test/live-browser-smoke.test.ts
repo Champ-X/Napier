@@ -4,9 +4,11 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import { BrowserOutputArtifactRegistrar } from "../src/browser-output-artifact.js";
 import { RunBrowserSessionManager } from "../src/browser-session.js";
 import { sha256 } from "../src/ed25519.js";
 import { RunResearchSourceManager } from "../src/research-sources.js";
+import { LocalStore } from "../src/store.js";
 
 const describeLive =
   process.env["NAPIER_LIVE_BROWSER_SMOKE"] === "1" ? describe : describe.skip;
@@ -363,6 +365,56 @@ describeLive("live controlled Browser Session smoke", () => {
       const bytes = await readFile(
         path.join(workspaceRoot, "browser-live.png"),
       );
+      const store = new LocalStore({
+        workspaceRoot,
+        dataRoot: path.join(workspaceRoot, ".state"),
+      });
+      await store.initialize();
+      const agent = store.listAgents()[0]!;
+      const thread = await store.createThread({
+        title: "Live Browser Artifact",
+        agentId: agent.id,
+      });
+      const run = await store.createRun({
+        threadId: thread.id,
+        agentId: agent.id,
+        source: "user",
+      });
+      let plan = await store.createPlan(thread.id, {
+        objective: "Register the saved Browser viewport.",
+        steps: [
+          {
+            id: "save",
+            title: "Save Browser viewport",
+            description: "Save the verified Browser viewport.",
+            verification: "The declared file Artifact is produced.",
+          },
+        ],
+        artifacts: [
+          {
+            id: "browser-live",
+            path: "browser-live.png",
+            kind: "file",
+            description: "The saved Browser viewport.",
+          },
+        ],
+      });
+      plan = await store.transitionPlanStep(plan.id, "save", {
+        action: "start",
+        runId: run.id,
+      });
+      const registration = await new BrowserOutputArtifactRegistrar(
+        store,
+      ).register(
+        { threadId: thread.id, runId: run.id },
+        {
+          action: "save_screenshot",
+          path: "browser-live.png",
+          pathSha256: saved.details.file!.pathSha256,
+          fileSha256: saved.details.file!.fileSha256,
+          fileBytes: saved.details.file!.fileBytes,
+        },
+      );
 
       expect(saved.details).toEqual(
         expect.objectContaining({
@@ -377,6 +429,16 @@ describeLive("live controlled Browser Session smoke", () => {
       );
       expect(sha256(bytes)).toBe(live.receipt.imageSha256);
       expect(bytes.byteLength).toBe(live.image.byteLength);
+      expect(registration.status).toBe("registered");
+      expect(store.getPlan(plan.id).artifacts[0]).toEqual(
+        expect.objectContaining({
+          status: "verified",
+          sourceRunId: run.id,
+          sha256: live.receipt.imageSha256,
+          sizeBytes: bytes.byteLength,
+        }),
+      );
+      store.close();
     } catch (error) {
       if (nestedSandboxDenied(error)) {
         skip(

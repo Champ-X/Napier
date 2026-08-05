@@ -19,13 +19,21 @@ import {
   isBrowserVisualClickRequest,
   validateBrowserVisualClickBinding,
 } from "./browser-takeover-visual.js";
+import { BrowserOutputArtifactRegistrar } from "./browser-output-artifact.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { nowIso } from "./ids.js";
 import type { LocalStore } from "./store.js";
 
 type BrowserTakeoverStore = Pick<
   LocalStore,
-  "appendEvent" | "getThread" | "listRuns"
+  | "appendEvent"
+  | "getPlan"
+  | "getThread"
+  | "listEvents"
+  | "listPlans"
+  | "listRuns"
+  | "updatePlanArtifact"
+  | "workspaceRoot"
 >;
 
 type BrowserTakeoverCapabilities = Pick<
@@ -41,12 +49,15 @@ export class BrowserTakeoverService {
     string,
     BrowserTakeoverSnapshotBinding
   >();
+  private readonly outputArtifacts: BrowserOutputArtifactRegistrar;
 
   constructor(
     private readonly store: BrowserTakeoverStore,
     private readonly capabilities: BrowserTakeoverCapabilities,
     private readonly pauses: BrowserSessionPauseManager,
-  ) {}
+  ) {
+    this.outputArtifacts = new BrowserOutputArtifactRegistrar(store);
+  }
 
   clear(threadId: string, runId: string): void {
     this.snapshots.delete(ownerKey({ threadId, runId }));
@@ -201,6 +212,21 @@ export class BrowserTakeoverService {
           },
         );
         await this.append(completed);
+        if (
+          (request.action === "download" ||
+            request.action === "save_screenshot") &&
+          result.details.file
+        ) {
+          await this.outputArtifacts
+            .register(owner, {
+              action: request.action,
+              path: request.path,
+              pathSha256: result.details.file.pathSha256,
+              fileSha256: result.details.file.fileSha256,
+              fileBytes: result.details.file.fileBytes,
+            })
+            .catch(() => undefined);
+        }
         return completed;
       },
     );

@@ -666,6 +666,15 @@ explicit new/switch/close plus click, masked type, select, scroll,
 back/forward, bounded wait, ref-bound download, and verified viewport capture
 to a new workspace file. Requests bind fresh refs plus the exact pause,
 Session, operation, active-tab, tab-count, tab-set, and snapshot evidence.
+After a verified download or viewport save, Napier also registers and verifies
+the file as a Plan Artifact only when one active Plan step is already running
+in that exact Run and exactly one expected file artifact declares the identical
+workspace path. It writes the normal `plan.artifact.produced` and
+`plan.artifact.verified` evidence after re-reading the actual bytes; a one-time
+event commit gap is repaired idempotently. No Plan, no Run-bound step, path
+mismatch, non-file artifact, or non-expected state remains a successful
+workspace output but skips automatic registration. Napier never chooses an
+arbitrary Plan or creates an undeclared artifact.
 For visual-only challenges or keyboard-driven login steps, Web also renders
 the exact verified 1280×900 Live PNG as a clickable viewport and exposes a
 fixed navigation-key allowlist. A visual click binds the displayed image
@@ -4044,7 +4053,7 @@ the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
 completed `web_fetch fetch -> research_source capture_fetch -> cite` against
 both public Node.js release HTML and the W3C dummy PDF while Tool events
 retained neither URL, body, Web Source ID, nor credential. The complete regular
-suite currently passes 2,342 tests.
+suite currently passes 2,345 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

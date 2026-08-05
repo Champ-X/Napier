@@ -736,6 +736,25 @@ URLs, titles, workspace paths, and output bytes remain live-only. Web clears
 private inputs after every attempt. Returning control resumes the exact pause
 state and releases the Agent's next Browser action on the same Run and Session.
 
+`browser-output-artifact.ts` bridges only verified Browser file outputs into
+the existing Plan authority. Registration is admitted when the Thread has
+exactly one active Plan with a running step already bound to the current user
+Run and exactly one `expected` file artifact whose normalized path equals the
+saved output path. The registrar rechecks path hash, file hash, and byte count,
+uses the canonical workspace Artifact verifier to reread the file, transitions
+`expected -> produced -> verified`, and appends the standard
+`plan.artifact.produced/verified` events. It does not create Plans or artifacts,
+select an unbound Plan, register directories/URLs/other kinds, or match by
+basename/hash alone. Missing authority or mismatched declarations are no-ops:
+the Browser file remains successfully saved.
+
+Manifest mutation and its standard event are two durable operations. The
+registrar is idempotent across `expected`, same-Run `produced`, and same-Run
+`verified` states; after a one-time event append failure it rereads Plan state,
+repairs the missing event, completes verification, and leaves portable Replay
+valid. If registration still cannot settle, Browser output success is retained
+and registration fails closed without rolling back or deleting user bytes.
+
 Visual and keyboard handoff are takeover-only internal actions rather than
 Agent Browser schema actions. `BrowserLiveViewReceipt` binds the PNG hash,
 1280×900 viewport, Session operation, selected tab, URL/origin/title hashes,
@@ -4552,7 +4571,7 @@ DeepSeek trial passed with one Search, two Fetches, three Browser actions,
 three captures, three citations, valid Replay, and zero diagnostics in 39.646
 seconds. This proves one real default-entry execution, not repeated
 reliability, automatic fallback, broad open-web quality, or cross-model
-superiority. The complete repository gate passes 2,342 regular tests.
+superiority. The complete repository gate passes 2,345 regular tests.
 
 The separate schema-2 open-web Security case fetches one public JSON response
 containing a direct prompt-injection canary through the same default

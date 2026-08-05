@@ -61,9 +61,11 @@ Audit date: 2026-08-05
   actionable states into that same isolated-profile takeover. Pause-bound Web
   takeover can also persist the exact verified Live PNG or stream a fresh-ref
   download into a new confined workspace file with hash/byte evidence.
-  Existing-user Chrome relay, autonomous CAPTCHA solving or login submission,
-  automatic Plan Artifact registration/richer file preview, and restart-safe
-  login state remain P0.
+  Exact declared file outputs now auto-register and byte-verify as Plan
+  Artifacts only when one active Plan step is already bound to that Run; all
+  ambiguous/no-Plan/path-mismatch cases remain no-op. Existing-user Chrome
+  relay, autonomous CAPTCHA solving or login submission, richer file preview,
+  and restart-safe login state remain P0.
 - The formal `napier doctor` CLI now diagnoses canonical workspace/runtime,
   optional model credential presence, keyless Search, HTML Fetch, sandboxed
   Chrome, and the OS process Sandbox without creating `.napier` state.
@@ -160,9 +162,9 @@ Observed result:
   390 px mobile checks had no horizontal overflow or browser console/page
   errors; the audited production Web main chunk remained 136.70 KiB under
   150 KiB;
-- the complete repository gate passes 2,342 regular tests: Root 126, CLI 205,
-  Server 197, Web 528, Contracts 3, Runtime 1,255, and SDK 28. Architecture
-  audits 1,012 production source files and 494 test files with zero cycles;
+- the complete repository gate passes 2,345 regular tests: Root 126, CLI 205,
+  Server 197, Web 528, Contracts 3, Runtime 1,258, and SDK 28. Architecture
+  audits 1,013 production source files and 495 test files with zero cycles;
   current performance, 265/265 OpenAPI compatibility operations, 82-file Web
   distribution evidence, and the 121-artifact release receipt all pass.
 
@@ -10690,5 +10692,58 @@ Observed result:
   tests skipped by default: Root 126, CLI 205, Server 197, Web 528, Contracts
   3, Runtime 1,255, and SDK 28. Architecture audits 1,012 production source
   files and 494 test files with zero cycles; current performance, 265/265
+  OpenAPI compatibility, the 82-file Web distribution, and the 121-artifact
+  release receipt all pass.
+
+## Completed Slice: Browser Output Plan Artifact Registration
+
+User scenario: after Web takeover saves a screenshot or download to a new
+workspace file, Napier automatically records and byte-verifies it when the
+current Run is already executing the Plan step that declared that exact file.
+
+Acceptance and threat boundary:
+
+- preserve the existing verified Browser output path: new-file-only workspace
+  confinement, parent/symlink checks, byte limits, hash/size evidence, and
+  pause/snapshot/Session binding remain authoritative;
+- admit automatic registration only when exactly one active Plan has a
+  `running` step whose `runId` is the current active user Run;
+- require exactly one declared `file` artifact whose normalized full path is
+  byte-equal to the Browser output path and whose status is `expected`;
+- reject arbitrary active Plans, unbound/other Runs, directories, URLs,
+  `other`, basename/hash-only matches, path mismatches, and already settled or
+  foreign-owned artifacts;
+- reread the actual workspace bytes through the canonical Artifact verifier and
+  require its SHA-256/size to equal Browser output evidence before registration;
+- transition only through the established
+  `expected -> produced -> verified` Plan lifecycle and append only standard
+  `plan.artifact.produced/verified` events; do not add a second artifact status
+  protocol or change Browser receipt schema;
+- repair a one-time standard event commit gap idempotently by rereading Plan
+  state and completing verification. Portable Replay must remain valid;
+- keep Browser output success independent from ancillary registration failure.
+  Never delete or roll back a successfully saved user file because no Plan
+  match exists or Plan registration fails.
+
+Observed result:
+
+- focused Runtime coverage passes 25 cases across exact registration, no-Plan
+  and path-mismatch skips, one-time produced-event commit-gap repair, Browser
+  takeover integration, existing Browser privacy/evidence, and portable Replay;
+- screenshot integration registers the declared path as `verified`, binds the
+  current Run, exact image SHA-256 and byte count, and emits one produced plus
+  one verified standard Plan event;
+- missing Run-bound Plan and mismatched declared path leave the file/Plan
+  unchanged and return skipped registration without inventing a Plan;
+- real Chrome Dogfood passed all five live Browser smokes in 19.74 seconds.
+  The viewport PNG bytes matched Live evidence exactly and the declared Plan
+  Artifact became verified under the same Run;
+- architecture audits 1,013 production source files and 495 test files with
+  zero cycles. Registration lives in a bounded leaf and no Store, Contracts
+  root, Agent Runtime, Server app, or Web main-entry budget increased;
+- the complete repository gate passes 2,345 regular tests with 46 opt-in live
+  tests skipped by default: Root 126, CLI 205, Server 197, Web 528, Contracts
+  3, Runtime 1,258, and SDK 28. Architecture audits 1,013 production source
+  files and 495 test files with zero cycles; current performance, 265/265
   OpenAPI compatibility, the 82-file Web distribution, and the 121-artifact
   release receipt all pass.

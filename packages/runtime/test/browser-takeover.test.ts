@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -417,6 +417,34 @@ describe("Browser takeover", () => {
     const snapshotText = "- heading [ref=e1]";
     const imageSha256 = sha256("live pixels");
     const outputPath = "artifacts/private-browser.png";
+    let plan = await fixture.store.createPlan(fixture.threadId, {
+      objective: "Save a Browser screenshot.",
+      steps: [
+        {
+          id: "capture",
+          title: "Capture screenshot",
+          description: "Save the Browser screenshot.",
+          verification: "The declared Artifact is produced.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "browser-screenshot",
+          path: outputPath,
+          kind: "file",
+          description: "The Browser screenshot.",
+        },
+      ],
+    });
+    plan = await fixture.store.transitionPlanStep(plan.id, "capture", {
+      action: "start",
+      runId: fixture.runId,
+    });
+    await mkdir(path.join(fixture.workspaceRoot, "artifacts"));
+    await writeFile(
+      path.join(fixture.workspaceRoot, outputPath),
+      "live pixels",
+    );
     const service = new BrowserSessionControlService(
       fixture.store,
       {
@@ -473,9 +501,26 @@ describe("Browser takeover", () => {
         sourceLiveImageSha256: imageSha256,
       }),
     );
+    const events = await fixture.store.listEvents(fixture.threadId);
     expect(
-      JSON.stringify(await fixture.store.listEvents(fixture.threadId)),
+      JSON.stringify(
+        events.filter((event) => event.type.startsWith("browser.takeover.")),
+      ),
     ).not.toContain(outputPath);
+    expect(fixture.store.getPlan(plan.id).artifacts[0]).toEqual(
+      expect.objectContaining({
+        id: "browser-screenshot",
+        status: "verified",
+        sourceRunId: fixture.runId,
+        sha256: imageSha256,
+        sizeBytes: 11,
+      }),
+    );
+    expect(
+      events
+        .filter((event) => event.type.startsWith("plan.artifact."))
+        .map((event) => event.type),
+    ).toEqual(["plan.artifact.produced", "plan.artifact.verified"]);
     await fixture.store.close();
   });
 
@@ -683,5 +728,5 @@ async function createFixture() {
     source: "user",
     model: { provider: "faux-browser-takeover", id: "faux-1" },
   });
-  return { store, threadId: thread.id, runId: run.id };
+  return { store, workspaceRoot, threadId: thread.id, runId: run.id };
 }
