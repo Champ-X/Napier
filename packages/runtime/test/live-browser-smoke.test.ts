@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { BrowserOutputArtifactRegistrar } from "../src/browser-output-artifact.js";
+import { streamBrowserLiveView } from "../src/browser-live-view-stream.js";
 import { RunBrowserSessionManager } from "../src/browser-session.js";
 import { sha256 } from "../src/ed25519.js";
 import { RunResearchSourceManager } from "../src/research-sources.js";
@@ -357,6 +358,23 @@ describeLive("live controlled Browser Session smoke", () => {
         url: "https://example.com/",
       });
       const live = await manager.captureLiveView(owner);
+      const streamEvents = [];
+      for await (const event of streamBrowserLiveView(
+        {
+          capture: (_threadId: string, _runId: string, signal?: AbortSignal) =>
+            manager.captureLiveView(owner, signal),
+        } as never,
+        owner.threadId,
+        owner.runId,
+        undefined,
+        {
+          maxSamples: 3,
+          intervalMs: 500,
+          sleep: async () => undefined,
+        },
+      )) {
+        streamEvents.push(event);
+      }
       const saved = await manager.executeTakeoverAction(owner, {
         action: "save_screenshot",
         path: "browser-live.png",
@@ -429,6 +447,26 @@ describeLive("live controlled Browser Session smoke", () => {
       );
       expect(sha256(bytes)).toBe(live.receipt.imageSha256);
       expect(bytes.byteLength).toBe(live.image.byteLength);
+      expect(streamEvents).toHaveLength(2);
+      expect(streamEvents[0]).toEqual(
+        expect.objectContaining({
+          type: "browser_live_view",
+          sequence: 1,
+          receipt: expect.objectContaining({
+            sessionOperation: 1,
+            imageSha256: live.receipt.imageSha256,
+          }),
+        }),
+      );
+      expect(streamEvents[1]).toEqual(
+        expect.objectContaining({
+          type: "browser_live_view_end",
+          sampleCount: 3,
+          frameCount: 1,
+          duplicateCount: 2,
+          reason: "sample_limit",
+        }),
+      );
       expect(registration.status).toBe("registered");
       expect(store.getPlan(plan.id).artifacts[0]).toEqual(
         expect.objectContaining({

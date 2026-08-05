@@ -606,11 +606,21 @@ fails closed. Pending and terminal confirmation events remain durable, while
 the one-use resolver is intentionally non-resumable across process restart.
 
 While an active user Run owns a Browser Session, Web also shows **Browser
-Live**. The panel polls a network-closed viewport PNG every 1.5 seconds through
-a `no-store`, byte-hash-verified endpoint. Live captures reuse the current
-Session and operation number without consuming the Agent's 64-operation budget,
-opening network access, appending Ledger events, creating Artifacts, or storing
-page pixels/text in Napier state.
+Live**. The panel consumes finite `no-store` SSE segments of up to 32 samples
+at one-second cadence. Each emitted frame contains canonical base64 PNG bytes,
+the existing hash-only Live receipt, and a frame self-hash; unchanged visual
+and takeover identity is suppressed. Web verifies response identity, event
+sequence, schema, base64 canonicality, PNG dimensions, image/receipt/frame
+hashes, aggregate bytes, and terminal counters before replacing the object
+URL. A segment reconnects only after its normal sample limit; the existing
+one-shot PNG endpoint remains the explicit fallback/manual refresh path.
+
+Live captures reuse the current Session and operation number without consuming
+the Agent's 64-operation budget, opening network access, appending Ledger
+events, creating Artifacts, or storing page pixels/text in Napier state. The
+server admits at most one stream per Run and eight globally, caps emitted image
+bytes at 24 MiB per segment, and returns only fixed terminal reasons for
+Session end, capture failure, or byte exhaustion.
 
 Browser Live also renders one evidence-derived activity strip. It matches
 Browser `tool.started` and terminal events by call ID, orders them against
@@ -4067,7 +4077,7 @@ the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
 completed `web_fetch fetch -> research_source capture_fetch -> cite` against
 both public Node.js release HTML and the W3C dummy PDF while Tool events
 retained neither URL, body, Web Source ID, nor credential. The complete regular
-suite currently passes 2,354 tests.
+suite currently passes 2,364 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

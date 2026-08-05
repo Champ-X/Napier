@@ -7,6 +7,50 @@ import { describe, expect, it, vi } from "vitest";
 import { registerBrowserLiveViewHttp } from "../src/browser-live-view-http.js";
 
 describe("Browser Live view HTTP", () => {
+  it("streams finite deduplicated hash-bound frames without buffering", async () => {
+    const firstImage = Buffer.from("PNG_STREAM_FIRST");
+    const secondImage = Buffer.from("PNG_STREAM_SECOND");
+    const first = { image: firstImage, receipt: liveReceipt(firstImage) };
+    const second = {
+      image: secondImage,
+      receipt: liveReceipt(secondImage, {
+        capturedAt: "2026-08-04T00:00:01.000Z",
+      }),
+    };
+    const capture = vi
+      .fn()
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce(second);
+    const app = new Hono();
+    registerBrowserLiveViewHttp(app, { capture } as never, {
+      maxSamples: 3,
+      intervalMs: 500,
+      sleep: async () => undefined,
+    });
+
+    const response = await app.request(
+      `/api/threads/${first.receipt.threadId}/runs/${first.receipt.runId}/browser-live-view/stream`,
+    );
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("x-accel-buffering")).toBe("no");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(response.headers.get("x-napier-browser-live-mode")).toBe(
+      "bounded-stream",
+    );
+    expect(body.match(/event: browser_live_view\n/gu)).toHaveLength(2);
+    expect(body).toContain("event: browser_live_view_end");
+    expect(body).toContain('"frameCount":2');
+    expect(body).toContain('"duplicateCount":1');
+    expect(body).toContain('"reason":"sample_limit"');
+    expect(body).not.toContain("PRIVATE_PAGE_CONTENT");
+    expect(capture).toHaveBeenCalledTimes(3);
+  });
+
   it("returns no-store hash-bound PNG bytes without page content headers", async () => {
     const image = Buffer.from("PNG_LIVE_BYTES");
     const receipt = liveReceipt(image);
@@ -79,7 +123,10 @@ describe("Browser Live view HTTP", () => {
   });
 });
 
-function liveReceipt(image: Buffer): BrowserLiveViewReceipt {
+function liveReceipt(
+  image: Buffer,
+  overrides: Partial<BrowserLiveViewReceipt> = {},
+): BrowserLiveViewReceipt {
   const content = {
     kind: "napier.browser-live-view" as const,
     schemaVersion: 4 as const,
@@ -95,7 +142,7 @@ function liveReceipt(image: Buffer): BrowserLiveViewReceipt {
     mimeType: "image/png" as const,
     viewportWidth: 1_280,
     viewportHeight: 900,
-    capturedAt: "2026-08-04T00:00:00.000Z",
+    capturedAt: overrides.capturedAt ?? "2026-08-04T00:00:00.000Z",
     currentUrlSha256: "b".repeat(64),
     currentOriginSha256: "c".repeat(64),
     titleSha256: "d".repeat(64),
@@ -116,6 +163,7 @@ function liveReceipt(image: Buffer): BrowserLiveViewReceipt {
     contentSha256: createHash("sha256")
       .update(canonicalJson(content))
       .digest("hex"),
+    ...overrides,
   };
 }
 

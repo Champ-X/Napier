@@ -44,3 +44,33 @@ export interface BrowserLiveViewReceipt {
   pageDiagnosis: BrowserPageDiagnosisEvidence;
   contentSha256: string;
 }
+
+export const BROWSER_LIVE_STREAM_MAX_SAMPLES = 32;
+export const BROWSER_LIVE_STREAM_INTERVAL_MS = 1_000;
+export const BROWSER_LIVE_STREAM_MAX_IMAGE_BYTES = 24 * 1024 * 1024;
+
+export interface BrowserLiveViewStreamFrame {
+  type: "browser_live_view";
+  schemaVersion: 1;
+  sequence: number;
+  imageBase64: string;
+  receipt: BrowserLiveViewReceipt;
+  contentSha256: string;
+}
+
+export type BrowserLiveViewStreamTerminalReason =
+  | "sample_limit"
+  | "session_ended"
+  | "image_byte_limit"
+  | "capture_failed";
+
+export interface BrowserLiveViewStreamTerminal {
+  type: "browser_live_view_end";
+  schemaVersion: 1;
+  sampleCount: number;
+  frameCount: number;
+  duplicateCount: number;
+  emittedImageBytes: number;
+  reason: BrowserLiveViewStreamTerminalReason;
+  contentSha256: string;
+}

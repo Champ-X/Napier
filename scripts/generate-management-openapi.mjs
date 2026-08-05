@@ -146,6 +146,11 @@ const PROMOTED_OPERATION_SCHEMAS = {
       200: "#/components/schemas/AgentMilestoneList",
     },
   },
+  "GET /api/threads/{threadId}/runs/{runId}/browser-live-view/stream": {
+    responseContentTypes: {
+      200: "text/event-stream",
+    },
+  },
   "POST /api/threads/{threadId}/operator-decisions/{decisionId}/answer": {
     request: "#/components/schemas/AnswerOperatorDecisionRequest",
     responses: {
@@ -2240,6 +2245,18 @@ function applyPromotedOperationSchemas(route, operation) {
     response.content["application/json"] ??= {};
     response.content["application/json"].schema = { $ref: schemaRef };
     promotedResponseSchemaRefs[status] = schemaRef;
+  }
+  for (const [status, contentType] of Object.entries(
+    overlay.responseContentTypes ?? {},
+  )) {
+    const response = operation.responses[status];
+    if (!response) continue;
+    response.description = "Successful no-store event stream";
+    response.content = {
+      [contentType]: {
+        schema: { type: "string" },
+      },
+    };
   }
   return {
     ...operation,

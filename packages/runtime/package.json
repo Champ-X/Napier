@@ -20,6 +20,10 @@
       "types": "./dist/browser-live-view.d.ts",
       "import": "./dist/browser-live-view.js"
     },
+    "./browser-live-view-stream": {
+      "types": "./dist/browser-live-view-stream.d.ts",
+      "import": "./dist/browser-live-view-stream.js"
+    },
     "./browser-session-control": {
       "types": "./dist/browser-session-control.d.ts",
       "import": "./dist/browser-session-control.js"

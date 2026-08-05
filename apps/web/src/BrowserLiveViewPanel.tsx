@@ -15,6 +15,7 @@ import type { BrowserSessionPauseState } from "@napier/contracts/browser-session
 import type { BrowserTakeoverAction } from "@napier/contracts/browser-takeover";
 
 import { getBrowserLiveView } from "./browser-live-view-api";
+import type { BrowserLiveViewStreamImage } from "./browser-live-view-stream-api";
 import {
   browserLiveActivity,
   type BrowserLiveControlTransition,
@@ -25,7 +26,7 @@ import {
   resumeBrowserSession,
 } from "./browser-session-control-api";
 
-const REFRESH_MS = 1_500;
+const PAUSE_REFRESH_MS = 1_500;
 const LazyBrowserTakeoverDesk = lazy(() => import("./BrowserTakeoverDesk"));
 
 export function BrowserLiveViewPanel({
@@ -50,18 +51,44 @@ export function BrowserLiveViewPanel({
   const [controlTransition, setControlTransition] =
     useState<BrowserLiveControlTransition>();
   const [operatorAction, setOperatorAction] = useState<BrowserTakeoverAction>();
+  const [streamRevision, setStreamRevision] = useState(0);
   const requestRef = useRef(0);
   const controlRequestRef = useRef(0);
   const controlBusyRef = useRef(false);
   const imageUrlRef = useRef<string | undefined>(undefined);
-  const controllerRef = useRef<AbortController | undefined>(undefined);
+  const refreshControllerRef = useRef<AbortController | undefined>(undefined);
+  const streamControllerRef = useRef<AbortController | undefined>(undefined);
+
+  const clearLive = useCallback(() => {
+    if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
+    imageUrlRef.current = undefined;
+    setImageUrl(undefined);
+    setReceipt(undefined);
+    setAvailable(false);
+  }, []);
+
+  const applyLive = useCallback(
+    (
+      live:
+        | BrowserLiveViewStreamImage
+        | Awaited<ReturnType<typeof getBrowserLiveView>>,
+    ) => {
+      const nextUrl = URL.createObjectURL(live.blob);
+      if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
+      imageUrlRef.current = nextUrl;
+      setImageUrl(nextUrl);
+      setReceipt(live.receipt);
+      setAvailable(true);
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     if (controlBusyRef.current) return;
     const request = (requestRef.current += 1);
-    controllerRef.current?.abort();
+    refreshControllerRef.current?.abort();
     const controller = new AbortController();
-    controllerRef.current = controller;
+    refreshControllerRef.current = controller;
     setRefreshing(true);
     try {
       const [live, nextPauseState] = await Promise.all([
@@ -69,35 +96,32 @@ export function BrowserLiveViewPanel({
         getBrowserSessionPauseState(threadId, runId),
       ]);
       if (request !== requestRef.current) return;
-      const nextUrl = URL.createObjectURL(live.blob);
-      if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
-      imageUrlRef.current = nextUrl;
-      setImageUrl(nextUrl);
-      setReceipt(live.receipt);
+      applyLive(live);
       setPauseState(nextPauseState);
-      setAvailable(true);
     } catch {
       if (request !== requestRef.current) return;
-      if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
-      imageUrlRef.current = undefined;
-      setImageUrl(undefined);
-      setReceipt(undefined);
+      clearLive();
       setPauseState(undefined);
-      setAvailable(false);
     } finally {
       if (request === requestRef.current) {
-        controllerRef.current = undefined;
+        refreshControllerRef.current = undefined;
         setRefreshing(false);
       }
     }
-  }, [runId, threadId]);
+  }, [applyLive, clearLive, runId, threadId]);
+
+  const manualRefresh = useCallback(async () => {
+    streamControllerRef.current?.abort();
+    await refresh();
+    setStreamRevision((revision) => revision + 1);
+  }, [refresh]);
 
   const togglePause = useCallback(async () => {
     if (!pauseState || controlBusyRef.current) return;
     const request = (controlRequestRef.current += 1);
     requestRef.current += 1;
-    controllerRef.current?.abort();
-    controllerRef.current = undefined;
+    refreshControllerRef.current?.abort();
+    refreshControllerRef.current = undefined;
     controlBusyRef.current = true;
     setControlBusy(true);
     setControlFailed(false);
@@ -139,21 +163,63 @@ export function BrowserLiveViewPanel({
   }, [pauseState?.status, togglePause]);
 
   useEffect(() => {
-    void refresh();
-    const timer = window.setInterval(() => void refresh(), REFRESH_MS);
+    let active = true;
+    const controller = new AbortController();
+    streamControllerRef.current = controller;
+    void getBrowserSessionPauseState(threadId, runId)
+      .then(
+        (state) => active && !controlBusyRef.current && setPauseState(state),
+      )
+      .catch(() => active && setPauseState(undefined));
+    const timer = window.setInterval(() => {
+      void getBrowserSessionPauseState(threadId, runId)
+        .then(
+          (state) => active && !controlBusyRef.current && setPauseState(state),
+        )
+        .catch(() => undefined);
+    }, PAUSE_REFRESH_MS);
+    void (async () => {
+      try {
+        const { streamBrowserLiveViews } =
+          await import("./browser-live-view-stream-api");
+        for (;;) {
+          const terminal = await streamBrowserLiveViews(
+            threadId,
+            runId,
+            (live) => {
+              if (active) applyLive(live);
+            },
+            controller.signal,
+          );
+          if (!active || terminal.reason !== "sample_limit") {
+            if (active && terminal.reason === "session_ended") {
+              clearLive();
+            }
+            break;
+          }
+        }
+      } catch {
+        if (active && !controller.signal.aborted) await refresh();
+      }
+    })();
     return () => {
+      active = false;
       window.clearInterval(timer);
+      controller.abort();
+      if (streamControllerRef.current === controller) {
+        streamControllerRef.current = undefined;
+      }
       requestRef.current += 1;
       controlRequestRef.current += 1;
       controlBusyRef.current = false;
       setControlTransition(undefined);
       setOperatorAction(undefined);
-      controllerRef.current?.abort();
-      controllerRef.current = undefined;
+      refreshControllerRef.current?.abort();
+      refreshControllerRef.current = undefined;
       if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
       imageUrlRef.current = undefined;
     };
-  }, [refresh]);
+  }, [applyLive, clearLive, refresh, runId, streamRevision, threadId]);
 
   if (!available || !imageUrl || !receipt || !pauseState) return null;
   const paused = pauseState.status === "paused";
@@ -211,7 +277,7 @@ export function BrowserLiveViewPanel({
           <button
             type="button"
             disabled={refreshing}
-            onClick={() => void refresh()}
+            onClick={() => void manualRefresh()}
           >
             <RefreshCw size={12} aria-hidden="true" />
             Refresh

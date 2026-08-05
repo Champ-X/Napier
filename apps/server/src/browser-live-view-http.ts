@@ -1,17 +1,67 @@
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 import type { BrowserLiveViewService } from "@napier/runtime/browser-live-view";
+import {
+  streamBrowserLiveView,
+  type BrowserLiveViewStreamOptions,
+} from "@napier/runtime/browser-live-view-stream";
 import { Hono } from "hono";
+import { streamSSE } from "hono/streaming";
 
 import {
   errorMessage,
   jsonError,
   setContentSha256Header,
 } from "./http-response-evidence.js";
+import { BrowserLiveViewStreamAdmission } from "./browser-live-view-stream-admission.js";
 
 export function registerBrowserLiveViewHttp(
   app: Hono,
   browserLiveViews: BrowserLiveViewService,
+  streamOptions: BrowserLiveViewStreamOptions = {},
 ): void {
+  const streamAdmission = new BrowserLiveViewStreamAdmission();
+  app.get(
+    "/api/threads/:threadId/runs/:runId/browser-live-view/stream",
+    (context) => {
+      let release: () => void;
+      try {
+        release = streamAdmission.claim(
+          context.req.param("threadId"),
+          context.req.param("runId"),
+        );
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 409);
+      }
+      const response = streamSSE(context, async (stream) => {
+        try {
+          for await (const event of streamBrowserLiveView(
+            browserLiveViews,
+            context.req.param("threadId"),
+            context.req.param("runId"),
+            context.req.raw.signal,
+            streamOptions,
+          )) {
+            await stream.writeSSE({
+              event: event.type,
+              data: JSON.stringify(event),
+              ...(event.type === "browser_live_view"
+                ? { id: String(event.sequence) }
+                : {}),
+            });
+          }
+        } finally {
+          release();
+        }
+      });
+      response.headers.set("Cache-Control", "no-store");
+      response.headers.set("X-Accel-Buffering", "no");
+      response.headers.set("X-Content-Type-Options", "nosniff");
+      response.headers.set("X-Napier-Thread-Id", context.req.param("threadId"));
+      response.headers.set("X-Napier-Run-Id", context.req.param("runId"));
+      response.headers.set("X-Napier-Browser-Live-Mode", "bounded-stream");
+      return response;
+    },
+  );
   app.get(
     "/api/threads/:threadId/runs/:runId/browser-live-view",
     async (context) => {

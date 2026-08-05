@@ -10861,6 +10861,59 @@
         "x-napier-source-route": "GET /api/threads/:threadId/runs/:runId/browser-live-view"
       }
     },
+    "/api/threads/{threadId}/runs/{runId}/browser-live-view/stream": {
+      "get": {
+        "operationId": "get-threads-by-threadId-runs-by-runId-browser-live-view-stream",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/runs/{runId}/browser-live-view/stream",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store event stream",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/runs/:runId/browser-live-view/stream",
+        "x-napier-promoted-response-schema-refs": {}
+      }
+    },
     "/api/threads/{threadId}/runs/{runId}/browser-session-control": {
       "get": {
         "operationId": "get-threads-by-threadId-runs-by-runId-browser-session-control",
@@ -15088,7 +15141,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "8d80c4c70daf40adee77912276e03f63a1e31bba7c9f72e2954f4402b6562a23",
-  "x-napier-route-count": 265,
-  "x-napier-route-set-sha256": "f1d8a043013c2866855e5799914cfddee409d5fe106350cf700852cef91c9aee"
+  "x-napier-source-sha256": "35e54b4de956c12a1b9b64d1621fd3d27782951752fc5dff66471bffe06956af",
+  "x-napier-route-count": 266,
+  "x-napier-route-set-sha256": "01e3dc22080864e66e71a8f05452f446829eae0da8a4afcf451a3121715f3d1a"
 }

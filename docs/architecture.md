@@ -623,8 +623,14 @@ Web
   -> composer badge renders the same projection
   -> Context preset selector fills existing form fields only
   -> Save Agent profile uses the existing HTTP validation/revision path
-  -> active Browser Session exposes a no-store, hash-verified viewport PNG
-  -> Web polls Browser Live without adding a Browser operation or Ledger event
+  -> active Browser Session exposes one bounded no-store viewport SSE segment
+  -> each segment samples 32 times, suppresses unchanged visual/takeover state,
+     and self-hashes every emitted PNG frame plus its terminal counters
+  -> Web verifies sequence, schema, identities, base64, PNG dimensions, hashes,
+     and aggregate bytes before replacing the ephemeral object URL
+  -> normal sample-limit terminal reconnects; manual refresh uses the existing
+     one-shot verified PNG endpoint
+  -> Browser Live adds no Browser operation or Ledger event
   -> active user Run may request process-local Browser pause
   -> pause becomes authoritative immediately without interrupting in-flight work
   -> the next Browser call waits in beforeToolCall while Session health is watched

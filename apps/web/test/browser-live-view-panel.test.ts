@@ -16,6 +16,8 @@ describe("Browser Live diagnosis handoff", () => {
     expect(source).toContain("not solve CAPTCHAs or import existing Chrome");
     expect(source).toContain("browserLiveActivity");
     expect(source).toContain("browser-live-activity");
+    expect(source).toContain('import("./browser-live-view-stream-api")');
+    expect(source).not.toContain("setInterval(() => void refresh()");
     expect(source).toContain("onActivityChange");
     expect(source).not.toContain("document.cookie");
     expect(source).not.toContain("chrome.cookies");

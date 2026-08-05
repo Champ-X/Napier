@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(23);
+    expect(generated.routeCount).toBe(24);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -71,7 +71,7 @@ describe("management OpenAPI generator", () => {
           "apps/server/src/domains/memory-http.ts",
           "apps/server/src/workspace-process-http.ts",
         ],
-        "x-napier-route-count": 23,
+        "x-napier-route-count": 24,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -113,6 +113,24 @@ describe("management OpenAPI generator", () => {
           content: expect.objectContaining({
             "application/json": { schema: true },
           }),
+        }),
+      }),
+    );
+    expect(
+      generated.artifact.paths[
+        "/api/threads/{threadId}/runs/{runId}/browser-live-view/stream"
+      ].get,
+    ).toEqual(
+      expect.objectContaining({
+        responses: expect.objectContaining({
+          200: {
+            description: "Successful no-store event stream",
+            content: {
+              "text/event-stream": {
+                schema: { type: "string" },
+              },
+            },
+          },
         }),
       }),
     );
@@ -739,10 +757,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 23 routes",
+      "Wrote docs/artifacts/management-openapi.json: 24 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(23);
+    expect(artifact["x-napier-route-count"]).toBe(24);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -807,6 +825,7 @@ async function createFixture() {
         "/api/threads/:threadId/runs",
         () => undefined,
       );
+      app.get("/api/threads/:threadId/runs/:runId/browser-live-view/stream", () => undefined);
       app.get("/assets/index.js", () => undefined);
     `,
   );
