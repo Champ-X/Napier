@@ -2,6 +2,7 @@ import type { Browser, LaunchOptions } from "playwright-core";
 import {
   BROWSER_LIVE_VIEWPORT_HEIGHT,
   BROWSER_LIVE_VIEWPORT_WIDTH,
+  type BrowserPageDiagnosisEvidence,
 } from "@napier/contracts/browser-live-view";
 import { type BrowserTakeoverKey } from "@napier/contracts/browser-takeover";
 
@@ -184,7 +185,7 @@ export interface BrowserScrollObservation {
 
 export interface BrowserSessionDetails {
   kind: "napier.browser-session-operation";
-  schemaVersion: 2;
+  schemaVersion: 3;
   action: BrowserSessionRequest["action"];
   sessionMode: "run_persistent";
   sessionReused: boolean;
@@ -199,6 +200,7 @@ export interface BrowserSessionDetails {
   currentUrlSha256: string;
   currentOriginSha256: string;
   titleSha256: string;
+  pageDiagnosis: BrowserPageDiagnosisEvidence;
   snapshotSha256?: string;
   snapshotChars?: number;
   snapshotTruncated?: boolean;

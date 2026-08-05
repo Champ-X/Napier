@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
+import { parseHTML } from "linkedom";
 
 import type {
   Browser,
@@ -18,6 +19,7 @@ import {
   RunBrowserSessionManager,
   type BrowserNetworkProxy,
 } from "../src/browser-session.js";
+import { probeBrowserPageDiagnosis } from "../src/browser-page-diagnosis.js";
 
 const roots: string[] = [];
 
@@ -30,6 +32,7 @@ interface HarnessOptions {
   sourceText?: string;
   sourceTitle?: string;
   sourceUrlDriftDuringCapture?: boolean;
+  pageHtml?: string;
 }
 
 export async function cleanupBrowserSessionHarnesses(): Promise<void> {
@@ -73,6 +76,7 @@ export async function createBrowserSessionHarness(
           options.sourceText ?? "Default research source text",
           options.sourceTitle,
           options.sourceUrlDriftDuringCapture ?? false,
+          options.pageHtml,
         );
         pages.push(page);
         downloads.push(page.download);
@@ -249,6 +253,7 @@ export class FakePage {
     private readonly sourceText: string,
     private readonly sourceTitle: string | undefined,
     private readonly sourceUrlDriftDuringCapture: boolean,
+    private readonly pageHtml: string | undefined,
   ) {
     this.download = new FakeDownload(downloadBody);
   }
@@ -331,11 +336,25 @@ export class FakePage {
         _callback: unknown,
         request:
           | number
+          | { kind: "diagnosis"; href: string }
           | { kind: "find"; limit: number }
           | { kind: "scroll"; deltaY: number; textLimit: number },
         _options: unknown,
       ) {
         if (typeof request !== "number") {
+          if (request.kind === "diagnosis") {
+            const { document } = parseHTML(
+              page.pageHtml ??
+                `<html><head><title>${escapeHtml(
+                  page.currentUrl === "about:blank"
+                    ? ""
+                    : `Page ${new URL(page.currentUrl).hostname}`,
+                )}</title></head><body><p>${escapeHtml(
+                  page.sourceText,
+                )}</p></body></html>`,
+            );
+            return probeBrowserPageDiagnosis(document.documentElement, request);
+          }
           if (request.kind === "find") {
             return {
               text: page.sourceText.slice(0, request.limit),
@@ -414,6 +433,14 @@ export class FakePage {
     this.closed = true;
     this.closeListener?.();
   }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 export class FakeDownload {

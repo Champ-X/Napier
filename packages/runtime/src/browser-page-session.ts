@@ -45,10 +45,7 @@ import {
   createBrowserSessionDetails,
   type BrowserSessionPageState,
 } from "./browser-session-details.js";
-import {
-  browserPageOrigin,
-  BrowserSessionNavigation,
-} from "./browser-session-navigation.js";
+import { BrowserSessionNavigation } from "./browser-session-navigation.js";
 import {
   isBrowserPageSpecialRequest,
   performBrowserPageSpecialOperation,
@@ -61,6 +58,10 @@ import {
   resolveBrowserRuntime,
 } from "./browser-runtime.js";
 import { createBrowserPageOperationResult } from "./browser-page-output.js";
+import {
+  captureBrowserPageMetadata,
+  captureBrowserPageState,
+} from "./browser-page-state.js";
 import { sha256 } from "./ed25519.js";
 import { FixedIpHttpProxy } from "./fixed-ip-http-proxy.js";
 import {
@@ -252,7 +253,7 @@ export class PersistentBrowserSession {
         withNetwork: (operation) => this.withNetwork(operation),
         configurePage: (targetPage) => this.configurePage(targetPage),
         pageState: (targetPage, targetSignal) =>
-          this.pageState(targetPage, targetSignal),
+          captureBrowserPageState(targetPage, targetSignal),
         ...(signal ? { signal } : {}),
       });
       state = tabResult.state;
@@ -274,7 +275,7 @@ export class PersistentBrowserSession {
               }),
             ),
           );
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         }
         case "back":
@@ -293,7 +294,7 @@ export class PersistentBrowserSession {
               },
             ),
           );
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         case "forward":
           await this.withNetwork(() =>
@@ -311,7 +312,7 @@ export class PersistentBrowserSession {
               },
             ),
           );
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         case "wait":
           await this.withNetwork(() =>
@@ -319,10 +320,10 @@ export class PersistentBrowserSession {
               Math.min(request.durationMs ?? 1_000, MAX_BROWSER_WAIT_MS),
             ),
           );
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         case "snapshot":
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         case "click":
           await this.withNetwork(() =>
@@ -332,7 +333,7 @@ export class PersistentBrowserSession {
               }),
             ),
           );
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         case "type":
           await this.withNetwork(() =>
@@ -340,7 +341,7 @@ export class PersistentBrowserSession {
               timeout: BROWSER_ACTION_TIMEOUT_MS,
             }),
           );
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         case "select":
           await this.withNetwork(() =>
@@ -348,7 +349,7 @@ export class PersistentBrowserSession {
               timeout: BROWSER_ACTION_TIMEOUT_MS,
             }),
           );
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         case "upload":
           file = await inspectBrowserUpload(this.workspaceRoot, request.path);
@@ -358,7 +359,7 @@ export class PersistentBrowserSession {
             }),
           );
           await assertBrowserUploadCurrent(file);
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         case "download": {
           await this.preflightNavigation(
@@ -401,7 +402,7 @@ export class PersistentBrowserSession {
               this.downloadAuthorized = false;
             }
           });
-          state = await this.pageState(page, signal);
+          state = await captureBrowserPageState(page, signal);
           break;
         }
         case "screenshot":
@@ -414,10 +415,10 @@ export class PersistentBrowserSession {
           if (screenshot.byteLength > MAX_BROWSER_SCREENSHOT_BYTES) {
             throw new Error("Browser screenshot exceeds the output limit");
           }
-          state = await this.pageMetadata(page);
+          state = await captureBrowserPageMetadata(page, signal);
           break;
         case "close":
-          state = await this.pageMetadata(page);
+          state = await captureBrowserPageMetadata(page, signal);
           break;
       }
 
@@ -518,28 +519,6 @@ export class PersistentBrowserSession {
     return page.locator(selector);
   }
 
-  private async pageState(
-    page: Page,
-    signal?: AbortSignal,
-  ): Promise<PageState> {
-    const metadata = await this.pageMetadata(page);
-    const raw = await page.locator("body").ariaSnapshot({
-      mode: "ai",
-      depth: 20,
-      timeout: BROWSER_ACTION_TIMEOUT_MS,
-      ...(signal ? { signal } : {}),
-    });
-    const snapshot =
-      raw.length > MAX_BROWSER_SNAPSHOT_CHARS
-        ? raw.slice(0, MAX_BROWSER_SNAPSHOT_CHARS)
-        : raw;
-    return {
-      ...metadata,
-      snapshot,
-      snapshotTruncated: raw.length > snapshot.length,
-    };
-  }
-
   private async captureCurrentPage(
     maxChars: number,
     signal?: AbortSignal,
@@ -556,16 +535,6 @@ export class PersistentBrowserSession {
       limitsSha256: BROWSER_LIMITS_SHA256,
       network: this.proxy.snapshot(),
     });
-  }
-
-  private async pageMetadata(page: Page): Promise<PageState> {
-    const url = page.url().slice(0, 4_096);
-    const title = (await page.title()).slice(0, 512);
-    return {
-      url,
-      origin: browserPageOrigin(url) ?? "",
-      title,
-    };
   }
 
   private configurePage(page: Page): void {

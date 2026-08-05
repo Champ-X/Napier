@@ -605,6 +605,17 @@ Session and operation number without consuming the Agent's 64-operation budget,
 opening network access, appending Ledger events, creating Artifacts, or storing
 page pixels/text in Napier state.
 
+Every selected-page state also runs a fixed structural login/challenge probe
+inside that already-open page without another network request. Password forms
+produce `login_required`; known CAPTCHA/challenge widgets, frames, scripts,
+exact verification controls, titles, or Cloudflare challenge paths produce
+`challenge_detected`. Ordinary article text that merely discusses login or
+CAPTCHA does not trigger the probe. Agent output recommends Browser Live
+handoff, while the Live receipt carries only the status, bounded signal count,
+canonical signal-set SHA-256, and takeover recommendation. Web verifies those
+fields with the PNG receipt and renders **Login required** or **Human
+verification required** with a direct **Take control** action.
+
 The same panel exposes **Pause** and **Resume** only for that active standard
 user Run and active Browser Session. Pause authority becomes active
 immediately, but it never interrupts an in-flight Browser action. Instead, the
@@ -643,8 +654,10 @@ values, URLs, and tab titles exist only in the live request/response and are
 cleared or discarded; Ledger retains hashes, counts, action status, and
 before/after Session/tab identity. **Return to Agent** resumes the same Run and
 Session after the operator action settles. Existing-user Chrome relay,
-automated CAPTCHA solving, DevTools, and cross-restart login recovery remain
-separate work.
+automated CAPTCHA solving or login submission, DevTools, and cross-restart
+login recovery remain separate work. Diagnosis never reads credentials,
+imports existing Chrome cookies/session state, or treats page text as
+instructions.
 
 For a production build served by the API process:
 

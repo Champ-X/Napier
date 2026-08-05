@@ -43,6 +43,15 @@ describe("Browser Live view HTTP", () => {
       receipt.activeTabId,
     );
     expect(response.headers.get("x-napier-browser-tab-count")).toBe("2");
+    expect(response.headers.get("x-napier-browser-page-diagnosis")).toBe(
+      "challenge_detected",
+    );
+    expect(
+      response.headers.get("x-napier-browser-page-diagnosis-signals-sha256"),
+    ).toBe(receipt.pageDiagnosis.signalsSha256);
+    expect(response.headers.get("x-napier-browser-takeover-recommended")).toBe(
+      "true",
+    );
     expect(JSON.stringify([...response.headers])).not.toContain(
       "PRIVATE_PAGE_CONTENT",
     );
@@ -73,7 +82,7 @@ describe("Browser Live view HTTP", () => {
 function liveReceipt(image: Buffer): BrowserLiveViewReceipt {
   const content = {
     kind: "napier.browser-live-view" as const,
-    schemaVersion: 3 as const,
+    schemaVersion: 4 as const,
     threadId: "thread_browser_live",
     runId: "run_browser_live",
     sessionIdSha256: "a".repeat(64),
@@ -95,6 +104,12 @@ function liveReceipt(image: Buffer): BrowserLiveViewReceipt {
     limitsSha256: "1".repeat(64),
     networkRequestCount: 3,
     blockedRequestCount: 1,
+    pageDiagnosis: {
+      status: "challenge_detected" as const,
+      signalCount: 2,
+      signalsSha256: "2".repeat(64),
+      takeoverRecommended: true,
+    },
   };
   return {
     ...content,

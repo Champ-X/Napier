@@ -32,9 +32,9 @@ Audit date: 2026-08-04
   citation and report-verification chain. Eligible successful
   `document.write` HTML shells now automatically render through the same
   controlled read-only Browser with bounded provenance and fail-visible
-  degradation. Generic SPA/login/CAPTCHA fallback, cross-restart Source
-  retention, broader interaction entry points, and existing-Chrome relay
-  remain P0.
+  degradation. Generic SPA-to-Browser fallback, autonomous login/CAPTCHA
+  recovery, cross-restart Source retention, broader interaction entry points,
+  and existing-Chrome relay remain P0.
 - A fresh default Agent also receives a read-only Browser schema plus
   `research_source`. Dynamic pages can use Browser `start -> wait`, call
   `research_source capture -> cite`, then close the Browser without
@@ -48,8 +48,12 @@ Audit date: 2026-08-04
   history, and Web operator new/switch/close; unsolicited popups still close
   and inactive tabs cannot use the shared proxy grant. Web takeover also binds
   visual clicks to the exact verified PNG and exposes only allowlisted
-  navigation keys for human login/challenge steps. Existing-user Chrome relay,
-  automated CAPTCHA solving, and restart-safe login state remain P0.
+  navigation keys for human login/challenge steps. Every selected-page state
+  now structurally diagnoses password forms and known CAPTCHA/challenge
+  controls without retaining raw markers; Agent output and Browser Live route
+  actionable states into that same isolated-profile takeover. Existing-user
+  Chrome relay, autonomous CAPTCHA solving or login submission, and
+  restart-safe login state remain P0.
 - The formal `napier doctor` CLI now diagnoses canonical workspace/runtime,
   optional model credential presence, keyless Search, HTML Fetch, sandboxed
   Chrome, and the OS process Sandbox without creating `.napier` state.
@@ -152,7 +156,7 @@ Observed result:
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 web connectivity               | In progress    | Default Search, Fetch, Browser, and Research Source now cover keyless discovery, bounded HTML/Markdown/JSON/text/PDF reading, conservative automatic rendering of eligible script shells, JavaScript Browser reading, exact same-Run captures, and claim-bound citations under `observe`. `napier setup` and the first-use Web Live Provider docket now provide preview-bound explicit registration for five known environment locators; ambient `.env` secrets alone remain unauthorized, while successful apply refreshes the untouched live-ready default without changing the Agent. Safe Automation now provides exact one-use Browser interaction confirmation in Web, Chat, and TUI; Web additionally provides a privacy-bounded Browser Live viewport, same-Run pause/resume, bounded pause-bound takeover, a four-tab isolated profile with selected-tab Live/Source/takeover plus back/forward history, and image-bound visual/allowlisted-key operator handoff for human login/challenge steps. A retained real DeepSeek benchmark proves the unchanged default Agent can combine official HTML, PDF, and dynamic Browser sources with valid Replay and privacy-bounded evidence. `napier doctor` performs Store-free Search/Fetch/Browser/model/runtime/Sandbox readiness checks, while shared presets/status expose configured authority across CLI, Chat, TUI, and Web. Remaining P0 work is dependency remediation, existing-Chrome relay, automated CAPTCHA/login-wall diagnosis, cross-restart Sources/Sessions and login state, open-web Security and repeated Research reliability, viewport streaming/download UX, and repeated same-model OMP comparison. One passing Research trial and bounded page navigation do not establish complete automation, onboarding, or reliability.                                                                                                                                                                                                                                                                                          |
+| P0 web connectivity               | In progress    | Default Search, Fetch, Browser, and Research Source now cover keyless discovery, bounded HTML/Markdown/JSON/text/PDF reading, conservative automatic rendering of eligible script shells, JavaScript Browser reading, exact same-Run captures, and claim-bound citations under `observe`. `napier setup` and the first-use Web Live Provider docket now provide preview-bound explicit registration for five known environment locators; ambient `.env` secrets alone remain unauthorized, while successful apply refreshes the untouched live-ready default without changing the Agent. Safe Automation now provides exact one-use Browser interaction confirmation in Web, Chat, and TUI; Web additionally provides a privacy-bounded Browser Live viewport, same-Run pause/resume, bounded pause-bound takeover, a four-tab isolated profile with selected-tab Live/Source/takeover plus back/forward history, image-bound visual/allowlisted-key operator handoff, and structural login/challenge diagnosis that routes actionable pages into isolated-profile takeover. A retained real DeepSeek benchmark proves the unchanged default Agent can combine official HTML, PDF, and dynamic Browser sources with valid Replay and privacy-bounded evidence. `napier doctor` performs Store-free Search/Fetch/Browser/model/runtime/Sandbox readiness checks, while shared presets/status expose configured authority across CLI, Chat, TUI, and Web. Remaining P0 work is dependency remediation, existing-Chrome relay, autonomous CAPTCHA solving or login submission, cross-restart Sources/Sessions and login state, open-web Security and repeated Research reliability, viewport streaming/download UX, and repeated same-model OMP comparison. One passing Research trial and bounded page navigation do not establish complete automation, onboarding, or reliability.                                                                                                                                                                                                                |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain. |
@@ -1753,6 +1757,90 @@ Observed result:
   controls, visible **Return to Agent**, and no console errors;
 - the same Run completed after
   `pause -> visual_click -> Tab -> Enter -> Back -> visual_click -> resume`.
+
+## Implemented Slice: Privacy-Safe Login and Challenge Diagnosis
+
+User scenario: when the selected isolated Browser tab reaches a password form
+or known CAPTCHA/challenge structure, the Agent and Web operator receive a
+privacy-safe actionable diagnosis and can enter the existing human takeover
+flow without Napier attempting to solve the challenge or importing ambient
+browser state.
+
+Acceptance:
+
+- define exactly `none | login_required | challenge_detected`, with challenge
+  taking precedence when login and verification structures coexist;
+- evaluate only fixed structural signals in the already-open selected page:
+  password inputs/forms, known Turnstile/reCAPTCHA/hCaptcha widgets,
+  provider-owned frames/scripts, exact human-verification controls/titles, and
+  Cloudflare's challenge path;
+- never use arbitrary article prose as a positive signal; ordinary pages that
+  discuss login or CAPTCHA must remain `none`;
+- perform no extra network request and keep proxy outbound state unchanged;
+- propagate diagnosis through every Browser operation and Browser Live
+  receipt as only status, bounded signal count, canonical signal-set SHA-256,
+  and derived takeover recommendation;
+- add concise Agent output that directs the user to Browser Live without
+  requesting credentials or claiming autonomous solving;
+- verify diagnosis headers as part of the no-store Live receipt and reject
+  unknown statuses, malformed hashes/counts, or inconsistent status/count/
+  takeover combinations;
+- render **Login required** or **Human verification required** in Web with one
+  direct **Take control** action into the same Run-owned isolated profile;
+- keep takeover snapshot/tab capture fail-closed if diagnosis evidence changes
+  between its paired no-operation reads;
+- update the current Web Trace projection to Browser schema 3 and include only
+  low-cardinality diagnosis plus hashes/counts.
+
+Threat boundary:
+
+- page content remains untrusted. The detector is a bounded heuristic and does
+  not authorize clicks, typing, navigation, policy changes, credential access,
+  or challenge completion;
+- diagnosis never reads password values, cookies, local storage, existing
+  Chrome profiles, extensions, DevTools state, or ambient login sessions;
+- raw matched selectors, script/frame URLs, title text, control labels, and
+  page prose stay inside the ephemeral page evaluation and are never returned;
+- false negatives remain possible for novel providers or custom login UI;
+  `none` is not proof that a page is unauthenticated;
+- CAPTCHA solving, login submission, credential storage, existing-Chrome
+  relay, and restart-safe login state remain explicit non-goals.
+
+Observed result:
+
+- pure probe tests execute the same function serialized into Playwright and
+  distinguish password forms/known challenge structures from an article whose
+  title/body discuss login, CAPTCHA, and “verify you are human”;
+- Runtime Session tests prove Agent output, Browser operation details, and Live
+  receipts agree without retaining a password value or reopening the proxy;
+  Server/Web tests reject malformed and internally inconsistent diagnosis
+  evidence;
+- opt-in production Browser Dogfood used Google Chrome, Napier's fresh
+  temporary profile, fixed-IP proxy, and ordinary `RunBrowserSessionManager`.
+  `https://github.com/login` produced `login_required`,
+  `https://developers.cloudflare.com/turnstile/` remained `none`, and
+  Cloudflare's official `https://demo.turnstile.workers.dev/` produced
+  `challenge_detected`; all three live tests passed in 9.56 seconds and Live
+  receipts matched operation evidence;
+- built Web/Server/Runtime Dogfood started the GitHub login through the normal
+  composer/SSE path. The Web banner displayed the isolated-profile/privacy
+  copy, its dedicated CTA paused the same Run, and takeover opened on
+  `tab_1 Sign in to GitHub · GitHub`;
+- from that paused takeover, an explicit second isolated tab opened the
+  official Turnstile demo and the banner changed to **Human verification
+  required** while both tabs remained in the same Session;
+- desktop 1440×900 and mobile 390×844 had zero document, Live, banner, or
+  takeover horizontal overflow. The mobile banner CTA was 243px wide; console
+  and page error reports were empty;
+- architecture review extracted selected-page state into leaf modules,
+  reducing `browser-page-session.ts` from 611 to 580 lines and lowering
+  `browser-event-view.ts` maximum-complexity debt from 28 to 25;
+- the complete repository gate passes 2,265 regular tests: Root 105, CLI 196,
+  Server 196, Web 517, Contracts 3, Runtime 1,220, and SDK 28. Architecture
+  audits 980 production source files and 485 test files with zero cycles;
+  current performance, 265/265 OpenAPI compatibility operations, the 82-file
+  Web distribution at 139.53 KiB main plus a 14.31 KiB lazy takeover chunk,
+  and the 119-artifact release receipt all pass.
 
 ## Implemented Slice: Live-Ready Default Model
 

@@ -92,4 +92,20 @@ function setBrowserLiveViewHeaders(
     "X-Napier-Browser-Blocked-Request-Count",
     String(receipt.blockedRequestCount),
   );
+  context.header(
+    "X-Napier-Browser-Page-Diagnosis",
+    receipt.pageDiagnosis.status,
+  );
+  context.header(
+    "X-Napier-Browser-Page-Diagnosis-Signal-Count",
+    String(receipt.pageDiagnosis.signalCount),
+  );
+  context.header(
+    "X-Napier-Browser-Page-Diagnosis-Signals-SHA256",
+    receipt.pageDiagnosis.signalsSha256,
+  );
+  context.header(
+    "X-Napier-Browser-Takeover-Recommended",
+    String(receipt.pageDiagnosis.takeoverRecommended),
+  );
 }

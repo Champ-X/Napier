@@ -680,6 +680,21 @@ SHA-256, Thread/Run identity, and bounded counters before creating an ephemeral
 object URL. Object URLs are revoked on replacement, failure, Thread/Run change,
 and unmount. This is a live observer, not a takeover or durable replay channel.
 
+`browser-page-diagnosis.ts` runs a fixed offline DOM probe whenever selected
+page metadata is captured. It recognizes password inputs/forms plus bounded
+known challenge structures: Turnstile/reCAPTCHA/hCaptcha widgets, provider
+frames/scripts, exact human-verification controls/titles, and Cloudflare's
+challenge path. It never scans arbitrary body prose for keywords, so an
+ordinary article discussing login or CAPTCHA stays `none`.
+`browser-page-state.ts` centralizes metadata, diagnosis, and ARIA snapshot
+capture outside the Browser Session orchestrator. Only
+`none | login_required | challenge_detected`, a bounded signal count, the
+canonical signal-set SHA-256, and a derived takeover recommendation enter
+operation or Live evidence. Raw markers, selectors, URLs, text, form values,
+and credentials do not. Agent-visible output directs the user to Browser Live;
+Web rejects malformed or internally inconsistent diagnosis headers before
+rendering the isolated-profile handoff banner.
+
 `BrowserTakeoverService` hangs from the existing Browser Session control
 boundary. It accepts only the active standard user Run while
 `BrowserSessionPauseManager` holds an exact paused state. A no-store snapshot
@@ -4250,6 +4265,9 @@ per-page origin grants; and `browser-page-tab-operation.ts` owns tab lifecycle
 execution. All ordinary actions resolve the selected page at operation start.
 Browser Source capture, find/scroll, screenshots, Live, and takeover use that
 same selected page and carry active-tab/count/set evidence.
+`browser-page-state.ts` owns selected-page metadata/snapshot capture and invokes
+the structural diagnosis leaf; takeover's paired snapshot/tab capture compares
+diagnosis evidence as part of the same fail-closed consistency check.
 `browser-workspace-files.ts` owns upload/download path and byte confinement;
 `browser-session-details.ts` owns bounded operation evidence;
 `browser-tool.ts` owns Agent schema and privacy projection.
@@ -4277,10 +4295,11 @@ only redacted tool arguments plus bounded operation evidence.
 
 The Browser surface now provides read-only dynamic-page research, bounded
 explicit tabs/history, Browser Live, pause/resume, one-use interaction
-confirmation, and pause-bound operator takeover in the isolated Run profile.
-Existing-user Chrome relay, automated CAPTCHA/login-wall diagnosis, download
-Artifact UX, viewport streaming protocols, cross-restart Source/Session/login
-recovery, and broader automation reliability remain P0.
+confirmation, structural login/challenge diagnosis, and pause-bound operator
+takeover in the isolated Run profile. Existing-user Chrome relay, autonomous
+CAPTCHA solving or login submission, download Artifact UX, viewport streaming
+protocols, cross-restart Source/Session/login recovery, and broader automation
+reliability remain P0.
 
 ### Research Source and Citation Flow
 

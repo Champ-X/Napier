@@ -34,6 +34,10 @@ describe("Browser Trace projection", () => {
     );
     expect(browserSummaryParts(view!)).toContain("browser download");
     expect(browserSummaryParts(view!)).toContain("browser-session-reused");
+    expect(browserSummaryParts(view!)).toContain("active-tab tab_2");
+    expect(browserSummaryParts(view!)).toContain("tabs 2");
+    expect(browserSummaryParts(view!)).toContain("page-login-required");
+    expect(browserSummaryParts(view!)).toContain("takeover-recommended");
     expect(browserSummaryParts(view!)).toContain("network-requests 12");
     expect(browserSummaryParts(view!)).toContain("file-bytes 456");
     expect(JSON.stringify(view)).not.toContain("PRIVATE_BROWSER");
@@ -155,6 +159,24 @@ describe("Browser Trace projection", () => {
     expect(
       browserEventEvidence({
         ...browserDetails(),
+        pageDiagnosis: {
+          ...browserDetails().pageDiagnosis,
+          takeoverRecommended: false,
+        },
+      }),
+    ).toBeUndefined();
+    expect(
+      browserEventEvidence({
+        ...browserDetails(),
+        pageDiagnosis: {
+          ...browserDetails().pageDiagnosis,
+          signalCount: 0,
+        },
+      }),
+    ).toBeUndefined();
+    expect(
+      browserEventEvidence({
+        ...browserDetails(),
         snapshotSha256: undefined,
       }),
     ).toBeUndefined();
@@ -211,18 +233,27 @@ describe("Browser Trace projection", () => {
 function browserDetails() {
   return {
     kind: "napier.browser-session-operation",
-    schemaVersion: 1,
+    schemaVersion: 3,
     action: "download",
     sessionMode: "run_persistent",
     sessionReused: true,
     sessionOperation: 4,
     sessionIdSha256: "1".repeat(64),
+    activeTabId: "tab_2",
+    tabCount: 2,
+    tabSetSha256: "0".repeat(64),
     browserExecutableSha256: "2".repeat(64),
     browserVersionSha256: "3".repeat(64),
     limitsSha256: "4".repeat(64),
     currentUrlSha256: "5".repeat(64),
     currentOriginSha256: "6".repeat(64),
     titleSha256: "7".repeat(64),
+    pageDiagnosis: {
+      status: "login_required",
+      signalCount: 2,
+      signalsSha256: "9".repeat(64),
+      takeoverRecommended: true,
+    },
     snapshotSha256: "8".repeat(64),
     snapshotChars: 321,
     snapshotTruncated: false,

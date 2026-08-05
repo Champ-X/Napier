@@ -89,6 +89,40 @@ describe("Browser Live view Web API", () => {
       "dimensions mismatch",
     );
   });
+
+  it("rejects malformed or inconsistent diagnosis headers", async () => {
+    const fixture = await responseFixture();
+    const invalidStatus = new Headers(fixture.response.headers);
+    invalidStatus.set("X-Napier-Browser-Page-Diagnosis", "PRIVATE_CHALLENGE");
+    const inconsistent = new Headers(fixture.response.headers);
+    inconsistent.set("X-Napier-Browser-Takeover-Recommended", "false");
+    const impossibleCount = new Headers(fixture.response.headers);
+    impossibleCount.set("X-Napier-Browser-Page-Diagnosis-Signal-Count", "0");
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(pngBytes(), { status: 200, headers: invalidStatus }),
+        )
+        .mockResolvedValueOnce(
+          new Response(pngBytes(), { status: 200, headers: inconsistent }),
+        )
+        .mockResolvedValueOnce(
+          new Response(pngBytes(), { status: 200, headers: impossibleCount }),
+        ),
+    );
+
+    await expect(getBrowserLiveView("thread_live", "run_live")).rejects.toThrow(
+      "page diagnosis is invalid",
+    );
+    await expect(getBrowserLiveView("thread_live", "run_live")).rejects.toThrow(
+      "response contract is invalid",
+    );
+    await expect(getBrowserLiveView("thread_live", "run_live")).rejects.toThrow(
+      "response contract is invalid",
+    );
+  });
 });
 
 async function responseFixture() {
@@ -96,7 +130,7 @@ async function responseFixture() {
   const imageSha256 = await sha256Bytes(bytes);
   const content = {
     kind: "napier.browser-live-view" as const,
-    schemaVersion: 3 as const,
+    schemaVersion: 4 as const,
     threadId: "thread_live",
     runId: "run_live",
     sessionIdSha256: "a".repeat(64),
@@ -118,6 +152,12 @@ async function responseFixture() {
     limitsSha256: "1".repeat(64),
     networkRequestCount: 5,
     blockedRequestCount: 2,
+    pageDiagnosis: {
+      status: "login_required" as const,
+      signalCount: 2,
+      signalsSha256: "2".repeat(64),
+      takeoverRecommended: true,
+    },
   };
   const receipt = {
     ...content,
@@ -152,6 +192,15 @@ async function responseFixture() {
     ),
     "X-Napier-Browser-Blocked-Request-Count": String(
       receipt.blockedRequestCount,
+    ),
+    "X-Napier-Browser-Page-Diagnosis": receipt.pageDiagnosis.status,
+    "X-Napier-Browser-Page-Diagnosis-Signal-Count": String(
+      receipt.pageDiagnosis.signalCount,
+    ),
+    "X-Napier-Browser-Page-Diagnosis-Signals-SHA256":
+      receipt.pageDiagnosis.signalsSha256,
+    "X-Napier-Browser-Takeover-Recommended": String(
+      receipt.pageDiagnosis.takeoverRecommended,
     ),
   });
   return {

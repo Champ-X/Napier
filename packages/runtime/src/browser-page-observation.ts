@@ -13,6 +13,7 @@ import {
   MAX_BROWSER_VIEWPORT_TEXT_CHARS,
 } from "./browser-session-model.js";
 import { formatBrowserOperationOutput } from "./browser-page-output.js";
+import { captureBrowserPageMetadata } from "./browser-page-state.js";
 import { createBrowserSessionDetails } from "./browser-session-details.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { FixedIpProxySnapshot } from "./fixed-ip-http-proxy.js";
@@ -65,12 +66,7 @@ export async function performBrowserPageObservation(input: {
           input.signal,
         )
       : undefined;
-  const url = input.page.url().slice(0, 4_096);
-  const state = {
-    url,
-    origin: pageOrigin(url),
-    title: (await input.page.title()).slice(0, 512),
-  };
+  const state = await captureBrowserPageMetadata(input.page, input.signal);
   return {
     output: formatBrowserOperationOutput({
       action: input.request.action,
@@ -286,15 +282,4 @@ function normalizedLines(value: string): string[] {
         .slice(0, 1_000),
     )
     .filter(Boolean);
-}
-
-function pageOrigin(value: string): string {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:"
-      ? url.origin
-      : "";
-  } catch {
-    return "";
-  }
 }

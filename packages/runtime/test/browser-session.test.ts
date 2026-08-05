@@ -54,6 +54,7 @@ describe("RunBrowserSessionManager", () => {
     expect(live.receipt).toEqual(
       expect.objectContaining({
         kind: "napier.browser-live-view",
+        schemaVersion: 4,
         threadId: owner.threadId,
         runId: owner.runId,
         sessionIdSha256: started.details.sessionIdSha256,
@@ -62,6 +63,12 @@ describe("RunBrowserSessionManager", () => {
         imageBytes: Buffer.byteLength("fake png"),
         mimeType: "image/png",
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        pageDiagnosis: {
+          status: "none",
+          signalCount: 0,
+          signalsSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          takeoverRecommended: false,
+        },
       }),
     );
     expect(live.image).toEqual(Buffer.from("fake png"));
@@ -108,6 +115,92 @@ describe("RunBrowserSessionManager", () => {
     await expect(
       harness.manager.execute(owner, { action: "snapshot" }),
     ).rejects.toThrow("not active");
+  });
+
+  it("routes login and challenge structures to privacy-safe human handoff", async () => {
+    const loginHarness = await createHarness({
+      pageHtml:
+        '<html><head><title>Sign in</title></head><body><form><input name="email"><input type="password" value="PRIVATE_PASSWORD"></form></body></html>',
+    });
+    const loginOwner = {
+      threadId: "thread_login_diagnosis",
+      runId: "run_login_diagnosis",
+    };
+    const login = await loginHarness.manager.execute(loginOwner, {
+      action: "start",
+      url: "https://one.example/login",
+    });
+    const loginLive = await loginHarness.manager.captureLiveView(loginOwner);
+
+    expect(login.details.pageDiagnosis).toEqual(
+      expect.objectContaining({
+        status: "login_required",
+        signalCount: 2,
+        takeoverRecommended: true,
+      }),
+    );
+    expect(login.output).toContain("Ask the user to take control");
+    expect(login.output).not.toContain("PRIVATE_PASSWORD");
+    expect(loginLive.receipt.pageDiagnosis).toEqual(
+      login.details.pageDiagnosis,
+    );
+    expect(loginHarness.proxies[0]?.outboundTransitions).toEqual([true, false]);
+    await loginHarness.manager.cancelRun(loginOwner);
+
+    const challengeHarness = await createHarness({
+      pageHtml:
+        '<html><head><title>Just a moment</title></head><body><div class="cf-turnstile"></div><iframe src="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/widget"></iframe></body></html>',
+    });
+    const challengeOwner = {
+      threadId: "thread_challenge_diagnosis",
+      runId: "run_challenge_diagnosis",
+    };
+    const challenge = await challengeHarness.manager.execute(challengeOwner, {
+      action: "start",
+      url: "https://one.example/cdn-cgi/challenge-platform/",
+    });
+
+    expect(challenge.details.pageDiagnosis).toEqual(
+      expect.objectContaining({
+        status: "challenge_detected",
+        signalCount: 4,
+        takeoverRecommended: true,
+      }),
+    );
+    expect(challenge.output).toContain("CAPTCHA solving is not automated");
+    await challengeHarness.manager.cancelRun(challengeOwner);
+  });
+
+  it("does not diagnose article text that merely discusses login or CAPTCHA", async () => {
+    const harness = await createHarness({
+      sourceText:
+        "This article explains CAPTCHA, login walls, and how to verify you are human.",
+      sourceTitle: "How login and CAPTCHA systems work",
+    });
+    const owner = {
+      threadId: "thread_diagnosis_article",
+      runId: "run_diagnosis_article",
+    };
+
+    const started = await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/articles/captcha-login",
+    });
+    const found = await harness.manager.execute(owner, {
+      action: "find",
+      query: "CAPTCHA",
+    });
+
+    expect(started.details.pageDiagnosis).toEqual(
+      expect.objectContaining({
+        status: "none",
+        signalCount: 0,
+        takeoverRecommended: false,
+      }),
+    );
+    expect(found.details.pageDiagnosis.status).toBe("none");
+    expect(started.output).not.toContain("Ask the user to take control");
+    await harness.manager.cancelRun(owner);
   });
 
   it("captures bounded normalized page text without reopening network access", async () => {
@@ -461,7 +554,7 @@ describe("RunBrowserSessionManager", () => {
     );
     expect(live.receipt).toEqual(
       expect.objectContaining({
-        schemaVersion: 3,
+        schemaVersion: 4,
         activeTabId: "tab_2",
         tabCount: 2,
         tabSetSha256: opened.details.tabSetSha256,

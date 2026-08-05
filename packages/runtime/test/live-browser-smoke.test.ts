@@ -266,6 +266,76 @@ describeLive("live controlled Browser Session smoke", () => {
       await manager.cancelRun(owner);
     }
   }, 60_000);
+
+  it("diagnoses public login and challenge pages without importing user state", async ({
+    skip,
+  }) => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-browser-diagnosis-"),
+    );
+    roots.push(workspaceRoot);
+    const manager = new RunBrowserSessionManager({ workspaceRoot });
+    const owner = {
+      threadId: "thread_live_browser_diagnosis",
+      runId: "run_live_browser_diagnosis",
+    };
+    try {
+      const login = await manager.execute(owner, {
+        action: "start",
+        url: "https://github.com/login",
+        allowCrossOrigin: true,
+      });
+      const loginLive = await manager.captureLiveView(owner);
+      expect(login.details.pageDiagnosis).toEqual(
+        expect.objectContaining({
+          status: "login_required",
+          takeoverRecommended: true,
+        }),
+      );
+      expect(loginLive.receipt.pageDiagnosis).toEqual(
+        login.details.pageDiagnosis,
+      );
+      expect(login.output).toContain("Ask the user to take control");
+
+      const article = await manager.execute(owner, {
+        action: "navigate",
+        url: "https://developers.cloudflare.com/turnstile/",
+        allowCrossOrigin: true,
+      });
+      expect(article.details.pageDiagnosis).toEqual(
+        expect.objectContaining({
+          status: "none",
+          takeoverRecommended: false,
+        }),
+      );
+
+      const challenge = await manager.execute(owner, {
+        action: "navigate",
+        url: "https://demo.turnstile.workers.dev/",
+        allowCrossOrigin: true,
+      });
+      const challengeLive = await manager.captureLiveView(owner);
+      expect(challenge.details.pageDiagnosis).toEqual(
+        expect.objectContaining({
+          status: "challenge_detected",
+          takeoverRecommended: true,
+        }),
+      );
+      expect(challengeLive.receipt.pageDiagnosis).toEqual(
+        challenge.details.pageDiagnosis,
+      );
+      expect(challenge.output).toContain("CAPTCHA solving is not automated");
+    } catch (error) {
+      if (nestedSandboxDenied(error)) {
+        skip(
+          "inconclusive: the current host denies Chrome's nested production sandbox",
+        );
+      }
+      throw error;
+    } finally {
+      await manager.cancelRun(owner);
+    }
+  }, 90_000);
 });
 
 function nestedSandboxDenied(error: unknown): boolean {

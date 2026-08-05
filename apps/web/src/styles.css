@@ -1573,6 +1573,11 @@ button:disabled {
   box-shadow: 0 12px 34px rgb(24 37 30 / 18%);
 }
 
+.browser-live-view.has-diagnosis {
+  grid-template-rows: auto auto minmax(120px, 300px) auto;
+  border-color: rgb(190 92 58 / 78%);
+}
+
 .browser-live-view header,
 .browser-live-view footer {
   display: flex;
@@ -1586,6 +1591,58 @@ button:disabled {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   background: #19251f;
+}
+
+.browser-page-diagnosis {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  color: #f8e7d6;
+  background: #4a2118;
+  border-top: 1px solid rgb(244 163 116 / 34%);
+  border-bottom: 1px solid rgb(244 163 116 / 34%);
+}
+
+.browser-page-diagnosis > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.browser-page-diagnosis strong,
+.browser-page-diagnosis span,
+.browser-page-diagnosis button {
+  font-family: var(--mono);
+}
+
+.browser-page-diagnosis strong {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.browser-page-diagnosis span {
+  font-size: 8px;
+  line-height: 1.45;
+  color: #e5bfaa;
+}
+
+.browser-page-diagnosis button {
+  min-height: 28px;
+  padding: 5px 9px;
+  font-size: 8px;
+  color: #34150f;
+  cursor: pointer;
+  background: #f3b68f;
+  border: 1px solid #f3b68f;
+  border-radius: 2px;
+}
+
+.browser-page-diagnosis button:disabled {
+  cursor: wait;
+  opacity: 0.5;
 }
 
 .browser-live-view header span,
@@ -1653,6 +1710,10 @@ button:disabled {
 
 .browser-live-view.has-takeover {
   grid-template-rows: auto minmax(120px, 260px) auto auto;
+}
+
+.browser-live-view.has-diagnosis.has-takeover {
+  grid-template-rows: auto auto minmax(120px, 260px) auto auto;
 }
 
 .browser-live-view.is-paused header .browser-session-toggle {
@@ -14860,6 +14921,19 @@ button:disabled {
     margin-left: 41px;
   }
 
+  .browser-live-view.has-diagnosis {
+    grid-template-rows: auto auto minmax(100px, 220px) auto;
+  }
+
+  .browser-page-diagnosis {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .browser-page-diagnosis button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
   .browser-live-view header {
     align-items: flex-start;
   }
@@ -14880,6 +14954,10 @@ button:disabled {
 
   .browser-live-view.has-takeover {
     grid-template-rows: auto minmax(100px, 180px) auto auto;
+  }
+
+  .browser-live-view.has-diagnosis.has-takeover {
+    grid-template-rows: auto auto minmax(100px, 180px) auto auto;
   }
 
   .browser-takeover-desk > header,

@@ -1,9 +1,25 @@
 export const BROWSER_LIVE_VIEWPORT_WIDTH = 1280;
 export const BROWSER_LIVE_VIEWPORT_HEIGHT = 900;
 
+export const BROWSER_PAGE_DIAGNOSIS_STATUSES = [
+  "none",
+  "login_required",
+  "challenge_detected",
+] as const;
+
+export type BrowserPageDiagnosisStatus =
+  (typeof BROWSER_PAGE_DIAGNOSIS_STATUSES)[number];
+
+export interface BrowserPageDiagnosisEvidence {
+  status: BrowserPageDiagnosisStatus;
+  signalCount: number;
+  signalsSha256: string;
+  takeoverRecommended: boolean;
+}
+
 export interface BrowserLiveViewReceipt {
   kind: "napier.browser-live-view";
-  schemaVersion: 3;
+  schemaVersion: 4;
   threadId: string;
   runId: string;
   sessionIdSha256: string;
@@ -25,5 +41,6 @@ export interface BrowserLiveViewReceipt {
   limitsSha256: string;
   networkRequestCount: number;
   blockedRequestCount: number;
+  pageDiagnosis: BrowserPageDiagnosisEvidence;
   contentSha256: string;
 }

@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "cb85126497a3edbb17eeccf3cc276dc59d770997cbde40f1a1f935f4dbc7ca62",
+  "artifactSetSha256": "ab96c6a6c57d035fa49c6d87592369418a6db9a4353fdd09d329c00584d70de1",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -29,19 +29,19 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "7b8f1526c02dba068d09412bfef331d7ec7434668605d164fd3dcc1d5f58c24c",
+      "sha256": "9f1d13d9cef24fc3abdadf8942cb38582d246578dcf1d257b77e2dded10f6ac9",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "e09fc83c852afc94cab63adc6a637e28d268438d19ccb24953ed44b2dc7f495d",
+      "sha256": "8352032722a4f5b0297f41d806df2c2455c44f52f52c32e13d90a66619e9b930",
       "valid": true
     },
     {
       "kind": "management-openapi",
       "path": "docs/artifacts/management-openapi-0.1.0.json",
-      "sha256": "696f7e13da848ee1c909f9ab294e6044997e09b8ac2540383f9a4c87414c7ffe",
+      "sha256": "97079e969d2e1b697a418ec67d6b998e23372d6726dc075e938b5734a2057725",
       "valid": true
     },
     {

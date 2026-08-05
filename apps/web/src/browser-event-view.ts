@@ -9,6 +9,11 @@ export interface BrowserToolEventTraceView extends BrowserObservationTraceView {
     | "start"
     | "navigate"
     | "back"
+    | "forward"
+    | "tab_new"
+    | "tab_list"
+    | "tab_switch"
+    | "tab_close"
     | "wait"
     | "find"
     | "scroll"
@@ -24,12 +29,19 @@ export interface BrowserToolEventTraceView extends BrowserObservationTraceView {
   browserSessionReused?: boolean;
   browserSessionOperation?: number;
   browserSessionIdSha256?: string;
+  browserActiveTabId?: string;
+  browserTabCount?: number;
+  browserTabSetSha256?: string;
   browserExecutableSha256?: string;
   browserVersionSha256?: string;
   browserLimitsSha256?: string;
   browserCurrentUrlSha256?: string;
   browserCurrentOriginSha256?: string;
   browserTitleSha256?: string;
+  browserPageDiagnosis?: "none" | "login_required" | "challenge_detected";
+  browserPageDiagnosisSignalCount?: number;
+  browserPageDiagnosisSignalsSha256?: string;
+  browserTakeoverRecommended?: boolean;
   browserSnapshotSha256?: string;
   browserSnapshotChars?: number;
   browserSnapshotTruncated?: boolean;
@@ -53,6 +65,11 @@ const ACTIONS = new Set<BrowserToolEventTraceView["browserAction"]>([
   "start",
   "navigate",
   "back",
+  "forward",
+  "tab_new",
+  "tab_list",
+  "tab_switch",
+  "tab_close",
   "wait",
   "find",
   "scroll",
@@ -80,12 +97,15 @@ export function browserEventEvidence(
   );
   const screenshot = optionalScreenshot(value);
   const file = optionalFile(value["file"]);
-  if (
-    snapshot === null ||
-    observation === null ||
-    screenshot === null ||
-    file === null
-  ) {
+  const diagnosis = pageDiagnosis(value["pageDiagnosis"]);
+  const optionalEvidence = {
+    snapshot,
+    observation,
+    screenshot,
+    file,
+    diagnosis,
+  };
+  if (!validBrowserOptionalEvidence(optionalEvidence)) {
     return undefined;
   }
   const suggestedFilenameSha256 =
@@ -119,12 +139,19 @@ export function browserEventEvidence(
     browserSessionReused: value["sessionReused"] as boolean,
     browserSessionOperation: operation,
     browserSessionIdSha256: value["sessionIdSha256"] as string,
+    browserActiveTabId: value["activeTabId"] as string,
+    browserTabCount: value["tabCount"] as number,
+    browserTabSetSha256: value["tabSetSha256"] as string,
     browserExecutableSha256: value["browserExecutableSha256"] as string,
     browserVersionSha256: value["browserVersionSha256"] as string,
     browserLimitsSha256: value["limitsSha256"] as string,
     browserCurrentUrlSha256: value["currentUrlSha256"] as string,
     browserCurrentOriginSha256: value["currentOriginSha256"] as string,
     browserTitleSha256: value["titleSha256"] as string,
+    browserPageDiagnosis: optionalEvidence.diagnosis.status,
+    browserPageDiagnosisSignalCount: optionalEvidence.diagnosis.signalCount,
+    browserPageDiagnosisSignalsSha256: optionalEvidence.diagnosis.signalsSha256,
+    browserTakeoverRecommended: optionalEvidence.diagnosis.takeoverRecommended,
     ...(snapshot ?? {}),
     ...(observation ?? {}),
     ...(screenshot ?? {}),
@@ -179,12 +206,15 @@ function browserEventEnvelope(value: Record<string, unknown>):
   const destinationCount = integer(network?.["destinationCount"], 0, 10_000);
   if (
     value["kind"] !== "napier.browser-session-operation" ||
-    value["schemaVersion"] !== 1 ||
+    value["schemaVersion"] !== 3 ||
     !action ||
     value["sessionMode"] !== "run_persistent" ||
     typeof value["sessionReused"] !== "boolean" ||
     operation === undefined ||
     value["sessionReused"] !== operation > 1 ||
+    !tabId(value["activeTabId"]) ||
+    integer(value["tabCount"], 1, 4) === undefined ||
+    !sha256(value["tabSetSha256"]) ||
     !validBrowserHashes(value) ||
     blockedRequestCount === undefined ||
     !network ||
@@ -232,6 +262,16 @@ export function browserSummaryParts(view: BrowserToolEventTraceView): string[] {
     ...(view.browserSessionOperation !== undefined
       ? [`browser-operation ${view.browserSessionOperation}`]
       : []),
+    ...(view.browserActiveTabId
+      ? [`active-tab ${view.browserActiveTabId}`]
+      : []),
+    ...(view.browserTabCount !== undefined
+      ? [`tabs ${view.browserTabCount}`]
+      : []),
+    ...(view.browserPageDiagnosis && view.browserPageDiagnosis !== "none"
+      ? [`page-${view.browserPageDiagnosis.replaceAll("_", "-")}`]
+      : []),
+    ...(view.browserTakeoverRecommended ? ["takeover-recommended"] : []),
     ...(view.browserCrossOriginAuthorized ? ["cross-origin-authorized"] : []),
     ...(view.browserBlockedRequestCount !== undefined
       ? [`blocked-requests ${view.browserBlockedRequestCount}`]
@@ -263,7 +303,9 @@ export function browserSummaryParts(view: BrowserToolEventTraceView): string[] {
       ? [`file-bytes ${view.browserFileBytes}`]
       : []),
     ...hash("browser-session", view.browserSessionIdSha256),
+    ...hash("browser-tabs", view.browserTabSetSha256),
     ...hash("browser-origin", view.browserCurrentOriginSha256),
+    ...hash("browser-page-diagnosis", view.browserPageDiagnosisSignalsSha256),
     ...hash("browser-snapshot", view.browserSnapshotSha256),
     ...hash("browser-find-query", view.browserFindQuerySha256),
     ...hash("browser-find-matches", view.browserFindMatchesSha256),
@@ -272,6 +314,62 @@ export function browserSummaryParts(view: BrowserToolEventTraceView): string[] {
     ...hash("browser-file", view.browserFileSha256),
     ...hash("browser-destinations", view.browserNetworkDestinationsSha256),
   ];
+}
+
+function validBrowserOptionalEvidence(input: {
+  snapshot: ReturnType<typeof optionalSnapshot>;
+  observation: ReturnType<typeof browserObservationEvidence>;
+  screenshot: ReturnType<typeof optionalScreenshot>;
+  file: ReturnType<typeof optionalFile>;
+  diagnosis: ReturnType<typeof pageDiagnosis>;
+}): input is typeof input & {
+  diagnosis: NonNullable<typeof input.diagnosis>;
+} {
+  return (
+    input.snapshot !== null &&
+    input.observation !== null &&
+    input.screenshot !== null &&
+    input.file !== null &&
+    input.diagnosis !== undefined
+  );
+}
+
+function pageDiagnosis(value: unknown):
+  | {
+      status: "none" | "login_required" | "challenge_detected";
+      signalCount: number;
+      signalsSha256: string;
+      takeoverRecommended: boolean;
+    }
+  | undefined {
+  if (!record(value)) return undefined;
+  const status =
+    value["status"] === "none" ||
+    value["status"] === "login_required" ||
+    value["status"] === "challenge_detected"
+      ? value["status"]
+      : undefined;
+  const signalCount = integer(value["signalCount"], 0, 12);
+  if (
+    !status ||
+    signalCount === undefined ||
+    !sha256(value["signalsSha256"]) ||
+    typeof value["takeoverRecommended"] !== "boolean" ||
+    value["takeoverRecommended"] !== (status !== "none") ||
+    (signalCount === 0) !== (status === "none")
+  ) {
+    return undefined;
+  }
+  return {
+    status,
+    signalCount,
+    signalsSha256: value["signalsSha256"],
+    takeoverRecommended: value["takeoverRecommended"],
+  };
+}
+
+function tabId(value: unknown): value is string {
+  return typeof value === "string" && /^tab_[1-9][0-9]{0,3}$/u.test(value);
 }
 
 function optionalSnapshot(

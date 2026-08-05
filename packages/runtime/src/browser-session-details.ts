@@ -6,6 +6,7 @@ import {
   type BrowserSessionRequest,
   type BrowserScrollObservation,
 } from "./browser-session-model.js";
+import type { BrowserPageDiagnosisEvidence } from "@napier/contracts/browser-live-view";
 import type { BrowserWorkspaceFile } from "./browser-workspace-files.js";
 import { sha256 } from "./ed25519.js";
 import type { FixedIpProxySnapshot } from "./fixed-ip-http-proxy.js";
@@ -15,6 +16,7 @@ export interface BrowserSessionPageState {
   url: string;
   origin: string;
   title: string;
+  diagnosis: BrowserPageDiagnosisEvidence;
   snapshot?: string;
   snapshotTruncated?: boolean;
 }
@@ -39,7 +41,7 @@ export function createBrowserSessionDetails(input: {
 }): BrowserSessionDetails {
   return {
     kind: "napier.browser-session-operation",
-    schemaVersion: 2,
+    schemaVersion: 3,
     action: input.action,
     sessionMode: "run_persistent",
     sessionReused: input.reused,
@@ -54,6 +56,7 @@ export function createBrowserSessionDetails(input: {
     currentUrlSha256: sha256(input.state.url),
     currentOriginSha256: sha256(input.state.origin),
     titleSha256: sha256(input.state.title),
+    pageDiagnosis: structuredClone(input.state.diagnosis),
     ...(input.state.snapshot !== undefined
       ? {
           snapshotSha256: sha256(input.state.snapshot),

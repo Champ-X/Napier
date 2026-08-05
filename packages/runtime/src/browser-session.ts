@@ -76,7 +76,7 @@ export class RunBrowserSessionManager {
         const details = result.details;
         const content = {
           kind: "napier.browser-live-view" as const,
-          schemaVersion: 3 as const,
+          schemaVersion: 4 as const,
           threadId: owner.threadId,
           runId: owner.runId,
           sessionIdSha256: details.sessionIdSha256,
@@ -98,6 +98,7 @@ export class RunBrowserSessionManager {
           limitsSha256: details.limitsSha256,
           networkRequestCount: details.network.requestCount,
           blockedRequestCount: details.blockedRequestCount,
+          pageDiagnosis: details.pageDiagnosis,
         };
         return {
           image,
@@ -152,6 +153,14 @@ export class RunBrowserSessionManager {
               tabs.details.currentOriginSha256 ||
             snapshot.details.titleSha256 !== tabs.details.titleSha256 ||
             snapshot.details.snapshotSha256 !== tabs.details.snapshotSha256 ||
+            snapshot.details.pageDiagnosis.status !==
+              tabs.details.pageDiagnosis.status ||
+            snapshot.details.pageDiagnosis.signalCount !==
+              tabs.details.pageDiagnosis.signalCount ||
+            snapshot.details.pageDiagnosis.signalsSha256 !==
+              tabs.details.pageDiagnosis.signalsSha256 ||
+            snapshot.details.pageDiagnosis.takeoverRecommended !==
+              tabs.details.pageDiagnosis.takeoverRecommended ||
             snapshot.details.tabSetSha256 !== tabs.details.tabSetSha256
           ) {
             throw new Error("Browser takeover tab evidence changed");

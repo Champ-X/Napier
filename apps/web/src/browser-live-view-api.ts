@@ -1,4 +1,8 @@
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
+import {
+  BROWSER_PAGE_DIAGNOSIS_STATUSES,
+  type BrowserPageDiagnosisStatus,
+} from "@napier/contracts/browser-live-view";
 
 import { throwNapierApiError } from "./api-error";
 import { canonicalJson, sha256Text } from "./stable-digest";
@@ -52,7 +56,7 @@ function receiptFromHeaders(
 ): BrowserLiveViewReceipt {
   const receipt = {
     kind: "napier.browser-live-view" as const,
-    schemaVersion: 3 as const,
+    schemaVersion: 4 as const,
     threadId: required(response, "X-Napier-Thread-Id"),
     runId: required(response, "X-Napier-Run-Id"),
     sessionIdSha256: digest(response, "X-Napier-Browser-Session-SHA256"),
@@ -102,17 +106,58 @@ function receiptFromHeaders(
       0,
       10_000,
     ),
+    pageDiagnosis: {
+      status: diagnosisStatus(response),
+      signalCount: integer(
+        response,
+        "X-Napier-Browser-Page-Diagnosis-Signal-Count",
+        0,
+        12,
+      ),
+      signalsSha256: digest(
+        response,
+        "X-Napier-Browser-Page-Diagnosis-Signals-SHA256",
+      ),
+      takeoverRecommended: boolean(
+        response,
+        "X-Napier-Browser-Takeover-Recommended",
+      ),
+    },
     contentSha256: digest(response, "X-Napier-Browser-Live-Receipt-SHA256"),
   };
   if (
     response.headers.get("Cache-Control") !== "no-store" ||
     response.headers.get("X-Content-Type-Options") !== "nosniff" ||
     response.headers.get("X-Napier-Content-SHA256-Mode") !== "body" ||
-    receipt.imageBytes !== observedBytes
+    receipt.imageBytes !== observedBytes ||
+    receipt.pageDiagnosis.takeoverRecommended !==
+      (receipt.pageDiagnosis.status !== "none") ||
+    (receipt.pageDiagnosis.signalCount === 0) !==
+      (receipt.pageDiagnosis.status === "none")
   ) {
     throw new Error("Browser live view response contract is invalid");
   }
   return receipt;
+}
+
+function diagnosisStatus(response: Response): BrowserPageDiagnosisStatus {
+  const value = required(response, "X-Napier-Browser-Page-Diagnosis");
+  if (
+    !BROWSER_PAGE_DIAGNOSIS_STATUSES.includes(
+      value as BrowserPageDiagnosisStatus,
+    )
+  ) {
+    throw new Error("Browser live view page diagnosis is invalid");
+  }
+  return value as BrowserPageDiagnosisStatus;
+}
+
+function boolean(response: Response, name: string): boolean {
+  const value = required(response, name);
+  if (value !== "true" && value !== "false") {
+    throw new Error(`Browser live view ${name} is invalid`);
+  }
+  return value === "true";
 }
 
 function tabId(response: Response, name: string): string {

@@ -1,4 +1,4 @@
-import { Eye, Pause, Play, RefreshCw } from "lucide-react";
+import { Eye, Pause, Play, RefreshCw, ShieldAlert } from "lucide-react";
 import {
   lazy,
   Suspense,
@@ -137,9 +137,11 @@ export function BrowserLiveViewPanel({
 
   if (!available || !imageUrl || !receipt || !pauseState) return null;
   const paused = pauseState.status === "paused";
+  const diagnosis = receipt.pageDiagnosis.status;
+  const diagnosisActive = diagnosis !== "none";
   return (
     <section
-      className={`browser-live-view${paused ? " is-paused" : ""}${paused && takeoverOpen ? " has-takeover" : ""}`}
+      className={`browser-live-view${paused ? " is-paused" : ""}${paused && takeoverOpen ? " has-takeover" : ""}${diagnosisActive ? " has-diagnosis" : ""}`}
       aria-label="Browser Live"
     >
       <header>
@@ -189,6 +191,33 @@ export function BrowserLiveViewPanel({
           </button>
         </div>
       </header>
+      {diagnosisActive ? (
+        <div
+          className="browser-page-diagnosis"
+          role="status"
+          aria-live="polite"
+        >
+          <ShieldAlert size={16} aria-hidden="true" />
+          <div>
+            <strong>
+              {diagnosis === "challenge_detected"
+                ? "Human verification required"
+                : "Login required"}
+            </strong>
+            <span>
+              Continue privately in this isolated Browser profile. Napier does
+              not solve CAPTCHAs or import existing Chrome login state.
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled={controlBusy}
+            onClick={() => void openTakeover()}
+          >
+            Take control
+          </button>
+        </div>
+      ) : null}
       <img
         src={imageUrl}
         alt="Live viewport from the active isolated Browser Session"
