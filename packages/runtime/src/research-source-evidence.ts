@@ -11,6 +11,17 @@ export interface ResearchSourceEvidenceRecord {
   textSha256: string;
 }
 
+export interface ResearchSourceCitationRecord {
+  id: string;
+  sourceId: string;
+  startLine: number;
+  endLine: number;
+  claim: string;
+  quoteSha256: string;
+  claimSha256: string;
+  token: string;
+}
+
 export function researchSourceDetails(
   action: "capture" | "capture_fetch" | "cite",
   counts: Pick<

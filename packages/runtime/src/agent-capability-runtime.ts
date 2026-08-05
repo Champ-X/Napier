@@ -9,6 +9,7 @@ import { RunBrowserSessionManager } from "./browser-session.js";
 import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import { gitStageMutationManagerFor } from "./git-stage.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
+import { ResearchSourceCapsuleStore } from "./research-source-capsule-store.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import { createStatelessAgentTools } from "./stateless-agent-tools.js";
 import type { LocalStore } from "./store.js";
@@ -80,6 +81,8 @@ export class AgentCapabilityRuntime {
       resolvedBrowserSessions,
       researchSourceCaptures,
       webFetchCapture,
+      new ResearchSourceCapsuleStore(store.dataRoot),
+      store,
     );
   }
 
@@ -173,6 +176,10 @@ export class AgentCapabilityRuntime {
         settlement.status === "rejected",
     );
     if (failure) throw failure.reason;
+  }
+
+  prepareResearchSourceRecovery(owner: AgentCapabilityOwner) {
+    return this.sessions.prepareResearchSourceRecovery(owner);
   }
 
   captureBrowserLiveView(

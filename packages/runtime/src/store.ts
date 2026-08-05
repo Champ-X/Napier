@@ -540,6 +540,10 @@ import {
   validateRunConfigurationFingerprint,
 } from "./run-config.js";
 import {
+  dropPrivateImportedEvent,
+  remapImportedEventPayload,
+} from "./thread-import-event-payload.js";
+import {
   createAgentMilestoneRecordedPayload,
   MAX_AGENT_MILESTONES_PER_RUN,
   MAX_AGENT_MILESTONES_PER_THREAD,
@@ -581,13 +585,11 @@ import {
   WORKFLOW_NODE_EXECUTION,
   type WorkflowNodeExecution,
 } from "./workflow-node-execution.js";
-import { WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT } from "./workflow-input-override.js";
 import {
   WORKFLOW_SIMULATION_EXECUTION,
   type WorkflowSimulationExecution,
 } from "./workflow-simulation-execution.js";
 import { validateWorkflowSimulationRunGate } from "./workflow-simulation-run-gate.js";
-import { WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT } from "./workflow-simulation-evidence.js";
 import {
   isWorkflowReadOnlyChildExecutionMode,
   validateWorkflowReadOnlyChildRunGate,
@@ -8135,7 +8137,8 @@ export class LocalStore {
       const subagentsById = new Map(
         subagents.map((task) => [task.id, task] as const),
       );
-      const events: RunEvent[] = bundle.events.map((source) => {
+      const importedEvents = bundle.events.filter(dropPrivateImportedEvent);
+      const events: RunEvent[] = importedEvents.map((source, index) => {
         const payload = rebindImportedSubagentEventPayload(
           source.type,
           source.payload,
@@ -8147,7 +8150,7 @@ export class LocalStore {
           id: eventIds.get(source.id)!,
           threadId,
           runId: runIds.get(source.runId) ?? auxiliaryRunIds.get(source.runId)!,
-          seq: source.seq,
+          seq: index + 1,
           type: source.type,
           category: source.category,
           visibility: source.visibility,
@@ -12305,60 +12308,6 @@ function normalizeInboundChannelAdapter(
 function normalizeImportedThreadTitle(value: string): string {
   const normalized = value.replace(/\s+/g, " ").trim();
   return normalized ? normalized.slice(0, 100) : "Imported ledger";
-}
-
-function remapImportedEventPayload(
-  type: string,
-  payload: JsonValue,
-  idMap: ReadonlyMap<string, string>,
-): JsonValue {
-  const simulationOutput =
-    type === WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT &&
-    isRecord(payload) &&
-    Object.prototype.hasOwnProperty.call(payload, "output")
-      ? structuredClone(payload["output"])
-      : undefined;
-  const replacementInput =
-    type === WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT &&
-    isRecord(payload) &&
-    Object.prototype.hasOwnProperty.call(payload, "input")
-      ? structuredClone(payload["input"])
-      : undefined;
-  const remapped = remapJsonValue(payload, idMap);
-  if (
-    simulationOutput !== undefined &&
-    isRecord(remapped) &&
-    Object.prototype.hasOwnProperty.call(remapped, "output")
-  ) {
-    remapped["output"] = simulationOutput;
-  }
-  if (
-    replacementInput !== undefined &&
-    isRecord(remapped) &&
-    Object.prototype.hasOwnProperty.call(remapped, "input")
-  ) {
-    remapped["input"] = replacementInput;
-  }
-  return remapped;
-}
-
-function remapJsonValue(
-  value: JsonValue,
-  idMap: ReadonlyMap<string, string>,
-): JsonValue {
-  if (typeof value === "string") return idMap.get(value) ?? value;
-  if (Array.isArray(value)) {
-    return value.map((item) => remapJsonValue(item, idMap));
-  }
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        remapJsonValue(item, idMap),
-      ]),
-    );
-  }
-  return value;
 }
 
 function rebindImportedSubagentEventPayload(

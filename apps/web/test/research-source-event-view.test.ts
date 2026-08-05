@@ -328,6 +328,28 @@ describe("Research Source Trace projection", () => {
         sourceTextChars: 8,
       }),
     ).toBeUndefined();
+    expect(
+      researchSourceEventEvidence({
+        kind: "napier.research-source",
+        schemaVersion: 1,
+        action: "list",
+        sourceCount: 1,
+        citationCount: 0,
+        sourceSetSha256: "a".repeat(64),
+        stateCapsule: {
+          kind: "napier.research-source-capsule-receipt",
+          schemaVersion: 1,
+          sourceRunId: "run_fixture12345678",
+          sourceCount: 1,
+          citationCount: 0,
+          sourceSetSha256: "a".repeat(64),
+          capsuleSha256: "b".repeat(64),
+          capsuleBytes: 1_024,
+          storage: "persisted",
+          contentSha256: "c".repeat(64),
+        },
+      }),
+    ).toBeUndefined();
   });
 
   it("projects verified report bytes without paths or Markdown", () => {

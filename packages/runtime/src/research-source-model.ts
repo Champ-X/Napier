@@ -7,6 +7,7 @@ import type {
   WebFetchBrowserFallbackStatus,
   WebFetchRenderMode,
 } from "./web-fetch-model.js";
+import type { ResearchSourceCapsuleReceipt } from "./research-source-capsule-model.js";
 
 export type ResearchSourceRequest =
   | { action: "capture"; maxChars?: number }
@@ -55,6 +56,7 @@ export interface ResearchSourceToolDetails {
   sourceCount: number;
   citationCount: number;
   sourceSetSha256: string;
+  stateCapsule?: ResearchSourceCapsuleReceipt;
   browserSessionOperation?: number;
   browserSessionIdSha256?: string;
   browserActiveTabId?: string;

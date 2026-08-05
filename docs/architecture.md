@@ -4382,9 +4382,20 @@ bounded Research lines. `research-source-capture.ts` independently validates
 both returned capture contracts and binds them to one immutable Research
 capture hash. `research-source-model.ts` and `research-source-evidence.ts`
 separate the shared contract/evidence projection from the registry.
-`research-sources.ts` owns Run isolation, serialization, cancellation, and the
-ephemeral Research registry. `research-source-tool.ts` owns the Agent schema
-and redacted call/input/output projections.
+`research-sources.ts` owns Run isolation, serialization, cancellation, and
+transactional Source/citation mutation. `research-source-capsule.ts` validates
+the complete private state and hash-only local receipt;
+`research-source-capsule-store.ts` stores content-addressed mode-`0600`
+capsules under a mode-`0700` root with per-object/count/total-byte bounds;
+`research-source-continuity.ts` permits lazy adoption only from an interrupted
+immediate parent into a verified `source: recovery` child. It writes a
+child-owned capsule before returning restored state.
+`research-source-recovery-context.ts` checkpoints that child receipt before
+the first model call, so another restart can continue even when the first
+recovery crashes before calling a Source tool. `run-recovery-prompt.ts`
+includes only Source counts/set hash and instructs the model to list before
+reusing IDs. `research-source-tool.ts` owns the Agent schema and redacted
+call/input/output projections.
 `research-report-verification.ts` owns canonical Markdown loading, exact
 claim-line parsing, current-Run token validation, and post-read freshness.
 `research-source-event-view.ts` independently validates the bounded Trace
@@ -4407,20 +4418,29 @@ and citation token. `verify_report` proves the token/claim/current-Run binding
 against actual workspace bytes; a verified Plan artifact independently binds
 the delivered artifact lifecycle.
 
-The registry is process-local by design. An interrupted `research_source`
-operation cannot be reconstructed from hash-only evidence, so automatic
-recovery marks it unsafe even though capture, cite, and list have read effects.
-No Web Fetch or Research Source is visible across Runs, and cancellation waits
-for both serialized queues before deleting registry state.
+Live Browser/Web Fetch registries remain process-local. Completed Research
+Source state is separately checkpointed in private capsules: a manual linked
+recovery Run can restore the latest exact Source/citation state, list it,
+create new citations, and verify a Markdown report without refetching. Ordinary
+children and completed-Run reuse cannot inherit it. The parent must be the
+interrupted immediate parent, the receipt must match Tool counts/set hash, and
+the private capsule must match Thread, Run, receipt, capture, quote, claim, and
+self-hash bindings. Replay export carries only receipts; import strips both
+`context.research_sources` and nested `stateCapsule` fields because a
+`local_only` capsule cannot be adopted into another data root. Automatic
+recovery remains blocked after `research_source` or other unsafe
+network-session tools; this slice does not pretend Browser or Web Fetch
+Sessions survived restart.
 
-The checked bridge gates cover same-Run import and cross-Run denial, stale
-hashes, Browser/Fetch provenance separation, Agent tool sequencing, redacted
-call projections, Trace validation, Browser-only benchmark compatibility, and
-real report verification against workspace bytes. Real built-CLI DeepSeek
-Dogfood completed the Fetch/capture/cite chain for public HTML and PDF without
-retaining credential, URL, body, or Web Source ID in Tool events. Architecture
-passes with 896 production source files, 447 test files, and zero cycles; the
-complete regular suite passes 2,134 tests.
+The checked bridge gates cover same-Run import and ordinary cross-Run denial,
+storage failure before mutation, 0700/0600 permissions, capsule/capture/claim
+tamper rejection, immediate-parent lineage, crash-before-first-tool
+multi-restart checkpointing, inherited list/cite/report verification, redacted
+CLI JSONL/Ledger, Trace validation, and retained benchmark compatibility. Real
+built-CLI DeepSeek Dogfood created a linked recovery child in a fresh process,
+restored one Source/citation, executed `list -> cite`, returned the required
+terminal result, and wrote a child-owned capsule. The private marker appeared
+only in private model/Source capsules, never JSONL or Ledger events.
 
 ### Open-Web Research Outcome Verification
 

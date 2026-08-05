@@ -88,6 +88,7 @@ export function researchSourceEventEvidence(
   ) {
     return undefined;
   }
+  if (!validStateCapsule(value["stateCapsule"])) return undefined;
   const counts = { sourceCount, citationCount };
   if (action === "list") return listEvidence(value, counts);
   if (action === "verify_report") {
@@ -190,6 +191,25 @@ function sourceOrCitationEvidence(
     researchCitationQuoteSha256: value["citationQuoteSha256"],
     researchCitationClaimSha256: value["citationClaimSha256"],
   };
+}
+
+function validStateCapsule(value: unknown): boolean {
+  if (value === undefined) return true;
+  return (
+    record(value) &&
+    value["kind"] === "napier.research-source-capsule-receipt" &&
+    value["schemaVersion"] === 1 &&
+    typeof value["sourceRunId"] === "string" &&
+    /^run_[a-z0-9_-]{8,80}$/u.test(value["sourceRunId"]) &&
+    integer(value["sourceCount"], 0, 16) !== undefined &&
+    integer(value["citationCount"], 0, 64) !== undefined &&
+    sha256(value["sourceSetSha256"]) &&
+    sha256(value["capsuleSha256"]) &&
+    integer(value["capsuleBytes"], 1, 2 * 1024 * 1024) !== undefined &&
+    value["storage"] === "local_only" &&
+    sha256(value["contentSha256"]) &&
+    Object.keys(value).length === 10
+  );
 }
 
 function listEvidence(

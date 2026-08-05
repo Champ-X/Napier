@@ -52,6 +52,7 @@ import {
   AGENT_MILESTONE_RECORDED_EVENT,
   projectAgentMilestones,
 } from "./agent-milestones.js";
+import { assertResearchSourceRecoveryContexts } from "./research-source-replay.js";
 import { assertIndependentModelAdvisorReviewEvidenceBindings } from "./independent-model-advisor.js";
 import {
   assertModelContextEnvelopeEventBindings,
@@ -82,9 +83,7 @@ import {
   validateSubagentOutcomeRepairOutcome,
   validateSubagentOutcomeRepairRequest,
 } from "./subagent-outcome-repair.js";
-
 export const MAX_THREAD_REPLAY_BUNDLE_BYTES = 10 * 1024 * 1024;
-
 const MAX_EVENTS = 50_000;
 const MAX_AGENT_REVISIONS = 10_000;
 const MAX_RUNS = 10_000;
@@ -866,6 +865,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     knownRunIds: runIds,
     label: "Thread replay bundle Model Context Envelope",
   });
+  assertResearchSourceRecoveryContexts(typedEvents, runsById);
   const toolLoopTriggerEvents = typedEvents.filter(
     (event) => event.type === TOOL_LOOP_GUARD_TRIGGERED_EVENT,
   );

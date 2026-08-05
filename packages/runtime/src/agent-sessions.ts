@@ -20,6 +20,8 @@ import {
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { WebFetchResearchCaptureProvider } from "./web-fetch-model.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
+import type { ResearchSourceCapsuleStore } from "./research-source-capsule-store.js";
+import type { LocalStore } from "./store.js";
 
 export class AgentSessionRuntime {
   private readonly kernels: AgentKernelRuntime;
@@ -35,6 +37,8 @@ export class AgentSessionRuntime {
     browserSessions?: RunBrowserSessionManager,
     researchSourceCaptures?: BrowserSourceCaptureProvider,
     webFetchCaptures?: WebFetchResearchCaptureProvider,
+    researchSourceCapsules?: ResearchSourceCapsuleStore,
+    store?: Pick<LocalStore, "listRuns" | "listEvents">,
   ) {
     this.kernels = new AgentKernelRuntime(processes);
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
@@ -44,6 +48,8 @@ export class AgentSessionRuntime {
       researchSourceCaptures ?? this.browsers,
       workspaceRoot,
       webFetchCaptures,
+      researchSourceCapsules,
+      store,
     );
     this.debuggerManager = processes
       ? new NodeDebuggerManager(processes, workspaceRoot)
@@ -111,6 +117,10 @@ export class AgentSessionRuntime {
         settlement.status === "rejected",
     );
     if (failure) throw failure.reason;
+  }
+
+  prepareResearchSourceRecovery(request: { threadId: string; runId: string }) {
+    return this.researchSources.prepareRecovery(request);
   }
 
   captureBrowserLiveView(

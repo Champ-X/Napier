@@ -26,21 +26,29 @@ export function validateResearchBrowserCapture(
   maxChars: number,
 ): URL {
   const normalized = browserResearchCapture(capture);
-  const url = validateResearchSourceCapture(normalized, maxChars);
-  const network = capture.network;
+  return validateBrowserResearchSourceCapture(normalized, maxChars);
+}
+
+export function validateBrowserResearchSourceCapture(
+  capture: BrowserResearchCapture,
+  maxChars: number,
+): URL {
+  const url = validateResearchSourceCapture(capture, maxChars);
+  const browser = capture.browser;
+  const network = browser.network;
   if (
-    !Number.isSafeInteger(capture.sessionOperation) ||
-    capture.sessionOperation < 1 ||
-    capture.sessionOperation > MAX_BROWSER_SESSION_OPERATIONS ||
-    !SHA256.test(capture.sessionIdSha256) ||
-    !/^tab_[1-9][0-9]{0,3}$/u.test(capture.activeTabId) ||
-    !Number.isSafeInteger(capture.tabCount) ||
-    capture.tabCount < 1 ||
-    capture.tabCount > 4 ||
-    !SHA256.test(capture.tabSetSha256) ||
-    !SHA256.test(capture.browserExecutableSha256) ||
-    !SHA256.test(capture.browserVersionSha256) ||
-    !SHA256.test(capture.limitsSha256) ||
+    !Number.isSafeInteger(browser.sessionOperation) ||
+    browser.sessionOperation < 1 ||
+    browser.sessionOperation > MAX_BROWSER_SESSION_OPERATIONS ||
+    !SHA256.test(browser.sessionIdSha256) ||
+    !/^tab_[1-9][0-9]{0,3}$/u.test(browser.activeTabId) ||
+    !Number.isSafeInteger(browser.tabCount) ||
+    browser.tabCount < 1 ||
+    browser.tabCount > 4 ||
+    !SHA256.test(browser.tabSetSha256) ||
+    !SHA256.test(browser.executableSha256) ||
+    !SHA256.test(browser.versionSha256) ||
+    !SHA256.test(browser.limitsSha256) ||
     !validNetworkCount(network.requestCount, MAX_PROXY_REQUESTS) ||
     !validNetworkCount(network.connectCount, MAX_PROXY_REQUESTS) ||
     !validNetworkCount(network.rejectedCount, MAX_PROXY_REQUESTS) ||

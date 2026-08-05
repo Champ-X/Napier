@@ -2,7 +2,11 @@ import { spawn } from "node:child_process";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 
-import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
+import {
+  fauxAssistantMessage,
+  fauxProvider,
+  fauxToolCall,
+} from "@earendil-works/pi-ai";
 import type { StreamFrame } from "@napier/contracts";
 import { hashEventStream } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
@@ -13,6 +17,7 @@ import {
   cliIo,
   collect,
   createInterruptedFixture,
+  createInterruptedResearchFixture,
   parseFrames,
   providerDependencies,
 } from "./cli-resume-fixture.js";
@@ -110,7 +115,7 @@ describe("Napier CLI interrupted Run resume", () => {
       providerDependencies(provider),
     );
 
-    expect(code).toBe(0);
+    expect(code, stderr.text() || stdout.text()).toBe(0);
     expect(stderr.text()).toBe("");
     const frames = parseFrames(stdout.text());
     const snapshot = frames.at(-2);
@@ -164,6 +169,108 @@ describe("Napier CLI interrupted Run resume", () => {
         "run.recovery.prompt",
         "run.recovery.completed",
       ]),
+    );
+  });
+
+  it("restores private Research Sources through a fresh CLI resume", async () => {
+    const fixture = await createInterruptedResearchFixture(temporaryRoots);
+    const provider = fauxProvider({ provider: "faux-cli-research-resume" });
+    provider.setResponses([
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("<run-recovery>");
+        expect(messages).toContain(
+          "A private local Source capsule is available",
+        );
+        expect(messages).toContain("Call research_source list");
+        expect(messages).not.toContain(fixture.sourceSecret);
+        return fauxAssistantMessage(
+          fauxToolCall("research_source", { action: "list" }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain(fixture.sourceId);
+        expect(messages).toContain(fixture.citationId);
+        expect(messages).not.toContain(fixture.sourceSecret);
+        return fauxAssistantMessage(
+          fauxToolCall("research_source", {
+            action: "cite",
+            sourceId: fixture.sourceId,
+            sourceContentSha256: fixture.sourceContentSha256,
+            startLine: 1,
+            endLine: 1,
+            claim: "The fresh CLI process recovered private Source evidence.",
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          fixture.sourceSecret,
+        );
+        return fauxAssistantMessage("CLI_RESEARCH_RESUME_RESULT");
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "resume",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--thread",
+        fixture.threadId,
+        "--run",
+        fixture.runId,
+        "--model",
+        "faux-cli-research-resume/faux-1",
+        "--jsonl",
+      ],
+      cliIo(fixture, stdout, stderr),
+      providerDependencies(provider),
+    );
+
+    expect(code, stderr.text() || stdout.text()).toBe(0);
+    expect(stderr.text()).toBe("");
+    expect(stdout.text()).not.toContain(fixture.sourceSecret);
+    const frames = parseFrames(stdout.text());
+    const snapshot = frames.findLast((frame) => frame.type === "snapshot");
+    const done = frames.at(-1);
+    expect(snapshot?.type).toBe("snapshot");
+    expect(done?.type).toBe("done");
+    if (snapshot?.type !== "snapshot" || done?.type !== "done") return;
+    const researchEvents = snapshot.detail.events.filter(
+      (event) =>
+        event.runId === done.runId &&
+        event.type === "tool.completed" &&
+        event.payload["toolName"] === "research_source",
+    );
+    expect(
+      researchEvents.map(
+        (event) =>
+          (event.payload["details"] as Record<string, unknown>)["action"],
+      ),
+    ).toEqual(["list", "cite"]);
+    expect(JSON.stringify(snapshot.detail.events)).not.toContain(
+      fixture.sourceSecret,
+    );
+    expect(
+      (researchEvents.at(-1)!.payload["details"] as Record<string, unknown>)[
+        "stateCapsule"
+      ],
+    ).toEqual(
+      expect.objectContaining({
+        sourceRunId: done.runId,
+        sourceCount: 1,
+        citationCount: 2,
+        storage: "local_only",
+      }),
     );
   });
 
