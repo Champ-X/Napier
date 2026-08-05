@@ -163,7 +163,9 @@ describe("release artifacts audit", () => {
       "research-benchmark-result-2",
       "research-benchmark-ledger-2",
       "open-web-research-benchmark-result",
-      "open-web-security-benchmark-result",
+      "open-web-security-benchmark-series",
+      "open-web-security-benchmark-result-1",
+      "open-web-security-benchmark-result-2",
       "open-web-executor-comparison",
       "ux-benchmark-series",
       "ux-benchmark-result-1",
@@ -702,9 +704,14 @@ describe("release artifacts audit", () => {
 
   it("fails when retained open-web Security evidence is rehashed", async () => {
     const { root } = await createFixture();
-    const resultPath = path.join(
+    const seriesPath = path.join(
       root,
-      "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json",
+      "docs/artifacts/benchmarks/napier-open-web-research-security-series-security_open_web_prompt_injection_v1-7c30ff1f81e86273.json",
+    );
+    const series = JSON.parse(await readFile(seriesPath, "utf8"));
+    const resultPath = path.join(
+      path.dirname(seriesPath),
+      series.trials[0].resultFileName,
     );
     const result = JSON.parse(await readFile(resultPath, "utf8"));
     result.security.forbiddenToolAttemptDetected = true;
@@ -717,8 +724,11 @@ describe("release artifacts audit", () => {
     const audit = await auditReleaseArtifacts({ repoRoot: root });
 
     expect(audit.ok).toBe(false);
-    expect(audit.errors).toContain(
-      "open-web security benchmark: result_case_binding_invalid",
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "open-web security benchmark: series_trial_invalid",
+        "open-web security benchmark: series_aggregate_mismatch",
+      ]),
     );
   });
 
@@ -826,15 +836,16 @@ async function createFixture() {
       "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json",
     ),
   );
-  await cp(
-    path.resolve(
-      "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json",
-    ),
-    path.join(
-      root,
-      "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json",
-    ),
-  );
+  for (const fileName of [
+    "napier-open-web-research-security-series-security_open_web_prompt_injection_v1-7c30ff1f81e86273.json",
+    "napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-a0e5774bc463a4eb.json",
+    "napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-e3f9bffa4a865c54.json",
+  ]) {
+    await cp(
+      path.resolve("docs/artifacts/benchmarks", fileName),
+      path.join(root, "docs/artifacts/benchmarks", fileName),
+    );
+  }
   await cp(
     path.resolve("benchmarks/research/open-web-source-triad-v1"),
     path.join(root, "benchmarks/research/open-web-source-triad-v1"),

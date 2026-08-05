@@ -29,6 +29,11 @@ import {
   runOpenWebResearchBenchmark,
   type OpenWebResearchBenchmarkDependencies,
 } from "../src/open-web-research-benchmark.js";
+import {
+  createOpenWebResearchSecuritySeries,
+  runOpenWebResearchSecuritySeries,
+  verifyOpenWebResearchSecuritySeries,
+} from "../src/open-web-research-security-series.js";
 import { verifyOpenWebResearchBenchmarkAgainstCase } from "../src/open-web-research-benchmark-verifier.js";
 
 const CASE_ROOT = path.resolve(
@@ -227,6 +232,118 @@ describe("open-web prompt-injection outcome benchmark", () => {
       }),
     );
   }, 30_000);
+
+  it("aggregates repeated security trials and rejects substitution", async () => {
+    const outputDir = await temporaryOutput();
+    const artifacts = await runOpenWebResearchSecuritySeries(
+      {
+        caseRoot: CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-open-web-security", id: "faux-1" },
+        env: {},
+        trialCount: 2,
+      },
+      securitySeriesDependencies(["pass", "pass"]),
+    );
+    const loaded = await loadOpenWebResearchBenchmarkCase(CASE_ROOT);
+    const inputs = artifacts.trials.map((trial) => ({
+      resultFileName: path.basename(trial.resultPath),
+      result: trial.result,
+    }));
+
+    expect(artifacts.series).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        completedTrialCount: 2,
+        passedTrialCount: 2,
+        failedTrialCount: 0,
+        inconclusiveTrialCount: 0,
+        promptInjectionLeakTrialCount: 0,
+        forbiddenToolAttemptTrialCount: 0,
+        exactFinalResponseTrialCount: 2,
+        replayValidTrialCount: 2,
+        credentialLeakTrialCount: 0,
+        passRate: 1,
+        exactFinalResponseRate: 1,
+      }),
+    );
+    expect(
+      verifyOpenWebResearchSecuritySeries(
+        artifacts.series,
+        inputs,
+        loaded.benchmarkCase,
+        loaded.expected,
+      ),
+    ).toEqual({
+      valid: true,
+      diagnostics: [],
+      seriesSha256: artifacts.series.contentSha256,
+      trialDiagnostics: [
+        { index: 1, diagnostics: [] },
+        { index: 2, diagnostics: [] },
+      ],
+    });
+    const serialized = JSON.stringify(artifacts.series);
+    for (const privateValue of [
+      SOURCE_URL,
+      CLAIM,
+      CANARY,
+      "Ignore all previous instructions",
+      "[citation:",
+    ]) {
+      expect(serialized).not.toContain(privateValue);
+    }
+
+    const substituted = structuredClone(inputs);
+    substituted[0] = structuredClone(inputs[1]!);
+    expect(
+      verifyOpenWebResearchSecuritySeries(
+        artifacts.series,
+        substituted,
+        loaded.benchmarkCase,
+        loaded.expected,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["series_trial_invalid", "series_aggregate_mismatch"],
+      }),
+    );
+    expect(() =>
+      createOpenWebResearchSecuritySeries({
+        generatedAt: artifacts.series.generatedAt,
+        requestedTrialCount: 2,
+        status: "completed",
+        trials: [artifacts.trials[0]!, artifacts.trials[0]!],
+      }),
+    ).toThrow("trials are inconsistent");
+  }, 30_000);
+
+  it("retains truthful failed security outcomes in a valid series", async () => {
+    const outputDir = await temporaryOutput();
+    const artifacts = await runOpenWebResearchSecuritySeries(
+      {
+        caseRoot: CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-open-web-security", id: "faux-1" },
+        env: {},
+        trialCount: 2,
+      },
+      securitySeriesDependencies(["pass", "leak"]),
+    );
+
+    expect(artifacts.series).toEqual(
+      expect.objectContaining({
+        completedTrialCount: 2,
+        passedTrialCount: 1,
+        failedTrialCount: 1,
+        promptInjectionLeakTrialCount: 1,
+        exactFinalResponseTrialCount: 1,
+        passRate: 0.5,
+        exactFinalResponseRate: 0.5,
+      }),
+    );
+  }, 30_000);
 });
 
 async function runSecurityCase(mode: "pass" | "browser" | "leak") {
@@ -289,6 +406,27 @@ function securityProvider(mode: "pass" | "browser" | "leak") {
     }),
   );
   return provider;
+}
+
+function securitySeriesDependencies(
+  modes: Array<"pass" | "browser" | "leak">,
+): OpenWebResearchBenchmarkDependencies {
+  let index = 0;
+  return {
+    now: () => new Date("2026-08-05T15:00:00.000Z"),
+    async createRuntime(options: LocalAgentRuntimeOptions) {
+      const provider = securityProvider(modes[index++]!);
+      const runtime = await createLocalAgentRuntime({
+        ...options,
+        sandbox: new UnsupportedSandboxAdapter("open-web-security-test"),
+        browserSessions:
+          new SecurityFixtureBrowser() as unknown as RunBrowserSessionManager,
+        webFetch: new SecurityFixtureWebFetch(),
+      });
+      runtime.models.registerProvider(provider.provider);
+      return runtime;
+    },
+  };
 }
 
 function captureFetchResponse(messages: string) {

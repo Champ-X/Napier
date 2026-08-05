@@ -31,6 +31,10 @@ import {
 } from "../apps/cli/dist/process-recovery-benchmark-series.js";
 import { loadOpenWebResearchBenchmarkCase } from "../apps/cli/dist/open-web-research-benchmark-case.js";
 import { verifyOpenWebResearchBenchmarkAgainstCase } from "../apps/cli/dist/open-web-research-benchmark-verifier.js";
+import {
+  openWebResearchSecuritySeriesArtifactReferences,
+  verifyOpenWebResearchSecuritySeries,
+} from "../apps/cli/dist/open-web-research-security-series.js";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -84,8 +88,8 @@ const defaultOpenWebResearchBenchmarkResultPath =
   "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json";
 const defaultOpenWebResearchBenchmarkCaseRoot =
   "benchmarks/research/open-web-source-triad-v1";
-const defaultOpenWebSecurityBenchmarkResultPath =
-  "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json";
+const defaultOpenWebSecurityBenchmarkSeriesPath =
+  "docs/artifacts/benchmarks/napier-open-web-research-security-series-security_open_web_prompt_injection_v1-7c30ff1f81e86273.json";
 const defaultOpenWebSecurityBenchmarkCaseRoot =
   "benchmarks/security/open-web-prompt-injection-v1";
 const defaultOpenWebExecutorComparisonPath =
@@ -163,9 +167,9 @@ export async function auditReleaseArtifacts(options = {}) {
   const openWebResearchBenchmarkCaseRoot =
     options.openWebResearchBenchmarkCaseRoot ??
     defaultOpenWebResearchBenchmarkCaseRoot;
-  const openWebSecurityBenchmarkResultPath =
-    options.openWebSecurityBenchmarkResultPath ??
-    defaultOpenWebSecurityBenchmarkResultPath;
+  const openWebSecurityBenchmarkSeriesPath =
+    options.openWebSecurityBenchmarkSeriesPath ??
+    defaultOpenWebSecurityBenchmarkSeriesPath;
   const openWebSecurityBenchmarkCaseRoot =
     options.openWebSecurityBenchmarkCaseRoot ??
     defaultOpenWebSecurityBenchmarkCaseRoot;
@@ -399,14 +403,12 @@ export async function auditReleaseArtifacts(options = {}) {
       caseRoot: openWebResearchBenchmarkCaseRoot,
       errors,
     });
-  const openWebSecurityBenchmarkArtifact =
-    await verifyOpenWebResearchReleaseArtifact({
+  const openWebSecurityBenchmarkArtifacts =
+    await verifyOpenWebSecuritySeriesReleaseArtifacts({
       repoRoot,
-      resultPath: openWebSecurityBenchmarkResultPath,
+      seriesPath: openWebSecurityBenchmarkSeriesPath,
       caseRoot: openWebSecurityBenchmarkCaseRoot,
       errors,
-      artifactKind: "open-web-security-benchmark-result",
-      diagnosticLabel: "open-web security benchmark",
     });
   const openWebExecutorComparisonArtifact =
     await verifyOpenWebComparisonReleaseArtifact({
@@ -510,7 +512,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...processRecoveryBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
     openWebResearchBenchmarkArtifact,
-    openWebSecurityBenchmarkArtifact,
+    ...openWebSecurityBenchmarkArtifacts,
     openWebExecutorComparisonArtifact,
     ...uxBenchmarkArtifacts,
   ];
@@ -796,8 +798,8 @@ function parseCliOptions(args) {
       index += 1;
       continue;
     }
-    if (arg === "--open-web-security-benchmark-result-path") {
-      options.openWebSecurityBenchmarkResultPath = readCliValue(
+    if (arg === "--open-web-security-benchmark-series-path") {
+      options.openWebSecurityBenchmarkSeriesPath = readCliValue(
         args,
         index,
         arg,
@@ -969,6 +971,90 @@ async function verifyOpenWebResearchReleaseArtifact({
     ...artifact,
     valid: evidence.readable && valid,
   };
+}
+
+async function verifyOpenWebSecuritySeriesReleaseArtifacts({
+  repoRoot,
+  seriesPath,
+  caseRoot,
+  errors,
+}) {
+  const seriesEvidence = await readArtifactEvidence(
+    repoRoot,
+    seriesPath,
+    errors,
+  );
+  const series = await readJsonArtifact(repoRoot, seriesPath, errors);
+  const root = path.posix.dirname(seriesPath);
+  const artifacts = [];
+  let valid = false;
+  try {
+    for (const reference of openWebResearchSecuritySeriesArtifactReferences(
+      series,
+    )) {
+      const resultPath = path.posix.join(root, reference.resultFileName);
+      artifacts.push({
+        resultFileName: reference.resultFileName,
+        result: await readJsonArtifact(repoRoot, resultPath, errors),
+        evidence: await readArtifactEvidence(repoRoot, resultPath, errors),
+      });
+    }
+    const loaded = await loadOpenWebResearchBenchmarkCase(
+      resolveRepoRelativePath(repoRoot, caseRoot, "openWebSecurityCaseRoot"),
+    );
+    const verification = verifyOpenWebResearchSecuritySeries(
+      series,
+      artifacts.map((artifact) => ({
+        resultFileName: artifact.resultFileName,
+        result: artifact.result,
+      })),
+      loaded.benchmarkCase,
+      loaded.expected,
+    );
+    valid =
+      verification.valid &&
+      series?.status === "completed" &&
+      series?.failedTrialCount === 0 &&
+      series?.inconclusiveTrialCount === 0;
+    if (!verification.valid) {
+      errors.push(
+        ...verification.diagnostics.map(
+          (diagnostic) => `open-web security benchmark: ${diagnostic}`,
+        ),
+      );
+    }
+    if (verification.valid && !valid) {
+      errors.push("open-web security benchmark: retained_series_not_passing");
+    }
+  } catch (error) {
+    errors.push(
+      `open-web security benchmark: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const { readable: _seriesReadable, ...seriesArtifact } = seriesEvidence;
+  return [
+    {
+      kind: "open-web-security-benchmark-series",
+      ...seriesArtifact,
+      valid:
+        seriesEvidence.readable &&
+        valid &&
+        artifacts.length > 0 &&
+        artifacts.every((artifact) => artifact.evidence.readable),
+    },
+    ...artifacts.map((artifact) => {
+      const { readable: _readable, ...evidence } = artifact.evidence;
+      return {
+        kind: `open-web-security-benchmark-result-${String(
+          artifacts.indexOf(artifact) + 1,
+        )}`,
+        ...evidence,
+        valid: artifact.evidence.readable && valid,
+      };
+    }),
+  ];
 }
 
 async function verifyOpenWebComparisonReleaseArtifact({

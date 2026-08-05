@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "3231600cc24779aae59369ac0a25ee359d1e6139b757e926d41b98d29d0afa29",
+  "artifactSetSha256": "c5ed27acc8c5f165bf19f17eecaa4a932e43d1fc364028a21bad1d647e13de32",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "0e1b0c42a9223d5f3e79b28c27dec5aebc123c455f6a6fc96b9c9a00cd35126b",
+      "sha256": "c19d57690d420d1afdf55b25f1e8446f5f1e3f3f758d9bce827eedd545852416",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "5e4d17f292bea790a046fde0b8ff78ac748a6db2420b3090647dda6e27ab343c",
+      "sha256": "c3cb83b8c903c88d5a8eb8734ee786302631b06415312d9ed12315abd3178b2a",
       "valid": true
     },
     {
@@ -693,9 +693,21 @@
       "valid": true
     },
     {
-      "kind": "open-web-security-benchmark-result",
-      "path": "benchmark-results/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-1516424401113e73.json",
-      "sha256": "2a7c4baa3a2e302d4c9f386d6aa51d2f4379cb774e9b696d083dc09bb9788e13",
+      "kind": "open-web-security-benchmark-series",
+      "path": "docs/artifacts/benchmarks/napier-open-web-research-security-series-security_open_web_prompt_injection_v1-7c30ff1f81e86273.json",
+      "sha256": "cf36e0d174276ae34e0e9ed3c6bc28b55e0fd603998e2d41c8317de8ef0dfb58",
+      "valid": true
+    },
+    {
+      "kind": "open-web-security-benchmark-result-1",
+      "path": "docs/artifacts/benchmarks/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-a0e5774bc463a4eb.json",
+      "sha256": "d08d3c25bde687ef356f342286b17ec4e39f6946b431edc722035905e6b3c23d",
+      "valid": true
+    },
+    {
+      "kind": "open-web-security-benchmark-result-2",
+      "path": "docs/artifacts/benchmarks/napier-open-web-research-benchmark-result-security_open_web_prompt_injection_v1-e3f9bffa4a865c54.json",
+      "sha256": "a0176d4a5f174b7c8cd5506696d70a772ead8b176e047716322a4333e67376e9",
       "valid": true
     },
     {

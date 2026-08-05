@@ -7,6 +7,11 @@ import { fileURLToPath } from "node:url";
 import { loadOpenWebResearchBenchmarkCase } from "../apps/cli/dist/open-web-research-benchmark-case.js";
 import { runOpenWebResearchBenchmark } from "../apps/cli/dist/open-web-research-benchmark.js";
 import {
+  openWebResearchSecuritySeriesArtifactReferences,
+  runOpenWebResearchSecuritySeries,
+  verifyOpenWebResearchSecuritySeries,
+} from "../apps/cli/dist/open-web-research-security-series.js";
+import {
   verifyOpenWebResearchBenchmarkAgainstCase,
   verifyOpenWebResearchBenchmarkResult,
 } from "../apps/cli/dist/open-web-research-benchmark-verifier.js";
@@ -17,7 +22,31 @@ const repoRoot = path.resolve(
 );
 const args = parseArgs(process.argv.slice(2));
 
-if (args.verifyResult) {
+if (args.verifySeries) {
+  const series = await readJson(args.verifySeries, 512 * 1024);
+  const root = path.dirname(args.verifySeries);
+  const artifacts = [];
+  for (const reference of openWebResearchSecuritySeriesArtifactReferences(
+    series,
+  )) {
+    artifacts.push({
+      resultFileName: reference.resultFileName,
+      result: await readJson(
+        path.join(root, reference.resultFileName),
+        2 * 1024 * 1024,
+      ),
+    });
+  }
+  const loaded = await loadOpenWebResearchBenchmarkCase(args.caseRoot);
+  const verification = verifyOpenWebResearchSecuritySeries(
+    series,
+    artifacts,
+    loaded.benchmarkCase,
+    loaded.expected,
+  );
+  console.log(JSON.stringify(verification, null, 2));
+  if (!verification.valid) process.exitCode = 1;
+} else if (args.verifyResult) {
   const result = await readJson(args.verifyResult, 2 * 1024 * 1024);
   const verification = args.caseRoot
     ? await verifyAgainstCase(result, args.caseRoot)
@@ -30,7 +59,7 @@ if (args.verifyResult) {
   process.once("SIGINT", abort);
   process.once("SIGTERM", abort);
   try {
-    const artifacts = await runOpenWebResearchBenchmark({
+    const options = {
       caseRoot:
         args.caseRoot ??
         path.join(repoRoot, "benchmarks/research/open-web-source-triad-v1"),
@@ -43,29 +72,68 @@ if (args.verifyResult) {
       ...(args.credentialEnv ? { credentialEnv: args.credentialEnv } : {}),
       ...(args.timeoutMs ? { timeoutMs: args.timeoutMs } : {}),
       signal: controller.signal,
-    });
-    console.log(
-      JSON.stringify(
-        {
-          status: artifacts.result.status,
-          caseId: artifacts.result.caseId,
-          model: artifacts.result.model,
-          durationMs: artifacts.result.run.durationMs,
-          usage: artifacts.result.run.usage,
-          searchCount: artifacts.result.searchCount,
-          fetchCount: artifacts.result.fetchCount,
-          browserCount: artifacts.result.browserCount,
-          citationCount: artifacts.result.citationCount,
-          citationSourceKindCount: artifacts.result.citationSourceKindCount,
-          diagnostics: artifacts.result.diagnostics,
-          resultSha256: artifacts.result.contentSha256,
-          resultPath: path.relative(repoRoot, artifacts.resultPath),
-        },
-        null,
-        2,
-      ),
-    );
-    if (artifacts.result.status !== "passed") process.exitCode = 1;
+    };
+    if ((args.trialCount ?? 1) > 1) {
+      const artifacts = await runOpenWebResearchSecuritySeries({
+        ...options,
+        trialCount: args.trialCount,
+      });
+      console.log(
+        JSON.stringify(
+          {
+            status: artifacts.series.status,
+            caseId: artifacts.series.caseId,
+            model: artifacts.series.model,
+            completedTrialCount: artifacts.series.completedTrialCount,
+            passedTrialCount: artifacts.series.passedTrialCount,
+            failedTrialCount: artifacts.series.failedTrialCount,
+            inconclusiveTrialCount: artifacts.series.inconclusiveTrialCount,
+            promptInjectionLeakTrialCount:
+              artifacts.series.promptInjectionLeakTrialCount,
+            forbiddenToolAttemptTrialCount:
+              artifacts.series.forbiddenToolAttemptTrialCount,
+            exactFinalResponseRate: artifacts.series.exactFinalResponseRate,
+            passRate: artifacts.series.passRate,
+            metrics: artifacts.series.metrics,
+            seriesSha256: artifacts.series.contentSha256,
+            seriesPath: path.relative(repoRoot, artifacts.seriesPath),
+          },
+          null,
+          2,
+        ),
+      );
+      if (
+        artifacts.series.status !== "completed" ||
+        artifacts.series.failedTrialCount > 0 ||
+        artifacts.series.inconclusiveTrialCount > 0
+      ) {
+        process.exitCode = 1;
+      }
+    } else {
+      const artifacts = await runOpenWebResearchBenchmark(options);
+      console.log(
+        JSON.stringify(
+          {
+            status: artifacts.result.status,
+            caseId: artifacts.result.caseId,
+            model: artifacts.result.model,
+            durationMs: artifacts.result.run.durationMs,
+            usage: artifacts.result.run.usage,
+            searchCount: artifacts.result.searchCount,
+            fetchCount: artifacts.result.fetchCount,
+            browserCount: artifacts.result.browserCount,
+            citationCount: artifacts.result.citationCount,
+            citationSourceKindCount: artifacts.result.citationSourceKindCount,
+            diagnostics: artifacts.result.diagnostics,
+            resultSha256: artifacts.result.contentSha256,
+            resultPath: path.relative(repoRoot, artifacts.resultPath),
+          },
+          null,
+          2,
+        ),
+      );
+      if (artifacts.result.status !== "passed") process.exitCode = 1;
+    }
   } finally {
     process.removeListener("SIGINT", abort);
     process.removeListener("SIGTERM", abort);
@@ -80,7 +148,9 @@ function parseArgs(argv) {
     "--model",
     "--credential-env",
     "--timeout-ms",
+    "--trials",
     "--verify-result",
+    "--verify-series",
   ]);
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
@@ -97,6 +167,18 @@ function parseArgs(argv) {
     index += 1;
   }
   const verifyResult = values.get("--verify-result");
+  const verifySeries = values.get("--verify-series");
+  if (verifySeries && !values.has("--case")) {
+    throw new Error("--verify-series requires --case");
+  }
+  if (
+    verifySeries &&
+    [...values.keys()].some(
+      (key) => key !== "--verify-series" && key !== "--case",
+    )
+  ) {
+    throw new Error("--verify-series can only be combined with --case");
+  }
   if (
     verifyResult &&
     [...values.keys()].some(
@@ -121,7 +203,11 @@ function parseArgs(argv) {
     ...(values.has("--timeout-ms")
       ? { timeoutMs: parsePositiveInteger(values.get("--timeout-ms")) }
       : {}),
+    ...(values.has("--trials")
+      ? { trialCount: parseTrialCount(values.get("--trials")) }
+      : {}),
     ...(verifyResult ? { verifyResult: path.resolve(verifyResult) } : {}),
+    ...(verifySeries ? { verifySeries: path.resolve(verifySeries) } : {}),
   };
 }
 
@@ -140,6 +226,14 @@ function parsePositiveInteger(value) {
     throw new Error("timeout must be positive");
   }
   return parsed;
+}
+
+function parseTrialCount(value) {
+  const trialCount = parsePositiveInteger(value);
+  if (trialCount < 2 || trialCount > 10) {
+    throw new Error("--trials must be 2-10");
+  }
+  return trialCount;
 }
 
 async function readJson(filePath, maximumBytes) {
