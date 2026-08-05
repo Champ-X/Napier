@@ -14,6 +14,9 @@ describe("Browser Live diagnosis handoff", () => {
     expect(source).toContain("isolated Browser profile");
     expect(source).toContain("not solve CAPTCHAs");
     expect(source).toContain("not solve CAPTCHAs or import existing Chrome");
+    expect(source).toContain("browserLiveActivity");
+    expect(source).toContain("browser-live-activity");
+    expect(source).toContain("onActivityChange");
     expect(source).not.toContain("document.cookie");
     expect(source).not.toContain("chrome.cookies");
   });

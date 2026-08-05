@@ -1934,6 +1934,94 @@ Observed result:
   Web distribution at 139.53 KiB main plus a 17.27 KiB lazy takeover chunk,
   and the 119-artifact release receipt all pass.
 
+## Implemented Slice: Browser Live Activity and Reload Recovery
+
+User scenario: while an Agent or operator is using Browser Live, the user can
+see whether Browser automation is actively navigating/reading/waiting, a pause
+is queued after the current action, the next Browser action is blocked awaiting
+Resume, a confirmation is required, takeover is active, or a specific operator
+action is in flight. Reloading Web during the Run preserves this truth and
+later clears Running state when the recovered Run settles.
+
+Acceptance:
+
+- derive Agent Browser activity only from current-Run `tool.started` and
+  matching terminal events using exact call IDs;
+- expose fixed low-cardinality action labels for navigation, page wait/read,
+  find/scroll, form actions, tabs, download, screenshot, and close; never expose
+  raw URL, title, ref, selector, typed value, page text, or workspace path;
+- distinguish an active Browser call that predates the durable pause request
+  (“pause queued”) from a Browser call admitted afterward and blocked in policy
+  preflight (“waiting for resume”);
+- prioritize exact local transition state only while pause/resume HTTP is
+  unsettled, then current operator action while takeover HTTP is unsettled,
+  active takeover, pending Browser confirmation, paused state, active Agent
+  action, and finally idle readiness;
+- keep confirmation labels action-only and preserve the existing separate
+  hash-bound confirmation docket;
+- render the activity strip in every Browser Live layout: ordinary, diagnosis,
+  paused, takeover, desktop, and mobile;
+- after Web reload or Thread selection, restore active Run truth only when
+  `Thread.currentRunId` names a matching `running` Run;
+- restore Running composer state and Browser Live controls from that detail;
+  reject stale, missing, terminal, or foreign Run pointers;
+- poll authoritative Thread detail once per second only while a recovered Run
+  remains active, because the reloaded client no longer owns its SSE stream;
+- clear recovered Running state and Browser Live after terminal settlement
+  without requiring another reload;
+- preserve ordinary attached-SSE Runs as event-driven and avoid duplicate model
+  or Browser execution.
+
+Threat boundary:
+
+- activity is a presentation projection, not execution authority. Labels cannot
+  pause, resume, confirm, navigate, or settle a Run;
+- unmatched or malformed Browser events fail closed to idle rather than
+  inventing an action;
+- “idle” means no unmatched Browser call in the available Run evidence; it does
+  not imply the model, another tool, or external page is inactive;
+- local pause/operator transition labels exist only during the actual request
+  promise and are cleared on success, failure, Run change, or unmount;
+- recovered-run polling reads only local single-user Thread detail and stops
+  when `currentRunId` no longer points to a running Run. It does not reattach an
+  SSE stream, replay a tool, or recover process authority after Server restart.
+
+Observed result:
+
+- pure projection tests cover unmatched/settled call IDs, foreign and malformed
+  events, pause queued versus waiting-for-resume ordering, pending download
+  confirmation, pause/resume transition precedence, takeover, screenshot
+  operator action, and idle fallback;
+- active-Run projection tests accept only a matching running
+  `Thread.currentRunId`; source-contract coverage proves recovered polling is
+  bounded to active Threads and updates both Thread and Bootstrap projections;
+- built Web/Server/Runtime Dogfood started a normal Browser Run, displayed
+  **Ready · waiting for Agent** during a real model gap, then used a durable
+  pause request while a real Browser wait was active. After the next Browser
+  snapshot entered pause preflight, Web displayed
+  **Agent · reading page · waiting for resume**;
+- Dogfood initially exposed that Web reload lost client-only `activeRunId` even
+  while the server Thread and Browser Session remained active. The fixed Web
+  reloaded the same Run, restored Browser Live and Resume, then polled the
+  authoritative Thread until the completed Run returned the idle composer;
+- takeover displayed **Operator · takeover active**. A 5 ms browser-side
+  observer around real **Save screenshot** captured the transient
+  **Operator · capturing screenshot** label and its return to takeover-active;
+- mobile 390×844 had zero document, Browser Live, or activity-strip horizontal
+  overflow; activity width was exactly the 267px Live content width. Console
+  and page error reports were empty, and **Return to Agent** resumed the same
+  Run;
+- architecture review extracted Browser activity, active-Run projection,
+  recovered polling, Thread-detail projection, and takeover execution lifecycle
+  into leaf modules. `BrowserTakeoverDesk.tsx` dropped from 500 to 487 lines and
+  `use-workspace-view-model.ts` from 2,383 to 2,378 lines; zero cycles remain;
+- the complete repository gate passes 2,279 regular tests: Root 105, CLI 196,
+  Server 197, Web 526, Contracts 3, Runtime 1,224, and SDK 28. Architecture
+  audits 990 production source files and 488 test files with zero cycles;
+  current performance, 265/265 OpenAPI compatibility operations, the 82-file
+  Web distribution at 143.32 KiB main plus a 17.62 KiB lazy takeover chunk,
+  and the 119-artifact release receipt all pass.
+
 ## Implemented Slice: Live-Ready Default Model
 
 User scenario: after explicitly registering a Provider credential locator once,

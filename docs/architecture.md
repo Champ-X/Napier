@@ -680,6 +680,17 @@ SHA-256, Thread/Run identity, and bounded counters before creating an ephemeral
 object URL. Object URLs are revoked on replacement, failure, Thread/Run change,
 and unmount. This is a live observer, not a takeover or durable replay channel.
 
+`browser-live-activity.ts` projects one low-cardinality current state from
+ordinary Run events. It matches Browser tool start/terminal pairs by call ID,
+compares the active call sequence with durable pause-request sequence, and
+prioritizes actual pause/resume transitions, operator requests, takeover,
+pending Browser confirmation, paused waits, active Agent Browser calls, then
+idle readiness. A Browser call started before the pause request is “pause
+queued”; a call started after it is “waiting for resume.” The projection never
+reads redacted argument hashes, page metadata, URL, ref, selector, text, or
+path. `BrowserLiveViewPanel` adds only local `pausing | resuming` and current
+operator action while those exact HTTP requests are unsettled.
+
 `browser-page-diagnosis.ts` runs a fixed offline DOM probe whenever selected
 page metadata is captured. It recognizes password inputs/forms plus bounded
 known challenge structures: Turnstile/reCAPTCHA/hCaptcha widgets, provider
@@ -741,6 +752,17 @@ only path/file SHA-256, file bytes, and for downloads the suggested-filename
 SHA-256. The raw path is shown from local component state only. Output files
 remain ordinary workspace files until an Agent or user explicitly adds and
 verifies them in a Plan Artifact manifest.
+
+Web active-Run restoration is also evidence-derived. `active-run-view-state.ts`
+accepts only `Thread.currentRunId` when a matching Run is still `running`.
+`use-recovered-active-run.ts` restores Browser Live and Running composer state
+after Bootstrap/thread reload. Since that client no longer owns the original
+SSE stream, it polls only the recovered active Thread every second and replaces
+Thread/Bootstrap detail with the authoritative response until settlement.
+Ordinary live runs do not set `currentRunId` in local incremental detail and
+remain SSE-driven. Stale, missing, or terminal current-Run pointers fail closed
+to idle. `thread-detail-view-state.ts` owns Thread list replacement and import
+receipt preservation outside the main Workbench view model.
 
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate

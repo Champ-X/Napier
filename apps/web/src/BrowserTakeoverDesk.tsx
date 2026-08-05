@@ -1,8 +1,8 @@
 import type {
+  BrowserTakeoverAction,
   BrowserTakeoverKey,
   BrowserTakeoverActionReceipt,
   BrowserTakeoverSnapshot,
-  ExecuteBrowserTakeoverActionRequest,
 } from "@napier/contracts/browser-takeover";
 import { BROWSER_TAKEOVER_KEYS } from "@napier/contracts/browser-takeover";
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
@@ -28,15 +28,13 @@ import {
 } from "react";
 
 import { formatApiErrorMessage } from "./api-error";
-import {
-  executeBrowserTakeoverAction,
-  getBrowserTakeoverSnapshot,
-} from "./browser-takeover-api";
+import { getBrowserTakeoverSnapshot } from "./browser-takeover-api";
 import {
   browserTakeoverLiveMatchesSnapshot,
   browserViewportCoordinates,
 } from "./browser-takeover-visual";
 import { BrowserTakeoverOutput } from "./BrowserTakeoverOutput";
+import { useBrowserTakeoverExecution } from "./use-browser-takeover-execution";
 
 type TakeoverMode = "click" | "type" | "select";
 
@@ -45,12 +43,14 @@ export function BrowserTakeoverDesk({
   runId,
   liveImageUrl,
   liveReceipt,
+  onActivityChange,
   onReturnToAgent,
 }: {
   threadId: string;
   runId: string;
   liveImageUrl: string;
   liveReceipt: BrowserLiveViewReceipt;
+  onActivityChange: (action: BrowserTakeoverAction | undefined) => void;
   onReturnToAgent: () => Promise<void>;
 }) {
   const [snapshot, setSnapshot] = useState<BrowserTakeoverSnapshot>();
@@ -97,34 +97,21 @@ export function BrowserTakeoverDesk({
     [snapshot],
   );
 
-  const execute = useCallback(
-    async (request: ExecuteBrowserTakeoverActionRequest) => {
-      setBusy(true);
-      setError(undefined);
-      try {
-        const completed = await executeBrowserTakeoverAction(
-          threadId,
-          runId,
-          request,
-        );
-        setReceipt(completed);
-        setRef("");
-        setValue("");
-        setNewTabUrl("");
-        setAllowCrossOrigin(false);
-        setSnapshot(await getBrowserTakeoverSnapshot(threadId, runId));
-        return completed;
-      } catch (actionError) {
-        setSnapshot(undefined);
-        setError(formatApiErrorMessage(actionError));
-        return undefined;
-      } finally {
-        setValue("");
-        setBusy(false);
-      }
+  const execute = useBrowserTakeoverExecution({
+    threadId,
+    runId,
+    onActivityChange,
+    setBusy,
+    setError,
+    setReceipt,
+    setSnapshot,
+    clearPrivateState: () => {
+      setRef("");
+      setValue("");
+      setNewTabUrl("");
+      setAllowCrossOrigin(false);
     },
-    [runId, threadId],
-  );
+  });
 
   const submitTargetAction = useCallback(() => {
     if (!binding || !ref.trim()) return;

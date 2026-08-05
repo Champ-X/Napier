@@ -9,9 +9,16 @@ import {
 } from "react";
 
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
+import type { RunEvent } from "@napier/contracts";
+import type { BrowserInteractionAction } from "@napier/contracts/browser-interaction-confirmation";
 import type { BrowserSessionPauseState } from "@napier/contracts/browser-session-control";
+import type { BrowserTakeoverAction } from "@napier/contracts/browser-takeover";
 
 import { getBrowserLiveView } from "./browser-live-view-api";
+import {
+  browserLiveActivity,
+  type BrowserLiveControlTransition,
+} from "./browser-live-activity";
 import {
   getBrowserSessionPauseState,
   pauseBrowserSession,
@@ -24,9 +31,13 @@ const LazyBrowserTakeoverDesk = lazy(() => import("./BrowserTakeoverDesk"));
 export function BrowserLiveViewPanel({
   threadId,
   runId,
+  events,
+  confirmationAction,
 }: {
   threadId: string;
   runId: string;
+  events: readonly RunEvent[];
+  confirmationAction?: BrowserInteractionAction;
 }) {
   const [imageUrl, setImageUrl] = useState<string>();
   const [receipt, setReceipt] = useState<BrowserLiveViewReceipt>();
@@ -36,6 +47,9 @@ export function BrowserLiveViewPanel({
   const [controlBusy, setControlBusy] = useState(false);
   const [controlFailed, setControlFailed] = useState(false);
   const [takeoverOpen, setTakeoverOpen] = useState(false);
+  const [controlTransition, setControlTransition] =
+    useState<BrowserLiveControlTransition>();
+  const [operatorAction, setOperatorAction] = useState<BrowserTakeoverAction>();
   const requestRef = useRef(0);
   const controlRequestRef = useRef(0);
   const controlBusyRef = useRef(false);
@@ -87,6 +101,9 @@ export function BrowserLiveViewPanel({
     controlBusyRef.current = true;
     setControlBusy(true);
     setControlFailed(false);
+    setControlTransition(
+      pauseState.status === "paused" ? "resuming" : "pausing",
+    );
     try {
       const nextState =
         pauseState.status === "paused"
@@ -103,6 +120,7 @@ export function BrowserLiveViewPanel({
       if (request === controlRequestRef.current) {
         controlBusyRef.current = false;
         setControlBusy(false);
+        setControlTransition(undefined);
       }
     }
   }, [pauseState, runId, threadId]);
@@ -128,6 +146,8 @@ export function BrowserLiveViewPanel({
       requestRef.current += 1;
       controlRequestRef.current += 1;
       controlBusyRef.current = false;
+      setControlTransition(undefined);
+      setOperatorAction(undefined);
       controllerRef.current?.abort();
       controllerRef.current = undefined;
       if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
@@ -139,6 +159,13 @@ export function BrowserLiveViewPanel({
   const paused = pauseState.status === "paused";
   const diagnosis = receipt.pageDiagnosis.status;
   const diagnosisActive = diagnosis !== "none";
+  const activity = browserLiveActivity(events, runId, {
+    pauseStatus: pauseState.status,
+    takeoverOpen: paused && takeoverOpen,
+    ...(controlTransition ? { controlTransition } : {}),
+    ...(confirmationAction ? { confirmationAction } : {}),
+    ...(operatorAction ? { operatorAction } : {}),
+  });
   return (
     <section
       className={`browser-live-view${paused ? " is-paused" : ""}${paused && takeoverOpen ? " has-takeover" : ""}${diagnosisActive ? " has-diagnosis" : ""}`}
@@ -191,6 +218,13 @@ export function BrowserLiveViewPanel({
           </button>
         </div>
       </header>
+      <div
+        className={`browser-live-activity is-${activity.state}`}
+        role="status"
+        aria-live="polite"
+      >
+        <span>{activity.label}</span>
+      </div>
       {diagnosisActive ? (
         <div
           className="browser-page-diagnosis"
@@ -235,6 +269,7 @@ export function BrowserLiveViewPanel({
             runId={runId}
             liveImageUrl={imageUrl}
             liveReceipt={receipt}
+            onActivityChange={setOperatorAction}
             onReturnToAgent={returnToAgent}
           />
         </Suspense>

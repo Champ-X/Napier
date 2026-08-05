@@ -1564,7 +1564,7 @@ button:disabled {
   position: relative;
   z-index: 4;
   display: grid;
-  grid-template-rows: auto minmax(120px, 300px) auto;
+  grid-template-rows: auto auto minmax(120px, 300px) auto;
   margin: 0 24px 14px 69px;
   overflow: hidden;
   background: #101713;
@@ -1574,8 +1574,55 @@ button:disabled {
 }
 
 .browser-live-view.has-diagnosis {
-  grid-template-rows: auto auto minmax(120px, 300px) auto;
+  grid-template-rows: auto auto auto minmax(120px, 300px) auto;
   border-color: rgb(190 92 58 / 78%);
+}
+
+.browser-live-activity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  padding: 6px 10px;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: #a8bcb0;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: #121b16;
+  border-top: 1px solid rgb(220 233 224 / 8%);
+  border-bottom: 1px solid rgb(220 233 224 / 12%);
+}
+
+.browser-live-activity::before {
+  width: 5px;
+  height: 5px;
+  margin-right: 7px;
+  content: "";
+  background: #7acb9e;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgb(122 203 158 / 54%);
+}
+
+.browser-live-activity.is-paused,
+.browser-live-activity.is-confirmation,
+.browser-live-activity.is-control {
+  color: #e8c77e;
+}
+
+.browser-live-activity.is-paused::before,
+.browser-live-activity.is-confirmation::before,
+.browser-live-activity.is-control::before {
+  background: #f2c975;
+  box-shadow: 0 0 6px rgb(242 201 117 / 54%);
+}
+
+.browser-live-activity.is-operator {
+  color: #f3b68f;
+}
+
+.browser-live-activity.is-operator::before {
+  background: #ee936b;
+  box-shadow: 0 0 6px rgb(238 147 107 / 58%);
 }
 
 .browser-live-view header,
@@ -1709,11 +1756,11 @@ button:disabled {
 }
 
 .browser-live-view.has-takeover {
-  grid-template-rows: auto minmax(120px, 260px) auto auto;
+  grid-template-rows: auto auto minmax(120px, 260px) auto auto;
 }
 
 .browser-live-view.has-diagnosis.has-takeover {
-  grid-template-rows: auto auto minmax(120px, 260px) auto auto;
+  grid-template-rows: auto auto auto minmax(120px, 260px) auto auto;
 }
 
 .browser-live-view.is-paused header .browser-session-toggle {
@@ -14979,13 +15026,13 @@ button:disabled {
   }
 
   .browser-live-view {
-    grid-template-rows: auto minmax(100px, 220px) auto;
+    grid-template-rows: auto auto minmax(100px, 220px) auto;
     margin-right: 12px;
     margin-left: 41px;
   }
 
   .browser-live-view.has-diagnosis {
-    grid-template-rows: auto auto minmax(100px, 220px) auto;
+    grid-template-rows: auto auto auto minmax(100px, 220px) auto;
   }
 
   .browser-page-diagnosis {
@@ -15016,11 +15063,11 @@ button:disabled {
   }
 
   .browser-live-view.has-takeover {
-    grid-template-rows: auto minmax(100px, 180px) auto auto;
+    grid-template-rows: auto auto minmax(100px, 180px) auto auto;
   }
 
   .browser-live-view.has-diagnosis.has-takeover {
-    grid-template-rows: auto auto minmax(100px, 180px) auto auto;
+    grid-template-rows: auto auto auto minmax(100px, 180px) auto auto;
   }
 
   .browser-takeover-desk > header,

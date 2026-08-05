@@ -44,6 +44,12 @@ export function RunDecisionDockets({
         <BrowserLiveViewPanel
           threadId={vm.detail!.thread.id}
           runId={vm.activeRunId!}
+          events={vm.detail!.events}
+          {...(vm.browserInteractionConfirmation
+            ? {
+                confirmationAction: vm.browserInteractionConfirmation.action,
+              }
+            : {})}
         />
       ) : null}
       {vm.openOperatorDecision ? (

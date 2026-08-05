@@ -605,6 +605,16 @@ Session and operation number without consuming the Agent's 64-operation budget,
 opening network access, appending Ledger events, creating Artifacts, or storing
 page pixels/text in Napier state.
 
+Browser Live also renders one evidence-derived activity strip. It matches
+Browser `tool.started` and terminal events by call ID, orders them against
+durable pause requests, pending interaction confirmation, and takeover
+receipts, and uses local transition state only while a real pause/resume or
+operator request is in flight. Labels distinguish Agent page work, a pause
+queued behind the current action, the next Browser call waiting for Resume,
+pending approval, active takeover, specific operator actions, and idle
+readiness. They contain only fixed action names—never URL, ref, selector,
+typed value, page text, or workspace path.
+
 Every selected-page state also runs a fixed structural login/challenge probe
 inside that already-open page without another network request. Password forms
 produce `login_required`; known CAPTCHA/challenge widgets, frames, scripts,
@@ -626,6 +636,13 @@ Requested, resumed, and cancelled transitions append hash-only Ledger evidence;
 page content, URL, title, pixels, and Browser arguments remain absent. Run
 cancellation, Session loss, close, settlement, or Server restart releases or
 rejects waiters and fails closed.
+
+If Web reloads while an authoritative `Thread.currentRunId` still names a
+running Run, it restores `activeRunId`, Running composer state, Browser Live,
+and pause/takeover controls from the loaded Thread detail. Because the reloaded
+client has no original SSE stream, it polls that Thread once per second only
+while the recovered Run remains active; terminal settlement clears the stale
+Running UI. Ordinary Runs with an attached SSE stream remain event-driven.
 
 While paused, **Take control** opens a no-store ARIA snapshot from that same
 isolated Browser Session. One Session owns at most four explicitly created

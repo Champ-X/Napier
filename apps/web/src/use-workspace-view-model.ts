@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   AgentProfile,
@@ -31,7 +31,6 @@ import type {
   TextMessagePayload,
   ThreadReplayBundle,
   ThreadReplayBundleVerification,
-  ThreadSummary,
 } from "@napier/contracts";
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import {
@@ -101,6 +100,11 @@ import {
   threadReplayBundleFilename,
 } from "./run-replay-view-model";
 import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
+import {
+  preserveThreadDetailImportReceipt,
+  upsertThread,
+} from "./thread-detail-view-state";
+import { useRecoveredActiveRun } from "./use-active-run-state";
 
 export type InspectorTab =
   | "trace"
@@ -244,18 +248,6 @@ export function importProvenanceReceiptView(
   return receipt;
 }
 
-function preserveThreadDetailImportReceipt(
-  next: WebThreadDetail | undefined,
-  current: WebThreadDetail | undefined,
-): WebThreadDetail | undefined {
-  if (!next || next.importReceipt || next.thread.id !== current?.thread.id) {
-    return next;
-  }
-  return current.importReceipt
-    ? { ...next, importReceipt: current.importReceipt }
-    : next;
-}
-
 function countEmbeddedModelContextEnvelopes(value: unknown): number {
   if (!value || typeof value !== "object") return 0;
   if (Array.isArray(value)) {
@@ -333,6 +325,16 @@ export function useWorkspaceViewModel() {
   const [isRunning, setIsRunning] = useState(false);
   const [operatorDecisionBusy, setOperatorDecisionBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const runStreamAttachedRef = useRef(false);
+
+  useRecoveredActiveRun(
+    detail,
+    runStreamAttachedRef.current,
+    setActiveRunId,
+    setIsRunning,
+    setDetail,
+    setBootstrap,
+  );
 
   const loadBootstrap = useCallback(async (threadId?: string) => {
     setIsLoading(true);
@@ -555,6 +557,7 @@ export function useWorkspaceViewModel() {
   }, [detail]);
 
   const startRunUi = useCallback(() => {
+    runStreamAttachedRef.current = true;
     setStreamingText("");
     setIsRunning(true);
     setActiveRunId(undefined);
@@ -565,6 +568,7 @@ export function useWorkspaceViewModel() {
   }, []);
 
   const finishRunUi = useCallback(() => {
+    runStreamAttachedRef.current = false;
     setIsRunning(false);
     setActiveRunId(undefined);
     setStreamingText("");
@@ -2349,15 +2353,6 @@ function contextCheckpointPayload(
 function isStringArray(value: unknown): value is string[] {
   return (
     Array.isArray(value) && value.every((item) => typeof item === "string")
-  );
-}
-
-function upsertThread(
-  threads: ThreadSummary[],
-  thread: ThreadSummary,
-): ThreadSummary[] {
-  return [thread, ...threads.filter((item) => item.id !== thread.id)].sort(
-    (left, right) => right.updatedAt.localeCompare(left.updatedAt),
   );
 }
 
