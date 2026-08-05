@@ -4200,6 +4200,12 @@ Agent calls web_fetch fetch with one public URL
 Agent calls web_fetch find/read/list in the same Run
   -> require exact Source ID and content hash
   -> return literal matches or <=400 exact numbered lines
+Every successful fetch mutation
+  -> clone the in-memory state before mutation
+  -> write each immutable Source once to a content-addressed private CAS
+  -> write a small manifest binding Thread/Run, ordered Source IDs/content
+     hashes/capsule hashes, fallback count, Source-set hash, and self-hash
+  -> append only a hash/count local-only receipt to Tool evidence
 Run settles
   -> cancel active/queued fetches and drop every Source body from memory
 ```
@@ -4213,33 +4219,42 @@ start/wait/capture/close adapter over the ordinary Browser manager.
 `web-fetch-fallback-execution.ts` owns the per-Run attempt cap and
 used/unavailable/not-needed decision. `web-fetch-source-view.ts` owns live
 preview formatting plus bounded detail receipts. `web-fetch-sources.ts` owns
-Run isolation, serialization, progressive reads, cancellation, and ephemeral
-Source storage.
+Run isolation, serialization, progressive reads, cancellation, and live Source
+storage. `web-fetch-capsule.ts` and `web-fetch-source-validation.ts` validate
+exact bounded Source, manifest, and receipt bindings.
+`web-fetch-capsule-store.ts` deduplicates immutable Sources and stores small
+manifests through the shared private `0700`/`0600` CAS.
+`web-fetch-continuity.ts` restores only an interrupted immediate parent into a
+verified running `source: recovery` child, then writes a child-owned manifest
+before any Source call returns.
 `web-fetch-tool.ts` owns the Agent schema and body-free Ledger projection.
 `AgentCapabilityRuntime` assembles Search and Fetch behind one
 `AgentNetworkCapabilities` boundary, so `agent-runtime.ts` does not grow a new
 constructor field per network tool.
 
 Source URL, title, author, publication date, raw body, normalized lines, Source
-ID, read query, and returned text stay live-only. Ledger/Replay/SSE/TUI/Web
+ID, read query, and returned text stay live/private. Ledger/Replay/SSE/TUI/Web
 Trace retain action, format, render mode, fallback status/stable diagnostic,
 Browser runtime/network hashes and counts when used, byte/line/character/page
-counts, truncation, redirect count, retrieval time, and hashes. The original
-user prompt and model reasoning remain ordinary message evidence and may
-intentionally mention the requested URL or quoted facts; that is distinct from
-Tool receipt leakage. Browser-rendered Fetch provenance is preserved through
+counts, truncation, redirect count, retrieval time, hashes, and a local-only
+state receipt. After `web_fetch` or `research_source` exposes private Source
+content to the model, later thinking deltas, model reasoning, and intermediate
+response text are retained only as SHA-256/byte receipts; final assistant text
+remains deliberate user-visible output, while its reasoning body is hash-only.
+Browser-rendered Fetch provenance is preserved through
 `capture_fetch` and independently validated by Research capture and Web Trace;
 partial, impossible, or mixed static/Browser evidence fails closed.
-The complete repository gate passes 2,156 regular tests.
 
-Fetch is read-only but not restart-adoptable because its Source body is
-deliberately process-local. Automatic recovery therefore treats any completed
-`web_fetch` call as unsafe, matching `research_source`. Dynamic rendering can
+Fetch remains unsafe for automatic recovery because a network-session action
+must never be silently repeated or adopted. Explicit manual linked recovery
+may restore only the exact private static Source state described above; Replay
+import strips `context.web_fetch_sources` and nested `stateCapsule` receipts
+because another data root cannot adopt local-only state. Dynamic rendering can
 use the conservative automatic shell fallback above or the following explicit
 default read-only Browser surface. Generic SPA detection, authentication,
-login walls, CAPTCHAs, scanned-PDF OCR, cross-restart Source retention, and
-Browser interaction remain outside this slice. Static or fallback-rendered
-Source citation uses the shared Research Source flow below.
+login walls, CAPTCHAs, scanned-PDF OCR, and Browser Session recovery remain
+outside this slice. Static or fallback-rendered Source citation uses the shared
+Research Source flow below.
 
 ## Controlled Browser Session Flow
 
@@ -4418,29 +4433,32 @@ and citation token. `verify_report` proves the token/claim/current-Run binding
 against actual workspace bytes; a verified Plan artifact independently binds
 the delivered artifact lifecycle.
 
-Live Browser/Web Fetch registries remain process-local. Completed Research
-Source state is separately checkpointed in private capsules: a manual linked
-recovery Run can restore the latest exact Source/citation state, list it,
-create new citations, and verify a Markdown report without refetching. Ordinary
-children and completed-Run reuse cannot inherit it. The parent must be the
-interrupted immediate parent, the receipt must match Tool counts/set hash, and
-the private capsule must match Thread, Run, receipt, capture, quote, claim, and
-self-hash bindings. Replay export carries only receipts; import strips both
-`context.research_sources` and nested `stateCapsule` fields because a
-`local_only` capsule cannot be adopted into another data root. Automatic
-recovery remains blocked after `research_source` or other unsafe
-network-session tools; this slice does not pretend Browser or Web Fetch
-Sessions survived restart.
+Live Browser registries remain process-local. Completed Research Source and
+Web Fetch state is separately checkpointed in private capsules: a manual linked
+recovery Run can restore the latest exact fetched Sources, Source/citation
+state, and continue `list`, `read`, `find`, `capture_fetch`, `cite`, and
+`verify_report` without refetching. Ordinary children and completed-Run reuse
+cannot inherit either registry. The parent must be the interrupted immediate
+parent; receipts must match Tool counts/set hashes; private capsules must match
+Thread, Run, manifest, Source, capture, quote, claim, and self-hash bindings.
+Replay export carries only receipts; import strips both private recovery
+contexts and nested `stateCapsule` fields because a `local_only` capsule cannot
+be adopted into another data root. Automatic recovery remains blocked after
+`research_source`, `web_fetch`, or other unsafe network-session tools; this
+slice does not pretend Browser Sessions survived restart.
 
 The checked bridge gates cover same-Run import and ordinary cross-Run denial,
-storage failure before mutation, 0700/0600 permissions, capsule/capture/claim
-tamper rejection, immediate-parent lineage, crash-before-first-tool
-multi-restart checkpointing, inherited list/cite/report verification, redacted
-CLI JSONL/Ledger, Trace validation, and retained benchmark compatibility. Real
-built-CLI DeepSeek Dogfood created a linked recovery child in a fresh process,
-restored one Source/citation, executed `list -> cite`, returned the required
-terminal result, and wrote a child-owned capsule. The private marker appeared
-only in private model/Source capsules, never JSONL or Ledger events.
+transactional storage failure before mutation, 0700/0600 permissions,
+Source/manifest/capture/claim tamper rejection, immediate-parent lineage,
+crash-before-first-tool multi-restart checkpointing, inherited
+list/read/find/capture/cite/report verification, private model-content
+redaction, CLI JSONL/Ledger privacy, Trace validation, and retained benchmark
+compatibility. Real built-CLI DeepSeek Dogfood created a linked recovery child
+in a fresh process, restored HTML and PDF Sources, executed
+`web_fetch:list -> find -> read -> research_source:capture_fetch -> cite`
+without `web_fetch:fetch`, returned the required terminal result, and wrote a
+child-owned manifest. Opaque Source markers appeared only in private Source
+and model-invocation capsules, never JSONL or Ledger events.
 
 ### Open-Web Research Outcome Verification
 

@@ -6152,28 +6152,35 @@ snippets remain untrusted discovery leads, not citation evidence.
 bounded Source preview plus Source ID/content hash; later `read` and `find`
 calls reuse the exact Run-local normalized Source. HTML, JSON, text, and PDF
 content is explicitly labeled untrusted and may never authorize actions.
-Fetched Web Sources remain process-local. For a static claim, call
+Fetched Web Sources stay in process for live use and are transactionally
+checkpointed into bounded content-addressed private Source capsules plus a
+small ordered manifest. For a static claim, call
 `research_source capture_fetch` with the exact Web Source ID and content hash,
 then use the same `cite` and `verify_report` protocol as Browser evidence.
 Dynamic JavaScript pages instead use the default read-only Browser followed by
 `research_source capture/cite`; static pages should still prefer `web_fetch`.
-Each successful Research Source capture or citation also writes one bounded,
-content-addressed private capsule under the Napier data root with directory
-mode `0700` and file mode `0600`. Ledger, Replay, JSONL/SSE, and Trace retain
-only a local-only receipt with hashes, bytes, and counts.
+Web Fetch and Research Source private roots use directory mode `0700` and file
+mode `0600`. Ledger, Replay, JSONL/SSE, and Trace retain only local-only
+receipts with hashes, bytes, and counts.
 
 When `napier resume` or another shared Runtime entry creates a verified
 `source: recovery` child of an interrupted immediate parent, Napier restores
-the latest capsule, checkpoints it under the child Run before the first model
-call, and tells the model to call `research_source list` before reusing IDs.
-The recovered child can list, cite, and `verify_report` against the immutable
-capture without refetching. Missing, malformed, cross-Thread, wrong-parent,
-ordinary-child, or content-drifted capsules fail closed. Completed-Run Source
-reuse, arbitrary cross-Run adoption, automatic recovery after unsafe network
-tools, and Browser/Web Fetch Session recovery remain unavailable.
+the latest Research Source and Web Fetch manifests, checkpoints child-owned
+copies before the first model call, and tells the model to list before reusing
+IDs. The recovered child can use Web Fetch `list`, `read`, `find`, and
+`research_source capture_fetch` without another network request, then cite and
+`verify_report` normally. Once either private Source tool returns, subsequent
+model thinking and intermediate response content are retained only as
+hash/byte receipts; the final answer remains user-visible but its reasoning
+body is not persisted. Missing, malformed, cross-Thread, wrong-parent,
+ordinary-child, or content-drifted capsules fail closed. Replay import strips
+local-only recovery contexts and nested receipts instead of adopting another
+data root's private state. Completed-Run Source reuse, arbitrary cross-Run
+adoption, automatic recovery after unsafe network tools, and Browser Session
+recovery remain unavailable.
 Authenticated content, CAPTCHA/login-wall recovery, scanned PDF OCR, automatic
 Fetch-to-Browser fallback, full Browser interaction, Browser Live/takeover,
-and cross-restart Browser/Web Fetch Session retention remain open P0 work.
+and cross-restart Browser Session/login retention remain open P0 work.
 
 Selecting `workspace` exposes only individually enabled structured tools:
 **Atomic patch** is hash-preconditioned and supports Hashline-style line

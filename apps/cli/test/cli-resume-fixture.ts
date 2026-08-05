@@ -14,6 +14,10 @@ import {
   UnsupportedSandboxAdapter,
   type LocalAgentRuntimeOptions,
 } from "@napier/runtime";
+import {
+  RunWebFetchSourceManager,
+  WebFetchCapsuleStore,
+} from "@napier/runtime/web-search";
 
 import type { CliIo, RunCliDependencies } from "../src/cli.js";
 
@@ -32,6 +36,12 @@ export interface ResearchResumeFixture extends ResumeFixture {
   sourceSecret: string;
 }
 
+export interface WebFetchResumeFixture extends ResumeFixture {
+  webSourceId: string;
+  webSourceContentSha256: string;
+  sourceSecret: string;
+}
+
 export async function createInterruptedFixture(
   temporaryRoots: string[],
 ): Promise<ResumeFixture> {
@@ -42,6 +52,61 @@ export async function createInterruptedResearchFixture(
   temporaryRoots: string[],
 ): Promise<ResearchResumeFixture> {
   return createInterruptedFixtureInternal(temporaryRoots, true);
+}
+
+export async function createInterruptedWebFetchFixture(
+  temporaryRoots: string[],
+): Promise<WebFetchResumeFixture> {
+  const fixture = await createInterruptedFixtureInternal(temporaryRoots, false);
+  const services = await createLocalAgentRuntime({
+    workspaceRoot: fixture.workspaceRoot,
+    dataRoot: fixture.dataRoot,
+    env: {},
+    sandbox: new UnsupportedSandboxAdapter("cli-fetch-resume-setup"),
+  });
+  try {
+    const sourceSecret = "CLI_PRIVATE_FETCH_RESTART_SOURCE";
+    const manager = new RunWebFetchSourceManager({
+      http: {
+        request: async () => ({
+          status: 200,
+          headers: { "content-type": "text/plain" },
+          body: Buffer.from(sourceSecret),
+          finalUrl: "https://example.com/cli-fetch-restart.txt",
+          redirectCount: 0,
+        }),
+      },
+      capsules: new WebFetchCapsuleStore(services.dataRoot),
+      store: services.store,
+      now: () => new Date("2026-08-05T00:00:00.000Z"),
+    });
+    const owner = { threadId: fixture.threadId, runId: fixture.runId };
+    const fetched = await manager.execute(owner, {
+      action: "fetch",
+      url: "https://example.com/cli-fetch-restart.txt",
+    });
+    await services.store.appendEvent({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      type: "tool.completed",
+      category: "tool",
+      visibility: "user",
+      payload: {
+        callId: "web-fetch-seed-1",
+        toolName: "web_fetch",
+        status: "completed",
+        details: fetched.details,
+      },
+    });
+    return {
+      ...fixture,
+      webSourceId: fetched.details.sourceId!,
+      webSourceContentSha256: fetched.details.sourceContentSha256!,
+      sourceSecret,
+    };
+  } finally {
+    await services.shutdown();
+  }
 }
 
 async function createInterruptedFixtureInternal(

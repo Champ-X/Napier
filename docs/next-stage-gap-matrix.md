@@ -162,7 +162,7 @@ Observed result:
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | --------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0 web connectivity               | In progress    | Default Search, Fetch, Browser, and Research Source now cover keyless discovery, bounded HTML/Markdown/JSON/text/PDF reading, conservative automatic rendering of eligible script shells, JavaScript Browser reading, exact captures, and claim-bound citations under `observe`. `napier setup` and the first-use Web Live Provider docket provide preview-bound registration for five environment locators; ambient `.env` secrets alone remain unauthorized. Safe Automation provides exact one-use Browser interaction confirmation in Web, Chat, and TUI; Web adds a privacy-bounded Browser Live viewport, pause/resume/takeover, four isolated tabs with history, visual/allowlisted-key handoff, login/challenge diagnosis, and verified workspace outputs. Research Source/citation state now survives a verified linked interrupted recovery: bounded content-addressed private capsules use 0700/0600 permissions, Ledger/Replay/streams retain hash-only receipts, the child checkpoints before its first model call, and recovered list/cite/report verification works without refetching. Ordinary children, completed-Run reuse, wrong-parent/tampered capsules, and Browser/Web Fetch Session adoption remain denied. A retained DeepSeek benchmark proves the default Agent can combine official HTML, PDF, and dynamic Browser sources; a separate same-model OMP comparison covers Search, URL/PDF, and Browser in default/controlled tracks and records only two decisive OMP failures, with four infrastructure outcomes excluded. `napier doctor` covers Store-free Search/Fetch/Browser/model/runtime/Sandbox readiness. Remaining P0 work is dependency remediation, existing-Chrome relay, autonomous CAPTCHA/login submission, cross-restart Browser/Web Fetch Sessions and login state, arbitrary completed-Run Source strategy, open-web Security/reliability, viewport streaming, automatic Plan Artifact registration/richer preview, multiple comparison seeds/trials, and a safely isolated OMP Browser path. One restart Dogfood and one comparison seed do not establish general reliability or superiority. |
+| P0 web connectivity               | In progress    | Default Search, Fetch, Browser, and Research Source now cover keyless discovery, bounded HTML/Markdown/JSON/text/PDF reading, conservative automatic rendering of eligible script shells, JavaScript Browser reading, exact captures, and claim-bound citations under `observe`. `napier setup` and Web onboarding provide preview-bound environment locators; ambient `.env` secrets remain unauthorized. Safe Automation provides one-use Browser interaction confirmation; Web adds privacy-bounded Browser Live/takeover, four isolated tabs with history, login/challenge diagnosis, and verified workspace outputs. Research Source/citation and static Web Fetch state now survive verified linked interrupted recovery: bounded content-addressed private capsules use `0700`/`0600` permissions, deduplicated Source manifests avoid rewrite amplification, Ledger/Replay/streams retain hash-only receipts, the child checkpoints before its first model call, and recovered list/read/find/capture/cite/report verification works without refetching. Private Source model thinking and intermediate responses become hash-only after access. Ordinary children, completed-Run reuse, wrong-parent/tampered capsules, imported-data-root adoption, automatic recovery, and Browser Session adoption remain denied. Browser and Fetch Sessions themselves are not restored. A retained DeepSeek benchmark proves the default Agent can combine official HTML, PDF, and dynamic Browser sources; a same-model OMP comparison covers Search, URLs/PDF, and Browser while excluding infrastructure outcomes. `napier doctor` covers Store-free network/model/runtime/Sandbox readiness. Remaining P0 work is dependency remediation, existing-Chrome relay, autonomous CAPTCHA/login submission, Browser Session/login recovery, arbitrary completed-Run Source strategy, open-web Security/reliability, viewport streaming, richer automatic Artifacts, repeated comparison seeds/trials, and safely isolated OMP Browser execution. One restart Dogfood and one comparison seed do not establish general reliability or superiority. |
 | P0 architecture and baseline      | In progress    | Checked architecture budgets now freeze production/test module growth, per-file maximum function complexity, root and extracted-domain public exports, workspace dependency direction, and a zero-cycle relative-import graph, down from 10 components and 54 cyclic Runtime modules. Leaf domain models, the 133-declaration Contracts execution extraction, Event/client/mutation/Store SPIs, Run replay extraction, Receipt Trust envelope inversion, and Credential/Schedule/Agent Profile/Thread Evidence/Lifecycle/Operations/Control/complete Channel HTTP extraction preserve public APIs and the single authoritative Store while reducing `app.ts` from 26,869 to 21,377 lines and its maximum function complexity from 63 to 53. The local product-path budget covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Continue shrinking Server/Store/Workbench and Receipt Trust line debt, and extend performance budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, explicitly preauthorized failed-write compensation, and parent-loss guarding now exist. macOS additionally tracks PID/start-time identities for descendants observed at launch, bounded background scans, and cleanup, including a tested child that creates a separate session. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, kernel-enforced rapid double-fork containment, remote sandboxes, tool callbacks, OCI identity binding, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, fixed read-only Git status/working/staged diff plus canonical 1-4 path hash-bound text-conflict inspection, preview-bound atomic 1-16 whole-path or one-path selected-hunk Git staging and conflict resolution staging, complete-index atomic ordinary/two-parent merge commit, current-HEAD-bound local branch creation, preview-bound same-tree or bounded clean divergent-tree branch switching with ref-CAS/reflog/recovery evidence, and preview-bound strictly linear local Review promotion with per-commit patch/blob proof and no-deref fast-forward CAS, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, capability-inherited semantic LSP navigation and grant-bound WorkspaceEdit application, capability-inherited private-candidate Node DAP, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, capability-inherited explicit-argv read-only Node candidate commands, one-use coordinated lifecycle merge, conflict detection, lifecycle-aware before/after diagnostics, and old/new-graph related tests exist; binary/symlink/attribute-converted/directory-lifecycle branch checkout, octopus/squash/autostash merge completion, binary/symlink/gitlink/directory conflict inspection, non-linear/merge Review promotion, multi-path hunk selection, child package scripts/Python/persistent processes, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and broader coding benchmarks remain.                                              |
@@ -10354,3 +10354,92 @@ Observed result:
   chunk remains 130.08 KiB under the 150 KiB budget; the 69-file dist is bound
   to `02f54d96cf731692`, and the six-artifact release set is bound to
   `d077e93e7ce2a80b`.
+
+## Completed Slice: Linked Web Fetch Source Recovery
+
+User scenario: after a CLI or Runtime process exits between fetching static
+HTML/PDF evidence and finishing the task, an explicit linked recovery can
+continue exact progressive reads and Research capture in a fresh process
+without another network request.
+
+Acceptance:
+
+- persist each successful Web Fetch mutation before committing it to live
+  Run state, so capsule or manifest failure leaves the prior state unchanged;
+- deduplicate immutable exact Sources in a content-addressed private store and
+  write only a small ordered manifest per state version;
+- bind Thread, Run, Source IDs/content hashes/capsule hashes, Browser fallback
+  count, Source-set hash, manifest hash/bytes, storage class, and self-hashes;
+- validate the complete persisted Source shape, URL normalization, format and
+  parser bounds, Browser fallback evidence, redirects, dates, lines, counts,
+  hashes, and exact supported fields before reuse;
+- permit restore only into a running `source=recovery` child whose immediate
+  parent is interrupted, and checkpoint a child-owned manifest before the
+  first model call;
+- preserve Web Fetch `list`, `read`, `find`, and
+  `research_source capture_fetch` with exact same-content hashes and no HTTP
+  fallback;
+- keep Source bodies, URLs, titles, IDs, query matches, quotes, and model-
+  visible tool output out of Ledger, Replay, JSONL/SSE, and Trace;
+- after a private Source tool result, retain model thinking deltas, reasoning,
+  and intermediate response text only as hashes/byte counts while preserving
+  deliberate final assistant text;
+- retain only hash/count local-only receipts in Tool and recovery-context
+  events, and strip both imported recovery contexts and nested receipts before
+  another data root can see them;
+- leave unsafe automatic recovery unchanged: no network action is silently
+  repeated, and no Browser Session, login state, or live tab is reconstructed.
+
+Threat boundary:
+
+- capsules are private local recovery state, not encrypted storage. Filesystem
+  permissions, exact validation, content addressing, and bounded capacity
+  reduce accidental disclosure and tampering but do not defend against a
+  principal that already controls the Napier account or data root;
+- fetched content remains untrusted even after hash verification. Recovery
+  proves byte continuity, not authority, factual correctness, safety, or
+  entitlement to perform actions described by the Source;
+- Browser-fallback Sources can retain the immutable normalized result and
+  bounded provenance, but the Browser process, tabs, cookies, credentials, and
+  interaction state do not survive;
+- a crash after writing an immutable Source but before its manifest or Ledger
+  receipt can leave an unreferenced private object. It cannot become eligible
+  recovery evidence and still counts against the bounded store;
+- final assistant text is intentional user-visible output and may quote a
+  Source when the task requires it. The boundary prevents hidden provider
+  reasoning and intermediate output from becoming an accidental durable copy;
+- ordinary children, completed-Run reuse, imported Replay roots, forged
+  lineage, stale/tampered manifests, exposed permissions, and storage failure
+  all fail closed.
+
+Observed result:
+
+- focused Runtime and fresh-CLI coverage passes 21 tests across HTML/PDF
+  restore, list/read/find/capture, multi-restart checkpointing, exact
+  permissions, transactional storage failure, ordinary-child denial,
+  Source/manifest/receipt tampering, Replay-import stripping, recovery prompt
+  guidance, and private model-content redaction;
+- Runtime and CLI TypeScript builds pass; the architecture audit covers 1,005
+  production source files and 490 test files with zero allowed cycles.
+  `agent-runtime.ts` shrinks to 3,536 lines under its lowered fixed budget, and
+  every new production leaf remains below 500 lines;
+- real built-CLI `deepseek/deepseek-v4-flash` Dogfood restored one HTML and one
+  PDF Source in a fresh process, created a linked recovery child, and executed
+  `web_fetch:list -> web_fetch:find -> web_fetch:read ->
+research_source:capture_fetch -> research_source:cite` with no
+  `web_fetch:fetch`;
+- the child completed with the required terminal result and a child-owned
+  checkpoint. Two deduplicated Source capsules and three manifests used
+  `0700` directories and `0600` files;
+- opaque markers present only in private HTML/PDF bodies were absent from
+  JSONL and Ledger after the model had read both Sources. The review first
+  reproduced an HTML marker copied into durable provider reasoning, then added
+  the shared private-Source model-content boundary and reran the same oracle to
+  zero leakage;
+- the complete repository gate passes 2,315 regular tests with 45 opt-in live
+  tests skipped by default: Root 125, CLI 198, Server 197, Web 526, Contracts
+  3, Runtime 1,238, and SDK 28. Architecture audits 1,005 production source
+  files and 490 test files with zero cycles; 265/265 OpenAPI compatibility,
+  current performance, the 82-file Web distribution, and the release-artifact
+  receipt all pass. The Web main chunk remains 143.32 KiB under the 150 KiB
+  budget.

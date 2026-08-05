@@ -3,6 +3,7 @@ import type {
   BrowserSessionOwner,
 } from "./browser-session-model.js";
 import type { FixedIpProxySnapshot } from "./fixed-ip-http-proxy.js";
+import type { WebFetchStateCapsuleReceipt } from "./web-fetch-capsule-model.js";
 
 export const WEB_FETCH_SOURCE_FORMATS = [
   "html",
@@ -150,6 +151,7 @@ export interface WebFetchToolDetails {
   findQuerySha256?: string;
   sourceCount: number;
   sourceSetSha256: string;
+  stateCapsule?: WebFetchStateCapsuleReceipt;
   retrievedAt?: string;
 }
 
@@ -166,6 +168,10 @@ export interface WebFetchExecutor {
     options?: WebFetchExecutionOptions,
   ): Promise<WebFetchResult>;
   cancelRun(owner: { threadId: string; runId: string }): Promise<void>;
+  prepareRecovery?(owner: {
+    threadId: string;
+    runId: string;
+  }): Promise<WebFetchStateCapsuleReceipt | undefined>;
   captureWebSource?(
     owner: { threadId: string; runId: string },
     request: {

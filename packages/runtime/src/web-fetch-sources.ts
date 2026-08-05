@@ -23,6 +23,13 @@ import {
   webFetchRunCounts,
   webFetchSourceDetails,
 } from "./web-fetch-source-view.js";
+import type { WebFetchStateCapsuleReceipt } from "./web-fetch-capsule-model.js";
+import type { WebFetchCapsuleStore } from "./web-fetch-capsule-store.js";
+import {
+  cloneWebFetchState,
+  WebFetchContinuity,
+} from "./web-fetch-continuity.js";
+import type { LocalStore } from "./store.js";
 
 const SOURCE_ID = /^websource_[a-z0-9]{8,80}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
@@ -31,6 +38,11 @@ export interface RunWebFetchSourceManagerOptions {
   http?: Pick<PublicHttpClient, "request">;
   browserFallback?: WebFetchBrowserFallbackProvider;
   now?: () => Date;
+  capsules?: Pick<
+    WebFetchCapsuleStore,
+    "putState" | "readManifest" | "readSource"
+  >;
+  store?: Pick<LocalStore, "listRuns" | "listEvents">;
 }
 
 interface RunWebFetchSources {
@@ -47,11 +59,17 @@ export class RunWebFetchSourceManager
   private readonly http: Pick<PublicHttpClient, "request">;
   private readonly browserFallback: WebFetchBrowserFallbackProvider | undefined;
   private readonly now: () => Date;
+  private readonly continuity: WebFetchContinuity;
+  private readonly stateCapsules = new Map<
+    string,
+    WebFetchStateCapsuleReceipt
+  >();
 
   constructor(options: RunWebFetchSourceManagerOptions = {}) {
     this.http = options.http ?? new PublicHttpClient();
     this.browserFallback = options.browserFallback;
     this.now = options.now ?? (() => new Date());
+    this.continuity = new WebFetchContinuity(options.capsules, options.store);
   }
 
   async execute(
@@ -70,6 +88,7 @@ export class RunWebFetchSourceManager
         key,
         async () => {
           throwIfAborted(operationSignal);
+          await this.restoreRecoveryState(key, owner);
           if (request.action === "fetch") {
             return this.fetch(
               key,
@@ -96,7 +115,19 @@ export class RunWebFetchSourceManager
     this.cancellations.get(key)?.abort();
     await this.tails.get(key)?.catch(() => undefined);
     this.runs.delete(key);
+    this.stateCapsules.delete(key);
+    this.continuity.forget(owner);
     this.cancellations.delete(key);
+  }
+
+  async prepareRecovery(owner: { threadId: string; runId: string }) {
+    const key = ownerKey(owner);
+    await this.serialized(
+      key,
+      () => this.restoreRecoveryState(key, owner),
+      new AbortController().signal,
+    );
+    return this.stateCapsules.get(key);
   }
 
   async captureWebSource(
@@ -117,6 +148,7 @@ export class RunWebFetchSourceManager
       key,
       async () => {
         throwIfAborted(operationSignal);
+        await this.restoreRecoveryState(key, owner);
         const { source } = this.source(key, {
           sourceId: request.webSourceId,
           sourceContentSha256: request.webSourceContentSha256,
@@ -173,7 +205,8 @@ export class RunWebFetchSourceManager
       signal,
       allowed: options.browserFallbackAllowed === true,
     });
-    run.browserFallbackCount = fallback.browserFallbackCount;
+    const next = cloneWebFetchState(run);
+    next.browserFallbackCount = fallback.browserFallbackCount;
     const lines = fallback.lines;
     const source: WebFetchSource = {
       id: createId("websource"),
@@ -202,10 +235,16 @@ export class RunWebFetchSourceManager
       ...(fallback.evidence ? { browserFallback: fallback.evidence } : {}),
       lines,
     };
-    run.sources.set(source.id, source);
+    next.sources.set(source.id, source);
+    const stateCapsule = await this.continuity.persist(owner, next);
+    if (stateCapsule) this.stateCapsules.set(key, stateCapsule);
+    this.runs.set(key, next);
     return {
       output: formatFetchedWebSource(source),
-      details: webFetchSourceDetails("fetch", run, source),
+      details: {
+        ...webFetchSourceDetails("fetch", next, source),
+        ...(stateCapsule ? { stateCapsule } : {}),
+      },
     };
   }
 
@@ -287,6 +326,7 @@ export class RunWebFetchSourceManager
 
   private list(key: string): WebFetchResult {
     const run = this.runs.get(key) ?? emptyRunSources();
+    const stateCapsule = this.stateCapsules.get(key);
     return {
       output:
         run.sources.size === 0
@@ -303,6 +343,7 @@ export class RunWebFetchSourceManager
         schemaVersion: 1,
         action: "list",
         ...webFetchRunCounts(run),
+        ...(stateCapsule ? { stateCapsule } : {}),
       },
     };
   }
@@ -336,6 +377,18 @@ export class RunWebFetchSourceManager
     const created = emptyRunSources();
     this.runs.set(key, created);
     return created;
+  }
+
+  private async restoreRecoveryState(
+    key: string,
+    owner: { threadId: string; runId: string },
+  ): Promise<void> {
+    if (this.runs.has(key)) return;
+    const restored = await this.continuity.restore(owner);
+    if (restored) {
+      this.runs.set(key, restored.state);
+      this.stateCapsules.set(key, restored.receipt);
+    }
   }
 
   private runCancellation(key: string): AbortController {

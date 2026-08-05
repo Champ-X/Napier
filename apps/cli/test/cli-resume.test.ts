@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   fauxAssistantMessage,
   fauxProvider,
+  fauxThinking,
   fauxToolCall,
 } from "@earendil-works/pi-ai";
 import type { StreamFrame } from "@napier/contracts";
@@ -18,6 +19,7 @@ import {
   collect,
   createInterruptedFixture,
   createInterruptedResearchFixture,
+  createInterruptedWebFetchFixture,
   parseFrames,
   providerDependencies,
 } from "./cli-resume-fixture.js";
@@ -269,6 +271,136 @@ describe("Napier CLI interrupted Run resume", () => {
         sourceRunId: done.runId,
         sourceCount: 1,
         citationCount: 2,
+        storage: "local_only",
+      }),
+    );
+  });
+
+  it("restores fetched Sources through a fresh CLI resume without HTTP", async () => {
+    const fixture = await createInterruptedWebFetchFixture(temporaryRoots);
+    const provider = fauxProvider({ provider: "faux-cli-fetch-resume" });
+    provider.setResponses([
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("Private local Web Fetch Sources");
+        expect(messages).toContain("Call web_fetch list");
+        expect(messages).not.toContain(fixture.sourceSecret);
+        return fauxAssistantMessage(
+          fauxToolCall("web_fetch", { action: "list" }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain(fixture.webSourceId);
+        expect(messages).not.toContain(fixture.sourceSecret);
+        return fauxAssistantMessage(
+          fauxToolCall("web_fetch", {
+            action: "read",
+            sourceId: fixture.webSourceId,
+            sourceContentSha256: fixture.webSourceContentSha256,
+            startLine: 1,
+            endLine: 1,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          fixture.sourceSecret,
+        );
+        return fauxAssistantMessage(
+          [
+            fauxThinking(fixture.sourceSecret),
+            fauxToolCall("research_source", {
+              action: "capture_fetch",
+              webSourceId: fixture.webSourceId,
+              webSourceContentSha256: fixture.webSourceContentSha256,
+              maxChars: 12_000,
+            }),
+          ],
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage([
+        fauxThinking(fixture.sourceSecret),
+        { type: "text", text: "CLI_FETCH_RESUME_RESULT" },
+      ]),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "resume",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--thread",
+        fixture.threadId,
+        "--run",
+        fixture.runId,
+        "--model",
+        "faux-cli-fetch-resume/faux-1",
+        "--jsonl",
+      ],
+      cliIo(fixture, stdout, stderr),
+      providerDependencies(provider),
+    );
+
+    expect(code, stderr.text() || stdout.text()).toBe(0);
+    expect(stdout.text()).not.toContain(fixture.sourceSecret);
+    const frames = parseFrames(stdout.text());
+    const snapshot = frames.findLast((frame) => frame.type === "snapshot");
+    const done = frames.at(-1);
+    if (snapshot?.type !== "snapshot" || done?.type !== "done") {
+      throw new Error("CLI Web Fetch recovery snapshot is missing");
+    }
+    const completed = snapshot.detail.events.filter(
+      (event) => event.runId === done.runId && event.type === "tool.completed",
+    );
+    expect(
+      completed.map((event) => ({
+        tool: event.payload["toolName"],
+        action: (event.payload["details"] as Record<string, unknown>)["action"],
+      })),
+    ).toEqual(
+      expect.arrayContaining([
+        { tool: "web_fetch", action: "list" },
+        { tool: "web_fetch", action: "read" },
+        { tool: "research_source", action: "capture_fetch" },
+      ]),
+    );
+    expect(JSON.stringify(snapshot.detail.events)).not.toContain(
+      fixture.sourceSecret,
+    );
+    expect(
+      snapshot.detail.events.findLast(
+        (event) =>
+          event.runId === done.runId && event.type === "message.assistant",
+      )?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        text: "CLI_FETCH_RESUME_RESULT",
+        reasoningRedacted: true,
+        reasoningSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(
+      (
+        completed.find(
+          (event) =>
+            event.payload["toolName"] === "web_fetch" &&
+            (event.payload["details"] as Record<string, unknown>)["action"] ===
+              "list",
+        )!.payload["details"] as Record<string, unknown>
+      )["stateCapsule"],
+    ).toEqual(
+      expect.objectContaining({
+        sourceRunId: done.runId,
+        sourceCount: 1,
         storage: "local_only",
       }),
     );

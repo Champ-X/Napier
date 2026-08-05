@@ -75,6 +75,7 @@ import { preflightAgentToolPolicy } from "./agent-tool-policy-preflight.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
 import { agentToolResultText } from "./agent-tool-result-text.js";
+import { PrivateSourceModelContentBoundary } from "./private-source-model-content.js";
 import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import { BrowserLiveViewService } from "./browser-live-view.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
@@ -84,7 +85,7 @@ import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabiliti
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
 export { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
-import { recordResearchSourceRecoveryContext } from "./research-source-recovery-context.js";
+import { recordNetworkSourceRecoveryContexts } from "./research-source-recovery-context.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
@@ -550,12 +551,12 @@ export class AgentRuntime {
           },
           options.onEvent,
         );
-        await recordResearchSourceRecoveryContext({
+        await recordNetworkSourceRecoveryContexts({
           threadId: thread.id,
           runId: run.id,
           enabled: options.recovery?.mode !== "automatic",
           prepare: () =>
-            this.capabilities.prepareResearchSourceRecovery({
+            this.capabilities.prepareNetworkSourceRecovery({
               threadId: thread.id,
               runId: run.id,
             }),
@@ -580,6 +581,7 @@ export class AgentRuntime {
             })
           : undefined;
       const modelAdvisorPolicy = effectiveModelAdvisorPolicy(agentProfile);
+      const privateSourceContent = new PrivateSourceModelContentBoundary();
       const invokeTurn = async (
         text: string,
         source: TurnSource,
@@ -603,6 +605,7 @@ export class AgentRuntime {
               abortController.signal,
               budget,
               nextModelContextEnvelopeTurnIndex,
+              privateSourceContent,
               toolResultReplay,
               options.onEvent,
             )
@@ -1235,6 +1238,7 @@ export class AgentRuntime {
     signal: AbortSignal,
     budget: RunBudgetTracker,
     nextModelContextEnvelopeTurnIndex: () => number,
+    privateSourceContent: PrivateSourceModelContentBoundary,
     toolResultReplay?: FrozenToolResultReplayController,
     onEvent?: EventSink,
   ): Promise<string> {
@@ -1930,6 +1934,7 @@ export class AgentRuntime {
           preRecordedControlMessages,
           currentModelContextEnvelope,
           toolResultLifecycle,
+          privateSourceContent,
           onEvent,
         );
         if (text !== undefined) finalText = text;
@@ -1958,6 +1963,7 @@ export class AgentRuntime {
     preRecordedControlMessages: Map<string, number>,
     modelContextEnvelope: ModelContextEnvelopeReceipt | undefined,
     toolResultLifecycle: AgentToolResultLifecycle,
+    privateSourceContent: PrivateSourceModelContentBoundary,
     onEvent?: EventSink,
   ): Promise<string | undefined> {
     if (event.type === "turn_start" || event.type === "turn_end") {
@@ -1977,7 +1983,9 @@ export class AgentRuntime {
     if (event.type === "message_update") {
       const update = event.assistantMessageEvent;
       if (update.type === "text_delta" || update.type === "thinking_delta") {
-        const redactCandidate = modelAdvisorPolicy.mode === "enforce";
+        const redactCandidate = privateSourceContent.redact(
+          modelAdvisorPolicy.mode === "enforce",
+        );
         await this.record(
           {
             threadId: run.threadId,
@@ -2054,9 +2062,6 @@ export class AgentRuntime {
           (event.message.stopReason === "aborted"
             ? "Model call was aborted."
             : "Model call failed.");
-        const redactCandidate =
-          modelFailure ||
-          (!hasToolCalls && modelAdvisorPolicy.mode === "enforce");
         await this.record(
           {
             threadId: run.threadId,
@@ -2065,24 +2070,14 @@ export class AgentRuntime {
             category: "model",
             visibility: "debug",
             payload: {
-              ...(redactCandidate
-                ? {
-                    textSha256: sha256Text(text),
-                    textBytes: Buffer.byteLength(text, "utf8"),
-                    reasoningSha256: sha256Text(reasoning),
-                    reasoningBytes: Buffer.byteLength(reasoning, "utf8"),
-                    contentRedacted: true,
-                    ...(modelFailure
-                      ? {
-                          errorSha256: sha256Text(modelFailureDiagnostic),
-                          errorBytes: Buffer.byteLength(
-                            modelFailureDiagnostic,
-                            "utf8",
-                          ),
-                        }
-                      : {}),
-                  }
-                : { text, reasoning }),
+              ...privateSourceContent.modelProjection({
+                text,
+                reasoning,
+                defaultRedacted:
+                  modelFailure ||
+                  (!hasToolCalls && modelAdvisorPolicy.mode === "enforce"),
+                ...(modelFailure ? { error: modelFailureDiagnostic } : {}),
+              }),
               model: `${event.message.provider}/${event.message.model}`,
               stopReason: event.message.stopReason,
               ...(modelContextEnvelope
@@ -2134,7 +2129,7 @@ export class AgentRuntime {
             payload: {
               role: "assistant",
               text,
-              reasoning,
+              ...privateSourceContent.reasoningProjection(reasoning),
               model: `${event.message.provider}/${event.message.model}`,
               usage,
               usageAccounting,
@@ -2172,6 +2167,7 @@ export class AgentRuntime {
       return undefined;
     }
     if (event.type === "tool_execution_end") {
+      privateSourceContent.observeToolResult(event.toolName);
       const output = agentToolResultText(event.result);
       const reusedProjection = toolResultLifecycle.reusedTerminalProjection(
         event.toolCallId,

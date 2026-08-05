@@ -4,7 +4,10 @@ import { WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT } from "./workflow-inpu
 import { WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT } from "./workflow-simulation-evidence.js";
 
 export function dropPrivateImportedEvent(event: RunEvent): boolean {
-  return event.type !== "context.research_sources";
+  return (
+    event.type !== "context.research_sources" &&
+    event.type !== "context.web_fetch_sources"
+  );
 }
 
 export function remapImportedEventPayload(
@@ -12,7 +15,7 @@ export function remapImportedEventPayload(
   payload: JsonValue,
   idMap: ReadonlyMap<string, string>,
 ): JsonValue {
-  if (type === "tool.completed" && researchSourceToolPayload(payload)) {
+  if (type === "tool.completed" && privateToolCapsulePayload(payload)) {
     const cloned = structuredClone(payload);
     const details = cloned["details"] as Record<string, JsonValue>;
     delete details["stateCapsule"];
@@ -48,7 +51,7 @@ export function remapImportedEventPayload(
   return remapped;
 }
 
-function researchSourceToolPayload(value: JsonValue): value is Record<
+function privateToolCapsulePayload(value: JsonValue): value is Record<
   string,
   JsonValue
 > & {
@@ -56,7 +59,8 @@ function researchSourceToolPayload(value: JsonValue): value is Record<
 } {
   return (
     record(value) &&
-    value["toolName"] === "research_source" &&
+    (value["toolName"] === "research_source" ||
+      value["toolName"] === "web_fetch") &&
     record(value["details"])
   );
 }

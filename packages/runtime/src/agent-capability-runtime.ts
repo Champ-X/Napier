@@ -22,6 +22,7 @@ import {
   RunWebFetchSourceManager,
   type RunWebFetchSourceManagerOptions,
 } from "./web-fetch-sources.js";
+import { WebFetchCapsuleStore } from "./web-fetch-capsule-store.js";
 import { createWebFetchTool } from "./web-fetch-tool.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
@@ -72,6 +73,8 @@ export class AgentCapabilityRuntime {
         browserFallback: createWebFetchBrowserFallbackProvider(
           resolvedBrowserSessions,
         ),
+        capsules: new WebFetchCapsuleStore(store.dataRoot),
+        store,
       });
     const webFetchCapture = webFetchResearchCaptureProvider(this.webFetch);
     this.sessions = new AgentSessionRuntime(
@@ -180,6 +183,17 @@ export class AgentCapabilityRuntime {
 
   prepareResearchSourceRecovery(owner: AgentCapabilityOwner) {
     return this.sessions.prepareResearchSourceRecovery(owner);
+  }
+
+  prepareWebFetchRecovery(owner: AgentCapabilityOwner) {
+    return this.webFetch.prepareRecovery?.(owner) ?? Promise.resolve(undefined);
+  }
+
+  prepareNetworkSourceRecovery(owner: AgentCapabilityOwner) {
+    return Promise.all([
+      this.prepareResearchSourceRecovery(owner),
+      this.prepareWebFetchRecovery(owner),
+    ]).then(([research, webFetch]) => ({ research, webFetch }));
   }
 
   captureBrowserLiveView(

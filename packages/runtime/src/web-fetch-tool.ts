@@ -8,6 +8,7 @@ import type {
   WebFetchExecutionOptions,
   WebFetchToolDetails,
 } from "./web-fetch-model.js";
+import { validateWebFetchStateCapsuleReceipt } from "./web-fetch-capsule.js";
 
 const sourceBindingSchema = {
   sourceId: Type.String({
@@ -144,6 +145,9 @@ function webFetchDetailsLedgerProjection(
   details: Record<string, unknown>,
 ): Record<string, JsonValue> {
   const sourceId = string(details["sourceId"]);
+  const stateCapsule = details["stateCapsule"]
+    ? validateWebFetchStateCapsuleReceipt(details["stateCapsule"])
+    : undefined;
   return {
     kind: "napier.web-fetch",
     schemaVersion: 1,
@@ -195,6 +199,7 @@ function webFetchDetailsLedgerProjection(
     ...(typeof details["sourceTruncated"] === "boolean"
       ? { sourceTruncated: details["sourceTruncated"] }
       : {}),
+    ...(stateCapsule ? { stateCapsule: toJsonValue(stateCapsule) } : {}),
   };
 }
 

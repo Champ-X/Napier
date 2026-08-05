@@ -1,5 +1,6 @@
 export * from "./public-http-client.js";
 export * from "./web-fetch-content.js";
+export * from "./web-fetch-capsule-store.js";
 export * from "./web-fetch-model.js";
 export * from "./web-fetch-sources.js";
 export * from "./web-fetch-tool.js";
