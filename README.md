@@ -528,10 +528,17 @@ npm run --silent napier -- doctor \
 checks Node/runtime components and optional model credential presence, then
 uses bounded real production paths for credential-free public Search, HTML Fetch,
 sandboxed Chrome, and the OS process Sandbox. `--offline` skips the three
-public-network/Browser probes. Human output uses fixed recovery codes; `--jsonl`
-returns one hash-bound `napier.doctor-report` with `ready`, `degraded`, or
-`blocked` status. Workspace paths, credential variable names/values, fetched
-content, URLs, and raw probe errors are absent.
+public-network/Browser probes. Human output uses fixed recovery codes and a
+deduplicated **Remediation** section. JSONL returns one hash-bound schema-2
+`napier.doctor-report` with `ready`, `degraded`, or `blocked` status plus
+machine-readable remediation IDs, required/optional priority, affected checks
+and codes, instructions, and quoted-literal verification commands.
+Remediation is always `automatic: false`: Doctor never installs a runtime or
+browser, changes proxy/firewall settings, creates a workspace, sets a secret,
+or disables Browser/OS sandboxing. Commands contain only placeholders such as
+`'WORKSPACE_PATH'` and `'CREDENTIAL_ENV_VAR'`; replace them deliberately before
+running. Workspace paths, credential variable names/values, fetched content,
+URLs, and raw probe errors are absent.
 
 Inspect or change the active Agent's user-facing capability preset without
 editing SQLite or reasoning about raw policy names:
@@ -4037,7 +4044,7 @@ the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
 completed `web_fetch fetch -> research_source capture_fetch -> cite` against
 both public Node.js release HTML and the W3C dummy PDF while Tool events
 retained neither URL, body, Web Source ID, nor credential. The complete regular
-suite currently passes 2,341 tests.
+suite currently passes 2,342 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

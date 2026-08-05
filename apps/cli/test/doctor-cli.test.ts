@@ -92,7 +92,7 @@ describe("Napier Doctor CLI", () => {
     expect(report).toEqual(
       expect.objectContaining({
         kind: "napier.doctor-report",
-        schemaVersion: 1,
+        schemaVersion: 2,
         status: "ready",
         online: true,
         checkCount: 7,
@@ -100,6 +100,8 @@ describe("Napier Doctor CLI", () => {
         warningCount: 0,
         failedCount: 0,
         skippedCount: 0,
+        remediationCount: 0,
+        remediations: [],
       }),
     );
     const { contentSha256, ...withoutHash } = report;
@@ -142,12 +144,23 @@ describe("Napier Doctor CLI", () => {
       status: string;
       skippedCount: number;
       checks: DoctorCheck[];
+      remediations: Array<{ id: string; priority: string }>;
     };
     expect(report.status).toBe("degraded");
     expect(report.skippedCount).toBe(3);
     expect(
       report.checks.filter((check) => check.code === "offline_mode"),
     ).toHaveLength(3);
+    expect(report.remediations).toEqual([
+      expect.objectContaining({
+        id: "repair_process_sandbox",
+        priority: "optional",
+      }),
+      expect.objectContaining({
+        id: "run_online_checks",
+        priority: "optional",
+      }),
+    ]);
     expect(onlineProbe).not.toHaveBeenCalled();
   });
 
@@ -181,6 +194,15 @@ describe("Napier Doctor CLI", () => {
       status: string;
       failedCount: number;
       checks: DoctorCheck[];
+      remediationCount: number;
+      remediations: Array<{
+        id: string;
+        priority: string;
+        checkIds: string[];
+        codes: string[];
+        verifyCommand: string;
+        automatic: boolean;
+      }>;
     };
     expect(report.status).toBe("blocked");
     expect(report.failedCount).toBe(3);
@@ -191,7 +213,70 @@ describe("Napier Doctor CLI", () => {
         "browser_missing",
       ]),
     );
+    expect(report.remediationCount).toBe(3);
+    expect(report.remediations).toEqual([
+      expect.objectContaining({
+        id: "configure_model_credential",
+        priority: "required",
+        checkIds: ["model"],
+        codes: ["credential_missing"],
+        verifyCommand: expect.stringContaining(
+          "--credential-env 'CREDENTIAL_ENV_VAR'",
+        ),
+        automatic: false,
+      }),
+      expect.objectContaining({
+        id: "install_supported_browser",
+        priority: "required",
+        checkIds: ["browser"],
+        codes: ["browser_missing"],
+        automatic: false,
+      }),
+      expect.objectContaining({
+        id: "repair_public_network",
+        priority: "required",
+        checkIds: ["search"],
+        codes: ["search_unavailable"],
+        verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH'",
+        automatic: false,
+      }),
+    ]);
     expect(stdout.text()).not.toContain("MISSING_DOCTOR_KEY");
+  });
+
+  it("renders privacy-safe human remediation without executing it", async () => {
+    const fixture = await createFixture();
+    const stdout = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "--credential-env",
+        "PRIVATE_DOCTOR_KEY",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      doctorDependencies({
+        model: failed("model", "credential_missing"),
+        sandbox: passed("sandbox", "sandbox_ready"),
+        search: failed("search", "search_unavailable"),
+        fetch: failed("fetch", "fetch_unavailable"),
+        browser: failed("browser", "browser_unavailable"),
+      }),
+    );
+
+    expect(code).toBe(1);
+    expect(stdout.text()).toContain("Remediation:");
+    expect(stdout.text()).toContain("REQUIRED configure_model_credential");
+    expect(stdout.text()).toContain("REQUIRED repair_public_network");
+    expect(stdout.text()).toContain("--workspace 'WORKSPACE_PATH'");
+    expect(stdout.text()).toContain("--credential-env 'CREDENTIAL_ENV_VAR'");
+    expect(stdout.text()).not.toContain(fixture.workspace);
+    expect(stdout.text()).not.toContain("PRIVATE_DOCTOR_KEY");
+    expect(stdout.text().match(/repair_public_network/gu)).toHaveLength(1);
   });
 
   it("fails closed for missing workspaces and cancellation", async () => {
@@ -213,6 +298,13 @@ describe("Napier Doctor CLI", () => {
       expect.objectContaining({
         status: "blocked",
         checks: [expect.objectContaining({ code: "workspace_unavailable" })],
+        remediations: [
+          expect.objectContaining({
+            id: "select_workspace",
+            priority: "required",
+            automatic: false,
+          }),
+        ],
       }),
     );
 
@@ -233,6 +325,13 @@ describe("Napier Doctor CLI", () => {
           expect.objectContaining({
             id: "runtime",
             code: "doctor_cancelled",
+          }),
+        ],
+        remediations: [
+          expect.objectContaining({
+            id: "retry_doctor",
+            priority: "required",
+            automatic: false,
           }),
         ],
       }),

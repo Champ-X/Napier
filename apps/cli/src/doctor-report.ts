@@ -1,28 +1,20 @@
 import type { ModelRef } from "@napier/contracts";
 import { canonicalJson, sha256 } from "@napier/runtime";
 
-export type DoctorCheckStatus = "passed" | "warning" | "failed" | "skipped";
+import {
+  type DoctorCheck,
+  type DoctorCheckStatus,
+} from "./doctor-check-model.js";
+import {
+  createDoctorRemediations,
+  type DoctorRemediation,
+} from "./doctor-remediation.js";
 
-export interface DoctorCheck {
-  id:
-    | "runtime"
-    | "workspace"
-    | "model"
-    | "sandbox"
-    | "search"
-    | "fetch"
-    | "browser";
-  status: DoctorCheckStatus;
-  required: boolean;
-  code: string;
-  message: string;
-  durationMs: number;
-  evidence?: Record<string, boolean | number | string>;
-}
+export type { DoctorCheck, DoctorCheckStatus };
 
 export interface DoctorReport {
   kind: "napier.doctor-report";
-  schemaVersion: 1;
+  schemaVersion: 2;
   status: "ready" | "degraded" | "blocked";
   online: boolean;
   workspaceSha256: string;
@@ -33,6 +25,8 @@ export interface DoctorReport {
   failedCount: number;
   skippedCount: number;
   checks: DoctorCheck[];
+  remediationCount: number;
+  remediations: DoctorRemediation[];
   contentSha256: string;
 }
 
@@ -43,6 +37,7 @@ export function createDoctorReport(input: {
   checks: DoctorCheck[];
 }): DoctorReport {
   const counts = countStatuses(input.checks);
+  const remediations = createDoctorRemediations(input.checks);
   const status: DoctorReport["status"] = input.checks.some(
     (check) => check.required && check.status === "failed",
   )
@@ -52,7 +47,7 @@ export function createDoctorReport(input: {
       : "ready";
   const reportWithoutHash = {
     kind: "napier.doctor-report" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     status,
     online: input.online,
     workspaceSha256: sha256(input.workspace),
@@ -63,6 +58,8 @@ export function createDoctorReport(input: {
     failedCount: counts.failed,
     skippedCount: counts.skipped,
     checks: input.checks,
+    remediationCount: remediations.length,
+    remediations,
   };
   return {
     ...reportWithoutHash,
@@ -77,6 +74,15 @@ export function formatDoctorReport(report: DoctorReport): string {
       (check) =>
         `${statusIcon(check.status)} ${check.id}: ${check.message} [${check.code}]`,
     ),
+    ...(report.remediations.length > 0
+      ? [
+          "Remediation:",
+          ...report.remediations.map(
+            (remediation) =>
+              `${remediation.priority === "required" ? "REQUIRED" : "OPTIONAL"} ${remediation.id}: ${remediation.instruction} Verify: ${remediation.verifyCommand}`,
+          ),
+        ]
+      : []),
     `Summary: ${String(report.passedCount)} passed, ${countLabel(report.warningCount, "warning")}, ${String(report.failedCount)} failed, ${String(report.skippedCount)} skipped`,
     `Report SHA-256: ${report.contentSha256}`,
   ].join("\n");

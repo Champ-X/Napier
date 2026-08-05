@@ -561,16 +561,27 @@ presence, and, unless `--offline` is selected, runs bounded real
 One total timeout/cancellation signal bounds every check. Browser and Fetch
 ephemeral state settles before return.
 
-`doctor-report.ts` owns the hash-bound `ready | degraded | blocked` report and
-human rendering. `doctor-probes.ts` maps failures to fixed recovery codes such
-as `credential_missing`, `search_unavailable`, `browser_missing`, and
-`sandbox_unavailable`; it never copies raw exceptions. The report retains only
-bounded status, duration, counts, known provider/adapter identifiers, numeric
-network/content evidence, executable/workspace/credential-locator hashes, and
-the selected public ModelRef. Workspace paths, credential variable names and
-values, URLs, response bodies, Browser page text, process output, and raw
-diagnostics remain absent. Required-check failure returns exit 1; skipped or
-non-required warnings return exit 0 with `degraded`.
+`doctor-report.ts` owns the hash-bound schema-2
+`ready | degraded | blocked` report and human rendering. `doctor-probes.ts`
+maps failures to fixed recovery codes such as `credential_missing`,
+`search_unavailable`, `browser_missing`, and `sandbox_unavailable`; it never
+copies raw exceptions. `doctor-remediation.ts` maps non-passing codes onto
+deduplicated fixed action IDs, required/optional priority, sorted check/code
+sets, privacy-safe instructions, and quoted-literal verification commands.
+Search, Fetch, and generic Browser transport failures share one public-network
+remediation. Every action is explicitly `automatic: false`: Doctor cannot
+install Node or Chrome, mutate network settings, create a workspace, set
+credentials, or disable Browser/OS sandboxing.
+
+The report retains only bounded status, duration, counts, known
+provider/adapter identifiers, numeric network/content evidence,
+executable/workspace/credential-locator hashes, the selected public ModelRef,
+and fixed remediation copy. Verification commands contain placeholders such as
+`'WORKSPACE_PATH'`, `'PROVIDER/MODEL_ID'`, and `'CREDENTIAL_ENV_VAR'`; they
+never interpolate local paths or locator names. Workspace paths, credential
+variable names and values, URLs, response bodies, Browser page text, process
+output, and raw diagnostics remain absent. Required-check failure returns exit
+1; skipped or non-required warnings return exit 0 with `degraded`.
 
 Capability presets are deterministic projections over the existing revisioned
 `AgentProfile`; they are not a second authority model or persistence store:
@@ -4541,7 +4552,7 @@ DeepSeek trial passed with one Search, two Fetches, three Browser actions,
 three captures, three citations, valid Replay, and zero diagnostics in 39.646
 seconds. This proves one real default-entry execution, not repeated
 reliability, automatic fallback, broad open-web quality, or cross-model
-superiority. The complete repository gate passes 2,341 regular tests.
+superiority. The complete repository gate passes 2,342 regular tests.
 
 The separate schema-2 open-web Security case fetches one public JSON response
 containing a direct prompt-injection canary through the same default

@@ -67,11 +67,15 @@ Audit date: 2026-08-05
 - The formal `napier doctor` CLI now diagnoses canonical workspace/runtime,
   optional model credential presence, keyless Search, HTML Fetch, sandboxed
   Chrome, and the OS process Sandbox without creating `.napier` state.
+  Schema-2 reports add deduplicated required/optional remediation actions with
+  fixed IDs and quoted-literal verification commands; every action is
+  `automatic: false` and retains no path, locator name/value, raw error, or
+  response content.
   `napier setup` and the first-use Web Live Provider docket now preview five
   known environment locators, require exact-hash explicit apply, verify the
   credential and pinned model, and preserve the onboarding ledger and Agent
-  revision. Dependency remediation, broader TUI guidance, and broader
-  LSP/DAP/Python/onboarding remediation remain P0.
+  revision. Automatic dependency installation, broader TUI guidance, and
+  broader LSP/DAP/Python/onboarding remediation remain P0.
 - Five shared capability presets now map user-facing Coding, Research, Data,
   Browser, and Safe Automation labels onto the existing revisioned Agent
   fields. `napier capabilities` supports status, non-mutating preview, and
@@ -156,9 +160,9 @@ Observed result:
   390 px mobile checks had no horizontal overflow or browser console/page
   errors; the audited production Web main chunk remained 136.70 KiB under
   150 KiB;
-- the complete repository gate passes 2,341 regular tests: Root 126, CLI 204,
+- the complete repository gate passes 2,342 regular tests: Root 126, CLI 205,
   Server 197, Web 528, Contracts 3, Runtime 1,255, and SDK 28. Architecture
-  audits 1,010 production source files and 494 test files with zero cycles;
+  audits 1,012 production source files and 494 test files with zero cycles;
   current performance, 265/265 OpenAPI compatibility operations, 82-file Web
   distribution evidence, and the 121-artifact release receipt all pass.
 
@@ -10636,6 +10640,55 @@ research_source:cite`;
 - the complete repository gate passes 2,341 regular tests with 46 opt-in live
   tests skipped by default: Root 126, CLI 204, Server 197, Web 528, Contracts
   3, Runtime 1,255, and SDK 28. Architecture audits 1,010 production source
+  files and 494 test files with zero cycles; current performance, 265/265
+  OpenAPI compatibility, the 82-file Web distribution, and the 121-artifact
+  release receipt all pass.
+
+## Completed Slice: Actionable Store-Free Doctor Remediation
+
+User scenario: after `napier doctor` identifies a missing credential, browser,
+sandbox, or public-network path, the user receives a bounded action plan and a
+safe verification command instead of only an opaque failure code.
+
+Acceptance and threat boundary:
+
+- preserve Store-free behavior: canonicalize and probe without creating a data
+  root, Agent, Thread, Run, credential reference, or background process;
+- derive remediation only from non-passing fixed Doctor codes; never ingest raw
+  exceptions, response bodies, page text, or process output;
+- expose stable action IDs, required/optional priority, sorted affected checks
+  and codes, privacy-safe instructions, verification command, and
+  `automatic: false`;
+- deduplicate shared root causes: Search, Fetch, and generic Browser transport
+  failures collapse into one `repair_public_network` action;
+- use quoted literal placeholders such as `'WORKSPACE_PATH'`,
+  `'PROVIDER/MODEL_ID'`, and `'CREDENTIAL_ENV_VAR'`; never interpolate the
+  canonical workspace, credential locator name/value, URL, or executable path;
+- do not install Node or Chrome, set secrets, mutate DNS/proxy/firewall, create
+  a workspace, alter sandbox policy, or run a suggested command automatically;
+- retain required-check exit 1 and optional/skipped exit 0 semantics;
+- include remediation inside the report self-hash so action tampering changes
+  `contentSha256`.
+
+Observed result:
+
+- focused CLI coverage passes six Doctor cases across ready, offline/degraded,
+  blocked credential/network/browser, deduplication, human rendering,
+  missing-workspace, cancellation, report self-hash, and privacy;
+- built-CLI missing-credential/offline Dogfood returned blocked schema 2 with
+  one required credential action, one optional sandbox action, and one
+  deduplicated online-check action covering Search/Fetch/Browser;
+- that report contained neither its temporary workspace root nor the supplied
+  credential locator name;
+- built-CLI live Dogfood with DeepSeek credential, keyless Search, Fetch, and
+  sandboxed Chrome completed with zero failed checks. The host OS process
+  sandbox warning produced one optional `repair_process_sandbox` action and no
+  credential-locator leakage;
+- both reports marked every action `automatic: false`; no workspace state or
+  external mutation was created by remediation;
+- the complete repository gate passes 2,342 regular tests with 46 opt-in live
+  tests skipped by default: Root 126, CLI 205, Server 197, Web 528, Contracts
+  3, Runtime 1,255, and SDK 28. Architecture audits 1,012 production source
   files and 494 test files with zero cycles; current performance, 265/265
   OpenAPI compatibility, the 82-file Web distribution, and the 121-artifact
   release receipt all pass.
