@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "9b3030a0f5d74c3dc736b06aeba8486cb047bd870c35730b60d958279e7eab69",
+  "artifactSetSha256": "6e34752fe5f213042cae72377f2c5ac447af6cd4aa2f2ab87fd87d62c98eb41a",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "c19d57690d420d1afdf55b25f1e8446f5f1e3f3f758d9bce827eedd545852416",
+      "sha256": "20d970781be47eda32f9d3110aa7662453b096c4566bb0fb329c0b452849afda",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "c3cb83b8c903c88d5a8eb8734ee786302631b06415312d9ed12315abd3178b2a",
+      "sha256": "c9f772b7aec7f7b17afc6473c527175fae146494fd260c00c85d81c9be0222ea",
       "valid": true
     },
     {
@@ -687,19 +687,31 @@
       "valid": true
     },
     {
-      "kind": "open-web-research-benchmark-series",
+      "kind": "open-web-research-freshness-campaign",
+      "path": "benchmark-results/napier-open-web-research-freshness-campaign-research_open_web_source_triad_v1-c9248212f0b67e3f.json",
+      "sha256": "4bd323f9625438be2ef2ebea323c580ff5e222d9fff53c2f24402751628d41c8",
+      "valid": true
+    },
+    {
+      "kind": "open-web-research-freshness-observation-1-result",
+      "path": "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
+      "sha256": "f94f77f317411504ad9bba3d108105bba4f1e5d5a40811ca88ae9fd1c2a68139",
+      "valid": true
+    },
+    {
+      "kind": "open-web-research-freshness-observation-2-series",
       "path": "benchmark-results/napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json",
       "sha256": "6090d7af5c838551303efe7a1c842a2308311a50005604cd4934b633b9227d94",
       "valid": true
     },
     {
-      "kind": "open-web-research-benchmark-result-1",
+      "kind": "open-web-research-freshness-observation-2-result-1",
       "path": "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-d7e4f2fd4e284674.json",
       "sha256": "4144f0525dfcf4c46d8623e1296f691d77b81e69cccc849516b451c2d464e0a8",
       "valid": true
     },
     {
-      "kind": "open-web-research-benchmark-result-2",
+      "kind": "open-web-research-freshness-observation-2-result-2",
       "path": "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b6f353840b7374e9.json",
       "sha256": "b00a93288f6daba5711b6497a8506591674bf08fa9400fa7a564bd648b295314",
       "valid": true

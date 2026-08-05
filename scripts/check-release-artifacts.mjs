@@ -30,10 +30,8 @@ import {
   verifyProcessRecoveryBenchmarkSeries,
 } from "../apps/cli/dist/process-recovery-benchmark-series.js";
 import { loadOpenWebResearchBenchmarkCase } from "../apps/cli/dist/open-web-research-benchmark-case.js";
-import {
-  openWebResearchSeriesArtifactReferences,
-  verifyOpenWebResearchSeries,
-} from "../apps/cli/dist/open-web-research-series.js";
+import { loadOpenWebResearchFreshnessCampaignArtifacts } from "../apps/cli/dist/open-web-research-freshness-artifacts.js";
+import { verifyOpenWebResearchFreshnessCampaign } from "../apps/cli/dist/open-web-research-freshness-campaign.js";
 import {
   openWebResearchSecuritySeriesArtifactReferences,
   verifyOpenWebResearchSecuritySeries,
@@ -87,8 +85,8 @@ const defaultProcessRecoveryBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-process-recovery-benchmark-series-long_horizon_process_write_compensation_v1-79f2082920791734.json";
 const defaultResearchBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-7860868b48599ded.json";
-const defaultOpenWebResearchBenchmarkSeriesPath =
-  "benchmark-results/napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json";
+const defaultOpenWebResearchFreshnessCampaignPath =
+  "benchmark-results/napier-open-web-research-freshness-campaign-research_open_web_source_triad_v1-c9248212f0b67e3f.json";
 const defaultOpenWebResearchBenchmarkCaseRoot =
   "benchmarks/research/open-web-source-triad-v1";
 const defaultOpenWebSecurityBenchmarkSeriesPath =
@@ -164,9 +162,9 @@ export async function auditReleaseArtifacts(options = {}) {
     defaultProcessRecoveryBenchmarkSeriesPath;
   const researchBenchmarkSeriesPath =
     options.researchBenchmarkSeriesPath ?? defaultResearchBenchmarkSeriesPath;
-  const openWebResearchBenchmarkSeriesPath =
-    options.openWebResearchBenchmarkSeriesPath ??
-    defaultOpenWebResearchBenchmarkSeriesPath;
+  const openWebResearchFreshnessCampaignPath =
+    options.openWebResearchFreshnessCampaignPath ??
+    defaultOpenWebResearchFreshnessCampaignPath;
   const openWebResearchBenchmarkCaseRoot =
     options.openWebResearchBenchmarkCaseRoot ??
     defaultOpenWebResearchBenchmarkCaseRoot;
@@ -400,9 +398,9 @@ export async function auditReleaseArtifacts(options = {}) {
     verifySeries: verifyResearchBenchmarkSeries,
   });
   const openWebResearchBenchmarkArtifacts =
-    await verifyOpenWebResearchSeriesReleaseArtifacts({
+    await verifyOpenWebResearchFreshnessReleaseArtifacts({
       repoRoot,
-      seriesPath: openWebResearchBenchmarkSeriesPath,
+      campaignPath: openWebResearchFreshnessCampaignPath,
       caseRoot: openWebResearchBenchmarkCaseRoot,
       errors,
     });
@@ -787,8 +785,8 @@ function parseCliOptions(args) {
       index += 1;
       continue;
     }
-    if (arg === "--open-web-research-benchmark-series-path") {
-      options.openWebResearchBenchmarkSeriesPath = readCliValue(
+    if (arg === "--open-web-research-freshness-campaign-path") {
+      options.openWebResearchFreshnessCampaignPath = readCliValue(
         args,
         index,
         arg,
@@ -930,56 +928,86 @@ async function verifyBenchmarkReleaseArtifacts({
   }));
 }
 
-async function verifyOpenWebResearchSeriesReleaseArtifacts({
+async function verifyOpenWebResearchFreshnessReleaseArtifacts({
   repoRoot,
-  seriesPath,
+  campaignPath,
   caseRoot,
   errors,
 }) {
-  const seriesEvidence = await readArtifactEvidence(
+  const campaignEvidence = await readArtifactEvidence(
     repoRoot,
-    seriesPath,
+    campaignPath,
     errors,
   );
-  const series = await readJsonArtifact(repoRoot, seriesPath, errors);
-  const root = path.posix.dirname(seriesPath);
-  const artifacts = [];
+  const observationArtifacts = [];
   let valid = false;
   try {
-    for (const reference of openWebResearchSeriesArtifactReferences(series)) {
-      const resultPath = path.posix.join(root, reference.resultFileName);
-      artifacts.push({
-        resultFileName: reference.resultFileName,
-        result: await readJsonArtifact(repoRoot, resultPath, errors),
-        evidence: await readArtifactEvidence(repoRoot, resultPath, errors),
+    const loadedCampaign = await loadOpenWebResearchFreshnessCampaignArtifacts(
+      resolveRepoRelativePath(
+        repoRoot,
+        campaignPath,
+        "openWebResearchFreshnessCampaignPath",
+      ),
+    );
+    const campaign = loadedCampaign.campaign;
+    const root = path.posix.dirname(campaignPath);
+    for (const [index, observation] of loadedCampaign.observations.entries()) {
+      const artifactPath = path.posix.join(root, observation.artifactFileName);
+      observationArtifacts.push({
+        index: index + 1,
+        observation,
+        artifactEvidence: await readArtifactEvidence(
+          repoRoot,
+          artifactPath,
+          errors,
+        ),
+        trialEvidence: await Promise.all(
+          observation.trials
+            .filter(
+              (trial) => trial.resultFileName !== observation.artifactFileName,
+            )
+            .map((trial) =>
+              readArtifactEvidence(
+                repoRoot,
+                path.posix.join(root, trial.resultFileName),
+                errors,
+              ),
+            ),
+        ),
       });
     }
     const loaded = await loadOpenWebResearchBenchmarkCase(
       resolveRepoRelativePath(repoRoot, caseRoot, "openWebResearchCaseRoot"),
     );
-    const verification = verifyOpenWebResearchSeries(
-      series,
-      artifacts.map((artifact) => ({
-        resultFileName: artifact.resultFileName,
-        result: artifact.result,
-      })),
+    const verification = verifyOpenWebResearchFreshnessCampaign(
+      campaign,
+      loadedCampaign.observations,
       loaded.benchmarkCase,
       loaded.expected,
     );
     valid =
       verification.valid &&
-      series?.status === "completed" &&
-      series?.completedTrialCount === series?.requestedTrialCount &&
-      series?.completedTrialCount >= 2;
+      campaign?.observationCount >= 2 &&
+      campaign?.minimumObservationGapMs >= campaign?.requiredObservationGapMs;
     if (!verification.valid) {
       errors.push(
         ...verification.diagnostics.map(
           (diagnostic) => `open-web research benchmark: ${diagnostic}`,
         ),
       );
+      for (const observation of verification.observationDiagnostics) {
+        errors.push(
+          ...observation.diagnostics.map(
+            (diagnostic) =>
+              `open-web research benchmark observation ${observation.index}: ${diagnostic}`,
+          ),
+        );
+      }
     }
     if (verification.valid && !valid) {
-      errors.push("open-web research benchmark: retained_series_not_complete");
+      errors.push(
+        "open-web research benchmark: retained_campaign_not_time_separated",
+      );
     }
   } catch (error) {
     errors.push(
@@ -988,21 +1016,35 @@ async function verifyOpenWebResearchSeriesReleaseArtifacts({
       }`,
     );
   }
-  const { readable: _seriesReadable, ...seriesArtifact } = seriesEvidence;
+  const { readable: _campaignReadable, ...campaignArtifact } = campaignEvidence;
+  const nestedArtifacts = observationArtifacts.flatMap((observation) => [
+    {
+      kind: `open-web-research-freshness-observation-${String(
+        observation.index,
+      )}-${observation.observation.artifact.kind === "napier.open-web-research-series" ? "series" : "result"}`,
+      evidence: observation.artifactEvidence,
+    },
+    ...observation.trialEvidence.map((evidence, index) => ({
+      kind: `open-web-research-freshness-observation-${String(
+        observation.index,
+      )}-result-${String(index + 1)}`,
+      evidence,
+    })),
+  ]);
   return [
     {
-      kind: "open-web-research-benchmark-series",
-      ...seriesArtifact,
+      kind: "open-web-research-freshness-campaign",
+      ...campaignArtifact,
       valid:
-        seriesEvidence.readable &&
+        campaignEvidence.readable &&
         valid &&
-        artifacts.length > 0 &&
-        artifacts.every((artifact) => artifact.evidence.readable),
+        observationArtifacts.length > 0 &&
+        nestedArtifacts.every((artifact) => artifact.evidence.readable),
     },
-    ...artifacts.map((artifact, index) => {
+    ...nestedArtifacts.map((artifact) => {
       const { readable: _readable, ...evidence } = artifact.evidence;
       return {
-        kind: `open-web-research-benchmark-result-${String(index + 1)}`,
+        kind: artifact.kind,
         ...evidence,
         valid: artifact.evidence.readable && valid,
       };

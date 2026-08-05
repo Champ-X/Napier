@@ -1,0 +1,158 @@
+{
+  "kind": "napier.open-web-research-freshness-campaign",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-05T20:25:29.395Z",
+  "caseId": "research_open_web_source_triad_v1",
+  "caseSha256": "1044633812902cd2a8387a84b8adeed54928b3ca700498c77122a2255290494c",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "requiredObservationGapMs": 86400000,
+  "observationCount": 2,
+  "firstObservedAt": "2026-08-04T14:18:24.596Z",
+  "lastObservedAt": "2026-08-05T19:55:53.662Z",
+  "observationSpanMs": 106649066,
+  "minimumObservationGapMs": 106609321,
+  "trialCount": 3,
+  "passedTrialCount": 2,
+  "failedTrialCount": 1,
+  "inconclusiveTrialCount": 0,
+  "claimsMatchTrialCount": 3,
+  "toolTopologyMatchTrialCount": 3,
+  "sourceCoverageMatchTrialCount": 3,
+  "citationEvidenceMatchTrialCount": 2,
+  "citationClaimsMatchTrialCount": 3,
+  "replayValidTrialCount": 3,
+  "credentialLeakTrialCount": 0,
+  "passRate": 0.6666666666666666,
+  "uniqueSourceEvidenceCount": 1,
+  "uniqueCitationEvidenceCount": 3,
+  "sourceEvidenceSetSha256": "52965a0cf2727a89d6f2b105c23e52003d817de8ae822ea0a11e8f545bb6b9a9",
+  "citationEvidenceSetSha256": "64e884b16ad7d3a3f378ea449c1c5f998766e01aa1d1f66dca9af988204c08e9",
+  "metrics": {
+    "durationMs": {
+      "total": 131353,
+      "min": 39540,
+      "p50": 39646,
+      "p95": 39646,
+      "max": 52167,
+      "mean": 43784.333333333336
+    },
+    "costUsd": {
+      "total": 0.0160011376,
+      "min": 0.0050774136000000004,
+      "p50": 0.0054105127999999995,
+      "p95": 0.0054105127999999995,
+      "max": 0.0055132112,
+      "mean": 0.005333712533333333
+    },
+    "inputTokens": {
+      "total": 81446,
+      "min": 25369,
+      "p50": 27587,
+      "p95": 27587,
+      "max": 28490,
+      "mean": 27148.666666666668
+    },
+    "outputTokens": {
+      "total": 11894,
+      "min": 3748,
+      "p50": 4004,
+      "p95": 4004,
+      "max": 4142,
+      "mean": 3964.6666666666665
+    },
+    "searchCount": {
+      "total": 3,
+      "min": 1,
+      "p50": 1,
+      "p95": 1,
+      "max": 1,
+      "mean": 1
+    },
+    "fetchCount": {
+      "total": 6,
+      "min": 2,
+      "p50": 2,
+      "p95": 2,
+      "max": 2,
+      "mean": 2
+    },
+    "browserCount": {
+      "total": 9,
+      "min": 3,
+      "p50": 3,
+      "p95": 3,
+      "max": 3,
+      "mean": 3
+    },
+    "researchCaptureCount": {
+      "total": 9,
+      "min": 3,
+      "p50": 3,
+      "p95": 3,
+      "max": 3,
+      "mean": 3
+    },
+    "citationCount": {
+      "total": 9,
+      "min": 3,
+      "p50": 3,
+      "p95": 3,
+      "max": 3,
+      "mean": 3
+    }
+  },
+  "resultSetSha256": "4ee7d2b67fef3a5fd12e6713cddbabd9037de246a17eda4cac9e9806b5bd6a4f",
+  "observations": [
+    {
+      "index": 1,
+      "artifactKind": "result",
+      "artifactFileName": "napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
+      "artifactContentSha256": "b90a841f097b03b9b4e1761f2a873d6dcf78c3a4b2c8c41725d39ac6d5ff19b0",
+      "firstObservedAt": "2026-08-04T14:18:24.596Z",
+      "lastObservedAt": "2026-08-04T14:18:24.596Z",
+      "trialCount": 1,
+      "passedTrialCount": 1,
+      "failedTrialCount": 0,
+      "inconclusiveTrialCount": 0,
+      "claimsMatchTrialCount": 1,
+      "toolTopologyMatchTrialCount": 1,
+      "sourceCoverageMatchTrialCount": 1,
+      "citationEvidenceMatchTrialCount": 1,
+      "citationClaimsMatchTrialCount": 1,
+      "replayValidTrialCount": 1,
+      "credentialLeakTrialCount": 0,
+      "resultSetSha256": "3628cdcd296da1578224311f232f35f89687742d24592d7cfcd0894eddea130f"
+    },
+    {
+      "index": 2,
+      "artifactKind": "series",
+      "artifactFileName": "napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json",
+      "artifactContentSha256": "a7b8199e42e133392b8b50f611602cf2d1e8780ae91b6224de980a6e520873af",
+      "firstObservedAt": "2026-08-05T19:55:13.917Z",
+      "lastObservedAt": "2026-08-05T19:55:53.662Z",
+      "trialCount": 2,
+      "passedTrialCount": 1,
+      "failedTrialCount": 1,
+      "inconclusiveTrialCount": 0,
+      "claimsMatchTrialCount": 2,
+      "toolTopologyMatchTrialCount": 2,
+      "sourceCoverageMatchTrialCount": 2,
+      "citationEvidenceMatchTrialCount": 1,
+      "citationClaimsMatchTrialCount": 2,
+      "replayValidTrialCount": 2,
+      "credentialLeakTrialCount": 0,
+      "resultSetSha256": "654b544dbec60f61422b3f1c9988642990828415ec4855685f0b865b4589d40c"
+    }
+  ],
+  "observationSetSha256": "af2d69ed6b40c2b80925ac1611d94b37c20c982a2697eed183f925bf5fbc9e6b",
+  "contentSha256": "c9248212f0b67e3fa29f64719646c4e86e3f4f9971babc2d91ecc7e5bb8264bb"
+}

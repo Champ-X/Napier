@@ -18,6 +18,7 @@ benchmark-results/
 !benchmark-results/
 benchmark-results/*
 !benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json
+!benchmark-results/napier-open-web-research-freshness-campaign-research_open_web_source_triad_v1-c9248212f0b67e3f.json
 !benchmark-results/napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json
 !benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-d7e4f2fd4e284674.json
 !benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b6f353840b7374e9.json

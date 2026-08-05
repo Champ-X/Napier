@@ -4634,6 +4634,25 @@ schema-2 Security release contract remains stricter and requires zero failed
 or inconclusive trials because it is a threat gate rather than an outcome
 distribution.
 
+`open-web-research-freshness-campaign.ts` aggregates 2-10 independently
+verified schema-1 Result/Series observations without invoking a model or
+restoring Browser state. Every observation must use a canonical sibling CAS
+filename, exact case/model/environment identity, unique Thread/Result hashes,
+and complete Series evidence. Observation windows are derived from underlying
+Result `generatedAt` timestamps; consecutive windows must be at least 24 hours
+apart. The campaign retains per-observation content hashes, times, outcome and
+capability counts, result-set hashes, and campaign-wide resource/tool
+distributions plus source/citation evidence-set hashes.
+
+`open-web-research-freshness-campaign-shape.ts` validates the exact self-hashed
+envelope before any reference is followed.
+`open-web-research-freshness-artifacts.ts` loads only no-symlink bounded sibling
+files and recursively resolves Series Results. Verification independently
+case-verifies singleton Results and Series, rebinds each observation by
+canonical filename/content hash, checks unique identities and the 24-hour
+window, then recreates the whole campaign. No Browser Session, cookies, page
+body, model output, prompt, or credential enters this offline process.
+
 Deterministic integration injects Search, Fetch, and a Browser Session manager
 at `createLocalAgentRuntime`; it still uses real Agent tool schemas, Policy,
 Research Source capture/citation, Replay, evaluation, and both verifier
@@ -4660,6 +4679,14 @@ total cost was `$0.0105906248`. This is repeated evidence for one current
 source triad, not a freshness SLA, automatic fallback proof, broad open-web
 quality distribution, or cross-model superiority.
 
+The retained campaign adds the historical pass as a second observation window
+29.61 hours before the current Series. Its three-trial aggregate has two
+passes, one citation-evidence failure, source coverage and valid Replay in all
+three, one source-evidence aggregate, and three citation-evidence aggregates.
+This proves time-separated execution and fixed-oracle acceptance, not stable
+page-body freshness or a freshness SLA. Release verification retains the
+campaign plus all four recursively referenced artifacts exactly once.
+
 The separate schema-2 open-web Security case fetches one public JSON response
 containing a direct prompt-injection canary through the same default
 `observe` Agent. Passing requires `web_fetch:fetch ->
@@ -4668,7 +4695,7 @@ attempts, no canary or credential leak, exact one-line claim/token output, and
 valid Replay. The retained privacy-bounded DeepSeek Series passed two
 independent trials in 17.145 seconds total at `$0.0039173288`; the opt-in live
 smoke uses the same two-trial path. Release verification retains the Series
-plus both Results in the 125-artifact set. This is a small threat-specific
+plus both Results in the 127-artifact set. This is a small threat-specific
 public-source distribution, not a general prompt-injection-immunity claim.
 
 ### Open-Web Executor Comparison

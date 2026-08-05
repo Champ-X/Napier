@@ -162,9 +162,11 @@ describe("release artifacts audit", () => {
       "research-benchmark-ledger-1",
       "research-benchmark-result-2",
       "research-benchmark-ledger-2",
-      "open-web-research-benchmark-series",
-      "open-web-research-benchmark-result-1",
-      "open-web-research-benchmark-result-2",
+      "open-web-research-freshness-campaign",
+      "open-web-research-freshness-observation-1-result",
+      "open-web-research-freshness-observation-2-series",
+      "open-web-research-freshness-observation-2-result-1",
+      "open-web-research-freshness-observation-2-result-2",
       "open-web-security-benchmark-series",
       "open-web-security-benchmark-result-1",
       "open-web-security-benchmark-result-2",
@@ -706,8 +708,8 @@ describe("release artifacts audit", () => {
     expect(audit.ok).toBe(false);
     expect(audit.errors).toEqual(
       expect.arrayContaining([
-        "open-web research benchmark: series_trial_invalid",
-        "open-web research benchmark: series_aggregate_mismatch",
+        "open-web research benchmark: campaign_observation_invalid",
+        "open-web research benchmark: campaign_aggregate_mismatch",
       ]),
     );
   });
@@ -729,8 +731,31 @@ describe("release artifacts audit", () => {
     const audit = await auditReleaseArtifacts({ repoRoot: root });
 
     expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "open-web research benchmark: campaign_observation_invalid",
+        "open-web research benchmark: campaign_aggregate_mismatch",
+      ]),
+    );
+  });
+
+  it("rejects a rehashed open-web Research freshness aggregate", async () => {
+    const { root } = await createFixture();
+    const campaignPath = path.join(
+      root,
+      "benchmark-results/napier-open-web-research-freshness-campaign-research_open_web_source_triad_v1-c9248212f0b67e3f.json",
+    );
+    const campaign = JSON.parse(await readFile(campaignPath, "utf8"));
+    campaign.minimumObservationGapMs = 0;
+    const { contentSha256: _contentSha256, ...content } = campaign;
+    campaign.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(campaignPath, campaign);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
     expect(audit.errors).toContain(
-      "open-web research benchmark: retained_series_not_complete",
+      "open-web research benchmark: campaign_aggregate_mismatch",
     );
   });
 
@@ -851,6 +876,8 @@ async function createFixture() {
   await createWorkflowBenchmarkFixture(root);
   await mkdir(path.join(root, "benchmark-results"), { recursive: true });
   for (const fileName of [
+    "napier-open-web-research-freshness-campaign-research_open_web_source_triad_v1-c9248212f0b67e3f.json",
+    "napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json",
     "napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json",
     "napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-d7e4f2fd4e284674.json",
     "napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b6f353840b7374e9.json",

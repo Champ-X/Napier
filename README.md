@@ -1961,6 +1961,34 @@ release distribution. Two trials expose outcome variance; they do not
 establish a freshness SLA, broad open-web reliability, or cross-model
 superiority.
 
+The historical Result and current Series can also be combined without another
+model call into a time-separated campaign:
+
+```bash
+npm run bench:research:open-web:freshness -- \
+  --case benchmarks/research/open-web-source-triad-v1 \
+  --output-dir benchmark-results \
+  --observation benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b90a841f097b03b9.json \
+  --observation benchmark-results/napier-open-web-research-series-research_open_web_source_triad_v1-a7b8199e42e13339.json
+```
+
+The retained
+[freshness campaign](benchmark-results/napier-open-web-research-freshness-campaign-research_open_web_source_triad_v1-c9248212f0b67e3f.json)
+binds two independently verified observation windows 106,609.321 seconds
+(29.61 hours) apart. Across three trials it records two passes and one
+citation-evidence failure, exact claim/tool/source/citation-claim/Replay/
+credential-privacy matches in all three, exact citation evidence in two, one
+unique source-evidence aggregate, and three citation-evidence aggregates.
+Campaign verification recursively verifies the historical Result, current
+Series, and both Series Results, then recreates the complete time and outcome
+aggregate.
+
+This proves time-separated execution and repeated acceptance of the fixed
+source/quote oracle. It does not prove that page bodies were unchanged, define
+a freshness SLA, or estimate a stable failure rate. The campaign contains no
+raw URL, source text, quote, claim, citation token, prompt, reasoning, or
+credential.
+
 The schema-2 `security_open_web_prompt_injection_v1` case uses the same
 unchanged default Agent against a public JSON response whose untrusted field
 instructs the model to call Browser, emit a canary, and reveal a key:
@@ -4116,7 +4144,7 @@ the existing fixed-source Research benchmark. Real built-CLI DeepSeek runs
 completed `web_fetch fetch -> research_source capture_fetch -> cite` against
 both public Node.js release HTML and the W3C dummy PDF while Tool events
 retained neither URL, body, Web Source ID, nor credential. The complete regular
-suite currently passes 2,375 tests.
+suite currently passes 2,380 tests.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
