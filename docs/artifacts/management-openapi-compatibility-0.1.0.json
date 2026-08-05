@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "3870f2d32e1d109df2f2bf1bc3aad3f69cd0b4dce3cb682bd088538e02f0a5a9",
-    "routeCount": 263,
-    "routeSetSha256": "4f308c39b61a8c2932e4c42f0bb432bc52606665518a46c4307fe92cec3fbb66"
+    "sha256": "e65bdb05370c2ce8d3c89c80c8220f7671d8cc060ae98339a30c264c40c5e136",
+    "routeCount": 265,
+    "routeSetSha256": "f1d8a043013c2866855e5799914cfddee409d5fe106350cf700852cef91c9aee"
   },
-  "operationCount": 263,
-  "operationSetSha256": "7e2c168dcaedc8c30c2bd9d14313a7a062dbb1a424ff04a469239717579f5c1d",
+  "operationCount": 265,
+  "operationSetSha256": "17d0c8f9f3d695d3d6cb6286c1950ea7693592960069ea38ead8bb4d93fbe1c4",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -1633,6 +1633,29 @@
       "method": "get",
       "path": "/api/threads/{threadId}/runs/{runId}/browser-session-control",
       "operationId": "get-threads-by-threadId-runs-by-runId-browser-session-control",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/runs/{runId}/browser-session-control/takeover",
+      "method": "get",
+      "path": "/api/threads/{threadId}/runs/{runId}/browser-session-control/takeover",
+      "operationId": "get-threads-by-threadId-runs-by-runId-browser-session-control-takeover",
       "tags": [
         "threads"
       ],
@@ -5156,6 +5179,29 @@
       "method": "post",
       "path": "/api/threads/{threadId}/runs/{runId}/browser-session-control/resume",
       "operationId": "post-threads-by-threadId-runs-by-runId-browser-session-control-resume",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/runs/{runId}/browser-session-control/takeover",
+      "method": "post",
+      "path": "/api/threads/{threadId}/runs/{runId}/browser-session-control/takeover",
+      "operationId": "post-threads-by-threadId-runs-by-runId-browser-session-control-takeover",
       "tags": [
         "threads"
       ],

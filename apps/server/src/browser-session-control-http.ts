@@ -1,4 +1,8 @@
 import type { BrowserSessionPauseState } from "@napier/contracts/browser-session-control";
+import type {
+  BrowserTakeoverActionReceipt,
+  BrowserTakeoverSnapshot,
+} from "@napier/contracts/browser-takeover";
 import type { BrowserSessionControlService } from "@napier/runtime/browser-session-control";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -13,8 +17,10 @@ import {
   RequestBodyTooLargeError,
 } from "./http-request-body.js";
 import { parseResumeBrowserSessionRequest } from "./thread-control-http-validation.js";
+import { parseBrowserTakeoverActionRequest } from "./browser-takeover-http-validation.js";
 
 const MAX_BROWSER_SESSION_CONTROL_BYTES = 1_024;
+const MAX_BROWSER_TAKEOVER_REQUEST_BYTES = 16 * 1024;
 
 export function registerBrowserSessionControlHttp(
   app: Hono,
@@ -91,6 +97,57 @@ export function registerBrowserSessionControlHttp(
       }
     },
   );
+  app.get(
+    "/api/threads/:threadId/runs/:runId/browser-session-control/takeover",
+    async (context) => {
+      try {
+        const snapshot = await controls.snapshot(
+          context.req.param("threadId"),
+          context.req.param("runId"),
+          context.req.raw.signal,
+        );
+        return takeoverResponse(context, snapshot);
+      } catch (error) {
+        return controlError(context, error);
+      }
+    },
+  );
+  app.post(
+    "/api/threads/:threadId/runs/:runId/browser-session-control/takeover",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_BROWSER_TAKEOVER_REQUEST_BYTES,
+          "Browser takeover action request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const request = parseBrowserTakeoverActionRequest(input);
+      if (!request) {
+        return jsonError(context, "Browser takeover action is invalid", 400);
+      }
+      try {
+        return takeoverResponse(
+          context,
+          await controls.executeTakeover(
+            context.req.param("threadId"),
+            context.req.param("runId"),
+            request,
+            context.req.raw.signal,
+          ),
+        );
+      } catch (error) {
+        return controlError(context, error);
+      }
+    },
+  );
 }
 
 function stateResponse(
@@ -101,6 +158,16 @@ function stateResponse(
   context.header("X-Content-Type-Options", "nosniff");
   setStableContentSha256Header(context, state.contentSha256);
   return context.json(state);
+}
+
+function takeoverResponse(
+  context: Context,
+  value: BrowserTakeoverSnapshot | BrowserTakeoverActionReceipt,
+): Response {
+  context.header("Cache-Control", "no-store");
+  context.header("X-Content-Type-Options", "nosniff");
+  setStableContentSha256Header(context, value.contentSha256);
+  return context.json(value);
 }
 
 function controlError(context: Context, error: unknown): Response {

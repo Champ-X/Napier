@@ -50,7 +50,7 @@ import {
   browserLaunchOptions,
   resolveBrowserRuntime,
 } from "./browser-runtime.js";
-import { formatBrowserOperationOutput } from "./browser-page-output.js";
+import { browserSnapshotResult, formatBrowserOperationOutput } from "./browser-page-output.js";
 import { sha256 } from "./ed25519.js";
 import { FixedIpHttpProxy } from "./fixed-ip-http-proxy.js";
 import {
@@ -58,7 +58,6 @@ import {
   resolvePublicHost,
   validatePublicHttpUrl,
 } from "./public-network.js";
-
 interface NavigationGrant {
   allowCrossOrigin: boolean;
   baselineOrigin?: string;
@@ -407,6 +406,7 @@ export class PersistentBrowserSession {
         ...(file ? { file } : {}),
       }),
       details,
+      ...browserSnapshotResult(request, state),
       ...(screenshot
         ? {
             screenshot: {

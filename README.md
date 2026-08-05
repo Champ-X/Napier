@@ -614,9 +614,19 @@ releases that same Run and Session, and cannot replay an older pause cycle.
 Requested, resumed, and cancelled transitions append hash-only Ledger evidence;
 page content, URL, title, pixels, and Browser arguments remain absent. Run
 cancellation, Session loss, close, settlement, or Server restart releases or
-rejects waiters and fails closed. The panel disappears when the Session closes
-or the Run settles. Direct user takeover, tabs/history, DevTools, login
-handoff, and restart recovery remain separate work.
+rejects waiters and fails closed.
+
+While paused, **Take control** opens a no-store ARIA snapshot from that same
+isolated tab. Operator click, masked type, select, scroll, back, and bounded
+wait actions require fresh refs plus the exact pause, Session, operation, and
+snapshot hashes. Snapshot capture consumes no Browser operation; every
+operator action consumes one and serializes against Agent actions and Resume.
+Typed text and selected values exist only in the live request and are cleared
+from Web state; Ledger retains hashes, byte/count metadata, action status, and
+before/after Session identity. **Return to Agent** resumes the same Run and
+Session after the operator action settles. Existing-user Chrome relay,
+multi-tab/history, DevTools, login handoff, and restart recovery remain
+separate work.
 
 For a production build served by the API process:
 

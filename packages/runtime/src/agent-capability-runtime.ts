@@ -1,6 +1,7 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { AgentProfile } from "@napier/contracts";
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
+import type { ExecuteBrowserTakeoverActionRequest } from "@napier/contracts/browser-takeover";
 
 import { AgentSessionRuntime } from "./agent-sessions.js";
 import type { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
@@ -181,9 +182,75 @@ export class AgentCapabilityRuntime {
     return this.sessions.captureBrowserLiveView(owner, signal);
   }
 
+  captureBrowserTakeoverSnapshot(
+    owner: AgentCapabilityOwner,
+    signal?: AbortSignal,
+  ) {
+    return this.sessions.captureBrowserTakeoverSnapshot(owner, signal);
+  }
+
+  executeBrowserTakeoverAction(
+    owner: AgentCapabilityOwner,
+    request: ExecuteBrowserTakeoverActionRequest,
+    signal?: AbortSignal,
+  ) {
+    return this.sessions.executeBrowserTakeoverAction(
+      owner,
+      takeoverSessionRequest(request),
+      signal,
+    );
+  }
+
   hasActiveBrowserSession(owner: AgentCapabilityOwner): boolean {
     return this.sessions.hasActiveBrowserSession(owner);
   }
+}
+
+function takeoverSessionRequest(request: ExecuteBrowserTakeoverActionRequest) {
+  if (request.action === "click") {
+    return {
+      action: request.action,
+      target: { ref: request.ref },
+      ...(request.allowCrossOrigin === true
+        ? { allowCrossOrigin: true as const }
+        : {}),
+    };
+  }
+  if (request.action === "type") {
+    return {
+      action: request.action,
+      target: { ref: request.ref },
+      text: request.text,
+    };
+  }
+  if (request.action === "select") {
+    return {
+      action: request.action,
+      target: { ref: request.ref },
+      values: request.values,
+    };
+  }
+  if (request.action === "scroll") {
+    return {
+      action: request.action,
+      direction: request.direction,
+      ...(request.pixels !== undefined ? { pixels: request.pixels } : {}),
+    };
+  }
+  if (request.action === "back") {
+    return {
+      action: request.action,
+      ...(request.allowCrossOrigin === true
+        ? { allowCrossOrigin: true as const }
+        : {}),
+    };
+  }
+  return {
+    action: request.action,
+    ...(request.durationMs !== undefined
+      ? { durationMs: request.durationMs }
+      : {}),
+  };
 }
 
 function webFetchResearchCaptureProvider(

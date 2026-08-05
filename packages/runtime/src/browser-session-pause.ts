@@ -128,6 +128,25 @@ export class BrowserSessionPauseManager {
     });
   }
 
+  runWhilePaused<T>(
+    owner: { threadId: string; runId: string },
+    expectedPauseStateSha256: string | undefined,
+    operation: (state: BrowserSessionPauseState) => Promise<T>,
+  ): Promise<T> {
+    const key = ownerKey(owner);
+    return this.serialized(key, async () => {
+      const current = this.paused.get(key);
+      if (!current) throw new Error("Browser Session is not paused");
+      if (
+        expectedPauseStateSha256 !== undefined &&
+        current.contentSha256 !== expectedPauseStateSha256
+      ) {
+        throw new Error("Browser Session pause state changed");
+      }
+      return await operation(structuredClone(current));
+    });
+  }
+
   async cancelRun(owner: { threadId: string; runId: string }): Promise<void> {
     const key = ownerKey(owner);
     await this.serialized(key, async () => {

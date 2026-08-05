@@ -1,5 +1,12 @@
 import { Eye, Pause, Play, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 import type { BrowserSessionPauseState } from "@napier/contracts/browser-session-control";
@@ -12,6 +19,7 @@ import {
 } from "./browser-session-control-api";
 
 const REFRESH_MS = 1_500;
+const LazyBrowserTakeoverDesk = lazy(() => import("./BrowserTakeoverDesk"));
 
 export function BrowserLiveViewPanel({
   threadId,
@@ -27,6 +35,7 @@ export function BrowserLiveViewPanel({
   const [refreshing, setRefreshing] = useState(false);
   const [controlBusy, setControlBusy] = useState(false);
   const [controlFailed, setControlFailed] = useState(false);
+  const [takeoverOpen, setTakeoverOpen] = useState(false);
   const requestRef = useRef(0);
   const controlRequestRef = useRef(0);
   const controlBusyRef = useRef(false);
@@ -87,6 +96,7 @@ export function BrowserLiveViewPanel({
           : await pauseBrowserSession(threadId, runId);
       if (request !== controlRequestRef.current) return;
       setPauseState(nextState);
+      if (nextState.status !== "paused") setTakeoverOpen(false);
     } catch {
       if (request === controlRequestRef.current) setControlFailed(true);
     } finally {
@@ -96,6 +106,19 @@ export function BrowserLiveViewPanel({
       }
     }
   }, [pauseState, runId, threadId]);
+
+  const openTakeover = useCallback(async () => {
+    if (controlBusyRef.current) return;
+    if (pauseState?.status !== "paused") {
+      await togglePause();
+    }
+    setTakeoverOpen(true);
+  }, [pauseState?.status, togglePause]);
+
+  const returnToAgent = useCallback(async () => {
+    if (pauseState?.status !== "paused") return;
+    await togglePause();
+  }, [pauseState?.status, togglePause]);
 
   useEffect(() => {
     void refresh();
@@ -116,7 +139,7 @@ export function BrowserLiveViewPanel({
   const paused = pauseState.status === "paused";
   return (
     <section
-      className={`browser-live-view${paused ? " is-paused" : ""}`}
+      className={`browser-live-view${paused ? " is-paused" : ""}${paused && takeoverOpen ? " has-takeover" : ""}`}
       aria-label="Browser Live"
     >
       <header>
@@ -151,6 +174,13 @@ export function BrowserLiveViewPanel({
           </button>
           <button
             type="button"
+            disabled={controlBusy}
+            onClick={() => void openTakeover()}
+          >
+            Take control
+          </button>
+          <button
+            type="button"
             disabled={refreshing}
             onClick={() => void refresh()}
           >
@@ -163,6 +193,21 @@ export function BrowserLiveViewPanel({
         src={imageUrl}
         alt="Live viewport from the active isolated Browser Session"
       />
+      {paused && takeoverOpen ? (
+        <Suspense
+          fallback={
+            <div className="browser-takeover-loading" role="status">
+              Opening operator controls…
+            </div>
+          }
+        >
+          <LazyBrowserTakeoverDesk
+            threadId={threadId}
+            runId={runId}
+            onReturnToAgent={returnToAgent}
+          />
+        </Suspense>
+      ) : null}
       <footer>
         <span>op {String(receipt.sessionOperation)}</span>
         <span title={receipt.currentOriginSha256}>

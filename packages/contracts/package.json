@@ -24,6 +24,10 @@
       "types": "./dist/browser-session-control.d.ts",
       "import": "./dist/browser-session-control.js"
     },
+    "./browser-takeover": {
+      "types": "./dist/browser-takeover.d.ts",
+      "import": "./dist/browser-takeover.js"
+    },
     "./default-run-model": {
       "types": "./dist/default-run-model.d.ts",
       "import": "./dist/default-run-model.js"

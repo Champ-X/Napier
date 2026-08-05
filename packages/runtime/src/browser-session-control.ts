@@ -1,7 +1,13 @@
 import type { BrowserSessionPauseState } from "@napier/contracts/browser-session-control";
+import type {
+  BrowserTakeoverActionReceipt,
+  BrowserTakeoverSnapshot,
+  ExecuteBrowserTakeoverActionRequest,
+} from "@napier/contracts/browser-takeover";
 
 import type { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
 import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
+import { BrowserTakeoverService } from "./browser-takeover.js";
 import type { LocalStore } from "./store.js";
 
 interface BrowserSessionControlOwner {
@@ -10,14 +16,20 @@ interface BrowserSessionControlOwner {
 }
 
 export class BrowserSessionControlService {
+  private readonly takeovers: BrowserTakeoverService;
+
   constructor(
     private readonly store: LocalStore,
     private readonly sessions: Pick<
       AgentCapabilityRuntime,
-      "hasActiveBrowserSession"
+      | "captureBrowserTakeoverSnapshot"
+      | "executeBrowserTakeoverAction"
+      | "hasActiveBrowserSession"
     >,
     private readonly pauses: BrowserSessionPauseManager,
-  ) {}
+  ) {
+    this.takeovers = new BrowserTakeoverService(store, sessions, pauses);
+  }
 
   async state(
     threadId: string,
@@ -32,6 +44,7 @@ export class BrowserSessionControlService {
     runId: string,
   ): Promise<BrowserSessionPauseState> {
     const owner = await this.authorize(threadId, runId);
+    this.takeovers.clear(threadId, runId);
     const state = await this.pauses.pause(owner);
     try {
       await this.authorize(threadId, runId);
@@ -48,7 +61,26 @@ export class BrowserSessionControlService {
     expectedPauseStateSha256: string,
   ): Promise<BrowserSessionPauseState> {
     const owner = await this.authorize(threadId, runId);
-    return await this.pauses.resume(owner, expectedPauseStateSha256);
+    const state = await this.pauses.resume(owner, expectedPauseStateSha256);
+    this.takeovers.clear(threadId, runId);
+    return state;
+  }
+
+  snapshot(
+    threadId: string,
+    runId: string,
+    signal?: AbortSignal,
+  ): Promise<BrowserTakeoverSnapshot> {
+    return this.takeovers.snapshot(threadId, runId, signal);
+  }
+
+  executeTakeover(
+    threadId: string,
+    runId: string,
+    request: ExecuteBrowserTakeoverActionRequest,
+    signal?: AbortSignal,
+  ): Promise<BrowserTakeoverActionReceipt> {
+    return this.takeovers.execute(threadId, runId, request, signal);
   }
 
   private async authorize(

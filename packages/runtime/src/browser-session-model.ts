@@ -183,6 +183,7 @@ export interface BrowserSessionDetails {
 export interface BrowserSessionOperationResult {
   output: string;
   details: BrowserSessionDetails;
+  snapshot?: string;
   screenshot?: {
     data: string;
     mimeType: "image/png";

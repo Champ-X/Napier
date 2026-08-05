@@ -104,6 +104,41 @@ export class RunBrowserSessionManager {
     );
   }
 
+  async captureTakeoverSnapshot(
+    owner: BrowserSessionOwner,
+    signal?: AbortSignal,
+  ): Promise<BrowserSessionOperationResult> {
+    const key = ownerKey(owner);
+    return this.serialized(
+      key,
+      async () => {
+        assertNotAborted(signal);
+        const session = this.sessions.get(key);
+        if (!session || !session.healthy) {
+          throw new Error("Browser Session is not active for this Run");
+        }
+        return await session.execute(
+          { action: "snapshot" },
+          true,
+          signal,
+          false,
+        );
+      },
+      signal,
+    );
+  }
+
+  async executeTakeoverAction(
+    owner: BrowserSessionOwner,
+    request: Extract<
+      BrowserSessionRequest,
+      { action: "click" | "type" | "select" | "scroll" | "back" | "wait" }
+    >,
+    signal?: AbortSignal,
+  ): Promise<BrowserSessionOperationResult> {
+    return await this.execute(owner, request, signal);
+  }
+
   async execute(
     owner: BrowserSessionOwner,
     request: BrowserSessionRequest,

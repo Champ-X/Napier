@@ -1,6 +1,10 @@
 import { AgentKernelRuntime } from "./agent-kernels.js";
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 import { RunBrowserSessionManager } from "./browser-session.js";
+import type {
+  BrowserSessionOperationResult,
+  BrowserSessionRequest,
+} from "./browser-session-model.js";
 import { createBrowserTool } from "./browser-tool.js";
 import {
   type LspSessionOwner,
@@ -114,6 +118,24 @@ export class AgentSessionRuntime {
     signal?: AbortSignal,
   ): Promise<{ image: Buffer; receipt: BrowserLiveViewReceipt }> {
     return this.browsers.captureLiveView(owner, signal);
+  }
+
+  captureBrowserTakeoverSnapshot(
+    owner: { threadId: string; runId: string },
+    signal?: AbortSignal,
+  ): Promise<BrowserSessionOperationResult> {
+    return this.browsers.captureTakeoverSnapshot(owner, signal);
+  }
+
+  executeBrowserTakeoverAction(
+    owner: { threadId: string; runId: string },
+    request: Extract<
+      BrowserSessionRequest,
+      { action: "click" | "type" | "select" | "scroll" | "back" | "wait" }
+    >,
+    signal?: AbortSignal,
+  ): Promise<BrowserSessionOperationResult> {
+    return this.browsers.executeTakeoverAction(owner, request, signal);
   }
 
   hasActiveBrowserSession(owner: { threadId: string; runId: string }): boolean {

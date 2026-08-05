@@ -56,3 +56,12 @@ export function formatBrowserOperationOutput(input: {
   if (input.action === "scroll") return input.scroll!.output;
   return formatBrowserPageState(input.action, input.state, input.file);
 }
+
+export function browserSnapshotResult(
+  request: BrowserSessionRequest,
+  state: BrowserPageState,
+): { snapshot?: string } {
+  return request.action === "snapshot" && state.snapshot !== undefined
+    ? { snapshot: state.snapshot }
+    : {};
+}

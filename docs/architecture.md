@@ -680,6 +680,20 @@ SHA-256, Thread/Run identity, and bounded counters before creating an ephemeral
 object URL. Object URLs are revoked on replacement, failure, Thread/Run change,
 and unmount. This is a live observer, not a takeover or durable replay channel.
 
+`BrowserTakeoverService` hangs from the existing Browser Session control
+boundary. It accepts only the active standard user Run while
+`BrowserSessionPauseManager` holds an exact paused state. A no-store snapshot
+returns the current untrusted ARIA tree plus pause/Session/operation/snapshot
+hashes and consumes no Browser operation. The process cache retains only those
+binding hashes, never page text. Operator click/type/select/scroll/back/wait
+requests bind to the complete snapshot identity, use fresh refs only, and run
+inside the same pause transition queue and serialized Browser Session. Resume
+therefore cannot race an operator action. Each action consumes one Browser
+operation and appends requested/completed/failed hash-only receipts; private
+text and values remain request-local and Web clears them after every attempt.
+Returning control resumes the exact pause state and releases the Agent's next
+Browser action on the same Run and Session.
+
 For a first live CLI task, `run`, `chat`, and `tui`
 `--credential-env <variable>` require an explicit non-demo `--model`, validate
 the environment name and current value, then create or re-enable only the
