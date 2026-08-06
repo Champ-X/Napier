@@ -868,6 +868,21 @@ ordinary Fetch still fails because it cannot provide readable evidence, and no
 OCR claim is made. Late registration failure keeps user bytes; pre-network or
 pre-write authority failure writes nothing.
 
+`RunWebFetchSourceManager.retainWebSource()` serializes save-produced Sources
+through the same Run map, source-count limit, strict Source validator, private
+capsule store, URL Artifact adapter, and content-set receipts used by ordinary
+Fetch. `web_fetch_save` must persist that Source before rechecking Plan
+authority and writing bytes. It returns both body/file identity and normalized
+Source identity, allowing same-Run `capture_fetch` and `cite` with one request.
+
+This ordering is deliberate: Source persistence failure writes no file; later
+extension, Plan-drift, workspace-write, or Artifact-settlement failure retains
+the fetched Source. Continuity/recovery/pin/import code recognizes state
+receipts from both `web_fetch` and `web_fetch_save`; next eligible Runs can
+list/read/find/capture without refetching, while imported Threads strip the
+local-only state receipt. One shared tool-name predicate keeps those consumers
+aligned.
+
 Visual and keyboard handoff are takeover-only internal actions rather than
 Agent Browser schema actions. `BrowserLiveViewReceipt` binds the PNG hash,
 1280×900 viewport, Session operation, selected tab, URL/origin/title hashes,

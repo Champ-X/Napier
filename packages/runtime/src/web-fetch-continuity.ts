@@ -6,6 +6,7 @@ import { validateWebFetchStateCapsuleReceipt } from "./web-fetch-capsule.js";
 import { canonicalJson } from "./ed25519.js";
 import { sourceContinuityPredecessor } from "./source-continuity-lineage.js";
 import type { WebFetchSource } from "./web-fetch-model.js";
+import { isWebFetchStateToolName } from "./web-fetch-state-tool.js";
 
 export interface WebFetchState {
   sources: Map<string, WebFetchSource>;
@@ -78,7 +79,7 @@ export class WebFetchContinuity {
         event.runId === parent.id &&
         (event.type === "context.web_fetch_sources" ||
           (event.type === "tool.completed" &&
-            record(event.payload)?.["toolName"] === "web_fetch")),
+            isWebFetchStateToolName(record(event.payload)?.["toolName"]))),
     );
     const receipts = events.flatMap((event) => {
       const payload = record(event.payload);

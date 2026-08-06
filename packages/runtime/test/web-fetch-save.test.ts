@@ -19,6 +19,8 @@ import {
   verifyThreadReplayBundle,
 } from "../src/thread-bundles.js";
 import { RunWebFetchSaveManager } from "../src/web-fetch-save.js";
+import { WebFetchCapsuleStore } from "../src/web-fetch-capsule-store.js";
+import { RunWebFetchSourceManager } from "../src/web-fetch-sources.js";
 
 const OWNER_URL = "https://example.com/report.pdf";
 const PDF_BODY = minimalPdf("Saved PDF evidence.");
@@ -34,9 +36,15 @@ describe("RunWebFetchSaveManager", () => {
   it("saves exact raw bytes and verifies the declared file Artifact", async () => {
     const fixture = await createFixture("artifacts/report.pdf");
     const http = { request: vi.fn(async () => response()) };
+    const sources = new RunWebFetchSourceManager({
+      http,
+      capsules: new WebFetchCapsuleStore(fixture.dataRoot),
+      store: fixture.store,
+    });
     const manager = new RunWebFetchSaveManager({
       workspaceRoot: fixture.workspaceRoot,
       store: fixture.store,
+      retainSource: sources,
       http,
       now: () => new Date("2026-08-06T00:00:00.000Z"),
     });
@@ -59,9 +67,34 @@ describe("RunWebFetchSaveManager", () => {
         sourceFormat: "pdf",
         sourceBodySha256: sha256(PDF_BODY),
         sourceBodyBytes: PDF_BODY.byteLength,
+        sourceId: expect.stringMatching(/^websource_/u),
+        sourceContentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        sourceCount: 1,
+        sourceSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        stateCapsule: expect.objectContaining({
+          sourceRunId: fixture.owner.runId,
+          sourceCount: 1,
+        }),
         artifactRegistration: "artifact_registered",
       }),
     );
+    const listed = await sources.execute(fixture.owner, { action: "list" });
+    const read = await sources.execute(fixture.owner, {
+      action: "read",
+      sourceId: result.details.sourceId,
+      sourceContentSha256: result.details.sourceContentSha256,
+      startLine: 1,
+      endLine: result.details.sourceLineCount,
+    });
+    const capture = await sources.captureWebSource(fixture.owner, {
+      webSourceId: result.details.sourceId,
+      webSourceContentSha256: result.details.sourceContentSha256,
+      maxChars: 12_000,
+    });
+    expect(listed.output).toContain(result.details.sourceId);
+    expect(read.output).toContain("Saved PDF evidence.");
+    expect(capture.lines.join("\n")).toContain("Saved PDF evidence.");
+    expect(http.request).toHaveBeenCalledTimes(1);
     expect(fixture.store.getPlan(fixture.planId).artifacts[0]).toEqual(
       expect.objectContaining({
         status: "verified",
@@ -91,6 +124,7 @@ describe("RunWebFetchSaveManager", () => {
     const noPlanManager = new RunWebFetchSaveManager({
       workspaceRoot: noPlan.workspaceRoot,
       store: noPlan.store,
+      retainSource: sourceManager(noPlan, noPlanHttp),
       http: noPlanHttp,
     });
     await expect(
@@ -107,6 +141,7 @@ describe("RunWebFetchSaveManager", () => {
     const mismatchManager = new RunWebFetchSaveManager({
       workspaceRoot: mismatch.workspaceRoot,
       store: mismatch.store,
+      retainSource: sourceManager(mismatch, mismatchHttp),
       http: mismatchHttp,
     });
     await expect(
@@ -133,9 +168,11 @@ describe("RunWebFetchSaveManager", () => {
 
   it("rejects extension mismatch and symlink parents without leaving bytes", async () => {
     const extension = await createFixture("artifacts/report.txt");
+    const extensionSources = sourceManager(extension);
     const extensionManager = new RunWebFetchSaveManager({
       workspaceRoot: extension.workspaceRoot,
       store: extension.store,
+      retainSource: extensionSources,
       http: { request: vi.fn(async () => response()) },
     });
     await expect(
@@ -147,12 +184,20 @@ describe("RunWebFetchSaveManager", () => {
     await expect(
       readFile(path.join(extension.workspaceRoot, "artifacts/report.txt")),
     ).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      extensionSources.execute(extension.owner, { action: "list" }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        output: expect.stringContaining("websource_"),
+      }),
+    );
     extension.store.close();
 
     const symlinked = await createFixture("linked/report.pdf", undefined, true);
     const symlinkManager = new RunWebFetchSaveManager({
       workspaceRoot: symlinked.workspaceRoot,
       store: symlinked.store,
+      retainSource: sourceManager(symlinked),
       http: { request: vi.fn(async () => response()) },
     });
     await expect(
@@ -169,6 +214,7 @@ describe("RunWebFetchSaveManager", () => {
     const manager = new RunWebFetchSaveManager({
       workspaceRoot: fixture.workspaceRoot,
       store: fixture.store,
+      retainSource: sourceManager(fixture),
       http: {
         request: vi.fn(async () => {
           await fixture.store.updatePlanArtifact(
@@ -202,9 +248,11 @@ describe("RunWebFetchSaveManager", () => {
 
   it("retains saved bytes when late Artifact settlement fails", async () => {
     const fixture = await createFixture("artifacts/report.pdf");
+    const sources = sourceManager(fixture);
     const manager = new RunWebFetchSaveManager({
       workspaceRoot: fixture.workspaceRoot,
       store: fixture.store,
+      retainSource: sources,
       http: { request: vi.fn(async () => response()) },
     });
     fixture.store.updatePlanArtifact = async () => {
@@ -225,9 +273,44 @@ describe("RunWebFetchSaveManager", () => {
     expect(fixture.store.getPlan(fixture.planId).artifacts[0]?.status).toBe(
       "expected",
     );
+    await expect(
+      sources.execute(fixture.owner, { action: "list" }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        output: expect.stringContaining(result.details.sourceId),
+      }),
+    );
     expect(
       JSON.stringify(await fixture.store.listEvents(fixture.owner.threadId)),
     ).not.toContain("PRIVATE_SAVE_ARTIFACT_FAILURE");
+    fixture.store.close();
+  });
+
+  it("does not write when Source persistence fails", async () => {
+    const fixture = await createFixture("artifacts/report.pdf");
+    const manager = new RunWebFetchSaveManager({
+      workspaceRoot: fixture.workspaceRoot,
+      store: fixture.store,
+      retainSource: {
+        retainWebSource: vi.fn(async () => {
+          throw new Error("PRIVATE_SOURCE_PERSISTENCE_FAILURE");
+        }),
+      },
+      http: { request: vi.fn(async () => response()) },
+    });
+
+    await expect(
+      manager.execute(fixture.owner, {
+        url: OWNER_URL,
+        path: "artifacts/report.pdf",
+      }),
+    ).rejects.toThrow("PRIVATE_SOURCE_PERSISTENCE_FAILURE");
+    await expect(
+      readFile(path.join(fixture.workspaceRoot, "artifacts/report.pdf")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    expect(fixture.store.getPlan(fixture.planId).artifacts[0]?.status).toBe(
+      "expected",
+    );
     fixture.store.close();
   });
 });
@@ -291,10 +374,24 @@ async function createFixture(
   }
   return {
     store,
+    dataRoot: path.join(root, "data"),
     workspaceRoot,
     owner: { threadId: thread.id, runId: run.id },
     planId,
   };
+}
+
+function sourceManager(
+  fixture: Awaited<ReturnType<typeof createFixture>>,
+  http: { request: ReturnType<typeof vi.fn> } = {
+    request: vi.fn(async () => response()),
+  },
+) {
+  return new RunWebFetchSourceManager({
+    http,
+    capsules: new WebFetchCapsuleStore(fixture.dataRoot),
+    store: fixture.store,
+  });
 }
 
 function response(): PublicHttpResponse {

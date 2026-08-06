@@ -9,6 +9,7 @@ import {
   type WebFetchStateCapsuleReceipt,
   validateWebFetchStateCapsuleReceipt,
 } from "./web-fetch-capsule.js";
+import { isWebFetchStateToolName } from "./web-fetch-state-tool.js";
 
 export function assertSourceContinuityPinBindings(
   events: readonly RunEvent[],
@@ -132,7 +133,7 @@ function webFetchReceipt(event: RunEvent, runId: string) {
   }
   if (event.type !== "tool.completed") return [];
   const payload = record(event.payload);
-  if (payload["toolName"] !== "web_fetch") return [];
+  if (!isWebFetchStateToolName(payload["toolName"])) return [];
   const details = record(payload["details"]);
   return details["stateCapsule"]
     ? [validateWebFetchStateCapsuleReceipt(details["stateCapsule"])]

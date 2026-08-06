@@ -6394,6 +6394,16 @@ does not delete successfully saved bytes and returns a bounded status. Use
 `web_fetch` for read/cite tasks and `web_fetch_save` only for an actual raw file
 deliverable.
 
+The save call also retains the exact same parsed Run-local Web Source before it
+writes bytes. Its result includes the ordinary Web Source ID, normalized
+content SHA-256, line count/set hash, and private state receipt, so
+`research_source capture_fetch` can cite that Source without a second request.
+The raw file SHA-256 equals `sourceBodySha256`; the citeable snapshot uses the
+same Source's `sourceContentSha256`. If private Source persistence fails, no
+file is written. If format/path/write or later Artifact settlement fails after
+persistence, the Source remains available for `web_fetch list/read/find` and
+continuation; import strips the local-only capsule as usual.
+
 When `napier resume` or another shared Runtime entry creates a verified
 `source: recovery` child of its interrupted parent, Napier restores the
 parent's latest Research Source and Web Fetch manifests. A fresh ordinary

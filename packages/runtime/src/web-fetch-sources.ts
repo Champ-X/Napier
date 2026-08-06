@@ -12,6 +12,7 @@ import {
   type WebFetchResearchCapture,
   type WebFetchResearchCaptureProvider,
   type WebFetchRequest,
+  type WebFetchRetainedSource,
   type WebFetchResult,
   type WebFetchSource,
 } from "./web-fetch-model.js";
@@ -32,6 +33,7 @@ import {
   WebFetchUrlArtifactRegistrar,
   type WebFetchSourceManagerStore,
 } from "./web-fetch-url-artifact.js";
+import { validateWebFetchSource } from "./web-fetch-source-validation.js";
 
 const SOURCE_ID = /^websource_[a-z0-9]{8,80}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
@@ -164,6 +166,27 @@ export class RunWebFetchSourceManager
     );
   }
 
+  async retainWebSource(
+    owner: { threadId: string; runId: string },
+    input: WebFetchSource,
+    signal?: AbortSignal,
+  ): Promise<WebFetchRetainedSource> {
+    const key = ownerKey(owner);
+    const cancellation = this.runCancellation(key);
+    const operationSignal = signal
+      ? AbortSignal.any([signal, cancellation.signal])
+      : cancellation.signal;
+    return this.serialized(
+      key,
+      async () => {
+        throwIfAborted(operationSignal);
+        await this.restoreRecoveryState(key, owner);
+        return this.storeSource(key, owner, input);
+      },
+      operationSignal,
+    );
+  }
+
   private async fetch(
     key: string,
     owner: { threadId: string; runId: string },
@@ -187,28 +210,51 @@ export class RunWebFetchSourceManager
       options,
       now: this.now,
     });
+    const retained = await this.storeSource(
+      key,
+      owner,
+      executed.source,
+      executed.browserFallbackCount,
+    );
+    return {
+      output: appendWebFetchUrlArtifactOutput(
+        formatFetchedWebSource(retained.source),
+        retained.details.urlArtifactRegistration,
+      ),
+      details: retained.details,
+    };
+  }
+
+  private async storeSource(
+    key: string,
+    owner: { threadId: string; runId: string },
+    input: WebFetchSource,
+    browserFallbackCount?: number,
+  ): Promise<WebFetchRetainedSource> {
+    const run = this.runSources(key);
+    if (run.sources.size >= MAX_WEB_FETCH_SOURCES_PER_RUN) {
+      throw new Error("Web fetch Source limit reached for this Run");
+    }
+    const source = validateWebFetchSource(input);
+    if (run.sources.has(source.id)) {
+      throw new Error("Web fetch Source ID already exists for this Run");
+    }
     const next = cloneWebFetchState(run);
-    next.browserFallbackCount = executed.browserFallbackCount;
-    const source = executed.source;
+    next.browserFallbackCount =
+      browserFallbackCount ?? next.browserFallbackCount;
     next.sources.set(source.id, source);
     const stateCapsule = await this.continuity.persist(owner, next);
-    const urlArtifactRegistration = await this.urlArtifacts.register(
-      owner,
-      source,
-    );
-    const visibleUrlArtifactRegistration =
-      visibleWebFetchUrlArtifactRegistration(urlArtifactRegistration);
+    const registration = await this.urlArtifacts.register(owner, source);
+    const visibleRegistration =
+      visibleWebFetchUrlArtifactRegistration(registration);
     if (stateCapsule) this.stateCapsules.set(key, stateCapsule);
     this.runs.set(key, next);
     return {
-      output: appendWebFetchUrlArtifactOutput(
-        formatFetchedWebSource(source),
-        visibleUrlArtifactRegistration,
-      ),
+      source: structuredClone(source),
       details: {
         ...webFetchSourceDetails("fetch", next, source),
-        ...(visibleUrlArtifactRegistration
-          ? { urlArtifactRegistration: visibleUrlArtifactRegistration }
+        ...(visibleRegistration
+          ? { urlArtifactRegistration: visibleRegistration }
           : {}),
         ...(stateCapsule ? { stateCapsule } : {}),
       },

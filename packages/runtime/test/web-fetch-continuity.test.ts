@@ -1,5 +1,6 @@
 import {
   chmod,
+  mkdir,
   mkdtemp,
   readdir,
   readFile,
@@ -19,6 +20,7 @@ import {
 } from "../src/web-fetch-capsule.js";
 import { buildRunRecoveryPrompt } from "../src/run-recovery-prompt.js";
 import { RunWebFetchSourceManager } from "../src/web-fetch-sources.js";
+import { RunWebFetchSaveManager } from "../src/web-fetch-save.js";
 import { webFetchToolOutputLedgerProjection } from "../src/web-fetch-tool.js";
 import type { PublicHttpResponse } from "../src/public-http-client.js";
 import { LocalStore } from "../src/store.js";
@@ -33,6 +35,121 @@ afterEach(async () => {
 });
 
 describe("Web Fetch continuity", () => {
+  it("restores a Source retained by web_fetch_save without another request", async () => {
+    const fixture = await continuityFixture();
+    await mkdir(path.join(fixture.workspaceRoot, "artifacts"), {
+      recursive: true,
+    });
+    let plan = await fixture.store.createPlan(fixture.threadId, {
+      objective: "Save one Source and continue its evidence.",
+      steps: [
+        {
+          id: "save",
+          title: "Save source",
+          description: "Save the declared public Source.",
+          verification: "The file and Source evidence are retained.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "source-file",
+          path: "artifacts/saved.txt",
+          kind: "file",
+          description: "Saved Source bytes.",
+        },
+      ],
+    });
+    plan = await fixture.store.transitionPlanStep(plan.id, "save", {
+      action: "start",
+      runId: fixture.parentRunId,
+    });
+    expect(plan.steps[0]?.status).toBe("running");
+    const capsules = new WebFetchCapsuleStore(fixture.dataRoot);
+    const http = {
+      request: vi.fn(async () =>
+        response(
+          "SAVED_SOURCE_CONTINUITY",
+          "text/plain",
+          "https://example.com/saved.txt",
+        ),
+      ),
+    };
+    const sourceManager = manager(fixture, http, capsules);
+    const saveManager = new RunWebFetchSaveManager({
+      workspaceRoot: fixture.workspaceRoot,
+      store: fixture.store,
+      retainSource: sourceManager,
+      http,
+    });
+    const owner = {
+      threadId: fixture.threadId,
+      runId: fixture.parentRunId,
+    };
+    const saved = await saveManager.execute(owner, {
+      url: "https://example.com/saved.txt",
+      path: "artifacts/saved.txt",
+    });
+    await appendSaveCompletion(fixture.store, owner, saved.details);
+    await fixture.store.finishRun(fixture.parentRunId, "completed");
+    const continuation = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: fixture.agentId,
+      source: "user",
+    });
+    const deniedHttp = { request: vi.fn() };
+    const reopened = manager(fixture, deniedHttp, capsules);
+    const continuationOwner = {
+      threadId: fixture.threadId,
+      runId: continuation.id,
+    };
+
+    const checkpoint = await reopened.prepareRecovery(continuationOwner);
+    const read = await reopened.execute(continuationOwner, {
+      action: "read",
+      sourceId: saved.details.sourceId,
+      sourceContentSha256: saved.details.sourceContentSha256,
+      startLine: 1,
+      endLine: saved.details.sourceLineCount,
+    });
+
+    expect(checkpoint).toEqual(
+      expect.objectContaining({
+        sourceRunId: continuation.id,
+        sourceCount: 1,
+      }),
+    );
+    expect(read.output).toContain("SAVED_SOURCE_CONTINUITY");
+    expect(http.request).toHaveBeenCalledTimes(1);
+    expect(deniedHttp.request).not.toHaveBeenCalled();
+    const bundle = createThreadReplayBundle(
+      await fixture.store.getDetail(fixture.threadId),
+    );
+    const saveEvent = bundle.events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload !== null &&
+        typeof event.payload === "object" &&
+        !Array.isArray(event.payload) &&
+        event.payload["toolName"] === "web_fetch_save",
+    );
+    const savePayload =
+      saveEvent?.payload !== null &&
+      typeof saveEvent?.payload === "object" &&
+      !Array.isArray(saveEvent.payload)
+        ? saveEvent.payload
+        : undefined;
+    const saveDetails =
+      savePayload?.["details"] !== null &&
+      typeof savePayload?.["details"] === "object" &&
+      !Array.isArray(savePayload["details"])
+        ? savePayload["details"]
+        : undefined;
+    expect(saveDetails?.["stateCapsule"]).toEqual(
+      expect.objectContaining({ sourceCount: 1 }),
+    );
+    fixture.store.close();
+  });
+
   it("adopts the immediately previous completed Run without another request", async () => {
     const fixture = await continuityFixture();
     const capsules = new WebFetchCapsuleStore(fixture.dataRoot);
@@ -610,6 +727,26 @@ async function appendCompletion(
       toolName: "web_fetch",
       status: "completed",
       details,
+    },
+  });
+}
+
+async function appendSaveCompletion(
+  store: LocalStore,
+  owner: { threadId: string; runId: string },
+  details: Record<string, unknown>,
+) {
+  await store.appendEvent({
+    threadId: owner.threadId,
+    runId: owner.runId,
+    type: "tool.completed",
+    category: "tool",
+    visibility: "user",
+    payload: {
+      callId: "save_source",
+      toolName: "web_fetch_save",
+      status: "completed",
+      details: JSON.parse(JSON.stringify(details)),
     },
   });
 }

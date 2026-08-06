@@ -13,8 +13,10 @@ import {
 import { executeWebFetchSource } from "./web-fetch-execution.js";
 import {
   MAX_WEB_FETCH_BODY_BYTES,
+  type WebFetchSourceRetentionProvider,
   type WebFetchSourceFormat,
 } from "./web-fetch-model.js";
+import type { WebFetchStateCapsuleReceipt } from "./web-fetch-capsule-model.js";
 import {
   preflightWorkspaceOutputFile,
   writeWorkspaceOutputFile,
@@ -34,6 +36,12 @@ export interface WebFetchSaveDetails {
   sourceFormat: WebFetchSourceFormat;
   sourceBodySha256: string;
   sourceBodyBytes: number;
+  sourceId: string;
+  sourceContentSha256: string;
+  sourceLineCount: number;
+  sourceCount: number;
+  sourceSetSha256: string;
+  stateCapsule?: WebFetchStateCapsuleReceipt;
   sourceUrlSha256: string;
   sourceOriginSha256: string;
   redirectCount: number;
@@ -62,6 +70,7 @@ export interface WebFetchSaveExecutor {
 export interface RunWebFetchSaveManagerOptions {
   workspaceRoot: string;
   store: RunBoundFileArtifactStore & RunBoundArtifactStore;
+  retainSource: WebFetchSourceRetentionProvider;
   http?: Pick<PublicHttpClient, "request">;
   now?: () => Date;
 }
@@ -108,6 +117,11 @@ export class RunWebFetchSaveManager implements WebFetchSaveExecutor {
       now: this.now,
       allowPdfWithoutText: true,
     });
+    const retained = await this.options.retainSource.retainWebSource(
+      owner,
+      executed.source,
+      signal,
+    );
     assertPathFormat(path, executed.source.format);
     const currentAuthority = this.artifacts.authorize(
       owner,
@@ -158,6 +172,8 @@ export class RunWebFetchSaveManager implements WebFetchSaveExecutor {
         `File SHA-256: ${file.fileSha256}`,
         `Bytes: ${file.fileBytes}`,
         `Format: ${executed.source.format}`,
+        `Web Source: ${retained.source.id}`,
+        `Content SHA-256: ${retained.source.contentSha256}`,
         artifactRegistration === "artifact_registered"
           ? "Plan Artifact: verified"
           : `Plan Artifact: not verified (${artifactRegistration})`,
@@ -171,6 +187,14 @@ export class RunWebFetchSaveManager implements WebFetchSaveExecutor {
         sourceFormat: executed.source.format,
         sourceBodySha256: executed.source.bodySha256,
         sourceBodyBytes: executed.source.bodyBytes,
+        sourceId: retained.source.id,
+        sourceContentSha256: retained.source.contentSha256,
+        sourceLineCount: retained.source.lineCount,
+        sourceCount: retained.details.sourceCount,
+        sourceSetSha256: retained.details.sourceSetSha256,
+        ...(retained.details.stateCapsule
+          ? { stateCapsule: retained.details.stateCapsule }
+          : {}),
         sourceUrlSha256: sha256(executed.source.finalUrl),
         sourceOriginSha256: sha256(new URL(executed.source.finalUrl).origin),
         redirectCount: executed.source.redirectCount,

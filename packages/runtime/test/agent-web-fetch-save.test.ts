@@ -31,30 +31,35 @@ describe("Agent Web Fetch raw Source delivery", () => {
     await mkdir(path.join(workspaceRoot, "artifacts"));
     const sourceUrl = "https://example.com/report.pdf";
     const pdfBody = minimalPdf("Agent raw PDF delivery.");
+    const request = vi.fn(
+      async (): Promise<PublicHttpResponse> => ({
+        status: 200,
+        headers: { "content-type": "application/pdf" },
+        body: pdfBody,
+        finalUrl: sourceUrl,
+        redirectCount: 0,
+      }),
+    );
     const services = await createLocalAgentRuntime({
       workspaceRoot,
       dataRoot: path.join(root, "state"),
       env: {},
-      webFetchHttp: {
-        request: vi.fn(
-          async (): Promise<PublicHttpResponse> => ({
-            status: 200,
-            headers: { "content-type": "application/pdf" },
-            body: pdfBody,
-            finalUrl: sourceUrl,
-            redirectCount: 0,
-          }),
-        ),
-      },
+      webFetchHttp: { request },
     });
     try {
-      const agent = services.store.listAgents()[0]!;
+      const originalAgent = services.store.listAgents()[0]!;
       expect(
         agentCapabilityPresetUpdate("research").enabledTools,
       ).not.toContain("web_fetch_save");
       expect(
         agentCapabilityPresetUpdate("safe_automation").enabledTools,
       ).toContain("web_fetch_save");
+      const agent = await services.store.updateAgent(originalAgent.id, {
+        toolPolicy: "workspace",
+        enabledTools: ["web_fetch_save", "research_source"],
+        enabledSkills: [],
+        enabledSubagents: [],
+      });
       const researchThread = await services.store.createThread({
         title: "Read-only raw save denial",
         agentId: agent.id,
@@ -89,6 +94,11 @@ describe("Agent Web Fetch raw Source delivery", () => {
         agentId: agent.id,
       });
       let planId = "";
+      let savedSourceId = "";
+      let savedSourceContentSha256 = "";
+      let capturedSourceId = "";
+      let capturedSourceContentSha256 = "";
+      let capturedClaimLine = 0;
       const provider = fauxProvider({ provider: "faux-web-fetch-save" });
       provider.setResponses([
         fauxAssistantMessage(
@@ -136,19 +146,44 @@ describe("Agent Web Fetch raw Source delivery", () => {
         ),
         (context) => {
           const messages = JSON.stringify(context.messages);
-          expect(messages).toContain("Plan Artifact: verified");
-          expect(messages).toContain(sha256(pdfBody));
+          savedSourceId =
+            /Web Source: (websource_[a-z0-9]+)/u.exec(messages)?.[1] ?? "";
+          savedSourceContentSha256 =
+            /Content SHA-256: ([a-f0-9]{64})/u.exec(messages)?.[1] ?? "";
           return fauxAssistantMessage(
-            fauxToolCall("update_plan_step", {
-              planId,
-              stepId: "save-pdf",
-              action: "complete",
-              evidence: "The exact raw PDF file Artifact is verified.",
+            fauxToolCall("research_source", {
+              action: "capture_fetch",
+              webSourceId: savedSourceId,
+              webSourceContentSha256: savedSourceContentSha256,
+              maxChars: 12_000,
             }),
             { stopReason: "toolUse" },
           );
         },
-        fauxAssistantMessage("RAW_PDF_DELIVERED"),
+        (context) => {
+          const messages = JSON.stringify(context.messages);
+          capturedSourceId =
+            /Research Source: (source_[a-z0-9]+)/u.exec(messages)?.[1] ?? "";
+          capturedSourceContentSha256 =
+            /Capture SHA-256: ([a-f0-9]{64})/u.exec(messages)?.[1] ?? "";
+          capturedClaimLine = Number(
+            /(\d+) \| Agent raw PDF delivery\./u.exec(messages)?.[1] ?? 0,
+          );
+          return fauxAssistantMessage(
+            fauxToolCall("research_source", {
+              action: "cite",
+              sourceId: capturedSourceId,
+              sourceContentSha256: capturedSourceContentSha256,
+              startLine: capturedClaimLine,
+              endLine: capturedClaimLine,
+              claim: "Agent raw PDF delivery.",
+            }),
+            { stopReason: "toolUse" },
+          );
+        },
+        () => {
+          return fauxAssistantMessage("RAW_PDF_DELIVERED");
+        },
         fauxAssistantMessage('{"facts":[]}'),
       ]);
       services.models.registerProvider(provider.provider);
@@ -157,15 +192,37 @@ describe("Agent Web Fetch raw Source delivery", () => {
         threadId: thread.id,
         text: "Save the declared raw PDF.",
         model: { provider: "faux-web-fetch-save", id: "faux-1" },
-        capabilityPreset: "safe_automation",
       });
 
-      expect(run.status, run.error).toBe("completed");
+      const events = await services.store.listEvents(thread.id);
+      const toolSummary = events
+        .filter(
+          (event) =>
+            event.type === "tool.completed" ||
+            event.type === "tool.failed" ||
+            event.type === "tool.blocked",
+        )
+        .map((event) => ({
+          type: event.type,
+          tool: record(event.payload)?.["toolName"],
+          action: record(record(event.payload)?.["details"])?.["action"],
+        }));
+      expect(
+        run.status,
+        `${run.error ?? "unknown error"}; tools=${JSON.stringify(toolSummary)}`,
+      ).toBe("completed");
+      expect(request).toHaveBeenCalledTimes(1);
+      expect(savedSourceId).toMatch(/^websource_/u);
+      expect(savedSourceContentSha256).toMatch(/^[a-f0-9]{64}$/u);
+      expect(capturedSourceId).toMatch(/^source_/u);
+      expect(capturedSourceContentSha256).toMatch(/^[a-f0-9]{64}$/u);
+      expect(capturedClaimLine).toBeGreaterThan(0);
       await expect(
         readFile(path.join(workspaceRoot, "artifacts/report.pdf")),
       ).resolves.toEqual(pdfBody);
       const plan = services.store.getPlan(planId);
-      expect(plan.status).toBe("completed");
+      expect(plan.status).toBe("active");
+      expect(plan.steps[0]?.status).toBe("running");
       expect(plan.artifacts[0]).toEqual(
         expect.objectContaining({
           status: "verified",
@@ -174,7 +231,6 @@ describe("Agent Web Fetch raw Source delivery", () => {
           sizeBytes: pdfBody.byteLength,
         }),
       );
-      const events = await services.store.listEvents(thread.id);
       const saveStart = events.find(
         (event) =>
           event.type === "tool.started" &&
@@ -191,6 +247,24 @@ describe("Agent Web Fetch raw Source delivery", () => {
           .filter((event) => event.type.startsWith("plan.artifact."))
           .map((event) => event.type),
       ).toEqual(["plan.artifact.produced", "plan.artifact.verified"]);
+      expect(
+        events
+          .filter(
+            (event) =>
+              event.type === "tool.completed" &&
+              ["web_fetch_save", "research_source"].includes(
+                String(record(event.payload)?.["toolName"]),
+              ),
+          )
+          .map((event) => ({
+            tool: record(event.payload)?.["toolName"],
+            action: record(record(event.payload)?.["details"])?.["action"],
+          })),
+      ).toEqual([
+        { tool: "web_fetch_save", action: undefined },
+        { tool: "research_source", action: "capture_fetch" },
+        { tool: "research_source", action: "cite" },
+      ]);
       const durable = JSON.stringify(events);
       expect(durable).not.toContain(sourceUrl);
       expect(durable).not.toContain("Agent raw PDF delivery.");

@@ -2,6 +2,7 @@ import type { RunEvent, RunRecord } from "@napier/contracts";
 
 import { validateResearchSourceCapsuleReceipt } from "./research-source-capsule.js";
 import { validateWebFetchStateCapsuleReceipt } from "./web-fetch-capsule.js";
+import { isWebFetchStateToolName } from "./web-fetch-state-tool.js";
 
 export function buildRunRecoveryPrompt(
   run: RunRecord,
@@ -120,7 +121,7 @@ function recoveryWebFetchHint(events: RunEvent[]): string {
       (event) =>
         event.type === "context.web_fetch_sources" ||
         (event.type === "tool.completed" &&
-          record(event.payload)?.["toolName"] === "web_fetch"),
+          isWebFetchStateToolName(record(event.payload)?.["toolName"])),
     )
     .flatMap((event) => {
       const payload = record(event.payload);

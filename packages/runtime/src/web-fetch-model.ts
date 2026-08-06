@@ -189,6 +189,24 @@ export interface WebFetchExecutor {
     },
     signal?: AbortSignal,
   ): Promise<WebFetchResearchCapture>;
+  retainWebSource?(
+    owner: { threadId: string; runId: string },
+    source: WebFetchSource,
+    signal?: AbortSignal,
+  ): Promise<WebFetchRetainedSource>;
+}
+
+export interface WebFetchRetainedSource {
+  source: WebFetchSource;
+  details: WebFetchToolDetails;
+}
+
+export interface WebFetchSourceRetentionProvider {
+  retainWebSource(
+    owner: { threadId: string; runId: string },
+    source: WebFetchSource,
+    signal?: AbortSignal,
+  ): Promise<WebFetchRetainedSource>;
 }
 
 export interface WebFetchResearchCapture {

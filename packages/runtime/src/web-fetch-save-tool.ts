@@ -7,6 +7,7 @@ import type {
   WebFetchSaveDetails,
   WebFetchSaveExecutor,
 } from "./web-fetch-save.js";
+import { validateWebFetchStateCapsuleReceipt } from "./web-fetch-capsule.js";
 
 const webFetchSaveSchema = Type.Object(
   {
@@ -84,6 +85,10 @@ export function webFetchSaveToolOutputLedgerProjection(
 ): Record<string, JsonValue> {
   const details =
     record(result) && record(result["details"]) ? result["details"] : {};
+  const sourceId = string(details["sourceId"]);
+  const stateCapsule = details["stateCapsule"]
+    ? validateWebFetchStateCapsuleReceipt(details["stateCapsule"])
+    : undefined;
   const projected = {
     kind: "napier.web-fetch-save",
     schemaVersion: 1,
@@ -92,12 +97,22 @@ export function webFetchSaveToolOutputLedgerProjection(
       "fileSha256",
       "sourceFormat",
       "sourceBodySha256",
+      "sourceContentSha256",
+      "sourceSetSha256",
       "sourceUrlSha256",
       "sourceOriginSha256",
       "retrievedAt",
       "artifactRegistration",
     ]),
-    ...copyNumber(details, ["fileBytes", "sourceBodyBytes", "redirectCount"]),
+    ...(sourceId ? { sourceIdSha256: sha256(sourceId) } : {}),
+    ...copyNumber(details, [
+      "fileBytes",
+      "sourceBodyBytes",
+      "sourceLineCount",
+      "sourceCount",
+      "redirectCount",
+    ]),
+    ...(stateCapsule ? { stateCapsule: toJsonValue(stateCapsule) } : {}),
   };
   return {
     outputSha256: sha256(output),

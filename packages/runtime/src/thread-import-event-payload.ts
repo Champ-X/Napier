@@ -1,5 +1,6 @@
 import type { JsonValue, RunEvent } from "@napier/contracts";
 
+import { isWebFetchStateToolName } from "./web-fetch-state-tool.js";
 import { WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT } from "./workflow-input-override.js";
 import { WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT } from "./workflow-simulation-evidence.js";
 
@@ -65,7 +66,7 @@ function privateToolCapsulePayload(value: JsonValue): value is Record<
   return (
     record(value) &&
     (value["toolName"] === "research_source" ||
-      value["toolName"] === "web_fetch") &&
+      isWebFetchStateToolName(value["toolName"])) &&
     record(value["details"])
   );
 }
