@@ -6352,6 +6352,24 @@ Web Fetch and Research Source private roots use directory mode `0700` and file
 mode `0600`. Ledger, Replay, JSONL/SSE, and Trace retain only local-only
 receipts with hashes, bytes, and counts.
 
+If the current Run owns the running step on the sole active Plan and that Plan
+declares exactly one `expected` `url` Artifact whose normalized path equals the
+authoritative final Fetch URL, successful `web_fetch fetch` automatically
+transitions it through `expected -> produced -> verified`. The verified digest
+and size bind the exact `canonicalJson(source.lines)` snapshot, so the model
+does not supply a hash or call `update_plan_artifact`. The Fetch result says
+`Plan URL Artifact: verified`.
+
+This settlement performs no second network request and grants no file-write or
+Browser authority. Request/final redirect mismatch, absent or ambiguous
+Run-bound Plans, non-URL declarations, path mismatch, or settled/foreign
+Artifacts are no-ops with ordinary Fetch output unchanged. Store/event failure
+returns only `artifact_registration_failed`; the fetched Source remains
+available. Standard `plan.artifact.produced/verified` events remain
+authoritative. This verifies the normalized fetched Source reference—it does
+not persist raw response bytes as a downloadable file or complete general
+Source/Artifact unification.
+
 When `napier resume` or another shared Runtime entry creates a verified
 `source: recovery` child of its interrupted parent, Napier restores the
 parent's latest Research Source and Web Fetch manifests. A fresh ordinary

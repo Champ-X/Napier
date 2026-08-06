@@ -29,7 +29,12 @@ import {
   cloneWebFetchState,
   WebFetchContinuity,
 } from "./web-fetch-continuity.js";
-import type { LocalStore } from "./store.js";
+import {
+  appendWebFetchUrlArtifactOutput,
+  visibleWebFetchUrlArtifactRegistration,
+  WebFetchUrlArtifactRegistrar,
+  type WebFetchSourceManagerStore,
+} from "./web-fetch-url-artifact.js";
 
 const SOURCE_ID = /^websource_[a-z0-9]{8,80}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
@@ -42,13 +47,14 @@ export interface RunWebFetchSourceManagerOptions {
     WebFetchCapsuleStore,
     "putState" | "readManifest" | "readSource"
   >;
-  store?: Pick<LocalStore, "listRuns" | "listEvents" | "getThread">;
+  store?: WebFetchSourceManagerStore;
 }
 
 interface RunWebFetchSources {
   sources: Map<string, WebFetchSource>;
   browserFallbackCount: number;
 }
+type WebFetchStateCapsules = Map<string, WebFetchStateCapsuleReceipt>;
 
 export class RunWebFetchSourceManager
   implements WebFetchExecutor, WebFetchResearchCaptureProvider
@@ -60,16 +66,15 @@ export class RunWebFetchSourceManager
   private readonly browserFallback: WebFetchBrowserFallbackProvider | undefined;
   private readonly now: () => Date;
   private readonly continuity: WebFetchContinuity;
-  private readonly stateCapsules = new Map<
-    string,
-    WebFetchStateCapsuleReceipt
-  >();
+  private readonly urlArtifacts: WebFetchUrlArtifactRegistrar;
+  private readonly stateCapsules: WebFetchStateCapsules = new Map();
 
   constructor(options: RunWebFetchSourceManagerOptions = {}) {
     this.http = options.http ?? new PublicHttpClient();
     this.browserFallback = options.browserFallback;
     this.now = options.now ?? (() => new Date());
     this.continuity = new WebFetchContinuity(options.capsules, options.store);
+    this.urlArtifacts = new WebFetchUrlArtifactRegistrar(options.store);
   }
 
   async execute(
@@ -240,12 +245,24 @@ export class RunWebFetchSourceManager
     };
     next.sources.set(source.id, source);
     const stateCapsule = await this.continuity.persist(owner, next);
+    const urlArtifactRegistration = await this.urlArtifacts.register(
+      owner,
+      source,
+    );
+    const visibleUrlArtifactRegistration =
+      visibleWebFetchUrlArtifactRegistration(urlArtifactRegistration);
     if (stateCapsule) this.stateCapsules.set(key, stateCapsule);
     this.runs.set(key, next);
     return {
-      output: formatFetchedWebSource(source),
+      output: appendWebFetchUrlArtifactOutput(
+        formatFetchedWebSource(source),
+        visibleUrlArtifactRegistration,
+      ),
       details: {
         ...webFetchSourceDetails("fetch", next, source),
+        ...(visibleUrlArtifactRegistration
+          ? { urlArtifactRegistration: visibleUrlArtifactRegistration }
+          : {}),
         ...(stateCapsule ? { stateCapsule } : {}),
       },
     };

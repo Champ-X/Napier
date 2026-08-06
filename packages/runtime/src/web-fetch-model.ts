@@ -154,6 +154,9 @@ export interface WebFetchToolDetails {
   sourceCount: number;
   sourceSetSha256: string;
   stateCapsule?: WebFetchStateCapsuleReceipt;
+  urlArtifactRegistration?:
+    | "artifact_registered"
+    | "artifact_registration_failed";
   retrievedAt?: string;
 }
 

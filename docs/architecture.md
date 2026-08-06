@@ -811,6 +811,28 @@ repairs the missing event, completes verification, and leaves portable Replay
 valid. If registration still cannot settle, Browser output success is retained
 and registration fails closed without rolling back or deleting user bytes.
 
+`run-bound-artifact.ts` now owns that common Run/Plan authority selection,
+single-match expected/ownership gate, current-state retry, and standard event
+repair. `run-bound-file-artifact.ts` keeps only workspace-file-specific byte
+verification, so Browser output and Research report behavior remain unchanged
+while sharing one lifecycle core with URL settlement.
+
+`web-fetch-url-artifact.ts` is a non-writing adapter. Only after Web Fetch has
+parsed or fallback-rendered and persisted a Source may it match one declared
+`url` Artifact whose normalized path equals the authoritative final URL and
+whose running Plan step is bound to the current Run. It transitions the
+Artifact through the standard lifecycle with the SHA-256 and byte length of
+`canonicalJson(source.lines)`. Digest and size therefore describe the same
+normalized snapshot; the requested pre-redirect URL, model input, and raw
+transport-body bytes cannot supply verification.
+
+No Plan/path/kind match remains invisible to model and Ledger output.
+Only `artifact_registered` or `artifact_registration_failed` is projected.
+Settlement failure cannot fail or remove the already-fetched Source. The URL
+in standard Artifact events is predeclared user-visible Plan data; private
+Source text, Source ID, raw body, transport errors, and Store errors remain
+excluded. This binds a Source reference and does not create a file copy.
+
 Visual and keyboard handoff are takeover-only internal actions rather than
 Agent Browser schema actions. `BrowserLiveViewReceipt` binds the PNG hash,
 1280×900 viewport, Session operation, selected tab, URL/origin/title hashes,

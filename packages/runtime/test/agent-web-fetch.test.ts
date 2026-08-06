@@ -17,6 +17,10 @@ import type {
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
 import type { PublicHttpResponse } from "../src/public-http-client.js";
+import {
+  createThreadReplayBundle,
+  verifyThreadReplayBundle,
+} from "../src/thread-bundles.js";
 import type { WebFetchExecutor } from "../src/web-fetch-model.js";
 import { RunWebFetchSourceManager } from "../src/web-fetch-sources.js";
 
@@ -153,6 +157,273 @@ describe("default Agent web fetch integration", () => {
       expect(durable).not.toContain("PRIVATE_FETCH_BODY_MARKER");
       expect(durable).not.toContain(sourceId);
       expect(durable).toContain("FETCH_PATH_COMPLETED");
+    } finally {
+      await services.shutdown();
+    }
+  });
+
+  it("automatically verifies an exact declared URL Artifact from fetched Source evidence", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-agent-url-artifact-"),
+    );
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const sourceUrl = "https://example.com/report.txt";
+    const sourceBody = "Automatic URL Artifact evidence.";
+    const services = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot: path.join(root, "state"),
+      env: {},
+      webFetchHttp: {
+        request: vi.fn(
+          async (): Promise<PublicHttpResponse> => ({
+            status: 200,
+            headers: { "content-type": "text/plain" },
+            body: Buffer.from(sourceBody),
+            finalUrl: sourceUrl,
+            redirectCount: 0,
+          }),
+        ),
+      },
+    });
+    try {
+      const agent = services.store.listAgents()[0]!;
+      const thread = await services.store.createThread({
+        title: "Automatic URL Artifact",
+        agentId: agent.id,
+      });
+      let planId = "";
+      const provider = fauxProvider({ provider: "faux-url-artifact" });
+      provider.setResponses([
+        fauxAssistantMessage(
+          fauxToolCall("create_plan", {
+            objective: "Fetch one declared public Source.",
+            steps: [
+              {
+                id: "fetch-source",
+                title: "Fetch source",
+                description: "Fetch the declared public URL.",
+                verification: "The URL Artifact is verified.",
+              },
+            ],
+            artifacts: [
+              {
+                id: "source-url",
+                path: sourceUrl,
+                kind: "url",
+                description: "The fetched public Source.",
+              },
+            ],
+          }),
+          { stopReason: "toolUse" },
+        ),
+        (context) => {
+          const messages = JSON.stringify(context.messages);
+          planId = /"planId":"(plan_[a-z0-9_]+)"/u.exec(messages)?.[1] ?? "";
+          expect(planId).toMatch(/^plan_/u);
+          return fauxAssistantMessage(
+            fauxToolCall("update_plan_step", {
+              planId,
+              stepId: "fetch-source",
+              action: "start",
+            }),
+            { stopReason: "toolUse" },
+          );
+        },
+        fauxAssistantMessage(
+          fauxToolCall("web_fetch", { action: "fetch", url: sourceUrl }),
+          { stopReason: "toolUse" },
+        ),
+        (context) => {
+          expect(JSON.stringify(context.messages)).toContain(
+            "Plan URL Artifact: verified",
+          );
+          return fauxAssistantMessage(
+            fauxToolCall("update_plan_step", {
+              planId,
+              stepId: "fetch-source",
+              action: "complete",
+              evidence: "Web Fetch verified the declared URL Artifact.",
+            }),
+            { stopReason: "toolUse" },
+          );
+        },
+        fauxAssistantMessage("URL_ARTIFACT_COMPLETED"),
+        fauxAssistantMessage('{"facts":[]}'),
+      ]);
+      services.models.registerProvider(provider.provider);
+
+      const run = await services.runtime.runPrompt({
+        threadId: thread.id,
+        text: "Fetch and verify the declared public URL.",
+        model: { provider: "faux-url-artifact", id: "faux-1" },
+      });
+
+      expect(run.status, run.error).toBe("completed");
+      const plan = services.store.getPlan(planId);
+      expect(plan.status).toBe("completed");
+      expect(plan.artifacts[0]).toEqual(
+        expect.objectContaining({
+          id: "source-url",
+          kind: "url",
+          path: sourceUrl,
+          status: "verified",
+          sourceRunId: run.id,
+          sha256: sha256(canonicalJson([sourceBody])),
+          sizeBytes: Buffer.byteLength(canonicalJson([sourceBody]), "utf8"),
+        }),
+      );
+      const events = await services.store.listEvents(thread.id);
+      expect(
+        events
+          .filter((event) => event.type.startsWith("plan.artifact."))
+          .map((event) => event.type),
+      ).toEqual(["plan.artifact.produced", "plan.artifact.verified"]);
+      const webFetch = events.find(
+        (event) =>
+          event.type === "tool.completed" &&
+          record(event.payload)?.["toolName"] === "web_fetch",
+      );
+      expect(record(record(webFetch?.payload)?.["details"])).toEqual(
+        expect.objectContaining({
+          action: "fetch",
+          urlArtifactRegistration: "artifact_registered",
+        }),
+      );
+      expect(
+        events
+          .filter((event) => event.type === "tool.completed")
+          .map((event) => record(event.payload)?.["toolName"]),
+      ).not.toContain("update_plan_artifact");
+      expect(
+        verifyThreadReplayBundle(
+          createThreadReplayBundle(await services.store.getDetail(thread.id)),
+        ).status,
+      ).toBe("valid");
+    } finally {
+      await services.shutdown();
+    }
+  });
+
+  it("keeps Fetch successful when URL Artifact settlement fails", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-agent-url-artifact-failure-"),
+    );
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const sourceUrl = "https://example.com/failure.txt";
+    const services = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot: path.join(root, "state"),
+      env: {},
+      webFetchHttp: {
+        request: vi.fn(
+          async (): Promise<PublicHttpResponse> => ({
+            status: 200,
+            headers: { "content-type": "text/plain" },
+            body: Buffer.from("Fetch remains available."),
+            finalUrl: sourceUrl,
+            redirectCount: 0,
+          }),
+        ),
+      },
+    });
+    try {
+      const agent = services.store.listAgents()[0]!;
+      const thread = await services.store.createThread({
+        title: "URL Artifact failure isolation",
+        agentId: agent.id,
+      });
+      let planId = "";
+      const provider = fauxProvider({ provider: "faux-url-artifact-failure" });
+      provider.setResponses([
+        fauxAssistantMessage(
+          fauxToolCall("create_plan", {
+            objective: "Fetch one declared public Source.",
+            steps: [
+              {
+                id: "fetch-source",
+                title: "Fetch source",
+                description: "Fetch the declared public URL.",
+                verification: "The Source remains usable.",
+              },
+            ],
+            artifacts: [
+              {
+                id: "source-url",
+                path: sourceUrl,
+                kind: "url",
+                description: "The fetched public Source.",
+              },
+            ],
+          }),
+          { stopReason: "toolUse" },
+        ),
+        (context) => {
+          planId =
+            /"planId":"(plan_[a-z0-9_]+)"/u.exec(
+              JSON.stringify(context.messages),
+            )?.[1] ?? "";
+          return fauxAssistantMessage(
+            fauxToolCall("update_plan_step", {
+              planId,
+              stepId: "fetch-source",
+              action: "start",
+            }),
+            { stopReason: "toolUse" },
+          );
+        },
+        () => {
+          services.store.updatePlanArtifact = async () => {
+            throw new Error("PRIVATE_URL_ARTIFACT_STORE_FAILURE");
+          };
+          return fauxAssistantMessage(
+            fauxToolCall("web_fetch", { action: "fetch", url: sourceUrl }),
+            { stopReason: "toolUse" },
+          );
+        },
+        (context) => {
+          const messages = JSON.stringify(context.messages);
+          expect(messages).toContain("Fetch remains available.");
+          expect(messages).toContain(
+            "Plan URL Artifact: registration failed; fetched Source remains available",
+          );
+          expect(messages).not.toContain("PRIVATE_URL_ARTIFACT_STORE_FAILURE");
+          return fauxAssistantMessage("URL_ARTIFACT_FAILURE_ISOLATED");
+        },
+        fauxAssistantMessage('{"facts":[]}'),
+      ]);
+      services.models.registerProvider(provider.provider);
+
+      const run = await services.runtime.runPrompt({
+        threadId: thread.id,
+        text: "Fetch the declared URL.",
+        model: { provider: "faux-url-artifact-failure", id: "faux-1" },
+      });
+
+      expect(run.status, run.error).toBe("completed");
+      expect(services.store.getPlan(planId).artifacts[0]?.status).toBe(
+        "expected",
+      );
+      const events = await services.store.listEvents(thread.id);
+      const webFetch = events.find(
+        (event) =>
+          event.type === "tool.completed" &&
+          record(event.payload)?.["toolName"] === "web_fetch",
+      );
+      expect(record(record(webFetch?.payload)?.["details"])).toEqual(
+        expect.objectContaining({
+          urlArtifactRegistration: "artifact_registration_failed",
+        }),
+      );
+      expect(JSON.stringify(events)).not.toContain(
+        "PRIVATE_URL_ARTIFACT_STORE_FAILURE",
+      );
+      expect(
+        events.some((event) => event.type.startsWith("plan.artifact.")),
+      ).toBe(false);
     } finally {
       await services.shutdown();
     }

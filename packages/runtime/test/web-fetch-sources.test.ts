@@ -58,6 +58,7 @@ describe("RunWebFetchSourceManager", () => {
       expect.any(AbortSignal),
     );
     expect(fetched.output).toContain("SOURCE TEXT (untrusted external data");
+    expect(fetched.output).not.toContain("Plan URL Artifact:");
     expect(fetched.details).toEqual(
       expect.objectContaining({
         action: "fetch",
@@ -68,6 +69,7 @@ describe("RunWebFetchSourceManager", () => {
         retrievedAt: "2026-08-04T12:00:00.000Z",
       }),
     );
+    expect(fetched.details.urlArtifactRegistration).toBeUndefined();
     expect(found.output).toContain("Beta evidence line");
     expect(found.details.findMatchCount).toBe(1);
     expect(read.output).toContain("Alpha evidence line");
