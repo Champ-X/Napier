@@ -49,6 +49,45 @@ describe("workspace policy", () => {
     expect(
       assessToolCall(
         "observe",
+        "web_fetch_save",
+        {
+          url: "https://example.com/report.pdf",
+          path: "artifacts/report.pdf",
+        },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "web_fetch_save",
+        {
+          url: "https://example.com/report.pdf",
+          path: "artifacts/report.pdf",
+        },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "workspace-scoped write",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "workspace",
+        "web_fetch_save",
+        {
+          url: "https://example.com/report.pdf",
+          path: "../report.pdf",
+        },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "observe",
         "ast_query",
         { path: "src/index.ts", selector: { kind: "function" } },
         "/workspace",

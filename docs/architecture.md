@@ -833,6 +833,41 @@ in standard Artifact events is predeclared user-visible Plan data; private
 Source text, Source ID, raw body, transport errors, and Store errors remain
 excluded. This binds a Source reference and does not create a file copy.
 
+Raw Source delivery is a separate write capability rather than a conditional
+`web_fetch` action. `web_fetch_save` appears only when a non-read-only profile
+explicitly enables it; Safe Automation does, while default/Research/Browser do
+not. Policy classifies it as a workspace write, Tool lifecycle records
+`effect=write`, automatic recovery treats that evidence as unsafe, read-only
+experiments cannot capture it, and private Source-content redaction starts
+after its result. URL/path arguments and results are hash-projected.
+
+```text
+web_fetch_save(url, path)
+  -> preflight new confined path through workspace-output-file
+  -> require sole active Plan + current running step + exact expected file
+  -> shared DNS-pinned HTTP / redirects / 8 MiB / parser execution
+  -> detect exact HTML/Markdown/JSON/text/PDF format
+  -> recheck same Plan/artifact authority after network and before write
+  -> exclusive O_NOFOLLOW/O_EXCL new-file stream + fsync + identity/hash check
+  -> require file SHA/bytes == response body SHA/bytes
+  -> shared Run-bound file registrar -> produced -> reread -> verified
+```
+
+`web-fetch-execution.ts` owns shared networking, parsing, and Source
+construction, so read-only Fetch and raw save cannot drift in URL, redirect,
+format, or response limits. Read-only Fetch still persists/cites normalized
+Source state and may use Browser fallback; raw save never Browser-renders
+because it promises original transport bytes.
+
+`workspace-output-file.ts` owns shared Browser/Fetch new-file confinement,
+stream limits, cancellation cleanup, exclusive creation, and open-file identity
+checks. Browser upload inspection remains separate and read-only. Raw save
+requires a format-compatible extension and an existing safe parent. Valid PDFs
+with no extractable text are admitted only by save with a fixed no-text marker;
+ordinary Fetch still fails because it cannot provide readable evidence, and no
+OCR claim is made. Late registration failure keeps user bytes; pre-network or
+pre-write authority failure writes nothing.
+
 Visual and keyboard handoff are takeover-only internal actions rather than
 Agent Browser schema actions. `BrowserLiveViewReceipt` binds the PNG hash,
 1280×900 viewport, Session operation, selected tab, URL/origin/title hashes,

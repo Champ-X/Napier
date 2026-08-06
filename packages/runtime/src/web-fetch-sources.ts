@@ -1,11 +1,8 @@
-import { canonicalJson, sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { sha256 } from "./ed25519.js";
 import { PublicHttpClient } from "./public-http-client.js";
-import { parseWebFetchBody } from "./web-fetch-content.js";
-import { resolveWebFetchBrowserFallback } from "./web-fetch-fallback-execution.js";
+import { executeWebFetchSource } from "./web-fetch-execution.js";
 import { createWebFetchResearchCapture } from "./web-fetch-research-capture.js";
 import {
-  MAX_WEB_FETCH_BODY_BYTES,
   MAX_WEB_FETCH_FIND_RESULTS,
   MAX_WEB_FETCH_READ_LINES,
   MAX_WEB_FETCH_SOURCES_PER_RUN,
@@ -178,71 +175,21 @@ export class RunWebFetchSourceManager
     if (run.sources.size >= MAX_WEB_FETCH_SOURCES_PER_RUN) {
       throw new Error("Web fetch Source limit reached for this Run");
     }
-    const response = await this.http.request(
-      {
-        url: normalizeRequestedUrl(url),
-        headers: {
-          accept:
-            "text/html, text/markdown, application/json, application/pdf, text/plain;q=0.9, */*;q=0.1",
-        },
-        maxResponseBytes: MAX_WEB_FETCH_BODY_BYTES,
-      },
-      signal,
-    );
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`Web fetch returned HTTP ${response.status}`);
-    }
-    const contentType = header(response.headers["content-type"]);
-    const parsed = await parseWebFetchBody({
-      body: response.body,
-      contentType,
-      finalUrl: response.finalUrl,
-      signal,
-    });
-    throwIfAborted(signal);
-    const fallback = await resolveWebFetchBrowserFallback({
+    const executed = await executeWebFetchSource({
+      http: this.http,
       ...(this.browserFallback
         ? { browserFallback: this.browserFallback }
         : {}),
       browserFallbackCount: run.browserFallbackCount,
       owner,
-      body: response.body,
-      finalUrl: response.finalUrl,
-      parsed,
-      contentType,
+      url,
       signal,
-      allowed: options.browserFallbackAllowed === true,
+      options,
+      now: this.now,
     });
     const next = cloneWebFetchState(run);
-    next.browserFallbackCount = fallback.browserFallbackCount;
-    const lines = fallback.lines;
-    const source: WebFetchSource = {
-      id: createId("websource"),
-      finalUrl: response.finalUrl,
-      title: fallback.title,
-      ...(parsed.author ? { author: parsed.author } : {}),
-      ...(parsed.publishedAt ? { publishedAt: parsed.publishedAt } : {}),
-      retrievedAt: this.now().toISOString(),
-      contentType,
-      format: parsed.format,
-      bodySha256: sha256(response.body),
-      contentSha256: sha256(canonicalJson(lines)),
-      bodyBytes: response.body.byteLength,
-      lineCount: lines.length,
-      textChars: lines.join("\n").length,
-      truncated: fallback.truncated,
-      redirectCount: response.redirectCount,
-      ...(parsed.pageCount !== undefined
-        ? { pageCount: parsed.pageCount }
-        : {}),
-      renderMode: fallback.renderMode,
-      browserFallbackStatus: fallback.status,
-      ...(fallback.diagnostic
-        ? { browserFallbackDiagnostic: fallback.diagnostic }
-        : {}),
-      ...(fallback.evidence ? { browserFallback: fallback.evidence } : {}),
-      lines,
-    };
+    next.browserFallbackCount = executed.browserFallbackCount;
+    const source = executed.source;
     next.sources.set(source.id, source);
     const stateCapsule = await this.continuity.persist(owner, next);
     const urlArtifactRegistration = await this.urlArtifacts.register(
@@ -451,18 +398,6 @@ function numberedLines(lines: readonly string[], startLine: number): string[] {
 
 function truncateLine(value: string, limit: number): string {
   return value.length <= limit ? value : `${value.slice(0, limit - 1)}…`;
-}
-
-function normalizeRequestedUrl(value: string): string {
-  const normalized = value.trim();
-  if (!normalized || normalized.length > 4_096) {
-    throw new Error("Web fetch URL is invalid");
-  }
-  return normalized;
-}
-
-function header(value: string | string[] | undefined): string {
-  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
 }
 
 function emptyRunSources(): RunWebFetchSources {

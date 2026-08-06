@@ -58,6 +58,7 @@ const RESEARCH_TOOLS: AgentToolName[] = [
   "browser",
   "research_source",
 ];
+const RESEARCH_WRITE_TOOLS: AgentToolName[] = ["web_fetch_save"];
 const CODE_INTELLIGENCE_TOOLS: AgentToolName[] = [
   "ast_query",
   "ast_edit_preview",
@@ -95,6 +96,7 @@ const PROCESS_TOOLS: AgentToolName[] = [
 ];
 const WRITE_TOOLS = new Set<AgentToolName>([
   "apply_patch",
+  "web_fetch_save",
   "lsp_rename_apply",
   "lsp_code_action_apply",
   "workspace_file_apply",
@@ -159,6 +161,7 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
       ...WORKSPACE_READ_TOOLS,
       ...DATA_TOOLS,
       ...RESEARCH_TOOLS,
+      ...RESEARCH_WRITE_TOOLS,
       ...CODE_INTELLIGENCE_TOOLS,
       ...CODE_WRITE_TOOLS,
       ...PROCESS_TOOLS,

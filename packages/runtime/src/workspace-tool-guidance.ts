@@ -334,6 +334,11 @@ function networkToolGuidance(toolNames: ReadonlySet<string>): string[] {
           "For long Sources, retain the Source ID and content SHA-256, then use web_fetch find or bounded read ranges instead of refetching or requesting the complete body again.",
         ]
       : []),
+    ...(toolNames.has("web_fetch_save")
+      ? [
+          "Use web_fetch_save only when the current Run-bound Plan already declares the exact new workspace file Artifact. It saves bounded raw response bytes, refuses overwrite or format/path mismatch, and is a workspace write unavailable to read-only presets.",
+        ]
+      : []),
   ];
 }
 

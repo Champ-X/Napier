@@ -27,6 +27,7 @@ export async function parseWebFetchBody(input: {
   contentType: string;
   finalUrl: string;
   signal?: AbortSignal;
+  allowPdfWithoutText?: boolean;
 }): Promise<ParsedWebContent> {
   throwIfAborted(input.signal);
   const mime = normalizeMime(input.contentType);
@@ -35,7 +36,11 @@ export async function parseWebFetchBody(input: {
     urlExtension(input.finalUrl) === ".pdf" ||
     input.body.subarray(0, 5).toString("ascii") === "%PDF-"
   ) {
-    return parsePdfBody(input.body, input.signal);
+    return parsePdfBody(
+      input.body,
+      input.signal,
+      input.allowPdfWithoutText === true,
+    );
   }
   const text = decodeUtf8(input.body);
   if (
@@ -73,6 +78,7 @@ export async function parseWebFetchBody(input: {
 async function parsePdfBody(
   body: Buffer,
   signal?: AbortSignal,
+  allowWithoutText = false,
 ): Promise<ParsedWebContent> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const operationSignal = boundedParseSignal(signal);
@@ -112,7 +118,10 @@ async function parsePdfBody(
       if (text) blocks.push(`## Page ${pageNumber}\n\n${text}`);
     }
     if (blocks.length === 0) {
-      throw new Error("PDF contains no extractable text");
+      if (!allowWithoutText) {
+        throw new Error("PDF contains no extractable text");
+      }
+      blocks.push("[PDF contains no extractable text; raw bytes only]");
     }
     return finalizeContent({
       format: "pdf",

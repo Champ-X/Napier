@@ -11,6 +11,11 @@ import {
   researchSourceToolOutputLedgerProjection,
 } from "./research-source-tool.js";
 import {
+  webFetchSaveToolCallArgumentsLedgerProjection,
+  webFetchSaveToolInputLedgerProjection,
+  webFetchSaveToolOutputLedgerProjection,
+} from "./web-fetch-save-tool.js";
+import {
   webFetchToolCallArgumentsLedgerProjection,
   webFetchToolInputLedgerProjection,
   webFetchToolOutputLedgerProjection,
@@ -31,6 +36,9 @@ export function agentNetworkToolCallProjection(
   if (toolName === "web_fetch") {
     return webFetchToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "web_fetch_save") {
+    return webFetchSaveToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "research_source") {
     return researchSourceToolCallArgumentsLedgerProjection(args);
   }
@@ -49,6 +57,9 @@ export function agentNetworkToolInputProjection(
   }
   if (toolName === "web_fetch") {
     return webFetchToolInputLedgerProjection(args);
+  }
+  if (toolName === "web_fetch_save") {
+    return webFetchSaveToolInputLedgerProjection(args);
   }
   if (toolName === "research_source") {
     return researchSourceToolInputLedgerProjection(args);
@@ -69,6 +80,9 @@ export function agentNetworkToolOutputProjection(
   }
   if (toolName === "web_fetch") {
     return webFetchToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "web_fetch_save") {
+    return webFetchSaveToolOutputLedgerProjection(output, result);
   }
   if (toolName === "research_source") {
     return researchSourceToolOutputLedgerProjection(output, result);

@@ -21,8 +21,26 @@ export interface RunBoundArtifactRegistration {
   artifactId?: string;
 }
 
+export interface RunBoundArtifactAuthority {
+  planId: string;
+  artifactId: string;
+}
+
 export class RunBoundArtifactRegistrar {
   constructor(private readonly store: RunBoundArtifactStore) {}
+
+  authorize(
+    owner: { threadId: string; runId: string },
+    matches: (artifact: ArtifactManifestEntry) => boolean,
+  ): RunBoundArtifactAuthority | undefined {
+    const resolved = this.resolve(owner, matches);
+    return resolved.kind === "matched"
+      ? {
+          planId: resolved.plan.id,
+          artifactId: resolved.artifact.id,
+        }
+      : undefined;
+  }
 
   async register(
     owner: { threadId: string; runId: string },
@@ -33,29 +51,9 @@ export class RunBoundArtifactRegistrar {
       runId: string,
     ) => Promise<ExecutionPlan>,
   ): Promise<RunBoundArtifactRegistration> {
-    const plan = this.runBoundPlan(owner);
-    if (!plan) return { status: "skipped", reason: "no_run_bound_plan" };
-    const artifacts = plan.artifacts.filter(matches);
-    if (artifacts.length !== 1) {
-      return {
-        status: "skipped",
-        reason: "no_matching_artifact",
-        planId: plan.id,
-      };
-    }
-    const artifact = artifacts[0]!;
-    if (
-      artifact.status !== "expected" ||
-      (artifact.sourceRunId !== undefined &&
-        artifact.sourceRunId !== owner.runId)
-    ) {
-      return {
-        status: "skipped",
-        reason: "artifact_not_expected",
-        planId: plan.id,
-        artifactId: artifact.id,
-      };
-    }
+    const resolved = this.resolve(owner, matches);
+    if (resolved.kind === "skipped") return resolved.registration;
+    const { plan, artifact } = resolved;
     try {
       const verified = await settle(plan, artifact.id, owner.runId);
       return {
@@ -102,6 +100,56 @@ export class RunBoundArtifactRegistrar {
           ),
       );
     return matches.length === 1 ? matches[0] : undefined;
+  }
+
+  private resolve(
+    owner: { threadId: string; runId: string },
+    matches: (artifact: ArtifactManifestEntry) => boolean,
+  ):
+    | {
+        kind: "matched";
+        plan: ExecutionPlan;
+        artifact: ArtifactManifestEntry;
+      }
+    | {
+        kind: "skipped";
+        registration: RunBoundArtifactRegistration;
+      } {
+    const plan = this.runBoundPlan(owner);
+    if (!plan) {
+      return {
+        kind: "skipped",
+        registration: { status: "skipped", reason: "no_run_bound_plan" },
+      };
+    }
+    const artifacts = plan.artifacts.filter(matches);
+    if (artifacts.length !== 1) {
+      return {
+        kind: "skipped",
+        registration: {
+          status: "skipped",
+          reason: "no_matching_artifact",
+          planId: plan.id,
+        },
+      };
+    }
+    const artifact = artifacts[0]!;
+    if (
+      artifact.status !== "expected" ||
+      (artifact.sourceRunId !== undefined &&
+        artifact.sourceRunId !== owner.runId)
+    ) {
+      return {
+        kind: "skipped",
+        registration: {
+          status: "skipped",
+          reason: "artifact_not_expected",
+          planId: plan.id,
+          artifactId: artifact.id,
+        },
+      };
+    }
+    return { kind: "matched", plan, artifact };
   }
 }
 

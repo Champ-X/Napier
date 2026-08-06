@@ -2,7 +2,11 @@ import type { JsonValue } from "@napier/contracts";
 
 import { sha256 } from "./ed25519.js";
 
-const PRIVATE_SOURCE_TOOLS = new Set(["research_source", "web_fetch"]);
+const PRIVATE_SOURCE_TOOLS = new Set([
+  "research_source",
+  "web_fetch",
+  "web_fetch_save",
+]);
 
 export class PrivateSourceModelContentBoundary {
   private active = false;

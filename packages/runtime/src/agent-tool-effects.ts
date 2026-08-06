@@ -21,6 +21,7 @@ const READ_ONLY_TOOLS = new Set([
 ]);
 const WRITE_TOOLS = new Set([
   "apply_patch",
+  "web_fetch_save",
   "lsp_rename_apply",
   "lsp_code_action_apply",
   "workspace_file_apply",

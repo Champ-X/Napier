@@ -9,5 +9,6 @@ describe("Context tool labels", () => {
       [...AGENT_TOOL_NAMES].sort(),
     );
     expect(contextCopy.toolLabels.web_search).toBe("Web Search");
+    expect(contextCopy.toolLabels.web_fetch_save).toBe("Web Fetch Save");
   });
 });

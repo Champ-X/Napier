@@ -165,6 +165,7 @@ export const contextCopy = {
     workspace_process: "Background process",
     web_search: "Web Search",
     web_fetch: "Web Fetch",
+    web_fetch_save: "Web Fetch Save",
     browser: "Browser Session",
     research_source: "Research Source",
     verify_workspace: "Sandbox verify",

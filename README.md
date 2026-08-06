@@ -6370,6 +6370,30 @@ authoritative. This verifies the normalized fetched Source reference—it does
 not persist raw response bytes as a downloadable file or complete general
 Source/Artifact unification.
 
+Safe Automation adds the separate `web_fetch_save` write tool for exact raw
+delivery. Read-only default, Research, Browser, recovery, advisor, and
+experiment contexts do not expose it. A writable Run must first create one
+Plan, start the current step, and declare the exact new workspace `file`
+Artifact path. `web_fetch_save` then uses the same DNS-pinned,
+redirect-revalidated, 8 MiB Fetch/parser boundary, rechecks Plan authority
+after networking, and writes exact response bytes only to that new-file path.
+
+The writer refuses absolute/escaping/protected/symlinked paths, missing unsafe
+parents, overwrites, extension/content mismatch, cancellation, size overflow,
+and Plan drift before write. HTML/HTM, Markdown, JSON, text, and PDF extensions
+are format-bound. Valid PDFs without extractable text can still be saved as raw
+bytes; Napier records a fixed no-text diagnostic but does not claim OCR. The
+saved file SHA-256/bytes must equal the Fetch body SHA-256/bytes before standard
+Plan Artifact settlement.
+
+Browser downloads/screenshots and Fetch saves share one exclusive,
+new-file-only workspace output writer. URL, tool path, response body, and raw
+failures stay outside save Tool events; the Plan's declared Artifact path
+remains ordinary user-visible Plan data. A late Artifact settlement failure
+does not delete successfully saved bytes and returns a bounded status. Use
+`web_fetch` for read/cite tasks and `web_fetch_save` only for an actual raw file
+deliverable.
+
 When `napier resume` or another shared Runtime entry creates a verified
 `source: recovery` child of its interrupted parent, Napier restores the
 parent's latest Research Source and Web Fetch manifests. A fresh ordinary

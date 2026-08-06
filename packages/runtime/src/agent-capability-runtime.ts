@@ -25,6 +25,8 @@ import {
 } from "./web-fetch-sources.js";
 import { WebFetchCapsuleStore } from "./web-fetch-capsule-store.js";
 import { createWebFetchTool } from "./web-fetch-tool.js";
+import { RunWebFetchSaveManager } from "./web-fetch-save.js";
+import { createWebFetchSaveTool } from "./web-fetch-save-tool.js";
 import { prepareNetworkSourceContinuity } from "./research-source-recovery-context.js";
 import { appendSourceContinuityGuidance } from "./source-continuity-guidance.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
@@ -53,6 +55,7 @@ export class AgentCapabilityRuntime {
   private readonly sessions: AgentSessionRuntime;
   private readonly webSearch: WebSearchExecutor;
   private readonly webFetch: WebFetchExecutor;
+  private readonly webFetchSave: RunWebFetchSaveManager;
 
   constructor(
     private readonly store: LocalStore,
@@ -79,6 +82,11 @@ export class AgentCapabilityRuntime {
         capsules: new WebFetchCapsuleStore(store.dataRoot),
         store,
       });
+    this.webFetchSave = new RunWebFetchSaveManager({
+      workspaceRoot: store.workspaceRoot,
+      store,
+      ...(network.webFetchHttp ? { http: network.webFetchHttp } : {}),
+    });
     const webFetchCapture = webFetchResearchCaptureProvider(this.webFetch);
     this.sessions = new AgentSessionRuntime(
       processes,
@@ -132,6 +140,21 @@ export class AgentCapabilityRuntime {
             networkSessionToolsAllowed(options) &&
             options.profile.enabledTools.includes("browser"),
         }),
+      );
+    }
+    if (
+      sessionToolsAllowed(options) &&
+      options.profile.enabledTools.includes("web_fetch_save")
+    ) {
+      tools.push(
+        createWebFetchSaveTool(
+          this.webFetchSave,
+          owner,
+          this.sessions.debuggerWriteBarrier({
+            threadId: owner.threadId,
+            id: owner.runId,
+          }),
+        ),
       );
     }
     if (networkSessionToolsAllowed(options)) {

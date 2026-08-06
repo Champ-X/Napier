@@ -10,7 +10,7 @@ import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 
 export type { PolicyDecision } from "./policy-model.js";
 
-const WRITE_TOOLS = new Set(["apply_patch"]);
+const WRITE_TOOLS = new Set(["apply_patch", "web_fetch_save"]);
 const WORKSPACE_FILE_PREVIEW_TOOLS = new Set(["workspace_file_preview"]);
 const WORKSPACE_FILE_APPLY_TOOLS = new Set(["workspace_file_apply"]);
 const LSP_WORKSPACE_EDIT_APPLY_TOOLS = new Set([
