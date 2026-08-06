@@ -79,5 +79,7 @@ export function browserConfirmationPageState(): BrowserConfirmationPageState {
     currentUrlSha256: "e".repeat(64),
     currentOriginSha256: "f".repeat(64),
     targetStateSha256: sha256("stable test target"),
+    targetSensitivity: "ordinary",
+    targetSensitivitySha256: sha256(canonicalJson([])),
   });
 }

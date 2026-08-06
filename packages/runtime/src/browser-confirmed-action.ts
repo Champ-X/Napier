@@ -1,5 +1,6 @@
 import type { BrowserInteractionAction } from "@napier/contracts/browser-interaction-confirmation";
 
+import type { BrowserSensitiveTargetStatus } from "./browser-sensitive-target.js";
 import type {
   BrowserSessionOwner,
   BrowserSessionRequest,
@@ -29,6 +30,8 @@ export interface BrowserConfirmationPageState {
   currentUrlSha256: string;
   currentOriginSha256: string;
   targetStateSha256: string;
+  targetSensitivity: BrowserSensitiveTargetStatus;
+  targetSensitivitySha256: string;
   contentSha256: string;
 }
 
@@ -182,8 +185,12 @@ function validatePageState(state: BrowserConfirmationPageState): void {
       state.currentUrlSha256,
       state.currentOriginSha256,
       state.targetStateSha256,
+      state.targetSensitivitySha256,
       contentSha256,
     ].every((value) => /^[a-f0-9]{64}$/u.test(value)) ||
+    (state.targetSensitivity !== "ordinary" &&
+      state.targetSensitivity !== "credential" &&
+      state.targetSensitivity !== "human_verification") ||
     sha256(canonicalJson(content)) !== contentSha256
   ) {
     throw new Error("Browser confirmation page state is invalid");

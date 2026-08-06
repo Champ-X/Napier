@@ -20,6 +20,7 @@ import {
   type BrowserNetworkProxy,
 } from "../src/browser-session.js";
 import { probeBrowserPageDiagnosis } from "../src/browser-page-diagnosis.js";
+import { probeBrowserSensitiveTarget } from "../src/browser-sensitive-target.js";
 
 const roots: string[] = [];
 
@@ -357,10 +358,22 @@ export class FakePage {
           | { kind: "diagnosis"; href: string }
           | { kind: "source"; href: string; limit: number }
           | { kind: "find"; limit: number }
-          | { kind: "scroll"; deltaY: number; textLimit: number },
+          | { kind: "scroll"; deltaY: number; textLimit: number }
+          | {
+              action: "click" | "type" | "select" | "upload" | "download";
+            },
         _options: unknown,
       ) {
         if (typeof request !== "number") {
+          if ("action" in request) {
+            const { document } = parseHTML(
+              page.pageHtml ??
+                `<html><body><button id="target">Ordinary target</button></body></html>`,
+            );
+            const target =
+              document.querySelector<HTMLElement>("#target") ?? document.body;
+            return probeBrowserSensitiveTarget(target, request);
+          }
           if (request.kind === "diagnosis" || request.kind === "source") {
             const capturedUrl = page.currentUrl;
             const { document } = parseHTML(

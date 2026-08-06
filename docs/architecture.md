@@ -790,6 +790,19 @@ and credentials do not. Agent-visible output directs the user to Browser Live;
 Web rejects malformed or internally inconsistent diagnosis headers before
 rendering the isolated-profile handoff banner.
 
+`browser-sensitive-target.ts` is a separate action-specific DOM probe evaluated
+on the exact selected locator before any one-use confirmation or upload-file
+preparation. It classifies only bounded structural signals: password inputs,
+credential autocomplete tokens, editable fields and submit controls inside a
+password form, known challenge containers/frames, and exact human-verification
+control text. Unknown signals are dropped; only
+`ordinary | credential | human_verification`, count, and signal-set SHA-256
+enter the private target-state binding. Credential and human-verification
+targets return a fixed policy block requiring pause-bound takeover, with no
+confirmation ticket and no Playwright action. Ordinary controls on the same
+page remain eligible. The self-contained probe is reconstructed and executed
+in tests exactly as Playwright serializes it.
+
 `BrowserTakeoverService` hangs from the existing Browser Session control
 boundary. It accepts only the active standard user Run while
 `BrowserSessionPauseManager` holds an exact paused state. A no-store snapshot

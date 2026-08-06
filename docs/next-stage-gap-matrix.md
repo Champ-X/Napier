@@ -12015,3 +12015,78 @@ Observed result:
   window for Napier's isolated Browser. It is not proof against a malicious
   remote server after the action begins, nor a broad claim about authenticated
   sessions, CAPTCHA handling, or arbitrary dynamic-site reliability.
+
+## Completed Slice: Sensitive Browser Target Human Handoff
+
+User scenario: when an Agent reaches a credential field, login-submit control,
+or human-verification control, Napier refuses Agent automation before approval
+or execution and directs the user to pause-bound takeover of the isolated
+Browser Session.
+
+Acceptance and threat boundary:
+
+- inspect only the exact selected locator before creating a confirmation or
+  reading an upload file; use one fixed self-contained DOM probe with no
+  network, page prose scan, selector guessing, or credential reads;
+- classify password inputs; username/current-password/new-password/
+  one-time-code autocomplete; editable fields and submit controls inside a
+  password form; known Turnstile/reCAPTCHA/hCaptcha containers/frames; and exact
+  human-verification controls;
+- return only `ordinary | credential | human_verification`, bounded signal
+  count, and signal-set SHA-256. Never return target text, labels, values,
+  autocomplete content, form body, URL, ref, or selector;
+- block credential and human-verification targets with one fixed
+  pause-bound-takeover reason before confirmation, upload preparation,
+  Playwright interaction, or action-scoped network access;
+- create no confirmation ticket or one-use action/upload grant for blocked
+  targets; preserve the Browser Session so the user can take control or the
+  Agent can close it;
+- keep ordinary controls on login/challenge pages eligible when the exact
+  target is not sensitive—for example a `type=button` Cancel control or an
+  unrelated search field;
+- preserve target-state freshness for eligible actions, read-only schemas,
+  isolated profiles, public-network policy, and the prohibition on automated
+  CAPTCHA solving or ambient credential adoption.
+
+Observed result:
+
+- `verified`: focused Runtime, CLI, Server, and Web coverage passes 74 tests
+  across self-contained probe reconstruction, credential autocomplete,
+  password fields/forms/submits, challenge widgets/exact controls, ordinary
+  same-page controls, unknown-signal privacy, target freshness, confirmation
+  surfaces, file actions, and formal Agent blocking;
+- `verified`: formal Agent integrations prove credential typing and challenge
+  clicking each produce `tool.blocked`, create zero confirmation events, and
+  execute neither `fill` nor `click`; durable events retain neither synthetic
+  typed text, password fixture values, nor challenge labels;
+- `verified`: real built-CLI `deepseek/deepseek-v4-flash` Dogfood used
+  `safe_automation` on `https://the-internet.herokuapp.com/login` and attempted
+  to type the synthetic marker `NAPIER_SYNTHETIC_USER` into the username field;
+- `verified`: Napier emitted the fixed policy reason
+  `Browser credential entry or login submission requires pause-bound human
+takeover`, created zero confirmation events, retained no raw URL/target/
+  marker in Browser tool receipts, kept the Session alive, and completed a
+  subsequent read `close` action. The Run exited 0 with
+  `AGENT_LOGIN_HANDOFF_OK`;
+- `verified`: Browser actions were read `start`, blocked write `type`, then
+  read `close`; the isolated Dogfood root was deleted;
+- `verified`: architecture audits 1,054 production source files and 518 test
+  files with zero cycles. Sensitive-target classification lives in one bounded
+  leaf; the 3,486-line Agent Runtime and 559-line Browser page Session remain at
+  their existing ratchets;
+- `verified`: the complete repository gate passes 2,462 regular tests with 46
+  opt-in live tests skipped by default: Root 158, CLI 221, Server 202, Web 532,
+  Contracts 3, Runtime 1,318, and SDK 28. Current performance, 266 generated
+  OpenAPI routes with 265/265 compatibility operations, the unchanged 88-file
+  Web distribution, and the unchanged 131-artifact release receipt all pass.
+  The production Web main entry remains 146.20 KiB under the 150 KiB budget;
+  Web receipt SHA-256 remains
+  `67dc05c204783c7a7a1dae9144f05b893fd8fa7b32143e734820be8302df6fad`,
+  release-set SHA-256 remains
+  `982279587499b05fc3e93031f181fe3cbaa6a5e794e7206488b1faae00af1c45`,
+  and release-receipt SHA-256 remains
+  `400d640461b453c72db43f9b866d51d1df531a0a00e4c21e54a03d603a1d4b16`;
+- `inferred`: this prevents direct Agent automation of structurally recognized
+  credentials and human verification in Napier's isolated Browser. Novel
+  provider UI may still evade structural detection, and takeover remains a
+  human workflow rather than autonomous login or CAPTCHA completion.

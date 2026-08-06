@@ -14,7 +14,11 @@ import {
 import { browserInteractionConfirmationPreview } from "./browser-tool.js";
 import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
 import type { BrowserSessionRequest } from "./browser-session-model.js";
-import type { BrowserConfirmationPageState } from "./browser-confirmed-action.js";
+import type {
+  BrowserConfirmationPageState,
+  BrowserConfirmedActionCandidate,
+} from "./browser-confirmed-action.js";
+import type { BrowserUploadAuthorizationCandidate } from "./browser-upload-authorization.js";
 import type { EventSink } from "./event-sink.js";
 import type { McpExtensionManager } from "./mcp.js";
 import { assessToolCall } from "./policy.js";
@@ -97,49 +101,27 @@ export async function preflightAgentToolPolicy(input: {
   }
   const owner = { threadId: input.run.threadId, runId: input.run.id };
   const pageRequest = browserPageConfirmationRequest(input.args);
-  let actionCandidate:
-    | ReturnType<BrowserInteractionConfirmationManager["actions"]["prepare"]>
-    | undefined;
-  let uploadCandidate:
-    | Awaited<
-        ReturnType<BrowserInteractionConfirmationManager["uploads"]["prepare"]>
-      >
-    | undefined;
+  let candidates: BrowserConfirmationCandidates | undefined;
   try {
-    actionCandidate = pageRequest
-      ? input.confirmations.actions.prepare({
-          owner,
-          callId: input.toolCall.id,
-          request: pageRequest,
-          pageState: await input.browserConfirmation.capture(
-            owner,
-            pageRequest,
-            input.signal,
-          ),
-        })
-      : undefined;
-    uploadCandidate =
-      action === "upload"
-        ? await input.confirmations.uploads.prepare({
-            owner,
-            callId: input.toolCall.id,
-            request: pageRequest as Extract<
-              BrowserSessionRequest,
-              { action: "upload" }
-            >,
-          })
-        : undefined;
+    candidates = await prepareBrowserConfirmationCandidates(
+      input,
+      owner,
+      action,
+      pageRequest,
+    );
   } catch (error) {
-    if (actionCandidate) input.confirmations.actions.discard(actionCandidate);
+    if (error instanceof SensitiveBrowserTargetError) {
+      return block(input, error.message);
+    }
     throw error;
   }
   const preview = browserInteractionConfirmationPreview(input.args);
-  if (actionCandidate) {
-    preview.pageStateSha256 = actionCandidate.pageState.contentSha256;
+  if (candidates.action) {
+    preview.pageStateSha256 = candidates.action.pageState.contentSha256;
   }
-  if (uploadCandidate) {
-    preview.fileSha256 = uploadCandidate.upload.fileSha256;
-    preview.fileBytes = uploadCandidate.upload.fileBytes;
+  if (candidates.upload) {
+    preview.fileSha256 = candidates.upload.upload.fileSha256;
+    preview.fileBytes = candidates.upload.upload.fileBytes;
   }
   let confirmation: Awaited<
     ReturnType<BrowserInteractionConfirmationManager["request"]>
@@ -157,21 +139,95 @@ export async function preflightAgentToolPolicy(input: {
       input.onEvent,
     );
   } catch (error) {
-    if (actionCandidate) input.confirmations.actions.discard(actionCandidate);
-    if (uploadCandidate) input.confirmations.uploads.discard(uploadCandidate);
+    discardBrowserConfirmationCandidates(input.confirmations, candidates);
     throw error;
   }
   if (confirmation.decision === "approve") {
-    if (actionCandidate) input.confirmations.actions.approve(actionCandidate);
-    if (uploadCandidate) input.confirmations.uploads.approve(uploadCandidate);
+    approveBrowserConfirmationCandidates(input.confirmations, candidates);
     return undefined;
   }
-  if (actionCandidate) input.confirmations.actions.discard(actionCandidate);
-  if (uploadCandidate) input.confirmations.uploads.discard(uploadCandidate);
+  discardBrowserConfirmationCandidates(input.confirmations, candidates);
   return block(
     input,
     `Browser ${action} action was not confirmed (${confirmation.confirmation.status})`,
   );
+}
+
+interface BrowserConfirmationCandidates {
+  action?: BrowserConfirmedActionCandidate;
+  upload?: BrowserUploadAuthorizationCandidate;
+}
+
+class SensitiveBrowserTargetError extends Error {}
+
+async function prepareBrowserConfirmationCandidates(
+  input: Parameters<typeof preflightAgentToolPolicy>[0],
+  owner: { threadId: string; runId: string },
+  action: Parameters<
+    BrowserInteractionConfirmationManager["request"]
+  >[0]["action"],
+  pageRequest: ReturnType<typeof browserPageConfirmationRequest>,
+): Promise<BrowserConfirmationCandidates> {
+  const pageState = pageRequest
+    ? await input.browserConfirmation.capture(owner, pageRequest, input.signal)
+    : undefined;
+  if (pageState && pageState.targetSensitivity !== "ordinary") {
+    throw new SensitiveBrowserTargetError(
+      sensitiveBrowserTargetReason(pageState.targetSensitivity),
+    );
+  }
+  const candidate = pageRequest
+    ? input.confirmations.actions.prepare({
+        owner,
+        callId: input.toolCall.id,
+        request: pageRequest,
+        pageState: pageState!,
+      })
+    : undefined;
+  try {
+    const upload =
+      action === "upload"
+        ? await input.confirmations.uploads.prepare({
+            owner,
+            callId: input.toolCall.id,
+            request: pageRequest as Extract<
+              BrowserSessionRequest,
+              { action: "upload" }
+            >,
+          })
+        : undefined;
+    return {
+      ...(candidate ? { action: candidate } : {}),
+      ...(upload ? { upload } : {}),
+    };
+  } catch (error) {
+    if (candidate) input.confirmations.actions.discard(candidate);
+    throw error;
+  }
+}
+
+function approveBrowserConfirmationCandidates(
+  confirmations: BrowserInteractionConfirmationManager,
+  candidates: BrowserConfirmationCandidates,
+): void {
+  if (candidates.action) confirmations.actions.approve(candidates.action);
+  if (candidates.upload) confirmations.uploads.approve(candidates.upload);
+}
+
+function discardBrowserConfirmationCandidates(
+  confirmations: BrowserInteractionConfirmationManager,
+  candidates: BrowserConfirmationCandidates,
+): void {
+  if (candidates.action) confirmations.actions.discard(candidates.action);
+  if (candidates.upload) confirmations.uploads.discard(candidates.upload);
+}
+
+function sensitiveBrowserTargetReason(
+  sensitivity: "credential" | "human_verification",
+): string {
+  return sensitivity === "credential"
+    ? "Browser credential entry or login submission requires pause-bound human takeover"
+    : "Browser human-verification controls require pause-bound human takeover";
 }
 
 function browserPageConfirmationRequest(

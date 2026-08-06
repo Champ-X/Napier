@@ -197,7 +197,6 @@ export class PersistentBrowserSession {
       async () => this.close(),
     );
   }
-
   async captureConfirmationPageState(
     request: BrowserConfirmedPageRequest,
     signal?: AbortSignal,
@@ -205,6 +204,7 @@ export class PersistentBrowserSession {
     return await captureBrowserPageConfirmationState({
       page: this.tabs.activePage,
       target: request.target,
+      action: request.action,
       locator: browserPageLocator,
       sessionOperation: this.operationCount,
       sessionIdSha256: this.idSha256,

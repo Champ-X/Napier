@@ -140,6 +140,8 @@ function confirmationState(
     currentUrlSha256: "e".repeat(64),
     currentOriginSha256: "f".repeat(64),
     targetStateSha256: sha256("stable target"),
+    targetSensitivity: "ordinary",
+    targetSensitivitySha256: sha256(canonicalJson([])),
     ...overrides,
   });
 }

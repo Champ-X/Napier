@@ -728,6 +728,15 @@ canonical signal-set SHA-256, and takeover recommendation. Web verifies those
 fields with the PNG receipt and renders **Login required** or **Human
 verification required** with a direct **Take control** action.
 
+Confirmed Agent actions additionally inspect the exact selected target before
+opening an approval docket. Typing into password, username/current-password/
+new-password/one-time-code, or other editable fields in a password form;
+clicking that form's submit control; and operating known human-verification
+widgets, frames, or exact controls are ineligible for Agent automation. Napier
+returns a fixed pause-bound takeover requirement, creates no confirmation, and
+executes no target action. Ordinary controls—even a `type=button` Cancel control
+on the same login page—remain eligible for normal state-bound confirmation.
+
 The same panel exposes **Pause** and **Resume** only for that active standard
 user Run and active Browser Session. Pause authority becomes active
 immediately, but it never interrupts an in-flight Browser action. Instead, the
