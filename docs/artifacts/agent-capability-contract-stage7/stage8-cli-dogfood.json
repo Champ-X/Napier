@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-07T07:05:29+08:00",
+  "baseCommit": "6fe61355bb7322230bb637285f50160f3799faf2",
+  "store": {
+    "identity": "/private/tmp/napier-stage8-cli.DnenLm/state",
+    "canonicalIdentityVerified": true,
+    "isolation": "fresh single Store used for every command in this receipt",
+    "finalWorkspaceSha256": "697b500cf39e2e7da7c1208f25b1996854bc10055585458b033595baff5b1fc8"
+  },
+  "commands": [
+    {
+      "purpose": "schema-v1 default status",
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-cli.DnenLm/workspace --data-root /private/tmp/napier-stage8-cli.DnenLm/state --jsonl",
+      "exitCode": 0,
+      "agentRevision": 1,
+      "schemaVersion": 1,
+      "action": "status",
+      "driftState": "current",
+      "ownership": "recommended",
+      "projectionSha256": "6b9080426bf587ab8f6f7186a99815f3f3c5cfe967a7dd5f7101cf640a21dd14"
+    },
+    {
+      "purpose": "authentic Browser override",
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-cli.DnenLm/workspace --data-root /private/tmp/napier-stage8-cli.DnenLm/state --preset browser --apply --jsonl",
+      "exitCode": 0,
+      "agentRevision": 2,
+      "action": "applied",
+      "presetId": "browser"
+    },
+    {
+      "purpose": "exact restore preview",
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-cli.DnenLm/workspace --data-root /private/tmp/napier-stage8-cli.DnenLm/state --restore-recommended --jsonl",
+      "exitCode": 0,
+      "agentRevision": 2,
+      "schemaVersion": 2,
+      "action": "restore_preview",
+      "operationCount": 26,
+      "explicitOverrideFields": [
+        "enabledTools",
+        "enabledSkills",
+        "enabledSubagents"
+      ],
+      "diffSha256": "b541d9d921a7f190fa1fec41dbed12a46597beb3b827240222baa964e026d182",
+      "projectionSha256": "ec2c7b902990a9bf5edb4594b63f7b9e3aa17ed10c19705d3a9c54928846a995"
+    },
+    {
+      "purpose": "exact non-noop restore commit",
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-cli.DnenLm/workspace --data-root /private/tmp/napier-stage8-cli.DnenLm/state --restore-recommended --apply --expected-revision 2 --diff-sha256 b541d9d921a7f190fa1fec41dbed12a46597beb3b827240222baa964e026d182 --jsonl",
+      "exitCode": 0,
+      "previousRevision": 2,
+      "agentRevision": 3,
+      "schemaVersion": 2,
+      "action": "restored",
+      "operationCountAfterCommit": 0,
+      "driftState": "current",
+      "ownership": "recommended",
+      "projectionSha256": "c93156886207007b87e29bbeced113211eb61c9137d1dfd4abab0634f5926ad0"
+    },
+    {
+      "purpose": "schema-v1 status after restore",
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-cli.DnenLm/workspace --data-root /private/tmp/napier-stage8-cli.DnenLm/state --jsonl",
+      "exitCode": 0,
+      "agentRevision": 3,
+      "schemaVersion": 1,
+      "action": "status",
+      "driftState": "current",
+      "ownership": "recommended",
+      "projectionSha256": "c93156886207007b87e29bbeced113211eb61c9137d1dfd4abab0634f5926ad0"
+    }
+  ],
+  "restoreBinding": {
+    "lookupStatus": "valid",
+    "agentRevision": 3,
+    "source": "explicit_restore",
+    "ownership": "recommended",
+    "recommendationSha256": "17a5fb30b02770c24dff24213ade809fb1bcd452f50f9b0eb8b36a6d03c29786",
+    "revisionLedgerDisclosure": "The Agent revision ledger uses source=updated for revision 3; explicit_restore is the capability-binding provenance, not the generic Agent revision source."
+  },
+  "protectedResearch": {
+    "command": "npm run --silent napier -- run --workspace /private/tmp/napier-stage8-cli.DnenLm/workspace --data-root /private/tmp/napier-stage8-cli.DnenLm/state --prompt 'Use web_fetch on official Node.js URL https://nodejs.org/en/blog/release/v24.11.0 and answer the Node.js 24 codename with that exact official URL, no other sources' --model deepseek/deepseek-v4-flash --credential-env DEEPSEEK_API_KEY --timeout-ms 120000 --jsonl",
+    "exitCode": 0,
+    "stderrBytes": 0,
+    "provider": "deepseek",
+    "model": "deepseek/deepseek-v4-flash",
+    "credentialReference": "DEEPSEEK_API_KEY",
+    "agentRevision": 3,
+    "threadId": "thread_ca7722158a5b455199cf",
+    "runId": "run_2bc3cd73344741abb094",
+    "status": "completed",
+    "eventCount": 1196,
+    "snapshotSha256": "49d30cf16c9abf378cb3c97d9dde940d533b769af7b97f969adcb4a159c13d09",
+    "eventStreamSha256": "2262be569eaeef7e8e890a1e1ac97f439cd8a44585bf4a5d3040ad6a22324953",
+    "assistantTextSha256": "f65eb1630ce8d50b8292f74c7da81ddf332809e3cf3a798c8082f57c82007e35",
+    "terminalOutcome": "Node.js 24 codename Krypton",
+    "officialCitation": "https://nodejs.org/en/blog/release/v24.11.0",
+    "officialCitationPresent": true,
+    "requestedResearchTool": "web_fetch",
+    "toolCompletionRecordRetained": false,
+    "sourceEvidenceDisclosure": "The exact command, official citation, terminal answer, replay status, and content/event/snapshot hashes are retained. The sanitized receipt does not claim a separately retained tool-completion event after raw JSONL deletion.",
+    "bootstrapDisclosure": "Store initialization also creates the normal zero-token revision-1 demo ledger run; it is not counted as the protected research run."
+  },
+  "replay": {
+    "status": "valid",
+    "diagnostics": [],
+    "contentSha256": "65b85854343bf62447dbf1fcbbed1266516bbc87c9aa45abd9583af4376391b2",
+    "eventStreamSha256": "2262be569eaeef7e8e890a1e1ac97f439cd8a44585bf4a5d3040ad6a22324953",
+    "eventCount": 1196,
+    "runCount": 1,
+    "modelContextEnvelopeCount": 6,
+    "embeddedModelContextEnvelopeCount": 0
+  },
+  "credentialReferenceCanary": {
+    "command": "node --import tsx scripts/run-credential-reference-canary.ts",
+    "status": "pass",
+    "matchCount": 0
+  },
+  "security": {
+    "credentialValueRecorded": false,
+    "environmentFileModified": false,
+    "rawJsonlRetained": false,
+    "databaseRetained": false
+  },
+  "cleanup": "isolated Store removed after receipt capture"
+}

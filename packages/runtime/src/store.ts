@@ -261,14 +261,15 @@ import {
   resolveAgentCapabilityProfile,
 } from "./agent-capability-override.js";
 import {
-  createRollbackCapabilityBinding,
   createSeededCapabilityBinding,
   ensureCurrentCapabilityBindings,
-  lookupCapabilityBinding,
-  propagateUpdatedCapabilityBinding,
-  validCapabilityBinding,
   type CapabilityBindingLookup,
 } from "./agent-capability-bindings.js";
+import {
+  rolledBackAgentCapabilityBinding,
+  storedAgentCapabilityBinding,
+  updatedAgentCapabilityBinding,
+} from "./agent-capability-store-state.js";
 import {
   CapabilityRestoreConflictError,
   CapabilityRestorePersistenceError,
@@ -1156,12 +1157,7 @@ export class LocalStore {
   ): CapabilityBindingLookup {
     this.assertInitialized();
     this.getAgent(agentId);
-    return lookupCapabilityBinding(
-      this.state.agentCapabilityBindings,
-      agentId,
-      revision,
-      { retainedRevisions: this.state.agentRevisions },
-    );
+    return storedAgentCapabilityBinding(this.state, agentId, revision);
   }
 
   async updateAgent(
@@ -1175,15 +1171,12 @@ export class LocalStore {
       );
       const current = this.state.agents[index];
       if (!current) throw new Error(`Agent not found: ${agentId}`);
-      const currentBinding = validCapabilityBinding(
-        lookupCapabilityBinding(
-          this.state.agentCapabilityBindings,
-          agentId,
-          current.revision,
-          { retainedRevisions: this.state.agentRevisions },
-        ),
-      );
       const updated = updateAgentProfile(current, request);
+      const binding = updatedAgentCapabilityBinding(
+        this.state,
+        current,
+        updated,
+      );
       this.state.agents[index] = updated;
       if (updated.revision !== current.revision) {
         this.state.agentRevisions.push(
@@ -1191,11 +1184,6 @@ export class LocalStore {
             source: "updated",
             changedFields: changedAgentFields(current, updated),
           }),
-        );
-        const binding = propagateUpdatedCapabilityBinding(
-          currentBinding,
-          current,
-          updated,
         );
         if (binding) this.state.agentCapabilityBindings.push(binding);
         await this.persistState();
@@ -1233,15 +1221,11 @@ export class LocalStore {
       });
       this.state.agents[index] = agent;
       this.state.agentRevisions.push(revision);
-      const targetBinding = validCapabilityBinding(
-        lookupCapabilityBinding(
-          this.state.agentCapabilityBindings,
-          target.agentId,
-          target.revision,
-          { retainedRevisions: this.state.agentRevisions },
-        ),
+      const binding = rolledBackAgentCapabilityBinding(
+        this.state,
+        target,
+        agent,
       );
-      const binding = createRollbackCapabilityBinding(targetBinding, agent);
       if (binding) this.state.agentCapabilityBindings.push(binding);
       await this.persistState();
       return structuredClone({ agent, revision });

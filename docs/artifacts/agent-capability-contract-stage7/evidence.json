@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-07T06:16:50+08:00",
-  "scope": "Default Agent Capability Contract v1 Stage 7 repair round 2 and re-review evidence",
-  "baseCommit": "d2924c770972712dc77cdf480d1bbf1dc8d06b35",
+  "capturedAt": "2026-08-07T07:27:16+08:00",
+  "scope": "Default Agent Capability Contract v1 Stage 7 round-2 evidence plus Stage 8 entry-capability closure",
+  "baseCommit": "6fe61355bb7322230bb637285f50160f3799faf2",
   "sourceState": "dirty worktree; no commit or staging performed",
   "verification": {
     "repositoryCheck": {
       "command": "npm run check",
-      "status": "pass_after_receipt_refresh",
+      "status": "pass",
       "exitCode": 0,
       "suites": {
         "root": { "filesPassed": 24, "testsPassed": 162 },
@@ -21,9 +21,9 @@
         "web": { "filesPassed": 109, "testsPassed": 548 },
         "contracts": { "filesPassed": 1, "testsPassed": 3 },
         "runtime": {
-          "filesPassed": 252,
+          "filesPassed": 253,
           "filesSkipped": 14,
-          "testsPassed": 1347,
+          "testsPassed": 1351,
           "testsSkipped": 31
         },
         "sdk": { "filesPassed": 7, "testsPassed": 28 }
@@ -31,7 +31,7 @@
       "audits": {
         "runtimeEnvironment": "pass",
         "packageLock": "pass",
-        "architecture": "1089 source files; 532 test files; 0 allowed cycles",
+        "architecture": "1090 source files; 533 test files; 0 allowed cycles",
         "managementOpenApi": "270 routes; generated artifact current",
         "managementOpenApiCompatibility": "270/270 operations verified",
         "codingComparison": "pass",
@@ -54,10 +54,10 @@
         "testsPassed": 5
       },
       {
-        "command": "npm exec --workspace @napier/runtime -- vitest run test/agent-capability-contract.test.ts test/agent-capability-recommendation.test.ts test/agent-capability-replay-import.test.ts",
+        "command": "npm exec --workspace @napier/runtime -- vitest run test/agent-capability-store-state.test.ts test/agent-capability-contract.test.ts test/agent-capability-recommendation.test.ts test/agent-capability-replay-import.test.ts",
         "status": "pass",
-        "filesPassed": 3,
-        "testsPassed": 26
+        "filesPassed": 4,
+        "testsPassed": 30
       },
       {
         "command": "npm exec --workspace @napier/server -- vitest run test/agent-capability-http.test.ts",
@@ -91,9 +91,9 @@
       {
         "command": "npm test -w @napier/runtime",
         "status": "pass",
-        "filesPassed": 252,
+        "filesPassed": 253,
         "filesSkipped": 14,
-        "testsPassed": 1347,
+        "testsPassed": 1351,
         "testsSkipped": 31
       },
       {
@@ -115,7 +115,7 @@
       "matchCount": 0
     },
     "architectureBudgets": {
-      "storeSourceLines": 14407,
+      "storeSourceLines": 14391,
       "runtimeRootExportLines": 201,
       "contractTestLines": 994,
       "recommendationTestLines": 84,
@@ -125,6 +125,86 @@
     "managementOpenApiResponses": {
       "GET /api/agents/{agentId}/capabilities": [200, 400, 404, 409, 413, 500],
       "POST /api/agents/{agentId}/capabilities/restore": [200, 400, 404, 409, 413, 422, 500, 503]
+    }
+  },
+  "stage8Closure": {
+    "receipts": {
+      "protectedRootCli": "stage8-cli-dogfood.json",
+      "exactOldReader": "stage8-old-reader.json",
+      "cliWebSameStoreParity": "stage8-cli-web-parity.json"
+    },
+    "architecture": {
+      "extraction": "Store-facing capability binding lookup, update propagation, and rollback propagation moved coherently into packages/runtime/src/agent-capability-store-state.ts.",
+      "storeSourceLines": 14391,
+      "previousCeiling": 14407,
+      "currentCeiling": 14391,
+      "strictlyBelowPreviousCeiling": true,
+      "newOrRaisedExemptions": 0,
+      "architectureAudit": "1090 source files; 533 test files; 0 allowed cycles"
+    },
+    "protectedRootCli": {
+      "singleStore": true,
+      "revisionSequence": [1, 2, 3],
+      "overridePreset": "browser",
+      "restoreWasNonNoop": true,
+      "restoreOperationCount": 26,
+      "restoreBindingSource": "explicit_restore",
+      "schemaV1StatusAfterRestore": true,
+      "officialSourceResearchOnRestoredAgent": true,
+      "replayValid": true,
+      "credentialValueRecorded": false
+    },
+    "oldReader": {
+      "commit": "d2924c770972712dc77cdf480d1bbf1dc8d06b35",
+      "sameStoreReadExitCode": 0,
+      "sameStoreWriteExitCode": 0,
+      "oldWriteRevision": 3,
+      "bindingArrayPreserved": true,
+      "oldWriteCreatedUnboundRevision": true,
+      "currentReopenDriftState": "custom_unmanaged",
+      "currentReopenOwnership": "unmanaged",
+      "restartReopenCount": 2
+    },
+    "cliWebParity": {
+      "sentinelPreset": "browser",
+      "sentinelRevision": 2,
+      "sameCanonicalStoreIdentity": true,
+      "projectionDeepEqual": true,
+      "projectionSha256": "ec2c7b902990a9bf5edb4594b63f7b9e3aa17ed10c19705d3a9c54928846a995",
+      "storeHashUnchangedAcrossWebRead": true
+    },
+    "webEvidenceLinkage": {
+      "staleUnknownLegacy": {
+        "screenshot": "stale.jpeg",
+        "deterministicTest": "agent-capability-contract.test.ts — detects the authentic pre-search/search-fetch historical fixture without changing its profile (including stale/unknown_legacy after restart)"
+      },
+      "customUnmanaged": {
+        "screenshot": "custom-unmanaged.jpeg",
+        "deterministicTests": [
+          "agent-capability-replay-import.test.ts — keeps source ownership and marks the imported Agent custom_unmanaged",
+          "stage8-old-reader.json — two current-reader reopen cycles"
+        ]
+      },
+      "broken": {
+        "screenshot": "broken.jpeg",
+        "deterministicTest": "agent-capability-contract.test.ts — retains malformed non-array metadata as actionable broken state across restarts"
+      },
+      "conflict409": {
+        "screenshot": "conflict-auto-refetch.jpeg",
+        "deterministicTest": "AgentCapabilityContractCard.test.tsx — automatically refetches an authoritative conflict projection and requires renewed confirmation"
+      },
+      "composerSummary": {
+        "deterministicTest": "agent-capability-composer.test.ts — makes drift, ownership, unavailable, catalog-only, and unverified states concise"
+      },
+      "revisionFlow": {
+        "screenshots": [
+          "web-before-rollback.jpeg",
+          "web-after-rollback.jpeg",
+          "web-after-rerestore.jpeg"
+        ],
+        "visibleRevisions": [3, 4, 5],
+        "persistenceEvidence": "Distinct HTTP projection hashes plus visible revision history; rollback and binding persistence are also covered by runtime tests."
+      }
     }
   },
   "cliContract": {
@@ -328,10 +408,16 @@
     "Round 2: the first Midscene command failed before interaction because MIDSCENE_MODEL_NAME was absent. Two further commands failed before interaction because one model identifier was invalid and another was blocked by provider privacy policy. No page state changed in those attempts.",
     "Round 2: the granular re-restore checkbox action over-planned: it scrolled, clicked Review / restore again, clicked the visible review checkbox, scrolled, then performed the UI action that created REV 5. It was interrupted during the next planning cycle. REV 5 was then independently confirmed by a fresh Midscene assertion, a distinct screenshot, and a read-only HTTP projection.",
     "Round 2: the focused server test first ran 2/3 because its test import had not followed the new mutation-only runtime subpath. The import was corrected and the exact command reran 3/3.",
-    "Round 2: the first full npm run check stopped only because the release receipt predated the regenerated OpenAPI compatibility fixture. The receipt was regenerated after all artifacts and the complete gate reran successfully."
+    "Round 2: the first full npm run check stopped only because the release receipt predated the regenerated OpenAPI compatibility fixture. The receipt was regenerated after all artifacts and the complete gate reran successfully.",
+    "Stage 8: the first architecture audit ran before its existing store.ts ceiling was lowered from 14407 to the extracted file's actual 14391 lines, so it correctly failed on a stale exact ceiling. No ceiling was raised or exemption added; after lowering the ceiling, the audit passed with 1090 source files, 533 test files, and zero allowed cycles.",
+    "Stage 8 old-reader setup: npm ci at exact d2924c7 reported the pre-existing node-domexception deprecation and one moderate audit finding; installation and both required builds exited 0.",
+    "Stage 8 cleanup: the first exact-root rm -rf request was rejected before execution by the command safety harness. The already-validated temporary roots were then removed with exact-root find -depth -delete; absence and the single-worktree inventory were verified.",
+    "Stage 8 first re-review correctly found a 131 MiB raw Midscene Chrome profile left in the system temporary directory. Its timestamps matched this task's capture; after verifying the exact canonical path, current-user ownership, zero symlinks, zero protected names, and no live/open process, the profile was removed with exact-root find -depth -delete. Both independent re-reviews were invalidated and restarted after this cleanup/evidence edit.",
+    "Stage 8 second re-review found that the first extraction had moved rollback provenance lookup before the new revision append, unlike the original ordering. The lookup was restored after the append and a future-binding ordering regression was added. Its first focused run had 29 passes and one failure because the new updated-revision fixture omitted required changedFields; the fixture was corrected and the exact focused command reran 30/30 before the full gate passed 1351 runtime tests.",
+    "Stage 8 second re-review also found that the parity receipt conflated the deterministic test's temporary Store with a separate hash-printing manual harness. The receipt now distinguishes their Store prefixes and assertions, and explains the product semantic projection hash versus the complete serialized-JSON receipt hash."
   ],
   "cleanup": {
-    "cleanupFollowupAt": "2026-08-07T06:31:42+08:00",
+    "cleanupFollowupAt": "2026-08-07T07:27:16+08:00",
     "removedHistoricalRoot": "napier-m0.O2p0kb",
     "historicalWorktreesRemoved": [
       "worktree-pre-search",
@@ -342,6 +428,8 @@
       "napier-stage7-r2-cli.cvKlPa",
       "napier-stage7-r2-cli-retry.mHw9Cd",
       "napier-stage7-r2-web.SyiEyF",
+      "napier-stage8-cli.DnenLm",
+      "napier-stage8-downgrade.SbPaO4",
       "napier-midscene-report-inspect",
       "napier-capability-dogfood.ADxZSa",
       "napier-capability-web.lwMpXz",
@@ -371,7 +459,17 @@
       "remainingNameOrMarkerMatches": 0
     },
     "gitWorktreesAfterCleanup": ["/Users/bytedance/projects/Napier"],
-    "rawMidsceneRemoved": true
+    "rawMidsceneRemoved": true,
+    "rawMidsceneProfileRemoved": {
+      "path": "${TMPDIR}/midscene-puppeteer-profile",
+      "sizeBeforeRemoval": "131 MiB",
+      "canonicalTargetVerified": true,
+      "owner": "current user",
+      "symlinkCount": 0,
+      "protectedFilenameMatchCount": 0,
+      "openFileCount": 0,
+      "removed": true
+    }
   },
   "security": {
     "credentialValuesRecorded": false,

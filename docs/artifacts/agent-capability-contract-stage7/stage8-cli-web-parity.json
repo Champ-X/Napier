@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-07T07:05:29+08:00",
+  "baseCommit": "6fe61355bb7322230bb637285f50160f3799faf2",
+  "formalTestCommand": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
+  "formalTestName": "returns the identical deterministic projection through CLI and Web HTTP on one persisted sentinel Store",
+  "formalTestExitCode": 0,
+  "formalTestStorePrefix": "${TMPDIR}/napier-projection-parity-",
+  "formalTestAssertions": {
+    "canonicalRealpathPassedToCliAndWeb": true,
+    "browserSentinelRevision": 2,
+    "cliWebProjectionDeepEqual": true,
+    "projectionSha256Equal": true,
+    "workspaceHashUnchangedAcrossWebRead": true,
+    "temporaryStoreRemovedByAfterEach": true
+  },
+  "manualCapture": {
+    "method": "A separate one-shot Node harness mirrored the formal test through the same built runCli, createServices, and createApp APIs so it could print secret-free hashes before deleting its Store.",
+    "store": {
+      "identity": "/private/var/folders/9c/8zfpbxcx005_pwqynx61s3_c0000gn/T/napier-stage8-parity.3JnYL0/state",
+      "canonicalRealpathVerified": true,
+      "sameIdentityPassedToCliAndWeb": true,
+      "sentinelPreset": "browser",
+      "agentRevision": 2
+    },
+    "sentinelApplyExitCode": 0,
+    "cliStatusExitCode": 0,
+    "cliStderrBytes": 0,
+    "webHttpStatus": 200,
+    "contractProjectionSha256": "ec2c7b902990a9bf5edb4594b63f7b9e3aa17ed10c19705d3a9c54928846a995",
+    "serializedProjectionJsonSha256": "f0702858a1a4fda2f4340e2b4f51d48b61ef85f4a146a2fe48a0759242f53df2",
+    "hashDistinction": "contractProjectionSha256 is the product's canonical semantic projection hash; serializedProjectionJsonSha256 hashes the complete captured JSON serialization as an independent receipt checksum.",
+    "cliWebProjectionDeepEqual": true,
+    "workspaceSha256BeforeWebRead": "6e96f279888f1034f28ec22f408c9e85f208fd937585a2eeb2e131e732896fb6",
+    "workspaceSha256AfterWebRead": "6e96f279888f1034f28ec22f408c9e85f208fd937585a2eeb2e131e732896fb6",
+    "webReadWasImmutable": true,
+    "cleanup": "manual-capture sentinel Store removed immediately after capture"
+  }
+}

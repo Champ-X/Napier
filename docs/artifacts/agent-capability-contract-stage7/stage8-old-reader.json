@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-07T07:05:29+08:00",
+  "newCodeCommit": "6fe61355bb7322230bb637285f50160f3799faf2",
+  "oldReaderCommit": "d2924c770972712dc77cdf480d1bbf1dc8d06b35",
+  "store": {
+    "identity": "/private/tmp/napier-stage8-downgrade.SbPaO4/state",
+    "canonicalIdentityVerified": true,
+    "sameStoreAcrossReaders": true
+  },
+  "toolVersions": {
+    "node": "v24.16.0",
+    "npm": "11.13.0",
+    "git": "2.50.1 (Apple Git-155)",
+    "typescript": "5.9.3"
+  },
+  "oldReaderPreparation": [
+    {
+      "command": "git worktree add --detach /private/tmp/napier-stage8-downgrade.SbPaO4/old-reader d2924c770972712dc77cdf480d1bbf1dc8d06b35",
+      "exitCode": 0
+    },
+    {
+      "command": "npm ci",
+      "cwd": "/private/tmp/napier-stage8-downgrade.SbPaO4/old-reader",
+      "exitCode": 0,
+      "disclosure": "npm reported the pre-existing node-domexception deprecation and one moderate audit finding; neither changed the exit status."
+    },
+    {
+      "command": "npm run build:core && npm run build -w @napier/cli",
+      "cwd": "/private/tmp/napier-stage8-downgrade.SbPaO4/old-reader",
+      "exitCode": 0
+    }
+  ],
+  "newCodePreparation": [
+    {
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-downgrade.SbPaO4/workspace --data-root /private/tmp/napier-stage8-downgrade.SbPaO4/state --jsonl",
+      "exitCode": 0,
+      "agentRevision": 1
+    },
+    {
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-downgrade.SbPaO4/workspace --data-root /private/tmp/napier-stage8-downgrade.SbPaO4/state --preset browser --apply --jsonl",
+      "exitCode": 0,
+      "agentRevision": 2,
+      "ownership": "explicit_overrides"
+    }
+  ],
+  "beforeOldWrite": {
+    "workspaceSha256": "4a644e5dbdb600404d28f10fd1f25b051b8c168848bb82942e97d1ff21bbf967",
+    "canonicalBindingArraySha256": "ae04745c2befc70e7b553d21817eeca4a7a1123a38f9ca38c509551b44f9b95d",
+    "bindingRevisions": [1, 2],
+    "revision2BindingStatus": "valid"
+  },
+  "oldReaderOperations": [
+    {
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-downgrade.SbPaO4/workspace --data-root /private/tmp/napier-stage8-downgrade.SbPaO4/state --jsonl",
+      "cwd": "/private/tmp/napier-stage8-downgrade.SbPaO4/old-reader",
+      "exitCode": 0,
+      "schemaVersion": 1,
+      "action": "status",
+      "agentRevision": 2,
+      "presetId": "browser"
+    },
+    {
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-downgrade.SbPaO4/workspace --data-root /private/tmp/napier-stage8-downgrade.SbPaO4/state --preset data --apply --jsonl",
+      "cwd": "/private/tmp/napier-stage8-downgrade.SbPaO4/old-reader",
+      "exitCode": 0,
+      "schemaVersion": 1,
+      "action": "applied",
+      "agentRevision": 3,
+      "presetId": "data"
+    },
+    {
+      "command": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-downgrade.SbPaO4/workspace --data-root /private/tmp/napier-stage8-downgrade.SbPaO4/state --jsonl",
+      "cwd": "/private/tmp/napier-stage8-downgrade.SbPaO4/old-reader",
+      "exitCode": 0,
+      "schemaVersion": 1,
+      "action": "status",
+      "agentRevision": 3,
+      "presetId": "data"
+    }
+  ],
+  "afterOldWriteBeforeCurrentReopen": {
+    "workspaceSha256": "2f72a6c828b4dd363099c6a4d7c4f816cc005e80b82977d4f6c56b2641c5fca9",
+    "canonicalBindingArraySha256": "ae04745c2befc70e7b553d21817eeca4a7a1123a38f9ca38c509551b44f9b95d",
+    "bindingArrayUnchanged": true,
+    "bindingRevisions": [1, 2],
+    "oldWriteCreatedUnboundRevision": 3
+  },
+  "currentReaderReopen": {
+    "rootCliCommand": "npm run --silent napier -- capabilities --workspace /private/tmp/napier-stage8-downgrade.SbPaO4/workspace --data-root /private/tmp/napier-stage8-downgrade.SbPaO4/state --jsonl",
+    "rootCliExitCode": 0,
+    "agentRevision": 3,
+    "schemaVersion": 1,
+    "driftState": "custom_unmanaged",
+    "ownership": "unmanaged",
+    "rootCliProjectionSha256": "23064c1527c97f56f318c2cd64393c1c52daa2a3c1daaeab9f5f261575a90832",
+    "revision1BindingStatus": "valid",
+    "revision2BindingStatus": "valid",
+    "revision3BindingStatus": "missing",
+    "runtimeReopenCount": 2,
+    "deterministicRuntimeProjectionSha256": "f368ed4815e7bd1c90dab73e9cfdb1ed7fea2b3d6b24b3a9c507aeffdc972e93",
+    "assertions": [
+      "The exact old reader can read the new-code Store.",
+      "The exact old reader can write a new Agent revision without deleting or rewriting the new binding collection.",
+      "The old write creates revision 3 without inventing provenance it cannot know.",
+      "The current reader preserves revision-2 provenance and classifies unbound revision 3 as custom_unmanaged/unmanaged after restart."
+    ]
+  },
+  "cleanup": "detached worktree, node_modules, database, and isolated Store removed after receipt capture"
+}

@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, mkdtemp, readFile, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Writable } from "node:stream";
@@ -17,7 +18,7 @@ afterEach(async () => {
 });
 
 describe("Agent capability projection parity", () => {
-  it("returns the identical deterministic projection through CLI and Web HTTP", async () => {
+  it("returns the identical deterministic projection through CLI and Web HTTP on one persisted sentinel Store", async () => {
     const root = await mkdtemp(
       path.join(tmpdir(), "napier-projection-parity-"),
     );
@@ -25,22 +26,38 @@ describe("Agent capability projection parity", () => {
     const workspaceRoot = path.join(root, "workspace");
     const dataRoot = path.join(root, "state");
     await mkdir(workspaceRoot);
-    const stdout = new CaptureWritable();
-    const stderr = new CaptureWritable();
-    const code = await runCli(
+    const applied = await runCapabilityCli(
       [
         "capabilities",
         "--workspace",
         workspaceRoot,
         "--data-root",
         dataRoot,
+        "--preset",
+        "browser",
+        "--apply",
         "--jsonl",
       ],
-      { cwd: root, env: {}, stdout, stderr },
+      root,
     );
-    expect(code).toBe(0);
-    expect(stderr.text()).toBe("");
-    const cli = JSON.parse(stdout.text());
+    expect(applied).toEqual(
+      expect.objectContaining({ action: "applied", agentRevision: 2 }),
+    );
+    const storeIdentity = await realpath(dataRoot);
+    const beforeHttpSha256 = await sha256File(
+      path.join(storeIdentity, "workspace.json"),
+    );
+    const cli = await runCapabilityCli(
+      [
+        "capabilities",
+        "--workspace",
+        workspaceRoot,
+        "--data-root",
+        storeIdentity,
+        "--jsonl",
+      ],
+      root,
+    );
     expect(cli.schemaVersion).toBe(1);
     expect(cli.action).toBe("status");
     expect(cli.projection).toEqual(
@@ -50,7 +67,11 @@ describe("Agent capability projection parity", () => {
       }),
     );
 
-    const services = await createServices({ workspaceRoot, dataRoot, env: {} });
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: storeIdentity,
+      env: {},
+    });
     try {
       const response = await createApp(services).request(
         `/api/agents/${cli.agentId}/capabilities`,
@@ -62,8 +83,27 @@ describe("Agent capability projection parity", () => {
     } finally {
       await services.shutdownLocalRuntime();
     }
+    expect(await sha256File(path.join(storeIdentity, "workspace.json"))).toBe(
+      beforeHttpSha256,
+    );
   });
 });
+
+async function runCapabilityCli(args, cwd) {
+  const stdout = new CaptureWritable();
+  const stderr = new CaptureWritable();
+  expect(
+    await runCli(args, { cwd, env: {}, stdout, stderr }),
+  ).toBe(0);
+  expect(stderr.text()).toBe("");
+  return JSON.parse(stdout.text());
+}
+
+async function sha256File(filePath) {
+  return createHash("sha256")
+    .update(await readFile(filePath))
+    .digest("hex");
+}
 
 class CaptureWritable extends Writable {
   chunks = [];
