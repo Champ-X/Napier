@@ -640,6 +640,14 @@ tool then applies the same Run-bound Plan Artifact settlement used by
 `save_screenshot`; absent/mismatched Plan authority keeps the downloaded file
 but reports a fixed non-verification reason.
 
+Confirmed Agent `upload` binds approval to bytes rather than only a workspace
+path. Before showing the confirmation, Runtime confines and reads one regular
+non-symlink file of at most 16 MiB, then displays only its path hash, content
+SHA-256, and byte count. Approval mints one in-memory, call/Run/argument-bound
+payload; later workspace mutation cannot substitute bytes before Playwright
+selects the file. Rejection, expiry, cancellation, mismatch, or reuse discards
+the payload, and consumed buffers are zeroed best-effort after the action.
+
 For one task or interactive session, pass the same strict preset ID directly
 to `run`, `chat`, or `tui`:
 

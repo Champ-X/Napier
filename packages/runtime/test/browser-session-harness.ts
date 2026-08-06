@@ -234,7 +234,15 @@ export class FakePage {
   readonly clicked: string[] = [];
   readonly filled: Array<{ selector: string; text: string }> = [];
   readonly selected: Array<{ selector: string; values: string[] }> = [];
-  readonly uploaded: Array<{ selector: string; path: string }> = [];
+  readonly uploaded: Array<
+    | { selector: string; path: string }
+    | {
+        selector: string;
+        name: string;
+        mimeType: string;
+        buffer: Buffer;
+      }
+  > = [];
   readonly visualClicks: Array<{ x: number; y: number }> = [];
   readonly pressedKeys: string[] = [];
   readonly download: FakeDownload;
@@ -329,8 +337,14 @@ export class FakePage {
         page.selected.push({ selector, values: [...values] });
         return [];
       },
-      async setInputFiles(filePath: string) {
-        page.uploaded.push({ selector, path: filePath });
+      async setInputFiles(
+        file: string | { name: string; mimeType: string; buffer: Buffer },
+      ) {
+        page.uploaded.push(
+          typeof file === "string"
+            ? { selector, path: file }
+            : { selector, ...file, buffer: Buffer.from(file.buffer) },
+        );
       },
       async evaluate(
         _callback: unknown,

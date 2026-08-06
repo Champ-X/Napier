@@ -43,6 +43,17 @@ describe("Browser interaction confirmation Web view", () => {
     expect(
       parseBrowserInteractionConfirmation({
         ...confirmation("pending"),
+        preview: {
+          targetKind: "ref",
+          targetSha256: "e".repeat(64),
+          fileSha256: "f".repeat(64),
+          crossOriginAuthorized: false,
+        },
+      }),
+    ).toBeUndefined();
+    expect(
+      parseBrowserInteractionConfirmation({
+        ...confirmation("pending"),
         action: "navigate",
       }),
     ).toBeUndefined();
@@ -74,6 +85,8 @@ function confirmation(status: "pending" | "approved") {
     preview: {
       targetKind: "ref" as const,
       targetSha256: "e".repeat(64),
+      fileSha256: "f".repeat(64),
+      fileBytes: 128,
       crossOriginAuthorized: false,
     },
     status,

@@ -14,6 +14,7 @@ import {
 } from "./browser-session.js";
 import type { BrowserOutputArtifactRegistrar } from "./browser-output-artifact.js";
 import { settleBrowserToolOutput } from "./browser-tool-output.js";
+import type { BrowserUploadAuthorizationManager } from "./browser-upload-authorization.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 
 const targetSchema = Type.Object(
@@ -272,6 +273,7 @@ export function createBrowserTool(
   options: {
     readOnly?: boolean;
     outputArtifacts?: Pick<BrowserOutputArtifactRegistrar, "register">;
+    uploadAuthorizations?: Pick<BrowserUploadAuthorizationManager, "consume">;
   } = {},
 ): AgentTool<typeof browserSchema, BrowserSessionDetails> {
   const readOnly = options.readOnly === true;
@@ -285,13 +287,32 @@ export function createBrowserTool(
     parameters: (readOnly
       ? readOnlyBrowserSchema
       : browserSchema) as typeof browserSchema,
-    async execute(_toolCallId, input, signal) {
+    async execute(toolCallId, input, signal) {
       if (readOnly && !READ_ONLY_BROWSER_ACTIONS.has(input.action)) {
         throw new Error(
           `Browser action requires an interactive Browser capability: ${input.action}`,
         );
       }
-      const result = await manager.execute(owner, input, signal);
+      let result;
+      if (input.action === "upload" && options.uploadAuthorizations) {
+        const upload = options.uploadAuthorizations.consume({
+          owner,
+          callId: toolCallId,
+          request: input,
+        });
+        try {
+          result = await manager.executePreparedUpload(
+            owner,
+            input,
+            upload,
+            signal,
+          );
+        } finally {
+          upload.buffer.fill(0);
+        }
+      } else {
+        result = await manager.execute(owner, input, signal);
+      }
       const output = await settleBrowserToolOutput({
         owner,
         request: input,

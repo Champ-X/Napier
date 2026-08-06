@@ -12,10 +12,9 @@ import {
   type Route,
 } from "playwright-core";
 
-import {
-  assertBrowserUploadCurrent,
-  type BrowserWorkspaceFile,
-  inspectBrowserUpload,
+import type {
+  BrowserPreparedUpload,
+  BrowserWorkspaceFile,
 } from "./browser-workspace-files.js";
 import {
   type BrowserPageFileRequest,
@@ -64,6 +63,7 @@ import {
   captureBrowserPageMetadata,
   captureBrowserPageState,
 } from "./browser-page-state.js";
+import { performBrowserPageUpload } from "./browser-page-upload.js";
 import { sha256 } from "./ed25519.js";
 import { FixedIpHttpProxy } from "./fixed-ip-http-proxy.js";
 import {
@@ -72,7 +72,6 @@ import {
   validatePublicHttpUrl,
 } from "./public-network.js";
 
-type PageState = BrowserSessionPageState;
 export class PersistentBrowserSession {
   readonly idSha256 = sha256(`browser-session:${randomUUID()}`);
   operationCount = 0;
@@ -166,15 +165,15 @@ export class PersistentBrowserSession {
     reused: boolean,
     signal?: AbortSignal,
     countOperation = true,
+    preparedUpload?: BrowserPreparedUpload,
   ): Promise<BrowserSessionOperationResult> {
     if (!this.healthy) throw new Error("Browser Session is unavailable");
     this.operationCount = reserveBrowserOperation(
       this.operationCount,
       countOperation,
     );
-    return abortable(this.perform(request, reused, signal), signal, async () =>
-      this.close(),
-    );
+    const operation = this.perform(request, reused, signal, preparedUpload);
+    return abortable(operation, signal, async () => this.close());
   }
   async capturePage(
     maxChars: number,
@@ -188,9 +187,8 @@ export class PersistentBrowserSession {
     ) {
       throw new Error("Browser source capture character limit is invalid");
     }
-    if (this.operationCount >= MAX_BROWSER_SESSION_OPERATIONS) {
+    if (this.operationCount >= MAX_BROWSER_SESSION_OPERATIONS)
       throw new Error("Browser Session operation limit reached");
-    }
     this.operationCount += 1;
     return abortable(
       this.captureCurrentPage(maxChars, signal),
@@ -218,6 +216,7 @@ export class PersistentBrowserSession {
     request: BrowserSessionRequest,
     reused: boolean,
     signal?: AbortSignal,
+    preparedUpload?: BrowserPreparedUpload,
   ): Promise<BrowserSessionOperationResult> {
     const page = this.tabs.activePage;
     if (isBrowserObservationRequest(request)) {
@@ -235,7 +234,7 @@ export class PersistentBrowserSession {
         ...(signal ? { signal } : {}),
       });
     }
-    let state: PageState;
+    let state: BrowserSessionPageState;
     let file: BrowserWorkspaceFile | undefined;
     let suggestedFilenameSha256: string | undefined;
     let screenshot: Buffer | undefined;
@@ -375,13 +374,15 @@ export class PersistentBrowserSession {
           state = await captureBrowserPageState(page, signal);
           break;
         case "upload":
-          file = await inspectBrowserUpload(this.workspaceRoot, request.path);
-          await this.withNetwork(() =>
-            this.locator(page, request.target).setInputFiles(file!.target, {
-              timeout: BROWSER_ACTION_TIMEOUT_MS,
-            }),
-          );
-          await assertBrowserUploadCurrent(file);
+          file = await performBrowserPageUpload({
+            page,
+            target: request.target,
+            path: request.path,
+            workspaceRoot: this.workspaceRoot,
+            ...(preparedUpload ? { prepared: preparedUpload } : {}),
+            locator: (targetPage, target) => this.locator(targetPage, target),
+            withNetwork: (operation) => this.withNetwork(operation),
+          });
           state = await captureBrowserPageState(page, signal);
           break;
         case "screenshot":
@@ -553,7 +554,6 @@ async function abortable<T>(
 }
 
 function assertNotAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
+  if (signal?.aborted)
     throw new Error("Browser Session operation was cancelled");
-  }
 }

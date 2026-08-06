@@ -76,6 +76,14 @@ export function BrowserInteractionConfirmationPanel({
             </dd>
           </div>
         ) : null}
+        {confirmation.preview.fileSha256 ? (
+          <div>
+            <dt>File · {String(confirmation.preview.fileBytes ?? 0)} bytes</dt>
+            <dd title={confirmation.preview.fileSha256}>
+              {confirmation.preview.fileSha256.slice(0, 12)}
+            </dd>
+          </div>
+        ) : null}
         {confirmation.preview.sourceImageSha256 ? (
           <div>
             <dt>Source image</dt>

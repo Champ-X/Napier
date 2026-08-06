@@ -11,6 +11,7 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
 import { createId, nowIso } from "./ids.js";
 import type { LocalStore } from "./store.js";
+import { BrowserUploadAuthorizationManager } from "./browser-upload-authorization.js";
 
 export const BROWSER_INTERACTION_CONFIRMATION_TIMEOUT_MS = 60_000;
 
@@ -44,12 +45,14 @@ interface PendingConfirmation {
 export class BrowserInteractionConfirmationManager {
   private readonly pendingById = new Map<string, PendingConfirmation>();
   private readonly pendingByRun = new Map<string, string>();
+  readonly uploads: BrowserUploadAuthorizationManager;
   readonly available: boolean;
 
   constructor(
-    private readonly store: Pick<LocalStore, "appendEvent">,
+    private readonly store: Pick<LocalStore, "appendEvent" | "workspaceRoot">,
     options: { available?: boolean; timeoutMs?: number } = {},
   ) {
+    this.uploads = new BrowserUploadAuthorizationManager(store.workspaceRoot);
     this.available = options.available === true;
     this.timeoutMs =
       options.timeoutMs ?? BROWSER_INTERACTION_CONFIRMATION_TIMEOUT_MS;
@@ -167,6 +170,7 @@ export class BrowserInteractionConfirmationManager {
   }
 
   async cancelRun(owner: BrowserInteractionConfirmationOwner): Promise<void> {
+    this.uploads.cancelRun(owner);
     const confirmationId = this.pendingByRun.get(ownerKey(owner));
     if (!confirmationId) return;
     await this.settle(confirmationId, "cancelled").catch(() => undefined);
@@ -312,6 +316,7 @@ function validPreview(
     preview.textSha256,
     preview.valueSetSha256,
     preview.pathSha256,
+    preview.fileSha256,
     preview.sourceImageSha256,
   ];
   return (
@@ -322,8 +327,10 @@ function validPreview(
     hashes.every(
       (hash) => hash === undefined || /^[a-f0-9]{64}$/u.test(hash),
     ) &&
+    (preview.fileSha256 === undefined) === (preview.fileBytes === undefined) &&
     validOptionalCount(preview.textBytes) &&
-    validOptionalCount(preview.valueCount)
+    validOptionalCount(preview.valueCount) &&
+    validOptionalCount(preview.fileBytes)
   );
 }
 

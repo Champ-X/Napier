@@ -16,6 +16,7 @@ import {
   assertBrowserUploadCurrent,
   inspectBrowserUpload,
   MAX_BROWSER_DOWNLOAD_BYTES,
+  prepareBrowserUpload,
   writeBrowserDownload,
   writeBrowserScreenshot,
 } from "../src/browser-workspace-files.js";
@@ -46,6 +47,27 @@ describe("browser workspace files", () => {
 
     await writeFile(path.join(workspace, "input.txt"), "changed");
     await expect(assertBrowserUploadCurrent(inspected)).rejects.toThrow(
+      "changed during execution",
+    );
+  });
+
+  it("prepares exact upload bytes independently from later workspace drift", async () => {
+    const workspace = await createWorkspace();
+    await writeFile(path.join(workspace, "input.json"), '{"approved":true}\n');
+
+    const prepared = await prepareBrowserUpload(workspace, "input.json");
+    await writeFile(path.join(workspace, "input.json"), '{"approved":false}\n');
+
+    expect(prepared).toEqual(
+      expect.objectContaining({
+        path: "input.json",
+        name: "input.json",
+        mimeType: "application/json",
+        fileBytes: 18,
+      }),
+    );
+    expect(prepared.buffer.toString("utf8")).toBe('{"approved":true}\n');
+    await expect(assertBrowserUploadCurrent(prepared)).rejects.toThrow(
       "changed during execution",
     );
   });

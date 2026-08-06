@@ -83,19 +83,48 @@ export async function preflightAgentToolPolicy(input: {
       "Browser interaction confirmation is unavailable in this entry point",
     );
   }
-  const confirmation = await input.confirmations.request(
-    {
-      threadId: input.run.threadId,
-      runId: input.run.id,
-      callId: input.toolCall.id,
-      action,
-      argumentsSha256: toolInvocationArgumentsSha256(input.args),
-      preview: browserInteractionConfirmationPreview(input.args),
-    },
-    input.signal,
-    input.onEvent,
-  );
-  if (confirmation.decision === "approve") return undefined;
+  const owner = { threadId: input.run.threadId, runId: input.run.id };
+  const uploadCandidate =
+    action === "upload"
+      ? await input.confirmations.uploads.prepare({
+          owner,
+          callId: input.toolCall.id,
+          request: input.args as {
+            action: "upload";
+            target: { ref?: string; selector?: string };
+            path: string;
+          },
+        })
+      : undefined;
+  const preview = browserInteractionConfirmationPreview(input.args);
+  if (uploadCandidate) {
+    preview.fileSha256 = uploadCandidate.upload.fileSha256;
+    preview.fileBytes = uploadCandidate.upload.fileBytes;
+  }
+  let confirmation: Awaited<
+    ReturnType<BrowserInteractionConfirmationManager["request"]>
+  >;
+  try {
+    confirmation = await input.confirmations.request(
+      {
+        ...owner,
+        callId: input.toolCall.id,
+        action,
+        argumentsSha256: toolInvocationArgumentsSha256(input.args),
+        preview,
+      },
+      input.signal,
+      input.onEvent,
+    );
+  } catch (error) {
+    if (uploadCandidate) input.confirmations.uploads.discard(uploadCandidate);
+    throw error;
+  }
+  if (confirmation.decision === "approve") {
+    if (uploadCandidate) input.confirmations.uploads.approve(uploadCandidate);
+    return undefined;
+  }
+  if (uploadCandidate) input.confirmations.uploads.discard(uploadCandidate);
   return block(
     input,
     `Browser ${action} action was not confirmed (${confirmation.confirmation.status})`,

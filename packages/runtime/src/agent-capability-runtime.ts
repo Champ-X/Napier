@@ -104,6 +104,7 @@ export class AgentCapabilityRuntime {
       webFetchCapture,
       new ResearchSourceCapsuleStore(store.dataRoot),
       store,
+      browserInteractionConfirmations?.uploads,
     );
   }
 

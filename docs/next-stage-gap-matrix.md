@@ -11862,3 +11862,76 @@ Observed result:
 - `inferred`: this proves one bounded public ZIP download through the formal
   Agent/TTY path and its failure-safe Plan settlement. It is not a broad claim
   about arbitrary sites, authenticated downloads, or network reliability.
+
+## Completed Slice: Exact-Byte Confirmed Agent Browser Upload
+
+User scenario: during an ordinary Agent Run, the model can select one existing
+workspace file with a fresh page ref, show the user the exact file hash and
+size before approval, and upload those approved bytes even if the workspace
+path changes while the confirmation is pending.
+
+Acceptance and threat boundary:
+
+- expose upload only to writable Agents and retain one-use human confirmation;
+  JSONL and non-TTY execution remain read-only;
+- before confirmation, require one confined regular non-symlink workspace file
+  of at most 16 MiB and snapshot its exact bytes, normalized path, basename,
+  MIME type, SHA-256, and byte count;
+- add only target/path/file hashes and byte count to the strict confirmation
+  receipt. Never retain the raw path, filename, MIME type, or file body there;
+- on approval, mint one bounded in-memory payload keyed by Thread, Run, and
+  tool-call ID and bound to the canonical arguments hash. Reject call/Run/
+  argument substitution, mismatch, and replay;
+- pass the approved in-memory payload to Playwright rather than rereading its
+  path. Later workspace replacement must not substitute different bytes;
+- discard prepared state on rejection, expiry, cancellation, event failure, or
+  mismatch; cap prepared/approved uploads at four per Runtime and zero consumed
+  buffers best-effort after execution;
+- preserve direct internal Session uploads with canonical path confinement and
+  pre/post hash checks. Do not adopt user Browser profiles/cookies, automate
+  CAPTCHA, persist Sessions, or infer broad remote-site reliability.
+
+Observed result:
+
+- `verified`: focused Contracts, Runtime, CLI, and Web coverage passes 49 tests
+  across exact-byte preparation, one-use grants, call/Run/argument
+  substitution, cancellation cleanup, prepared-payload tampering, path drift,
+  direct Session compatibility, confirmation parser strictness, terminal/Web
+  rendering, and formal Agent execution;
+- `verified`: the same-Run Agent integration pauses after snapshotting fixture
+  bytes, changes the workspace path before approval, and proves Browser
+  execution receives only the original approved buffer, SHA-256, byte count,
+  basename, and MIME type while confirmation/tool receipts retain neither
+  version of the body nor the raw path;
+- `verified`: real built-CLI `deepseek/deepseek-v4-flash` Dogfood used
+  `safe_automation` against `https://the-internet.herokuapp.com/upload`. A fresh
+  file-input ref requested one terminal approval showing a 35-byte file with
+  SHA-256
+  `3e7e6df8b3366af64804ffe51bbd4a1669273e954e6a9bef902f0947e9762508`;
+- `verified`: a second fresh-ref confirmation approved only the form submit.
+  The resulting page displayed `File Uploaded!` and `upload-proof.txt`; Browser
+  closed, the Run completed with exit 0, and the final token was
+  `AGENT_UPLOAD_OK`;
+- `verified`: Browser actions were read `start`, write `upload`, write `click`,
+  then read `close`. Upload and click confirmations each transitioned
+  `pending -> approved`; upload confirmation and tool receipts contained no raw
+  path or file body, and the isolated Dogfood root was deleted;
+- `verified`: architecture audits 1,048 production source files and 512 test
+  files with zero cycles. The 3,487-line Agent Runtime and 559-line Browser page
+  Session remain at their existing budgets; upload preparation, authorization,
+  and page execution live in bounded leaves;
+- `verified`: the complete repository gate passes 2,449 regular tests with 46
+  opt-in live tests skipped by default: Root 158, CLI 221, Server 202, Web 532,
+  Contracts 3, Runtime 1,305, and SDK 28. Current performance, 266 generated
+  OpenAPI routes with 265/265 compatibility operations, the 88-file Web
+  distribution, and the 131-artifact release receipt all pass. The production
+  Web main entry is 145.99 KiB under the 150 KiB budget; Web receipt SHA-256 is
+  `5e9580d40cfca737e6fab8ce3015dc5bb5ad95b7e6e857572e43304c4f86e402`,
+  release-set SHA-256 is
+  `bc15277f0d957969745cd02044c22a84f02cb45ed9f76f93336eb12098369c55`,
+  and release-receipt SHA-256 is
+  `cd83b93c150a85404125dbfeb8c7be3e959703990cb606ee19f0665ea7d763a8`;
+- `inferred`: this proves one synthetic public text-file upload through the
+  formal Agent/TTY path and closes byte substitution after approval. It is not
+  a broad claim about arbitrary file types, authenticated sites, remote upload
+  reliability, or server-side content handling.

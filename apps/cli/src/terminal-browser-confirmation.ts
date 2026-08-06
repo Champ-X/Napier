@@ -123,6 +123,11 @@ export function terminalBrowserInteractionConfirmationLines(
     ...(preview.pathSha256
       ? [`[confirm] workspace path ${shortHash(preview.pathSha256)}`]
       : []),
+    ...(preview.fileSha256
+      ? [
+          `[confirm] file ${String(preview.fileBytes ?? 0)}B ${shortHash(preview.fileSha256)}`,
+        ]
+      : []),
     ...(preview.sourceImageSha256
       ? [`[confirm] source image ${shortHash(preview.sourceImageSha256)}`]
       : []),

@@ -4534,6 +4534,19 @@ then passes only path/file hashes and byte count to
 `BrowserOutputArtifactRegistrar`; registration success/skip/failure decorates
 the live tool result without changing the already verified workspace bytes.
 
+Confirmed Agent uploads use a pre-execution boundary instead. After policy
+validation and before confirmation, `BrowserUploadAuthorizationManager` reads
+one confined regular file into a bounded prepared payload and adds only its
+path hash, file hash, and byte count to the strict confirmation receipt. An
+approved candidate moves to a one-use in-memory map keyed by Thread, Run, and
+tool-call ID and remains bound to the canonical argument hash. The Browser tool
+consumes that exact payload and `browser-page-upload.ts` passes it to
+Playwright's in-memory `setInputFiles`, so path mutation after approval cannot
+change the selected bytes. Reject/expiry/event failure discards prepared state;
+Run cancellation clears pending/approved candidates; mismatch or replay fails
+closed; and consumed buffers are zeroed best-effort. Direct internal Session
+callers retain the canonical path-based upload API with pre/post hash checks.
+
 The proxy permits public subresource origins so ordinary pages can load, but
 every top-level origin transition remains action-scoped and tracked per tab.
 Because one proxy is shared by the isolated Session, Browser Route denies

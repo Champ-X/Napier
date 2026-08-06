@@ -18,10 +18,34 @@ export const MAX_BROWSER_DOWNLOAD_BYTES = 32 * 1024 * 1024;
 
 export type BrowserWorkspaceFile = WorkspaceOutputFile;
 
+export interface BrowserPreparedUpload extends BrowserWorkspaceFile {
+  name: string;
+  mimeType: string;
+  buffer: Buffer;
+}
+
 export async function inspectBrowserUpload(
   workspaceRootInput: string,
   inputPath: string,
 ): Promise<BrowserWorkspaceFile> {
+  const prepared = await prepareBrowserUpload(workspaceRootInput, inputPath);
+  try {
+    const {
+      name: _name,
+      mimeType: _mimeType,
+      buffer: _buffer,
+      ...file
+    } = prepared;
+    return file;
+  } finally {
+    prepared.buffer.fill(0);
+  }
+}
+
+export async function prepareBrowserUpload(
+  workspaceRootInput: string,
+  inputPath: string,
+): Promise<BrowserPreparedUpload> {
   const { relativePath, target } = await resolveExistingBrowserFile(
     workspaceRootInput,
     inputPath,
@@ -51,9 +75,27 @@ export async function inspectBrowserUpload(
       pathSha256: sha256(relativePath),
       fileSha256: sha256(buffer),
       fileBytes: buffer.byteLength,
+      name: path.basename(relativePath),
+      mimeType: browserUploadMimeType(relativePath),
+      buffer,
     };
   } finally {
     await handle.close();
+  }
+}
+
+export function assertBrowserPreparedUpload(
+  upload: BrowserPreparedUpload,
+): void {
+  if (
+    upload.pathSha256 !== sha256(upload.path) ||
+    upload.fileSha256 !== sha256(upload.buffer) ||
+    upload.fileBytes !== upload.buffer.byteLength ||
+    upload.fileBytes > MAX_BROWSER_UPLOAD_BYTES ||
+    upload.name !== path.basename(upload.path) ||
+    !upload.mimeType
+  ) {
+    throw new Error("Browser prepared upload is invalid");
   }
 }
 
@@ -153,6 +195,40 @@ export async function preflightBrowserScreenshot(
     action: "screenshot",
     maximumBytes: MAX_BROWSER_SCREENSHOT_BYTES,
   });
+}
+
+function browserUploadMimeType(filePath: string): string {
+  switch (path.extname(filePath).toLowerCase()) {
+    case ".txt":
+    case ".log":
+      return "text/plain";
+    case ".md":
+      return "text/markdown";
+    case ".csv":
+      return "text/csv";
+    case ".html":
+    case ".htm":
+      return "text/html";
+    case ".xml":
+      return "application/xml";
+    case ".json":
+      return "application/json";
+    case ".pdf":
+      return "application/pdf";
+    case ".zip":
+      return "application/zip";
+    case ".png":
+      return "image/png";
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".gif":
+      return "image/gif";
+    case ".webp":
+      return "image/webp";
+    default:
+      return "application/octet-stream";
+  }
 }
 
 async function resolveExistingBrowserFile(

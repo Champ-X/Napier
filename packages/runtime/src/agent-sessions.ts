@@ -6,6 +6,7 @@ import type {
   BrowserSessionRequest,
 } from "./browser-session-model.js";
 import { createBrowserTool } from "./browser-tool.js";
+import type { BrowserUploadAuthorizationManager } from "./browser-upload-authorization.js";
 import { BrowserOutputArtifactRegistrar } from "./browser-output-artifact.js";
 import {
   type LspSessionOwner,
@@ -45,6 +46,7 @@ export class AgentSessionRuntime {
     researchSourceCapsules?: ResearchSourceCapsuleStore,
     store?: Pick<LocalStore, "listRuns" | "listEvents" | "getThread"> &
       RunBoundFileArtifactStore,
+    private readonly browserUploads?: BrowserUploadAuthorizationManager,
   ) {
     this.kernels = new AgentKernelRuntime(processes);
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
@@ -105,6 +107,9 @@ export class AgentSessionRuntime {
           readOnly: options.readOnlyBrowser,
           ...(this.browserOutputArtifacts
             ? { outputArtifacts: this.browserOutputArtifacts }
+            : {}),
+          ...(this.browserUploads
+            ? { uploadAuthorizations: this.browserUploads }
             : {}),
         }),
       );

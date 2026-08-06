@@ -1,4 +1,8 @@
 import { PersistentBrowserSession } from "./browser-page-session.js";
+import {
+  assertBrowserPreparedUpload,
+  type BrowserPreparedUpload,
+} from "./browser-workspace-files.js";
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -216,10 +220,25 @@ export class RunBrowserSessionManager {
     return await this.executeRequest(owner, request, signal);
   }
 
+  async executePreparedUpload(
+    owner: BrowserSessionOwner,
+    request: Extract<BrowserSessionRequest, { action: "upload" }>,
+    upload: BrowserPreparedUpload,
+    signal?: AbortSignal,
+  ): Promise<BrowserSessionOperationResult> {
+    assertBrowserPreparedUpload(upload);
+    try {
+      return await this.executeRequest(owner, request, signal, upload);
+    } finally {
+      upload.buffer.fill(0);
+    }
+  }
+
   private async executeRequest(
     owner: BrowserSessionOwner,
     request: BrowserSessionRequest,
     signal?: AbortSignal,
+    preparedUpload?: BrowserPreparedUpload,
   ): Promise<BrowserSessionOperationResult> {
     const key = ownerKey(owner);
     return this.serialized(
@@ -269,7 +288,14 @@ export class RunBrowserSessionManager {
           }
           throw new Error("Browser Session is not active for this Run");
         }
-        return this.runOperation(key, session, request, true, signal);
+        return this.runOperation(
+          key,
+          session,
+          request,
+          true,
+          signal,
+          preparedUpload,
+        );
       },
       signal,
     );
@@ -288,9 +314,16 @@ export class RunBrowserSessionManager {
     request: BrowserSessionRequest,
     reused: boolean,
     signal?: AbortSignal,
+    preparedUpload?: BrowserPreparedUpload,
   ): Promise<BrowserSessionOperationResult> {
     try {
-      const result = await session.execute(request, reused, signal);
+      const result = await session.execute(
+        request,
+        reused,
+        signal,
+        true,
+        preparedUpload,
+      );
       if (request.action === "close") {
         this.sessions.delete(key);
         await session.close();
