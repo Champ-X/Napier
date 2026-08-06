@@ -2586,7 +2586,7 @@ receipts. Before hashing retained Benchmark files, it performs full semantic
 verification for every Series/campaign/report/attempt contract. It stores only
 artifact kinds, repo-relative paths, SHA-256 values, validity booleans, package
 name/version, and a canonical artifact-set digest. The current receipt contains
-131 artifacts and binds set SHA-256 `006628f036186d6c...`.
+131 artifacts and binds set SHA-256 `eefedf6f04a03de7...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
@@ -4506,6 +4506,22 @@ diagnosis evidence as part of the same fail-closed consistency check.
 `browser-workspace-files.ts` owns upload/download path and byte confinement;
 `browser-session-details.ts` owns bounded operation evidence;
 `browser-tool.ts` owns Agent schema and privacy projection.
+
+Agent screenshot delivery is a two-operation byte binding rather than a new
+pixel store. Read-only `screenshot` returns live PNG content plus its safe
+`screenshotSha256`. A writable standard user Run with an explicit confirmation
+channel may then request `save_screenshot(path, expectedLiveImageSha256)`.
+Policy first requires a confined new `.png` path and a SHA-256 value; the
+one-use confirmation retains only path/request hashes. The serialized Browser
+Session recaptures the selected fixed viewport with network closed and
+`browser-page-file-operation.ts` requires the new bytes to equal the supplied
+prior screenshot digest before `workspace-output-file.ts` creates the file
+exclusively. `browser-tool.ts` then invokes the same
+`BrowserOutputArtifactRegistrar` used by takeover for any exact current
+Run-bound expected file Artifact. Registration failure keeps the verified user
+bytes and reports the fixed reason; it cannot roll back the screenshot.
+Visual-click/keypress authority and screenshot saves bound to the user's
+displayed Live frame remain pause/takeover-only.
 
 The proxy permits public subresource origins so ordinary pages can load, but
 every top-level origin transition remains action-scoped and tracked per tab.

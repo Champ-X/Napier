@@ -60,10 +60,28 @@ export function assessBrowserToolCall(
       reason: "interactive Browser actions require a writable Agent policy",
     };
   }
-  if (action === "upload" || action === "download") {
+  if (
+    action === "upload" ||
+    action === "download" ||
+    action === "save_screenshot"
+  ) {
     const candidate = getStringField(input, "path");
     const denial = workspacePathDenial(candidate, workspaceRoot);
     if (denial) return denial;
+    if (
+      action === "save_screenshot" &&
+      (!candidate?.toLowerCase().endsWith(".png") ||
+        !/^[a-f0-9]{64}$/u.test(
+          getStringField(input, "expectedLiveImageSha256") ?? "",
+        ))
+    ) {
+      return {
+        allowed: false,
+        risk: "high",
+        reason:
+          "browser screenshot save requires a .png path and exact prior screenshot hash",
+      };
+    }
   }
   return {
     allowed: true,

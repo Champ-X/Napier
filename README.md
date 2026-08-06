@@ -618,6 +618,18 @@ one-shot input, resume, SDK/RPC, Workflows, schedules, and channels do not gain
 an interactive decision channel and continue to receive the read-only Browser
 schema.
 
+Writable confirmed Browser entries also expose `save_screenshot`, but only
+after a read-only `screenshot` returns its exact `screenshotSha256`. The save
+request must repeat that digest and name a new workspace-relative `.png` path.
+Runtime recaptures the selected viewport with network closed, requires the
+bytes to match the prior digest, writes through the exclusive Browser/Fetch
+output transaction, and returns only path/file hashes and byte count. When one
+active Plan step is already bound to the Run and declares the exact file
+Artifact, the same standard produced/verified lifecycle settles it
+automatically. Read-only profiles can capture a live image but cannot save it;
+visual clicks, keypresses, and user-observed screenshot saves remain
+pause-bound takeover operations.
+
 For one task or interactive session, pass the same strict preset ID directly
 to `run`, `chat`, or `tui`:
 
@@ -6254,7 +6266,7 @@ Security, restart/offline-wait/budget Long-horizon, Research, and UX Benchmark
 Series, the durable Goal no-progress Series, the Process recovery Series, and
 all forty-seven Result/Ledger pairs by SHA-256. It also recursively verifies
 the open-web executor campaign, both sibling reports, and both failed-attempt
-receipts; the current 131-artifact set is bound by `006628f036186d6c...`;
+receipts; the current 131-artifact set is bound by `eefedf6f04a03de7...`;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract

@@ -4,6 +4,7 @@ export const BROWSER_INTERACTION_ACTIONS = [
   "select",
   "upload",
   "download",
+  "save_screenshot",
 ] as const;
 
 export type BrowserInteractionAction =
@@ -24,6 +25,7 @@ export interface BrowserInteractionConfirmationPreview {
   valueCount?: number;
   valueSetSha256?: string;
   pathSha256?: string;
+  sourceImageSha256?: string;
   crossOriginAuthorized: boolean;
 }
 
@@ -147,6 +149,7 @@ function validPreview(value: unknown): boolean {
     "valueCount",
     "valueSetSha256",
     "pathSha256",
+    "sourceImageSha256",
     "crossOriginAuthorized",
   ]);
   return (
@@ -158,6 +161,7 @@ function validPreview(value: unknown): boolean {
       preview["textSha256"],
       preview["valueSetSha256"],
       preview["pathSha256"],
+      preview["sourceImageSha256"],
     ].every((entry) => entry === undefined || hash(entry)) &&
     validOptionalCount(preview["textBytes"]) &&
     validOptionalCount(preview["valueCount"])

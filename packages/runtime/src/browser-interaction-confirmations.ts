@@ -312,6 +312,7 @@ function validPreview(
     preview.textSha256,
     preview.valueSetSha256,
     preview.pathSha256,
+    preview.sourceImageSha256,
   ];
   return (
     typeof preview.crossOriginAuthorized === "boolean" &&

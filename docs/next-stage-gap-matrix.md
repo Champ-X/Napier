@@ -1791,6 +1791,70 @@ Observed result:
   autonomous login/CAPTCHA policy, broader form/download reliability, and
   confirmed-action outcome distributions.
 
+## Implemented Slice: Confirmed Agent Browser Screenshot Delivery
+
+User scenario: an Agent can capture a public Browser viewport, ask the user to
+approve saving those exact pixels, and deliver a verified PNG Artifact without
+requiring Web takeover.
+
+Acceptance and safety boundary:
+
+- keep read-only `screenshot` available to ordinary Browser profiles as live
+  PNG tool content, and return its exact `screenshotSha256` to the model;
+- expose `save_screenshot` only in the writable Browser schema and classify it
+  as a write requiring one-use interaction confirmation;
+- require a new workspace-relative `.png` path and the exact prior
+  `screenshotSha256`; policy rejects path/hash shape before confirmation;
+- serialize behind ordinary Browser actions, recapture the selected fixed
+  viewport with network closed, and require byte/hash equality before writing;
+- reuse `workspace-output-file` for exclusive create, no-follow, symlink,
+  protected-path, cancellation, fsync, inode, size, and hash checks;
+- return only path/file SHA-256 and byte count in ordinary Tool/Ledger
+  evidence. Keep PNG bytes as workspace output and never retain them in the
+  confirmation protocol;
+- after a verified write, reuse `BrowserOutputArtifactRegistrar` so exactly one
+  current Run-bound expected file Artifact at the same path transitions through
+  standard `produced -> verified` evidence;
+- keep visual click, arbitrary keypress, and user-observed Live-frame
+  screenshot saves pause/takeover-only. Agent save authority cannot replay a
+  takeover snapshot or bypass ordinary Browser policy.
+
+Observed result:
+
+- `verified`: focused schema, policy, effect, confirmation preview, manager,
+  confined writer, output registration, Plan lifecycle, and broad Agent Browser
+  integration tests pass. The dedicated same-Run test proves
+  `start -> screenshot -> pending -> approved -> save_screenshot`, exact file
+  bytes, and `plan.artifact.produced -> verified`;
+- `verified`: the broad `agent-browser.test.ts` was kept below its 1,000-line
+  budget by moving screenshot delivery into a dedicated 330-line test file;
+- `verified`: a built human one-shot CLI Dogfood used real DeepSeek V4 Flash
+  and production Chromium against Selenium's public Web Form. The model created
+  one Plan/step/expected PNG Artifact, started the step, captured a read-only
+  screenshot, and requested `save_screenshot` with the returned digest;
+- `verified`: the terminal confirmation showed only request/argument/path and
+  source-image hash prefixes, cross-origin status, and expiry. One exact
+  approval resumed the same Run and completed with `AGENT_SCREENSHOT_OK`;
+- `verified`: the confined output `artifacts/selenium-form.png` had PNG
+  signature `89504e470d0a1a0a`, 57,087 bytes, and SHA-256
+  `ad6e40683657b7eba523fdfdd54840176257d2f20ce3c94d377c7c426b406186`.
+  The Plan and step completed, and Artifact `selenium-form` was verified with
+  the same Run, digest, and byte count;
+- `verified`: confirmation events were `pending -> approved`; Browser Tool
+  effects were read `start`, read `screenshot`, write `save_screenshot`, read
+  `close`. Confirmation/tool receipts contained no raw workspace path, while
+  the standard user-declared Plan Artifact events retained the intended path;
+- `verified`: the complete repository gate passes 2,439 regular tests with 46
+  opt-in live tests skipped by default: Root 158, CLI 221, Server 202, Web 532,
+  Contracts 3, Runtime 1,295, and SDK 28. Architecture audits 1,045 production
+  source files and 508 test files with zero cycles; OpenAPI 266 routes and
+  265/265 compatibility operations, current performance, the 88-file Web
+  distribution, and the 131-artifact release receipt all pass. The Web main
+  entry is 145.70 KiB under the 150 KiB budget;
+- P0 remains open for existing-Chrome relay, restart-safe login state,
+  autonomous login/CAPTCHA policy, confirmed download/upload distributions,
+  richer output preview, and unified durable Source/file lineage.
+
 ## Implemented Slice: Browser Live Viewport Observation
 
 User scenario: while an Agent is reading or operating a public page, the user
@@ -11715,17 +11779,17 @@ Observed result:
 - `verified`: release verification recursively binds both attempts, the
   campaign, and both reports. The release receipt contains 131 artifacts with
   set SHA-256
-  `006628f036186d6c302914c9e7879039886160e09cccba994167eefda7cb7b46`
+  `eefedf6f04a03de75b88cb7abb11eb786837f67ef1a966116304cf4d68f4e396`
   and verifies with receipt SHA-256
-  `9dbf0758aa42f886008f204ed01f8229745c5b4554ddbd69cc564d5f97817cab`;
-- `verified`: the complete repository gate passes 2,432 regular tests with 46
-  opt-in live tests skipped by default: Root 158, CLI 217, Server 202, Web 532,
-  Contracts 3, Runtime 1,292, and SDK 28. Architecture audits 1,043 production
-  source files and 507 test files with zero cycles; 266 generated OpenAPI
+  `8bf489b2c0a6b5294e781110e0d8ddb7f791225e04ad22cdcb2125919ac81eb1`;
+- `verified`: the complete repository gate passes 2,439 regular tests with 46
+  opt-in live tests skipped by default: Root 158, CLI 221, Server 202, Web 532,
+  Contracts 3, Runtime 1,295, and SDK 28. Architecture audits 1,045 production
+  source files and 508 test files with zero cycles; 266 generated OpenAPI
   routes, 265/265 compatibility operations, current performance, and the
   88-file Web distribution all pass. The production Web main entry remains
-  145.46 KiB under the 150 KiB budget;
-- `verified`: architecture audits 1,043 production source files and 507 test
+  145.70 KiB under the 150 KiB budget;
+- `verified`: architecture audits 1,045 production source files and 508 test
   files with zero cycles. Campaign shape/aggregation, artifact loading, and CLI
   orchestration live in bounded root-script leaves; Runtime, Browser
   persistence, Agent policy, and user configuration are unchanged;

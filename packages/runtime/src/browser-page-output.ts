@@ -42,11 +42,13 @@ export function formatBrowserPageState(
 
 export function formatBrowserScreenshot(
   state: BrowserPageState,
+  screenshotSha256: string,
   activeTabId?: string,
 ): string {
   return [
     "Browser SCREENSHOT captured.",
     ...(activeTabId ? [`Active tab: ${activeTabId}`] : []),
+    `Screenshot SHA-256: ${screenshotSha256}`,
     `URL: ${state.url}`,
     `Title: ${state.title || "(empty)"}`,
     ...formatBrowserPageDiagnosis(state.diagnosis),
@@ -62,9 +64,14 @@ export function formatBrowserOperationOutput(input: {
   scroll?: BrowserScrollObservation;
   tabs?: BrowserSessionTabDescriptor[];
   activeTabId?: string;
+  screenshotSha256?: string;
 }): string {
   if (input.action === "screenshot") {
-    return formatBrowserScreenshot(input.state, input.activeTabId);
+    return formatBrowserScreenshot(
+      input.state,
+      input.screenshotSha256!,
+      input.activeTabId,
+    );
   }
   if (input.action === "close") return "Browser Session closed.";
   if (input.action === "tab_list") {
@@ -144,6 +151,9 @@ export function createBrowserPageOperationResult(input: {
       action: input.request.action,
       state: input.state,
       activeTabId: input.details.activeTabId,
+      ...(input.details.screenshotSha256
+        ? { screenshotSha256: input.details.screenshotSha256 }
+        : {}),
       ...(input.file ? { file: input.file } : {}),
       ...tabResult,
     }),

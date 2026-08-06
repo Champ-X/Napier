@@ -208,13 +208,9 @@ export class RunBrowserSessionManager {
     request: BrowserSessionRequest,
     signal?: AbortSignal,
   ): Promise<BrowserSessionOperationResult> {
-    if (
-      request.action === "visual_click" ||
-      request.action === "keypress" ||
-      request.action === "save_screenshot"
-    ) {
+    if (request.action === "visual_click" || request.action === "keypress") {
       throw new Error(
-        "Browser visual, keyboard, and screenshot-save actions require pause-bound takeover",
+        "Browser visual and keyboard actions require pause-bound takeover",
       );
     }
     return await this.executeRequest(owner, request, signal);

@@ -6,6 +6,7 @@ import type {
   BrowserSessionRequest,
 } from "./browser-session-model.js";
 import { createBrowserTool } from "./browser-tool.js";
+import { BrowserOutputArtifactRegistrar } from "./browser-output-artifact.js";
 import {
   type LspSessionOwner,
   RunLspSessionManager,
@@ -29,6 +30,9 @@ export class AgentSessionRuntime {
   private readonly debuggerManager: NodeDebuggerManager | undefined;
   private readonly languageServers: RunLspSessionManager;
   private readonly browsers: RunBrowserSessionManager;
+  private readonly browserOutputArtifacts:
+    | BrowserOutputArtifactRegistrar
+    | undefined;
   private readonly researchSources: RunResearchSourceManager;
 
   constructor(
@@ -46,6 +50,9 @@ export class AgentSessionRuntime {
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
     this.browsers =
       browserSessions ?? new RunBrowserSessionManager({ workspaceRoot });
+    this.browserOutputArtifacts = store
+      ? new BrowserOutputArtifactRegistrar(store)
+      : undefined;
     this.researchSources = new RunResearchSourceManager(
       researchSourceCaptures ?? this.browsers,
       workspaceRoot,
@@ -96,6 +103,9 @@ export class AgentSessionRuntime {
       tools.push(
         createBrowserTool(this.browsers, context, {
           readOnly: options.readOnlyBrowser,
+          ...(this.browserOutputArtifacts
+            ? { outputArtifacts: this.browserOutputArtifacts }
+            : {}),
         }),
       );
     }

@@ -44,8 +44,8 @@ export class BrowserOutputArtifactRegistrar {
 
 function browserOutputEvidence(output: BrowserOutputArtifact): string {
   return output.action === "save_screenshot"
-    ? "Browser takeover saved the declared screenshot workspace output."
-    : "Browser takeover saved the declared download workspace output.";
+    ? "Browser saved the declared screenshot workspace output."
+    : "Browser saved the declared download workspace output.";
 }
 
 function browserOutputVerificationEvidence(

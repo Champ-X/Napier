@@ -17,7 +17,9 @@ export class TerminalBrowserInteractionConfirmationController {
   private confirmation: BrowserInteractionConfirmation | undefined;
   private deciding = false;
 
-  constructor(private readonly confirmations: BrowserInteractionConfirmationManager) {}
+  constructor(
+    private readonly confirmations: BrowserInteractionConfirmationManager,
+  ) {}
 
   hasPending(): boolean {
     return this.confirmation?.status === "pending";
@@ -89,8 +91,7 @@ export function browserInteractionConfirmationEvent(
     !confirmation ||
     confirmation.threadId !== event.threadId ||
     confirmation.runId !== event.runId ||
-    event.type !==
-      `browser.interaction_confirmation.${confirmation.status}`
+    event.type !== `browser.interaction_confirmation.${confirmation.status}`
   ) {
     return undefined;
   }
@@ -121,6 +122,9 @@ export function terminalBrowserInteractionConfirmationLines(
       : []),
     ...(preview.pathSha256
       ? [`[confirm] workspace path ${shortHash(preview.pathSha256)}`]
+      : []),
+    ...(preview.sourceImageSha256
+      ? [`[confirm] source image ${shortHash(preview.sourceImageSha256)}`]
       : []),
     `[confirm] cross-origin ${preview.crossOriginAuthorized ? "authorized" : "no"} · expires ${confirmation.expiresAt}`,
     "[confirm] Type approve or reject; Ctrl-C cancels the Run.",

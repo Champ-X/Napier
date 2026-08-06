@@ -717,7 +717,7 @@ describe("RunBrowserSessionManager", () => {
     expect(finalHarness.browsers[0]?.closed).toBe(true);
   });
 
-  it("allows visual, keyboard, and screenshot-save actions only through takeover", async () => {
+  it("allows exact screenshot save normally but keeps visual and keyboard takeover-only", async () => {
     const harness = await createHarness();
     const owner = {
       threadId: "thread_visual_takeover",
@@ -735,13 +735,11 @@ describe("RunBrowserSessionManager", () => {
         y: 450,
       }),
     ).rejects.toThrow("pause-bound takeover");
-    await expect(
-      harness.manager.execute(owner, {
-        action: "save_screenshot",
-        path: "takeover.png",
-        expectedLiveImageSha256: sha256("fake png"),
-      }),
-    ).rejects.toThrow("pause-bound takeover");
+    const agentSaved = await harness.manager.execute(owner, {
+      action: "save_screenshot",
+      path: "agent.png",
+      expectedLiveImageSha256: sha256("fake png"),
+    });
     expect(harness.browsers[0]?.closed).toBe(false);
 
     const saved = await harness.manager.executeTakeoverAction(owner, {
@@ -765,7 +763,7 @@ describe("RunBrowserSessionManager", () => {
     });
     expect(saved.details).toEqual(
       expect.objectContaining({
-        sessionOperation: 2,
+        sessionOperation: 3,
         file: {
           pathSha256: sha256("takeover.png"),
           fileSha256: sha256("fake png"),
@@ -773,14 +771,27 @@ describe("RunBrowserSessionManager", () => {
         },
       }),
     );
+    expect(agentSaved.details).toEqual(
+      expect.objectContaining({
+        sessionOperation: 2,
+        file: {
+          pathSha256: sha256("agent.png"),
+          fileSha256: sha256("fake png"),
+          fileBytes: Buffer.byteLength("fake png"),
+        },
+      }),
+    );
+    await expect(
+      readFile(path.join(harness.workspace, "agent.png")),
+    ).resolves.toEqual(Buffer.from("fake png"));
     await expect(
       readFile(path.join(harness.workspace, "takeover.png")),
     ).resolves.toEqual(Buffer.from("fake png"));
-    expect(clicked.details.sessionOperation).toBe(3);
-    expect(pressed.details.sessionOperation).toBe(4);
+    expect(clicked.details.sessionOperation).toBe(4);
+    expect(pressed.details.sessionOperation).toBe(5);
     expect(downloaded.details).toEqual(
       expect.objectContaining({
-        sessionOperation: 5,
+        sessionOperation: 6,
         file: expect.objectContaining({
           pathSha256: sha256("takeover-download.txt"),
           fileBytes: Buffer.byteLength("download body"),
@@ -816,6 +827,30 @@ describe("RunBrowserSessionManager", () => {
     ).rejects.toThrow("live viewport changed");
     await expect(
       readFile(path.join(harness.workspace, "stale.png")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    expect(harness.browsers[0]?.closed).toBe(true);
+  });
+
+  it("rejects an ordinary stale screenshot save before creating the workspace file", async () => {
+    const harness = await createHarness();
+    const owner = {
+      threadId: "thread_agent_screenshot_stale",
+      runId: "run_agent_screenshot_stale",
+    };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/",
+    });
+
+    await expect(
+      harness.manager.execute(owner, {
+        action: "save_screenshot",
+        path: "agent-stale.png",
+        expectedLiveImageSha256: sha256("old pixels"),
+      }),
+    ).rejects.toThrow("live viewport changed");
+    await expect(
+      readFile(path.join(harness.workspace, "agent-stale.png")),
     ).rejects.toMatchObject({ code: "ENOENT" });
     expect(harness.browsers[0]?.closed).toBe(true);
   });

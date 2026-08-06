@@ -144,6 +144,41 @@ describe("browser Agent tool", () => {
     );
     expect(
       assessToolCall(
+        "workspace",
+        "browser",
+        {
+          action: "save_screenshot",
+          path: "artifacts/page.png",
+          expectedLiveImageSha256: "a".repeat(64),
+        },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "high",
+        reason: expect.stringContaining("action-bound confirmation"),
+      }),
+    );
+    expect(
+      assessToolCall(
+        "workspace",
+        "browser",
+        {
+          action: "save_screenshot",
+          path: "artifacts/page.jpg",
+          expectedLiveImageSha256: "not-a-hash",
+        },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: false,
+        reason: expect.stringContaining("exact prior screenshot hash"),
+      }),
+    );
+    expect(
+      assessToolCall(
         "observe",
         "research_source",
         { action: "capture", maxChars: 12_000 },
@@ -237,6 +272,17 @@ describe("browser Agent tool", () => {
         }),
       ),
     ).not.toContain("PRIVATE");
+    expect(
+      browserInteractionConfirmationPreview({
+        action: "save_screenshot",
+        path: "PRIVATE_SCREENSHOT.png",
+        expectedLiveImageSha256: "a".repeat(64),
+      }),
+    ).toEqual({
+      pathSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      sourceImageSha256: "a".repeat(64),
+      crossOriginAuthorized: false,
+    });
   });
 
   it("returns screenshots as live image content while details remain bounded", async () => {
@@ -267,6 +313,65 @@ describe("browser Agent tool", () => {
     );
   });
 
+  it("registers confirmed Browser file outputs through the standard Plan path", async () => {
+    const outputArtifacts = {
+      register: vi.fn(async () => ({
+        status: "registered" as const,
+        reason: "artifact_registered" as const,
+        planId: "plan_browser_output",
+        artifactId: "browser-output",
+      })),
+    };
+    const execute = vi.fn(async () => ({
+      output: "Browser SAVE_SCREENSHOT complete.",
+      details: {
+        ...details("save_screenshot"),
+        file: {
+          pathSha256: sha256("artifacts/page.png"),
+          fileSha256: "9".repeat(64),
+          fileBytes: 123,
+        },
+      },
+    }));
+    const tool = createBrowserTool(
+      { execute } as unknown as RunBrowserSessionManager,
+      { threadId: "thread_output", runId: "run_output" },
+      { outputArtifacts },
+    );
+
+    const result = await tool.execute("call_output", {
+      action: "save_screenshot",
+      path: "artifacts/page.png",
+      expectedLiveImageSha256: "9".repeat(64),
+    });
+
+    expect(execute).toHaveBeenCalledWith(
+      { threadId: "thread_output", runId: "run_output" },
+      {
+        action: "save_screenshot",
+        path: "artifacts/page.png",
+        expectedLiveImageSha256: "9".repeat(64),
+      },
+      undefined,
+    );
+    expect(outputArtifacts.register).toHaveBeenCalledWith(
+      { threadId: "thread_output", runId: "run_output" },
+      {
+        action: "save_screenshot",
+        path: "artifacts/page.png",
+        pathSha256: sha256("artifacts/page.png"),
+        fileSha256: "9".repeat(64),
+        fileBytes: 123,
+      },
+    );
+    expect(result.content).toEqual([
+      {
+        type: "text",
+        text: "Browser SAVE_SCREENSHOT complete.\nPlan Artifact: verified",
+      },
+    ]);
+  });
+
   it("classifies navigation/read lifecycle separately from interaction", () => {
     expect(builtInToolEffect("browser", { action: "start" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "navigate" })).toBe("read");
@@ -284,6 +389,9 @@ describe("browser Agent tool", () => {
     expect(builtInToolEffect("browser", { action: "close" })).toBe("read");
     expect(builtInToolEffect("browser", { action: "click" })).toBe("write");
     expect(builtInToolEffect("browser", { action: "download" })).toBe("write");
+    expect(builtInToolEffect("browser", { action: "save_screenshot" })).toBe(
+      "write",
+    );
   });
 });
 

@@ -36,6 +36,7 @@ describe("terminal Browser interaction confirmation", () => {
         "[confirm] request aaaaaaaaaaaa · arguments bbbbbbbbbbbb",
         "[confirm] target selector cccccccccccc",
         "[confirm] text 19B dddddddddddd",
+        "[confirm] source image 111111111111",
         "[confirm] cross-origin no · expires 2026-08-05T00:01:00.000Z",
       ]),
     );
@@ -61,9 +62,9 @@ describe("terminal Browser interaction confirmation", () => {
     expect(parseTerminalBrowserInteractionDecision("yes")).toBeUndefined();
     expect(controller.submit("approve")).resolves.toBe("not_pending");
 
-    expect(
-      controller.applyEvent(confirmationEvent(confirmation)),
-    ).toEqual(confirmation);
+    expect(controller.applyEvent(confirmationEvent(confirmation))).toEqual(
+      confirmation,
+    );
     expect(await controller.submit("yes")).toBe("invalid");
     expect(await controller.submit("approve")).toBe("submitted");
     expect(decide).toHaveBeenCalledWith(
@@ -92,6 +93,7 @@ function fixture(): BrowserInteractionConfirmation {
       targetSha256: "c".repeat(64),
       textSha256: "d".repeat(64),
       textBytes: 19,
+      sourceImageSha256: "1".repeat(64),
       crossOriginAuthorized: false,
     },
     status: "pending",

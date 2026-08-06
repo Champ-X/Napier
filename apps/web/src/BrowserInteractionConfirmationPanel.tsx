@@ -76,6 +76,14 @@ export function BrowserInteractionConfirmationPanel({
             </dd>
           </div>
         ) : null}
+        {confirmation.preview.sourceImageSha256 ? (
+          <div>
+            <dt>Source image</dt>
+            <dd title={confirmation.preview.sourceImageSha256}>
+              {confirmation.preview.sourceImageSha256.slice(0, 12)}
+            </dd>
+          </div>
+        ) : null}
         <div>
           <dt>Expires</dt>
           <dd>{new Date(confirmation.expiresAt).toLocaleTimeString()}</dd>
