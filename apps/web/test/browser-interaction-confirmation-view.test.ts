@@ -31,6 +31,15 @@ describe("Browser interaction confirmation Web view", () => {
     expect(
       parseBrowserInteractionConfirmation({
         ...confirmation("pending"),
+        preview: {
+          ...confirmation("pending").preview,
+          effect: "transfer_everything",
+        },
+      }),
+    ).toBeUndefined();
+    expect(
+      parseBrowserInteractionConfirmation({
+        ...confirmation("pending"),
         selector: "#PRIVATE_SELECTOR",
       }),
     ).toBeUndefined();
@@ -85,6 +94,7 @@ function confirmation(status: "pending" | "approved") {
     preview: {
       targetKind: "ref" as const,
       targetSha256: "e".repeat(64),
+      effect: "interaction" as const,
       fileSha256: "f".repeat(64),
       fileBytes: 128,
       pageStateSha256: "1".repeat(64),

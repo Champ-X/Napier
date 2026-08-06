@@ -12090,3 +12090,72 @@ takeover`, created zero confirmation events, retained no raw URL/target/
   credentials and human verification in Napier's isolated Browser. Novel
   provider UI may still evade structural detection, and takeover remains a
   human workflow rather than autonomous login or CAPTCHA completion.
+
+## Completed Slice: Effect-Aware Browser Confirmation
+
+User scenario: before approving a Browser action, the user sees whether the
+selected control will merely interact, enter data, submit, communicate,
+publish, purchase, delete, or change permissions instead of approving an opaque
+generic click.
+
+Acceptance and threat boundary:
+
+- define one strict shared effect enum with fixed CLI/Web labels:
+  `interaction`, `data_entry`, `selection_change`, `file_upload`,
+  `file_download`, `screenshot_save`, `form_submit`, `communication`,
+  `publication`, `purchase`, `deletion`, and `permission_change`;
+- derive non-click effects from the exact action. For clicks, classify only the
+  selected target's bounded label/value text plus tag/type/form semantics using
+  the existing self-contained target probe;
+- bind the effect into the target-state self-hash and strict confirmation
+  preview. Never retain the raw target label, URL, selector/ref, page body, or
+  form value;
+- show the shared human label in one-shot CLI, Chat, TUI, and Web confirmation
+  dockets before approval. Invalid/unknown effect values fail strict parsing;
+- keep confirmation one-use, target-state-bound, and policy-validated.
+  High-impact classification improves user understanding; it does not bypass
+  approval, broaden Agent authority, or weaken sensitive-target takeover;
+- lazy-load the pending-only Web confirmation panel so effect labels do not
+  increase the default Workbench main-entry bundle.
+
+Observed result:
+
+- `verified`: focused Contracts, Runtime, CLI, Server, and Web coverage passes
+  76 tests across all fixed effect classes, serialized probe reconstruction,
+  sensitive-target takeover, target freshness, screenshot/file actions, strict
+  parser rejection, and terminal/Web rendering;
+- `verified`: classifier coverage maps `Delete account`, `Place order`,
+  `Publish post`, `Send message`, `Grant access`, ordinary form submit, and
+  ordinary controls to their exact fixed effects without returning target
+  labels. Type/select/upload/download and screenshot-save effects are derived
+  from the action;
+- `verified`: real built-CLI `deepseek/deepseek-v4-flash` Dogfood used
+  `safe_automation` on
+  `https://the-internet.herokuapp.com/add_remove_elements/`. The first fresh-ref
+  docket labeled Add Element `Interact with page`; after one approval and a
+  fresh snapshot, the Delete control docket labeled the second click
+  `Delete or remove`;
+- `verified`: both one-use approvals completed, a final fresh snapshot observed
+  no Delete control, Browser closed, the Run exited 0, and the final token was
+  `AGENT_EFFECT_DELETE_OK`;
+- `verified`: pending confirmation receipts retained effects `interaction` and
+  `deletion` plus target/page-state hashes, while Browser receipts contained no
+  raw fixture URL or Add/Delete labels; the isolated Dogfood root was deleted;
+- `verified`: the Web confirmation panel is now a 3.18 KiB lazy chunk. The
+  production main entry falls from the transient over-budget 150.46 KiB build
+  to 147.42 KiB, below the unchanged 150 KiB budget;
+- `verified`: the complete repository gate passes 2,464 regular tests with 46
+  opt-in live tests skipped by default: Root 158, CLI 221, Server 202, Web 532,
+  Contracts 3, Runtime 1,320, and SDK 28. Architecture audits 1,054 production
+  source files and 518 test files with zero cycles; current performance, 266
+  generated OpenAPI routes with 265/265 compatibility operations, the 94-file
+  Web distribution, and the 131-artifact release receipt all pass. Web receipt
+  SHA-256 is
+  `651917887d8eddbd9114a3ee7fe5aa8253d783e85a235a84550f1565d193560f`,
+  release-set SHA-256 is
+  `fdc4b96322605547015190b5114614e56f56ed66158581e3832cdbef503b8227`,
+  and release-receipt SHA-256 is
+  `e212917a7b55f165ec214f1051bc3484c64b0504b074700cff31a0b24e549453`;
+- `inferred`: fixed target semantics make common high-impact effects visible,
+  but arbitrary custom wording may remain `interaction`. Effect classification
+  informs the human decision and is not a guarantee of remote-server behavior.

@@ -1,11 +1,13 @@
 import { lazy, Suspense } from "react";
 
-import { BrowserInteractionConfirmationPanel } from "./BrowserInteractionConfirmationPanel";
 import { BrowserLiveViewPanel } from "./BrowserLiveViewPanel";
 import { browserLiveViewExpected } from "./browser-live-view-state";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
 const LazyOperatorDecisionPanel = lazy(() => import("./OperatorDecisionPanel"));
+const LazyBrowserInteractionConfirmationPanel = lazy(
+  () => import("./BrowserInteractionConfirmationPanel"),
+);
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
@@ -65,11 +67,13 @@ export function RunDecisionDockets({
         </Suspense>
       ) : null}
       {vm.browserInteractionConfirmation ? (
-        <BrowserInteractionConfirmationPanel
-          confirmation={vm.browserInteractionConfirmation}
-          busy={vm.browserInteractionConfirmationBusy}
-          onDecision={vm.decideBrowserInteractionConfirmation}
-        />
+        <Suspense fallback={null}>
+          <LazyBrowserInteractionConfirmationPanel
+            confirmation={vm.browserInteractionConfirmation}
+            busy={vm.browserInteractionConfirmationBusy}
+            onDecision={vm.decideBrowserInteractionConfirmation}
+          />
+        </Suspense>
       ) : null}
     </div>
   );

@@ -105,6 +105,7 @@ describe("Browser sensitive target probe", () => {
         ),
       ).toEqual({
         status: "ordinary",
+        effect: action === "type" ? "data_entry" : "interaction",
         signalCount: 0,
         signalsSha256: sha256("[]"),
       });
@@ -115,11 +116,66 @@ describe("Browser sensitive target probe", () => {
     expect(
       createBrowserSensitiveTargetEvidence({
         signals: ["private body", "passwordish"],
+        effect: "interaction",
       }),
     ).toEqual({
       status: "ordinary",
+      effect: "interaction",
       signalCount: 0,
       signalsSha256: sha256("[]"),
     });
+  });
+
+  it("classifies fixed high-impact click effects without returning labels", () => {
+    const document = parseHTML(`
+      <html><body>
+        <button id="delete">Delete account</button>
+        <button id="purchase">Place order</button>
+        <button id="publish">Publish post</button>
+        <button id="send">Send message</button>
+        <button id="permission">Grant access</button>
+        <form><button id="submit">Continue</button></form>
+        <button id="ordinary" type="button">Open details</button>
+      </body></html>
+    `).document;
+    const expected = {
+      "#delete": "deletion",
+      "#purchase": "purchase",
+      "#publish": "publication",
+      "#send": "communication",
+      "#permission": "permission_change",
+      "#submit": "form_submit",
+      "#ordinary": "interaction",
+    } as const;
+
+    for (const [selector, effect] of Object.entries(expected)) {
+      const probe = probeBrowserSensitiveTarget(
+        document.querySelector<HTMLElement>(selector)!,
+        { action: "click" },
+      );
+      expect(probe.effect).toBe(effect);
+      expect(JSON.stringify(probe)).not.toContain(
+        document.querySelector<HTMLElement>(selector)!.textContent,
+      );
+    }
+  });
+
+  it("classifies non-click effects from the action", () => {
+    const document = parseHTML(
+      `<html><body><input id="target" autocomplete="off"></body></html>`,
+    ).document;
+    const target = document.querySelector<HTMLElement>("#target")!;
+    expect(probeBrowserSensitiveTarget(target, { action: "type" }).effect).toBe(
+      "data_entry",
+    );
+    expect(
+      probeBrowserSensitiveTarget(target, { action: "select" }).effect,
+    ).toBe("selection_change");
+    expect(
+      probeBrowserSensitiveTarget(target, { action: "upload" }).effect,
+    ).toBe("file_upload");
+    expect(
+      probeBrowserSensitiveTarget(target, { action: "download" }).effect,
+    ).toBe("file_download");
   });
 });

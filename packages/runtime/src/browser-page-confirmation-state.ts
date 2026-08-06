@@ -53,6 +53,7 @@ export async function captureBrowserPageConfirmationState(input: {
     currentUrlSha256: sha256(beforeUrl),
     currentOriginSha256: sha256(browserPageOrigin(beforeUrl) ?? ""),
     targetStateSha256: sha256(targetState),
+    targetEffect: sensitivity.effect,
     targetSensitivity: sensitivity.status,
     targetSensitivitySha256: sensitivity.signalsSha256,
   });

@@ -32,6 +32,7 @@ interface ConfirmationPageState {
   currentUrlSha256: string;
   currentOriginSha256: string;
   targetStateSha256: string;
+  targetEffect: "data_entry";
   targetSensitivity: "ordinary";
   targetSensitivitySha256: string;
   contentSha256: string;
@@ -582,6 +583,7 @@ function terminalConfirmationPageState(): ConfirmationPageState {
     currentUrlSha256: "e".repeat(64),
     currentOriginSha256: "f".repeat(64),
     targetStateSha256: sha256("stable terminal target"),
+    targetEffect: "data_entry" as const,
     targetSensitivity: "ordinary" as const,
     targetSensitivitySha256: sha256(canonicalJson([])),
   };

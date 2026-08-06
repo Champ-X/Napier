@@ -1,4 +1,5 @@
 import type { BrowserInteractionAction } from "@napier/contracts/browser-interaction-confirmation";
+import type { BrowserInteractionEffect } from "@napier/contracts/browser-interaction-confirmation";
 
 import type { BrowserSensitiveTargetStatus } from "./browser-sensitive-target.js";
 import type {
@@ -30,6 +31,7 @@ export interface BrowserConfirmationPageState {
   currentUrlSha256: string;
   currentOriginSha256: string;
   targetStateSha256: string;
+  targetEffect: BrowserInteractionEffect;
   targetSensitivity: BrowserSensitiveTargetStatus;
   targetSensitivitySha256: string;
   contentSha256: string;
@@ -191,10 +193,27 @@ function validatePageState(state: BrowserConfirmationPageState): void {
     (state.targetSensitivity !== "ordinary" &&
       state.targetSensitivity !== "credential" &&
       state.targetSensitivity !== "human_verification") ||
+    !validTargetEffect(state.targetEffect) ||
     sha256(canonicalJson(content)) !== contentSha256
   ) {
     throw new Error("Browser confirmation page state is invalid");
   }
+}
+
+function validTargetEffect(value: string): value is BrowserInteractionEffect {
+  return (
+    value === "interaction" ||
+    value === "data_entry" ||
+    value === "selection_change" ||
+    value === "file_upload" ||
+    value === "file_download" ||
+    value === "form_submit" ||
+    value === "communication" ||
+    value === "publication" ||
+    value === "purchase" ||
+    value === "deletion" ||
+    value === "permission_change"
+  );
 }
 
 function confirmedAction(value: string): BrowserInteractionAction {

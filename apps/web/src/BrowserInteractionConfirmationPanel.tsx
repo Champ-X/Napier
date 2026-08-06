@@ -1,4 +1,5 @@
 import type { BrowserInteractionConfirmation } from "@napier/contracts/browser-interaction-confirmation";
+import { BROWSER_INTERACTION_EFFECT_LABELS } from "@napier/contracts/browser-interaction-confirmation";
 import { Check, MousePointerClick, X } from "lucide-react";
 
 export function BrowserInteractionConfirmationPanel({
@@ -38,6 +39,14 @@ export function BrowserInteractionConfirmationPanel({
           <dt>Action</dt>
           <dd>{confirmation.action}</dd>
         </div>
+        {confirmation.preview.effect ? (
+          <div>
+            <dt>Effect</dt>
+            <dd>
+              {BROWSER_INTERACTION_EFFECT_LABELS[confirmation.preview.effect]}
+            </dd>
+          </div>
+        ) : null}
         <div>
           <dt>Arguments</dt>
           <dd title={confirmation.argumentsSha256}>
@@ -134,3 +143,5 @@ export function BrowserInteractionConfirmationPanel({
     </section>
   );
 }
+
+export default BrowserInteractionConfirmationPanel;

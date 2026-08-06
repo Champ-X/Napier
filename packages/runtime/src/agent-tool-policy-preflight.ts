@@ -116,6 +116,11 @@ export async function preflightAgentToolPolicy(input: {
     throw error;
   }
   const preview = browserInteractionConfirmationPreview(input.args);
+  const effect =
+    candidates.action?.pageState.targetEffect ?? nonTargetBrowserEffect(action);
+  if (effect) {
+    preview.effect = effect;
+  }
   if (candidates.action) {
     preview.pageStateSha256 = candidates.action.pageState.contentSha256;
   }
@@ -151,6 +156,16 @@ export async function preflightAgentToolPolicy(input: {
     input,
     `Browser ${action} action was not confirmed (${confirmation.confirmation.status})`,
   );
+}
+
+function nonTargetBrowserEffect(
+  action: Parameters<
+    BrowserInteractionConfirmationManager["request"]
+  >[0]["action"],
+) {
+  return action === "save_screenshot"
+    ? ("screenshot_save" as const)
+    : undefined;
 }
 
 interface BrowserConfirmationCandidates {

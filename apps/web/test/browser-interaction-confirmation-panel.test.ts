@@ -17,6 +17,7 @@ describe("Browser interaction confirmation panel", () => {
         preview: {
           targetKind: "selector",
           targetSha256: "d".repeat(64),
+          effect: "data_entry",
           textSha256: "e".repeat(64),
           textBytes: 19,
           fileSha256: "1".repeat(64),
@@ -38,6 +39,8 @@ describe("Browser interaction confirmation panel", () => {
 
     expect(serialized).toContain("Confirm ");
     expect(serialized).toContain("type");
+    expect(serialized).toContain("Enter data");
+    expect(serialized).toContain("Effect");
     expect(serialized).toContain("Approve once");
     expect(serialized).toContain("Reject");
     expect(serialized).toContain("aaaaaaaaaaaa");

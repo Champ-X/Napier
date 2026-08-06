@@ -752,6 +752,15 @@ and more than four pending/approved grants fail closed. Unrelated page nodes,
 raw ARIA text, labels, URL, selector/ref, and form values remain outside durable
 evidence.
 
+The same self-contained target probe classifies one strict confirmation effect:
+`interaction`, `data_entry`, `selection_change`, `file_upload`,
+`file_download`, `form_submit`, `communication`, `publication`, `purchase`,
+`deletion`, or `permission_change`; `save_screenshot` is derived from the
+action. Classification uses only bounded action semantics and exact target
+text/role/form structure. The result is part of the target-state self-hash and
+the strict confirmation preview, while raw labels remain private. Contracts
+owns the enum and human labels so CLI and lazy-loaded Web dockets cannot drift.
+
 `BrowserLiveViewService` authorizes only the active standard user Run. It asks
 the same serialized `RunBrowserSessionManager` for a viewport screenshot using
 the existing screenshot implementation with operation counting disabled.

@@ -682,6 +682,14 @@ during a pending decision, rejection, or Run cancellation fails closed.
 Pending and terminal confirmation events remain durable, while the one-use
 resolver is intentionally non-resumable across process restart.
 
+Confirmation dockets show a fixed human-readable effect derived from the
+action and bounded selected-target semantics: interact, enter data, change
+selection, upload/download, save screenshot, submit, send communication,
+publish, purchase/pay, delete/remove, or change permissions. Raw target labels
+never enter the docket; only the enum is retained. This makes high-impact
+controls explicit without granting them broader authority or blocking ordinary
+confirmed actions.
+
 For `click`, `type`, `select`, `upload`, and `download`, confirmation also binds
 the selected target's bounded ARIA semantics plus Session, tab-set, URL, and
 origin identity. Runtime recaptures that target immediately before execution.

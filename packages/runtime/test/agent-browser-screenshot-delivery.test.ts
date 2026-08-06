@@ -184,7 +184,12 @@ describe("Agent Browser screenshot delivery", () => {
       }).toEqual({
         runStatus: "running",
         operations: ["start", "screenshot"],
-        confirmations: [expect.objectContaining({ action: "save_screenshot" })],
+        confirmations: [
+          expect.objectContaining({
+            action: "save_screenshot",
+            preview: expect.objectContaining({ effect: "screenshot_save" }),
+          }),
+        ],
       });
     });
     await approveNextConfirmation(

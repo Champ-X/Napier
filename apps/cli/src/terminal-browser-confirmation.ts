@@ -1,5 +1,6 @@
 import type { RunEvent } from "@napier/contracts";
 import {
+  BROWSER_INTERACTION_EFFECT_LABELS,
   type BrowserInteractionConfirmation,
   parseBrowserInteractionConfirmation,
 } from "@napier/contracts/browser-interaction-confirmation";
@@ -108,6 +109,11 @@ export function terminalBrowserInteractionConfirmationLines(
     ...(preview.targetSha256
       ? [
           `[confirm] target ${preview.targetKind ?? "unknown"} ${shortHash(preview.targetSha256)}`,
+        ]
+      : []),
+    ...(preview.effect
+      ? [
+          `[confirm] effect ${BROWSER_INTERACTION_EFFECT_LABELS[preview.effect]}`,
         ]
       : []),
     ...(preview.textSha256

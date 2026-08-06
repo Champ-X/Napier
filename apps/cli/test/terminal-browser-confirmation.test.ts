@@ -35,6 +35,7 @@ describe("terminal Browser interaction confirmation", () => {
         "[confirm] Browser type paused before execution",
         "[confirm] request aaaaaaaaaaaa · arguments bbbbbbbbbbbb",
         "[confirm] target selector cccccccccccc",
+        "[confirm] effect Enter data",
         "[confirm] text 19B dddddddddddd",
         "[confirm] file 128B 222222222222",
         "[confirm] page state 333333333333",
@@ -93,6 +94,7 @@ function fixture(): BrowserInteractionConfirmation {
     preview: {
       targetKind: "selector",
       targetSha256: "c".repeat(64),
+      effect: "data_entry",
       textSha256: "d".repeat(64),
       textBytes: 19,
       fileSha256: "2".repeat(64),

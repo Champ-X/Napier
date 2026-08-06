@@ -1,4 +1,5 @@
 import type { Locator } from "playwright-core";
+import type { BrowserInteractionEffect } from "@napier/contracts/browser-interaction-confirmation";
 
 import { BROWSER_ACTION_TIMEOUT_MS } from "./browser-session-model.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -21,10 +22,12 @@ type BrowserSensitiveTargetSignal =
 
 interface BrowserSensitiveTargetProbe {
   signals: BrowserSensitiveTargetSignal[];
+  effect: BrowserInteractionEffect;
 }
 
 export interface BrowserSensitiveTargetEvidence {
   status: BrowserSensitiveTargetStatus;
+  effect: BrowserInteractionEffect;
   signalCount: number;
   signalsSha256: string;
 }
@@ -54,7 +57,10 @@ export function probeBrowserSensitiveTarget(
   const signals = new Set<BrowserSensitiveTargetSignal>();
   addCredentialSignals(signals, target, request.action);
   addChallengeSignals(signals, target, request.action);
-  return { signals: [...signals].sort() };
+  return {
+    signals: [...signals].sort(),
+    effect: targetEffect(target, request.action),
+  };
 
   function addCredentialSignals(
     output: Set<BrowserSensitiveTargetSignal>,
@@ -164,6 +170,49 @@ export function probeBrowserSensitiveTarget(
         .toLowerCase(),
     );
   }
+
+  function targetEffect(
+    element: HTMLElement,
+    action: "click" | "type" | "select" | "upload" | "download",
+  ): BrowserInteractionEffect {
+    if (action === "type") return "data_entry";
+    if (action === "select") return "selection_change";
+    if (action === "upload") return "file_upload";
+    if (action === "download") return "file_download";
+    const text = (
+      element.getAttribute("aria-label") ??
+      element.getAttribute("value") ??
+      element.textContent ??
+      ""
+    )
+      .replace(/\s+/gu, " ")
+      .trim()
+      .toLowerCase();
+    if (/(^|\b)(delete|remove|destroy|erase)(\b|$)/u.test(text))
+      return "deletion";
+    if (
+      /(^|\b)(buy|checkout|pay|purchase|place order|subscribe)(\b|$)/u.test(
+        text,
+      )
+    )
+      return "purchase";
+    if (/(^|\b)(publish|post|go live)(\b|$)/u.test(text)) return "publication";
+    if (/(^|\b)(send|message|email|reply)(\b|$)/u.test(text))
+      return "communication";
+    if (
+      /(^|\b)(allow|approve access|grant|invite|permission|revoke)(\b|$)/u.test(
+        text,
+      )
+    )
+      return "permission_change";
+    const tag = element.tagName.toLowerCase();
+    const type = (element.getAttribute("type") ?? "").toLowerCase();
+    return element.closest("form") &&
+      ((tag === "button" && type !== "button" && type !== "reset") ||
+        (tag === "input" && (type === "image" || type === "submit")))
+      ? "form_submit"
+      : "interaction";
+  }
 }
 
 export function createBrowserSensitiveTargetEvidence(
@@ -187,9 +236,30 @@ export function createBrowserSensitiveTargetEvidence(
       : "ordinary";
   return {
     status,
+    effect: validBrowserInteractionEffect(probe.effect)
+      ? probe.effect
+      : "interaction",
     signalCount: signals.length,
     signalsSha256: sha256(canonicalJson(signals)),
   };
+}
+
+function validBrowserInteractionEffect(
+  value: unknown,
+): value is BrowserInteractionEffect {
+  return (
+    value === "interaction" ||
+    value === "data_entry" ||
+    value === "selection_change" ||
+    value === "file_upload" ||
+    value === "file_download" ||
+    value === "form_submit" ||
+    value === "communication" ||
+    value === "publication" ||
+    value === "purchase" ||
+    value === "deletion" ||
+    value === "permission_change"
+  );
 }
 
 function isBrowserSensitiveTargetSignal(

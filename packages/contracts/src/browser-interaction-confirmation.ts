@@ -17,9 +17,46 @@ export type BrowserInteractionConfirmationStatus =
   | "expired"
   | "cancelled";
 
+export const BROWSER_INTERACTION_EFFECTS = [
+  "interaction",
+  "data_entry",
+  "selection_change",
+  "file_upload",
+  "file_download",
+  "screenshot_save",
+  "form_submit",
+  "communication",
+  "publication",
+  "purchase",
+  "deletion",
+  "permission_change",
+] as const;
+
+export type BrowserInteractionEffect =
+  (typeof BROWSER_INTERACTION_EFFECTS)[number];
+
+export const BROWSER_INTERACTION_EFFECT_LABELS: Record<
+  BrowserInteractionEffect,
+  string
+> = {
+  interaction: "Interact with page",
+  data_entry: "Enter data",
+  selection_change: "Change selection",
+  file_upload: "Upload file",
+  file_download: "Download file",
+  screenshot_save: "Save screenshot",
+  form_submit: "Submit form",
+  communication: "Send communication",
+  publication: "Publish content",
+  purchase: "Purchase or pay",
+  deletion: "Delete or remove",
+  permission_change: "Change permissions",
+};
+
 export interface BrowserInteractionConfirmationPreview {
   targetKind?: "ref" | "selector";
   targetSha256?: string;
+  effect?: BrowserInteractionEffect;
   textSha256?: string;
   textBytes?: number;
   valueCount?: number;
@@ -147,6 +184,7 @@ function validPreview(value: unknown): boolean {
   const keys = new Set([
     "targetKind",
     "targetSha256",
+    "effect",
     "textSha256",
     "textBytes",
     "valueCount",
@@ -161,6 +199,11 @@ function validPreview(value: unknown): boolean {
   return (
     Object.keys(preview).every((key) => keys.has(key)) &&
     typeof preview["crossOriginAuthorized"] === "boolean" &&
+    (preview["effect"] === undefined ||
+      (typeof preview["effect"] === "string" &&
+        BROWSER_INTERACTION_EFFECTS.includes(
+          preview["effect"] as BrowserInteractionEffect,
+        ))) &&
     validPreviewTarget(preview) &&
     [
       preview["targetSha256"],
