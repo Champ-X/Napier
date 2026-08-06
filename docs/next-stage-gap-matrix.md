@@ -11798,3 +11798,67 @@ Observed result:
   failure, but it is not a broad reliability distribution or general
   superiority claim. Additional seeds, repetitions, OMP versions, and Browser
   tasks remain open.
+
+## Completed Slice: Confirmed Agent Browser Download Delivery
+
+User scenario: during an ordinary Agent Run, the model can select a fresh link,
+ask the user once before downloading, stream the resulting bytes into a
+declared workspace file, and settle that file as a verified Plan Artifact under
+the same Run.
+
+Acceptance and threat boundary:
+
+- expose download only to writable Agents and preserve one-use human
+  confirmation; JSONL and non-TTY execution remain read-only;
+- require a fresh Browser ref, a confined workspace-relative output path, and
+  preflight of both the current origin and destination before the click;
+- enable Browser network only around the confirmed action, pair the click with
+  one Playwright download, stream through the bounded download writer, and
+  clear download-manager state in `finally`;
+- retain exact output byte count and SHA-256 plus only the SHA-256 of the
+  browser-suggested filename; confirmation and tool receipts must not retain the
+  raw output path;
+- reuse the canonical Run-bound Browser output registrar. Register only an
+  exact expected `file` artifact on the current running Plan step and reread
+  workspace bytes before `expected -> produced -> verified`;
+- keep successful file delivery independent from ancillary Plan settlement.
+  Missing, failed, or thrown registration must preserve the verified workspace
+  bytes and report a fixed non-verification reason rather than roll back the
+  download;
+- do not persist Browser Sessions, adopt user profiles/cookies, automate
+  CAPTCHA, broaden cross-origin authority, or add a second artifact lifecycle.
+
+Observed result:
+
+- `verified`: focused Runtime coverage passes 33 tests across confirmed
+  screenshot and download delivery, exact same-Run Plan settlement, fresh-ref
+  enforcement, output registration success/skip/failure/throw behavior,
+  Browser policy, and Session handling;
+- `verified`: the same-Run integration downloads exact fixture bytes, retains
+  the suggested-filename hash, registers the declared file as `verified`, and
+  binds its SHA-256 and byte count to the current Run without network access;
+- `verified`: real built-CLI Dogfood opened the public W3C XHTML 1.0 page at
+  `https://www.w3.org/TR/xhtml1/`, selected the fresh link named `ZIP archive`,
+  requested one terminal `approve`, and completed with
+  `AGENT_DOWNLOAD_OK`;
+- `verified`: the delivered `artifacts/xhtml1.zip` begins with the ZIP `PK`
+  signature, contains 255,486 bytes, and has SHA-256
+  `78107aa9b19d1a666ccd59a49432c56bbf12a17e0cebbb1eeaa495a344afbeed`.
+  The browser-suggested filename SHA-256 is
+  `9bfaf0b07f5147d1245f953eaebc95a805b633afd0d008ea207ce84691848018`;
+- `verified`: the Plan and step completed, and Artifact `xhtml1` became
+  verified under the same Run with the exact file hash and byte count.
+  Confirmation events transitioned `pending -> approved`; Browser actions were
+  read `start`, write `download`, then read `close`;
+- `verified`: confirmation and tool receipts contained no raw output path, and
+  the isolated Dogfood root was deleted after evidence checks;
+- `verified`: the complete repository gate passes 2,442 regular tests with 46
+  opt-in live tests skipped by default: Root 158, CLI 221, Server 202, Web 532,
+  Contracts 3, Runtime 1,298, and SDK 28. Architecture audits 1,046 production
+  source files and 509 test files with zero cycles; current performance, 266
+  generated OpenAPI routes with 265/265 compatibility operations, the 88-file
+  Web distribution, and the 131-artifact release receipt all pass. The
+  production Web main entry remains 145.70 KiB under the 150 KiB budget;
+- `inferred`: this proves one bounded public ZIP download through the formal
+  Agent/TTY path and its failure-safe Plan settlement. It is not a broad claim
+  about arbitrary sites, authenticated downloads, or network reliability.

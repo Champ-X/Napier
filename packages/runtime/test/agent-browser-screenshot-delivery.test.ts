@@ -234,6 +234,179 @@ describe("Agent Browser screenshot delivery", () => {
       ),
     ).not.toContain(outputPath);
   });
+
+  it("confirms and registers exact downloaded bytes in the same Run", async () => {
+    const fixture = await createFixture();
+    const archive = Buffer.from("PK\u0003\u0004EXACT_AGENT_DOWNLOAD");
+    const archiveSha256 = sha256(archive);
+    const outputPath = "artifacts/archive.zip";
+    const operations: string[] = [];
+    const browserSessions = {
+      execute: vi.fn(
+        async (
+          _owner: { threadId: string; runId: string },
+          request: {
+            action: BrowserSessionDetails["action"];
+            target?: { ref?: string };
+            path?: string;
+          },
+        ) => {
+          operations.push(request.action);
+          if (request.action === "download") {
+            expect(request).toEqual({
+              action: "download",
+              target: { ref: "e7" },
+              path: outputPath,
+            });
+            await writeFile(
+              path.join(fixture.workspaceRoot, outputPath),
+              archive,
+            );
+            return {
+              output: "Browser DOWNLOAD complete.",
+              details: {
+                ...details(request.action, operations.length),
+                file: {
+                  pathSha256: sha256(outputPath),
+                  fileSha256: archiveSha256,
+                  fileBytes: archive.byteLength,
+                },
+                suggestedFilenameSha256: sha256("archive.zip"),
+              },
+            };
+          }
+          return {
+            output:
+              request.action === "start"
+                ? 'Browser START complete.\nlink "ZIP archive" [ref=e7]'
+                : `BROWSER_${request.action}`,
+            details: details(request.action, operations.length),
+          };
+        },
+      ),
+      cancelRun: vi.fn(async () => undefined),
+      hasActiveSession: vi.fn(() => true),
+    } as unknown as RunBrowserSessionManager;
+    const provider = fauxProvider({ provider: "faux-browser-download" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("browser", {
+          action: "start",
+          url: "https://example.com/",
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("browser", {
+          action: "download",
+          target: { ref: "e7" },
+          path: outputPath,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage("Agent download delivery completed."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    fixture.registry.registerProvider(provider.provider);
+    const confirmations = new BrowserInteractionConfirmationManager(
+      fixture.store,
+      { available: true, timeoutMs: 5_000 },
+    );
+    const runtime = new AgentRuntime(
+      fixture.store,
+      fixture.registry,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      browserSessions,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {},
+      confirmations,
+    );
+    const running = runtime.runPrompt({
+      threadId: fixture.threadId,
+      text: "Download and verify the declared Browser archive.",
+      model: { provider: "faux-browser-download", id: "faux-1" },
+      onRunCreated: async (run) => {
+        let plan = await fixture.store.createPlan(fixture.threadId, {
+          objective: "Deliver one Browser download.",
+          steps: [
+            {
+              id: "download",
+              title: "Download Browser archive",
+              description: "Save the exact downloaded bytes.",
+              verification: "The declared ZIP Artifact is verified.",
+            },
+          ],
+          artifacts: [
+            {
+              id: "archive",
+              path: outputPath,
+              kind: "file",
+              description: "The exact Browser download.",
+            },
+          ],
+        });
+        plan = await fixture.store.transitionPlanStep(plan.id, "download", {
+          action: "start",
+          runId: run.id,
+        });
+        expect(plan.steps[0]?.status).toBe("running");
+      },
+    });
+    await approveNextConfirmation(
+      confirmations,
+      fixture.store,
+      fixture.threadId,
+      "download",
+    );
+
+    const run = await running;
+
+    expect(run.status, run.error).toBe("completed");
+    expect(operations).toEqual(["start", "download"]);
+    await expect(
+      readFile(path.join(fixture.workspaceRoot, outputPath)),
+    ).resolves.toEqual(archive);
+    expect(fixture.store.listPlans(fixture.threadId)[0]!.artifacts[0]).toEqual(
+      expect.objectContaining({
+        id: "archive",
+        status: "verified",
+        sourceRunId: run.id,
+        sha256: archiveSha256,
+        sizeBytes: archive.byteLength,
+      }),
+    );
+    const events = await fixture.store.listEvents(fixture.threadId);
+    expect(
+      events
+        .filter((event) =>
+          event.type.startsWith("browser.interaction_confirmation."),
+        )
+        .map((event) => event.type),
+    ).toEqual([
+      "browser.interaction_confirmation.pending",
+      "browser.interaction_confirmation.approved",
+    ]);
+    expect(
+      events
+        .filter((event) => event.type.startsWith("plan.artifact."))
+        .map((event) => event.type),
+    ).toEqual(["plan.artifact.produced", "plan.artifact.verified"]);
+    expect(
+      JSON.stringify(
+        events.filter(
+          (event) =>
+            event.type.startsWith("browser.interaction_confirmation.") ||
+            event.type.startsWith("tool."),
+        ),
+      ),
+    ).not.toContain(outputPath);
+  });
 });
 
 async function createFixture() {
@@ -267,6 +440,7 @@ async function approveNextConfirmation(
   confirmations: BrowserInteractionConfirmationManager,
   store: LocalStore,
   threadId: string,
+  action: "save_screenshot" | "download" = "save_screenshot",
 ): Promise<void> {
   let pending:
     | ReturnType<BrowserInteractionConfirmationManager["list"]>[number]
@@ -275,7 +449,7 @@ async function approveNextConfirmation(
     const runId = store.listRuns(threadId)[0]?.id;
     expect(runId).toBeDefined();
     pending = confirmations.list({ threadId, runId: runId! })[0];
-    expect(pending?.action).toBe("save_screenshot");
+    expect(pending?.action).toBe(action);
   });
   await confirmations.decide(
     { threadId, runId: store.listRuns(threadId)[0]!.id },

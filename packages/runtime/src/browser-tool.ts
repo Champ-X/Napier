@@ -13,6 +13,7 @@ import {
   RunBrowserSessionManager,
 } from "./browser-session.js";
 import type { BrowserOutputArtifactRegistrar } from "./browser-output-artifact.js";
+import { settleBrowserToolOutput } from "./browser-tool-output.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 
 const targetSchema = Type.Object(
@@ -291,29 +292,14 @@ export function createBrowserTool(
         );
       }
       const result = await manager.execute(owner, input, signal);
-      const artifactRegistration =
-        (input.action === "save_screenshot" || input.action === "download") &&
-        result.details.file
-          ? await options.outputArtifacts
-              ?.register(owner, {
-                action: input.action,
-                path: input.path,
-                pathSha256: result.details.file.pathSha256,
-                fileSha256: result.details.file.fileSha256,
-                fileBytes: result.details.file.fileBytes,
-              })
-              .catch(() => ({
-                status: "failed" as const,
-                reason: "artifact_registration_failed" as const,
-              }))
-          : undefined;
-      const output = artifactRegistration
-        ? `${result.output}\nPlan Artifact: ${
-            artifactRegistration.status === "registered"
-              ? "verified"
-              : `not verified (${artifactRegistration.reason})`
-          }`
-        : result.output;
+      const output = await settleBrowserToolOutput({
+        owner,
+        request: input,
+        result,
+        ...(options.outputArtifacts
+          ? { registrar: options.outputArtifacts }
+          : {}),
+      });
       return {
         content: [
           { type: "text" as const, text: output },

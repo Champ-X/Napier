@@ -630,6 +630,16 @@ automatically. Read-only profiles can capture a live image but cannot save it;
 visual clicks, keypresses, and user-observed screenshot saves remain
 pause-bound takeover operations.
 
+Confirmed Agent `download` uses the same file-delivery boundary. The model must
+use a fresh ARIA ref plus a new workspace-relative target; confirmation shows
+only target/path/request hashes. Runtime preflights the target before clicking,
+opens public network only for that action, streams at most 32 MiB into the
+exclusive output transaction, hashes the suggested filename rather than
+retaining it, and deletes partial/download-manager state on failure. The Agent
+tool then applies the same Run-bound Plan Artifact settlement used by
+`save_screenshot`; absent/mismatched Plan authority keeps the downloaded file
+but reports a fixed non-verification reason.
+
 For one task or interactive session, pass the same strict preset ID directly
 to `run`, `chat`, or `tui`:
 

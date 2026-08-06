@@ -4523,6 +4523,17 @@ bytes and reports the fixed reason; it cannot roll back the screenshot.
 Visual-click/keypress authority and screenshot saves bound to the user's
 displayed Live frame remain pause/takeover-only.
 
+Confirmed Agent downloads share only the post-write settlement leaf with
+screenshot delivery. `download(ref, path)` still requires one-use confirmation
+of a fresh selected-page ARIA ref and confined new target. The Browser Session
+preflights path and current top-level origin before clicking, enables outbound
+network only around the action, waits for the paired Playwright download,
+streams at most 32 MiB through `workspace-output-file.ts`, hashes the suggested
+filename, and deletes download-manager state in `finally`. `browser-tool-output`
+then passes only path/file hashes and byte count to
+`BrowserOutputArtifactRegistrar`; registration success/skip/failure decorates
+the live tool result without changing the already verified workspace bytes.
+
 The proxy permits public subresource origins so ordinary pages can load, but
 every top-level origin transition remains action-scoped and tracked per tab.
 Because one proxy is shared by the isolated Session, Browser Route denies
