@@ -112,11 +112,11 @@ function formatCapabilities(result: CapabilityCliResult): string {
 
 function browserInteractionLabel(
   status: AgentCapabilityStatus,
-): "yes" | "confirm in Web" | "no" {
+): "yes" | "confirm interactively" | "no" {
   return status.browserInteract
     ? "yes"
     : status.browserInteractWithConfirmation
-      ? "confirm in Web"
+      ? "confirm interactively"
       : "no";
 }
 

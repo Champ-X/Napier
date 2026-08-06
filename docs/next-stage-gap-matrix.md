@@ -48,8 +48,9 @@ Audit date: 2026-08-05
   `unrestricted`; literal find and bounded vertical scroll are also available
   with proxy outbound closed. Click/type/select/upload/download remain absent
   and policy-denied under read-only presets. Safe Automation now adds
-  effect-specific one-use confirmation across Web, Chat, and TUI; Web also
-  provides a verified live viewport, operator pause/resume, and bounded
+  effect-specific one-use confirmation across Web, human one-shot CLI, Chat,
+  and TUI; Web also provides a verified live viewport, operator pause/resume,
+  and bounded
   pause-bound takeover. The isolated Run profile now supports at most four
   explicit tabs, selected-tab Source/Live/takeover, independent back/forward
   history, and Web operator new/switch/close; unsolicited popups still close
@@ -90,8 +91,9 @@ Audit date: 2026-08-05
   revisioned apply; Chat/TUI `/status` and Web show the same permission truth.
   `run`, `chat`, and `tui` also accept temporary per-Run presets without
   revising the Agent. Browser and Research remain read-only. Safe Automation
-  now exposes Browser interaction in Web, Chat, and TUI through exact one-use
-  confirmations. Dependency remediation, existing-Chrome relay, and broader
+  now exposes Browser interaction in Web, human one-shot CLI, Chat, and TUI
+  through exact one-use confirmations. JSONL/piped one-shot runs remain
+  read-only. Dependency remediation, existing-Chrome relay, and broader
   interaction reliability remain P0.
 - Plan Blueprint record ordering, signer selection, replay ownership, and
   conflict-preview validation now live outside `PlanPanel.tsx`, reducing the
@@ -1731,6 +1733,63 @@ Observed result:
   current performance, 263/263 OpenAPI compatibility operations, the 82-file
   Web distribution at 136.63 KiB main, and the 119-artifact release receipt
   all pass.
+
+## Implemented Slice: One-Shot CLI Browser Interaction Confirmation
+
+User scenario: a user can run one human terminal command with Safe Automation,
+approve or reject one exact Browser action, and receive the final result
+without opening Chat, TUI, or Web.
+
+Acceptance and safety boundary:
+
+- enable the existing process-local Browser confirmation manager only for
+  non-JSONL `napier run` when stdin is a TTY;
+- keep `run --jsonl`, missing stdin, piped/non-TTY input, resume, SDK/RPC,
+  Workflows, schedules, and channels on the read-only Browser schema;
+- reuse the same strict Contracts parser, request-hash compare-and-set manager,
+  60-second expiry, and hash-only terminal projection as Chat/TUI;
+- accept only `approve | reject` after the exact confirmation is pending.
+  Ignore all pre-confirmation lines and consume invalid decision input locally;
+- bind the decision to Thread, Run, call ID, action, validated arguments, and
+  request hash; approval remains one-use and cannot bypass Browser URL/file
+  policy;
+- on EOF, output failure, timeout, Ctrl-C, decision failure, or Runtime
+  shutdown, cancel the Run and pending authority before closing the local
+  Runtime;
+- retain no raw selector/ref, typed text, selected values, URL, upload/download
+  path, page content, or credential in the terminal confirmation UI.
+
+Observed result:
+
+- `verified`: focused one-shot, Chat, TUI, controller, JSONL/non-TTY denial,
+  pre-confirmation input, approval, rejection, and redaction tests pass; the
+  complete CLI suite passes 221 regular tests with 15 opt-in live tests skipped;
+- `verified`: a built PTY Dogfood used real DeepSeek V4 Flash and production
+  Chromium against Selenium's public Web Form. The Agent started and
+  snapshotted the page, then paused before `type`;
+- `verified`: the terminal displayed only action, request/argument/target/text
+  hash prefixes, text byte count, cross-origin status, and expiry. It contained
+  neither the private target identity nor `NAPIER_ONE_SHOT_CONFIRMED`;
+- `verified`: one exact `approve` produced
+  `browser.interaction_confirmation.pending -> approved`, resumed the same Run,
+  typed the requested value, took a fresh snapshot, did not submit/click/
+  upload/download, and completed with `ONE_SHOT_BROWSER_OK`;
+- `verified`: the initial Dogfood harness omitted `--credential-env` against a
+  fresh data root and truthfully failed before Browser execution. The corrected
+  formal-entry run added only the missing locator flag; no failed product
+  outcome was rerun away;
+- `verified`: the complete repository gate passes 2,436 regular tests with 46
+  opt-in live tests skipped by default: Root 158, CLI 221, Server 202, Web 532,
+  Contracts 3, Runtime 1,292, and SDK 28. Architecture audits 1,045 production
+  source files and 507 test files with zero cycles; OpenAPI 266 routes and
+  265/265 compatibility operations, current performance, the 88-file Web
+  distribution, and the 131-artifact release receipt all pass;
+- `verified`: one-shot/resume invocation orchestration moved from `cli.ts` into
+  bounded leaf modules, reducing the root from 681 to 578 lines. The
+  architecture override was lowered to the exact new count rather than raised;
+- P0 remains open for existing-Chrome relay, restart-safe login state,
+  autonomous login/CAPTCHA policy, broader form/download reliability, and
+  confirmed-action outcome distributions.
 
 ## Implemented Slice: Browser Live Viewport Observation
 

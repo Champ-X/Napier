@@ -602,17 +602,21 @@ until the user saves it. Chat/TUI `/status` and the Web composer display the
 same preset and permission labels.
 
 Safe Automation and custom writable profiles can expose Browser
-`click`/`type`/`select`/`upload`/`download` only in the Web entry. Every such
-action pauses before execution and shows a hash-only confirmation docket with
-**Approve once** and **Reject**. Approval is bound to the exact Run, tool call,
-action, validated argument SHA-256, and 60-second expiry; it cannot be reused.
-The docket previews only redacted effects such as target kind/hash, text byte
-count/hash, selected-value count/set hash, workspace-path hash, and
-cross-origin intent.
+`click`/`type`/`select`/`upload`/`download` only in entries with an explicit
+one-use confirmation surface: Web, Chat, TUI, and human one-shot `run` when
+stdin is a TTY. Every such action pauses before execution and shows only
+hash-bound effect metadata plus **Approve once**/**Reject** or exact
+`approve | reject` terminal input. Approval is bound to the exact Run, tool
+call, action, validated argument SHA-256, and 60-second expiry; it cannot be
+reused. The preview exposes only target kind/hash, text byte count/hash,
+selected-value count/set hash, workspace-path hash, cross-origin intent, and
+expiry.
+
 Neither `workspace` nor `unrestricted` bypasses this gate. The confirmed action
-continues in the same Run-owned Browser Session. CLI, Chat, and TUI continue to
-expose the read-only Browser schema because they do not yet have a confirmation
-surface.
+continues in the same Run-owned Browser Session. `run --jsonl`, piped/non-TTY
+one-shot input, resume, SDK/RPC, Workflows, schedules, and channels do not gain
+an interactive decision channel and continue to receive the read-only Browser
+schema.
 
 For one task or interactive session, pass the same strict preset ID directly
 to `run`, `chat`, or `tui`:
@@ -639,13 +643,14 @@ drift.
 Browser interaction confirmation is a separate process-local authority. The
 Contracts and Runtime narrow subpaths share only action, hashes, timestamps,
 status, and receipt digests. Selector, text, values, URLs, upload paths, and
-download paths never enter confirmation events or the Web/Chat/TUI docket.
-Web uses buttons; Chat and TUI accept only the exact words `approve` or
-`reject` while the Run is paused. Invalid terminal input is consumed locally,
-is not queued as a prompt, and does not enter Ledger evidence. `Ctrl-C`,
-timeout, EOF during a pending Chat decision, rejection, or Run cancellation
-fails closed. Pending and terminal confirmation events remain durable, while
-the one-use resolver is intentionally non-resumable across process restart.
+download paths never enter confirmation events or confirmation UI. Web uses
+buttons; human one-shot `run`, Chat, and TUI accept only the exact words
+`approve` or `reject` after the matching request is pending. Invalid or
+pre-confirmation terminal input is consumed locally, is not queued as a Run
+decision or prompt, and does not enter Ledger evidence. `Ctrl-C`, timeout, EOF
+during a pending decision, rejection, or Run cancellation fails closed.
+Pending and terminal confirmation events remain durable, while the one-use
+resolver is intentionally non-resumable across process restart.
 
 While an active user Run owns a Browser Session, Web also shows **Browser
 Live**. The panel consumes finite `no-store` SSE segments of up to 32 samples

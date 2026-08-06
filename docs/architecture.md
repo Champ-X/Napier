@@ -703,12 +703,13 @@ maximum complexity 60, and `ContextPanel.tsx` to 3,537 lines.
 Presets are convenience, not escalation. None sets `unrestricted`; the Browser
 and Research presets remain `observe` and report Browser read available but
 interaction unavailable. Coding has no Browser tool. Safe Automation uses
-`workspace`; in Web it reports `interact confirm` and exposes the interactive
-schema only because the Server supplies a confirmation manager. CLI, Chat, and
-TUI supply no confirmation manager, receive the read-only schema, and report
-interaction unavailable. Raw custom profile editing remains available and is
-truthfully labeled `Custom`. Doctor remains the separate source of truth for
-live model, network, Browser, and Sandbox readiness.
+`workspace`; Web, Chat, TUI, and human one-shot `run` with TTY stdin report
+`interact confirm` and expose the interactive schema only because those
+entries supply a confirmation manager. JSONL, piped/non-TTY one-shot runs,
+resume, SDK/RPC, Workflows, schedules, and channels supply no confirmation
+manager and receive the read-only schema. Raw custom profile editing remains
+available and is truthfully labeled `Custom`. Doctor remains the separate
+source of truth for live model, network, Browser, and Sandbox readiness.
 
 Temporary presets are admitted only for standard `user` Runs. Recovery,
 schedules, channels, Workflows, and model/tool/Agent experiments fail closed if
@@ -724,15 +725,16 @@ authority.
 accepts one pending interactive Browser call per Run, appends a hash-only
 `browser.interaction_confirmation.pending` event, and awaits an exact
 request-SHA decision while the SSE stream and Browser Session remain live.
-The Server decision route and local Chat/TUI controllers bind Thread, Run,
-confirmation ID, and expected request hash. Web uses explicit buttons; Chat
-and TUI accept only `approve | reject` while the matching Run is paused.
-Invalid terminal input is consumed locally and cannot become a queued user
-message. A terminal `approved | rejected | expired | cancelled` event is
-appended before the waiting tool proceeds. Runtime policy still validates
-public-network and workspace-file scope before confirmation; confirmation
-cannot authorize an otherwise denied call. Raw tool arguments stay in the
-private live call/capsule boundary and never enter the confirmation protocol.
+The Server decision route and local one-shot/Chat/TUI controllers bind Thread,
+Run, confirmation ID, and expected request hash. Web uses explicit buttons;
+terminal entries accept only `approve | reject` after the matching request is
+pending. Pre-confirmation or invalid terminal input is consumed locally and
+cannot become a Run decision or queued user message. A terminal
+`approved | rejected | expired | cancelled` event is appended before the
+waiting tool proceeds. Runtime policy still validates public-network and
+workspace-file scope before confirmation; confirmation cannot authorize an
+otherwise denied call. Raw tool arguments stay in the private live
+call/capsule boundary and never enter the confirmation protocol.
 Web and terminal entries parse the same exact Contracts shape.
 
 `BrowserLiveViewService` authorizes only the active standard user Run. It asks

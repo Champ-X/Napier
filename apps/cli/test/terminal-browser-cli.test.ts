@@ -30,6 +30,238 @@ afterEach(async () => {
 });
 
 describe("terminal Browser interaction confirmation", () => {
+  it("approves one exact Browser interaction in a human one-shot Run", async () => {
+    const fixture = await createFixture();
+    const operations: string[] = [];
+    const provider = browserProvider(
+      "one-shot-browser-confirm",
+      "ONE_SHOT_BROWSER_CONFIRMED",
+      "#PRIVATE_ONE_SHOT_SELECTOR",
+      "PRIVATE_ONE_SHOT_TEXT",
+    );
+    const input = ttyInput();
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+    const running = runCli(
+      [
+        "run",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--prompt",
+        "Type into the confirmed Browser target.",
+        "--model",
+        "one-shot-browser-confirm/faux-1",
+        "--preset",
+        "safe_automation",
+      ],
+      {
+        cwd: fixture.root,
+        env: {},
+        stdin: input,
+        stdout,
+        stderr,
+      },
+      browserDependencies(provider, browserSessions(operations), "one-shot"),
+    );
+
+    input.write("approve\n");
+    await vi.waitFor(() =>
+      expect(stderr.text()).toContain(
+        "[confirm] Browser type paused before execution",
+      ),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(operations).toEqual(["start"]);
+    expect(stderr.text()).toContain("Type approve or reject");
+    expect(stderr.text()).not.toContain("PRIVATE_ONE_SHOT_SELECTOR");
+    expect(stderr.text()).not.toContain("PRIVATE_ONE_SHOT_TEXT");
+    input.write("not-a-decision\n");
+    await vi.waitFor(() =>
+      expect(
+        stderr.text().split("Type approve or reject").length - 1,
+      ).toBeGreaterThanOrEqual(2),
+    );
+    input.write("approve\n");
+
+    expect(await running).toBe(0);
+    expect(operations).toEqual(["start", "type"]);
+    expect(stderr.text()).toContain("[confirm] Browser type approved");
+    expect(stdout.text()).toBe("ONE_SHOT_BROWSER_CONFIRMED\n");
+    expect(stdout.text()).not.toContain("PRIVATE_ONE_SHOT_TEXT");
+  });
+
+  it("rejects one exact Browser interaction in a human one-shot Run", async () => {
+    const fixture = await createFixture();
+    const operations: string[] = [];
+    const provider = browserProvider(
+      "one-shot-browser-reject",
+      "ONE_SHOT_BROWSER_REJECTED",
+      "#PRIVATE_ONE_SHOT_REJECT_SELECTOR",
+      "PRIVATE_ONE_SHOT_REJECT_TEXT",
+    );
+    const input = ttyInput();
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+    const running = runCli(
+      [
+        "run",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--prompt",
+        "Reject the exact Browser interaction.",
+        "--model",
+        "one-shot-browser-reject/faux-1",
+        "--preset",
+        "safe_automation",
+      ],
+      {
+        cwd: fixture.root,
+        env: {},
+        stdin: input,
+        stdout,
+        stderr,
+      },
+      browserDependencies(
+        provider,
+        browserSessions(operations),
+        "one-shot-reject",
+      ),
+    );
+
+    await vi.waitFor(() =>
+      expect(stderr.text()).toContain(
+        "[confirm] Browser type paused before execution",
+      ),
+    );
+    input.write("reject\n");
+
+    expect(await running).toBe(0);
+    expect(operations).toEqual(["start"]);
+    expect(stderr.text()).toContain("[confirm] Browser type rejected");
+    expect(stdout.text()).toBe("ONE_SHOT_BROWSER_REJECTED\n");
+    expect(`${stdout.text()}${stderr.text()}`).not.toContain(
+      "PRIVATE_ONE_SHOT_REJECT_TEXT",
+    );
+  });
+
+  it("cancels a pending one-shot Browser confirmation on EOF", async () => {
+    const fixture = await createFixture();
+    const operations: string[] = [];
+    const provider = browserProvider(
+      "one-shot-browser-eof",
+      "ONE_SHOT_EOF_MUST_NOT_COMPLETE",
+      "#PRIVATE_ONE_SHOT_EOF_SELECTOR",
+      "PRIVATE_ONE_SHOT_EOF_TEXT",
+    );
+    const input = ttyInput();
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+    const running = runCli(
+      [
+        "run",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--prompt",
+        "Cancel if the confirmation input closes.",
+        "--model",
+        "one-shot-browser-eof/faux-1",
+        "--preset",
+        "safe_automation",
+      ],
+      {
+        cwd: fixture.root,
+        env: {},
+        stdin: input,
+        stdout,
+        stderr,
+      },
+      browserDependencies(
+        provider,
+        browserSessions(operations),
+        "one-shot-eof",
+      ),
+    );
+
+    await vi.waitFor(() =>
+      expect(stderr.text()).toContain(
+        "[confirm] Browser type paused before execution",
+      ),
+    );
+    input.end();
+
+    expect(await running).toBe(1);
+    expect(operations).toEqual(["start"]);
+    expect(stdout.text()).not.toContain("ONE_SHOT_EOF_MUST_NOT_COMPLETE");
+    expect(`${stdout.text()}${stderr.text()}`).not.toContain(
+      "PRIVATE_ONE_SHOT_EOF_TEXT",
+    );
+  });
+
+  it("keeps JSONL and non-TTY one-shot Browser surfaces read-only", async () => {
+    for (const mode of ["jsonl", "non_tty"] as const) {
+      const fixture = await createFixture();
+      const operations: string[] = [];
+      const provider = browserProvider(
+        `one-shot-browser-${mode}`,
+        `ONE_SHOT_${mode.toUpperCase()}_READ_ONLY`,
+        `#PRIVATE_${mode.toUpperCase()}_SELECTOR`,
+        `PRIVATE_${mode.toUpperCase()}_TEXT`,
+      );
+      const input = new PassThrough();
+      if (mode === "jsonl") {
+        Object.defineProperty(input, "isTTY", { value: true });
+      }
+      input.end("approve\n");
+      const stdout = new CaptureWritable();
+      const stderr = new CaptureWritable();
+
+      const code = await runCli(
+        [
+          "run",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--prompt",
+          "Do not expose Browser interaction without a human channel.",
+          "--model",
+          `one-shot-browser-${mode}/faux-1`,
+          "--preset",
+          "safe_automation",
+          ...(mode === "jsonl" ? ["--jsonl"] : []),
+        ],
+        {
+          cwd: fixture.root,
+          env: {},
+          stdin: input,
+          stdout,
+          stderr,
+        },
+        browserDependencies(
+          provider,
+          browserSessions(operations),
+          `one-shot-${mode}`,
+        ),
+      );
+
+      expect(code).toBe(0);
+      expect(operations).toEqual(["start"]);
+      expect(stdout.text()).toContain(
+        `ONE_SHOT_${mode.toUpperCase()}_READ_ONLY`,
+      );
+      expect(stdout.text()).not.toContain(`PRIVATE_${mode.toUpperCase()}_TEXT`);
+      expect(`${stdout.text()}${stderr.text()}`).not.toContain(
+        "Browser type paused before execution",
+      );
+    }
+  });
+
   it("approves one exact Browser interaction while the Chat Run is active", async () => {
     const fixture = await createFixture();
     const operations: string[] = [];

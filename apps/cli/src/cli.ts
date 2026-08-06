@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import type { RunEvent, RunRecord } from "@napier/contracts";
+import type { RunEvent } from "@napier/contracts";
 import {
   canonicalJson,
   createExecutionPlanWorkflowExperimentResultFrame,
@@ -23,12 +23,12 @@ import {
   parseCliArgs,
   type CliAction,
   type CliBranchOptions,
-  type CliExecutionOptions,
   type CliResumeOptions,
   type CliRunOptions,
   type CliWorkflowOptions,
 } from "./cli-options.js";
 import { cliRunPromptOptions } from "./cli-run-options.js";
+import { executeCliInvocation } from "./cli-invocation.js";
 import { createCliWorkflowExperimentRequest } from "./cli-workflow-experiment.js";
 import { executeAgentMessageExperimentCli } from "./agent-message-experiment-cli.js";
 import {
@@ -133,12 +133,13 @@ async function executeRun(
   dependencies: RunCliDependencies,
   parentSignal?: AbortSignal,
 ): Promise<number> {
-  return executeInvocation(
+  return executeCliInvocation(
     options,
     io,
     dependencies,
     parentSignal,
     options.threadId ?? "thread_cli_preflight",
+    true,
     async (services) => {
       await configureCliModelCredential(services, options, io.env);
       const thread = options.threadId
@@ -161,12 +162,13 @@ async function executeResume(
   dependencies: RunCliDependencies,
   parentSignal?: AbortSignal,
 ): Promise<number> {
-  return executeInvocation(
+  return executeCliInvocation(
     options,
     io,
     dependencies,
     parentSignal,
     options.threadId,
+    false,
     (services) => {
       services.store.getThread(options.threadId);
       return {
@@ -530,95 +532,6 @@ async function createWorkflowThread(
   });
 }
 
-interface PreparedCliInvocation {
-  threadId: string;
-  invoke(
-    signal: AbortSignal,
-    onEvent?: (event: RunEvent) => Promise<void>,
-  ): Promise<RunRecord>;
-}
-
-async function executeInvocation(
-  options: CliExecutionOptions,
-  io: CliIo,
-  dependencies: RunCliDependencies,
-  parentSignal: AbortSignal | undefined,
-  initialThreadId: string,
-  prepare: (
-    services: LocalAgentRuntimeServices,
-  ) => PreparedCliInvocation | Promise<PreparedCliInvocation>,
-): Promise<number> {
-  let services: LocalAgentRuntimeServices | undefined;
-  let threadId = initialThreadId;
-  const controller = new AbortController();
-  const forwardAbort = (): void => controller.abort();
-  parentSignal?.addEventListener("abort", forwardAbort, { once: true });
-  if (parentSignal?.aborted) controller.abort();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
-  try {
-    const workspaceRoot = await canonicalWorkspace(options.workspace, io.cwd);
-    const dataRoot = path.resolve(
-      io.cwd,
-      options.dataRoot ?? path.join(workspaceRoot, ".napier"),
-    );
-    services = await dependencies.createRuntime({
-      workspaceRoot,
-      dataRoot,
-      env: io.env,
-    });
-    const invocation = await prepare(services);
-    threadId = invocation.threadId;
-    const thread = services.store.getThread(threadId);
-    const eventWriter = options.jsonl
-      ? new OrderedEventFrameWriter(io.stdout, thread.id, thread.eventCount + 1)
-      : undefined;
-    const onEvent = eventWriter
-      ? async (event: RunEvent): Promise<void> => eventWriter.write(event)
-      : undefined;
-    const run = await invocation.invoke(controller.signal, onEvent);
-    const detail = await services.store.getDetail(threadId);
-    if (eventWriter) {
-      await eventWriter.finish(detail.thread.eventCount, detail.events);
-      const snapshot = streamSnapshotFrame(detail);
-      const done = streamRunDoneFrame(
-        threadId,
-        run.id,
-        run.status,
-        snapshot.detailSha256,
-        snapshot.detailBytes,
-        snapshot.detail.thread.eventCount,
-        snapshot.eventBytes,
-        hashEventStream(snapshot.detail.events),
-      );
-      await writeJsonLine(io.stdout, snapshot);
-      await writeJsonLine(io.stdout, done);
-    } else {
-      const assistant = latestAssistantText(detail.events, run.id);
-      if (assistant) await writeLine(io.stdout, assistant);
-      await writeLine(
-        io.stderr,
-        `Napier run ${run.id} ${run.status} (thread ${threadId})`,
-      );
-    }
-    return run.status === "completed" ? 0 : 1;
-  } catch (error) {
-    const frame = streamRunErrorFrame(threadId, error);
-    if (options.jsonl) {
-      await writeJsonLine(io.stdout, frame);
-    } else {
-      await writeLine(
-        io.stderr,
-        `Napier run failed: ${frame.message} (${frame.diagnosticSha256.slice(0, 12)})`,
-      );
-    }
-    return 1;
-  } finally {
-    clearTimeout(timeout);
-    parentSignal?.removeEventListener("abort", forwardAbort);
-    await services?.shutdown().catch(() => undefined);
-  }
-}
-
 function existingThread(
   services: LocalAgentRuntimeServices,
   options: CliRunOptions,
@@ -642,22 +555,6 @@ async function newThread(
     title: options.title ?? "CLI one-shot",
     agentId: agent.id,
   });
-}
-
-function latestAssistantText(events: RunEvent[], runId: string): string {
-  for (let index = events.length - 1; index >= 0; index -= 1) {
-    const event = events[index]!;
-    if (event.runId !== runId || event.type !== "message.assistant") continue;
-    if (
-      event.payload &&
-      !Array.isArray(event.payload) &&
-      typeof event.payload === "object" &&
-      typeof event.payload["text"] === "string"
-    ) {
-      return event.payload["text"];
-    }
-  }
-  return "";
 }
 
 function signedNumber(value: number, fractionDigits?: number): string {

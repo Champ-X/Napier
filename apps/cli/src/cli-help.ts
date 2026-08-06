@@ -88,6 +88,7 @@ Run options:
   --source-run <run-id>  Explicit completed same-Thread Run for private Source continuity
   --title <text>         Title for a new Thread
   --preset <id>          Temporary capability preset for this Run only
+                         Safe Automation Browser actions require TTY approve/reject
 
 Resume options:
   --thread <thread-id>   Waiting Thread containing an interrupted Run
