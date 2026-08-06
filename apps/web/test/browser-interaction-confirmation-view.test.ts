@@ -87,6 +87,7 @@ function confirmation(status: "pending" | "approved") {
       targetSha256: "e".repeat(64),
       fileSha256: "f".repeat(64),
       fileBytes: 128,
+      pageStateSha256: "1".repeat(64),
       crossOriginAuthorized: false,
     },
     status,

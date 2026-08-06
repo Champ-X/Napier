@@ -19,6 +19,7 @@ import {
 import { BrowserInteractionConfirmationManager } from "../src/browser-interaction-confirmations.js";
 import { BrowserSessionPauseManager } from "../src/browser-session-pause.js";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
+import { withBrowserConfirmationState } from "./browser-confirmation-harness.js";
 
 const roots: string[] = [];
 
@@ -55,10 +56,10 @@ describe("Agent Browser Session integration", () => {
       },
     );
     const cancelRun = vi.fn(async () => undefined);
-    const browserSessions = {
+    const browserSessions = withBrowserConfirmationState({
       execute,
       cancelRun,
-    } as unknown as RunBrowserSessionManager;
+    }) as unknown as RunBrowserSessionManager;
     const provider = fauxProvider({ provider: "faux-browser" });
     provider.setResponses([
       fauxAssistantMessage(
@@ -283,7 +284,7 @@ describe("Agent Browser Session integration", () => {
   it("executes one confirmed Browser interaction in the same Run Session", async () => {
     const fixture = await createFixture("workspace");
     const operations: string[] = [];
-    const browserSessions = {
+    const browserSessions = withBrowserConfirmationState({
       execute: vi.fn(
         async (
           _owner: { threadId: string; runId: string },
@@ -298,7 +299,7 @@ describe("Agent Browser Session integration", () => {
       ),
       cancelRun: vi.fn(async () => undefined),
       hasActiveSession: vi.fn(() => true),
-    } as unknown as RunBrowserSessionManager;
+    }) as unknown as RunBrowserSessionManager;
     const provider = fauxProvider({ provider: "faux-browser-confirmed" });
     provider.setResponses([
       fauxAssistantMessage(
@@ -519,13 +520,13 @@ describe("Agent Browser Session integration", () => {
 
   it("does not execute a rejected Browser interaction", async () => {
     const fixture = await createFixture("workspace");
-    const browserSessions = {
+    const browserSessions = withBrowserConfirmationState({
       execute: vi.fn(async () => ({
         output: "STARTED",
         details: details("start", 1),
       })),
       cancelRun: vi.fn(async () => undefined),
-    } as unknown as RunBrowserSessionManager;
+    }) as unknown as RunBrowserSessionManager;
     const provider = fauxProvider({ provider: "faux-browser-rejected" });
     provider.setResponses([
       fauxAssistantMessage(

@@ -21,6 +21,7 @@ describe("Browser interaction confirmation panel", () => {
           textBytes: 19,
           fileSha256: "1".repeat(64),
           fileBytes: 128,
+          pageStateSha256: "2".repeat(64),
           sourceImageSha256: "f".repeat(64),
           crossOriginAuthorized: false,
         },
@@ -45,7 +46,9 @@ describe("Browser interaction confirmation panel", () => {
     expect(serialized).toContain("eeeeeeeeeeee");
     expect(serialized).toContain("ffffffffffff");
     expect(serialized).toContain("111111111111");
+    expect(serialized).toContain("222222222222");
     expect(serialized).toContain("File");
+    expect(serialized).toContain("Page state");
     expect(serialized).toContain("Source image");
     expect(serialized).toContain("128");
     expect(serialized).toContain("19");

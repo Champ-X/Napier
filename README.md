@@ -682,6 +682,14 @@ during a pending decision, rejection, or Run cancellation fails closed.
 Pending and terminal confirmation events remain durable, while the one-use
 resolver is intentionally non-resumable across process restart.
 
+For `click`, `type`, `select`, `upload`, and `download`, confirmation also binds
+the selected target's bounded ARIA semantics plus Session, tab-set, URL, and
+origin identity. Runtime recaptures that target immediately before execution.
+If the page changes what the ref/selector means while approval is pending, the
+action fails before side effects and the same Browser Session stays available
+for a fresh snapshot and new confirmation. Unrelated page content is not part
+of this hash, avoiding false rejection on ordinary dynamic pages.
+
 While an active user Run owns a Browser Session, Web also shows **Browser
 Live**. The panel consumes finite `no-store` SSE segments of up to 32 samples
 at one-second cadence. Each emitted frame contains canonical base64 PNG bytes,

@@ -19,6 +19,7 @@ import {
 import { BrowserInteractionConfirmationManager } from "../src/browser-interaction-confirmations.js";
 import type { BrowserPreparedUpload } from "../src/browser-workspace-files.js";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
+import { withBrowserConfirmationState } from "./browser-confirmation-harness.js";
 
 const roots: string[] = [];
 
@@ -37,7 +38,7 @@ describe("Agent Browser upload delivery", () => {
     await writeFile(path.join(fixture.workspaceRoot, inputPath), approvedBytes);
     const operations: string[] = [];
     let executedUpload: BrowserPreparedUpload | undefined;
-    const browserSessions = {
+    const browserSessions = withBrowserConfirmationState({
       execute: vi.fn(
         async (
           _owner: { threadId: string; runId: string },
@@ -89,7 +90,7 @@ describe("Agent Browser upload delivery", () => {
       ),
       cancelRun: vi.fn(async () => undefined),
       hasActiveSession: vi.fn(() => true),
-    } as unknown as RunBrowserSessionManager;
+    }) as unknown as RunBrowserSessionManager;
     const provider = fauxProvider({ provider: "faux-browser-upload" });
     provider.setResponses([
       fauxAssistantMessage(

@@ -1526,8 +1526,7 @@ export class AgentRuntime {
           : {}),
         confirmations: this.browserInteractionConfirmations,
         browserPauses: this.browserSessionPauses,
-        browserSessionActive: (owner) =>
-          this.capabilities.hasActiveBrowserSession(owner),
+        browserConfirmation: this.capabilities.browserConfirmation,
         restrictedReadOnlyExecution,
         toolCall,
         args,

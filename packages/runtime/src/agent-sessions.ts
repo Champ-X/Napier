@@ -6,7 +6,7 @@ import type {
   BrowserSessionRequest,
 } from "./browser-session-model.js";
 import { createBrowserTool } from "./browser-tool.js";
-import type { BrowserUploadAuthorizationManager } from "./browser-upload-authorization.js";
+import type { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import { BrowserOutputArtifactRegistrar } from "./browser-output-artifact.js";
 import {
   type LspSessionOwner,
@@ -46,7 +46,7 @@ export class AgentSessionRuntime {
     researchSourceCapsules?: ResearchSourceCapsuleStore,
     store?: Pick<LocalStore, "listRuns" | "listEvents" | "getThread"> &
       RunBoundFileArtifactStore,
-    private readonly browserUploads?: BrowserUploadAuthorizationManager,
+    private readonly browserConfirmations?: BrowserInteractionConfirmationManager,
   ) {
     this.kernels = new AgentKernelRuntime(processes);
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
@@ -108,8 +108,11 @@ export class AgentSessionRuntime {
           ...(this.browserOutputArtifacts
             ? { outputArtifacts: this.browserOutputArtifacts }
             : {}),
-          ...(this.browserUploads
-            ? { uploadAuthorizations: this.browserUploads }
+          ...(this.browserConfirmations
+            ? {
+                actionConfirmations: this.browserConfirmations.actions,
+                uploadAuthorizations: this.browserConfirmations.uploads,
+              }
             : {}),
         }),
       );
@@ -159,6 +162,17 @@ export class AgentSessionRuntime {
     tabs: BrowserSessionOperationResult;
   }> {
     return this.browsers.captureTakeoverSnapshot(owner, signal);
+  }
+
+  captureBrowserConfirmationPageState(
+    owner: { threadId: string; runId: string },
+    request: Extract<
+      BrowserSessionRequest,
+      { action: "click" | "type" | "select" | "upload" | "download" }
+    >,
+    signal?: AbortSignal,
+  ) {
+    return this.browsers.captureConfirmationPageState(owner, request, signal);
   }
 
   executeBrowserTakeoverAction(

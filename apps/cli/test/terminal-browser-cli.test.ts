@@ -21,6 +21,20 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { runCli, type CliIo, type RunCliDependencies } from "../src/cli.js";
 
+interface ConfirmationPageState {
+  kind: "napier.browser-confirmation-page-state";
+  schemaVersion: 1;
+  sessionIdSha256: string;
+  sessionOperation: number;
+  activeTabId: string;
+  tabCount: number;
+  tabSetSha256: string;
+  currentUrlSha256: string;
+  currentOriginSha256: string;
+  targetStateSha256: string;
+  contentSha256: string;
+}
+
 const roots: string[] = [];
 
 afterEach(async () => {
@@ -506,7 +520,7 @@ function browserDependencies(
 }
 
 function browserSessions(operations: string[]): RunBrowserSessionManager {
-  return {
+  const session = {
     execute: vi.fn(
       async (
         _owner: { threadId: string; runId: string },
@@ -521,7 +535,56 @@ function browserSessions(operations: string[]): RunBrowserSessionManager {
     ),
     cancelRun: vi.fn(async () => undefined),
     hasActiveSession: vi.fn(() => true),
-  } as unknown as RunBrowserSessionManager;
+  };
+  return withConfirmationState(session) as unknown as RunBrowserSessionManager;
+}
+
+function withConfirmationState<
+  Session extends {
+    execute(
+      owner: { threadId: string; runId: string },
+      request: { action: BrowserSessionDetails["action"] },
+      signal?: AbortSignal,
+    ): Promise<unknown>;
+  },
+>(session: Session): Session {
+  const confirmed = session as Session & {
+    captureConfirmationPageState(): Promise<ConfirmationPageState>;
+    executeConfirmedAction(
+      owner: { threadId: string; runId: string },
+      request: { action: BrowserSessionDetails["action"] },
+      expected: ConfirmationPageState,
+      signal?: AbortSignal,
+    ): Promise<unknown>;
+  };
+  confirmed.captureConfirmationPageState = async () =>
+    terminalConfirmationPageState();
+  confirmed.executeConfirmedAction = async (
+    owner,
+    request,
+    _expected,
+    signal,
+  ) => session.execute(owner, request, signal);
+  return session;
+}
+
+function terminalConfirmationPageState(): ConfirmationPageState {
+  const content = {
+    kind: "napier.browser-confirmation-page-state" as const,
+    schemaVersion: 1 as const,
+    sessionIdSha256: "a".repeat(64),
+    sessionOperation: 1,
+    activeTabId: "tab_1",
+    tabCount: 1,
+    tabSetSha256: sha256(canonicalJson(["tab_1"])),
+    currentUrlSha256: "e".repeat(64),
+    currentOriginSha256: "f".repeat(64),
+    targetStateSha256: sha256("stable terminal target"),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
 }
 
 function browserDetails(
@@ -545,6 +608,15 @@ function browserDetails(
     currentUrlSha256: "e".repeat(64),
     currentOriginSha256: "f".repeat(64),
     titleSha256: "1".repeat(64),
+    pageDiagnosis: {
+      status: "none",
+      signalCount: 0,
+      signalsSha256: sha256(canonicalJson([])),
+      takeoverRecommended: false,
+    },
+    snapshotSha256: sha256("terminal browser snapshot"),
+    snapshotChars: 25,
+    snapshotTruncated: false,
     blockedRequestCount: 0,
     network: {
       requestCount: operation,

@@ -128,6 +128,9 @@ export function terminalBrowserInteractionConfirmationLines(
           `[confirm] file ${String(preview.fileBytes ?? 0)}B ${shortHash(preview.fileSha256)}`,
         ]
       : []),
+    ...(preview.pageStateSha256
+      ? [`[confirm] page state ${shortHash(preview.pageStateSha256)}`]
+      : []),
     ...(preview.sourceImageSha256
       ? [`[confirm] source image ${shortHash(preview.sourceImageSha256)}`]
       : []),

@@ -59,6 +59,18 @@ export class AgentCapabilityRuntime {
   private readonly webSearch: WebSearchExecutor;
   private readonly webFetch: WebFetchExecutor;
   private readonly webFetchSave: RunWebFetchSaveManager | undefined;
+  readonly browserConfirmation = {
+    capture: (
+      owner: AgentCapabilityOwner,
+      request: Parameters<
+        AgentSessionRuntime["captureBrowserConfirmationPageState"]
+      >[1],
+      signal?: AbortSignal,
+    ) =>
+      this.sessions.captureBrowserConfirmationPageState(owner, request, signal),
+    active: (owner: AgentCapabilityOwner) =>
+      this.sessions.hasActiveBrowserSession(owner),
+  };
 
   constructor(
     private readonly store: LocalStore,
@@ -104,7 +116,7 @@ export class AgentCapabilityRuntime {
       webFetchCapture,
       new ResearchSourceCapsuleStore(store.dataRoot),
       store,
-      browserInteractionConfirmations?.uploads,
+      browserInteractionConfirmations,
     );
   }
 
@@ -309,7 +321,7 @@ export class AgentCapabilityRuntime {
   }
 
   hasActiveBrowserSession(owner: AgentCapabilityOwner): boolean {
-    return this.sessions.hasActiveBrowserSession(owner);
+    return this.browserConfirmation.active(owner);
   }
 }
 

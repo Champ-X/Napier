@@ -11,6 +11,7 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
 import { createId, nowIso } from "./ids.js";
 import type { LocalStore } from "./store.js";
+import { BrowserConfirmedActionManager } from "./browser-confirmed-action.js";
 import { BrowserUploadAuthorizationManager } from "./browser-upload-authorization.js";
 
 export const BROWSER_INTERACTION_CONFIRMATION_TIMEOUT_MS = 60_000;
@@ -45,6 +46,7 @@ interface PendingConfirmation {
 export class BrowserInteractionConfirmationManager {
   private readonly pendingById = new Map<string, PendingConfirmation>();
   private readonly pendingByRun = new Map<string, string>();
+  readonly actions = new BrowserConfirmedActionManager();
   readonly uploads: BrowserUploadAuthorizationManager;
   readonly available: boolean;
 
@@ -170,6 +172,7 @@ export class BrowserInteractionConfirmationManager {
   }
 
   async cancelRun(owner: BrowserInteractionConfirmationOwner): Promise<void> {
+    this.actions.cancelRun(owner);
     this.uploads.cancelRun(owner);
     const confirmationId = this.pendingByRun.get(ownerKey(owner));
     if (!confirmationId) return;
@@ -317,6 +320,7 @@ function validPreview(
     preview.valueSetSha256,
     preview.pathSha256,
     preview.fileSha256,
+    preview.pageStateSha256,
     preview.sourceImageSha256,
   ];
   return (

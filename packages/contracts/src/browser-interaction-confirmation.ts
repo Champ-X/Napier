@@ -27,6 +27,7 @@ export interface BrowserInteractionConfirmationPreview {
   pathSha256?: string;
   fileSha256?: string;
   fileBytes?: number;
+  pageStateSha256?: string;
   sourceImageSha256?: string;
   crossOriginAuthorized: boolean;
 }
@@ -153,6 +154,7 @@ function validPreview(value: unknown): boolean {
     "pathSha256",
     "fileSha256",
     "fileBytes",
+    "pageStateSha256",
     "sourceImageSha256",
     "crossOriginAuthorized",
   ]);
@@ -166,6 +168,7 @@ function validPreview(value: unknown): boolean {
       preview["valueSetSha256"],
       preview["pathSha256"],
       preview["fileSha256"],
+      preview["pageStateSha256"],
       preview["sourceImageSha256"],
     ].every((entry) => entry === undefined || hash(entry)) &&
     (preview["fileSha256"] === undefined) ===

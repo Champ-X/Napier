@@ -84,6 +84,14 @@ export function BrowserInteractionConfirmationPanel({
             </dd>
           </div>
         ) : null}
+        {confirmation.preview.pageStateSha256 ? (
+          <div>
+            <dt>Page state</dt>
+            <dd title={confirmation.preview.pageStateSha256}>
+              {confirmation.preview.pageStateSha256.slice(0, 12)}
+            </dd>
+          </div>
+        ) : null}
         {confirmation.preview.sourceImageSha256 ? (
           <div>
             <dt>Source image</dt>

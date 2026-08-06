@@ -737,6 +737,21 @@ otherwise denied call. Raw tool arguments stay in the private live
 call/capsule boundary and never enter the confirmation protocol.
 Web and terminal entries parse the same exact Contracts shape.
 
+Semantic target actions (`click`, `type`, `select`, `upload`, and `download`)
+add a second one-use authority in `browser-confirmed-action.ts`. Before showing
+confirmation, the serialized Browser manager captures the selected target's
+bounded ARIA snapshot plus Session ID, operation, active tab, tab-set, URL, and
+origin hashes. Only the resulting `pageStateSha256` enters confirmation events
+and CLI/Web dockets. Immediately before execution,
+`browser-confirmed-session.ts` recaptures the same target inside the same
+per-Run Session queue and compares exact content hashes. Drift throws a
+retryable fixed error before network/action execution and deliberately keeps
+the Session alive; the model can take a fresh snapshot and request a new
+confirmation. Action/Run/call/arguments substitution, replay, cancellation,
+and more than four pending/approved grants fail closed. Unrelated page nodes,
+raw ARIA text, labels, URL, selector/ref, and form values remain outside durable
+evidence.
+
 `BrowserLiveViewService` authorizes only the active standard user Run. It asks
 the same serialized `RunBrowserSessionManager` for a viewport screenshot using
 the existing screenshot implementation with operation counting disabled.

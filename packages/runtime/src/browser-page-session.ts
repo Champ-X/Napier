@@ -7,7 +7,6 @@ import {
   chromium,
   type Browser,
   type BrowserContext,
-  type Locator,
   type Page,
   type Route,
 } from "playwright-core";
@@ -31,7 +30,6 @@ import {
   BROWSER_LIMITS_SHA256,
   BROWSER_NAVIGATION_TIMEOUT_MS,
   MAX_BROWSER_WAIT_MS,
-  type BrowserElementTarget,
   type BrowserNetworkProxy,
   type BrowserPageSourceCapture,
   type BrowserRuntimeBinding,
@@ -63,6 +61,9 @@ import {
   captureBrowserPageMetadata,
   captureBrowserPageState,
 } from "./browser-page-state.js";
+import { captureBrowserPageConfirmationState } from "./browser-page-confirmation-state.js";
+import type { BrowserConfirmedPageRequest } from "./browser-confirmed-action.js";
+import { browserPageLocator } from "./browser-page-locator.js";
 import { performBrowserPageUpload } from "./browser-page-upload.js";
 import { sha256 } from "./ed25519.js";
 import { FixedIpHttpProxy } from "./fixed-ip-http-proxy.js";
@@ -197,6 +198,20 @@ export class PersistentBrowserSession {
     );
   }
 
+  async captureConfirmationPageState(
+    request: BrowserConfirmedPageRequest,
+    signal?: AbortSignal,
+  ) {
+    return await captureBrowserPageConfirmationState({
+      page: this.tabs.activePage,
+      target: request.target,
+      locator: browserPageLocator,
+      sessionOperation: this.operationCount,
+      sessionIdSha256: this.idSha256,
+      tabs: this.tabs.evidence(),
+      ...(signal ? { signal } : {}),
+    });
+  }
   async close(): Promise<void> {
     if (this.closed || this.closing) return;
     this.closing = true;
@@ -265,7 +280,7 @@ export class PersistentBrowserSession {
             request: fileRequest,
             workspaceRoot: this.workspaceRoot,
             navigation: this.navigation,
-            locator: (locatorPage, target) => this.locator(locatorPage, target),
+            locator: browserPageLocator,
             preflightNavigation: (navigationPage, value, allowed) =>
               this.preflightNavigation(navigationPage, value, allowed),
             withNetwork: (operation) => this.withNetwork(operation),
@@ -350,7 +365,7 @@ export class PersistentBrowserSession {
         case "click":
           await this.withNetwork(() =>
             this.navigation.run(page, request.allowCrossOrigin === true, () =>
-              this.locator(page, request.target).click({
+              browserPageLocator(page, request.target).click({
                 timeout: BROWSER_ACTION_TIMEOUT_MS,
               }),
             ),
@@ -359,7 +374,7 @@ export class PersistentBrowserSession {
           break;
         case "type":
           await this.withNetwork(() =>
-            this.locator(page, request.target).fill(request.text, {
+            browserPageLocator(page, request.target).fill(request.text, {
               timeout: BROWSER_ACTION_TIMEOUT_MS,
             }),
           );
@@ -367,9 +382,12 @@ export class PersistentBrowserSession {
           break;
         case "select":
           await this.withNetwork(() =>
-            this.locator(page, request.target).selectOption(request.values, {
-              timeout: BROWSER_ACTION_TIMEOUT_MS,
-            }),
+            browserPageLocator(page, request.target).selectOption(
+              request.values,
+              {
+                timeout: BROWSER_ACTION_TIMEOUT_MS,
+              },
+            ),
           );
           state = await captureBrowserPageState(page, signal);
           break;
@@ -380,7 +398,7 @@ export class PersistentBrowserSession {
             path: request.path,
             workspaceRoot: this.workspaceRoot,
             ...(preparedUpload ? { prepared: preparedUpload } : {}),
-            locator: (targetPage, target) => this.locator(targetPage, target),
+            locator: browserPageLocator,
             withNetwork: (operation) => this.withNetwork(operation),
           });
           state = await captureBrowserPageState(page, signal);
@@ -479,24 +497,6 @@ export class PersistentBrowserSession {
     } finally {
       this.proxy.setOutboundEnabled(false);
     }
-  }
-
-  private locator(page: Page, target: BrowserElementTarget): Locator {
-    const ref = target.ref?.trim();
-    const selector = target.selector?.trim();
-    if (Boolean(ref) === Boolean(selector)) {
-      throw new Error("Browser target requires exactly one ref or selector");
-    }
-    if (ref) {
-      if (!/^[a-z0-9]{1,40}$/u.test(ref)) {
-        throw new Error("Browser target ref is invalid");
-      }
-      return page.locator(`aria-ref=${ref}`);
-    }
-    if (!selector || selector.length > 1_000) {
-      throw new Error("Browser target selector is invalid");
-    }
-    return page.locator(selector);
   }
 
   private async captureCurrentPage(

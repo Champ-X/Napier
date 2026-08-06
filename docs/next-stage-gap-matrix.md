@@ -11935,3 +11935,83 @@ Observed result:
   formal Agent/TTY path and closes byte substitution after approval. It is not
   a broad claim about arbitrary file types, authenticated sites, remote upload
   reliability, or server-side content handling.
+
+## Completed Slice: Target-State-Bound Browser Confirmation
+
+User scenario: when an ordinary Agent asks the user to confirm a Browser
+click, type, select, upload, or download, approval applies only while that exact
+page target still has the same bounded ARIA semantics in the same Session/tab/
+URL state.
+
+Acceptance and threat boundary:
+
+- before confirmation, serialize against the current Run-owned Browser Session
+  and capture only the selected target's bounded ARIA snapshot plus Session ID,
+  operation, active tab, tab-set, URL, and origin hashes;
+- add only one `pageStateSha256` to the strict confirmation preview. Never
+  retain target ARIA text, labels, raw ref/selector, URL, form values, or page
+  body in confirmation receipts or UI;
+- bind one prepared/approved grant to Thread, Run, tool-call ID, action,
+  canonical arguments hash, and target-state hash; reject substitution, replay,
+  cancellation, and more than four grants per Runtime;
+- immediately before execution, recapture the same selected target in the same
+  per-Run Session queue and require the exact state hash. Drift must fail before
+  click/fill/select/upload/download or network side effects;
+- keep a drifted Session healthy so the Agent can take a fresh snapshot and ask
+  for a new one-use confirmation. Other execution failures keep the existing
+  close-on-error behavior;
+- bind only the selected target and Session/tab/URL identity, not unrelated page
+  nodes, so dynamic counters, clocks, or background content do not cause
+  needless confirmation failure;
+- preserve read-only schemas, pause-bound visual/keypress takeover, exact-byte
+  upload grants, confirmed download settlement, and public-network policy.
+
+Observed result:
+
+- `verified`: focused Contracts, Runtime, CLI, Server, and Web coverage passes
+  68 tests across target-state construction and tamper rejection, one-use
+  authority, Run/call/action/argument substitution, cancellation, direct
+  Session success, stale-target refusal, same-Session retry, formal Agent
+  execution, file output paths, and terminal/Web rendering;
+- `verified`: the formal Agent integration captures one ref, changes that ref's
+  ARIA semantics while approval is pending, and proves the first click does not
+  execute. The Browser Session remains healthy; a fresh snapshot yields a
+  different page-state hash, a second confirmation succeeds, and exactly one
+  click executes under the original Run;
+- `verified`: confirmation events transition
+  `pending -> approved -> pending -> approved`; the stale attempt records one
+  failed Browser tool result while durable evidence contains neither changed
+  target text nor raw Browser arguments;
+- `verified`: real built-CLI `deepseek/deepseek-v4-flash` Dogfood used
+  `safe_automation` on
+  `https://the-internet.herokuapp.com/add_remove_elements/`. The terminal
+  docket showed target-ref hash
+  `0b227dd238234a0b1a29605d2857ea067969f6bdae3c268720dc57f875a48e54`
+  and page-state SHA-256
+  `5cacbcae8238e0390e04ecee819cd16d927c78f449640ecf3e895abe7bff166d`;
+- `verified`: one terminal approval clicked `Add Element` exactly once, a fresh
+  snapshot observed the new `Delete` button, Browser closed, the Run exited 0,
+  and the final token was `AGENT_TARGET_BOUND_OK`;
+- `verified`: Browser actions were read `start`, write `click`, read `snapshot`,
+  then read `close`. Confirmation/tool receipts contained no raw fixture URL or
+  target labels, and the isolated Dogfood root was deleted;
+- `verified`: architecture audits 1,053 production source files and 516 test
+  files with zero cycles. Target authority, target capture, confirmed Session
+  execution, locator handling, and tool execution live in bounded leaves;
+  `agent-runtime.ts` is ratcheted from 3,487 to 3,486 lines, while the 559-line
+  Browser page Session and other root budgets do not increase;
+- `verified`: the complete repository gate passes 2,455 regular tests with 46
+  opt-in live tests skipped by default: Root 158, CLI 221, Server 202, Web 532,
+  Contracts 3, Runtime 1,311, and SDK 28. Current performance, 266 generated
+  OpenAPI routes with 265/265 compatibility operations, the 88-file Web
+  distribution, and the 131-artifact release receipt all pass. The production
+  Web main entry is 146.20 KiB under the 150 KiB budget; Web receipt SHA-256 is
+  `67dc05c204783c7a7a1dae9144f05b893fd8fa7b32143e734820be8302df6fad`,
+  release-set SHA-256 is
+  `982279587499b05fc3e93031f181fe3cbaa6a5e794e7206488b1faae00af1c45`,
+  and release-receipt SHA-256 is
+  `400d640461b453c72db43f9b866d51d1df531a0a00e4c21e54a03d603a1d4b16`;
+- `inferred`: this closes semantic-target substitution during one confirmation
+  window for Napier's isolated Browser. It is not proof against a malicious
+  remote server after the action begins, nor a broad claim about authenticated
+  sessions, CAPTCHA handling, or arbitrary dynamic-site reliability.

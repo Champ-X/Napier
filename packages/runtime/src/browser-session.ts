@@ -1,5 +1,10 @@
 import { PersistentBrowserSession } from "./browser-page-session.js";
 import {
+  BrowserConfirmationPageChangedError,
+  type BrowserConfirmationPageState,
+} from "./browser-confirmed-action.js";
+import { BrowserConfirmedSessionExecutor } from "./browser-confirmed-session.js";
+import {
   assertBrowserPreparedUpload,
   type BrowserPreparedUpload,
 } from "./browser-workspace-files.js";
@@ -23,6 +28,11 @@ export { resolveBrowserRuntime } from "./browser-runtime.js";
 export class RunBrowserSessionManager {
   private readonly sessions = new Map<string, PersistentBrowserSession>();
   private readonly tails = new Map<string, Promise<void>>();
+  private readonly confirmed = new BrowserConfirmedSessionExecutor(
+    (owner, signal, operation) => this.withSession(owner, signal, operation),
+    (key, session, request, signal, upload) =>
+      this.runOperation(key, session, request, true, signal, upload),
+  );
   private startingSessions = 0;
 
   constructor(private readonly options: RunBrowserSessionManagerOptions) {}
@@ -234,6 +244,47 @@ export class RunBrowserSessionManager {
     }
   }
 
+  async captureConfirmationPageState(
+    owner: BrowserSessionOwner,
+    request: Extract<
+      BrowserSessionRequest,
+      { action: "click" | "type" | "select" | "upload" | "download" }
+    >,
+    signal?: AbortSignal,
+  ): Promise<BrowserConfirmationPageState> {
+    return await this.confirmed.capture(owner, request, signal);
+  }
+
+  async executeConfirmedAction(
+    owner: BrowserSessionOwner,
+    request: Extract<
+      BrowserSessionRequest,
+      {
+        action: "click" | "type" | "select" | "download";
+      }
+    >,
+    expected: BrowserConfirmationPageState,
+    signal?: AbortSignal,
+  ): Promise<BrowserSessionOperationResult> {
+    return await this.confirmed.execute(owner, request, expected, signal);
+  }
+
+  async executeConfirmedUpload(
+    owner: BrowserSessionOwner,
+    request: Extract<BrowserSessionRequest, { action: "upload" }>,
+    upload: BrowserPreparedUpload,
+    expected: BrowserConfirmationPageState,
+    signal?: AbortSignal,
+  ): Promise<BrowserSessionOperationResult> {
+    return await this.confirmed.execute(
+      owner,
+      request,
+      expected,
+      signal,
+      upload,
+    );
+  }
+
   private async executeRequest(
     owner: BrowserSessionOwner,
     request: BrowserSessionRequest,
@@ -330,6 +381,7 @@ export class RunBrowserSessionManager {
       }
       return result;
     } catch (error) {
+      if (error instanceof BrowserConfirmationPageChangedError) throw error;
       this.sessions.delete(key);
       await session.close();
       throw error;
@@ -357,6 +409,33 @@ export class RunBrowserSessionManager {
     } finally {
       release();
     }
+  }
+
+  private async withSession<T>(
+    owner: BrowserSessionOwner,
+    signal: AbortSignal | undefined,
+    operation: (session: PersistentBrowserSession, key: string) => Promise<T>,
+  ): Promise<T> {
+    const key = ownerKey(owner);
+    return await this.serialized(
+      key,
+      async () => {
+        assertNotAborted(signal);
+        const session = this.sessions.get(key);
+        if (!session || !session.healthy) {
+          throw new Error("Browser Session is not active for this Run");
+        }
+        try {
+          return await operation(session, key);
+        } catch (error) {
+          if (error instanceof BrowserConfirmationPageChangedError) throw error;
+          this.sessions.delete(key);
+          await session.close();
+          throw error;
+        }
+      },
+      signal,
+    );
   }
 
   private async pruneClosedSessions(): Promise<void> {

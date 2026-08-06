@@ -13,6 +13,8 @@ import {
 } from "./browser-interaction-confirmations.js";
 import { browserInteractionConfirmationPreview } from "./browser-tool.js";
 import type { BrowserSessionPauseManager } from "./browser-session-pause.js";
+import type { BrowserSessionRequest } from "./browser-session-model.js";
+import type { BrowserConfirmationPageState } from "./browser-confirmed-action.js";
 import type { EventSink } from "./event-sink.js";
 import type { McpExtensionManager } from "./mcp.js";
 import { assessToolCall } from "./policy.js";
@@ -26,7 +28,17 @@ export async function preflightAgentToolPolicy(input: {
   extensionManager?: McpExtensionManager;
   confirmations: BrowserInteractionConfirmationManager;
   browserPauses: BrowserSessionPauseManager;
-  browserSessionActive: (owner: { threadId: string; runId: string }) => boolean;
+  browserConfirmation: {
+    capture: (
+      owner: { threadId: string; runId: string },
+      request: Extract<
+        BrowserSessionRequest,
+        { action: "click" | "type" | "select" | "upload" | "download" }
+      >,
+      signal?: AbortSignal,
+    ) => Promise<BrowserConfirmationPageState>;
+    active: (owner: { threadId: string; runId: string }) => boolean;
+  };
   restrictedReadOnlyExecution: boolean;
   toolCall: { id: string; name: string };
   args: unknown;
@@ -39,7 +51,7 @@ export async function preflightAgentToolPolicy(input: {
       { threadId: input.run.threadId, runId: input.run.id },
       input.signal,
       () =>
-        input.browserSessionActive({
+        input.browserConfirmation.active({
           threadId: input.run.threadId,
           runId: input.run.id,
         }),
@@ -84,19 +96,47 @@ export async function preflightAgentToolPolicy(input: {
     );
   }
   const owner = { threadId: input.run.threadId, runId: input.run.id };
-  const uploadCandidate =
-    action === "upload"
-      ? await input.confirmations.uploads.prepare({
+  const pageRequest = browserPageConfirmationRequest(input.args);
+  let actionCandidate:
+    | ReturnType<BrowserInteractionConfirmationManager["actions"]["prepare"]>
+    | undefined;
+  let uploadCandidate:
+    | Awaited<
+        ReturnType<BrowserInteractionConfirmationManager["uploads"]["prepare"]>
+      >
+    | undefined;
+  try {
+    actionCandidate = pageRequest
+      ? input.confirmations.actions.prepare({
           owner,
           callId: input.toolCall.id,
-          request: input.args as {
-            action: "upload";
-            target: { ref?: string; selector?: string };
-            path: string;
-          },
+          request: pageRequest,
+          pageState: await input.browserConfirmation.capture(
+            owner,
+            pageRequest,
+            input.signal,
+          ),
         })
       : undefined;
+    uploadCandidate =
+      action === "upload"
+        ? await input.confirmations.uploads.prepare({
+            owner,
+            callId: input.toolCall.id,
+            request: pageRequest as Extract<
+              BrowserSessionRequest,
+              { action: "upload" }
+            >,
+          })
+        : undefined;
+  } catch (error) {
+    if (actionCandidate) input.confirmations.actions.discard(actionCandidate);
+    throw error;
+  }
   const preview = browserInteractionConfirmationPreview(input.args);
+  if (actionCandidate) {
+    preview.pageStateSha256 = actionCandidate.pageState.contentSha256;
+  }
   if (uploadCandidate) {
     preview.fileSha256 = uploadCandidate.upload.fileSha256;
     preview.fileBytes = uploadCandidate.upload.fileBytes;
@@ -117,18 +157,44 @@ export async function preflightAgentToolPolicy(input: {
       input.onEvent,
     );
   } catch (error) {
+    if (actionCandidate) input.confirmations.actions.discard(actionCandidate);
     if (uploadCandidate) input.confirmations.uploads.discard(uploadCandidate);
     throw error;
   }
   if (confirmation.decision === "approve") {
+    if (actionCandidate) input.confirmations.actions.approve(actionCandidate);
     if (uploadCandidate) input.confirmations.uploads.approve(uploadCandidate);
     return undefined;
   }
+  if (actionCandidate) input.confirmations.actions.discard(actionCandidate);
   if (uploadCandidate) input.confirmations.uploads.discard(uploadCandidate);
   return block(
     input,
     `Browser ${action} action was not confirmed (${confirmation.confirmation.status})`,
   );
+}
+
+function browserPageConfirmationRequest(
+  args: unknown,
+):
+  | Extract<
+      BrowserSessionRequest,
+      { action: "click" | "type" | "select" | "upload" | "download" }
+    >
+  | undefined {
+  if (!args || typeof args !== "object" || Array.isArray(args))
+    return undefined;
+  const action = (args as Record<string, unknown>)["action"];
+  return action === "click" ||
+    action === "type" ||
+    action === "select" ||
+    action === "upload" ||
+    action === "download"
+    ? (args as Extract<
+        BrowserSessionRequest,
+        { action: "click" | "type" | "select" | "upload" | "download" }
+      >)
+    : undefined;
 }
 
 async function block(

@@ -249,6 +249,7 @@ export class FakePage {
   blockClicks = false;
   closed = false;
   driftTitleOnNextRead = false;
+  ariaSnapshotText: string | undefined;
   private currentUrl = "about:blank";
   private scrollY = 0;
   private readonly backHistory: string[] = [];
@@ -318,11 +319,14 @@ export class FakePage {
     const page = this;
     return {
       async ariaSnapshot() {
-        return [
-          `- heading "Fake page" [ref=e1]`,
-          `- textbox "Input" [ref=e2]`,
-          `- link "Download" [ref=e3]`,
-        ].join("\n");
+        return (
+          page.ariaSnapshotText ??
+          [
+            `- heading "Fake page" [ref=e1]`,
+            `- textbox "Input" [ref=e2]`,
+            `- link "Download" [ref=e3]`,
+          ].join("\n")
+        );
       },
       async click() {
         page.clicked.push(selector);

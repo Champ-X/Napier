@@ -12,8 +12,9 @@ import {
   MAX_BROWSER_WAIT_MS,
   RunBrowserSessionManager,
 } from "./browser-session.js";
+import type { BrowserConfirmedActionManager } from "./browser-confirmed-action.js";
 import type { BrowserOutputArtifactRegistrar } from "./browser-output-artifact.js";
-import { settleBrowserToolOutput } from "./browser-tool-output.js";
+import { executeBrowserTool } from "./browser-tool-execution.js";
 import type { BrowserUploadAuthorizationManager } from "./browser-upload-authorization.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 
@@ -274,6 +275,7 @@ export function createBrowserTool(
     readOnly?: boolean;
     outputArtifacts?: Pick<BrowserOutputArtifactRegistrar, "register">;
     uploadAuthorizations?: Pick<BrowserUploadAuthorizationManager, "consume">;
+    actionConfirmations?: Pick<BrowserConfirmedActionManager, "consume">;
   } = {},
 ): AgentTool<typeof browserSchema, BrowserSessionDetails> {
   const readOnly = options.readOnly === true;
@@ -293,32 +295,20 @@ export function createBrowserTool(
           `Browser action requires an interactive Browser capability: ${input.action}`,
         );
       }
-      let result;
-      if (input.action === "upload" && options.uploadAuthorizations) {
-        const upload = options.uploadAuthorizations.consume({
-          owner,
-          callId: toolCallId,
-          request: input,
-        });
-        try {
-          result = await manager.executePreparedUpload(
-            owner,
-            input,
-            upload,
-            signal,
-          );
-        } finally {
-          upload.buffer.fill(0);
-        }
-      } else {
-        result = await manager.execute(owner, input, signal);
-      }
-      const output = await settleBrowserToolOutput({
+      const { result, output } = await executeBrowserTool({
+        manager,
         owner,
+        callId: toolCallId,
         request: input,
-        result,
+        ...(signal ? { signal } : {}),
+        ...(options.actionConfirmations
+          ? { actionConfirmations: options.actionConfirmations }
+          : {}),
+        ...(options.uploadAuthorizations
+          ? { uploadAuthorizations: options.uploadAuthorizations }
+          : {}),
         ...(options.outputArtifacts
-          ? { registrar: options.outputArtifacts }
+          ? { outputArtifacts: options.outputArtifacts }
           : {}),
       });
       return {
