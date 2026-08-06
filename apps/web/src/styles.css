@@ -514,7 +514,13 @@ button:disabled {
   display: grid;
   min-width: 0;
   min-height: 0;
-  grid-template-rows: 76px auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "header"
+    "notices"
+    "conversation"
+    "decisions"
+    "composer";
+  grid-template-rows: 76px auto minmax(0, 1fr) auto auto;
   background:
     linear-gradient(
       90deg,
@@ -531,6 +537,7 @@ button:disabled {
 }
 
 .workbench-header {
+  grid-area: header;
   display: flex;
   min-width: 0;
   align-items: center;
@@ -662,6 +669,7 @@ button:disabled {
 }
 
 .workbench-notices {
+  grid-area: notices;
   display: grid;
 }
 
@@ -772,6 +780,7 @@ button:disabled {
 }
 
 .conversation {
+  grid-area: conversation;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
@@ -1300,6 +1309,7 @@ button:disabled {
 }
 
 .run-decision-dockets {
+  grid-area: decisions;
   min-height: 0;
   padding: 0 24px 14px 69px;
   overflow: auto;
@@ -2275,6 +2285,7 @@ button:disabled {
 .composer {
   position: relative;
   z-index: 3;
+  grid-area: composer;
   margin: 0 24px 19px 69px;
   padding: 0 15px 11px;
   background: #f8f4ec;

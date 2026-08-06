@@ -13,7 +13,7 @@ export function useThreadNavigation(input: {
   setSelectedModelKey(value: string): void;
   modelKey(model: { provider: string; id: string }): string;
   resetReceipts(): void;
-  setStreamingText(value: string): void;
+  resolveDetail(detail: ThreadDetail | undefined): ThreadDetail | undefined;
   setError(value: string | undefined): void;
 }) {
   const shared = {
@@ -23,13 +23,11 @@ export function useThreadNavigation(input: {
     setSelectedModelKey: input.setSelectedModelKey,
     modelKey: input.modelKey,
     resetReceipts: input.resetReceipts,
+    resolveDetail: input.resolveDetail,
     setError: input.setError,
   };
   return {
-    selectThread: useSelectThread({
-      ...shared,
-      setStreamingText: input.setStreamingText,
-    }),
+    selectThread: useSelectThread(shared),
     newThread: useNewThread(shared),
     ...useThreadTrash({
       bootstrap: input.bootstrap,

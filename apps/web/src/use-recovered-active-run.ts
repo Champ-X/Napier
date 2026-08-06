@@ -11,8 +11,6 @@ const RECOVERED_RUN_REFRESH_MS = 1_000;
 export function useRecoveredActiveRun(
   detail: WebThreadDetail | undefined,
   streamAttached: boolean,
-  setActiveRunId: (runId: string | undefined) => void,
-  setIsRunning: (running: boolean) => void,
   setDetail: (detail: WebThreadDetail) => void,
   setBootstrap: (
     update: (
@@ -24,8 +22,6 @@ export function useRecoveredActiveRun(
   const threadId = detail?.thread.id;
   useEffect(() => {
     if (streamAttached) return;
-    setActiveRunId(state.activeRunId);
-    setIsRunning(state.isRunning);
     if (!state.activeRunId || !threadId) return;
 
     let disposed = false;
@@ -54,12 +50,9 @@ export function useRecoveredActiveRun(
       window.clearInterval(timer);
     };
   }, [
-    setActiveRunId,
     setBootstrap,
     setDetail,
-    setIsRunning,
     state.activeRunId,
-    state.isRunning,
     streamAttached,
     threadId,
   ]);

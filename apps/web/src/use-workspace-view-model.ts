@@ -24,11 +24,9 @@ import type {
   ReviewMemoryRequest,
   RunControlMessageMode,
   RunComparison,
-  RunEvent,
   RunReplaySnapshot,
   RunReplaySnapshotVerification,
   StreamFrame,
-  TextMessagePayload,
   ThreadReplayBundle,
   ThreadReplayBundleVerification,
 } from "@napier/contracts";
@@ -98,9 +96,21 @@ import {
   runReplaySnapshotFilename,
   threadReplayBundleFilename,
 } from "./run-replay-view-model";
+import {
+  applyThreadRunEvent,
+  applyThreadStreamFrameToBootstrap,
+  applyThreadStreamFrameToDetail,
+  attachThreadRun,
+  detachThreadRun,
+  mergeNavigationBootstrap,
+  mergeRefreshedThreadBootstrap,
+  resolveCachedThreadDetail,
+  threadRunViewState,
+  type ThreadRunSessions,
+} from "./thread-run-stream-state";
+import { messagePayload } from "./message-payload";
 import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
 import {
-  preserveThreadDetailImportReceipt,
   upsertThread,
 } from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
@@ -276,7 +286,8 @@ export function useWorkspaceViewModel() {
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("trace");
   const [selectedModelKey, setSelectedModelKey] = useState("napier/demo");
   const [composer, setComposer] = useState("");
-  const [activeRunId, setActiveRunId] = useState<string>();
+  const [threadRunSessions, setThreadRunSessions] =
+    useState<ThreadRunSessions>({});
   const [controlMessageMode, setControlMessageMode] =
     useState<RunControlMessageMode>("steering");
   const [goalDraft, setGoalDraft] = useState("");
@@ -320,27 +331,35 @@ export function useWorkspaceViewModel() {
   const [traceVerifyBusy, setTraceVerifyBusy] = useState(false);
   const [traceVerificationReceipt, setTraceVerificationReceipt] =
     useState<OpenTelemetryTraceVerificationReceipt>();
-  const [streamingText, setStreamingText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isRunning, setIsRunning] = useState(false);
   const [operatorDecisionBusy, setOperatorDecisionBusy] = useState(false);
   const [error, setError] = useState<string>();
-  const runStreamAttachedRef = useRef(false);
+  const selectedThreadIdRef = useRef<string | undefined>(undefined);
+  const threadDetailCacheRef = useRef(new Map<string, WebThreadDetail>());
+  selectedThreadIdRef.current = selectedThreadId;
+
+  const { activeRunId, isRunning, streamingText } = useMemo(
+    () => threadRunViewState(detail, threadRunSessions),
+    [detail, threadRunSessions],
+  );
 
   useRecoveredActiveRun(
     detail,
-    runStreamAttachedRef.current,
-    setActiveRunId,
-    setIsRunning,
+    detail ? threadRunSessions[detail.thread.id] !== undefined : false,
     setDetail,
     setBootstrap,
   );
-
   const loadBootstrap = useCallback(async (threadId?: string) => {
     setIsLoading(true);
     setError(undefined);
     try {
       const result = await getBootstrap(threadId);
+      if (result.activeThread) {
+        threadDetailCacheRef.current.set(
+          result.activeThread.thread.id,
+          result.activeThread,
+        );
+      }
       setBootstrap(result);
       setDetail(result.activeThread);
       setSelectedThreadId(result.activeThread?.thread.id);
@@ -458,73 +477,74 @@ export function useWorkspaceViewModel() {
       setTraceExportReceipt,
       setTraceVerificationReceipt,
     ].forEach((reset) => reset(undefined));
+  const resolveThreadDetail = useCallback(
+    (candidate: WebThreadDetail | undefined) =>
+      resolveCachedThreadDetail(threadDetailCacheRef.current, candidate),
+    [],
+  );
   const threadNavigation = useThreadNavigation({
     bootstrap,
     selectedThreadId,
-    setBootstrap,
+    setBootstrap: (value) => setBootstrap((current) => mergeNavigationBootstrap(current, value)),
     setDetail,
     setSelectedThreadId,
     setSelectedModelKey,
     modelKey,
     resetReceipts: resetThreadReceipts,
-    setStreamingText,
+    resolveDetail: resolveThreadDetail,
     setError,
   });
-
-  const handleStreamFrame = useCallback((frame: StreamFrame): void => {
-    if (frame.type === "event") {
-      const event = frame.event;
-      setActiveRunId(event.runId);
-      if (event.type === "model.text.delta") {
-        const delta = objectString(event.payload, "delta");
-        if (delta) setStreamingText((current) => current + delta);
+  const handleStreamFrame = useCallback(
+    (sourceThreadId: string, frame: StreamFrame): void => {
+      if (frame.type === "event") {
+        setThreadRunSessions((current) =>
+          applyThreadRunEvent(current, sourceThreadId, frame.event),
+        );
       }
-      if (
-        event.type === "message.assistant" ||
-        event.type === "model.advisor.blocked" ||
-        event.type === "model.advisor.correction.requested"
-      ) {
-        setStreamingText("");
+      const cached = applyThreadStreamFrameToDetail(
+        threadDetailCacheRef.current.get(sourceThreadId),
+        sourceThreadId,
+        frame,
+      );
+      if (cached) threadDetailCacheRef.current.set(sourceThreadId, cached);
+      if (selectedThreadIdRef.current === sourceThreadId && cached) {
+        setDetail(cached);
       }
-      setDetail((current) =>
-        current
-          ? {
-              ...current,
-              thread: {
-                ...current.thread,
-                status: "running",
-                eventCount: event.seq,
-                updatedAt: event.createdAt,
-              },
-              events: [...current.events, event],
-            }
-          : current,
-      );
-    } else if (frame.type === "snapshot") {
-      setDetail((current) =>
-        preserveThreadDetailImportReceipt(frame.detail, current),
-      );
       setBootstrap((current) =>
-        current
-          ? {
-              ...current,
-              threads: upsertThread(current.threads, frame.detail.thread),
-            }
-          : current,
+        applyThreadStreamFrameToBootstrap(current, sourceThreadId, frame),
       );
-    } else if (frame.type === "error") {
-      setError(
-        `${frame.message} (${frame.code} · ${frame.diagnosticSha256.slice(0, 12)})`,
-      );
+      if (
+        frame.type === "error" &&
+        selectedThreadIdRef.current === sourceThreadId
+      ) {
+        setError(
+          `${frame.message} (${frame.code} · ${frame.diagnosticSha256.slice(0, 12)})`,
+        );
+      }
+    },
+    [],
+  );
+  const streamFrameHandler = useCallback(
+    (threadId: string) => (frame: StreamFrame) =>
+      handleStreamFrame(threadId, frame),
+    [handleStreamFrame],
+  );
+  const setRunError = useCallback((threadId: string, error: unknown): void => {
+    if (selectedThreadIdRef.current === threadId) {
+      setError(toErrorMessage(error));
     }
   }, []);
   const refreshBootstrap = useCallback(async (threadId: string) => {
     const refreshed = await getBootstrap(threadId);
-    setBootstrap(refreshed);
-    setDetail((current) =>
-      preserveThreadDetailImportReceipt(refreshed.activeThread, current),
+    if (refreshed.activeThread)
+      threadDetailCacheRef.current.set(threadId, refreshed.activeThread);
+    setBootstrap((current) =>
+      mergeRefreshedThreadBootstrap(current, refreshed, threadId),
     );
-  }, []);
+    if (selectedThreadIdRef.current === threadId) {
+      setDetail(resolveThreadDetail(refreshed.activeThread));
+    }
+  }, [resolveThreadDetail]);
 
   const refreshActiveThread = useCallback(async (): Promise<void> => {
     if (!detail) return;
@@ -541,23 +561,20 @@ export function useWorkspaceViewModel() {
     );
   }, [detail]);
 
-  const startRunUi = useCallback(() => {
-    runStreamAttachedRef.current = true;
-    setStreamingText("");
-    setIsRunning(true);
-    setActiveRunId(undefined);
+  const startRunUi = useCallback((threadId: string, source: WebThreadDetail) => {
+    threadDetailCacheRef.current.set(threadId, source);
+    setThreadRunSessions((current) => attachThreadRun(current, threadId));
     setRunReplayVerificationReceipt(undefined);
     setTraceExportReceipt(undefined);
     setTraceVerificationReceipt(undefined);
     setError(undefined);
   }, []);
 
-  const finishRunUi = useCallback(() => {
-    runStreamAttachedRef.current = false;
-    setIsRunning(false);
-    setActiveRunId(undefined);
-    setStreamingText("");
-  }, []);
+  const finishRunUi = useCallback(
+    (threadId: string) =>
+      setThreadRunSessions((current) => detachThreadRun(current, threadId)),
+    [],
+  );
 
   const submit = useCallback(
     async (override?: string) => {
@@ -599,19 +616,20 @@ export function useWorkspaceViewModel() {
         setError(copy.modelUnavailableHint);
         return;
       }
+      const threadId = detail.thread.id;
       setComposer("");
-      startRunUi();
+      startRunUi(threadId, detail);
       try {
         await streamPrompt(
-          detail.thread.id,
+          threadId,
           { text, model: parseModelKey(selectedModelKey) },
-          handleStreamFrame,
+          streamFrameHandler(threadId),
         );
-        await refreshBootstrap(detail.thread.id);
+        await refreshBootstrap(threadId);
       } catch (runError) {
-        setError(toErrorMessage(runError));
+        setRunError(threadId, runError);
       } finally {
-        finishRunUi();
+        finishRunUi(threadId);
       }
     },
     [
@@ -620,13 +638,14 @@ export function useWorkspaceViewModel() {
       controlMessageMode,
       detail,
       finishRunUi,
-      handleStreamFrame,
       isRunning,
       openOperatorDecision,
       refreshBootstrap,
       selectedModel.configured,
       selectedModelKey,
+      setRunError,
       startRunUi,
+      streamFrameHandler,
     ],
   );
 
@@ -636,32 +655,34 @@ export function useWorkspaceViewModel() {
       setError(copy.modelUnavailableHint);
       return;
     }
-    startRunUi();
+    const threadId = detail.thread.id;
+    startRunUi(threadId, detail);
     try {
       await resumeRunApi(
-        detail.thread.id,
+        threadId,
         {
           runId: resumableRun.id,
           model: parseModelKey(selectedModelKey),
         },
-        handleStreamFrame,
+        streamFrameHandler(threadId),
       );
-      await refreshBootstrap(detail.thread.id);
+      await refreshBootstrap(threadId);
     } catch (runError) {
-      setError(toErrorMessage(runError));
+      setRunError(threadId, runError);
     } finally {
-      finishRunUi();
+      finishRunUi(threadId);
     }
   }, [
     detail,
     finishRunUi,
-    handleStreamFrame,
     isRunning,
     refreshBootstrap,
     resumableRun,
     selectedModel.configured,
     selectedModelKey,
+    setRunError,
     startRunUi,
+    streamFrameHandler,
   ]);
 
   const stop = useCallback(async () => {
@@ -720,32 +741,36 @@ export function useWorkspaceViewModel() {
       ) {
         return;
       }
+      const threadId = detail.thread.id;
       setOperatorDecisionBusy(true);
-      startRunUi();
+      startRunUi(threadId, detail);
       try {
         await continueOperatorDecisionApi(
-          detail.thread.id,
+          threadId,
           decision.id,
-          handleStreamFrame,
+          streamFrameHandler(threadId),
         );
-        await refreshBootstrap(detail.thread.id);
+        await refreshBootstrap(threadId);
       } catch (continueError) {
-        setError(toErrorMessage(continueError));
-        await refreshActiveThread().catch(() => undefined);
+        setRunError(threadId, continueError);
+        if (selectedThreadIdRef.current === threadId) {
+          await refreshActiveThread().catch(() => undefined);
+        }
       } finally {
         setOperatorDecisionBusy(false);
-        finishRunUi();
+        finishRunUi(threadId);
       }
     },
     [
       detail,
       finishRunUi,
-      handleStreamFrame,
       isRunning,
       operatorDecisionBusy,
       refreshActiveThread,
       refreshBootstrap,
+      setRunError,
       startRunUi,
+      streamFrameHandler,
     ],
   );
 
@@ -2211,32 +2236,6 @@ function downloadJson(value: unknown, filename: string): void {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 0);
-}
-
-function messagePayload(event: RunEvent): TextMessagePayload | undefined {
-  if (
-    !event.payload ||
-    Array.isArray(event.payload) ||
-    typeof event.payload !== "object"
-  )
-    return undefined;
-  const role = event.payload["role"];
-  const text = event.payload["text"];
-  if (
-    (role !== "user" && role !== "assistant" && role !== "system") ||
-    typeof text !== "string"
-  )
-    return undefined;
-  return {
-    role,
-    text,
-    ...(typeof event.payload["reasoning"] === "string"
-      ? { reasoning: event.payload["reasoning"] }
-      : {}),
-    ...(typeof event.payload["model"] === "string"
-      ? { model: event.payload["model"] }
-      : {}),
-  };
 }
 
 function objectString(value: unknown, key: string): string | undefined {
