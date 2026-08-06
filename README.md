@@ -1546,6 +1546,86 @@ sampled at named checkpoints rather than enforced as a hard quota, and this
 profile is a regression gate for the supported local CI environment rather
 than a cross-machine score.
 
+## Confirmed Browser Form Outcome Benchmark
+
+The fixed `browser_confirmed_form_cli_v1` case measures repeated ordinary form
+completion through the formal built one-shot CLI, not a direct Runtime helper
+or a machine-only approval shortcut. Each trial starts from a fresh Workspace,
+Store, Thread, Run, Browser profile, and provider session. The runner opens the
+built CLI in a real PTY and writes `approve` only after observing the expected
+pending `type` or `click` confirmation docket. JSONL, piped, non-TTY, RPC,
+Workflow, schedule, and channel entries remain read-only.
+
+Run one live trial with the default hash-bound public form:
+
+```bash
+npm run bench:browser:confirmed-form
+```
+
+Run 2–10 independent trials sequentially:
+
+```bash
+npm run bench:browser:confirmed-form -- --trials 5
+```
+
+The case manifest stores only hashes for the public target URL and synthetic
+form value. Execution accepts them as explicit inputs and rejects drift before
+starting the CLI. A passing trial requires:
+
+- exactly two one-use approvals ordered as `type` then `click`;
+- confirmation effects `data_entry` then `form_submit`;
+- exactly one completed Browser `type` and one completed Browser `click`;
+- one monotonically advancing Run-owned Browser Session and a final `close`;
+- exact post-submit URL and title hashes from the click result;
+- the exact final assistant token, a completed Run, and a valid portable Replay;
+- one available environment credential locator with no credential persistence;
+- no raw target URL, synthetic form value, or credential in terminal output or
+  retained benchmark evidence.
+
+The Agent may perform bounded read-only Browser observations such as
+`find`, `snapshot`, navigation, or tab inspection before the writes. Those
+route choices do not change the task outcome. Any extra write, missing close,
+wrong destination hash, Session substitution, confirmation mismatch, malformed
+evidence, or leak fails the trial. A cancelled or interrupted Run is
+inconclusive rather than silently retried.
+
+Each trial writes a content-addressed Result and privacy-bounded Ledger. The
+Ledger retains strict confirmation objects, safe Browser operation projections,
+selected lifecycle/evaluation events, chained receipts, and full Replay/event
+stream hashes; prompts, assistant text, reasoning, URLs, selectors, form
+values, page bodies, and credentials are omitted. Repeated execution adds a
+self-hashed Series with pass/failure/inconclusive counts and
+first-confirmation, total-duration, and cost distributions.
+
+Verify one archived pair without a model or Browser call:
+
+```bash
+npm run bench:browser:confirmed-form -- \
+  --verify-result <napier-browser-confirmed-form-benchmark-result-...json> \
+  --ledger <napier-browser-confirmed-form-benchmark-ledger-...json>
+```
+
+Verify a Series and every referenced Result/Ledger pair:
+
+```bash
+npm run bench:browser:confirmed-form -- \
+  --verify-series <napier-browser-confirmed-form-benchmark-series-...json>
+```
+
+The retained
+[five-trial DeepSeek Series](benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-series-browser_confirmed_form_cli_v1-3c043842fbec2361.json)
+completed 5/5 trials with pass rate `1`. Every trial performed the exact two
+confirmed writes, reached the expected post-submit URL/title hashes in one
+Session, closed the Browser, verified Replay, and passed all credential/private
+value checks. Total duration ranged from 15.856 to 154.480 seconds
+(p50 65.577 seconds); first confirmation ranged from 9.449 to 140.053 seconds;
+total cost was `$0.0339100384`.
+
+This proves five executions of one synthetic, unauthenticated public form on
+one provider/runtime snapshot. It does not establish an arbitrary-site,
+authenticated-form, provider-availability, latency, or Browser reliability
+SLA, and it does not weaken the separate credential/CAPTCHA takeover policy.
+
 ### Store Scale Baseline
 
 Run the opt-in store benchmark after changes to persistence or Thread

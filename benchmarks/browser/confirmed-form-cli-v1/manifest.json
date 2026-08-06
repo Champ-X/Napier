@@ -1,0 +1,17 @@
+{
+  "kind": "napier.browser-confirmed-form-benchmark-case",
+  "schemaVersion": 1,
+  "id": "browser_confirmed_form_cli_v1",
+  "title": "Confirmed public form submission through one-shot CLI",
+  "objective": "Measure repeated formal-entry success for one ordinary public form using exact one-use data-entry and submit confirmations without retaining the URL or form value in benchmark artifacts.",
+  "expectedAssistantText": "BROWSER_CONFIRMED_FORM_OK",
+  "targetUrlSha256": "dca2867256f927350404c84c81bfd1875d146441627808687c9533a75c59c470",
+  "formValueSha256": "5ad2a05b4e76f9a8a60a25e09fea8ff12adbc613e39f433da6b3d8cf3a573704",
+  "expectedConfirmationActions": ["type", "click"],
+  "expectedConfirmationEffects": ["data_entry", "form_submit"],
+  "expectedOutcomeUrlSha256": "5cc8c129bc0d94b569adaef9411f689257b609d3088642d90b6b8018d7fd4c5c",
+  "expectedOutcomeTitleSha256": "00c28b8183e3c500e70b1580271840bcf5eb6e720028ba3ff2099b7daf17dfe5",
+  "timeoutMs": 180000,
+  "maxDurationMs": 180000,
+  "contentSha256": "6611c769e2d8bc9d1bd0a53411facde4c08df8e76f8de5442bb806c6b4fff603"
+}

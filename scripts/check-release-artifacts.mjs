@@ -24,6 +24,10 @@ import {
   verifyUxBenchmarkSeries,
 } from "../apps/cli/dist/ux-benchmark-series.js";
 import {
+  browserConfirmedFormSeriesArtifactReferences,
+  verifyBrowserConfirmedFormBenchmarkSeries,
+} from "../apps/cli/dist/browser-confirmed-form-benchmark-series.js";
+import {
   goalNoProgressSeriesArtifactReferences,
   verifyGoalNoProgressBenchmarkSeries,
 } from "../apps/cli/dist/goal-no-progress-benchmark-series.js";
@@ -103,6 +107,8 @@ const defaultOpenWebExecutorComparisonAttemptPaths = [
 ];
 const defaultUxBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-ux-benchmark-series-ux_first_task_cli_v1-747782333f3ad3c3.json";
+const defaultBrowserConfirmedFormBenchmarkSeriesPath =
+  "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-series-browser_confirmed_form_cli_v1-3c043842fbec2361.json";
 
 export async function auditReleaseArtifacts(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -199,6 +205,9 @@ export async function auditReleaseArtifacts(options = {}) {
   }
   const uxBenchmarkSeriesPath =
     options.uxBenchmarkSeriesPath ?? defaultUxBenchmarkSeriesPath;
+  const browserConfirmedFormBenchmarkSeriesPath =
+    options.browserConfirmedFormBenchmarkSeriesPath ??
+    defaultBrowserConfirmedFormBenchmarkSeriesPath;
   const rootPackage = parseJson(
     await readTextFile(
       path.join(repoRoot, "package.json"),
@@ -456,6 +465,16 @@ export async function auditReleaseArtifacts(options = {}) {
     artifactReferences: uxBenchmarkSeriesArtifactReferences,
     verifySeries: verifyUxBenchmarkSeries,
   });
+  const browserConfirmedFormBenchmarkArtifacts =
+    await verifyBenchmarkReleaseArtifacts({
+      repoRoot,
+      seriesPath: browserConfirmedFormBenchmarkSeriesPath,
+      errors,
+      artifactKindPrefix: "browser-confirmed-form-benchmark",
+      diagnosticLabel: "Browser confirmed form benchmark",
+      artifactReferences: browserConfirmedFormSeriesArtifactReferences,
+      verifySeries: verifyBrowserConfirmedFormBenchmarkSeries,
+    });
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -547,6 +566,7 @@ export async function auditReleaseArtifacts(options = {}) {
     ...openWebExecutorComparisonAttemptArtifacts,
     ...openWebExecutorComparisonArtifacts,
     ...uxBenchmarkArtifacts,
+    ...browserConfirmedFormBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
     Buffer.from(formatArtifactSetManifest(artifacts), "utf8"),
@@ -872,6 +892,15 @@ function parseCliOptions(args) {
     }
     if (arg === "--ux-benchmark-series-path") {
       options.uxBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--browser-confirmed-form-series-path") {
+      options.browserConfirmedFormBenchmarkSeriesPath = readCliValue(
+        args,
+        index,
+        arg,
+      );
       index += 1;
       continue;
     }

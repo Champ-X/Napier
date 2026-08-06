@@ -737,6 +737,50 @@ otherwise denied call. Raw tool arguments stay in the private live
 call/capsule boundary and never enter the confirmation protocol.
 Web and terminal entries parse the same exact Contracts shape.
 
+The confirmed-form benchmark is an evidence client of that same one-shot
+confirmation path, not another Browser authority:
+
+```text
+hash-bound browser_confirmed_form_cli_v1 case
+  -> fresh temporary Workspace + Store
+  -> built napier run --preset safe_automation in a real node-pty
+  -> observe pending type confirmation -> write one approve
+  -> observe pending click confirmation -> write one approve
+  -> reopen Store after process exit
+  -> project strict confirmations + safe Browser operation metadata
+  -> verify exact write order/effects, destination hashes, Session identity,
+     close, terminal Run, Replay, credential locator, and leak scans
+  -> append benchmark.browser.confirmed_form.evaluated
+  -> write CAS Result + privacy-bounded Ledger
+2-10 trials
+  -> aggregate passed/failed/inconclusive plus timing/cost distributions
+  -> self-verify every Result/Ledger binding and recreate the Series
+release audit
+  -> load the retained Series and all five referenced artifact pairs
+  -> run the same semantic verifier before accepting the release set
+```
+
+The manifest contains hashes rather than the public URL or synthetic form
+value; execution receives those explicit values and rejects drift before CLI
+launch. The PTY driver never approves preemptively and aborts on an unexpected
+confirmation action. JSONL and non-TTY paths are not involved. The scorer
+requires exactly one confirmed `type` followed by exactly one confirmed
+`click`, effects `data_entry -> form_submit`, exact post-submit URL/title
+hashes from the click result, one monotonically advancing Session, final close,
+exact assistant output hash, completed Run, valid Replay, and credential/privacy
+checks. Bounded read-only Browser observations and navigation may vary before
+the writes; they do not become task-success requirements. Any additional
+write, target outcome drift, Session substitution, malformed evidence, or leak
+fails.
+
+Ledger retention is intentionally narrower than Thread Replay. It stores only
+strict confirmation records, redacted Browser operation projections, selected
+lifecycle/evaluation events, chained receipts for that safe subset, and the
+full event-stream/Replay hashes. Prompt, assistant text, reasoning, URL,
+selector, form value, page body, and credential are absent. Graceful PTY
+cancellation enters the normal built-CLI AbortController; a cancelled or
+restart-interrupted Run scores inconclusive and is never silently retried.
+
 Semantic target actions (`click`, `type`, `select`, `upload`, and `download`)
 add a second one-use authority in `browser-confirmed-action.ts`. Before showing
 confirmation, the serialized Browser manager captures the selected target's

@@ -13,6 +13,7 @@
   "scripts": {
     "bench:coding": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-coding-benchmark.mjs",
     "bench:coding:compare": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-coding-executor-comparison.mjs",
+    "bench:browser:confirmed-form": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-browser-confirmed-form-benchmark.mjs",
     "bench:goal-no-progress": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-goal-no-progress-benchmark.mjs",
     "bench:process-recovery": "npm run build:core && npm run build -w @napier/cli && node scripts/run-process-recovery-benchmark.mjs",
     "bench:research": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-research-benchmark.mjs",

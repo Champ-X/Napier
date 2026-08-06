@@ -181,6 +181,17 @@ describe("release artifacts audit", () => {
       "ux-benchmark-ledger-1",
       "ux-benchmark-result-2",
       "ux-benchmark-ledger-2",
+      "browser-confirmed-form-benchmark-series",
+      "browser-confirmed-form-benchmark-result-1",
+      "browser-confirmed-form-benchmark-ledger-1",
+      "browser-confirmed-form-benchmark-result-2",
+      "browser-confirmed-form-benchmark-ledger-2",
+      "browser-confirmed-form-benchmark-result-3",
+      "browser-confirmed-form-benchmark-ledger-3",
+      "browser-confirmed-form-benchmark-result-4",
+      "browser-confirmed-form-benchmark-ledger-4",
+      "browser-confirmed-form-benchmark-result-5",
+      "browser-confirmed-form-benchmark-ledger-5",
     ]);
     expect(createReleaseArtifactsReceipt(result)).toMatchObject({
       type: "napier.release-artifacts-audit",
@@ -903,6 +914,42 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when retained Browser confirmed form evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const benchmarkRoot = path.join(
+      root,
+      "benchmark-results/browser-confirmed-form-live-20260805-series5-release",
+    );
+    const seriesName = (await readdir(benchmarkRoot)).find((name) =>
+      name.startsWith(
+        "napier-browser-confirmed-form-benchmark-series-browser_confirmed_form_cli_v1-",
+      ),
+    );
+    const series = JSON.parse(
+      await readFile(path.join(benchmarkRoot, seriesName), "utf8"),
+    );
+    const resultPath = path.join(
+      benchmarkRoot,
+      series.trials[0].resultFileName,
+    );
+    const result = JSON.parse(await readFile(resultPath, "utf8"));
+    result.evaluation.privateUrl = "https://private.example/";
+    const { contentSha256: _contentSha256, ...content } = result;
+    result.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(resultPath, result);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        "Browser confirmed form benchmark series: series_trial_invalid",
+        "Browser confirmed form benchmark trial 1: result_shape_invalid",
+        "Browser confirmed form benchmark trial 1: trial_binding_mismatch",
+      ]),
+    );
+  });
+
   it("rejects malformed release artifact receipts", async () => {
     const { root } = await createFixture();
     await writeJson(
@@ -969,6 +1016,16 @@ async function createFixture() {
         path.join(root, "benchmark-results", name),
       ),
     ),
+  );
+  await cp(
+    path.resolve(
+      "benchmark-results/browser-confirmed-form-live-20260805-series5-release",
+    ),
+    path.join(
+      root,
+      "benchmark-results/browser-confirmed-form-live-20260805-series5-release",
+    ),
+    { recursive: true },
   );
   for (const fileName of [
     "napier-open-web-research-security-series-security_open_web_prompt_injection_v1-7c30ff1f81e86273.json",

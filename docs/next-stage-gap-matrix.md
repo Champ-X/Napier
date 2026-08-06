@@ -12159,3 +12159,91 @@ Observed result:
 - `inferred`: fixed target semantics make common high-impact effects visible,
   but arbitrary custom wording may remain `interaction`. Effect classification
   informs the human decision and is not a guarantee of remote-server behavior.
+
+## Completed Slice: Repeated Confirmed Browser Form Outcomes
+
+User scenario: a release reviewer can measure whether ordinary Agent-driven
+form completion repeatedly succeeds through the same built one-shot CLI and
+human confirmation path that a terminal user operates, without granting
+machine-only approval authority or retaining the form content.
+
+Acceptance and threat boundary:
+
+- define one content-addressed synthetic public form case whose manifest stores
+  only target/value hashes, fixed expected effects, post-submit URL/title
+  hashes, duration bounds, and the exact final assistant token;
+- execute each trial from a fresh Workspace, Store, Thread, Run, provider
+  session, isolated Browser profile, and real PTY-backed built CLI;
+- send `approve` only after the PTY exposes the expected pending `type` or
+  `click` docket. Keep JSONL, piped/non-TTY, RPC, Workflow, schedule, and
+  channel Browser entries read-only;
+- require exact one-use `type -> click` approvals and effects
+  `data_entry -> form_submit`, exactly one completed write of each action, one
+  monotonically advancing Run-owned Browser Session, the exact destination
+  URL/title hashes, final close, exact assistant token, completed Run, and
+  valid Replay;
+- permit bounded read-only Browser route variance—find/snapshot, navigation,
+  screenshot/wait, and tab inspection—without turning route minimality into
+  task success. Any extra write, missing close, stale/wrong outcome hash,
+  Session substitution, malformed evidence, or leak still fails;
+- retain only strict confirmation objects, safe Browser operation projections,
+  selected lifecycle/evaluation events, chained receipts, and full Replay/event
+  stream hashes. Omit prompt, assistant text, reasoning, raw URL, selector,
+  form value, page body, and credential;
+- classify graceful PTY cancellation or restart interruption as inconclusive;
+  do not discard or silently rerun failed/inconclusive outcomes;
+- aggregate 2–10 independent trials into a self-verifying Series with
+  completed/passed/failed/inconclusive counts plus first-confirmation,
+  total-duration, and cost distributions;
+- semantically verify the retained Series and every referenced Result/Ledger
+  pair in the formal release artifact audit.
+
+Observed result:
+
+- `verified`: focused case, formal one-shot CLI, confirmation, Browser outcome,
+  cancellation, privacy, tamper, Series, and script tests pass. The
+  deterministic formal path covers read-only find/snapshot/navigation/tab
+  variance before the exact two writes and rejects recomputed-hash outcome
+  substitution;
+- `verified`: an initial live attempt completed the exact writes and destination
+  but failed the first rubric because the Agent correctly used click's fresh
+  result instead of a redundant snapshot; it also exposed that retaining every
+  model-delta receipt could exceed the 4 MiB ledger bound. The final contract
+  scores the outcome and retains only safe evidence-event receipts;
+- `verified`: a later five-trial campaign truthfully reported 4/5 when one
+  successful form outcome used an extra read-only tab route. A separate
+  campaign also reported 4/5 when one successful outcome used two read-only
+  navigations. Those artifacts remain local diagnostic evidence and were not
+  promoted as passing release distributions;
+- `verified`: the final built-CLI `deepseek/deepseek-v4-flash` campaign
+  completed 5/5 independent trials with pass rate `1`. All trials recorded
+  pending/approved `type` and `click` confirmations with effects `data_entry`
+  and `form_submit`, exactly one completed write of each action, one Session,
+  exact post-submit URL/title hashes, final close, completed Run, exact final
+  token, valid Replay, and zero credential/private-value leak flags;
+- `verified`: total duration was 15.856–154.480 seconds (p50 65.577, p95
+  154.480); first confirmation was 9.449–140.053 seconds (p50 55.063);
+  aggregate cost was `$0.0339100384`;
+- `verified`: the content-addressed Series SHA-256 is
+  `3c043842fbec23615c2e82d7ff0396cbfb261557d7b731f2c4fc1124d7bf6d1f`.
+  Offline Series verification returns valid with zero diagnostics;
+- `verified`: the release audit semantically verifies the Series plus five
+  Result/Ledger pairs and now covers 142 artifacts. Release-set SHA-256 is
+  `e2b7f7df7f990afbc128afc3c5373721f940557f1eba60b6d4711a32701ddfc1`;
+  release-receipt SHA-256 is
+  `c62f0acd635899bba18d4fbb935cb2ed84ced11e7c540327d58bbaa4c0a2d347`;
+- `verified`: the complete repository gate passes 2,473 regular tests with 46
+  opt-in live tests skipped by default: Root 161, CLI 227, Server 202, Web
+  532, Contracts 3, Runtime 1,320, and SDK 28. Architecture audits 1,065
+  production source files and 519 test files with zero cycles and no new
+  budget override. Product performance remains within budget at 765.4 ms to
+  first CLI event, 917.9 ms to first token, 1,217.8 ms to completion, 0.4 ms
+  read p95, 5.3 ms for a 1,000-event projection, and 761.856 bytes per closed
+  SQLite event. The 94-file Web distribution remains 143.97 KiB under its
+  unchanged 150 KiB main-entry budget;
+- `inferred`: five successful executions close the explicit
+  confirmed-action outcome-distribution gap for one synthetic,
+  unauthenticated public form and prove the formal-entry measurement path.
+  They do not establish arbitrary-site/authenticated-form reliability,
+  provider availability or latency SLAs, cross-model superiority, or
+  autonomous login/CAPTCHA support.

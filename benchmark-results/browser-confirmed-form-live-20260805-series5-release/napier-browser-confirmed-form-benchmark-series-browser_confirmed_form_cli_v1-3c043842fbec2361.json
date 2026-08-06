@@ -1,0 +1,104 @@
+{
+  "kind": "napier.browser-confirmed-form-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-06T08:24:34.566Z",
+  "caseId": "browser_confirmed_form_cli_v1",
+  "caseSha256": "6611c769e2d8bc9d1bd0a53411facde4c08df8e76f8de5442bb806c6b4fff603",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 5,
+  "completedTrialCount": 5,
+  "passedTrialCount": 5,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 0,
+  "completionRate": 1,
+  "passRate": 1,
+  "metrics": {
+    "firstConfirmationMs": {
+      "total": 335767,
+      "min": 9449,
+      "p50": 55063,
+      "p95": 140053,
+      "max": 140053,
+      "mean": 67153.4
+    },
+    "totalDurationMs": {
+      "total": 390368,
+      "min": 15856,
+      "p50": 65577,
+      "p95": 154480,
+      "max": 154480,
+      "mean": 78073.6
+    },
+    "costUsd": {
+      "total": 0.0339100384,
+      "min": 0.0044409008,
+      "p50": 0.0073491936,
+      "p95": 0.0088721528,
+      "max": 0.0088721528,
+      "mean": 0.00678200768
+    }
+  },
+  "trials": [
+    {
+      "index": 1,
+      "threadId": "thread_edc849b7ded347789593",
+      "runId": "run_d13afaa74c034e7584ad",
+      "status": "passed",
+      "resultFileName": "napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-9e24e16af0886977.json",
+      "resultSha256": "9e24e16af088697729bc9470c5f729dcaf992e2497dc977f15b974bf60dc666a",
+      "ledgerFileName": "napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-804615bfa1b1be51.json",
+      "ledgerSha256": "804615bfa1b1be51b84f0800bcc681e36efe89cedc9242f4f4c20a0804e8e464"
+    },
+    {
+      "index": 2,
+      "threadId": "thread_d826f7012c464dd7ba4e",
+      "runId": "run_de5358a9e4194b7eb7ff",
+      "status": "passed",
+      "resultFileName": "napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-d10253d3b5555efb.json",
+      "resultSha256": "d10253d3b5555efb6a11bf8a70d188475604e2ba4d755f0afc86d50c86462970",
+      "ledgerFileName": "napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-85015ed067273714.json",
+      "ledgerSha256": "85015ed06727371440395cba1b1a05d812c650c94e898107ea1684435db75a2b"
+    },
+    {
+      "index": 3,
+      "threadId": "thread_231d5c47ed63438fa3e1",
+      "runId": "run_b1ec3a3a7d16421c8f27",
+      "status": "passed",
+      "resultFileName": "napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-ead20b43b9ee5d9d.json",
+      "resultSha256": "ead20b43b9ee5d9db0c586442f2313589f60355a685e0e8552ccebb46ef17660",
+      "ledgerFileName": "napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-5de0464fa052d868.json",
+      "ledgerSha256": "5de0464fa052d868c4bb6d9fe65d7d9888c8511d9cde331c9ce9e0ea46d639f4"
+    },
+    {
+      "index": 4,
+      "threadId": "thread_2e9a8332b8954f6994ee",
+      "runId": "run_c8428892248840ff97a5",
+      "status": "passed",
+      "resultFileName": "napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-88c39cbe0410cb34.json",
+      "resultSha256": "88c39cbe0410cb3464b2b3e9a1f7e06fcaed09dc579fbf9fdf1059ba556e24e1",
+      "ledgerFileName": "napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-9741dbb74083982e.json",
+      "ledgerSha256": "9741dbb74083982e2904374db56691fe83a8fcaa7e03240a4d6ddc02628432a5"
+    },
+    {
+      "index": 5,
+      "threadId": "thread_36650f487b9748f8879c",
+      "runId": "run_ab5c1aa5cff54342af50",
+      "status": "passed",
+      "resultFileName": "napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-c200f2181dac0e3c.json",
+      "resultSha256": "c200f2181dac0e3cf6ada6d3a5960a372d61e004e260c3110c38744449e5b57c",
+      "ledgerFileName": "napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-b6846518cf25a334.json",
+      "ledgerSha256": "b6846518cf25a3348b18ed88ee3134ae05f70b0af508931e4cd6db9baccfdbab"
+    }
+  ],
+  "contentSha256": "3c043842fbec23615c2e82d7ff0396cbfb261557d7b731f2c4fc1124d7bf6d1f"
+}
