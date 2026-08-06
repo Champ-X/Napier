@@ -1,0 +1,202 @@
+.agent-capability-contract {
+  display: grid;
+  gap: 9px;
+  padding: 11px;
+  background: rgb(248 243 233 / 82%);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--ledger);
+}
+
+.agent-capability-contract.state-stale,
+.agent-capability-contract.state-broken,
+.agent-capability-contract.state-custom_unmanaged {
+  border-left-color: var(--vermilion);
+}
+
+.agent-capability-contract > header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.agent-capability-contract > header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.agent-capability-contract > header strong,
+.agent-capability-contract > header span,
+.agent-capability-contract > header code,
+.agent-capability-contract > p,
+.agent-capability-contract summary,
+.agent-capability-contract label,
+.agent-capability-contract button,
+.agent-capability-contract dt,
+.agent-capability-contract dd {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.agent-capability-contract > header span,
+.agent-capability-contract > p,
+.agent-capability-contract dt {
+  color: var(--ink-muted);
+}
+
+.agent-capability-contract > p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.agent-capability-contract-icon {
+  display: grid;
+  color: var(--ledger);
+}
+
+.state-stale .agent-capability-contract-icon,
+.state-broken .agent-capability-contract-icon,
+.state-custom_unmanaged .agent-capability-contract-icon {
+  color: var(--vermilion);
+}
+
+.agent-capability-contract-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.agent-capability-contract-facts > div {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  background: rgb(255 255 255 / 45%);
+  border: 1px solid var(--rule);
+}
+
+.agent-capability-contract-facts dd {
+  margin: 0;
+  font-size: 14px;
+}
+
+.agent-capability-contract-overrides {
+  display: grid;
+  gap: 3px;
+  padding: 7px;
+  background: rgb(255 255 255 / 45%);
+  border: 1px solid var(--rule);
+}
+
+.agent-capability-contract-overrides span {
+  overflow-wrap: anywhere;
+}
+
+.agent-capability-contract details {
+  padding: 7px;
+  border: 1px solid var(--rule);
+}
+
+.agent-capability-contract summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.agent-capability-contract-diff,
+.agent-capability-readiness {
+  display: grid;
+  gap: 4px;
+  padding: 7px 0 0;
+  margin: 0;
+  list-style: none;
+}
+
+.agent-capability-contract-diff li {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.agent-capability-contract-diff strong,
+.agent-capability-contract-diff em,
+.agent-capability-readiness code {
+  overflow-wrap: anywhere;
+}
+
+.agent-capability-contract-diff em,
+.agent-capability-readiness em {
+  font-style: normal;
+  color: var(--ink-faint);
+}
+
+.agent-capability-contract-hash {
+  display: grid;
+  gap: 3px;
+  margin-top: 7px !important;
+}
+
+.agent-capability-contract-hash code {
+  overflow-wrap: anywhere;
+}
+
+.agent-capability-readiness li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 5px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.agent-capability-readiness li > span {
+  display: grid;
+}
+
+.agent-capability-restore-confirmation {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  line-height: 1.45;
+}
+
+.agent-capability-restore-confirmation input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.agent-capability-restore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 29px;
+  color: #fff;
+  background: var(--ledger);
+  border: 1px solid var(--ledger);
+}
+
+.agent-capability-restore:disabled {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+  background: transparent;
+  border-color: var(--rule);
+}
+
+.agent-capability-contract-error,
+.agent-capability-contract-loading {
+  padding: 8px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  border: 1px solid var(--rule);
+}
+
+.agent-capability-contract-error {
+  color: #843c2d;
+  background: var(--vermilion-soft);
+}

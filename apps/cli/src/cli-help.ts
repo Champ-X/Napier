@@ -67,6 +67,9 @@ Setup options:
 Capability options:
   --agent <agent-id>     Agent profile (default: first local Agent)
   --preset <id>          coding, research, data, browser, or safe_automation
+  --restore-recommended  Preview the versioned default recommendation
+  --expected-revision    Exact Agent revision required for restore apply
+  --diff-sha256 <hash>   Exact restore preview hash required for apply
   --apply                Persist the selected preset as a new Agent revision
   --jsonl                Emit one typed capability-status JSON object
 

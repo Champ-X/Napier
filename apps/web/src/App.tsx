@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from "react";
+import type { KeyboardEvent } from "react";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import {
   Activity,
@@ -23,17 +23,20 @@ import {
 } from "lucide-react";
 
 import type { GoalState, RunRecord, ThreadStatus } from "@napier/contracts";
-import { AgentCapabilityStatusBadge } from "./AgentCapabilityStatusBadge";
+import { InspectorTabButton } from "./InspectorTabButton";
+import { FatalState, LoadingShell } from "./AppInitialStates";
 import { copy } from "./copy";
 import { RunDecisionDockets } from "./RunDecisionDockets";
 import {
-  type InspectorTab,
   type MessageView,
   useWorkspaceViewModel,
 } from "./use-workspace-view-model";
 import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
 
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
+const LazyAgentCapabilityStatusBadge = lazy(
+  () => import("./AgentCapabilityStatusBadge"),
+);
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
 const LazyFilesPanel = lazy(() => import("./FilesPanel"));
@@ -250,7 +253,12 @@ export function App() {
           />
           <div className="composer-footer">
             <div className="composer-hints">
-              <AgentCapabilityStatusBadge agent={activeAgent} />
+              <Suspense fallback={<span>Capability contract loading...</span>}>
+                <LazyAgentCapabilityStatusBadge
+                  agent={activeAgent}
+                  onReview={() => vm.setInspectorTab("context")}
+                />
+              </Suspense>
               <span>
                 <Command size={12} aria-hidden="true" />
                 {copy.shortcut}
@@ -923,52 +931,6 @@ function GoalPanel({
         {copy.goal.guardrail}
       </p>
     </section>
-  );
-}
-
-function InspectorTabButton({
-  id,
-  active,
-  icon,
-  children,
-  onClick,
-}: {
-  id: InspectorTab;
-  active: boolean;
-  icon: ReactNode;
-  children: ReactNode;
-  onClick: (id: InspectorTab) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      className={active ? "is-active" : ""}
-      onClick={() => onClick(id)}
-    >
-      {icon}
-      {children}
-    </button>
-  );
-}
-
-function LoadingShell() {
-  return (
-    <div className="loading-shell" aria-label="Loading Napier" role="status">
-      <div className="loading-monogram">N</div>
-      <span>Opening the ledger</span>
-    </div>
-  );
-}
-
-function FatalState({ message }: { message: string }) {
-  return (
-    <main className="fatal-state">
-      <AlertCircle size={26} aria-hidden="true" />
-      <h1>{copy.notices.disconnected}</h1>
-      <p>{message}</p>
-    </main>
   );
 }
 

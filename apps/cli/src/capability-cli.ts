@@ -9,21 +9,36 @@ import {
   type AgentCapabilityStatus,
 } from "@napier/contracts/agent-capabilities";
 import type { AgentProfile } from "@napier/contracts";
+import type { EffectiveAgentCapabilityProjectionV1 } from "@napier/contracts/agent-capability-contract";
 
 import type { CliCapabilityOptions } from "./cli-capability-options.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 
-export interface CapabilityCliResult {
+interface CapabilityCliResultBase {
   kind: "napier.agent-capability-status";
-  schemaVersion: 1;
-  action: "status" | "preview" | "applied";
   agentId: string;
   agentRevision: number;
   status: AgentCapabilityStatus;
   preset?: AgentCapabilityPreset;
 }
+
+export interface CapabilityCliResultV1 extends CapabilityCliResultBase {
+  schemaVersion: 1;
+  action: "status" | "preview" | "applied";
+  projection?: EffectiveAgentCapabilityProjectionV1;
+}
+
+export interface CapabilityCliRestoreResultV2 extends CapabilityCliResultBase {
+  schemaVersion: 2;
+  action: "restore_preview" | "restored";
+  projection: EffectiveAgentCapabilityProjectionV1;
+}
+
+export type CapabilityCliResult =
+  | CapabilityCliResultV1
+  | CapabilityCliRestoreResultV2;
 
 export async function executeCapabilities(
   options: CliCapabilityOptions,
@@ -64,15 +79,58 @@ export async function executeCapabilities(
             agentCapabilityPresetUpdate(preset.id),
           )
         : projected;
-    const result: CapabilityCliResult = {
-      kind: "napier.agent-capability-status",
-      schemaVersion: 1,
-      action: preset ? (options.apply ? "applied" : "preview") : "status",
-      agentId: agent.id,
-      agentRevision: agent.revision,
-      status: agentCapabilityStatus(agent),
+    let projection: EffectiveAgentCapabilityProjectionV1 | undefined;
+    let action: CapabilityCliResult["action"] = preset
+      ? options.apply
+        ? "applied"
+        : "preview"
+      : "status";
+    if (options.restoreRecommended) {
+      if (options.apply) {
+        const restored = await services.agentCapabilities.restore(current.id, {
+          schemaVersion: 1,
+          expectedRevision: options.expectedRevision!,
+          diffSha256: options.diffSha256!,
+        });
+        projection = restored.projection;
+        action = "restored";
+      } else {
+        projection = await services.agentCapabilities.project(current.id);
+        action = "restore_preview";
+      }
+    } else if (!preset) {
+      projection = await services.agentCapabilities.project(current.id);
+    }
+    const legacyProfile = projection
+      ? {
+          toolPolicy: projection.toolPolicy,
+          enabledTools: projection.configuredTools,
+          enabledSkills: projection.configuredSkills,
+          enabledSubagents: projection.configuredSubagents as NonNullable<
+            AgentProfile["enabledSubagents"]
+          >,
+        }
+      : agent;
+    const base = {
+      kind: "napier.agent-capability-status" as const,
+      agentId: projection?.agentId ?? agent.id,
+      agentRevision: projection?.agentRevision ?? agent.revision,
+      status: agentCapabilityStatus(legacyProfile),
       ...(preset ? { preset } : {}),
     };
+    const result: CapabilityCliResult = options.restoreRecommended
+      ? {
+          ...base,
+          schemaVersion: 2,
+          action: action as CapabilityCliRestoreResultV2["action"],
+          projection: projection!,
+        }
+      : {
+          ...base,
+          schemaVersion: 1,
+          action: action as CapabilityCliResultV1["action"],
+          ...(projection ? { projection } : {}),
+        };
     if (options.jsonl) {
       await writeJsonLine(io.stdout, result);
     } else {
@@ -99,6 +157,13 @@ function formatCapabilities(result: CapabilityCliResult): string {
     `Permissions: ${status.policyLabel}`,
     `Tools: ${status.enabledToolCount} enabled / ${status.blockedEnabledToolCount} blocked by policy`,
     `Capabilities: network ${yesNo(status.networkRead)} · browser read ${yesNo(status.browserRead)} · browser interact ${browserInteractionLabel(status)} · workspace write ${yesNo(status.workspaceWrite)} · process ${yesNo(status.processExecution)}`,
+    ...(result.projection
+      ? [
+          `Contract: ${result.projection.driftState} · ${result.projection.ownership}`,
+          `Projection: ${result.projection.projectionSha256}`,
+          `Restore diff: ${result.projection.restorePreview.diffSha256} (${String(result.projection.restorePreview.operations.length)} operations)`,
+        ]
+      : []),
     ...(result.action === "status"
       ? [
           "Available presets:",

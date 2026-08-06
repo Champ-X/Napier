@@ -71,6 +71,28 @@ export const contextCopy = {
   capabilityPresetCustom: "Custom configuration",
   capabilityPresetBody:
     "Selecting a preset only fills the existing policy, tools, skills, and delegation fields. Save Agent profile to create the normal revision; Browser interaction remains unavailable unless policy explicitly permits it.",
+  capabilityContract: "Default capability contract",
+  capabilityContractLoading: "Loading effective capability contract...",
+  capabilityContractUnavailable: "Capability contract is unavailable.",
+  capabilityContractBody:
+    "This projection comes from the stored Agent revision and the Runtime's actual tool exposure. Restore is explicit and bound to the exact revision and diff hash shown below.",
+  capabilityConfigured: "Configured tools",
+  capabilityExposed: "Runtime exposed",
+  capabilityReadinessIssues: "Readiness notes",
+  capabilityExplicitOverrides: "Explicit override fields",
+  capabilityRestoreDiff: "Recommended restore diff",
+  capabilityChanges: "changes",
+  capabilityNoChanges: "The managed fields already match the recommendation.",
+  capabilityDiffHash: "Exact diff SHA-256",
+  capabilityReadiness: "Effective readiness",
+  capabilityRestoreConfirm:
+    "I reviewed this exact diff and want a new Agent revision.",
+  capabilityRestore: "Restore recommended capabilities",
+  capabilityRestoring: "Restoring exact recommendation...",
+  capabilityConflictRefreshed:
+    "The preview changed. Authoritative projection loaded; review the new revision and diff, then confirm again.",
+  capabilityConflictRefreshFailed:
+    "The preview changed and automatic refresh failed. Reopen Context before retrying.",
   capabilityTools: "tools",
   capabilityBrowserRead: "Browser read",
   capabilityBrowserInteract: "Browser interact",

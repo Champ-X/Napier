@@ -76,26 +76,14 @@ import {
   selectedModelAvailability,
 } from "./model-selection-view-model";
 import { AgentCapabilityPresetControl } from "./AgentCapabilityPresetControl";
+import { AgentCapabilityContractCard } from "./AgentCapabilityContractCard";
+import {
+  AGENT_MODEL_ADVISOR_RULES as MODEL_ADVISOR_RULES,
+  DEFAULT_AGENT_MODEL_ADVISOR_POLICY as DEFAULT_MODEL_ADVISOR_POLICY,
+  DEFAULT_AGENT_RUN_LIMITS as DEFAULT_RUN_LIMITS,
+} from "./context-agent-defaults";
 
 const copy = { context: contextCopy };
-const DEFAULT_RUN_LIMITS = {
-  maxTurns: 24,
-  maxTotalTokens: 250_000,
-  maxCostUsd: 10,
-  timeoutMs: 900_000,
-} as const;
-const DEFAULT_MODEL_ADVISOR_POLICY = {
-  mode: "observe" as const,
-  enabledRules: [
-    "unverified_verification_claim" as const,
-    "destructive_command_reference" as const,
-  ],
-  maxCorrectionAttempts: 0,
-};
-const MODEL_ADVISOR_RULES: ModelAdvisorRuleId[] = [
-  "unverified_verification_claim",
-  "destructive_command_reference",
-];
 const MAX_SKILL_CONTENT_FILE_BYTES = 128 * 1024;
 const MAX_PROMPT_PACKAGE_FILE_BYTES = 129 * 1024;
 const MAX_SKILL_PACKAGE_FILE_BYTES = 513 * 1024;
@@ -1476,6 +1464,13 @@ export default function ContextPanel({
             setAgentSkills(update.enabledSkills);
             setAgentSubagents(update.enabledSubagents ?? []);
           }}
+        />
+
+        <AgentCapabilityContractCard
+          agentId={agent.id}
+          agentRevision={agent.revision}
+          disabled={configurationBusy}
+          onRestored={refreshWorkspace}
         />
 
         <fieldset

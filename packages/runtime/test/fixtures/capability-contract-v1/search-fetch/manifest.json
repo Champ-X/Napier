@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "name": "search-fetch",
+  "sourceCommit": "0da2f2d4c24519cc83f1d7a2bbe18ed86db6c05d",
+  "sourceCommitRelationship": {
+    "relation": "direct_child",
+    "ancestorCommit": "c00af0f0b2830c091859be8c146710021a2f385c",
+    "ancestorSubject": "feat(search): enable default provider-neutral web search",
+    "sourceSubject": "feat(fetch): add default URL and PDF source reading"
+  },
+  "extractionCommand": "fixture_source=\"$(mktemp -d /tmp/napier-capability-source.XXXXXX)\" fixture_output=\"$(mktemp -d /tmp/napier-capability-output.XXXXXX)\" && git worktree add --detach \"$fixture_source\" 0da2f2d4c24519cc83f1d7a2bbe18ed86db6c05d && (cd \"$fixture_source\" && npm ci && npm run build:core && NAPIER_FIXTURE_OUTPUT=\"$fixture_output\" node --input-type=module -e 'import { createLocalAgentRuntime } from \"./packages/runtime/dist/local-agent-runtime.js\"; const runtime = await createLocalAgentRuntime({ workspaceRoot: process.cwd(), dataRoot: process.env.NAPIER_FIXTURE_OUTPUT, env: {} }); await runtime.shutdown();')",
+  "toolVersions": {
+    "node": "v24.16.0",
+    "npm": "11.13.0",
+    "git": "2.50.1 (Apple Git-155)",
+    "typescript": "5.9.3",
+    "@types/node": "24.12.4",
+    "runtime": "@napier/runtime@0.1.0"
+  },
+  "canonicalManagedPayload": {
+    "toolPolicy": "observe",
+    "enabledTools": [
+      "apply_patch",
+      "data_frame",
+      "git_branch_create_apply",
+      "git_branch_create_preview",
+      "git_branch_switch_apply",
+      "git_branch_switch_preview",
+      "git_commit_apply",
+      "git_commit_preview",
+      "git_inspect",
+      "git_review_apply",
+      "git_review_preview",
+      "git_stage_apply",
+      "git_stage_preview",
+      "inspect_code",
+      "inspect_data",
+      "list_files",
+      "list_symbols",
+      "read_file",
+      "read_symbol",
+      "search_files",
+      "sqlite_query",
+      "verify_workspace",
+      "web_fetch",
+      "web_search"
+    ],
+    "enabledSkills": [
+      "artifact-studio",
+      "data-analysis",
+      "research-brief",
+      "software-delivery"
+    ],
+    "enabledSubagents": ["general", "researcher", "reviewer"]
+  },
+  "managedPayloadSha256": "2995f55cd7ea5ded57f11febe0342e3086cd48fe7913eb0c9832c603f7b4d265",
+  "files": {
+    "workspace.json": "3bfd983aac08374b1fa425e138c3b545d7e1d844f893f3ce97571edc423f4a72",
+    "events/thread_742b2c4cf8a94d3bb62d.jsonl": "f12b9855e9ab8f4e868b236657c29435e0860289bf3d9eb9ad17ab52b9d59819"
+  }
+}

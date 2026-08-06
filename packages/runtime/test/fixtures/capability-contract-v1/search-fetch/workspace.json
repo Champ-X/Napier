@@ -1,0 +1,318 @@
+{
+  "version": 1,
+  "apiVersion": "2026-07-25",
+  "agents": [
+    {
+      "id": "agent_napier",
+      "name": "Napier",
+      "description": "A glass-box generalist for research, building, and long-running goals.",
+      "systemPrompt": "You are Napier, a rigorous general-purpose agent. Work in observable steps, preserve evidence, and prefer reversible actions.",
+      "model": {
+        "provider": "napier",
+        "id": "demo"
+      },
+      "thinkingLevel": "medium",
+      "toolPolicy": "observe",
+      "enabledTools": [
+        "list_files",
+        "read_file",
+        "search_files",
+        "list_symbols",
+        "inspect_data",
+        "data_frame",
+        "sqlite_query",
+        "inspect_code",
+        "read_symbol",
+        "web_search",
+        "web_fetch",
+        "git_inspect",
+        "git_stage_preview",
+        "git_stage_apply",
+        "git_commit_preview",
+        "git_commit_apply",
+        "git_branch_create_preview",
+        "git_branch_create_apply",
+        "git_branch_switch_preview",
+        "git_branch_switch_apply",
+        "git_review_preview",
+        "git_review_apply",
+        "apply_patch",
+        "verify_workspace"
+      ],
+      "enabledSkills": [
+        "data-analysis",
+        "research-brief",
+        "software-delivery",
+        "artifact-studio"
+      ],
+      "enabledSubagents": [
+        "researcher",
+        "reviewer",
+        "general"
+      ],
+      "subagentLimits": {
+        "maxConcurrent": 2,
+        "maxTotal": 4,
+        "maxTurns": 8,
+        "timeoutMs": 120000
+      },
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 10,
+        "timeoutMs": 900000
+      },
+      "modelAdvisor": {
+        "mode": "observe",
+        "enabledRules": [
+          "unverified_verification_claim",
+          "destructive_command_reference"
+        ],
+        "maxCorrectionAttempts": 0
+      },
+      "revision": 1,
+      "createdAt": "2026-08-06T18:05:03.298Z",
+      "updatedAt": "2026-08-06T18:05:03.298Z"
+    }
+  ],
+  "agentRevisions": [
+    {
+      "agentId": "agent_napier",
+      "revision": 1,
+      "profile": {
+        "id": "agent_napier",
+        "name": "Napier",
+        "description": "A glass-box generalist for research, building, and long-running goals.",
+        "systemPrompt": "You are Napier, a rigorous general-purpose agent. Work in observable steps, preserve evidence, and prefer reversible actions.",
+        "model": {
+          "provider": "napier",
+          "id": "demo"
+        },
+        "thinkingLevel": "medium",
+        "toolPolicy": "observe",
+        "enabledTools": [
+          "list_files",
+          "read_file",
+          "search_files",
+          "list_symbols",
+          "inspect_data",
+          "data_frame",
+          "sqlite_query",
+          "inspect_code",
+          "read_symbol",
+          "web_search",
+          "web_fetch",
+          "git_inspect",
+          "git_stage_preview",
+          "git_stage_apply",
+          "git_commit_preview",
+          "git_commit_apply",
+          "git_branch_create_preview",
+          "git_branch_create_apply",
+          "git_branch_switch_preview",
+          "git_branch_switch_apply",
+          "git_review_preview",
+          "git_review_apply",
+          "apply_patch",
+          "verify_workspace"
+        ],
+        "enabledSkills": [
+          "data-analysis",
+          "research-brief",
+          "software-delivery",
+          "artifact-studio"
+        ],
+        "enabledSubagents": [
+          "researcher",
+          "reviewer",
+          "general"
+        ],
+        "subagentLimits": {
+          "maxConcurrent": 2,
+          "maxTotal": 4,
+          "maxTurns": 8,
+          "timeoutMs": 120000
+        },
+        "runLimits": {
+          "maxTurns": 24,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 10,
+          "timeoutMs": 900000
+        },
+        "modelAdvisor": {
+          "mode": "observe",
+          "enabledRules": [
+            "unverified_verification_claim",
+            "destructive_command_reference"
+          ],
+          "maxCorrectionAttempts": 0
+        },
+        "revision": 1,
+        "createdAt": "2026-08-06T18:05:03.298Z",
+        "updatedAt": "2026-08-06T18:05:03.298Z"
+      },
+      "changedFields": [
+        "name",
+        "description",
+        "systemPrompt",
+        "model",
+        "thinkingLevel",
+        "toolPolicy",
+        "enabledTools",
+        "enabledSkills",
+        "enabledSubagents",
+        "subagentLimits",
+        "runLimits",
+        "automaticRecovery",
+        "modelAdvisor",
+        "promptVariables",
+        "toolLoopGuard"
+      ],
+      "source": "created",
+      "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+      "createdAt": "2026-08-06T18:05:03.298Z",
+      "contentSha256": "e8ee964df55e98fef48d1eebf3711d195e968e8c69b76e83b2f74f74bfe2b2c9"
+    }
+  ],
+  "threads": [
+    {
+      "id": "thread_742b2c4cf8a94d3bb62d",
+      "title": "The first ledger",
+      "agentId": "agent_napier",
+      "status": "idle",
+      "createdAt": "2026-08-06T18:05:03.298Z",
+      "updatedAt": "2026-08-06T18:05:03.298Z",
+      "lastMessage": "This thread is a durable ledger. Every answer, tool call, branch, goal, and artifact is recorded as evidence you can inspect and replay.",
+      "eventCount": 3,
+      "runIds": [
+        "run_3781e6d6627d48ae887e"
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "id": "run_3781e6d6627d48ae887e",
+      "threadId": "thread_742b2c4cf8a94d3bb62d",
+      "agentId": "agent_napier",
+      "status": "completed",
+      "startedAt": "2026-08-06T18:05:03.298Z",
+      "finishedAt": "2026-08-06T18:05:03.298Z",
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0
+      },
+      "agentRevision": 1,
+      "limits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 10,
+        "timeoutMs": 900000
+      },
+      "configuration": {
+        "schemaVersion": 2,
+        "agentRevision": 1,
+        "model": {
+          "provider": "napier",
+          "id": "demo"
+        },
+        "thinkingLevel": "medium",
+        "toolPolicy": "observe",
+        "enabledTools": [
+          "apply_patch",
+          "data_frame",
+          "git_branch_create_apply",
+          "git_branch_create_preview",
+          "git_branch_switch_apply",
+          "git_branch_switch_preview",
+          "git_commit_apply",
+          "git_commit_preview",
+          "git_inspect",
+          "git_review_apply",
+          "git_review_preview",
+          "git_stage_apply",
+          "git_stage_preview",
+          "inspect_code",
+          "inspect_data",
+          "list_files",
+          "list_symbols",
+          "read_file",
+          "read_symbol",
+          "search_files",
+          "sqlite_query",
+          "verify_workspace",
+          "web_fetch",
+          "web_search"
+        ],
+        "enabledSkills": [
+          "artifact-studio",
+          "data-analysis",
+          "research-brief",
+          "software-delivery"
+        ],
+        "enabledSubagents": [
+          "general",
+          "researcher",
+          "reviewer"
+        ],
+        "subagentLimits": {
+          "maxConcurrent": 2,
+          "maxTotal": 4,
+          "maxTurns": 8,
+          "timeoutMs": 120000
+        },
+        "runLimits": {
+          "maxTurns": 24,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 10,
+          "timeoutMs": 900000
+        },
+        "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+        "automaticRecovery": {
+          "mode": "manual",
+          "maxAttempts": 2,
+          "backoffMs": 5000
+        },
+        "executionMode": "standard",
+        "contentSha256": "a3ce60597a58a162eeaf39a807acb84f231ae71270562b0a3596f9b028f9089d"
+      }
+    }
+  ],
+  "memories": [],
+  "subagents": [],
+  "extensions": [],
+  "extensionPackageRolloutChannels": [],
+  "extensionPublisherTrustAnchors": [],
+  "skillPackageInstallations": [],
+  "evaluations": [],
+  "evaluationAdjudications": [],
+  "evaluationReviewerBallots": [],
+  "evaluationConsensusResolutions": [],
+  "evaluationCasebooks": [],
+  "evaluationCasebookQualificationExecutions": [],
+  "receiptTrustAnchors": [],
+  "receiptTrustAnchorDirectorySubscriptions": [],
+  "receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions": [],
+  "receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions": [],
+  "receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines": [],
+  "receiptTrustAnchorDirectoryQuorumPromotionBaselines": [],
+  "receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines": [],
+  "receiptTrustAnchorDirectoryQuorumActivationDecisions": [],
+  "receiptTrustAnchorDirectoryQuorumActivationSelections": [],
+  "evaluationQualificationBaselines": [],
+  "evaluationSuites": [],
+  "evaluationSuiteExecutions": [],
+  "automaticRecoveryAssessments": [],
+  "automaticRecoveryAttempts": [],
+  "plans": [],
+  "executionPlanBlueprints": [],
+  "executionPlanBlueprintOutcomeBaselines": [],
+  "executionPlanBlueprintRecommendationPolicyOverrides": [],
+  "executionPlanBlueprintRecommendationPolicyOverrideRetirements": [],
+  "credentials": [],
+  "schedules": [],
+  "channels": [],
+  "inboundDeliveries": []
+}

@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(24);
+    expect(generated.routeCount).toBe(26);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -71,7 +71,7 @@ describe("management OpenAPI generator", () => {
           "apps/server/src/domains/memory-http.ts",
           "apps/server/src/workspace-process-http.ts",
         ],
-        "x-napier-route-count": 24,
+        "x-napier-route-count": 26,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -114,6 +114,16 @@ describe("management OpenAPI generator", () => {
             "application/json": { schema: true },
           }),
         }),
+      }),
+    );
+    expect(
+      generated.artifact.paths["/api/agents/{agentId}/capabilities/restore"]
+        .post.responses,
+    ).toEqual(
+      expect.objectContaining({
+        422: { $ref: "#/components/responses/ErrorResponse" },
+        500: { $ref: "#/components/responses/ErrorResponse" },
+        503: { $ref: "#/components/responses/ErrorResponse" },
       }),
     );
     expect(
@@ -757,10 +767,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 24 routes",
+      "Wrote docs/artifacts/management-openapi.json: 26 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(24);
+    expect(artifact["x-napier-route-count"]).toBe(26);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -804,6 +814,8 @@ async function createFixture() {
     path.join(root, "apps/server/src/app.ts"),
     `
       app.get("/api/health", () => undefined);
+      app.get("/api/agents/:agentId/capabilities", () => undefined);
+      app.post("/api/agents/:agentId/capabilities/restore", () => undefined);
       app.get("/api/receipt-trust/anchors", () => undefined);
       app.get("/api/receipt-trust/anchors/directory", () => undefined);
       app.post("/api/receipt-trust/anchors", () => undefined);

@@ -1,8 +1,6 @@
 import { createHash } from "node:crypto";
 
 import {
-  AGENT_TOOL_NAMES,
-  type AgentToolName,
   type AgentProfile,
   type AgentProfileField,
   type AgentProfileRevision,
@@ -22,7 +20,6 @@ import { nowIso } from "./ids.js";
 import { normalizePromptVariableDefinitions } from "./prompt-variables.js";
 import { normalizeToolLoopGuardPolicy } from "./tool-loop-guard.js";
 
-const ALLOWED_TOOLS: ReadonlySet<string> = new Set(AGENT_TOOL_NAMES);
 const THINKING_LEVELS = new Set<AgentProfile["thinkingLevel"]>([
   "off",
   "minimal",
@@ -512,19 +509,8 @@ function validateToolPolicy(
   return value;
 }
 
-function normalizeTools(values: string[]): AgentToolName[] {
-  const normalized: AgentToolName[] = [];
-  for (const tool of new Set(values)) {
-    if (!isAgentToolName(tool)) {
-      throw new Error(`Unsupported Agent tool: ${tool}`);
-    }
-    normalized.push(tool);
-  }
-  return normalized.sort();
-}
-
-function isAgentToolName(value: string): value is AgentToolName {
-  return ALLOWED_TOOLS.has(value);
+function normalizeTools(values: string[]): string[] {
+  return normalizeNames(values, "Agent tool");
 }
 
 export function effectiveModelAdvisorPolicy(

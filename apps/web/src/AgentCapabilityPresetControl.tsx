@@ -8,6 +8,7 @@ import type { AgentProfile, ToolPolicyMode } from "@napier/contracts";
 
 import { agentCapabilityDetailText } from "./agent-capability-view-model";
 import { contextCopy as copy } from "./context-copy";
+import "./agent-capability-preset.css";
 
 export function AgentCapabilityPresetControl({
   profile,

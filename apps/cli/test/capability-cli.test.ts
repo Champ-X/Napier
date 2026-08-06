@@ -13,7 +13,7 @@ import {
   UnsupportedSandboxAdapter,
   type LocalAgentRuntimeOptions,
 } from "@napier/runtime";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { parseCliArgs, runCli } from "../src/cli.js";
 import type { CliIo, RunCliDependencies } from "../src/cli-runtime.js";
@@ -92,13 +92,32 @@ describe("Agent capability presets", () => {
       options: {
         workspace: ".",
         presetId: "browser",
+        restoreRecommended: false,
         apply: false,
         jsonl: true,
       },
     });
     expect(() =>
       parseCliArgs(["capabilities", "--workspace", ".", "--apply"]),
-    ).toThrow("--apply requires --preset");
+    ).toThrow("--apply requires --preset or --restore-recommended");
+    expect(() =>
+      parseCliArgs([
+        "capabilities",
+        "--workspace",
+        ".",
+        "--restore-recommended",
+        "--apply",
+      ]),
+    ).toThrow("Restore apply requires");
+    expect(() =>
+      parseCliArgs([
+        "capabilities",
+        "--workspace",
+        ".",
+        "--expected-revision",
+        "1",
+      ]),
+    ).toThrow("require --restore-recommended");
     expect(() =>
       parseCliArgs([
         "capabilities",
@@ -108,6 +127,63 @@ describe("Agent capability presets", () => {
         "unrestricted",
       ]),
     ).toThrow("--preset must be one of");
+  });
+
+  it("additively includes the authoritative projection in default JSONL status", async () => {
+    const fixture = await createFixture();
+    const stdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "capabilities",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--jsonl",
+        ],
+        cliIo(fixture.root, stdout, new CaptureWritable()),
+        dependencies(),
+      ),
+    ).toBe(0);
+    const result = JSON.parse(stdout.text());
+    expect(Object.keys(result).sort()).toEqual(
+      [
+        "action",
+        "agentId",
+        "agentRevision",
+        "kind",
+        "projection",
+        "schemaVersion",
+        "status",
+      ].sort(),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        kind: "napier.agent-capability-status",
+        schemaVersion: 1,
+        action: "status",
+        agentId: "agent_napier",
+        agentRevision: 1,
+        projection: expect.objectContaining({
+          kind: "napier.effective-agent-capabilities",
+          schemaVersion: 1,
+          agentId: "agent_napier",
+          agentRevision: 1,
+          driftState: "current",
+          ownership: "recommended",
+          projectionSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+    expect(result.status).toEqual(
+      agentCapabilityStatus({
+        toolPolicy: result.projection.toolPolicy,
+        enabledTools: result.projection.configuredTools,
+        enabledSkills: result.projection.configuredSkills,
+        enabledSubagents: result.projection.configuredSubagents,
+      }),
+    );
   });
 
   it("previews without mutation and applies one revision through the Store", async () => {
@@ -132,6 +208,7 @@ describe("Agent capability presets", () => {
     expect(preview).toEqual(
       expect.objectContaining({
         kind: "napier.agent-capability-status",
+        schemaVersion: 1,
         action: "preview",
         agentRevision: 1,
         status: expect.objectContaining({
@@ -141,6 +218,7 @@ describe("Agent capability presets", () => {
         }),
       }),
     );
+    expect(preview).not.toHaveProperty("projection");
     let services = await createLocalAgentRuntime({
       workspaceRoot: fixture.workspaceRoot,
       dataRoot: fixture.dataRoot,
@@ -166,8 +244,10 @@ describe("Agent capability presets", () => {
       dependencies(),
     );
     expect(applyCode).toBe(0);
-    expect(JSON.parse(applyOut.text())).toEqual(
+    const applied = JSON.parse(applyOut.text());
+    expect(applied).toEqual(
       expect.objectContaining({
+        schemaVersion: 1,
         action: "applied",
         agentRevision: 2,
         status: expect.objectContaining({
@@ -176,6 +256,18 @@ describe("Agent capability presets", () => {
           browserInteract: false,
         }),
       }),
+    );
+    expect(applied).not.toHaveProperty("projection");
+    expect(Object.keys(applied).sort()).toEqual(
+      [
+        "action",
+        "agentId",
+        "agentRevision",
+        "kind",
+        "preset",
+        "schemaVersion",
+        "status",
+      ].sort(),
     );
     services = await createLocalAgentRuntime({
       workspaceRoot: fixture.workspaceRoot,
@@ -191,6 +283,132 @@ describe("Agent capability presets", () => {
     expect(services.store.listAgentRevisions(agent.id)).toHaveLength(2);
     await services.shutdown();
   });
+
+  it("previews and applies a recommendation restore with exact CAS inputs", async () => {
+    const fixture = await createFixture();
+    await runCli(
+      [
+        "capabilities",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--preset",
+        "browser",
+        "--apply",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, new CaptureWritable(), new CaptureWritable()),
+      dependencies(),
+    );
+
+    const previewOut = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "capabilities",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--restore-recommended",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, previewOut, new CaptureWritable()),
+        dependencies(),
+      ),
+    ).toBe(0);
+    const preview = JSON.parse(previewOut.text());
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        action: "restore_preview",
+        agentRevision: 2,
+        projection: expect.objectContaining({
+          driftState: "current",
+          ownership: "explicit_overrides",
+          restorePreview: expect.objectContaining({
+            diffSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          }),
+        }),
+      }),
+    );
+
+    const staleOut = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "capabilities",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--restore-recommended",
+          "--apply",
+          "--expected-revision",
+          "2",
+          "--diff-sha256",
+          "0".repeat(64),
+          "--jsonl",
+        ],
+        cliIo(fixture.root, new CaptureWritable(), staleOut),
+        dependencies(),
+      ),
+    ).toBe(1);
+    expect(staleOut.text()).toContain("refresh the preview");
+
+    const restoreOut = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "capabilities",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--restore-recommended",
+          "--apply",
+          "--expected-revision",
+          "2",
+          "--diff-sha256",
+          preview.projection.restorePreview.diffSha256,
+          "--jsonl",
+        ],
+        cliIo(fixture.root, restoreOut, new CaptureWritable()),
+        postCommitCapabilityMutationDependencies(),
+      ),
+    ).toBe(0);
+    const restored = JSON.parse(restoreOut.text());
+    expect(restored).toEqual(
+      expect.objectContaining({
+        action: "restored",
+        agentRevision: 3,
+        projection: expect.objectContaining({
+          driftState: "current",
+          ownership: "recommended",
+        }),
+      }),
+    );
+    expect(restored.agentRevision).toBe(restored.projection.agentRevision);
+    expect(restored.status).toEqual(
+      agentCapabilityStatus({
+        toolPolicy: restored.projection.toolPolicy,
+        enabledTools: restored.projection.configuredTools,
+        enabledSkills: restored.projection.configuredSkills,
+        enabledSubagents: restored.projection.configuredSubagents,
+      }),
+    );
+    const after = await createLocalAgentRuntime({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("capability-inspect"),
+    });
+    expect(after.store.getAgent("agent_napier").revision).toBe(4);
+    expect(after.store.getAgent("agent_napier").enabledSkills).toEqual([
+      "research-brief",
+    ]);
+    await after.shutdown();
+  });
 });
 
 function dependencies(): RunCliDependencies {
@@ -200,6 +418,31 @@ function dependencies(): RunCliDependencies {
         ...options,
         sandbox: new UnsupportedSandboxAdapter("capability-cli"),
       });
+    },
+  };
+}
+
+function postCommitCapabilityMutationDependencies(): RunCliDependencies {
+  return {
+    async createRuntime(options: LocalAgentRuntimeOptions) {
+      const services = await createLocalAgentRuntime({
+        ...options,
+        sandbox: new UnsupportedSandboxAdapter("capability-cli"),
+      });
+      const restore = services.agentCapabilities.restore.bind(
+        services.agentCapabilities,
+      );
+      vi.spyOn(services.agentCapabilities, "restore").mockImplementationOnce(
+        async (agentId, request) => {
+          const committed = await restore(agentId, request);
+          await services.store.updateAgent(
+            agentId,
+            agentCapabilityPresetUpdate("browser"),
+          );
+          return committed;
+        },
+      );
+      return services;
     },
   };
 }

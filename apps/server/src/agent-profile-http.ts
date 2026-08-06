@@ -26,6 +26,7 @@ import {
   RequestBodyTooLargeError,
 } from "./http-request-body.js";
 import { assertAvailableModel } from "./model-http-availability.js";
+import { registerAgentCapabilityHttp } from "./agent-capability-http.js";
 
 const MAX_AGENT_PROFILE_REQUEST_BYTES = 32 * 1024;
 
@@ -43,12 +44,14 @@ type AgentProfileHttpStore = Pick<
 export interface AgentProfileHttpServices {
   store: AgentProfileHttpStore;
   models: ModelRegistry;
+  agentCapabilities: import("@napier/runtime").LocalAgentRuntimeServices["agentCapabilities"];
 }
 
 export function registerAgentProfileHttp(
   app: Hono,
   services: AgentProfileHttpServices,
 ): void {
+  registerAgentCapabilityHttp(app, services);
   app.put("/api/agents/:agentId", async (context) => {
     const agentId = context.req.param("agentId");
     let input: unknown;

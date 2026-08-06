@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "63a7883a5cb126572b519cce2afbc3cf77ba27e6b6ca236650a97d993bf9525f",
-    "routeCount": 268,
-    "routeSetSha256": "46a1ee8431047f19acc09ec57b8858b6bba8bc572cf81d1844b63b931fbf2ae2"
+    "sha256": "ab0e35a6c13a9400b881c41fa3b9330a0c3cec72cbf393f43ee5ba016134bada",
+    "routeCount": 270,
+    "routeSetSha256": "794788f62d33bf0122fa23f990ea47a5d69eb33e7f9ff321fe4727dd4b52654a"
   },
-  "operationCount": 268,
-  "operationSetSha256": "8d62f507d7b5a6b9a42fe89a20b4dfe7b20653d8b0b29b6bd7e6a4b93d9963fc",
+  "operationCount": 270,
+  "operationSetSha256": "ab74a43f13c40d01efbaf8ad1a774236c69fedc62d57465dcc6fee9bfb1eba78",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}",
@@ -52,6 +52,29 @@
         "404",
         "409",
         "413"
+      ]
+    },
+    {
+      "key": "GET /api/agents/{agentId}/capabilities",
+      "method": "get",
+      "path": "/api/agents/{agentId}/capabilities",
+      "operationId": "get-agents-by-agentId-capabilities",
+      "tags": [
+        "agents"
+      ],
+      "pathParameters": [
+        "agentId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413",
+        "500"
       ]
     },
     {
@@ -1829,6 +1852,31 @@
         "404",
         "409",
         "413"
+      ]
+    },
+    {
+      "key": "POST /api/agents/{agentId}/capabilities/restore",
+      "method": "post",
+      "path": "/api/agents/{agentId}/capabilities/restore",
+      "operationId": "post-agents-by-agentId-capabilities-restore",
+      "tags": [
+        "agents"
+      ],
+      "pathParameters": [
+        "agentId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413",
+        "422",
+        "500",
+        "503"
       ]
     },
     {

@@ -63,6 +63,110 @@
         "x-napier-source-route": "PUT /api/agents/:agentId"
       }
     },
+    "/api/agents/{agentId}/capabilities": {
+      "get": {
+        "operationId": "get-agents-by-agentId-capabilities",
+        "tags": [
+          "agents"
+        ],
+        "summary": "GET /api/agents/{agentId}/capabilities",
+        "parameters": [
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/agents/:agentId/capabilities"
+      }
+    },
+    "/api/agents/{agentId}/capabilities/restore": {
+      "post": {
+        "operationId": "post-agents-by-agentId-capabilities-restore",
+        "tags": [
+          "agents"
+        ],
+        "summary": "POST /api/agents/{agentId}/capabilities/restore",
+        "parameters": [
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/agents/:agentId/capabilities/restore"
+      }
+    },
     "/api/agents/{agentId}/revisions": {
       "get": {
         "operationId": "get-agents-by-agentId-revisions",
@@ -15191,8 +15295,9 @@
     }
   },
   "x-napier-artifact-kind": "management-openapi",
-  "x-napier-source-path": "apps/server/src/agent-profile-http.ts",
+  "x-napier-source-path": "apps/server/src/agent-capability-http.ts",
   "x-napier-source-paths": [
+    "apps/server/src/agent-capability-http.ts",
     "apps/server/src/agent-profile-http.ts",
     "apps/server/src/app.ts",
     "apps/server/src/bootstrap-http.ts",
@@ -15231,7 +15336,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "3afc763dd7d95b7aa8d28eeb1f004ec6607d49f96ac08caac3babed358fd3dfd",
-  "x-napier-route-count": 268,
-  "x-napier-route-set-sha256": "46a1ee8431047f19acc09ec57b8858b6bba8bc572cf81d1844b63b931fbf2ae2"
+  "x-napier-source-sha256": "93de54bd8d7cd5637b7ab70b703f945dfc4d79173f0970a6724f2b8a1cc3bfe3",
+  "x-napier-route-count": 270,
+  "x-napier-route-set-sha256": "794788f62d33bf0122fa23f990ea47a5d69eb33e7f9ff321fe4727dd4b52654a"
 }

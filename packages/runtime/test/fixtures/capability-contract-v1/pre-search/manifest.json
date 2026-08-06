@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "name": "pre-search",
+  "sourceCommit": "37a048ba2fe081ead4665dea0bce95a6b30c56e2",
+  "sourceCommitRelationship": {
+    "relation": "direct_parent",
+    "descendantCommit": "c00af0f0b2830c091859be8c146710021a2f385c",
+    "descendantSubject": "feat(search): enable default provider-neutral web search"
+  },
+  "extractionCommand": "fixture_source=\"$(mktemp -d /tmp/napier-capability-source.XXXXXX)\" fixture_output=\"$(mktemp -d /tmp/napier-capability-output.XXXXXX)\" && git worktree add --detach \"$fixture_source\" 37a048ba2fe081ead4665dea0bce95a6b30c56e2 && (cd \"$fixture_source\" && npm ci && npm run build:core && NAPIER_FIXTURE_OUTPUT=\"$fixture_output\" node --input-type=module -e 'import { createLocalAgentRuntime } from \"./packages/runtime/dist/local-agent-runtime.js\"; const runtime = await createLocalAgentRuntime({ workspaceRoot: process.cwd(), dataRoot: process.env.NAPIER_FIXTURE_OUTPUT, env: {} }); await runtime.shutdown();')",
+  "toolVersions": {
+    "node": "v24.16.0",
+    "npm": "11.13.0",
+    "git": "2.50.1 (Apple Git-155)",
+    "typescript": "5.9.3",
+    "@types/node": "24.12.4",
+    "runtime": "@napier/runtime@0.1.0"
+  },
+  "canonicalManagedPayload": {
+    "toolPolicy": "observe",
+    "enabledTools": [
+      "apply_patch",
+      "data_frame",
+      "git_branch_create_apply",
+      "git_branch_create_preview",
+      "git_branch_switch_apply",
+      "git_branch_switch_preview",
+      "git_commit_apply",
+      "git_commit_preview",
+      "git_inspect",
+      "git_review_apply",
+      "git_review_preview",
+      "git_stage_apply",
+      "git_stage_preview",
+      "inspect_code",
+      "inspect_data",
+      "list_files",
+      "list_symbols",
+      "read_file",
+      "read_symbol",
+      "search_files",
+      "sqlite_query",
+      "verify_workspace"
+    ],
+    "enabledSkills": [
+      "artifact-studio",
+      "data-analysis",
+      "research-brief",
+      "software-delivery"
+    ],
+    "enabledSubagents": ["general", "researcher", "reviewer"]
+  },
+  "managedPayloadSha256": "ac15ac4783ddfc45df07e112d5b50db5278d41cabd5eac17a55a1e38e171da70",
+  "files": {
+    "workspace.json": "fda4065432ab3cd45577068e3505298106322529b25b822d3110f9eb88a5f966",
+    "events/thread_d1872b201aa24d8a84f4.jsonl": "f60cc39cd7ad9d00f3c5da75156c4f68f9beda1facfd6ca83a8a6a3a5a7612ac"
+  }
+}

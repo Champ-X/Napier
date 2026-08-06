@@ -196,14 +196,13 @@ import type {
   VerifyTrustedReceiptRequest,
 } from "@napier/contracts";
 import {
-  type AgentRuntime,
   AutomationService,
   ChannelService,
-  type CredentialReferenceStore,
   createLocalAgentRuntime,
   EvaluationCasebookQualificationService,
   EvaluationSuiteService,
   type KeychainSecretStore,
+  type LocalAgentRuntimeServices,
   type OsSandboxAdapter,
   createEvaluationCasebookQualificationReceipt,
   createEvaluationSuiteGateReceipt,
@@ -213,7 +212,6 @@ import {
   createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   builtinUsagePriceTableCatalog,
-  type LocalStore,
   MAX_RECEIPT_TRUST_ANCHORS,
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
   MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT,
@@ -232,10 +230,6 @@ import {
   MAX_TRUSTED_RECEIPT_BYTES,
   MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
   MAX_THREAD_REPLAY_BUNDLE_BYTES,
-  type McpExtensionManager,
-  type ModelRegistry,
-  type ModelInvocationExperimentRuntime,
-  type ToolInvocationExperimentRuntime,
   RecoveryService,
   receiptTrustAnchorsFromDirectory,
   RunEvaluationService,
@@ -248,13 +242,7 @@ import {
   verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceiptEnvelope,
   verifyUsagePriceTableCatalog,
-  type WorkspaceFileMutationManager,
-  type WorkspaceProcessManager,
-  type AgentMessageExperimentRuntime,
-  type ExecutionPlanWorkflowExperimentRuntime,
-  type ExecutionPlanWorkflowRuntime,
 } from "@napier/runtime";
-import type { ProviderSetupService } from "@napier/runtime/provider-setup";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 
@@ -336,26 +324,29 @@ import { registerWorkspaceProcessHttp } from "./workspace-process-http.js";
 import { inferWorkspaceRoot } from "./workspace-root.js";
 export { inferWorkspaceRoot } from "./workspace-root.js";
 
-export interface NapierServices {
-  store: LocalStore;
-  models: ModelRegistry;
-  extensions: McpExtensionManager;
-  runtime: AgentRuntime;
-  workflows: ExecutionPlanWorkflowRuntime;
-  workflowExperiments: ExecutionPlanWorkflowExperimentRuntime;
-  agentMessageExperiments: AgentMessageExperimentRuntime;
-  modelInvocationExperiments: ModelInvocationExperimentRuntime;
-  toolInvocationExperiments: ToolInvocationExperimentRuntime;
+export interface NapierServices extends Pick<
+  LocalAgentRuntimeServices,
+  | "store"
+  | "models"
+  | "extensions"
+  | "runtime"
+  | "agentCapabilities"
+  | "workflows"
+  | "workflowExperiments"
+  | "agentMessageExperiments"
+  | "modelInvocationExperiments"
+  | "toolInvocationExperiments"
+  | "credentials"
+  | "workspaceFileMutations"
+  | "workspaceProcesses"
+  | "providerSetup"
+> {
   evaluations: RunEvaluationService;
   evaluationCasebookQualifications: EvaluationCasebookQualificationService;
   evaluationSuites: EvaluationSuiteService;
-  credentials: CredentialReferenceStore;
   automation: AutomationService;
   channels: ChannelService;
   recovery: RecoveryService;
-  workspaceFileMutations: WorkspaceFileMutationManager;
-  workspaceProcesses: WorkspaceProcessManager;
-  providerSetup: ProviderSetupService;
   receiptTrustDirectories: ReceiptTrustAnchorDirectoryDiscoveryService;
   receiptTrustDirectorySubscriptions: ReceiptTrustAnchorDirectorySubscriptionService;
   shutdownLocalRuntime(): Promise<void>;
@@ -407,6 +398,7 @@ export async function createServices(options?: {
     agentMessageExperiments,
     modelInvocationExperiments,
     toolInvocationExperiments,
+    agentCapabilities,
     providerSetup,
   } = local;
   const evaluations = new RunEvaluationService(store, models);
@@ -442,6 +434,7 @@ export async function createServices(options?: {
     agentMessageExperiments,
     modelInvocationExperiments,
     toolInvocationExperiments,
+    agentCapabilities,
     evaluations,
     evaluationCasebookQualifications,
     evaluationSuites,

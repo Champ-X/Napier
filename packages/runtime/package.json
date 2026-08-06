@@ -39,6 +39,10 @@
     "./provider-setup": {
       "types": "./dist/provider-setup.d.ts",
       "import": "./dist/provider-setup.js"
+    },
+    "./agent-capability-store-mutations": {
+      "types": "./dist/agent-capability-store-mutations.d.ts",
+      "import": "./dist/agent-capability-store-mutations.js"
     }
   },
   "files": [

@@ -13076,47 +13076,6 @@ button:disabled {
   min-width: 0;
 }
 
-.agent-capability-preset {
-  display: grid;
-  gap: 8px;
-  padding: 10px;
-  background: rgb(238 231 217 / 48%);
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--ledger);
-}
-
-.agent-capability-preset > header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.agent-capability-preset > header > div {
-  display: grid;
-  gap: 2px;
-}
-
-.agent-capability-preset strong,
-.agent-capability-preset span,
-.agent-capability-preset code {
-  font-family: var(--mono);
-  font-size: 7px;
-}
-
-.agent-capability-preset > header span {
-  color: var(--ink-faint);
-  letter-spacing: 0.08em;
-}
-
-.agent-capability-preset p,
-.agent-capability-preset small {
-  margin: 0;
-  font-size: 7px;
-  line-height: 1.55;
-  color: var(--ink-muted);
-}
-
 .context-runtime-card {
   position: relative;
   padding: 12px;

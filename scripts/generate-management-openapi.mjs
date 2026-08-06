@@ -164,6 +164,10 @@ const PROMOTED_OPERATION_SCHEMAS = {
     },
   },
 };
+const ADDITIONAL_ERROR_RESPONSES = {
+  "GET /api/agents/{agentId}/capabilities": [500],
+  "POST /api/agents/{agentId}/capabilities/restore": [422, 500, 503],
+};
 
 export async function generateManagementOpenApi(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -2190,6 +2194,16 @@ function createOperation(route) {
       404: { $ref: "#/components/responses/ErrorResponse" },
       409: { $ref: "#/components/responses/ErrorResponse" },
       413: { $ref: "#/components/responses/ErrorResponse" },
+      ...Object.fromEntries(
+        (
+          ADDITIONAL_ERROR_RESPONSES[
+            `${route.method.toUpperCase()} ${route.openapiPath}`
+          ] ?? []
+        ).map((status) => [
+          status,
+          { $ref: "#/components/responses/ErrorResponse" },
+        ]),
+      ),
     },
     "x-napier-source-route": `${route.method.toUpperCase()} ${route.rawPath}`,
   };

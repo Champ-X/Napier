@@ -3,6 +3,8 @@ import path from "node:path";
 
 import type { KeychainSecretStore } from "./credentials.js";
 import { CredentialReferenceStore } from "./credentials.js";
+import { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
+import { AgentCapabilityService } from "./agent-capability-service.js";
 import { AgentRuntime } from "./agent-runtime.js";
 import { BrowserInteractionConfirmationManager } from "./browser-interaction-confirmations.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
@@ -61,6 +63,7 @@ export interface LocalAgentRuntimeServices {
   browserSessionPauses: BrowserSessionPauseManager;
   providerSetup: ProviderSetupService;
   runtime: AgentRuntime;
+  agentCapabilities: AgentCapabilityService;
   embeddedAgents: EmbeddedAgentService;
   agentMessageExperiments: AgentMessageExperimentRuntime;
   modelInvocationExperiments: ModelInvocationExperimentRuntime;
@@ -120,6 +123,31 @@ export async function createLocalAgentRuntime(
       models,
       options.env ?? process.env,
     );
+    const network = {
+      webSearch:
+        options.webSearch ??
+        new WebSearchProviderRegistry({
+          ...(options.env ? { env: options.env } : {}),
+        }),
+      ...(options.webFetch ? { webFetch: options.webFetch } : {}),
+      ...(options.webFetchHttp ? { webFetchHttp: options.webFetchHttp } : {}),
+    };
+    const capabilityRuntime = new AgentCapabilityRuntime(
+      store,
+      sandbox,
+      initializedProcesses,
+      workspaceFileMutations,
+      browserInteractionConfirmations,
+      browserSessionPauses,
+      options.browserSessions,
+      options.researchSourceCaptures,
+      network,
+    );
+    const agentCapabilities = new AgentCapabilityService(
+      store,
+      sandbox,
+      capabilityRuntime,
+    );
     const runtime = new AgentRuntime(
       store,
       models,
@@ -132,15 +160,7 @@ export async function createLocalAgentRuntime(
       undefined,
       undefined,
       undefined,
-      {
-        webSearch:
-          options.webSearch ??
-          new WebSearchProviderRegistry({
-            ...(options.env ? { env: options.env } : {}),
-          }),
-        ...(options.webFetch ? { webFetch: options.webFetch } : {}),
-        ...(options.webFetchHttp ? { webFetchHttp: options.webFetchHttp } : {}),
-      },
+      network,
       browserInteractionConfirmations,
       browserSessionPauses,
     );
@@ -180,6 +200,7 @@ export async function createLocalAgentRuntime(
       browserSessionPauses,
       providerSetup,
       runtime,
+      agentCapabilities,
       embeddedAgents,
       agentMessageExperiments,
       modelInvocationExperiments,

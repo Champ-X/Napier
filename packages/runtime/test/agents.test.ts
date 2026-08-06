@@ -258,10 +258,14 @@ describe("Agent profile updates", () => {
     ).toEqual(updated);
   });
 
-  it("rejects unsupported tools, malformed models, and unsafe budgets", () => {
+  it("preserves unknown tool names while rejecting malformed names and unsafe budgets", () => {
+    expect(
+      updateAgentProfile(PROFILE, { enabledTools: ["future_tool"] })
+        .enabledTools,
+    ).toEqual(["future_tool"]);
     expect(() =>
-      updateAgentProfile(PROFILE, { enabledTools: ["bash"] }),
-    ).toThrow("Unsupported Agent tool");
+      updateAgentProfile(PROFILE, { enabledTools: ["shell access"] }),
+    ).toThrow("Invalid Agent tool name");
     expect(
       updateAgentProfile(PROFILE, {
         enabledTools: [

@@ -245,6 +245,7 @@ import {
   type VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
+import type { RestoreRecommendedCapabilitiesRequestV1 } from "@napier/contracts/agent-capability-contract";
 import { loadThreadDetail } from "./thread-detail.js";
 import {
   createThreadRecord,
@@ -253,13 +254,28 @@ import {
   threadRuns,
 } from "./thread-records.js";
 import { mutateThreadTrash, visibleThreads } from "./thread-trash.js";
+import { createWorkspaceSeed } from "./workspace-seed.js";
 
 import {
   assertOperatorDecisionCapabilityContinuation,
   resolveAgentCapabilityProfile,
 } from "./agent-capability-override.js";
+import {
+  createRollbackCapabilityBinding,
+  createSeededCapabilityBinding,
+  ensureCurrentCapabilityBindings,
+  lookupCapabilityBinding,
+  propagateUpdatedCapabilityBinding,
+  validCapabilityBinding,
+  type CapabilityBindingLookup,
+} from "./agent-capability-bindings.js";
+import {
+  CapabilityRestoreConflictError,
+  CapabilityRestorePersistenceError,
+  restoreRecommendedCapabilitiesState,
+  type CapabilityRestoreCommit,
+} from "./agent-capability-store-mutations.js";
 import { createId, nowIso } from "./ids.js";
-import { DEFAULT_AGENT_ENABLED_TOOLS } from "./read-only-tool-names.js";
 import type { ChannelDeliveryExecution } from "./store-port.js";
 import {
   DEFAULT_MODEL_ADVISOR_POLICY,
@@ -715,6 +731,7 @@ interface PersistedState {
   apiVersion: string;
   agents: AgentProfile[];
   agentRevisions: AgentProfileRevision[];
+  agentCapabilityBindings: unknown[];
   threads: ThreadRecord[];
   runs: PersistedRunRecord[];
   memories: MemoryFact[];
@@ -871,6 +888,7 @@ const EMPTY_STATE: PersistedState = {
   apiVersion: NAPIER_API_VERSION,
   agents: [],
   agentRevisions: [],
+  agentCapabilityBindings: [],
   threads: [],
   runs: [],
   memories: [],
@@ -1132,6 +1150,20 @@ export class LocalStore {
     return structuredClone(snapshot);
   }
 
+  getAgentCapabilityBinding(
+    agentId: string,
+    revision: number,
+  ): CapabilityBindingLookup {
+    this.assertInitialized();
+    this.getAgent(agentId);
+    return lookupCapabilityBinding(
+      this.state.agentCapabilityBindings,
+      agentId,
+      revision,
+      { retainedRevisions: this.state.agentRevisions },
+    );
+  }
+
   async updateAgent(
     agentId: string,
     request: UpdateAgentProfileRequest,
@@ -1143,6 +1175,14 @@ export class LocalStore {
       );
       const current = this.state.agents[index];
       if (!current) throw new Error(`Agent not found: ${agentId}`);
+      const currentBinding = validCapabilityBinding(
+        lookupCapabilityBinding(
+          this.state.agentCapabilityBindings,
+          agentId,
+          current.revision,
+          { retainedRevisions: this.state.agentRevisions },
+        ),
+      );
       const updated = updateAgentProfile(current, request);
       this.state.agents[index] = updated;
       if (updated.revision !== current.revision) {
@@ -1152,6 +1192,12 @@ export class LocalStore {
             changedFields: changedAgentFields(current, updated),
           }),
         );
+        const binding = propagateUpdatedCapabilityBinding(
+          currentBinding,
+          current,
+          updated,
+        );
+        if (binding) this.state.agentCapabilityBindings.push(binding);
         await this.persistState();
       }
       return structuredClone(updated);
@@ -1187,8 +1233,45 @@ export class LocalStore {
       });
       this.state.agents[index] = agent;
       this.state.agentRevisions.push(revision);
+      const targetBinding = validCapabilityBinding(
+        lookupCapabilityBinding(
+          this.state.agentCapabilityBindings,
+          target.agentId,
+          target.revision,
+          { retainedRevisions: this.state.agentRevisions },
+        ),
+      );
+      const binding = createRollbackCapabilityBinding(targetBinding, agent);
+      if (binding) this.state.agentCapabilityBindings.push(binding);
       await this.persistState();
       return structuredClone({ agent, revision });
+    });
+  }
+
+  async restoreRecommendedAgentCapabilities(
+    agentId: string,
+    request: RestoreRecommendedCapabilitiesRequestV1,
+  ): Promise<CapabilityRestoreCommit> {
+    this.assertInitialized();
+    return this.stateQueue.run(async () => {
+      const result = restoreRecommendedCapabilitiesState(
+        this.state,
+        agentId,
+        request,
+      );
+      try {
+        await this.persistState();
+      } catch (error) {
+        if (error instanceof ConcurrentStoreUpdateError) {
+          throw new CapabilityRestoreConflictError();
+        }
+        throw new CapabilityRestorePersistenceError({ cause: error });
+      }
+      return structuredClone({
+        previousRevision: result.previous.revision,
+        agent: result.updated,
+        binding: result.binding,
+      });
     });
   }
 
@@ -9340,114 +9423,14 @@ export class LocalStore {
   }
 
   private async seedWorkspace(): Promise<void> {
-    const timestamp = nowIso();
-    const threadId = createId("thread");
-    const runId = createId("run");
-    const assistantText =
-      "This thread is a durable ledger. Every answer, tool call, branch, goal, and artifact is recorded as evidence you can inspect and replay.";
-    const agent: AgentProfile = {
-      id: "agent_napier",
-      name: "Napier",
-      description:
-        "A glass-box generalist for research, building, and long-running goals.",
-      systemPrompt:
-        "You are Napier, a rigorous general-purpose agent. Work in observable steps, preserve evidence, and prefer reversible actions.",
-      model: { provider: "napier", id: "demo" },
-      thinkingLevel: "medium",
-      toolPolicy: "observe",
-      enabledTools: [...DEFAULT_AGENT_ENABLED_TOOLS],
-      enabledSkills: [
-        "data-analysis",
-        "research-brief",
-        "software-delivery",
-        "artifact-studio",
-      ],
-      enabledSubagents: ["researcher", "reviewer", "general"],
-      subagentLimits: {
-        maxConcurrent: 2,
-        maxTotal: 4,
-        maxTurns: 8,
-        timeoutMs: 120_000,
-      },
-      runLimits: structuredClone(DEFAULT_RUN_LIMITS),
-      modelAdvisor: structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
-      revision: 1,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-    const events: RunEvent[] = [
-      {
-        id: createId("event"),
-        threadId,
-        runId,
-        seq: 1,
-        type: "run.started",
-        category: "lifecycle",
-        visibility: "debug",
-        createdAt: timestamp,
-        payload: { source: "onboarding" },
-      },
-      {
-        id: createId("event"),
-        threadId,
-        runId,
-        seq: 2,
-        type: "message.assistant",
-        category: "message",
-        visibility: "user",
-        createdAt: nowIso(),
-        payload: {
-          role: "assistant",
-          text: assistantText,
-          model: "napier/demo",
-        },
-      },
-      {
-        id: createId("event"),
-        threadId,
-        runId,
-        seq: 3,
-        type: "system.note",
-        category: "system",
-        visibility: "debug",
-        createdAt: nowIso(),
-        payload: {
-          text: "Demo mode is active. Configure a provider key to switch this agent to a live model.",
-        },
-      },
-    ];
-    const finishedAt = events.at(-1)!.createdAt;
-    const thread: ThreadRecord = {
-      id: threadId,
-      title: "The first ledger",
-      agentId: agent.id,
-      status: "idle",
-      createdAt: timestamp,
-      updatedAt: finishedAt,
-      lastMessage: assistantText,
-      eventCount: events.length,
-      runIds: [runId],
-    };
-    const run: PersistedRunRecord = {
-      id: runId,
-      threadId,
-      agentId: agent.id,
-      status: "completed",
-      startedAt: timestamp,
-      finishedAt,
-      usage: emptyUsage(),
-      agentRevision: agent.revision,
-      limits: normalizeRunLimits(
-        agent.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
-      ),
-      configuration: createRunConfigurationFingerprint(agent),
-    };
+    const { agent, events, thread, run } = createWorkspaceSeed();
     const state: PersistedState = {
       ...structuredClone(EMPTY_STATE),
       agents: [agent],
       agentRevisions: [
         createAgentProfileRevision(agent, { source: "created" }),
       ],
+      agentCapabilityBindings: [createSeededCapabilityBinding(agent)],
       threads: [thread],
       runs: [run],
     };
@@ -10006,6 +9989,11 @@ export class LocalStore {
         );
       }
     }
+    state.agentCapabilityBindings = ensureCurrentCapabilityBindings(
+      state.agentCapabilityBindings,
+      state.agents,
+      state.agentRevisions,
+    );
     for (const run of state.runs) {
       const agent = state.agents.find(
         (candidate) => candidate.id === run.agentId,
@@ -11487,6 +11475,13 @@ export class LocalStore {
     stateJson: string;
   }): boolean {
     const parsed = JSON.parse(snapshot.stateJson) as PersistedState;
+    const capabilityBindingMetadataPresent = Object.hasOwn(
+      parsed,
+      "agentCapabilityBindings",
+    );
+    const capabilityBindingContent = JSON.stringify(
+      parsed.agentCapabilityBindings,
+    );
     const migrateEvaluationCasebooks =
       Array.isArray(parsed.evaluationCasebooks) &&
       parsed.evaluationCasebooks.some(
@@ -11542,7 +11537,12 @@ export class LocalStore {
       this.listPersistedEvaluationEvents(parsed),
     );
     this.stateRevision = snapshot.revision;
-    return requiresStateMigration;
+    return (
+      requiresStateMigration ||
+      !capabilityBindingMetadataPresent ||
+      capabilityBindingContent !==
+        JSON.stringify(this.state.agentCapabilityBindings)
+    );
   }
 
   private requireLedger(): SqliteLedger {

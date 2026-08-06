@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-07T06:16:50+08:00",
+  "scope": "Default Agent Capability Contract v1 Stage 7 repair round 2 and re-review evidence",
+  "baseCommit": "d2924c770972712dc77cdf480d1bbf1dc8d06b35",
+  "sourceState": "dirty worktree; no commit or staging performed",
+  "verification": {
+    "repositoryCheck": {
+      "command": "npm run check",
+      "status": "pass_after_receipt_refresh",
+      "exitCode": 0,
+      "suites": {
+        "root": { "filesPassed": 24, "testsPassed": 162 },
+        "cli": {
+          "filesPassed": 52,
+          "filesSkipped": 10,
+          "testsPassed": 229,
+          "testsSkipped": 15
+        },
+        "server": { "filesPassed": 76, "testsPassed": 206 },
+        "web": { "filesPassed": 109, "testsPassed": 548 },
+        "contracts": { "filesPassed": 1, "testsPassed": 3 },
+        "runtime": {
+          "filesPassed": 252,
+          "filesSkipped": 14,
+          "testsPassed": 1347,
+          "testsSkipped": 31
+        },
+        "sdk": { "filesPassed": 7, "testsPassed": 28 }
+      },
+      "audits": {
+        "runtimeEnvironment": "pass",
+        "packageLock": "pass",
+        "architecture": "1089 source files; 532 test files; 0 allowed cycles",
+        "managementOpenApi": "270 routes; generated artifact current",
+        "managementOpenApiCompatibility": "270/270 operations verified",
+        "codingComparison": "pass",
+        "productPerformance": "pass",
+        "webDist": "104 files; manifest and receipt verified",
+        "releaseArtifacts": "142 artifacts; receipt verified"
+      },
+      "firstAttempt": {
+        "status": "failed",
+        "stage": "check:release-artifacts",
+        "cause": "The OpenAPI compatibility fixture had been generated after the release receipt, so the receipt correctly rejected the later artifact change.",
+        "resolution": "Regenerated the release receipt from the final artifact set and reran the complete command successfully."
+      }
+    },
+    "focused": [
+      {
+        "command": "npm exec --workspace @napier/cli -- vitest run test/capability-cli.test.ts",
+        "status": "pass",
+        "filesPassed": 1,
+        "testsPassed": 5
+      },
+      {
+        "command": "npm exec --workspace @napier/runtime -- vitest run test/agent-capability-contract.test.ts test/agent-capability-recommendation.test.ts test/agent-capability-replay-import.test.ts",
+        "status": "pass",
+        "filesPassed": 3,
+        "testsPassed": 26
+      },
+      {
+        "command": "npm exec --workspace @napier/server -- vitest run test/agent-capability-http.test.ts",
+        "status": "pass_after_import_fix",
+        "filesPassed": 1,
+        "testsPassed": 3,
+        "firstAttempt": "2 passed and 1 failed because the test still imported a mutation-only error from the runtime root after that export was intentionally removed; the test now uses the dedicated mutation subpath."
+      },
+      {
+        "command": "npm exec --workspace @napier/web -- vitest run test/AgentCapabilityContractCard.test.tsx test/agent-capability-api.test.ts test/agent-capability-composer.test.ts",
+        "status": "pass",
+        "filesPassed": 3,
+        "testsPassed": 8
+      },
+      {
+        "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs scripts/generate-management-openapi.test.mjs",
+        "status": "pass",
+        "filesPassed": 2,
+        "testsPassed": 5
+      }
+    ],
+    "workspaceTests": [
+      {
+        "command": "npm test -w @napier/cli",
+        "status": "pass",
+        "filesPassed": 52,
+        "filesSkipped": 10,
+        "testsPassed": 229,
+        "testsSkipped": 15
+      },
+      {
+        "command": "npm test -w @napier/runtime",
+        "status": "pass",
+        "filesPassed": 252,
+        "filesSkipped": 14,
+        "testsPassed": 1347,
+        "testsSkipped": 31
+      },
+      {
+        "command": "npm test -w @napier/server",
+        "status": "pass",
+        "filesPassed": 76,
+        "testsPassed": 206
+      },
+      {
+        "command": "npm test -w @napier/web",
+        "status": "pass",
+        "filesPassed": 109,
+        "testsPassed": 548
+      }
+    ],
+    "credentialReferenceCanary": {
+      "command": "node --import tsx scripts/run-credential-reference-canary.ts",
+      "status": "pass",
+      "matchCount": 0
+    },
+    "architectureBudgets": {
+      "storeSourceLines": 14407,
+      "runtimeRootExportLines": 201,
+      "contractTestLines": 994,
+      "recommendationTestLines": 84,
+      "replayImportTestLines": 81,
+      "newOrRaisedExemptions": 0
+    },
+    "managementOpenApiResponses": {
+      "GET /api/agents/{agentId}/capabilities": [200, 400, 404, 409, 413, 500],
+      "POST /api/agents/{agentId}/capabilities/restore": [200, 400, 404, 409, 413, 422, 500, 503]
+    }
+  },
+  "cliContract": {
+    "defaultStatus": {
+      "schemaVersion": 1,
+      "topLevelKeys": [
+        "schemaVersion",
+        "kind",
+        "action",
+        "agentId",
+        "agentRevision",
+        "status",
+        "projection"
+      ],
+      "projectionSource": "shared AgentCapabilityService.project",
+      "legacyStatusSource": "the same authoritative projection"
+    },
+    "restoreAtomicity": "The restore command emits the exact projection returned by the atomic commit. A post-commit test mutation advances the store while the command continues to report the committed revision and matching legacy status without a second read.",
+    "parity": "The default schema-v1 CLI projection is byte-for-byte deeply equal to the Web HTTP projection for the same persisted agent revision."
+  },
+  "immutability": {
+    "publicTypes": "Managed capability payload and recommendation members are readonly.",
+    "runtime": "Recommendations, nested arrays, history entries, and history payloads are recursively frozen.",
+    "tests": "Pinned literal recommendation hash/vector, Object.isFrozen checks, and mutation-resistance checks passed."
+  },
+  "replayImport": {
+    "targetAgent": "imported.agent.id",
+    "expectedSource": "explicit_overrides",
+    "expectedDriftState": "custom_unmanaged",
+    "expectedOwnership": "unmanaged",
+    "restartVerified": true
+  },
+  "protectedCliResearch": {
+    "executionPath": "repository-root npm script -> Napier CLI run command",
+    "provider": "deepseek",
+    "model": "deepseek/deepseek-v4-flash",
+    "credentialReference": "DEEPSEEK_API_KEY",
+    "preset": "research",
+    "commands": [
+      "NAPIER_HOME=$data_root npm run --silent napier -- run --message $official_source_research_prompt --model deepseek/deepseek-v4-flash --credential-env DEEPSEEK_API_KEY --preset research --jsonl --timeout-ms 120000",
+      "NAPIER_HOME=$data_root npm run --silent napier -- run --thread-id thread_9ccfc10110174fadb20d --message $official_release_followup_prompt --model deepseek/deepseek-v4-flash --credential-env DEEPSEEK_API_KEY --preset research --jsonl --timeout-ms 120000",
+      "NAPIER_HOME=$data_root npm run --silent napier -- capabilities --jsonl"
+    ],
+    "runs": [
+      {
+        "runId": "run_10fcae8026f849729e0a",
+        "threadId": "thread_9ccfc10110174fadb20d",
+        "status": "completed",
+        "eventCount": 439,
+        "tool": "web_search",
+        "outcome": "The official-site search returned only the Node.js homepage, so the assistant explicitly declined to claim a codename from insufficient evidence."
+      },
+      {
+        "runId": "run_6c12736d1e504d208175",
+        "threadId": "thread_9ccfc10110174fadb20d",
+        "status": "completed",
+        "eventCount": 1070,
+        "tool": "web_fetch",
+        "toolEventDisclosure": "started, failed, automatically retried, started, completed",
+        "result": "Node.js 24 codename Krypton",
+        "citation": "https://nodejs.org/en/blog/release/v24.11.0",
+        "assistantTextSha256": "0775e5247f1c004dc4316ef88b24d17556c9fdd8b68b87366d9033729a78be16",
+        "snapshotSha256": "95e54e27153d98229edfc13fba041928b64f5fdafaa146ac28311bb931b698f1",
+        "eventStreamSha256": "c1a7aabafff462d5e62912bcc285729b9b7acc38419e2f42074afe69ca20f2dc"
+      }
+    ],
+    "replayVerification": {
+      "status": "valid",
+      "diagnostics": [],
+      "contentSha256": "fc0106083ff0ed935b4eb2396ded127fb91f577dce43ffa7acc1d4ca34444a15",
+      "eventStreamSha256": "c1a7aabafff462d5e62912bcc285729b9b7acc38419e2f42074afe69ca20f2dc",
+      "modelContextEnvelopeCount": 7,
+      "runIds": [
+        "run_10fcae8026f849729e0a",
+        "run_6c12736d1e504d208175"
+      ]
+    },
+    "capabilityProjection": {
+      "schemaVersion": 1,
+      "action": "status",
+      "agentId": "agent_napier",
+      "agentRevision": 1,
+      "driftState": "current",
+      "ownership": "recommended",
+      "projectionSha256": "6b9080426bf587ab8f6f7186a99815f3f3c5cfe967a7dd5f7101cf640a21dd14",
+      "diffSha256": "ecabd083b88bbd1aba4d439b1b9b2b5d79aca4f94e7d01ca44e8c68f6b83445e"
+    }
+  },
+  "browserEvidence": {
+    "runner": "@midscene/web@1",
+    "round2Workflow": [
+      {
+        "step": "before",
+        "agentRevision": 3,
+        "driftState": "current",
+        "ownership": "recommended",
+        "assertion": "Default capability contract rev 3/v1/current/recommended with zero changes; confirmation unchecked.",
+        "screenshot": "web-before-rollback.jpeg"
+      },
+      {
+        "step": "rollback",
+        "mutation": "Clicked REV 2 Review rollback exactly once, verified the rollback ticket, then clicked Restore as new revision exactly once.",
+        "agentRevision": 4,
+        "driftState": "current",
+        "ownership": "explicit_overrides",
+        "assertion": "Revision history visibly marked REV 4 Current and Restored from REV 2; composer showed Browser/read-only and explicit_overrides.",
+        "httpCrossCheck": {
+          "explicitOverrideFields": [
+            "enabledTools",
+            "enabledSkills",
+            "enabledSubagents"
+          ],
+          "projectionSha256": "a72e9efbdfd137f370125f64a6ae0d1f0dcad6c86aa61ca024fb1d240a31d778"
+        },
+        "screenshot": "web-after-rollback.jpeg"
+      },
+      {
+        "step": "rerestore",
+        "mutation": "The visible capability review flow confirmed and restored the recommendation, creating REV 5.",
+        "agentRevision": 5,
+        "driftState": "current",
+        "ownership": "recommended",
+        "assertion": "Default capability contract visibly showed rev 5/v1/current/recommended and zero changes; composer showed current/recommended.",
+        "httpCrossCheck": {
+          "explicitOverrideFields": [],
+          "projectionSha256": "59885542b2182d087ba09e52d08f5420691e922fcade7b334949eefa8bd5bf0e"
+        },
+        "screenshot": "web-after-rerestore.jpeg"
+      }
+    ],
+    "retainedScreenshots": {
+      "broken": {
+        "path": "broken.jpeg",
+        "sha256": "4d230eba23a3dacc1e9ba2f1af934419a4a2b534fe06f554379ff30b39060130"
+      },
+      "conflictAutoRefetch": {
+        "path": "conflict-auto-refetch.jpeg",
+        "sha256": "bc84bcece8011f5fb608e9330ba74989854bd1e82c14775c5a59a6f89162501d"
+      },
+      "customUnmanaged": {
+        "path": "custom-unmanaged.jpeg",
+        "sha256": "fca5f1265f246bfa47e7220aeeef4aeec5b48aa1279cc6a85ea04713137412a6"
+      },
+      "explicitOverrides": {
+        "path": "explicit-overrides.jpeg",
+        "sha256": "fb90d367cf421bbec44690426b4b42ecfa25d1b5ecce4b1294629e82a4f6e858"
+      },
+      "protectedResearch": {
+        "path": "protected-research.jpeg",
+        "sha256": "01c6848602838fb95754b17a5e4433337c5e564b37147124b45514ee0c6ba1d0"
+      },
+      "stale": {
+        "path": "stale.jpeg",
+        "sha256": "8f9f2ebb43813577f34b1ef8452d5fa261e723434438786051f3b323358b9a72"
+      },
+      "webBeforeRollback": {
+        "path": "web-before-rollback.jpeg",
+        "sha256": "9dcde04b4656a9812736f16848be0d6a07a1d354e7f072ee85ef14ff530c7b85"
+      },
+      "webAfterRollback": {
+        "path": "web-after-rollback.jpeg",
+        "sha256": "3228d4c37e518aadd52c8de44a662f00b46c8f5459eaabadaa23de205260dfb0"
+      },
+      "webAfterRerestore": {
+        "path": "web-after-rerestore.jpeg",
+        "sha256": "8cbf769a4ac43c8ff518fb53ccba329cfb4b321800d63a49cb26ebb89f09709a"
+      }
+    },
+    "preDeletionRawInventory": {
+      "htmlReportCount": 15,
+      "reportScreenshotCount": 193,
+      "totalFileCount": 225,
+      "reports": [
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_02-02-44-mqqxmkp3.html", "sha256": "dd83b8b34b6a23a6dc041289becdb5ee607573516736fc0c4570c10238122904" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_02-54-56-z016h0qr.html", "sha256": "27894f4c05e13792dc224b599c0556cf40d70dde5d40362d7844cf83d1c4c84a" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-06-26-em5a06l4.html", "sha256": "31081b05f813b91a5be9ef78b8c3394ff48a64f9989a739c797ab522cc4566c8" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-10-44-ek21w8rb.html", "sha256": "7a92957e2a84faa0750274fde00705fd76f43cb001ea62a974f204dee2d78672" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-29-07-adpebree.html", "sha256": "999d41f5c75f75881014f1a064e28c1b5ead16b1983a464e9de3c14aa2fbd4c8" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-34-44-bo4myh57.html", "sha256": "818b05e0f9ad8c67bf1df5bd43ec199c6abfc53c040378747dc973a2099b83a1" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-41-42-qqxy3tz9.html", "sha256": "1f0305856163a12a2abe17b4816d210a819558ba6fefff7ec7525a345a6220dd" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-51-28-m9k8q0gj.html", "sha256": "013490a9f9b6b4463f8413f764acc27c204367b4e7357856d92786685a322993" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-52-55-8e8dpcam.html", "sha256": "d0ca59cb6cb3a6fafbf5ee3bc90ad7542b2687d23fd2c0db689bcc95c6126e38" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-56-12-4t8m6mox.html", "sha256": "8cfe53c56c5495a3ff0df9468fbe6381e97c6d30714914bc248d2a9e1a7fcbe7" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-57-28-qiz1tnex.html", "sha256": "2fd72ce7550244412a5cd02e19df22a55feeea361d166f219b5e27f8ed9d24bd" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-58-36-axs6mcsk.html", "sha256": "f7f02c4f523d75cd0721db8d5ba1f4fb03191bbb35453e0639af4f43e382eb2c" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_05-00-04-14eoacwl.html", "sha256": "76663c45c018d9c5f7fc621d7140800929538cd37e3bb81c46b55e698826770a" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_05-08-21-9cfmrvo4.html", "sha256": "f8a338402383993d0d3cf04b27b4d6c1658a19ae5e8930d50a044b17a3a53484" },
+        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_05-54-34-vj29diei.html", "sha256": "4a8422f1d80997eda3a7dbbe315e65019d01fd6f5d64c637c3041df9dcd13437" }
+      ]
+    },
+    "postDeletionState": "Raw midscene_run reports/assets were removed after this inventory and screenshot sanitization; only the nine retained sanitized JPEGs and this index remain in the evidence bundle.",
+    "listenersAfterCapture": { "port5173": "clear", "port8787": "clear", "midsceneBrowser": "closed" }
+  },
+  "automationDisclosures": [
+    "Earlier round: the first disabled-button visual assertion failed because the disabled control retained an active green fill. CSS was corrected and the repeated assertion passed.",
+    "Earlier round: one broad renewed-restore prompt over-executed, advancing revisions 3 through 7. It was interrupted; all restore mutations remained confirmation-gated.",
+    "Earlier round: rollback navigation clicked Review rollback controls without mutating state; a later API rollback was evidence-only and is not claimed as satisfying the round-2 UI rollback requirement.",
+    "Earlier round: the first protected research run remained in model.thinking.delta through 16385 events and was stopped; two preliminary fixture server launches used non-operative data-root variable names; a timing-sensitive Web conflict assertion was fixed and passed repeatedly.",
+    "Round 2: the first root CLI DeepSeek run completed a search, then stalled while trying to fetch at model-invocation sequence 383. SIGINT did not settle it, so only its exact isolated process tree was terminated with SIGTERM. It is not counted as a pass.",
+    "Round 2: the bounded root CLI search run completed but returned only the official homepage; the assistant correctly reported insufficient evidence. A same-thread official-release follow-up then completed; its web_fetch emitted one failed attempt before an automatic successful retry.",
+    "Round 2: the first Midscene command failed before interaction because MIDSCENE_MODEL_NAME was absent. Two further commands failed before interaction because one model identifier was invalid and another was blocked by provider privacy policy. No page state changed in those attempts.",
+    "Round 2: the granular re-restore checkbox action over-planned: it scrolled, clicked Review / restore again, clicked the visible review checkbox, scrolled, then performed the UI action that created REV 5. It was interrupted during the next planning cycle. REV 5 was then independently confirmed by a fresh Midscene assertion, a distinct screenshot, and a read-only HTTP projection.",
+    "Round 2: the focused server test first ran 2/3 because its test import had not followed the new mutation-only runtime subpath. The import was corrected and the exact command reran 3/3.",
+    "Round 2: the first full npm run check stopped only because the release receipt predated the regenerated OpenAPI compatibility fixture. The receipt was regenerated after all artifacts and the complete gate reran successfully."
+  ],
+  "cleanup": {
+    "cleanupFollowupAt": "2026-08-07T06:31:42+08:00",
+    "removedHistoricalRoot": "napier-m0.O2p0kb",
+    "historicalWorktreesRemoved": [
+      "worktree-pre-search",
+      "worktree-pre-slice",
+      "worktree-search-fetch"
+    ],
+    "taskTempRootsRemoved": [
+      "napier-stage7-r2-cli.cvKlPa",
+      "napier-stage7-r2-cli-retry.mHw9Cd",
+      "napier-stage7-r2-web.SyiEyF",
+      "napier-midscene-report-inspect",
+      "napier-capability-dogfood.ADxZSa",
+      "napier-capability-web.lwMpXz",
+      "napier-live-ready-dogfood.ODRpns"
+    ],
+    "taskMarkersAndLogsRemoved": [
+      "napier-capability-root",
+      "napier-capability-web-root",
+      "napier-capability-server-build.log"
+    ],
+    "cleanupFollowupInventory": {
+      "directoryFileCounts": {
+        "napier-capability-dogfood.ADxZSa": 7,
+        "napier-capability-web.lwMpXz": 9,
+        "napier-live-ready-dogfood.ODRpns": 33
+      },
+      "directoryKiB": {
+        "napier-capability-dogfood.ADxZSa": 68,
+        "napier-capability-web.lwMpXz": 168,
+        "napier-live-ready-dogfood.ODRpns": 2236
+      },
+      "owner": "current user",
+      "symlinkCount": 0,
+      "protectedFilenameMatchCount": 0,
+      "openFileCount": 0,
+      "markerTargetsCanonical": true,
+      "remainingNameOrMarkerMatches": 0
+    },
+    "gitWorktreesAfterCleanup": ["/Users/bytedance/projects/Napier"],
+    "rawMidsceneRemoved": true
+  },
+  "security": {
+    "credentialValuesRecorded": false,
+    "environmentFile": {
+      "readForCredentialInjection": true,
+      "modified": false,
+      "valuesRecorded": false
+    },
+    "protectedFilesModified": false,
+    "rawMidsceneReportsTracked": false,
+    "sanitization": "Only selected screenshots, hashes, identifiers, command templates, and non-secret result metadata are retained; no provider secret, environment value, raw SSE body, persisted credential, database, or model wrapper is included."
+  }
+}

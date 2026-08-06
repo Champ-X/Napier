@@ -9,6 +9,9 @@ import type { CliWorkspaceOptions } from "./cli-execution-options.js";
 export interface CliCapabilityOptions extends CliWorkspaceOptions {
   agentId?: string;
   presetId?: AgentCapabilityPresetId;
+  restoreRecommended: boolean;
+  expectedRevision?: number;
+  diffSha256?: string;
   apply: boolean;
 }
 
@@ -17,8 +20,13 @@ export const CAPABILITY_VALUE_OPTIONS = new Set([
   "--data-root",
   "--agent",
   "--preset",
+  "--expected-revision",
+  "--diff-sha256",
 ]);
-export const CAPABILITY_FLAG_OPTIONS = new Set(["--apply"]);
+export const CAPABILITY_FLAG_OPTIONS = new Set([
+  "--apply",
+  "--restore-recommended",
+]);
 
 export function optionalCapabilityPreset(
   values: Map<string, string>,
@@ -41,8 +49,36 @@ export function parseCapabilityOptions(
   jsonl: boolean,
 ): { kind: "capabilities"; options: CliCapabilityOptions } {
   const preset = optionalCapabilityPreset(values);
-  if (flags.has("--apply") && !preset) {
-    throw new Error("--apply requires --preset");
+  const restoreRecommended = flags.has("--restore-recommended");
+  if (preset && restoreRecommended) {
+    throw new Error(
+      "--preset and --restore-recommended are mutually exclusive",
+    );
+  }
+  if (flags.has("--apply") && !preset && !restoreRecommended) {
+    throw new Error("--apply requires --preset or --restore-recommended");
+  }
+  if (
+    !restoreRecommended &&
+    (values.has("--expected-revision") || values.has("--diff-sha256"))
+  ) {
+    throw new Error(
+      "--expected-revision and --diff-sha256 require --restore-recommended",
+    );
+  }
+  if (
+    restoreRecommended &&
+    !flags.has("--apply") &&
+    (values.has("--expected-revision") || values.has("--diff-sha256"))
+  ) {
+    throw new Error("Restore preview does not accept apply preconditions");
+  }
+  if (restoreRecommended && flags.has("--apply")) {
+    if (!values.has("--expected-revision") || !values.has("--diff-sha256")) {
+      throw new Error(
+        "Restore apply requires --expected-revision and --diff-sha256",
+      );
+    }
   }
   return {
     kind: "capabilities",
@@ -50,6 +86,7 @@ export function parseCapabilityOptions(
       workspace: requiredValue(values, "--workspace"),
       jsonl,
       apply: flags.has("--apply"),
+      restoreRecommended,
       ...(values.has("--data-root")
         ? { dataRoot: requiredValue(values, "--data-root") }
         : {}),
@@ -57,6 +94,32 @@ export function parseCapabilityOptions(
         ? { agentId: optionalResourceId(values, "--agent")! }
         : {}),
       ...(preset ? { presetId: preset } : {}),
+      ...(values.has("--expected-revision")
+        ? { expectedRevision: capabilityRevision(values) }
+        : {}),
+      ...(values.has("--diff-sha256")
+        ? { diffSha256: capabilityDiffSha256(values) }
+        : {}),
     },
   };
+}
+
+function capabilityRevision(values: Map<string, string>): number {
+  const value = requiredValue(values, "--expected-revision");
+  if (!/^[1-9][0-9]*$/u.test(value)) {
+    throw new Error("--expected-revision must be a positive integer");
+  }
+  const revision = Number(value);
+  if (!Number.isSafeInteger(revision)) {
+    throw new Error("--expected-revision is invalid");
+  }
+  return revision;
+}
+
+function capabilityDiffSha256(values: Map<string, string>): string {
+  const value = requiredValue(values, "--diff-sha256");
+  if (!/^[a-f0-9]{64}$/u.test(value)) {
+    throw new Error("--diff-sha256 must be a lower-case SHA-256");
+  }
+  return value;
 }
