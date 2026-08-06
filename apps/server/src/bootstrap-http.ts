@@ -41,7 +41,8 @@ type BootstrapStore = Pick<
   | "listInboundChannels"
   | "listAgentRevisions"
   | "getDetail"
->;
+> &
+  Partial<Pick<LocalStore, "listVisibleThreads">>;
 
 export function registerBootstrapHttp(
   app: Hono,
@@ -61,7 +62,8 @@ async function createBootstrapResponse(
   services: { store: BootstrapStore; models: ModelRegistry },
   requestedThreadId?: string,
 ): Promise<LiveReadyBootstrapResponse> {
-  const threads = services.store.listThreads();
+  const threads =
+    services.store.listVisibleThreads?.() ?? services.store.listThreads();
   const activeThreadId = requestedThreadId ?? threads[0]?.id;
   const activeThread = activeThreadId
     ? await services.store.getDetail(activeThreadId)

@@ -245,6 +245,14 @@ import {
   type VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
+import { loadThreadDetail } from "./thread-detail.js";
+import {
+  createThreadRecord,
+  findThread,
+  sortedThreads,
+  threadRuns,
+} from "./thread-records.js";
+import { mutateThreadTrash, visibleThreads } from "./thread-trash.js";
 
 import {
   assertOperatorDecisionCapabilityContinuation,
@@ -4347,26 +4355,55 @@ export class LocalStore {
 
   listThreads(): ThreadSummary[] {
     this.assertInitialized();
+    return structuredClone(sortedThreads(this.state.threads));
+  }
+
+  listVisibleThreads(): ThreadSummary[] {
+    this.assertInitialized();
     return structuredClone(
-      [...this.state.threads].sort((left, right) =>
-        right.updatedAt.localeCompare(left.updatedAt),
+      visibleThreads(this.state.threads, (threadId) =>
+        this.requireLedger().listEvents(threadId),
       ),
     );
   }
 
   getThread(threadId: string): ThreadRecord {
     this.assertInitialized();
-    const thread = this.state.threads.find((item) => item.id === threadId);
-    if (!thread) throw new Error(`Thread not found: ${threadId}`);
-    return structuredClone(thread);
+    return structuredClone(findThread(this.state.threads, threadId));
+  }
+
+  async trashThread(threadId: string): Promise<ThreadRecord> {
+    return this.setThreadTrashed(threadId, true);
+  }
+
+  async restoreThread(threadId: string): Promise<ThreadRecord> {
+    return this.setThreadTrashed(threadId, false);
+  }
+
+  private async setThreadTrashed(
+    threadId: string,
+    trashed: boolean,
+  ): Promise<ThreadRecord> {
+    this.assertInitialized();
+    return this.threadQueue(threadId).run(() =>
+      this.stateQueue.run(async () => {
+        const thread = this.mutableThread(threadId);
+        return mutateThreadTrash({
+          action: trashed ? "trash" : "restore",
+          thread,
+          runs: this.state.runs,
+          events: this.requireLedger().listEvents(threadId),
+          append: (input) => this.appendEventsToThread(thread, [input])[0]!,
+          persist: (event) => this.persistState(event),
+        });
+      }),
+    );
   }
 
   listRuns(threadId: string): RunRecord[] {
     this.assertInitialized();
     return structuredClone(
-      this.state.runs
-        .filter((run) => run.threadId === threadId)
-        .map(stripRunSecrets),
+      threadRuns(this.state.runs, threadId).map(stripRunSecrets),
     );
   }
 
@@ -7493,32 +7530,7 @@ export class LocalStore {
   }
 
   async getDetail(threadId: string): Promise<ThreadDetail> {
-    const thread = this.getThread(threadId);
-    const events = await this.listEvents(threadId);
-    return {
-      thread,
-      agent: this.getAgent(thread.agentId),
-      runs: this.listRuns(threadId),
-      plans: this.listPlans(threadId),
-      evaluations: this.listRunEvaluations(threadId),
-      evaluationAdjudications: this.listEvaluationAdjudications(threadId),
-      evaluationReviewerBallots: this.listEvaluationReviewerBallots(threadId),
-      evaluationConsensusResolutions:
-        this.listEvaluationConsensusResolutions(threadId),
-      evaluationSuites: this.listEvaluationSuites(threadId),
-      evaluationSuiteExecutions: this.listEvaluationSuiteExecutions(threadId),
-      automaticRecoveryAssessments:
-        this.listAutomaticRecoveryAssessments(threadId),
-      automaticRecoveryAttempts: this.listAutomaticRecoveryAttempts(threadId),
-      subagents: this.listSubagentTasks(threadId),
-      runControlMessages: projectRunControlMessages(events),
-      operatorDecisions: projectOperatorDecisions(events),
-      contextCheckpointCalibration: createContextCheckpointCalibrationReport(
-        threadId,
-        events,
-      ),
-      events,
-    };
+    return loadThreadDetail(this, threadId);
   }
 
   async listRunControlMessages(
@@ -7559,21 +7571,7 @@ export class LocalStore {
     this.assertInitialized();
     this.getAgent(input.agentId);
     return this.stateQueue.run(async () => {
-      const timestamp = nowIso();
-      const thread: ThreadRecord = {
-        id: createId("thread"),
-        title: input.title,
-        agentId: input.agentId,
-        status: "idle",
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        lastMessage: "",
-        eventCount: 0,
-        runIds: [],
-        ...(input.importProvenance
-          ? { importProvenance: structuredClone(input.importProvenance) }
-          : {}),
-      };
+      const thread = createThreadRecord(input);
       this.state.threads.push(thread);
       await this.persistState();
       return structuredClone(thread);
@@ -11323,9 +11321,7 @@ export class LocalStore {
   }
 
   private mutableThread(threadId: string): ThreadRecord {
-    const thread = this.state.threads.find((item) => item.id === threadId);
-    if (!thread) throw new Error(`Thread not found: ${threadId}`);
-    return thread;
+    return findThread(this.state.threads, threadId);
   }
 
   private mutableRun(runId: string): PersistedRunRecord {

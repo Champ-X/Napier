@@ -3,13 +3,35 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "e65bdb05370c2ce8d3c89c80c8220f7671d8cc060ae98339a30c264c40c5e136",
-    "routeCount": 265,
-    "routeSetSha256": "f1d8a043013c2866855e5799914cfddee409d5fe106350cf700852cef91c9aee"
+    "sha256": "63a7883a5cb126572b519cce2afbc3cf77ba27e6b6ca236650a97d993bf9525f",
+    "routeCount": 268,
+    "routeSetSha256": "46a1ee8431047f19acc09ec57b8858b6bba8bc572cf81d1844b63b931fbf2ae2"
   },
-  "operationCount": 265,
-  "operationSetSha256": "17d0c8f9f3d695d3d6cb6286c1950ea7693592960069ea38ead8bb4d93fbe1c4",
+  "operationCount": 268,
+  "operationSetSha256": "8d62f507d7b5a6b9a42fe89a20b4dfe7b20653d8b0b29b6bd7e6a4b93d9963fc",
   "operations": [
+    {
+      "key": "DELETE /api/threads/{threadId}",
+      "method": "delete",
+      "path": "/api/threads/{threadId}",
+      "operationId": "delete-threads-by-threadId",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
     {
       "key": "DELETE /api/threads/{threadId}/goal",
       "method": "delete",
@@ -1610,6 +1632,29 @@
       "method": "get",
       "path": "/api/threads/{threadId}/runs/{runId}/browser-live-view",
       "operationId": "get-threads-by-threadId-runs-by-runId-browser-live-view",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/runs/{runId}/browser-live-view/stream",
+      "method": "get",
+      "path": "/api/threads/{threadId}/runs/{runId}/browser-live-view/stream",
+      "operationId": "get-threads-by-threadId-runs-by-runId-browser-live-view-stream",
       "tags": [
         "threads"
       ],
@@ -5092,6 +5137,28 @@
       ],
       "pathParameters": [
         "processId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/restore",
+      "method": "post",
+      "path": "/api/threads/{threadId}/restore",
+      "operationId": "post-threads-by-threadId-restore",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
         "threadId"
       ],
       "acceptsJsonRequestBody": true,

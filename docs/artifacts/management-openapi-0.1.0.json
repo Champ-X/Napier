@@ -7235,6 +7235,46 @@
       }
     },
     "/api/threads/{threadId}": {
+      "delete": {
+        "operationId": "delete-threads-by-threadId",
+        "tags": [
+          "threads"
+        ],
+        "summary": "DELETE /api/threads/{threadId}",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "DELETE /api/threads/:threadId"
+      },
       "get": {
         "operationId": "get-threads-by-threadId",
         "tags": [
@@ -10643,6 +10683,56 @@
           }
         },
         "x-napier-source-route": "GET /api/threads/:threadId/recovery"
+      }
+    },
+    "/api/threads/{threadId}/restore": {
+      "post": {
+        "operationId": "post-threads-by-threadId-restore",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/restore",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/restore"
       }
     },
     "/api/threads/{threadId}/resume": {
@@ -15141,7 +15231,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "35e54b4de956c12a1b9b64d1621fd3d27782951752fc5dff66471bffe06956af",
-  "x-napier-route-count": 266,
-  "x-napier-route-set-sha256": "01e3dc22080864e66e71a8f05452f446829eae0da8a4afcf451a3121715f3d1a"
+  "x-napier-source-sha256": "3afc763dd7d95b7aa8d28eeb1f004ec6607d49f96ac08caac3babed358fd3dfd",
+  "x-napier-route-count": 268,
+  "x-napier-route-set-sha256": "46a1ee8431047f19acc09ec57b8858b6bba8bc572cf81d1844b63b931fbf2ae2"
 }

@@ -496,6 +496,13 @@ The explicit root `postinstall` prepares only the current-platform native PTY
 helper after the dependency install; it rejects missing, non-regular, or
 symlinked helpers.
 
+The left ledger rail supports reversible deletion. Hover a settled ledger,
+choose the trash icon, and confirm inline; Napier immediately removes it from
+the default list and selects the next ledger. **Undo** restores the same
+ledger and its evidence. Ledgers with queued or running work cannot be moved
+to trash. This is an auditable local trash operation recorded as
+`thread.trashed` / `thread.restored`, not physical evidence destruction.
+
 The CLI exposes the same preview-bound setup without creating another task
 Thread or revising the Agent:
 

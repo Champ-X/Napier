@@ -42,6 +42,7 @@ const LazyProcessPanel = lazy(() => import("./ProcessPanel"));
 const LazyRunLabPanel = lazy(() => import("./RunLabPanel"));
 const LazyPlanPanel = lazy(() => import("./PlanPanel"));
 const LazyTracePanel = lazy(() => import("./TracePanel"));
+const LazyThreadList = lazy(() => import("./ThreadList"));
 
 export function App() {
   const vm = useWorkspaceViewModel();
@@ -95,33 +96,17 @@ export function App() {
           <span>{copy.recentThreads}</span>
           <span>{String(vm.bootstrap.threads.length).padStart(2, "0")}</span>
         </div>
-        <div className="thread-list">
-          {vm.bootstrap.threads.length === 0 ? (
-            <p className="quiet-copy">{copy.noThreads}</p>
-          ) : null}
-          {vm.bootstrap.threads.map((thread, index) => (
-            <button
-              className={`thread-row ${thread.id === vm.selectedThreadId ? "is-active" : ""}`}
-              type="button"
-              key={thread.id}
-              onClick={() => void vm.selectThread(thread.id)}
-              aria-current={
-                thread.id === vm.selectedThreadId ? "page" : undefined
-              }
-            >
-              <span className="thread-index">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <span className="thread-copy">
-                <strong>{thread.title}</strong>
-                <small>
-                  {thread.lastMessage || formatDate(thread.updatedAt)}
-                </small>
-              </span>
-              <StatusDot status={thread.status} />
-            </button>
-          ))}
-        </div>
+        <Suspense fallback={<div className="thread-list" />}>
+          <LazyThreadList
+            threads={vm.bootstrap.threads}
+            selectedThreadId={vm.selectedThreadId}
+            busyThreadId={vm.threadLifecycleBusyId}
+            trashedThread={vm.trashedThreadReceipt}
+            onSelect={(threadId) => void vm.selectThread(threadId)}
+            onTrash={(threadId) => void vm.trashThread(threadId)}
+            onRestore={() => void vm.restoreTrashedThread()}
+          />
+        </Suspense>
 
         <div className="workspace-stamp">
           <Database size={14} aria-hidden="true" />
@@ -968,10 +953,6 @@ function InspectorTabButton({
   );
 }
 
-function StatusDot({ status }: { status: ThreadStatus }) {
-  return <span className={`status-dot status-${status}`} aria-label={status} />;
-}
-
 function LoadingShell() {
   return (
     <div className="loading-shell" aria-label="Loading Napier" role="status">
@@ -1025,13 +1006,6 @@ function formatTime(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
   }).format(new Date(value));
 }
 

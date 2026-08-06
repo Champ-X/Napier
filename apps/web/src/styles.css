@@ -214,33 +214,25 @@ button:disabled {
   scrollbar-color: #4b5650 transparent;
 }
 
-.thread-row {
+.thread-row-shell {
   position: relative;
-  display: grid;
-  width: 100%;
-  grid-template-columns: 24px minmax(0, 1fr) 8px;
-  gap: 7px;
-  align-items: start;
-  padding: 11px 9px 12px;
-  text-align: left;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
   border-radius: 3px;
-  transition: background 130ms ease;
+  transition:
+    background 130ms ease,
+    box-shadow 130ms ease;
 }
 
-.thread-row:hover {
+.thread-row-shell:hover {
   background: rgb(255 255 255 / 4%);
 }
 
-.thread-row.is-active {
-  background: #ecede6;
+.thread-row-shell.is-active {
   color: var(--ink);
+  background: #ecede6;
   box-shadow: 0 4px 15px rgb(0 0 0 / 14%);
 }
 
-.thread-row.is-active::before {
+.thread-row-shell.is-active::before {
   position: absolute;
   top: 8px;
   bottom: 8px;
@@ -248,6 +240,159 @@ button:disabled {
   width: 2px;
   content: "";
   background: var(--vermilion);
+}
+
+.thread-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 24px minmax(0, 1fr) 8px;
+  gap: 7px;
+  align-items: start;
+  padding: 11px 28px 12px 9px;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+}
+
+.thread-trash-button {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: #87928b;
+  cursor: pointer;
+  visibility: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  opacity: 0;
+  place-items: center;
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    opacity 120ms ease;
+}
+
+.thread-row-shell:hover .thread-trash-button,
+.thread-row-shell.is-active .thread-trash-button,
+.thread-row-shell.is-confirming .thread-trash-button,
+.thread-trash-button:focus-visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+.thread-trash-button:hover:not(:disabled) {
+  color: #fff6f2;
+  background: var(--vermilion);
+}
+
+.thread-trash-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.28;
+}
+
+.thread-trash-confirm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22px auto;
+  gap: 5px;
+  align-items: center;
+  margin: -5px 7px 8px;
+  padding: 7px 7px 7px 9px;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: #f1c6bb;
+  background: #49332e;
+  border: 1px solid rgb(198 86 61 / 45%);
+  border-radius: 3px;
+}
+
+.thread-trash-confirm > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-trash-confirm button {
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  color: #d4b7af;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  place-items: center;
+}
+
+.thread-trash-confirm button:hover:not(:disabled) {
+  color: #fff;
+  background: rgb(255 255 255 / 8%);
+}
+
+.thread-trash-confirm .confirm-trash {
+  color: #fff;
+  background: var(--vermilion);
+}
+
+.thread-undo {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 4px 0;
+  padding: 9px;
+  color: #d8ded9;
+  background: #303a35;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 3px;
+  box-shadow: 0 9px 22px rgb(0 0 0 / 18%);
+}
+
+.thread-undo > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thread-undo span {
+  font-family: var(--mono);
+  font-size: 6px;
+  color: #99a69e;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.thread-undo strong {
+  overflow: hidden;
+  font-family: var(--serif);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-undo button {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 7px;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: #eff3f0;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 2px;
+}
+
+.thread-undo button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 8%);
 }
 
 .thread-index {
@@ -282,8 +427,8 @@ button:disabled {
   white-space: nowrap;
 }
 
-.thread-row.is-active .thread-copy small,
-.thread-row.is-active .thread-index {
+.thread-row-shell.is-active .thread-copy small,
+.thread-row-shell.is-active .thread-index {
   color: #717a74;
 }
 

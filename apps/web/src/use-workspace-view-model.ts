@@ -47,7 +47,6 @@ import {
   createExtensionPublisherTrustAnchor as createExtensionPublisherTrustAnchorApi,
   createMcpExtension,
   createRunEvaluation,
-  createThread,
   disconnectExtension,
   exportExtensionPackageLockfile as exportExtensionPackageLockfileApi,
   exportOpenTelemetryTrace as exportOpenTelemetryTraceApi,
@@ -105,6 +104,7 @@ import {
   upsertThread,
 } from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
+import { useThreadNavigation } from "./use-thread-navigation";
 
 export type InspectorTab =
   | "trace"
@@ -451,40 +451,25 @@ export function useWorkspaceViewModel() {
     );
     setRunComparison(undefined);
   }, [detail?.thread.id, terminalRunKey]);
-  const selectThread = useCallback(async (threadId: string) => {
-    setSelectedThreadId(threadId);
-    setStreamingText("");
-    setLabFixtureReceipt(undefined);
-    setRunReplayVerificationReceipt(undefined);
-    setTraceExportReceipt(undefined);
-    setTraceVerificationReceipt(undefined);
-    setError(undefined);
-    try {
-      const selected = await getBootstrap(threadId);
-      setBootstrap(selected);
-      setDetail(selected.activeThread);
-      setSelectedModelKey(modelKey(selected.recommendedRunModel));
-    } catch (loadError) {
-      setError(toErrorMessage(loadError));
-    }
-  }, []);
-  const newThread = useCallback(async () => {
-    setLabFixtureReceipt(undefined);
-    setRunReplayVerificationReceipt(undefined);
-    setTraceExportReceipt(undefined);
-    setTraceVerificationReceipt(undefined);
-    setError(undefined);
-    try {
-      const created = await createThread();
-      const refreshed = await getBootstrap(created.thread.id);
-      setBootstrap(refreshed);
-      setDetail(refreshed.activeThread);
-      setSelectedThreadId(created.thread.id);
-      setSelectedModelKey(modelKey(refreshed.recommendedRunModel));
-    } catch (createError) {
-      setError(toErrorMessage(createError));
-    }
-  }, []);
+  const resetThreadReceipts = () =>
+    [
+      setLabFixtureReceipt,
+      setRunReplayVerificationReceipt,
+      setTraceExportReceipt,
+      setTraceVerificationReceipt,
+    ].forEach((reset) => reset(undefined));
+  const threadNavigation = useThreadNavigation({
+    bootstrap,
+    selectedThreadId,
+    setBootstrap,
+    setDetail,
+    setSelectedThreadId,
+    setSelectedModelKey,
+    modelKey,
+    resetReceipts: resetThreadReceipts,
+    setStreamingText,
+    setError,
+  });
 
   const handleStreamFrame = useCallback((frame: StreamFrame): void => {
     if (frame.type === "event") {
@@ -2122,6 +2107,7 @@ export function useWorkspaceViewModel() {
     labBusyAction,
     labFixtureReceipt,
     operatorDecisionBusy,
+    ...threadNavigation,
     ...browserInteraction,
     streamingText,
     messages,
@@ -2147,8 +2133,6 @@ export function useWorkspaceViewModel() {
     setMemoryReviewIntervalDays,
     toggleMemoryConsolidation,
     cancelMemoryConsolidation,
-    selectThread,
-    newThread,
     submit,
     resume,
     stop,

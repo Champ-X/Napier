@@ -32,7 +32,9 @@ type ThreadLifecycleHttpStore = Pick<
   | "getDetail"
   | "importThreadReplayBundle"
   | "listAgents"
+  | "restoreThread"
   | "setGoal"
+  | "trashThread"
 >;
 
 export interface ThreadLifecycleHttpServices {
@@ -124,6 +126,44 @@ export function registerThreadLifecycleHttp(
     );
     setThreadDetailProjectionHeaders(context, detail);
     return context.json(detail, 201);
+  });
+
+  app.delete("/api/threads/:threadId", async (context) => {
+    const threadId = context.req.param("threadId");
+    try {
+      await services.store.trashThread(threadId);
+      const detail = await services.store.getDetail(threadId);
+      setThreadDetailProjectionHeaders(context, detail);
+      return context.json(detail);
+    } catch (error) {
+      const message = errorMessage(error);
+      return jsonError(
+        context,
+        message,
+        message.includes("not found")
+          ? 404
+          : message.includes("active work")
+            ? 409
+            : 400,
+      );
+    }
+  });
+
+  app.post("/api/threads/:threadId/restore", async (context) => {
+    const threadId = context.req.param("threadId");
+    try {
+      await services.store.restoreThread(threadId);
+      const detail = await services.store.getDetail(threadId);
+      setThreadDetailProjectionHeaders(context, detail);
+      return context.json(detail);
+    } catch (error) {
+      const message = errorMessage(error);
+      return jsonError(
+        context,
+        message,
+        message.includes("not found") ? 404 : 400,
+      );
+    }
   });
 
   registerGoalHttp(app, services.store);
