@@ -1,0 +1,352 @@
+{
+  "type": "napier.open-web-executor-comparison-campaign",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-06T02:44:09.688Z",
+  "reportCount": 2,
+  "seeds": [
+    20260805,
+    20260808
+  ],
+  "trialCount": 1,
+  "timeoutMs": 180000,
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nodeVersion": "24.16.0",
+    "napierVersion": "0.1.0",
+    "ompVersion": "17.2.1",
+    "ompExecutableSha256": "4165c69cab5d49e84a37b474ab5c13d536c1c386245575cf8d16efb32d022a92",
+    "ompRuntimeExecutableSha256": "4165c69cab5d49e84a37b474ab5c13d536c1c386245575cf8d16efb32d022a92",
+    "ompRuntimeVersion": "17.2.1",
+    "browserRuntimeExecutableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+    "browserRuntimeSetSha256": "2520d1c7175c98a0b439abebaaf6b8e3d87bea9c478a49b4fd42bc7e6856b614",
+    "browserRuntimeFileCount": 17,
+    "browserRuntimeBytes": 201473747,
+    "outerSandbox": "macos-sandbox-exec-guarded"
+  },
+  "tracks": [
+    "default",
+    "controlled"
+  ],
+  "reports": [
+    {
+      "index": 1,
+      "fileName": "napier-open-web-executor-comparison-seed-20260805.json",
+      "seed": 20260805,
+      "generatedAt": "2026-08-05T22:21:33.476Z",
+      "contentSha256": "2664d9e8b7eff4b7525864f7b52787504ca4595ed79b6d417048ee3784e79d49",
+      "suiteSha256": "77e23945a13f3679f9e00b4a683f7da26ac256cb598e4768f8de32b671db2098",
+      "summary": {
+        "byTrack": {
+          "default": {
+            "pairCount": 3,
+            "decisivePairCount": 3,
+            "excludedPairCount": 0,
+            "napier": {
+              "passed": 2,
+              "failed": 1,
+              "inconclusive": 0,
+              "infrastructureFailure": 0,
+              "meanDurationMs": 17156.667,
+              "meanCostUsd": 0.003093861867,
+              "totalToolFailed": 0,
+              "totalManualInterventions": 0
+            },
+            "omp": {
+              "passed": 0,
+              "failed": 3,
+              "inconclusive": 0,
+              "infrastructureFailure": 0,
+              "meanDurationMs": 129265,
+              "meanCostUsd": 0.0102098416,
+              "totalToolFailed": 29,
+              "totalManualInterventions": 0
+            },
+            "paired": {
+              "bothPassed": 0,
+              "napierOnlyPassed": 2,
+              "ompOnlyPassed": 0,
+              "neitherPassed": 1
+            }
+          },
+          "controlled": {
+            "pairCount": 3,
+            "decisivePairCount": 3,
+            "excludedPairCount": 0,
+            "napier": {
+              "passed": 1,
+              "failed": 2,
+              "inconclusive": 0,
+              "infrastructureFailure": 0,
+              "meanDurationMs": 14144,
+              "meanCostUsd": 0.00214214,
+              "totalToolFailed": 0,
+              "totalManualInterventions": 0
+            },
+            "omp": {
+              "passed": 2,
+              "failed": 1,
+              "inconclusive": 0,
+              "infrastructureFailure": 0,
+              "meanDurationMs": 99802.333,
+              "meanCostUsd": 0.010807749867,
+              "totalToolFailed": 12,
+              "totalManualInterventions": 0
+            },
+            "paired": {
+              "bothPassed": 1,
+              "napierOnlyPassed": 0,
+              "ompOnlyPassed": 1,
+              "neitherPassed": 1
+            }
+          }
+        },
+        "overall": {
+          "pairCount": 6,
+          "decisivePairCount": 6,
+          "excludedPairCount": 0,
+          "napier": {
+            "passed": 3,
+            "failed": 3,
+            "inconclusive": 0,
+            "infrastructureFailure": 0,
+            "meanDurationMs": 15650.333,
+            "meanCostUsd": 0.002618000933,
+            "totalToolFailed": 0,
+            "totalManualInterventions": 0
+          },
+          "omp": {
+            "passed": 2,
+            "failed": 4,
+            "inconclusive": 0,
+            "infrastructureFailure": 0,
+            "meanDurationMs": 114533.667,
+            "meanCostUsd": 0.010508795733,
+            "totalToolFailed": 41,
+            "totalManualInterventions": 0
+          },
+          "paired": {
+            "bothPassed": 1,
+            "napierOnlyPassed": 2,
+            "ompOnlyPassed": 1,
+            "neitherPassed": 2
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "fileName": "napier-open-web-executor-comparison-seed-20260808.json",
+      "seed": 20260808,
+      "generatedAt": "2026-08-06T02:44:09.688Z",
+      "contentSha256": "1cc5e1e01a937ace1ce508a7e4baf20d0c1c8b5a2995567199bf4fead4bc85aa",
+      "suiteSha256": "84b4cffb7c34dd42e741e87d4998ef444a5c9204d2a876fc3e90ff393c400e5a",
+      "summary": {
+        "byTrack": {
+          "default": {
+            "pairCount": 3,
+            "decisivePairCount": 3,
+            "excludedPairCount": 0,
+            "napier": {
+              "passed": 2,
+              "failed": 1,
+              "inconclusive": 0,
+              "infrastructureFailure": 0,
+              "meanDurationMs": 15409.667,
+              "meanCostUsd": 0.0028657328,
+              "totalToolFailed": 0,
+              "totalManualInterventions": 0
+            },
+            "omp": {
+              "passed": 0,
+              "failed": 3,
+              "inconclusive": 0,
+              "infrastructureFailure": 0,
+              "meanDurationMs": 113545.667,
+              "meanCostUsd": 0.008173228,
+              "totalToolFailed": 10,
+              "totalManualInterventions": 0
+            },
+            "paired": {
+              "bothPassed": 0,
+              "napierOnlyPassed": 2,
+              "ompOnlyPassed": 0,
+              "neitherPassed": 1
+            }
+          },
+          "controlled": {
+            "pairCount": 3,
+            "decisivePairCount": 2,
+            "excludedPairCount": 1,
+            "napier": {
+              "passed": 2,
+              "failed": 1,
+              "inconclusive": 0,
+              "infrastructureFailure": 0,
+              "meanDurationMs": 13428.333,
+              "meanCostUsd": 0.001974735467,
+              "totalToolFailed": 0,
+              "totalManualInterventions": 0
+            },
+            "omp": {
+              "passed": 0,
+              "failed": 2,
+              "inconclusive": 0,
+              "infrastructureFailure": 1,
+              "meanDurationMs": 136285,
+              "meanCostUsd": 0.009430728533,
+              "totalToolFailed": 46,
+              "totalManualInterventions": 0
+            },
+            "paired": {
+              "bothPassed": 0,
+              "napierOnlyPassed": 1,
+              "ompOnlyPassed": 0,
+              "neitherPassed": 1
+            }
+          }
+        },
+        "overall": {
+          "pairCount": 6,
+          "decisivePairCount": 5,
+          "excludedPairCount": 1,
+          "napier": {
+            "passed": 4,
+            "failed": 2,
+            "inconclusive": 0,
+            "infrastructureFailure": 0,
+            "meanDurationMs": 14419,
+            "meanCostUsd": 0.002420234133,
+            "totalToolFailed": 0,
+            "totalManualInterventions": 0
+          },
+          "omp": {
+            "passed": 0,
+            "failed": 5,
+            "inconclusive": 0,
+            "infrastructureFailure": 1,
+            "meanDurationMs": 124915.333,
+            "meanCostUsd": 0.008801978267,
+            "totalToolFailed": 56,
+            "totalManualInterventions": 0
+          },
+          "paired": {
+            "bothPassed": 0,
+            "napierOnlyPassed": 3,
+            "ompOnlyPassed": 0,
+            "neitherPassed": 2
+          }
+        }
+      }
+    }
+  ],
+  "reportSetSha256": "f20d175dba097b9264dc0ce73beaee565d72cfa4952a0ca89acb515ea27635dd",
+  "summary": {
+    "byTrack": {
+      "default": {
+        "pairCount": 6,
+        "decisivePairCount": 6,
+        "excludedPairCount": 0,
+        "napier": {
+          "passed": 4,
+          "failed": 2,
+          "inconclusive": 0,
+          "infrastructureFailure": 0,
+          "meanDurationMs": 16283.167,
+          "meanCostUsd": 0.002979797333,
+          "totalToolFailed": 0,
+          "totalManualInterventions": 0
+        },
+        "omp": {
+          "passed": 0,
+          "failed": 6,
+          "inconclusive": 0,
+          "infrastructureFailure": 0,
+          "meanDurationMs": 121405.333,
+          "meanCostUsd": 0.0091915348,
+          "totalToolFailed": 39,
+          "totalManualInterventions": 0
+        },
+        "paired": {
+          "bothPassed": 0,
+          "napierOnlyPassed": 4,
+          "ompOnlyPassed": 0,
+          "neitherPassed": 2
+        }
+      },
+      "controlled": {
+        "pairCount": 6,
+        "decisivePairCount": 5,
+        "excludedPairCount": 1,
+        "napier": {
+          "passed": 3,
+          "failed": 3,
+          "inconclusive": 0,
+          "infrastructureFailure": 0,
+          "meanDurationMs": 13786.167,
+          "meanCostUsd": 0.002058437733,
+          "totalToolFailed": 0,
+          "totalManualInterventions": 0
+        },
+        "omp": {
+          "passed": 2,
+          "failed": 3,
+          "inconclusive": 0,
+          "infrastructureFailure": 1,
+          "meanDurationMs": 118043.667,
+          "meanCostUsd": 0.0101192392,
+          "totalToolFailed": 58,
+          "totalManualInterventions": 0
+        },
+        "paired": {
+          "bothPassed": 1,
+          "napierOnlyPassed": 1,
+          "ompOnlyPassed": 1,
+          "neitherPassed": 2
+        }
+      }
+    },
+    "overall": {
+      "pairCount": 12,
+      "decisivePairCount": 11,
+      "excludedPairCount": 1,
+      "napier": {
+        "passed": 7,
+        "failed": 5,
+        "inconclusive": 0,
+        "infrastructureFailure": 0,
+        "meanDurationMs": 15034.667,
+        "meanCostUsd": 0.002519117533,
+        "totalToolFailed": 0,
+        "totalManualInterventions": 0
+      },
+      "omp": {
+        "passed": 2,
+        "failed": 9,
+        "inconclusive": 0,
+        "infrastructureFailure": 1,
+        "meanDurationMs": 119724.5,
+        "meanCostUsd": 0.009655387,
+        "totalToolFailed": 97,
+        "totalManualInterventions": 0
+      },
+      "paired": {
+        "bothPassed": 1,
+        "napierOnlyPassed": 5,
+        "ompOnlyPassed": 1,
+        "neitherPassed": 4
+      }
+    }
+  },
+  "notes": [
+    "Each sibling schema-2 report is independently verified against the deterministic suite regenerated from its seed before aggregation.",
+    "Campaign entries retain only digests, configuration, timing aggregates, statuses, and counts; raw tasks, URLs, quotes, model output, reasoning, and transcripts are excluded.",
+    "Inconclusive and infrastructure-failure pairs remain in executor status totals and excludedPairCount, and are excluded from paired win/loss counts.",
+    "Multiple seeds reduce one-seed risk but do not by themselves establish broad executor superiority."
+  ],
+  "contentSha256": "01ad0296171ff913dcefb55e93009fcf54e2213991d244ea15985db91d2c6b40"
+}

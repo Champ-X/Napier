@@ -2104,8 +2104,57 @@ npm run bench:research:open-web:compare -- \
   --verify benchmark-results/napier-open-web-executor-comparison-seed-20260805.json
 ```
 
-A one-seed, one-trial report validates the comparison path and records current
-evidence; it is not a repeated reliability distribution or a general
+If a comparison is cancelled, aborts during execution, or finishes trials but
+the final report contract rejects their projection, the runner writes a
+separate content-addressed
+`napier.open-web-executor-comparison-attempt` receipt before deleting temporary
+roots. It stores only seed/configuration/environment bindings, report
+diagnostics, and invalid field paths. It is not a Result, is never included in
+campaign aggregates, and cannot be replaced by a later successful run:
+
+```bash
+npm run bench:research:open-web:compare -- \
+  --verify-attempt benchmark-results/napier-open-web-executor-comparison-attempt-seed-<seed>-<hash>.json
+```
+
+Retrospective receipts created after an older runner already cleaned temporary
+roots explicitly use `diagnosticScope=retrospective_after_cleanup` and
+`cases.unavailable_after_cleanup`; they do not invent a trial or field path.
+Attempt loading is byte-bounded, refuses symlinks, verifies the exact
+self-hash and canonical content-addressed filename, and rejects raw evidence or
+sensitive keys.
+
+Combine 2-10 co-located schema-2 reports into one independently verifiable
+multi-seed campaign:
+
+```bash
+npm run bench:research:open-web:compare:campaign -- \
+  --report benchmark-results/napier-open-web-executor-comparison-seed-20260805.json \
+  --report benchmark-results/napier-open-web-executor-comparison-seed-20260808.json
+```
+
+The campaign requires unique seeds and report hashes plus identical model,
+trial-count, timeout, OMP/runtime, Browser-runtime, platform, and Sandbox
+bindings. It independently verifies every report, then recreates the flattened
+default, controlled, and overall distributions. Inconclusive and
+infrastructure outcomes remain visible and excluded from paired wins exactly
+as they were in each report. The campaign stores only sibling filenames,
+digests, configuration, per-report summaries, and recreated aggregates; it
+does not copy case evidence. Verification accepts only bounded regular sibling
+files and rejects report substitution, aggregate drift, symlinks, path
+traversal, raw evidence, and sensitive keys.
+
+Verify a campaign and all of its sibling reports without credentials or
+network access:
+
+```bash
+npm run bench:research:open-web:compare:campaign -- \
+  --verify benchmark-results/napier-open-web-executor-comparison-campaign-seeds-<first>-<last>-<hash>.json
+```
+
+A one-seed, one-trial report validates the comparison path and records one
+current sample. A multi-seed campaign reduces seed-specific risk, but a small
+campaign is still not a broad reliability distribution or a general
 superiority claim.
 
 The retained seed-`20260805`
@@ -2125,6 +2174,31 @@ user-state imports, zero credential leaks, and no manual interventions. This
 one-seed sample proves the isolated OMP Browser comparison path and exposes
 task variance; it does not prove broad Napier superiority or stable Browser
 success rates.
+
+The retained two-seed
+[comparison campaign](benchmark-results/napier-open-web-executor-comparison-campaign-seeds-20260805-20260808-01ad0296171ff913.json)
+combines seeds `20260805` and `20260808`, one trial per seed, with identical
+model, timeout, OMP/runtime, Browser-runtime, platform, and Sandbox bindings.
+Offline verification independently accepted both reports and recreated 12
+pairs: 11 decisive and one infrastructure exclusion. Napier passed 7/12 and
+OMP passed 2/12; paired decisive outcomes were one both-passed, five
+Napier-only, one OMP-only, and four neither. Mean duration/cost was 15.035
+seconds/`$0.002519117533` for Napier and 119.725
+seconds/`$0.009655387` for OMP. OMP recorded 97 failed tool attempts versus
+Napier's zero, with no manual interventions.
+
+Seed `20260808` truthfully retained one OMP default-Browser
+`security_leak` failure after the bounded canary scanner detected a comparison
+credential in process output or persisted trial state; no credential value is
+stored. Its controlled Browser pair was excluded as infrastructure because a
+reported successful Browser completion had no matching Browser-proxy request
+evidence. All OMP Browser receipts still reported fresh/nonpersistent,
+loopback-only, no-user-import, process-closed isolation. The campaign content
+SHA-256 is
+`01ad0296171ff913dcefb55e93009fcf54e2213991d244ea15985db91d2c6b40`.
+Two seeds reduce seed-specific risk and expose a serious OMP harness/security
+outcome, but they still do not establish broad reliability or general Napier
+superiority.
 
 ### First-Task UX Outcome Benchmark
 
@@ -6173,8 +6247,9 @@ OpenAPI artifact, management OpenAPI compatibility fixture, Web dist receipt,
 Web dist manifest, and the semantically verified Workflow, Data, DataFrame,
 Security, restart/offline-wait/budget Long-horizon, Research, and UX Benchmark
 Series, the durable Goal no-progress Series, the Process recovery Series, and
-all forty-seven Result/Ledger pairs by SHA-256; the current 118-artifact set is
-bound by `202d58fcc780ef88...`;
+all forty-seven Result/Ledger pairs by SHA-256. It also recursively verifies
+the open-web executor campaign, both sibling reports, and both failed-attempt
+receipts; the current 131-artifact set is bound by `006628f036186d6c...`;
 `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract

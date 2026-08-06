@@ -8,7 +8,9 @@ import { verifyRuntimeEnvironmentReceipt } from "./check-runtime-environment.mjs
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
-import { verifyOpenWebComparisonReport } from "./open-web-comparison-report.mjs";
+import { loadOpenWebComparisonAttemptReceipt } from "./open-web-comparison-attempt-artifacts.mjs";
+import { loadOpenWebComparisonCampaignArtifacts } from "./open-web-comparison-campaign-artifacts.mjs";
+import { verifyOpenWebComparisonCampaign } from "./open-web-comparison-campaign.mjs";
 import {
   verifyWorkflowBenchmarkSeries,
   workflowBenchmarkSeriesArtifactReferences,
@@ -93,8 +95,12 @@ const defaultOpenWebSecurityBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-open-web-research-security-series-security_open_web_prompt_injection_v1-7c30ff1f81e86273.json";
 const defaultOpenWebSecurityBenchmarkCaseRoot =
   "benchmarks/security/open-web-prompt-injection-v1";
-const defaultOpenWebExecutorComparisonPath =
-  "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json";
+const defaultOpenWebExecutorComparisonCampaignPath =
+  "benchmark-results/napier-open-web-executor-comparison-campaign-seeds-20260805-20260808-01ad0296171ff913.json";
+const defaultOpenWebExecutorComparisonAttemptPaths = [
+  "benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260806-eeb63387bc7f02ef.json",
+  "benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260807-62596440116b4a2a.json",
+];
 const defaultUxBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-ux-benchmark-series-ux_first_task_cli_v1-747782333f3ad3c3.json";
 
@@ -174,9 +180,23 @@ export async function auditReleaseArtifacts(options = {}) {
   const openWebSecurityBenchmarkCaseRoot =
     options.openWebSecurityBenchmarkCaseRoot ??
     defaultOpenWebSecurityBenchmarkCaseRoot;
-  const openWebExecutorComparisonPath =
-    options.openWebExecutorComparisonPath ??
-    defaultOpenWebExecutorComparisonPath;
+  const openWebExecutorComparisonCampaignPath =
+    options.openWebExecutorComparisonCampaignPath ??
+    defaultOpenWebExecutorComparisonCampaignPath;
+  const openWebExecutorComparisonAttemptPaths =
+    options.openWebExecutorComparisonAttemptPaths ??
+    defaultOpenWebExecutorComparisonAttemptPaths;
+  if (
+    !Array.isArray(openWebExecutorComparisonAttemptPaths) ||
+    openWebExecutorComparisonAttemptPaths.length < 1 ||
+    openWebExecutorComparisonAttemptPaths.length > 10 ||
+    new Set(openWebExecutorComparisonAttemptPaths).size !==
+      openWebExecutorComparisonAttemptPaths.length
+  ) {
+    throw new Error(
+      "openWebExecutorComparisonAttemptPaths must contain 1-10 unique paths",
+    );
+  }
   const uxBenchmarkSeriesPath =
     options.uxBenchmarkSeriesPath ?? defaultUxBenchmarkSeriesPath;
   const rootPackage = parseJson(
@@ -411,12 +431,22 @@ export async function auditReleaseArtifacts(options = {}) {
       caseRoot: openWebSecurityBenchmarkCaseRoot,
       errors,
     });
-  const openWebExecutorComparisonArtifact =
-    await verifyOpenWebComparisonReleaseArtifact({
+  const openWebExecutorComparisonArtifacts =
+    await verifyOpenWebComparisonCampaignReleaseArtifacts({
       repoRoot,
-      reportPath: openWebExecutorComparisonPath,
+      campaignPath: openWebExecutorComparisonCampaignPath,
       errors,
     });
+  const openWebExecutorComparisonAttemptArtifacts = await Promise.all(
+    openWebExecutorComparisonAttemptPaths.map((attemptPath, index) =>
+      verifyOpenWebComparisonAttemptReleaseArtifact({
+        repoRoot,
+        attemptPath,
+        index,
+        errors,
+      }),
+    ),
+  );
   const uxBenchmarkArtifacts = await verifyBenchmarkReleaseArtifacts({
     repoRoot,
     seriesPath: uxBenchmarkSeriesPath,
@@ -514,7 +544,8 @@ export async function auditReleaseArtifacts(options = {}) {
     ...researchBenchmarkArtifacts,
     ...openWebResearchBenchmarkArtifacts,
     ...openWebSecurityBenchmarkArtifacts,
-    openWebExecutorComparisonArtifact,
+    ...openWebExecutorComparisonAttemptArtifacts,
+    ...openWebExecutorComparisonArtifacts,
     ...uxBenchmarkArtifacts,
   ];
   const artifactSetSha256 = sha256(
@@ -813,8 +844,20 @@ function parseCliOptions(args) {
       index += 1;
       continue;
     }
-    if (arg === "--open-web-executor-comparison-path") {
-      options.openWebExecutorComparisonPath = readCliValue(args, index, arg);
+    if (arg === "--open-web-executor-comparison-campaign-path") {
+      options.openWebExecutorComparisonCampaignPath = readCliValue(
+        args,
+        index,
+        arg,
+      );
+      index += 1;
+      continue;
+    }
+    if (arg === "--open-web-executor-comparison-attempt-path") {
+      options.openWebExecutorComparisonAttemptPaths ??= [];
+      options.openWebExecutorComparisonAttemptPaths.push(
+        readCliValue(args, index, arg),
+      );
       index += 1;
       continue;
     }
@@ -1136,26 +1179,107 @@ async function verifyOpenWebSecuritySeriesReleaseArtifacts({
   ];
 }
 
-async function verifyOpenWebComparisonReleaseArtifact({
+async function verifyOpenWebComparisonCampaignReleaseArtifacts({
   repoRoot,
-  reportPath,
+  campaignPath,
   errors,
 }) {
-  const evidence = await readArtifactEvidence(repoRoot, reportPath, errors);
-  const report = await readJsonArtifact(repoRoot, reportPath, errors);
-  const verification = verifyOpenWebComparisonReport(report);
-  if (!verification.valid) {
-    errors.push(
-      ...verification.diagnostics.map(
-        (diagnostic) => `open-web executor comparison: ${diagnostic}`,
+  const campaignEvidence = await readArtifactEvidence(
+    repoRoot,
+    campaignPath,
+    errors,
+  );
+  const reports = [];
+  let valid = false;
+  try {
+    const loaded = await loadOpenWebComparisonCampaignArtifacts(
+      resolveRepoRelativePath(
+        repoRoot,
+        campaignPath,
+        "openWebExecutorComparisonCampaignPath",
       ),
+    );
+    const verification = verifyOpenWebComparisonCampaign(
+      loaded.campaign,
+      loaded.reports,
+    );
+    valid = verification.valid;
+    if (!verification.valid) {
+      errors.push(
+        ...verification.diagnostics.map(
+          (diagnostic) =>
+            `open-web executor comparison campaign: ${diagnostic}`,
+        ),
+      );
+    }
+    for (const artifact of loaded.reports) {
+      reports.push({
+        fileName: artifact.fileName,
+        evidence: await readArtifactEvidence(
+          repoRoot,
+          path.posix.join(path.posix.dirname(campaignPath), artifact.fileName),
+          errors,
+        ),
+      });
+    }
+  } catch (error) {
+    errors.push(
+      `open-web executor comparison campaign: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const { readable: _campaignReadable, ...campaignArtifact } = campaignEvidence;
+  return [
+    {
+      kind: "open-web-executor-comparison-campaign",
+      ...campaignArtifact,
+      valid:
+        campaignEvidence.readable &&
+        valid &&
+        reports.length >= 2 &&
+        reports.every((report) => report.evidence.readable),
+    },
+    ...reports.map((report, index) => {
+      const { readable: _reportReadable, ...reportArtifact } = report.evidence;
+      return {
+        kind: `open-web-executor-comparison-report-${String(index + 1)}`,
+        ...reportArtifact,
+        valid: report.evidence.readable && valid,
+      };
+    }),
+  ];
+}
+
+async function verifyOpenWebComparisonAttemptReleaseArtifact({
+  repoRoot,
+  attemptPath,
+  index,
+  errors,
+}) {
+  const evidence = await readArtifactEvidence(repoRoot, attemptPath, errors);
+  let valid = false;
+  try {
+    await loadOpenWebComparisonAttemptReceipt(
+      resolveRepoRelativePath(
+        repoRoot,
+        attemptPath,
+        "openWebExecutorComparisonAttemptPath",
+      ),
+    );
+    valid = true;
+  } catch (error) {
+    errors.push(
+      `open-web executor comparison attempt: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
   }
   const { readable: _readable, ...artifact } = evidence;
   return {
-    kind: "open-web-executor-comparison",
+    kind: `open-web-executor-comparison-attempt-${String(index + 1)}`,
     ...artifact,
-    valid: evidence.readable && verification.valid,
+    valid: evidence.readable && valid,
   };
 }
 

@@ -6,6 +6,7 @@ import {
   mkdir,
   readFile,
   readdir,
+  rename,
   rm,
   writeFile,
 } from "node:fs/promises";
@@ -170,7 +171,11 @@ describe("release artifacts audit", () => {
       "open-web-security-benchmark-series",
       "open-web-security-benchmark-result-1",
       "open-web-security-benchmark-result-2",
-      "open-web-executor-comparison",
+      "open-web-executor-comparison-attempt-1",
+      "open-web-executor-comparison-attempt-2",
+      "open-web-executor-comparison-campaign",
+      "open-web-executor-comparison-report-1",
+      "open-web-executor-comparison-report-2",
       "ux-benchmark-series",
       "ux-benchmark-result-1",
       "ux-benchmark-ledger-1",
@@ -789,7 +794,7 @@ describe("release artifacts audit", () => {
     );
   });
 
-  it("fails when the retained open-web executor comparison is rehashed", async () => {
+  it("fails when a retained open-web executor comparison report is rehashed", async () => {
     const { root } = await createFixture();
     const reportPath = path.join(
       root,
@@ -804,8 +809,70 @@ describe("release artifacts audit", () => {
     const audit = await auditReleaseArtifacts({ repoRoot: root });
 
     expect(audit.ok).toBe(false);
+    expect(audit.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "open-web executor comparison campaign: Open-web comparison report is invalid: report_summary_invalid",
+        ),
+      ]),
+    );
+  });
+
+  it("fails when the retained open-web executor attempt receipt is rehashed", async () => {
+    const { root } = await createFixture();
+    const attemptPath = path.join(
+      root,
+      "benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260806-eeb63387bc7f02ef.json",
+    );
+    const attempt = JSON.parse(await readFile(attemptPath, "utf8"));
+    attempt.diagnostics = ["report_cases_invalid"];
+    const { contentSha256: _contentSha256, ...content } = attempt;
+    attempt.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(attemptPath, attempt);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
     expect(audit.errors).toContain(
-      "open-web executor comparison: report_summary_invalid",
+      "open-web executor comparison attempt: Open-web comparison attempt filename is invalid",
+    );
+  });
+
+  it("fails when the retained open-web executor campaign aggregate is rehashed", async () => {
+    const { root } = await createFixture();
+    const campaignName = (
+      await readdir(path.join(root, "benchmark-results"))
+    ).find((name) =>
+      name.startsWith("napier-open-web-executor-comparison-campaign-seeds-"),
+    );
+    const campaignPath = path.join(root, "benchmark-results", campaignName);
+    const campaign = JSON.parse(await readFile(campaignPath, "utf8"));
+    campaign.summary.overall.napier.meanDurationMs += 1;
+    const { contentSha256: _contentSha256, ...content } = campaign;
+    campaign.contentSha256 = sha256(canonicalJson(content));
+    const renamedCampaignName = campaignName.replace(
+      /[a-f0-9]{16}\.json$/u,
+      `${campaign.contentSha256.slice(0, 16)}.json`,
+    );
+    const renamedCampaignPath = path.join(
+      root,
+      "benchmark-results",
+      renamedCampaignName,
+    );
+    await writeJson(campaignPath, campaign);
+    await rename(campaignPath, renamedCampaignPath);
+
+    const audit = await auditReleaseArtifacts({
+      repoRoot: root,
+      openWebExecutorComparisonCampaignPath: path.posix.join(
+        "benchmark-results",
+        renamedCampaignName,
+      ),
+    });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toContain(
+      "open-web executor comparison campaign: campaign_aggregate_invalid",
     );
   });
 
@@ -887,13 +954,20 @@ async function createFixture() {
       path.join(root, "benchmark-results", fileName),
     );
   }
-  await cp(
-    path.resolve(
-      "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json",
-    ),
-    path.join(
-      root,
-      "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json",
+  const openWebComparisonNames = (
+    await readdir(path.resolve("benchmark-results"))
+  ).filter(
+    (name) =>
+      name.startsWith("napier-open-web-executor-comparison-attempt-seed-") ||
+      name.startsWith("napier-open-web-executor-comparison-seed-") ||
+      name.startsWith("napier-open-web-executor-comparison-campaign-seeds-"),
+  );
+  await Promise.all(
+    openWebComparisonNames.map((name) =>
+      cp(
+        path.resolve("benchmark-results", name),
+        path.join(root, "benchmark-results", name),
+      ),
     ),
   );
   for (const fileName of [

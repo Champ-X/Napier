@@ -15,8 +15,17 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
+import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
+
+import {
+  createOpenWebComparisonAttemptReceipt,
+  openWebComparisonAttemptFileName,
+  verifyOpenWebComparisonAttemptReceipt,
+} from "./open-web-comparison-attempt.mjs";
+import { loadOpenWebComparisonAttemptReceipt } from "./open-web-comparison-attempt-artifacts.mjs";
 import {
   createOpenWebComparisonReport,
+  diagnoseOpenWebComparisonCases,
   openWebComparisonSummary,
   verifyOpenWebComparisonReport,
 } from "./open-web-comparison-report.mjs";
@@ -54,6 +63,8 @@ export async function runOpenWebExecutorComparison(input) {
   const temporaryRoot = await mkdtemp(
     path.join(tmpdir(), "napier-open-web-comparison-"),
   );
+  let environment;
+  const cases = [];
   try {
     const ompRuntime = await createOpenWebComparisonOmpRuntime({
       temporaryRoot,
@@ -65,7 +76,21 @@ export async function runOpenWebExecutorComparison(input) {
     if (ompRuntime.packageVersion !== ompVersion) {
       throw new Error("OMP version and runtime image version differ");
     }
-    const cases = [];
+    environment = {
+      platform: process.platform,
+      architecture: process.arch,
+      nodeVersion: process.versions.node,
+      napierVersion: "0.1.0",
+      ompVersion,
+      ompExecutableSha256: await fileSha256(ompEntry),
+      ompRuntimeExecutableSha256: ompRuntime.executableSha256,
+      ompRuntimeVersion: ompRuntime.packageVersion,
+      browserRuntimeExecutableSha256: browserRuntime.executableSha256,
+      browserRuntimeSetSha256: browserRuntime.runtimeSetSha256,
+      browserRuntimeFileCount: browserRuntime.fileCount,
+      browserRuntimeBytes: browserRuntime.totalBytes,
+      outerSandbox: "macos-sandbox-exec-guarded",
+    };
     for (let caseIndex = 0; caseIndex < suite.cases.length; caseIndex += 1) {
       const benchmarkCase = suite.cases[caseIndex];
       const tracks = [];
@@ -94,6 +119,7 @@ export async function runOpenWebExecutorComparison(input) {
               ompRuntime,
               browserRuntime,
               bunExecutable,
+              signal: input.signal,
             });
           }
           trials.push({
@@ -125,26 +151,48 @@ export async function runOpenWebExecutorComparison(input) {
       timeoutMs: input.timeoutMs,
       model: { provider: "deepseek", id: "deepseek-v4-flash" },
       suite: publicOpenWebComparisonSuite(suite),
-      environment: {
-        platform: process.platform,
-        architecture: process.arch,
-        nodeVersion: process.versions.node,
-        napierVersion: "0.1.0",
-        ompVersion,
-        ompExecutableSha256: await fileSha256(ompEntry),
-        ompRuntimeExecutableSha256: ompRuntime.executableSha256,
-        ompRuntimeVersion: ompRuntime.packageVersion,
-        browserRuntimeExecutableSha256: browserRuntime.executableSha256,
-        browserRuntimeSetSha256: browserRuntime.runtimeSetSha256,
-        browserRuntimeFileCount: browserRuntime.fileCount,
-        browserRuntimeBytes: browserRuntime.totalBytes,
-        outerSandbox: "macos-sandbox-exec-guarded",
-      },
+      environment,
       cases,
       summary: openWebComparisonSummary(cases),
       notes: OPEN_WEB_COMPARISON_NOTES_V2,
     };
-    const report = createOpenWebComparisonReport(content);
+    let report;
+    try {
+      report = createOpenWebComparisonReport(content);
+    } catch (error) {
+      const verification = verifyOpenWebComparisonReport({
+        ...content,
+        contentSha256: sha256(canonicalJson(content)),
+      });
+      const attempt = createOpenWebComparisonAttemptReceipt({
+        generatedAt,
+        seed: input.seed,
+        trialCount: input.trialCount,
+        timeoutMs: input.timeoutMs,
+        model: content.model,
+        environment: content.environment,
+        status: "report_invalid",
+        diagnosticScope: "captured_before_cleanup",
+        diagnostics: verification.diagnostics,
+        caseDiagnostics: diagnoseOpenWebComparisonCases(
+          cases,
+          suite,
+          input.trialCount,
+          content.schemaVersion,
+          content.environment,
+        ),
+      });
+      const attemptPath = await writeOpenWebComparisonAttempt(attempt);
+      throw new Error(
+        `Open-web comparison report finalization failed; attempt receipt: ${path.relative(
+          repoRoot,
+          attemptPath,
+        )}; diagnostics: ${verification.diagnostics.join(
+          ",",
+        )}; cases: ${attempt.caseDiagnostics.join(",")}`,
+        { cause: error },
+      );
+    }
     const outputPath = path.resolve(
       input.outputPath ??
         path.join(
@@ -159,9 +207,81 @@ export async function runOpenWebExecutorComparison(input) {
       mode: 0o600,
     });
     return { report, outputPath };
+  } catch (error) {
+    if (
+      input.signal?.aborted &&
+      environment &&
+      !String(error).includes("attempt receipt:")
+    ) {
+      const attempt = createOpenWebComparisonAttemptReceipt({
+        generatedAt: new Date().toISOString(),
+        seed: input.seed,
+        trialCount: input.trialCount,
+        timeoutMs: input.timeoutMs,
+        model: { provider: "deepseek", id: "deepseek-v4-flash" },
+        environment,
+        status: "cancelled",
+        diagnosticScope: "captured_before_cleanup",
+        diagnostics: [
+          "comparison_cancelled",
+          ...(input.abortDiagnostic ? [input.abortDiagnostic] : []),
+        ],
+        caseDiagnostics: [
+          cases.length === 0 ? "cases.not_started" : "cases.incomplete",
+        ],
+      });
+      const attemptPath = await writeOpenWebComparisonAttempt(attempt);
+      throw new Error(
+        `Open-web comparison was cancelled; attempt receipt: ${path.relative(
+          repoRoot,
+          attemptPath,
+        )}`,
+        { cause: error },
+      );
+    }
+    if (environment && !String(error).includes("attempt receipt:")) {
+      const attempt = createOpenWebComparisonAttemptReceipt({
+        generatedAt: new Date().toISOString(),
+        seed: input.seed,
+        trialCount: input.trialCount,
+        timeoutMs: input.timeoutMs,
+        model: { provider: "deepseek", id: "deepseek-v4-flash" },
+        environment,
+        status: "execution_aborted",
+        diagnosticScope: "captured_before_cleanup",
+        diagnostics: ["trial_execution_aborted"],
+        caseDiagnostics: [
+          cases.length === 0 ? "cases.not_started" : "cases.incomplete",
+        ],
+      });
+      const attemptPath = await writeOpenWebComparisonAttempt(attempt);
+      throw new Error(
+        `Open-web comparison execution aborted; attempt receipt: ${path.relative(
+          repoRoot,
+          attemptPath,
+        )}`,
+        { cause: error },
+      );
+    }
+    throw error;
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
+}
+
+async function writeOpenWebComparisonAttempt(attempt) {
+  const attemptPath = path.join(
+    repoRoot,
+    "benchmark-results",
+    openWebComparisonAttemptFileName(attempt),
+  );
+  await mkdir(path.dirname(attemptPath), { recursive: true });
+  await writeFile(attemptPath, `${JSON.stringify(attempt, null, 2)}\n`, {
+    encoding: "utf8",
+    mode: 0o600,
+    flag: "wx",
+  });
+  return attemptPath;
 }
 
 function parseArgs(argv) {
@@ -175,6 +295,7 @@ function parseArgs(argv) {
     "--omp",
     "--bun",
     "--verify",
+    "--verify-attempt",
   ]);
   for (let index = 0; index < argv.length; index += 2) {
     const flag = argv[index];
@@ -187,8 +308,16 @@ function parseArgs(argv) {
     }
     values.set(flag, value);
   }
-  if (values.has("--verify") && values.size !== 1) {
-    throw new Error("--verify cannot be combined with execution options");
+  if (
+    (values.has("--verify") || values.has("--verify-attempt")) &&
+    values.size !== 1
+  ) {
+    throw new Error(
+      "Verification options cannot be combined with execution options",
+    );
+  }
+  if (values.has("--verify") && values.has("--verify-attempt")) {
+    throw new Error("Only one verification option may be used");
   }
   const seed = positiveInteger(values.get("--seed") ?? "20260805", "--seed");
   const trialCount = positiveInteger(values.get("--trials") ?? "2", "--trials");
@@ -216,6 +345,9 @@ function parseArgs(argv) {
       : {}),
     ...(values.has("--verify")
       ? { verifyPath: path.resolve(values.get("--verify")) }
+      : {}),
+    ...(values.has("--verify-attempt")
+      ? { verifyAttemptPath: path.resolve(values.get("--verify-attempt")) }
       : {}),
   };
 }
@@ -269,18 +401,49 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const verification = verifyOpenWebComparisonReport(report);
     process.stdout.write(`${JSON.stringify(verification, null, 2)}\n`);
     if (!verification.valid) process.exitCode = 1;
-  } else {
-    const result = await runOpenWebExecutorComparison(options);
-    process.stdout.write(
-      `${JSON.stringify(
-        {
-          outputPath: path.relative(repoRoot, result.outputPath),
-          summary: result.report.summary,
-          contentSha256: result.report.contentSha256,
-        },
-        null,
-        2,
-      )}\n`,
+  } else if (options.verifyAttemptPath) {
+    const attempt = await loadOpenWebComparisonAttemptReceipt(
+      options.verifyAttemptPath,
     );
+    const verification = verifyOpenWebComparisonAttemptReceipt(attempt);
+    process.stdout.write(`${JSON.stringify(verification, null, 2)}\n`);
+    if (!verification.valid) process.exitCode = 1;
+  } else {
+    const controller = new AbortController();
+    let signalName;
+    const abort = (received) => {
+      signalName ??= received;
+      controller.abort();
+    };
+    const onSigint = () => abort("SIGINT");
+    const onSigterm = () => abort("SIGTERM");
+    process.once("SIGINT", onSigint);
+    process.once("SIGTERM", onSigterm);
+    try {
+      const result = await runOpenWebExecutorComparison({
+        ...options,
+        signal: controller.signal,
+      });
+      process.stdout.write(
+        `${JSON.stringify(
+          {
+            outputPath: path.relative(repoRoot, result.outputPath),
+            summary: result.report.summary,
+            contentSha256: result.report.contentSha256,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+    } catch (error) {
+      process.stderr.write(
+        `${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      if (!signalName) process.exitCode = 1;
+    } finally {
+      process.removeListener("SIGINT", onSigint);
+      process.removeListener("SIGTERM", onSigterm);
+      if (signalName) process.exitCode = signalName === "SIGINT" ? 130 : 143;
+    }
   }
 }

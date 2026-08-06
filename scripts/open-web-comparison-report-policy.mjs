@@ -14,6 +14,7 @@ export const OPEN_WEB_COMPARISON_NOTES_V2 = [
 
 const DIAGNOSTICS = new Set([
   "answer_mismatch",
+  "browser_network_evidence_missing",
   "credential_leak_detected",
   "fact_count_mismatch",
   "fact_id_mismatch",
@@ -22,6 +23,7 @@ const DIAGNOSTICS = new Set([
   "final_output_oversized",
   "final_output_shape_invalid",
   "machine_output_invalid",
+  "model_proxy_rejected",
   "process_output_limit",
   "process_timeout",
   "quote_mismatch",

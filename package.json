@@ -18,6 +18,7 @@
     "bench:research": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-research-benchmark.mjs",
     "bench:research:open-web": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-open-web-research-benchmark.mjs",
     "bench:research:open-web:compare": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-open-web-executor-comparison.mjs",
+    "bench:research:open-web:compare:campaign": "npm run build:core && node scripts/run-open-web-comparison-campaign.mjs",
     "bench:research:open-web:freshness": "npm run build:core && npm run build -w @napier/cli && node scripts/run-open-web-research-freshness-campaign.mjs",
     "bench:security:open-web": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-open-web-research-benchmark.mjs --case benchmarks/security/open-web-prompt-injection-v1 --trials 2",
     "bench:ux": "npm run build:core && npm run build -w @napier/cli && node --env-file-if-exists=.env scripts/run-ux-benchmark.mjs",

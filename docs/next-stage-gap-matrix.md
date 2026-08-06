@@ -497,7 +497,7 @@ Observed result:
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented `napier chat`, and bounded full-screen `napier tui` share explicit first-task environment-locator bootstrap and one Runtime with the local TypeScript SDK and versioned stdio JSON-RPC. CLI, HTTP, SDK, RPC, and the Plan Workbench run schema-2 selected-checkpoint tests, schema-3 typed-output simulations, schema-4 typed constructed-input replacements, schema-5 full-subgraph node step control, and schema-6 top-level input replacement through the same Ledger state; the browser independently verifies mode, selector presence/absence, node sets, replacement hashes/bytes, Snapshot, result, comparison, Manifest, and event-stream bindings. Run Lab and the same programmatic entries expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. Authenticated remote transport, ACP, Desktop, zero-upload local Manifest recovery, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| P9 outcome benchmark              | In progress    | Coding, Workflow, SQLite/DataFrame Data, SQLite prompt-injection Security, restart/offline-wait/token-budget/Goal-no-progress Long-horizon, fixed-source Research, a repeated real open-web Search/Fetch/Browser Research triad, a same-model Napier/OMP open-web comparison, and clean-state CLI UX cases now measure exact outcomes, tool protocols, Replay, privacy, durability, and offline evidence. The retained open-web campaign spans two observation windows 29.61 hours apart and three trials: two passes and one `citation_evidence_mismatch` failure, with claims, tool topology, source coverage, citation claims, Replay, and credential privacy in all three. The schema-2 seed-`20260805` comparison has six decisive pairs with isolated OMP Browser available: Napier passed 3/6, OMP 2/6; paired outcomes are one both-passed, two Napier-only, one OMP-only, and two neither. Seven other retained two-trial DeepSeek families passed 2/2; multi-restart/offline-wait distributions retain Provider-error inconclusive outcomes; current-case budget passed 7/7; Goal no-progress retains one breaker pass and one model-divergence failure. These samples are not a cross-model or general superiority claim. Multiple open-web cases/seeds/trials, longer observation windows, broader Long-horizon/Security/UX recovery/Web onboarding, broader Coding/Workflow/Data, reference-project execution, and larger cross-model distributions remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| P9 outcome benchmark              | In progress    | Coding, Workflow, SQLite/DataFrame Data, SQLite prompt-injection Security, restart/offline-wait/token-budget/Goal-no-progress Long-horizon, fixed-source Research, a repeated real open-web Search/Fetch/Browser Research triad, a same-model Napier/OMP open-web comparison campaign, and clean-state CLI UX cases now measure exact outcomes, tool protocols, Replay, privacy, durability, and offline evidence. The retained Research freshness campaign spans two observation windows 29.61 hours apart and three trials: two passes and one `citation_evidence_mismatch` failure. The schema-1 two-seed executor campaign binds schema-2 seeds `20260805` and `20260808`: 12 pairs, 11 decisive, one infrastructure exclusion, Napier 7/12, OMP 2/12; paired decisive outcomes are one both-passed, five Napier-only, one OMP-only, and four neither. It also retains one OMP Browser credential-canary failure and one Browser-network evidence exclusion, while two earlier failed/cancelled paid attempts remain separate non-Result receipts. Seven other retained two-trial DeepSeek families passed 2/2; multi-restart/offline-wait distributions retain Provider-error inconclusive outcomes; current-case budget passed 7/7; Goal no-progress retains one breaker pass and one model-divergence failure. These small samples are not a cross-model, broad reliability, or general superiority claim. More open-web seeds/trials, longer observation windows, broader Long-horizon/Security/UX recovery/Web onboarding, broader Coding/Workflow/Data, reference-project execution, and larger cross-model distributions remain. |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Dogfood Evidence: Real DeepSeek Outcomes
@@ -11543,3 +11543,135 @@ Observed result:
   source files and 502 test files with zero cycles; current performance, 266
   generated OpenAPI routes with 265/265 compatibility operations, the 88-file
   Web distribution, and the 127-artifact release receipt all pass.
+
+## Implemented Slice: Multi-Seed Open-Web Executor Campaign
+
+User scenario: a maintainer can combine multiple same-model Napier/OMP
+open-web comparison reports into one portable, privacy-safe artifact and
+independently verify the cross-seed distribution offline, without trusting
+filesystem order, manually copying summary numbers, following arbitrary paths,
+or rerunning paid/networked trials.
+
+Acceptance and evidence boundary:
+
+- accept 2-10 canonical sibling schema-2 comparison reports and require unique
+  uint32 seeds, report content hashes, canonical seed-derived filenames, and
+  deterministic ascending seed order;
+- independently regenerate and verify each seed suite, report self-hash,
+  counterbalanced case/track/trial binding, hidden-evidence digests, outcome
+  summary, Browser-isolation/environment binding, and privacy policy before
+  aggregation;
+- require exact schema, model, trial-count, timeout, platform, Node/Napier/OMP
+  version and executable/runtime hashes, Browser runtime identity, and outer
+  Sandbox compatibility across reports;
+- flatten the verified underlying pairs to recreate default, controlled, and
+  overall distributions. Preserve passed, failed, inconclusive, and
+  infrastructure-failure executor totals; exclude only non-decisive pairs from
+  paired win/loss counts;
+- bind every sibling through seed, filename, report hash, suite hash, retained
+  per-report summary, an ordered report-set hash, and the campaign self-hash;
+- validate the exact campaign shape before resolving references, then load
+  only bounded ordinary non-symlink siblings. Reject path traversal, symlink
+  substitution, report substitution, duplicate seeds/hashes, missing or extra
+  artifacts, configuration drift, aggregate drift, and filename/hash drift;
+- retain no raw prompts, URLs, answers, quotes, model output, reasoning,
+  transcripts, tool arguments, page bodies, credentials, cookies, or tokens;
+- invoke no model, network, Browser, user configuration, Store, Workspace, or
+  credential path during campaign creation or verification;
+- make the campaign the release trust root and recursively retain the campaign
+  plus every referenced report exactly once;
+- treat a small multi-seed sample as reduced seed-specific risk, not a broad
+  reliability distribution or general Napier-superiority claim.
+
+Observed result:
+
+- `verified`: focused contract and CLI coverage passes 42 tests across
+  deterministic aggregation, truthful exclusion preservation, compatible
+  binding enforcement, duplicate seed refusal, report substitution, rehashed
+  aggregate drift, raw-evidence/privacy rejection, bounded sibling loading,
+  symlink refusal, path traversal, portable create/verify, retainable failed
+  security/proxy-integrity outcomes, field-path-only report diagnostics, and
+  bounded content-addressed failed-attempt loading;
+- `verified`: the first additional bounded live attempt used seed `20260806`,
+  one trial, and the same 180-second per-executor timeout. All paid trials
+  completed, but the prior runner rejected the final projection with
+  `report_cases_invalid,report_summary_invalid` and deleted its mandatory
+  temporary roots, so no Result exists and no case-level path can be recovered
+  honestly;
+- `verified`: that attempt remains in
+  `napier.open-web-executor-comparison-attempt` receipt
+  `benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260806-eeb63387bc7f02ef.json`
+  with content SHA-256
+  `eeb63387bc7f02ef4f0aa6c0c29a2f633ad0109f56089606e376ecd5f5dd74e2`.
+  It explicitly records `retrospective_after_cleanup` and
+  `cases.unavailable_after_cleanup`, passes offline verification, contains no
+  raw evidence marker, is release-bound independently, and is excluded from
+  campaign outcome aggregates;
+- `verified`: report semantics now retain a detected credential leak only as a
+  failed `security_leak`, and retain model-proxy rejection only as excluded
+  infrastructure evidence. Missing Browser-network evidence is also retained
+  as excluded infrastructure. Future finalization failures write a strict
+  field-path-only receipt before cleanup, rather than losing the attempt;
+- `verified`: seed `20260807` was deliberately cancelled after a retained-
+  evidence audit found an invalid harness classification. The cancellation
+  exposed and drove a fix for signal cleanup; the comparison-owned Browser
+  process group and temp root were removed, and focused cancellation tests now
+  prove SIGINT/SIGTERM abort active child groups and leave zero comparison
+  processes/temp roots. The non-Result receipt
+  `benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260807-62596440116b4a2a.json`
+  records `cancelled`, `comparison_cancelled`, and
+  `harness_classification_invalid`, verifies offline, and remains outside
+  campaign metrics;
+- `verified`: the final clean bounded seed `20260808`, one trial, completed
+  with a valid schema-2 report
+  `benchmark-results/napier-open-web-executor-comparison-seed-20260808.json`
+  and content SHA-256
+  `1cc5e1e01a937ace1ce508a7e4baf20d0c1c8b5a2995567199bf4fead4bc85aa`.
+  Five pairs were decisive and one controlled Browser pair was excluded as
+  infrastructure. Napier passed 4/6; OMP passed 0/6. Paired decisive outcomes
+  were three Napier-only and two neither;
+- `verified`: seed `20260808` truthfully retained one OMP default-Browser
+  `security_leak` failure after the bounded canary scanner detected a
+  comparison credential in process output or persistence; no credential value
+  is retained. Its controlled Browser outcome reported a successful Browser
+  completion without matching Browser-proxy traffic and was excluded as
+  `browser_network_evidence_missing`. All OMP Browser receipts remained ready,
+  fresh/nonpersistent, no-user-import, loopback-only, and process-closed;
+- `verified`: the final campaign combines seeds `20260805` and `20260808`,
+  one trial per seed, in
+  `benchmark-results/napier-open-web-executor-comparison-campaign-seeds-20260805-20260808-01ad0296171ff913.json`.
+  It independently verifies both reports and recreates 12 pairs: 11 decisive
+  and one excluded. Napier passed 7/12; OMP passed 2/12. Paired decisive
+  outcomes are one both-passed, five Napier-only, one OMP-only, and four
+  neither. Mean duration/cost is 15.035 seconds/`$0.002519117533` for Napier
+  and 119.725 seconds/`$0.009655387` for OMP; failed tool attempts are zero
+  versus 97, with zero manual interventions;
+- `verified`: campaign content SHA-256 is
+  `01ad0296171ff913dcefb55e93009fcf54e2213991d244ea15985db91d2c6b40`;
+  report-set SHA-256 is
+  `f20d175dba097b9264dc0ce73beaee565d72cfa4952a0ca89acb515ea27635dd`.
+  Scanning the campaign, two reports, and two attempt receipts found zero raw
+  URL, expected answer/quote, model endpoint, credential variable, citation
+  token, or reasoning markers;
+- `verified`: release verification recursively binds both attempts, the
+  campaign, and both reports. The release receipt contains 131 artifacts with
+  set SHA-256
+  `006628f036186d6c302914c9e7879039886160e09cccba994167eefda7cb7b46`
+  and verifies with receipt SHA-256
+  `9dbf0758aa42f886008f204ed01f8229745c5b4554ddbd69cc564d5f97817cab`;
+- `verified`: the complete repository gate passes 2,432 regular tests with 46
+  opt-in live tests skipped by default: Root 158, CLI 217, Server 202, Web 532,
+  Contracts 3, Runtime 1,292, and SDK 28. Architecture audits 1,043 production
+  source files and 507 test files with zero cycles; 266 generated OpenAPI
+  routes, 265/265 compatibility operations, current performance, and the
+  88-file Web distribution all pass. The production Web main entry remains
+  145.46 KiB under the 150 KiB budget;
+- `verified`: architecture audits 1,043 production source files and 507 test
+  files with zero cycles. Campaign shape/aggregation, artifact loading, and CLI
+  orchestration live in bounded root-script leaves; Runtime, Browser
+  persistence, Agent policy, and user configuration are unchanged;
+- `inferred`: this two-seed sample favors Napier on outcomes, latency, cost,
+  and failed-tool count, and exposes one concrete OMP credential-canary
+  failure, but it is not a broad reliability distribution or general
+  superiority claim. Additional seeds, repetitions, OMP versions, and Browser
+  tasks remain open.

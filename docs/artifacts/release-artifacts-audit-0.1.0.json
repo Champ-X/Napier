@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "39307175b2dbc28e85cd1a14cff2d02a338cc5f977f722780ebdff28cc0bae51",
+  "artifactSetSha256": "006628f036186d6c302914c9e7879039886160e09cccba994167eefda7cb7b46",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "20d970781be47eda32f9d3110aa7662453b096c4566bb0fb329c0b452849afda",
+      "sha256": "155af35d6d1954019b5cfdcae0ca17f80d2cc7aa7b566236a6589a435bc36255",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "c9f772b7aec7f7b17afc6473c527175fae146494fd260c00c85d81c9be0222ea",
+      "sha256": "469fe44d002f1f5f68a64acbb37c2ecfbc76489b283076f5652d4d83c2518d2d",
       "valid": true
     },
     {
@@ -735,9 +735,33 @@
       "valid": true
     },
     {
-      "kind": "open-web-executor-comparison",
+      "kind": "open-web-executor-comparison-attempt-1",
+      "path": "benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260806-eeb63387bc7f02ef.json",
+      "sha256": "b18fd7f4ae17ae3196a0f2d91418754a3ef61c6df6180aeeb08e4edaefa12b22",
+      "valid": true
+    },
+    {
+      "kind": "open-web-executor-comparison-attempt-2",
+      "path": "benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260807-62596440116b4a2a.json",
+      "sha256": "ba93830ceae4b130ac3c17f4696763886155040e4f6e77ee74de384dd2fba02f",
+      "valid": true
+    },
+    {
+      "kind": "open-web-executor-comparison-campaign",
+      "path": "benchmark-results/napier-open-web-executor-comparison-campaign-seeds-20260805-20260808-01ad0296171ff913.json",
+      "sha256": "8191a5c72e8e2562d6c9c6c6d2e238f2dbfb01be044bfb672ac3dbaa4aa8e086",
+      "valid": true
+    },
+    {
+      "kind": "open-web-executor-comparison-report-1",
       "path": "benchmark-results/napier-open-web-executor-comparison-seed-20260805.json",
       "sha256": "28e939f5d2c74cb749142d02f6051e82d8e58f4818ffb8d13a5e4ba7ad2651bf",
+      "valid": true
+    },
+    {
+      "kind": "open-web-executor-comparison-report-2",
+      "path": "benchmark-results/napier-open-web-executor-comparison-seed-20260808.json",
+      "sha256": "9ef252a1bea76e4475eb8f625d57394496790a04b4a8cf2bc7ffbf5bd0b3376d",
       "valid": true
     },
     {

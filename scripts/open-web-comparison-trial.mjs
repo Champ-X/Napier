@@ -76,6 +76,7 @@ async function runNapierTrial(input) {
     cwd: roots.workspaceRoot,
     env,
     timeoutMs: input.timeoutMs + 15_000,
+    signal: input.signal,
     secrets: [input.secret],
     onStdoutLine: (line) => parser.accept(line),
   });
@@ -150,6 +151,7 @@ async function runOmpTrial(input) {
       cwd: roots.workspaceRoot,
       env,
       timeoutMs: input.timeoutMs + 15_000,
+      signal: input.signal,
       secrets: [
         input.secret,
         childApiKey,
@@ -225,6 +227,11 @@ export function createOpenWebComparisonTrialOutcome(input) {
     input.browserIsolation?.loopbackOnly === false ||
     input.browserIsolation?.processClosed === false;
   const infrastructureSignal = input.infrastructureSignal;
+  const modelProxyFailed = input.modelProxy?.modelMatch === false;
+  const browserNetworkFailed =
+    input.executor === "omp" &&
+    input.parsed.toolCounts.browser > 0 &&
+    (input.browserIsolation?.network?.requestCount ?? 0) === 0;
   const processFailure =
     input.execution.timedOut ||
     input.execution.outputLimitExceeded ||
@@ -233,35 +240,43 @@ export function createOpenWebComparisonTrialOutcome(input) {
     input.parsed.status !== "completed";
   const status = securityLeak
     ? "failed"
-    : browserIsolationFailed
+    : modelProxyFailed
       ? "infrastructure_failure"
-      : input.execution.timedOut
-        ? "inconclusive"
-        : infrastructureSignal &&
-            (processFailure || input.parsed.toolFailed > 0)
+      : browserNetworkFailed
+        ? "infrastructure_failure"
+        : browserIsolationFailed
           ? "infrastructure_failure"
-          : processFailure
-            ? "failed"
-            : input.outcome.passed
-              ? "passed"
-              : "failed";
+          : input.execution.timedOut
+            ? "inconclusive"
+            : infrastructureSignal &&
+                (processFailure || input.parsed.toolFailed > 0)
+              ? "infrastructure_failure"
+              : processFailure
+                ? "failed"
+                : input.outcome.passed
+                  ? "passed"
+                  : "failed";
   const failureClass = securityLeak
     ? "security_leak"
-    : browserIsolationFailed
+    : modelProxyFailed
       ? "external_infrastructure"
-      : input.execution.timedOut
-        ? "timeout"
-        : status === "infrastructure_failure"
+      : browserNetworkFailed
+        ? "external_infrastructure"
+        : browserIsolationFailed
           ? "external_infrastructure"
-          : input.execution.outputLimitExceeded
-            ? "output_limit"
-            : input.execution.parseFailed
-              ? "machine_protocol"
-              : processFailure
-                ? "executor_failure"
-                : input.outcome.passed
-                  ? "none"
-                  : "outcome_oracle";
+          : input.execution.timedOut
+            ? "timeout"
+            : status === "infrastructure_failure"
+              ? "external_infrastructure"
+              : input.execution.outputLimitExceeded
+                ? "output_limit"
+                : input.execution.parseFailed
+                  ? "machine_protocol"
+                  : processFailure
+                    ? "executor_failure"
+                    : input.outcome.passed
+                      ? "none"
+                      : "outcome_oracle";
   return {
     executor: input.executor,
     status,
@@ -278,6 +293,8 @@ export function createOpenWebComparisonTrialOutcome(input) {
       ...(input.execution.timedOut ? ["process_timeout"] : []),
       ...(input.execution.outputLimitExceeded ? ["process_output_limit"] : []),
       ...(input.execution.parseFailed ? ["machine_output_invalid"] : []),
+      ...(modelProxyFailed ? ["model_proxy_rejected"] : []),
+      ...(browserNetworkFailed ? ["browser_network_evidence_missing"] : []),
       ...(securityLeak ? ["credential_leak_detected"] : []),
     ],
     evidence: input.outcome.evidence,

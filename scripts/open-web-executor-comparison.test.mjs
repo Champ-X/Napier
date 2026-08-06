@@ -17,6 +17,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { startOpenWebComparisonModelProxy } from "./open-web-comparison-model-proxy.mjs";
 import {
+  createOpenWebComparisonAttemptReceipt,
+  openWebComparisonAttemptFileName,
+  verifyOpenWebComparisonAttemptReceipt,
+} from "./open-web-comparison-attempt.mjs";
+import { loadOpenWebComparisonAttemptReceipt } from "./open-web-comparison-attempt-artifacts.mjs";
+import {
   assertOpenWebComparisonBrowserRuntimeCurrent,
   createOpenWebComparisonBrowserRuntime,
 } from "./open-web-comparison-browser-runtime.mjs";
@@ -32,7 +38,13 @@ import {
 import { startOpenWebComparisonPublicProxy } from "./open-web-comparison-public-proxy.mjs";
 import { createOpenWebComparisonOmpRuntime } from "./open-web-comparison-omp-runtime.mjs";
 import {
+  createOpenWebComparisonCampaign,
+  openWebComparisonCampaignArtifactReferences,
+  verifyOpenWebComparisonCampaign,
+} from "./open-web-comparison-campaign.mjs";
+import {
   createOpenWebComparisonReport,
+  diagnoseOpenWebComparisonCases,
   openWebComparisonSummary,
   verifyOpenWebComparisonReport,
 } from "./open-web-comparison-report.mjs";
@@ -952,6 +964,175 @@ describe("open-web executor comparison", () => {
     );
   });
 
+  it("classifies model proxy integrity rejection as infrastructure", () => {
+    const assembled = createOpenWebComparisonTrialOutcome({
+      executor: "omp",
+      parsed: {
+        status: "completed",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          costUsd: 0.002,
+        },
+        toolCounts: { search: 1, fetch: 1, browser: 0 },
+        toolFailed: 0,
+        frameCount: 10,
+      },
+      execution: {
+        code: 0,
+        timedOut: false,
+        outputLimitExceeded: false,
+        parseFailed: false,
+        secretLeakDetected: false,
+        durationMs: 120,
+        firstOutputMs: 10,
+        stdoutBytes: 1_000,
+        stderrBytes: 0,
+        stderr: "",
+      },
+      outcome: {
+        passed: true,
+        diagnostics: [],
+        evidence: {
+          finalOutputSha256: "b".repeat(64),
+          finalOutputBytes: 100,
+          factCount: 1,
+          factSetSha256: "c".repeat(64),
+          answerSetSha256: "d".repeat(64),
+          sourceUrlSetSha256: "e".repeat(64),
+          quoteSetSha256: "f".repeat(64),
+        },
+      },
+      persistenceScan: { leakDetected: false, bytes: 1_024, fileCount: 4 },
+      infrastructureSignal: false,
+      credentialBoundary: "loopback_proxy_dummy_child_key",
+      modelProxy: {
+        requestCount: 1,
+        requestBytes: 100,
+        responseBytes: 200,
+        rejectedCount: 1,
+        modelMatch: false,
+        upstreamOriginSha256: "1".repeat(64),
+      },
+      browserIsolation: readyBrowserIsolation(),
+      publicNetwork: {
+        requestCount: 3,
+        connectCount: 2,
+        rejectedCount: 0,
+        transferredBytes: 1_024,
+        destinationCount: 2,
+        destinationsSha256: "3".repeat(64),
+      },
+      sandbox: {
+        id: "macos-sandbox-exec-guarded",
+        profileSha256: "2".repeat(64),
+      },
+    });
+
+    expect(assembled).toEqual(
+      expect.objectContaining({
+        status: "infrastructure_failure",
+        outcomePassed: false,
+        failureClass: "external_infrastructure",
+        diagnostics: ["model_proxy_rejected"],
+      }),
+    );
+  });
+
+  it("classifies missing Browser network evidence as infrastructure", () => {
+    const browserIsolation = readyBrowserIsolation();
+    browserIsolation.network.requestCount = 0;
+    const assembled = createOpenWebComparisonTrialOutcome({
+      executor: "omp",
+      parsed: {
+        status: "completed",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          costUsd: 0.002,
+        },
+        toolCounts: { search: 0, fetch: 0, browser: 1 },
+        toolFailed: 0,
+        frameCount: 10,
+      },
+      execution: {
+        code: 0,
+        timedOut: false,
+        outputLimitExceeded: false,
+        parseFailed: false,
+        secretLeakDetected: false,
+        durationMs: 120,
+        firstOutputMs: 10,
+        stdoutBytes: 1_000,
+        stderrBytes: 0,
+        stderr: "",
+      },
+      outcome: {
+        passed: true,
+        diagnostics: [],
+        evidence: {
+          finalOutputSha256: "b".repeat(64),
+          finalOutputBytes: 100,
+          factCount: 1,
+          factSetSha256: "c".repeat(64),
+          answerSetSha256: "d".repeat(64),
+          sourceUrlSetSha256: "e".repeat(64),
+          quoteSetSha256: "f".repeat(64),
+        },
+      },
+      persistenceScan: { leakDetected: false, bytes: 1_024, fileCount: 4 },
+      infrastructureSignal: false,
+      credentialBoundary: "loopback_proxy_dummy_child_key",
+      modelProxy: {
+        requestCount: 1,
+        requestBytes: 100,
+        responseBytes: 200,
+        rejectedCount: 1,
+        modelMatch: true,
+        upstreamOriginSha256: "1".repeat(64),
+      },
+      browserIsolation,
+      publicNetwork: {
+        requestCount: 3,
+        connectCount: 2,
+        rejectedCount: 0,
+        transferredBytes: 1_024,
+        destinationCount: 2,
+        destinationsSha256: "3".repeat(64),
+      },
+      sandbox: {
+        id: "macos-sandbox-exec-guarded",
+        profileSha256: "2".repeat(64),
+      },
+    });
+
+    expect(assembled).toEqual(
+      expect.objectContaining({
+        status: "infrastructure_failure",
+        outcomePassed: false,
+        failureClass: "external_infrastructure",
+        diagnostics: ["browser_network_evidence_missing"],
+      }),
+    );
+    const report = comparisonReport(20260805, {
+      napier: "passed",
+      omp: "passed",
+    });
+    report.cases[2].tracks[0].trials[0].omp = assembled;
+    report.summary = openWebComparisonSummary(report.cases);
+    report.contentSha256 = hashWithoutSelf(report);
+    expect(verifyOpenWebComparisonReport(report)).toEqual({
+      valid: true,
+      diagnostics: [],
+      reportSha256: report.contentSha256,
+    });
+    expect(report.summary.overall.excludedPairCount).toBe(1);
+  });
+
   it("creates a counterbalanced self-verifying privacy-safe report", () => {
     const suite = createOpenWebComparisonSuite(20260805);
     const cases = suite.cases.map((benchmarkCase, caseIndex) => ({
@@ -1080,6 +1261,380 @@ describe("open-web executor comparison", () => {
     );
   });
 
+  it("retains detected credential leakage only as a failed security outcome", () => {
+    const report = comparisonReport(20260805, {
+      napier: "passed",
+      omp: "failed",
+    });
+    const leaked = structuredClone(report);
+    const outcome = leaked.cases[0].tracks[0].trials[0].napier;
+    outcome.status = "failed";
+    outcome.outcomePassed = false;
+    outcome.failureClass = "security_leak";
+    outcome.diagnostics = ["credential_leak_detected"];
+    outcome.security.secretLeakDetected = true;
+    leaked.summary = openWebComparisonSummary(leaked.cases);
+    leaked.contentSha256 = hashWithoutSelf(leaked);
+
+    expect(verifyOpenWebComparisonReport(leaked)).toEqual({
+      valid: true,
+      diagnostics: [],
+      reportSha256: leaked.contentSha256,
+    });
+
+    const inconsistent = structuredClone(leaked);
+    inconsistent.cases[0].tracks[0].trials[0].napier.status = "passed";
+    inconsistent.cases[0].tracks[0].trials[0].napier.outcomePassed = true;
+    inconsistent.summary = openWebComparisonSummary(inconsistent.cases);
+    inconsistent.contentSha256 = hashWithoutSelf(inconsistent);
+    expect(verifyOpenWebComparisonReport(inconsistent)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["report_cases_invalid", "report_summary_invalid"],
+      }),
+    );
+  });
+
+  it("retains model proxy rejection as excluded infrastructure evidence", () => {
+    const report = comparisonReport(20260805, {
+      napier: "passed",
+      omp: "passed",
+    });
+    const rejected = structuredClone(report);
+    const outcome = rejected.cases[0].tracks[0].trials[0].omp;
+    outcome.status = "infrastructure_failure";
+    outcome.outcomePassed = false;
+    outcome.failureClass = "external_infrastructure";
+    outcome.diagnostics = ["model_proxy_rejected"];
+    outcome.modelProxy.modelMatch = false;
+    outcome.modelProxy.rejectedCount = 1;
+    rejected.summary = openWebComparisonSummary(rejected.cases);
+    rejected.contentSha256 = hashWithoutSelf(rejected);
+
+    expect(verifyOpenWebComparisonReport(rejected)).toEqual({
+      valid: true,
+      diagnostics: [],
+      reportSha256: rejected.contentSha256,
+    });
+    expect(rejected.summary.overall).toEqual(
+      expect.objectContaining({
+        excludedPairCount: 1,
+        omp: expect.objectContaining({ infrastructureFailure: 1 }),
+      }),
+    );
+
+    const inconsistent = structuredClone(rejected);
+    const inconsistentOutcome = inconsistent.cases[0].tracks[0].trials[0].omp;
+    inconsistentOutcome.status = "failed";
+    inconsistentOutcome.failureClass = "outcome_oracle";
+    inconsistentOutcome.diagnostics = ["quote_mismatch"];
+    inconsistent.summary = openWebComparisonSummary(inconsistent.cases);
+    inconsistent.contentSha256 = hashWithoutSelf(inconsistent);
+    expect(verifyOpenWebComparisonReport(inconsistent)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["report_cases_invalid", "report_summary_invalid"],
+      }),
+    );
+  });
+
+  it("diagnoses invalid outcomes by field path without retaining evidence", () => {
+    const report = comparisonReport(20260805, {
+      napier: "passed",
+      omp: "failed",
+    });
+    report.cases[1].tracks[1].trials[0].omp.security.secretLeakDetected = true;
+
+    expect(
+      diagnoseOpenWebComparisonCases(
+        report.cases,
+        createOpenWebComparisonSuite(20260805),
+        1,
+        2,
+        report.environment,
+      ),
+    ).toEqual([
+      "cases.1.invalid",
+      "cases.1.tracks.1.trials.0.omp",
+      "cases.1.tracks.1.trials.0.omp.security",
+    ]);
+  });
+
+  it("creates a privacy-safe self-hashed failed-attempt receipt", () => {
+    const report = comparisonReport(20260805, {
+      napier: "passed",
+      omp: "failed",
+    });
+    const attempt = createOpenWebComparisonAttemptReceipt({
+      generatedAt: "2026-08-06T00:00:00.000Z",
+      seed: 20260806,
+      trialCount: 1,
+      timeoutMs: 180_000,
+      model: report.model,
+      environment: report.environment,
+      status: "report_invalid",
+      diagnosticScope: "captured_before_cleanup",
+      diagnostics: ["report_cases_invalid", "report_summary_invalid"],
+      caseDiagnostics: ["cases.1.tracks.1.trials.0.omp"],
+    });
+
+    expect(attempt).toEqual(
+      expect.objectContaining({
+        type: "napier.open-web-executor-comparison-attempt",
+        schemaVersion: 1,
+        seed: 20260806,
+        status: "report_invalid",
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(hashWithoutSelf(attempt)).toBe(attempt.contentSha256);
+    expect(verifyOpenWebComparisonAttemptReceipt(attempt)).toEqual({
+      valid: true,
+      diagnostics: [],
+      attemptSha256: attempt.contentSha256,
+    });
+    const serialized = JSON.stringify(attempt);
+    expect(serialized).not.toContain("nodejs.org");
+    expect(serialized).not.toContain("Dummy PDF file");
+    expect(serialized).not.toContain("reasoning_content");
+    expect(serialized).not.toContain("DEEPSEEK_API_KEY");
+  });
+
+  it("creates a distinct cancellation attempt outside campaign results", () => {
+    const report = comparisonReport(20260805, {
+      napier: "passed",
+      omp: "failed",
+    });
+    const attempt = createOpenWebComparisonAttemptReceipt({
+      generatedAt: "2026-08-06T00:00:00.000Z",
+      seed: 20260807,
+      trialCount: 1,
+      timeoutMs: 180_000,
+      model: report.model,
+      environment: report.environment,
+      status: "cancelled",
+      diagnosticScope: "captured_before_cleanup",
+      diagnostics: ["comparison_cancelled", "harness_classification_invalid"],
+      caseDiagnostics: ["cases.incomplete"],
+    });
+
+    expect(verifyOpenWebComparisonAttemptReceipt(attempt)).toEqual({
+      valid: true,
+      diagnostics: [],
+      attemptSha256: attempt.contentSha256,
+    });
+    expect(attempt.status).toBe("cancelled");
+    expect(JSON.stringify(attempt)).not.toContain("rejectedCount");
+  });
+
+  it("loads only filename-bound non-symlink attempt receipts", async () => {
+    const report = comparisonReport(20260805, {
+      napier: "passed",
+      omp: "failed",
+    });
+    const attempt = createOpenWebComparisonAttemptReceipt({
+      generatedAt: "2026-08-06T00:00:00.000Z",
+      seed: 20260806,
+      trialCount: 1,
+      timeoutMs: 180_000,
+      model: report.model,
+      environment: report.environment,
+      status: "report_invalid",
+      diagnosticScope: "retrospective_after_cleanup",
+      diagnostics: ["report_cases_invalid", "report_summary_invalid"],
+      caseDiagnostics: ["cases.unavailable_after_cleanup"],
+    });
+    const root = await mkdtemp(path.join(tmpdir(), "napier-compare-attempt-"));
+    roots.push(root);
+    const validPath = path.join(
+      root,
+      openWebComparisonAttemptFileName(attempt),
+    );
+    await writeFile(validPath, `${JSON.stringify(attempt, null, 2)}\n`);
+
+    await expect(
+      loadOpenWebComparisonAttemptReceipt(validPath),
+    ).resolves.toEqual(attempt);
+    const wrongName = path.join(root, "attempt.json");
+    await writeFile(wrongName, `${JSON.stringify(attempt, null, 2)}\n`);
+    await expect(
+      loadOpenWebComparisonAttemptReceipt(wrongName),
+    ).rejects.toThrow("Open-web comparison attempt filename is invalid");
+    const symlinkPath = path.join(
+      root,
+      `napier-open-web-executor-comparison-attempt-seed-20260806-${"0".repeat(
+        16,
+      )}.json`,
+    );
+    await symlink(validPath, symlinkPath);
+    await expect(
+      loadOpenWebComparisonAttemptReceipt(symlinkPath),
+    ).rejects.toThrow("Open-web comparison attempt artifact file is invalid");
+  });
+
+  it("creates a hash-bound multi-seed campaign and preserves exclusions", () => {
+    const first = comparisonReport(20260805, {
+      napier: "passed",
+      omp: "failed",
+    });
+    const second = comparisonReport(20260806, {
+      napier: "inconclusive",
+      omp: "infrastructure_failure",
+    });
+    const artifacts = [first, second].map((report) => ({
+      fileName: `napier-open-web-executor-comparison-seed-${String(
+        report.seed,
+      )}.json`,
+      report,
+    }));
+    const campaign = createOpenWebComparisonCampaign({
+      generatedAt: "2026-08-07T00:00:00.000Z",
+      reports: artifacts,
+    });
+
+    expect(verifyOpenWebComparisonCampaign(campaign, artifacts)).toEqual({
+      valid: true,
+      diagnostics: [],
+      campaignSha256: campaign.contentSha256,
+      reportDiagnostics: [
+        { index: 1, seed: 20260805, diagnostics: [] },
+        { index: 2, seed: 20260806, diagnostics: [] },
+      ],
+    });
+    expect(campaign.reportCount).toBe(2);
+    expect(campaign.seeds).toEqual([20260805, 20260806]);
+    expect(campaign.summary.overall).toEqual(
+      expect.objectContaining({
+        pairCount: 12,
+        decisivePairCount: 6,
+        excludedPairCount: 6,
+        napier: expect.objectContaining({
+          passed: 6,
+          inconclusive: 6,
+        }),
+        omp: expect.objectContaining({
+          failed: 6,
+          infrastructureFailure: 6,
+        }),
+        paired: {
+          bothPassed: 0,
+          napierOnlyPassed: 6,
+          ompOnlyPassed: 0,
+          neitherPassed: 0,
+        },
+      }),
+    );
+    expect(JSON.stringify(campaign)).not.toContain("nodejs.org/");
+    expect(JSON.stringify(campaign)).not.toContain("Dummy PDF file");
+    expect(JSON.stringify(campaign)).not.toContain("reasoning_content");
+  });
+
+  it("rejects campaign report substitution, aggregate drift, and raw evidence", () => {
+    const reports = [
+      comparisonReport(20260805, { napier: "passed", omp: "failed" }),
+      comparisonReport(20260806, { napier: "failed", omp: "passed" }),
+    ];
+    const artifacts = reports.map((report) => ({
+      fileName: `napier-open-web-executor-comparison-seed-${String(
+        report.seed,
+      )}.json`,
+      report,
+    }));
+    const campaign = createOpenWebComparisonCampaign({
+      generatedAt: "2026-08-07T00:00:00.000Z",
+      reports: artifacts,
+    });
+
+    const substituted = structuredClone(artifacts);
+    substituted[1].report = comparisonReport(20260807, {
+      napier: "passed",
+      omp: "passed",
+    });
+    expect(verifyOpenWebComparisonCampaign(campaign, substituted)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: expect.arrayContaining([
+          "campaign_report_invalid",
+          "campaign_aggregate_invalid",
+        ]),
+        reportDiagnostics: expect.arrayContaining([
+          expect.objectContaining({
+            index: 2,
+            diagnostics: ["report_binding_invalid"],
+          }),
+        ]),
+      }),
+    );
+
+    const drifted = structuredClone(campaign);
+    drifted.summary.overall.napier.meanDurationMs += 1;
+    drifted.contentSha256 = hashWithoutSelf(drifted);
+    expect(verifyOpenWebComparisonCampaign(drifted, artifacts)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: ["campaign_aggregate_invalid"],
+      }),
+    );
+
+    const leaked = structuredClone(campaign);
+    leaked.environment.outerSandbox = "https://nodejs.org/private";
+    leaked.contentSha256 = hashWithoutSelf(leaked);
+    expect(verifyOpenWebComparisonCampaign(leaked, artifacts)).toEqual({
+      valid: false,
+      diagnostics: ["campaign_shape_invalid"],
+      campaignSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      reportDiagnostics: [],
+    });
+
+    const sensitive = structuredClone(campaign);
+    sensitive.environment.apiKey = "must-not-be-followed";
+    sensitive.contentSha256 = hashWithoutSelf(sensitive);
+    expect(verifyOpenWebComparisonCampaign(sensitive, artifacts)).toEqual({
+      valid: false,
+      diagnostics: ["campaign_shape_invalid"],
+      campaignSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      reportDiagnostics: [],
+    });
+    expect(() =>
+      openWebComparisonCampaignArtifactReferences(sensitive),
+    ).toThrow("Open-web comparison campaign shape is invalid");
+  });
+
+  it("requires unique seeds, report hashes, and compatible bindings", () => {
+    const first = comparisonReport(20260805, {
+      napier: "passed",
+      omp: "failed",
+    });
+    const second = comparisonReport(20260806, {
+      napier: "failed",
+      omp: "passed",
+    });
+    const artifact = (report) => ({
+      fileName: `napier-open-web-executor-comparison-seed-${String(
+        report.seed,
+      )}.json`,
+      report,
+    });
+
+    expect(() =>
+      createOpenWebComparisonCampaign({
+        generatedAt: "2026-08-07T00:00:00.000Z",
+        reports: [artifact(first), artifact(first)],
+      }),
+    ).toThrow("seed must be unique");
+
+    const incompatible = structuredClone(second);
+    incompatible.timeoutMs = 120_000;
+    incompatible.contentSha256 = hashWithoutSelf(incompatible);
+    expect(verifyOpenWebComparisonReport(incompatible).valid).toBe(true);
+    expect(() =>
+      createOpenWebComparisonCampaign({
+        generatedAt: "2026-08-07T00:00:00.000Z",
+        reports: [artifact(first), artifact(incompatible)],
+      }),
+    ).toThrow("incompatible execution bindings");
+  });
+
   it("excludes infrastructure and inconclusive outcomes from paired wins", () => {
     const cases = [
       {
@@ -1196,6 +1751,27 @@ describe("open-web executor comparison", () => {
     expect(result.durationMs).toBeLessThan(2_000);
   });
 
+  it("aborts and closes a comparison process group", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-compare-abort-"));
+    roots.push(root);
+    const controller = new AbortController();
+    const running = runOpenWebComparisonProcess({
+      command: process.execPath,
+      args: [
+        "-e",
+        'process.on("SIGTERM", () => {}); setInterval(() => {}, 1000)',
+      ],
+      cwd: root,
+      env: { PATH: process.env.PATH ?? "/usr/bin:/bin" },
+      timeoutMs: 5_000,
+      signal: controller.signal,
+      onStdoutLine: () => undefined,
+    });
+    setTimeout(() => controller.abort(), 50);
+
+    await expect(running).rejects.toThrow("Open-web comparison was cancelled");
+  });
+
   it("detects persisted credentials and rejects escaping state symlinks", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-compare-scan-"));
     const outside = await mkdtemp(
@@ -1263,6 +1839,37 @@ function reportContentV2(suite, cases) {
     },
     notes: OPEN_WEB_COMPARISON_NOTES_V2,
   };
+}
+
+function comparisonReport(seed, statuses) {
+  const suite = createOpenWebComparisonSuite(seed);
+  const cases = suite.cases.map((benchmarkCase, caseIndex) => ({
+    caseId: benchmarkCase.id,
+    complexity: benchmarkCase.complexity,
+    taskFamily: benchmarkCase.taskFamily,
+    promptSha256: benchmarkCase.promptSha256,
+    oracleSha256: benchmarkCase.oracleSha256,
+    caseSha256: benchmarkCase.caseSha256,
+    tracks: ["default", "controlled"].map((track, trackIndex) => ({
+      track,
+      trials: [
+        pair(
+          1,
+          (1 + trackIndex + caseIndex) % 2 === 0
+            ? ["omp", "napier"]
+            : ["napier", "omp"],
+          outcome("napier", statuses.napier),
+          outcomeV2("omp", statuses.omp),
+        ),
+      ],
+    })),
+  }));
+  const content = reportContentV2(suite, cases);
+  content.generatedAt = new Date(
+    Date.UTC(2026, 7, 5 + (seed - 20260805)),
+  ).toISOString();
+  content.summary = openWebComparisonSummary(cases);
+  return createOpenWebComparisonReport(content);
 }
 
 function pair(trial, order, napier, omp) {

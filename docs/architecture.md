@@ -2578,12 +2578,13 @@ dist manifest, and retained Workflow, Data, DataFrame, Security, single- and
 multi-restart/offline-wait/budget Long-horizon, durable Goal no-progress,
 Process recovery, Research, and UX Benchmark Series plus all forty-seven
 Result/Ledger pairs into one
-`napier.release-artifacts-audit` receipt. Before
-hashing the 110 Benchmark files, the gate performs full semantic verification
-for sixteen Series across twelve cases. It stores only artifact kinds,
-repo-relative paths, SHA-256 values, validity booleans, package name/version,
-and a canonical artifact-set digest. The current receipt contains 118 artifacts
-and binds set SHA-256 `390d817a8d3f8df7...`.
+`napier.release-artifacts-audit` receipt. The gate also recursively verifies
+the open-web executor campaign, both sibling reports, and both failed-attempt
+receipts. Before hashing retained Benchmark files, it performs full semantic
+verification for every Series/campaign/report/attempt contract. It stores only
+artifact kinds, repo-relative paths, SHA-256 values, validity booleans, package
+name/version, and a canonical artifact-set digest. The current receipt contains
+131 artifacts and binds set SHA-256 `006628f036186d6c...`.
 Verification re-runs the component and Benchmark verifiers and fails if any
 underlying artifact or the aggregate receipt drifts.
 
@@ -4868,6 +4869,54 @@ counterbalanced order and every exact shape, recomputes the aggregate and
 self-hash, and rejects raw evidence markers or sensitive keys. The CLI
 `--verify` path repeats that verification without credentials or network.
 
+The report contract must retain truthful integrity failures instead of making
+them impossible to serialize. A detected process/persistence credential leak
+is valid only as `status=failed`, `failureClass=security_leak`,
+`secretLeakDetected=true`, and `credential_leak_detected`; it can never pass.
+A model-mismatched proxy request is valid only as excluded
+`infrastructure_failure` evidence with `model_proxy_rejected`; ordinary denied
+auxiliary requests remain counted but do not exclude a trial. Field-level
+report diagnostics identify only case/track/trial/executor and validator field
+names such as `security` or `browserIsolation`; they never include output,
+tool arguments, prompts, URLs, or expected evidence.
+
+If paid trials finish but report self-verification still fails,
+`run-open-web-executor-comparison.mjs` writes a separate
+`napier.open-web-executor-comparison-attempt` receipt before mandatory
+temporary-root deletion. Its strict verifier binds seed, model, trial count,
+timeout, environment/runtime identity, report diagnostics, privacy-safe field
+paths, fixed notes, self-hash, and content-addressed filename. Loading is
+byte-bounded and no-symlink. The receipt is explicitly not a comparison Result
+and cannot enter campaign summaries. A retrospective receipt created after an
+older runner already cleaned temporary roots uses
+`retrospective_after_cleanup` plus `cases.unavailable_after_cleanup`, rather
+than guessing an offending trial. Release verification retains attempt
+receipts independently from campaigns so later success does not erase failed
+execution history.
+
+`open-web-comparison-campaign.mjs` adds the cross-seed evidence boundary
+without widening the live runner. A campaign accepts 2-10 canonical sibling
+schema-2 reports, requires unique seeds and content hashes, and requires exact
+model, trial-count, timeout, platform, OMP/runtime, Browser-runtime, and outer
+Sandbox compatibility. It independently report-verifies every sibling, then
+recreates flattened default, controlled, and overall summaries from the
+underlying pairs. The aggregate therefore preserves failed, inconclusive, and
+infrastructure outcomes instead of projecting only successful trials.
+
+The campaign retains no case or trial evidence. Its report entries contain
+only the canonical sibling filename, seed, generation time, report/suite
+digests, and already privacy-bounded report summary. A report-set digest binds
+the ordered seed/filename/content-hash tuples, while the campaign self-hash
+binds configuration, entries, recreated aggregate, and fixed claim-limiting
+notes. Verification validates the campaign shape before loading any reference,
+then follows only bounded regular, non-symlink sibling files with canonical
+seed-derived names. Report substitution, duplicate seeds or hashes,
+configuration drift, aggregate drift, path traversal, symlink substitution,
+raw URLs, and sensitive keys fail closed. Campaign creation and verification
+invoke no model, network, Browser, user configuration, or credential path.
+Release verification uses the campaign as the trust root and recursively binds
+the campaign plus every referenced report into the release artifact set.
+
 Seed `20260805`, one trial, and a 180-second per-executor timeout produced the
 retained privacy-bounded report
 `benchmark-results/napier-open-web-executor-comparison-seed-20260805.json`
@@ -4887,6 +4936,31 @@ than starts. Infrastructure classification trusts only structured provider/
 retry errors and process stderr; untrusted tool/page text cannot exclude a
 pair. No trial reported a secret leak or manual intervention. This one seed
 proves the isolated comparison path, not broad superiority or stable rates.
+
+The retained campaign
+`benchmark-results/napier-open-web-executor-comparison-campaign-seeds-20260805-20260808-01ad0296171ff913.json`
+combines schema-2 seeds `20260805` and `20260808` with one trial per seed and
+identical execution bindings. Independent offline verification accepted both
+reports with empty diagnostics and recreated 12 pairs: 11 decisive and one
+excluded infrastructure pair. Napier passed 7/12 outcomes and OMP passed 2/12;
+paired decisive counts were one both-passed, five Napier-only, one OMP-only,
+and four neither. Mean duration/cost was 15,034.667 ms/`$0.002519117533` for
+Napier and 119,724.5 ms/`$0.009655387` for OMP; failed tool attempts were zero
+and 97 respectively, with zero manual interventions.
+
+Seed `20260808` exercises the reportable-integrity paths. OMP default Browser
+is a decisive failed `security_leak`: the bounded scanner detected a
+comparison credential canary in child output or trial persistence, while the
+report stores only `secretLeakDetected=true` and
+`credential_leak_detected`. OMP controlled Browser is an excluded
+`external_infrastructure` outcome because a successful Browser completion had
+no matching Browser-proxy request receipt. Both still retain ready,
+fresh/nonpersistent, no-user-import, loopback-only, process-closed Browser
+isolation. Campaign content SHA-256 is
+`01ad0296171ff913dcefb55e93009fcf54e2213991d244ea15985db91d2c6b40`.
+This two-seed campaign reduces seed-specific risk and proves truthful integrity
+failure retention; it is not a broad reliability distribution or a general
+superiority claim.
 
 ## TypeScript LSP Code Intelligence Flow
 

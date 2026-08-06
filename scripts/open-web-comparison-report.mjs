@@ -42,6 +42,86 @@ export function createOpenWebComparisonReport(content) {
 
 export { openWebComparisonSummary };
 
+export function diagnoseOpenWebComparisonCases(
+  input,
+  expectedSuite,
+  trialCount,
+  schemaVersion,
+  environment,
+) {
+  const cases = Array.isArray(input) ? input : [];
+  if (!expectedSuite || !Array.isArray(expectedSuite.cases)) {
+    return ["cases.suite_unavailable"];
+  }
+  if (cases.length !== expectedSuite.cases.length) {
+    return ["cases.length"];
+  }
+  const diagnostics = [];
+  for (let caseIndex = 0; caseIndex < cases.length; caseIndex += 1) {
+    const entry = cases[caseIndex];
+    const expected = expectedSuite.cases[caseIndex];
+    if (!validCase(entry, expected, trialCount, schemaVersion, caseIndex)) {
+      diagnostics.push(`cases.${String(caseIndex)}.invalid`);
+    }
+    if (!Array.isArray(entry?.tracks)) continue;
+    for (
+      let trackIndex = 0;
+      trackIndex < entry.tracks.length;
+      trackIndex += 1
+    ) {
+      const track = entry.tracks[trackIndex];
+      if (!Array.isArray(track?.trials)) continue;
+      for (
+        let trialIndex = 0;
+        trialIndex < track.trials.length;
+        trialIndex += 1
+      ) {
+        const pair = track.trials[trialIndex];
+        if (
+          !validPair(pair, trialIndex + 1, trackIndex, caseIndex, schemaVersion)
+        ) {
+          for (const executor of ["napier", "omp"]) {
+            const outcomePath = `cases.${String(caseIndex)}.tracks.${String(
+              trackIndex,
+            )}.trials.${String(trialIndex)}.${executor}`;
+            const outcomeDiagnostics = diagnoseOutcome(
+              pair?.[executor],
+              executor,
+              schemaVersion,
+            );
+            if (outcomeDiagnostics.length > 0) {
+              diagnostics.push(outcomePath);
+              diagnostics.push(
+                ...outcomeDiagnostics.map(
+                  (diagnostic) => `${outcomePath}.${diagnostic}`,
+                ),
+              );
+            }
+          }
+        }
+        if (
+          record(environment) &&
+          record(pair?.omp) &&
+          record(pair.omp.browserIsolation) &&
+          (pair.omp.browserIsolation.browserExecutableSha256 !==
+            environment.browserRuntimeExecutableSha256 ||
+            pair.omp.browserIsolation.browserRuntimeSetSha256 !==
+              environment.browserRuntimeSetSha256 ||
+            (pair.omp.toolCounts?.browser > 0 &&
+              pair.omp.browserIsolation.network?.requestCount === 0))
+        ) {
+          diagnostics.push(
+            `cases.${String(caseIndex)}.tracks.${String(
+              trackIndex,
+            )}.trials.${String(trialIndex)}.omp.browserEnvironmentBinding`,
+          );
+        }
+      }
+    }
+  }
+  return [...new Set(diagnostics)].slice(0, 64);
+}
+
 export function verifyOpenWebComparisonReport(input) {
   const diagnostics = [];
   if (
@@ -238,13 +318,13 @@ function validOutcome(value, executor, schemaVersion) {
     !validOpenWebComparisonDiagnostics(value.diagnostics) ||
     !validEvidence(value.evidence) ||
     !validProcess(value.process) ||
-    !validSecurity(value.security)
+    !validSecurity(value.security, value)
   ) {
     return false;
   }
   if (executor === "omp") {
     return (
-      validProxy(value.modelProxy) &&
+      validProxy(value.modelProxy, value) &&
       validBrowserIsolation(value.browserIsolation, schemaVersion) &&
       validPublicNetwork(value.publicNetwork) &&
       validSandbox(value.sandbox)
@@ -256,6 +336,79 @@ function validOutcome(value, executor, schemaVersion) {
     value.publicNetwork === undefined &&
     value.sandbox === undefined
   );
+}
+
+function diagnoseOutcome(value, executor, schemaVersion) {
+  if (!record(value)) return ["shape"];
+  const diagnostics = [];
+  if (
+    !exactKeys(value, [
+      "diagnostics",
+      "durationMs",
+      "evidence",
+      "executor",
+      "failureClass",
+      "firstOutputMs",
+      "manualInterventionCount",
+      ...(executor === "omp" ? ["modelProxy"] : []),
+      ...(executor === "omp" ? ["browserIsolation"] : []),
+      "outcomePassed",
+      "process",
+      ...(executor === "omp" ? ["publicNetwork"] : []),
+      ...(executor === "omp" ? ["sandbox"] : []),
+      "security",
+      "status",
+      "toolCounts",
+      "toolFailed",
+      "usage",
+    ])
+  ) {
+    diagnostics.push("shape");
+  }
+  if (value.executor !== executor) diagnostics.push("executor");
+  if (
+    !["passed", "failed", "inconclusive", "infrastructure_failure"].includes(
+      value.status,
+    )
+  ) {
+    diagnostics.push("status");
+  }
+  if (
+    typeof value.outcomePassed !== "boolean" ||
+    value.outcomePassed !== (value.status === "passed")
+  ) {
+    diagnostics.push("outcomePassed");
+  }
+  if (!validOpenWebComparisonFailureClass(value.failureClass)) {
+    diagnostics.push("failureClass");
+  }
+  if (!nonNegativeInteger(value.durationMs)) diagnostics.push("durationMs");
+  if (!nonNegativeInteger(value.firstOutputMs)) {
+    diagnostics.push("firstOutputMs");
+  }
+  if (!validUsage(value.usage)) diagnostics.push("usage");
+  if (!validToolCounts(value.toolCounts)) diagnostics.push("toolCounts");
+  if (!nonNegativeInteger(value.toolFailed)) diagnostics.push("toolFailed");
+  if (value.manualInterventionCount !== 0) {
+    diagnostics.push("manualInterventionCount");
+  }
+  if (!validOpenWebComparisonDiagnostics(value.diagnostics)) {
+    diagnostics.push("diagnostics");
+  }
+  if (!validEvidence(value.evidence)) diagnostics.push("evidence");
+  if (!validProcess(value.process)) diagnostics.push("process");
+  if (!validSecurity(value.security, value)) diagnostics.push("security");
+  if (executor === "omp") {
+    if (!validProxy(value.modelProxy, value)) diagnostics.push("modelProxy");
+    if (!validBrowserIsolation(value.browserIsolation, schemaVersion)) {
+      diagnostics.push("browserIsolation");
+    }
+    if (!validPublicNetwork(value.publicNetwork)) {
+      diagnostics.push("publicNetwork");
+    }
+    if (!validSandbox(value.sandbox)) diagnostics.push("sandbox");
+  }
+  return [...new Set(diagnostics)];
 }
 
 function validEvidence(value) {
@@ -304,7 +457,7 @@ function validProcess(value) {
   );
 }
 
-function validSecurity(value) {
+function validSecurity(value, outcome) {
   return (
     record(value) &&
     exactKeys(value, [
@@ -314,17 +467,24 @@ function validSecurity(value) {
       "persistenceScanFileCount",
       "secretLeakDetected",
     ]) &&
-    value.secretLeakDetected === false &&
+    typeof value.secretLeakDetected === "boolean" &&
     value.ambientCredentialCount === 0 &&
     nonNegativeInteger(value.persistenceScanBytes) &&
     nonNegativeInteger(value.persistenceScanFileCount) &&
     ["environment_locator", "loopback_proxy_dummy_child_key"].includes(
       value.credentialBoundary,
-    )
+    ) &&
+    (value.secretLeakDetected
+      ? outcome.status === "failed" &&
+        outcome.outcomePassed === false &&
+        outcome.failureClass === "security_leak" &&
+        outcome.diagnostics.includes("credential_leak_detected")
+      : outcome.failureClass !== "security_leak" &&
+        !outcome.diagnostics.includes("credential_leak_detected"))
   );
 }
 
-function validProxy(value) {
+function validProxy(value, outcome) {
   return (
     record(value) &&
     exactKeys(value, [
@@ -339,8 +499,14 @@ function validProxy(value) {
     nonNegativeInteger(value.requestBytes) &&
     nonNegativeInteger(value.responseBytes) &&
     nonNegativeInteger(value.rejectedCount) &&
-    value.modelMatch === true &&
-    digest(value.upstreamOriginSha256)
+    typeof value.modelMatch === "boolean" &&
+    digest(value.upstreamOriginSha256) &&
+    (value.modelMatch
+      ? !outcome.diagnostics.includes("model_proxy_rejected")
+      : outcome.status === "infrastructure_failure" &&
+        outcome.outcomePassed === false &&
+        outcome.failureClass === "external_infrastructure" &&
+        outcome.diagnostics.includes("model_proxy_rejected"))
   );
 }
 
@@ -417,7 +583,10 @@ function validBrowserEnvironmentBindings(cases, environment) {
         record(outcome.toolCounts) &&
         record(outcome.browserIsolation.network) &&
         (outcome.toolCounts.browser === 0 ||
-          outcome.browserIsolation.network.requestCount > 0),
+          outcome.browserIsolation.network.requestCount > 0 ||
+          (outcome.status === "infrastructure_failure" &&
+            outcome.failureClass === "external_infrastructure" &&
+            outcome.diagnostics.includes("browser_network_evidence_missing"))),
     )
   );
 }

@@ -7,6 +7,7 @@ const MAX_LINE_BYTES = 8 * 1024 * 1024;
 const TERMINATION_GRACE_MS = 1_000;
 
 export async function runOpenWebComparisonProcess(input) {
+  if (input.signal?.aborted) throw abortError();
   const startedAt = performance.now();
   const child = spawn(input.command, input.args, {
     cwd: input.cwd,
@@ -39,6 +40,10 @@ export async function runOpenWebComparisonProcess(input) {
     );
     forceKillTimer.unref();
   };
+  const abort = () => {
+    stop();
+  };
+  input.signal?.addEventListener("abort", abort, { once: true });
   const noteOutput = (chunk) => {
     firstOutputMs ??= elapsed(startedAt);
   };
@@ -99,8 +104,10 @@ export async function runOpenWebComparisonProcess(input) {
   }).finally(() => {
     clearTimeout(timer);
     if (forceKillTimer) clearTimeout(forceKillTimer);
+    input.signal?.removeEventListener("abort", abort);
   });
   if (pending) parseLine(pending);
+  if (input.signal?.aborted) throw abortError();
   return {
     ...result,
     durationMs: elapsed(startedAt),
@@ -113,6 +120,12 @@ export async function runOpenWebComparisonProcess(input) {
     parseFailed,
     secretLeakDetected,
   };
+}
+
+function abortError() {
+  const error = new Error("Open-web comparison was cancelled");
+  error.name = "AbortError";
+  return error;
 }
 
 export function createNapierComparisonParser() {

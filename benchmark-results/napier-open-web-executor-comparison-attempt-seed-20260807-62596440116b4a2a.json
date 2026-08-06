@@ -1,0 +1,42 @@
+{
+  "type": "napier.open-web-executor-comparison-attempt",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-06T02:25:39.608Z",
+  "seed": 20260807,
+  "trialCount": 1,
+  "timeoutMs": 180000,
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nodeVersion": "24.16.0",
+    "napierVersion": "0.1.0",
+    "ompVersion": "17.2.1",
+    "ompExecutableSha256": "4165c69cab5d49e84a37b474ab5c13d536c1c386245575cf8d16efb32d022a92",
+    "ompRuntimeExecutableSha256": "4165c69cab5d49e84a37b474ab5c13d536c1c386245575cf8d16efb32d022a92",
+    "ompRuntimeVersion": "17.2.1",
+    "browserRuntimeExecutableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+    "browserRuntimeSetSha256": "2520d1c7175c98a0b439abebaaf6b8e3d87bea9c478a49b4fd42bc7e6856b614",
+    "browserRuntimeFileCount": 17,
+    "browserRuntimeBytes": 201473747,
+    "outerSandbox": "macos-sandbox-exec-guarded"
+  },
+  "status": "cancelled",
+  "diagnosticScope": "retrospective_after_cleanup",
+  "diagnostics": [
+    "comparison_cancelled",
+    "harness_classification_invalid"
+  ],
+  "caseDiagnostics": [
+    "cases.unavailable_after_cleanup"
+  ],
+  "notes": [
+    "This receipt records a comparison attempt that did not produce a valid report.",
+    "It retains only configuration, environment bindings, verifier diagnostics, and invalid field paths; no prompts, URLs, answers, quotes, model output, reasoning, transcripts, tool arguments, or credentials are retained.",
+    "The attempt is not a comparison result and must not be included in campaign outcome aggregates."
+  ],
+  "contentSha256": "62596440116b4a2a50312c9190951afecd1581ba532a5615cff28c0291b0d7dd"
+}
