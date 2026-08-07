@@ -23,9 +23,11 @@ const defaultPublicEntries = [
   "packages/contracts/src/execution-experiments.ts",
   "packages/contracts/src/execution-runs.ts",
   "packages/contracts/src/execution-workflows.ts",
+  "packages/contracts/src/management-http.ts",
   "packages/contracts/src/workflow-experiments.ts",
   "packages/runtime/src/index.ts",
   "packages/sdk/src/index.ts",
+  "packages/sdk/src/management.ts",
 ];
 const defaultWorkspaceImports = {
   "@napier/contracts": [],

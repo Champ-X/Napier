@@ -1,4 +1,4 @@
-# SDK capability parity — Stage 7 evidence
+# SDK capability parity — Stage 8 repaired evidence
 
 This directory proves the bounded addition of a stateless, GET-only
 `@napier/sdk/management` client for the existing effective-Agent capability
@@ -15,8 +15,9 @@ environment value is retained.
   Store and event-manifest digests.
 - `production-server-trace.json`: a bounded loopback trace through the actual built
   server entry and the external SDK example using global `fetch`.
-- `evidence.json`: causally observed formal-command exits, current source/built-entry
-  hashes, artifact links, cleanup receipts, and the frozen acceptance contract.
+- `evidence.json`: causally observed formal-command exits, immutable implementation
+  Git blobs, deterministic execution closures, exact repair content, historical gate
+  and review receipts, artifact links, and cleanup receipts.
 
 Capture after building Contracts, Runtime, CLI, SDK, and Server:
 
@@ -32,14 +33,24 @@ npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs
 node --import tsx scripts/run-credential-reference-canary.ts
 ```
 
-Verify exact schemas, links, current identities, and sanitized content without
-starting a server or changing artifacts:
+Ordinary verification checks immutable implementation objects and recorded repair
+content without coupling the evidence to the current HEAD. It does not start a
+server or change artifacts:
 
 ```sh
 node scripts/capture-sdk-capability-parity.mjs --output-dir docs/artifacts/sdk-capability-parity-stage7 --verify
 ```
 
-The implementation is additive and has no persistent schema migration. After the
-single reviewed topic commit exists, rollback is `git revert <topic-commit>`.
-Before that commit, discard only task-owned files; never reset or clean protected
-user files.
+The stricter capture-snapshot mode additionally requires the exact Stage 8 repair
+path set relative to the implementation commit:
+
+```sh
+node scripts/capture-sdk-capability-parity.mjs --output-dir docs/artifacts/sdk-capability-parity-stage7 --verify-current
+```
+
+The immutable implementation commit is
+`d81f77b64998fd786aa7a514f53494adb255e1e5`; rollback is
+`git revert d81f77b64998fd786aa7a514f53494adb255e1e5`. The containing
+Stage 8 repair commit binds `evidence.json` and is recorded by the external Stage
+8 acceptance output after final review. The implementation is additive and has no
+persistent schema migration. Never reset or clean protected user files.

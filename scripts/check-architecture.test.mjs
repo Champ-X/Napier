@@ -156,7 +156,17 @@ describe("architecture growth gate", () => {
         ),
       ).toEqual([]);
     }
-  });
+  }, 20_000);
+
+  it("retains the management public-entry pins when regenerating the repository baseline", async () => {
+    const repoRoot = path.resolve(import.meta.dirname, "..");
+    const baseline = await createArchitectureBaseline({ repoRoot });
+
+    expect(baseline.publicExports).toMatchObject({
+      "packages/contracts/src/management-http.ts": 6,
+      "packages/sdk/src/management.ts": 5,
+    });
+  }, 20_000);
 });
 
 function relativeClosure(graph, entry) {

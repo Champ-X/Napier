@@ -6,20 +6,23 @@ import { promisify } from "node:util";
 
 import { runFourStateCapabilityParity } from "./agent-capability-parity-harness.mjs";
 import {
-  captureCurrentIdentity,
+  captureEvidenceIdentity,
   createEvidence,
   FORMAL_COMMANDS,
   jsonText,
   sha256Text,
   verifyArtifacts,
 } from "./sdk-capability-parity-evidence.mjs";
+import { CAPTURE_OUTPUT_PATHS } from "./sdk-capability-parity-identity.mjs";
 import { runBoundProductionServerTrace } from "./sdk-capability-production-server-harness.mjs";
 
 const execFileAsync = promisify(execFile);
-const { outputDir, verify } = parseArguments(process.argv.slice(2));
+const { outputDir, mode } = parseArguments(process.argv.slice(2));
 
-if (verify) {
-  await verifyArtifacts(outputDir);
+if (mode !== "capture") {
+  await verifyArtifacts(outputDir, {
+    verifyCurrent: mode === "verify-current",
+  });
   process.stdout.write(
     `Verified SDK capability parity evidence: ${outputDir}\n`,
   );
@@ -66,7 +69,12 @@ async function captureArtifacts(target) {
   const readme = readmeText();
   const fourStateText = jsonText(fourStateParity);
   const productionTraceText = jsonText(productionServerTrace);
-  const identity = await captureCurrentIdentity();
+  const contentOverrides = new Map([
+    [CAPTURE_OUTPUT_PATHS[0], readme],
+    [CAPTURE_OUTPUT_PATHS[2], fourStateText],
+    [CAPTURE_OUTPUT_PATHS[3], productionTraceText],
+  ]);
+  const identity = await captureEvidenceIdentity({ contentOverrides });
   const evidence = createEvidence({
     readme,
     fourStateText,
@@ -87,7 +95,7 @@ async function captureArtifacts(target) {
     ),
     writeFile(path.join(target, "evidence.json"), jsonText(evidence)),
   ]);
-  await verifyArtifacts(target);
+  await verifyArtifacts(target, { verifyCurrent: true });
 }
 
 async function observeCommand(contract, arguments_, executable = "npm") {
@@ -111,7 +119,7 @@ async function observeCommand(contract, arguments_, executable = "npm") {
 }
 
 function readmeText() {
-  return `# SDK capability parity — Stage 7 evidence
+  return `# SDK capability parity — Stage 8 repaired evidence
 
 This directory proves the bounded addition of a stateless, GET-only
 \`@napier/sdk/management\` client for the existing effective-Agent capability
@@ -128,8 +136,9 @@ environment value is retained.
   Store and event-manifest digests.
 - \`production-server-trace.json\`: a bounded loopback trace through the actual built
   server entry and the external SDK example using global \`fetch\`.
-- \`evidence.json\`: causally observed formal-command exits, current source/built-entry
-  hashes, artifact links, cleanup receipts, and the frozen acceptance contract.
+- \`evidence.json\`: causally observed formal-command exits, immutable implementation
+  Git blobs, deterministic execution closures, exact repair content, historical gate
+  and review receipts, artifact links, and cleanup receipts.
 
 Capture after building Contracts, Runtime, CLI, SDK, and Server:
 
@@ -145,28 +154,41 @@ npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs
 node --import tsx scripts/run-credential-reference-canary.ts
 \`\`\`
 
-Verify exact schemas, links, current identities, and sanitized content without
-starting a server or changing artifacts:
+Ordinary verification checks immutable implementation objects and recorded repair
+content without coupling the evidence to the current HEAD. It does not start a
+server or change artifacts:
 
 \`\`\`sh
 node scripts/capture-sdk-capability-parity.mjs --output-dir docs/artifacts/sdk-capability-parity-stage7 --verify
 \`\`\`
 
-The implementation is additive and has no persistent schema migration. After the
-single reviewed topic commit exists, rollback is \`git revert <topic-commit>\`.
-Before that commit, discard only task-owned files; never reset or clean protected
-user files.
+The stricter capture-snapshot mode additionally requires the exact Stage 8 repair
+path set relative to the implementation commit:
+
+\`\`\`sh
+node scripts/capture-sdk-capability-parity.mjs --output-dir docs/artifacts/sdk-capability-parity-stage7 --verify-current
+\`\`\`
+
+The immutable implementation commit is
+\`d81f77b64998fd786aa7a514f53494adb255e1e5\`; rollback is
+\`git revert d81f77b64998fd786aa7a514f53494adb255e1e5\`. The containing
+Stage 8 repair commit binds \`evidence.json\` and is recorded by the external Stage
+8 acceptance output after final review. The implementation is additive and has no
+persistent schema migration. Never reset or clean protected user files.
 `;
 }
 
 function parseArguments(arguments_) {
   let outputDir;
-  let verify = false;
+  let mode = "capture";
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
     if (argument === "--verify") {
-      assert.equal(verify, false, "--verify may be supplied only once");
-      verify = true;
+      assert.equal(mode, "capture", "verification mode may be supplied once");
+      mode = "verify";
+    } else if (argument === "--verify-current") {
+      assert.equal(mode, "capture", "verification mode may be supplied once");
+      mode = "verify-current";
     } else if (argument === "--output-dir") {
       assert.equal(
         outputDir,
@@ -182,7 +204,7 @@ function parseArguments(arguments_) {
     }
   }
   assert.ok(outputDir, "--output-dir is required");
-  return { outputDir, verify };
+  return { outputDir, mode };
 }
 
 function commandEnvironment() {

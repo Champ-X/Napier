@@ -14,7 +14,7 @@
   "listener": {
     "loopback": true,
     "ephemeralNonzeroPort": true,
-    "announcedOriginSha256": "de90947db34925cd5152719da1f1517cde600a9397a6d85ae875593e08b3f605"
+    "announcedOriginSha256": "f7601bdd723c230d63e523d9b7f1ba6bca3ff6a7d494b2cbdfb094bd695f5567"
   },
   "child": {
     "startupBounded": true,
@@ -56,14 +56,14 @@
   },
   "storeDigests": {
     "before": {
-      "rawWorkspaceSha256": "3e78ac7263cb3068cc52a20e49c6aa34990216fa7189ea6ea2bb83ba0b4ccb00",
-      "logicalStoreSha256": "69d7e4294d746ae259a4de935181a7641b80541e83598ad3d19f3ed97617d102",
-      "eventManifestSha256": "3bb13fda5982e0acb3866e90dd64dea1a997b38e7480ab9d384cb05051a03bea"
+      "rawWorkspaceSha256": "27633e62aef3dcc1c95c4cd0d5eaab4acb1128e00b623a195b8b5fd6c5502248",
+      "logicalStoreSha256": "1049e84874ad1f0fbceec1b7757af02cb8ee54c3daea0220a098db2b2ef8f6e8",
+      "eventManifestSha256": "99707a53449c1b6c02a9bb4ace24830c3b5e842cf4424bd42186e6cfbe3d4184"
     },
     "after": {
-      "rawWorkspaceSha256": "3e78ac7263cb3068cc52a20e49c6aa34990216fa7189ea6ea2bb83ba0b4ccb00",
-      "logicalStoreSha256": "69d7e4294d746ae259a4de935181a7641b80541e83598ad3d19f3ed97617d102",
-      "eventManifestSha256": "3bb13fda5982e0acb3866e90dd64dea1a997b38e7480ab9d384cb05051a03bea"
+      "rawWorkspaceSha256": "27633e62aef3dcc1c95c4cd0d5eaab4acb1128e00b623a195b8b5fd6c5502248",
+      "logicalStoreSha256": "1049e84874ad1f0fbceec1b7757af02cb8ee54c3daea0220a098db2b2ef8f6e8",
+      "eventManifestSha256": "99707a53449c1b6c02a9bb4ace24830c3b5e842cf4424bd42186e6cfbe3d4184"
     }
   }
 }

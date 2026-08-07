@@ -4,19 +4,29 @@ import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import {
-  captureCurrentIdentity,
-  IDENTITY_FILES,
+  BASE_COMMIT,
+  CAPTURE_OUTPUT_PATHS,
+  captureEvidenceIdentity,
+  deterministicExecutionClosure,
+  IMPLEMENTATION_COMMIT,
+  immutableImplementationIdentity,
   LINE_BUDGET_FILES,
+  repairSnapshotForPaths,
+  currentRepairSnapshot,
 } from "./sdk-capability-parity-identity.mjs";
-
+import {
+  STAGE7_GATE_HISTORY,
+  STAGE7_RETRY_HISTORY,
+  STAGE7_REVIEW_HISTORY,
+  STAGE8_REPAIR_RETRY_HISTORY,
+} from "./sdk-capability-parity-stage7-history.mjs";
 import {
   verifyFourStateParity,
   verifyProductionServerTrace,
 } from "./sdk-capability-parity-receipts.mjs";
 
-export { captureCurrentIdentity };
+export { captureEvidenceIdentity };
 
-export const BASE_COMMIT = "c9f225388cf40766b9002365121242758abf18d8";
 export const EXPECTED_FILES = [
   "README.md",
   "evidence.json",
@@ -39,18 +49,50 @@ export const FORMAL_COMMANDS = [
   {
     id: "G06-credential-reference-canary",
     command: "node --import tsx scripts/run-credential-reference-canary.ts",
-    evidenceFile: null,
+    evidenceFile: false,
   },
-];
-export const EXECUTION_DISCLOSURES = [
-  "The pre-existing install lacked the package-lock-declared SDK workspace link; a validated ignored link enabled the locked root import and was removed afterward.",
-  "An initial offline temp installation lacked one cached Runtime dependency; the approved extracted-published-tarball consumer then passed JS and TypeScript checks without network access.",
-  "A broad read-only plan search was interrupted at its bound before the exact run path was supplied.",
-  "One broad cleanup command was rejected before execution; validated task-root cleanup then completed through the bounded Node filesystem API.",
-  "The first sparse-array test replay used stale Contracts dist because build was omitted; rebuilding made all systematic validator cases pass without a source correction.",
 ];
 
 const SHA256 = /^[a-f0-9]{64}$/u;
+const CHRONOLOGY = {
+  baseCommit: BASE_COMMIT,
+  preT14Capture: {
+    observedHead: BASE_COMMIT,
+    meaning:
+      "Stage 7 artifacts were captured before the authorized implementation commit.",
+  },
+  implementation: {
+    commit: IMPLEMENTATION_COMMIT,
+    parent: BASE_COMMIT,
+    subject: "feat: add SDK capability projection parity",
+    changedFiles: 33,
+    insertions: 5656,
+    deletions: 652,
+    amended: false,
+    pushed: false,
+    rollback: `git revert ${IMPLEMENTATION_COMMIT}`,
+  },
+  stage8Repair:
+    "A separate reversible follow-up repairs acceptance evidence without amending the implementation commit.",
+};
+const EXTERNAL_BOUNDARY = {
+  evidenceSelfBinding:
+    "The containing Stage 8 repair commit binds evidence.json because a file cannot contain its own content hash.",
+  finalRepairCommitIdentity:
+    "Recorded by the external Stage 8 acceptance output after authorization; it is not self-asserted here.",
+  finalStage8Reviews:
+    "Recorded externally after this artifact and working snapshot are frozen.",
+};
+const BUDGETS = {
+  sdkRootPublicExports: 22,
+  sdkRootRuntimeValueExports: 2,
+  sdkManagementPublicExports: 5,
+  sdkManagementRuntimeValueExports: 2,
+  contractsManagementHttpPublicExports: 6,
+  contractsManagementHttpRuntimeValueExports: 3,
+  maximumHandwrittenProductionLines: 499,
+  raisedBudget: false,
+};
 
 export function createEvidence(input) {
   const artifactHashes = {
@@ -58,74 +100,52 @@ export function createEvidence(input) {
     fourState: sha256Text(input.fourStateText),
     trace: sha256Text(input.productionTraceText),
   };
-  const formalCommands = input.formalCommands.map((receipt) => {
-    const contract = FORMAL_COMMANDS.find(({ id }) => id === receipt.id);
-    assert.ok(contract);
-    return {
-      ...receipt,
+  const formalCommands = input.formalCommands.map((observation, index) => {
+    const contract = FORMAL_COMMANDS[index];
+    assert.equal(observation.id, contract.id);
+    return withReceiptHash({
+      ...observation,
       evidenceFile: contract.evidenceFile,
       evidenceSha256:
         contract.evidenceFile === "four-state-parity.json"
           ? artifactHashes.fourState
           : contract.evidenceFile === "production-server-trace.json"
             ? artifactHashes.trace
-            : null,
-    };
+            : false,
+    });
   });
   return {
     kind: "napier.sdk-capability-parity-evidence",
-    schemaVersion: 1,
+    schemaVersion: 2,
     scope: "napier-m0-sdk-capability-projection-parity",
-    stage: 7,
-    commit: {
-      base: BASE_COMMIT,
-      observedHead: input.identity.head,
-      final: null,
-      status: "pending_explicit_T14_authorization",
-    },
-    result: "formal_evidence_passed",
+    stage: 8,
+    result: "stage7_evidence_repaired_and_verified",
+    chronology: CHRONOLOGY,
+    externalBoundary: EXTERNAL_BOUNDARY,
     execution: {
       offline: true,
       liveModelCalls: false,
       externalNetworkRequired: false,
+      overallM0Complete: false,
+      outOfScopeMilestones: ["M1", "M2", "M3", "M4", "M5"],
     },
-    gateContract: {
-      requiredGateIds: ["G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08"],
-      artifactGateIds: FORMAL_COMMANDS.map(({ id }) => id),
-      fullRepositoryCommand: "npm run check",
-      nonArtifactGatesVerifiedExternally: true,
-    },
+    gateReceipts: STAGE7_GATE_HISTORY.map((gate) =>
+      withReceiptHash({
+        ...gate,
+        source: "validated_stage7_execution_history",
+      }),
+    ),
     formalCommands,
     credentialReferenceCanary: input.canary,
-    sourceIdentity: input.identity,
-    publicApiBudgets: {
-      sdkRootPublicExports: 22,
-      sdkRootRuntimeValueExports: 2,
-      sdkManagementPublicExports: 5,
-      sdkManagementRuntimeValueExports: 2,
-      contractsManagementHttpPublicExports: 6,
-      contractsManagementHttpRuntimeValueExports: 3,
-      maximumHandwrittenProductionLines: 499,
+    identity: input.identity,
+    publicApiBudgets: BUDGETS,
+    retryLedger: {
+      stage7: STAGE7_RETRY_HISTORY,
+      stage8Repair: STAGE8_REPAIR_RETRY_HISTORY,
     },
-    executionDisclosures: EXECUTION_DISCLOSURES,
-    reviews: {
-      preimplementation: [
-        {
-          reviewer: "/root/stage2_goal_intake",
-          verdict: "pass-with-known-nonblocking-risks",
-          blockers: [],
-        },
-        {
-          reviewer: "/root/stage3_entry_capabilities",
-          verdict: "pass-with-known-nonblocking-risks",
-          blockers: [],
-        },
-      ],
-      implementation: {
-        status: "pending_after_frozen_G01_G07",
-        requiredIndependentReviewCount: 2,
-      },
-    },
+    reviewReceipts: STAGE7_REVIEW_HISTORY.map((review) =>
+      withReceiptHash({ ...review, source: "validated_stage7_review_history" }),
+    ),
     protectedFiles: {
       excluded: [".env", "goal.md", "docs/napier-interview-deep-dive.zh-CN.md"],
       verification: "external_names_only_G08",
@@ -153,7 +173,7 @@ export function createEvidence(input) {
   };
 }
 
-export async function verifyArtifacts(target) {
+export async function verifyArtifacts(target, options = {}) {
   assert.deepEqual((await readdir(target)).sort(), EXPECTED_FILES);
   for (const file of EXPECTED_FILES) {
     const stat = await lstat(path.join(target, file));
@@ -164,90 +184,82 @@ export async function verifyArtifacts(target) {
   const evidence = JSON.parse(texts.evidence);
   const fourState = JSON.parse(texts.fourState);
   const trace = JSON.parse(texts.trace);
-  verifyEvidence(evidence, texts, fourState, trace);
+  await verifyEvidence(evidence, texts, fourState, trace, options);
   verifyFourStateParity(fourState);
-  verifyProductionServerTrace(trace, evidence.sourceIdentity);
-  assert.deepEqual(evidence.sourceIdentity, await captureCurrentIdentity());
+  const productionFiles = Object.fromEntries(
+    Object.entries(
+      evidence.identity.executionClosure.groups.productionServerTrace.files,
+    ).map(([file, record]) => [file, record.sha256]),
+  );
+  verifyProductionServerTrace(trace, { files: productionFiles });
   verifyArtifactCorpus(Object.values(texts).join("\n"));
 }
 
-function verifyEvidence(value, texts, fourState, trace) {
+async function verifyEvidence(value, texts, fourState, trace, options) {
   exactKeys(value, [
     "kind",
     "schemaVersion",
     "scope",
     "stage",
-    "commit",
     "result",
+    "chronology",
+    "externalBoundary",
     "execution",
-    "gateContract",
+    "gateReceipts",
     "formalCommands",
     "credentialReferenceCanary",
-    "sourceIdentity",
+    "identity",
     "publicApiBudgets",
-    "executionDisclosures",
-    "reviews",
+    "retryLedger",
+    "reviewReceipts",
     "protectedFiles",
     "cleanup",
     "artifacts",
   ]);
   assert.equal(value.kind, "napier.sdk-capability-parity-evidence");
-  assert.equal(value.schemaVersion, 1);
+  assert.equal(value.schemaVersion, 2);
   assert.equal(value.scope, "napier-m0-sdk-capability-projection-parity");
-  assert.equal(value.stage, 7);
-  exactKeys(value.commit, ["base", "observedHead", "final", "status"]);
-  assert.deepEqual(value.commit, {
-    base: BASE_COMMIT,
-    observedHead: BASE_COMMIT,
-    final: null,
-    status: "pending_explicit_T14_authorization",
-  });
-  assert.equal(value.result, "formal_evidence_passed");
+  assert.equal(value.stage, 8);
+  assert.equal(value.result, "stage7_evidence_repaired_and_verified");
+  assert.deepEqual(value.chronology, CHRONOLOGY);
+  assert.deepEqual(value.externalBoundary, EXTERNAL_BOUNDARY);
   assert.deepEqual(value.execution, {
     offline: true,
     liveModelCalls: false,
     externalNetworkRequired: false,
+    overallM0Complete: false,
+    outOfScopeMilestones: ["M1", "M2", "M3", "M4", "M5"],
   });
-  exactKeys(value.gateContract, [
-    "requiredGateIds",
-    "artifactGateIds",
-    "fullRepositoryCommand",
-    "nonArtifactGatesVerifiedExternally",
-  ]);
-  assert.deepEqual(value.gateContract.requiredGateIds, [
-    "G01",
-    "G02",
-    "G03",
-    "G04",
-    "G05",
-    "G06",
-    "G07",
-    "G08",
-  ]);
   assert.deepEqual(
-    value.gateContract.artifactGateIds,
-    FORMAL_COMMANDS.map(({ id }) => id),
+    value.gateReceipts,
+    STAGE7_GATE_HISTORY.map((gate) =>
+      withReceiptHash({
+        ...gate,
+        source: "validated_stage7_execution_history",
+      }),
+    ),
   );
-  assert.equal(value.gateContract.fullRepositoryCommand, "npm run check");
-  assert.equal(value.gateContract.nonArtifactGatesVerifiedExternally, true);
   verifyFormalCommands(value.formalCommands);
-  exactKeys(value.credentialReferenceCanary, ["status", "matchCount"]);
   assert.deepEqual(value.credentialReferenceCanary, {
     status: "pass",
     matchCount: 0,
   });
-  verifyIdentitySchema(value.sourceIdentity);
-  assert.deepEqual(value.publicApiBudgets, {
-    sdkRootPublicExports: 22,
-    sdkRootRuntimeValueExports: 2,
-    sdkManagementPublicExports: 5,
-    sdkManagementRuntimeValueExports: 2,
-    contractsManagementHttpPublicExports: 6,
-    contractsManagementHttpRuntimeValueExports: 3,
-    maximumHandwrittenProductionLines: 499,
+  await verifyIdentity(value.identity, options.verifyCurrent === true);
+  assert.deepEqual(value.publicApiBudgets, BUDGETS);
+  assert.deepEqual(value.retryLedger, {
+    stage7: STAGE7_RETRY_HISTORY,
+    stage8Repair: STAGE8_REPAIR_RETRY_HISTORY,
   });
-  assert.deepEqual(value.executionDisclosures, EXECUTION_DISCLOSURES);
-  verifyReviewAndProtection(value);
+  assert.deepEqual(
+    value.reviewReceipts,
+    STAGE7_REVIEW_HISTORY.map((review) =>
+      withReceiptHash({ ...review, source: "validated_stage7_review_history" }),
+    ),
+  );
+  assert.deepEqual(value.protectedFiles, {
+    excluded: [".env", "goal.md", "docs/napier-interview-deep-dive.zh-CN.md"],
+    verification: "external_names_only_G08",
+  });
   assert.deepEqual(value.cleanup, {
     fourStateRootRemoved: fourState.cleanup.removed,
     productionRootValidated: trace.cleanup.rootValidated,
@@ -257,6 +269,52 @@ function verifyEvidence(value, texts, fourState, trace) {
     productionPortClosed: trace.portClosed,
   });
   verifyArtifactLinks(value, texts);
+}
+
+async function verifyIdentity(value, verifyCurrent) {
+  exactKeys(value, [
+    "schemaVersion",
+    "implementation",
+    "repairSnapshot",
+    "executionClosure",
+    "manifestSha256",
+  ]);
+  assert.equal(value.schemaVersion, 2);
+  assert.equal(value.manifestSha256, manifestHash(value));
+  assert.deepEqual(
+    value.implementation,
+    await immutableImplementationIdentity(),
+  );
+  assert.deepEqual(
+    [...value.repairSnapshot.changedPaths].sort(),
+    value.repairSnapshot.changedPaths,
+  );
+  for (const file of CAPTURE_OUTPUT_PATHS) {
+    assert.ok(value.repairSnapshot.changedPaths.includes(file));
+  }
+  assert.deepEqual(
+    value.repairSnapshot,
+    await repairSnapshotForPaths(value.repairSnapshot.changedPaths),
+  );
+  assert.deepEqual(
+    value.executionClosure,
+    await deterministicExecutionClosure(),
+  );
+  if (verifyCurrent) {
+    assert.deepEqual(value.repairSnapshot, await currentRepairSnapshot());
+  }
+  for (const group of Object.values(value.executionClosure.groups)) {
+    assert.equal(group.counts.allFiles, Object.keys(group.files).length);
+    for (const [file, record] of Object.entries(group.files)) {
+      verifyContentRecord(file, record);
+    }
+  }
+  for (const [file, record] of Object.entries(value.implementation.files)) {
+    verifyContentRecord(file, record, true);
+  }
+  for (const [file, record] of Object.entries(value.repairSnapshot.files)) {
+    verifyContentRecord(file, record);
+  }
 }
 
 function verifyFormalCommands(value) {
@@ -271,6 +329,7 @@ function verifyFormalCommands(value) {
       "stderrSha256",
       "evidenceFile",
       "evidenceSha256",
+      "receiptSha256",
     ]);
     const expected = FORMAL_COMMANDS[index];
     assert.equal(receipt.id, expected.id);
@@ -280,7 +339,8 @@ function verifyFormalCommands(value) {
     sha256(receipt.stderrSha256);
     assert.equal(receipt.evidenceFile, expected.evidenceFile);
     if (receipt.evidenceFile) sha256(receipt.evidenceSha256);
-    else assert.equal(receipt.evidenceSha256, null);
+    else assert.equal(receipt.evidenceSha256, false);
+    assert.equal(receipt.receiptSha256, receiptHash(receipt));
   }
 }
 
@@ -304,9 +364,7 @@ function verifyArtifactLinks(value, texts) {
     ],
   ];
   for (const [artifact, file, text] of linked) {
-    exactKeys(artifact, ["file", "sha256"]);
-    assert.equal(artifact.file, file);
-    assert.equal(artifact.sha256, sha256Text(text));
+    assert.deepEqual(artifact, { file, sha256: sha256Text(text) });
   }
   assert.equal(
     value.formalCommands[0].evidenceSha256,
@@ -318,42 +376,15 @@ function verifyArtifactLinks(value, texts) {
   );
 }
 
-function verifyIdentitySchema(value) {
-  exactKeys(value, ["schemaVersion", "head", "files", "lineCounts"]);
-  assert.equal(value.schemaVersion, 1);
-  assert.equal(value.head, BASE_COMMIT);
-  assert.deepEqual(Object.keys(value.files), IDENTITY_FILES);
-  for (const digest of Object.values(value.files)) sha256(digest);
-  assert.deepEqual(Object.keys(value.lineCounts), IDENTITY_FILES);
-  for (const [file, lines] of Object.entries(value.lineCounts)) {
-    assert.ok(IDENTITY_FILES.includes(file));
-    assert.ok(Number.isSafeInteger(lines) && lines > 0);
-    if (LINE_BUDGET_FILES.has(file)) assert.ok(lines <= 499);
-  }
-}
-
-function verifyReviewAndProtection(value) {
-  exactKeys(value.reviews, ["preimplementation", "implementation"]);
-  assert.deepEqual(value.reviews.preimplementation, [
-    {
-      reviewer: "/root/stage2_goal_intake",
-      verdict: "pass-with-known-nonblocking-risks",
-      blockers: [],
-    },
-    {
-      reviewer: "/root/stage3_entry_capabilities",
-      verdict: "pass-with-known-nonblocking-risks",
-      blockers: [],
-    },
-  ]);
-  assert.deepEqual(value.reviews.implementation, {
-    status: "pending_after_frozen_G01_G07",
-    requiredIndependentReviewCount: 2,
-  });
-  assert.deepEqual(value.protectedFiles, {
-    excluded: [".env", "goal.md", "docs/napier-interview-deep-dive.zh-CN.md"],
-    verification: "external_names_only_G08",
-  });
+function verifyContentRecord(file, record, gitBlob = false) {
+  exactKeys(
+    record,
+    gitBlob ? ["gitBlobSha1", "sha256", "lines"] : ["sha256", "lines"],
+  );
+  if (gitBlob) assert.match(record.gitBlobSha1, /^[a-f0-9]{40}$/u);
+  sha256(record.sha256);
+  assert.ok(Number.isSafeInteger(record.lines) && record.lines >= 0);
+  if (LINE_BUDGET_FILES.has(file)) assert.ok(record.lines <= 499);
 }
 
 async function readArtifactTexts(target) {
@@ -366,17 +397,30 @@ async function readArtifactTexts(target) {
   return { readme, evidence, fourState, trace };
 }
 
+function withReceiptHash(receipt) {
+  return { ...receipt, receiptSha256: receiptHash(receipt) };
+}
+
+function receiptHash(receipt) {
+  const { receiptSha256: _ignored, ...content } = receipt;
+  return sha256Text(JSON.stringify(content));
+}
+
+function manifestHash(manifest) {
+  const { manifestSha256: _ignored, ...content } = manifest;
+  return sha256Text(JSON.stringify(content));
+}
+
 function exactKeys(value, keys) {
   assert.ok(value && typeof value === "object" && !Array.isArray(value));
   assert.deepEqual(Object.keys(value), keys);
 }
 
 function denseArray(value) {
-  if (!Array.isArray(value)) return false;
-  for (let index = 0; index < value.length; index += 1) {
-    if (!Object.hasOwn(value, index)) return false;
-  }
-  return true;
+  return (
+    Array.isArray(value) &&
+    value.every((_, index) => Object.hasOwn(value, index))
+  );
 }
 
 function sha256(value) {
@@ -394,9 +438,8 @@ function verifyArtifactCorpus(value) {
     /-----BEGIN [A-Z ]*PRIVATE KEY-----/u,
     /Napier is listening on http:\/\//u,
     /"agents"\s*:\s*\[/u,
-  ]) {
+  ])
     assert.equal(forbidden.test(value), false);
-  }
 }
 
 export function jsonText(value) {
@@ -404,9 +447,5 @@ export function jsonText(value) {
 }
 
 export function sha256Text(value) {
-  return sha256Bytes(Buffer.from(value, "utf8"));
-}
-
-function sha256Bytes(value) {
   return createHash("sha256").update(value).digest("hex");
 }

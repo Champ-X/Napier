@@ -16,26 +16,83 @@ const EVIDENCE_DIRECTORY = path.resolve(
 const ZERO_DIGEST = "0".repeat(64);
 
 describe("SDK capability parity evidence verifier", () => {
-  test("accepts the captured evidence", async () => {
+  test("accepts immutable ordinary verification after HEAD advanced from capture", async () => {
     await verifyArtifacts(EVIDENCE_DIRECTORY);
+  });
+
+  test("accepts the exact current Stage 8 repair snapshot", async () => {
+    await verifyArtifacts(EVIDENCE_DIRECTORY, { verifyCurrent: true });
+  }, 20_000);
+
+  test("locks the deterministic execution closures and exclusions", async () => {
+    const evidence = await readJson(EVIDENCE_DIRECTORY, "evidence.json");
+    const { fourStateParity, productionServerTrace } =
+      evidence.identity.executionClosure.groups;
+    expect(fourStateParity.counts).toEqual({
+      executionFiles: 719,
+      sourceCounterparts: 714,
+      packageManifests: 2,
+      allFiles: 1435,
+    });
+    expect(fourStateParity.executionAreaCounts).toEqual({
+      "apps/cli/dist": 53,
+      "apps/server/dist": 100,
+      "packages/contracts/dist": 16,
+      "packages/runtime/dist": 542,
+      "packages/runtime/test/fixtures": 3,
+      "packages/sdk/dist": 3,
+      scripts: 2,
+    });
+    expect(productionServerTrace.counts).toEqual({
+      executionFiles: 664,
+      sourceCounterparts: 660,
+      packageManifests: 3,
+      allFiles: 1327,
+    });
+    expect(productionServerTrace.executionAreaCounts).toEqual({
+      "apps/server/dist": 101,
+      other: 1,
+      "packages/contracts/dist": 16,
+      "packages/runtime/dist": 540,
+      "packages/sdk/dist": 3,
+      scripts: 3,
+    });
+    expect(
+      evidence.identity.executionClosure.excludedCategories.map(
+        ({ category }) => category,
+      ),
+    ).toEqual([
+      "node_builtins_and_third_party_packages",
+      "declarations_and_source_maps",
+      "web_static_assets",
+      "runtime_created_state_temp_and_process_output",
+      "protected_user_files",
+      "evidence_self_content_hash",
+    ]);
   });
 
   test.each([
     ["failed formal command", failFormalCommand],
     ["credential-reference match", addCredentialReferenceMatch],
-    ["current source identity mismatch", changeSourceIdentity],
-    ["external example identity drift", changeExampleIdentity],
-    ["omitted identity entry", removeIdentityEntry],
+    ["implementation blob drift", changeImplementationBlob],
+    ["implementation path omission", omitImplementationPath],
+    ["repair content drift", changeRepairContent],
+    ["repair path omission", omitRepairPath, { verifyCurrent: true }],
+    ["execution closure content drift", changeClosureContent],
+    ["execution closure path omission", omitClosurePath],
+    ["execution closure count drift", changeClosureCount],
+    ["historical gate receipt drift", changeGateReceipt],
+    ["historical review receipt drift", changeReviewReceipt],
     ["custom Agent linkage mismatch", breakCustomAgentLink],
     ["four-state digest continuity mismatch", breakDigestContinuity],
     ["production output overflow", exceedProductionOutputBound],
     ["built server entry mismatch", changeServerEntryIdentity],
     ["unexpected evidence key", addUnexpectedEvidenceKey],
     ["missing evidence key", removeRequiredEvidenceKey],
-  ])("rejects %s", async (_name, tamper) => {
+  ])("rejects %s", async (_name, tamper, options = {}) => {
     await withArtifactCopy(async (directory) => {
       await tamper(directory);
-      await expect(verifyArtifacts(directory)).rejects.toThrow();
+      await expect(verifyArtifacts(directory, options)).rejects.toThrow();
     });
   });
 });
@@ -65,29 +122,82 @@ async function addCredentialReferenceMatch(directory) {
   });
 }
 
-async function changeSourceIdentity(directory) {
+async function changeImplementationBlob(directory) {
   await updateJson(directory, "evidence.json", (evidence) => {
-    evidence.sourceIdentity.files["packages/sdk/dist/management.js"] =
-      ZERO_DIGEST;
+    evidence.identity.implementation.files[
+      "packages/sdk/src/management.ts"
+    ].sha256 = ZERO_DIGEST;
   });
 }
 
-async function changeExampleIdentity(directory) {
+async function omitImplementationPath(directory) {
   await updateJson(directory, "evidence.json", (evidence) => {
-    evidence.sourceIdentity.files[
-      "packages/sdk/examples/effective-capabilities.mjs"
-    ] = ZERO_DIGEST;
+    const file = "packages/sdk/src/management.ts";
+    evidence.identity.implementation.changedPaths =
+      evidence.identity.implementation.changedPaths.filter(
+        (candidate) => candidate !== file,
+      );
+    delete evidence.identity.implementation.files[file];
   });
 }
 
-async function removeIdentityEntry(directory) {
+async function changeRepairContent(directory) {
   await updateJson(directory, "evidence.json", (evidence) => {
-    delete evidence.sourceIdentity.files[
-      "packages/sdk/examples/effective-capabilities.mjs"
-    ];
-    delete evidence.sourceIdentity.lineCounts[
-      "packages/sdk/examples/effective-capabilities.mjs"
-    ];
+    evidence.identity.repairSnapshot.files[
+      "scripts/check-architecture.mjs"
+    ].sha256 = ZERO_DIGEST;
+  });
+}
+
+async function omitRepairPath(directory) {
+  await updateJson(directory, "evidence.json", (evidence) => {
+    const file = "scripts/check-architecture.mjs";
+    evidence.identity.repairSnapshot.changedPaths =
+      evidence.identity.repairSnapshot.changedPaths.filter(
+        (candidate) => candidate !== file,
+      );
+    delete evidence.identity.repairSnapshot.files[file];
+    evidence.identity.repairSnapshot.manifestSha256 = manifestHash(
+      evidence.identity.repairSnapshot,
+    );
+    evidence.identity.manifestSha256 = manifestHash(evidence.identity);
+  });
+}
+
+async function changeClosureContent(directory) {
+  await updateJson(directory, "evidence.json", (evidence) => {
+    evidence.identity.executionClosure.groups.productionServerTrace.files[
+      "apps/server/dist/index.js"
+    ].sha256 = ZERO_DIGEST;
+  });
+}
+
+async function omitClosurePath(directory) {
+  await updateJson(directory, "evidence.json", (evidence) => {
+    const group = evidence.identity.executionClosure.groups.fourStateParity;
+    const file = "apps/server/dist/app.js";
+    group.executionFiles = group.executionFiles.filter(
+      (candidate) => candidate !== file,
+    );
+    delete group.files[file];
+  });
+}
+
+async function changeClosureCount(directory) {
+  await updateJson(directory, "evidence.json", (evidence) => {
+    evidence.identity.executionClosure.groups.fourStateParity.counts.executionFiles -= 1;
+  });
+}
+
+async function changeGateReceipt(directory) {
+  await updateJson(directory, "evidence.json", (evidence) => {
+    evidence.gateReceipts[6].counts.totalReportedPassedTests = 2690;
+  });
+}
+
+async function changeReviewReceipt(directory) {
+  await updateJson(directory, "evidence.json", (evidence) => {
+    evidence.reviewReceipts[0].T11.verdict = "PASS";
   });
 }
 
@@ -140,21 +250,38 @@ async function removeRequiredEvidenceKey(directory) {
 async function updateLinkedReceipt(directory, file, mutate) {
   const text = await updateJson(directory, file, mutate);
   await updateJson(directory, "evidence.json", (evidence) => {
-    if (file === "four-state-parity.json") {
-      evidence.artifacts.fourStateParity.sha256 = sha256Text(text);
-      evidence.formalCommands[0].evidenceSha256 = sha256Text(text);
-    } else {
-      evidence.artifacts.productionServerTrace.sha256 = sha256Text(text);
-      evidence.formalCommands[1].evidenceSha256 = sha256Text(text);
-    }
+    const index = file === "four-state-parity.json" ? 0 : 1;
+    const artifact =
+      file === "four-state-parity.json"
+        ? evidence.artifacts.fourStateParity
+        : evidence.artifacts.productionServerTrace;
+    artifact.sha256 = sha256Text(text);
+    evidence.formalCommands[index].evidenceSha256 = sha256Text(text);
+    evidence.formalCommands[index].receiptSha256 = receiptHash(
+      evidence.formalCommands[index],
+    );
   });
+}
+
+async function readJson(directory, file) {
+  return JSON.parse(await readFile(path.join(directory, file), "utf8"));
 }
 
 async function updateJson(directory, file, mutate) {
   const target = path.join(directory, file);
-  const value = JSON.parse(await readFile(target, "utf8"));
+  const value = await readJson(directory, file);
   mutate(value);
   const text = jsonText(value);
   await writeFile(target, text);
   return text;
+}
+
+function receiptHash(receipt) {
+  const { receiptSha256: _ignored, ...content } = receipt;
+  return sha256Text(JSON.stringify(content));
+}
+
+function manifestHash(manifest) {
+  const { manifestSha256: _ignored, ...content } = manifest;
+  return sha256Text(JSON.stringify(content));
 }
