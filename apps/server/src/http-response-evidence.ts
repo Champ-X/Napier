@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import type { JsonValue, RunEvent, RunMetrics } from "@napier/contracts";
+import { managementHttpErrorCodeForStatus } from "@napier/contracts/management-http";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
@@ -167,32 +168,14 @@ export function jsonError(
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, body);
   context.header("X-Napier-Error-Status", String(status));
-  context.header("X-Napier-Error-Code", jsonErrorCode(status));
+  context.header(
+    "X-Napier-Error-Code",
+    managementHttpErrorCodeForStatus(status),
+  );
   context.header("X-Napier-Error-Message-SHA256", sha256Text(body.error));
   return context.json(body, status);
 }
 
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function jsonErrorCode(status: ContentfulStatusCode): string {
-  switch (status) {
-    case 400:
-      return "invalid_request";
-    case 401:
-      return "unauthorized";
-    case 403:
-      return "forbidden";
-    case 404:
-      return "not_found";
-    case 409:
-      return "conflict";
-    case 413:
-      return "request_too_large";
-    case 429:
-      return "rate_limited";
-    default:
-      return status >= 500 ? "server_error" : "http_error";
-  }
 }

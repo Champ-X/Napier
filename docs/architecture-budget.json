@@ -108,7 +108,6 @@
     "packages/runtime/test/workflow-recovery.test.ts": 1331,
     "packages/runtime/test/workflow-runtime.test.ts": 3833,
     "packages/runtime/test/workspace-processes.test.ts": 3071,
-    "packages/sdk/src/index.ts": 546,
     "packages/sdk/test/sdk-workflow.test.ts": 1089
   },
   "complexityOverrides": {
@@ -242,9 +241,11 @@
     "packages/contracts/src/execution-runs.ts": 21,
     "packages/contracts/src/execution-workflows.ts": 40,
     "packages/contracts/src/index.ts": 634,
+    "packages/contracts/src/management-http.ts": 6,
     "packages/contracts/src/workflow-experiments.ts": 18,
     "packages/runtime/src/index.ts": 201,
-    "packages/sdk/src/index.ts": 22
+    "packages/sdk/src/index.ts": 22,
+    "packages/sdk/src/management.ts": 5
   },
   "allowedCycles": [],
   "allowedWorkspaceImports": {

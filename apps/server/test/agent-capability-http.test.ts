@@ -141,8 +141,11 @@ describe("Agent capability HTTP", () => {
         error: "Capability restore request is invalid",
       }),
     );
-    expect(await app.request("/api/agents/agent_missing/capabilities")).toEqual(
-      expect.objectContaining({ status: 404 }),
+    await expectCapabilityError(
+      await app.request("/api/agents/agent_missing/capabilities"),
+      404,
+      "not_found",
+      "Agent not found: agent_missing",
     );
   });
 
@@ -213,9 +216,11 @@ describe("Agent capability HTTP", () => {
     const internalResponse = await app.request(
       `/api/agents/${seeded.id}/capabilities`,
     );
-    expect(internalResponse.status).toBe(500);
-    expect(JSON.stringify(await internalResponse.json())).not.toContain(
-      "private internal detail",
+    await expectCapabilityError(
+      internalResponse,
+      500,
+      "server_error",
+      "Capability service failed; refresh and retry. No capability state was inferred.",
     );
     internal.mockRestore();
   });
@@ -223,4 +228,25 @@ describe("Agent capability HTTP", () => {
 
 function sha256Json(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
+async function expectCapabilityError(
+  response: Response,
+  status: number,
+  code: string,
+  message: string,
+): Promise<void> {
+  const body = await response.text();
+  expect(response.status).toBe(status);
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("body");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    createHash("sha256").update(body).digest("hex"),
+  );
+  expect(response.headers.get("x-napier-error-status")).toBe(String(status));
+  expect(response.headers.get("x-napier-error-code")).toBe(code);
+  expect(response.headers.get("x-napier-error-message-sha256")).toBe(
+    createHash("sha256").update(message).digest("hex"),
+  );
+  expect(JSON.parse(body)).toEqual({ error: message });
 }

@@ -16,6 +16,10 @@
       "types": "./dist/agent-capability-contract.d.ts",
       "import": "./dist/agent-capability-contract.js"
     },
+    "./management-http": {
+      "types": "./dist/management-http.d.ts",
+      "import": "./dist/management-http.js"
+    },
     "./browser-interaction-confirmation": {
       "types": "./dist/browser-interaction-confirmation.d.ts",
       "import": "./dist/browser-interaction-confirmation.js"

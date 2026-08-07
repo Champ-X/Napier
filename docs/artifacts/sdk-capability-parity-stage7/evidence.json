@@ -1,0 +1,270 @@
+{
+  "kind": "napier.sdk-capability-parity-evidence",
+  "schemaVersion": 1,
+  "scope": "napier-m0-sdk-capability-projection-parity",
+  "stage": 7,
+  "commit": {
+    "base": "c9f225388cf40766b9002365121242758abf18d8",
+    "observedHead": "c9f225388cf40766b9002365121242758abf18d8",
+    "final": null,
+    "status": "pending_explicit_T14_authorization"
+  },
+  "result": "formal_evidence_passed",
+  "execution": {
+    "offline": true,
+    "liveModelCalls": false,
+    "externalNetworkRequired": false
+  },
+  "gateContract": {
+    "requiredGateIds": [
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "G07",
+      "G08"
+    ],
+    "artifactGateIds": [
+      "G04",
+      "G05",
+      "G06-credential-reference-canary"
+    ],
+    "fullRepositoryCommand": "npm run check",
+    "nonArtifactGatesVerifiedExternally": true
+  },
+  "formalCommands": [
+    {
+      "id": "G04",
+      "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
+      "exitCode": 0,
+      "stdoutSha256": "e991fc9018f48b821389fff36d4e8e89078a3ab60fac4821f6a80acf2765f9eb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evidenceFile": "four-state-parity.json",
+      "evidenceSha256": "dd6c5b1d41da7e0a0095c127f216e403c9325e169cf2114b45f54c1a9a9fee96"
+    },
+    {
+      "id": "G05",
+      "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
+      "exitCode": 0,
+      "stdoutSha256": "e0f54aa47d0ae716cb8b778ef6d73f6d705e14aa52663f1ca60c58d3ae59beee",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evidenceFile": "production-server-trace.json",
+      "evidenceSha256": "2cc403d94d7560c04c0c52c9b4d3f347673afe65d8c467fb8303704aa0a038c3"
+    },
+    {
+      "id": "G06-credential-reference-canary",
+      "command": "node --import tsx scripts/run-credential-reference-canary.ts",
+      "exitCode": 0,
+      "stdoutSha256": "21644f240d456e8578a9607c6173b401135aed866f9ea1677e79e6713563dcac",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evidenceFile": null,
+      "evidenceSha256": null
+    }
+  ],
+  "credentialReferenceCanary": {
+    "status": "pass",
+    "matchCount": 0
+  },
+  "sourceIdentity": {
+    "schemaVersion": 1,
+    "head": "c9f225388cf40766b9002365121242758abf18d8",
+    "files": {
+      "packages/contracts/package.json": "2bb2a733d33004c87f491fa0a8008f07944dbdd951f3f7984442d975e6bb7f9a",
+      "packages/contracts/src/agent-capability-contract.ts": "4ac7cd1c8a076f1a901883947b0314cc6d7a533eaf5f0626d162c3dfb9c1e273",
+      "packages/contracts/src/management-http.ts": "d6ac585f05200d8850edb1ea79522bed1dbe6190fdf80d0271df8f660fd2ca27",
+      "packages/contracts/dist/agent-capability-contract.js": "b817af90f09d52bcc2f97397f38fe17f20378739f28b185e24baba1ca87a3302",
+      "packages/contracts/dist/management-http.js": "d6cac70f72ba24068c010cc7c6fe2054972a0ae108e62c218e937a83ef969b4a",
+      "packages/sdk/package.json": "e4d2142b20d2048b533156b3b4a5835ae3ad0ab6ec4bcf9091005d13119a2356",
+      "packages/sdk/src/index.ts": "9adeb9ee7736d1e6a64399f0d498dd1dd2b83944087c6df58c19b0ec0e45f5a0",
+      "packages/sdk/src/management.ts": "0fac3b1141ce309411b80a38977a04d8424c64c4d2d772dacec340f2f72fc0bc",
+      "packages/sdk/src/management-client.ts": "90a991ecf08bd67de04822d1e465062b809f06689aa1dda722405f0da6d222d1",
+      "packages/sdk/src/management-client-error.ts": "ab66fe1b0a1b23788ba41de16760135fd7bf9f3c048b815f16dcf907647a6ff7",
+      "packages/sdk/dist/index.js": "44446863535e69c9361e1dbc364a840444193f9e215f337c4ed2b1ee379b8321",
+      "packages/sdk/dist/management.js": "2fdccaa60aaa7088f2b5ab868e5446683e401744ad4364c36d52a29c6c0da83e",
+      "packages/sdk/dist/management-client.js": "5e6f17e8d2452e2ea58061a5aa2f22cc2756c3b61a56dd809894b0b41db0c8ab",
+      "packages/sdk/dist/management-client-error.js": "7fec272029009f0f5f9386a6e0cae694a15e6bcbc67c5343ee00eec152bf91f5",
+      "packages/sdk/examples/effective-capabilities.mjs": "26b8639bbb66fdeb30014fb7299ad78809b0ad3357a185fdc04a9f747ef28056",
+      "packages/runtime/src/index.ts": "638a568482be126fa50e950717cbc3b4c0a1d03c4cd6d303bcb4d12c289f09aa",
+      "packages/runtime/src/local-agent-runtime.ts": "147c289d7fc5fbaf7683054fa1967ab1e11c8eeea27d0c192ce7dc8bdc6b2f9a",
+      "packages/runtime/src/agent-capability-service.ts": "65e5e1d6e21886f0f589676cebce10918dfb9de8e8c30e6762ad4467e3007efb",
+      "packages/runtime/src/agent-capability-bindings.ts": "2144c7dcf18851dfb1b6420a9d41990ae49cd0efaba28d4674dc9d4a4fa504e8",
+      "packages/runtime/src/agent-capability-store-state.ts": "5b6f385c22320cd3683f0d382708d82af88b5c6a83f0e4c9e9af92fd518bda9c",
+      "packages/runtime/src/agent-capability-store-mutations.ts": "689c17f83e485ac2164d59b3cf99258fcac0d568ed31d19783b3ab6f187016c1",
+      "packages/runtime/src/default-agent-capability-contract.ts": "e26a8bfc94b9205db62e8461a18ad2387c13bcc642ed6d23cbed4a59d382d8aa",
+      "packages/runtime/dist/index.js": "638a568482be126fa50e950717cbc3b4c0a1d03c4cd6d303bcb4d12c289f09aa",
+      "packages/runtime/dist/local-agent-runtime.js": "d8aa522300dfa26b59f602e4bae07cd9610295533e3bd0b7d2014dc6c922eb9d",
+      "packages/runtime/dist/agent-capability-service.js": "d7be2d6fdbf2aa99d0a146daf42bee9345896e764110dda670c660a89a17a10d",
+      "packages/runtime/dist/agent-capability-bindings.js": "e189e3f2357b28130777f3953dd4dbdff2306abe2bd2ee4b046efd6b941dc044",
+      "packages/runtime/dist/agent-capability-store-state.js": "66edb34c0a51f1bdc6c7d0a0d3814a15cabd9ae5862c3e739edc0a388e9e2ace",
+      "packages/runtime/dist/agent-capability-store-mutations.js": "d71f8d5e9baf899d92e018b5214d0a82728fe800b33a7ca10f27235e1bc64828",
+      "packages/runtime/dist/default-agent-capability-contract.js": "d7eec1651cc9c7172d5953aada8a79b617e47cbf8e248ae3fe26f6b12bb7173b",
+      "packages/runtime/test/fixtures/capability-contract-v1/pre-search/manifest.json": "6982706c51e45677c49e979f4cf1803be817cd179023564d254f85431e452572",
+      "packages/runtime/test/fixtures/capability-contract-v1/pre-search/workspace.json": "fda4065432ab3cd45577068e3505298106322529b25b822d3110f9eb88a5f966",
+      "packages/runtime/test/fixtures/capability-contract-v1/pre-search/events/thread_d1872b201aa24d8a84f4.jsonl": "f60cc39cd7ad9d00f3c5da75156c4f68f9beda1facfd6ca83a8a6a3a5a7612ac",
+      "apps/server/src/index.ts": "1d8003e3da5258cfc0070bcb1a502de767fe29f33a24a69b0d3a5c120544881c",
+      "apps/server/src/app.ts": "bb460001e7feb5e53db34590f7c95e72453d3d9885d29c761decdaeb050489fa",
+      "apps/server/src/agent-capability-http.ts": "28f2f3159c598601824d44e88173e180cf9cd71f4ffed46cfdd5a42f2a1b9da5",
+      "apps/server/src/http-response-evidence.ts": "92b6a2ecf64d757e514308e10160ece5edc9beb48cbee61f6715db2bba4b99fa",
+      "apps/server/dist/index.js": "f5c2a2f8213edb0b8e69ca90d6b9336e07822c21940760aa82bae797c507435f",
+      "apps/server/dist/app.js": "0b48838f4dd009805da4737553ee8c748d7f348b09167e6af1af0968f437cf7f",
+      "apps/server/dist/agent-capability-http.js": "894f0b1a7b6ab5f95f447a26bd4c9fbdc183f0248be28918f01bd0aaad5e3caf",
+      "apps/server/dist/http-response-evidence.js": "ec26104f5f12db6fd47129b21c914ac708b1d7f871b427dd672b4c3c8fd21bc7",
+      "apps/cli/src/cli.ts": "84a29abd7afba6fc2324a6349435593800f843ee9363d7ad611b16c9a6288a9b",
+      "apps/cli/src/cli-options.ts": "9fed7b82c8c3ee73c50c74403a8fe327bf2c1d130817f60bbd56bfbe3ab4e64f",
+      "apps/cli/src/cli-command-options.ts": "c71cce33327beaeeeb25364bf10a72cf575e8c03c7171b6ed61d0fb93ffc35b3",
+      "apps/cli/src/cli-capability-options.ts": "2acfc20046ade495af8f661d54d5bdb2fe9853628d05333440084eb5fb121334",
+      "apps/cli/src/cli-first-use.ts": "ea4212d923f471bae643d2cea9e97717a545a3c70e96c2439b5cbe3826eb32b7",
+      "apps/cli/src/capability-cli.ts": "6189ddc77e059c99348ee2422813ce312b70b6bf8fe9c3a390a9ac9208a1406e",
+      "apps/cli/dist/cli.js": "952ac7862886250ce46be57e906d8897ffb44c39be2cc3d15959abbc8af2d292",
+      "apps/cli/dist/cli-options.js": "d74beee3fa2ecddcddf1ddb5d8bc14a9e9ed1e1398a2007bc03cc697f398ccfa",
+      "apps/cli/dist/cli-command-options.js": "b1f10a72fb7e6b823f8ffa41da9c344b411d300b07fda8c4333010457c77bc07",
+      "apps/cli/dist/cli-capability-options.js": "c317de72ef8e92521d9e8e58ac82cf927c829df901febb5d25d54bbdcb84a475",
+      "apps/cli/dist/cli-first-use.js": "0951929cbf905ac7f1e4c9593901dc65d29c9001a39ad8546b157c801d3f8f34",
+      "apps/cli/dist/capability-cli.js": "89b8f915b2be01999f15e14eb344b313260e5f78547ab8f9451a151b6f4020f6",
+      "scripts/agent-capability-projection-equality.test.mjs": "58098dc02ae39f434cea5417f1d2f2a56d0efc944c2bf50e03277a2513d2804a",
+      "scripts/agent-capability-parity-harness.mjs": "a69dd14abbd2049384992d8d97930c497a1add62fc29c4269de3528e2f8063be",
+      "scripts/sdk-capability-production-server.test.mjs": "6fe2da58addd29d4a7983631df149f7429cde357e5f22c29b102547510cd4ce4",
+      "scripts/sdk-capability-production-server-harness.mjs": "cfcf332f32a3f5e0604a345c5d41524f7a63700d5b781ff0e0a06d8fdeb14a1c",
+      "scripts/sdk-capability-production-process.mjs": "92780c89bd6fad6708dc0e87e042fd88fec2f6969d813a1a82b9a50ba88d8850",
+      "scripts/sdk-capability-production-process.test.mjs": "39fea454640a94839fc818750e7b94ac27b4653106aa1012f110d68db82d5f2f",
+      "scripts/capture-sdk-capability-parity.mjs": "822949c636e75dd39e9ee19d9a942e9e1d040fd7edea6423175a43d8cb6291be",
+      "scripts/sdk-capability-parity-evidence.mjs": "4ac55c6c78bbf489272cfd094d59a793882cbf37101dc8b24ff12d37d8075bac",
+      "scripts/sdk-capability-parity-evidence.test.mjs": "4aaa95ae8dcf524f3c494441574b40ecada08b2e0d80d90dce386810cdc619fa",
+      "scripts/sdk-capability-parity-identity.mjs": "aeafae3521cd8b4b75c95844b82983d0804d87fc5f1e9610e716a9ac807cebc1",
+      "scripts/sdk-capability-parity-receipts.mjs": "b3dcde96ea7bebab599287111e1dcde8e4645a16b5789699a21cc14e43ec97d3",
+      "scripts/run-credential-reference-canary.ts": "68d6a148403a2a58221fa12adea709c54a9a8f0e8e359f2730e4b20fa314b0f4"
+    },
+    "lineCounts": {
+      "packages/contracts/package.json": 56,
+      "packages/contracts/src/agent-capability-contract.ts": 325,
+      "packages/contracts/src/management-http.ts": 103,
+      "packages/contracts/dist/agent-capability-contract.js": 171,
+      "packages/contracts/dist/management-http.js": 35,
+      "packages/sdk/package.json": 33,
+      "packages/sdk/src/index.ts": 54,
+      "packages/sdk/src/management.ts": 7,
+      "packages/sdk/src/management-client.ts": 491,
+      "packages/sdk/src/management-client-error.ts": 33,
+      "packages/sdk/dist/index.js": 8,
+      "packages/sdk/dist/management.js": 2,
+      "packages/sdk/dist/management-client.js": 361,
+      "packages/sdk/dist/management-client-error.js": 29,
+      "packages/sdk/examples/effective-capabilities.mjs": 21,
+      "packages/runtime/src/index.ts": 201,
+      "packages/runtime/src/local-agent-runtime.ts": 243,
+      "packages/runtime/src/agent-capability-service.ts": 281,
+      "packages/runtime/src/agent-capability-bindings.ts": 440,
+      "packages/runtime/src/agent-capability-store-state.ts": 55,
+      "packages/runtime/src/agent-capability-store-mutations.ts": 138,
+      "packages/runtime/src/default-agent-capability-contract.ts": 385,
+      "packages/runtime/dist/index.js": 201,
+      "packages/runtime/dist/local-agent-runtime.js": 134,
+      "packages/runtime/dist/agent-capability-service.js": 212,
+      "packages/runtime/dist/agent-capability-bindings.js": 306,
+      "packages/runtime/dist/agent-capability-store-state.js": 10,
+      "packages/runtime/dist/agent-capability-store-mutations.js": 74,
+      "packages/runtime/dist/default-agent-capability-contract.js": 259,
+      "packages/runtime/test/fixtures/capability-contract-v1/pre-search/manifest.json": 58,
+      "packages/runtime/test/fixtures/capability-contract-v1/pre-search/workspace.json": 312,
+      "packages/runtime/test/fixtures/capability-contract-v1/pre-search/events/thread_d1872b201aa24d8a84f4.jsonl": 3,
+      "apps/server/src/index.ts": 59,
+      "apps/server/src/app.ts": 14521,
+      "apps/server/src/agent-capability-http.ts": 128,
+      "apps/server/src/http-response-evidence.ts": 181,
+      "apps/server/dist/index.js": 40,
+      "apps/server/dist/app.js": 7859,
+      "apps/server/dist/agent-capability-http.js": 78,
+      "apps/server/dist/http-response-evidence.js": 91,
+      "apps/cli/src/cli.ts": 578,
+      "apps/cli/src/cli-options.ts": 479,
+      "apps/cli/src/cli-command-options.ts": 83,
+      "apps/cli/src/cli-capability-options.ts": 125,
+      "apps/cli/src/cli-first-use.ts": 56,
+      "apps/cli/src/capability-cli.ts": 190,
+      "apps/cli/dist/cli.js": 391,
+      "apps/cli/dist/cli-options.js": 306,
+      "apps/cli/dist/cli-command-options.js": 66,
+      "apps/cli/dist/cli-capability-options.js": 87,
+      "apps/cli/dist/cli-first-use.js": 34,
+      "apps/cli/dist/capability-cli.js": 134,
+      "scripts/agent-capability-projection-equality.test.mjs": 32,
+      "scripts/agent-capability-parity-harness.mjs": 413,
+      "scripts/sdk-capability-production-server.test.mjs": 45,
+      "scripts/sdk-capability-production-server-harness.mjs": 250,
+      "scripts/sdk-capability-production-process.mjs": 396,
+      "scripts/sdk-capability-production-process.test.mjs": 151,
+      "scripts/capture-sdk-capability-parity.mjs": 195,
+      "scripts/sdk-capability-parity-evidence.mjs": 412,
+      "scripts/sdk-capability-parity-evidence.test.mjs": 160,
+      "scripts/sdk-capability-parity-identity.mjs": 129,
+      "scripts/sdk-capability-parity-receipts.mjs": 247,
+      "scripts/run-credential-reference-canary.ts": 337
+    }
+  },
+  "publicApiBudgets": {
+    "sdkRootPublicExports": 22,
+    "sdkRootRuntimeValueExports": 2,
+    "sdkManagementPublicExports": 5,
+    "sdkManagementRuntimeValueExports": 2,
+    "contractsManagementHttpPublicExports": 6,
+    "contractsManagementHttpRuntimeValueExports": 3,
+    "maximumHandwrittenProductionLines": 499
+  },
+  "executionDisclosures": [
+    "The pre-existing install lacked the package-lock-declared SDK workspace link; a validated ignored link enabled the locked root import and was removed afterward.",
+    "An initial offline temp installation lacked one cached Runtime dependency; the approved extracted-published-tarball consumer then passed JS and TypeScript checks without network access.",
+    "A broad read-only plan search was interrupted at its bound before the exact run path was supplied.",
+    "One broad cleanup command was rejected before execution; validated task-root cleanup then completed through the bounded Node filesystem API.",
+    "The first sparse-array test replay used stale Contracts dist because build was omitted; rebuilding made all systematic validator cases pass without a source correction."
+  ],
+  "reviews": {
+    "preimplementation": [
+      {
+        "reviewer": "/root/stage2_goal_intake",
+        "verdict": "pass-with-known-nonblocking-risks",
+        "blockers": []
+      },
+      {
+        "reviewer": "/root/stage3_entry_capabilities",
+        "verdict": "pass-with-known-nonblocking-risks",
+        "blockers": []
+      }
+    ],
+    "implementation": {
+      "status": "pending_after_frozen_G01_G07",
+      "requiredIndependentReviewCount": 2
+    }
+  },
+  "protectedFiles": {
+    "excluded": [
+      ".env",
+      "goal.md",
+      "docs/napier-interview-deep-dive.zh-CN.md"
+    ],
+    "verification": "external_names_only_G08"
+  },
+  "cleanup": {
+    "fourStateRootRemoved": true,
+    "productionRootValidated": true,
+    "productionRootRemoved": true,
+    "productionChildForced": false,
+    "exampleChildForced": false,
+    "productionPortClosed": true
+  },
+  "artifacts": {
+    "readme": {
+      "file": "README.md",
+      "sha256": "0cb977b0424691ee117884128c428e6d1d87fb486d1a1a677ad37ab4b5518fbe"
+    },
+    "fourStateParity": {
+      "file": "four-state-parity.json",
+      "sha256": "dd6c5b1d41da7e0a0095c127f216e403c9325e169cf2114b45f54c1a9a9fee96"
+    },
+    "productionServerTrace": {
+      "file": "production-server-trace.json",
+      "sha256": "2cc403d94d7560c04c0c52c9b4d3f347673afe65d8c467fb8303704aa0a038c3"
+    }
+  }
+}

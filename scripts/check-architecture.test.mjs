@@ -7,6 +7,7 @@ import {
   auditArchitecture,
   createArchitectureBaseline,
 } from "./check-architecture.mjs";
+import { analyzeRepository } from "./architecture-analysis.mjs";
 
 const temporaryRoots = [];
 
@@ -130,7 +131,45 @@ describe("architecture growth gate", () => {
       "packages/contracts/src/index.ts imports forbidden workspace dependency @napier/runtime",
     );
   });
+
+  it("keeps the SDK management subpath isolated from embedded application code", async () => {
+    const repoRoot = path.resolve(import.meta.dirname, "..");
+    const analysis = await analyzeRepository(repoRoot);
+    const closure = relativeClosure(
+      analysis.graph,
+      "packages/sdk/src/management.ts",
+    );
+
+    expect([...closure].sort()).toEqual([
+      "packages/sdk/src/management-client-error.ts",
+      "packages/sdk/src/management-client.ts",
+      "packages/sdk/src/management.ts",
+    ]);
+    for (const filePath of closure) {
+      const file = analysis.filesByPath.get(filePath);
+      expect(file).toBeDefined();
+      expect(
+        file.moduleSpecifiers.filter(
+          (specifier) =>
+            !specifier.startsWith(".") &&
+            !specifier.startsWith("@napier/contracts/"),
+        ),
+      ).toEqual([]);
+    }
+  });
 });
+
+function relativeClosure(graph, entry) {
+  const closure = new Set();
+  const pending = [entry];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current || closure.has(current)) continue;
+    closure.add(current);
+    pending.push(...(graph.get(current) ?? []));
+  }
+  return closure;
+}
 
 async function createFixture() {
   const root = await mkdtemp(path.join(tmpdir(), "napier-architecture-"));

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "serverEntrySha256": "f5c2a2f8213edb0b8e69ca90d6b9336e07822c21940760aa82bae797c507435f",
+  "sdkManagementEntrySha256": "2fdccaa60aaa7088f2b5ab868e5446683e401744ad4364c36d52a29c6c0da83e",
+  "allowlistedEnvironmentKeys": [
+    "LANG",
+    "NAPIER_HOME",
+    "NAPIER_PORT",
+    "NAPIER_WORKSPACE",
+    "NODE_ENV",
+    "TMPDIR",
+    "TZ"
+  ],
+  "listener": {
+    "loopback": true,
+    "ephemeralNonzeroPort": true,
+    "announcedOriginSha256": "de90947db34925cd5152719da1f1517cde600a9397a6d85ae875593e08b3f605"
+  },
+  "child": {
+    "startupBounded": true,
+    "outputBounded": true,
+    "gracefulZeroExit": true,
+    "forcedCleanup": false,
+    "stdoutBytes": 46,
+    "stderrBytes": 0,
+    "totalOutputBytes": 46,
+    "maximumOutputBytes": 65536
+  },
+  "example": {
+    "timeoutBounded": true,
+    "outputBounded": true,
+    "gracefulZeroExit": true,
+    "forcedCleanup": false,
+    "stdoutBytes": 180,
+    "stderrBytes": 0,
+    "totalOutputBytes": 180,
+    "maximumOutputBytes": 65536
+  },
+  "sdk": {
+    "externalProcess": true,
+    "builtPackageSubpath": true,
+    "globalFetch": true,
+    "integrityVerified": true,
+    "agentId": "agent_napier",
+    "agentRevision": 1,
+    "driftState": "current",
+    "ownership": "recommended",
+    "projectionSha256": "6b9080426bf587ab8f6f7186a99815f3f3c5cfe967a7dd5f7101cf640a21dd14"
+  },
+  "storeNonMutation": true,
+  "portClosed": true,
+  "postExitSdkRequestFailed": true,
+  "cleanup": {
+    "rootValidated": true,
+    "removed": true
+  },
+  "storeDigests": {
+    "before": {
+      "rawWorkspaceSha256": "3e78ac7263cb3068cc52a20e49c6aa34990216fa7189ea6ea2bb83ba0b4ccb00",
+      "logicalStoreSha256": "69d7e4294d746ae259a4de935181a7641b80541e83598ad3d19f3ed97617d102",
+      "eventManifestSha256": "3bb13fda5982e0acb3866e90dd64dea1a997b38e7480ab9d384cb05051a03bea"
+    },
+    "after": {
+      "rawWorkspaceSha256": "3e78ac7263cb3068cc52a20e49c6aa34990216fa7189ea6ea2bb83ba0b4ccb00",
+      "logicalStoreSha256": "69d7e4294d746ae259a4de935181a7641b80541e83598ad3d19f3ed97617d102",
+      "eventManifestSha256": "3bb13fda5982e0acb3866e90dd64dea1a997b38e7480ab9d384cb05051a03bea"
+    }
+  }
+}
