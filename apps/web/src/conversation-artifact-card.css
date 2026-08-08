@@ -160,3 +160,129 @@
   line-height: 1.6;
   white-space: pre;
 }
+
+.message-citation-link {
+  display: inline-flex;
+  min-width: 22px;
+  min-height: 19px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 2px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--paper-bright);
+  text-decoration: none;
+  vertical-align: 1px;
+  background: var(--ledger);
+  border-radius: 10px;
+}
+
+.message-citation-link:hover,
+.message-citation-link:focus-visible {
+  background: var(--vermilion);
+}
+
+.conversation-citation {
+  margin: -11px 0 25px 37px;
+  padding: 11px 12px;
+  color: var(--ink-soft);
+  background: rgb(235 241 237 / 82%);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--ledger);
+  border-radius: 2px;
+}
+
+.conversation-citation > summary {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  cursor: pointer;
+  list-style: none;
+}
+
+.conversation-citation > summary::-webkit-details-marker {
+  display: none;
+}
+
+.conversation-citation > summary div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.conversation-citation > summary span,
+.conversation-citation > summary time,
+.conversation-citation dt,
+.conversation-citation dd {
+  font-family: var(--mono);
+  font-size: 8px;
+}
+
+.conversation-citation > summary span,
+.conversation-citation > summary time,
+.conversation-citation dt {
+  color: var(--ink-faint);
+}
+
+.conversation-citation > summary span {
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.conversation-citation > summary strong {
+  font-family: var(--serif);
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.conversation-citation > dl {
+  display: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px 12px;
+  margin: 10px 0;
+}
+
+.conversation-citation[open] > dl {
+  display: grid;
+}
+
+.conversation-citation > dl div {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.conversation-citation dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-citation > p {
+  display: none;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 9px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.conversation-citation[open] > p {
+  display: block;
+}
+
+.conversation-citation:target {
+  outline: 2px solid var(--ledger);
+  outline-offset: 3px;
+}
+
+@media (max-width: 540px) {
+  .conversation-citation > dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -20,15 +20,26 @@ export interface MessageWorkspaceLink {
   targetId: string;
 }
 
+export interface MessageCitationLink {
+  citationId: string;
+  targetId: string;
+  index: number;
+}
+
 export function MessageMarkdown({
   text,
   workspaceLinks = [],
+  citationLinks = [],
 }: {
   text: string;
   workspaceLinks?: readonly MessageWorkspaceLink[];
+  citationLinks?: readonly MessageCitationLink[];
 }) {
   const workspaceTargets = new Map(
     workspaceLinks.map((link) => [link.path, link.targetId]),
+  );
+  const citationTargets = new Map(
+    citationLinks.map((link) => [link.citationId, link]),
   );
   return (
     <>
@@ -68,14 +79,14 @@ export function MessageMarkdown({
           const Heading = `h${String(block.level + 2)}` as "h3" | "h4" | "h5";
           return (
             <Heading key={key}>
-              {inlineMarkdown(block.value, workspaceTargets)}
+              {inlineMarkdown(block.value, workspaceTargets, citationTargets)}
             </Heading>
           );
         }
         if (block.kind === "quote") {
           return (
             <blockquote key={key}>
-              {inlineMarkdown(block.value, workspaceTargets)}
+              {inlineMarkdown(block.value, workspaceTargets, citationTargets)}
             </blockquote>
           );
         }
@@ -85,7 +96,7 @@ export function MessageMarkdown({
             <List key={key}>
               {block.items.map((item, itemIndex) => (
                 <li key={`${key}-${String(itemIndex)}`}>
-                  {inlineMarkdown(item, workspaceTargets)}
+                  {inlineMarkdown(item, workspaceTargets, citationTargets)}
                 </li>
               ))}
             </List>
@@ -99,7 +110,11 @@ export function MessageMarkdown({
                   <tr>
                     {block.headers.map((header, headerIndex) => (
                       <th key={`${key}-head-${String(headerIndex)}`}>
-                        {inlineMarkdown(header, workspaceTargets)}
+                        {inlineMarkdown(
+                          header,
+                          workspaceTargets,
+                          citationTargets,
+                        )}
                       </th>
                     ))}
                   </tr>
@@ -109,7 +124,11 @@ export function MessageMarkdown({
                     <tr key={`${key}-row-${String(rowIndex)}`}>
                       {row.map((cell, cellIndex) => (
                         <td key={`${key}-cell-${String(rowIndex)}-${String(cellIndex)}`}>
-                          {inlineMarkdown(cell, workspaceTargets)}
+                          {inlineMarkdown(
+                            cell,
+                            workspaceTargets,
+                            citationTargets,
+                          )}
                         </td>
                       ))}
                     </tr>
@@ -120,7 +139,9 @@ export function MessageMarkdown({
           );
         }
         return (
-          <p key={key}>{inlineMarkdown(block.value, workspaceTargets)}</p>
+          <p key={key}>
+            {inlineMarkdown(block.value, workspaceTargets, citationTargets)}
+          </p>
         );
       })}
     </>
@@ -309,16 +330,34 @@ function diffLineTone(line: string): DiffLineTone {
 function inlineMarkdown(
   value: string,
   workspaceTargets: ReadonlyMap<string, string>,
+  citationTargets: ReadonlyMap<string, MessageCitationLink>,
 ): ReactNode[] {
   const tokens =
-    /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]\n]+\]\([^\s)]+\))/gu;
+    /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]\n]+\]\([^\s)]+\)|\[citation:citation_[a-z0-9]{8,80}\])/gu;
   const output: ReactNode[] = [];
   let cursor = 0;
   for (const match of value.matchAll(tokens)) {
     const start = match.index;
     if (start > cursor) output.push(value.slice(cursor, start));
     const token = match[0];
-    if (token.startsWith("`")) {
+    if (token.startsWith("[citation:")) {
+      const citationId = token.slice("[citation:".length, -1);
+      const citation = citationTargets.get(citationId);
+      output.push(
+        citation ? (
+          <a
+            className="message-citation-link"
+            href={`#${citation.targetId}`}
+            key={`${start}-citation`}
+            aria-label={`Citation ${citation.index}`}
+          >
+            [{citation.index}]
+          </a>
+        ) : (
+          token
+        ),
+      );
+    } else if (token.startsWith("`")) {
       const code = token.slice(1, -1);
       const targetId = workspaceTargets.get(code);
       output.push(

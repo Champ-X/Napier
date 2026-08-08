@@ -34,6 +34,13 @@ describe("Message workspace links", () => {
               targetId: "conversation-artifact-plan_1-artifact_report-5",
             },
           ]}
+          citationLinks={[
+            {
+              citationId: "citation_fixture0001",
+              targetId: "conversation-citation-citation_fixture0001-7",
+              index: 1,
+            },
+          ]}
         />,
         container,
       );
@@ -70,6 +77,39 @@ describe("Message workspace links", () => {
     expect(container.textContent).toContain(".env");
     expect(container.textContent).toContain(
       "[unknown](artifacts/unknown.md)",
+    );
+  });
+
+  it("links only citation tokens backed by strict ledger evidence", async () => {
+    const container = installDom();
+    await act(async () => {
+      render(
+        <MessageMarkdown
+          text={[
+            "Supported claim. [citation:citation_fixture0001]",
+            "Unbound claim. [citation:citation_unknown0001]",
+          ].join("\n")}
+          citationLinks={[
+            {
+              citationId: "citation_fixture0001",
+              targetId: "conversation-citation-citation_fixture0001-7",
+              index: 1,
+            },
+          ]}
+        />,
+        container,
+      );
+    });
+
+    const links = findElementsByLocalName(container, "a");
+    expect(links).toHaveLength(1);
+    expect(links[0]?.getAttribute("href")).toBe(
+      "#conversation-citation-citation_fixture0001-7",
+    );
+    expect(links[0]?.getAttribute("aria-label")).toBe("Citation 1");
+    expect(links[0]?.textContent).toBe("[1]");
+    expect(container.textContent).toContain(
+      "[citation:citation_unknown0001]",
     );
   });
 });

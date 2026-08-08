@@ -13,14 +13,21 @@ import {
   conversationArtifacts,
   type ConversationArtifact,
 } from "./conversation-artifact-view-model";
+import {
+  conversationCitationLinks,
+  conversationCitations,
+  type ConversationCitation,
+} from "./conversation-citation-view-model";
 import { copy } from "./copy";
 import {
   conversationActivities,
   type ConversationActivity,
 } from "./conversation-activity-view-model";
 import { ConversationArtifactCard } from "./ConversationArtifactCard";
+import { ConversationCitationCard } from "./ConversationCitationCard";
 import {
   MessageMarkdown,
+  type MessageCitationLink,
   type MessageWorkspaceLink,
 } from "./message-markdown";
 import type { MessageView } from "./use-workspace-view-model";
@@ -28,7 +35,8 @@ import type { MessageView } from "./use-workspace-view-model";
 type FeedItem =
   | { kind: "message"; seq: number; message: MessageView }
   | { kind: "activity"; seq: number; activity: ConversationActivity }
-  | { kind: "artifact"; seq: number; artifact: ConversationArtifact };
+  | { kind: "artifact"; seq: number; artifact: ConversationArtifact }
+  | { kind: "citation"; seq: number; citation: ConversationCitation };
 
 export function ConversationLedger({
   messages,
@@ -53,9 +61,16 @@ export function ConversationLedger({
   );
   const workspaceLinks: MessageWorkspaceLink[] =
     conversationArtifactWorkspaceLinks(artifacts);
+  const citations = conversationCitations(events);
+  const citationLinks: MessageCitationLink[] =
+    conversationCitationLinks(citations);
+  const citationEventIds = new Set(citations.map((citation) => citation.id));
   const activityEvents = events.filter((event) => {
     const key = conversationArtifactEventKey(event);
-    return !key || !artifactKeys.has(`${key[0]}:${key[1]}`);
+    return (
+      !citationEventIds.has(event.id) &&
+      (!key || !artifactKeys.has(`${key[0]}:${key[1]}`))
+    );
   });
   const feed: FeedItem[] = [
     ...messages.map((message) => ({
@@ -73,6 +88,11 @@ export function ConversationLedger({
       seq: artifact.seq,
       artifact,
     })),
+    ...citations.map((citation) => ({
+      kind: "citation" as const,
+      seq: citation.seq,
+      citation,
+    })),
   ].sort((left, right) => left.seq - right.seq);
 
   return (
@@ -83,23 +103,38 @@ export function ConversationLedger({
             key={`message-${item.message.id}`}
             message={item.message}
             workspaceLinks={workspaceLinks}
+            citationLinks={citationLinks}
             {...(item.message.role === "assistant"
               ? { onBranch: () => onBranch(item.message.seq) }
               : {})}
           />
         ) : item.kind === "activity" ? (
           <ActivityCard key={`activity-${item.activity.id}`} activity={item.activity} />
-        ) : (
+        ) : item.kind === "artifact" ? (
           <ConversationArtifactCard
             key={`artifact-${item.artifact.planId}-${item.artifact.artifact.id}`}
             item={item.artifact}
             threadId={item.artifact.threadId}
             onLedgerChanged={onLedgerChanged}
           />
+        ) : (
+          <ConversationCitationCard
+            key={`citation-${item.citation.citationId}`}
+            citation={item.citation}
+            index={
+              citationLinks.find(
+                (link) => link.citationId === item.citation.citationId,
+              )?.index ?? 1
+            }
+          />
         ),
       )}
       {streamingText ? (
-        <StreamingCard text={streamingText} workspaceLinks={workspaceLinks} />
+        <StreamingCard
+          text={streamingText}
+          workspaceLinks={workspaceLinks}
+          citationLinks={citationLinks}
+        />
       ) : null}
       <div ref={endRef} />
     </div>
@@ -135,10 +170,12 @@ function MessageCard({
   message,
   onBranch,
   workspaceLinks,
+  citationLinks,
 }: {
   message: MessageView;
   onBranch?: () => void;
   workspaceLinks: readonly MessageWorkspaceLink[];
+  citationLinks: readonly MessageCitationLink[];
 }) {
   return (
     <article className={`message-card role-${message.role}`}>
@@ -153,7 +190,11 @@ function MessageCard({
           {message.model ? <small>{message.model}</small> : null}
         </header>
         <div className="message-text">
-          <MessageMarkdown text={message.text} workspaceLinks={workspaceLinks} />
+          <MessageMarkdown
+            text={message.text}
+            workspaceLinks={workspaceLinks}
+            citationLinks={citationLinks}
+          />
         </div>
         {onBranch ? (
           <button className="branch-action" type="button" onClick={onBranch}>
@@ -169,9 +210,11 @@ function MessageCard({
 function StreamingCard({
   text,
   workspaceLinks,
+  citationLinks,
 }: {
   text: string;
   workspaceLinks: readonly MessageWorkspaceLink[];
+  citationLinks: readonly MessageCitationLink[];
 }) {
   return (
     <article
@@ -188,7 +231,11 @@ function StreamingCard({
           <small>{copy.running}</small>
         </header>
         <div className="message-text">
-          <MessageMarkdown text={text} workspaceLinks={workspaceLinks} />
+          <MessageMarkdown
+            text={text}
+            workspaceLinks={workspaceLinks}
+            citationLinks={citationLinks}
+          />
           <span className="ink-caret" aria-hidden="true" />
         </div>
       </div>
