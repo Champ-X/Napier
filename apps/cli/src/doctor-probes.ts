@@ -12,6 +12,7 @@ import {
   probePythonRuntime,
   probeShellRuntime,
   probeSkillsRuntime,
+  sandboxIsolationStrength,
 } from "@napier/runtime/doctor-probes";
 
 import { localCapabilityCheck } from "./doctor-local-capability-check.js";
@@ -277,14 +278,20 @@ async function defaultSandboxProbe(
     !result.stdout &&
     !result.stderr;
   if (!passed) throw new Error("sandbox probe failed");
+  const isolation = sandboxIsolationStrength(sandbox.id);
   return {
     id: "sandbox",
     status: "passed",
     required: false,
     code: "sandbox_ready",
-    message: "The OS process sandbox launched a network-denied probe",
+    message: `The OS process sandbox launched a network-denied probe (${isolation.summary})`,
     durationMs: Date.now() - startedAt,
-    evidence: { adapter: sandbox.id },
+    evidence: {
+      adapter: sandbox.id,
+      isolationLevel: isolation.level,
+      networkDeniedByDefault: isolation.networkDeniedByDefault,
+      resourceLimited: isolation.resourceLimited,
+    },
   };
 }
 
@@ -415,14 +422,16 @@ async function safeProbe(
 }
 
 function sandboxFailure(_error: unknown, durationMs: number): DoctorCheck {
+  const isolation = sandboxIsolationStrength(createPlatformSandboxAdapter().id);
   return {
     id: "sandbox",
     status: "warning",
     required: false,
     code: "sandbox_unavailable",
     message:
-      "OS process sandbox is unavailable; coding/process tasks will fail closed",
+      "OS process sandbox is unavailable; coding/process tasks (run, build, test, LSP, git) will fail closed. Read-only file tools still work.",
     durationMs,
+    evidence: { isolationLevel: isolation.level },
   };
 }
 

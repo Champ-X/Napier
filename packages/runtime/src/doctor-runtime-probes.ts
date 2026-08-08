@@ -20,6 +20,57 @@ export interface RuntimeCapabilityProbe {
   evidence?: Record<string, boolean | number | string>;
 }
 
+export interface SandboxIsolationStrength {
+  level: "none" | "os_profile" | "namespace" | "container";
+  networkDeniedByDefault: boolean;
+  resourceLimited: boolean;
+  summary: string;
+}
+
+/**
+ * Describes the isolation an OS sandbox adapter actually enforces, so Doctor can
+ * report isolation strength and degradation impact instead of only the adapter
+ * id. Values reflect the concrete launch arguments each adapter builds.
+ */
+export function sandboxIsolationStrength(
+  adapterId: string,
+): SandboxIsolationStrength {
+  switch (adapterId) {
+    case "oci-container":
+      return {
+        level: "container",
+        networkDeniedByDefault: true,
+        resourceLimited: true,
+        summary:
+          "Container isolation with dropped capabilities, no-new-privileges, pid/memory/cpu limits, read-only root, and default-denied network",
+      };
+    case "macos-sandbox-exec":
+      return {
+        level: "os_profile",
+        networkDeniedByDefault: true,
+        resourceLimited: false,
+        summary:
+          "macOS sandbox-exec profile with default-denied network and scoped filesystem; no CPU or memory ceiling",
+      };
+    case "linux-bubblewrap":
+      return {
+        level: "namespace",
+        networkDeniedByDefault: true,
+        resourceLimited: false,
+        summary:
+          "Linux bubblewrap namespaces with default-denied network and scoped filesystem; no CPU or memory ceiling",
+      };
+    default:
+      return {
+        level: "none",
+        networkDeniedByDefault: false,
+        resourceLimited: false,
+        summary:
+          "No supported OS process isolation on this host; process capabilities fail closed",
+      };
+  }
+}
+
 /**
  * Skill loader readiness. Scans `<workspace>/skills/<name>/SKILL.md`. The loader
  * itself is always constructed, so an empty or absent catalog is reported as
