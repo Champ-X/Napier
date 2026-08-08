@@ -1,9 +1,13 @@
 import type { KeyboardEvent } from "react";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useCallback, useState } from "react";
 import { Command, Send, Square } from "lucide-react";
 
 import type { AgentProfile } from "@napier/contracts";
 import { copy } from "./copy";
+import {
+  initialComposerRunReadiness,
+  type ComposerRunReadiness,
+} from "./composer-readiness-types";
 import type { SelectedModelAvailability } from "./model-selection-view-model";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 
@@ -14,6 +18,7 @@ const LazyComposerCapabilityControl = lazy(
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
 const MODEL_WARNING_ID = "composer-model-unavailable";
+const READINESS_WARNING_ID = "composer-capability-unavailable";
 
 export function Composer({
   vm,
@@ -41,12 +46,18 @@ export function Composer({
   activeModel: SelectedModelAvailability;
   canStartRun: boolean;
 }) {
+  const [runReadiness, setRunReadiness] =
+    useState<ComposerRunReadiness>(initialComposerRunReadiness);
+  const canSubmit = canStartRun && runReadiness.canRun;
+  const submit = useCallback(() => {
+    if (vm.isRunning || canSubmit) void vm.submit();
+  }, [canSubmit, vm]);
   return (
     <form
       className="composer"
       onSubmit={(event) => {
         event.preventDefault();
-        void vm.submit();
+        submit();
       }}
     >
       <div className="composer-rule" aria-hidden="true">
@@ -76,7 +87,7 @@ export function Composer({
         }
         onChange={(event) => vm.setComposer(event.target.value)}
         onKeyDown={(event) =>
-          handleComposerKeys(event, () => void vm.submit())
+          handleComposerKeys(event, submit)
         }
       />
       <div className="composer-footer">
@@ -90,6 +101,7 @@ export function Composer({
               threadId={vm.detail?.thread.id}
               onReview={() => vm.setInspectorTab("context")}
               onAgentUpdated={vm.commitAgentConfiguration}
+              onReadinessChange={setRunReadiness}
             />
           </Suspense>
           <span>
@@ -141,9 +153,13 @@ export function Composer({
           <button
             className="run-button"
             type="submit"
-            disabled={!canStartRun}
+            disabled={!canSubmit}
             aria-describedby={
-              !activeModel.configured ? MODEL_WARNING_ID : undefined
+              !activeModel.configured
+                ? MODEL_WARNING_ID
+                : !runReadiness.canRun
+                  ? READINESS_WARNING_ID
+                  : undefined
             }
           >
             <Send size={14} aria-hidden="true" />
@@ -154,6 +170,25 @@ export function Composer({
       {!vm.isRunning && !activeModel.configured ? (
         <p id={MODEL_WARNING_ID} className="composer-model-warning" role="status">
           {copy.modelUnavailableHint}
+        </p>
+      ) : null}
+      {!vm.isRunning &&
+      activeModel.configured &&
+      runReadiness.level === "blocked" ? (
+        <p
+          id={READINESS_WARNING_ID}
+          className="composer-model-warning"
+          role="alert"
+        >
+          {runReadiness.message}
+        </p>
+      ) : null}
+      {!vm.isRunning &&
+      activeModel.configured &&
+      runReadiness.level === "warn" &&
+      runReadiness.message ? (
+        <p className="composer-readiness-warning" role="status">
+          {runReadiness.message}
         </p>
       ) : null}
     </form>

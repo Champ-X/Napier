@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowRight, ShieldCheck } from "lucide-react";
 
 import type { AgentProfile } from "@napier/contracts";
@@ -16,6 +16,10 @@ import {
   composerModeDependency,
   composerModes,
 } from "./composer-mode-view-model";
+import {
+  composerRunReadiness,
+  type ComposerRunReadiness,
+} from "./composer-readiness-view-model";
 import { updateAgentProfile } from "./context-api";
 import { formatApiErrorMessage } from "./api-error";
 import { useAgentCapabilityProjection } from "./use-agent-capability-projection";
@@ -27,12 +31,14 @@ export function ComposerCapabilityControl({
   threadId,
   onReview,
   onAgentUpdated,
+  onReadinessChange,
 }: {
   agent: AgentProfile | undefined;
   disabled: boolean;
   threadId: string | undefined;
   onReview: () => void;
   onAgentUpdated: (agent: AgentProfile) => void;
+  onReadinessChange: (readiness: ComposerRunReadiness) => void;
 }) {
   const { projection, refresh, loading, error } = useAgentCapabilityProjection(
     agent?.id,
@@ -46,6 +52,20 @@ export function ComposerCapabilityControl({
   const activeDependency = activeMode
     ? composerModeDependency(activeMode.id, projection)
     : undefined;
+  const runReadiness = useMemo(
+    () =>
+      composerRunReadiness(
+        agent,
+        busyMode ? undefined : projection,
+        loading || Boolean(busyMode),
+        error,
+      ),
+    [agent, busyMode, error, loading, projection],
+  );
+
+  useEffect(() => {
+    onReadinessChange(runReadiness);
+  }, [onReadinessChange, runReadiness]);
 
   const applyMode = async (modeId: AgentCapabilityPresetId): Promise<void> => {
     if (!agent || disabled || busyMode) return;
@@ -103,6 +123,18 @@ export function ComposerCapabilityControl({
           {activeDependency.message}
         </p>
       ) : null}
+      <div className="composer-readiness-row" aria-label="Current run readiness">
+        {runReadiness.items.map((item) => (
+          <span
+            key={item.id}
+            className={`composer-readiness-item state-${item.state}`}
+            title={item.detail}
+          >
+            <strong>{item.label}</strong>
+            {item.value}
+          </span>
+        ))}
+      </div>
       {applyError ? (
         <p className="composer-mode-error" role="alert">
           {applyError}

@@ -2767,6 +2767,14 @@ button:disabled {
   color: var(--danger);
 }
 
+.composer-readiness-warning {
+  margin: 8px 0 0;
+  font-family: var(--mono);
+  font-size: 7px;
+  line-height: 1.45;
+  color: #765814;
+}
+
 .control-mode,
 .composer-run-actions {
   display: flex;
