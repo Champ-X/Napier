@@ -24,13 +24,13 @@ import { InspectorTabButton } from "./InspectorTabButton";
 import { FatalState, LoadingShell } from "./AppInitialStates";
 import { Composer } from "./Composer";
 import { copy } from "./copy";
+import { ResponsiveInspector } from "./ResponsiveInspector";
 import { RunDecisionDockets } from "./RunDecisionDockets";
 import {
   type MessageView,
   useWorkspaceViewModel,
 } from "./use-workspace-view-model";
 import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
-
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
@@ -216,7 +216,7 @@ export function App() {
         />
       </main>
 
-      <aside className="inspector" aria-label={copy.inspect}>
+      <ResponsiveInspector label={copy.inspect}>
         <div
           className="inspector-tabs"
           role="tablist"
@@ -600,7 +600,7 @@ export function App() {
             </Suspense>
           ) : null}
         </div>
-      </aside>
+      </ResponsiveInspector>
     </div>
   );
 }

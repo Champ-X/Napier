@@ -2411,6 +2411,12 @@ button:disabled {
   border-left: 1px solid var(--rule-strong);
 }
 
+.inspector-drawer-trigger,
+.inspector-drawer-backdrop,
+.inspector-drawer-header {
+  display: none;
+}
+
 .inspector-tabs {
   display: grid;
   min-width: 0;
@@ -14956,7 +14962,89 @@ button:disabled {
   }
 
   .inspector {
-    display: none;
+    position: fixed;
+    z-index: 30;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    width: min(430px, calc(100vw - 84px));
+    grid-template-rows: 44px 52px minmax(0, 1fr);
+    box-shadow: -18px 0 48px rgb(32 40 36 / 24%);
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(105%);
+    transition:
+      transform 180ms ease,
+      visibility 180ms;
+  }
+
+  .inspector.is-drawer-open {
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  .inspector-drawer-trigger {
+    position: fixed;
+    z-index: 20;
+    top: 86px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 9px;
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--paper-bright);
+    cursor: pointer;
+    background: var(--ledger);
+    border: 1px solid rgb(255 255 255 / 18%);
+    border-radius: 3px;
+    box-shadow: 0 8px 22px rgb(32 40 36 / 18%);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .inspector-drawer-backdrop {
+    position: fixed;
+    z-index: 25;
+    inset: 0;
+    display: block;
+    padding: 0;
+    cursor: pointer;
+    background: rgb(28 35 31 / 38%);
+    border: 0;
+  }
+
+  .inspector-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px 0 14px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .inspector-drawer-header > span,
+  .inspector-drawer-header > button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .inspector-drawer-header > span {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .inspector-drawer-header > button {
+    padding: 6px;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
   }
 }
 
