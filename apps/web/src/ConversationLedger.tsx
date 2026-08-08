@@ -6,12 +6,8 @@ import {
   GitBranch,
 } from "lucide-react";
 
-import type {
-  ExecutionPlan,
-  OperatorDecision,
-  RunEvent,
-  SubagentTask,
-} from "@napier/contracts";
+import type { RunEvent } from "@napier/contracts";
+import type { WebThreadDetail } from "./api";
 import {
   conversationApprovalEventId,
   conversationApprovals,
@@ -42,6 +38,10 @@ import {
   type ConversationPlan,
 } from "./conversation-plan-view-model";
 import {
+  conversationRecoveries,
+  type ConversationRecovery,
+} from "./conversation-recovery-view-model";
+import {
   conversationSubagentEventId,
   conversationSubagents,
   type ConversationSubagent,
@@ -57,6 +57,7 @@ import { ConversationCitationCard } from "./ConversationCitationCard";
 import { ConversationBrowserActivityCard } from "./ConversationBrowserActivityCard";
 import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCard";
 import { ConversationPlanCard } from "./ConversationPlanCard";
+import { ConversationRecoveryCard } from "./ConversationRecoveryCard";
 import { ConversationSubagentCard } from "./ConversationSubagentCard";
 import {
   MessageMarkdown,
@@ -94,29 +95,30 @@ type FeedItem =
       kind: "subagent";
       seq: number;
       subagent: ConversationSubagent;
+    }
+  | {
+      kind: "recovery";
+      seq: number;
+      recovery: ConversationRecovery;
     };
 
 export function ConversationLedger({
   messages,
-  events,
-  plans,
-  operatorDecisions,
-  subagents,
+  detail,
   streamingText,
   endRef,
   onBranch,
   onLedgerChanged,
 }: {
   messages: MessageView[];
-  events: RunEvent[];
-  plans: ExecutionPlan[];
-  operatorDecisions: OperatorDecision[];
-  subagents: SubagentTask[];
+  detail: WebThreadDetail | undefined;
   streamingText: string;
   endRef: React.RefObject<HTMLDivElement | null>;
   onBranch: (seq: number) => void;
   onLedgerChanged: () => Promise<void>;
 }) {
+  const events = detail?.events ?? [];
+  const plans = detail?.plans ?? [];
   const artifacts = conversationArtifacts(events, plans);
   const artifactKeys = new Set(
     artifacts.map((item) => `${item.planId}:${item.artifact.id}`),
@@ -137,13 +139,21 @@ export function ConversationLedger({
   );
   const planItems = conversationPlans(events, plans);
   const planIds = new Set(planItems.map((item) => item.plan.id));
-  const approvals = conversationApprovals(operatorDecisions);
+  const approvals = conversationApprovals(detail?.operatorDecisions ?? []);
   const approvalIds = new Set(
     approvals.map((approval) => approval.decision.id),
   );
-  const subagentItems = conversationSubagents(events, subagents);
+  const subagentItems = conversationSubagents(events, detail?.subagents ?? []);
   const subagentIds = new Set(
     subagentItems.map((subagent) => subagent.task.id),
+  );
+  const recoveryItems = conversationRecoveries(
+    events,
+    detail?.automaticRecoveryAssessments ?? [],
+    detail?.automaticRecoveryAttempts ?? [],
+  );
+  const recoveryEventIds = new Set(
+    recoveryItems.flatMap((recovery) => recovery.eventIds),
   );
   const activityEvents = events.filter((event) => {
     const key = conversationArtifactEventKey(event);
@@ -153,6 +163,7 @@ export function ConversationLedger({
     const subagentId = conversationSubagentEventId(event);
     return (
       !citationEventIds.has(event.id) &&
+      !recoveryEventIds.has(event.id) &&
       (!callId || !networkCallIds.has(callId)) &&
       (!callId || !browserCallIds.has(callId)) &&
       (!planId || !planIds.has(planId)) &&
@@ -207,6 +218,11 @@ export function ConversationLedger({
       seq: subagent.seq,
       subagent,
     })),
+    ...recoveryItems.map((recovery) => ({
+      kind: "recovery" as const,
+      seq: recovery.seq,
+      recovery,
+    })),
   ].sort((left, right) => left.seq - right.seq);
 
   return (
@@ -223,7 +239,10 @@ export function ConversationLedger({
               : {})}
           />
         ) : item.kind === "activity" ? (
-          <ActivityCard key={`activity-${item.activity.id}`} activity={item.activity} />
+          <ActivityCard
+            key={`activity-${item.activity.id}`}
+            activity={item.activity}
+          />
         ) : item.kind === "artifact" ? (
           <ConversationArtifactCard
             key={`artifact-${item.artifact.planId}-${item.artifact.artifact.id}`}
@@ -261,10 +280,15 @@ export function ConversationLedger({
             key={`approval-${item.approval.decision.id}`}
             approval={item.approval}
           />
-        ) : (
+        ) : item.kind === "subagent" ? (
           <ConversationSubagentCard
             key={`subagent-${item.subagent.task.id}`}
             item={item.subagent}
+          />
+        ) : (
+          <ConversationRecoveryCard
+            key={`recovery-${item.recovery.id}`}
+            item={item.recovery}
           />
         ),
       )}
@@ -298,7 +322,9 @@ function ActivityCard({ activity }: { activity: ConversationActivity }) {
         <span>{activity.label}</span>
         <strong>{activity.summary}</strong>
         {activity.count > 1 ? <small>×{activity.count}</small> : null}
-        <time dateTime={activity.createdAt}>{formatTime(activity.createdAt)}</time>
+        <time dateTime={activity.createdAt}>
+          {formatTime(activity.createdAt)}
+        </time>
       </summary>
       <code>{activity.type}</code>
     </details>
@@ -325,7 +351,9 @@ function MessageCard({
       <div className="message-content">
         <header>
           <span>{message.role === "user" ? "Operator" : "Napier"}</span>
-          <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
+          <time dateTime={message.createdAt}>
+            {formatTime(message.createdAt)}
+          </time>
           {message.model ? <small>{message.model}</small> : null}
         </header>
         <div className="message-text">
@@ -383,7 +411,11 @@ function StreamingCard({
 }
 
 function eventCallId(event: RunEvent): string | undefined {
-  if (!event.payload || typeof event.payload !== "object" || Array.isArray(event.payload)) {
+  if (
+    !event.payload ||
+    typeof event.payload !== "object" ||
+    Array.isArray(event.payload)
+  ) {
     return undefined;
   }
   const callId = event.payload["callId"];
