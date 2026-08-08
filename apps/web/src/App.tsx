@@ -1,29 +1,20 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
 import {
-  Activity,
   AlertCircle,
-  Brain,
-  Cable,
-  CalendarClock,
   Circle,
-  ClipboardList,
-  Command,
   Database,
-  FolderArchive,
   GitBranch,
-  Layers,
   Plus,
   RotateCcw,
-  Scale,
   ShieldCheck,
   Target,
 } from "lucide-react";
 
 import type { GoalState, RunRecord, ThreadStatus } from "@napier/contracts";
-import { InspectorTabButton } from "./InspectorTabButton";
 import { FatalState, LoadingShell } from "./AppInitialStates";
 import { Composer } from "./Composer";
 import { copy } from "./copy";
+import { InspectorNavigation } from "./InspectorNavigation";
 import { ResponsiveInspector } from "./ResponsiveInspector";
 import { RunDecisionDockets } from "./RunDecisionDockets";
 import {
@@ -217,92 +208,10 @@ export function App() {
       </main>
 
       <ResponsiveInspector label={copy.inspect}>
-        <div
-          className="inspector-tabs"
-          role="tablist"
-          aria-label={copy.inspect}
-        >
-          <InspectorTabButton
-            id="trace"
-            active={vm.inspectorTab === "trace"}
-            icon={<Activity size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.trace}
-          </InspectorTabButton>
-          <InspectorTabButton
-            id="processes"
-            active={vm.inspectorTab === "processes"}
-            icon={<Command size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.processes}
-          </InspectorTabButton>
-          <InspectorTabButton
-            id="files"
-            active={vm.inspectorTab === "files"}
-            icon={<FolderArchive size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.files}
-          </InspectorTabButton>
-          <InspectorTabButton
-            id="lab"
-            active={vm.inspectorTab === "lab"}
-            icon={<Scale size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.lab}
-          </InspectorTabButton>
-          <InspectorTabButton
-            id="plan"
-            active={vm.inspectorTab === "plan"}
-            icon={<ClipboardList size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.plan}
-          </InspectorTabButton>
-          <InspectorTabButton
-            id="goal"
-            active={vm.inspectorTab === "goal"}
-            icon={<Target size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.goal}
-          </InspectorTabButton>
-          <InspectorTabButton
-            id="memory"
-            active={vm.inspectorTab === "memory"}
-            icon={<Brain size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.memory}
-          </InspectorTabButton>
-          <InspectorTabButton
-            id="extensions"
-            active={vm.inspectorTab === "extensions"}
-            icon={<Cable size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.extensions}
-          </InspectorTabButton>
-          <InspectorTabButton
-            id="automations"
-            active={vm.inspectorTab === "automations"}
-            icon={<CalendarClock size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.automations}
-          </InspectorTabButton>
-          <InspectorTabButton
-            id="context"
-            active={vm.inspectorTab === "context"}
-            icon={<Layers size={14} />}
-            onClick={vm.setInspectorTab}
-          >
-            {copy.tabs.context}
-          </InspectorTabButton>
-        </div>
+        <InspectorNavigation
+          activeTab={vm.inspectorTab}
+          onChange={vm.setInspectorTab}
+        />
 
         <div className="inspector-body">
           {vm.inspectorTab === "trace" ? (

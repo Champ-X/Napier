@@ -2400,7 +2400,7 @@ button:disabled {
   display: grid;
   min-width: 0;
   min-height: 0;
-  grid-template-rows: 52px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   background:
     repeating-linear-gradient(
       0deg,
@@ -2417,13 +2417,44 @@ button:disabled {
   display: none;
 }
 
+.inspector-navigation {
+  background: rgb(244 240 231 / 80%);
+  border-bottom: 1px solid var(--rule);
+}
+
+.inspector-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 7px 9px 0;
+}
+
+.inspector-groups button {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.inspector-groups button.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--vermilion);
+}
+
 .inspector-tabs {
   display: grid;
   min-width: 0;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-  padding: 8px 9px 0;
-  background: rgb(244 240 231 / 80%);
-  border-bottom: 1px solid var(--rule);
+  grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+  padding: 4px 9px 0;
 }
 
 .inspector-tabs button {
@@ -14969,7 +15000,7 @@ button:disabled {
     bottom: 0;
     display: grid;
     width: min(430px, calc(100vw - 84px));
-    grid-template-rows: 44px 52px minmax(0, 1fr);
+    grid-template-rows: 44px auto minmax(0, 1fr);
     box-shadow: -18px 0 48px rgb(32 40 36 / 24%);
     visibility: hidden;
     pointer-events: none;
