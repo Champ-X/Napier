@@ -5,6 +5,7 @@ type MarkdownBlock =
   | { kind: "heading"; level: 1 | 2 | 3; value: string }
   | { kind: "quote"; value: string }
   | { kind: "list"; ordered: boolean; items: string[] }
+  | { kind: "table"; headers: string[]; rows: string[][] }
   | { kind: "paragraph"; value: string };
 
 export function MessageMarkdown({ text }: { text: string }) {
@@ -14,7 +15,12 @@ export function MessageMarkdown({ text }: { text: string }) {
         const key = `${block.kind}-${String(index)}`;
         if (block.kind === "code") {
           return (
-            <pre className="message-code-block" key={key}>
+            <pre
+              className={`message-code-block${
+                block.language ? ` language-${block.language.toLowerCase()}` : ""
+              }`}
+              key={key}
+            >
               {block.language ? <span>{block.language}</span> : null}
               <code>{block.value}</code>
             </pre>
@@ -39,6 +45,34 @@ export function MessageMarkdown({ text }: { text: string }) {
             </List>
           );
         }
+        if (block.kind === "table") {
+          return (
+            <div className="message-table-wrap" key={key}>
+              <table>
+                <thead>
+                  <tr>
+                    {block.headers.map((header, headerIndex) => (
+                      <th key={`${key}-head-${String(headerIndex)}`}>
+                        {inlineMarkdown(header)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {block.rows.map((row, rowIndex) => (
+                    <tr key={`${key}-row-${String(rowIndex)}`}>
+                      {row.map((cell, cellIndex) => (
+                        <td key={`${key}-cell-${String(rowIndex)}-${String(cellIndex)}`}>
+                          {inlineMarkdown(cell)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
         return <p key={key}>{inlineMarkdown(block.value)}</p>;
       })}
     </>
@@ -59,6 +93,7 @@ export function parseMarkdownBlocks(text: string): MarkdownBlock[] {
       parseFence(lines, index) ??
       parseHeading(line, index) ??
       parseQuote(lines, index) ??
+      parseTable(lines, index) ??
       parseList(lines, index) ??
       parseParagraph(lines, index);
     blocks.push(parsed.block);
@@ -141,6 +176,31 @@ function parseList(lines: string[], index: number): ParsedBlock | undefined {
   return { block: { kind: "list", ordered, items }, nextIndex };
 }
 
+function parseTable(lines: string[], index: number): ParsedBlock | undefined {
+  const headers = tableCells(lines[index] ?? "");
+  const divider = lines[index + 1] ?? "";
+  if (
+    headers.length === 0 ||
+    !/^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/u.test(divider)
+  ) {
+    return undefined;
+  }
+  const rows: string[][] = [];
+  let nextIndex = index + 2;
+  while (nextIndex < lines.length && (lines[nextIndex] ?? "").includes("|")) {
+    const cells = tableCells(lines[nextIndex] ?? "");
+    if (cells.length === 0) break;
+    rows.push(
+      Array.from({ length: headers.length }, (_, cellIndex) => cells[cellIndex] ?? ""),
+    );
+    nextIndex += 1;
+  }
+  return {
+    block: { kind: "table", headers, rows },
+    nextIndex,
+  };
+}
+
 function parseParagraph(lines: string[], index: number): ParsedBlock {
   const paragraph = [lines[index] ?? ""];
   let nextIndex = index + 1;
@@ -163,8 +223,16 @@ function isBlockStart(line: string): boolean {
     /^```/u.test(line) ||
     /^(#{1,3})\s+/u.test(line) ||
     /^>\s?/u.test(line) ||
+    (line.includes("|") && /^.*\|.*$/u.test(line)) ||
     /^\s*(?:[-*]|\d+\.)\s+/u.test(line)
   );
+}
+
+function tableCells(line: string): string[] {
+  const normalized = line.trim().replace(/^\|/u, "").replace(/\|$/u, "");
+  return normalized.includes("|")
+    ? normalized.split("|").map((cell) => cell.trim())
+    : [];
 }
 
 function inlineMarkdown(value: string): ReactNode[] {

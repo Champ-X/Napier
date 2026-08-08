@@ -15,6 +15,10 @@ describe("Message Markdown", () => {
           "",
           "> verified source",
           "",
+          "| Check | Status |",
+          "| --- | --- |",
+          "| Typecheck | Pass |",
+          "",
           "Use `npm test` before delivery.",
           "",
           "```ts",
@@ -26,6 +30,11 @@ describe("Message Markdown", () => {
       { kind: "heading", level: 2, value: "Result" },
       { kind: "list", ordered: false, items: ["first", "second"] },
       { kind: "quote", value: "verified source" },
+      {
+        kind: "table",
+        headers: ["Check", "Status"],
+        rows: [["Typecheck", "Pass"]],
+      },
       { kind: "paragraph", value: "Use `npm test` before delivery." },
       { kind: "code", language: "ts", value: "const value = 1;" },
     ]);
@@ -54,5 +63,7 @@ describe("Message Markdown", () => {
     expect(source).toContain('url.protocol === "https:"');
     expect(source).toContain('url.protocol === "http:"');
     expect(source).toContain('rel="noreferrer noopener"');
+    expect(source).toContain("message-table-wrap");
+    expect(source).toContain("language-${block.language.toLowerCase()}");
   });
 });

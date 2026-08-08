@@ -1136,6 +1136,53 @@ button:disabled {
   white-space: pre;
 }
 
+.message-code-block.language-diff,
+.message-code-block.language-patch {
+  box-shadow: inset 3px 0 0 var(--vermilion);
+}
+
+.message-table-wrap {
+  margin: 13px 0 17px;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.message-table-wrap table {
+  width: 100%;
+  min-width: 360px;
+  border-collapse: collapse;
+  font-family: "Avenir Next", Avenir, sans-serif;
+  font-size: 11px;
+}
+
+.message-table-wrap th,
+.message-table-wrap td {
+  padding: 7px 9px;
+  text-align: left;
+  vertical-align: top;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.message-table-wrap th {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-soft);
+  background: var(--paper-deep);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.message-table-wrap tr:last-child td {
+  border-bottom: 0;
+}
+
+.message-table-wrap th:last-child,
+.message-table-wrap td:last-child {
+  border-right: 0;
+}
+
 .branch-action {
   display: flex;
   align-items: center;
