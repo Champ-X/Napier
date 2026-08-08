@@ -516,11 +516,12 @@ button:disabled {
   min-height: 0;
   grid-template-areas:
     "header"
+    "narrative"
     "notices"
     "conversation"
     "decisions"
     "composer";
-  grid-template-rows: 76px auto minmax(0, 1fr) auto auto;
+  grid-template-rows: 76px auto auto minmax(0, 1fr) auto auto;
   background:
     linear-gradient(
       90deg,
@@ -655,6 +656,61 @@ button:disabled {
 .run-status.is-running > span {
   background: var(--ochre);
   animation: breathe 1.2s ease-in-out infinite;
+}
+
+.task-narrative {
+  grid-area: narrative;
+  display: grid;
+  grid-template-columns: minmax(180px, 1.3fr) repeat(2, minmax(130px, 1fr));
+  gap: 1px;
+  padding: 0 24px 0 72px;
+  background: var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.task-narrative > div {
+  min-width: 0;
+  padding: 9px 11px;
+  background: rgb(250 247 240 / 96%);
+}
+
+.task-narrative-current > span,
+.task-narrative > div:not(.task-narrative-current) > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.task-narrative-current strong,
+.task-narrative p {
+  display: block;
+  margin: 3px 0 0;
+  overflow: hidden;
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-narrative.phase-working .task-narrative-current > span {
+  color: var(--ochre);
+}
+
+.task-narrative.phase-blocked .task-narrative-current > span,
+.task-narrative.phase-failed .task-narrative-current > span,
+.task-narrative-blocker > span {
+  color: var(--vermilion) !important;
+}
+
+.task-narrative.phase-completed .task-narrative-current > span {
+  color: var(--ledger);
 }
 
 .error-banner {
@@ -15160,6 +15216,12 @@ button:disabled {
 
   .workbench-header {
     padding-left: 42px;
+  }
+
+  .task-narrative {
+    grid-template-columns: 1fr;
+    padding-right: 12px;
+    padding-left: 41px;
   }
 
   .error-banner,

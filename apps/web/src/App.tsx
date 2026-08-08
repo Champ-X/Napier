@@ -17,10 +17,8 @@ import { copy } from "./copy";
 import { InspectorNavigation } from "./InspectorNavigation";
 import { ResponsiveInspector } from "./ResponsiveInspector";
 import { RunDecisionDockets } from "./RunDecisionDockets";
-import {
-  type MessageView,
-  useWorkspaceViewModel,
-} from "./use-workspace-view-model";
+import { TaskNarrativeBar } from "./TaskNarrativeBar";
+import { type MessageView, useWorkspaceViewModel } from "./use-workspace-view-model";
 import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
@@ -152,6 +150,7 @@ export function App() {
           </div>
         </header>
 
+        <TaskNarrativeBar detail={vm.detail} />
         <div className="workbench-notices">
           {vm.error ? (
             <div className="error-banner" role="alert">

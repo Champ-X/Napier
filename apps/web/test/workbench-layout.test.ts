@@ -9,10 +9,13 @@ describe("Workbench layout", () => {
     );
 
     expect(styles).toContain('grid-template-areas:\n    "header"');
-    expect(styles).toContain('"notices"\n    "conversation"\n    "decisions"');
     expect(styles).toContain(
-      "grid-template-rows: 76px auto minmax(0, 1fr) auto auto;",
+      '"narrative"\n    "notices"\n    "conversation"\n    "decisions"',
     );
+    expect(styles).toContain(
+      "grid-template-rows: 76px auto auto minmax(0, 1fr) auto auto;",
+    );
+    expect(styles).toContain(".task-narrative {\n  grid-area: narrative;");
     expect(styles).toContain(".workbench-notices {\n  grid-area: notices;");
     expect(styles).toContain(".conversation {\n  grid-area: conversation;");
     expect(styles).toContain(".run-decision-dockets {\n  grid-area: decisions;");
