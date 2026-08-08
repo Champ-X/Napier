@@ -87,7 +87,7 @@ export async function createLocalAgentRuntime(
   let extensions: McpExtensionManager | undefined;
   let workspaceProcesses: WorkspaceProcessManager | undefined;
   try {
-    await store.initialize();
+    await store.initialize(true);
     const credentials = new CredentialReferenceStore({
       store,
       ...(options.env ? { env: options.env } : {}),

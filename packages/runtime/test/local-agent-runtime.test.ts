@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   createLocalAgentRuntime,
+  LocalStore,
   UnsupportedSandboxAdapter,
 } from "../src/index.js";
 
@@ -95,5 +96,70 @@ describe("local Agent Runtime bootstrap", () => {
       "SQLite ledger is not initialized",
     );
     await expect(services.shutdown()).resolves.toBeUndefined();
+  });
+
+  it("interrupts an unexpired orphan Run lease before exposing the workspace", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-local-restart-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "state");
+    await mkdir(workspaceRoot);
+    const abandoned = new LocalStore({ workspaceRoot, dataRoot });
+    await abandoned.initialize();
+    const agent = abandoned.listAgents()[0]!;
+    const thread = await abandoned.createThread({
+      title: "Orphan Run restart",
+      agentId: agent.id,
+    });
+    const leased = await abandoned.createLeasedRun(
+      { threadId: thread.id, agentId: agent.id },
+      { ownerId: "worker_abandoned", ttlMs: 60_000 },
+    );
+    expect(leased.run.lease?.expiresAt).toBeDefined();
+    abandoned.close();
+
+    const services = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("restart-test"),
+    });
+    try {
+      const recovered = services.store.listRuns(thread.id).find(
+        (run) => run.id === leased.run.id,
+      );
+      expect(recovered).toEqual(
+        expect.objectContaining({
+          status: "interrupted",
+          interruptionReason: expect.stringContaining(
+            "runtime process exited",
+          ),
+        }),
+      );
+      expect(recovered).not.toHaveProperty("lease");
+      const recoveredThread = services.store.getThread(thread.id);
+      expect(recoveredThread).toEqual(
+        expect.objectContaining({ status: "waiting" }),
+      );
+      expect(recoveredThread).not.toHaveProperty("currentRunId");
+      expect(
+        (await services.store.listEvents(thread.id)).filter(
+          (event) =>
+            event.runId === leased.run.id && event.type === "run.interrupted",
+        ),
+      ).toHaveLength(1);
+      await expect(
+        services.store.trashThread(thread.id),
+      ).resolves.toBeDefined();
+      expect(
+        services.store.listVisibleThreads().some(
+          (candidate) => candidate.id === thread.id,
+        ),
+      ).toBe(false);
+      expect(
+        (await services.store.listEvents(thread.id)).at(-1)?.type,
+      ).toBe("thread.trashed");
+    } finally {
+      await services.shutdown();
+    }
   });
 });

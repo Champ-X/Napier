@@ -1046,7 +1046,7 @@ export class LocalStore {
     this.stateQueue = new SerialQueue(() => this.refreshStateFromLedger(), 4);
   }
 
-  async initialize(): Promise<void> {
+  async initialize(interruptActiveRuns = false): Promise<void> {
     if (this.initialized) return;
     await mkdir(this.eventsRoot, { recursive: true });
     const ledger = new SqliteLedger(this.databasePath);
@@ -1082,7 +1082,7 @@ export class LocalStore {
         await this.stateQueue.run(() => this.persistState());
       }
       this.initialized = true;
-      if (restored) await this.reconcileInterruptedRuns();
+      if (restored) await this.reconcileInterruptedRuns(interruptActiveRuns);
     } catch (error) {
       ledger.close();
       this.ledger = undefined;
@@ -9183,7 +9183,7 @@ export class LocalStore {
     );
   }
 
-  private async reconcileInterruptedRuns(): Promise<void> {
+  private async reconcileInterruptedRuns(interruptActiveLeases = false): Promise<void> {
     const reason =
       "The runtime process exited or its renewable owner lease expired before this run reached a terminal state.";
     const timestamp = nowIso();
@@ -9202,8 +9202,7 @@ export class LocalStore {
       for (const run of this.state.runs) {
         if (run.status !== "queued" && run.status !== "running") continue;
         if (
-          run.lease &&
-          run.leaseTokenSha256 &&
+          !interruptActiveLeases && run.lease && run.leaseTokenSha256 &&
           Number.isFinite(Date.parse(run.lease.expiresAt)) &&
           Date.parse(run.lease.expiresAt) > timestampMs
         ) {
