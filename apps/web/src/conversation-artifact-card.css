@@ -394,3 +394,116 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.conversation-browser-activity {
+  margin: -11px 0 25px 37px;
+  color: var(--ink-soft);
+  background: rgb(239 235 229 / 86%);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--ochre);
+  border-radius: 2px;
+}
+
+.conversation-browser-activity.status-completed {
+  border-left-color: var(--ledger);
+}
+
+.conversation-browser-activity.status-failed,
+.conversation-browser-activity.takeover-recommended {
+  border-left-color: var(--vermilion);
+}
+
+.conversation-browser-activity > summary {
+  display: grid;
+  min-height: 42px;
+  grid-template-columns: 18px minmax(0, 1fr) 16px auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.conversation-browser-activity > summary::-webkit-details-marker {
+  display: none;
+}
+
+.conversation-browser-activity > summary div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.conversation-browser-activity > summary span,
+.conversation-browser-activity > summary time,
+.conversation-browser-activity dt,
+.conversation-browser-activity dd {
+  font-family: var(--mono);
+  font-size: 8px;
+}
+
+.conversation-browser-activity > summary span,
+.conversation-browser-activity > summary time,
+.conversation-browser-activity dt {
+  color: var(--ink-faint);
+}
+
+.conversation-browser-activity > summary span {
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.conversation-browser-activity > summary strong {
+  overflow: hidden;
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-browser-activity .is-spinning {
+  animation: spin 1s linear infinite;
+}
+
+.conversation-browser-activity > dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px 12px;
+  margin: 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.conversation-browser-activity > dl div {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.conversation-browser-activity dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-browser-activity > p {
+  margin: 0;
+  padding: 0 12px 10px;
+  font-family: var(--serif);
+  font-size: 9px;
+  color: var(--ink-faint);
+}
+
+.conversation-browser-activity.takeover-recommended > p {
+  color: var(--vermilion);
+}
+
+@media (max-width: 540px) {
+  .conversation-browser-activity > dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

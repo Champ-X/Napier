@@ -19,6 +19,10 @@ import {
   type ConversationCitation,
 } from "./conversation-citation-view-model";
 import {
+  conversationBrowserActivities,
+  type ConversationBrowserActivity,
+} from "./conversation-browser-activity-view-model";
+import {
   conversationNetworkActivities,
   type ConversationNetworkActivity,
 } from "./conversation-network-activity-view-model";
@@ -29,6 +33,7 @@ import {
 } from "./conversation-activity-view-model";
 import { ConversationArtifactCard } from "./ConversationArtifactCard";
 import { ConversationCitationCard } from "./ConversationCitationCard";
+import { ConversationBrowserActivityCard } from "./ConversationBrowserActivityCard";
 import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCard";
 import {
   MessageMarkdown,
@@ -46,6 +51,11 @@ type FeedItem =
       kind: "network";
       seq: number;
       activity: ConversationNetworkActivity;
+    }
+  | {
+      kind: "browser";
+      seq: number;
+      activity: ConversationBrowserActivity;
     };
 
 export function ConversationLedger({
@@ -79,12 +89,17 @@ export function ConversationLedger({
   const networkCallIds = new Set(
     networkActivities.map((activity) => activity.callId),
   );
+  const browserActivities = conversationBrowserActivities(events);
+  const browserCallIds = new Set(
+    browserActivities.map((activity) => activity.callId),
+  );
   const activityEvents = events.filter((event) => {
     const key = conversationArtifactEventKey(event);
     const callId = eventCallId(event);
     return (
       !citationEventIds.has(event.id) &&
       (!callId || !networkCallIds.has(callId)) &&
+      (!callId || !browserCallIds.has(callId)) &&
       (!key || !artifactKeys.has(`${key[0]}:${key[1]}`))
     );
   });
@@ -111,6 +126,11 @@ export function ConversationLedger({
     })),
     ...networkActivities.map((activity) => ({
       kind: "network" as const,
+      seq: activity.seq,
+      activity,
+    })),
+    ...browserActivities.map((activity) => ({
+      kind: "browser" as const,
       seq: activity.seq,
       activity,
     })),
@@ -148,9 +168,14 @@ export function ConversationLedger({
               )?.index ?? 1
             }
           />
-        ) : (
+        ) : item.kind === "network" ? (
           <ConversationNetworkActivityCard
             key={`network-${item.activity.callId}`}
+            activity={item.activity}
+          />
+        ) : (
+          <ConversationBrowserActivityCard
+            key={`browser-${item.activity.callId}`}
             activity={item.activity}
           />
         ),
