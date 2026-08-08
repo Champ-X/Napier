@@ -26,6 +26,11 @@ import {
   conversationNetworkActivities,
   type ConversationNetworkActivity,
 } from "./conversation-network-activity-view-model";
+import {
+  conversationPlanEventId,
+  conversationPlans,
+  type ConversationPlan,
+} from "./conversation-plan-view-model";
 import { copy } from "./copy";
 import {
   conversationActivities,
@@ -35,6 +40,7 @@ import { ConversationArtifactCard } from "./ConversationArtifactCard";
 import { ConversationCitationCard } from "./ConversationCitationCard";
 import { ConversationBrowserActivityCard } from "./ConversationBrowserActivityCard";
 import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCard";
+import { ConversationPlanCard } from "./ConversationPlanCard";
 import {
   MessageMarkdown,
   type MessageCitationLink,
@@ -56,6 +62,11 @@ type FeedItem =
       kind: "browser";
       seq: number;
       activity: ConversationBrowserActivity;
+    }
+  | {
+      kind: "plan";
+      seq: number;
+      plan: ConversationPlan;
     };
 
 export function ConversationLedger({
@@ -93,13 +104,17 @@ export function ConversationLedger({
   const browserCallIds = new Set(
     browserActivities.map((activity) => activity.callId),
   );
+  const planItems = conversationPlans(events, plans);
+  const planIds = new Set(planItems.map((item) => item.plan.id));
   const activityEvents = events.filter((event) => {
     const key = conversationArtifactEventKey(event);
     const callId = eventCallId(event);
+    const planId = conversationPlanEventId(event);
     return (
       !citationEventIds.has(event.id) &&
       (!callId || !networkCallIds.has(callId)) &&
       (!callId || !browserCallIds.has(callId)) &&
+      (!planId || !planIds.has(planId)) &&
       (!key || !artifactKeys.has(`${key[0]}:${key[1]}`))
     );
   });
@@ -133,6 +148,11 @@ export function ConversationLedger({
       kind: "browser" as const,
       seq: activity.seq,
       activity,
+    })),
+    ...planItems.map((plan) => ({
+      kind: "plan" as const,
+      seq: plan.seq,
+      plan,
     })),
   ].sort((left, right) => left.seq - right.seq);
 
@@ -173,10 +193,15 @@ export function ConversationLedger({
             key={`network-${item.activity.callId}`}
             activity={item.activity}
           />
-        ) : (
+        ) : item.kind === "browser" ? (
           <ConversationBrowserActivityCard
             key={`browser-${item.activity.callId}`}
             activity={item.activity}
+          />
+        ) : (
+          <ConversationPlanCard
+            key={`plan-${item.plan.plan.id}`}
+            item={item.plan}
           />
         ),
       )}
