@@ -45,6 +45,7 @@ export function ConversationWorkspace({
             events={vm.detail?.events ?? []}
             plans={vm.detail?.plans ?? []}
             operatorDecisions={vm.detail?.operatorDecisions ?? []}
+            subagents={vm.detail?.subagents ?? []}
             streamingText={vm.streamingText}
             endRef={endRef}
             onBranch={(seq) => void vm.branchFrom(seq)}

@@ -10,6 +10,7 @@ import type {
   ExecutionPlan,
   OperatorDecision,
   RunEvent,
+  SubagentTask,
 } from "@napier/contracts";
 import {
   conversationApprovalEventId,
@@ -40,6 +41,11 @@ import {
   conversationPlans,
   type ConversationPlan,
 } from "./conversation-plan-view-model";
+import {
+  conversationSubagentEventId,
+  conversationSubagents,
+  type ConversationSubagent,
+} from "./conversation-subagent-view-model";
 import { copy } from "./copy";
 import {
   conversationActivities,
@@ -51,6 +57,7 @@ import { ConversationCitationCard } from "./ConversationCitationCard";
 import { ConversationBrowserActivityCard } from "./ConversationBrowserActivityCard";
 import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCard";
 import { ConversationPlanCard } from "./ConversationPlanCard";
+import { ConversationSubagentCard } from "./ConversationSubagentCard";
 import {
   MessageMarkdown,
   type MessageCitationLink,
@@ -82,6 +89,11 @@ type FeedItem =
       kind: "approval";
       seq: number;
       approval: ConversationApproval;
+    }
+  | {
+      kind: "subagent";
+      seq: number;
+      subagent: ConversationSubagent;
     };
 
 export function ConversationLedger({
@@ -89,6 +101,7 @@ export function ConversationLedger({
   events,
   plans,
   operatorDecisions,
+  subagents,
   streamingText,
   endRef,
   onBranch,
@@ -98,6 +111,7 @@ export function ConversationLedger({
   events: RunEvent[];
   plans: ExecutionPlan[];
   operatorDecisions: OperatorDecision[];
+  subagents: SubagentTask[];
   streamingText: string;
   endRef: React.RefObject<HTMLDivElement | null>;
   onBranch: (seq: number) => void;
@@ -127,17 +141,23 @@ export function ConversationLedger({
   const approvalIds = new Set(
     approvals.map((approval) => approval.decision.id),
   );
+  const subagentItems = conversationSubagents(events, subagents);
+  const subagentIds = new Set(
+    subagentItems.map((subagent) => subagent.task.id),
+  );
   const activityEvents = events.filter((event) => {
     const key = conversationArtifactEventKey(event);
     const callId = eventCallId(event);
     const planId = conversationPlanEventId(event);
     const approvalId = conversationApprovalEventId(event);
+    const subagentId = conversationSubagentEventId(event);
     return (
       !citationEventIds.has(event.id) &&
       (!callId || !networkCallIds.has(callId)) &&
       (!callId || !browserCallIds.has(callId)) &&
       (!planId || !planIds.has(planId)) &&
       (!approvalId || !approvalIds.has(approvalId)) &&
+      (!subagentId || !subagentIds.has(subagentId)) &&
       (!key || !artifactKeys.has(`${key[0]}:${key[1]}`))
     );
   });
@@ -181,6 +201,11 @@ export function ConversationLedger({
       kind: "approval" as const,
       seq: approval.seq,
       approval,
+    })),
+    ...subagentItems.map((subagent) => ({
+      kind: "subagent" as const,
+      seq: subagent.seq,
+      subagent,
     })),
   ].sort((left, right) => left.seq - right.seq);
 
@@ -231,10 +256,15 @@ export function ConversationLedger({
             key={`plan-${item.plan.plan.id}`}
             item={item.plan}
           />
-        ) : (
+        ) : item.kind === "approval" ? (
           <ConversationApprovalCard
             key={`approval-${item.approval.decision.id}`}
             approval={item.approval}
+          />
+        ) : (
+          <ConversationSubagentCard
+            key={`subagent-${item.subagent.task.id}`}
+            item={item.subagent}
           />
         ),
       )}
