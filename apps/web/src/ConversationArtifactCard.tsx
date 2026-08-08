@@ -9,7 +9,10 @@ import {
   type PlanArtifactTextPreviewReceipt,
 } from "./artifact-file-api";
 import { formatArtifactSizeBytes } from "./artifact-manifest-view-model";
-import type { ConversationArtifact } from "./conversation-artifact-view-model";
+import {
+  conversationArtifactTargetId,
+  type ConversationArtifact,
+} from "./conversation-artifact-view-model";
 
 export function ConversationArtifactCard({
   item,
@@ -74,7 +77,11 @@ export function ConversationArtifactCard({
   };
 
   return (
-    <article className={`conversation-artifact status-${item.artifact.status}`}>
+    <article
+      id={conversationArtifactTargetId(item)}
+      className={`conversation-artifact status-${item.artifact.status}`}
+      tabIndex={-1}
+    >
       <header>
         <Icon size={16} aria-hidden="true" />
         <div>

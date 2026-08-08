@@ -1105,6 +1105,38 @@ button:disabled {
   text-underline-offset: 2px;
 }
 
+.message-workspace-link {
+  font-weight: 650;
+  text-decoration-style: dashed;
+}
+
+.message-workspace-link::after {
+  content: " ↗";
+  font-family: var(--mono);
+  font-size: 0.7em;
+  color: var(--ink-faint);
+}
+
+.message-workspace-link.is-code {
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+.message-workspace-link.is-code::after {
+  content: none;
+}
+
+.message-workspace-link.is-code code {
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 2px;
+}
+
+.conversation-artifact:target {
+  outline: 2px solid var(--ochre);
+  outline-offset: 3px;
+}
+
 .message-code-block {
   position: relative;
   margin: 13px 0 17px;

@@ -14,6 +14,11 @@ export interface ConversationArtifact {
   artifact: ArtifactManifestEntry;
 }
 
+export interface ConversationArtifactWorkspaceLink {
+  path: string;
+  targetId: string;
+}
+
 const ARTIFACT_STATUS_EVENT =
   /^plan\.artifact\.(produced|verified|missing|superseded)$/u;
 
@@ -62,10 +67,42 @@ export function conversationArtifactEventKey(
   return planId && artifactId ? [planId, artifactId] : undefined;
 }
 
+export function conversationArtifactWorkspaceLinks(
+  artifacts: readonly ConversationArtifact[],
+): ConversationArtifactWorkspaceLink[] {
+  return artifacts.flatMap((item) =>
+    item.artifact.kind === "file" &&
+    (item.artifact.status === "produced" ||
+      item.artifact.status === "verified")
+      ? [
+          {
+            path: item.artifact.path,
+            targetId: conversationArtifactTargetId(item),
+          },
+        ]
+      : [],
+  );
+}
+
+export function conversationArtifactTargetId(
+  item: ConversationArtifact,
+): string {
+  return [
+    "conversation-artifact",
+    safeIdSegment(item.planId),
+    safeIdSegment(item.artifact.id),
+    String(item.seq),
+  ].join("-");
+}
+
 function payloadString(value: unknown, key: string): string | undefined {
   if (!value || Array.isArray(value) || typeof value !== "object") {
     return undefined;
   }
   const entry = (value as Record<string, unknown>)[key];
   return typeof entry === "string" ? entry : undefined;
+}
+
+function safeIdSegment(value: string): string {
+  return value.replaceAll(/[^A-Za-z0-9_-]/gu, "_");
 }

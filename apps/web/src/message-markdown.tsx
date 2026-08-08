@@ -15,7 +15,21 @@ export type DiffLineTone =
   | "metadata"
   | "context";
 
-export function MessageMarkdown({ text }: { text: string }) {
+export interface MessageWorkspaceLink {
+  path: string;
+  targetId: string;
+}
+
+export function MessageMarkdown({
+  text,
+  workspaceLinks = [],
+}: {
+  text: string;
+  workspaceLinks?: readonly MessageWorkspaceLink[];
+}) {
+  const workspaceTargets = new Map(
+    workspaceLinks.map((link) => [link.path, link.targetId]),
+  );
   return (
     <>
       {parseMarkdownBlocks(text).map((block, index) => {
@@ -52,10 +66,18 @@ export function MessageMarkdown({ text }: { text: string }) {
         }
         if (block.kind === "heading") {
           const Heading = `h${String(block.level + 2)}` as "h3" | "h4" | "h5";
-          return <Heading key={key}>{inlineMarkdown(block.value)}</Heading>;
+          return (
+            <Heading key={key}>
+              {inlineMarkdown(block.value, workspaceTargets)}
+            </Heading>
+          );
         }
         if (block.kind === "quote") {
-          return <blockquote key={key}>{inlineMarkdown(block.value)}</blockquote>;
+          return (
+            <blockquote key={key}>
+              {inlineMarkdown(block.value, workspaceTargets)}
+            </blockquote>
+          );
         }
         if (block.kind === "list") {
           const List = block.ordered ? "ol" : "ul";
@@ -63,7 +85,7 @@ export function MessageMarkdown({ text }: { text: string }) {
             <List key={key}>
               {block.items.map((item, itemIndex) => (
                 <li key={`${key}-${String(itemIndex)}`}>
-                  {inlineMarkdown(item)}
+                  {inlineMarkdown(item, workspaceTargets)}
                 </li>
               ))}
             </List>
@@ -77,7 +99,7 @@ export function MessageMarkdown({ text }: { text: string }) {
                   <tr>
                     {block.headers.map((header, headerIndex) => (
                       <th key={`${key}-head-${String(headerIndex)}`}>
-                        {inlineMarkdown(header)}
+                        {inlineMarkdown(header, workspaceTargets)}
                       </th>
                     ))}
                   </tr>
@@ -87,7 +109,7 @@ export function MessageMarkdown({ text }: { text: string }) {
                     <tr key={`${key}-row-${String(rowIndex)}`}>
                       {row.map((cell, cellIndex) => (
                         <td key={`${key}-cell-${String(rowIndex)}-${String(cellIndex)}`}>
-                          {inlineMarkdown(cell)}
+                          {inlineMarkdown(cell, workspaceTargets)}
                         </td>
                       ))}
                     </tr>
@@ -97,7 +119,9 @@ export function MessageMarkdown({ text }: { text: string }) {
             </div>
           );
         }
-        return <p key={key}>{inlineMarkdown(block.value)}</p>;
+        return (
+          <p key={key}>{inlineMarkdown(block.value, workspaceTargets)}</p>
+        );
       })}
     </>
   );
@@ -282,7 +306,10 @@ function diffLineTone(line: string): DiffLineTone {
   return "context";
 }
 
-function inlineMarkdown(value: string): ReactNode[] {
+function inlineMarkdown(
+  value: string,
+  workspaceTargets: ReadonlyMap<string, string>,
+): ReactNode[] {
   const tokens =
     /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]\n]+\]\([^\s)]+\))/gu;
   const output: ReactNode[] = [];
@@ -292,14 +319,37 @@ function inlineMarkdown(value: string): ReactNode[] {
     if (start > cursor) output.push(value.slice(cursor, start));
     const token = match[0];
     if (token.startsWith("`")) {
-      output.push(<code key={`${start}-code`}>{token.slice(1, -1)}</code>);
+      const code = token.slice(1, -1);
+      const targetId = workspaceTargets.get(code);
+      output.push(
+        targetId ? (
+          <a
+            className="message-workspace-link is-code"
+            href={`#${targetId}`}
+            key={`${start}-workspace-code`}
+          >
+            <code>{code}</code>
+          </a>
+        ) : (
+          <code key={`${start}-code`}>{code}</code>
+        ),
+      );
     } else if (token.startsWith("**")) {
       output.push(<strong key={`${start}-strong`}>{token.slice(2, -2)}</strong>);
     } else {
       const link = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/u);
       const href = link?.[2];
+      const targetId = href ? workspaceTargets.get(href) : undefined;
       output.push(
-        href && safeExternalHref(href) ? (
+        targetId ? (
+          <a
+            className="message-workspace-link"
+            href={`#${targetId}`}
+            key={`${start}-workspace-link`}
+          >
+            {link?.[1]}
+          </a>
+        ) : href && safeExternalHref(href) ? (
           <a
             href={href}
             key={`${start}-link`}

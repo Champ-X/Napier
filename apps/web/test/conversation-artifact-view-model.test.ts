@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   conversationArtifactEventKey,
+  conversationArtifactTargetId,
+  conversationArtifactWorkspaceLinks,
   conversationArtifacts,
 } from "../src/conversation-artifact-view-model";
 
@@ -73,6 +75,67 @@ describe("Conversation artifacts", () => {
       "plan_1",
       "artifact_report",
     ]);
+  });
+
+  it("links only produced or verified file artifacts with safe DOM targets", () => {
+    const verified = conversationArtifacts(
+      [
+        event(5, "plan.artifact.verified", "user", {
+          planId: "plan_1",
+          artifactId: "artifact_report",
+        }),
+      ],
+      [plan()],
+    )[0]!;
+    const produced = {
+      ...verified,
+      seq: 6,
+      artifact: {
+        ...verified.artifact,
+        id: "artifact:output",
+        path: "artifacts/output.txt",
+        status: "produced" as const,
+      },
+    };
+    const directory = {
+      ...verified,
+      seq: 7,
+      artifact: {
+        ...verified.artifact,
+        id: "artifact_directory",
+        path: "artifacts/results",
+        kind: "directory" as const,
+      },
+    };
+    const missing = {
+      ...verified,
+      seq: 8,
+      artifact: {
+        ...verified.artifact,
+        id: "artifact_missing",
+        path: ".env",
+        status: "missing" as const,
+      },
+    };
+
+    expect(
+      conversationArtifactWorkspaceLinks([
+        verified,
+        produced,
+        directory,
+        missing,
+      ]),
+    ).toEqual([
+      {
+        path: "artifacts/report.md",
+        targetId: "conversation-artifact-plan_1-artifact_report-5",
+      },
+      {
+        path: "artifacts/output.txt",
+        targetId: "conversation-artifact-plan_1-artifact_output-6",
+      },
+    ]);
+    expect(conversationArtifactTargetId(produced)).not.toContain(":");
   });
 });
 

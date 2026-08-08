@@ -9,6 +9,7 @@ import {
 import type { ExecutionPlan, RunEvent } from "@napier/contracts";
 import {
   conversationArtifactEventKey,
+  conversationArtifactWorkspaceLinks,
   conversationArtifacts,
   type ConversationArtifact,
 } from "./conversation-artifact-view-model";
@@ -18,7 +19,10 @@ import {
   type ConversationActivity,
 } from "./conversation-activity-view-model";
 import { ConversationArtifactCard } from "./ConversationArtifactCard";
-import { MessageMarkdown } from "./message-markdown";
+import {
+  MessageMarkdown,
+  type MessageWorkspaceLink,
+} from "./message-markdown";
 import type { MessageView } from "./use-workspace-view-model";
 
 type FeedItem =
@@ -47,6 +51,8 @@ export function ConversationLedger({
   const artifactKeys = new Set(
     artifacts.map((item) => `${item.planId}:${item.artifact.id}`),
   );
+  const workspaceLinks: MessageWorkspaceLink[] =
+    conversationArtifactWorkspaceLinks(artifacts);
   const activityEvents = events.filter((event) => {
     const key = conversationArtifactEventKey(event);
     return !key || !artifactKeys.has(`${key[0]}:${key[1]}`);
@@ -76,6 +82,7 @@ export function ConversationLedger({
           <MessageCard
             key={`message-${item.message.id}`}
             message={item.message}
+            workspaceLinks={workspaceLinks}
             {...(item.message.role === "assistant"
               ? { onBranch: () => onBranch(item.message.seq) }
               : {})}
@@ -91,7 +98,9 @@ export function ConversationLedger({
           />
         ),
       )}
-      {streamingText ? <StreamingCard text={streamingText} /> : null}
+      {streamingText ? (
+        <StreamingCard text={streamingText} workspaceLinks={workspaceLinks} />
+      ) : null}
       <div ref={endRef} />
     </div>
   );
@@ -125,9 +134,11 @@ function ActivityCard({ activity }: { activity: ConversationActivity }) {
 function MessageCard({
   message,
   onBranch,
+  workspaceLinks,
 }: {
   message: MessageView;
   onBranch?: () => void;
+  workspaceLinks: readonly MessageWorkspaceLink[];
 }) {
   return (
     <article className={`message-card role-${message.role}`}>
@@ -142,7 +153,7 @@ function MessageCard({
           {message.model ? <small>{message.model}</small> : null}
         </header>
         <div className="message-text">
-          <MessageMarkdown text={message.text} />
+          <MessageMarkdown text={message.text} workspaceLinks={workspaceLinks} />
         </div>
         {onBranch ? (
           <button className="branch-action" type="button" onClick={onBranch}>
@@ -155,7 +166,13 @@ function MessageCard({
   );
 }
 
-function StreamingCard({ text }: { text: string }) {
+function StreamingCard({
+  text,
+  workspaceLinks,
+}: {
+  text: string;
+  workspaceLinks: readonly MessageWorkspaceLink[];
+}) {
   return (
     <article
       className="message-card role-assistant is-streaming"
@@ -171,7 +188,7 @@ function StreamingCard({ text }: { text: string }) {
           <small>{copy.running}</small>
         </header>
         <div className="message-text">
-          <MessageMarkdown text={text} />
+          <MessageMarkdown text={text} workspaceLinks={workspaceLinks} />
           <span className="ink-caret" aria-hidden="true" />
         </div>
       </div>
