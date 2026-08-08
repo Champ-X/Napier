@@ -4,6 +4,7 @@ import { AlertCircle, RotateCcw } from "lucide-react";
 import type { RunRecord, ThreadStatus } from "@napier/contracts";
 import { FatalState, LoadingShell } from "./AppInitialStates";
 import { Composer } from "./Composer";
+import { ConversationWorkspace } from "./ConversationWorkspace";
 import { copy } from "./copy";
 import { InspectorNavigation } from "./InspectorNavigation";
 import { LedgerNavigation } from "./LedgerNavigation";
@@ -11,9 +12,7 @@ import { ResponsiveInspector } from "./ResponsiveInspector";
 import { RunDecisionDockets } from "./RunDecisionDockets";
 import { TaskNarrativeBar } from "./TaskNarrativeBar";
 import { useWorkspaceViewModel } from "./use-workspace-view-model";
-import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
-const LazyConversationLedger = lazy(() => import("./ConversationLedger"));
 const LazyGoalPanel = lazy(() => import("./GoalPanel"));
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
@@ -125,26 +124,11 @@ export function App() {
           ) : null}
         </div>
 
-        <section className="conversation" aria-label="Conversation">
-          {shouldShowWelcomePanel(vm.messages) ? (
-            <WelcomePanel
-              canStart={activeModel.configured}
-              onBootstrapUpdated={vm.commitConfigurationBootstrap}
-              onPrompt={(prompt) => void vm.submit(prompt)}
-              threadId={vm.detail?.thread.id}
-            />
-          ) : (
-            <Suspense fallback={<div className="message-ledger" />}>
-              <LazyConversationLedger
-                messages={vm.messages}
-                events={vm.detail?.events ?? []}
-                streamingText={vm.streamingText}
-                endRef={conversationEnd}
-                onBranch={(seq) => void vm.branchFrom(seq)}
-              />
-            </Suspense>
-          )}
-        </section>
+        <ConversationWorkspace
+          vm={vm}
+          canStart={activeModel.configured}
+          endRef={conversationEnd}
+        />
         <RunDecisionDockets vm={vm} />
 
         <Composer

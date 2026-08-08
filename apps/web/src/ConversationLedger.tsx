@@ -6,42 +6,66 @@ import {
   GitBranch,
 } from "lucide-react";
 
-import type { RunEvent } from "@napier/contracts";
+import type { ExecutionPlan, RunEvent } from "@napier/contracts";
+import {
+  conversationArtifactEventKey,
+  conversationArtifacts,
+  type ConversationArtifact,
+} from "./conversation-artifact-view-model";
 import { copy } from "./copy";
 import {
   conversationActivities,
   type ConversationActivity,
 } from "./conversation-activity-view-model";
+import { ConversationArtifactCard } from "./ConversationArtifactCard";
 import { MessageMarkdown } from "./message-markdown";
 import type { MessageView } from "./use-workspace-view-model";
 
 type FeedItem =
   | { kind: "message"; seq: number; message: MessageView }
-  | { kind: "activity"; seq: number; activity: ConversationActivity };
+  | { kind: "activity"; seq: number; activity: ConversationActivity }
+  | { kind: "artifact"; seq: number; artifact: ConversationArtifact };
 
 export function ConversationLedger({
   messages,
   events,
+  plans,
   streamingText,
   endRef,
   onBranch,
+  onLedgerChanged,
 }: {
   messages: MessageView[];
   events: RunEvent[];
+  plans: ExecutionPlan[];
   streamingText: string;
   endRef: React.RefObject<HTMLDivElement | null>;
   onBranch: (seq: number) => void;
+  onLedgerChanged: () => Promise<void>;
 }) {
+  const artifacts = conversationArtifacts(events, plans);
+  const artifactKeys = new Set(
+    artifacts.map((item) => `${item.planId}:${item.artifact.id}`),
+  );
+  const activityEvents = events.filter((event) => {
+    const key = conversationArtifactEventKey(event);
+    return !key || !artifactKeys.has(`${key[0]}:${key[1]}`);
+  });
   const feed: FeedItem[] = [
     ...messages.map((message) => ({
       kind: "message" as const,
       seq: message.seq,
       message,
     })),
-    ...conversationActivities(events).map((activity) => ({
+    ...conversationActivities(activityEvents).map((activity) => ({
       kind: "activity" as const,
       seq: activity.seq,
       activity,
+    })),
+    ...artifacts.map((artifact) => ({
+      kind: "artifact" as const,
+      seq: artifact.seq,
+      artifact,
     })),
   ].sort((left, right) => left.seq - right.seq);
 
@@ -56,8 +80,15 @@ export function ConversationLedger({
               ? { onBranch: () => onBranch(item.message.seq) }
               : {})}
           />
-        ) : (
+        ) : item.kind === "activity" ? (
           <ActivityCard key={`activity-${item.activity.id}`} activity={item.activity} />
+        ) : (
+          <ConversationArtifactCard
+            key={`artifact-${item.artifact.planId}-${item.artifact.artifact.id}`}
+            item={item.artifact}
+            threadId={item.artifact.threadId}
+            onLedgerChanged={onLedgerChanged}
+          />
         ),
       )}
       {streamingText ? <StreamingCard text={streamingText} /> : null}
