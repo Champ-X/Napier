@@ -1,9 +1,8 @@
 .agent-capability-composer {
-  display: grid;
-  grid-template-columns: auto auto auto auto;
-  gap: 5px 10px;
-  align-items: center;
-  padding: 5px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
   background: rgb(238 231 217 / 62%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ledger);
@@ -16,7 +15,76 @@
   border-left-color: var(--vermilion);
 }
 
-.composer-hints .agent-capability-composer > span {
+.composer-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.composer-mode {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 3px 9px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink);
+  cursor: pointer;
+  background: rgb(255 255 255 / 55%);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+}
+
+.composer-mode:hover:not(:disabled) {
+  border-color: var(--ledger);
+}
+
+.composer-mode.is-active {
+  color: var(--paper);
+  background: var(--ledger);
+  border-color: var(--ledger);
+}
+
+.composer-mode.dep-blocked {
+  color: var(--vermilion);
+  border-color: var(--vermilion);
+}
+
+.composer-mode.is-active.dep-blocked {
+  color: var(--paper);
+  background: var(--vermilion);
+}
+
+.composer-mode:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.composer-mode-dependency,
+.composer-mode-error {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.composer-mode-dependency.dep-warn {
+  color: var(--ochre, #8a6d3b);
+}
+
+.composer-mode-dependency.dep-blocked,
+.composer-mode-error {
+  color: var(--vermilion);
+}
+
+.agent-capability-composer-status {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  gap: 5px 10px;
+  align-items: center;
+}
+
+.composer-hints .agent-capability-composer-status > span {
   font-size: 11px;
   line-height: 1.35;
 }
@@ -31,7 +99,7 @@
   border-left: 1px solid var(--rule);
 }
 
-.agent-capability-composer button {
+.agent-capability-composer-status button {
   display: inline-flex;
   gap: 4px;
   align-items: center;
@@ -44,7 +112,7 @@
 }
 
 @media (max-width: 920px) {
-  .agent-capability-composer {
+  .agent-capability-composer-status {
     grid-template-columns: 1fr auto;
   }
 

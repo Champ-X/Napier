@@ -1,7 +1,7 @@
 import type { EffectiveAgentCapabilityProjectionV1 } from "@napier/contracts/agent-capability-contract";
 import { describe, expect, it } from "vitest";
 
-import { agentCapabilityComposerSummary } from "../src/AgentCapabilityStatusBadge";
+import { agentCapabilityComposerSummary } from "../src/agent-capability-composer-summary";
 
 describe("Composer Agent capability affordance", () => {
   it("makes drift, ownership, unavailable, catalog-only, and unverified states concise", () => {

@@ -1,4 +1,3 @@
-import type { KeyboardEvent } from "react";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import {
   Activity,
@@ -16,15 +15,14 @@ import {
   Plus,
   RotateCcw,
   Scale,
-  Send,
   ShieldCheck,
-  Square,
   Target,
 } from "lucide-react";
 
 import type { GoalState, RunRecord, ThreadStatus } from "@napier/contracts";
 import { InspectorTabButton } from "./InspectorTabButton";
 import { FatalState, LoadingShell } from "./AppInitialStates";
+import { Composer } from "./Composer";
 import { copy } from "./copy";
 import { RunDecisionDockets } from "./RunDecisionDockets";
 import {
@@ -34,9 +32,6 @@ import {
 import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
 
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
-const LazyAgentCapabilityStatusBadge = lazy(
-  () => import("./AgentCapabilityStatusBadge"),
-);
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
 const LazyFilesPanel = lazy(() => import("./FilesPanel"));
@@ -70,7 +65,6 @@ export function App() {
     !vm.openOperatorDecision &&
     activeModel.configured,
   );
-  const modelWarningId = "composer-model-unavailable";
 
   return (
     <div className="app-shell">
@@ -214,120 +208,12 @@ export function App() {
 
         <RunDecisionDockets vm={vm} />
 
-        <form
-          className="composer"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void vm.submit();
-          }}
-        >
-          <div className="composer-rule" aria-hidden="true">
-            <span />
-            <span>
-              {vm.openOperatorDecision
-                ? vm.openOperatorDecision.header
-                : vm.isRunning
-                  ? copy.runControlMode
-                  : copy.inputMode}
-            </span>
-            <span />
-          </div>
-          <textarea
-            aria-label={
-              vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
-            }
-            placeholder={
-              vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
-            }
-            value={vm.composer}
-            rows={3}
-            disabled={
-              !vm.detail ||
-              Boolean(vm.openOperatorDecision) ||
-              Boolean(vm.browserInteractionConfirmation)
-            }
-            onChange={(event) => vm.setComposer(event.target.value)}
-            onKeyDown={(event) =>
-              handleComposerKeys(event, () => void vm.submit())
-            }
-          />
-          <div className="composer-footer">
-            <div className="composer-hints">
-              <Suspense fallback={<span>Capability contract loading...</span>}>
-                <LazyAgentCapabilityStatusBadge
-                  agent={activeAgent}
-                  onReview={() => vm.setInspectorTab("context")}
-                />
-              </Suspense>
-              <span>
-                <Command size={12} aria-hidden="true" />
-                {copy.shortcut}
-              </span>
-              {vm.isRunning ? (
-                <label className="control-mode">
-                  <span>{copy.controlMode}</span>
-                  <select
-                    aria-label={copy.controlMode}
-                    value={vm.controlMessageMode}
-                    onChange={(event) =>
-                      vm.setControlMessageMode(
-                        event.target.value === "follow_up"
-                          ? "follow_up"
-                          : "steering",
-                      )
-                    }
-                  >
-                    <option value="steering">{copy.steering}</option>
-                    <option value="follow_up">{copy.followUp}</option>
-                  </select>
-                </label>
-              ) : null}
-            </div>
-            {vm.isRunning ? (
-              <div className="composer-run-actions">
-                <button
-                  className="run-button control"
-                  type="submit"
-                  disabled={!vm.composer.trim() || !vm.activeRunId}
-                >
-                  <Send size={13} aria-hidden="true" />
-                  {vm.controlMessageMode === "steering"
-                    ? copy.steer
-                    : copy.queueFollowUp}
-                </button>
-                <button
-                  className="run-button stop"
-                  type="button"
-                  onClick={() => void vm.stop()}
-                >
-                  <Square size={13} fill="currentColor" aria-hidden="true" />
-                  {copy.stop}
-                </button>
-              </div>
-            ) : (
-              <button
-                className="run-button"
-                type="submit"
-                disabled={!canStartRun}
-                aria-describedby={
-                  !activeModel.configured ? modelWarningId : undefined
-                }
-              >
-                <Send size={14} aria-hidden="true" />
-                {copy.send}
-              </button>
-            )}
-          </div>
-          {!vm.isRunning && !activeModel.configured ? (
-            <p
-              id={modelWarningId}
-              className="composer-model-warning"
-              role="status"
-            >
-              {copy.modelUnavailableHint}
-            </p>
-          ) : null}
-        </form>
+        <Composer
+          vm={vm}
+          activeAgent={activeAgent}
+          activeModel={activeModel}
+          canStartRun={canStartRun}
+        />
       </main>
 
       <aside className="inspector" aria-label={copy.inspect}>
@@ -932,16 +818,6 @@ function GoalPanel({
       </p>
     </section>
   );
-}
-
-function handleComposerKeys(
-  event: KeyboardEvent<HTMLTextAreaElement>,
-  submit: () => void,
-): void {
-  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-    event.preventDefault();
-    submit();
-  }
 }
 
 function statusLabel(status?: ThreadStatus): string {
