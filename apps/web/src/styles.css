@@ -82,6 +82,10 @@ button:disabled {
     var(--paper);
 }
 
+.app-shell:has(.ledger-nav.is-collapsed) {
+  grid-template-columns: 72px minmax(520px, 1fr) 338px;
+}
+
 .ledger-nav {
   position: relative;
   display: flex;
@@ -98,6 +102,9 @@ button:disabled {
     ),
     var(--nav);
   border-right: 1px solid #151b18;
+  transition:
+    padding 160ms ease,
+    width 160ms ease;
 }
 
 .ledger-nav::before {
@@ -111,10 +118,34 @@ button:disabled {
 }
 
 .brand-lockup {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 11px;
   padding: 0 8px 24px;
+}
+
+.ledger-collapse-button {
+  position: absolute;
+  top: 7px;
+  right: 0;
+  z-index: 2;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  padding: 0;
+  color: #a8b2ab;
+  cursor: pointer;
+  background: rgb(255 255 255 / 5%);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 3px;
+  place-items: center;
+}
+
+.ledger-collapse-button:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 10%);
 }
 
 .brand-mark {
@@ -192,6 +223,71 @@ button:disabled {
   background: rgb(0 0 0 / 18%);
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: 3px;
+}
+
+.ledger-nav.is-collapsed {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
+.ledger-nav.is-collapsed .brand-lockup {
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.ledger-nav.is-collapsed .ledger-collapse-button {
+  position: static;
+}
+
+.ledger-nav.is-collapsed .brand-lockup > div:last-of-type,
+.ledger-nav.is-collapsed .new-ledger-button > span,
+.ledger-nav.is-collapsed .new-ledger-button kbd,
+.ledger-nav.is-collapsed .nav-section-heading > span:first-child,
+.ledger-nav.is-collapsed .thread-copy,
+.ledger-nav.is-collapsed .workspace-stamp > div,
+.ledger-nav.is-collapsed .workspace-stamp .local-pill,
+.ledger-nav.is-collapsed .thread-row .status-dot,
+.ledger-nav.is-collapsed .thread-trash-button {
+  display: none;
+}
+
+.ledger-nav.is-collapsed .new-ledger-button {
+  justify-content: center;
+  min-width: 38px;
+  margin-right: auto;
+  margin-left: auto;
+  padding: 0;
+}
+
+.ledger-nav.is-collapsed .nav-section-heading {
+  justify-content: center;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.ledger-nav.is-collapsed .thread-row {
+  display: grid;
+  width: 42px;
+  height: 38px;
+  grid-template-columns: 1fr;
+  margin-right: auto;
+  margin-left: auto;
+  padding: 0;
+  place-items: center;
+}
+
+.ledger-nav.is-collapsed .thread-index {
+  padding: 0;
+}
+
+.ledger-nav.is-collapsed .workspace-stamp {
+  grid-template-columns: 1fr;
+  padding-right: 0;
+  padding-left: 0;
+  place-items: center;
 }
 
 .nav-section-heading {
@@ -15185,6 +15281,10 @@ button:disabled {
     grid-template-columns: 232px minmax(500px, 1fr);
   }
 
+  .app-shell:has(.ledger-nav.is-collapsed) {
+    grid-template-columns: 72px minmax(500px, 1fr);
+  }
+
   .inspector {
     position: fixed;
     z-index: 30;
@@ -15277,6 +15377,10 @@ button:disabled {
     grid-template-columns: 68px minmax(0, 1fr);
   }
 
+  .app-shell:has(.ledger-nav.is-collapsed) {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
+
   .ledger-nav {
     padding: 18px 8px 12px;
   }
@@ -15291,6 +15395,10 @@ button:disabled {
   .brand-lockup {
     justify-content: center;
     padding-inline: 0;
+  }
+
+  .ledger-collapse-button {
+    display: none;
   }
 
   .new-ledger-button {

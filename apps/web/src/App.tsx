@@ -2,8 +2,6 @@ import { lazy, Suspense, useEffect, useRef } from "react";
 import {
   AlertCircle,
   Circle,
-  Database,
-  Plus,
   RotateCcw,
   ShieldCheck,
   Target,
@@ -14,6 +12,7 @@ import { FatalState, LoadingShell } from "./AppInitialStates";
 import { Composer } from "./Composer";
 import { copy } from "./copy";
 import { InspectorNavigation } from "./InspectorNavigation";
+import { LedgerNavigation } from "./LedgerNavigation";
 import { ResponsiveInspector } from "./ResponsiveInspector";
 import { RunDecisionDockets } from "./RunDecisionDockets";
 import { TaskNarrativeBar } from "./TaskNarrativeBar";
@@ -29,7 +28,6 @@ const LazyProcessPanel = lazy(() => import("./ProcessPanel"));
 const LazyRunLabPanel = lazy(() => import("./RunLabPanel"));
 const LazyPlanPanel = lazy(() => import("./PlanPanel"));
 const LazyTracePanel = lazy(() => import("./TracePanel"));
-const LazyThreadList = lazy(() => import("./ThreadList"));
 export function App() {
   const vm = useWorkspaceViewModel();
   const conversationEnd = useRef<HTMLDivElement>(null);
@@ -56,52 +54,16 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <nav className="ledger-nav" aria-label={copy.recentThreads}>
-        <div className="brand-lockup">
-          <div className="brand-mark" aria-hidden="true">
-            N
-          </div>
-          <div>
-            <strong>{copy.appName}</strong>
-            <span>{copy.appDescriptor}</span>
-          </div>
-        </div>
-
-        <button
-          className="new-ledger-button"
-          type="button"
-          onClick={() => void vm.newThread()}
-        >
-          <Plus size={15} aria-hidden="true" />
-          {copy.newThread}
-          <kbd>N</kbd>
-        </button>
-
-        <div className="nav-section-heading">
-          <span>{copy.recentThreads}</span>
-          <span>{String(vm.bootstrap.threads.length).padStart(2, "0")}</span>
-        </div>
-        <Suspense fallback={<div className="thread-list" />}>
-          <LazyThreadList
-            threads={vm.bootstrap.threads}
-            selectedThreadId={vm.selectedThreadId}
-            busyThreadId={vm.threadLifecycleBusyId}
-            trashedThread={vm.trashedThreadReceipt}
-            onSelect={(threadId) => void vm.selectThread(threadId)}
-            onTrash={(threadId) => void vm.trashThread(threadId)}
-            onRestore={() => void vm.restoreTrashedThread()}
-          />
-        </Suspense>
-
-        <div className="workspace-stamp">
-          <Database size={14} aria-hidden="true" />
-          <div>
-            <span>{copy.workspace}</span>
-            <strong>{shortPath(vm.bootstrap.workspace.root)}</strong>
-          </div>
-          <span className="local-pill">{copy.localFirst}</span>
-        </div>
-      </nav>
+      <LedgerNavigation
+        bootstrap={vm.bootstrap}
+        selectedThreadId={vm.selectedThreadId}
+        busyThreadId={vm.threadLifecycleBusyId}
+        trashedThread={vm.trashedThreadReceipt}
+        onNewThread={() => void vm.newThread()}
+        onSelect={(threadId) => void vm.selectThread(threadId)}
+        onTrash={(threadId) => void vm.trashThread(threadId)}
+        onRestore={() => void vm.restoreTrashedThread()}
+      />
 
       <main className="workbench">
         <header className="workbench-header">
@@ -656,9 +618,4 @@ function goalStatusLabel(status: GoalState["status"]): string {
   if (status === "completed") return copy.goal.completed;
   if (status === "blocked") return copy.goal.blocked;
   return copy.goal.active;
-}
-
-function shortPath(value: string): string {
-  const parts = value.split("/").filter(Boolean);
-  return parts.length > 2 ? `…/${parts.slice(-2).join("/")}` : value;
 }
