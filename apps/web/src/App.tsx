@@ -3,7 +3,6 @@ import {
   AlertCircle,
   Circle,
   Database,
-  GitBranch,
   Plus,
   RotateCcw,
   ShieldCheck,
@@ -18,9 +17,10 @@ import { InspectorNavigation } from "./InspectorNavigation";
 import { ResponsiveInspector } from "./ResponsiveInspector";
 import { RunDecisionDockets } from "./RunDecisionDockets";
 import { TaskNarrativeBar } from "./TaskNarrativeBar";
-import { type MessageView, useWorkspaceViewModel } from "./use-workspace-view-model";
+import { useWorkspaceViewModel } from "./use-workspace-view-model";
 import { shouldShowWelcomePanel, WelcomePanel } from "./WelcomePanel";
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
+const LazyConversationLedger = lazy(() => import("./ConversationLedger"));
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
 const LazyFilesPanel = lazy(() => import("./FilesPanel"));
@@ -30,7 +30,6 @@ const LazyRunLabPanel = lazy(() => import("./RunLabPanel"));
 const LazyPlanPanel = lazy(() => import("./PlanPanel"));
 const LazyTracePanel = lazy(() => import("./TracePanel"));
 const LazyThreadList = lazy(() => import("./ThreadList"));
-
 export function App() {
   const vm = useWorkspaceViewModel();
   const conversationEnd = useRef<HTMLDivElement>(null);
@@ -178,24 +177,17 @@ export function App() {
               threadId={vm.detail?.thread.id}
             />
           ) : (
-            <div className="message-ledger">
-              {vm.messages.map((message) => (
-                <MessageCard
-                  key={message.id}
-                  message={message}
-                  {...(message.role === "assistant"
-                    ? { onBranch: () => void vm.branchFrom(message.seq) }
-                    : {})}
-                />
-              ))}
-              {vm.streamingText ? (
-                <StreamingCard text={vm.streamingText} />
-              ) : null}
-              <div ref={conversationEnd} />
-            </div>
+            <Suspense fallback={<div className="message-ledger" />}>
+              <LazyConversationLedger
+                messages={vm.messages}
+                events={vm.detail?.events ?? []}
+                streamingText={vm.streamingText}
+                endRef={conversationEnd}
+                onBranch={(seq) => void vm.branchFrom(seq)}
+              />
+            </Suspense>
           )}
         </section>
-
         <RunDecisionDockets vm={vm} />
 
         <Composer
@@ -556,67 +548,6 @@ function RecoveryBanner({
   );
 }
 
-function MessageCard({
-  message,
-  onBranch,
-}: {
-  message: MessageView;
-  onBranch?: () => void;
-}) {
-  return (
-    <article className={`message-card role-${message.role}`}>
-      <div className="message-gutter">
-        <span>{String(message.seq).padStart(3, "0")}</span>
-        <i />
-      </div>
-      <div className="message-content">
-        <header>
-          <span>{message.role === "user" ? "Operator" : "Napier"}</span>
-          <time dateTime={message.createdAt}>
-            {formatTime(message.createdAt)}
-          </time>
-          {message.model ? <small>{message.model}</small> : null}
-        </header>
-        <div className="message-text">
-          {message.text.split(/\n{2,}/).map((paragraph, index) => (
-            <p key={`${message.id}-${index}`}>{paragraph}</p>
-          ))}
-        </div>
-        {onBranch ? (
-          <button className="branch-action" type="button" onClick={onBranch}>
-            <GitBranch size={13} aria-hidden="true" />
-            {copy.branch}
-          </button>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function StreamingCard({ text }: { text: string }) {
-  return (
-    <article
-      className="message-card role-assistant is-streaming"
-      aria-live="polite"
-    >
-      <div className="message-gutter">
-        <span>•••</span>
-        <i />
-      </div>
-      <div className="message-content">
-        <header>
-          <span>Napier</span>
-          <small>{copy.running}</small>
-        </header>
-        <div className="message-text">
-          <p>{text}</p>
-          <span className="ink-caret" aria-hidden="true" />
-        </div>
-      </div>
-    </article>
-  );
-}
-
 function GoalPanel({
   goal,
   draft,
@@ -740,13 +671,6 @@ function goalProgress(goal: GoalState): number {
     7,
     (goal.continuationCount / Math.max(1, goal.maxContinuations)) * 100,
   );
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 }
 
 function shortPath(value: string): string {
