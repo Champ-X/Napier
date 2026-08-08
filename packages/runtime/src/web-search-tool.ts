@@ -64,6 +64,7 @@ const webSearchSchema = Type.Object(
     provider: Type.Optional(
       Type.Union([
         Type.Literal("auto"),
+        Type.Literal("firecrawl"),
         Type.Literal("brave"),
         Type.Literal("tavily"),
         Type.Literal("bing"),

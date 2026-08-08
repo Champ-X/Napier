@@ -1,6 +1,7 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
 
 export const WEB_SEARCH_PROVIDER_IDS = [
+  "firecrawl",
   "brave",
   "tavily",
   "bing",

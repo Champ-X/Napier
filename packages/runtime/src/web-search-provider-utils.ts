@@ -59,6 +59,12 @@ export function tavilyTimeRange(
   return { day: "day", week: "week", month: "month", year: "year" }[value];
 }
 
+export function firecrawlTimeBasedSearch(
+  value: NonNullable<NormalizedWebSearchRequest["timeRange"]>,
+): string {
+  return { day: "qdr:d", week: "qdr:w", month: "qdr:m", year: "qdr:y" }[value];
+}
+
 export function bingFreshness(
   value: NonNullable<NormalizedWebSearchRequest["timeRange"]>,
 ): string {

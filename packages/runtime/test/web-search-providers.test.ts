@@ -61,7 +61,14 @@ describe("WebSearchProviderRegistry", () => {
           source: "Brave Search",
         },
       ],
-      attempts: [{ provider: "brave", status: "succeeded" }],
+      attempts: [
+        {
+          provider: "firecrawl",
+          status: "unavailable",
+          diagnostic: "firecrawl credentials are not configured",
+        },
+        { provider: "brave", status: "succeeded" },
+      ],
       retrievedAt: "2026-08-04T10:00:00.000Z",
     });
   });
@@ -108,6 +115,11 @@ describe("WebSearchProviderRegistry", () => {
       },
     ]);
     expect(result.attempts).toEqual([
+      {
+        provider: "firecrawl",
+        status: "unavailable",
+        diagnostic: "firecrawl credentials are not configured",
+      },
       {
         provider: "brave",
         status: "unavailable",
@@ -250,6 +262,71 @@ describe("WebSearchProviderRegistry", () => {
           category: "news",
           provider: "tavily",
         }),
+        AbortSignal.timeout(1_000),
+      ),
+    ).rejects.not.toThrow(testApiKey);
+  });
+  it("prefers Firecrawl when its key is configured and maps web results", async () => {
+    const http = requester(async (request) => {
+      expect(request.url).toBe("https://api.firecrawl.dev/v2/search");
+      expect(request.headers?.["authorization"]).toBe("Bearer FIRECRAWL_KEY");
+      expect(request.body).toContain('"sources":[{"type":"web"}]');
+      return response(
+        200,
+        JSON.stringify({
+          success: true,
+          data: {
+            web: [
+              {
+                title: "Napier overview",
+                url: "https://docs.example.com/napier",
+                description: "Primary Napier documentation.",
+              },
+            ],
+          },
+        }),
+        "application/json",
+      );
+    });
+    const registry = new WebSearchProviderRegistry({
+      env: { FIRECRAWL_API_KEY: "FIRECRAWL_KEY", BRAVE_API_KEY: "BRAVE_KEY" },
+      http,
+      now: () => new Date("2026-08-04T10:00:00.000Z"),
+    });
+
+    const result = await registry.search(
+      normalizeWebSearchRequest({ query: "napier docs", provider: "auto" }),
+      AbortSignal.timeout(1_000),
+    );
+    expect(result.provider).toBe("firecrawl");
+    expect(result.results).toEqual([
+      {
+        title: "Napier overview",
+        url: "https://docs.example.com/napier",
+        snippet: "Primary Napier documentation.",
+        source: "Firecrawl",
+      },
+    ]);
+    expect(result.attempts).toEqual([
+      { provider: "firecrawl", status: "succeeded" },
+    ]);
+    expect(http.request).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not expose the Firecrawl key in errors", async () => {
+    const testApiKey = "FIRECRAWL_SECRET_KEY";
+    const http = requester(async (request) => {
+      expect(request.headers?.["authorization"]).toBe(`Bearer ${testApiKey}`);
+      return response(500, `boom ${testApiKey}`, "text/plain");
+    });
+    const registry = new WebSearchProviderRegistry({
+      env: { FIRECRAWL_API_KEY: testApiKey },
+      http,
+    });
+
+    await expect(
+      registry.search(
+        normalizeWebSearchRequest({ query: "release notes", provider: "firecrawl" }),
         AbortSignal.timeout(1_000),
       ),
     ).rejects.not.toThrow(testApiKey);

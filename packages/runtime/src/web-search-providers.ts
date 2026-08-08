@@ -19,6 +19,7 @@ import {
   decodeXml,
   duckDuckGoFreshness,
   elementText,
+  firecrawlTimeBasedSearch,
   jsonRecord,
   providerDiagnostic,
   record,
@@ -62,6 +63,7 @@ export class WebSearchProviderRegistry {
     const env = options.env ?? process.env;
     const http = options.http ?? new PublicHttpClient();
     this.providers = options.providers ?? [
+      new FirecrawlWebSearchProvider(http, env["FIRECRAWL_API_KEY"]),
       new BraveWebSearchProvider(http, env["BRAVE_API_KEY"]),
       new TavilyWebSearchProvider(http, env["TAVILY_API_KEY"]),
       new BingWebSearchProvider(http),
@@ -129,6 +131,72 @@ export class WebSearchProviderRegistry {
     throw new Error(
       `Web search failed after ${attempts.length} provider attempt${attempts.length === 1 ? "" : "s"}${summary ? ` (${summary})` : ""}`,
     );
+  }
+}
+
+class FirecrawlWebSearchProvider implements WebSearchProvider {
+  readonly id = "firecrawl";
+
+  constructor(
+    private readonly http: PublicHttpRequester,
+    private readonly apiKey: string | undefined,
+  ) {}
+
+  available(): boolean {
+    return Boolean(this.apiKey?.trim());
+  }
+
+  async search(
+    request: NormalizedWebSearchRequest,
+    signal: AbortSignal,
+  ): Promise<WebSearchResult[]> {
+    if (request.category === "images") {
+      throw new Error("Firecrawl web search does not return image results");
+    }
+    const news = request.category === "news";
+    const response = await this.http.request(
+      {
+        url: "https://api.firecrawl.dev/v2/search",
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          authorization: `Bearer ${this.apiKey!.trim()}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          query: webSearchQueryText(request),
+          limit: request.count,
+          sources: [{ type: news ? "news" : "web" }],
+          ...(request.timeRange
+            ? { tbs: firecrawlTimeBasedSearch(request.timeRange) }
+            : {}),
+        }),
+      },
+      signal,
+    );
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(`Firecrawl returned HTTP ${response.status}`);
+    }
+    const data = record(jsonRecord(response.body)["data"]) ?? {};
+    const entries = news
+      ? recordArray(data["news"])
+      : recordArray(data["web"]);
+    return entries.flatMap((entry) => {
+      const url = text(entry["url"]);
+      const title = text(entry["title"]);
+      if (!url || !title) return [];
+      const snippet = text(entry["snippet"]) ?? text(entry["description"]);
+      const publishedAt = text(entry["date"]);
+      return [
+        {
+          title,
+          url,
+          ...(snippet ? { snippet } : {}),
+          ...(publishedAt ? { publishedAt } : {}),
+          source: "Firecrawl",
+        },
+      ];
+    });
   }
 }
 
