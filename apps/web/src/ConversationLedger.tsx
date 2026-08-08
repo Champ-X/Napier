@@ -12,6 +12,7 @@ import {
   conversationActivities,
   type ConversationActivity,
 } from "./conversation-activity-view-model";
+import { MessageMarkdown } from "./message-markdown";
 import type { MessageView } from "./use-workspace-view-model";
 
 type FeedItem =
@@ -110,9 +111,7 @@ function MessageCard({
           {message.model ? <small>{message.model}</small> : null}
         </header>
         <div className="message-text">
-          {message.text.split(/\n{2,}/).map((paragraph, index) => (
-            <p key={`${message.id}-${index}`}>{paragraph}</p>
-          ))}
+          <MessageMarkdown text={message.text} />
         </div>
         {onBranch ? (
           <button className="branch-action" type="button" onClick={onBranch}>
@@ -141,7 +140,7 @@ function StreamingCard({ text }: { text: string }) {
           <small>{copy.running}</small>
         </header>
         <div className="message-text">
-          <p>{text}</p>
+          <MessageMarkdown text={text} />
           <span className="ink-caret" aria-hidden="true" />
         </div>
       </div>
