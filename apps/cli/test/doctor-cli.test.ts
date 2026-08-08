@@ -386,6 +386,44 @@ describe("Napier Doctor CLI", () => {
     );
   });
 
+  it("flags host-direct execution as a no-isolation warning", async () => {
+    const fixture = await createFixture();
+    const stdout = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--model",
+        "napier/demo",
+        "--offline",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      doctorDependencies({
+        model: passed("model", "demo_model_ready"),
+        sandbox: warning("sandbox", "sandbox_host_direct"),
+      }),
+    );
+
+    expect(code).toBe(0);
+    const report = JSON.parse(stdout.text()) as {
+      status: string;
+      remediations: Array<{ id: string; priority: string; checkIds: string[] }>;
+    };
+    expect(report.status).toBe("degraded");
+    expect(report.remediations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "prefer_isolated_sandbox",
+          priority: "optional",
+          checkIds: ["sandbox"],
+        }),
+      ]),
+    );
+  });
+
   it("guides container sandbox enablement when a container runtime is available", async () => {
     const fixture = await createFixture();
     const stdout = new CaptureWritable();

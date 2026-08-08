@@ -60,6 +60,14 @@ export function sandboxIsolationStrength(
         summary:
           "Linux bubblewrap namespaces with default-denied network and scoped filesystem; no CPU or memory ceiling",
       };
+    case "host-direct":
+      return {
+        level: "none",
+        networkDeniedByDefault: false,
+        resourceLimited: false,
+        summary:
+          "Direct host execution with no OS isolation, network open, and full workspace access; enabled only by explicit operator opt-in",
+      };
     default:
       return {
         level: "none",

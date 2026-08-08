@@ -76,3 +76,20 @@ async function isExecutableFile(candidate: string): Promise<boolean> {
     return false;
   }
 }
+
+export function validateContainerImage(image: string): void {
+  if (
+    !image ||
+    image.length > 200 ||
+    /[\s\u0000-\u001f\u007f]/.test(image) ||
+    !/^[a-zA-Z0-9][a-zA-Z0-9._/:@-]*$/.test(image)
+  ) {
+    throw new Error("OCI container sandbox image is invalid");
+  }
+}
+
+export function validateContainerEnvName(name: string): void {
+  if (!/^[A-Z_][A-Z0-9_]{0,127}$/.test(name)) {
+    throw new Error(`Container sandbox environment name is invalid: ${name}`);
+  }
+}

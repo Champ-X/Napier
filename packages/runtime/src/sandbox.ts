@@ -9,7 +9,10 @@ import {
   containerScratchBaseDir,
   CONTAINER_IMAGE_ENV,
   resolveContainerLaunchExecutable,
+  validateContainerEnvName,
+  validateContainerImage,
 } from "./sandbox-container.js";
+import { HostDirectSandboxAdapter } from "./sandbox-host-direct.js";
 import { launchSandboxProcess } from "./sandbox-process-lifecycle.js";
 import type {
   OsSandboxAdapter,
@@ -59,6 +62,7 @@ export function createPlatformSandboxAdapter(
         : {}),
     });
   }
+  if (HostDirectSandboxAdapter.enabled()) return new HostDirectSandboxAdapter();
   if (platform === "darwin") return new MacOsSandboxAdapter();
   if (platform === "linux") return new LinuxBubblewrapSandboxAdapter();
   return new UnsupportedSandboxAdapter(platform);
@@ -477,23 +481,6 @@ function scopedWorkspaceWritePaths(request: SandboxLaunchRequest): string[] {
     throw new Error("Sandbox workspace write paths cannot overlap");
   }
   return resolved;
-}
-
-function validateContainerImage(image: string): void {
-  if (
-    !image ||
-    image.length > 200 ||
-    /[\s\u0000-\u001f\u007f]/.test(image) ||
-    !/^[a-zA-Z0-9][a-zA-Z0-9._/:@-]*$/.test(image)
-  ) {
-    throw new Error("OCI container sandbox image is invalid");
-  }
-}
-
-function validateContainerEnvName(name: string): void {
-  if (!/^[A-Z_][A-Z0-9_]{0,127}$/.test(name)) {
-    throw new Error(`Container sandbox environment name is invalid: ${name}`);
-  }
 }
 
 function bindMount(source: string, target: string, readonly: boolean): string {

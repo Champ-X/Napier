@@ -59,6 +59,22 @@ export async function defaultSandboxProbe(
     !result.stderr;
   if (!passed) return sandboxUnavailableCheck(Date.now() - startedAt);
   const isolation = sandboxIsolationStrength(sandbox.id);
+  if (sandbox.id === "host-direct") {
+    return {
+      id: "sandbox",
+      status: "warning",
+      required: false,
+      code: "sandbox_host_direct",
+      message: `Direct host execution is enabled with NO OS isolation (${isolation.summary}). Process tasks run under your own authority.`,
+      durationMs: Date.now() - startedAt,
+      evidence: {
+        adapter: sandbox.id,
+        isolationLevel: isolation.level,
+        networkDeniedByDefault: isolation.networkDeniedByDefault,
+        resourceLimited: isolation.resourceLimited,
+      },
+    };
+  }
   return {
     id: "sandbox",
     status: "passed",
