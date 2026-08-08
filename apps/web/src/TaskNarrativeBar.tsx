@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, CircleDot, Clock3 } from "lucide-react";
 
 import type { ThreadDetail } from "@napier/contracts";
@@ -11,7 +12,17 @@ export function TaskNarrativeBar({
     "thread" | "runs" | "plans" | "events" | "operatorDecisions"
   > | undefined;
 }) {
-  const narrative = taskNarrative(detail);
+  const [now, setNow] = useState(() => Date.now());
+  const running = detail?.runs.some(
+    (run) =>
+      run.id === detail.thread.currentRunId && run.status === "running",
+  );
+  useEffect(() => {
+    if (!running) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [running]);
+  const narrative = taskNarrative(detail, now);
   const Icon =
     narrative.phase === "completed"
       ? CheckCircle2
@@ -33,6 +44,7 @@ export function TaskNarrativeBar({
           {narrative.phaseLabel}
         </span>
         <strong>{narrative.currentAction}</strong>
+        {narrative.metrics ? <small>{narrative.metrics}</small> : null}
       </div>
       {narrative.completedItems.length > 0 ? (
         <div className="task-narrative-completed">

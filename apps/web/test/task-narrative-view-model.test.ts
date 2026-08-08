@@ -82,13 +82,26 @@ describe("Task narrative", () => {
 
   it("settles completed work without inventing a percentage", () => {
     const detail = fixture();
-    detail.runs.push(run("completed"));
+    const completed = run("completed");
+    completed.startedAt = "2026-08-08T00:00:00.000Z";
+    completed.finishedAt = "2026-08-08T00:01:05.000Z";
+    completed.usage.inputTokens = 1_000;
+    completed.usage.outputTokens = 500;
+    completed.usage.costUsd = 0.125;
+    completed.limits = {
+      maxTurns: 20,
+      maxTotalTokens: 10_000,
+      maxCostUsd: 2,
+      timeoutMs: 120_000,
+    };
+    detail.runs.push(completed);
 
     const narrative = taskNarrative(detail);
     expect(narrative).toEqual(
       expect.objectContaining({
         phase: "completed",
         currentAction: "Latest run completed",
+        metrics: "1m 5s / 2m 0s · 1,500 / 10,000 tokens · $0.1250 / $2.00",
       }),
     );
     expect(narrative).not.toHaveProperty("progress");

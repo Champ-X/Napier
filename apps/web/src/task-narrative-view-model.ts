@@ -13,6 +13,7 @@ export interface TaskNarrative {
   phaseLabel: string;
   currentAction: string;
   completedItems: string[];
+  metrics?: string;
   nextStep?: string;
   blocker?: string;
 }
@@ -22,6 +23,7 @@ export function taskNarrative(
     ThreadDetail,
     "thread" | "runs" | "plans" | "events" | "operatorDecisions"
   > | undefined,
+  now = Date.now(),
 ): TaskNarrative {
   if (!detail) return baseNarrative("ready", "Ready", "Choose or create a ledger");
   const openDecision = detail.operatorDecisions.findLast(
@@ -40,25 +42,29 @@ export function taskNarrative(
       .map((step) => step.title) ?? [];
 
   if (openDecision) {
+    const run = detail.runs.find((candidate) => candidate.id === openDecision.runId);
     return {
       phase: "waiting",
       phaseLabel: "Waiting",
       currentAction: openDecision.header,
       completedItems,
+      ...(run ? { metrics: runMetrics(run, now) } : {}),
       blocker: "Operator input is required before the run can continue.",
       ...(nextStep ? { nextStep: nextStep.title } : {}),
     };
   }
   if (blockedStep || detail.thread.status === "failed") {
+    const failedRun = detail.runs.findLast((run) => run.status === "failed");
     const blocker =
       blockedStep?.blocker ||
-      detail.runs.findLast((run) => run.status === "failed")?.error ||
+      failedRun?.error ||
       "The latest run needs review.";
     return {
       phase: detail.thread.status === "failed" ? "failed" : "blocked",
       phaseLabel: detail.thread.status === "failed" ? "Needs review" : "Blocked",
       currentAction: blockedStep?.title ?? "Review the failed run",
       completedItems,
+      ...(failedRun ? { metrics: runMetrics(failedRun, now) } : {}),
       blocker,
       ...(nextStep ? { nextStep: nextStep.title } : {}),
     };
@@ -77,6 +83,7 @@ export function taskNarrative(
         latestToolAction(detail.events, running.id) ??
         "Model is preparing the next action",
       completedItems,
+      metrics: runMetrics(running, now),
       ...(nextStep ? { nextStep: nextStep.title } : {}),
     };
   }
@@ -99,6 +106,7 @@ export function taskNarrative(
           .filter((step) => step.status === "completed")
           .slice(-3)
           .map((step) => step.title) ?? completedItems,
+      ...(completedRun ? { metrics: runMetrics(completedRun, now) } : {}),
       nextStep: "Start a follow-up task or inspect the evidence.",
     };
   }
@@ -139,4 +147,32 @@ function payloadString(value: unknown, key: string): string | undefined {
 
 function humanize(value: string): string {
   return value.replaceAll("_", " ");
+}
+
+function runMetrics(
+  run: ThreadDetail["runs"][number],
+  now: number,
+): string {
+  const finishedAt = run.finishedAt ? Date.parse(run.finishedAt) : now;
+  const elapsedMs = Math.max(0, finishedAt - Date.parse(run.startedAt));
+  const tokens = run.usage.inputTokens + run.usage.outputTokens;
+  return [
+    run.limits
+      ? `${formatDuration(elapsedMs)} / ${formatDuration(run.limits.timeoutMs)}`
+      : formatDuration(elapsedMs),
+    run.limits
+      ? `${tokens.toLocaleString()} / ${run.limits.maxTotalTokens.toLocaleString()} tokens`
+      : `${tokens.toLocaleString()} tokens`,
+    run.limits
+      ? `$${run.usage.costUsd.toFixed(4)} / $${run.limits.maxCostUsd.toFixed(2)}`
+      : `$${run.usage.costUsd.toFixed(4)}`,
+  ].join(" · ");
+}
+
+function formatDuration(milliseconds: number): string {
+  const seconds = Math.floor(milliseconds / 1_000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}m ${remainder}s`;
 }
