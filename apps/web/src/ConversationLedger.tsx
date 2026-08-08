@@ -6,7 +6,16 @@ import {
   GitBranch,
 } from "lucide-react";
 
-import type { ExecutionPlan, RunEvent } from "@napier/contracts";
+import type {
+  ExecutionPlan,
+  OperatorDecision,
+  RunEvent,
+} from "@napier/contracts";
+import {
+  conversationApprovalEventId,
+  conversationApprovals,
+  type ConversationApproval,
+} from "./conversation-approval-view-model";
 import {
   conversationArtifactEventKey,
   conversationArtifactWorkspaceLinks,
@@ -37,6 +46,7 @@ import {
   type ConversationActivity,
 } from "./conversation-activity-view-model";
 import { ConversationArtifactCard } from "./ConversationArtifactCard";
+import { ConversationApprovalCard } from "./ConversationApprovalCard";
 import { ConversationCitationCard } from "./ConversationCitationCard";
 import { ConversationBrowserActivityCard } from "./ConversationBrowserActivityCard";
 import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCard";
@@ -67,12 +77,18 @@ type FeedItem =
       kind: "plan";
       seq: number;
       plan: ConversationPlan;
+    }
+  | {
+      kind: "approval";
+      seq: number;
+      approval: ConversationApproval;
     };
 
 export function ConversationLedger({
   messages,
   events,
   plans,
+  operatorDecisions,
   streamingText,
   endRef,
   onBranch,
@@ -81,6 +97,7 @@ export function ConversationLedger({
   messages: MessageView[];
   events: RunEvent[];
   plans: ExecutionPlan[];
+  operatorDecisions: OperatorDecision[];
   streamingText: string;
   endRef: React.RefObject<HTMLDivElement | null>;
   onBranch: (seq: number) => void;
@@ -106,15 +123,21 @@ export function ConversationLedger({
   );
   const planItems = conversationPlans(events, plans);
   const planIds = new Set(planItems.map((item) => item.plan.id));
+  const approvals = conversationApprovals(operatorDecisions);
+  const approvalIds = new Set(
+    approvals.map((approval) => approval.decision.id),
+  );
   const activityEvents = events.filter((event) => {
     const key = conversationArtifactEventKey(event);
     const callId = eventCallId(event);
     const planId = conversationPlanEventId(event);
+    const approvalId = conversationApprovalEventId(event);
     return (
       !citationEventIds.has(event.id) &&
       (!callId || !networkCallIds.has(callId)) &&
       (!callId || !browserCallIds.has(callId)) &&
       (!planId || !planIds.has(planId)) &&
+      (!approvalId || !approvalIds.has(approvalId)) &&
       (!key || !artifactKeys.has(`${key[0]}:${key[1]}`))
     );
   });
@@ -153,6 +176,11 @@ export function ConversationLedger({
       kind: "plan" as const,
       seq: plan.seq,
       plan,
+    })),
+    ...approvals.map((approval) => ({
+      kind: "approval" as const,
+      seq: approval.seq,
+      approval,
     })),
   ].sort((left, right) => left.seq - right.seq);
 
@@ -198,10 +226,15 @@ export function ConversationLedger({
             key={`browser-${item.activity.callId}`}
             activity={item.activity}
           />
-        ) : (
+        ) : item.kind === "plan" ? (
           <ConversationPlanCard
             key={`plan-${item.plan.plan.id}`}
             item={item.plan}
+          />
+        ) : (
+          <ConversationApprovalCard
+            key={`approval-${item.approval.decision.id}`}
+            approval={item.approval}
           />
         ),
       )}
