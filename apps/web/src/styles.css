@@ -9851,23 +9851,6 @@ button:disabled {
   line-height: 1.48;
 }
 
-.goal-progress {
-  height: 3px;
-  overflow: hidden;
-  background: var(--rule);
-}
-
-.goal-progress span {
-  display: block;
-  height: 100%;
-  min-width: 7%;
-  background: var(--ledger);
-}
-
-.goal-card-blocked .goal-progress span {
-  background: var(--vermilion);
-}
-
 .goal-card dl {
   display: grid;
   grid-template-columns: 1fr 1fr;

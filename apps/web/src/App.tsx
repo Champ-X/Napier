@@ -580,13 +580,6 @@ function GoalPanel({
             <Target size={18} aria-hidden="true" />
           </div>
           <p>{goal.objective}</p>
-          <div className="goal-progress">
-            <span
-              style={{
-                width: `${goalProgress(goal)}%`,
-              }}
-            />
-          </div>
           <dl>
             <div>
               <dt>Status</dt>
@@ -663,14 +656,6 @@ function goalStatusLabel(status: GoalState["status"]): string {
   if (status === "completed") return copy.goal.completed;
   if (status === "blocked") return copy.goal.blocked;
   return copy.goal.active;
-}
-
-function goalProgress(goal: GoalState): number {
-  if (goal.status === "completed") return 100;
-  return Math.max(
-    7,
-    (goal.continuationCount / Math.max(1, goal.maxContinuations)) * 100,
-  );
 }
 
 function shortPath(value: string): string {
