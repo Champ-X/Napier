@@ -887,29 +887,6 @@ button:disabled {
   margin-bottom: 0;
 }
 
-.reasoning-note {
-  margin: -2px 0 13px;
-  padding: 7px 10px;
-  font-size: 10px;
-  color: var(--ink-soft);
-  background: rgb(220 229 221 / 45%);
-  border: 1px solid #ccd8ce;
-  border-radius: 3px;
-}
-
-.reasoning-note summary {
-  font-family: var(--mono);
-  font-size: 8px;
-  cursor: pointer;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.reasoning-note p {
-  margin: 7px 0 0;
-  line-height: 1.55;
-}
-
 .branch-action {
   display: flex;
   align-items: center;

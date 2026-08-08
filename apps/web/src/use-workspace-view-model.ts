@@ -149,7 +149,6 @@ export interface MessageView {
   seq: number;
   role: "user" | "assistant" | "system";
   text: string;
-  reasoning: string;
   model: string;
   createdAt: string;
 }
@@ -386,7 +385,6 @@ export function useWorkspaceViewModel() {
           seq: event.seq,
           role: payload.role,
           text: payload.text,
-          reasoning: payload.reasoning ?? "",
           model: payload.model ?? "",
           createdAt: event.createdAt,
         },

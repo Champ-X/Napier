@@ -669,12 +669,6 @@ function MessageCard({
           </time>
           {message.model ? <small>{message.model}</small> : null}
         </header>
-        {message.reasoning ? (
-          <details className="reasoning-note">
-            <summary>Reasoning note</summary>
-            <p>{message.reasoning}</p>
-          </details>
-        ) : null}
         <div className="message-text">
           {message.text.split(/\n{2,}/).map((paragraph, index) => (
             <p key={`${message.id}-${index}`}>{paragraph}</p>
