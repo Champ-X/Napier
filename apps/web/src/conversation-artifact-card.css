@@ -286,3 +286,111 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.conversation-network-activity {
+  margin: -11px 0 25px 37px;
+  color: var(--ink-soft);
+  background: rgb(244 240 231 / 82%);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--ochre);
+  border-radius: 2px;
+}
+
+.conversation-network-activity.status-completed {
+  border-left-color: var(--ledger);
+}
+
+.conversation-network-activity.status-failed {
+  border-left-color: var(--vermilion);
+}
+
+.conversation-network-activity > summary {
+  display: grid;
+  min-height: 42px;
+  grid-template-columns: 18px minmax(0, 1fr) 16px auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.conversation-network-activity > summary::-webkit-details-marker {
+  display: none;
+}
+
+.conversation-network-activity > summary div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.conversation-network-activity > summary span,
+.conversation-network-activity > summary time,
+.conversation-network-activity dt,
+.conversation-network-activity dd {
+  font-family: var(--mono);
+  font-size: 8px;
+}
+
+.conversation-network-activity > summary span,
+.conversation-network-activity > summary time,
+.conversation-network-activity dt {
+  color: var(--ink-faint);
+}
+
+.conversation-network-activity > summary span {
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.conversation-network-activity > summary strong {
+  overflow: hidden;
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-network-activity .is-spinning {
+  animation: spin 1s linear infinite;
+}
+
+.conversation-network-activity > dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px 12px;
+  margin: 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.conversation-network-activity > dl div {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.conversation-network-activity dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-network-activity > p {
+  margin: 0;
+  padding: 0 12px 10px;
+  font-family: var(--serif);
+  font-size: 9px;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 540px) {
+  .conversation-network-activity > dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

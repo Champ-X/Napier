@@ -18,6 +18,10 @@ import {
   conversationCitations,
   type ConversationCitation,
 } from "./conversation-citation-view-model";
+import {
+  conversationNetworkActivities,
+  type ConversationNetworkActivity,
+} from "./conversation-network-activity-view-model";
 import { copy } from "./copy";
 import {
   conversationActivities,
@@ -25,6 +29,7 @@ import {
 } from "./conversation-activity-view-model";
 import { ConversationArtifactCard } from "./ConversationArtifactCard";
 import { ConversationCitationCard } from "./ConversationCitationCard";
+import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCard";
 import {
   MessageMarkdown,
   type MessageCitationLink,
@@ -36,7 +41,12 @@ type FeedItem =
   | { kind: "message"; seq: number; message: MessageView }
   | { kind: "activity"; seq: number; activity: ConversationActivity }
   | { kind: "artifact"; seq: number; artifact: ConversationArtifact }
-  | { kind: "citation"; seq: number; citation: ConversationCitation };
+  | { kind: "citation"; seq: number; citation: ConversationCitation }
+  | {
+      kind: "network";
+      seq: number;
+      activity: ConversationNetworkActivity;
+    };
 
 export function ConversationLedger({
   messages,
@@ -65,10 +75,16 @@ export function ConversationLedger({
   const citationLinks: MessageCitationLink[] =
     conversationCitationLinks(citations);
   const citationEventIds = new Set(citations.map((citation) => citation.id));
+  const networkActivities = conversationNetworkActivities(events);
+  const networkCallIds = new Set(
+    networkActivities.map((activity) => activity.callId),
+  );
   const activityEvents = events.filter((event) => {
     const key = conversationArtifactEventKey(event);
+    const callId = eventCallId(event);
     return (
       !citationEventIds.has(event.id) &&
+      (!callId || !networkCallIds.has(callId)) &&
       (!key || !artifactKeys.has(`${key[0]}:${key[1]}`))
     );
   });
@@ -92,6 +108,11 @@ export function ConversationLedger({
       kind: "citation" as const,
       seq: citation.seq,
       citation,
+    })),
+    ...networkActivities.map((activity) => ({
+      kind: "network" as const,
+      seq: activity.seq,
+      activity,
     })),
   ].sort((left, right) => left.seq - right.seq);
 
@@ -117,7 +138,7 @@ export function ConversationLedger({
             threadId={item.artifact.threadId}
             onLedgerChanged={onLedgerChanged}
           />
-        ) : (
+        ) : item.kind === "citation" ? (
           <ConversationCitationCard
             key={`citation-${item.citation.citationId}`}
             citation={item.citation}
@@ -126,6 +147,11 @@ export function ConversationLedger({
                 (link) => link.citationId === item.citation.citationId,
               )?.index ?? 1
             }
+          />
+        ) : (
+          <ConversationNetworkActivityCard
+            key={`network-${item.activity.callId}`}
+            activity={item.activity}
           />
         ),
       )}
@@ -241,6 +267,14 @@ function StreamingCard({
       </div>
     </article>
   );
+}
+
+function eventCallId(event: RunEvent): string | undefined {
+  if (!event.payload || typeof event.payload !== "object" || Array.isArray(event.payload)) {
+    return undefined;
+  }
+  const callId = event.payload["callId"];
+  return typeof callId === "string" ? callId : undefined;
 }
 
 function formatTime(value: string): string {
