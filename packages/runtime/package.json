@@ -16,6 +16,10 @@
       "types": "./dist/doctor-runtime-probes.d.ts",
       "import": "./dist/doctor-runtime-probes.js"
     },
+    "./sandbox-container": {
+      "types": "./dist/sandbox-container.d.ts",
+      "import": "./dist/sandbox-container.js"
+    },
     "./browser-interaction-confirmations": {
       "types": "./dist/browser-interaction-confirmations.d.ts",
       "import": "./dist/browser-interaction-confirmations.js"

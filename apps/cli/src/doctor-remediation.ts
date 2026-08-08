@@ -72,6 +72,13 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
       "Use a supported host sandbox before coding or process tasks; those capabilities fail closed without it.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
+  sandbox_container_available: {
+    id: "enable_container_sandbox",
+    instruction:
+      "A container runtime was found. Set NAPIER_CONTAINER_SANDBOX_IMAGE to a trusted image (for example alpine:3.20) to enable a container sandbox; on VM-backed runtimes like colima also set NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR to a mount-shared path.",
+    verifyCommand:
+      "NAPIER_CONTAINER_SANDBOX_IMAGE='IMAGE' napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
   skills_missing: {
     id: "repair_skill_loader",
     instruction:

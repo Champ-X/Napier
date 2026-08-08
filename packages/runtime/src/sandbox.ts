@@ -197,7 +197,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     validateContainerImage(this.image);
     const executable = await resolveContainerLaunchExecutable(this.executable);
     const sandboxHome = await mkdtemp(
-      path.join(containerScratchBaseDir(), "napier-process-sandbox-"),
+      path.join(await containerScratchBaseDir(), "napier-process-sandbox-"),
     );
     const args = buildOciContainerArgs(request, sandboxHome, this.image);
     return launchSandboxProcess({

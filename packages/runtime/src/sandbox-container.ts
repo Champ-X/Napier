@@ -1,5 +1,5 @@
 import { constants as fsConstants } from "node:fs";
-import { access } from "node:fs/promises";
+import { access, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -34,11 +34,16 @@ export async function resolveContainerExecutable(
  * Base directory for the container sandbox scratch home. Defaults to the OS
  * temp dir, which Docker Desktop and Linux share into containers. Hosts whose
  * VM only mounts a subtree (for example colima sharing $HOME) can point this at
- * a mount-visible path so bind mounts resolve inside the guest.
+ * a mount-visible path so bind mounts resolve inside the guest. A configured
+ * directory is created if it does not exist so the guidance is self-sufficient.
  */
-export function containerScratchBaseDir(): string {
+export async function containerScratchBaseDir(): Promise<string> {
   const configured = process.env[CONTAINER_SCRATCH_DIR_ENV]?.trim();
-  return configured && path.isAbsolute(configured) ? configured : tmpdir();
+  if (configured && path.isAbsolute(configured)) {
+    await mkdir(configured, { recursive: true });
+    return configured;
+  }
+  return tmpdir();
 }
 
 /**

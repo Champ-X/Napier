@@ -1,9 +1,7 @@
 import {
-  createPlatformSandboxAdapter,
   ModelRegistry,
   resolveBrowserRuntime,
   RunBrowserSessionManager,
-  runSandboxedProcess,
   sha256,
 } from "@napier/runtime";
 import {
@@ -12,9 +10,12 @@ import {
   probePythonRuntime,
   probeShellRuntime,
   probeSkillsRuntime,
-  sandboxIsolationStrength,
 } from "@napier/runtime/doctor-probes";
 
+import {
+  defaultSandboxProbe,
+  sandboxFailure,
+} from "./doctor-sandbox-probe.js";
 import { localCapabilityCheck } from "./doctor-local-capability-check.js";
 import {
   normalizeWebSearchRequest,
@@ -251,62 +252,6 @@ async function defaultModelProbe(
   };
 }
 
-async function defaultSandboxProbe(
-  workspaceRoot: string,
-  signal: AbortSignal,
-): Promise<DoctorCheck> {
-  const startedAt = Date.now();
-  const sandbox = createPlatformSandboxAdapter();
-  const container = sandbox.id === "oci-container";
-  const launch = container
-    ? {
-        command: "/bin/true",
-        args: [] as string[],
-        env: { LANG: "C", LC_ALL: "C", PATH: "/usr/bin:/bin" },
-      }
-    : {
-        command: process.execPath,
-        args: ["-e", "process.exit(0)"],
-        env: { LANG: "C", LC_ALL: "C", PATH: process.env.PATH ?? "" },
-      };
-  const result = await runSandboxedProcess({
-    sandbox,
-    launch: {
-      command: launch.command,
-      args: launch.args,
-      cwd: workspaceRoot,
-      env: launch.env,
-      workspaceRoot,
-      approvedCapabilities: ["process.spawn"],
-    },
-    timeoutMs: container ? 60_000 : 5_000,
-    maxOutputChars: 256,
-    signal,
-    abortedMessage: "Doctor sandbox probe was cancelled",
-  });
-  const passed =
-    result.status === "exited" &&
-    result.exitCode === 0 &&
-    !result.stdout &&
-    !result.stderr;
-  if (!passed) throw new Error("sandbox probe failed");
-  const isolation = sandboxIsolationStrength(sandbox.id);
-  return {
-    id: "sandbox",
-    status: "passed",
-    required: false,
-    code: "sandbox_ready",
-    message: `The OS process sandbox launched a network-denied probe (${isolation.summary})`,
-    durationMs: Date.now() - startedAt,
-    evidence: {
-      adapter: sandbox.id,
-      isolationLevel: isolation.level,
-      networkDeniedByDefault: isolation.networkDeniedByDefault,
-      resourceLimited: isolation.resourceLimited,
-    },
-  };
-}
-
 async function defaultSearchProbe(signal: AbortSignal): Promise<DoctorCheck> {
   const startedAt = Date.now();
   const registry = new WebSearchProviderRegistry({ env: {} });
@@ -431,20 +376,6 @@ async function safeProbe(
     const check = failure(error, Date.now() - startedAt);
     return { ...check, id, required };
   }
-}
-
-function sandboxFailure(_error: unknown, durationMs: number): DoctorCheck {
-  const isolation = sandboxIsolationStrength(createPlatformSandboxAdapter().id);
-  return {
-    id: "sandbox",
-    status: "warning",
-    required: false,
-    code: "sandbox_unavailable",
-    message:
-      "OS process sandbox is unavailable; coding/process tasks (run, build, test, LSP, git) will fail closed. Read-only file tools still work.",
-    durationMs,
-    evidence: { isolationLevel: isolation.level },
-  };
 }
 
 function networkFailure(
