@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 
+import "./message-markdown.css";
+import { highlightMessageCode } from "./message-code-highlighting";
+
 type MarkdownBlock =
   | { kind: "code"; language?: string; value: string }
   | { kind: "heading"; level: 1 | 2 | 3; value: string }
@@ -51,6 +54,9 @@ export function MessageMarkdown({
             language === "diff" || language === "patch"
               ? projectDiffLines(block.value)
               : undefined;
+          const highlighted = diffLines
+            ? undefined
+            : highlightMessageCode(block.value, language);
           return (
             <pre
               className={`message-code-block${
@@ -70,7 +76,20 @@ export function MessageMarkdown({
                         {lineIndex < diffLines.length - 1 ? "\n" : null}
                       </span>
                     ))
-                  : block.value}
+                  : highlighted
+                    ? highlighted.map((token, tokenIndex) =>
+                        token.tone ? (
+                          <span
+                            className={`message-code-token is-${token.tone}`}
+                            key={`${key}-token-${String(tokenIndex)}`}
+                          >
+                            {token.value}
+                          </span>
+                        ) : (
+                          token.value
+                        ),
+                      )
+                    : block.value}
               </code>
             </pre>
           );
