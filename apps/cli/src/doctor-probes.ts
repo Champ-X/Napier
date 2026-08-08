@@ -7,6 +7,15 @@ import {
   sha256,
 } from "@napier/runtime";
 import {
+  probeDapRuntime,
+  probeLspRuntime,
+  probePythonRuntime,
+  probeShellRuntime,
+  probeSkillsRuntime,
+} from "@napier/runtime/doctor-probes";
+
+import { localCapabilityCheck } from "./doctor-local-capability-check.js";
+import {
   normalizeWebSearchRequest,
   RunWebFetchSourceManager,
   WebSearchProviderRegistry,
@@ -31,6 +40,11 @@ export interface DoctorProbeDependencies {
     workspaceRoot: string,
     signal: AbortSignal,
   ) => Promise<DoctorCheck>;
+  skills?: (workspaceRoot: string) => Promise<DoctorCheck>;
+  lsp?: () => Promise<DoctorCheck>;
+  dap?: () => Promise<DoctorCheck>;
+  python?: () => Promise<DoctorCheck>;
+  shell?: () => Promise<DoctorCheck>;
 }
 
 export async function runDoctorProbes(input: {
@@ -68,6 +82,28 @@ export async function runDoctorProbes(input: {
       }),
     ),
   ];
+  input.signal.throwIfAborted();
+  checks.push(
+    ...(await Promise.all([
+      dependencies.skills
+        ? dependencies.skills(input.workspaceRoot)
+        : localCapabilityCheck("skills", () =>
+            probeSkillsRuntime(input.workspaceRoot),
+          ),
+      dependencies.lsp
+        ? dependencies.lsp()
+        : localCapabilityCheck("lsp", probeLspRuntime),
+      dependencies.dap
+        ? dependencies.dap()
+        : localCapabilityCheck("dap", probeDapRuntime),
+      dependencies.python
+        ? dependencies.python()
+        : localCapabilityCheck("python", probePythonRuntime),
+      dependencies.shell
+        ? dependencies.shell()
+        : localCapabilityCheck("shell", probeShellRuntime),
+    ])),
+  );
   input.signal.throwIfAborted();
   const sandbox =
     dependencies.sandbox ??

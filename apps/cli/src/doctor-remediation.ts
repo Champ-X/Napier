@@ -72,6 +72,36 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
       "Use a supported host sandbox before coding or process tasks; those capabilities fail closed without it.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
+  skills_missing: {
+    id: "repair_skill_loader",
+    instruction:
+      "Add at least one skills/<name>/SKILL.md file to the workspace, or install a reviewed Skill baseline, so the loader can resolve content.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  lsp_missing: {
+    id: "repair_lsp_runtime",
+    instruction:
+      "Reinstall dependencies so typescript-language-server and typescript resolve; LSP tools fail closed without them.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  dap_missing: {
+    id: "repair_debug_adapter",
+    instruction:
+      "Reinstall dependencies so node-pty rebuilds for this Node version; the Node debug adapter cannot attach without it.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  python_missing: {
+    id: "repair_python_runtime",
+    instruction:
+      "Install a python3 interpreter with its standard library (for example Xcode Command Line Tools on macOS) before Python tasks.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  shell_missing: {
+    id: "repair_shell_runtime",
+    instruction:
+      "Reinstall dependencies so node-pty rebuilds; PTY shell and background process tools fail closed without it.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
   search_unavailable: networkRemediation(),
   fetch_unavailable: networkRemediation(),
   browser_unavailable: networkRemediation(),

@@ -12,6 +12,10 @@
       "types": "./dist/web-search.d.ts",
       "import": "./dist/web-search.js"
     },
+    "./doctor-probes": {
+      "types": "./dist/doctor-runtime-probes.d.ts",
+      "import": "./dist/doctor-runtime-probes.js"
+    },
     "./browser-interaction-confirmations": {
       "types": "./dist/browser-interaction-confirmations.d.ts",
       "import": "./dist/browser-interaction-confirmations.js"

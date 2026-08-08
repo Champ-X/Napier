@@ -95,8 +95,8 @@ describe("Napier Doctor CLI", () => {
         schemaVersion: 2,
         status: "ready",
         online: true,
-        checkCount: 7,
-        passedCount: 7,
+        checkCount: 12,
+        passedCount: 12,
         warningCount: 0,
         failedCount: 0,
         skippedCount: 0,
@@ -337,6 +337,54 @@ describe("Napier Doctor CLI", () => {
       }),
     );
   });
+  it("checks local Skills, LSP, DAP, Python, and Shell readiness", async () => {
+    const fixture = await createFixture();
+    const stdout = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--model",
+        "napier/demo",
+        "--offline",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      doctorDependencies({
+        model: passed("model", "demo_model_ready"),
+        sandbox: passed("sandbox", "sandbox_ready"),
+        python: warning("python", "python_missing"),
+      }),
+    );
+
+    expect(code).toBe(0);
+    const report = JSON.parse(stdout.text()) as {
+      status: string;
+      checkCount: number;
+      checks: DoctorCheck[];
+      remediations: Array<{ id: string; priority: string; checkIds: string[] }>;
+    };
+    expect(report.checkCount).toBe(12);
+    expect(report.checks.map((check) => check.id)).toEqual(
+      expect.arrayContaining(["skills", "lsp", "dap", "python", "shell"]),
+    );
+    const python = report.checks.find((check) => check.id === "python");
+    expect(python).toEqual(
+      expect.objectContaining({ status: "warning", required: false }),
+    );
+    expect(report.status).toBe("degraded");
+    expect(report.remediations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "repair_python_runtime",
+          priority: "optional",
+          checkIds: ["python"],
+        }),
+      ]),
+    );
+  });
 });
 
 function doctorDependencies(
@@ -358,15 +406,29 @@ function doctorDependencies(
       fetch: async () => overrides.fetch ?? passed("fetch", "fetch_ready"),
       browser: async () =>
         overrides.browser ?? passed("browser", "browser_ready"),
+      skills: async () => overrides.skills ?? passed("skills", "skills_ready"),
+      lsp: async () => overrides.lsp ?? passed("lsp", "lsp_ready"),
+      dap: async () => overrides.dap ?? passed("dap", "dap_ready"),
+      python: async () => overrides.python ?? passed("python", "python_ready"),
+      shell: async () => overrides.shell ?? passed("shell", "shell_ready"),
     },
   };
 }
 
 function passed(id: DoctorCheck["id"], code: string): DoctorCheck {
+  const optional = new Set<DoctorCheck["id"]>([
+    "model",
+    "sandbox",
+    "skills",
+    "lsp",
+    "dap",
+    "python",
+    "shell",
+  ]);
   return {
     id,
     status: "passed",
-    required: id !== "model" && id !== "sandbox",
+    required: !optional.has(id),
     code,
     message: "ready",
     durationMs: 1,

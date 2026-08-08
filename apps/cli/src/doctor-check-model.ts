@@ -8,7 +8,12 @@ export interface DoctorCheck {
     | "sandbox"
     | "search"
     | "fetch"
-    | "browser";
+    | "browser"
+    | "skills"
+    | "lsp"
+    | "dap"
+    | "python"
+    | "shell";
   status: DoctorCheckStatus;
   required: boolean;
   code: string;
