@@ -8,21 +8,45 @@ type MarkdownBlock =
   | { kind: "table"; headers: string[]; rows: string[][] }
   | { kind: "paragraph"; value: string };
 
+export type DiffLineTone =
+  | "addition"
+  | "deletion"
+  | "hunk"
+  | "metadata"
+  | "context";
+
 export function MessageMarkdown({ text }: { text: string }) {
   return (
     <>
       {parseMarkdownBlocks(text).map((block, index) => {
         const key = `${block.kind}-${String(index)}`;
         if (block.kind === "code") {
+          const language = block.language?.toLowerCase();
+          const diffLines =
+            language === "diff" || language === "patch"
+              ? projectDiffLines(block.value)
+              : undefined;
           return (
             <pre
               className={`message-code-block${
-                block.language ? ` language-${block.language.toLowerCase()}` : ""
+                language ? ` language-${language}` : ""
               }`}
               key={key}
             >
               {block.language ? <span>{block.language}</span> : null}
-              <code>{block.value}</code>
+              <code>
+                {diffLines
+                  ? diffLines.map((line, lineIndex) => (
+                      <span
+                        className={`message-diff-line is-${line.tone}`}
+                        key={`${key}-line-${String(lineIndex)}`}
+                      >
+                        {line.value}
+                        {lineIndex < diffLines.length - 1 ? "\n" : null}
+                      </span>
+                    ))
+                  : block.value}
+              </code>
             </pre>
           );
         }
@@ -77,6 +101,15 @@ export function MessageMarkdown({ text }: { text: string }) {
       })}
     </>
   );
+}
+
+export function projectDiffLines(
+  value: string,
+): Array<{ value: string; tone: DiffLineTone }> {
+  return value.split("\n").map((line) => ({
+    value: line,
+    tone: diffLineTone(line),
+  }));
 }
 
 export function parseMarkdownBlocks(text: string): MarkdownBlock[] {
@@ -233,6 +266,20 @@ function tableCells(line: string): string[] {
   return normalized.includes("|")
     ? normalized.split("|").map((cell) => cell.trim())
     : [];
+}
+
+function diffLineTone(line: string): DiffLineTone {
+  if (line.startsWith("@@")) return "hunk";
+  if (
+    /^(?:diff |index |--- |\+\+\+ |new file |deleted file |rename |similarity |\\ No newline)/u.test(
+      line,
+    )
+  ) {
+    return "metadata";
+  }
+  if (line.startsWith("+")) return "addition";
+  if (line.startsWith("-")) return "deletion";
+  return "context";
 }
 
 function inlineMarkdown(value: string): ReactNode[] {

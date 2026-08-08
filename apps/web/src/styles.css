@@ -1141,6 +1141,32 @@ button:disabled {
   box-shadow: inset 3px 0 0 var(--vermilion);
 }
 
+.message-diff-line {
+  display: block;
+  min-height: 1.6em;
+  padding: 0 8px;
+  margin: 0 -8px;
+}
+
+.message-diff-line.is-addition {
+  color: #cae7d7;
+  background: rgb(49 121 80 / 22%);
+}
+
+.message-diff-line.is-deletion {
+  color: #f0c9c0;
+  background: rgb(167 64 45 / 22%);
+}
+
+.message-diff-line.is-hunk {
+  color: #d9c98c;
+  background: rgb(174 137 42 / 15%);
+}
+
+.message-diff-line.is-metadata {
+  color: #98b8ac;
+}
+
 .message-table-wrap {
   margin: 13px 0 17px;
   overflow: auto;

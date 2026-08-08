@@ -1,7 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
-import { parseMarkdownBlocks } from "../src/message-markdown";
+import {
+  parseMarkdownBlocks,
+  projectDiffLines,
+} from "../src/message-markdown";
 
 describe("Message Markdown", () => {
   it("parses headings, lists, quotes, paragraphs, and fenced code", () => {
@@ -54,6 +57,32 @@ describe("Message Markdown", () => {
     ]);
   });
 
+  it("classifies diff lines without interpreting their contents as markup", () => {
+    expect(
+      projectDiffLines(
+        [
+          "diff --git a/app.ts b/app.ts",
+          "--- a/app.ts",
+          "+++ b/app.ts",
+          "@@ -1,2 +1,2 @@",
+          "-const oldValue = '<script>';",
+          "+const newValue = '<strong>';",
+          " unchanged",
+          "\\ No newline at end of file",
+        ].join("\n"),
+      ),
+    ).toEqual([
+      { value: "diff --git a/app.ts b/app.ts", tone: "metadata" },
+      { value: "--- a/app.ts", tone: "metadata" },
+      { value: "+++ b/app.ts", tone: "metadata" },
+      { value: "@@ -1,2 +1,2 @@", tone: "hunk" },
+      { value: "-const oldValue = '<script>';", tone: "deletion" },
+      { value: "+const newValue = '<strong>';", tone: "addition" },
+      { value: " unchanged", tone: "context" },
+      { value: "\\ No newline at end of file", tone: "metadata" },
+    ]);
+  });
+
   it("never injects raw HTML and restricts links to http(s)", async () => {
     const source = await readFile(
       new URL("../src/message-markdown.tsx", import.meta.url),
@@ -64,6 +93,7 @@ describe("Message Markdown", () => {
     expect(source).toContain('url.protocol === "http:"');
     expect(source).toContain('rel="noreferrer noopener"');
     expect(source).toContain("message-table-wrap");
-    expect(source).toContain("language-${block.language.toLowerCase()}");
+    expect(source).toContain("language-${language}");
+    expect(source).toContain("message-diff-line");
   });
 });
