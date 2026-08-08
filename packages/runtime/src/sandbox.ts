@@ -5,6 +5,11 @@ import path from "node:path";
 
 import { probeMacOsSandboxAvailability } from "./macos-sandbox-availability.js";
 import { createParentGuardedTerminalLaunch } from "./process-guardian.js";
+import {
+  containerScratchBaseDir,
+  CONTAINER_IMAGE_ENV,
+  resolveContainerLaunchExecutable,
+} from "./sandbox-container.js";
 import { launchSandboxProcess } from "./sandbox-process-lifecycle.js";
 import type {
   OsSandboxAdapter,
@@ -28,8 +33,6 @@ export { UnsupportedSandboxAdapter } from "./unsupported-sandbox.js";
 
 const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
 const BUBBLEWRAP_EXEC = "/usr/bin/bwrap";
-const CONTAINER_EXEC = "/usr/bin/docker";
-const CONTAINER_IMAGE_ENV = "NAPIER_CONTAINER_SANDBOX_IMAGE";
 const MAX_RUNTIME_READ_PATHS = 8;
 const MAX_WORKSPACE_WRITE_PATHS = 8;
 const LINUX_RUNTIME_READ_PATHS = [
@@ -49,7 +52,7 @@ export function createPlatformSandboxAdapter(
 ): OsSandboxAdapter {
   const containerImage =
     options.containerImage ?? process.env[CONTAINER_IMAGE_ENV];
-  if ((options.preferContainer || platform === "win32") && containerImage) {
+  if (containerImage && (options.preferContainer || platform !== "linux")) {
     return new OciContainerSandboxAdapter(containerImage, {
       ...(options.containerExecutable
         ? { executable: options.containerExecutable }
@@ -167,13 +170,13 @@ export class LinuxBubblewrapSandboxAdapter implements OsSandboxAdapter {
 
 export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   readonly id = "oci-container";
-  private readonly executable: string;
+  private readonly executable: string | undefined;
 
   constructor(
     private readonly image: string,
     options: { executable?: string; spawnProcess?: typeof spawn } = {},
   ) {
-    this.executable = options.executable ?? CONTAINER_EXEC;
+    this.executable = options.executable;
     this.spawnProcess = options.spawnProcess ?? spawn;
   }
 
@@ -192,19 +195,13 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       );
     }
     validateContainerImage(this.image);
-    try {
-      await access(this.executable);
-    } catch {
-      throw new Error(
-        `OCI container sandbox requires an executable at ${this.executable}`,
-      );
-    }
+    const executable = await resolveContainerLaunchExecutable(this.executable);
     const sandboxHome = await mkdtemp(
-      path.join(tmpdir(), "napier-process-sandbox-"),
+      path.join(containerScratchBaseDir(), "napier-process-sandbox-"),
     );
     const args = buildOciContainerArgs(request, sandboxHome, this.image);
     return launchSandboxProcess({
-      command: this.executable,
+      command: executable,
       args,
       cwd: "/",
       env: containerProcessEnv(request.env),

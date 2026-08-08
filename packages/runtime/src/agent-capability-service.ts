@@ -24,6 +24,7 @@ import {
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
 } from "./default-agent-capability-contract.js";
 import { probeMacOsSandboxAvailability } from "./macos-sandbox-availability.js";
+import { resolveContainerExecutable } from "./sandbox-container.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
 
@@ -246,6 +247,9 @@ async function sandboxAvailable(sandbox: OsSandboxAdapter): Promise<boolean> {
     if (sandbox.id === "linux-bubblewrap") {
       await access("/usr/bin/bwrap");
       return true;
+    }
+    if (sandbox.id === "oci-container") {
+      return (await resolveContainerExecutable()) !== undefined;
     }
     return false;
   } catch {

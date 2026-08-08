@@ -1,5 +1,8 @@
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { EventEmitter } from "node:events";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { PassThrough } from "node:stream";
 
 import { describe, expect, it } from "vitest";
@@ -15,6 +18,7 @@ import {
   MacOsSandboxAdapter,
   OciContainerSandboxAdapter,
 } from "../src/sandbox.js";
+import { resolveContainerExecutable } from "../src/sandbox-container.js";
 
 const BASE_REQUEST = {
   command: "/opt/napier/bin/mcp-server",
@@ -121,6 +125,35 @@ describe("OS sandbox adapters", () => {
       }).id,
     ).toBe("oci-container");
     expect(createPlatformSandboxAdapter("win32").id).toBe("unsupported");
+  });
+
+  it("falls back to the OCI container adapter on macOS and Linux when an image is configured", () => {
+    expect(
+      createPlatformSandboxAdapter("darwin", {
+        containerImage: "alpine:3.20",
+      }).id,
+    ).toBe("oci-container");
+    expect(
+      createPlatformSandboxAdapter("linux", {
+        containerImage: "alpine:3.20",
+        preferContainer: true,
+      }).id,
+    ).toBe("oci-container");
+    expect(createPlatformSandboxAdapter("darwin").id).toBe("macos-sandbox-exec");
+    expect(createPlatformSandboxAdapter("linux").id).toBe("linux-bubblewrap");
+  });
+
+  it("resolves a container executable from PATH and rejects missing ones", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "napier-container-bin-"));
+    const executable = path.join(dir, "docker");
+    await writeFile(executable, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    await expect(
+      resolveContainerExecutable(["docker"], dir),
+    ).resolves.toBe(executable);
+    await expect(
+      resolveContainerExecutable(["docker"], path.join(dir, "empty")),
+    ).resolves.toBeUndefined();
+    await rm(dir, { recursive: true, force: true });
   });
 
   it("fails closed when Bubblewrap is not installed", async () => {

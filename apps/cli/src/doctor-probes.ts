@@ -257,17 +257,29 @@ async function defaultSandboxProbe(
 ): Promise<DoctorCheck> {
   const startedAt = Date.now();
   const sandbox = createPlatformSandboxAdapter();
+  const container = sandbox.id === "oci-container";
+  const launch = container
+    ? {
+        command: "/bin/true",
+        args: [] as string[],
+        env: { LANG: "C", LC_ALL: "C", PATH: "/usr/bin:/bin" },
+      }
+    : {
+        command: process.execPath,
+        args: ["-e", "process.exit(0)"],
+        env: { LANG: "C", LC_ALL: "C", PATH: process.env.PATH ?? "" },
+      };
   const result = await runSandboxedProcess({
     sandbox,
     launch: {
-      command: process.execPath,
-      args: ["-e", "process.exit(0)"],
+      command: launch.command,
+      args: launch.args,
       cwd: workspaceRoot,
-      env: { LANG: "C", LC_ALL: "C", PATH: process.env.PATH ?? "" },
+      env: launch.env,
       workspaceRoot,
       approvedCapabilities: ["process.spawn"],
     },
-    timeoutMs: 5_000,
+    timeoutMs: container ? 60_000 : 5_000,
     maxOutputChars: 256,
     signal,
     abortedMessage: "Doctor sandbox probe was cancelled",
