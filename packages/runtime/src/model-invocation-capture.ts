@@ -12,6 +12,10 @@ import type {
 
 import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
+import {
+  applyModelAdapterOptions,
+  modelAdapterReceipt,
+} from "./model-adapters.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import type { LocalStore } from "./store.js";
 
@@ -27,6 +31,20 @@ export async function captureModelInvocation(
   onEvent?: EventSink,
 ): Promise<void> {
   try {
+    const adaptedOptions = applyModelAdapterOptions(model, options);
+    const adapter = modelAdapterReceipt(model, options);
+    await append(
+      store,
+      {
+        threadId: run.threadId,
+        runId: run.id,
+        type: "context.model_adapter",
+        category: "model",
+        visibility: "debug",
+        payload: JSON.parse(JSON.stringify(adapter)),
+      },
+      onEvent,
+    );
     const receipt = await capsules.put({
       sourceThreadId: run.threadId,
       sourceRunId: run.id,
@@ -35,7 +53,7 @@ export async function captureModelInvocation(
       model,
       contextEnvelopeSha256: envelope.contentSha256,
       context,
-      ...(options ? { options } : {}),
+      ...(adaptedOptions ? { options: adaptedOptions } : {}),
     });
     await append(
       store,

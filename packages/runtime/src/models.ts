@@ -17,6 +17,8 @@ import type {
 } from "@napier/contracts";
 import { recommendedDefaultRunModel } from "@napier/contracts/default-run-model";
 
+import { createModelAdapterModels } from "./model-adapters.js";
+
 export const MAX_MODELS_PER_PROVIDER = 18;
 export const MAX_PROJECTED_LIVE_MODELS = 512;
 
@@ -24,10 +26,12 @@ export class ModelRegistry {
   readonly models: MutableModels;
 
   constructor(credentials?: CredentialStore) {
-    const models = createModels({
-      ...(credentials ? { credentials } : {}),
-      authContext: explicitCredentialAuthContext(),
-    });
+    const models = createModelAdapterModels(
+      createModels({
+        ...(credentials ? { credentials } : {}),
+        authContext: explicitCredentialAuthContext(),
+      }),
+    );
     for (const provider of builtinProviders()) models.setProvider(provider);
     this.models = models;
   }
