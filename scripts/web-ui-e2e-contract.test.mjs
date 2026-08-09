@@ -72,13 +72,12 @@ function validReceipt() {
       startupDurationMs: 1,
     },
     browser: {
-      transport: "loopback-cdp",
+      transport: "playwright-launch",
       freshProfile: true,
       profilePersistent: false,
       osIsolationClaimed: false,
       executableSha256: "c".repeat(64),
       startupDurationMs: 2,
-      loopbackWarmup: { attempts: 2, durationMs: 15_100 },
     },
     fixture: {
       threadId: "thread_fixture01",
@@ -112,6 +111,12 @@ function validReceipt() {
         manualActivationPreserved: true,
         groupNavigationPassed: true,
         toolNavigationPassed: true,
+      },
+      browserInspector: {
+        tabSelected: true,
+        panelLabelledBy: "inspector-tab-browser",
+        title: "Browser",
+        actionDisabled: true,
       },
       narrative: {
         ...WEB_UI_NARRATIVE_EXPECTATION,

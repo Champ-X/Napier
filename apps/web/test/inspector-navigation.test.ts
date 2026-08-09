@@ -35,6 +35,7 @@ describe("Inspector navigation", () => {
         defaultTab: "context",
         tabs: [
           "context",
+          "browser",
           "trace",
           "processes",
           "lab",
@@ -51,6 +52,7 @@ describe("Inspector navigation", () => {
     expect(inspectorTabs("trace")).toEqual([
       "trace",
       "context",
+      "browser",
       "processes",
       "lab",
       "memory",
@@ -59,6 +61,16 @@ describe("Inspector navigation", () => {
     ]);
     expect(inspectorTabs("goal")).toEqual(["goal", "plan"]);
     expect(inspectorTabs("files")).toEqual(["files"]);
+    expect(inspectorTabs("browser")).toEqual([
+      "browser",
+      "context",
+      "trace",
+      "processes",
+      "lab",
+      "memory",
+      "extensions",
+      "automations",
+    ]);
   });
 
   it("wraps arrow navigation and supports Home and End", () => {

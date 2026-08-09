@@ -236,6 +236,7 @@ export function BrowserLiveViewPanel({
     <section
       className={`browser-live-view${paused ? " is-paused" : ""}${paused && takeoverOpen ? " has-takeover" : ""}${diagnosisActive ? " has-diagnosis" : ""}`}
       aria-label="Browser Live"
+      tabIndex={-1}
     >
       <header>
         <span>

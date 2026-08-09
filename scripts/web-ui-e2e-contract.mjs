@@ -34,15 +34,12 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.server?.ephemeralPort, true);
   assert.equal(receipt?.server?.healthReady, true);
   assert.equal(receipt?.server?.startupDurationMs >= 0, true);
-  assert.equal(receipt?.browser?.transport, "loopback-cdp");
+  assert.equal(receipt?.browser?.transport, "playwright-launch");
   assert.equal(receipt?.browser?.freshProfile, true);
   assert.equal(receipt?.browser?.profilePersistent, false);
   assert.equal(receipt?.browser?.osIsolationClaimed, false);
   assert.match(receipt?.browser?.executableSha256 ?? "", SHA256);
   assert.equal(receipt?.browser?.startupDurationMs >= 0, true);
-  assert.equal(receipt?.browser?.loopbackWarmup?.attempts >= 1, true);
-  assert.equal(receipt?.browser?.loopbackWarmup?.attempts <= 3, true);
-  assert.equal(receipt?.browser?.loopbackWarmup?.durationMs >= 0, true);
   assert.match(receipt?.fixture?.threadId ?? "", /^thread_[a-z0-9]{8,80}$/u);
   assert.deepEqual(
     {
@@ -114,6 +111,17 @@ export function assertViewportReceipt(viewport) {
   assert.equal(viewport.keyboard.manualActivationPreserved, true);
   assert.equal(viewport.keyboard.groupNavigationPassed, true);
   assert.equal(viewport.keyboard.toolNavigationPassed, true);
+  assert.equal(viewport.browserInspector.tabSelected, true);
+  assert.equal(
+    viewport.browserInspector.panelLabelledBy,
+    "inspector-tab-browser",
+  );
+  assert.equal(viewport.browserInspector.title, "Browser");
+  assert.equal(
+    viewport.browserInspector.actionDisabled,
+    true,
+    JSON.stringify(viewport.browserInspector),
+  );
   assert.deepEqual(
     {
       title: viewport.narrative.title,

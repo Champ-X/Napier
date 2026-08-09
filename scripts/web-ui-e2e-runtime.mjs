@@ -88,15 +88,25 @@ export async function startProductionWebServer(root, port = 0) {
   }
 }
 
-export async function startWebUiCdpBrowser(root) {
+export async function startWebUiBrowser(root) {
   const startedAt = performance.now();
   const executablePath = await realpath(chromium.executablePath());
   const executable = await lstat(executablePath);
   assert.equal(executable.isFile(), true);
-  const profileRoot = path.join(root, "browser-profile");
-  const child = spawn(executablePath, browserArguments(profileRoot), {
-    cwd: root,
-    detached: true,
+  const browser = await chromium.launch({
+    executablePath,
+    headless: true,
+    args: [
+      "--disable-background-networking",
+      "--disable-breakpad",
+      "--disable-component-update",
+      "--disable-default-apps",
+      "--disable-extensions",
+      "--disable-gpu",
+      "--disable-sync",
+      "--no-default-browser-check",
+      "--no-first-run",
+    ],
     env: {
       HOME: root,
       LANG: "C",
@@ -105,22 +115,13 @@ export async function startWebUiCdpBrowser(root) {
       TMPDIR: path.join(root, "tmp"),
       TZ: "UTC",
     },
-    stdio: "ignore",
   });
   try {
-    const port = await waitForDevToolsPort(child, profileRoot);
-    const endpoint = `http://127.0.0.1:${String(port)}`;
-    const version = await fetch(`${endpoint}/json/version`, {
-      signal: AbortSignal.timeout(5_000),
-    }).then((response) => response.json());
-    const websocket = new URL(version.webSocketDebuggerUrl);
-    assert.equal(websocket.hostname, "127.0.0.1");
-    assert.equal(Number(websocket.port), port);
-    const browser = await chromium.connectOverCDP(endpoint);
+    await browser.newContext();
     return {
       browser,
       receipt: {
-        transport: "loopback-cdp",
+        transport: "playwright-launch",
         freshProfile: true,
         profilePersistent: false,
         osIsolationClaimed: false,
@@ -128,12 +129,11 @@ export async function startWebUiCdpBrowser(root) {
         startupDurationMs: Math.round(performance.now() - startedAt),
       },
       async close() {
-        await browser.close().catch(() => undefined);
-        await terminate(child);
+        await browser.close();
       },
     };
   } catch (error) {
-    await terminate(child).catch(() => undefined);
+    await browser.close().catch(() => undefined);
     throw error;
   }
 }
@@ -156,40 +156,6 @@ export async function removeWebUiE2eRoot(root) {
 
 export function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
-}
-
-function browserArguments(profileRoot) {
-  return [
-    "--headless=new",
-    "--disable-background-networking",
-    "--disable-breakpad",
-    "--disable-component-update",
-    "--disable-default-apps",
-    "--disable-extensions",
-    "--disable-gpu",
-    "--disable-sync",
-    "--no-default-browser-check",
-    "--no-first-run",
-    "--remote-debugging-address=127.0.0.1",
-    "--remote-debugging-port=0",
-    `--user-data-dir=${profileRoot}`,
-    "about:blank",
-  ];
-}
-
-async function waitForDevToolsPort(child, profileRoot) {
-  const activePort = path.join(profileRoot, "DevToolsActivePort");
-  const deadline = Date.now() + WEB_UI_START_TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      throw new Error("Web UI E2E Browser exited before CDP was ready");
-    }
-    const value = await readFile(activePort, "utf8").catch(() => "");
-    const port = Number(value.split(/\r?\n/u)[0]);
-    if (Number.isInteger(port) && port > 0 && port <= 65_535) return port;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error("Web UI E2E Browser CDP startup timed out");
 }
 
 function observeServer(child) {

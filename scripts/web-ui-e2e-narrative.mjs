@@ -58,31 +58,6 @@ export async function openWebUiPage(context, url, viewport, setup = () => {}) {
   throw firstError;
 }
 
-export async function warmWebUiLoopback(browser, origin) {
-  const context = browserContext(browser);
-  const startedAt = performance.now();
-  let lastError;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const page = await context.newPage();
-    try {
-      const response = await page.goto(`${origin}/api/health`, {
-        waitUntil: "commit",
-        timeout: 15_000,
-      });
-      assert.equal(response?.ok(), true);
-      return {
-        attempts: attempt,
-        durationMs: Math.round(performance.now() - startedAt),
-      };
-    } catch (error) {
-      lastError = error;
-    } finally {
-      await page.close().catch(() => undefined);
-    }
-  }
-  throw lastError;
-}
-
 export async function refreshPreservesWebUiNarrative(
   page,
   origin,

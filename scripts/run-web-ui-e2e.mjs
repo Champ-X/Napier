@@ -15,7 +15,7 @@ import {
   removeWebUiE2eRoot,
   sha256,
   startProductionWebServer,
-  startWebUiCdpBrowser,
+  startWebUiBrowser,
   WEB_UI_START_TIMEOUT_MS,
 } from "./web-ui-e2e-runtime.mjs";
 import {
@@ -24,7 +24,6 @@ import {
   refreshPreservesWebUiNarrative,
   verifyWebUiRecoveryNarrative,
   verifyWebUiServerRestart,
-  warmWebUiLoopback,
 } from "./web-ui-e2e-narrative.mjs";
 
 const receiptPath = parseArguments(process.argv.slice(2));
@@ -36,18 +35,18 @@ let operationError;
 const cleanupErrors = [];
 
 try {
+  debug("seed");
   receipt.productionEntry = await productionEntryReceipt();
   receipt.fixture = await seedWebUiNarrativeFixture(temporaryRoot);
+  debug("server");
   serverRuntime = await startProductionWebServer(temporaryRoot);
   receipt.server = serverRuntime.receipt;
-  browserRuntime = await startWebUiCdpBrowser(temporaryRoot);
+  debug("browser");
+  browserRuntime = await startWebUiBrowser(temporaryRoot);
   receipt.browser = browserRuntime.receipt;
-  receipt.browser.loopbackWarmup = await warmWebUiLoopback(
-    browserRuntime.browser,
-    serverRuntime.origin,
-  );
   receipt.viewports = [];
   for (const viewport of WEB_UI_E2E_VIEWPORTS) {
+    debug(`viewport:${String(viewport.width)}`);
     const viewportReceipt = await inspectViewport(
       browserRuntime.browser,
       serverRuntime.origin,
@@ -57,11 +56,13 @@ try {
     assertViewportReceipt(viewportReceipt);
     receipt.viewports.push(viewportReceipt);
   }
+  debug("recovery");
   receipt.recovery = await verifyWebUiRecoveryNarrative(
     browserRuntime.browser,
     serverRuntime.origin,
     receipt.fixture.recovery,
   );
+  debug("reconnect");
   receipt.reconnect = await verifyWebUiServerRestart(
     browserRuntime.browser,
     serverRuntime,
@@ -70,6 +71,7 @@ try {
   );
   serverRuntime = receipt.reconnect.runtime;
   delete receipt.reconnect.runtime;
+  debug("passed");
   receipt.status = "passed";
 } catch (error) {
   operationError = error;
@@ -142,6 +144,7 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
     const geometry = await page.evaluate(readGeometry);
     const opened = viewport.layout === "drawer";
     const keyboard = await verifyKeyboardNavigation(page);
+    const browserInspector = await verifyBrowserInspector(page);
     const screenshot = await screenshotReceipt(page);
     const closed =
       viewport.layout === "drawer"
@@ -168,6 +171,7 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
         ),
       },
       keyboard,
+      browserInspector,
       narrative: { ...narrative, refreshPreserved },
       console: { errorCount: consoleErrors.length },
       screenshot,
@@ -230,6 +234,34 @@ async function verifyKeyboardNavigation(page) {
     groupNavigationPassed: true,
     toolNavigationPassed: true,
   };
+}
+
+async function verifyBrowserInspector(page) {
+  await page.locator("#inspector-group-inspect").click();
+  await page.locator("#inspector-tab-browser").click();
+  await page
+    .locator("#browser-inspector-title")
+    .waitFor({ state: "visible", timeout: 10_000 });
+  const receipt = await page.evaluate(() => ({
+    tabSelected:
+      document
+        .getElementById("inspector-tab-browser")
+        ?.getAttribute("aria-selected") === "true",
+    panelLabelledBy:
+      document
+        .getElementById("inspector-active-panel")
+        ?.getAttribute("aria-labelledby") ?? "",
+    title:
+      document.getElementById("browser-inspector-title")?.textContent?.trim() ??
+      "",
+    actionDisabled:
+      document.querySelector(".browser-inspector-card button") instanceof
+      HTMLButtonElement
+        ? document.querySelector(".browser-inspector-card button").disabled
+        : false,
+  }));
+  await page.locator("#inspector-group-activity").click();
+  return receipt;
 }
 
 async function selected(page, id) {
@@ -385,5 +417,11 @@ async function cleanup(label, action) {
     cleanupErrors.push(
       new Error(`Failed to clean up Web UI E2E ${label}`, { cause: error }),
     );
+  }
+}
+
+function debug(stage) {
+  if (process.env["NAPIER_WEB_E2E_DEBUG"] === "1") {
+    process.stderr.write(`[web-ui-e2e] ${stage}\n`);
   }
 }

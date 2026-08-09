@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Command,
   FolderArchive,
+  Globe,
   Layers,
   Scale,
   Search,
@@ -48,6 +49,7 @@ export const INSPECTOR_GROUPS: ReadonlyArray<{
     defaultTab: "context",
     tabs: [
       "context",
+      "browser",
       "trace",
       "processes",
       "lab",
@@ -59,6 +61,7 @@ export const INSPECTOR_GROUPS: ReadonlyArray<{
 ];
 
 const TAB_ICONS: Record<InspectorTab, typeof Activity> = {
+  browser: Globe,
   trace: Activity,
   processes: Command,
   files: FolderArchive,
@@ -69,6 +72,10 @@ const TAB_ICONS: Record<InspectorTab, typeof Activity> = {
   extensions: Cable,
   automations: CalendarClock,
   context: Layers,
+};
+const TAB_LABELS: Record<InspectorTab, string> = {
+  ...copy.tabs,
+  browser: "Browser",
 };
 
 export function InspectorNavigation({
@@ -137,7 +144,7 @@ export function InspectorNavigation({
                 moveToolFocus(event, id, visibleTabs, setFocusedTool)
               }
             >
-              {copy.tabs[tab]}
+              {TAB_LABELS[tab]}
             </InspectorTabButton>
           );
         })}

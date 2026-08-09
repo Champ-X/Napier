@@ -116,7 +116,7 @@ import {
 } from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
 import { useThreadNavigation } from "./use-thread-navigation";
-export type InspectorTab =
+export type InspectorTab = "browser"
   | "trace"
   | "processes"
   | "files"

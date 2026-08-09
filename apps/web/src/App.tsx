@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { AlertCircle, RotateCcw } from "lucide-react";
 
-import type { RunRecord, ThreadStatus } from "@napier/contracts";
+import type { ThreadStatus } from "@napier/contracts";
 import { FatalState, LoadingShell } from "./AppInitialStates";
 import { Composer } from "./Composer";
 import { ConversationWorkspace } from "./ConversationWorkspace";
@@ -12,7 +11,9 @@ import { ResponsiveInspector } from "./ResponsiveInspector";
 import { RunDecisionDockets } from "./RunDecisionDockets";
 import { TaskNarrativeBoundary } from "./TaskNarrativeBoundary";
 import { useWorkspaceViewModel } from "./use-workspace-view-model";
+import { WorkbenchNotices } from "./WorkbenchNotices";
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
+const LazyBrowserInspectorPanel = lazy(() => import("./BrowserInspectorPanel"));
 const LazyGoalPanel = lazy(() => import("./GoalPanel"));
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
@@ -106,23 +107,13 @@ export function App() {
         </header>
 
         <TaskNarrativeBoundary detail={vm.detail} />
-        <div className="workbench-notices">
-          {vm.error ? (
-            <div className="error-banner" role="alert">
-              <AlertCircle size={16} aria-hidden="true" />
-              <span>{vm.error}</span>
-            </div>
-          ) : null}
-
-          {vm.resumableRun ? (
-            <RecoveryBanner
-              run={vm.resumableRun}
-              running={vm.isRunning}
-              modelConfigured={activeModel.configured}
-              onResume={() => void vm.resume()}
-            />
-          ) : null}
-        </div>
+        <WorkbenchNotices
+          error={vm.error}
+          resumableRun={vm.resumableRun}
+          running={vm.isRunning}
+          modelConfigured={activeModel.configured}
+          onResume={() => void vm.resume()}
+        />
 
         <ConversationWorkspace
           vm={vm}
@@ -189,6 +180,13 @@ export function App() {
               />
             </Suspense>
           ) : null}
+          <Suspense fallback={null}>
+            <LazyBrowserInspectorPanel
+              activeTab={vm.inspectorTab}
+              events={vm.detail?.events ?? []}
+              activeRunId={vm.activeRunId}
+            />
+          </Suspense>
           {vm.inspectorTab === "files" && vm.detail ? (
             <Suspense
               fallback={
@@ -451,49 +449,6 @@ export function App() {
         </InspectorPanel>
       </ResponsiveInspector>
     </div>
-  );
-}
-
-function RecoveryBanner({
-  run,
-  running,
-  modelConfigured,
-  onResume,
-}: {
-  run: RunRecord;
-  running: boolean;
-  modelConfigured: boolean;
-  onResume: () => void;
-}) {
-  const resumeWarningId = "recovery-model-unavailable";
-  return (
-    <section className="recovery-banner" aria-labelledby="recovery-title">
-      <div className="recovery-mark" aria-hidden="true">
-        <RotateCcw size={16} />
-      </div>
-      <div>
-        <span>{copy.recovery.eyebrow}</span>
-        <h2 id="recovery-title">{copy.recovery.title}</h2>
-        <p>{copy.recovery.body}</p>
-        <code>
-          {copy.recovery.run}: {run.id}
-        </code>
-      </div>
-      <div className="recovery-actions">
-        {!modelConfigured ? (
-          <p id={resumeWarningId}>{copy.modelUnavailableHint}</p>
-        ) : null}
-        <button
-          type="button"
-          disabled={running || !modelConfigured}
-          aria-describedby={!modelConfigured ? resumeWarningId : undefined}
-          onClick={onResume}
-        >
-          <RotateCcw size={12} aria-hidden="true" />
-          {copy.recovery.action}
-        </button>
-      </div>
-    </section>
   );
 }
 
