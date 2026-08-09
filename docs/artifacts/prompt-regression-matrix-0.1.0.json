@@ -1,0 +1,116 @@
+{
+  "kind": "napier.prompt-regression-matrix",
+  "schemaVersion": 1,
+  "matrixVersion": "napier.prompt-regression.v1",
+  "promptContentStored": false,
+  "dimensions": [
+    "network",
+    "coding",
+    "browser",
+    "long_task",
+    "user_interrupt",
+    "dangerous_action",
+    "partial_block",
+    "correction"
+  ],
+  "caseCount": 8,
+  "cases": [
+    {
+      "id": "prompt_network_v1",
+      "dimension": "network",
+      "testFile": "apps/cli/test/open-web-research-benchmark.test.ts",
+      "testNameSha256": "8ceb75510ad10bcd4cf44b3df399154b17785342415d9abd2277c8b2c8036cc6",
+      "testFileSha256": "976435c5073762c36b4e0224e29081bdb46638599d721cb432a47fca22c9d9c1",
+      "argvSha256": "1184cdbde6500c3c0ee664f7bc9a75ca03cd1e0be436eb7eb1b2e2104665ded2",
+      "status": "passed",
+      "testFileCount": 1,
+      "testCount": 1,
+      "contentSha256": "87cbd4310820d1cf5763c70bb9b880ce6982aa3a7fcd8dad9b28e004ded82946"
+    },
+    {
+      "id": "prompt_coding_v1",
+      "dimension": "coding",
+      "testFile": "apps/cli/test/coding-benchmark.test.ts",
+      "testNameSha256": "405b2a675017ac78ee346d5e89e48ec2cbc9c9468df9333983cf188120acf90d",
+      "testFileSha256": "76df24d2ca370eab99fd758fd96edcdff738acc986c90efc3262d68382775ca1",
+      "argvSha256": "3865ec053a7ae5ed045cdbceea0992aa20da97451c42f47dde30011f4a27c868",
+      "status": "passed",
+      "testFileCount": 1,
+      "testCount": 1,
+      "contentSha256": "eb13256009bcde30dd86fab9e97b7bf44bb4d92ed0a0512083f7054664a809ed"
+    },
+    {
+      "id": "prompt_browser_v1",
+      "dimension": "browser",
+      "testFile": "packages/runtime/test/agent-browser.test.ts",
+      "testNameSha256": "37a520b7b608f2e4baa689352e4084b83aaa87965ffc50294de0cb9486804a95",
+      "testFileSha256": "46c3bfa00d3565bc77dfeefdc52179e2b0e0dd077b3fdb6a37696f341304eaa9",
+      "argvSha256": "00d29920b6a6f898c0c259c9b3f3e51d6dac26e8991a8ea5ab4578133a46d6ca",
+      "status": "passed",
+      "testFileCount": 1,
+      "testCount": 1,
+      "contentSha256": "37e0940d95aaadfaa03c5e6613580ad8bd30f34fd469de3d534796f2912b9bc3"
+    },
+    {
+      "id": "prompt_long_task_v1",
+      "dimension": "long_task",
+      "testFile": "apps/cli/test/workflow-benchmark-long-horizon.test.ts",
+      "testNameSha256": "928d8d6e118308315e5e1a9ad533079f8861b7d75586e85746110f781644f624",
+      "testFileSha256": "73cc0fec3889eb36914b54d91ed5f09632cadac051f175a6957140af3e8324ee",
+      "argvSha256": "c713bf7078fe4b3a0eb5de4292fafb1f48d6f6811792379584dd56e328a0522d",
+      "status": "passed",
+      "testFileCount": 1,
+      "testCount": 1,
+      "contentSha256": "a8a487b574b7bffb2254dae882e65689b0f59ac83f0ada499cba3500834cc3d2"
+    },
+    {
+      "id": "prompt_user_interrupt_v1",
+      "dimension": "user_interrupt",
+      "testFile": "apps/cli/test/interactive-cli.test.ts",
+      "testNameSha256": "fd348707883e04c32b26280a96f3fab7fc6af5c01fd8f513e7f2ce8643852df0",
+      "testFileSha256": "dda4f38291332d726b448e7080a71028aad43d73c3cb8a2afcb4248d260b9a83",
+      "argvSha256": "c69820c3b0ba78e4ac4cac11b6fe5305419841f21ebd8b1c96328d44fe5d79ca",
+      "status": "passed",
+      "testFileCount": 1,
+      "testCount": 1,
+      "contentSha256": "dc9d34dce9e989517ba18354f840e4c2e51cb6a232af7d8896ce612b3535d791"
+    },
+    {
+      "id": "prompt_dangerous_action_v1",
+      "dimension": "dangerous_action",
+      "testFile": "packages/runtime/test/agent-browser-sensitive-target.test.ts",
+      "testNameSha256": "162748ddff771eaacebe3eae9891a05c3295379a05be908972a0f3ee147bf212",
+      "testFileSha256": "d02d627080743cf84fd8b59512088151b8c5556d773f7b387bdf17ac52baa089",
+      "argvSha256": "0c1d0ad361f7cbff738f702036a88f003e88d5333f73275ce96bfee1a40dfbb1",
+      "status": "passed",
+      "testFileCount": 1,
+      "testCount": 1,
+      "contentSha256": "85ea8a32da0cb3d0f5b0fee8fd9e34582d62be0887a3f3b3dae49021e4b02a21"
+    },
+    {
+      "id": "prompt_partial_block_v1",
+      "dimension": "partial_block",
+      "testFile": "apps/cli/test/workflow-cli.test.ts",
+      "testNameSha256": "5ab6ded7ba96dbaafc3f386d8b0f739435020ddbadd34cbaf37e39beb9b787b9",
+      "testFileSha256": "53e2e67e6c072a649c2cd24b0b1b7604396088a4fb51beb06ac2091387aed495",
+      "argvSha256": "a6487cabacbc0674944474c739e2b5332174b2869dc2fe83e3dc5d718a70738b",
+      "status": "passed",
+      "testFileCount": 1,
+      "testCount": 1,
+      "contentSha256": "de1d3163bbef3070ccbd4f69459b7acb30fd9bb1e30ccfb9a4d772e1c7b9dbc4"
+    },
+    {
+      "id": "prompt_correction_v1",
+      "dimension": "correction",
+      "testFile": "packages/runtime/test/model-advisor.test.ts",
+      "testNameSha256": "ee28223e35ca9298b515708c1d9c77b97f6ed552937bc9c54ab0a32839d26201",
+      "testFileSha256": "42cfef93808cdc809728f3dc1e9bb9bc039852c5f5dd182ba3efe7d1897a0157",
+      "argvSha256": "aa4d4cf90281dce13cdc608c47434e7e8a85875a8f3b2bef2bf53cdee667f78f",
+      "status": "passed",
+      "testFileCount": 1,
+      "testCount": 1,
+      "contentSha256": "7bc01e2ca4ff9ebd503224107ae7bb38e409bf6a06e05a0b4e530ba06df9ff4e"
+    }
+  ],
+  "contentSha256": "a540b85d66c4feebb0fa8370c3785125caed6c4c5ef2cad158439554b5f2d358"
+}
