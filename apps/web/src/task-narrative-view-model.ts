@@ -258,10 +258,25 @@ function latestToolAction(
     (candidate) =>
       candidate.runId === runId &&
       candidate.type === "tool.started" &&
-      candidate.visibility !== "hidden",
+      candidate.visibility !== "hidden" &&
+      !hasToolTerminal(events, candidate),
   );
   const toolName = event ? payloadString(event.payload, "toolName") : undefined;
   return toolName ? `Running ${humanize(toolName)}` : undefined;
+}
+
+function hasToolTerminal(events: RunEvent[], start: RunEvent): boolean {
+  const callId = payloadString(start.payload, "callId");
+  if (!callId) return true;
+  return events.some(
+    (event) =>
+      event.runId === start.runId &&
+      event.seq > start.seq &&
+      (event.type === "tool.completed" ||
+        event.type === "tool.failed" ||
+        event.type === "tool.blocked") &&
+      payloadString(event.payload, "callId") === callId,
+  );
 }
 
 function baseNarrative(

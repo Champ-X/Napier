@@ -166,12 +166,49 @@ describe("Task narrative", () => {
     detail.thread.status = "running";
     detail.thread.currentRunId = "run_1";
     detail.runs.push(run("running"));
-    detail.events.push(toolStarted("run_1", "web_search"));
+    detail.events.push(toolStarted("run_1", "web_search", "call_search", 3));
 
     expect(taskNarrative(detail)).toEqual(
       expect.objectContaining({
         phase: "working",
         currentAction: "Running web search",
+      }),
+    );
+  });
+
+  it("does not report a settled tool as the current action", () => {
+    const detail = fixture();
+    detail.thread.status = "running";
+    detail.thread.currentRunId = "run_1";
+    detail.runs.push(run("running"));
+    detail.events.push(
+      toolStarted("run_1", "web_search", "call_search", 3),
+      toolTerminal("run_1", "web_search", "call_search", "tool.completed", 4),
+    );
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phase: "working",
+        currentAction: "Model is preparing the next action",
+      }),
+    );
+  });
+
+  it("shows the latest unsettled tool when calls overlap", () => {
+    const detail = fixture();
+    detail.thread.status = "running";
+    detail.thread.currentRunId = "run_1";
+    detail.runs.push(run("running"));
+    detail.events.push(
+      toolStarted("run_1", "read_file", "call_read", 3),
+      toolStarted("run_1", "web_search", "call_search", 4),
+      toolTerminal("run_1", "web_search", "call_search", "tool.failed", 5),
+    );
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phase: "working",
+        currentAction: "Running read file",
       }),
     );
   });
@@ -431,17 +468,42 @@ function step(
   };
 }
 
-function toolStarted(runId: string, toolName: string): RunEvent {
+function toolStarted(
+  runId: string,
+  toolName: string,
+  callId = "call_tool",
+  seq = 3,
+): RunEvent {
   return {
-    id: "event_tool",
+    id: `event_tool_${String(seq)}`,
     threadId: "thread_1",
     runId,
-    seq: 3,
+    seq,
     type: "tool.started",
     category: "tool",
     visibility: "user",
     createdAt: timestamp(2),
-    payload: { toolName },
+    payload: { callId, toolName },
+  };
+}
+
+function toolTerminal(
+  runId: string,
+  toolName: string,
+  callId: string,
+  type: "tool.completed" | "tool.failed" | "tool.blocked",
+  seq: number,
+): RunEvent {
+  return {
+    id: `event_terminal_${String(seq)}`,
+    threadId: "thread_1",
+    runId,
+    seq,
+    type,
+    category: "tool",
+    visibility: "user",
+    createdAt: timestamp(3),
+    payload: { callId, toolName },
   };
 }
 
