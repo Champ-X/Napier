@@ -55,31 +55,24 @@ const editBase = {
   selector: selectorSchema,
   nodeSha256: Type.String({ pattern: "^[a-f0-9]{64}$" }),
 };
-const astEditPreviewSchema = Type.Union([
-  Type.Object(
-    {
-      ...editBase,
-      operation: Type.Literal("remove"),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      ...editBase,
-      operation: Type.Union([
-        Type.Literal("replace"),
-        Type.Literal("insert_before"),
-        Type.Literal("insert_after"),
-      ]),
-      replacement: Type.String({
+const astEditPreviewSchema = Type.Object(
+  {
+    ...editBase,
+    operation: Type.Union([
+      Type.Literal("replace"),
+      Type.Literal("remove"),
+      Type.Literal("insert_before"),
+      Type.Literal("insert_after"),
+    ]),
+    replacement: Type.Optional(
+      Type.String({
         minLength: 1,
         maxLength: MAX_TYPESCRIPT_AST_REPLACEMENT_BYTES,
       }),
-    },
-    { additionalProperties: false },
-  ),
-]);
-Object.assign(astEditPreviewSchema, { type: "object" });
+    ),
+  },
+  { additionalProperties: false },
+);
 
 export function createTypescriptAstTools(workspaceRoot: string) {
   const runner = new TypescriptAstRunner(workspaceRoot);
@@ -137,7 +130,7 @@ export function createTypescriptAstTools(workspaceRoot: string) {
     name: "ast_edit_preview",
     label: "AST edit preview",
     description:
-      "Preview one AST-bound replace, remove, insert-before, or insert-after edit without writing. Requires the current file SHA-256 and node SHA-256 from ast_query, reparses the complete result, rejects comment-trivia reassociation, and returns one unique exact patch for apply_patch.",
+      "Preview one AST-bound replace/remove/insert_before/insert_after without writing. Requires current file SHA-256 + node SHA-256 from ast_query; remove forbids replacement, other operations require it. Reparses the complete result, rejects comment-trivia reassociation, and returns one unique exact patch for apply_patch.",
     parameters: astEditPreviewSchema,
     async execute(_toolCallId, input, signal) {
       const result = await runner.previewEdit({
