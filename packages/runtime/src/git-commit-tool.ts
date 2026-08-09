@@ -16,21 +16,17 @@ const previewSchema = Type.Object(
     message: Type.String({
       minLength: 1,
       maxLength: MAX_GIT_COMMIT_MESSAGE_BYTES,
-      description:
-        "Reviewed commit message. Never include credentials or private values.",
     }),
     contextLines: Type.Optional(
       Type.Integer({
         minimum: 0,
         maximum: 10,
-        description: "Complete staged diff context lines. Defaults to 3.",
       }),
     ),
     timeoutMs: Type.Optional(
       Type.Integer({
         minimum: 1_000,
         maximum: MAX_GIT_COMMIT_TIMEOUT_MS,
-        description: "Total private commit construction wall-time budget.",
       }),
     ),
   },
@@ -41,14 +37,11 @@ const applySchema = Type.Object(
   {
     previewId: Type.String({
       pattern: "^gitcommitpreview_[a-z0-9]{8,80}$",
-      description:
-        "One-use execution-scoped ID returned by git_commit_preview.",
     }),
     timeoutMs: Type.Optional(
       Type.Integer({
         minimum: 1_000,
         maximum: MAX_GIT_COMMIT_TIMEOUT_MS,
-        description: "Total private reconstruction and ref-CAS budget.",
       }),
     ),
   },
@@ -98,7 +91,7 @@ export function createGitCommitPreviewTool(
     name: "git_commit_preview",
     label: "Preview Git commit",
     description:
-      "Construct an exact ordinary or two-parent merge commit from the complete staged index in a private object directory. Before construction it recovers only one verified incomplete Napier merge-marker transaction or fails closed. A merge requires resolved stage-0 index state and exact MERGE_HEAD operation evidence; a merge tree equal to its first parent returns an explicit zero-delta tree transition. Returns staged-tree evidence, fixed Napier identity, proposed commit SHA-1, and one-use execution-scoped preview ID. It never changes refs, the real object database, index, or worktree.",
+      "Preview exact ordinary/two-parent commit from the complete staged index in private objects. Recovers only one verified incomplete Napier merge marker or fails closed; merge requires resolved stage-0 + exact MERGE_HEAD, and zero-delta is explicit. Returns staged-tree evidence, fixed identity, proposed SHA-1, and one-use scoped ID without changing refs, real objects, index, or worktree. Message must contain no secrets.",
     parameters: previewSchema,
     async execute(_toolCallId, input, signal) {
       const preview = await manager.preview(
@@ -147,7 +140,7 @@ export function createGitCommitApplyTool(
     name: "git_commit_apply",
     label: "Apply Git commit",
     description:
-      "Apply one fresh ordinary or two-parent merge commit preview. Reconstructs the exact private tree/commit, promotes verified objects, CAS-updates only the previewed attached branch, and clears only the exact bound merge operation files after the commit is observed. Hooks, signing, editors, checkout, merge execution, remote operations, and history rewriting are unavailable.",
+      "Apply one fresh one-use ordinary/two-parent merge preview: reconstruct exact private tree/commit, promote verified objects, CAS-update only its attached branch, then clear only bound merge files after observation. Hooks/signing/editors/checkout/merge execution/remotes/history rewrite are unavailable.",
     parameters: applySchema,
     async execute(_toolCallId, input, signal) {
       const result = await manager.apply(
