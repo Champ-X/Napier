@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 131,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DSfprKay.js",
-    "sizeBytes": 151891,
+    "path": "apps/web/dist/assets/index-Bg0kRFFa.js",
+    "sizeBytes": 151876,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "8fb66c98e7e5da04e6d75e60004fc5fb83b40240e0756d470279d46c4a061354"
+    "sha256": "41e620a46c637d6f5ec0b62d46f819e57d43aee196997246e9da4cf4311fcfb9"
   },
-  "distContentSha256": "8fb66c98e7e5da04e6d75e60004fc5fb83b40240e0756d470279d46c4a061354",
+  "distContentSha256": "41e620a46c637d6f5ec0b62d46f819e57d43aee196997246e9da4cf4311fcfb9",
   "errors": []
 }

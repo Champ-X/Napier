@@ -35,7 +35,7 @@ import { appendSourceContinuityGuidance } from "./source-continuity-guidance.js"
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
-import type { ProjectSkillSnapshot } from "./project-skill-snapshot.js";
+import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 import { createSkillLoadTool } from "./skill-load-tool.js";
 
 interface AgentCapabilityOwner {
@@ -45,7 +45,7 @@ interface AgentCapabilityOwner {
 
 export interface CreateAgentCapabilityToolsOptions extends AgentCapabilityOwner {
   profile: AgentProfile;
-  projectSkillSnapshot?: ProjectSkillSnapshot;
+  projectSkillSnapshot?: SkillSnapshot;
   skillLoadAllowed?: boolean;
   browserInteractionConfirmationAllowed?: boolean;
   restrictedReadOnlyExecution?: boolean;

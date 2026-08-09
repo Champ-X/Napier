@@ -4,6 +4,7 @@ import {
   type LocalStore,
   type ModelRegistry,
 } from "@napier/runtime";
+import { inspectStandardSkillCatalog } from "@napier/runtime/standard-skill-catalog";
 import type { Context } from "hono";
 import { Hono } from "hono";
 
@@ -42,11 +43,15 @@ type BootstrapStore = Pick<
   | "listAgentRevisions"
   | "getDetail"
 > &
-  Partial<Pick<LocalStore, "listVisibleThreads">>;
+  Partial<Pick<LocalStore, "listVisibleThreads" | "workspaceRoot">>;
 
 export function registerBootstrapHttp(
   app: Hono,
-  services: { store: BootstrapStore; models: ModelRegistry },
+  services: {
+    store: BootstrapStore;
+    models: ModelRegistry;
+    skillUserHome?: string;
+  },
 ): void {
   app.get("/api/bootstrap", async (context) => {
     const response = await createBootstrapResponse(
@@ -59,7 +64,11 @@ export function registerBootstrapHttp(
 }
 
 async function createBootstrapResponse(
-  services: { store: BootstrapStore; models: ModelRegistry },
+  services: {
+    store: BootstrapStore;
+    models: ModelRegistry;
+    skillUserHome?: string;
+  },
   requestedThreadId?: string,
 ): Promise<LiveReadyBootstrapResponse> {
   const threads =
@@ -88,7 +97,7 @@ async function createBootstrapResponse(
     recommendedRunModel,
     agents,
     threads,
-    skills: BUNDLED_SKILLS,
+    skills: await bootstrapSkills(services),
     models,
     memories: services.store.listMemories(),
     extensions: services.store.listExtensions(),
@@ -105,6 +114,22 @@ async function createBootstrapResponse(
     inboundChannelAdapterCatalogSha256: inboundChannelAdapterCatalogSha256(),
     ...(activeThread ? { activeThread } : {}),
   };
+}
+
+async function bootstrapSkills(services: {
+  store: BootstrapStore;
+  skillUserHome?: string;
+}) {
+  const workspaceRoot = services.store.workspaceRoot;
+  if (!workspaceRoot) return BUNDLED_SKILLS;
+  const discovered = await inspectStandardSkillCatalog(workspaceRoot, {
+    ...(services.skillUserHome ? { userHome: services.skillUserHome } : {}),
+  }).catch(() => []);
+  const catalog = new Map(BUNDLED_SKILLS.map((skill) => [skill.name, skill]));
+  for (const skill of discovered) catalog.set(skill.name, skill);
+  return [...catalog.values()].sort((left, right) =>
+    left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
+  );
 }
 
 function setBootstrapProjectionHeaders(

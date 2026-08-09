@@ -1,16 +1,17 @@
 import { constants as fsConstants } from "node:fs";
-import { access, readdir } from "node:fs/promises";
+import { access } from "node:fs/promises";
 import { createRequire } from "node:module";
-import path from "node:path";
-
-import { isSkillLoadReceiptV1 } from "@napier/contracts/skill-load";
 
 import { resolveCommandRuntimeBinding } from "./command-runtime.js";
-import { buildProjectSkillSnapshot } from "./project-skill-snapshot.js";
+import { isSkillLoadReceipt } from "./skill-load-contracts.js";
 import { createSkillLoadTool } from "./skill-load-tool.js";
+import {
+  buildStandardSkillSnapshot,
+  discoverStandardSkillNames,
+} from "./standard-skill-snapshot.js";
 
 const require = createRequire(import.meta.url);
-const MAX_SCANNED_SKILL_DIRS = 128;
+const MAX_PROBED_SKILLS = 64;
 
 export type RuntimeCapabilityStatus =
   | "ready"
@@ -91,64 +92,62 @@ export function sandboxIsolationStrength(
  */
 export async function probeSkillsRuntime(
   workspaceRoot: string,
+  options: { userHome?: string } = {},
 ): Promise<RuntimeCapabilityProbe> {
-  const skillsDir = path.join(workspaceRoot, "skills");
-  let entries: string[];
+  let present: string[];
   try {
-    entries = (await readdir(skillsDir, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory())
-      .slice(0, MAX_SCANNED_SKILL_DIRS)
-      .map((entry) => entry.name);
+    present = (await discoverStandardSkillNames(workspaceRoot, options)).slice(
+      0,
+      MAX_PROBED_SKILLS,
+    );
   } catch {
     return {
-      status: "available_unverified",
-      code: "skills_empty",
+      status: "unavailable",
+      code: "skills_unavailable",
       message:
-        "Skill loader is available; no workspace skills directory is present yet",
-      evidence: { present: 0 },
+        "Project or user Skill roots were found, but their catalogs could not be safely inspected",
+      evidence: { present: 0, productionCall: false },
     };
-  }
-  const present: string[] = [];
-  for (const name of entries) {
-    const exists = await access(path.join(skillsDir, name, "SKILL.md")).then(
-      () => true,
-      () => false,
-    );
-    if (exists) present.push(name);
   }
   if (present.length === 0) {
     return {
       status: "available_unverified",
       code: "skills_empty",
       message:
-        "Skill loader is available; no SKILL.md files were found under the workspace skills directory",
+        "Skill loader is available; no direct project or user Skill directories were found",
       evidence: { present: 0 },
     };
   }
   try {
-    const snapshot = await buildProjectSkillSnapshot(
+    const snapshot = await buildStandardSkillSnapshot(
       workspaceRoot,
       present.slice(0, 64),
+      undefined,
+      options,
     );
     const name = snapshot.binding.loadableSkillNames[0];
-    if (!name) throw new Error("No Project Skill passed snapshot admission");
+    if (!name) throw new Error("No Skill passed snapshot admission");
     const result = await createSkillLoadTool(snapshot).execute(
       "doctor_skill_load",
       { name },
       new AbortController().signal,
     );
-    if (!isSkillLoadReceiptV1(result.details)) {
+    if (!isSkillLoadReceipt(result.details)) {
       throw new Error("Production Skill load did not return a valid receipt");
     }
     return {
       status: "ready",
       code: "skills_ready",
-      message: `Production Skill loader loaded 1 of ${String(snapshot.binding.loadableSkillNames.length)} admitted workspace Skills`,
+      message: `Production Skill loader loaded 1 of ${String(snapshot.binding.loadableSkillNames.length)} admitted project or user Skills`,
       evidence: {
         present: present.length,
         admitted: snapshot.binding.loadableSkillNames.length,
         productionCall: true,
         catalogSha256: snapshot.binding.catalogSha256,
+        source: result.details.source,
+        ...(result.details.schemaVersion === 2
+          ? { rootKind: result.details.rootKind }
+          : {}),
       },
     };
   } catch {
@@ -156,7 +155,7 @@ export async function probeSkillsRuntime(
       status: "unavailable",
       code: "skills_unavailable",
       message:
-        "Workspace Skills were found, but the production Skill loader could not safely load one",
+        "Project or user Skills were found, but the production Skill loader could not safely load one",
       evidence: { present: present.length, productionCall: false },
     };
   }

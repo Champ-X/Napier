@@ -171,7 +171,7 @@ import {
   assertRunConfigurationSkillContext,
   resolveAgentRunSkillContext,
 } from "./skill-run-context.js";
-import type { ProjectSkillSnapshot } from "./project-skill-snapshot.js";
+import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 import { LocalStore } from "./store.js";
 import { SubagentCoordinator } from "./subagents.js";
 import { createUsageAccounting } from "./token-accounting.js";
@@ -1191,7 +1191,7 @@ export class AgentRuntime {
     subagents: SubagentCoordinator | undefined,
     restrictedReadOnlyExecution: boolean,
     skillLoadAllowed: boolean,
-    projectSkillSnapshot: ProjectSkillSnapshot | undefined,
+    projectSkillSnapshot: SkillSnapshot | undefined,
     catalogSkills: readonly Skill[],
     resolvedSystemPrompt: string,
     skillCatalogInjected: boolean,

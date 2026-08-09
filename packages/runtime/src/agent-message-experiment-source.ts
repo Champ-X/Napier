@@ -19,6 +19,7 @@ import {
   projectFrozenToolResultPlan,
   type FrozenToolResultPlan,
 } from "./agent-message-tool-result-replay.js";
+import { isSkillCatalogBinding } from "./skill-load-contracts.js";
 import { formatMemoryContext } from "./memory.js";
 import {
   agentMessageExperimentHistoryBinding,
@@ -29,7 +30,7 @@ import {
   resolvePromptVariables,
 } from "./prompt-variables.js";
 import { createRunConfigurationFingerprint } from "./run-config.js";
-import type { ProjectSkillSnapshot } from "./project-skill-snapshot.js";
+import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 import { prepareSkillContinuationSnapshot } from "./skill-load-replay.js";
 import { formatSkillCatalog, loadWorkspaceSkills } from "./skills.js";
 import type { LocalStore } from "./store.js";
@@ -42,7 +43,7 @@ export interface AgentMessageExperimentSource {
   sourceRun: RunRecord;
   frozenToolResults: FrozenToolResultPlan;
   capabilityPreset?: AgentCapabilityPresetId;
-  skillSnapshot?: ProjectSkillSnapshot;
+  skillSnapshot?: SkillSnapshot;
   title: string;
 }
 
@@ -91,25 +92,38 @@ export async function projectAgentMessageExperimentSource(
     sourceRunEvents,
     sourceRun.id,
   );
-  const sourceAgent = applyAgentCapabilityPresetOverride(store.getAgentRevision(
-    sourceRun.agentId,
-    sourceRun.agentRevision,
-  ).profile, capabilityPreset, "user");
-  const skillSnapshot = capabilityPreset === "research"
-    ? (await prepareSkillContinuationSnapshot(
-        store.workspaceRoot,
-        sourceRun,
-        sourceRunEvents,
-      )).snapshot
+  const sourceAgent = applyAgentCapabilityPresetOverride(
+    store.getAgentRevision(sourceRun.agentId, sourceRun.agentRevision).profile,
+    capabilityPreset,
+    "user",
+  );
+  const firstClassSkillLoading = sourceRunEvents.some(
+    (event) =>
+      event.type === "context.skills" && isSkillCatalogBinding(event.payload),
+  );
+  const skillSnapshot = firstClassSkillLoading
+    ? (
+        await prepareSkillContinuationSnapshot(
+          store.workspaceRoot,
+          sourceRun,
+          sourceRunEvents,
+        )
+      ).snapshot
     : undefined;
   if (capabilityPreset === "research" && !skillSnapshot) {
-    throw new Error("Agent message experiment Research Skill evidence is unavailable");
+    throw new Error(
+      "Agent message experiment Research Skill evidence is unavailable",
+    );
   }
   const legacySkills = skillSnapshot
     ? undefined
-    : await loadWorkspaceSkills(store.workspaceRoot, sourceConfiguration.enabledSkills);
+    : await loadWorkspaceSkills(
+        store.workspaceRoot,
+        sourceConfiguration.enabledSkills,
+      );
   const skills = skillSnapshot?.skills ?? legacySkills!.skills;
-  const skillCatalogSha256 = skillSnapshot?.manifest.catalogSha256 ??
+  const skillCatalogSha256 =
+    skillSnapshot?.manifest.catalogSha256 ??
     legacySkills!.fingerprint.contentSha256;
   if (skillCatalogSha256 !== sourceConfiguration.skillCatalogSha256) {
     throw new Error(
@@ -253,10 +267,17 @@ function availableSourceRun(
   agentRevision: number;
   finishedAt: string;
 } {
-  return Boolean(run) && run!.source === "user" && run!.status !== "running" &&
-    run!.status !== "queued" && Boolean(run!.configuration) &&
-    run!.configuration!.schemaVersion >= 7 && Boolean(run!.agentRevision) &&
-    Boolean(run!.finishedAt) && run!.agentId === threadAgentId;
+  return (
+    Boolean(run) &&
+    run!.source === "user" &&
+    run!.status !== "running" &&
+    run!.status !== "queued" &&
+    Boolean(run!.configuration) &&
+    run!.configuration!.schemaVersion >= 7 &&
+    Boolean(run!.agentRevision) &&
+    Boolean(run!.finishedAt) &&
+    run!.agentId === threadAgentId
+  );
 }
 
 function sourceMemoryBinding(events: RunEvent[]): string {

@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "26ac52f524ca688dbcfb78892af9ad58c715fb8909db5b4bb78d6a0f81db971f",
+      "stdoutSha256": "11bf9f8a1045b673ee392bbc4e4f815e36b3b7cffb5249c026272d541db9cc52",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "1a642cca7a2181b91ce6ee3e2af1f2dd399a99c194465a0c12f653ada2c824ed",
-      "receiptSha256": "4e8fdb041fce209f9e5d1f20d9a9ddab06df886f959dba7bcbed14abe3db2d32"
+      "evidenceSha256": "1e000a730d4b89e1d0ca91a72252c62425d7dabbc5fe863fb04dea03895787b8",
+      "receiptSha256": "a883f868a74deb8345c27e70a021acb920cd086538734c1d23ada29baa0c3a1a"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "a4fc450715800b868012bfc1aa302b62af8f2e20f3538edde19ec0d6c72ef87d",
+      "stdoutSha256": "203fd29230a66a2b626542f58231b64447d7f8e1c056d4e3fb229ef0db6607cd",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "fb42de7394bf08e0d39787227ac23483f9e70f1ceb61ce7e73334c718d897359",
-      "receiptSha256": "76aad57725e082b6271e2a0cf959244b99af5d0cbcb8b71ab3929cba0ba9ea11"
+      "evidenceSha256": "b0044620b91dcf7296aee705919c7085304d7d1196be91b1541e2c27184874cb",
+      "receiptSha256": "c8eb376653169c5cf1df2aa7d37ac82f1cc697cfe5c8725616741aab4442a78e"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -504,7 +504,9 @@
         "apps/cli/test/skill-load-research-cli.test.ts",
         "apps/cli/test/tui-cli.test.ts",
         "apps/cli/test/tui-terminal.test.ts",
+        "apps/server/src/bootstrap-http.ts",
         "apps/server/src/bundled-skills.ts",
+        "apps/server/test/bootstrap-http.test.ts",
         "apps/server/test/bundled-skills.test.ts",
         "apps/web/src/AgentCapabilityStatusBadge.tsx",
         "apps/web/src/App.tsx",
@@ -512,6 +514,8 @@
         "apps/web/src/BrowserLiveViewPanel.tsx",
         "apps/web/src/Composer.tsx",
         "apps/web/src/ComposerCapabilityControl.tsx",
+        "apps/web/src/ContextOptionGroup.tsx",
+        "apps/web/src/ContextPanel.tsx",
         "apps/web/src/ConversationApprovalCard.tsx",
         "apps/web/src/ConversationArtifactCard.tsx",
         "apps/web/src/ConversationBrowserActivityCard.tsx",
@@ -613,26 +617,17 @@
         "docs/architecture-budget.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-4ceddccb91ca8223.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-6dda20bbba559a95.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-6efe3b93ad3865ec.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-9502abdc0176439a.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-c7ef11d6c1f07ae0.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-eda98b40d26b4c65.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-ee8237d8588e6be5.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-normalization-migration-20260807.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-54d3d797c09043ca.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-60b6a86808205b1e.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-90191838c6deeec3.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-9ded7844fa70d0cd.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-b3e34c7d47a04e11.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-b53a5d0ccacf7d98.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-d7b39fa9c99fcc19.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-d81e8fcc60131846.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-06c3c6466c0b47f9.json",
         "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-7860868b48599ded.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json",
         "docs/artifacts/management-openapi-0.1.0.json",
+        "docs/artifacts/management-openapi-compatibility-0.1.0.json",
         "docs/artifacts/package-lock-audit-0.1.0.json",
         "docs/artifacts/prompt-regression-matrix-0.1.0.json",
         "docs/artifacts/release-artifacts-audit-0.1.0.json",
@@ -646,6 +641,7 @@
         "docs/artifacts/skill-load-fast-core-stage7/final-check.json",
         "docs/artifacts/skill-load-fast-core-stage7/real-provider-cli.json",
         "docs/artifacts/skill-load-fast-core-stage7/security-cleanup.json",
+        "docs/artifacts/skill-load-standard-stage1/dogfood.json",
         "docs/artifacts/web-dist-0.1.0.sha256",
         "docs/artifacts/web-dist-audit-0.1.0.json",
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json",
@@ -657,10 +653,13 @@
         "packages/contracts/src/index.ts",
         "packages/contracts/src/model-context-envelope.ts",
         "packages/contracts/src/skill-load-research.ts",
+        "packages/contracts/src/skill-load-standard-types.ts",
+        "packages/contracts/src/skill-load-standard.ts",
         "packages/contracts/src/skill-load-validation.ts",
         "packages/contracts/src/skill-load.ts",
         "packages/contracts/test/agent-capability-contract.test.ts",
         "packages/contracts/test/research-source-evidence.test.ts",
+        "packages/contracts/test/skill-load-standard.test.ts",
         "packages/contracts/test/skill-load.test.ts",
         "packages/runtime/package.json",
         "packages/runtime/src/agent-capability-override.ts",
@@ -719,11 +718,16 @@
         "packages/runtime/src/sandbox-container.ts",
         "packages/runtime/src/sandbox-host-direct.ts",
         "packages/runtime/src/sandbox.ts",
+        "packages/runtime/src/skill-load-contracts.ts",
         "packages/runtime/src/skill-load-replay.ts",
         "packages/runtime/src/skill-load-tool.ts",
         "packages/runtime/src/skill-run-context.ts",
         "packages/runtime/src/source-continuity-guidance.ts",
         "packages/runtime/src/sqlite-query-tool.ts",
+        "packages/runtime/src/standard-skill-catalog.ts",
+        "packages/runtime/src/standard-skill-snapshot-compose.ts",
+        "packages/runtime/src/standard-skill-snapshot-types.ts",
+        "packages/runtime/src/standard-skill-snapshot.ts",
         "packages/runtime/src/store.ts",
         "packages/runtime/src/subagents.ts",
         "packages/runtime/src/thread-branches.ts",
@@ -813,6 +817,8 @@
         "packages/runtime/test/sandbox.test.ts",
         "packages/runtime/test/skill-load-recovery-replay.test.ts",
         "packages/runtime/test/source-continuity-preparation.test.ts",
+        "packages/runtime/test/standard-skill-load-run.test.ts",
+        "packages/runtime/test/standard-skill-snapshot.test.ts",
         "packages/runtime/test/subagent-outcome-review.test.ts",
         "packages/runtime/test/subagents.test.ts",
         "packages/runtime/test/tool-invocation-experiments.test.ts",
@@ -836,6 +842,8 @@
         "scripts/run-skill-load-fast-core-evidence.mjs",
         "scripts/run-skill-load-fast-core-evidence.test.mjs",
         "scripts/run-skill-load-final-check.mjs",
+        "scripts/run-standard-skill-directory-dogfood.mjs",
+        "scripts/run-standard-skill-directory-dogfood.test.mjs",
         "scripts/run-web-ui-e2e.mjs",
         "scripts/sdk-capability-parity-evidence.mjs",
         "scripts/sdk-capability-parity-evidence.test.mjs",
@@ -882,7 +890,7 @@
           "lines": 431
         },
         "apps/cli/src/doctor-remediation.ts": {
-          "sha256": "983e509921aae3b1077a1e4d981ab8815d1edb0f01c69062fb1c1475eb3dd121",
+          "sha256": "03ae79c47c7e06bd49bb5a569423c90a693382d2c4f2045e6a5acbfe91340881",
           "lines": 201
         },
         "apps/cli/src/doctor-sandbox-probe.ts": {
@@ -929,16 +937,24 @@
           "sha256": "46cd8be0ac6d192900d9ef2f16bc0a84131f1246d06b95ec2609cc8c6c7dd8a2",
           "lines": 221
         },
+        "apps/server/src/bootstrap-http.ts": {
+          "sha256": "a73690618e61d7bc54b7c8cef7fd70de381197a5644fabc6756ce98c231c5286",
+          "lines": 174
+        },
         "apps/server/src/bundled-skills.ts": {
           "sha256": "b8339bb013815941fc430265f1458c1c623f8e774c07564680937a7ae7e25139",
           "lines": 39
+        },
+        "apps/server/test/bootstrap-http.test.ts": {
+          "sha256": "e58978cbe88e6f139b3fe03216561dcc7daec9b65e8a407d3bd10cb0f6df542a",
+          "lines": 269
         },
         "apps/server/test/bundled-skills.test.ts": {
           "sha256": "a1472108c205a8f94f99a01493f87b7e2e3661b028d6589c83e16802deb1c6cb",
           "lines": 15
         },
         "apps/web/src/App.tsx": {
-          "sha256": "015964c2079541e0b638adcdbccd076a669d441c43224223af5f0076ebb0228d",
+          "sha256": "99e7f621f0d4fe831d2100caacecf9f8f4914e943020eb5c80ebfc88d0fbc6d8",
           "lines": 459
         },
         "apps/web/src/BrowserInspectorPanel.tsx": {
@@ -956,6 +972,14 @@
         "apps/web/src/ComposerCapabilityControl.tsx": {
           "sha256": "0d1fb87c1a421eb0e8cec6ffb3b783d898f593e916f6714ef0844ef4c2c88846",
           "lines": 175
+        },
+        "apps/web/src/ContextOptionGroup.tsx": {
+          "sha256": "22322df6b00c54467a06b80de5f392d55283b2e3ae67209484abcc1bed3730e4",
+          "lines": 59
+        },
+        "apps/web/src/ContextPanel.tsx": {
+          "sha256": "3cbd53614e6df86f93a5a1d7d336e475b8627dc4b723779c4b5d9efb25aa8de7",
+          "lines": 3483
         },
         "apps/web/src/ConversationApprovalCard.tsx": {
           "sha256": "d738fc519f1e823c5245b2a226002238ec609976c6590c87ffe6791d65ec5faf",
@@ -1074,8 +1098,8 @@
           "lines": 269
         },
         "apps/web/src/context-copy.ts": {
-          "sha256": "a294523b1ddc849bd380b4d733034de1439a3dde80d080eb9f7a3b863c80cfdd",
-          "lines": 482
+          "sha256": "80678abad65858c305ef20635acf20f2ef8503b010b9120fa298474774185326",
+          "lines": 487
         },
         "apps/web/src/context-event-view.ts": {
           "sha256": "c9a244d03b8902360a62e52df73bb2a3a508a916d260c7f3ede63290d7914f75",
@@ -1154,8 +1178,8 @@
           "lines": 388
         },
         "apps/web/src/skill-load-event-view.ts": {
-          "sha256": "e9b8c6e1e9ba408a6069b73cf195819a864a754e8605409a651063a2e50fb6c0",
-          "lines": 87
+          "sha256": "0a273130246f97d3f139be08a473b8af3eb7faf025a9ffe680902aa4c3e25af8",
+          "lines": 135
         },
         "apps/web/src/styles.css": {
           "sha256": "17614d79f4148fce63177d5aeb65039403d1c4a96b489d0084aa827675813772",
@@ -1330,8 +1354,8 @@
           "lines": 23
         },
         "apps/web/test/skill-load-event-view.test.ts": {
-          "sha256": "18c84465fb730adf47cbea596977db853b3ddce43fd6434fbb55459debbaac8d",
-          "lines": 131
+          "sha256": "2c2784abf230f4ac54d895067ef4076097aae1f393099560c328d1668f720ce0",
+          "lines": 186
         },
         "apps/web/test/task-completion-summary.test.ts": {
           "sha256": "db056e14c50f2eb3d66336248b40a0f38edbbdb7ca3649f5a5a280a63536a21c",
@@ -1350,7 +1374,7 @@
           "lines": 37
         },
         "docs/architecture-budget.json": {
-          "sha256": "f14e403552d31bb7217bd119d9e69770f4ebdcfee091df6eddfd66e5a6fc12c1",
+          "sha256": "d0ba3e70c665454a1436eb5a521e681e9f9241280c77c5b2441bd084ab1c5120",
           "lines": 259
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
@@ -1398,8 +1422,12 @@
           "lines": 80
         },
         "docs/artifacts/management-openapi-0.1.0.json": {
-          "sha256": "70d88969ed6e453608ce8b28bd86abef5c22201d532523f6ecec731b8a1442ed",
+          "sha256": "1323a7b346e63f3fb426f0fbf526132c4c48547e08cc61562da62bb4a8f089bd",
           "lines": 15436
+        },
+        "docs/artifacts/management-openapi-compatibility-0.1.0.json": {
+          "sha256": "ea47cf300b4d411c233d5fd1e9f6a2b78baf806ee5e004bad0b608e9ef643745",
+          "lines": 5880
         },
         "docs/artifacts/package-lock-audit-0.1.0.json": {
           "sha256": "9f5d9402395b47f947c720cefc9c7e6f577ed7aadb77feb53fec66f7e343a17f",
@@ -1410,7 +1438,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "62120b74587fa731a1f1c0d1b081fb7ed380ffa8c8b9bdccc5ed4c338677f266",
+          "sha256": "45c2a6e0f8c64b0a2370637152501245de11618c5e7cfe12bfcad179572e0ff8",
           "lines": 871
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -1422,11 +1450,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "1a642cca7a2181b91ce6ee3e2af1f2dd399a99c194465a0c12f653ada2c824ed",
+          "sha256": "1e000a730d4b89e1d0ca91a72252c62425d7dabbc5fe863fb04dea03895787b8",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "fb42de7394bf08e0d39787227ac23483f9e70f1ceb61ce7e73334c718d897359",
+          "sha256": "b0044620b91dcf7296aee705919c7085304d7d1196be91b1541e2c27184874cb",
           "lines": 69
         },
         "docs/artifacts/skill-load-fast-core-stage7/README.md": {
@@ -1437,12 +1465,16 @@
           "sha256": "4d99e79ce535bfa9aa1ec7ff6b7a7b788b4e590a9076792b017562ef7ea9a5f8",
           "lines": 119
         },
+        "docs/artifacts/skill-load-standard-stage1/dogfood.json": {
+          "sha256": "21c36ac9d67fcf0e0baa7c358b52bbd9bbd8f35508f576e7a7643a771184a496",
+          "lines": 111
+        },
         "docs/artifacts/web-dist-0.1.0.sha256": {
-          "sha256": "8fb66c98e7e5da04e6d75e60004fc5fb83b40240e0756d470279d46c4a061354",
+          "sha256": "41e620a46c637d6f5ec0b62d46f819e57d43aee196997246e9da4cf4311fcfb9",
           "lines": 131
         },
         "docs/artifacts/web-dist-audit-0.1.0.json": {
-          "sha256": "bd45355c4e78bec21c6c5eee7aa8a853af79546f7f3b6e1100cf5dd135f21bdd",
+          "sha256": "5fb5abf6f678fd8648db4c98dcf9d730198bf0ecb4c53175f23997ea082576f7",
           "lines": 18
         },
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json": {
@@ -1454,8 +1486,8 @@
           "lines": 97
         },
         "packages/contracts/package.json": {
-          "sha256": "2a389138839950d83361c2326cb44f70079c8497fb9fadbbe02eb7123c45248e",
-          "lines": 60
+          "sha256": "5d4c4cb605ef044640cf56efd1dadae35509066c57e827c8670b7d67ccb71c37",
+          "lines": 64
         },
         "packages/contracts/src/agent-capabilities.ts": {
           "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -1481,6 +1513,14 @@
           "sha256": "d23cbb972473354cf27e488ee8e539586e46a8bd458e4c84d4de50bfb4fdfad9",
           "lines": 231
         },
+        "packages/contracts/src/skill-load-standard-types.ts": {
+          "sha256": "a514b68a82e919b80c62b976efe80cddf5c9220e7db585b8d935bf85b52a9031",
+          "lines": 135
+        },
+        "packages/contracts/src/skill-load-standard.ts": {
+          "sha256": "bf4975c4a19660e917a8b3b3b47924c80def47fb86d2f9d25b199b51f6087e1a",
+          "lines": 499
+        },
         "packages/contracts/src/skill-load-validation.ts": {
           "sha256": "75afec23fa30c1a63f91643188c0c4b760c644437dbd71dfb3ba42d6aedf388c",
           "lines": 76
@@ -1497,37 +1537,41 @@
           "sha256": "59d9c9b1236a95605ee95aeb5b4dca1cdf791673015248a7655f700a6db0c044",
           "lines": 237
         },
+        "packages/contracts/test/skill-load-standard.test.ts": {
+          "sha256": "5f4ec86bf667de014be39c4ce9b97d5f7eabb18e02d96ba76db668ee07ed5612",
+          "lines": 196
+        },
         "packages/contracts/test/skill-load.test.ts": {
           "sha256": "ff4ac8ce8c822cf7852a7b7cd9b71e9973948c3128b28c555d47f72a8c25e171",
           "lines": 309
         },
         "packages/runtime/package.json": {
-          "sha256": "d4b61682df8151bea445b36d994b81c3df1e7a3ef8177d6170d067f6a323baf0",
-          "lines": 96
+          "sha256": "53c9cd1b94466656bd0bfb4d39004909d4fd986bf99f0092bb30c9128bbe9588",
+          "lines": 100
         },
         "packages/runtime/src/agent-capability-override.ts": {
           "sha256": "1d7137b13e23af60f66144f990b64aae6dcd119ad9ac8c4a5222f5fccda6224c",
           "lines": 196
         },
         "packages/runtime/src/agent-capability-runtime.ts": {
-          "sha256": "b1bae5237d7e0a1e5b21f382b2544d4d3673862f7724457ff13ccb353ace631b",
+          "sha256": "f7848963237aa0ae7cb26b63ffb7640d35dfc56cb155270184dba9fb153798ad",
           "lines": 469
         },
         "packages/runtime/src/agent-capability-service.ts": {
-          "sha256": "01e5e9d66b3bc4d686a02d6c3eda0eaa49058dcbbe1e9f3677211f4cf67fe0fa",
-          "lines": 383
+          "sha256": "54ab3c3f312dbda054a729e8fdf3a8c6b8950582961c137a8090e9b49b137c35",
+          "lines": 423
         },
         "packages/runtime/src/agent-message-experiment-source.ts": {
-          "sha256": "1bac7e983f2363b0b1514080f357235bccc5b728315e3eaa0272bedcbcbab724",
-          "lines": 340
+          "sha256": "e54a2138ef5baf8846b9463cce5612bcdf17baa93698a1ef79570da6a215c3e7",
+          "lines": 361
         },
         "packages/runtime/src/agent-message-experiments.ts": {
           "sha256": "71f04a358e5477614632d3af6ae56e746952d97d4c4ceb919e786020e14ceb09",
           "lines": 338
         },
         "packages/runtime/src/agent-message-tool-result-replay.ts": {
-          "sha256": "e7ca5a6a8582f95b33a1886f711d9c1253d53fb961b1028b536702c646545f61",
-          "lines": 492
+          "sha256": "cdfe819934a78ac237d3eaceac2acc418a8546cfb60fc30ca2f505b990d323be",
+          "lines": 495
         },
         "packages/runtime/src/agent-milestone-tool.ts": {
           "sha256": "0b8be82e59dd0b3346a4cf8d3c2e168100a76d07ad786c5873b0e91e0a053162",
@@ -1542,7 +1586,7 @@
           "lines": 100
         },
         "packages/runtime/src/agent-runtime.ts": {
-          "sha256": "97b8dfa572796cec60c350a3ad3b130d690afb2944034f8bc33cf6281b2a6208",
+          "sha256": "b0c04a0673556fc173769bc158d9887e270f7c54dc07d4ec28ee5d5898aec6b0",
           "lines": 3415
         },
         "packages/runtime/src/agent-tool-ledger.ts": {
@@ -1550,7 +1594,7 @@
           "lines": 472
         },
         "packages/runtime/src/agent-tool-result-lifecycle.ts": {
-          "sha256": "df82709fc76b7f02fd43be82bc90b0ea4a8a558f076e66852c9779395590a4b3",
+          "sha256": "1d3501726045a59ec2ddba201b18c9ae4d8d89710ac1e2157cccee770fd0bf60",
           "lines": 197
         },
         "packages/runtime/src/agent-tool-specialized-ledger.ts": {
@@ -1582,8 +1626,8 @@
           "lines": 439
         },
         "packages/runtime/src/doctor-runtime-probes.ts": {
-          "sha256": "f852f158fdc6231f1ab2e62423a6bd97571e918c28ae361e8cf8e229b60d42cd",
-          "lines": 267
+          "sha256": "2e97cd494d4e7c0b9049dfe14c21e1bc8fe6f3604dc587577a7d7904e3755ce5",
+          "lines": 266
         },
         "packages/runtime/src/git-commit-tool.ts": {
           "sha256": "4ca318421f8b391a9838d77e6491f1e61f305e6df574a03acb6afb300fe5d9f6",
@@ -1706,7 +1750,7 @@
           "lines": 387
         },
         "packages/runtime/src/research-recovery-options.ts": {
-          "sha256": "a82ea421c4478901da124e8402800519ab42bd1ec3887c7fe3c9e873bdd5d4a6",
+          "sha256": "74b931bfcbff2ba1f26ed65331d6bbbef3975d32452fbee673664ee81bcad756",
           "lines": 99
         },
         "packages/runtime/src/research-source-continuity.ts": {
@@ -1729,17 +1773,21 @@
           "sha256": "4c881f4bc127fa80dcc737616d1feb27b4237698add30307ff0a85a24d42dfb4",
           "lines": 542
         },
+        "packages/runtime/src/skill-load-contracts.ts": {
+          "sha256": "19f6be08b570cdf94650d0c3448ec38a01209f9b2b4ee12ddc21fd34d467d043",
+          "lines": 71
+        },
         "packages/runtime/src/skill-load-replay.ts": {
-          "sha256": "73af19f02cae003bec4987dd3eee15f0a01c97ee51735fa4919dca3254a12b1c",
-          "lines": 171
+          "sha256": "bc2a773855c7c40ec5df34972a626993b8b2814646f00376801256f7e9047b4c",
+          "lines": 181
         },
         "packages/runtime/src/skill-load-tool.ts": {
-          "sha256": "822e03bb933bd7202454414830b3c1879a6b7b315581c734b1280dc63698a204",
-          "lines": 261
+          "sha256": "3ee676977e9bef8cbf099d4191b9ed9abc0600c8e70c51df51dc0262586d3751",
+          "lines": 325
         },
         "packages/runtime/src/skill-run-context.ts": {
-          "sha256": "eb0e4aedd7dabd571b695164948191cfb402597b2872511dad9732d3590906d1",
-          "lines": 155
+          "sha256": "8f4978ec8b646972c01c5f5aac7aed8a1eaf99f8c56072879dbc45684704f307",
+          "lines": 134
         },
         "packages/runtime/src/source-continuity-guidance.ts": {
           "sha256": "59eda3cdf5b41078d11f752b7007260f9d7513191355c595e270fd60d3a2757b",
@@ -1748,6 +1796,22 @@
         "packages/runtime/src/sqlite-query-tool.ts": {
           "sha256": "771a17c518a748d28f303980ae6533895d5b139eaac490c8ba465ff5f314d1cb",
           "lines": 417
+        },
+        "packages/runtime/src/standard-skill-catalog.ts": {
+          "sha256": "3f307235f11c5d725971c15f4a9a424c32cda20997a973e8cb539e24cfe792af",
+          "lines": 98
+        },
+        "packages/runtime/src/standard-skill-snapshot-compose.ts": {
+          "sha256": "7525d481791b7c69c9387647fcf039685eec349e18873ff7b56fd98684cc5ca6",
+          "lines": 424
+        },
+        "packages/runtime/src/standard-skill-snapshot-types.ts": {
+          "sha256": "b6a452e17e2606c3e0a50ec7f25e97bfe7886f8b0ead7d551b40c971646b6a65",
+          "lines": 83
+        },
+        "packages/runtime/src/standard-skill-snapshot.ts": {
+          "sha256": "b3d4a531adb615b7bf4021739f4682dfa9d51e40c7637062573d84881a71e987",
+          "lines": 260
         },
         "packages/runtime/src/store.ts": {
           "sha256": "4d09cc9a06fbbbd6c98ad9654b11b0c69d0f2d3c0c29082d406508bf75beb70c",
@@ -1870,12 +1934,12 @@
           "lines": 463
         },
         "packages/runtime/test/agent-capability-contract-v2.test.ts": {
-          "sha256": "a6e37affefdf034e349d1efe0efcedc6ed69bb22a6c3d79903d27f317bf9ec21",
+          "sha256": "2a91d171229b92ed39e6c1e7a8a4c1d40e7e4438ee1d8b0f39fb9d18674ceeb0",
           "lines": 264
         },
         "packages/runtime/test/agent-capability-contract.test.ts": {
-          "sha256": "fa45aa0d5f971fb15328ded61be976ce1c7b5ea8c4d728e7825d524940b23247",
-          "lines": 985
+          "sha256": "7ae60e9513444b2404c41a1e0ef3932b0a7640af0a18d8a655d17e452217c65f",
+          "lines": 990
         },
         "packages/runtime/test/agent-capability-override.test.ts": {
           "sha256": "e93d2dee0d35c0ef5fe020d1e6a02dd740a4de7d5ba76a230e55157708e31c4d",
@@ -1934,8 +1998,8 @@
           "lines": 261
         },
         "packages/runtime/test/doctor-runtime-probes.test.ts": {
-          "sha256": "1fc4274f8bab55cdbbcaa8af8428a0e44d9789385011bb7ec43d6fa5c9635417",
-          "lines": 88
+          "sha256": "0331a0677e36a67d5b3b879377352f25d9e794862998f2cf7d1632cb8e2029fe",
+          "lines": 94
         },
         "packages/runtime/test/independent-model-advisor.test.ts": {
           "sha256": "6c8c017ae18bf2735e9bdbc1023d898a213c73dc61fee94cb81baf1bfa47ddff",
@@ -2098,12 +2162,20 @@
           "lines": 579
         },
         "packages/runtime/test/skill-load-recovery-replay.test.ts": {
-          "sha256": "097d335978de04cccc9a1b60198c8487b5822c89a6cc2184fd0369f9fb054a70",
-          "lines": 163
+          "sha256": "00072bb644f6cd533a17cb48ea874d6ec9c85486e5a478e35c36032276c956f7",
+          "lines": 210
         },
         "packages/runtime/test/source-continuity-preparation.test.ts": {
           "sha256": "858654d8ae8a1d77aad002f6c13e5794b16a9f885f0b75fb0c63cff1a25ba9e1",
           "lines": 66
+        },
+        "packages/runtime/test/standard-skill-load-run.test.ts": {
+          "sha256": "46c2908629b2e023ff7525a4e712bdf3fa4c99bbc1cfb8c2cadedf451211fa5e",
+          "lines": 146
+        },
+        "packages/runtime/test/standard-skill-snapshot.test.ts": {
+          "sha256": "ae15439a5be0dacbe5e9da3c75128e75f6ffd02383ac7111647f306d40c7cb44",
+          "lines": 324
         },
         "packages/runtime/test/subagent-outcome-review.test.ts": {
           "sha256": "c47a093608b4c1f0b17bca94ea66d47feb0ab1b1003e88f7059f761481ef15dc",
@@ -2197,6 +2269,14 @@
           "sha256": "5f2196bf044c52f041dd795875c0fbe7a630b8cb5f005187fc584c0431e3c8cf",
           "lines": 223
         },
+        "scripts/run-standard-skill-directory-dogfood.mjs": {
+          "sha256": "c5edc1dfe04ceec7bd752222da26c864b661fd706200815943edb307a66a12c6",
+          "lines": 370
+        },
+        "scripts/run-standard-skill-directory-dogfood.test.mjs": {
+          "sha256": "9d3c4df868c6d6e11d16df88cdd15cff36bae6b8747bd96e42e14ac11c7fdb83",
+          "lines": 68
+        },
         "scripts/run-web-ui-e2e.mjs": {
           "sha256": "05d37a355d9d47fd1fcfaace670bbac35999479b553ab057cd3630a1b62b4b4d",
           "lines": 492
@@ -2206,7 +2286,7 @@
           "lines": 459
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "09a9a3f5605b71c322595f4c2235b0c7d761bb2155c63d41a6cd5d355e8e8c55",
+          "sha256": "4b19e22b2f413a71d127f3dde3935a944397ffcd7287ebd1d9866e0f0e97e63a",
           "lines": 287
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -2259,17 +2339,7 @@
         }
       },
       "deletedPaths": [
-        "apps/web/src/AgentCapabilityStatusBadge.tsx",
-        "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-6dda20bbba559a95.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-6efe3b93ad3865ec.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-9502abdc0176439a.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-eda98b40d26b4c65.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-60b6a86808205b1e.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-90191838c6deeec3.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-9ded7844fa70d0cd.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-d7b39fa9c99fcc19.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-7860868b48599ded.json",
-        "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json"
+        "apps/web/src/AgentCapabilityStatusBadge.tsx"
       ],
       "excludedContent": [
         {
@@ -2289,7 +2359,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "1af9bb1bd10c87e20d9a7f50c387bb7cd0fc1a5fd2ee2ed618b54fae033b8ce7"
+      "manifestSha256": "3e6974b0a6abae2932c581dc969c8fcaf3c91b0334c381530b2a7d1337c67b0c"
     },
     "executionClosure": {
       "algorithm": {
@@ -2488,6 +2558,8 @@
             "packages/contracts/dist/provider-setup.js",
             "packages/contracts/dist/rpc.js",
             "packages/contracts/dist/skill-load-research.js",
+            "packages/contracts/dist/skill-load-standard-types.js",
+            "packages/contracts/dist/skill-load-standard.js",
             "packages/contracts/dist/skill-load-validation.js",
             "packages/contracts/dist/skill-load.js",
             "packages/contracts/dist/workflow-experiments.js",
@@ -2817,6 +2889,7 @@
             "packages/runtime/dist/sandboxed-process.js",
             "packages/runtime/dist/schedules.js",
             "packages/runtime/dist/skill-content.js",
+            "packages/runtime/dist/skill-load-contracts.js",
             "packages/runtime/dist/skill-load-replay.js",
             "packages/runtime/dist/skill-load-tool.js",
             "packages/runtime/dist/skill-packages.js",
@@ -2834,6 +2907,9 @@
             "packages/runtime/dist/sqlite-query-tool.js",
             "packages/runtime/dist/sqlite-query-worker.js",
             "packages/runtime/dist/sqlite-query.js",
+            "packages/runtime/dist/standard-skill-catalog.js",
+            "packages/runtime/dist/standard-skill-snapshot-compose.js",
+            "packages/runtime/dist/standard-skill-snapshot.js",
             "packages/runtime/dist/stateless-agent-tools.js",
             "packages/runtime/dist/store-hashing.js",
             "packages/runtime/dist/store-observability.js",
@@ -3233,6 +3309,8 @@
             "packages/contracts/src/provider-setup.ts",
             "packages/contracts/src/rpc.ts",
             "packages/contracts/src/skill-load-research.ts",
+            "packages/contracts/src/skill-load-standard-types.ts",
+            "packages/contracts/src/skill-load-standard.ts",
             "packages/contracts/src/skill-load-validation.ts",
             "packages/contracts/src/skill-load.ts",
             "packages/contracts/src/workflow-experiments.ts",
@@ -3562,6 +3640,7 @@
             "packages/runtime/src/sandboxed-process.ts",
             "packages/runtime/src/schedules.ts",
             "packages/runtime/src/skill-content.ts",
+            "packages/runtime/src/skill-load-contracts.ts",
             "packages/runtime/src/skill-load-replay.ts",
             "packages/runtime/src/skill-load-tool.ts",
             "packages/runtime/src/skill-packages.ts",
@@ -3579,6 +3658,9 @@
             "packages/runtime/src/sqlite-query-tool.ts",
             "packages/runtime/src/sqlite-query-worker.ts",
             "packages/runtime/src/sqlite-query.ts",
+            "packages/runtime/src/standard-skill-catalog.ts",
+            "packages/runtime/src/standard-skill-snapshot-compose.ts",
+            "packages/runtime/src/standard-skill-snapshot.ts",
             "packages/runtime/src/stateless-agent-tools.ts",
             "packages/runtime/src/store-hashing.ts",
             "packages/runtime/src/store-observability.ts",
@@ -3845,16 +3927,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 743,
-            "sourceCounterparts": 738,
+            "executionFiles": 749,
+            "sourceCounterparts": 744,
             "packageManifests": 2,
-            "allFiles": 1483
+            "allFiles": 1495
           },
           "executionAreaCounts": {
             "apps/cli/dist": 56,
             "apps/server/dist": 100,
-            "packages/contracts/dist": 19,
-            "packages/runtime/dist": 560,
+            "packages/contracts/dist": 21,
+            "packages/runtime/dist": 564,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -3969,7 +4051,7 @@
               "lines": 293
             },
             "apps/cli/dist/doctor-remediation.js": {
-              "sha256": "037f6c0f761349a424e8fcc468697fa7a14792360108c7ab773a47a420c4e1d6",
+              "sha256": "ef3c9769e581958b5c76fe98499c8b154b04d017d69ca25f749c2bc7b14f18d7",
               "lines": 143
             },
             "apps/cli/dist/doctor-report.js": {
@@ -4193,7 +4275,7 @@
               "lines": 431
             },
             "apps/cli/src/doctor-remediation.ts": {
-              "sha256": "983e509921aae3b1077a1e4d981ab8815d1edb0f01c69062fb1c1475eb3dd121",
+              "sha256": "03ae79c47c7e06bd49bb5a569423c90a693382d2c4f2045e6a5acbfe91340881",
               "lines": 201
             },
             "apps/cli/src/doctor-report.ts": {
@@ -4329,8 +4411,8 @@
               "lines": 7859
             },
             "apps/server/dist/bootstrap-http.js": {
-              "sha256": "01469ad79f08ad8f1225c4e5d322f4a9a456ece2c4cc7d56c0f5c3a8ae377966",
-              "lines": 67
+              "sha256": "59d03169f7d3ef220500f8dc01138f27ce855f29ea7b41a9a018b7176aca6bdc",
+              "lines": 80
             },
             "apps/server/dist/browser-interaction-confirmation-http.js": {
               "sha256": "e9a941056baa93d0b054a9a25ea339fadc97f13af23084d9f530e874d1cb44e3",
@@ -4729,8 +4811,8 @@
               "lines": 14521
             },
             "apps/server/src/bootstrap-http.ts": {
-              "sha256": "9ddc15227c9014a11d7ede319c869d29722925dbde0619ac395744331f1478a3",
-              "lines": 149
+              "sha256": "a73690618e61d7bc54b7c8cef7fd70de381197a5644fabc6756ce98c231c5286",
+              "lines": 174
             },
             "apps/server/src/browser-interaction-confirmation-http.ts": {
               "sha256": "265484e5cf5977a216149677c9b59103ee9610ccc3d1dd495458b781d0b4c9e7",
@@ -5172,6 +5254,14 @@
               "sha256": "597c5a468eb08524cb2c0cbf725ece25fb347d23704a697586b5a98be7bdfc43",
               "lines": 139
             },
+            "packages/contracts/dist/skill-load-standard-types.js": {
+              "sha256": "cc6ac2604b9fcf2c90a4afa3cffd7bd0865bb2e8148c347635e1d2e883a25de1",
+              "lines": 5
+            },
+            "packages/contracts/dist/skill-load-standard.js": {
+              "sha256": "f7c4ddf949e0b42389b7d44d6e80e7be23bba17573a6535e139aa28de2197739",
+              "lines": 363
+            },
             "packages/contracts/dist/skill-load-validation.js": {
               "sha256": "e9b92a75c5f905993945eb850479d2a21962cf21e4dcbedda1835f4a1ca0d49b",
               "lines": 81
@@ -5185,8 +5275,8 @@
               "lines": 1
             },
             "packages/contracts/package.json": {
-              "sha256": "2a389138839950d83361c2326cb44f70079c8497fb9fadbbe02eb7123c45248e",
-              "lines": 60
+              "sha256": "5d4c4cb605ef044640cf56efd1dadae35509066c57e827c8670b7d67ccb71c37",
+              "lines": 64
             },
             "packages/contracts/src/agent-capabilities.ts": {
               "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -5252,6 +5342,14 @@
               "sha256": "d23cbb972473354cf27e488ee8e539586e46a8bd458e4c84d4de50bfb4fdfad9",
               "lines": 231
             },
+            "packages/contracts/src/skill-load-standard-types.ts": {
+              "sha256": "a514b68a82e919b80c62b976efe80cddf5c9220e7db585b8d935bf85b52a9031",
+              "lines": 135
+            },
+            "packages/contracts/src/skill-load-standard.ts": {
+              "sha256": "bf4975c4a19660e917a8b3b3b47924c80def47fb86d2f9d25b199b51f6087e1a",
+              "lines": 499
+            },
             "packages/contracts/src/skill-load-validation.ts": {
               "sha256": "75afec23fa30c1a63f91643188c0c4b760c644437dbd71dfb3ba42d6aedf388c",
               "lines": 76
@@ -5277,8 +5375,8 @@
               "lines": 311
             },
             "packages/runtime/dist/agent-capability-service.js": {
-              "sha256": "fa2c8f08922c2d840edc80995d5630b5d6b2a29da1536f91078c9a5af1c1285c",
-              "lines": 291
+              "sha256": "ece8cef3a9a0259ce4538b7cc3296164eadfc5d445b9d409b1add1bbfaaf0745",
+              "lines": 318
             },
             "packages/runtime/dist/agent-capability-store-mutations.js": {
               "sha256": "d71f8d5e9baf899d92e018b5214d0a82728fe800b33a7ca10f27235e1bc64828",
@@ -5317,16 +5415,16 @@
               "lines": 85
             },
             "packages/runtime/dist/agent-message-experiment-source.js": {
-              "sha256": "951395bcf201867e07ffb06886551ea03100819973137b1c25fbc686010e8df3",
-              "lines": 204
+              "sha256": "4617316f1a9bdbb2fda9580f906bb35edc75f99f13ae83c350a9053d1ae0164f",
+              "lines": 211
             },
             "packages/runtime/dist/agent-message-experiments.js": {
               "sha256": "a290e92e4f8051e7f1769205b3d2dffbc017429bf8c4fe4197925ae681977e3c",
               "lines": 237
             },
             "packages/runtime/dist/agent-message-tool-result-replay.js": {
-              "sha256": "716fd9a1bc0fa0321d2309642d683808cc464f96eb90d08ad1355f1b4fb84a86",
-              "lines": 304
+              "sha256": "aa98724271065d1c10b5190b0c5fe2245d980c6f48e6495049f79b688a586ed0",
+              "lines": 307
             },
             "packages/runtime/dist/agent-milestone-tool.js": {
               "sha256": "979882e0c4e42d1d7327a4481c3170724c6d6077280c98381673bb9fd384e62e",
@@ -5381,7 +5479,7 @@
               "lines": 191
             },
             "packages/runtime/dist/agent-tool-result-lifecycle.js": {
-              "sha256": "cc7d9eec3612bc5f8643345f887a9423b99653da2f7dd95ca9ab3254362465ae",
+              "sha256": "8a5185ff69f7d47eaa72c60ecc8f19bd015ad726eaf9351a94a6cad459309382",
               "lines": 132
             },
             "packages/runtime/dist/agent-tool-result-text.js": {
@@ -5657,8 +5755,8 @@
               "lines": 124
             },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "589a4d1cdfe193fea2662cd0e64dbf1b6c2dc1cacba70b947d3a8d80279184e8",
-              "lines": 217
+              "sha256": "85dddd7b716bf9e6c783fd48fef35c1dad851927c200deb6efe639096b005b81",
+              "lines": 210
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -6449,7 +6547,7 @@
               "lines": 306
             },
             "packages/runtime/dist/research-recovery-options.js": {
-              "sha256": "55b1be32442969d5c4b9b052849a887c770f023506c3809935678593aba92b4e",
+              "sha256": "4667023de6515cf05b5cbfde6eef1bb14876fcb05f4429542640189bc6e43f5b",
               "lines": 57
             },
             "packages/runtime/dist/research-report-artifact.js": {
@@ -6568,21 +6666,25 @@
               "sha256": "650bde62d8d4c09dbc40c336080f0f7bb5e3d65f62978ddde950323fa5ca2263",
               "lines": 203
             },
+            "packages/runtime/dist/skill-load-contracts.js": {
+              "sha256": "f73f6416a4d6c1aef995eb6433a66917406bbdcb7bf97a9db1dffc39ab8f0026",
+              "lines": 18
+            },
             "packages/runtime/dist/skill-load-replay.js": {
-              "sha256": "c32a2f744988749e824b5074280212ecb642c65a84e3c641fd4c3eb06988494e",
-              "lines": 86
+              "sha256": "51414760ec8b92b46ba87db1172015ac4f74fec5463453d927a963bf3571fd44",
+              "lines": 96
             },
             "packages/runtime/dist/skill-load-tool.js": {
-              "sha256": "f27cbbbfb076ea7ce9e1c8335664f8dfac1c13f5b111468569cb6d99af46d112",
-              "lines": 182
+              "sha256": "83da8adbe58b2aa02219c8bfa5b77d8a6f803feee9899b83e2505b8fc6d92a8b",
+              "lines": 226
             },
             "packages/runtime/dist/skill-packages.js": {
               "sha256": "1b87e0f34f5591794c32612c6e97f5db0e76edb3788ab5fd2efb29e20fa4770d",
               "lines": 556
             },
             "packages/runtime/dist/skill-run-context.js": {
-              "sha256": "d916bebdde7f398b4352d32321deab36241e3a8433f59316f419991c1789d465",
-              "lines": 103
+              "sha256": "d9c4235a6736eebe737607f54fe6f0aa7ed2ad12cdb30396ab8b729d26cee821",
+              "lines": 86
             },
             "packages/runtime/dist/skills.js": {
               "sha256": "c56ebe1fcf3a9096ec8efb555ae1502af2f826c8ec1b2b54af5c5275b5808615",
@@ -6635,6 +6737,18 @@
             "packages/runtime/dist/sqlite-query.js": {
               "sha256": "8824e84d5595141d3765eb58504e8b20b79b6b27cb6bcf8681f82314572c621d",
               "lines": 304
+            },
+            "packages/runtime/dist/standard-skill-catalog.js": {
+              "sha256": "ba05527b1c4194d1f701bcefd868d5c12ca11d5aa10d6abbe0db7cfa5669c592",
+              "lines": 69
+            },
+            "packages/runtime/dist/standard-skill-snapshot-compose.js": {
+              "sha256": "78dc29671d950d5cfb218073c74e22bca29852e067a535f93372214a1767eecd",
+              "lines": 290
+            },
+            "packages/runtime/dist/standard-skill-snapshot.js": {
+              "sha256": "f394d5caeef27be45bc05c5587c408963437d3f0767eb14aad1f65af94d4f6f3",
+              "lines": 166
             },
             "packages/runtime/dist/stateless-agent-tools.js": {
               "sha256": "4bf94173a0ce5cae5144e1cb5964ffda9092fd09f0311a602f38ba43a929d1ec",
@@ -7505,8 +7619,8 @@
               "lines": 67
             },
             "packages/runtime/package.json": {
-              "sha256": "d4b61682df8151bea445b36d994b81c3df1e7a3ef8177d6170d067f6a323baf0",
-              "lines": 96
+              "sha256": "53c9cd1b94466656bd0bfb4d39004909d4fd986bf99f0092bb30c9128bbe9588",
+              "lines": 100
             },
             "packages/runtime/src/agent-capability-bindings.ts": {
               "sha256": "2144c7dcf18851dfb1b6420a9d41990ae49cd0efaba28d4674dc9d4a4fa504e8",
@@ -7517,12 +7631,12 @@
               "lines": 196
             },
             "packages/runtime/src/agent-capability-runtime.ts": {
-              "sha256": "b1bae5237d7e0a1e5b21f382b2544d4d3673862f7724457ff13ccb353ace631b",
+              "sha256": "f7848963237aa0ae7cb26b63ffb7640d35dfc56cb155270184dba9fb153798ad",
               "lines": 469
             },
             "packages/runtime/src/agent-capability-service.ts": {
-              "sha256": "01e5e9d66b3bc4d686a02d6c3eda0eaa49058dcbbe1e9f3677211f4cf67fe0fa",
-              "lines": 383
+              "sha256": "54ab3c3f312dbda054a729e8fdf3a8c6b8950582961c137a8090e9b49b137c35",
+              "lines": 423
             },
             "packages/runtime/src/agent-capability-store-mutations.ts": {
               "sha256": "689c17f83e485ac2164d59b3cf99258fcac0d568ed31d19783b3ab6f187016c1",
@@ -7561,16 +7675,16 @@
               "lines": 130
             },
             "packages/runtime/src/agent-message-experiment-source.ts": {
-              "sha256": "1bac7e983f2363b0b1514080f357235bccc5b728315e3eaa0272bedcbcbab724",
-              "lines": 340
+              "sha256": "e54a2138ef5baf8846b9463cce5612bcdf17baa93698a1ef79570da6a215c3e7",
+              "lines": 361
             },
             "packages/runtime/src/agent-message-experiments.ts": {
               "sha256": "71f04a358e5477614632d3af6ae56e746952d97d4c4ceb919e786020e14ceb09",
               "lines": 338
             },
             "packages/runtime/src/agent-message-tool-result-replay.ts": {
-              "sha256": "e7ca5a6a8582f95b33a1886f711d9c1253d53fb961b1028b536702c646545f61",
-              "lines": 492
+              "sha256": "cdfe819934a78ac237d3eaceac2acc418a8546cfb60fc30ca2f505b990d323be",
+              "lines": 495
             },
             "packages/runtime/src/agent-milestone-tool.ts": {
               "sha256": "0b8be82e59dd0b3346a4cf8d3c2e168100a76d07ad786c5873b0e91e0a053162",
@@ -7605,7 +7719,7 @@
               "lines": 100
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "97b8dfa572796cec60c350a3ad3b130d690afb2944034f8bc33cf6281b2a6208",
+              "sha256": "b0c04a0673556fc173769bc158d9887e270f7c54dc07d4ec28ee5d5898aec6b0",
               "lines": 3415
             },
             "packages/runtime/src/agent-sessions.ts": {
@@ -7625,7 +7739,7 @@
               "lines": 328
             },
             "packages/runtime/src/agent-tool-result-lifecycle.ts": {
-              "sha256": "df82709fc76b7f02fd43be82bc90b0ea4a8a558f076e66852c9779395590a4b3",
+              "sha256": "1d3501726045a59ec2ddba201b18c9ae4d8d89710ac1e2157cccee770fd0bf60",
               "lines": 197
             },
             "packages/runtime/src/agent-tool-result-text.ts": {
@@ -7901,8 +8015,8 @@
               "lines": 173
             },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "f852f158fdc6231f1ab2e62423a6bd97571e918c28ae361e8cf8e229b60d42cd",
-              "lines": 267
+              "sha256": "2e97cd494d4e7c0b9049dfe14c21e1bc8fe6f3604dc587577a7d7904e3755ce5",
+              "lines": 266
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -8693,7 +8807,7 @@
               "lines": 387
             },
             "packages/runtime/src/research-recovery-options.ts": {
-              "sha256": "a82ea421c4478901da124e8402800519ab42bd1ec3887c7fe3c9e873bdd5d4a6",
+              "sha256": "74b931bfcbff2ba1f26ed65331d6bbbef3975d32452fbee673664ee81bcad756",
               "lines": 99
             },
             "packages/runtime/src/research-report-artifact.ts": {
@@ -8812,21 +8926,25 @@
               "sha256": "a9a69b30fbcb097936f4cb8415fbc6c4cfb414323a3af3c74ff79728e328a8f0",
               "lines": 263
             },
+            "packages/runtime/src/skill-load-contracts.ts": {
+              "sha256": "19f6be08b570cdf94650d0c3448ec38a01209f9b2b4ee12ddc21fd34d467d043",
+              "lines": 71
+            },
             "packages/runtime/src/skill-load-replay.ts": {
-              "sha256": "73af19f02cae003bec4987dd3eee15f0a01c97ee51735fa4919dca3254a12b1c",
-              "lines": 171
+              "sha256": "bc2a773855c7c40ec5df34972a626993b8b2814646f00376801256f7e9047b4c",
+              "lines": 181
             },
             "packages/runtime/src/skill-load-tool.ts": {
-              "sha256": "822e03bb933bd7202454414830b3c1879a6b7b315581c734b1280dc63698a204",
-              "lines": 261
+              "sha256": "3ee676977e9bef8cbf099d4191b9ed9abc0600c8e70c51df51dc0262586d3751",
+              "lines": 325
             },
             "packages/runtime/src/skill-packages.ts": {
               "sha256": "9158172565e636889d410bd63ee857600f55908815d672d9e9bdb532357ed724",
               "lines": 754
             },
             "packages/runtime/src/skill-run-context.ts": {
-              "sha256": "eb0e4aedd7dabd571b695164948191cfb402597b2872511dad9732d3590906d1",
-              "lines": 155
+              "sha256": "8f4978ec8b646972c01c5f5aac7aed8a1eaf99f8c56072879dbc45684704f307",
+              "lines": 134
             },
             "packages/runtime/src/skills.ts": {
               "sha256": "2b4c7d8863bf0bbf05f7943ba3a6a64e1438ae9bc437b61c8232902e95b6f84d",
@@ -8879,6 +8997,18 @@
             "packages/runtime/src/sqlite-query.ts": {
               "sha256": "25a8f1aff166f6efe9172eaaabff9fd644c97a99fff29265c220c2597ef7b73d",
               "lines": 445
+            },
+            "packages/runtime/src/standard-skill-catalog.ts": {
+              "sha256": "3f307235f11c5d725971c15f4a9a424c32cda20997a973e8cb539e24cfe792af",
+              "lines": 98
+            },
+            "packages/runtime/src/standard-skill-snapshot-compose.ts": {
+              "sha256": "7525d481791b7c69c9387647fcf039685eec349e18873ff7b56fd98684cc5ca6",
+              "lines": 424
+            },
+            "packages/runtime/src/standard-skill-snapshot.ts": {
+              "sha256": "b3d4a531adb615b7bf4021739f4682dfa9d51e40c7637062573d84881a71e987",
+              "lines": 260
             },
             "packages/runtime/src/stateless-agent-tools.ts": {
               "sha256": "fd222cbe09996d2d9d5c46bd3e9beca7d9081eb00f2f310aeebfdcc2ffacf90c",
@@ -9793,7 +9923,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "8853e18a5dde534b6dfbc19c4b919899b08d6d14bd99a1b633ad10d36c5ee05e"
+          "manifestSha256": "38b491b79d7b60410df6645ca5b4f1643a4b7ec1a0981862cb97f71855d133e1"
         },
         "productionServerTrace": {
           "roots": [
@@ -9923,6 +10053,8 @@
             "packages/contracts/dist/provider-setup.js",
             "packages/contracts/dist/rpc.js",
             "packages/contracts/dist/skill-load-research.js",
+            "packages/contracts/dist/skill-load-standard-types.js",
+            "packages/contracts/dist/skill-load-standard.js",
             "packages/contracts/dist/skill-load-validation.js",
             "packages/contracts/dist/skill-load.js",
             "packages/contracts/dist/workflow-experiments.js",
@@ -10250,6 +10382,7 @@
             "packages/runtime/dist/sandboxed-process.js",
             "packages/runtime/dist/schedules.js",
             "packages/runtime/dist/skill-content.js",
+            "packages/runtime/dist/skill-load-contracts.js",
             "packages/runtime/dist/skill-load-replay.js",
             "packages/runtime/dist/skill-load-tool.js",
             "packages/runtime/dist/skill-packages.js",
@@ -10267,6 +10400,9 @@
             "packages/runtime/dist/sqlite-query-tool.js",
             "packages/runtime/dist/sqlite-query-worker.js",
             "packages/runtime/dist/sqlite-query.js",
+            "packages/runtime/dist/standard-skill-catalog.js",
+            "packages/runtime/dist/standard-skill-snapshot-compose.js",
+            "packages/runtime/dist/standard-skill-snapshot.js",
             "packages/runtime/dist/stateless-agent-tools.js",
             "packages/runtime/dist/store-hashing.js",
             "packages/runtime/dist/store-observability.js",
@@ -10609,6 +10745,8 @@
             "packages/contracts/src/provider-setup.ts",
             "packages/contracts/src/rpc.ts",
             "packages/contracts/src/skill-load-research.ts",
+            "packages/contracts/src/skill-load-standard-types.ts",
+            "packages/contracts/src/skill-load-standard.ts",
             "packages/contracts/src/skill-load-validation.ts",
             "packages/contracts/src/skill-load.ts",
             "packages/contracts/src/workflow-experiments.ts",
@@ -10936,6 +11074,7 @@
             "packages/runtime/src/sandboxed-process.ts",
             "packages/runtime/src/schedules.ts",
             "packages/runtime/src/skill-content.ts",
+            "packages/runtime/src/skill-load-contracts.ts",
             "packages/runtime/src/skill-load-replay.ts",
             "packages/runtime/src/skill-load-tool.ts",
             "packages/runtime/src/skill-packages.ts",
@@ -10953,6 +11092,9 @@
             "packages/runtime/src/sqlite-query-tool.ts",
             "packages/runtime/src/sqlite-query-worker.ts",
             "packages/runtime/src/sqlite-query.ts",
+            "packages/runtime/src/standard-skill-catalog.ts",
+            "packages/runtime/src/standard-skill-snapshot-compose.ts",
+            "packages/runtime/src/standard-skill-snapshot.ts",
             "packages/runtime/src/stateless-agent-tools.ts",
             "packages/runtime/src/store-hashing.ts",
             "packages/runtime/src/store-observability.ts",
@@ -11219,16 +11361,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 684,
-            "sourceCounterparts": 680,
+            "executionFiles": 690,
+            "sourceCounterparts": 686,
             "packageManifests": 3,
-            "allFiles": 1367
+            "allFiles": 1379
           },
           "executionAreaCounts": {
             "apps/server/dist": 101,
             "other": 1,
-            "packages/contracts/dist": 19,
-            "packages/runtime/dist": 557,
+            "packages/contracts/dist": 21,
+            "packages/runtime/dist": 561,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
@@ -11254,8 +11396,8 @@
               "lines": 7859
             },
             "apps/server/dist/bootstrap-http.js": {
-              "sha256": "01469ad79f08ad8f1225c4e5d322f4a9a456ece2c4cc7d56c0f5c3a8ae377966",
-              "lines": 67
+              "sha256": "59d03169f7d3ef220500f8dc01138f27ce855f29ea7b41a9a018b7176aca6bdc",
+              "lines": 80
             },
             "apps/server/dist/browser-interaction-confirmation-http.js": {
               "sha256": "e9a941056baa93d0b054a9a25ea339fadc97f13af23084d9f530e874d1cb44e3",
@@ -11658,8 +11800,8 @@
               "lines": 14521
             },
             "apps/server/src/bootstrap-http.ts": {
-              "sha256": "9ddc15227c9014a11d7ede319c869d29722925dbde0619ac395744331f1478a3",
-              "lines": 149
+              "sha256": "a73690618e61d7bc54b7c8cef7fd70de381197a5644fabc6756ce98c231c5286",
+              "lines": 174
             },
             "apps/server/src/browser-interaction-confirmation-http.ts": {
               "sha256": "265484e5cf5977a216149677c9b59103ee9610ccc3d1dd495458b781d0b4c9e7",
@@ -12105,6 +12247,14 @@
               "sha256": "597c5a468eb08524cb2c0cbf725ece25fb347d23704a697586b5a98be7bdfc43",
               "lines": 139
             },
+            "packages/contracts/dist/skill-load-standard-types.js": {
+              "sha256": "cc6ac2604b9fcf2c90a4afa3cffd7bd0865bb2e8148c347635e1d2e883a25de1",
+              "lines": 5
+            },
+            "packages/contracts/dist/skill-load-standard.js": {
+              "sha256": "f7c4ddf949e0b42389b7d44d6e80e7be23bba17573a6535e139aa28de2197739",
+              "lines": 363
+            },
             "packages/contracts/dist/skill-load-validation.js": {
               "sha256": "e9b92a75c5f905993945eb850479d2a21962cf21e4dcbedda1835f4a1ca0d49b",
               "lines": 81
@@ -12118,8 +12268,8 @@
               "lines": 1
             },
             "packages/contracts/package.json": {
-              "sha256": "2a389138839950d83361c2326cb44f70079c8497fb9fadbbe02eb7123c45248e",
-              "lines": 60
+              "sha256": "5d4c4cb605ef044640cf56efd1dadae35509066c57e827c8670b7d67ccb71c37",
+              "lines": 64
             },
             "packages/contracts/src/agent-capabilities.ts": {
               "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -12185,6 +12335,14 @@
               "sha256": "d23cbb972473354cf27e488ee8e539586e46a8bd458e4c84d4de50bfb4fdfad9",
               "lines": 231
             },
+            "packages/contracts/src/skill-load-standard-types.ts": {
+              "sha256": "a514b68a82e919b80c62b976efe80cddf5c9220e7db585b8d935bf85b52a9031",
+              "lines": 135
+            },
+            "packages/contracts/src/skill-load-standard.ts": {
+              "sha256": "bf4975c4a19660e917a8b3b3b47924c80def47fb86d2f9d25b199b51f6087e1a",
+              "lines": 499
+            },
             "packages/contracts/src/skill-load-validation.ts": {
               "sha256": "75afec23fa30c1a63f91643188c0c4b760c644437dbd71dfb3ba42d6aedf388c",
               "lines": 76
@@ -12210,8 +12368,8 @@
               "lines": 311
             },
             "packages/runtime/dist/agent-capability-service.js": {
-              "sha256": "fa2c8f08922c2d840edc80995d5630b5d6b2a29da1536f91078c9a5af1c1285c",
-              "lines": 291
+              "sha256": "ece8cef3a9a0259ce4538b7cc3296164eadfc5d445b9d409b1add1bbfaaf0745",
+              "lines": 318
             },
             "packages/runtime/dist/agent-capability-store-mutations.js": {
               "sha256": "d71f8d5e9baf899d92e018b5214d0a82728fe800b33a7ca10f27235e1bc64828",
@@ -12250,16 +12408,16 @@
               "lines": 85
             },
             "packages/runtime/dist/agent-message-experiment-source.js": {
-              "sha256": "951395bcf201867e07ffb06886551ea03100819973137b1c25fbc686010e8df3",
-              "lines": 204
+              "sha256": "4617316f1a9bdbb2fda9580f906bb35edc75f99f13ae83c350a9053d1ae0164f",
+              "lines": 211
             },
             "packages/runtime/dist/agent-message-experiments.js": {
               "sha256": "a290e92e4f8051e7f1769205b3d2dffbc017429bf8c4fe4197925ae681977e3c",
               "lines": 237
             },
             "packages/runtime/dist/agent-message-tool-result-replay.js": {
-              "sha256": "716fd9a1bc0fa0321d2309642d683808cc464f96eb90d08ad1355f1b4fb84a86",
-              "lines": 304
+              "sha256": "aa98724271065d1c10b5190b0c5fe2245d980c6f48e6495049f79b688a586ed0",
+              "lines": 307
             },
             "packages/runtime/dist/agent-milestone-tool.js": {
               "sha256": "979882e0c4e42d1d7327a4481c3170724c6d6077280c98381673bb9fd384e62e",
@@ -12314,7 +12472,7 @@
               "lines": 191
             },
             "packages/runtime/dist/agent-tool-result-lifecycle.js": {
-              "sha256": "cc7d9eec3612bc5f8643345f887a9423b99653da2f7dd95ca9ab3254362465ae",
+              "sha256": "8a5185ff69f7d47eaa72c60ecc8f19bd015ad726eaf9351a94a6cad459309382",
               "lines": 132
             },
             "packages/runtime/dist/agent-tool-result-text.js": {
@@ -13374,7 +13532,7 @@
               "lines": 306
             },
             "packages/runtime/dist/research-recovery-options.js": {
-              "sha256": "55b1be32442969d5c4b9b052849a887c770f023506c3809935678593aba92b4e",
+              "sha256": "4667023de6515cf05b5cbfde6eef1bb14876fcb05f4429542640189bc6e43f5b",
               "lines": 57
             },
             "packages/runtime/dist/research-report-artifact.js": {
@@ -13493,21 +13651,25 @@
               "sha256": "650bde62d8d4c09dbc40c336080f0f7bb5e3d65f62978ddde950323fa5ca2263",
               "lines": 203
             },
+            "packages/runtime/dist/skill-load-contracts.js": {
+              "sha256": "f73f6416a4d6c1aef995eb6433a66917406bbdcb7bf97a9db1dffc39ab8f0026",
+              "lines": 18
+            },
             "packages/runtime/dist/skill-load-replay.js": {
-              "sha256": "c32a2f744988749e824b5074280212ecb642c65a84e3c641fd4c3eb06988494e",
-              "lines": 86
+              "sha256": "51414760ec8b92b46ba87db1172015ac4f74fec5463453d927a963bf3571fd44",
+              "lines": 96
             },
             "packages/runtime/dist/skill-load-tool.js": {
-              "sha256": "f27cbbbfb076ea7ce9e1c8335664f8dfac1c13f5b111468569cb6d99af46d112",
-              "lines": 182
+              "sha256": "83da8adbe58b2aa02219c8bfa5b77d8a6f803feee9899b83e2505b8fc6d92a8b",
+              "lines": 226
             },
             "packages/runtime/dist/skill-packages.js": {
               "sha256": "1b87e0f34f5591794c32612c6e97f5db0e76edb3788ab5fd2efb29e20fa4770d",
               "lines": 556
             },
             "packages/runtime/dist/skill-run-context.js": {
-              "sha256": "d916bebdde7f398b4352d32321deab36241e3a8433f59316f419991c1789d465",
-              "lines": 103
+              "sha256": "d9c4235a6736eebe737607f54fe6f0aa7ed2ad12cdb30396ab8b729d26cee821",
+              "lines": 86
             },
             "packages/runtime/dist/skills.js": {
               "sha256": "c56ebe1fcf3a9096ec8efb555ae1502af2f826c8ec1b2b54af5c5275b5808615",
@@ -13560,6 +13722,18 @@
             "packages/runtime/dist/sqlite-query.js": {
               "sha256": "8824e84d5595141d3765eb58504e8b20b79b6b27cb6bcf8681f82314572c621d",
               "lines": 304
+            },
+            "packages/runtime/dist/standard-skill-catalog.js": {
+              "sha256": "ba05527b1c4194d1f701bcefd868d5c12ca11d5aa10d6abbe0db7cfa5669c592",
+              "lines": 69
+            },
+            "packages/runtime/dist/standard-skill-snapshot-compose.js": {
+              "sha256": "78dc29671d950d5cfb218073c74e22bca29852e067a535f93372214a1767eecd",
+              "lines": 290
+            },
+            "packages/runtime/dist/standard-skill-snapshot.js": {
+              "sha256": "f394d5caeef27be45bc05c5587c408963437d3f0767eb14aad1f65af94d4f6f3",
+              "lines": 166
             },
             "packages/runtime/dist/stateless-agent-tools.js": {
               "sha256": "4bf94173a0ce5cae5144e1cb5964ffda9092fd09f0311a602f38ba43a929d1ec",
@@ -14426,8 +14600,8 @@
               "lines": 67
             },
             "packages/runtime/package.json": {
-              "sha256": "d4b61682df8151bea445b36d994b81c3df1e7a3ef8177d6170d067f6a323baf0",
-              "lines": 96
+              "sha256": "53c9cd1b94466656bd0bfb4d39004909d4fd986bf99f0092bb30c9128bbe9588",
+              "lines": 100
             },
             "packages/runtime/src/agent-capability-bindings.ts": {
               "sha256": "2144c7dcf18851dfb1b6420a9d41990ae49cd0efaba28d4674dc9d4a4fa504e8",
@@ -14438,12 +14612,12 @@
               "lines": 196
             },
             "packages/runtime/src/agent-capability-runtime.ts": {
-              "sha256": "b1bae5237d7e0a1e5b21f382b2544d4d3673862f7724457ff13ccb353ace631b",
+              "sha256": "f7848963237aa0ae7cb26b63ffb7640d35dfc56cb155270184dba9fb153798ad",
               "lines": 469
             },
             "packages/runtime/src/agent-capability-service.ts": {
-              "sha256": "01e5e9d66b3bc4d686a02d6c3eda0eaa49058dcbbe1e9f3677211f4cf67fe0fa",
-              "lines": 383
+              "sha256": "54ab3c3f312dbda054a729e8fdf3a8c6b8950582961c137a8090e9b49b137c35",
+              "lines": 423
             },
             "packages/runtime/src/agent-capability-store-mutations.ts": {
               "sha256": "689c17f83e485ac2164d59b3cf99258fcac0d568ed31d19783b3ab6f187016c1",
@@ -14482,16 +14656,16 @@
               "lines": 130
             },
             "packages/runtime/src/agent-message-experiment-source.ts": {
-              "sha256": "1bac7e983f2363b0b1514080f357235bccc5b728315e3eaa0272bedcbcbab724",
-              "lines": 340
+              "sha256": "e54a2138ef5baf8846b9463cce5612bcdf17baa93698a1ef79570da6a215c3e7",
+              "lines": 361
             },
             "packages/runtime/src/agent-message-experiments.ts": {
               "sha256": "71f04a358e5477614632d3af6ae56e746952d97d4c4ceb919e786020e14ceb09",
               "lines": 338
             },
             "packages/runtime/src/agent-message-tool-result-replay.ts": {
-              "sha256": "e7ca5a6a8582f95b33a1886f711d9c1253d53fb961b1028b536702c646545f61",
-              "lines": 492
+              "sha256": "cdfe819934a78ac237d3eaceac2acc418a8546cfb60fc30ca2f505b990d323be",
+              "lines": 495
             },
             "packages/runtime/src/agent-milestone-tool.ts": {
               "sha256": "0b8be82e59dd0b3346a4cf8d3c2e168100a76d07ad786c5873b0e91e0a053162",
@@ -14526,7 +14700,7 @@
               "lines": 100
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "97b8dfa572796cec60c350a3ad3b130d690afb2944034f8bc33cf6281b2a6208",
+              "sha256": "b0c04a0673556fc173769bc158d9887e270f7c54dc07d4ec28ee5d5898aec6b0",
               "lines": 3415
             },
             "packages/runtime/src/agent-sessions.ts": {
@@ -14546,7 +14720,7 @@
               "lines": 328
             },
             "packages/runtime/src/agent-tool-result-lifecycle.ts": {
-              "sha256": "df82709fc76b7f02fd43be82bc90b0ea4a8a558f076e66852c9779395590a4b3",
+              "sha256": "1d3501726045a59ec2ddba201b18c9ae4d8d89710ac1e2157cccee770fd0bf60",
               "lines": 197
             },
             "packages/runtime/src/agent-tool-result-text.ts": {
@@ -15606,7 +15780,7 @@
               "lines": 387
             },
             "packages/runtime/src/research-recovery-options.ts": {
-              "sha256": "a82ea421c4478901da124e8402800519ab42bd1ec3887c7fe3c9e873bdd5d4a6",
+              "sha256": "74b931bfcbff2ba1f26ed65331d6bbbef3975d32452fbee673664ee81bcad756",
               "lines": 99
             },
             "packages/runtime/src/research-report-artifact.ts": {
@@ -15725,21 +15899,25 @@
               "sha256": "a9a69b30fbcb097936f4cb8415fbc6c4cfb414323a3af3c74ff79728e328a8f0",
               "lines": 263
             },
+            "packages/runtime/src/skill-load-contracts.ts": {
+              "sha256": "19f6be08b570cdf94650d0c3448ec38a01209f9b2b4ee12ddc21fd34d467d043",
+              "lines": 71
+            },
             "packages/runtime/src/skill-load-replay.ts": {
-              "sha256": "73af19f02cae003bec4987dd3eee15f0a01c97ee51735fa4919dca3254a12b1c",
-              "lines": 171
+              "sha256": "bc2a773855c7c40ec5df34972a626993b8b2814646f00376801256f7e9047b4c",
+              "lines": 181
             },
             "packages/runtime/src/skill-load-tool.ts": {
-              "sha256": "822e03bb933bd7202454414830b3c1879a6b7b315581c734b1280dc63698a204",
-              "lines": 261
+              "sha256": "3ee676977e9bef8cbf099d4191b9ed9abc0600c8e70c51df51dc0262586d3751",
+              "lines": 325
             },
             "packages/runtime/src/skill-packages.ts": {
               "sha256": "9158172565e636889d410bd63ee857600f55908815d672d9e9bdb532357ed724",
               "lines": 754
             },
             "packages/runtime/src/skill-run-context.ts": {
-              "sha256": "eb0e4aedd7dabd571b695164948191cfb402597b2872511dad9732d3590906d1",
-              "lines": 155
+              "sha256": "8f4978ec8b646972c01c5f5aac7aed8a1eaf99f8c56072879dbc45684704f307",
+              "lines": 134
             },
             "packages/runtime/src/skills.ts": {
               "sha256": "2b4c7d8863bf0bbf05f7943ba3a6a64e1438ae9bc437b61c8232902e95b6f84d",
@@ -15792,6 +15970,18 @@
             "packages/runtime/src/sqlite-query.ts": {
               "sha256": "25a8f1aff166f6efe9172eaaabff9fd644c97a99fff29265c220c2597ef7b73d",
               "lines": 445
+            },
+            "packages/runtime/src/standard-skill-catalog.ts": {
+              "sha256": "3f307235f11c5d725971c15f4a9a424c32cda20997a973e8cb539e24cfe792af",
+              "lines": 98
+            },
+            "packages/runtime/src/standard-skill-snapshot-compose.ts": {
+              "sha256": "7525d481791b7c69c9387647fcf039685eec349e18873ff7b56fd98684cc5ca6",
+              "lines": 424
+            },
+            "packages/runtime/src/standard-skill-snapshot.ts": {
+              "sha256": "b3d4a531adb615b7bf4021739f4682dfa9d51e40c7637062573d84881a71e987",
+              "lines": 260
             },
             "packages/runtime/src/stateless-agent-tools.ts": {
               "sha256": "fd222cbe09996d2d9d5c46bd3e9beca7d9081eb00f2f310aeebfdcc2ffacf90c",
@@ -16702,7 +16892,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "dfe1e109a5208503b1619c3b7fa7f33f79eca2ed84e04058d6f9c41dccaecca7"
+          "manifestSha256": "cc4954763eff5c682f5d28fc641d0f4c5ba566bf6557bf13938f43bb2791c79f"
         }
       },
       "excludedCategories": [
@@ -16731,9 +16921,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "23fbe18a827c5242ebc2c450d308339c2cfc136df06bc2f03f9593fae4bfbd9e"
+      "manifestSha256": "22cb42fe1f7d1b720d6930859f0e943d63fd6a77d4caf23fa2d43ca4cfbac323"
     },
-    "manifestSha256": "525ac98ccda5ee32a4aba558c123e98fcaf7039bbcdff28ad20d5e4c7ded7acc"
+    "manifestSha256": "c7ab47d2a9b291604e226eaeaaf0b5d57c1d3ca1724282639246a30102ede02e"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -16921,11 +17111,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "1a642cca7a2181b91ce6ee3e2af1f2dd399a99c194465a0c12f653ada2c824ed"
+      "sha256": "1e000a730d4b89e1d0ca91a72252c62425d7dabbc5fe863fb04dea03895787b8"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "fb42de7394bf08e0d39787227ac23483f9e70f1ceb61ce7e73334c718d897359"
+      "sha256": "b0044620b91dcf7296aee705919c7085304d7d1196be91b1541e2c27184874cb"
     }
   }
 }

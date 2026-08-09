@@ -1,19 +1,18 @@
 import { Type } from "@earendil-works/pi-ai";
 import type { AgentTool, AgentToolResult } from "@earendil-works/pi-agent-core";
-import type {
-  SkillLoadFailureCode,
-  SkillLoadFailureV1,
-  SkillLoadReceiptV1,
-  SkillLoadSelectionV1,
-} from "@napier/contracts/skill-load";
-import {
-  isSkillLoadFailureV1,
-  isSkillLoadReceiptV1,
-  isSkillLoadSelectionV1,
-} from "@napier/contracts/skill-load";
+import type { SkillLoadFailureCode } from "@napier/contracts/skill-load";
+import type { StandardSkillRootKind } from "@napier/contracts/skill-load-standard";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import type { ProjectSkillSnapshot } from "./project-skill-snapshot.js";
+import {
+  isSkillLoadFailure,
+  isSkillLoadReceipt,
+  isSkillLoadSelection,
+  type SkillLoadFailure,
+  type SkillLoadReceipt,
+  type SkillLoadSelection,
+} from "./skill-load-contracts.js";
+import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 
 const NAME_PATTERN = "^[a-z0-9]+(?:-[a-z0-9]+)*$";
 const NAME = new RegExp(NAME_PATTERN, "u");
@@ -24,17 +23,17 @@ const parameters = Type.Object(
 
 export interface SkillLoadAgentTool extends AgentTool<any> {
   readonly operation: "skill.load";
-  selection(args: unknown): SkillLoadSelectionV1 | undefined;
+  selection(args: unknown): SkillLoadSelection | undefined;
 }
 
 export function createSkillLoadTool(
-  snapshot: ProjectSkillSnapshot,
+  snapshot: SkillSnapshot,
 ): SkillLoadAgentTool {
   const tool: SkillLoadAgentTool = {
     name: "skill_load",
-    label: "Load project Skill",
+    label: "Load Skill",
     description:
-      "Load one enabled project Skill into the private model context by its exact canonical name.",
+      "Load one enabled project or user Skill into the private model context by its exact canonical name.",
     parameters,
     operation: "skill.load",
     executionMode: "sequential",
@@ -45,7 +44,12 @@ export function createSkillLoadTool(
         const input = record(args);
         const requested = typeof input?.name === "string" ? input.name : "";
         if (!validName(requested)) {
-          return failureResult(snapshot, requested, "skill_invalid", "tool_input");
+          return failureResult(
+            snapshot,
+            requested,
+            "skill_invalid",
+            "tool_input",
+          );
         }
         const request = snapshot.binding.configuredSkillRequests.find(
           (item) =>
@@ -70,11 +74,16 @@ export function createSkillLoadTool(
             unavailable?.failureCode ?? "skill_invalid",
             unavailable?.diagnosticSha256 ?? sha256("unavailable"),
             true,
+            unavailable && "candidateRootKinds" in unavailable
+              ? unavailable.candidateRootKinds
+              : [],
           );
         }
         const entry = snapshot.entry(requested);
+        const origin = skillEntryOrigin(entry);
         if (
           !entry ||
+          (snapshot.binding.schemaVersion === 2 && !origin) ||
           snapshot.binding.catalogSha256 !== snapshot.manifest.catalogSha256 ||
           snapshot.binding.availabilitySetSha256 !==
             snapshot.manifest.availabilitySetSha256
@@ -87,15 +96,13 @@ export function createSkillLoadTool(
           );
         }
         check(signal);
-        const core = {
+        const common = {
           kind: "napier.skill-load-receipt" as const,
-          schemaVersion: 1 as const,
           operation: "skill.load" as const,
           agentToolName: "skill_load" as const,
           state: "loaded" as const,
           name: requested,
           requestedNameSha256: sha256(requested),
-          source: "project" as const,
           relativePath: entry.relativePath,
           sizeBytes: entry.sizeBytes,
           lineCount: entry.lineCount,
@@ -104,11 +111,24 @@ export function createSkillLoadTool(
           catalogSha256: snapshot.binding.catalogSha256,
           snapshotManifestSha256: snapshot.manifest.snapshotManifestSha256,
         };
+        const core =
+          snapshot.binding.schemaVersion === 1
+            ? {
+                ...common,
+                schemaVersion: 1 as const,
+                source: "project" as const,
+              }
+            : {
+                ...common,
+                schemaVersion: 2 as const,
+                source: origin!.source,
+                rootKind: origin!.rootKind,
+              };
         const receipt = {
           ...core,
           contentSha256: sha256(canonicalJson(core)),
         };
-        if (!isSkillLoadReceiptV1(receipt)) {
+        if (!isSkillLoadReceipt(receipt)) {
           return failureResult(
             snapshot,
             requested,
@@ -141,23 +161,26 @@ export function isSkillLoadAgentTool(
 ): tool is SkillLoadAgentTool {
   return Boolean(
     tool &&
-      tool.name === "skill_load" &&
-      (tool as Partial<SkillLoadAgentTool>).operation === "skill.load" &&
-      typeof (tool as Partial<SkillLoadAgentTool>).selection === "function",
+    tool.name === "skill_load" &&
+    (tool as Partial<SkillLoadAgentTool>).operation === "skill.load" &&
+    typeof (tool as Partial<SkillLoadAgentTool>).selection === "function",
   );
 }
 
 export function skillLoadOutputLedgerProjection(
   output: string,
   result: unknown,
-): Record<string, string | number | boolean | SkillLoadReceiptV1 | SkillLoadFailureV1> {
+): Record<
+  string,
+  string | number | boolean | SkillLoadReceipt | SkillLoadFailure
+> {
   const details = record(result)?.details;
   return {
     operation: "skill.load",
     outputSha256: sha256(output),
     outputBytes: Buffer.byteLength(output, "utf8"),
     outputRedacted: true,
-    ...(isSkillLoadReceiptV1(details) || isSkillLoadFailureV1(details)
+    ...(isSkillLoadReceipt(details) || isSkillLoadFailure(details)
       ? { details }
       : {}),
   };
@@ -188,46 +211,57 @@ export function skillLoadInputLedgerProjection(args: unknown) {
 }
 
 function createSelection(
-  snapshot: ProjectSkillSnapshot,
+  snapshot: SkillSnapshot,
   args: unknown,
-): SkillLoadSelectionV1 | undefined {
+): SkillLoadSelection | undefined {
   const value = record(args);
-  if (!value || Object.keys(value).length !== 1 || !validName(value.name)) return;
+  if (!value || Object.keys(value).length !== 1 || !validName(value.name))
+    return;
   const request = snapshot.binding.configuredSkillRequests.find(
     (item) => item.state === "loadable" && item.canonicalName === value.name,
   );
   if (!request || !snapshot.entry(value.name)) return;
-  const core = {
+  const entry = snapshot.entry(value.name);
+  if (!entry) return;
+  const origin = skillEntryOrigin(entry);
+  if (snapshot.binding.schemaVersion === 2 && !origin) return;
+  const common = {
     kind: "napier.skill-load-selection" as const,
-    schemaVersion: 1 as const,
     operation: "skill.load" as const,
     agentToolName: "skill_load" as const,
     state: "selected" as const,
     name: value.name,
     requestedNameSha256: sha256(value.name),
-    source: "project" as const,
     catalogSha256: snapshot.binding.catalogSha256,
     availabilitySetSha256: snapshot.binding.availabilitySetSha256,
     snapshotManifestSha256: snapshot.manifest.snapshotManifestSha256,
     inputSha256: sha256(canonicalJson({ name: value.name })),
   };
+  const core =
+    snapshot.binding.schemaVersion === 1
+      ? { ...common, schemaVersion: 1 as const, source: "project" as const }
+      : {
+          ...common,
+          schemaVersion: 2 as const,
+          source: origin!.source,
+          rootKind: origin!.rootKind,
+        };
   const selection = { ...core, contentSha256: sha256(canonicalJson(core)) };
-  return isSkillLoadSelectionV1(selection) ? selection : undefined;
+  return isSkillLoadSelection(selection) ? selection : undefined;
 }
 
 function failureResult(
-  snapshot: ProjectSkillSnapshot,
+  snapshot: SkillSnapshot,
   requested: string,
   failureCode: SkillLoadFailureCode,
   diagnostic: string,
   diagnosticIsHash = false,
-): AgentToolResult<SkillLoadFailureV1> {
-  const core = {
+  candidateRootKinds: StandardSkillRootKind[] = [],
+): AgentToolResult<SkillLoadFailure> {
+  const common = {
     kind: "napier.skill-load-failure" as const,
-    schemaVersion: 1 as const,
     operation: "skill.load" as const,
     agentToolName: "skill_load" as const,
-    source: "project" as const,
     subject: "skill_request" as const,
     state: "failed" as const,
     failureCode,
@@ -237,8 +271,18 @@ function failureResult(
     snapshotManifestSha256: snapshot.manifest.snapshotManifestSha256,
     diagnosticSha256: diagnosticIsHash ? diagnostic : sha256(diagnostic),
   };
+  const core =
+    snapshot.binding.schemaVersion === 1
+      ? { ...common, schemaVersion: 1 as const, source: "project" as const }
+      : {
+          ...common,
+          schemaVersion: 2 as const,
+          source: "composite" as const,
+          candidateRootKinds,
+        };
   const failure = { ...core, contentSha256: sha256(canonicalJson(core)) };
-  if (!isSkillLoadFailureV1(failure)) throw new Error("Skill load failure invariant failed");
+  if (!isSkillLoadFailure(failure))
+    throw new Error("Skill load failure invariant failed");
   return {
     content: [{ type: "text", text: `Skill load failed: ${failureCode}.` }],
     details: failure,
@@ -254,8 +298,28 @@ function record(value: unknown): Record<string, unknown> | undefined {
     : undefined;
 }
 function check(signal?: AbortSignal): void {
-  if (signal?.aborted) throw signal.reason ?? new DOMException("Aborted", "AbortError");
+  if (signal?.aborted)
+    throw signal.reason ?? new DOMException("Aborted", "AbortError");
 }
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+function skillEntryOrigin(value: unknown):
+  | {
+      source: "project" | "user";
+      rootKind: StandardSkillRootKind;
+    }
+  | undefined {
+  const entry = record(value);
+  if (
+    (entry?.source === "project" || entry?.source === "user") &&
+    (entry.rootKind === "project_legacy" ||
+      entry.rootKind === "project_standard" ||
+      entry.rootKind === "user_standard")
+  ) {
+    return {
+      source: entry.source,
+      rootKind: entry.rootKind,
+    };
+  }
 }

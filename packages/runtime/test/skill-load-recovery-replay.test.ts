@@ -4,6 +4,7 @@ import path from "node:path";
 
 import type { JsonValue } from "@napier/contracts";
 import { isSkillLoadReceiptV1 } from "@napier/contracts/skill-load";
+import { isStandardSkillLoadReceiptV2 } from "@napier/contracts/skill-load-standard";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { buildProjectSkillSnapshot } from "../src/project-skill-snapshot.js";
@@ -12,6 +13,7 @@ import {
   validateSkillLoadFrozenReplay,
   validateSkillSnapshotForContinuation,
 } from "../src/skill-load-replay.js";
+import { buildStandardSkillSnapshot } from "../src/standard-skill-snapshot.js";
 
 const roots: string[] = [];
 
@@ -43,6 +45,51 @@ async function writeSkill(
 }
 
 describe("Skill snapshot recovery and frozen replay", () => {
+  it("replays an exact project-standard V2 snapshot and source identity", async () => {
+    const { root, workspaceRoot } = await fixture();
+    await rm(path.join(workspaceRoot, "skills"), { recursive: true });
+    await writeSkill(
+      path.join(workspaceRoot, ".agents"),
+      "research-brief",
+      "Standard guidance.",
+    );
+    const home = path.join(root, "home");
+    await mkdir(home);
+    const source = await buildStandardSkillSnapshot(
+      workspaceRoot,
+      ["research-brief"],
+      undefined,
+      { userHome: home },
+    );
+    const target = await buildStandardSkillSnapshot(
+      workspaceRoot,
+      ["research-brief"],
+      undefined,
+      { userHome: home },
+    );
+    validateSkillSnapshotForContinuation(source.binding, target);
+
+    const result = await createSkillLoadTool(source).execute(
+      "call_standard_source",
+      { name: "research-brief" },
+      new AbortController().signal,
+    );
+    expect(isStandardSkillLoadReceiptV2(result.details)).toBe(true);
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        source: "project",
+        rootKind: "project_standard",
+      }),
+    );
+    expect(
+      validateSkillLoadFrozenReplay(source.binding, target, {
+        toolName: "skill_load",
+        isError: false,
+        result: { details: result.details as JsonValue },
+      }),
+    ).toEqual(result.details);
+  });
+
   it("accepts exact restart equality and frozen reuse without another disk read", async () => {
     const { workspaceRoot } = await fixture();
     const source = await buildProjectSkillSnapshot(workspaceRoot, [

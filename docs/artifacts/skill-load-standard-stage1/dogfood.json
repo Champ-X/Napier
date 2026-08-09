@@ -1,0 +1,111 @@
+{
+  "kind": "napier.standard-skill-directory-dogfood",
+  "schemaVersion": 1,
+  "result": "passed",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "credentialLocator": "DEEPSEEK_API_KEY",
+  "layout": "project_standard",
+  "relativeRoot": ".agents/skills",
+  "capabilityProjectionSha256": "5d1fc1a83c9648f95a9fd61dec570acf065d878ae4d287153730aa71bdaca075",
+  "cliEntrypointSha256": "8d90047290b7540fd48675061c9809f5edb61c4712b863149fbbba63040229d4",
+  "promptSha256": "21cc7142af6c80f43db88e9863e5996dcf5345a6d769a20b3868ed9baed508b7",
+  "exitCode": 0,
+  "stdoutBytes": 1678943,
+  "stdoutSha256": "a91d2c599a4b6eea20fd675b8cd3ad9d944ae7808f75e1a8c0d678270bfc2a4b",
+  "stderrBytes": 0,
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "frameCount": 2063,
+  "runIdSha256": "bc9092bf924079b973c675a0d026cdce0034e10dc9b59a993505a6c664eb63ab",
+  "skillCopies": [
+    {
+      "name": "research-brief",
+      "relativePath": ".agents/skills/research-brief/SKILL.md",
+      "contentSha256": "e16d803879271613589555d1a8d77ea866a960a038de980fab7f0a8f95b3726f"
+    },
+    {
+      "name": "data-analysis",
+      "relativePath": ".agents/skills/data-analysis/SKILL.md",
+      "contentSha256": "18513a1136169aa75a48dd579d20c29b43afe0e825d7397ce5a0275d49a17b33"
+    }
+  ],
+  "binding": {
+    "catalogSha256": "f7f498fc0dd99549b8e850f9becd41e21a90caf23654050e8088337da05bd2f8",
+    "availabilitySetSha256": "2d1c58d0903c96716cecd55e8b9d5e76b7438062d22c1b9f24f9ab1bee407cb2",
+    "snapshotManifestSha256": "03e9c2bf2cdad97138add10709994c381eb18e46619163536564badd1e52e000",
+    "contentSha256": "6fb87e7594ccda9835776b72cc9a830ba924aa1d31e7544972525a5112d8e255",
+    "loadableSkillNames": ["data-analysis", "research-brief"],
+    "researchSource": "project",
+    "researchRootKind": "project_standard"
+  },
+  "lifecycle": {
+    "selectionSha256": "dac7eabe671cc796869536031af72a6048e110b7b23c4f443019f8330efbf8bd",
+    "receiptSha256": "86417da5ce40f6bae72c2fb17c6e84e926a89fb292a3a195fa8cc42a7d8e6685",
+    "source": "project",
+    "rootKind": "project_standard",
+    "relativePath": ".agents/skills/research-brief/SKILL.md"
+  },
+  "toolSequence": [
+    {
+      "seq": 96,
+      "status": "completed",
+      "toolName": "skill_load",
+      "operation": "skill.load"
+    },
+    {
+      "seq": 446,
+      "status": "completed",
+      "toolName": "web_search"
+    },
+    {
+      "seq": 513,
+      "status": "completed",
+      "toolName": "web_search"
+    },
+    {
+      "seq": 514,
+      "status": "completed",
+      "toolName": "web_search"
+    },
+    {
+      "seq": 750,
+      "status": "completed",
+      "toolName": "web_fetch",
+      "action": "fetch"
+    },
+    {
+      "seq": 1156,
+      "status": "failed",
+      "toolName": "web_fetch",
+      "action": "unknown"
+    },
+    {
+      "seq": 1292,
+      "status": "completed",
+      "toolName": "research_source",
+      "action": "capture_fetch"
+    },
+    {
+      "seq": 1517,
+      "status": "completed",
+      "toolName": "research_source",
+      "action": "cite"
+    }
+  ],
+  "replay": {
+    "status": "valid",
+    "contentSha256": "2ab98bbda2829e68fda43d9dc5ff85e47720204396ca24073f1a6e329faf6b68",
+    "eventStreamSha256": "6d0924688a013850ee7a3abf2658c04ca543eec6a337a86e82466541f69570fb",
+    "eventCount": 2061,
+    "runCount": 1
+  },
+  "profileBeforeSha256": "9bc17e07da7773fb2b37c4e43fcfc5bcf2e888f7b0f6af88a3bf8c0ea1ba3dce",
+  "profileAfterSha256": "9bc17e07da7773fb2b37c4e43fcfc5bcf2e888f7b0f6af88a3bf8c0ea1ba3dce",
+  "revisionCountBefore": 1,
+  "revisionCountAfter": 1,
+  "credentialCanaryMatches": 0,
+  "rawJsonlRetained": false,
+  "privateCapsulesRetained": false,
+  "taskRootRemoved": true,
+  "contentSha256": "3cbc05a4c42134bb655e99abdfcd7c192a78f40b4891f3870fc97fc6bac80213"
+}

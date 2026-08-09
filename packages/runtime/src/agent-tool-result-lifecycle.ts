@@ -18,7 +18,7 @@ import type { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store
 import { captureToolInvocationResult } from "./tool-invocation-result-capture.js";
 import type { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 import type { LocalStore } from "./store.js";
-import { isSkillLoadFailureV1 } from "@napier/contracts/skill-load";
+import { isSkillLoadFailure } from "./skill-load-contracts.js";
 import { isSkillLoadAgentTool } from "./skill-load-tool.js";
 
 export interface AgentToolResultLifecycleOptions {
@@ -125,7 +125,7 @@ export class AgentToolResultLifecycle {
       });
       return reused.patch;
     }
-    const typedSkillFailure = isSkillLoadFailureV1(input.result.details);
+    const typedSkillFailure = isSkillLoadFailure(input.result.details);
     const effectiveIsError = input.isError || typedSkillFailure;
     await captureToolInvocationResult(
       this.options.store,

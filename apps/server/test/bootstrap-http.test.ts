@@ -1,4 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 import type {
   AgentProfile,
@@ -89,6 +91,59 @@ describe("Bootstrap HTTP", () => {
       [{ revision: 1, changedFields: [] }],
     );
     expect(agent.model).toEqual({ provider: "napier", id: "demo" });
+  });
+
+  it("discovers project-standard Skills for Web configuration", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-bootstrap-skills-"),
+    );
+    const userHome = await mkdtemp(
+      path.join(tmpdir(), "napier-bootstrap-home-"),
+    );
+    try {
+      const skillRoot = path.join(
+        workspaceRoot,
+        ".agents",
+        "skills",
+        "custom-delivery",
+      );
+      await mkdir(skillRoot, { recursive: true });
+      await writeFile(
+        path.join(skillRoot, "SKILL.md"),
+        "---\nname: custom-delivery\ndescription: Ship safely.\n---\n# Delivery\n",
+      );
+      const agent = seedAgent();
+      const thread = threadSummary();
+      const store = Object.assign(
+        bootstrapStore(agent, thread, threadDetail(agent, thread)),
+        { workspaceRoot },
+      );
+      const app = new Hono();
+      registerBootstrapHttp(app, {
+        store: store as never,
+        skillUserHome: userHome,
+        models: {
+          list: vi.fn(async () => []),
+          recommendDefaultRunModel: vi.fn(async () => ({
+            provider: "napier",
+            id: "demo",
+          })),
+        } as never,
+      });
+
+      const response = await app.request("/api/bootstrap");
+      const bootstrap = (await response.json()) as BootstrapResponse;
+      expect(response.status).toBe(200);
+      expect(bootstrap.skills).toContainEqual({
+        name: "custom-delivery",
+        description: "Ship safely.",
+        source: "workspace",
+        enabled: true,
+      });
+    } finally {
+      await rm(workspaceRoot, { recursive: true, force: true });
+      await rm(userHome, { recursive: true, force: true });
+    }
   });
 });
 

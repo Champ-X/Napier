@@ -47,6 +47,10 @@
     "./skill-load": {
       "types": "./dist/skill-load.d.ts",
       "import": "./dist/skill-load.js"
+    },
+    "./skill-load-standard": {
+      "types": "./dist/skill-load-standard.d.ts",
+      "import": "./dist/skill-load-standard.js"
     }
   },
   "files": [

@@ -422,7 +422,7 @@ export function App() {
               <LazyContextPanel
                 agent={activeAgent}
                 workspace={vm.bootstrap.workspace.root}
-                skills={vm.bootstrap.skills.map((skill) => skill.name)}
+                skills={vm.bootstrap.skills}
                 models={vm.bootstrap.models}
                 credentials={vm.bootstrap.credentials}
                 publisherAnchors={vm.bootstrap.extensionPublisherTrustAnchors}

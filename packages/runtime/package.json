@@ -16,6 +16,10 @@
       "types": "./dist/doctor-runtime-probes.d.ts",
       "import": "./dist/doctor-runtime-probes.js"
     },
+    "./standard-skill-catalog": {
+      "types": "./dist/standard-skill-catalog.d.ts",
+      "import": "./dist/standard-skill-catalog.js"
+    },
     "./sandbox-container": {
       "types": "./dist/sandbox-container.d.ts",
       "import": "./dist/sandbox-container.js"

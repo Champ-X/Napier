@@ -121,7 +121,7 @@ describe("default Agent Capability Contract v3", () => {
       expect(
         (await services.agentCapabilities.project(agent.id)).projectionSha256,
       ).toBe(
-        "19e8be0dd830e143a39a7a967b6de7bc86e88a761a6490f851db7332eb410076",
+        "e7bbc560317563ee146e9424d4c8fc639385c40a0ca4a260be98975cca17252a",
       );
     } finally {
       await services.shutdown();

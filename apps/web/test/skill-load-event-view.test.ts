@@ -107,6 +107,61 @@ describe("Skill load Trace projection", () => {
       effect: "read",
     });
   });
+
+  it("renders V2 user roots and composite conflict candidates", () => {
+    const loaded = withHash({
+      kind: "napier.skill-load-receipt",
+      schemaVersion: 2,
+      operation: "skill.load",
+      agentToolName: "skill_load",
+      state: "loaded",
+      name: "user-brief",
+      requestedNameSha256: hash("user-brief"),
+      source: "user",
+      rootKind: "user_standard",
+      relativePath: ".agents/skills/user-brief/SKILL.md",
+      sizeBytes: 123,
+      lineCount: 9,
+      rawContentSha256: "4".repeat(64),
+      invocationSha256: "5".repeat(64),
+      catalogSha256: "1".repeat(64),
+      snapshotManifestSha256: "3".repeat(64),
+    });
+    const view = skillLoadEventEvidence(loaded);
+    expect(view).toEqual(
+      expect.objectContaining({
+        skillLoadSource: "user",
+        skillLoadRootKind: "user_standard",
+      }),
+    );
+    expect(skillLoadSummaryParts(view!)).toContain("skill-root user_standard");
+
+    const failure = withHash({
+      kind: "napier.skill-load-failure",
+      schemaVersion: 2,
+      operation: "skill.load",
+      agentToolName: "skill_load",
+      source: "composite",
+      subject: "skill_request",
+      state: "unavailable",
+      failureCode: "skill_ambiguous",
+      requestedNameSha256: hash("shared-brief"),
+      canonicalName: "shared-brief",
+      candidateRootKinds: ["project_standard", "user_standard"],
+      catalogSha256: "1".repeat(64),
+      diagnosticSha256: "2".repeat(64),
+    });
+    const conflict = skillLoadEventEvidence(failure);
+    expect(conflict).toEqual(
+      expect.objectContaining({
+        skillLoadSource: "composite",
+        skillLoadCandidateRootKinds: ["project_standard", "user_standard"],
+      }),
+    );
+    expect(skillLoadSummaryParts(conflict!)).toContain(
+      "skill-candidates project_standard,user_standard",
+    );
+  });
 });
 
 function toolEvent(details: JsonValue): RunEvent {

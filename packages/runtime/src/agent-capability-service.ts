@@ -1,4 +1,5 @@
 import { access } from "node:fs/promises";
+import { homedir } from "node:os";
 import path from "node:path";
 
 import { AGENT_TOOL_NAMES, type AgentProfile } from "@napier/contracts";
@@ -25,9 +26,9 @@ import {
 } from "./default-agent-capability-contract.js";
 import { probeMacOsSandboxAvailability } from "./macos-sandbox-availability.js";
 import {
-  buildProjectSkillSnapshot,
-  type ProjectSkillSnapshot,
-} from "./project-skill-snapshot.js";
+  buildStandardSkillSnapshot,
+  type SkillSnapshot,
+} from "./standard-skill-snapshot.js";
 import { resolveContainerExecutable } from "./sandbox-container.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
@@ -214,7 +215,7 @@ function toolReadiness(
 }
 
 interface SkillReadinessInspection {
-  snapshot?: ProjectSkillSnapshot;
+  snapshot?: SkillSnapshot;
   readiness: CapabilityReadinessRecord[];
 }
 
@@ -228,22 +229,22 @@ async function inspectSkillReadiness(
       readiness: await legacySkillReadiness(workspaceRoot, skills),
     };
   }
-  let snapshot: ProjectSkillSnapshot;
+  let snapshot: SkillSnapshot;
   try {
-    snapshot = await buildProjectSkillSnapshot(workspaceRoot, skills);
+    snapshot = await buildStandardSkillSnapshot(workspaceRoot, skills);
   } catch {
     return {
       readiness: await Promise.all(
         sortedUnique(skills).map(async (name) => ({
           id: `skill:${name}`,
-          status: (await skillFileExists(workspaceRoot, name))
+          status: (await standardSkillFileExists(workspaceRoot, name))
             ? ("unavailable" as const)
             : ("missing" as const),
           configured: true,
           allowedByPolicy: true,
           exposed: false,
-          detail: (await skillFileExists(workspaceRoot, name))
-            ? "Project Skill snapshot could not be safely constructed"
+          detail: (await standardSkillFileExists(workspaceRoot, name))
+            ? "Skill snapshot could not be safely constructed"
             : "Configured Skill content is missing",
         })),
       ),
@@ -270,15 +271,34 @@ async function inspectSkillReadiness(
           : undefined;
       const ready =
         request?.state === "loadable" && Boolean(snapshot.entry(name));
+      const missing = failure?.failureCode === "skill_not_found";
+      const origin =
+        request?.state === "loadable" &&
+        "source" in request &&
+        "rootKind" in request
+          ? ` from ${request.source} root ${request.rootKind}`
+          : "";
+      const candidates =
+        failure &&
+        "candidateRootKinds" in failure &&
+        failure.candidateRootKinds.length > 0
+          ? `; candidates: ${failure.candidateRootKinds.join(", ")}`
+          : "";
       return {
         id: `skill:${name}`,
-        status: ready ? ("ready" as const) : ("unavailable" as const),
+        status: ready
+          ? ("ready" as const)
+          : missing
+            ? ("missing" as const)
+            : ("unavailable" as const),
         configured: true,
         allowedByPolicy: true,
         exposed: ready,
         detail: ready
-          ? "Skill is snapshot-bound and loadable through the production Runtime"
-          : `Skill is unavailable${failure ? ` (${failure.failureCode})` : ""}`,
+          ? `Skill is snapshot-bound${origin} and loadable through the production Runtime`
+          : missing
+            ? "Configured Skill content is missing"
+            : `Skill is unavailable${failure ? ` (${failure.failureCode}${candidates})` : ""}`,
       };
     }),
   };
@@ -313,6 +333,26 @@ function skillFileExists(
     () => true,
     () => false,
   );
+}
+
+async function standardSkillFileExists(
+  workspaceRoot: string,
+  name: string,
+): Promise<boolean> {
+  const locations = [
+    path.join(workspaceRoot, "skills", name, "SKILL.md"),
+    path.join(workspaceRoot, ".agents", "skills", name, "SKILL.md"),
+    path.join(homedir(), ".agents", "skills", name, "SKILL.md"),
+  ];
+  const results = await Promise.all(
+    locations.map((location) =>
+      access(location).then(
+        () => true,
+        () => false,
+      ),
+    ),
+  );
+  return results.some(Boolean);
 }
 
 export async function inspectSandboxReadiness(

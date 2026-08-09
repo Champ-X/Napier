@@ -38,6 +38,7 @@ import type {
   SkillPackageInstallation,
   SkillPackageQualification,
   SkillPackageVerification,
+  SkillSummary,
   SubagentRole,
   ToolLoopGuardPolicy,
   UsagePriceTableCatalog,
@@ -77,6 +78,7 @@ import {
 } from "./model-selection-view-model";
 import { AgentCapabilityPresetControl } from "./AgentCapabilityPresetControl";
 import { AgentCapabilityContractCard } from "./AgentCapabilityContractCard";
+import { ContextOptionGroup as OptionGroup } from "./ContextOptionGroup";
 import {
   AGENT_MODEL_ADVISOR_RULES as MODEL_ADVISOR_RULES,
   DEFAULT_AGENT_MODEL_ADVISOR_POLICY as DEFAULT_MODEL_ADVISOR_POLICY,
@@ -179,7 +181,7 @@ type SkillContentReceipt =
 export interface ContextPanelProps {
   agent: AgentProfile;
   workspace: string;
-  skills: string[];
+  skills: SkillSummary[];
   models: ModelSummary[];
   credentials: CredentialReference[];
   publisherAnchors: ExtensionPublisherTrustAnchor[];
@@ -1692,9 +1694,10 @@ export default function ContextPanel({
         <OptionGroup
           legend={copy.context.skills}
           options={skills.map((skill) => ({
-            value: skill,
-            label: skill,
-            detail: copy.context.bundledSkill,
+            value: skill.name,
+            label: skill.name,
+            detail: `${copy.context.skillSources[skill.source]} · ${skill.description}`,
+            enabled: skill.enabled,
           }))}
           selected={agentSkills}
           disabled={configurationBusy}
@@ -2972,46 +2975,6 @@ function HashRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function OptionGroup<T extends string>({
-  legend,
-  options,
-  selected,
-  disabled,
-  onChange,
-}: {
-  legend: string;
-  options: Array<{ value: T; label: string; detail: string }>;
-  selected: T[];
-  disabled: boolean;
-  onChange: (value: T[]) => void;
-}) {
-  return (
-    <fieldset className="context-option-group">
-      <legend>{legend}</legend>
-      <div className="context-option-grid">
-        {options.map((option) => (
-          <label key={option.value}>
-            <input
-              type="checkbox"
-              checked={selected.includes(option.value)}
-              disabled={disabled}
-              onChange={(event) =>
-                onChange(
-                  toggleSelection(selected, option.value, event.target.checked),
-                )
-              }
-            />
-            <span>
-              <strong>{option.label}</strong>
-              <small>{option.detail}</small>
-            </span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
 function NumberField({
   label,
   value,
@@ -3112,18 +3075,6 @@ function CredentialCard({
       </footer>
     </article>
   );
-}
-
-function toggleSelection<T extends string>(
-  current: T[],
-  value: T,
-  selected: boolean,
-): T[] {
-  return selected
-    ? current.includes(value)
-      ? current
-      : [...current, value]
-    : current.filter((candidate) => candidate !== value);
 }
 
 function credentialLocator(source: CredentialReferenceSource): string {

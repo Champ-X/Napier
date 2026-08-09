@@ -88,7 +88,7 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   skills_missing: {
     id: "repair_skill_loader",
     instruction:
-      "Add at least one skills/<name>/SKILL.md file to the workspace, or install a reviewed Skill baseline, so the loader can resolve content.",
+      "Add a reviewed SKILL.md under skills/<name>, .agents/skills/<name>, or ~/.agents/skills/<name>; resolve any same-name conflict, then rerun Doctor.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
   lsp_missing: {

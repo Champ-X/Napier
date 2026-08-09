@@ -195,6 +195,11 @@ export const contextCopy = {
   },
   skills: "Available skills",
   bundledSkill: "bundled skill",
+  skillSources: {
+    bundled: "bundled",
+    workspace: "workspace",
+    user: "user",
+  },
   subagents: "Delegation roles",
   subagentLabels: {
     researcher: "Researcher",

@@ -1,23 +1,20 @@
 import type { JsonValue, RunEvent, RunRecord } from "@napier/contracts";
-import type {
-  SkillCatalogBindingV1,
-  SkillLoadReceiptV1,
-} from "@napier/contracts/skill-load";
 import {
-  isProjectSkillSnapshotManifestV1,
-  isSkillCatalogBindingV1,
-  isSkillLoadReceiptV1,
-} from "@napier/contracts/skill-load";
-
+  isSkillCatalogBinding,
+  isSkillLoadReceipt,
+  isSkillSnapshotManifest,
+  type SkillCatalogBinding,
+  type SkillLoadReceipt,
+} from "./skill-load-contracts.js";
 import {
-  buildProjectSkillSnapshot,
-  type ProjectSkillSnapshot,
-} from "./project-skill-snapshot.js";
+  buildStandardSkillSnapshot,
+  type SkillSnapshot,
+} from "./standard-skill-snapshot.js";
 
 export const SKILL_CONTINUATION_SNAPSHOT: unique symbol = Symbol(
   "napier.skill-continuation-snapshot",
 );
-export type SkillContinuationSnapshot = ProjectSkillSnapshot;
+export type SkillContinuationSnapshot = SkillSnapshot;
 
 export function skillSnapshotSignalForCapability(
   enabled: boolean,
@@ -29,12 +26,12 @@ export function skillSnapshotSignalForCapability(
 export async function resolveRunSkillSnapshot(
   workspaceRoot: string,
   enabledSkills: readonly string[],
-  provided: ProjectSkillSnapshot | undefined,
+  provided: SkillSnapshot | undefined,
   signal?: AbortSignal,
-): Promise<ProjectSkillSnapshot> {
+): Promise<SkillSnapshot> {
   const snapshot =
     provided ??
-    (await buildProjectSkillSnapshot(workspaceRoot, enabledSkills, signal));
+    (await buildStandardSkillSnapshot(workspaceRoot, enabledSkills, signal));
   const requests = snapshot.binding.configuredSkillRequests;
   if (
     requests.length !== enabledSkills.length ||
@@ -54,12 +51,12 @@ export async function prepareSkillContinuationSnapshot(
   interrupted: RunRecord,
   events: readonly RunEvent[],
   signal?: AbortSignal,
-): Promise<{ bound: boolean; snapshot?: ProjectSkillSnapshot }> {
+): Promise<{ bound: boolean; snapshot?: SkillSnapshot }> {
   const candidates = events.filter((event) => event.type === "context.skills");
   if (candidates.length === 0) return { bound: false };
   if (
     candidates.length !== 1 ||
-    !isSkillCatalogBindingV1(candidates[0]?.payload)
+    !isSkillCatalogBinding(candidates[0]?.payload)
   ) {
     throw new Error("Source Run Project Skill binding evidence is invalid");
   }
@@ -82,7 +79,7 @@ export async function prepareSkillContinuationSnapshot(
   ) {
     throw new Error("Source Run Project Skill selection evidence is invalid");
   }
-  const snapshot = await buildProjectSkillSnapshot(
+  const snapshot = await buildStandardSkillSnapshot(
     workspaceRoot,
     selectedNames as string[],
     signal,
@@ -99,13 +96,14 @@ export interface SkillLoadReplayCapsuleProjection {
 
 export function validateSkillSnapshotForContinuation(
   sourceBinding: unknown,
-  targetSnapshot: ProjectSkillSnapshot,
-): Readonly<SkillCatalogBindingV1> {
+  targetSnapshot: SkillSnapshot,
+): Readonly<SkillCatalogBinding> {
   if (
-    !isSkillCatalogBindingV1(sourceBinding) ||
+    !isSkillCatalogBinding(sourceBinding) ||
     !Object.isFrozen(targetSnapshot) ||
-    !isSkillCatalogBindingV1(targetSnapshot.binding) ||
-    !isProjectSkillSnapshotManifestV1(targetSnapshot.manifest)
+    !isSkillCatalogBinding(targetSnapshot.binding) ||
+    !isSkillSnapshotManifest(targetSnapshot.manifest) ||
+    sourceBinding.schemaVersion !== targetSnapshot.binding.schemaVersion
   ) {
     throw new Error("Project Skill continuation binding is invalid");
   }
@@ -134,9 +132,9 @@ export function validateSkillSnapshotForContinuation(
 
 export function validateSkillLoadFrozenReplay(
   sourceBinding: unknown,
-  targetSnapshot: ProjectSkillSnapshot,
+  targetSnapshot: SkillSnapshot,
   capsule: SkillLoadReplayCapsuleProjection,
-): SkillLoadReceiptV1 {
+): SkillLoadReceipt {
   const binding = validateSkillSnapshotForContinuation(
     sourceBinding,
     targetSnapshot,
@@ -144,7 +142,8 @@ export function validateSkillLoadFrozenReplay(
   if (
     capsule.toolName !== "skill_load" ||
     capsule.isError ||
-    !isSkillLoadReceiptV1(capsule.result.details)
+    !isSkillLoadReceipt(capsule.result.details) ||
+    capsule.result.details.schemaVersion !== binding.schemaVersion
   ) {
     throw new Error(
       "Frozen Skill load result is not a reusable success receipt",
@@ -152,8 +151,19 @@ export function validateSkillLoadFrozenReplay(
   }
   const receipt = capsule.result.details;
   const entry = targetSnapshot.entry(receipt.name);
+  const originMatches =
+    receipt.schemaVersion === 1
+      ? Boolean(entry)
+      : Boolean(
+          entry &&
+          "source" in entry &&
+          "rootKind" in entry &&
+          receipt.source === entry.source &&
+          receipt.rootKind === entry.rootKind,
+        );
   if (
     !entry ||
+    !originMatches ||
     receipt.requestedNameSha256 !== entry.requestedNameSha256 ||
     receipt.relativePath !== entry.relativePath ||
     receipt.sizeBytes !== entry.sizeBytes ||

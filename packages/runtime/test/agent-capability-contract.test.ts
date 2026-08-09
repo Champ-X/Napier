@@ -194,6 +194,7 @@ describe("default Agent Capability Contract", () => {
         }),
       );
       expect(projection.runtimeExposedTools).toContain("web_search");
+      expect(projection.runtimeExposedTools).toContain("skill_load");
       expect(projection.runtimeExposedTools).not.toContain("apply_patch");
       expect(projection.readiness).toEqual(
         expect.arrayContaining([
@@ -212,6 +213,10 @@ describe("default Agent Capability Contract", () => {
           expect.objectContaining({
             id: "skill:browser-automation",
             status: "missing",
+          }),
+          expect.objectContaining({
+            id: "tool:skill_load",
+            status: "ready",
           }),
         ]),
       );

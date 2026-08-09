@@ -9,11 +9,6 @@ import type {
   ToolInvocationCapsuleReceipt,
   ToolInvocationResultCapsuleReceipt,
 } from "@napier/contracts";
-import type { SkillCatalogBindingV1 } from "@napier/contracts/skill-load";
-import {
-  isSkillCatalogBindingV1,
-  isSkillLoadReceiptV1,
-} from "@napier/contracts/skill-load";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { AgentMessageExperimentExecution } from "./agent-message-experiment-execution.js";
@@ -28,11 +23,16 @@ import {
   toolInvocationArgumentsSha256,
   validateToolInvocationCapsuleReceipt,
 } from "./tool-invocation-capsule.js";
-import type { ProjectSkillSnapshot } from "./project-skill-snapshot.js";
+import {
+  isSkillCatalogBinding,
+  isSkillLoadReceipt,
+  type SkillCatalogBinding,
+} from "./skill-load-contracts.js";
 import {
   validateSkillLoadFrozenReplay,
   validateSkillSnapshotForContinuation,
 } from "./skill-load-replay.js";
+import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 
 export const AGENT_MESSAGE_TOOL_RESULT_REPLAY: unique symbol = Symbol(
   "napier.agent-message-tool-result-replay",
@@ -56,7 +56,7 @@ export interface FrozenToolResultPlan {
   entries: FrozenToolResultEntry[];
   sourceResultSetSha256: string;
   unavailableCount: number;
-  sourceSkillBinding?: SkillCatalogBindingV1;
+  sourceSkillBinding?: SkillCatalogBinding;
 }
 
 export function validateAgentMessageToolResultReplay(
@@ -68,8 +68,10 @@ export function validateAgentMessageToolResultReplay(
     (replay &&
       (replay.sourceThreadId !== experiment?.sourceThreadId ||
         replay.sourceRunId !== experiment.sourceRunId ||
-        replay.plan.entries.length !== experiment.sourceReusableToolResultCount ||
-        replay.plan.sourceResultSetSha256 !== experiment.sourceToolResultSetSha256))
+        replay.plan.entries.length !==
+          experiment.sourceReusableToolResultCount ||
+        replay.plan.sourceResultSetSha256 !==
+          experiment.sourceToolResultSetSha256))
   ) {
     throw new Error("Agent message experiment tool result replay is invalid");
   }
@@ -103,7 +105,7 @@ export class FrozenToolResultReplayController {
     }
   }
 
-  validateTargetSkillSnapshot(snapshot?: ProjectSkillSnapshot): void {
+  validateTargetSkillSnapshot(snapshot?: SkillSnapshot): void {
     const skillEntries = this.plan.entries.filter(
       (entry) => entry.toolName === "skill_load",
     );
@@ -260,11 +262,11 @@ export async function projectFrozenToolResultPlan(
   capsules: ToolInvocationResultCapsuleStore,
 ): Promise<FrozenToolResultPlan> {
   const sourceEvents = events.filter((event) => event.runId === sourceRunId);
-  const skillBindings: SkillCatalogBindingV1[] = [];
+  const skillBindings: SkillCatalogBinding[] = [];
   for (const event of sourceEvents) {
     if (
       event.type === "context.skills" &&
-      isSkillCatalogBindingV1(event.payload)
+      isSkillCatalogBinding(event.payload)
     ) {
       skillBindings.push(event.payload);
     }
@@ -306,7 +308,7 @@ async function projectFrozenToolResultEntry(
   sourceRunId: string,
   capsules: ToolInvocationResultCapsuleStore,
   invocationEvent: RunEvent,
-  sourceSkillBinding: SkillCatalogBindingV1 | undefined,
+  sourceSkillBinding: SkillCatalogBinding | undefined,
 ): Promise<SequencedFrozenToolResultEntry | undefined> {
   const invocation = validateToolInvocationCapsuleReceipt(
     invocationEvent.payload,
@@ -404,7 +406,7 @@ function capsuleBindsResult(
 
 function skillLoadSourceBindingIsValid(
   capsule: ToolInvocationResultCapsule,
-  binding: SkillCatalogBindingV1 | undefined,
+  binding: SkillCatalogBinding | undefined,
 ): boolean {
   if (capsule.toolName !== "skill_load") return true;
   if (!binding) return false;
@@ -412,7 +414,8 @@ function skillLoadSourceBindingIsValid(
   // target-entry equality is checked against the freshly acquired snapshot.
   const details = capsule.result.details;
   return (
-    isSkillLoadReceiptV1(details) &&
+    isSkillLoadReceipt(details) &&
+    details.schemaVersion === binding.schemaVersion &&
     details.catalogSha256 === binding.catalogSha256 &&
     details.snapshotManifestSha256 === binding.snapshotManifestSha256
   );

@@ -4,11 +4,19 @@ import {
   isSkillLoadReceiptV1,
   isSkillLoadSelectionV1,
 } from "@napier/contracts/skill-load";
+import type { StandardSkillRootKind } from "@napier/contracts/skill-load-standard";
+import {
+  isStandardSkillLoadFailureV2,
+  isStandardSkillLoadReceiptV2,
+  isStandardSkillLoadSelectionV2,
+} from "@napier/contracts/skill-load-standard";
 
 export interface SkillLoadToolEventTraceView {
   skillLoadName?: string;
   skillLoadState?: SkillLifecycleState;
-  skillLoadSource?: "project";
+  skillLoadSource?: "project" | "user" | "composite";
+  skillLoadRootKind?: StandardSkillRootKind;
+  skillLoadCandidateRootKinds?: StandardSkillRootKind[];
   skillLoadCatalogSha256?: string;
   skillLoadAvailabilitySetSha256?: string;
   skillLoadSnapshotManifestSha256?: string;
@@ -32,11 +40,35 @@ export function skillLoadEventEvidence(
       skillLoadSnapshotManifestSha256: value.snapshotManifestSha256,
     };
   }
+  if (isStandardSkillLoadSelectionV2(value)) {
+    return {
+      skillLoadName: value.name,
+      skillLoadState: "selected",
+      skillLoadSource: value.source,
+      skillLoadRootKind: value.rootKind,
+      skillLoadCatalogSha256: value.catalogSha256,
+      skillLoadAvailabilitySetSha256: value.availabilitySetSha256,
+      skillLoadSnapshotManifestSha256: value.snapshotManifestSha256,
+    };
+  }
   if (isSkillLoadReceiptV1(value)) {
     return {
       skillLoadName: value.name,
       skillLoadState: "loaded",
       skillLoadSource: "project",
+      skillLoadCatalogSha256: value.catalogSha256,
+      skillLoadSnapshotManifestSha256: value.snapshotManifestSha256,
+      skillLoadReceiptSha256: value.contentSha256,
+      skillLoadRawContentSha256: value.rawContentSha256,
+      skillLoadInvocationSha256: value.invocationSha256,
+    };
+  }
+  if (isStandardSkillLoadReceiptV2(value)) {
+    return {
+      skillLoadName: value.name,
+      skillLoadState: "loaded",
+      skillLoadSource: value.source,
+      skillLoadRootKind: value.rootKind,
       skillLoadCatalogSha256: value.catalogSha256,
       skillLoadSnapshotManifestSha256: value.snapshotManifestSha256,
       skillLoadReceiptSha256: value.contentSha256,
@@ -54,9 +86,21 @@ export function skillLoadEventEvidence(
       skillLoadCatalogSha256: value.catalogSha256,
       ...(value.subject === "skill_request" && value.snapshotManifestSha256
         ? {
-            skillLoadSnapshotManifestSha256:
-              value.snapshotManifestSha256,
+            skillLoadSnapshotManifestSha256: value.snapshotManifestSha256,
           }
+        : {}),
+      skillLoadFailureSha256: value.contentSha256,
+    };
+  }
+  if (isStandardSkillLoadFailureV2(value)) {
+    return {
+      ...(value.canonicalName ? { skillLoadName: value.canonicalName } : {}),
+      skillLoadState: value.state,
+      skillLoadSource: "composite",
+      skillLoadCandidateRootKinds: value.candidateRootKinds,
+      skillLoadCatalogSha256: value.catalogSha256,
+      ...(value.snapshotManifestSha256
+        ? { skillLoadSnapshotManifestSha256: value.snapshotManifestSha256 }
         : {}),
       skillLoadFailureSha256: value.contentSha256,
     };
@@ -72,6 +116,10 @@ export function skillLoadSummaryParts(
     `skill ${view.skillLoadName ?? "catalog"}`,
     `skill-state ${view.skillLoadState}`,
     ...(view.skillLoadSource ? [`skill-source ${view.skillLoadSource}`] : []),
+    ...(view.skillLoadRootKind ? [`skill-root ${view.skillLoadRootKind}`] : []),
+    ...(view.skillLoadCandidateRootKinds?.length
+      ? [`skill-candidates ${view.skillLoadCandidateRootKinds.join(",")}`]
+      : []),
     ...hash("skill-catalog", view.skillLoadCatalogSha256),
     ...hash("skill-availability", view.skillLoadAvailabilitySetSha256),
     ...hash("skill-manifest", view.skillLoadSnapshotManifestSha256),

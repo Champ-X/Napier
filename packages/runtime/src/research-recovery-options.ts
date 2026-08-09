@@ -1,5 +1,4 @@
 import type { RunEvent, RunRecord } from "@napier/contracts";
-import { isSkillCatalogBindingV1 } from "@napier/contracts/skill-load";
 
 import { capabilityPresetForOriginRun } from "./agent-capability-override.js";
 import type { RunPromptOptions } from "./agent-runtime-options.js";
@@ -8,6 +7,7 @@ import {
   prepareSkillContinuationSnapshot,
   SKILL_CONTINUATION_SNAPSHOT,
 } from "./skill-load-replay.js";
+import { isSkillCatalogBinding } from "./skill-load-contracts.js";
 import { loadWorkspaceSkills } from "./skills.js";
 
 export async function prepareManualSkillRecoveryOptions(
@@ -21,7 +21,7 @@ export async function prepareManualSkillRecoveryOptions(
     (event) =>
       event.runId === interrupted.id &&
       event.type === "context.skills" &&
-      isSkillCatalogBindingV1(event.payload),
+      isSkillCatalogBinding(event.payload),
   );
   if (!firstClassSkillLoading) return options;
   const continuation = await prepareSkillContinuationSnapshot(
@@ -54,7 +54,7 @@ export async function prepareAutomaticSkillRecoveryOptions(
   const preset = capabilityPresetForOriginRun(events, interrupted.id);
   const firstClassSkillLoading = events.some(
     (event) =>
-      event.type === "context.skills" && isSkillCatalogBindingV1(event.payload),
+      event.type === "context.skills" && isSkillCatalogBinding(event.payload),
   );
   const continuation = firstClassSkillLoading
     ? await prepareSkillContinuationSnapshot(
