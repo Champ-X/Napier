@@ -44,21 +44,16 @@ const delegateTaskSchema = Type.Object({
   description: Type.String({
     minLength: 1,
     maxLength: 180,
-    description: "Short task label shown in the delegation ledger.",
   }),
   task: Type.String({
     minLength: 1,
     maxLength: 8_000,
-    description:
-      "Self-contained task with relevant paths, constraints, and expected evidence.",
   }),
   writePaths: Type.Optional(
     Type.Array(
       Type.String({
         minLength: 1,
         maxLength: 500,
-        description:
-          "Workspace-relative UTF-8 file path that the coder may create, modify, delete, or use as one side of a move only inside its private worktree.",
       }),
       { minItems: 1, maxItems: MAX_SUBAGENT_WORKTREE_WRITE_FILES },
     ),
@@ -192,11 +187,11 @@ export class SubagentCoordinator {
       name: "delegate_task",
       label: "Delegate task",
       description: [
-        "Delegate a substantial independent investigation, review, or path-scoped coding task to an isolated subagent.",
+        "Delegate substantial independent investigation, review, or path-scoped coding work; never trivial or parent-context-dependent tasks.",
         `Available roles: ${[...this.enabledRoles].join(", ")}.`,
         `Run budget: at most ${this.limits.maxTotal} total and ${this.limits.maxConcurrent} concurrent delegations.`,
-        "Coder tasks require explicit writePaths for every created, modified, deleted, moved-from, or moved-to file and return an unmerged one-use worktree preview.",
-        "Do not delegate trivial work or tasks that require the parent conversation.",
+        "description is a short ledger label; task must be self-contained with paths, constraints, and evidence.",
+        "Only coder uses writePaths, listing every created, changed, deleted, or moved endpoint; returns an isolated, unmerged one-use worktree preview.",
       ].join(" "),
       parameters: delegateTaskSchema,
       execute: async (_toolCallId, input, signal) => {

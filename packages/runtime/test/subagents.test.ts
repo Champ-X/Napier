@@ -110,6 +110,22 @@ function sha256(value: string): string {
 }
 
 describe("SubagentCoordinator", () => {
+  it("keeps the delegate tool definition within one KiB", async () => {
+    const { coordinator } = await createHarness();
+    const tool = coordinator.createTool();
+    const bytes = Buffer.byteLength(
+      JSON.stringify({
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+        constrainedSampling: tool.constrainedSampling ?? null,
+      }),
+      "utf8",
+    );
+
+    expect(bytes).toBeLessThanOrEqual(1_024);
+  });
+
   it("uses the validated profile limits without a second silent clamp", async () => {
     const { coordinator } = await createHarness({
       maxConcurrent: 6,
