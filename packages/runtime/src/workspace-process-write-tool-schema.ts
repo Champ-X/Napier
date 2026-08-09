@@ -43,30 +43,20 @@ export const workspaceProcessWriteActionSchema = Type.Union([
       writePaths,
       failureRecovery,
       interactive: Type.Optional(Type.Boolean()),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("preview_write"),
-      runtime: Type.Literal("node"),
-      args: Type.Array(argument, { maxItems: 64 }),
-      cwd,
-      timeoutMs,
-      writePaths,
-      failureRecovery,
-      terminal: Type.Object(
-        {
-          columns: Type.Integer({
-            minimum: MIN_TERMINAL_COLUMNS,
-            maximum: MAX_TERMINAL_COLUMNS,
-          }),
-          rows: Type.Integer({
-            minimum: MIN_TERMINAL_ROWS,
-            maximum: MAX_TERMINAL_ROWS,
-          }),
-        },
-        { additionalProperties: false },
+      terminal: Type.Optional(
+        Type.Object(
+          {
+            columns: Type.Integer({
+              minimum: MIN_TERMINAL_COLUMNS,
+              maximum: MAX_TERMINAL_COLUMNS,
+            }),
+            rows: Type.Integer({
+              minimum: MIN_TERMINAL_ROWS,
+              maximum: MAX_TERMINAL_ROWS,
+            }),
+          },
+          { additionalProperties: false },
+        ),
       ),
     },
     { additionalProperties: false },

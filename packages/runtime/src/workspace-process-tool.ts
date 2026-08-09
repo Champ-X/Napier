@@ -1,6 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { JsonValue } from "@napier/contracts";
-import { Type } from "typebox";
+import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -44,42 +44,20 @@ const workspaceProcessSchema = Type.Union([
         Type.Integer({ minimum: 1_000, maximum: 120_000 }),
       ),
       interactive: Type.Optional(Type.Boolean()),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("start"),
-      runtime: Type.Literal("node"),
-      args: Type.Array(
-        Type.String({
-          maxLength: 2_048,
-          pattern: "^[^\\u0000-\\u001f\\u007f]*$",
-        }),
-        { maxItems: 64 },
-      ),
-      cwd: Type.Optional(
-        Type.String({
-          minLength: 1,
-          maxLength: 500,
-          pattern: "^[^\\u0000-\\u001f\\u007f]*$",
-        }),
-      ),
-      timeoutMs: Type.Optional(
-        Type.Integer({ minimum: 1_000, maximum: 120_000 }),
-      ),
-      terminal: Type.Object(
-        {
-          columns: Type.Integer({
-            minimum: MIN_TERMINAL_COLUMNS,
-            maximum: MAX_TERMINAL_COLUMNS,
-          }),
-          rows: Type.Integer({
-            minimum: MIN_TERMINAL_ROWS,
-            maximum: MAX_TERMINAL_ROWS,
-          }),
-        },
-        { additionalProperties: false },
+      terminal: Type.Optional(
+        Type.Object(
+          {
+            columns: Type.Integer({
+              minimum: MIN_TERMINAL_COLUMNS,
+              maximum: MAX_TERMINAL_COLUMNS,
+            }),
+            rows: Type.Integer({
+              minimum: MIN_TERMINAL_ROWS,
+              maximum: MAX_TERMINAL_ROWS,
+            }),
+          },
+          { additionalProperties: false },
+        ),
       ),
     },
     { additionalProperties: false },
@@ -154,9 +132,10 @@ export function createWorkspaceProcessTool(
     name: "workspace_process",
     label: "Workspace process",
     description:
-      "Start, send bounded input to, poll, resize, or cancel a background Node Process Session. Ordinary starts are read-only. Workspace writes require preview_write with 1-8 existing explicit scopes followed by one-use start_write; the Sandbox keeps the rest of the workspace read-only and settlement verifies the observed Delta. All starts use explicit argv, denied network access, and a fixed environment. Choose either pipe interactive mode or a bounded PTY. Input and output text are ephemeral and redacted from Ledger evidence.",
+      "Manage background Node Process Sessions: start with explicit argv, offline fixed environment, and either interactive pipe or bounded PTY; then input, poll, resize PTY, or cancel. Text is ephemeral and Ledger-redacted. Starts are read-only; writes require preview_write with 1-8 existing scopes then one-use start_write. Sandbox keeps other paths read-only and settlement verifies the observed Delta.",
     parameters: workspaceProcessSchema,
     async execute(_toolCallId, input, signal) {
+      assertExclusiveProcessIoMode(input);
       if (input.action === "preview_write") {
         const preview = await manager.previewWrite({
           ...context,
@@ -356,6 +335,18 @@ export function workspaceProcessToolOutputLedgerProjection(
 
 function workspaceProcessCallSha256(args: unknown): string {
   return sha256(canonicalJson({ toolName: "workspace_process", args }));
+}
+
+function assertExclusiveProcessIoMode(
+  input: Static<typeof workspaceProcessSchema>,
+): void {
+  if (
+    (input.action === "start" || input.action === "preview_write") &&
+    input.interactive === true &&
+    input.terminal !== undefined
+  ) {
+    throw new Error("Choose either interactive pipe mode or terminal PTY mode");
+  }
 }
 
 function record(value: unknown): value is Record<string, unknown> {
