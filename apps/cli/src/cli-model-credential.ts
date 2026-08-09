@@ -2,6 +2,7 @@ import type { CredentialReference } from "@napier/contracts";
 import type { LocalAgentRuntimeServices } from "@napier/runtime";
 
 import type { CliCredentialBootstrapOptions } from "./cli-credential-options.js";
+import { CliPublicError } from "./cli-public-error.js";
 
 export async function configureCliModelCredential(
   services: LocalAgentRuntimeServices,
@@ -14,7 +15,8 @@ export async function configureCliModelCredential(
     throw new Error("CLI credential bootstrap requires a live model");
   }
   if (!env[options.credentialEnv]?.trim()) {
-    throw new Error(
+    throw new CliPublicError(
+      "credential_env_unavailable",
       `Credential environment variable is unavailable: ${options.credentialEnv}`,
     );
   }
@@ -44,7 +46,8 @@ export async function configureCliModelCredential(
     await assertCredentialAvailable(services, reference);
   }
   if (!(await services.models.isConfigured(model))) {
-    throw new Error(
+    throw new CliPublicError(
+      "model_unavailable",
       `CLI model is unavailable after credential bootstrap: ${model.provider}/${model.id}`,
     );
   }
@@ -58,7 +61,8 @@ function assertMatchingEnvironmentReference(
     reference.source.type !== "environment" ||
     reference.source.variable !== variable
   ) {
-    throw new Error(
+    throw new CliPublicError(
+      "credential_reference_conflict",
       `Provider already uses a different active credential reference: ${reference.providerId}`,
     );
   }
@@ -70,7 +74,8 @@ async function assertCredentialAvailable(
 ): Promise<void> {
   const checked = await services.credentials.check(reference.id);
   if (checked.availability !== "available") {
-    throw new Error(
+    throw new CliPublicError(
+      "credential_reference_unavailable",
       `Credential environment reference is unavailable: ${reference.providerId}`,
     );
   }

@@ -4,12 +4,12 @@ import type { RunEvent, RunRecord } from "@napier/contracts";
 import {
   hashEventStream,
   streamRunDoneFrame,
-  streamRunErrorFrame,
   streamSnapshotFrame,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
 
 import type { CliExecutionOptions } from "./cli-execution-options.js";
+import { cliErrorFrame } from "./cli-public-error.js";
 import {
   OneShotBrowserInteractionConfirmation,
   oneShotBrowserConfirmationAvailable,
@@ -115,7 +115,7 @@ export async function executeCliInvocation(
     }
     return run.status === "completed" ? 0 : 1;
   } catch (error) {
-    const frame = streamRunErrorFrame(threadId, error);
+    const frame = cliErrorFrame(threadId, error);
     if (options.jsonl) {
       await writeJsonLine(io.stdout, frame);
     } else {
