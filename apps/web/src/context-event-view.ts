@@ -85,7 +85,7 @@ export interface ContextEventTraceView {
 }
 
 const CONTEXT_EVENT =
-  /^context\.(skills|prepared|memory|model_envelope|model_invocation(_unavailable)?|tool_invocation(_unavailable)?|tool_result(_unavailable)?|prompt_variables|tool_loop_guard|delegation\.updated|milestones\.updated|compaction\.(started|completed|failed))$/u;
+  /^context\.(skills|prepared|memory|model_adapter|model_envelope|model_invocation(_unavailable)?|tool_invocation(_unavailable)?|tool_result(_unavailable)?|prompt_variables|tool_loop_guard|delegation\.updated|milestones\.updated|compaction\.(started|completed|failed))$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const CONTEXT_RECEIPT_SUMMARY = "context receipt";

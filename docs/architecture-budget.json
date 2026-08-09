@@ -36,7 +36,7 @@
     "apps/web/src/RunLabPanel.tsx": 1112,
     "apps/web/src/tool-event-view.ts": 746,
     "apps/web/src/trace-event-summary-view.ts": 754,
-    "apps/web/src/TracePanel.tsx": 1086,
+    "apps/web/src/TracePanel.tsx": 966,
     "apps/web/src/use-workspace-view-model.ts": 2359,
     "apps/web/src/workflow-event-view.ts": 773,
     "apps/web/test/api.test.ts": 2488,

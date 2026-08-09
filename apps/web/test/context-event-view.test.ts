@@ -132,6 +132,26 @@ describe("Context event trace view", () => {
     expect(contextEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects Model Adapter receipts without provider context", () => {
+    const event = contextEvent("context.model_adapter", {
+      kind: "napier.model-adapter-selection",
+      schemaVersion: 1,
+      adapterId: "napier.anthropic-messages.v1",
+      family: "anthropic",
+      adapterVersion: 1,
+      modelApi: "anthropic-messages",
+      cacheRetention: "long",
+      cacheRetentionSource: "adapter",
+      contentSha256: "8".repeat(64),
+      systemPrompt: "TOP_SECRET_PROVIDER_CONTEXT",
+    });
+
+    expect(contextEventTraceSummary(event)).toBe(
+      `context / model_adapter / schema 1 / content ${"8".repeat(12)}`,
+    );
+    expect(contextEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("projects local tool invocation capsules without arguments", () => {
     const event = contextEvent("context.tool_invocation", {
       kind: "napier.tool-invocation-capsule-receipt",

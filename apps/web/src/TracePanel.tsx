@@ -31,11 +31,12 @@ import {
 } from "./agent-milestone-api";
 import { agentMilestoneCopy } from "./agent-milestone-copy";
 import { copy } from "./copy";
+import { modelAdapterViews } from "./model-adapter-view";
+import { modelContextEnvelopeViews } from "./model-context-envelope-view";
 import {
-  modelContextEnvelopeViews,
-  type ModelContextEnvelopeView,
-} from "./model-context-envelope-view";
-import { modelContextEnvelopeCopy } from "./model-context-envelope-copy";
+  ModelAdapterLedger,
+  ModelContextEnvelopeLedger,
+} from "./ModelContextTraceLedgers";
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
 import {
   independentModelAdvisorVerificationState,
@@ -95,6 +96,7 @@ export default function TracePanel({
   const milestoneEventSeq = latestAgentMilestoneEventSeq(events);
   const advisorReviews = independentModelAdvisorReviewViews(events);
   const contextEnvelopes = modelContextEnvelopeViews(events);
+  const modelAdapters = modelAdapterViews(events);
   const loopGuardTriggers = toolLoopGuardTriggerViews(events);
   const summaryCoverage = traceSummaryCoverageView(events);
   const summaryCoverageGenericTypesKey =
@@ -307,6 +309,7 @@ export default function TracePanel({
         milestones={milestones}
         unavailable={milestonesUnavailable}
       />
+      <ModelAdapterLedger adapters={modelAdapters} />
       <ModelContextEnvelopeLedger envelopes={contextEnvelopes} />
       <IndependentAdvisorLedger reviews={advisorReviews} />
       <ToolLoopGuardLedger triggers={loopGuardTriggers} />
@@ -420,129 +423,6 @@ function TraceEventListItem({ event }: { event: RunEvent }) {
         </footer>
       </div>
     </li>
-  );
-}
-
-function ModelContextEnvelopeLedger({
-  envelopes,
-}: {
-  envelopes: ModelContextEnvelopeView[];
-}) {
-  return (
-    <section
-      className="tool-loop-guard-ledger model-context-envelope-ledger"
-      aria-labelledby="model-context-envelope-title"
-    >
-      <header>
-        <div>
-          <span>{modelContextEnvelopeCopy.eyebrow}</span>
-          <h3 id="model-context-envelope-title">
-            {modelContextEnvelopeCopy.title}
-          </h3>
-        </div>
-        <span>{String(envelopes.length).padStart(2, "0")}</span>
-      </header>
-      {envelopes.length === 0 ? (
-        <p>{modelContextEnvelopeCopy.empty}</p>
-      ) : (
-        <ol>
-          {envelopes
-            .slice()
-            .reverse()
-            .map((envelope) => (
-              <li
-                className="tool-loop-guard-card model-context-envelope-card"
-                key={`${envelope.eventSeq}:${envelope.contentSha256}`}
-              >
-                <header>
-                  <span>
-                    <ShieldCheck size={11} aria-hidden="true" />
-                    {modelContextEnvelopeCopy.turn} {envelope.turnIndex}
-                  </span>
-                  <code>#{String(envelope.eventSeq).padStart(3, "0")}</code>
-                </header>
-                <dl>
-                  <div>
-                    <dt>{modelContextEnvelopeCopy.messages}</dt>
-                    <dd>{envelope.messageCount}</dd>
-                  </div>
-                  <div>
-                    <dt>{modelContextEnvelopeCopy.users}</dt>
-                    <dd>{envelope.userMessageCount}</dd>
-                  </div>
-                  <div>
-                    <dt>{modelContextEnvelopeCopy.assistants}</dt>
-                    <dd>{envelope.assistantMessageCount}</dd>
-                  </div>
-                  <div>
-                    <dt>{modelContextEnvelopeCopy.tools}</dt>
-                    <dd>{envelope.toolResultMessageCount}</dd>
-                  </div>
-                </dl>
-                <dl>
-                  <div>
-                    <dt>{modelContextEnvelopeCopy.other}</dt>
-                    <dd>{envelope.otherMessageCount}</dd>
-                  </div>
-                  <div>
-                    <dt>{modelContextEnvelopeCopy.promptBytes}</dt>
-                    <dd>{envelope.systemPromptBytes}</dd>
-                  </div>
-                  <div>
-                    <dt>{modelContextEnvelopeCopy.toolCount}</dt>
-                    <dd>{envelope.toolCount}</dd>
-                  </div>
-                </dl>
-                <p>
-                  <span>{modelContextEnvelopeCopy.prompt}</span>
-                  <code title={envelope.systemPromptSha256}>
-                    {envelope.systemPromptSha256.slice(0, 12)}
-                  </code>
-                </p>
-                <p>
-                  <span>{modelContextEnvelopeCopy.messageSet}</span>
-                  <code title={envelope.messageSetSha256}>
-                    {envelope.messageSetSha256.slice(0, 12)}
-                  </code>
-                </p>
-                <p>
-                  <span>{modelContextEnvelopeCopy.toolNames}</span>
-                  <code title={envelope.toolNameSetSha256}>
-                    {envelope.toolNameSetSha256.slice(0, 12)}
-                  </code>
-                </p>
-                <p>
-                  <span>{modelContextEnvelopeCopy.toolDefinitions}</span>
-                  <code title={envelope.toolDefinitionSetSha256}>
-                    {envelope.toolDefinitionSetSha256.slice(0, 12)}
-                  </code>
-                </p>
-                {envelope.responseSeq !== undefined ? (
-                  <p>
-                    <span>{modelContextEnvelopeCopy.response}</span>
-                    <code>
-                      #{String(envelope.responseSeq).padStart(3, "0")} ·{" "}
-                      {envelope.responseModel} · {modelContextEnvelopeCopy.stop}{" "}
-                      {envelope.responseStopReason}
-                    </code>
-                  </p>
-                ) : (
-                  <p>
-                    <span>{modelContextEnvelopeCopy.response}</span>
-                    <code>{modelContextEnvelopeCopy.responseMissing}</code>
-                  </p>
-                )}
-                <footer>
-                  <span>{modelContextEnvelopeCopy.receipt}</span>
-                  <code title={envelope.contentSha256}>
-                    {envelope.contentSha256.slice(0, 12)}
-                  </code>
-                </footer>
-              </li>
-            ))}
-        </ol>
-      )}
-    </section>
   );
 }
 
