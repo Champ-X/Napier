@@ -52,23 +52,18 @@ const verifyWorkspaceSchema = Type.Object(
       Type.String({
         minLength: 1,
         maxLength: 500,
-        description:
-          "Workspace-relative working directory. Defaults to the workspace root.",
       }),
     ),
     target: Type.Optional(
       Type.String({
         minLength: 1,
         maxLength: 500,
-        description:
-          "Path relative to cwd for a config, test, or format target. Typecheck defaults to cwd/tsconfig.json; test defaults to all tests in cwd; format defaults to cwd.",
       }),
     ),
     timeoutMs: Type.Optional(
       Type.Integer({
         minimum: MIN_TIMEOUT_MS,
         maximum: MAX_TIMEOUT_MS,
-        description: "Wall-time budget in milliseconds.",
       }),
     ),
   },
@@ -320,7 +315,7 @@ export function createVerificationTool(
     name: "verify_workspace",
     label: "Verify workspace",
     description:
-      "Run a bounded TypeScript typecheck, Vitest test, or Prettier format check through Napier's OS sandbox. The workspace is read-only, networking is disabled, no package script or shell is used, and stdout/stderr are bounded.",
+      "Run bounded typecheck/test/format via pinned TypeScript/Vitest/Prettier toolchain in a read-only offline OS sandbox. workspace-relative cwd defaults root; target defaults to tsconfig/all tests/cwd respectively; timeoutMs bounds it. No package script/shell; output bounded.",
     parameters: verifyWorkspaceSchema,
     async execute(_toolCallId, input, signal) {
       const result = await runner.run(input, signal);

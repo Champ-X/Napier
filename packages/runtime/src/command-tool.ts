@@ -22,13 +22,9 @@ const commandSchema = Type.Object(
       Type.String({
         maxLength: MAX_COMMAND_ARGUMENT_CHARS,
         pattern: COMMAND_ARGUMENT_PATTERN,
-        description:
-          "One literal argv item. Shell syntax, interpolation, and environment expansion are not evaluated.",
       }),
       {
         maxItems: MAX_COMMAND_ARGUMENTS,
-        description:
-          "Explicit argv passed directly to the selected runtime without a shell command string.",
       },
     ),
     cwd: Type.Optional(
@@ -36,15 +32,12 @@ const commandSchema = Type.Object(
         minLength: 1,
         maxLength: 500,
         pattern: COMMAND_ARGUMENT_PATTERN,
-        description:
-          "Workspace-relative working directory. Defaults to the workspace root.",
       }),
     ),
     timeoutMs: Type.Optional(
       Type.Integer({
         minimum: MIN_COMMAND_TIMEOUT_MS,
         maximum: MAX_COMMAND_TIMEOUT_MS,
-        description: "Wall-time budget in milliseconds.",
       }),
     ),
   },
@@ -59,7 +52,7 @@ export function createCommandTool(
     name: "run_command",
     label: "Run command",
     description:
-      "Run Node with explicit argv in a bounded OS sandbox. The workspace is read-only, network and inherited environment access are denied, output and wall time are capped, and no user-provided shell command string is evaluated.",
+      "Run Node with literal argv (no shell/interpolation/env expansion) in a bounded OS sandbox. Optional workspace-relative cwd defaults root; timeoutMs bounds wall time. Workspace is read-only/offline, inherited env denied, output capped.",
     parameters: commandSchema,
     async execute(_toolCallId, input, signal) {
       const result = await runner.run(input, signal);
