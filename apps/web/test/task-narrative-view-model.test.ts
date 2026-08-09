@@ -48,6 +48,102 @@ describe("Task narrative", () => {
     );
   });
 
+  it("does not let an older completed run hide interrupted recovery", () => {
+    const detail = fixture();
+    detail.thread.status = "waiting";
+    detail.runs.push(run("completed"), interruptedRun());
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phase: "waiting",
+        phaseLabel: "Recovering",
+        currentAction: "Assessing the interrupted run",
+        blocker: "Recovery safety evidence is being evaluated.",
+      }),
+    );
+  });
+
+  it("shows safety-blocked automatic recovery", () => {
+    const detail = recoveryFixture();
+    detail.automaticRecoveryAssessments.push(
+      recoveryAssessment(false, ["unsafe_tool_effect"]),
+    );
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phase: "blocked",
+        phaseLabel: "Recovery blocked",
+        currentAction: "Automatic recovery stopped safely",
+        blocker: "1 safety condition requires review.",
+      }),
+    );
+  });
+
+  it("shows running and terminal recovery attempts", () => {
+    const running = recoveryFixture();
+    const assessment = recoveryAssessment(true);
+    running.automaticRecoveryAssessments.push(assessment);
+    running.automaticRecoveryAttempts.push(recoveryAttempt("running"));
+    running.runs.push(recoveryRun("running"));
+    running.thread.status = "running";
+    running.thread.currentRunId = "run_recovery";
+
+    expect(taskNarrative(running)).toEqual(
+      expect.objectContaining({
+        phase: "working",
+        phaseLabel: "Recovering",
+        currentAction: "Restoring from verified read-only evidence",
+        nextStep: "Attempt 1/2 is in progress.",
+      }),
+    );
+
+    const failed = recoveryFixture();
+    failed.automaticRecoveryAssessments.push(assessment);
+    failed.automaticRecoveryAttempts.push(recoveryAttempt("failed"));
+    failed.runs.push(recoveryRun("failed"));
+    failed.thread.status = "failed";
+    expect(taskNarrative(failed)).toEqual(
+      expect.objectContaining({
+        phase: "failed",
+        phaseLabel: "Recovery failed",
+        blocker: "Attempt 1/2 failed.",
+      }),
+    );
+
+    const completed = recoveryFixture();
+    completed.automaticRecoveryAssessments.push(assessment);
+    completed.automaticRecoveryAttempts.push(recoveryAttempt("completed"));
+    completed.runs.push(recoveryRun("completed"));
+    completed.thread.status = "idle";
+    expect(taskNarrative(completed)).toEqual(
+      expect.objectContaining({
+        phase: "completed",
+        phaseLabel: "Recovered",
+        currentAction: "Interrupted work recovered",
+      }),
+    );
+  });
+
+  it("ignores an old recovery chain after newer work settles", () => {
+    const detail = recoveryFixture();
+    const assessment = recoveryAssessment(true);
+    detail.automaticRecoveryAssessments.push(assessment);
+    detail.automaticRecoveryAttempts.push(recoveryAttempt("completed"));
+    detail.runs.push(recoveryRun("completed"), {
+      ...run("completed"),
+      id: "run_newer",
+    });
+    detail.thread.status = "idle";
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phase: "completed",
+        phaseLabel: "Settled",
+        currentAction: "Latest run completed",
+      }),
+    );
+  });
+
   it("shows the running plan step before the latest tool", () => {
     const detail = fixture();
     detail.thread.status = "running";
@@ -191,6 +287,94 @@ function run(status: "running" | "completed"): ThreadDetail["runs"][number] {
       cacheWriteTokens: 0,
       costUsd: 0,
     },
+  };
+}
+
+function interruptedRun(): ThreadDetail["runs"][number] {
+  return {
+    ...run("completed"),
+    id: "run_interrupted",
+    status: "interrupted",
+    interruptedAt: timestamp(4),
+    interruptionReason: "Runtime restarted before settlement.",
+  };
+}
+
+function recoveryRun(
+  status: "running" | "failed" | "completed",
+): ThreadDetail["runs"][number] {
+  return {
+    ...run(status === "running" ? "running" : "completed"),
+    id: "run_recovery",
+    status,
+    source: "recovery",
+    parentRunId: "run_interrupted",
+    ...(status === "failed" ? { error: "Recovery timeout." } : {}),
+  };
+}
+
+function recoveryFixture(): ThreadDetail {
+  const detail = fixture();
+  detail.thread.status = "waiting";
+  detail.runs.push(run("completed"), interruptedRun());
+  return detail;
+}
+
+function recoveryAssessment(
+  eligible: boolean,
+  blockReasons: ThreadDetail["automaticRecoveryAssessments"][number]["blockReasons"] = [],
+): ThreadDetail["automaticRecoveryAssessments"][number] {
+  return {
+    schemaVersion: 1,
+    threadId: "thread_1",
+    runId: "run_interrupted",
+    rootRunId: "run_interrupted",
+    agentId: "agent_1",
+    policy: { mode: "safe_read_only", maxAttempts: 2, backoffMs: 1_000 },
+    eligible,
+    blockReasons,
+    toolCalls: {
+      total: 1,
+      readOnly: eligible ? 1 : 0,
+      unsafe: eligible ? 0 : 1,
+      unknownEffect: 0,
+      unresolved: 0,
+    },
+    unsafeToolNames: eligible ? [] : ["apply_patch"],
+    unknownEffectToolNames: [],
+    unresolvedToolNames: [],
+    eventRange: {
+      fromSeq: 1,
+      toSeq: 4,
+      eventCount: 4,
+      eventStreamSha256: "f".repeat(64),
+    },
+    priorAttempts: 0,
+    eligibleAt: timestamp(4),
+    assessedAt: timestamp(4),
+    contentSha256: "a".repeat(64),
+  };
+}
+
+function recoveryAttempt(
+  status: ThreadDetail["automaticRecoveryAttempts"][number]["status"],
+): ThreadDetail["automaticRecoveryAttempts"][number] {
+  return {
+    id: "recovery_1",
+    threadId: "thread_1",
+    agentId: "agent_1",
+    rootRunId: "run_interrupted",
+    interruptedRunId: "run_interrupted",
+    attempt: 1,
+    maxAttempts: 2,
+    triggerId: "automatic-recovery:run_interrupted:1",
+    assessmentSha256: "a".repeat(64),
+    status,
+    ...(status !== "claimed" ? { recoveryRunId: "run_recovery" } : {}),
+    createdAt: timestamp(4),
+    updatedAt: timestamp(5),
+    revision: 2,
+    contentSha256: "b".repeat(64),
   };
 }
 

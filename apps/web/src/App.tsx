@@ -10,7 +10,7 @@ import { InspectorNavigation } from "./InspectorNavigation";
 import { LedgerNavigation } from "./LedgerNavigation";
 import { ResponsiveInspector } from "./ResponsiveInspector";
 import { RunDecisionDockets } from "./RunDecisionDockets";
-import { TaskNarrativeBar } from "./TaskNarrativeBar";
+import { TaskNarrativeBoundary } from "./TaskNarrativeBoundary";
 import { useWorkspaceViewModel } from "./use-workspace-view-model";
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
 const LazyGoalPanel = lazy(() => import("./GoalPanel"));
@@ -105,7 +105,7 @@ export function App() {
           </div>
         </header>
 
-        <TaskNarrativeBar detail={vm.detail} />
+        <TaskNarrativeBoundary detail={vm.detail} />
         <div className="workbench-notices">
           {vm.error ? (
             <div className="error-banner" role="alert">

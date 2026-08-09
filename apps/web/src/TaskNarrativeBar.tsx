@@ -11,7 +11,13 @@ export function TaskNarrativeBar({
 }: {
   detail: Pick<
     ThreadDetail,
-    "thread" | "runs" | "plans" | "events" | "operatorDecisions"
+    | "thread"
+    | "runs"
+    | "plans"
+    | "events"
+    | "operatorDecisions"
+    | "automaticRecoveryAssessments"
+    | "automaticRecoveryAttempts"
   > | undefined;
 }) {
   const [now, setNow] = useState(() => Date.now());
@@ -68,3 +74,5 @@ export function TaskNarrativeBar({
     </section>
   );
 }
+
+export default TaskNarrativeBar;

@@ -21,7 +21,13 @@ export interface TaskNarrative {
 export function taskNarrative(
   detail: Pick<
     ThreadDetail,
-    "thread" | "runs" | "plans" | "events" | "operatorDecisions"
+    | "thread"
+    | "runs"
+    | "plans"
+    | "events"
+    | "operatorDecisions"
+    | "automaticRecoveryAssessments"
+    | "automaticRecoveryAttempts"
   > | undefined,
   now = Date.now(),
 ): TaskNarrative {
@@ -40,19 +46,16 @@ export function taskNarrative(
       .filter((step) => step.status === "completed")
       .slice(-3)
       .map((step) => step.title) ?? [];
-
-  if (openDecision) {
-    const run = detail.runs.find((candidate) => candidate.id === openDecision.runId);
-    return {
-      phase: "waiting",
-      phaseLabel: "Waiting",
-      currentAction: openDecision.header,
+  if (openDecision)
+    return operatorDecisionNarrative(
+      detail.runs,
+      openDecision,
       completedItems,
-      ...(run ? { metrics: runMetrics(run, now) } : {}),
-      blocker: "Operator input is required before the run can continue.",
-      ...(nextStep ? { nextStep: nextStep.title } : {}),
-    };
-  }
+      nextStep?.title,
+      now,
+    );
+  const recovery = recoveryNarrative(detail, completedItems, now);
+  if (recovery) return recovery;
   if (blockedStep || detail.thread.status === "failed") {
     const failedRun = detail.runs.findLast((run) => run.status === "failed");
     const blocker =
@@ -115,6 +118,136 @@ export function taskNarrative(
     "Ready",
     nextStep ? `Ready to start: ${nextStep.title}` : "Describe the task to begin",
   );
+}
+
+function operatorDecisionNarrative(
+  runs: ThreadDetail["runs"],
+  decision: ThreadDetail["operatorDecisions"][number],
+  completedItems: string[],
+  nextStep: string | undefined,
+  now: number,
+): TaskNarrative {
+  const run = runs.find((candidate) => candidate.id === decision.runId);
+  return {
+    phase: "waiting",
+    phaseLabel: "Waiting",
+    currentAction: decision.header,
+    completedItems,
+    ...(run ? { metrics: runMetrics(run, now) } : {}),
+    blocker: "Operator input is required before the run can continue.",
+    ...(nextStep ? { nextStep } : {}),
+  };
+}
+
+function recoveryNarrative(
+  detail: Pick<
+    ThreadDetail,
+    | "thread"
+    | "runs"
+    | "automaticRecoveryAssessments"
+    | "automaticRecoveryAttempts"
+  >,
+  completedItems: string[],
+  now: number,
+): TaskNarrative | undefined {
+  const interrupted = detail.runs.findLast(
+    (run) => run.status === "interrupted",
+  );
+  if (!interrupted) return undefined;
+  const assessment = detail.automaticRecoveryAssessments.findLast(
+    (candidate) => candidate.runId === interrupted.id,
+  );
+  const attempt = assessment
+    ? detail.automaticRecoveryAttempts.findLast(
+        (candidate) =>
+          candidate.assessmentSha256 === assessment.contentSha256,
+      )
+    : undefined;
+  const latestRunId = detail.runs.at(-1)?.id;
+  if (
+    attempt?.recoveryRunId
+      ? latestRunId !== attempt.recoveryRunId
+      : latestRunId !== interrupted.id
+  ) {
+    return undefined;
+  }
+  if (!assessment && detail.thread.status === "waiting") {
+    return {
+      phase: "waiting",
+      phaseLabel: "Recovering",
+      currentAction: "Assessing the interrupted run",
+      completedItems,
+      metrics: runMetrics(interrupted, now),
+      blocker: "Recovery safety evidence is being evaluated.",
+    };
+  }
+  if (assessment && !assessment.eligible) {
+    return {
+      phase: "blocked",
+      phaseLabel: "Recovery blocked",
+      currentAction: "Automatic recovery stopped safely",
+      completedItems,
+      metrics: runMetrics(interrupted, now),
+      blocker: `${assessment.blockReasons.length} safety condition${
+        assessment.blockReasons.length === 1 ? "" : "s"
+      } ${assessment.blockReasons.length === 1 ? "requires" : "require"} review.`,
+      nextStep: "Review the Retry card or resume manually.",
+    };
+  }
+  if (assessment?.eligible && !attempt && detail.thread.status === "waiting") {
+    return {
+      phase: "waiting",
+      phaseLabel: "Recovering",
+      currentAction: "Waiting for a recovery claim",
+      completedItems,
+      metrics: runMetrics(interrupted, now),
+      blocker: "The verified retry is waiting for its recovery worker.",
+    };
+  }
+  if (attempt?.status === "claimed" || attempt?.status === "running") {
+    const recoveryRun = attempt.recoveryRunId
+      ? detail.runs.find((run) => run.id === attempt.recoveryRunId)
+      : undefined;
+    return {
+      phase: "working",
+      phaseLabel: "Recovering",
+      currentAction:
+        attempt.status === "claimed"
+          ? "Claiming the interrupted run"
+          : "Restoring from verified read-only evidence",
+      completedItems,
+      metrics: runMetrics(recoveryRun ?? interrupted, now),
+      nextStep: `Attempt ${attempt.attempt}/${attempt.maxAttempts} is in progress.`,
+    };
+  }
+  if (attempt?.status === "completed") {
+    const recoveryRun = attempt.recoveryRunId
+      ? detail.runs.find((run) => run.id === attempt.recoveryRunId)
+      : undefined;
+    return {
+      phase: "completed",
+      phaseLabel: "Recovered",
+      currentAction: "Interrupted work recovered",
+      completedItems,
+      metrics: runMetrics(recoveryRun ?? interrupted, now),
+      nextStep: "Inspect the recovered output or start a follow-up task.",
+    };
+  }
+  if (
+    attempt &&
+    ["failed", "cancelled", "interrupted", "abandoned"].includes(attempt.status)
+  ) {
+    return {
+      phase: "failed",
+      phaseLabel: "Recovery failed",
+      currentAction: "Review the recovery attempt",
+      completedItems,
+      metrics: runMetrics(interrupted, now),
+      blocker: `Attempt ${attempt.attempt}/${attempt.maxAttempts} ${attempt.status}.`,
+      nextStep: "Review the Retry card or resume manually.",
+    };
+  }
+  return undefined;
 }
 
 function latestToolAction(
