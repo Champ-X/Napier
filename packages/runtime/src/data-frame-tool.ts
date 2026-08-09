@@ -126,12 +126,9 @@ const dataFrameSchema = Type.Object(
     path: Type.String({
       minLength: 1,
       maxLength: 500,
-      description:
-        "Workspace-relative UTF-8 JSON, JSONL, CSV, TSV, or Markdown table path.",
     }),
     sourceSha256: Type.String({
       pattern: "^[a-f0-9]{64}$",
-      description: "Exact file SHA-256 returned by inspect_data.",
     }),
     format: Type.Optional(
       Type.Union([
@@ -146,8 +143,6 @@ const dataFrameSchema = Type.Object(
     operations: Type.Array(operationSchema, {
       minItems: 1,
       maxItems: MAX_DATA_FRAME_OPERATIONS,
-      description:
-        "Ordered explicit cast, filter, select, sort, group, or limit operations.",
     }),
   },
   { additionalProperties: false },
@@ -184,7 +179,7 @@ export function createDataFrameTool(
     name: "data_frame",
     label: "DataFrame",
     description:
-      "Transform one hash-bound UTF-8 JSON, JSONL, CSV, TSV, or Markdown table with a bounded deterministic DataFrame plan. Run inspect_data first. CSV/TSV/Markdown cells remain strings until an explicit cast. Supports ordered cast, typed filter, select, stable null-last sort, group aggregations, and limit over up to 10,000 source rows; the complete result must fit 1,000 rows and 256 KiB. Returns complete table JSON live only. Write it with apply_patch and verify the Plan Artifact. No expressions, code, imports, filesystem writes, network, implicit numeric coercion, or nested values are allowed.",
+      "Transform one workspace JSON, JSONL, CSV, TSV, or Markdown table with ordered cast, filter, select, sort, group, and limit operations. Run inspect_data first and pass its sourceSha256; cast delimited or Markdown cells before numeric operations. No expressions, code, I/O, network, implicit numeric coercion, or nested values; output is complete live JSON only.",
     parameters: dataFrameSchema,
     async execute(_toolCallId, input, signal) {
       const result = await executeDataFrame(workspaceRoot, input, signal);
