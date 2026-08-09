@@ -19,58 +19,34 @@ const visiblePath = Type.String({
   pattern: "^[^\\u0000-\\u001f\\u007f]+$",
 });
 
-const previewSchema = Type.Union([
-  Type.Object(
-    {
-      action: Type.Literal("list_trash"),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("preview"),
-      operation: Type.Literal("create_directory"),
-      path: visiblePath,
-      createParentDirectories: Type.Optional(Type.Boolean()),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("preview"),
-      operation: Type.Literal("move"),
-      sourcePath: visiblePath,
-      destinationPath: visiblePath,
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("preview"),
-      operation: Type.Literal("trash"),
-      path: visiblePath,
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("preview"),
-      operation: Type.Literal("restore"),
-      trashId: Type.String({
+const previewSchema = Type.Object(
+  {
+    action: Type.Union([Type.Literal("list_trash"), Type.Literal("preview")]),
+    operation: Type.Optional(
+      Type.Union([
+        Type.Literal("create_directory"),
+        Type.Literal("move"),
+        Type.Literal("trash"),
+        Type.Literal("restore"),
+      ]),
+    ),
+    path: Type.Optional(visiblePath),
+    sourcePath: Type.Optional(visiblePath),
+    destinationPath: Type.Optional(visiblePath),
+    createParentDirectories: Type.Optional(Type.Boolean()),
+    trashId: Type.Optional(
+      Type.String({
         pattern: "^trash_[a-z0-9]{8,80}$",
       }),
-    },
-    { additionalProperties: false },
-  ),
-]);
-Object.assign(previewSchema, { type: "object" });
+    ),
+  },
+  { additionalProperties: false },
+);
 
 const applySchema = Type.Object(
   {
     previewId: Type.String({
       pattern: "^filepreview_[a-z0-9]{8,80}$",
-      description:
-        "One-use preview ID returned by workspace_file_preview in this Run.",
     }),
   },
   { additionalProperties: false },
@@ -104,10 +80,20 @@ export function createWorkspaceFilePreviewTool(
     name: "workspace_file_preview",
     label: "Workspace file preview",
     description:
-      "Preview a bounded create-directory, move, reversible-trash, or restore operation without mutating the workspace, or list reversible trash. Apply requires the returned one-use preview ID through workspace_file_apply.",
+      "Use action=list_trash alone, or action=preview with exactly one operation: create_directory(path, optional parents), move(sourcePath,destinationPath), trash(path), or restore(trashId). Preview is bounded and non-mutating; apply its one-use ID via workspace_file_apply.",
     parameters: previewSchema,
     async execute(_toolCallId, input, signal) {
       if (input.action === "list_trash") {
+        if (
+          input.operation !== undefined ||
+          input.path !== undefined ||
+          input.sourcePath !== undefined ||
+          input.destinationPath !== undefined ||
+          input.createParentDirectories !== undefined ||
+          input.trashId !== undefined
+        ) {
+          invalidPreviewRequest();
+        }
         const list = await manager.listTrash(context.threadId);
         const details = listedDetails(list.items);
         const lines =
@@ -145,7 +131,7 @@ export function createWorkspaceFileApplyTool(
     name: "workspace_file_apply",
     label: "Apply workspace file operation",
     description:
-      "Apply one fresh, one-use Workspace file mutation preview. This tool accepts no paths, refuses an occupied destination at its final check, and never performs permanent deletion.",
+      "Apply one fresh one-use previewId from this Run; no paths accepted. Refuses stale preview or occupied destination at final check and never performs permanent deletion.",
     parameters: applySchema,
     async execute(_toolCallId, input, signal) {
       const result = await manager.apply(
@@ -228,33 +214,57 @@ export function workspaceFileToolOutputLedgerProjection(
 }
 
 function previewRequest(input: {
-  operation: "create_directory" | "move" | "trash" | "restore";
+  operation?: "create_directory" | "move" | "trash" | "restore";
   path?: string;
   sourcePath?: string;
   destinationPath?: string;
   createParentDirectories?: boolean;
   trashId?: string;
 }): WorkspaceFileMutationRequest {
+  if (
+    input.operation !== "create_directory" &&
+    input.createParentDirectories !== undefined
+  ) {
+    invalidPreviewRequest();
+  }
+  const fields = [
+    input.path,
+    input.sourcePath,
+    input.destinationPath,
+    input.trashId,
+  ].filter((value) => value !== undefined).length;
   if (input.operation === "create_directory") {
+    if (!input.path || fields !== 1) invalidPreviewRequest();
     return {
       operation: input.operation,
-      path: input.path!,
+      path: input.path,
       ...(input.createParentDirectories === true
         ? { createParentDirectories: true }
         : {}),
     };
   }
   if (input.operation === "move") {
+    if (!input.sourcePath || !input.destinationPath || fields !== 2) {
+      invalidPreviewRequest();
+    }
     return {
       operation: input.operation,
-      sourcePath: input.sourcePath!,
-      destinationPath: input.destinationPath!,
+      sourcePath: input.sourcePath,
+      destinationPath: input.destinationPath,
     };
   }
   if (input.operation === "trash") {
-    return { operation: input.operation, path: input.path! };
+    if (!input.path || fields !== 1) invalidPreviewRequest();
+    return { operation: input.operation, path: input.path };
   }
-  return { operation: input.operation, trashId: input.trashId! };
+  if (input.operation !== "restore" || !input.trashId || fields !== 1) {
+    invalidPreviewRequest();
+  }
+  return { operation: input.operation, trashId: input.trashId };
+}
+
+function invalidPreviewRequest(): never {
+  throw new Error("Workspace file preview fields do not match operation");
 }
 
 function previewToolResult(preview: WorkspaceFileMutationPreview) {
