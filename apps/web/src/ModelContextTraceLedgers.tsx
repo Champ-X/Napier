@@ -18,6 +18,8 @@ const adapterCopy = {
   empty: "No Model Adapter selection has been recorded for this Thread.",
   api: "API",
   cache: "Cache",
+  maxTokens: "Stream cap",
+  modelCap: "Model cap",
   source: "Source",
   receipt: "Receipt",
 } as const;
@@ -217,7 +219,23 @@ export function ModelAdapterLedger({
                     <dt>{adapterCopy.source}</dt>
                     <dd>{adapter.cacheRetentionSource}</dd>
                   </div>
+                  <div>
+                    <dt>{adapterCopy.maxTokens}</dt>
+                    <dd>
+                      {adapter.streamOptionMaxTokens ?? "legacy unavailable"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{adapterCopy.modelCap}</dt>
+                    <dd>{adapter.modelMaxTokens ?? "legacy unavailable"}</dd>
+                  </div>
                 </dl>
+                {adapter.streamOptionMaxTokensSource ? (
+                  <p>
+                    <span>Token source</span>
+                    <code>{adapter.streamOptionMaxTokensSource}</code>
+                  </p>
+                ) : null}
                 <p>
                   <span>Adapter</span>
                   <code>{adapter.adapterId}</code>

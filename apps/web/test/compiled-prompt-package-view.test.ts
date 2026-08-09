@@ -68,6 +68,10 @@ describe("compiled Prompt package trace view", () => {
         "4bd4be0290317713104cbeb5dca77e3ec62757849e3bea0fb14645f54beeadda",
       bytes: 922,
     };
+    modern["modelAdapter"] = {
+      adapterId: "napier.anthropic-messages.v2",
+      adapterContentSha256: "2".repeat(64),
+    };
     const drifted = structuredClone(modern);
     (drifted["invariantCore"] as Record<string, JsonValue>)["version"] =
       "napier.invariant-core.v2";

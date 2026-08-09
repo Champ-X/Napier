@@ -88,7 +88,7 @@ describe("compiled Prompt package", () => {
           toolDefinitionSetSha256: envelope.toolDefinitionSetSha256,
         },
         modelAdapter: {
-          adapterId: "napier.anthropic-messages.v1",
+          adapterId: "napier.anthropic-messages.v2",
           adapterContentSha256: adapter.contentSha256,
         },
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
@@ -141,6 +141,10 @@ describe("compiled Prompt package", () => {
       ...legacyContent,
       schemaVersion: 1 as const,
       packageVersion: "napier.prompt-context.v1" as const,
+      modelAdapter: {
+        ...legacyContent.modelAdapter,
+        adapterId: "napier.anthropic-messages.v1" as const,
+      },
     };
     expect(
       validateCompiledPromptPackageReceipt({

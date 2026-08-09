@@ -118,8 +118,13 @@ describe("OpenTelemetry Prompt evidence", () => {
       "napier.event.payload.content_sha256": adapter.contentSha256,
       "napier.event.payload.family": adapter.family,
       "napier.event.payload.kind": adapter.kind,
+      "napier.event.payload.model_max_tokens": adapter.modelMaxTokens,
       "napier.event.payload.model_api": adapter.modelApi,
       "napier.event.payload.schema_version": adapter.schemaVersion,
+      "napier.event.payload.stream_option_max_tokens":
+        adapter.streamOptionMaxTokens,
+      "napier.event.payload.stream_option_max_tokens_source":
+        adapter.streamOptionMaxTokensSource,
     });
     expect(adapterEvent.droppedAttributesCount).toBe(0);
     const promptEvent = findEvent(artifact, "context.prompt_package");
@@ -250,6 +255,23 @@ describe("OpenTelemetry Prompt evidence", () => {
       spanCount: 0,
       eventCount: 0,
     });
+    const adapterDrift = structuredClone(artifact);
+    const adapterEvent = findEvent(adapterDrift, "context.model_adapter");
+    setAttributeValue(
+      adapterEvent.attributes,
+      "napier.event.payload.stream_option_max_tokens",
+      1,
+    );
+    rehashArtifact(adapterDrift);
+    expect(() => validateOpenTelemetryTraceArtifact(adapterDrift)).toThrow(
+      "event anchor set binding",
+    );
+    expect(verifyOpenTelemetryTraceArtifact(adapterDrift)).toEqual({
+      status: "invalid",
+      diagnostics: ["event_anchor_mismatch"],
+      spanCount: 0,
+      eventCount: 0,
+    });
 
     await store.appendEvent({
       threadId: thread.id,
@@ -309,11 +331,14 @@ function attributeValue(attribute: OtlpKeyValue): string | number | boolean {
 function setAttributeValue(
   attributes: OtlpKeyValue[],
   key: string,
-  value: string,
+  value: string | number,
 ): void {
   const attribute = attributes.find((item) => item.key === key);
   if (!attribute) throw new Error(`Missing OTLP attribute: ${key}`);
-  attribute.value = { stringValue: value };
+  attribute.value =
+    typeof value === "string"
+      ? { stringValue: value }
+      : { intValue: String(value) };
 }
 
 function rehashArtifact(artifact: OpenTelemetryTraceArtifact): void {

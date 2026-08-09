@@ -19,6 +19,7 @@ export const PROMPT_EVIDENCE_OTEL_KEYS = new Set([
   "napier.event.payload.kind",
   "napier.event.payload.lossless",
   "napier.event.payload.model_api",
+  "napier.event.payload.model_max_tokens",
   "napier.event.payload.package_version",
   "napier.event.payload.partition_sha256",
   "napier.event.payload.prompt_invariant_core_bytes",
@@ -30,6 +31,8 @@ export const PROMPT_EVIDENCE_OTEL_KEYS = new Set([
   "napier.event.payload.segment_count",
   "napier.event.payload.system_prompt_bytes",
   "napier.event.payload.system_prompt_sha256",
+  "napier.event.payload.stream_option_max_tokens",
+  "napier.event.payload.stream_option_max_tokens_source",
   "napier.event.payload.token_estimate_method",
   "napier.event.payload.tool_count",
   "napier.event.payload.tool_definition_set_sha256",
@@ -53,6 +56,15 @@ export function promptEvidenceOtelAttributes(
       "napier.event.payload.family": receipt.family,
       "napier.event.payload.kind": receipt.kind,
       "napier.event.payload.model_api": receipt.modelApi,
+      ...(receipt.schemaVersion === 2
+        ? {
+            "napier.event.payload.model_max_tokens": receipt.modelMaxTokens,
+            "napier.event.payload.stream_option_max_tokens":
+              receipt.streamOptionMaxTokens,
+            "napier.event.payload.stream_option_max_tokens_source":
+              receipt.streamOptionMaxTokensSource,
+          }
+        : {}),
       "napier.event.payload.schema_version": receipt.schemaVersion,
     };
   }

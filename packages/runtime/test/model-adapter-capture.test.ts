@@ -71,6 +71,8 @@ describe("Model adapter capture", () => {
       expect(
         observedOptions.every((options) => options?.cacheRetention === "long"),
       ).toBe(true);
+      expect(observedOptions[0]?.maxTokens).toBe(16_384);
+      expect(observedOptions.at(-1)?.maxTokens).toBe(700);
       const events = await services.store.listEvents(thread.id);
       const adapterEvents = events.filter(
         (event) =>
@@ -85,13 +87,16 @@ describe("Model adapter capture", () => {
       expect(adapterEvents[0]?.payload).toEqual(
         expect.objectContaining({
           kind: "napier.model-adapter-selection",
-          schemaVersion: 1,
-          adapterId: "napier.anthropic-messages.v1",
+          schemaVersion: 2,
+          adapterId: "napier.anthropic-messages.v2",
           family: "anthropic",
-          adapterVersion: 1,
+          adapterVersion: 2,
           modelApi: "anthropic-messages",
           cacheRetention: "long",
           cacheRetentionSource: "adapter",
+          streamOptionMaxTokens: 16_384,
+          streamOptionMaxTokensSource: "model",
+          modelMaxTokens: 16_384,
           contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         }),
       );
@@ -128,7 +133,7 @@ describe("Model adapter capture", () => {
             toolDefinitionSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
           }),
           modelAdapter: {
-            adapterId: "napier.anthropic-messages.v1",
+            adapterId: "napier.anthropic-messages.v2",
             adapterContentSha256: adapterEvents[0]?.payload["contentSha256"],
           },
           contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
@@ -146,6 +151,7 @@ describe("Model adapter capture", () => {
         String(invocation!.payload["capsuleSha256"]),
       );
       expect(capsule.options.cacheRetention).toBe("long");
+      expect(capsule.options.maxTokens).toBe(16_384);
       const snapshot = await createRunReplaySnapshot(
         services.store,
         thread.id,

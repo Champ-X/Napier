@@ -50,7 +50,10 @@ export interface CompiledPromptPackageView {
   adapterId:
     | "napier.anthropic-messages.v1"
     | "napier.openai-family.v1"
-    | "napier.generic.v1";
+    | "napier.generic.v1"
+    | "napier.anthropic-messages.v2"
+    | "napier.openai-family.v2"
+    | "napier.generic.v2";
   adapterContentSha256: string;
   contentSha256: string;
 }
@@ -107,7 +110,7 @@ function compiledPromptPackageView(
   const scalars = scalarView(payload);
   const layers = layerViews(payload["layers"]);
   const capabilities = capabilityView(payload["effectiveCapabilities"]);
-  const adapter = adapterView(payload["modelAdapter"]);
+  const adapter = adapterView(payload["modelAdapter"], generation);
   const purpose =
     generation === "modern" ? purposeView(payload["purpose"]) : undefined;
   const invariantCore =
@@ -345,6 +348,7 @@ function capabilityView(
 
 function adapterView(
   input: unknown,
+  generation: PackageGeneration,
 ):
   | Pick<CompiledPromptPackageView, "adapterId" | "adapterContentSha256">
   | undefined {
@@ -352,11 +356,16 @@ function adapterView(
   const adapterId =
     input["adapterId"] === "napier.anthropic-messages.v1" ||
     input["adapterId"] === "napier.openai-family.v1" ||
-    input["adapterId"] === "napier.generic.v1"
+    input["adapterId"] === "napier.generic.v1" ||
+    input["adapterId"] === "napier.anthropic-messages.v2" ||
+    input["adapterId"] === "napier.openai-family.v2" ||
+    input["adapterId"] === "napier.generic.v2"
       ? input["adapterId"]
       : undefined;
   const adapterContentSha256 = hash(input["adapterContentSha256"]);
-  return adapterId && adapterContentSha256
+  return adapterId &&
+    adapterContentSha256 &&
+    adapterId.endsWith(generation === "modern" ? ".v2" : ".v1")
     ? { adapterId, adapterContentSha256 }
     : undefined;
 }

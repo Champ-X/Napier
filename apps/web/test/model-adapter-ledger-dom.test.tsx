@@ -30,7 +30,36 @@ describe("Model Adapter ledger", () => {
     expect(text).toContain("long");
     expect(text).toContain("napier.anthropic-messages.v1");
     expect(text).toContain("a".repeat(12));
+    expect(text).toContain("legacy unavailable");
     expect(text).not.toContain("TOP_SECRET");
+  });
+
+  it("renders v2 output-token policy", () => {
+    const tree = ModelAdapterLedger({
+      adapters: [
+        {
+          eventSeq: 22,
+          runId: "run_adapter_v2",
+          adapterId: "napier.openai-family.v2",
+          family: "openai",
+          adapterVersion: 2,
+          modelApi: "openai-responses",
+          cacheRetention: "short",
+          cacheRetentionSource: "adapter",
+          streamOptionMaxTokens: 16_384,
+          streamOptionMaxTokensSource: "adapter",
+          modelMaxTokens: 64_000,
+          contentSha256: "b".repeat(64),
+        },
+      ],
+    });
+    const text = visibleText(tree);
+
+    expect(text).toContain("openai · v2");
+    expect(text).toContain("16384");
+    expect(text).toContain("64000");
+    expect(text).toContain("Token source");
+    expect(text).toContain("adapter");
   });
 
   it("renders five Prompt layers without raw Prompt or tool names", () => {
@@ -129,7 +158,7 @@ describe("Model Adapter ledger", () => {
           toolCount: 4,
           toolNameSetSha256: "3".repeat(64),
           toolDefinitionSetSha256: "4".repeat(64),
-          adapterId: "napier.anthropic-messages.v1",
+          adapterId: "napier.anthropic-messages.v2",
           adapterContentSha256: "2".repeat(64),
           contentSha256: "5".repeat(64),
         },

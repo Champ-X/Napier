@@ -115,7 +115,10 @@ export function validateCompiledPromptPackageReceipt(
   const effectiveCapabilities = validateEffectiveCapabilities(
     value["effectiveCapabilities"],
   );
-  const modelAdapter = validateAdapterBinding(value["modelAdapter"]);
+  const modelAdapter = validateAdapterBinding(
+    value["modelAdapter"],
+    generation,
+  );
   assertLayerTotals(value, layers, modelAdapter);
   const purpose =
     generation === "modern" ? validatePurpose(value["purpose"]) : undefined;
@@ -356,14 +359,24 @@ function validateEffectiveCapabilities(
 
 function validateAdapterBinding(
   input: unknown,
+  generation: ReceiptGeneration,
 ): CompiledPromptPackageReceipt["modelAdapter"] {
   const value = record(input);
-  const adapterId =
-    value["adapterId"] === "napier.anthropic-messages.v1" ||
-    value["adapterId"] === "napier.openai-family.v1" ||
-    value["adapterId"] === "napier.generic.v1"
-      ? value["adapterId"]
-      : undefined;
+  const allowedAdapterIds =
+    generation === "modern"
+      ? [
+          "napier.anthropic-messages.v2",
+          "napier.openai-family.v2",
+          "napier.generic.v2",
+        ]
+      : [
+          "napier.anthropic-messages.v1",
+          "napier.openai-family.v1",
+          "napier.generic.v1",
+        ];
+  const adapterId = allowedAdapterIds.includes(String(value["adapterId"]))
+    ? (value["adapterId"] as ModelAdapterReceipt["adapterId"])
+    : undefined;
   const adapterContentSha256 = value["adapterContentSha256"];
   if (
     !exactKeys(value, ["adapterId", "adapterContentSha256"]) ||

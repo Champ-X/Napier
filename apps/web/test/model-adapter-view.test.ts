@@ -40,6 +40,44 @@ describe("Model Adapter trace view", () => {
       },
     ]);
   });
+
+  it("projects v2 output-token policy and rejects mixed generations", () => {
+    const modern = event({
+      kind: "napier.model-adapter-selection",
+      schemaVersion: 2,
+      adapterId: "napier.openai-family.v2",
+      family: "openai",
+      adapterVersion: 2,
+      modelApi: "openai-responses",
+      cacheRetention: "short",
+      cacheRetentionSource: "adapter",
+      streamOptionMaxTokens: 16_384,
+      streamOptionMaxTokensSource: "adapter",
+      modelMaxTokens: 64_000,
+      contentSha256: "c".repeat(64),
+    });
+    const mixed = event({
+      ...payload(modern),
+      adapterId: "napier.openai-family.v1",
+    });
+
+    expect(modelAdapterViews([modern, mixed])).toEqual([
+      {
+        eventSeq: 21,
+        runId: "run_adapter",
+        adapterId: "napier.openai-family.v2",
+        family: "openai",
+        adapterVersion: 2,
+        modelApi: "openai-responses",
+        cacheRetention: "short",
+        cacheRetentionSource: "adapter",
+        streamOptionMaxTokens: 16_384,
+        streamOptionMaxTokensSource: "adapter",
+        modelMaxTokens: 64_000,
+        contentSha256: "c".repeat(64),
+      },
+    ]);
+  });
 });
 
 function event(payload: RunEvent["payload"]): RunEvent {
