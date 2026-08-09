@@ -109,13 +109,13 @@ import {
   type ThreadRunSessions,
 } from "./thread-run-stream-state";
 import { messagePayload } from "./message-payload";
+import { commitThreadLocation, threadIdFromLocation } from "./thread-location";
 import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
 import {
   upsertThread,
 } from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
 import { useThreadNavigation } from "./use-thread-navigation";
-
 export type InspectorTab =
   | "trace"
   | "processes"
@@ -361,7 +361,7 @@ export function useWorkspaceViewModel() {
       }
       setBootstrap(result);
       setDetail(result.activeThread);
-      setSelectedThreadId(result.activeThread?.thread.id);
+      commitThreadLocation(setSelectedThreadId, result.activeThread?.thread.id);
       setSelectedModelKey(modelKey(result.recommendedRunModel));
     } catch (loadError) {
       setError(toErrorMessage(loadError));
@@ -371,7 +371,7 @@ export function useWorkspaceViewModel() {
   }, []);
 
   useEffect(() => {
-    void loadBootstrap();
+    void loadBootstrap(threadIdFromLocation());
   }, [loadBootstrap]);
   const messages = useMemo<MessageView[]>(() => {
     return (detail?.events ?? []).flatMap((event): MessageView[] => {
@@ -820,7 +820,7 @@ export function useWorkspaceViewModel() {
         const refreshed = await getBootstrap(branch.thread.id);
         setBootstrap(refreshed);
         setDetail(refreshed.activeThread);
-        setSelectedThreadId(branch.thread.id);
+        commitThreadLocation(setSelectedThreadId, branch.thread.id);
         setSelectedModelKey(modelKey(refreshed.recommendedRunModel));
       } catch (branchError) {
         setError(toErrorMessage(branchError));
@@ -1995,7 +1995,7 @@ export function useWorkspaceViewModel() {
       const refreshed = await getBootstrap(imported.thread.id);
       setBootstrap(refreshed);
       setDetail(refreshed.activeThread);
-      setSelectedThreadId(imported.thread.id);
+      commitThreadLocation(setSelectedThreadId, imported.thread.id);
       setSelectedModelKey(modelKey(refreshed.recommendedRunModel));
       setRunComparison(undefined);
       setInspectorTab("lab");

@@ -78,6 +78,7 @@ function validReceipt() {
       osIsolationClaimed: false,
       executableSha256: "c".repeat(64),
       startupDurationMs: 2,
+      loopbackWarmup: { attempts: 2, durationMs: 15_100 },
     },
     fixture: {
       threadId: "thread_fixture01",
@@ -123,6 +124,16 @@ function validReceipt() {
         bytes: 42,
       },
     })),
+    recovery: {
+      title: "Recover interrupted verification",
+      phase: "Recovery blocked",
+      currentAction: "Automatic recovery stopped safely",
+      completedItem: "Inspect recovery evidence",
+      blocker: "2 safety conditions require review.",
+      nextStep: "Review the Retry card or resume manually.",
+      selectedThreadPreserved: true,
+      refreshPreserved: true,
+    },
     reconnect: {
       disconnected: true,
       samePort: true,

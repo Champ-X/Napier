@@ -3,6 +3,7 @@ import type { ThreadDetail } from "@napier/contracts";
 import { createThread } from "./api";
 import { getBootstrap } from "./bootstrap-api";
 import { formatApiErrorMessage } from "./api-error";
+import { commitThreadLocation } from "./thread-location";
 
 export function useNewThread(input: {
   setBootstrap(value: LiveReadyBootstrapResponse): void;
@@ -21,7 +22,7 @@ export function useNewThread(input: {
       const refreshed = await getBootstrap(created.thread.id);
       input.setBootstrap(refreshed);
       input.setDetail(refreshed.activeThread);
-      input.setSelectedThreadId(created.thread.id);
+      commitThreadLocation(input.setSelectedThreadId, created.thread.id);
       input.setSelectedModelKey(input.modelKey(refreshed.recommendedRunModel));
     } catch (error) {
       input.setError(formatApiErrorMessage(error));

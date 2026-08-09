@@ -40,6 +40,9 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.browser?.osIsolationClaimed, false);
   assert.match(receipt?.browser?.executableSha256 ?? "", SHA256);
   assert.equal(receipt?.browser?.startupDurationMs >= 0, true);
+  assert.equal(receipt?.browser?.loopbackWarmup?.attempts >= 1, true);
+  assert.equal(receipt?.browser?.loopbackWarmup?.attempts <= 3, true);
+  assert.equal(receipt?.browser?.loopbackWarmup?.durationMs >= 0, true);
   assert.match(receipt?.fixture?.threadId ?? "", /^thread_[a-z0-9]{8,80}$/u);
   assert.deepEqual(
     {
@@ -62,6 +65,26 @@ export function assertWebUiE2eReceipt(receipt) {
     WEB_UI_E2E_VIEWPORTS,
   );
   receipt.viewports.forEach(assertViewportReceipt);
+  assert.deepEqual(
+    {
+      title: receipt.recovery.title,
+      phase: receipt.recovery.phase,
+      currentAction: receipt.recovery.currentAction,
+      completedItem: receipt.recovery.completedItem,
+      blocker: receipt.recovery.blocker,
+      nextStep: receipt.recovery.nextStep,
+    },
+    {
+      title: "Recover interrupted verification",
+      phase: "Recovery blocked",
+      currentAction: "Automatic recovery stopped safely",
+      completedItem: "Inspect recovery evidence",
+      blocker: "2 safety conditions require review.",
+      nextStep: "Review the Retry card or resume manually.",
+    },
+  );
+  assert.equal(receipt?.recovery?.selectedThreadPreserved, true);
+  assert.equal(receipt?.recovery?.refreshPreserved, true);
   assert.equal(receipt?.reconnect?.disconnected, true);
   assert.equal(receipt?.reconnect?.samePort, true);
   assert.equal(receipt?.reconnect?.narrativePreserved, true);

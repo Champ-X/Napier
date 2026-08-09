@@ -4,6 +4,7 @@ import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-m
 import type { ThreadDetail } from "@napier/contracts";
 import { getBootstrap } from "./bootstrap-api";
 import { formatApiErrorMessage } from "./api-error";
+import { commitThreadLocation } from "./thread-location";
 import { restoreThread, trashThread } from "./thread-lifecycle-api";
 
 export interface TrashedThreadReceipt {
@@ -39,7 +40,10 @@ export function useThreadTrash(input: {
     (bootstrap: LiveReadyBootstrapResponse) => {
       setBootstrap(bootstrap);
       setDetail(bootstrap.activeThread);
-      setSelectedThreadId(bootstrap.activeThread?.thread.id);
+      commitThreadLocation(
+        setSelectedThreadId,
+        bootstrap.activeThread?.thread.id,
+      );
       setSelectedModelKey(modelKey(bootstrap.recommendedRunModel));
     },
     [

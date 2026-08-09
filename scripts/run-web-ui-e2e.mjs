@@ -18,6 +18,14 @@ import {
   startWebUiCdpBrowser,
   WEB_UI_START_TIMEOUT_MS,
 } from "./web-ui-e2e-runtime.mjs";
+import {
+  openWebUiPage,
+  readWebUiNarrative,
+  refreshPreservesWebUiNarrative,
+  verifyWebUiRecoveryNarrative,
+  verifyWebUiServerRestart,
+  warmWebUiLoopback,
+} from "./web-ui-e2e-narrative.mjs";
 
 const receiptPath = parseArguments(process.argv.slice(2));
 const temporaryRoot = await createWebUiE2eRoot();
@@ -34,6 +42,10 @@ try {
   receipt.server = serverRuntime.receipt;
   browserRuntime = await startWebUiCdpBrowser(temporaryRoot);
   receipt.browser = browserRuntime.receipt;
+  receipt.browser.loopbackWarmup = await warmWebUiLoopback(
+    browserRuntime.browser,
+    serverRuntime.origin,
+  );
   receipt.viewports = [];
   for (const viewport of WEB_UI_E2E_VIEWPORTS) {
     const viewportReceipt = await inspectViewport(
@@ -45,7 +57,12 @@ try {
     assertViewportReceipt(viewportReceipt);
     receipt.viewports.push(viewportReceipt);
   }
-  receipt.reconnect = await verifyServerRestart(
+  receipt.recovery = await verifyWebUiRecoveryNarrative(
+    browserRuntime.browser,
+    serverRuntime.origin,
+    receipt.fixture.recovery,
+  );
+  receipt.reconnect = await verifyWebUiServerRestart(
     browserRuntime.browser,
     serverRuntime,
     temporaryRoot,
@@ -90,31 +107,29 @@ process.stdout.write(serialized);
 async function inspectViewport(browser, origin, viewport, expectedNarrative) {
   const context = browser.contexts()[0];
   assert.ok(context, "Web UI E2E Browser context is unavailable");
-  const page = await context.newPage();
   const consoleErrors = [];
-  page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
-  });
-  page.on("pageerror", (error) => consoleErrors.push(error.message));
+  const page = await openWebUiPage(
+    context,
+    `${origin}/?thread=${encodeURIComponent(expectedNarrative.threadId)}`,
+    { width: viewport.width, height: viewport.height },
+    (candidate) => {
+      candidate.on("console", (message) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+      });
+      candidate.on("pageerror", (error) => consoleErrors.push(error.message));
+    },
+  );
   try {
-    await page.setViewportSize({
-      width: viewport.width,
-      height: viewport.height,
-    });
-    await page.goto(origin, {
-      waitUntil: "commit",
-      timeout: WEB_UI_START_TIMEOUT_MS,
-    });
     await page.locator("#inspector-group-activity").waitFor({
       state: "attached",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(250);
-    const narrative = await readNarrative(page, expectedNarrative);
+    const narrative = await readWebUiNarrative(page, expectedNarrative);
     const refreshPreserved =
       viewport.width === 1_600
-        ? await refreshPreservesNarrative(
+        ? await refreshPreservesWebUiNarrative(
             page,
             origin,
             expectedNarrative,
@@ -157,97 +172,6 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
       console: { errorCount: consoleErrors.length },
       screenshot,
     };
-  } finally {
-    await page.close();
-  }
-}
-
-async function readNarrative(page, expected) {
-  await page.locator(".task-narrative-current strong").waitFor({
-    state: "visible",
-    timeout: WEB_UI_START_TIMEOUT_MS,
-  });
-  const narrative = await page.evaluate(() => {
-    const text = (selector) =>
-      document.querySelector(selector)?.textContent?.trim() ?? "";
-    const completed = text(".task-narrative-completed p");
-    const artifact = text(".task-narrative-completed small").replace(
-      /^Outputs · /u,
-      "",
-    );
-    return {
-      title: text(".thread-heading h1"),
-      phase: text(".task-narrative-current > span"),
-      currentAction: text(".task-narrative-current strong"),
-      metrics: text(".task-narrative-current small"),
-      completedItem: completed,
-      blocker: text(".task-narrative-blocker p"),
-      nextStep: text(".task-narrative-next p"),
-      artifactPath: artifact,
-    };
-  });
-  assert.equal(narrative.title, expected.title);
-  assert.equal(narrative.phase, expected.phase);
-  assert.equal(narrative.currentAction, expected.currentAction);
-  assert.equal(narrative.completedItem, expected.completedItem);
-  assert.equal(narrative.blocker, expected.blocker);
-  assert.equal(narrative.nextStep, expected.nextStep);
-  assert.equal(narrative.artifactPath, expected.artifactPath);
-  return narrative;
-}
-
-async function refreshPreservesNarrative(page, origin, expected, before) {
-  await page.reload({
-    waitUntil: "commit",
-    timeout: WEB_UI_START_TIMEOUT_MS,
-  });
-  const after = await readNarrative(page, expected);
-  assert.deepEqual(after, before);
-  assert.equal(page.url(), `${origin}/`);
-  return true;
-}
-
-async function verifyServerRestart(browser, runtime, root, expected) {
-  const origin = runtime.origin;
-  const port = Number(new URL(origin).port);
-  const context = browser.contexts()[0];
-  assert.ok(context, "Web UI E2E Browser context is unavailable");
-  const page = await context.newPage();
-  let restarted;
-  try {
-    await page.setViewportSize({ width: 1_600, height: 900 });
-    await page.goto(origin, {
-      waitUntil: "commit",
-      timeout: WEB_UI_START_TIMEOUT_MS,
-    });
-    const before = await readNarrative(page, expected);
-    await runtime.close();
-    const disconnected = await page.evaluate(async () => {
-      try {
-        await fetch("/api/health", { cache: "no-store" });
-        return false;
-      } catch {
-        return true;
-      }
-    });
-    restarted = await startProductionWebServer(root, port);
-    assert.equal(restarted.origin, origin);
-    await page.reload({
-      waitUntil: "commit",
-      timeout: WEB_UI_START_TIMEOUT_MS,
-    });
-    const after = await readNarrative(page, expected);
-    assert.deepEqual(after, before);
-    return {
-      disconnected,
-      samePort: restarted.origin === origin,
-      narrativePreserved: true,
-      restartStartupDurationMs: restarted.receipt.startupDurationMs,
-      runtime: restarted,
-    };
-  } catch (error) {
-    await restarted?.close().catch(() => undefined);
-    throw error;
   } finally {
     await page.close();
   }
@@ -436,6 +360,7 @@ function createReceipt() {
     server: {},
     browser: {},
     viewports: [],
+    recovery: {},
     reconnect: {},
     cleanup: {
       browserClosed: false,

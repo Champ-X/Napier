@@ -105,6 +105,72 @@ export async function seedWebUiNarrativeFixture(root) {
         costUsd: 0.042,
       },
     });
+    const recoveryThread = await store.createThread({
+      title: "Recover interrupted verification",
+      agentId: agent.id,
+    });
+    const recoveryRun = await store.createRun({
+      threadId: recoveryThread.id,
+      agentId: agent.id,
+      model: { provider: "faux-recovery", id: "faux-1" },
+    });
+    const recoveryPlan = await store.createPlan(recoveryThread.id, {
+      objective: "Recover an interrupted verification safely.",
+      steps: [
+        {
+          id: "inspect",
+          title: "Inspect recovery evidence",
+          description: "Inspect the durable evidence before recovery.",
+          verification: "The durable evidence is recorded.",
+        },
+        {
+          id: "verify",
+          title: "Verify recovered result",
+          description: "Verify the interrupted result before delivery.",
+          verification: "The recovered result passes verification.",
+          dependsOn: ["inspect"],
+        },
+      ],
+    });
+    await store.transitionPlanStep(recoveryPlan.id, "inspect", {
+      action: "start",
+      runId: recoveryRun.id,
+    });
+    await store.transitionPlanStep(recoveryPlan.id, "inspect", {
+      action: "complete",
+      evidence: "Durable evidence was inspected.",
+    });
+    await store.transitionPlanStep(recoveryPlan.id, "verify", {
+      action: "start",
+      runId: recoveryRun.id,
+    });
+    await store.appendEvent({
+      threadId: recoveryThread.id,
+      runId: recoveryRun.id,
+      type: "tool.started",
+      category: "tool",
+      visibility: "user",
+      payload: {
+        callId: "call_recovery_write",
+        toolName: "apply_patch",
+        status: "started",
+        effect: "write",
+      },
+    });
+    await store.appendEvent({
+      threadId: recoveryThread.id,
+      runId: recoveryRun.id,
+      type: "tool.completed",
+      category: "tool",
+      visibility: "user",
+      payload: {
+        callId: "call_recovery_write",
+        toolName: "apply_patch",
+        status: "completed",
+        effect: "write",
+      },
+    });
+    await store.setThreadStatus(thread.id, "waiting");
     return {
       threadId: thread.id,
       title: thread.title,
@@ -114,6 +180,15 @@ export async function seedWebUiNarrativeFixture(root) {
       blocker: "Operator input is required before the run can continue.",
       nextStep: "Approve final delivery",
       artifactPath: "artifacts/research-brief.md",
+      recovery: {
+        threadId: recoveryThread.id,
+        title: recoveryThread.title,
+        phase: "Recovery blocked",
+        currentAction: "Automatic recovery stopped safely",
+        completedItem: "Inspect recovery evidence",
+        blocker: "2 safety conditions require review.",
+        nextStep: "Review the Retry card or resume manually.",
+      },
     };
   } finally {
     store.close();

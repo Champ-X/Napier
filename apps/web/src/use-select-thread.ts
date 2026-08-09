@@ -4,6 +4,7 @@ import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-m
 import type { ThreadDetail } from "@napier/contracts";
 import { getBootstrap } from "./bootstrap-api";
 import { formatApiErrorMessage } from "./api-error";
+import { commitThreadLocation } from "./thread-location";
 
 export function useSelectThread(input: {
   setBootstrap(value: LiveReadyBootstrapResponse): void;
@@ -30,6 +31,7 @@ export function useSelectThread(input: {
         ...(activeThread ? { activeThread } : {}),
       });
       input.setDetail(activeThread);
+      commitThreadLocation(input.setSelectedThreadId, activeThread?.thread.id);
       input.setSelectedModelKey(input.modelKey(selected.recommendedRunModel));
     } catch (error) {
       if (requestId !== requestIdRef.current) return;

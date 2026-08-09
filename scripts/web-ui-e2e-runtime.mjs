@@ -96,6 +96,7 @@ export async function startWebUiCdpBrowser(root) {
   const profileRoot = path.join(root, "browser-profile");
   const child = spawn(executablePath, browserArguments(profileRoot), {
     cwd: root,
+    detached: true,
     env: {
       HOME: root,
       LANG: "C",
@@ -238,14 +239,25 @@ function observeServer(child) {
 
 async function terminate(child, exitPromise = childExit(child)) {
   if (child.exitCode !== null || child.signalCode !== null) return;
-  child.kill("SIGTERM");
+  signalProcess(child, "SIGTERM");
   try {
     await withTimeout(exitPromise, CLOSE_TIMEOUT_MS, "Process close timed out");
-  } catch (error) {
-    child.kill("SIGKILL");
+  } catch {
+    signalProcess(child, "SIGKILL");
     await withTimeout(exitPromise, CLOSE_TIMEOUT_MS, "Process kill timed out");
-    throw error;
   }
+}
+
+function signalProcess(child, signal) {
+  if (child.pid) {
+    try {
+      process.kill(-child.pid, signal);
+      return;
+    } catch {
+      // Fall back to the direct child when it does not own a process group.
+    }
+  }
+  child.kill(signal);
 }
 
 function childExit(child) {
