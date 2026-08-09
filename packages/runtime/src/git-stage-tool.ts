@@ -18,8 +18,6 @@ const previewSchema = Type.Object(
         minLength: 1,
         maxLength: 500,
         pattern: "^[^\\u0000-\\u001f\\u007f]+$",
-        description:
-          "One workspace-relative path. Mutually exclusive with paths.",
       }),
     ),
     paths: Type.Optional(
@@ -33,8 +31,6 @@ const previewSchema = Type.Object(
           minItems: 1,
           maxItems: MAX_GIT_STAGE_TARGETS,
           uniqueItems: true,
-          description:
-            "One to sixteen workspace-relative regular-file or tracked-deleted paths staged as one atomic index transaction. Mutually exclusive with path.",
         },
       ),
     ),
@@ -42,7 +38,6 @@ const previewSchema = Type.Object(
       Type.Integer({
         minimum: 0,
         maximum: 10,
-        description: "Unified diff context lines. Defaults to 3.",
       }),
     ),
     hunkIndexes: Type.Optional(
@@ -55,8 +50,6 @@ const previewSchema = Type.Object(
           minItems: 1,
           maxItems: 32,
           uniqueItems: true,
-          description:
-            "Optional strictly increasing 1-based hunk indexes from the current single-path working patch. Omit to stage the complete path.",
         },
       ),
     ),
@@ -64,7 +57,6 @@ const previewSchema = Type.Object(
       Type.Integer({
         minimum: 1_000,
         maximum: MAX_GIT_STAGE_TIMEOUT_MS,
-        description: "Total config/add/diff wall-time budget.",
       }),
     ),
   },
@@ -75,14 +67,11 @@ const applySchema = Type.Object(
   {
     previewId: Type.String({
       pattern: "^gitstagepreview_[a-z0-9]{8,80}$",
-      description:
-        "One-use preview ID returned by git_stage_preview in this Run.",
     }),
     timeoutMs: Type.Optional(
       Type.Integer({
         minimum: 1_000,
         maximum: MAX_GIT_STAGE_TIMEOUT_MS,
-        description: "Total config/add/diff wall-time budget.",
       }),
     ),
   },
@@ -130,7 +119,7 @@ export function createGitStagePreviewTool(
     name: "git_stage_preview",
     label: "Preview Git stage",
     description:
-      "Construct an exact one-to-sixteen-path staging preview through one private Git index and private object directory. Use path for one file or paths for one atomic multi-path set. hunkIndexes is available only with path. Returns the complete proposed staged tree patch plus any unmerged-to-resolved index transition as live untrusted repository data, with a one-use execution-scoped preview ID. It never changes the real index, refs, worktree, or object database.",
+      "Preview exact staging in a private index/object directory: path XOR paths (1-16 atomic targets); hunkIndexes only with single path, omitted for full paths. Returns complete proposed staged patch/index transition as untrusted data plus one-use scoped ID; never changes real index, refs, worktree, or objects.",
     parameters: previewSchema,
     async execute(_toolCallId, input, signal) {
       const preview = await manager.preview(
@@ -177,7 +166,7 @@ export function createGitStageApplyTool(
     name: "git_stage_apply",
     label: "Apply Git stage",
     description:
-      "Apply one fresh execution-scoped Git stage preview. Rebuilds and rehashes the private index, rechecks HEAD/config/index/worktree under locks, promotes verified content-addressed objects, then atomically installs the index through index.lock. It never changes refs, commits, or worktree files.",
+      "Apply one fresh scoped one-use preview. Rebuilds/rehashes its private index; rechecks HEAD/config/index/worktree under locks; promotes verified objects; atomically installs via index.lock. Never changes refs, commits, or worktree files.",
     parameters: applySchema,
     async execute(_toolCallId, input, signal) {
       const result = await manager.apply(
