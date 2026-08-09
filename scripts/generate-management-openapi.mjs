@@ -335,44 +335,10 @@ export async function generateManagementOpenApi(options = {}) {
           },
         },
         ModelContextEnvelopeReceipt: {
-          type: "object",
-          required: [
-            "kind",
-            "schemaVersion",
-            "turnIndex",
-            "systemPromptSha256",
-            "systemPromptBytes",
-            "messageCount",
-            "userMessageCount",
-            "assistantMessageCount",
-            "toolResultMessageCount",
-            "otherMessageCount",
-            "messageSetSha256",
-            "toolCount",
-            "toolNameSetSha256",
-            "toolDefinitionSetSha256",
-            "contentSha256",
+          oneOf: [
+            modelContextEnvelopeReceiptSchema(1),
+            modelContextEnvelopeReceiptSchema(2),
           ],
-          additionalProperties: false,
-          properties: {
-            kind: { const: "napier.model-context-envelope" },
-            schemaVersion: { const: 1 },
-            turnIndex: { type: "integer", minimum: 0 },
-            systemPromptSha256: { $ref: "#/components/schemas/Sha256Hex" },
-            systemPromptBytes: { type: "integer", minimum: 0 },
-            messageCount: { type: "integer", minimum: 0 },
-            userMessageCount: { type: "integer", minimum: 0 },
-            assistantMessageCount: { type: "integer", minimum: 0 },
-            toolResultMessageCount: { type: "integer", minimum: 0 },
-            otherMessageCount: { type: "integer", minimum: 0 },
-            messageSetSha256: { $ref: "#/components/schemas/Sha256Hex" },
-            toolCount: { type: "integer", minimum: 0 },
-            toolNameSetSha256: { $ref: "#/components/schemas/Sha256Hex" },
-            toolDefinitionSetSha256: {
-              $ref: "#/components/schemas/Sha256Hex",
-            },
-            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
-          },
         },
         ReviewSubagentOutcomeRequest: {
           type: "object",
@@ -2080,6 +2046,65 @@ export function extractManagementRoutes(sourceText) {
     throw new Error("No /api management routes were found");
   }
   return routes;
+}
+
+function modelContextEnvelopeReceiptSchema(schemaVersion) {
+  const modern = schemaVersion === 2;
+  const modernKeys = [
+    "toolDefinitionBytes",
+    "toolDefinitionEstimatedTokens",
+    "toolDefinitionTokenEstimateMethod",
+  ];
+  return {
+    type: "object",
+    required: [
+      "kind",
+      "schemaVersion",
+      "turnIndex",
+      "systemPromptSha256",
+      "systemPromptBytes",
+      "messageCount",
+      "userMessageCount",
+      "assistantMessageCount",
+      "toolResultMessageCount",
+      "otherMessageCount",
+      "messageSetSha256",
+      "toolCount",
+      "toolNameSetSha256",
+      "toolDefinitionSetSha256",
+      ...(modern ? modernKeys : []),
+      "contentSha256",
+    ],
+    additionalProperties: false,
+    properties: {
+      kind: { const: "napier.model-context-envelope" },
+      schemaVersion: { const: schemaVersion },
+      turnIndex: { type: "integer", minimum: 0 },
+      systemPromptSha256: { $ref: "#/components/schemas/Sha256Hex" },
+      systemPromptBytes: { type: "integer", minimum: 0 },
+      messageCount: { type: "integer", minimum: 0 },
+      userMessageCount: { type: "integer", minimum: 0 },
+      assistantMessageCount: { type: "integer", minimum: 0 },
+      toolResultMessageCount: { type: "integer", minimum: 0 },
+      otherMessageCount: { type: "integer", minimum: 0 },
+      messageSetSha256: { $ref: "#/components/schemas/Sha256Hex" },
+      toolCount: { type: "integer", minimum: 0 },
+      toolNameSetSha256: { $ref: "#/components/schemas/Sha256Hex" },
+      toolDefinitionSetSha256: {
+        $ref: "#/components/schemas/Sha256Hex",
+      },
+      ...(modern
+        ? {
+            toolDefinitionBytes: { type: "integer", minimum: 0 },
+            toolDefinitionEstimatedTokens: { type: "integer", minimum: 0 },
+            toolDefinitionTokenEstimateMethod: {
+              const: "ceil_utf8_bytes_div_4",
+            },
+          }
+        : {}),
+      contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+    },
+  };
 }
 
 export async function discoverManagementSourcePaths(repoRoot) {

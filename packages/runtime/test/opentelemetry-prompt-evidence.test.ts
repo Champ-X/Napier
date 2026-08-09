@@ -85,6 +85,14 @@ describe("OpenTelemetry Prompt evidence", () => {
     await store.appendEvent({
       threadId: thread.id,
       runId: run.id,
+      type: "context.model_envelope",
+      category: "model",
+      visibility: "debug",
+      payload: structuredClone(envelope),
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
       type: "context.model_adapter",
       category: "model",
       visibility: "debug",
@@ -108,6 +116,19 @@ describe("OpenTelemetry Prompt evidence", () => {
 
     expect(validateOpenTelemetryTraceArtifact(artifact)).toEqual(artifact);
     expect(verifyOpenTelemetryTraceArtifact(artifact).status).toBe("valid");
+    const envelopeEvent = findEvent(artifact, "context.model_envelope");
+    expect(projectAttributes(envelopeEvent.attributes)).toMatchObject({
+      "napier.event.payload.schema_version": 2,
+      "napier.event.payload.tool_count": 1,
+      "napier.event.payload.tool_definition_bytes":
+        envelope.schemaVersion === 2 ? envelope.toolDefinitionBytes : undefined,
+      "napier.event.payload.tool_definition_estimated_tokens":
+        envelope.schemaVersion === 2
+          ? envelope.toolDefinitionEstimatedTokens
+          : undefined,
+      "napier.event.payload.tool_definition_token_estimate_method":
+        "ceil_utf8_bytes_div_4",
+    });
     const adapterEvent = findEvent(artifact, "context.model_adapter");
     expect(projectAttributes(adapterEvent.attributes)).toMatchObject({
       "napier.event.payload.adapter_id": adapter.adapterId,

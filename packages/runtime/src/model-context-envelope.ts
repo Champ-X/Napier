@@ -3,6 +3,9 @@ import type { ModelContextEnvelopeReceipt, RunEvent } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
 
 export const MODEL_CONTEXT_ENVELOPE_EVENT = "context.model_envelope";
+export const MODEL_CONTEXT_ENVELOPE_VERSION = 2 as const;
+export const MODEL_CONTEXT_TOOL_TOKEN_ESTIMATE_METHOD =
+  "ceil_utf8_bytes_div_4" as const;
 
 export interface ModelContextEnvelopeInput {
   turnIndex: number;
@@ -32,9 +35,11 @@ export function createModelContextEnvelopeReceipt(
   const toolDefinitionDigests = input.tools
     .map((tool) => {
       const definition = toolDefinitionProjection(tool);
+      const serializedDefinition = canonicalJson(definition);
       return {
         nameSha256: sha256(tool.name),
-        definitionSha256: sha256(canonicalJson(definition)),
+        definitionSha256: sha256(serializedDefinition),
+        definitionBytes: Buffer.byteLength(serializedDefinition, "utf8"),
       };
     })
     .sort((left, right) =>
@@ -42,9 +47,19 @@ export function createModelContextEnvelopeReceipt(
         ? left.definitionSha256.localeCompare(right.definitionSha256)
         : left.nameSha256.localeCompare(right.nameSha256),
     );
+  const toolDefinitionBytes = toolDefinitionDigests.reduce(
+    (total, definition) => total + definition.definitionBytes,
+    0,
+  );
+  const toolDefinitionSet = toolDefinitionDigests.map(
+    ({ nameSha256, definitionSha256 }) => ({
+      nameSha256,
+      definitionSha256,
+    }),
+  );
   const content = {
     kind: "napier.model-context-envelope" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: MODEL_CONTEXT_ENVELOPE_VERSION,
     turnIndex: input.turnIndex,
     systemPromptSha256: sha256(input.systemPrompt),
     systemPromptBytes: Buffer.byteLength(input.systemPrompt, "utf8"),
@@ -61,7 +76,10 @@ export function createModelContextEnvelopeReceipt(
     messageSetSha256: sha256(canonicalJson(messageDigests)),
     toolCount: toolNames.length,
     toolNameSetSha256: sha256(canonicalJson(toolNames)),
-    toolDefinitionSetSha256: sha256(canonicalJson(toolDefinitionDigests)),
+    toolDefinitionSetSha256: sha256(canonicalJson(toolDefinitionSet)),
+    toolDefinitionBytes,
+    toolDefinitionEstimatedTokens: Math.ceil(toolDefinitionBytes / 4),
+    toolDefinitionTokenEstimateMethod: MODEL_CONTEXT_TOOL_TOKEN_ESTIMATE_METHOD,
   };
   return {
     ...content,
@@ -74,7 +92,7 @@ export function validateModelContextEnvelopeReceipt(
 ): ModelContextEnvelopeReceipt {
   const value = record(input) ? input : undefined;
   if (!value) throw new Error("Model context envelope receipt is invalid");
-  const allowedKeys = [
+  const legacyKeys = [
     "kind",
     "schemaVersion",
     "turnIndex",
@@ -91,19 +109,26 @@ export function validateModelContextEnvelopeReceipt(
     "toolDefinitionSetSha256",
     "contentSha256",
   ];
+  const modernKeys = [
+    ...legacyKeys.slice(0, -1),
+    "toolDefinitionBytes",
+    "toolDefinitionEstimatedTokens",
+    "toolDefinitionTokenEstimateMethod",
+    "contentSha256",
+  ];
+  const modern = value["schemaVersion"] === MODEL_CONTEXT_ENVELOPE_VERSION;
+  const allowedKeys = modern ? modernKeys : legacyKeys;
   if (
     Object.keys(value).length !== allowedKeys.length ||
     Object.keys(value).some((key) => !allowedKeys.includes(key))
   ) {
     throw new Error("Model context envelope receipt has unsupported fields");
   }
-  const receipt: ModelContextEnvelopeReceipt = {
+  const common = {
     kind:
       value["kind"] === "napier.model-context-envelope"
-        ? value["kind"]
+        ? ("napier.model-context-envelope" as const)
         : invalidReceipt(),
-    schemaVersion:
-      value["schemaVersion"] === 1 ? value["schemaVersion"] : invalidReceipt(),
     turnIndex: nonNegativeInteger(value["turnIndex"]),
     systemPromptSha256: shaField(value["systemPromptSha256"]),
     systemPromptBytes: nonNegativeInteger(value["systemPromptBytes"]),
@@ -116,8 +141,39 @@ export function validateModelContextEnvelopeReceipt(
     toolCount: nonNegativeInteger(value["toolCount"]),
     toolNameSetSha256: shaField(value["toolNameSetSha256"]),
     toolDefinitionSetSha256: shaField(value["toolDefinitionSetSha256"]),
-    contentSha256: shaField(value["contentSha256"]),
   };
+  const receipt: ModelContextEnvelopeReceipt = modern
+    ? {
+        ...common,
+        schemaVersion: MODEL_CONTEXT_ENVELOPE_VERSION,
+        toolDefinitionBytes: nonNegativeInteger(value["toolDefinitionBytes"]),
+        toolDefinitionEstimatedTokens: nonNegativeInteger(
+          value["toolDefinitionEstimatedTokens"],
+        ),
+        toolDefinitionTokenEstimateMethod:
+          value["toolDefinitionTokenEstimateMethod"] ===
+          MODEL_CONTEXT_TOOL_TOKEN_ESTIMATE_METHOD
+            ? value["toolDefinitionTokenEstimateMethod"]
+            : invalidReceipt(),
+        contentSha256: shaField(value["contentSha256"]),
+      }
+    : {
+        ...common,
+        schemaVersion:
+          value["schemaVersion"] === 1
+            ? value["schemaVersion"]
+            : invalidReceipt(),
+        contentSha256: shaField(value["contentSha256"]),
+      };
+  if (
+    receipt.schemaVersion === MODEL_CONTEXT_ENVELOPE_VERSION &&
+    receipt.toolDefinitionEstimatedTokens !==
+      Math.ceil(receipt.toolDefinitionBytes / 4)
+  ) {
+    throw new Error(
+      "Model context envelope tool definition estimate is invalid",
+    );
+  }
   if (
     receipt.userMessageCount +
       receipt.assistantMessageCount +

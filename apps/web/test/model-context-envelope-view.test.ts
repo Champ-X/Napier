@@ -60,6 +60,7 @@ describe("Model Context Envelope trace view", () => {
       {
         eventSeq: 17,
         runId: "run_context",
+        schemaVersion: 1,
         turnIndex: 2,
         responseSeq: 18,
         responseModel: "faux-secure/faux-1",
@@ -77,6 +78,44 @@ describe("Model Context Envelope trace view", () => {
         toolDefinitionSetSha256: "d".repeat(64),
         contentSha256: "e".repeat(64),
       },
+    ]);
+  });
+
+  it("projects v2 tool definition cost and rejects estimate drift", () => {
+    const valid = envelopeEvent({
+      kind: "napier.model-context-envelope",
+      schemaVersion: 2,
+      turnIndex: 0,
+      systemPromptSha256: "1".repeat(64),
+      systemPromptBytes: 2_048,
+      messageCount: 1,
+      userMessageCount: 1,
+      assistantMessageCount: 0,
+      toolResultMessageCount: 0,
+      otherMessageCount: 0,
+      messageSetSha256: "2".repeat(64),
+      toolCount: 20,
+      toolNameSetSha256: "3".repeat(64),
+      toolDefinitionSetSha256: "4".repeat(64),
+      toolDefinitionBytes: 31_462,
+      toolDefinitionEstimatedTokens: 7_866,
+      toolDefinitionTokenEstimateMethod: "ceil_utf8_bytes_div_4",
+      contentSha256: "5".repeat(64),
+    });
+    const drifted = envelopeEvent({
+      ...recordPayload(valid),
+      toolDefinitionEstimatedTokens: 7_865,
+      contentSha256: "6".repeat(64),
+    });
+
+    expect(modelContextEnvelopeViews([valid, drifted])).toEqual([
+      expect.objectContaining({
+        schemaVersion: 2,
+        toolCount: 20,
+        toolDefinitionBytes: 31_462,
+        toolDefinitionEstimatedTokens: 7_866,
+        toolDefinitionTokenEstimateMethod: "ceil_utf8_bytes_div_4",
+      }),
     ]);
   });
 });

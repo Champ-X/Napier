@@ -323,6 +323,18 @@ export function ModelContextEnvelopeLedger({
                     <dt>{modelContextEnvelopeCopy.toolCount}</dt>
                     <dd>{envelope.toolCount}</dd>
                   </div>
+                  {envelope.toolDefinitionBytes !== undefined ? (
+                    <div>
+                      <dt>{modelContextEnvelopeCopy.toolSchemaBytes}</dt>
+                      <dd>{envelope.toolDefinitionBytes}</dd>
+                    </div>
+                  ) : null}
+                  {envelope.toolDefinitionEstimatedTokens !== undefined ? (
+                    <div>
+                      <dt>{modelContextEnvelopeCopy.toolSchemaTokens}</dt>
+                      <dd>~{envelope.toolDefinitionEstimatedTokens} tok</dd>
+                    </div>
+                  ) : null}
                 </dl>
                 <p>
                   <span>{modelContextEnvelopeCopy.prompt}</span>

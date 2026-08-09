@@ -50,6 +50,7 @@ import type {
   WorkflowObjectSchema,
 } from "./execution-workflows.js";
 import type { ExecutionPlanWorkflowExperimentResult } from "./workflow-experiments.js";
+import type { ModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 
 export const NAPIER_API_VERSION = "2026-07-25";
 
@@ -330,24 +331,6 @@ export interface ToolLoopGuardTriggerReceipt {
   resultSha256: string;
   attemptSetSha256: string;
   policySha256: string;
-  contentSha256: string;
-}
-
-export interface ModelContextEnvelopeReceipt {
-  kind: "napier.model-context-envelope";
-  schemaVersion: 1;
-  turnIndex: number;
-  systemPromptSha256: string;
-  systemPromptBytes: number;
-  messageCount: number;
-  userMessageCount: number;
-  assistantMessageCount: number;
-  toolResultMessageCount: number;
-  otherMessageCount: number;
-  messageSetSha256: string;
-  toolCount: number;
-  toolNameSetSha256: string;
-  toolDefinitionSetSha256: string;
   contentSha256: string;
 }
 
@@ -6896,6 +6879,7 @@ export type * from "./execution-channels.js";
 export * from "./execution-runs.js";
 export * from "./execution-workflows.js";
 export * from "./execution-experiments.js";
+export type * from "./model-context-envelope.js";
 export * from "./workflow-experiments.js";
 export * from "./rpc.js";
 

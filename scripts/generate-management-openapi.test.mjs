@@ -270,14 +270,36 @@ describe("management OpenAPI generator", () => {
       generated.artifact.components.schemas.ModelContextEnvelopeReceipt,
     ).toEqual(
       expect.objectContaining({
-        type: "object",
-        required: expect.arrayContaining([
-          "kind",
-          "messageSetSha256",
-          "toolDefinitionSetSha256",
-          "contentSha256",
-        ]),
-        additionalProperties: false,
+        oneOf: [
+          expect.objectContaining({
+            type: "object",
+            required: expect.arrayContaining([
+              "kind",
+              "messageSetSha256",
+              "toolDefinitionSetSha256",
+              "contentSha256",
+            ]),
+            additionalProperties: false,
+            properties: expect.objectContaining({
+              schemaVersion: { const: 1 },
+            }),
+          }),
+          expect.objectContaining({
+            type: "object",
+            required: expect.arrayContaining([
+              "toolDefinitionBytes",
+              "toolDefinitionEstimatedTokens",
+              "toolDefinitionTokenEstimateMethod",
+            ]),
+            additionalProperties: false,
+            properties: expect.objectContaining({
+              schemaVersion: { const: 2 },
+              toolDefinitionTokenEstimateMethod: {
+                const: "ceil_utf8_bytes_div_4",
+              },
+            }),
+          }),
+        ],
       }),
     );
     expect(generated.artifact.paths["/api/receipt-trust/anchors"].get).toEqual(

@@ -54,6 +54,7 @@ const SAFE_STRING_PAYLOAD_KEYS = new Set([
   "status",
   "stopReason",
   "toolName",
+  "toolDefinitionTokenEstimateMethod",
   "traceSummaryBoundaryStatus",
   "verdict",
   "importedAt",
@@ -148,6 +149,7 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "reviewerCount",
   "revision",
   "sampleCount",
+  "schemaVersion",
   "score",
   "sizeBytes",
   "localImportedThroughSeq",
@@ -160,6 +162,8 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "threshold",
   "toSeq",
   "toolCount",
+  "toolDefinitionBytes",
+  "toolDefinitionEstimatedTokens",
   "toolLoopGuardThreshold",
   "toolResultMessageCount",
   "turnCount",
@@ -370,6 +374,9 @@ function scalarPayloadAttributes(
 }
 
 function safeStringPayloadValue(key: string, value: string): boolean {
+  if (key === "toolDefinitionTokenEstimateMethod") {
+    return value === "ceil_utf8_bytes_div_4";
+  }
   if (SAFE_STRING_PAYLOAD_KEYS.has(key) || SAFE_ID_PAYLOAD_KEYS.has(key)) {
     return true;
   }

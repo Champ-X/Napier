@@ -3,6 +3,7 @@ import type { RunEvent } from "@napier/contracts";
 export interface ModelContextEnvelopeView {
   eventSeq: number;
   runId: string;
+  schemaVersion: 1 | 2;
   turnIndex: number;
   responseSeq?: number;
   responseModel?: string;
@@ -14,6 +15,9 @@ export interface ModelContextEnvelopeView {
   toolResultMessageCount: number;
   otherMessageCount: number;
   toolCount: number;
+  toolDefinitionBytes?: number;
+  toolDefinitionEstimatedTokens?: number;
+  toolDefinitionTokenEstimateMethod?: "ceil_utf8_bytes_div_4";
   systemPromptSha256: string;
   messageSetSha256: string;
   toolNameSetSha256: string;
@@ -22,7 +26,7 @@ export interface ModelContextEnvelopeView {
 }
 
 const SHA256 = /^[a-f0-9]{64}$/u;
-const ALLOWED_KEYS = new Set([
+const LEGACY_KEYS = [
   "kind",
   "schemaVersion",
   "turnIndex",
@@ -38,7 +42,14 @@ const ALLOWED_KEYS = new Set([
   "toolNameSetSha256",
   "toolDefinitionSetSha256",
   "contentSha256",
-]);
+] as const;
+const MODERN_KEYS = [
+  ...LEGACY_KEYS.slice(0, -1),
+  "toolDefinitionBytes",
+  "toolDefinitionEstimatedTokens",
+  "toolDefinitionTokenEstimateMethod",
+  "contentSha256",
+] as const;
 
 export function modelContextEnvelopeViews(
   events: readonly RunEvent[],
@@ -52,84 +63,136 @@ export function modelContextEnvelopeViews(
       response,
     );
   }
-  return events.flatMap((event): ModelContextEnvelopeView[] => {
+  const views: ModelContextEnvelopeView[] = [];
+  for (const event of events) {
     if (event.type !== "context.model_envelope" || !record(event.payload)) {
-      return [];
+      continue;
     }
-    const payload = event.payload;
-    if (
-      Object.keys(payload).length !== ALLOWED_KEYS.size ||
-      Object.keys(payload).some((key) => !ALLOWED_KEYS.has(key)) ||
-      payload["kind"] !== "napier.model-context-envelope" ||
-      payload["schemaVersion"] !== 1
-    ) {
-      return [];
-    }
-    const turnIndex = nonNegativeInteger(payload["turnIndex"]);
-    const systemPromptBytes = nonNegativeInteger(payload["systemPromptBytes"]);
-    const messageCount = nonNegativeInteger(payload["messageCount"]);
-    const userMessageCount = nonNegativeInteger(payload["userMessageCount"]);
-    const assistantMessageCount = nonNegativeInteger(
-      payload["assistantMessageCount"],
-    );
-    const toolResultMessageCount = nonNegativeInteger(
+    const payload = envelopePayloadView(event.payload);
+    if (!payload) continue;
+    views.push({
+      eventSeq: event.seq,
+      runId: event.runId,
+      ...payload,
+      ...responseBindingProjection(
+        responsesByRunAndTurn.get(`${event.runId}:${payload.turnIndex}`),
+        payload.contentSha256,
+        payload.messageSetSha256,
+        payload.toolDefinitionSetSha256,
+      ),
+    });
+  }
+  return views;
+}
+
+type EnvelopePayloadView = Omit<
+  ModelContextEnvelopeView,
+  "eventSeq" | "runId" | "responseSeq" | "responseModel" | "responseStopReason"
+>;
+
+function envelopePayloadView(
+  payload: Record<string, unknown>,
+): EnvelopePayloadView | undefined {
+  const schemaVersion = envelopeSchemaVersion(payload);
+  if (!schemaVersion || !exactEnvelopeKeys(payload, schemaVersion)) return;
+  const counts = envelopeCounts(payload);
+  const hashes = envelopeHashes(payload);
+  const toolCost = toolDefinitionCost(payload, schemaVersion);
+  if (!counts || !hashes || !toolCost) return;
+  return {
+    schemaVersion,
+    ...counts,
+    ...toolCost,
+    ...hashes,
+  };
+}
+
+function envelopeSchemaVersion(
+  payload: Record<string, unknown>,
+): 1 | 2 | undefined {
+  if (payload["kind"] !== "napier.model-context-envelope") return;
+  return payload["schemaVersion"] === 1 || payload["schemaVersion"] === 2
+    ? payload["schemaVersion"]
+    : undefined;
+}
+
+function exactEnvelopeKeys(
+  payload: Record<string, unknown>,
+  schemaVersion: 1 | 2,
+): boolean {
+  const allowed: ReadonlySet<string> =
+    schemaVersion === 2 ? new Set(MODERN_KEYS) : new Set(LEGACY_KEYS);
+  const keys = Object.keys(payload);
+  return keys.length === allowed.size && keys.every((key) => allowed.has(key));
+}
+
+function envelopeCounts(payload: Record<string, unknown>) {
+  const counts = {
+    turnIndex: nonNegativeInteger(payload["turnIndex"]),
+    systemPromptBytes: nonNegativeInteger(payload["systemPromptBytes"]),
+    messageCount: nonNegativeInteger(payload["messageCount"]),
+    userMessageCount: nonNegativeInteger(payload["userMessageCount"]),
+    assistantMessageCount: nonNegativeInteger(payload["assistantMessageCount"]),
+    toolResultMessageCount: nonNegativeInteger(
       payload["toolResultMessageCount"],
-    );
-    const otherMessageCount = nonNegativeInteger(payload["otherMessageCount"]);
-    const toolCount = nonNegativeInteger(payload["toolCount"]);
-    const systemPromptSha256 = hash(payload["systemPromptSha256"]);
-    const messageSetSha256 = hash(payload["messageSetSha256"]);
-    const toolNameSetSha256 = hash(payload["toolNameSetSha256"]);
-    const toolDefinitionSetSha256 = hash(payload["toolDefinitionSetSha256"]);
-    const contentSha256 = hash(payload["contentSha256"]);
-    if (
-      turnIndex === undefined ||
-      systemPromptBytes === undefined ||
-      messageCount === undefined ||
-      userMessageCount === undefined ||
-      assistantMessageCount === undefined ||
-      toolResultMessageCount === undefined ||
-      otherMessageCount === undefined ||
-      toolCount === undefined ||
-      !systemPromptSha256 ||
-      !messageSetSha256 ||
-      !toolNameSetSha256 ||
-      !toolDefinitionSetSha256 ||
-      !contentSha256 ||
-      userMessageCount +
-        assistantMessageCount +
-        toolResultMessageCount +
-        otherMessageCount !==
-        messageCount
-    ) {
-      return [];
-    }
-    return [
-      {
-        eventSeq: event.seq,
-        runId: event.runId,
-        turnIndex,
-        ...responseBindingProjection(
-          responsesByRunAndTurn.get(`${event.runId}:${turnIndex}`),
-          contentSha256,
-          messageSetSha256,
-          toolDefinitionSetSha256,
-        ),
-        systemPromptBytes,
-        messageCount,
-        userMessageCount,
-        assistantMessageCount,
-        toolResultMessageCount,
-        otherMessageCount,
-        toolCount,
-        systemPromptSha256,
-        messageSetSha256,
-        toolNameSetSha256,
-        toolDefinitionSetSha256,
-        contentSha256,
-      },
-    ];
-  });
+    ),
+    otherMessageCount: nonNegativeInteger(payload["otherMessageCount"]),
+    toolCount: nonNegativeInteger(payload["toolCount"]),
+  };
+  if (Object.values(counts).some((value) => value === undefined)) return;
+  const total =
+    counts.userMessageCount! +
+    counts.assistantMessageCount! +
+    counts.toolResultMessageCount! +
+    counts.otherMessageCount!;
+  return total === counts.messageCount
+    ? (counts as Record<keyof typeof counts, number>)
+    : undefined;
+}
+
+function envelopeHashes(payload: Record<string, unknown>) {
+  const hashes = {
+    systemPromptSha256: hash(payload["systemPromptSha256"]),
+    messageSetSha256: hash(payload["messageSetSha256"]),
+    toolNameSetSha256: hash(payload["toolNameSetSha256"]),
+    toolDefinitionSetSha256: hash(payload["toolDefinitionSetSha256"]),
+    contentSha256: hash(payload["contentSha256"]),
+  };
+  return Object.values(hashes).every(Boolean)
+    ? (hashes as Record<keyof typeof hashes, string>)
+    : undefined;
+}
+
+function toolDefinitionCost(
+  payload: Record<string, unknown>,
+  schemaVersion: 1 | 2,
+):
+  | Pick<
+      ModelContextEnvelopeView,
+      | "toolDefinitionBytes"
+      | "toolDefinitionEstimatedTokens"
+      | "toolDefinitionTokenEstimateMethod"
+    >
+  | undefined {
+  if (schemaVersion === 1) return {};
+  const toolDefinitionBytes = nonNegativeInteger(
+    payload["toolDefinitionBytes"],
+  );
+  const toolDefinitionEstimatedTokens = nonNegativeInteger(
+    payload["toolDefinitionEstimatedTokens"],
+  );
+  if (
+    toolDefinitionBytes === undefined ||
+    toolDefinitionEstimatedTokens !== Math.ceil(toolDefinitionBytes / 4) ||
+    payload["toolDefinitionTokenEstimateMethod"] !== "ceil_utf8_bytes_div_4"
+  ) {
+    return;
+  }
+  return {
+    toolDefinitionBytes,
+    toolDefinitionEstimatedTokens,
+    toolDefinitionTokenEstimateMethod: "ceil_utf8_bytes_div_4",
+  };
 }
 
 interface ModelContextResponseBinding {

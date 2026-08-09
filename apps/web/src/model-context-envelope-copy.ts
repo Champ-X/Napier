@@ -10,6 +10,8 @@ export const modelContextEnvelopeCopy = {
   other: "Other",
   promptBytes: "Prompt bytes",
   toolCount: "Tools",
+  toolSchemaBytes: "Tool schema bytes",
+  toolSchemaTokens: "Tool schema est.",
   prompt: "Prompt",
   messageSet: "Messages",
   toolNames: "Tool names",

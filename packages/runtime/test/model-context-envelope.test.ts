@@ -6,8 +6,11 @@ import {
   assertModelContextEnvelopeEventBindings,
   createModelContextEnvelopeReceipt,
   MODEL_CONTEXT_ENVELOPE_EVENT,
+  MODEL_CONTEXT_ENVELOPE_VERSION,
+  MODEL_CONTEXT_TOOL_TOKEN_ESTIMATE_METHOD,
   validateModelContextEnvelopeReceipt,
 } from "../src/model-context-envelope.js";
+import { canonicalJson, sha256 } from "../src/ed25519.js";
 
 describe("model context envelope", () => {
   it("binds prompt, messages, and tools without copying raw context", () => {
@@ -49,7 +52,7 @@ describe("model context envelope", () => {
     expect(receipt).toEqual(
       expect.objectContaining({
         kind: "napier.model-context-envelope",
-        schemaVersion: 1,
+        schemaVersion: MODEL_CONTEXT_ENVELOPE_VERSION,
         turnIndex: 2,
         systemPromptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         systemPromptBytes: Buffer.byteLength(
@@ -65,6 +68,10 @@ describe("model context envelope", () => {
         toolCount: 3,
         toolNameSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         toolDefinitionSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        toolDefinitionBytes: 418,
+        toolDefinitionEstimatedTokens: 105,
+        toolDefinitionTokenEstimateMethod:
+          MODEL_CONTEXT_TOOL_TOKEN_ESTIMATE_METHOD,
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
@@ -97,9 +104,42 @@ describe("model context envelope", () => {
     expect(() =>
       validateModelContextEnvelopeReceipt({
         ...receipt,
+        toolDefinitionEstimatedTokens:
+          receipt.schemaVersion === 2
+            ? receipt.toolDefinitionEstimatedTokens + 1
+            : 1,
+        contentSha256: receipt.contentSha256,
+      }),
+    ).toThrow("estimate is invalid");
+    expect(() =>
+      validateModelContextEnvelopeReceipt({
+        ...receipt,
         contentSha256: "0".repeat(64),
       }),
     ).toThrow("hash mismatch");
+  });
+
+  it("accepts legacy v1 hash-only receipts", () => {
+    const modern = createModelContextEnvelopeReceipt({
+      turnIndex: 0,
+      systemPrompt: "System",
+      messages: [{ role: "user", content: "Hello" }],
+      tools: [],
+    });
+    const {
+      toolDefinitionBytes: _toolDefinitionBytes,
+      toolDefinitionEstimatedTokens: _toolDefinitionEstimatedTokens,
+      toolDefinitionTokenEstimateMethod: _toolDefinitionTokenEstimateMethod,
+      contentSha256: _contentSha256,
+      ...common
+    } = modern.schemaVersion === 2 ? modern : invalidModern();
+    const legacyContent = { ...common, schemaVersion: 1 as const };
+    const legacy = {
+      ...legacyContent,
+      contentSha256: sha256(canonicalJson(legacyContent)),
+    };
+
+    expect(validateModelContextEnvelopeReceipt(legacy)).toEqual(legacy);
   });
 
   it("requires each envelope to have exactly one bound model response", () => {
@@ -144,3 +184,7 @@ describe("model context envelope", () => {
     ).not.toThrow();
   });
 });
+
+function invalidModern(): never {
+  throw new Error("Expected a modern Model Context Envelope");
+}

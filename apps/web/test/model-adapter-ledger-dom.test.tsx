@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   CompiledPromptPackageLedger,
   ModelAdapterLedger,
+  ModelContextEnvelopeLedger,
 } from "../src/ModelContextTraceLedgers";
 
 describe("Model Adapter ledger", () => {
@@ -60,6 +61,42 @@ describe("Model Adapter ledger", () => {
     expect(text).toContain("64000");
     expect(text).toContain("Token source");
     expect(text).toContain("adapter");
+  });
+
+  it("renders v2 tool schema cost without raw definitions", () => {
+    const tree = ModelContextEnvelopeLedger({
+      envelopes: [
+        {
+          eventSeq: 23,
+          runId: "run_envelope_v2",
+          schemaVersion: 2,
+          turnIndex: 0,
+          systemPromptBytes: 5_768,
+          messageCount: 1,
+          userMessageCount: 1,
+          assistantMessageCount: 0,
+          toolResultMessageCount: 0,
+          otherMessageCount: 0,
+          toolCount: 20,
+          toolDefinitionBytes: 31_462,
+          toolDefinitionEstimatedTokens: 7_866,
+          toolDefinitionTokenEstimateMethod: "ceil_utf8_bytes_div_4",
+          systemPromptSha256: "1".repeat(64),
+          messageSetSha256: "2".repeat(64),
+          toolNameSetSha256: "3".repeat(64),
+          toolDefinitionSetSha256: "4".repeat(64),
+          contentSha256: "5".repeat(64),
+        },
+      ],
+    });
+    const text = visibleText(tree);
+
+    expect(text).toContain("Tool schema bytes");
+    expect(text).toContain("31462");
+    expect(text).toContain("Tool schema est.");
+    expect(text).toContain("~7866 tok");
+    expect(text).not.toContain("read_file");
+    expect(text).not.toContain("TOP_SECRET_SCHEMA");
   });
 
   it("renders five Prompt layers without raw Prompt or tool names", () => {
