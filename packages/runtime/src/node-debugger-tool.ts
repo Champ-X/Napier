@@ -29,7 +29,6 @@ const actionTimeout = Type.Optional(
   Type.Integer({
     minimum: 1,
     maximum: MAX_NODE_DEBUG_ACTION_TIMEOUT_MS,
-    description: "Wall-time budget for this DAP action.",
   }),
 );
 const nodeDebuggerSchema = Type.Union([
@@ -40,16 +39,12 @@ const nodeDebuggerSchema = Type.Union([
         minLength: 1,
         maxLength: 500,
         pattern: "^[^\\u0000-\\u001f\\u007f]*$",
-        description:
-          "Workspace-relative source file. Without sourceMapPath this is also the launched JavaScript or Node-executable TypeScript program.",
       }),
       programPath: Type.Optional(
         Type.String({
           minLength: 1,
           maxLength: 500,
           pattern: "^[^\\u0000-\\u001f\\u007f]*$",
-          description:
-            "Workspace-relative generated program. Must be supplied with sourceMapPath.",
         }),
       ),
       sourceMapPath: Type.Optional(
@@ -57,8 +52,6 @@ const nodeDebuggerSchema = Type.Union([
           minLength: 1,
           maxLength: 500,
           pattern: "^[^\\u0000-\\u001f\\u007f]*$",
-          description:
-            "Workspace-relative external v3 source map. Must be supplied with programPath.",
         }),
       ),
       breakpoints: Type.Array(
@@ -131,8 +124,6 @@ const nodeDebuggerSchema = Type.Union([
       expression: Type.String({
         minLength: 1,
         maxLength: MAX_NODE_DEBUG_EXPRESSION_CHARS,
-        description:
-          "Expression evaluated on the paused frame with throwOnSideEffect enabled.",
       }),
       timeoutMs: actionTimeout,
     },
@@ -163,7 +154,7 @@ export function createNodeDebuggerTool(
     name: "node_debugger",
     label: "Node debugger",
     description:
-      "Launch and control one Run-owned Node Debug Adapter Protocol session in the read-only, offline OS Sandbox. Set source breakpoints, inspect stack/scopes/variables, evaluate expressions without side effects, continue, or single-step. For compiled TypeScript, bind both the generated program and its external source map so breakpoints and frames use original coordinates. Retain the processId while paused. Source, paths, variable names/values, expressions, arguments, and target output are live-only.",
+      "Launch/control one Run-owned Node DAP session in the read-only offline OS Sandbox: set source breakpoints; inspect stack/scopes/variables; evaluate paused-frame expressions with throwOnSideEffect; continue/step/cancel. All paths are workspace-relative. path launches JS/Node-executable TS unless compiled TS supplies paired programPath + external-v3 sourceMapPath for original coordinates. Retain processId while paused; timeoutMs bounds each action. Source, paths, values, expressions, args, and output are live-only.",
     parameters: nodeDebuggerSchema,
     async execute(_toolCallId, input, signal) {
       let result: NodeDebuggerActionResult;
