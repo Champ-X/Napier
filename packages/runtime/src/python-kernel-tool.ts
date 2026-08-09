@@ -28,15 +28,12 @@ const pythonKernelSchema = Type.Union([
           minLength: 1,
           maxLength: 500,
           pattern: "^[^\\u0000-\\u001f\\u007f]*$",
-          description:
-            "Workspace-relative working directory. Defaults to the workspace root.",
         }),
       ),
       sessionTimeoutMs: Type.Optional(
         Type.Integer({
           minimum: MIN_PYTHON_KERNEL_SESSION_TIMEOUT_MS,
           maximum: MAX_PYTHON_KERNEL_SESSION_TIMEOUT_MS,
-          description: "Total wall-time budget for the persistent kernel.",
         }),
       ),
     },
@@ -49,14 +46,11 @@ const pythonKernelSchema = Type.Union([
       code: Type.String({
         minLength: 1,
         maxLength: MAX_PYTHON_KERNEL_CODE_BYTES,
-        description:
-          "Restricted synchronous Python evaluated in the existing persistent state.",
       }),
       timeoutMs: Type.Optional(
         Type.Integer({
           minimum: 1,
           maximum: MAX_PYTHON_KERNEL_EVALUATION_TIMEOUT_MS,
-          description: "Wall-time budget for this evaluation.",
         }),
       ),
     },
@@ -103,7 +97,7 @@ export function createPythonKernelTool(
     name: "python_kernel",
     label: "Python kernel",
     description:
-      "Start, evaluate, or cancel persistent restricted synchronous Python in a read-only, offline OS Sandbox Process Session. State survives across evaluations in this Run. Imports, classes, async/yield, private or dunder access, dynamic compilation, file APIs, subprocesses, workspace writes, networking, and inherited environment access are unavailable. Timeout or uncertain state terminates the kernel.",
+      "Start/evaluate/cancel persistent restricted synchronous Python in a read-only offline OS Sandbox. start: workspace-relative cwd + total sessionTimeoutMs; evaluate: processId, code, timeoutMs. State persists across this Run. imports, classes, async/yield, private/dunder access, dynamic compilation, file APIs, subprocesses, workspace writes, network, and inherited env are unavailable. Timeout or uncertain outcome terminates the kernel.",
     parameters: pythonKernelSchema,
     async execute(_toolCallId, input, signal) {
       if (input.action === "start") {

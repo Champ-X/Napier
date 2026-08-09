@@ -28,15 +28,12 @@ const javascriptKernelSchema = Type.Union([
           minLength: 1,
           maxLength: 500,
           pattern: "^[^\\u0000-\\u001f\\u007f]*$",
-          description:
-            "Workspace-relative working directory. Defaults to the workspace root.",
         }),
       ),
       sessionTimeoutMs: Type.Optional(
         Type.Integer({
           minimum: MIN_JAVASCRIPT_KERNEL_SESSION_TIMEOUT_MS,
           maximum: MAX_JAVASCRIPT_KERNEL_SESSION_TIMEOUT_MS,
-          description: "Total wall-time budget for the persistent kernel.",
         }),
       ),
     },
@@ -49,14 +46,11 @@ const javascriptKernelSchema = Type.Union([
       code: Type.String({
         minLength: 1,
         maxLength: MAX_JAVASCRIPT_KERNEL_CODE_BYTES,
-        description:
-          "Synchronous JavaScript evaluated in the existing isolated context. Promises terminate the kernel.",
       }),
       timeoutMs: Type.Optional(
         Type.Integer({
           minimum: 1,
           maximum: MAX_JAVASCRIPT_KERNEL_EVALUATION_TIMEOUT_MS,
-          description: "CPU wall-time budget for this evaluation.",
         }),
       ),
     },
@@ -98,7 +92,7 @@ export function createJavascriptKernelTool(
     name: "javascript_kernel",
     label: "JavaScript kernel",
     description:
-      "Start, evaluate, or cancel a persistent synchronous JavaScript context in the existing read-only, offline OS Sandbox Process Session. State survives across evaluations in this Run. process, require, fetch, WebAssembly, shared-memory Atomics, GC callbacks, dynamic string code generation, workspace writes, and inherited environment access are unavailable. Promise microtasks drain within the evaluation timeout; a returned Promise or thenable terminates the kernel.",
+      "Start/evaluate/cancel persistent synchronous JavaScript in a read-only offline OS Sandbox. start: workspace-relative cwd + total sessionTimeoutMs; evaluate: processId, code, CPU timeoutMs. State persists across this Run. process/require/fetch/WebAssembly/shared-memory Atomics/GC callbacks/dynamic string code/workspace writes/inherited env are unavailable. Promise microtasks drain within timeout; returned Promise/thenable or uncertain outcome terminates the kernel.",
     parameters: javascriptKernelSchema,
     async execute(_toolCallId, input, signal) {
       if (input.action === "start") {
