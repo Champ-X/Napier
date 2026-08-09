@@ -187,11 +187,11 @@ export class SubagentCoordinator {
       name: "delegate_task",
       label: "Delegate task",
       description: [
-        "Delegate substantial independent investigation, review, or path-scoped coding work; never trivial or parent-context-dependent tasks.",
-        `Available roles: ${[...this.enabledRoles].join(", ")}.`,
+        "Delegate substantial independent investigation, review, or scoped coding; never trivial or parent-context-dependent work.",
+        `Roles: ${[...this.enabledRoles].join(", ")}.`,
         `Run budget: at most ${this.limits.maxTotal} total and ${this.limits.maxConcurrent} concurrent delegations.`,
         "description is a short ledger label; task must be self-contained with paths, constraints, and evidence.",
-        "Only coder uses writePaths, listing every created, changed, deleted, or moved endpoint; returns an isolated, unmerged one-use worktree preview.",
+        "Only coder uses writePaths listing every created, changed, deleted, or moved endpoint; returns an isolated unmerged one-use worktree preview.",
       ].join(" "),
       parameters: delegateTaskSchema,
       execute: async (_toolCallId, input, signal) => {

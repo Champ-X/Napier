@@ -111,7 +111,14 @@ function sha256(value: string): string {
 
 describe("SubagentCoordinator", () => {
   it("keeps the delegate tool definition within one KiB", async () => {
-    const { coordinator } = await createHarness();
+    const { coordinator } = await createHarness(
+      {},
+      {
+        enabledSubagents: ["researcher", "reviewer", "general", "coder"],
+        enabledTools: ["apply_patch", "lsp_diagnostics"],
+        toolPolicy: "workspace",
+      },
+    );
     const tool = coordinator.createTool();
     const bytes = Buffer.byteLength(
       JSON.stringify({
