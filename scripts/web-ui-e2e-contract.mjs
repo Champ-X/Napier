@@ -12,6 +12,15 @@ export const INSPECTOR_GROUP_LABELS = Object.freeze([
   "Files/Artifacts",
   "Inspect",
 ]);
+export const WEB_UI_NARRATIVE_EXPECTATION = Object.freeze({
+  title: "Ship verified research brief",
+  phase: "Waiting",
+  currentAction: "Approval",
+  completedItem: "Inspect source evidence",
+  blocker: "Operator input is required before the run can continue.",
+  nextStep: "Approve final delivery",
+  artifactPath: "artifacts/research-brief.md",
+});
 
 export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.schemaVersion, 1);
@@ -31,6 +40,19 @@ export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.browser?.osIsolationClaimed, false);
   assert.match(receipt?.browser?.executableSha256 ?? "", SHA256);
   assert.equal(receipt?.browser?.startupDurationMs >= 0, true);
+  assert.match(receipt?.fixture?.threadId ?? "", /^thread_[a-z0-9]{8,80}$/u);
+  assert.deepEqual(
+    {
+      title: receipt.fixture.title,
+      phase: receipt.fixture.phase,
+      currentAction: receipt.fixture.currentAction,
+      completedItem: receipt.fixture.completedItem,
+      blocker: receipt.fixture.blocker,
+      nextStep: receipt.fixture.nextStep,
+      artifactPath: receipt.fixture.artifactPath,
+    },
+    WEB_UI_NARRATIVE_EXPECTATION,
+  );
   assert.deepEqual(
     receipt?.viewports?.map(({ width, height, layout }) => ({
       width,
@@ -64,6 +86,20 @@ export function assertViewportReceipt(viewport) {
   assert.equal(viewport.keyboard.manualActivationPreserved, true);
   assert.equal(viewport.keyboard.groupNavigationPassed, true);
   assert.equal(viewport.keyboard.toolNavigationPassed, true);
+  assert.deepEqual(
+    {
+      title: viewport.narrative.title,
+      phase: viewport.narrative.phase,
+      currentAction: viewport.narrative.currentAction,
+      completedItem: viewport.narrative.completedItem,
+      blocker: viewport.narrative.blocker,
+      nextStep: viewport.narrative.nextStep,
+      artifactPath: viewport.narrative.artifactPath,
+    },
+    WEB_UI_NARRATIVE_EXPECTATION,
+  );
+  assert.equal(viewport.narrative.metrics.includes("tokens"), true);
+  assert.equal(viewport.narrative.metrics.includes("$0.0420"), true);
   assert.equal(viewport.console.errorCount, 0);
   assert.match(viewport.screenshot.sha256, SHA256);
   assert.equal(viewport.screenshot.bytes > 0, true);
@@ -84,6 +120,9 @@ export function assertViewportReceipt(viewport) {
   }
   if (viewport.width === 390) {
     assert.equal(viewport.geometry.navigationLabelOverflowPx, 0);
+  }
+  if (viewport.width === 1_600) {
+    assert.equal(viewport.narrative.refreshPreserved, true);
   }
 }
 

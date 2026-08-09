@@ -18,7 +18,20 @@ describe("Workbench layout", () => {
     expect(styles).toContain(".task-narrative {\n  grid-area: narrative;");
     expect(styles).toContain(".workbench-notices {\n  grid-area: notices;");
     expect(styles).toContain(".conversation {\n  grid-area: conversation;");
-    expect(styles).toContain(".run-decision-dockets {\n  grid-area: decisions;");
+    expect(styles).toContain(
+      ".run-decision-dockets {\n  grid-area: decisions;",
+    );
     expect(styles).toContain("grid-area: composer;");
+  });
+
+  it("keeps blockers and next actions independently visible", async () => {
+    const source = await readFile(
+      new URL("../src/TaskNarrativeBar.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain("{narrative.blocker ? (");
+    expect(source).toContain("{narrative.nextStep ? (");
+    expect(source).not.toContain(") : narrative.nextStep ? (");
   });
 });

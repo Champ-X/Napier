@@ -8,6 +8,7 @@ import {
   WEB_UI_E2E_KIND,
   WEB_UI_E2E_VIEWPORTS,
 } from "./web-ui-e2e-contract.mjs";
+import { seedWebUiNarrativeFixture } from "./web-ui-e2e-fixture.mjs";
 import {
   createWebUiE2eRoot,
   productionEntryReceipt,
@@ -28,6 +29,7 @@ const cleanupErrors = [];
 
 try {
   receipt.productionEntry = await productionEntryReceipt();
+  receipt.fixture = await seedWebUiNarrativeFixture(temporaryRoot);
   serverRuntime = await startProductionWebServer(temporaryRoot);
   receipt.server = serverRuntime.receipt;
   browserRuntime = await startWebUiCdpBrowser(temporaryRoot);
@@ -38,6 +40,7 @@ try {
       browserRuntime.browser,
       serverRuntime.origin,
       viewport,
+      receipt.fixture,
     );
     assertViewportReceipt(viewportReceipt);
     receipt.viewports.push(viewportReceipt);
@@ -76,7 +79,7 @@ if (receiptPath) {
 }
 process.stdout.write(serialized);
 
-async function inspectViewport(browser, origin, viewport) {
+async function inspectViewport(browser, origin, viewport, expectedNarrative) {
   const context = browser.contexts()[0];
   assert.ok(context, "Web UI E2E Browser context is unavailable");
   const page = await context.newPage();
@@ -100,6 +103,16 @@ async function inspectViewport(browser, origin, viewport) {
     });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(250);
+    const narrative = await readNarrative(page, expectedNarrative);
+    const refreshPreserved =
+      viewport.width === 1_600
+        ? await refreshPreservesNarrative(
+            page,
+            origin,
+            expectedNarrative,
+            narrative,
+          )
+        : false;
     const initial = await page.evaluate(readInitialLayout);
     const openFocusTarget =
       viewport.layout === "drawer" ? await openDrawer(page) : "";
@@ -132,12 +145,58 @@ async function inspectViewport(browser, origin, viewport) {
         ),
       },
       keyboard,
+      narrative: { ...narrative, refreshPreserved },
       console: { errorCount: consoleErrors.length },
       screenshot,
     };
   } finally {
     await page.close();
   }
+}
+
+async function readNarrative(page, expected) {
+  await page.locator(".task-narrative-current strong").waitFor({
+    state: "visible",
+    timeout: WEB_UI_START_TIMEOUT_MS,
+  });
+  const narrative = await page.evaluate(() => {
+    const text = (selector) =>
+      document.querySelector(selector)?.textContent?.trim() ?? "";
+    const completed = text(".task-narrative-completed p");
+    const artifact = text(".task-narrative-completed small").replace(
+      /^Outputs · /u,
+      "",
+    );
+    return {
+      title: text(".thread-heading h1"),
+      phase: text(".task-narrative-current > span"),
+      currentAction: text(".task-narrative-current strong"),
+      metrics: text(".task-narrative-current small"),
+      completedItem: completed,
+      blocker: text(".task-narrative-blocker p"),
+      nextStep: text(".task-narrative-next p"),
+      artifactPath: artifact,
+    };
+  });
+  assert.equal(narrative.title, expected.title);
+  assert.equal(narrative.phase, expected.phase);
+  assert.equal(narrative.currentAction, expected.currentAction);
+  assert.equal(narrative.completedItem, expected.completedItem);
+  assert.equal(narrative.blocker, expected.blocker);
+  assert.equal(narrative.nextStep, expected.nextStep);
+  assert.equal(narrative.artifactPath, expected.artifactPath);
+  return narrative;
+}
+
+async function refreshPreservesNarrative(page, origin, expected, before) {
+  await page.reload({
+    waitUntil: "domcontentloaded",
+    timeout: WEB_UI_START_TIMEOUT_MS,
+  });
+  const after = await readNarrative(page, expected);
+  assert.deepEqual(after, before);
+  assert.equal(page.url(), `${origin}/`);
+  return true;
 }
 
 async function openDrawer(page) {

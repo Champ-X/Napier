@@ -757,7 +757,7 @@ button:disabled {
 .task-narrative {
   grid-area: narrative;
   display: grid;
-  grid-template-columns: minmax(180px, 1.3fr) repeat(2, minmax(130px, 1fr));
+  grid-template-columns: minmax(180px, 1.3fr) repeat(3, minmax(110px, 1fr));
   gap: 1px;
   padding: 0 24px 0 72px;
   background: var(--rule);

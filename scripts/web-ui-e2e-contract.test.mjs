@@ -8,6 +8,7 @@ import {
   assertWebUiE2eReceipt,
   INSPECTOR_GROUP_LABELS,
   WEB_UI_E2E_KIND,
+  WEB_UI_NARRATIVE_EXPECTATION,
   WEB_UI_E2E_VIEWPORTS,
 } from "./web-ui-e2e-contract.mjs";
 
@@ -78,6 +79,10 @@ function validReceipt() {
       executableSha256: "c".repeat(64),
       startupDurationMs: 2,
     },
+    fixture: {
+      threadId: "thread_fixture01",
+      ...WEB_UI_NARRATIVE_EXPECTATION,
+    },
     viewports: WEB_UI_E2E_VIEWPORTS.map((viewport) => ({
       ...viewport,
       inspector: {
@@ -106,6 +111,11 @@ function validReceipt() {
         manualActivationPreserved: true,
         groupNavigationPassed: true,
         toolNavigationPassed: true,
+      },
+      narrative: {
+        ...WEB_UI_NARRATIVE_EXPECTATION,
+        metrics: "1s / 15m 0s · 1,680 / 250,000 tokens · $0.0420 / $10.00",
+        refreshPreserved: viewport.width === 1_600,
       },
       console: { errorCount: 0 },
       screenshot: {

@@ -9,21 +9,22 @@ const LazyTaskCompletionSummary = lazy(() => import("./TaskCompletionSummary"));
 export function TaskNarrativeBar({
   detail,
 }: {
-  detail: Pick<
-    ThreadDetail,
-    | "thread"
-    | "runs"
-    | "plans"
-    | "events"
-    | "operatorDecisions"
-    | "automaticRecoveryAssessments"
-    | "automaticRecoveryAttempts"
-  > | undefined;
+  detail:
+    | Pick<
+        ThreadDetail,
+        | "thread"
+        | "runs"
+        | "plans"
+        | "events"
+        | "operatorDecisions"
+        | "automaticRecoveryAssessments"
+        | "automaticRecoveryAttempts"
+      >
+    | undefined;
 }) {
   const [now, setNow] = useState(() => Date.now());
   const running = detail?.runs.some(
-    (run) =>
-      run.id === detail.thread.currentRunId && run.status === "running",
+    (run) => run.id === detail.thread.currentRunId && run.status === "running",
   );
   useEffect(() => {
     if (!running) return;
@@ -65,7 +66,8 @@ export function TaskNarrativeBar({
           <span>Blocked by</span>
           <p>{narrative.blocker}</p>
         </div>
-      ) : narrative.nextStep ? (
+      ) : null}
+      {narrative.nextStep ? (
         <div className="task-narrative-next">
           <span>Next</span>
           <p>{narrative.nextStep}</p>
