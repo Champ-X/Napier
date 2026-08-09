@@ -10,7 +10,13 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
+import {
+  createRunReplaySnapshot,
+  exportThreadReplayBundle,
+  verifyRunReplaySnapshot,
+} from "../src/replay.js";
 import { UnsupportedSandboxAdapter } from "../src/sandbox.js";
+import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 
 const roots: string[] = [];
 
@@ -133,6 +139,28 @@ describe("Model adapter capture", () => {
         String(invocation!.payload["capsuleSha256"]),
       );
       expect(capsule.options.cacheRetention).toBe("long");
+      const snapshot = await createRunReplaySnapshot(
+        services.store,
+        thread.id,
+        run.id,
+      );
+      expect(verifyRunReplaySnapshot(snapshot)).toEqual(
+        expect.objectContaining({
+          status: "valid",
+          diagnostics: [],
+          threadId: thread.id,
+          runId: run.id,
+        }),
+      );
+      const bundle = await exportThreadReplayBundle(services.store, thread.id);
+      expect(verifyThreadReplayBundle(bundle)).toEqual(
+        expect.objectContaining({
+          status: "valid",
+          diagnostics: [],
+          threadId: thread.id,
+          runCount: expect.any(Number),
+        }),
+      );
     } finally {
       await services.shutdown();
     }

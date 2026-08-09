@@ -10,10 +10,8 @@ import {
 import type { ReplayStorePort } from "./store-port.js";
 import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
 import { canonicalJson } from "./ed25519.js";
-import {
-  assertModelContextEnvelopeEventBindings,
-  validateModelContextEnvelopeReceipt,
-} from "./model-context-envelope.js";
+import { validateModelContextEnvelopeReceipt } from "./model-context-envelope.js";
+import { assertModelRequestEvidenceBindings } from "./model-prompt-evidence-bindings.js";
 import { assertIndependentModelAdvisorReviewEvidenceBindings } from "./independent-model-advisor.js";
 import {
   deriveRunMetrics,
@@ -186,9 +184,9 @@ function validateRunReplaySnapshot(input: unknown): RunReplaySnapshot {
     assertReplayEvent(event, threadId, runId, previousSeq);
     previousSeq = event.seq;
   }
-  assertModelContextEnvelopeEventBindings(events, {
+  assertModelRequestEvidenceBindings(events, {
     knownRunIds: new Set([runId]),
-    label: "Run replay snapshot Model Context Envelope",
+    label: "Run replay snapshot",
   });
   assertEmbeddedModelContextEnvelopeReceipts({ events, subagents }, "snapshot");
   assertIndependentModelAdvisorReviewEvidenceBindings(

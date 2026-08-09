@@ -55,10 +55,10 @@ import {
 import { assertSourceContinuityContexts } from "./research-source-replay.js";
 import { assertIndependentModelAdvisorReviewEvidenceBindings } from "./independent-model-advisor.js";
 import {
-  assertModelContextEnvelopeEventBindings,
   MODEL_CONTEXT_ENVELOPE_EVENT,
   validateModelContextEnvelopeReceipt,
 } from "./model-context-envelope.js";
+import { assertModelRequestEvidenceBindings } from "./model-prompt-evidence-bindings.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import {
   createPromptVariableCatalog,
@@ -861,9 +861,9 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       );
     }
   }
-  assertModelContextEnvelopeEventBindings(typedEvents, {
+  assertModelRequestEvidenceBindings(typedEvents, {
     knownRunIds: runIds,
-    label: "Thread replay bundle Model Context Envelope",
+    label: "Thread replay bundle",
   });
   assertSourceContinuityContexts(typedEvents, runsById, thread);
   const toolLoopTriggerEvents = typedEvents.filter(
