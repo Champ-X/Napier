@@ -4,6 +4,7 @@ import {
   INSPECTOR_GROUPS,
   inspectorGroup,
   inspectorTabs,
+  adjacentIndex,
 } from "../src/InspectorNavigation";
 
 describe("Inspector navigation", () => {
@@ -58,5 +59,15 @@ describe("Inspector navigation", () => {
     ]);
     expect(inspectorTabs("goal")).toEqual(["goal", "plan"]);
     expect(inspectorTabs("files")).toEqual(["files"]);
+  });
+
+  it("wraps arrow navigation and supports Home and End", () => {
+    expect(adjacentIndex(0, 3, "ArrowLeft")).toBe(2);
+    expect(adjacentIndex(2, 3, "ArrowRight")).toBe(0);
+    expect(adjacentIndex(1, 3, "ArrowDown")).toBe(2);
+    expect(adjacentIndex(1, 3, "ArrowUp")).toBe(0);
+    expect(adjacentIndex(2, 3, "Home")).toBe(0);
+    expect(adjacentIndex(0, 3, "End")).toBe(2);
+    expect(adjacentIndex(0, 3, "Enter")).toBeUndefined();
   });
 });

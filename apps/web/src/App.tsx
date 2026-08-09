@@ -6,7 +6,7 @@ import { FatalState, LoadingShell } from "./AppInitialStates";
 import { Composer } from "./Composer";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import { copy } from "./copy";
-import { InspectorNavigation } from "./InspectorNavigation";
+import { InspectorNavigation, InspectorPanel } from "./InspectorNavigation";
 import { LedgerNavigation } from "./LedgerNavigation";
 import { ResponsiveInspector } from "./ResponsiveInspector";
 import { RunDecisionDockets } from "./RunDecisionDockets";
@@ -145,7 +145,7 @@ export function App() {
           onChange={vm.setInspectorTab}
         />
 
-        <div className="inspector-body">
+        <InspectorPanel activeTab={vm.inspectorTab}>
           {vm.inspectorTab === "trace" ? (
             <Suspense
               fallback={
@@ -448,7 +448,7 @@ export function App() {
               />
             </Suspense>
           ) : null}
-        </div>
+        </InspectorPanel>
       </ResponsiveInspector>
     </div>
   );

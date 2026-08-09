@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 
 export function ResponsiveInspector({
@@ -11,19 +11,35 @@ export function ResponsiveInspector({
 }) {
   const [open, setOpen] = useState(false);
   const inspectorId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const inspectorRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    const focusTimer = window.setTimeout(() => {
+      inspectorRef.current
+        ?.querySelector<HTMLButtonElement>(
+          '.inspector-groups [role="tab"][aria-selected="true"]',
+        )
+        ?.focus();
+    }, 200);
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     };
     window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
   }, [open]);
 
   return (
     <>
       <button
+        ref={triggerRef}
         className="inspector-drawer-trigger"
         type="button"
         aria-controls={inspectorId}
@@ -38,10 +54,14 @@ export function ResponsiveInspector({
           className="inspector-drawer-backdrop"
           type="button"
           aria-label={`Close ${label}`}
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            setOpen(false);
+            triggerRef.current?.focus();
+          }}
         />
       ) : null}
       <aside
+        ref={inspectorRef}
         id={inspectorId}
         className={`inspector${open ? " is-drawer-open" : ""}`}
         aria-label={label}
@@ -54,7 +74,10 @@ export function ResponsiveInspector({
           <button
             type="button"
             aria-label={`Close ${label}`}
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              setOpen(false);
+              triggerRef.current?.focus();
+            }}
           >
             <X size={15} aria-hidden="true" />
           </button>

@@ -11,6 +11,8 @@ import {
   Search,
   Target,
 } from "lucide-react";
+import type { KeyboardEvent, ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 import { copy } from "./copy";
 import { InspectorTabButton } from "./InspectorTabButton";
@@ -78,6 +80,12 @@ export function InspectorNavigation({
 }) {
   const activeGroup = inspectorGroup(activeTab);
   const visibleTabs = inspectorTabs(activeTab);
+  const [focusedGroup, setFocusedGroup] = useState(activeGroup.id);
+  const [focusedTool, setFocusedTool] = useState(activeTab);
+  useEffect(() => {
+    setFocusedGroup(activeGroup.id);
+    setFocusedTool(activeTab);
+  }, [activeGroup.id, activeTab]);
 
   return (
     <nav className="inspector-navigation" aria-label="Inspector navigation">
@@ -91,12 +99,18 @@ export function InspectorNavigation({
           const active = group.id === activeGroup.id;
           return (
             <button
+              id={`inspector-group-${group.id}`}
               key={group.id}
               type="button"
               role="tab"
+              aria-controls="inspector-active-panel"
               aria-selected={active}
+              tabIndex={focusedGroup === group.id ? 0 : -1}
               className={active ? "is-active" : ""}
               onClick={() => onChange(group.defaultTab)}
+              onKeyDown={(event) =>
+                moveGroupFocus(event, group.id, setFocusedGroup)
+              }
             >
               <Icon size={13} aria-hidden="true" />
               {group.label}
@@ -116,8 +130,12 @@ export function InspectorNavigation({
               key={tab}
               id={tab}
               active={activeTab === tab}
+              tabbable={focusedTool === tab}
               icon={<Icon size={14} />}
               onClick={onChange}
+              onKeyDown={(event, id) =>
+                moveToolFocus(event, id, visibleTabs, setFocusedTool)
+              }
             >
               {copy.tabs[tab]}
             </InspectorTabButton>
@@ -140,4 +158,72 @@ export function inspectorTabs(
 ): readonly InspectorTab[] {
   const group = inspectorGroup(activeTab);
   return [activeTab, ...group.tabs.filter((tab) => tab !== activeTab)];
+}
+
+export function InspectorPanel({
+  activeTab,
+  children,
+}: {
+  activeTab: InspectorTab;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      id="inspector-active-panel"
+      className="inspector-body"
+      role="tabpanel"
+      aria-labelledby={`inspector-tab-${activeTab}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function adjacentIndex(
+  current: number,
+  length: number,
+  key: string,
+): number | undefined {
+  if (key === "Home") return 0;
+  if (key === "End") return length - 1;
+  if (key === "ArrowRight" || key === "ArrowDown") {
+    return (current + 1) % length;
+  }
+  if (key === "ArrowLeft" || key === "ArrowUp") {
+    return (current - 1 + length) % length;
+  }
+  return undefined;
+}
+
+function moveGroupFocus(
+  event: KeyboardEvent<HTMLButtonElement>,
+  currentId: InspectorGroupId,
+  setFocused: (group: InspectorGroupId) => void,
+): void {
+  const current = INSPECTOR_GROUPS.findIndex((group) => group.id === currentId);
+  const next = adjacentIndex(current, INSPECTOR_GROUPS.length, event.key);
+  if (next === undefined) return;
+  event.preventDefault();
+  const group = INSPECTOR_GROUPS[next]!;
+  setFocused(group.id);
+  requestAnimationFrame(() =>
+    document.getElementById(`inspector-group-${group.id}`)?.focus(),
+  );
+}
+
+function moveToolFocus(
+  event: KeyboardEvent<HTMLButtonElement>,
+  currentId: InspectorTab,
+  tabs: readonly InspectorTab[],
+  setFocused: (tab: InspectorTab) => void,
+): void {
+  const current = tabs.indexOf(currentId);
+  const next = adjacentIndex(current, tabs.length, event.key);
+  if (next === undefined) return;
+  event.preventDefault();
+  const tab = tabs[next]!;
+  setFocused(tab);
+  requestAnimationFrame(() =>
+    document.getElementById(`inspector-tab-${tab}`)?.focus(),
+  );
 }
