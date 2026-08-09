@@ -29,4 +29,11 @@ export const BUNDLED_SKILLS: SkillSummary[] = [
     source: "bundled",
     enabled: true,
   },
+  {
+    name: "browser-automation",
+    description:
+      "Inspect dynamic pages and perform confirmed browser workflows with explicit evidence.",
+    source: "bundled",
+    enabled: true,
+  },
 ];

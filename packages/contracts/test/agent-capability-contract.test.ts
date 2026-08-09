@@ -11,7 +11,7 @@ const validProjection: EffectiveAgentCapabilityProjectionV1 = {
   agentId: "agent_napier",
   agentRevision: 2,
   contractId: "napier.default-agent.capabilities",
-  contractVersion: 1,
+  contractVersion: 2,
   recommendationSha256: digest,
   driftState: "current",
   ownership: "recommended",
@@ -35,7 +35,7 @@ const validProjection: EffectiveAgentCapabilityProjectionV1 = {
   restorePreview: {
     schemaVersion: 1,
     contractId: "napier.default-agent.capabilities",
-    contractVersion: 1,
+    contractVersion: 2,
     recommendationSha256: digest,
     agentId: "agent_napier",
     agentRevision: 2,
@@ -56,8 +56,18 @@ const validProjection: EffectiveAgentCapabilityProjectionV1 = {
 };
 
 describe("effective Agent capability projection validator", () => {
-  it("accepts a complete V1 projection without recomputing its hashes", () => {
+  it("accepts a schema-V1 projection for the current contract version", () => {
     expect(isEffectiveAgentCapabilityProjectionV1(validProjection)).toBe(true);
+    expect(
+      isEffectiveAgentCapabilityProjectionV1({
+        ...validProjection,
+        contractVersion: 1,
+        restorePreview: {
+          ...validProjection.restorePreview,
+          contractVersion: 1,
+        },
+      }),
+    ).toBe(true);
     expect(
       isEffectiveAgentCapabilityProjectionV1({
         ...validProjection,
@@ -132,7 +142,13 @@ const invalidProjections: ReadonlyArray<readonly [string, unknown]> = [
     Number.MAX_SAFE_INTEGER + 1,
   ),
   invalidAt("wrong contract identity", ["contractId"], "other"),
-  invalidAt("wrong contract version", ["contractVersion"], 2),
+  invalidAt("zero contract version", ["contractVersion"], 0),
+  invalidAt("fractional contract version", ["contractVersion"], 1.5),
+  invalidAt(
+    "mismatched restore contract version",
+    ["restorePreview", "contractVersion"],
+    1,
+  ),
   invalidAt(
     "uppercase recommendation digest",
     ["recommendationSha256"],
@@ -198,9 +214,9 @@ const invalidProjections: ReadonlyArray<readonly [string, unknown]> = [
     "other",
   ),
   invalidAt(
-    "wrong restore contract version",
+    "zero restore contract version",
     ["restorePreview", "contractVersion"],
-    2,
+    0,
   ),
   invalidAt(
     "malformed restore recommendation digest",

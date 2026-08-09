@@ -18,7 +18,7 @@ describe("TUI terminal projection", () => {
       capabilities: agentCapabilityStatus({
         toolPolicy: "observe",
         enabledTools: ["web_search", "web_fetch", "browser", "research_source"],
-        enabledSkills: ["research-brief"],
+        enabledSkills: ["research-brief", "browser-automation"],
         enabledSubagents: ["researcher", "reviewer"],
       }),
     });

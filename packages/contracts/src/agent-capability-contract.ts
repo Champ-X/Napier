@@ -63,7 +63,7 @@ export interface CapabilityDiffOperation {
 export interface CapabilityRestorePreviewV1 {
   schemaVersion: 1;
   contractId: "napier.default-agent.capabilities";
-  contractVersion: 1;
+  contractVersion: number;
   recommendationSha256: string;
   agentId: string;
   agentRevision: number;
@@ -95,7 +95,7 @@ export interface EffectiveAgentCapabilityProjectionV1 {
   agentId: string;
   agentRevision: number;
   contractId: "napier.default-agent.capabilities";
-  contractVersion: 1;
+  contractVersion: number;
   recommendationSha256: string;
   driftState: CapabilityDriftState;
   ownership: CapabilityOwnership | "unmanaged";
@@ -192,7 +192,7 @@ export function isEffectiveAgentCapabilityProjectionV1(
     !nonEmptyString(value.agentId) ||
     !positiveSafeInteger(value.agentRevision) ||
     value.contractId !== "napier.default-agent.capabilities" ||
-    value.contractVersion !== 1 ||
+    !positiveSafeInteger(value.contractVersion) ||
     !sha256(value.recommendationSha256) ||
     !member(value.driftState, CAPABILITY_DRIFT_STATES) ||
     !member(value.ownership, CAPABILITY_OWNERSHIPS) ||
@@ -207,6 +207,7 @@ export function isEffectiveAgentCapabilityProjectionV1(
     !denseArray(value.readiness) ||
     !value.readiness.every(capabilityReadinessRecord) ||
     !capabilityRestorePreview(value.restorePreview) ||
+    value.restorePreview.contractVersion !== value.contractVersion ||
     !sha256(value.projectionSha256)
   ) {
     return false;
@@ -233,7 +234,9 @@ function capabilityReadinessRecord(value: unknown): boolean {
   );
 }
 
-function capabilityRestorePreview(value: unknown): boolean {
+function capabilityRestorePreview(
+  value: unknown,
+): value is CapabilityRestorePreviewV1 {
   return (
     exactRecord(value, [
       "schemaVersion",
@@ -249,7 +252,7 @@ function capabilityRestorePreview(value: unknown): boolean {
     ]) &&
     value.schemaVersion === 1 &&
     value.contractId === "napier.default-agent.capabilities" &&
-    value.contractVersion === 1 &&
+    positiveSafeInteger(value.contractVersion) &&
     sha256(value.recommendationSha256) &&
     nonEmptyString(value.agentId) &&
     positiveSafeInteger(value.agentRevision) &&

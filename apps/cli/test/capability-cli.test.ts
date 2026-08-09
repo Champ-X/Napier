@@ -62,6 +62,13 @@ describe("Agent capability presets", () => {
         processExecution: false,
       }),
     );
+    expect(agentCapabilityPresetUpdate("browser").enabledSkills).toEqual([
+      "research-brief",
+      "browser-automation",
+    ]);
+    expect(
+      agentCapabilityPresetUpdate("safe_automation").enabledSkills,
+    ).toContain("browser-automation");
     expect(
       agentCapabilityStatus(agentCapabilityPresetUpdate("safe_automation")),
     ).toEqual(
@@ -405,6 +412,7 @@ describe("Agent capability presets", () => {
     });
     expect(after.store.getAgent("agent_napier").revision).toBe(4);
     expect(after.store.getAgent("agent_napier").enabledSkills).toEqual([
+      "browser-automation",
       "research-brief",
     ]);
     await after.shutdown();

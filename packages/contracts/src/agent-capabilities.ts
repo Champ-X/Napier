@@ -149,7 +149,7 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
     "Read dynamic public pages and capture citations; form interaction remains blocked.",
     "observe",
     [...RESEARCH_TOOLS],
-    ["research-brief"],
+    ["research-brief", "browser-automation"],
     ["researcher", "reviewer"],
   ),
   preset(
@@ -166,7 +166,13 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
       ...CODE_WRITE_TOOLS,
       ...PROCESS_TOOLS,
     ],
-    ["research-brief", "data-analysis", "software-delivery", "artifact-studio"],
+    [
+      "research-brief",
+      "data-analysis",
+      "software-delivery",
+      "artifact-studio",
+      "browser-automation",
+    ],
     ["researcher", "reviewer", "general", "coder"],
   ),
 ];

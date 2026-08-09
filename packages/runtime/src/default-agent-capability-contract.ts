@@ -15,7 +15,7 @@ import type {
 
 export const DEFAULT_AGENT_CAPABILITY_CONTRACT_ID =
   "napier.default-agent.capabilities" as const;
-export const DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION = 1 as const;
+export const DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION = 2 as const;
 
 export const DEFAULT_AGENT_CAPABILITY_TOOLS = [
   "list_files",
@@ -46,11 +46,16 @@ export const DEFAULT_AGENT_CAPABILITY_TOOLS = [
   "verify_workspace",
 ] as const;
 
-export const DEFAULT_AGENT_CAPABILITY_SKILLS = [
+export const DEFAULT_AGENT_CAPABILITY_SKILLS_V1 = [
   "data-analysis",
   "research-brief",
   "software-delivery",
   "artifact-studio",
+] as const;
+
+export const DEFAULT_AGENT_CAPABILITY_SKILLS = [
+  ...DEFAULT_AGENT_CAPABILITY_SKILLS_V1,
+  "browser-automation",
 ] as const;
 
 export const DEFAULT_AGENT_CAPABILITY_SUBAGENTS = [
@@ -86,7 +91,7 @@ export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1: ManagedCapabilityPayloa
   deepFreeze({
     toolPolicy: "observe" as const,
     enabledTools: sortedUnique(DEFAULT_AGENT_CAPABILITY_TOOLS),
-    enabledSkills: sortedUnique(DEFAULT_AGENT_CAPABILITY_SKILLS),
+    enabledSkills: sortedUnique(DEFAULT_AGENT_CAPABILITY_SKILLS_V1),
     enabledSubagents: sortedUnique(DEFAULT_AGENT_CAPABILITY_SUBAGENTS),
   });
 
@@ -99,10 +104,25 @@ export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1_SHA256 = sha256(
   }),
 );
 
+export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2: ManagedCapabilityPayload =
+  deepFreeze({
+    ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1,
+    enabledSkills: sortedUnique(DEFAULT_AGENT_CAPABILITY_SKILLS),
+  });
+
+export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256 = sha256(
+  canonicalJson({
+    schemaVersion: 1,
+    contractId: DEFAULT_AGENT_CAPABILITY_CONTRACT_ID,
+    contractVersion: 2,
+    ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2,
+  }),
+);
+
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION =
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1;
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2;
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256 =
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1_SHA256;
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256;
 
 export const DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY: readonly AgentCapabilityContractRecommendation[] =
   deepFreeze([
@@ -112,6 +132,14 @@ export const DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY: readonly AgentCapability
       recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1_SHA256,
       recommendation: managedCapabilityPayload(
         DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1,
+      ),
+    },
+    {
+      contractId: DEFAULT_AGENT_CAPABILITY_CONTRACT_ID,
+      contractVersion: 2,
+      recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256,
+      recommendation: managedCapabilityPayload(
+        DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2,
       ),
     },
   ]);

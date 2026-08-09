@@ -71,7 +71,7 @@ async function createFixtureRuntime(name: "pre-search" | "search-fetch") {
   return { create, dataRoot };
 }
 
-describe("default Agent Capability Contract v1", () => {
+describe("default Agent Capability Contract", () => {
   it.each(["pre-search", "search-fetch"] as const)(
     "verifies the reproducible %s fixture manifest",
     async (name) => {
@@ -140,74 +140,6 @@ describe("default Agent Capability Contract v1", () => {
     },
   );
 
-  it("pins the literal V1 recommendation, managed, diff, and projection vectors", async () => {
-    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION).toEqual({
-      toolPolicy: "observe",
-      enabledTools: [
-        "apply_patch",
-        "browser",
-        "data_frame",
-        "git_branch_create_apply",
-        "git_branch_create_preview",
-        "git_branch_switch_apply",
-        "git_branch_switch_preview",
-        "git_commit_apply",
-        "git_commit_preview",
-        "git_inspect",
-        "git_review_apply",
-        "git_review_preview",
-        "git_stage_apply",
-        "git_stage_preview",
-        "inspect_code",
-        "inspect_data",
-        "list_files",
-        "list_symbols",
-        "read_file",
-        "read_symbol",
-        "research_source",
-        "search_files",
-        "sqlite_query",
-        "verify_workspace",
-        "web_fetch",
-        "web_search",
-      ],
-      enabledSkills: [
-        "artifact-studio",
-        "data-analysis",
-        "research-brief",
-        "software-delivery",
-      ],
-      enabledSubagents: ["general", "researcher", "reviewer"],
-    });
-    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256).toBe(
-      "17a5fb30b02770c24dff24213ade809fb1bcd452f50f9b0eb8b36a6d03c29786",
-    );
-    const services = await createRuntime();
-    try {
-      const agent = services.store.listAgents()[0]!;
-      expect(managedCapabilitySha256(agent)).toBe(
-        "af88ec401700dd0af192113aa688d27029bc209c982cd8dc7289145c37128b9e",
-      );
-      const preview = createCapabilityRestorePreview({
-        ...agent,
-        revision: 7,
-        enabledTools: ["read_file", "list_files"],
-        enabledSkills: [],
-        enabledSubagents: [],
-      });
-      expect(preview.diffSha256).toBe(
-        "5fdbd1ad6b20d18686fb63e5bd87c722288abff7894cecf334dcd7795b7e58ff",
-      );
-      expect(
-        (await services.agentCapabilities.project(agent.id)).projectionSha256,
-      ).toBe(
-        "586ecb73c1df3f98a8ff3f0014aa83694d057fde1742cdf8b04edf632d7cac99",
-      );
-    } finally {
-      await services.shutdown();
-    }
-  });
-
   it("seeds a recommendation binding and projects actual policy exposure", async () => {
     const services = await createRuntime();
     try {
@@ -252,6 +184,10 @@ describe("default Agent Capability Contract v1", () => {
           }),
           expect.objectContaining({
             id: "skill:research-brief",
+            status: "missing",
+          }),
+          expect.objectContaining({
+            id: "skill:browser-automation",
             status: "missing",
           }),
         ]),
@@ -475,7 +411,7 @@ describe("default Agent Capability Contract v1", () => {
         agentId: "agent_napier",
         agentRevision: 1,
         contractId: "napier.default-agent.capabilities",
-        contractVersion: 2,
+        contractVersion: 3,
         recommendationSha256: "f".repeat(64),
         source: "seeded",
         ownership: "recommended",
@@ -540,7 +476,7 @@ describe("default Agent Capability Contract v1", () => {
     }
   });
 
-  it("keeps V1 ownership under a simulated V2 recommendation history", async () => {
+  it("keeps V2 ownership under a simulated V3 recommendation history", async () => {
     const services = await createRuntime();
     try {
       const profile = services.store.listAgents()[0]!;
@@ -550,21 +486,21 @@ describe("default Agent Capability Contract v1", () => {
       );
       expect(lookup.status).toBe("valid");
       if (lookup.status !== "valid") throw new Error("binding missing");
-      const v2 = createAgentCapabilityContractRecommendation(2, {
+      const v3 = createAgentCapabilityContractRecommendation(3, {
         ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION,
         enabledSkills: [
           ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills,
           "future-v2-skill",
         ],
       });
-      const history = [...DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY, v2];
+      const history = [...DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY, v3];
       expect(validateCapabilityBinding(lookup.binding, history)).toEqual(
         lookup.binding,
       );
       expect(bindingMatchesProfile(lookup.binding, profile, history)).toBe(
         true,
       );
-      const renamed = { ...profile, revision: 2, name: "V2 runtime name" };
+      const renamed = { ...profile, revision: 2, name: "V3 runtime name" };
       const propagated = propagateUpdatedCapabilityBinding(
         lookup.binding,
         profile,
@@ -573,7 +509,7 @@ describe("default Agent Capability Contract v1", () => {
       );
       expect(propagated).toEqual(
         expect.objectContaining({
-          contractVersion: 1,
+          contractVersion: 2,
           recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
           ownership: "recommended",
           explicitOverrideFields: [],
@@ -592,7 +528,7 @@ describe("default Agent Capability Contract v1", () => {
       );
       expect(overridden).toEqual(
         expect.objectContaining({
-          contractVersion: 1,
+          contractVersion: 2,
           recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
           ownership: "explicit_overrides",
           explicitOverrideFields: ["enabledSkills"],

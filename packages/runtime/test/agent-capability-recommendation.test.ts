@@ -5,11 +5,15 @@ import {
   DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1_SHA256,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2,
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256,
 } from "../src/default-agent-capability-contract.js";
 
 describe("Agent capability recommendation immutability", () => {
-  it("keeps the literal V1 recommendation vector pinned", () => {
-    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION).toEqual(
+  it("keeps V1 pinned while making Browser Automation the V2 default", () => {
+    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1).toEqual(
       expect.objectContaining({
         toolPolicy: "observe",
         enabledSkills: [
@@ -21,7 +25,23 @@ describe("Agent capability recommendation immutability", () => {
         enabledSubagents: ["general", "researcher", "reviewer"],
       }),
     );
-    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledTools).toEqual(
+    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V1_SHA256).toBe(
+      "17a5fb30b02770c24dff24213ade809fb1bcd452f50f9b0eb8b36a6d03c29786",
+    );
+    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2).toEqual(
+      expect.objectContaining({
+        toolPolicy: "observe",
+        enabledSkills: [
+          "artifact-studio",
+          "browser-automation",
+          "data-analysis",
+          "research-brief",
+          "software-delivery",
+        ],
+        enabledSubagents: ["general", "researcher", "reviewer"],
+      }),
+    );
+    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledTools).toEqual(
       expect.arrayContaining([
         "apply_patch",
         "browser",
@@ -30,14 +50,20 @@ describe("Agent capability recommendation immutability", () => {
         "web_search",
       ]),
     );
+    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256).toBe(
+      "79c836e15a89df6ad76270de296665217aac7bb04b81421b9e6dc80487ea7613",
+    );
+    expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION).toBe(
+      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2,
+    );
     expect(DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256).toBe(
-      "17a5fb30b02770c24dff24213ade809fb1bcd452f50f9b0eb8b36a6d03c29786",
+      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256,
     );
   });
 
-  it("recursively freezes the V1 payload and history against mutation", () => {
+  it("recursively freezes the current payload and complete history", () => {
     const recommendation = DEFAULT_AGENT_CAPABILITY_RECOMMENDATION;
-    const historyEntry = DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY[0]!;
+    const historyEntry = DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY[1]!;
     expect(Object.isFrozen(recommendation)).toBe(true);
     expect(Object.isFrozen(recommendation.enabledTools)).toBe(true);
     expect(Object.isFrozen(recommendation.enabledSkills)).toBe(true);
@@ -61,11 +87,16 @@ describe("Agent capability recommendation immutability", () => {
       ).push(historyEntry),
     ).toThrow(TypeError);
     expect(recommendation.enabledSkills).not.toContain("mutated-skill");
-    expect(DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY).toHaveLength(1);
+    expect(DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY).toHaveLength(2);
+    expect(
+      DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY.map(
+        (entry) => entry.contractVersion,
+      ),
+    ).toEqual([1, 2]);
   });
 
   it("recursively freezes recommendations created for future history", () => {
-    const future = createAgentCapabilityContractRecommendation(2, {
+    const future = createAgentCapabilityContractRecommendation(3, {
       ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION,
       enabledSkills: [
         ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills,
