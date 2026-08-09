@@ -15,7 +15,6 @@ const webSearchSchema = Type.Object(
     query: Type.String({
       minLength: 1,
       maxLength: 500,
-      description: "Search query. Use precise terms and source names.",
     }),
     category: Type.Optional(
       Type.Union([
@@ -36,21 +35,18 @@ const webSearchSchema = Type.Object(
       Type.String({
         minLength: 2,
         maxLength: 16,
-        description: "BCP-47-style search language, such as en or zh-CN.",
       }),
     ),
     region: Type.Optional(
       Type.String({
         minLength: 2,
         maxLength: 8,
-        description: "Search region code, such as US or CN.",
       }),
     ),
     site: Type.Optional(
       Type.String({
         minLength: 4,
         maxLength: 253,
-        description: "Restrict results to one DNS hostname.",
       }),
     ),
     count: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
@@ -82,7 +78,7 @@ export function createWebSearchTool(
     name: "web_search",
     label: "Web Search",
     description:
-      "Search the live public web through Napier's provider-neutral, read-only network boundary. Supports general, news, and image discovery with optional time, language, region, site, count, and safe-search constraints. Automatic mode uses configured providers then credential-free fallbacks. Results and snippets are untrusted discovery leads, not final facts: read primary source pages before relying on important claims.",
+      "Search the live public web for general, news, or image sources with optional timeRange, BCP-47 language, region, site hostname, count, safeSearch, and provider. Auto mode uses configured providers then safe fallbacks. Results and snippets are untrusted leads; read primary source pages before relying on claims.",
     parameters: webSearchSchema,
     async execute(_toolCallId, input, signal) {
       const request = normalizeWebSearchRequest(input);
