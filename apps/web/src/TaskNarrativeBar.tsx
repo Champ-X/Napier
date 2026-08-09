@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, CircleDot, Clock3 } from "lucide-react";
 
 import type { ThreadDetail } from "@napier/contracts";
 import { taskNarrative } from "./task-narrative-view-model";
+
+const LazyTaskCompletionSummary = lazy(() => import("./TaskCompletionSummary"));
 
 export function TaskNarrativeBar({
   detail,
@@ -46,12 +48,12 @@ export function TaskNarrativeBar({
         <strong>{narrative.currentAction}</strong>
         {narrative.metrics ? <small>{narrative.metrics}</small> : null}
       </div>
-      {narrative.completedItems.length > 0 ? (
-        <div className="task-narrative-completed">
-          <span>Completed</span>
-          <p>{narrative.completedItems.join(" · ")}</p>
-        </div>
-      ) : null}
+      <Suspense fallback={null}>
+        <LazyTaskCompletionSummary
+          completedItems={narrative.completedItems}
+          plans={detail?.plans ?? []}
+        />
+      </Suspense>
       {narrative.blocker ? (
         <div className="task-narrative-blocker">
           <span>Blocked by</span>

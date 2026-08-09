@@ -806,6 +806,17 @@ button:disabled {
   white-space: nowrap;
 }
 
+.task-narrative-completed small {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ledger);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .task-narrative.phase-working .task-narrative-current > span {
   color: var(--ochre);
 }
