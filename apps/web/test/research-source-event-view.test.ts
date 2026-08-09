@@ -1,4 +1,5 @@
 import type { RunEvent } from "@napier/contracts";
+import { parseResearchSourceEvidenceV1 } from "@napier/contracts/skill-load";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -35,31 +36,11 @@ describe("Research Source Trace projection", () => {
   });
 
   it("projects Web Fetch Source provenance without Source bodies or IDs", () => {
-    const details = {
-      ...citationDetails(),
-      action: "capture_fetch",
-      sourceKind: "web_fetch",
-      citationId: undefined,
-      citationTokenSha256: undefined,
-      citationStartLine: undefined,
-      citationEndLine: undefined,
-      citationQuoteSha256: undefined,
-      citationClaimSha256: undefined,
-      browserSessionOperation: undefined,
-      browserSessionIdSha256: undefined,
-      browserExecutableSha256: undefined,
-      browserVersionSha256: undefined,
-      browserLimitsSha256: undefined,
-      browserNetworkDestinationsSha256: undefined,
-      webSourceContentSha256: "a".repeat(64),
-      webSourceBodySha256: "b".repeat(64),
+    const details = webCaptureDetails({
       webSourceFormat: "pdf",
-      webSourceLineCount: 20,
       webSourceRenderMode: "static",
       browserFallbackStatus: "not_needed",
-      webSourceId: "websource_private",
-      sourceBody: "PRIVATE_FETCH_SOURCE_BODY",
-    };
+    });
     const view = researchSourceEventEvidence(details);
 
     expect(view).toEqual(
@@ -78,8 +59,13 @@ describe("Research Source Trace projection", () => {
     expect(researchSourceSummaryParts(view!)).toContain(
       "source-kind web_fetch",
     );
-    expect(JSON.stringify(view)).not.toContain("websource_private");
     expect(JSON.stringify(view)).not.toContain("PRIVATE_FETCH_SOURCE_BODY");
+    expect(
+      researchSourceEventEvidence({
+        ...details,
+        sourceBody: "PRIVATE_FETCH_SOURCE_BODY",
+      }),
+    ).toBeUndefined();
     expect(
       researchSourceEventEvidence({
         ...details,
@@ -89,27 +75,7 @@ describe("Research Source Trace projection", () => {
   });
 
   it("treats pre-fallback Web Fetch evidence as legacy static provenance", () => {
-    const details = {
-      ...citationDetails(),
-      action: "capture_fetch",
-      sourceKind: "web_fetch",
-      citationId: undefined,
-      citationTokenSha256: undefined,
-      citationStartLine: undefined,
-      citationEndLine: undefined,
-      citationQuoteSha256: undefined,
-      citationClaimSha256: undefined,
-      browserSessionOperation: undefined,
-      browserSessionIdSha256: undefined,
-      browserExecutableSha256: undefined,
-      browserVersionSha256: undefined,
-      browserLimitsSha256: undefined,
-      browserNetworkDestinationsSha256: undefined,
-      webSourceContentSha256: "a".repeat(64),
-      webSourceBodySha256: "b".repeat(64),
-      webSourceFormat: "html",
-      webSourceLineCount: 20,
-    };
+    const details = webCaptureDetails();
 
     expect(researchSourceEventEvidence(details)).toEqual(
       expect.objectContaining({
@@ -126,35 +92,19 @@ describe("Research Source Trace projection", () => {
   });
 
   it("projects complete Browser fallback provenance and rejects partial mixtures", () => {
-    const details = {
-      ...citationDetails(),
-      action: "capture_fetch",
-      sourceKind: "web_fetch",
-      citationId: undefined,
-      citationTokenSha256: undefined,
-      citationStartLine: undefined,
-      citationEndLine: undefined,
-      citationQuoteSha256: undefined,
-      citationClaimSha256: undefined,
-      browserSessionOperation: undefined,
-      browserSessionIdSha256: undefined,
-      browserExecutableSha256: undefined,
-      browserVersionSha256: undefined,
-      browserLimitsSha256: undefined,
-      browserNetworkDestinationsSha256: undefined,
-      webSourceContentSha256: "a".repeat(64),
-      webSourceBodySha256: "b".repeat(64),
-      webSourceFormat: "html",
-      webSourceLineCount: 20,
+    const details = webCaptureDetails({
       webSourceRenderMode: "browser_fallback",
       browserFallbackStatus: "used",
       webFetchBrowserSessionOperation: 3,
       webFetchBrowserSessionIdSha256: "c".repeat(64),
+      webFetchBrowserActiveTabId: "tab_2",
+      webFetchBrowserTabCount: 2,
+      webFetchBrowserTabSetSha256: "9".repeat(64),
       webFetchBrowserExecutableSha256: "d".repeat(64),
       webFetchBrowserVersionSha256: "e".repeat(64),
       webFetchBrowserLimitsSha256: "f".repeat(64),
       webFetchBrowserNetworkDestinationsSha256: "1".repeat(64),
-    };
+    });
     const view = researchSourceEventEvidence(details);
 
     expect(view).toEqual(
@@ -194,30 +144,11 @@ describe("Research Source Trace projection", () => {
   });
 
   it("projects stable unavailable fallback diagnostics without Browser identity", () => {
-    const details = {
-      ...citationDetails(),
-      action: "capture_fetch",
-      sourceKind: "web_fetch",
-      citationId: undefined,
-      citationTokenSha256: undefined,
-      citationStartLine: undefined,
-      citationEndLine: undefined,
-      citationQuoteSha256: undefined,
-      citationClaimSha256: undefined,
-      browserSessionOperation: undefined,
-      browserSessionIdSha256: undefined,
-      browserExecutableSha256: undefined,
-      browserVersionSha256: undefined,
-      browserLimitsSha256: undefined,
-      browserNetworkDestinationsSha256: undefined,
-      webSourceContentSha256: "a".repeat(64),
-      webSourceBodySha256: "b".repeat(64),
-      webSourceFormat: "html",
-      webSourceLineCount: 20,
+    const details = webCaptureDetails({
       webSourceRenderMode: "static",
       browserFallbackStatus: "unavailable",
       browserFallbackDiagnostic: "browser_unavailable",
-    };
+    });
 
     expect(researchSourceEventEvidence(details)).toEqual(
       expect.objectContaining({
@@ -237,30 +168,11 @@ describe("Research Source Trace projection", () => {
   it.each(["login_required", "challenge_detected"] as const)(
     "projects %s Browser fallback handoff diagnostics",
     (browserFallbackDiagnostic) => {
-      const details = {
-        ...citationDetails(),
-        action: "capture_fetch",
-        sourceKind: "web_fetch",
-        citationId: undefined,
-        citationTokenSha256: undefined,
-        citationStartLine: undefined,
-        citationEndLine: undefined,
-        citationQuoteSha256: undefined,
-        citationClaimSha256: undefined,
-        browserSessionOperation: undefined,
-        browserSessionIdSha256: undefined,
-        browserExecutableSha256: undefined,
-        browserVersionSha256: undefined,
-        browserLimitsSha256: undefined,
-        browserNetworkDestinationsSha256: undefined,
-        webSourceContentSha256: "a".repeat(64),
-        webSourceBodySha256: "b".repeat(64),
-        webSourceFormat: "html",
-        webSourceLineCount: 20,
+      const details = webCaptureDetails({
         webSourceRenderMode: "static",
         browserFallbackStatus: "unavailable",
         browserFallbackDiagnostic,
-      };
+      });
 
       expect(researchSourceEventEvidence(details)).toEqual(
         expect.objectContaining({
@@ -308,6 +220,27 @@ describe("Research Source Trace projection", () => {
     expect(summary).toContain("research-source cite");
     expect(summary).toContain("citation-range 2-4");
     expect(summary).not.toContain("PRIVATE_RESEARCH");
+
+    const normalized = parseResearchSourceEvidenceV1(citationDetails());
+    expect(researchSourceEventEvidence(normalized)).toEqual(
+      expect.objectContaining({ researchSourceAction: "cite" }),
+    );
+    const malformedEvent = structuredClone(event);
+    malformedEvent.payload = {
+      toolName: "research_source",
+      status: "completed",
+      effect: "read",
+      output: "PRIVATE_RESEARCH_SOURCE_TEXT",
+      details: {
+        ...citationDetails(),
+        rawSource: "PRIVATE_RAW_SOURCE",
+      },
+    };
+    const malformedView = toolEventTraceView(malformedEvent);
+    expect(malformedView).not.toHaveProperty("researchSourceAction");
+    expect(toolEventTraceSummary(malformedEvent)).not.toContain(
+      "PRIVATE_RAW_SOURCE",
+    );
   });
 
   it("accepts count-only lists and fails closed on inconsistent evidence", () => {
@@ -422,8 +355,40 @@ describe("Research Source Trace projection", () => {
         sourceId: "source_fixture0001",
       }),
     ).toBeUndefined();
+    expect(
+      researchSourceEventEvidence({
+        ...reportDetails(),
+        markdown: "PRIVATE_REPORT_MARKDOWN",
+      }),
+    ).toBeUndefined();
   });
 });
+
+function webCaptureDetails(overrides: Record<string, unknown> = {}) {
+  return {
+    kind: "napier.research-source",
+    schemaVersion: 1,
+    action: "capture_fetch",
+    sourceKind: "web_fetch",
+    sourceId: "source_fixture0001",
+    sourceContentSha256: "2".repeat(64),
+    sourceUrlSha256: "3".repeat(64),
+    sourceOriginSha256: "4".repeat(64),
+    sourceTitleSha256: "5".repeat(64),
+    sourceTextSha256: "6".repeat(64),
+    sourceLineCount: 8,
+    sourceTextChars: 1_024,
+    sourceTruncated: false,
+    sourceCount: 2,
+    citationCount: 3,
+    sourceSetSha256: "9".repeat(64),
+    webSourceContentSha256: "a".repeat(64),
+    webSourceBodySha256: "b".repeat(64),
+    webSourceFormat: "html",
+    webSourceLineCount: 20,
+    ...overrides,
+  };
+}
 
 function citationDetails() {
   return {
@@ -451,13 +416,13 @@ function citationDetails() {
     sourceSetSha256: "9".repeat(64),
     browserSessionOperation: 5,
     browserSessionIdSha256: "a".repeat(64),
+    browserActiveTabId: "tab_1",
+    browserTabCount: 1,
+    browserTabSetSha256: "f".repeat(64),
     browserExecutableSha256: "b".repeat(64),
     browserVersionSha256: "c".repeat(64),
     browserLimitsSha256: "d".repeat(64),
     browserNetworkDestinationsSha256: "e".repeat(64),
-    sourceText: "PRIVATE_RESEARCH_SOURCE_TEXT",
-    sourceUrl: "https://private-research.example/",
-    quote: "PRIVATE_RESEARCH_QUOTE",
   };
 }
 
@@ -474,7 +439,5 @@ function reportDetails() {
     reportFileBytes: 2_048,
     reportCitationCount: 2,
     reportCitationSetSha256: "3".repeat(64),
-    path: "PRIVATE_REPORT_PATH",
-    markdown: "PRIVATE_REPORT_MARKDOWN",
   };
 }

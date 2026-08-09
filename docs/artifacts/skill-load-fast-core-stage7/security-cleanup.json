@@ -1,0 +1,775 @@
+{
+  "kind": "napier.skill-load-fast-core-security-cleanup",
+  "schemaVersion": 1,
+  "originalCredentialCanaryMatches": 0,
+  "rawJsonlRetained": false,
+  "privateCapsulesRetained": false,
+  "taskOwnedRootRemoved": true,
+  "childExitConfirmed": true,
+  "orchestrationChronology": {
+    "kind": "napier.skill-load-fast-core-orchestration-chronology",
+    "schemaVersion": 1,
+    "evidenceStrength": "orchestration_chronology_not_independent_pre_mutation_tree_proof",
+    "baselineHead": "15379397889dd3b4e86374dd377aee8479e1b264",
+    "planSha256": "4245df04c4274b43f5568fd15178251c7cc16429e4b76c8e903862bef350a1fb",
+    "preRunStatusDigest": "unavailable_not_retained",
+    "externalStage7Chronology": {
+      "status": "retained",
+      "scope": "pre_f09_chronology_prefix",
+      "entryCount": 7,
+      "canonicalSha256": "308a38d619757ad82ce9f3bd994ae9a0d308399115dfd493e869ee6cc04da7fa"
+    },
+    "observations": [
+      {
+        "ordinal": 1,
+        "result": "credential_missing",
+        "exitCode": 20,
+        "credentialSource": "inherited_environment",
+        "providerCallAttempted": false,
+        "temporaryRootCreated": false
+      },
+      {
+        "ordinal": 2,
+        "result": "passed",
+        "exitCode": 0,
+        "credentialSource": "authorized_process_local_env_loader",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "protocol": "openai-completions",
+        "toolName": "skill_load",
+        "toolCallCount": 1,
+        "toolResultCount": 1,
+        "assistantTurnsAfterTool": 1,
+        "argumentSha256": "1f0a089b99fd52fff35d471672165d281f7bf11f35fc01b577a42a2002a0d44d",
+        "resultSha256": "8be0b189072aa9768d9de9d2d53199501431c47a086cb130f9fbf5dc3bbedbda",
+        "sourceReceiptSha256": "30ec73d94d7a78a1c305fedd84661fc8f4014505072cc182ed60bf2089e9fa60",
+        "stdoutBytes": 443,
+        "stderrBytes": 0,
+        "credentialCanaryMatches": 0,
+        "taskOwnedRootRemoved": true
+      }
+    ],
+    "receiptSha256": "3c1374220b90ec4e9e8230a828054a9074ddafe5deae2d9e0ab7262134f6f9b9"
+  },
+  "retainedCanaryScan": {
+    "scope": "original_stage7_sanitized_artifacts_before_f09",
+    "targetCount": 4,
+    "credentialCanaryMatches": 0,
+    "privatePayloadMatches": 0,
+    "receiptSha256": "77c2180f0d8a63aa149c8a802f4220aec7bf33d4b37c317106ccebae4be0e825"
+  },
+  "publicWorkingTreeScan": {
+    "scope": "current_task_owned_public_working_tree_content_manifest",
+    "targetCount": 141,
+    "targetManifest": [
+      {
+        "path": "README.md",
+        "state": "file",
+        "contentSha256": "e5cb9c3c6b42e65d2b90541dd4a4b8f499cf87eb7e6581d9c930dda8fa32ab2b"
+      },
+      {
+        "path": "apps/cli/src/research-benchmark-ledger-shape.ts",
+        "state": "file",
+        "contentSha256": "d869a313ea9b5bf597c12c2b30f3be1331839ce6dadb3b8e37a0aef5b2a160ad"
+      },
+      {
+        "path": "apps/cli/test/cli-resume.test.ts",
+        "state": "file",
+        "contentSha256": "70afea472b5738ee41fe66d28cab22a4fb68106a29c4f1b7fc21b69a1b813bbb"
+      },
+      {
+        "path": "apps/cli/test/open-web-research-benchmark.test.ts",
+        "state": "file",
+        "contentSha256": "b4087548790de21d717fc353bb798e8830fb2af624e4cbc884c989c7980b1939"
+      },
+      {
+        "path": "apps/cli/test/research-benchmark.test.ts",
+        "state": "file",
+        "contentSha256": "8ad361ba7d6a7d34e55acdcb68ce92907a95fb6e8f1bc1809d6c9623d6d860b8"
+      },
+      {
+        "path": "apps/cli/test/skill-load-research-cli.test.ts",
+        "state": "file",
+        "contentSha256": "c70c447be7c12411dbc66ff5b717a7800b42bd4706782c7684fe0d3d7b620de2"
+      },
+      {
+        "path": "apps/cli/test/tui-cli.test.ts",
+        "state": "file",
+        "contentSha256": "93c120b595e2be0103b06bb8c641d395d69dcd85b6d3d3348a4566e1228de737"
+      },
+      {
+        "path": "apps/cli/test/tui-terminal.test.ts",
+        "state": "file",
+        "contentSha256": "46cd8be0ac6d192900d9ef2f16bc0a84131f1246d06b95ec2609cc8c6c7dd8a2"
+      },
+      {
+        "path": "apps/web/src/BrowserInspectorPanel.tsx",
+        "state": "file",
+        "contentSha256": "24a4c5c64804c14ca1f06537750c8aa4aebfe1f29b339fba73d6acd0d657c010"
+      },
+      {
+        "path": "apps/web/src/context-copy.ts",
+        "state": "file",
+        "contentSha256": "a294523b1ddc849bd380b4d733034de1439a3dde80d080eb9f7a3b863c80cfdd"
+      },
+      {
+        "path": "apps/web/src/research-source-event-view.ts",
+        "state": "file",
+        "contentSha256": "18ed47fbd55a35d0e74e4dddb34b3104796d0ef88f77bbdcdc14075e24e703e4"
+      },
+      {
+        "path": "apps/web/src/skill-load-event-view.ts",
+        "state": "file",
+        "contentSha256": "e9b8c6e1e9ba408a6069b73cf195819a864a754e8605409a651063a2e50fb6c0"
+      },
+      {
+        "path": "apps/web/src/tool-event-view.ts",
+        "state": "file",
+        "contentSha256": "4227c4c62e7b2f4b4b4dbcc2b7a8d110e7f1b41bdae7186b2696cba14a6dd382"
+      },
+      {
+        "path": "apps/web/src/tool-result-reuse-event-view.ts",
+        "state": "file",
+        "contentSha256": "575e0607535c720a0f290de8dad8653261c109ffb6946e74bee1cf2c59fdc6cf"
+      },
+      {
+        "path": "apps/web/test/agent-capability-view.test.ts",
+        "state": "file",
+        "contentSha256": "7b6594029d4335cc6247d6349cadddbd1d6844c34bba522875e940af22159eef"
+      },
+      {
+        "path": "apps/web/test/research-source-event-view.test.ts",
+        "state": "file",
+        "contentSha256": "db85182c4e4e226558a5bbf54ec55a631cde45f9e3c50991246f6f13a01337df"
+      },
+      {
+        "path": "apps/web/test/skill-load-event-view.test.ts",
+        "state": "file",
+        "contentSha256": "18c84465fb730adf47cbea596977db853b3ddce43fd6434fbb55459debbaac8d"
+      },
+      {
+        "path": "docs/architecture-budget.json",
+        "state": "file",
+        "contentSha256": "f14e403552d31bb7217bd119d9e69770f4ebdcfee091df6eddfd66e5a6fc12c1"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json",
+        "state": "file",
+        "contentSha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-4ceddccb91ca8223.json",
+        "state": "file",
+        "contentSha256": "31a0da2b6f78e7f478dd41358d49e814dd31a333bc2dd661be0782a40322826e"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-6dda20bbba559a95.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-6efe3b93ad3865ec.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-9502abdc0176439a.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-c7ef11d6c1f07ae0.json",
+        "state": "file",
+        "contentSha256": "e2535671e5602ea33a34f0c4c1a637bf414cf70b82dab25c4ecd754c29b5db3e"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-eda98b40d26b4c65.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-ee8237d8588e6be5.json",
+        "state": "file",
+        "contentSha256": "b9d1f1fc1af90da78af6c39b46bb07de30b04f1a35687bf14c647568b2f5b549"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-normalization-migration-20260807.json",
+        "state": "file",
+        "contentSha256": "041179ec499ca7a77b3c5fe70e76d193d655c99235634f1a2bb4d7aa87680f39"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-54d3d797c09043ca.json",
+        "state": "file",
+        "contentSha256": "784dfe3d7ea466f65681096c9a219d3ab6ad5909d67d83473e496d56ef5bf0f9"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-60b6a86808205b1e.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-90191838c6deeec3.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-9ded7844fa70d0cd.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-b3e34c7d47a04e11.json",
+        "state": "file",
+        "contentSha256": "b63c4577ed551cc86ad3485c4591dd9d6f6931af4067402c5e615483a88b9292"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-b53a5d0ccacf7d98.json",
+        "state": "file",
+        "contentSha256": "e7352ca41e50cca41fad419056bf83cbc5ac742451df4a96d7e405fa12abbf4b"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-d7b39fa9c99fcc19.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-result-research_aurora_contradiction_v1-d81e8fcc60131846.json",
+        "state": "file",
+        "contentSha256": "028fa3f884dd03eb43ae1f683d139df280a81bf080bc2f139393434877c60316"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-06c3c6466c0b47f9.json",
+        "state": "file",
+        "contentSha256": "ad9f116e52a74bdfb87757d57672155666c71e89542a2e8d79e3e42c848d6785"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json",
+        "state": "file",
+        "contentSha256": "53c3f66f1f09b328bc1c1e526807c7a5f4aa1b573c646871300161e8f89eab82"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-7860868b48599ded.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-f7a821ff7a0b0723.json",
+        "state": "deleted"
+      },
+      {
+        "path": "docs/artifacts/package-lock-audit-0.1.0.json",
+        "state": "file",
+        "contentSha256": "9f5d9402395b47f947c720cefc9c7e6f577ed7aadb77feb53fec66f7e343a17f"
+      },
+      {
+        "path": "docs/artifacts/prompt-regression-matrix-0.1.0.json",
+        "state": "file",
+        "contentSha256": "b4171362a93c0162399bdd93e2b3992c7b450099a5204fd02954358065c6b124"
+      },
+      {
+        "path": "docs/artifacts/release-artifacts-audit-0.1.0.json",
+        "state": "file",
+        "contentSha256": "62120b74587fa731a1f1c0d1b081fb7ed380ffa8c8b9bdccc5ed4c338677f266"
+      },
+      {
+        "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
+        "state": "file",
+        "contentSha256": "22a63414af0bd7052658aec79a43d010dfd4fec81991f9bdcc009b83af97e61f"
+      },
+      {
+        "path": "docs/artifacts/sdk-capability-parity-stage7/evidence.json",
+        "state": "file",
+        "contentSha256": "25bd5f9ebbe48471c7de28878b388e385fd3d6e3cf9268bcdb90e1e158fe0a22"
+      },
+      {
+        "path": "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json",
+        "state": "file",
+        "contentSha256": "1a642cca7a2181b91ce6ee3e2af1f2dd399a99c194465a0c12f653ada2c824ed"
+      },
+      {
+        "path": "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json",
+        "state": "file",
+        "contentSha256": "fb42de7394bf08e0d39787227ac23483f9e70f1ceb61ce7e73334c718d897359"
+      },
+      {
+        "path": "docs/artifacts/skill-load-fast-core-stage7/README.md",
+        "state": "file",
+        "contentSha256": "46afb39e48b7c3ad56e5dc4ce3a04a3a1c31f6f66fe6768e0d0490fa2a510e17"
+      },
+      {
+        "path": "docs/artifacts/skill-load-fast-core-stage7/evidence.json",
+        "state": "content_excluded",
+        "exclusionReason": "self_referential_post_check_bundle_binding"
+      },
+      {
+        "path": "docs/artifacts/skill-load-fast-core-stage7/final-check.json",
+        "state": "content_excluded",
+        "exclusionReason": "self_referential_final_check_receipt"
+      },
+      {
+        "path": "docs/artifacts/skill-load-fast-core-stage7/real-provider-cli.json",
+        "state": "file",
+        "contentSha256": "4d99e79ce535bfa9aa1ec7ff6b7a7b788b4e590a9076792b017562ef7ea9a5f8"
+      },
+      {
+        "path": "docs/artifacts/skill-load-fast-core-stage7/security-cleanup.json",
+        "state": "content_excluded",
+        "exclusionReason": "self_referential_post_check_public_scan_binding"
+      },
+      {
+        "path": "docs/artifacts/web-dist-0.1.0.sha256",
+        "state": "file",
+        "contentSha256": "8fb66c98e7e5da04e6d75e60004fc5fb83b40240e0756d470279d46c4a061354"
+      },
+      {
+        "path": "docs/artifacts/web-dist-audit-0.1.0.json",
+        "state": "file",
+        "contentSha256": "bd45355c4e78bec21c6c5eee7aa8a853af79546f7f3b6e1100cf5dd135f21bdd"
+      },
+      {
+        "path": "packages/contracts/package.json",
+        "state": "file",
+        "contentSha256": "2a389138839950d83361c2326cb44f70079c8497fb9fadbbe02eb7123c45248e"
+      },
+      {
+        "path": "packages/contracts/src/agent-capabilities.ts",
+        "state": "file",
+        "contentSha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133"
+      },
+      {
+        "path": "packages/contracts/src/agent-tool-names.ts",
+        "state": "file",
+        "contentSha256": "c251fcd9538827e6530d4227224964248d0f5223583b34d427c2aee6facc41e7"
+      },
+      {
+        "path": "packages/contracts/src/skill-load-research.ts",
+        "state": "file",
+        "contentSha256": "d23cbb972473354cf27e488ee8e539586e46a8bd458e4c84d4de50bfb4fdfad9"
+      },
+      {
+        "path": "packages/contracts/src/skill-load-validation.ts",
+        "state": "file",
+        "contentSha256": "75afec23fa30c1a63f91643188c0c4b760c644437dbd71dfb3ba42d6aedf388c"
+      },
+      {
+        "path": "packages/contracts/src/skill-load.ts",
+        "state": "file",
+        "contentSha256": "749e57694dcfc33f9b1bbc9e357a1537c9a07f534e0eae01fc0dc3b7805b5779"
+      },
+      {
+        "path": "packages/contracts/test/research-source-evidence.test.ts",
+        "state": "file",
+        "contentSha256": "59d9c9b1236a95605ee95aeb5b4dca1cdf791673015248a7655f700a6db0c044"
+      },
+      {
+        "path": "packages/contracts/test/skill-load.test.ts",
+        "state": "file",
+        "contentSha256": "ff4ac8ce8c822cf7852a7b7cd9b71e9973948c3128b28c555d47f72a8c25e171"
+      },
+      {
+        "path": "packages/runtime/src/agent-capability-override.ts",
+        "state": "file",
+        "contentSha256": "1d7137b13e23af60f66144f990b64aae6dcd119ad9ac8c4a5222f5fccda6224c"
+      },
+      {
+        "path": "packages/runtime/src/agent-capability-runtime.ts",
+        "state": "file",
+        "contentSha256": "b1bae5237d7e0a1e5b21f382b2544d4d3673862f7724457ff13ccb353ace631b"
+      },
+      {
+        "path": "packages/runtime/src/agent-capability-service.ts",
+        "state": "file",
+        "contentSha256": "01e5e9d66b3bc4d686a02d6c3eda0eaa49058dcbbe1e9f3677211f4cf67fe0fa"
+      },
+      {
+        "path": "packages/runtime/src/agent-message-experiment-source.ts",
+        "state": "file",
+        "contentSha256": "1bac7e983f2363b0b1514080f357235bccc5b728315e3eaa0272bedcbcbab724"
+      },
+      {
+        "path": "packages/runtime/src/agent-message-experiments.ts",
+        "state": "file",
+        "contentSha256": "71f04a358e5477614632d3af6ae56e746952d97d4c4ceb919e786020e14ceb09"
+      },
+      {
+        "path": "packages/runtime/src/agent-message-tool-result-replay.ts",
+        "state": "file",
+        "contentSha256": "e7ca5a6a8582f95b33a1886f711d9c1253d53fb961b1028b536702c646545f61"
+      },
+      {
+        "path": "packages/runtime/src/agent-runtime-options.ts",
+        "state": "file",
+        "contentSha256": "63f7830e419199b1c82a1f06d9459ce51d08650d5e069b3e106e35f239951795"
+      },
+      {
+        "path": "packages/runtime/src/agent-runtime-utils.ts",
+        "state": "file",
+        "contentSha256": "01fa9f0b13afe3420b709ed5f111c826601db16ae325a152d84ebba28fd79395"
+      },
+      {
+        "path": "packages/runtime/src/agent-runtime.ts",
+        "state": "file",
+        "contentSha256": "97b8dfa572796cec60c350a3ad3b130d690afb2944034f8bc33cf6281b2a6208"
+      },
+      {
+        "path": "packages/runtime/src/agent-tool-ledger.ts",
+        "state": "file",
+        "contentSha256": "6c7116250473f1f4cb655164b882074c72b2330334c6e0775fa552f9b656d1bf"
+      },
+      {
+        "path": "packages/runtime/src/agent-tool-result-lifecycle.ts",
+        "state": "file",
+        "contentSha256": "df82709fc76b7f02fd43be82bc90b0ea4a8a558f076e66852c9779395590a4b3"
+      },
+      {
+        "path": "packages/runtime/src/agent-tool-specialized-ledger.ts",
+        "state": "file",
+        "contentSha256": "19d0f6140c691560c15a8cd5b431701c2b7251548be9d4d5545bdcfe278aec3a"
+      },
+      {
+        "path": "packages/runtime/src/default-agent-capability-contract.ts",
+        "state": "file",
+        "contentSha256": "caae5fb90e2ee18a33daec10d65aaf9b5906baf74946f76d90f7d696bee2ba01"
+      },
+      {
+        "path": "packages/runtime/src/doctor-runtime-probes.ts",
+        "state": "file",
+        "contentSha256": "f852f158fdc6231f1ab2e62423a6bd97571e918c28ae361e8cf8e229b60d42cd"
+      },
+      {
+        "path": "packages/runtime/src/ids.ts",
+        "state": "file",
+        "contentSha256": "cb9b4e04eba914393ad80ddd04fc69eef8247a3d569e07427b28899c032fa595"
+      },
+      {
+        "path": "packages/runtime/src/internal-research-recovery-authorization.ts",
+        "state": "file",
+        "contentSha256": "24c0778a153ff86e83af9a8791fbb4474c8cdf8c6e1f0b5a69bb66edc4748645"
+      },
+      {
+        "path": "packages/runtime/src/model-invocation-experiments.ts",
+        "state": "file",
+        "contentSha256": "cf3c295b47960cb9678f7fb349c1eefee20a0485173aa3b55a0d32df5064aa0e"
+      },
+      {
+        "path": "packages/runtime/src/project-skill-snapshot.ts",
+        "state": "file",
+        "contentSha256": "91df07b1cb5bb07e227fe55ed7d66de77db825e2746ccf740168c2217e8a94b3"
+      },
+      {
+        "path": "packages/runtime/src/read-only-tool-names.ts",
+        "state": "file",
+        "contentSha256": "0666e1e63eba51e18a14d8d5224cceb11f75c36ff7fa6dc7d2952ae3d69d1883"
+      },
+      {
+        "path": "packages/runtime/src/research-recovery-options.ts",
+        "state": "file",
+        "contentSha256": "a82ea421c4478901da124e8402800519ab42bd1ec3887c7fe3c9e873bdd5d4a6"
+      },
+      {
+        "path": "packages/runtime/src/research-source-continuity.ts",
+        "state": "file",
+        "contentSha256": "cac17e5996abf137abd2212edeb6ef9cdbccb7c6df9db630f045290bf950006f"
+      },
+      {
+        "path": "packages/runtime/src/research-source-tool.ts",
+        "state": "file",
+        "contentSha256": "c7adf14b066cf06e8b4b5582a598d6ed8b3afa4b8383d6a640261432c5f94876"
+      },
+      {
+        "path": "packages/runtime/src/skill-load-replay.ts",
+        "state": "file",
+        "contentSha256": "73af19f02cae003bec4987dd3eee15f0a01c97ee51735fa4919dca3254a12b1c"
+      },
+      {
+        "path": "packages/runtime/src/skill-load-tool.ts",
+        "state": "file",
+        "contentSha256": "822e03bb933bd7202454414830b3c1879a6b7b315581c734b1280dc63698a204"
+      },
+      {
+        "path": "packages/runtime/src/skill-run-context.ts",
+        "state": "file",
+        "contentSha256": "eb0e4aedd7dabd571b695164948191cfb402597b2872511dad9732d3590906d1"
+      },
+      {
+        "path": "packages/runtime/src/store.ts",
+        "state": "file",
+        "contentSha256": "4d09cc9a06fbbbd6c98ad9654b11b0c69d0f2d3c0c29082d406508bf75beb70c"
+      },
+      {
+        "path": "packages/runtime/src/thread-branches.ts",
+        "state": "file",
+        "contentSha256": "33e98a434833db350da5e5fbc2072843bfb49faa953c03883773f7d26fc4647e"
+      },
+      {
+        "path": "packages/runtime/src/tool-invocation-capsule-store.ts",
+        "state": "file",
+        "contentSha256": "58e48ecd809e6bee2a04f82445d30ee0b2281b2ba61a2ca0c913e89098ed2f17"
+      },
+      {
+        "path": "packages/runtime/src/tool-invocation-experiments.ts",
+        "state": "file",
+        "contentSha256": "39cdf5963ac7f3b13bf4f8ecda411a8f9bd3b508bac0032283adbff53cb8a627"
+      },
+      {
+        "path": "packages/runtime/src/tool-invocation-result-capsule-store.ts",
+        "state": "file",
+        "contentSha256": "37b588ba1343e4f7c398eec9073d50dddf704447585c6254a43c5a46b4b3bcd5"
+      },
+      {
+        "path": "packages/runtime/src/workflow-approval-runtime.ts",
+        "state": "file",
+        "contentSha256": "b185010c22c2958081af3ab402667bef09769b16ab5e50eccc8729e2c2f1da3e"
+      },
+      {
+        "path": "packages/runtime/src/workflow-deterministic-runtime.ts",
+        "state": "file",
+        "contentSha256": "a553923182338ce3cc87375b385910173c8195e3e1e75a342e11bf25d8e2dceb"
+      },
+      {
+        "path": "packages/runtime/src/workflow-kernel-run.ts",
+        "state": "file",
+        "contentSha256": "ba8b1205b792e0f52f114a1079fcbdd7a1adb312d60d794500cc0e78cda664be"
+      },
+      {
+        "path": "packages/runtime/src/workflow-loop-runtime.ts",
+        "state": "file",
+        "contentSha256": "a5ac10c4f5a3f7c275df9d98deb7c231ff490fa46239011e308b1a6e35492571"
+      },
+      {
+        "path": "packages/runtime/src/workflow-map-runtime.ts",
+        "state": "file",
+        "contentSha256": "c1b3adda5227b7c98bff51be42316ac89d3ab20fab6eb9044ad315210214b379"
+      },
+      {
+        "path": "packages/runtime/src/workflow-reduce-runtime.ts",
+        "state": "file",
+        "contentSha256": "8e616878cd2ce3a6dd9fc5451b38e0d15ccf52098c04de7ff954f82820289aec"
+      },
+      {
+        "path": "packages/runtime/src/workflow-reuse-materializer.ts",
+        "state": "file",
+        "contentSha256": "f33a66aa34d7a91aad50d10d498edbf0e9af5c089c8d0420102d1d0dc1b1fcbe"
+      },
+      {
+        "path": "packages/runtime/src/workflow-simulation-materializer.ts",
+        "state": "file",
+        "contentSha256": "cdddf31273b2458a9875675663fdd288eff68e20ae0bb76bcc012223a7ec32f2"
+      },
+      {
+        "path": "packages/runtime/src/workflow-tool-runtime.ts",
+        "state": "file",
+        "contentSha256": "62db07d0608431e98df2d5793c70ecba373fe535b26c8bea5463d8bb49376fe3"
+      },
+      {
+        "path": "packages/runtime/src/workspace-patch-tool.ts",
+        "state": "file",
+        "contentSha256": "e0ac0cb6c1915cfb1508725ae830f145f0cf633e247d776e0260d960834827ed"
+      },
+      {
+        "path": "packages/runtime/test/agent-capability-contract-v2.test.ts",
+        "state": "file",
+        "contentSha256": "a6e37affefdf034e349d1efe0efcedc6ed69bb22a6c3d79903d27f317bf9ec21"
+      },
+      {
+        "path": "packages/runtime/test/agent-capability-contract.test.ts",
+        "state": "file",
+        "contentSha256": "fa45aa0d5f971fb15328ded61be976ce1c7b5ea8c4d728e7825d524940b23247"
+      },
+      {
+        "path": "packages/runtime/test/agent-capability-override.test.ts",
+        "state": "file",
+        "contentSha256": "e93d2dee0d35c0ef5fe020d1e6a02dd740a4de7d5ba76a230e55157708e31c4d"
+      },
+      {
+        "path": "packages/runtime/test/agent-capability-recommendation.test.ts",
+        "state": "file",
+        "contentSha256": "1386b63b58b6482efd323edd08e4d133ed7fa83f344d5c71e674f3362eacb61e"
+      },
+      {
+        "path": "packages/runtime/test/agent-capability-store-state.test.ts",
+        "state": "file",
+        "contentSha256": "661f697b4fceea06aedff4313f8f9c2d0ff86b12d29bea2219e95760f10cc752"
+      },
+      {
+        "path": "packages/runtime/test/agent-coder-subagent.test.ts",
+        "state": "file",
+        "contentSha256": "25cda07b6d71d5f0b746b009f0b13510dd9f1356a15e23beae5835b8ec70b9bb"
+      },
+      {
+        "path": "packages/runtime/test/agent-message-experiments.test.ts",
+        "state": "file",
+        "contentSha256": "de267b7c4ede6b1458ff5856706fd66c5b66bd6cf1070bae71c2524cbf109ef2"
+      },
+      {
+        "path": "packages/runtime/test/agent-runtime.test.ts",
+        "state": "file",
+        "contentSha256": "c84720a256ae89641b800c320d44817eb4c9b84916034a0cd75e3adf4af6be71"
+      },
+      {
+        "path": "packages/runtime/test/agent-skill-load-vertical.test.ts",
+        "state": "file",
+        "contentSha256": "2ac21bcd12e9058ef34c76f465e8966ecc552947ba3de0392de6f2c777980d5c"
+      },
+      {
+        "path": "packages/runtime/test/agent-skill-load.test.ts",
+        "state": "file",
+        "contentSha256": "b8fac6c3929c129b1cbdcef9d395a08e0b0e4966c317d84a2ffeabbc7327a673"
+      },
+      {
+        "path": "packages/runtime/test/agent-skill-snapshot-run.test.ts",
+        "state": "file",
+        "contentSha256": "3bc50df63318c48a8a56db21fa195e046893cc8366fc908bfe90669d2e8b2000"
+      },
+      {
+        "path": "packages/runtime/test/agent-web-fetch-save.test.ts",
+        "state": "file",
+        "contentSha256": "b18d74fe0e1b6949b690a94718844a1e1e00e60c2039626b7b14f20309439083"
+      },
+      {
+        "path": "packages/runtime/test/automatic-recovery.test.ts",
+        "state": "file",
+        "contentSha256": "ba18159e293538ddca725cba9ea35135863d521514bbbe1322fefe4d2b9a9b0a"
+      },
+      {
+        "path": "packages/runtime/test/blueprint-outcome-review.test.ts",
+        "state": "file",
+        "contentSha256": "dea7e8b45a313d0eeec144ca3ed18cee3b4a18f132da1df9932480a0d1a4fb6f"
+      },
+      {
+        "path": "packages/runtime/test/doctor-runtime-probes.test.ts",
+        "state": "file",
+        "contentSha256": "1fc4274f8bab55cdbbcaa8af8428a0e44d9789385011bb7ec43d6fa5c9635417"
+      },
+      {
+        "path": "packages/runtime/test/independent-model-advisor.test.ts",
+        "state": "file",
+        "contentSha256": "6c8c017ae18bf2735e9bdbc1023d898a213c73dc61fee94cb81baf1bfa47ddff"
+      },
+      {
+        "path": "packages/runtime/test/lsp-rename-apply-diagnostics.test.ts",
+        "state": "file",
+        "contentSha256": "ae168b411f35f4d185020e036a02331d89c025964345de4def683e1e544391cc"
+      },
+      {
+        "path": "packages/runtime/test/project-skill-snapshot.test.ts",
+        "state": "file",
+        "contentSha256": "500e7a58e706dc61643cc017f33c769e251275e197630250f3d7c29002a7872d"
+      },
+      {
+        "path": "packages/runtime/test/provider-patch-tool-definition-budget.test.ts",
+        "state": "file",
+        "contentSha256": "77c4a32facd5022381c64da8711901f1531626bdddfda5a3c8c261d2ecfa1844"
+      },
+      {
+        "path": "packages/runtime/test/provider-tool-schema.test.ts",
+        "state": "file",
+        "contentSha256": "5c2bb085ad21e1579cd2b6561cef304674f0d579d322df2240c7c56f1b420c0a"
+      },
+      {
+        "path": "packages/runtime/test/replan-review.test.ts",
+        "state": "file",
+        "contentSha256": "27a137bb3214ab069a1e0aba3755ddb3be0c687c1266f59a8acc3678cf051685"
+      },
+      {
+        "path": "packages/runtime/test/research-skill-application.test.ts",
+        "state": "file",
+        "contentSha256": "cb7623d3edffdf002143b7aa6d6681ac349345493c7a7383342cc8b3edf21388"
+      },
+      {
+        "path": "packages/runtime/test/research-source-continuity.test.ts",
+        "state": "file",
+        "contentSha256": "9cb6d82b759aa34c5577af07be35d9244d5263157825cca4e5f8dd6d2091262a"
+      },
+      {
+        "path": "packages/runtime/test/research-source-tool.test.ts",
+        "state": "file",
+        "contentSha256": "6c76d55e89c79a0f3ee732f670fd2a0ffccedd92c0ec42a43d3e9ff70cfb8131"
+      },
+      {
+        "path": "packages/runtime/test/skill-load-recovery-replay.test.ts",
+        "state": "file",
+        "contentSha256": "097d335978de04cccc9a1b60198c8487b5822c89a6cc2184fd0369f9fb054a70"
+      },
+      {
+        "path": "packages/runtime/test/subagent-outcome-review.test.ts",
+        "state": "file",
+        "contentSha256": "c47a093608b4c1f0b17bca94ea66d47feb0ab1b1003e88f7059f761481ef15dc"
+      },
+      {
+        "path": "packages/runtime/test/tool-invocation-experiments.test.ts",
+        "state": "file",
+        "contentSha256": "479095f6125c80f20bac01ac1ce273b9b6953131b1dbea422ec0b6a0031b55b8"
+      },
+      {
+        "path": "packages/runtime/test/tool-invocation-result-capsule.test.ts",
+        "state": "file",
+        "contentSha256": "b47695d7a200b239397e9085ebdac47c28041c0f3f4ee7da2efea73d79bc7d4b"
+      },
+      {
+        "path": "packages/runtime/test/workspace-patch-tool.test.ts",
+        "state": "file",
+        "contentSha256": "079a6cf58d25b80b6e1768ec8998f6594cc4477310e188438ed942683b207cb4"
+      },
+      {
+        "path": "scripts/check-release-artifacts.mjs",
+        "state": "file",
+        "contentSha256": "3d724b36d80eb812ba0dd8cdfb888ee8d32be657872d2280c1489fe692d9de10"
+      },
+      {
+        "path": "scripts/check-release-artifacts.test.mjs",
+        "state": "file",
+        "contentSha256": "afe6c28324a8d61901cde954061159089bda4e1615f0f348d839c04e8f5413b7"
+      },
+      {
+        "path": "scripts/prompt-regression-matrix.test.mjs",
+        "state": "file",
+        "contentSha256": "7dc4f7b8daacd322c5abbe2e84649cdedce16a1c0eefb465cc2d3b3e0e836132"
+      },
+      {
+        "path": "scripts/refresh-skill-load-fast-core-evidence.mjs",
+        "state": "file",
+        "contentSha256": "1d4d12194b3475c9762a47b5c7d7bb9fa54c3b095305df6788a591c48c865a71"
+      },
+      {
+        "path": "scripts/run-skill-load-fast-core-evidence.mjs",
+        "state": "file",
+        "contentSha256": "4350de4dd8a7683c710c9158040e75f686c2395c28993cc5a9e51ed04052e52c"
+      },
+      {
+        "path": "scripts/run-skill-load-fast-core-evidence.test.mjs",
+        "state": "file",
+        "contentSha256": "0435d43a23781de9924b5571c16184139a5e2a8274d9cafce61e0101c468bd6a"
+      },
+      {
+        "path": "scripts/run-skill-load-final-check.mjs",
+        "state": "file",
+        "contentSha256": "5f2196bf044c52f041dd795875c0fbe7a630b8cb5f005187fc584c0431e3c8cf"
+      },
+      {
+        "path": "scripts/sdk-capability-parity-evidence.mjs",
+        "state": "file",
+        "contentSha256": "9dacb8eae28a8d2e090e923dcb72a5594de727f5169f27cd5de03fc0f902912e"
+      },
+      {
+        "path": "scripts/sdk-capability-parity-evidence.test.mjs",
+        "state": "file",
+        "contentSha256": "09a9a3f5605b71c322595f4c2235b0c7d761bb2155c63d41a6cd5d355e8e8c55"
+      },
+      {
+        "path": "scripts/sdk-capability-parity-identity.mjs",
+        "state": "file",
+        "contentSha256": "8df30b89fa9c63a2dff0f515c0cec4e7a83071769e89921f82cf1e7ffe914fa9"
+      },
+      {
+        "path": "scripts/skill-load-fast-core-evidence-lib.mjs",
+        "state": "file",
+        "contentSha256": "1e7617c337c5251bb967b8339f27fef498fcdebb1129632e0fcfd325bbae55c9"
+      }
+    ],
+    "targetManifestSha256": "a59b0736226374c37a48f956b5d189d84a71cd45c55aa1c148cded036cd7b070",
+    "credentialCanaryVerification": "unavailable_credential_not_retained",
+    "privatePayloadVerification": "unavailable_private_payload_not_retained",
+    "receiptSha256": "61a5ae4d881a66bcd796508d29c3a577d936b27c541f36f38deb3389378de640"
+  },
+  "stagedIndexScan": {
+    "scope": "current_git_index_content_manifest",
+    "targetCount": 0,
+    "targetManifest": [],
+    "targetManifestSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "credentialCanaryVerification": "unavailable_credential_not_retained",
+    "privatePayloadVerification": "unavailable_private_payload_not_retained",
+    "receiptSha256": "f418ef9c925146a96bc98e6d7572ee8486f2c14e0b94be473e91475bcc18e543"
+  }
+}

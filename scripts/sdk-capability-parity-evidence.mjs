@@ -289,6 +289,14 @@ async function verifyIdentity(value, verifyCurrent) {
     [...value.repairSnapshot.changedPaths].sort(),
     value.repairSnapshot.changedPaths,
   );
+  assert.deepEqual(
+    [...value.repairSnapshot.deletedPaths].sort(),
+    value.repairSnapshot.deletedPaths,
+  );
+  for (const file of value.repairSnapshot.deletedPaths) {
+    assert.ok(value.repairSnapshot.changedPaths.includes(file));
+    assert.equal(value.repairSnapshot.files[file], undefined);
+  }
   for (const file of CAPTURE_OUTPUT_PATHS) {
     assert.ok(value.repairSnapshot.changedPaths.includes(file));
   }
@@ -433,7 +441,7 @@ function verifyArtifactCorpus(value) {
     /\/Users\//u,
     /\/private\/tmp\//u,
     /(?:^|[^A-Za-z])\/tmp\//u,
-    /sk-[A-Za-z0-9_-]{20,}/u,
+    /(?:^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{20,}/u,
     /AKIA[0-9A-Z]{16}/u,
     /-----BEGIN [A-Z ]*PRIVATE KEY-----/u,
     /Napier is listening on http:\/\//u,

@@ -7,7 +7,7 @@ import {
 
 import type { EventSink } from "./event-sink.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
 import type { LocalStore } from "./store.js";
 import {
   evaluateExecutionPlanWorkflowDeterministicTemplate,
@@ -63,7 +63,7 @@ export class ExecutionPlanWorkflowDeterministicError extends Error {
 }
 
 export class ExecutionPlanWorkflowDeterministicRuntime {
-  private readonly workerId = createId("workflowdet");
+  private readonly workerId = createProcessLeaseOwnerId("workflowdet");
 
   constructor(
     private readonly store: LocalStore,

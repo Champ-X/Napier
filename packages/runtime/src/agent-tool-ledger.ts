@@ -1,15 +1,5 @@
 import type { JsonValue } from "@napier/contracts";
 
-import {
-  agentDataToolCallProjection,
-  agentDataToolInputProjection,
-  agentDataToolOutputProjection,
-} from "./agent-data-tool-ledger.js";
-import {
-  agentNetworkToolCallProjection,
-  agentNetworkToolInputProjection,
-  agentNetworkToolOutputProjection,
-} from "./agent-network-tool-ledger.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   javascriptKernelToolCallArgumentsLedgerProjection,
@@ -67,10 +57,10 @@ import {
   lspSymbolsToolOutputLedgerProjection,
 } from "./lsp-symbols-tool.js";
 import {
-  agentProcessToolCallProjection,
-  agentProcessToolInputProjection,
-  agentProcessToolOutputProjection,
-} from "./agent-process-tool-ledger.js";
+  specializedToolCallProjection,
+  specializedToolInputProjection,
+  specializedToolOutputProjection,
+} from "./agent-tool-specialized-ledger.js";
 import {
   typescriptAstToolCallArgumentsLedgerProjection,
   typescriptAstToolInputLedgerProjection,
@@ -106,7 +96,6 @@ import {
   verificationToolInputLedgerProjection,
   verificationToolOutputLedgerProjection,
 } from "./verification-ledger.js";
-
 const PRIVATE_WORKSPACE_READ_TOOLS = new Set([
   "list_files",
   "read_file",
@@ -117,16 +106,33 @@ const PRIVATE_WORKSPACE_READ_TOOLS = new Set([
   "read_symbol",
 ]);
 
+export function agentToolAllowsGenericDetailsFallback(
+  toolName: string,
+): boolean {
+  return toolName !== "research_source";
+}
+
+export function agentToolGenericDetailsLedgerProjection(
+  toolName: string,
+  outputProjection: Readonly<Record<string, JsonValue>>,
+  details: unknown,
+): Record<string, JsonValue> {
+  if (
+    Object.hasOwn(outputProjection, "details") ||
+    details === undefined ||
+    !agentToolAllowsGenericDetailsFallback(toolName)
+  ) {
+    return {};
+  }
+  return { details: toJsonValue(details) };
+}
+
 export function agentToolCallArgumentsLedgerProjection(
   toolName: string,
   args: unknown,
 ): JsonValue {
-  const dataProjection = agentDataToolCallProjection(toolName, args);
-  if (dataProjection !== undefined) return dataProjection;
-  const processProjection = agentProcessToolCallProjection(toolName, args);
-  if (processProjection !== undefined) return processProjection;
-  const networkProjection = agentNetworkToolCallProjection(toolName, args);
-  if (networkProjection !== undefined) return networkProjection;
+  const specializedProjection = specializedToolCallProjection(toolName, args);
+  if (specializedProjection !== undefined) return specializedProjection;
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolCallArgumentsLedgerProjection(args);
   }
@@ -194,12 +200,8 @@ export function agentToolInputLedgerProjection(
   toolName: string,
   args: unknown,
 ): Record<string, JsonValue> {
-  const dataProjection = agentDataToolInputProjection(toolName, args);
-  if (dataProjection !== undefined) return dataProjection;
-  const processProjection = agentProcessToolInputProjection(toolName, args);
-  if (processProjection !== undefined) return processProjection;
-  const networkProjection = agentNetworkToolInputProjection(toolName, args);
-  if (networkProjection !== undefined) return networkProjection;
+  const specializedProjection = specializedToolInputProjection(toolName, args);
+  if (specializedProjection !== undefined) return specializedProjection;
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolInputLedgerProjection(args);
   }
@@ -272,24 +274,12 @@ export function agentToolOutputLedgerProjection(
   output: string,
   result: unknown,
 ): Record<string, JsonValue> {
-  const dataProjection = agentDataToolOutputProjection(
+  const specializedProjection = specializedToolOutputProjection(
     toolName,
     output,
     result,
   );
-  if (dataProjection !== undefined) return dataProjection;
-  const processProjection = agentProcessToolOutputProjection(
-    toolName,
-    output,
-    result,
-  );
-  if (processProjection !== undefined) return processProjection;
-  const networkProjection = agentNetworkToolOutputProjection(
-    toolName,
-    output,
-    result,
-  );
-  if (networkProjection !== undefined) return networkProjection;
+  if (specializedProjection !== undefined) return specializedProjection;
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolOutputLedgerProjection(output, result);
   }

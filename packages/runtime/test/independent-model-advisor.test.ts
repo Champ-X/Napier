@@ -101,12 +101,7 @@ describe("independent Model Advisor", () => {
           { status: "completed" },
           "lifecycle",
         ),
-        event(
-          8,
-          "run.recovery.auto.failed",
-          { status: "failed" },
-          "lifecycle",
-        ),
+        event(8, "run.recovery.auto.failed", { status: "failed" }, "lifecycle"),
         event(
           9,
           "evaluation.suite.completed",
@@ -137,13 +132,13 @@ describe("independent Model Advisor", () => {
       '"planArtifactVerifiedAfterWorkspaceWrite":false',
     );
     expect(prompt.user).toContain('"goalSatisfiedAfterWorkspaceWrite":false');
-    expect(prompt.user).toContain(
-      '"recoveryCompletedAfterInterruption":false',
-    );
+    expect(prompt.user).toContain('"recoveryCompletedAfterInterruption":false');
     expect(prompt.user).toContain(
       '"evaluationCompletedAfterWorkspaceWrite":false',
     );
-    expect(prompt.user).toContain('"evaluationPassedAfterWorkspaceWrite":false');
+    expect(prompt.user).toContain(
+      '"evaluationPassedAfterWorkspaceWrite":false',
+    );
     expect(prompt.user).toContain('"latestPlanCompletedSeq":2');
     expect(prompt.user).toContain('"latestPlanInvalidatedSeq":4');
     expect(prompt.user).toContain('"latestPlanArtifactVerifiedSeq":1');
@@ -235,7 +230,7 @@ describe("independent Model Advisor", () => {
         promptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         modelContextEnvelope: expect.objectContaining({
           kind: "napier.model-context-envelope",
-          schemaVersion: 1,
+          schemaVersion: 2,
           turnIndex: 0,
           messageCount: 1,
           toolCount: 0,

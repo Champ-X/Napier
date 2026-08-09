@@ -9,8 +9,29 @@ import { createSqliteQueryTool } from "../src/sqlite-query-tool.js";
 import { createTypescriptAstTools } from "../src/typescript-ast-tool.js";
 import { createWorkspaceFilePreviewTool } from "../src/workspace-file-tools.js";
 import { createWorkspaceProcessTool } from "../src/workspace-process-tool.js";
+import { createSkillLoadTool } from "../src/skill-load-tool.js";
 
 describe("Provider tool schema compatibility", () => {
+  it("publishes the exact provider-safe skill_load schema", () => {
+    const tool = createSkillLoadTool(undefined as never);
+    expect(tool.name).toBe("skill_load");
+    expect(tool.parameters).toEqual(
+      expect.objectContaining({
+        type: "object",
+        additionalProperties: false,
+        required: ["name"],
+        properties: {
+          name: expect.objectContaining({
+            type: "string",
+            minLength: 1,
+            maxLength: 64,
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          }),
+        },
+      }),
+    );
+  });
+
   it("publishes object-rooted JSON Schemas for action-union tools", () => {
     const owner = { threadId: "thread_schema", runId: "run_schema" };
     const astEdit = createTypescriptAstTools("/workspace").find(
@@ -28,14 +49,30 @@ describe("Provider tool schema compatibility", () => {
       createWorkspaceProcessTool(undefined as never, owner),
     ];
 
+    const compactObjectTools = new Set([
+      "sqlite_query",
+      "ast_edit_preview",
+      "workspace_file_preview",
+    ]);
     for (const tool of tools) {
       const schema = tool.parameters as Record<string, unknown>;
-      expect(schema, tool.name).toEqual(
-        expect.objectContaining({
-          type: "object",
-          anyOf: expect.any(Array),
-        }),
-      );
+      if (compactObjectTools.has(tool.name)) {
+        expect(schema, tool.name).toEqual(
+          expect.objectContaining({
+            type: "object",
+            additionalProperties: false,
+            properties: expect.any(Object),
+          }),
+        );
+        expect(schema, tool.name).not.toHaveProperty("anyOf");
+      } else {
+        expect(schema, tool.name).toEqual(
+          expect.objectContaining({
+            type: "object",
+            anyOf: expect.any(Array),
+          }),
+        );
+      }
     }
   });
 });

@@ -30,6 +30,7 @@ import {
 } from "./agent-message-experiment-source.js";
 import { sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
+import { SKILL_CONTINUATION_SNAPSHOT } from "./skill-load-replay.js";
 import type { LocalStore } from "./store.js";
 import { createThreadBranch } from "./thread-branches.js";
 
@@ -131,6 +132,9 @@ export class AgentMessageExperimentRuntime {
         text: source.prompt,
         model: preview.targetModel,
         agentRevision: preview.sourceAgentRevision,
+        ...(source.capabilityPreset
+          ? { capabilityPreset: source.capabilityPreset }
+          : {}),
         executionMode: "agent_experiment_read_only",
         source: "user",
         parentRunId: branch.run.id,
@@ -151,6 +155,9 @@ export class AgentMessageExperimentRuntime {
         },
         ...(toolResultReplay
           ? { [AGENT_MESSAGE_TOOL_RESULT_REPLAY]: toolResultReplay }
+          : {}),
+        ...(source.skillSnapshot
+          ? { [SKILL_CONTINUATION_SNAPSHOT]: source.skillSnapshot }
           : {}),
         ...(options.signal ? { signal: options.signal } : {}),
         onRunCreated: async (run) => {

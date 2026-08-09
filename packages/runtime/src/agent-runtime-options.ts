@@ -18,6 +18,10 @@ import {
   type FrozenToolResultReplayController,
 } from "./agent-message-tool-result-replay.js";
 import {
+  SKILL_CONTINUATION_SNAPSHOT,
+  type SkillContinuationSnapshot,
+} from "./skill-load-replay.js";
+import {
   WORKFLOW_NODE_EXECUTION,
   type WorkflowNodeExecution,
 } from "./workflow-node-execution.js";
@@ -43,6 +47,7 @@ export interface RunPromptOptions {
   [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
   [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
   [AGENT_MESSAGE_TOOL_RESULT_REPLAY]?: FrozenToolResultReplayController;
+  [SKILL_CONTINUATION_SNAPSHOT]?: SkillContinuationSnapshot;
   recovery?: {
     mode: "manual" | "automatic";
     attemptId?: string;

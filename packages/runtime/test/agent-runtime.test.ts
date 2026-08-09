@@ -165,12 +165,10 @@ describe("AgentRuntime demo path", () => {
       agentId: agent.id,
     });
     const runtime = new AgentRuntime(store, new ModelRegistry());
-
     const run = await runtime.runPrompt({
       threadId: thread.id,
       text: "Use the configured skills.",
     });
-
     expect(run.configuration).toEqual(
       expect.objectContaining({
         schemaVersion: 8,
@@ -192,18 +190,18 @@ describe("AgentRuntime demo path", () => {
     const skillsEvent = events.find((event) => event.type === "context.skills");
     expect(skillsEvent?.payload).toEqual(
       expect.objectContaining({
-        skillCatalogSha256: run.configuration?.skillCatalogSha256,
-        requestedSkillNames: ["runtime-skill"],
-        loadedSkillNames: ["runtime-skill"],
-        missingSkillNames: [],
-        skills: [
+        kind: "napier.skill-catalog-binding",
+        catalogSha256: run.configuration?.skillCatalogSha256,
+        loadableSkillNames: ["runtime-skill"],
+        unavailableSkills: [],
+        configuredSkillRequests: [
           expect.objectContaining({
-            name: "runtime-skill",
-            relativePath: "skills/runtime-skill/SKILL.md",
-            sizeBytes: Buffer.byteLength(skillText),
-            contentSha256: createHash("sha256").update(skillText).digest("hex"),
+            canonicalName: "runtime-skill",
+            state: "loadable",
+            requestedNameSha256: createHash("sha256").update("runtime-skill").digest("hex"),
           }),
         ],
+        snapshotManifestSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
     expect(JSON.stringify(run.configuration)).not.toContain(

@@ -35,6 +35,8 @@ import { appendSourceContinuityGuidance } from "./source-continuity-guidance.js"
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
+import type { ProjectSkillSnapshot } from "./project-skill-snapshot.js";
+import { createSkillLoadTool } from "./skill-load-tool.js";
 
 interface AgentCapabilityOwner {
   threadId: string;
@@ -43,6 +45,8 @@ interface AgentCapabilityOwner {
 
 export interface CreateAgentCapabilityToolsOptions extends AgentCapabilityOwner {
   profile: AgentProfile;
+  projectSkillSnapshot?: ProjectSkillSnapshot;
+  skillLoadAllowed?: boolean;
   browserInteractionConfirmationAllowed?: boolean;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
@@ -150,6 +154,14 @@ export class AgentCapabilityRuntime {
         : {}),
       webSearch: this.webSearch,
     });
+    if (
+      options.skillLoadAllowed === true &&
+      !options.advisorCorrection &&
+      options.projectSkillSnapshot &&
+      options.profile.enabledTools.includes("skill_load")
+    ) {
+      tools.push(createSkillLoadTool(options.projectSkillSnapshot));
+    }
     if (
       !options.advisorCorrection &&
       options.profile.enabledTools.includes("web_fetch")

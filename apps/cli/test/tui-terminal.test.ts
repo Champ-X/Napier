@@ -1,7 +1,10 @@
 import { Writable } from "node:stream";
 
 import type { RunEvent } from "@napier/contracts";
-import { agentCapabilityStatus } from "@napier/contracts/agent-capabilities";
+import {
+  agentCapabilityPreset,
+  agentCapabilityStatus,
+} from "@napier/contracts/agent-capabilities";
 import type { BrowserInteractionConfirmation } from "@napier/contracts/browser-interaction-confirmation";
 import { describe, expect, it } from "vitest";
 
@@ -15,12 +18,7 @@ describe("TUI terminal projection", () => {
     const state = new TuiSessionState({
       title: "unsafe\u001b]52;c;TITLE\u0007\u202e",
       model: { provider: "safe", id: "model" },
-      capabilities: agentCapabilityStatus({
-        toolPolicy: "observe",
-        enabledTools: ["web_search", "web_fetch", "browser", "research_source"],
-        enabledSkills: ["research-brief", "browser-automation"],
-        enabledSubagents: ["researcher", "reviewer"],
-      }),
+      capabilities: agentCapabilityStatus(agentCapabilityPreset("browser")),
     });
     state.beginPrompt("prompt\u001b[2J\u0007");
     state.applyEvent(

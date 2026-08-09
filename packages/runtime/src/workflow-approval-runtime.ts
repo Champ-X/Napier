@@ -6,7 +6,7 @@ import type {
 
 import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
 import type { LocalStore, OperatorDecisionMutation } from "./store.js";
 import {
   ExecutionPlanWorkflowLedger,
@@ -62,7 +62,7 @@ export class WorkflowApprovalRuntimeError extends Error {
 }
 
 export class ExecutionPlanWorkflowApprovalRuntime {
-  private readonly workerId = createId("workflowapproval");
+  private readonly workerId = createProcessLeaseOwnerId("workflowapproval");
 
   constructor(
     private readonly store: LocalStore,

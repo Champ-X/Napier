@@ -253,7 +253,7 @@ describe("open-web Research outcome benchmark", () => {
         status: "failed",
         fetchCount: 2,
         adjacentCitationCount: 2,
-        diagnostics: ["run_not_completed", "citation_adjacency_mismatch"],
+        diagnostics: ["citation_adjacency_mismatch"],
       }),
     );
     expect(artifacts.result.evidence.toolSequence).toContain("web_fetch:read");

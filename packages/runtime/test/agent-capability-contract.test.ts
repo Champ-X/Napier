@@ -50,6 +50,29 @@ async function createRuntime() {
   });
 }
 
+async function createRuntimeWithSkills(names: readonly string[]) {
+  const root = await mkdtemp(
+    path.join(tmpdir(), "napier-capability-contract-skills-"),
+  );
+  roots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  await mkdir(workspaceRoot);
+  for (const name of names) {
+    const directory = path.join(workspaceRoot, "skills", name);
+    await mkdir(directory, { recursive: true });
+    await writeFile(
+      path.join(directory, "SKILL.md"),
+      `---\nname: ${name}\ndescription: ${name} readiness fixture.\n---\n\n# ${name}\n\nFollow the bounded workflow.\n`,
+    );
+  }
+  return createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot: path.join(root, "state"),
+    env: {},
+    sandbox: new UnsupportedSandboxAdapter("capability-contract-skill-test"),
+  });
+}
+
 async function createFixtureRuntime(name: "pre-search" | "search-fetch") {
   const root = await mkdtemp(path.join(tmpdir(), "napier-capability-legacy-"));
   roots.push(root);
@@ -190,6 +213,38 @@ describe("default Agent Capability Contract", () => {
             id: "skill:browser-automation",
             status: "missing",
           }),
+        ]),
+      );
+    } finally {
+      await services.shutdown();
+    }
+  });
+
+  it("projects the production Skill loader as ready when the default catalog is loadable", async () => {
+    const services = await createRuntimeWithSkills(
+      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills,
+    );
+    try {
+      const agent = services.store.listAgents()[0]!;
+      const projection = await services.agentCapabilities.project(agent.id);
+      expect(agent.enabledTools).toContain("skill_load");
+      expect(projection.runtimeExposedTools).toContain("skill_load");
+      expect(projection.readiness).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "tool:skill_load",
+            status: "ready",
+            allowedByPolicy: true,
+            exposed: true,
+          }),
+          ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills.map((name) =>
+            expect.objectContaining({
+              id: `skill:${name}`,
+              status: "ready",
+              allowedByPolicy: true,
+              exposed: true,
+            }),
+          ),
         ]),
       );
     } finally {
@@ -476,7 +531,7 @@ describe("default Agent Capability Contract", () => {
     }
   });
 
-  it("keeps V2 ownership under a simulated V3 recommendation history", async () => {
+  it("keeps V3 ownership under a simulated V4 recommendation history", async () => {
     const services = await createRuntime();
     try {
       const profile = services.store.listAgents()[0]!;
@@ -486,14 +541,14 @@ describe("default Agent Capability Contract", () => {
       );
       expect(lookup.status).toBe("valid");
       if (lookup.status !== "valid") throw new Error("binding missing");
-      const v3 = createAgentCapabilityContractRecommendation(3, {
+      const v4 = createAgentCapabilityContractRecommendation(4, {
         ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION,
         enabledSkills: [
           ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills,
-          "future-v2-skill",
+          "future-v3-skill",
         ],
       });
-      const history = [...DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY, v3];
+      const history = [...DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY, v4];
       expect(validateCapabilityBinding(lookup.binding, history)).toEqual(
         lookup.binding,
       );
@@ -509,7 +564,7 @@ describe("default Agent Capability Contract", () => {
       );
       expect(propagated).toEqual(
         expect.objectContaining({
-          contractVersion: 2,
+          contractVersion: 3,
           recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
           ownership: "recommended",
           explicitOverrideFields: [],
@@ -518,7 +573,7 @@ describe("default Agent Capability Contract", () => {
       const customized = {
         ...renamed,
         revision: 3,
-        enabledSkills: ["future-v2-skill"],
+        enabledSkills: ["future-v3-skill"],
       };
       const overridden = propagateUpdatedCapabilityBinding(
         propagated,
@@ -528,7 +583,7 @@ describe("default Agent Capability Contract", () => {
       );
       expect(overridden).toEqual(
         expect.objectContaining({
-          contractVersion: 2,
+          contractVersion: 3,
           recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
           ownership: "explicit_overrides",
           explicitOverrideFields: ["enabledSkills"],

@@ -4,7 +4,7 @@ import type {
   ThreadDetail,
 } from "@napier/contracts";
 
-import { createId } from "./ids.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
 import type { LocalStore } from "./store.js";
 
 const MAX_BRANCH_TITLE_CHARS = 100;
@@ -95,7 +95,7 @@ export async function createThreadBranch(
       branchFromSeq: request.fromSeq,
     },
     {
-      ownerId: createId("branch"),
+      ownerId: createProcessLeaseOwnerId("branch"),
       ttlMs: 10 * 60_000,
     },
   );

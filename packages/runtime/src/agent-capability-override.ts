@@ -79,7 +79,7 @@ export function resolveAgentCapabilityProfileFromStore(
   return applyAgentCapabilityPresetOverride(profile, presetId, source);
 }
 
-function capabilityPresetForOriginRun(
+export function capabilityPresetForOriginRun(
   events: readonly RunEvent[],
   runId: string,
 ): AgentCapabilityPresetId | undefined {

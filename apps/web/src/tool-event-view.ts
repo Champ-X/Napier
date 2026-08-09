@@ -35,6 +35,11 @@ import {
   type ResearchSourceToolEventTraceView,
 } from "./research-source-event-view";
 import {
+  skillLoadEventEvidence,
+  skillLoadSummaryParts,
+  type SkillLoadToolEventTraceView,
+} from "./skill-load-event-view";
+import {
   sqliteQueryEventEvidence,
   sqliteQuerySummaryParts,
   type SqliteQueryToolEventTraceView,
@@ -79,6 +84,11 @@ import {
   workspaceReadSummaryParts,
   type WorkspaceReadToolEventTraceView,
 } from "./workspace-read-event-view";
+import {
+  toolResultReuseEventEvidence,
+  toolResultReuseSummaryParts,
+  type ToolResultReuseEventTraceView,
+} from "./tool-result-reuse-event-view";
 
 export interface ToolEventTraceView
   extends
@@ -97,7 +107,9 @@ export interface ToolEventTraceView
     SubagentWorktreeToolEventTraceView,
     VerificationToolEventTraceView,
     WriteLinkedTestEventTraceView,
-    WorkspaceReadToolEventTraceView {
+    WorkspaceReadToolEventTraceView,
+    SkillLoadToolEventTraceView,
+    ToolResultReuseEventTraceView {
   toolName: string;
   status: string;
   effect?: "read" | "write";
@@ -144,19 +156,6 @@ export interface ToolEventTraceView
   fileMutationBytes?: number;
   fileMutationReversible?: boolean;
   fileMutationPostcondition?: "verified" | "drifted" | "indeterminate";
-  sourceRunId?: string;
-  sourceCallId?: string;
-  targetCallId?: string;
-  targetExecutionMode?: string;
-  outputChanged?: boolean;
-  durationMsDelta?: number;
-  previewSha256?: string;
-  comparisonSha256?: string;
-  resultSha256?: string;
-  resultCapsuleSha256?: string;
-  sourceToolResultSetSha256?: string;
-  resultReused?: boolean;
-  resultError?: boolean;
 }
 
 const TOOL_EVENT_PATTERN =
@@ -216,6 +215,10 @@ export function toolEventTraceView(
     toolName === "research_source"
       ? researchSourceEventEvidence(event.payload["details"])
       : undefined;
+  const skillLoadEvidence =
+    toolName === "skill_load"
+      ? skillLoadEventEvidence(event.payload["details"])
+      : undefined;
   const sqliteQueryEvidence =
     toolName === "sqlite_query"
       ? sqliteQueryEventEvidence(event.payload["details"])
@@ -266,6 +269,7 @@ export function toolEventTraceView(
     ...(gitEvidence ? gitEvidence : {}),
     ...(browserEvidence ? browserEvidence : {}),
     ...(researchSourceEvidence ? researchSourceEvidence : {}),
+    ...(skillLoadEvidence ? skillLoadEvidence : {}),
     ...(sqliteQueryEvidence ? sqliteQueryEvidence : {}),
     ...(dataFrameEvidence ?? {}),
     ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
@@ -275,23 +279,7 @@ export function toolEventTraceView(
     ...(patchEvidence ? patchEvidence : {}),
     ...(subagentWorktreeEvidence ? subagentWorktreeEvidence : {}),
     ...(fileMutationEvidence ? fileMutationEvidence : {}),
-    ...safeStatusField(event.payload, "sourceRunId"),
-    ...safeStatusField(event.payload, "sourceCallId"),
-    ...safeStatusField(event.payload, "targetCallId"),
-    ...safeStatusField(event.payload, "targetExecutionMode"),
-    ...(typeof event.payload["outputChanged"] === "boolean"
-      ? { outputChanged: event.payload["outputChanged"] }
-      : {}),
-    ...signedIntegerField(event.payload, "durationMsDelta"),
-    ...shaViewField(event.payload, "previewSha256"),
-    ...shaViewField(event.payload, "comparisonSha256"),
-    ...shaViewField(event.payload, "resultSha256"),
-    ...shaViewField(event.payload, "resultCapsuleSha256"),
-    ...shaViewField(event.payload, "sourceToolResultSetSha256"),
-    ...(event.payload["resultReused"] === true ? { resultReused: true } : {}),
-    ...(typeof event.payload["isError"] === "boolean"
-      ? { resultError: event.payload["isError"] }
-      : {}),
+    ...toolResultReuseEventEvidence(event.payload),
   };
 }
 
@@ -315,6 +303,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...gitToolSummaryParts(view),
     ...browserSummaryParts(view),
     ...researchSourceSummaryParts(view),
+    ...skillLoadSummaryParts(view),
     ...sqliteQuerySummaryParts(view),
     ...dataFrameSummaryParts(view),
     ...javascriptKernelSummaryParts(view),
@@ -408,35 +397,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       ? [`postcondition ${view.fileMutationPostcondition}`]
       : []),
     ...(view.fileMutationReversible ? ["reversible"] : []),
-    ...(view.sourceRunId ? [`source ${view.sourceRunId.slice(-10)}`] : []),
-    ...(view.sourceCallId ? [`call ${view.sourceCallId.slice(-10)}`] : []),
-    ...(view.targetCallId
-      ? [`target-call ${view.targetCallId.slice(-10)}`]
-      : []),
-    ...(view.targetExecutionMode ? [`mode ${view.targetExecutionMode}`] : []),
-    ...(view.outputChanged !== undefined
-      ? [`output-changed ${view.outputChanged}`]
-      : []),
-    ...(view.durationMsDelta !== undefined
-      ? [`duration-delta ${view.durationMsDelta}`]
-      : []),
-    ...(view.previewSha256
-      ? [`preview ${view.previewSha256.slice(0, 12)}`]
-      : []),
-    ...(view.comparisonSha256
-      ? [`comparison ${view.comparisonSha256.slice(0, 12)}`]
-      : []),
-    ...(view.resultSha256 ? [`result ${view.resultSha256.slice(0, 12)}`] : []),
-    ...(view.resultCapsuleSha256
-      ? [`result-capsule ${view.resultCapsuleSha256.slice(0, 12)}`]
-      : []),
-    ...(view.sourceToolResultSetSha256
-      ? [`result-set ${view.sourceToolResultSetSha256.slice(0, 12)}`]
-      : []),
-    ...(view.resultReused ? ["reused"] : []),
-    ...(view.resultError !== undefined
-      ? [`result-error ${view.resultError}`]
-      : []),
+    ...toolResultReuseSummaryParts(view),
   ].join(" / ");
 }
 
@@ -457,32 +418,6 @@ function safeToolName(value: unknown): string | undefined {
 
 function safeStatus(value: unknown): string | undefined {
   return typeof value === "string" && STATUS.test(value) ? value : undefined;
-}
-
-function safeStatusField(
-  payload: Record<string, unknown>,
-  key: keyof ToolEventTraceView,
-): Partial<ToolEventTraceView> {
-  const value = safeStatus(payload[key]);
-  return value ? { [key]: value } : {};
-}
-
-function signedIntegerField(
-  payload: Record<string, unknown>,
-  key: keyof ToolEventTraceView,
-): Partial<ToolEventTraceView> {
-  const value = payload[key];
-  return typeof value === "number" && Number.isSafeInteger(value)
-    ? { [key]: value }
-    : {};
-}
-
-function shaViewField(
-  payload: Record<string, unknown>,
-  key: keyof ToolEventTraceView,
-): Partial<ToolEventTraceView> {
-  const value = sha256(payload[key]);
-  return value ? { [key]: value } : {};
 }
 
 function safeEffect(value: unknown): "read" | "write" | undefined {

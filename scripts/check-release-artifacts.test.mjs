@@ -163,6 +163,7 @@ describe("release artifacts audit", () => {
       "research-benchmark-ledger-1",
       "research-benchmark-result-2",
       "research-benchmark-ledger-2",
+      "research-benchmark-normalization-migration",
       "open-web-research-freshness-campaign",
       "open-web-research-freshness-observation-1-result",
       "open-web-research-freshness-observation-2-series",
@@ -678,14 +679,19 @@ describe("release artifacts audit", () => {
   it("fails when retained Research evidence is tampered", async () => {
     const { root } = await createFixture();
     const benchmarkRoot = path.join(root, "docs/artifacts/benchmarks");
-    const resultName = (await readdir(benchmarkRoot))
-      .filter((name) =>
-        name.startsWith(
-          "napier-research-benchmark-result-research_aurora_contradiction_v1-",
+    const series = JSON.parse(
+      await readFile(
+        path.join(
+          benchmarkRoot,
+          "napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json",
         ),
-      )
-      .sort()[0];
-    const resultPath = path.join(benchmarkRoot, resultName);
+        "utf8",
+      ),
+    );
+    const resultPath = path.join(
+      benchmarkRoot,
+      series.trials[0].resultFileName,
+    );
     const result = JSON.parse(await readFile(resultPath, "utf8"));
     result.evaluation.reportVerified = false;
     await writeJson(resultPath, result);
@@ -699,6 +705,26 @@ describe("release artifacts audit", () => {
         "research benchmark trial 1: result_shape_invalid",
         "research benchmark trial 1: trial_binding_mismatch",
       ]),
+    );
+  });
+
+  it("fails when the Research normalization migration receipt is tampered", async () => {
+    const { root } = await createFixture();
+    const receiptPath = path.join(
+      root,
+      "docs/artifacts/benchmarks/napier-research-benchmark-normalization-migration-20260807.json",
+    );
+    const receipt = JSON.parse(await readFile(receiptPath, "utf8"));
+    receipt.providerRerun = true;
+    const { contentSha256: _contentSha256, ...content } = receipt;
+    receipt.contentSha256 = sha256(canonicalJson(content));
+    await writeJson(receiptPath, receipt);
+
+    const audit = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(audit.ok).toBe(false);
+    expect(audit.errors).toContain(
+      "research benchmark normalization migration receipt is invalid",
     );
   });
 

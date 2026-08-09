@@ -90,7 +90,9 @@ const defaultGoalNoProgressBenchmarkSeriesPath =
 const defaultProcessRecoveryBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-process-recovery-benchmark-series-long_horizon_process_write_compensation_v1-79f2082920791734.json";
 const defaultResearchBenchmarkSeriesPath =
-  "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-7860868b48599ded.json";
+  "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json";
+const defaultResearchBenchmarkMigrationReceiptPath =
+  "docs/artifacts/benchmarks/napier-research-benchmark-normalization-migration-20260807.json";
 const defaultOpenWebResearchFreshnessCampaignPath =
   "benchmark-results/napier-open-web-research-freshness-campaign-research_open_web_source_triad_v1-c9248212f0b67e3f.json";
 const defaultOpenWebResearchBenchmarkCaseRoot =
@@ -426,6 +428,24 @@ export async function auditReleaseArtifacts(options = {}) {
     artifactReferences: researchBenchmarkSeriesArtifactReferences,
     verifySeries: verifyResearchBenchmarkSeries,
   });
+  const researchBenchmarkMigrationEvidence = await readArtifactEvidence(
+    repoRoot,
+    defaultResearchBenchmarkMigrationReceiptPath,
+    errors,
+  );
+  const researchBenchmarkMigrationReceipt = await readJsonArtifact(
+    repoRoot,
+    defaultResearchBenchmarkMigrationReceiptPath,
+    errors,
+  );
+  const researchBenchmarkMigrationValid =
+    validResearchBenchmarkMigrationReceipt(
+      researchBenchmarkMigrationReceipt,
+      researchBenchmarkSeriesPath,
+    );
+  if (!researchBenchmarkMigrationValid) {
+    errors.push("research benchmark normalization migration receipt is invalid");
+  }
   const openWebResearchBenchmarkArtifacts =
     await verifyOpenWebResearchFreshnessReleaseArtifacts({
       repoRoot,
@@ -561,6 +581,14 @@ export async function auditReleaseArtifacts(options = {}) {
     ...goalNoProgressBenchmarkArtifacts,
     ...processRecoveryBenchmarkArtifacts,
     ...researchBenchmarkArtifacts,
+    {
+      kind: "research-benchmark-normalization-migration",
+      path: researchBenchmarkMigrationEvidence.path,
+      sha256: researchBenchmarkMigrationEvidence.sha256,
+      valid:
+        researchBenchmarkMigrationEvidence.readable &&
+        researchBenchmarkMigrationValid,
+    },
     ...openWebResearchBenchmarkArtifacts,
     ...openWebSecurityBenchmarkArtifacts,
     ...openWebExecutorComparisonAttemptArtifacts,
@@ -1470,6 +1498,48 @@ function readCliValue(args, index, name) {
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function validResearchBenchmarkMigrationReceipt(value, releaseSeriesPath) {
+  if (!isRecord(value)) return false;
+  const { contentSha256, ...content } = value;
+  const series = value.series;
+  return (
+    value.kind === "napier.research-benchmark-normalization-migration" &&
+    value.schemaVersion === 1 &&
+    value.providerRerun === false &&
+    value.conclusionsChanged === false &&
+    isSha256(contentSha256) &&
+    sha256(Buffer.from(stableJson(content), "utf8")) === contentSha256 &&
+    isRecord(value.sourceProvenance) &&
+    value.sourceProvenance.path ===
+      "benchmarks/research/aurora-contradiction-v1/sources.json" &&
+    isSha256(value.sourceProvenance.sha256) &&
+    Array.isArray(series) &&
+    series.length === 2 &&
+    series.some(
+      (entry) =>
+        isRecord(entry) &&
+        isRecord(entry.normalized) &&
+        entry.normalized.file === path.posix.basename(releaseSeriesPath),
+    ) &&
+    series.every(
+      (entry) =>
+        isRecord(entry) &&
+        isRecord(entry.old) &&
+        isRecord(entry.normalized) &&
+        typeof entry.old.file === "string" &&
+        isSha256(entry.old.contentSha256) &&
+        typeof entry.normalized.file === "string" &&
+        isSha256(entry.normalized.contentSha256) &&
+        Array.isArray(entry.trials) &&
+        entry.trials.length === 2 &&
+        isRecord(entry.verification) &&
+        entry.verification.valid === true &&
+        Array.isArray(entry.verification.diagnostics) &&
+        entry.verification.diagnostics.length === 0
+    )
+  );
 }
 
 function isSha256(value) {

@@ -3,7 +3,11 @@ import { access, readdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 
+import { isSkillLoadReceiptV1 } from "@napier/contracts/skill-load";
+
 import { resolveCommandRuntimeBinding } from "./command-runtime.js";
+import { buildProjectSkillSnapshot } from "./project-skill-snapshot.js";
+import { createSkillLoadTool } from "./skill-load-tool.js";
 
 const require = createRequire(import.meta.url);
 const MAX_SCANNED_SKILL_DIRS = 128;
@@ -80,9 +84,10 @@ export function sandboxIsolationStrength(
 }
 
 /**
- * Skill loader readiness. Scans `<workspace>/skills/<name>/SKILL.md`. The loader
- * itself is always constructed, so an empty or absent catalog is reported as
- * available rather than broken; a present catalog confirms loadable Skills.
+ * Skill loader readiness. An available catalog is admitted through the same
+ * snapshot builder and production tool used by Agent Runs, then one Skill is
+ * actually loaded. Empty workspaces remain unverified rather than claiming a
+ * production call that could not be made.
  */
 export async function probeSkillsRuntime(
   workspaceRoot: string,
@@ -90,9 +95,7 @@ export async function probeSkillsRuntime(
   const skillsDir = path.join(workspaceRoot, "skills");
   let entries: string[];
   try {
-    entries = (
-      await readdir(skillsDir, { withFileTypes: true })
-    )
+    entries = (await readdir(skillsDir, { withFileTypes: true }))
       .filter((entry) => entry.isDirectory())
       .slice(0, MAX_SCANNED_SKILL_DIRS)
       .map((entry) => entry.name);
@@ -105,17 +108,15 @@ export async function probeSkillsRuntime(
       evidence: { present: 0 },
     };
   }
-  let present = 0;
+  const present: string[] = [];
   for (const name of entries) {
-    const exists = await access(
-      path.join(skillsDir, name, "SKILL.md"),
-    ).then(
+    const exists = await access(path.join(skillsDir, name, "SKILL.md")).then(
       () => true,
       () => false,
     );
-    if (exists) present += 1;
+    if (exists) present.push(name);
   }
-  if (present === 0) {
+  if (present.length === 0) {
     return {
       status: "available_unverified",
       code: "skills_empty",
@@ -124,12 +125,41 @@ export async function probeSkillsRuntime(
       evidence: { present: 0 },
     };
   }
-  return {
-    status: "ready",
-    code: "skills_ready",
-    message: `Skill loader resolved ${String(present)} workspace Skill${present === 1 ? "" : "s"}`,
-    evidence: { present },
-  };
+  try {
+    const snapshot = await buildProjectSkillSnapshot(
+      workspaceRoot,
+      present.slice(0, 64),
+    );
+    const name = snapshot.binding.loadableSkillNames[0];
+    if (!name) throw new Error("No Project Skill passed snapshot admission");
+    const result = await createSkillLoadTool(snapshot).execute(
+      "doctor_skill_load",
+      { name },
+      new AbortController().signal,
+    );
+    if (!isSkillLoadReceiptV1(result.details)) {
+      throw new Error("Production Skill load did not return a valid receipt");
+    }
+    return {
+      status: "ready",
+      code: "skills_ready",
+      message: `Production Skill loader loaded 1 of ${String(snapshot.binding.loadableSkillNames.length)} admitted workspace Skills`,
+      evidence: {
+        present: present.length,
+        admitted: snapshot.binding.loadableSkillNames.length,
+        productionCall: true,
+        catalogSha256: snapshot.binding.catalogSha256,
+      },
+    };
+  } catch {
+    return {
+      status: "unavailable",
+      code: "skills_unavailable",
+      message:
+        "Workspace Skills were found, but the production Skill loader could not safely load one",
+      evidence: { present: present.length, productionCall: false },
+    };
+  }
 }
 
 /**
@@ -193,7 +223,8 @@ export async function probePythonRuntime(): Promise<RuntimeCapabilityProbe> {
     return {
       status: "available_unverified",
       code: "python_ready",
-      message: "A python3 interpreter with the required standard library was found",
+      message:
+        "A python3 interpreter with the required standard library was found",
       evidence: {
         assetCount: binding.runtimeAssets.length,
         executableSha256: binding.executableSha256,

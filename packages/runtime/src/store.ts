@@ -256,10 +256,8 @@ import {
 import { mutateThreadTrash, visibleThreads } from "./thread-trash.js";
 import { createWorkspaceSeed } from "./workspace-seed.js";
 
-import {
-  assertOperatorDecisionCapabilityContinuation,
-  resolveAgentCapabilityProfile,
-} from "./agent-capability-override.js";
+import { assertOperatorDecisionCapabilityContinuation } from "./agent-capability-override.js";
+import { resolveStoredRunCapabilityProfile } from "./internal-research-recovery-authorization.js";
 import {
   createSeededCapabilityBinding,
   ensureCurrentCapabilityBindings,
@@ -276,7 +274,7 @@ import {
   restoreRecommendedCapabilitiesState,
   type CapabilityRestoreCommit,
 } from "./agent-capability-store-mutations.js";
-import { createId, nowIso } from "./ids.js";
+import { createId, nowIso, preserveRunLeaseOnStartup } from "./ids.js";
 import type { ChannelDeliveryExecution } from "./store-port.js";
 import {
   DEFAULT_MODEL_ADVISOR_POLICY,
@@ -9201,11 +9199,7 @@ export class LocalStore {
     await this.stateQueue.run(async () => {
       for (const run of this.state.runs) {
         if (run.status !== "queued" && run.status !== "running") continue;
-        if (
-          !interruptActiveLeases && run.lease && run.leaseTokenSha256 &&
-          Number.isFinite(Date.parse(run.lease.expiresAt)) &&
-          Date.parse(run.lease.expiresAt) > timestampMs
-        ) {
+        if (preserveRunLeaseOnStartup(run.lease, Boolean(run.leaseTokenSha256), timestampMs, interruptActiveLeases)) {
           continue;
         }
         run.status = "interrupted";
@@ -11017,15 +11011,18 @@ export class LocalStore {
     if (thread.agentId !== input.agentId) {
       throw new Error("Run agent must match the thread agent");
     }
-    const effectiveRunAgent = resolveAgentCapabilityProfile({
+    const effectiveRunAgent = resolveStoredRunCapabilityProfile({
       agents: this.state.agents,
       revisions: this.state.agentRevisions,
+      runs: this.state.runs,
+      events: this.requireLedger().listEvents(thread.id),
+      threadId: thread.id,
       agentId: input.agentId,
-      ...(input.agentRevision !== undefined
-        ? { agentRevision: input.agentRevision }
-        : {}),
-      ...(input.capabilityPreset ? { presetId: input.capabilityPreset } : {}),
+      agentRevision: input.agentRevision,
+      capabilityPreset: input.capabilityPreset,
+      parentRunId: input.parentRunId,
       source: input.source ?? "user",
+      authorizationCarrier: input,
     });
     const executionMode = input.executionMode ?? "standard";
     if (openOperatorDecision) {

@@ -37,6 +37,7 @@ export const AGENT_TOOL_NAMES = [
   "python_kernel",
   "node_debugger",
   "workspace_process",
+  "skill_load",
   "web_search",
   "web_fetch",
   "web_fetch_save",

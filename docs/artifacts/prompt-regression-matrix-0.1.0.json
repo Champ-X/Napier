@@ -20,12 +20,12 @@
       "dimension": "network",
       "testFile": "apps/cli/test/open-web-research-benchmark.test.ts",
       "testNameSha256": "8ceb75510ad10bcd4cf44b3df399154b17785342415d9abd2277c8b2c8036cc6",
-      "testFileSha256": "976435c5073762c36b4e0224e29081bdb46638599d721cb432a47fca22c9d9c1",
+      "testFileSha256": "b4087548790de21d717fc353bb798e8830fb2af624e4cbc884c989c7980b1939",
       "argvSha256": "1184cdbde6500c3c0ee664f7bc9a75ca03cd1e0be436eb7eb1b2e2104665ded2",
       "status": "passed",
       "testFileCount": 1,
       "testCount": 1,
-      "contentSha256": "87cbd4310820d1cf5763c70bb9b880ce6982aa3a7fcd8dad9b28e004ded82946"
+      "contentSha256": "dbca0ec6787cd7fe999a22cfd686349e77239b0527e84b3903831cefd6361743"
     },
     {
       "id": "prompt_coding_v1",
@@ -112,5 +112,5 @@
       "contentSha256": "7bc01e2ca4ff9ebd503224107ae7bb38e409bf6a06e05a0b4e530ba06df9ff4e"
     }
   ],
-  "contentSha256": "a540b85d66c4feebb0fa8370c3785125caed6c4c5ef2cad158439554b5f2d358"
+  "contentSha256": "fad17723476ed1f05222642956f2b9679c5094d0180af2910c6927d072fbb23f"
 }

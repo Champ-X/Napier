@@ -160,6 +160,7 @@ describe("Napier full-screen TUI", () => {
           enabledTools: [
             "browser",
             "research_source",
+            "skill_load",
             "web_fetch",
             "web_search",
           ],

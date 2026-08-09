@@ -1,5 +1,5 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createId, createProcessLeaseOwnerId } from "./ids.js";
 import type { LocalStore } from "./store.js";
 import type {
   WorkflowExecutionContext,
@@ -144,7 +144,7 @@ export class ExecutionPlanWorkflowSimulationMaterializer {
           },
         },
         {
-          ownerId: createId("workflowsim"),
+          ownerId: createProcessLeaseOwnerId("workflowsim"),
           ttlMs: 10 * 60_000,
         },
       );

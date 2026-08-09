@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import { builtInToolEffect } from "../src/agent-tool-effects.js";
 import {
+  agentToolAllowsGenericDetailsFallback,
+  agentToolGenericDetailsLedgerProjection,
+} from "../src/agent-tool-ledger.js";
+import {
   createResearchSourceTool,
   researchSourceToolCallArgumentsLedgerProjection,
   researchSourceToolInputLedgerProjection,
@@ -119,8 +123,40 @@ describe("research_source Agent tool", () => {
       expect.objectContaining({
         outputBytes: 43,
         outputRedacted: true,
+        details: expect.objectContaining({
+          kind: "napier.research-source-evidence",
+          action: "cite",
+          browserActiveTabIdSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
       }),
     );
+    expect(JSON.stringify(output)).not.toContain("tab_1");
+
+    const invalid = researchSourceToolOutputLedgerProjection("PRIVATE_OUTPUT", {
+      details: { ...details("cite"), rawSource: "PRIVATE_RAW_SOURCE" },
+    });
+    expect(invalid).not.toHaveProperty("details");
+    expect(JSON.stringify(invalid)).not.toContain("PRIVATE_RAW_SOURCE");
+    expect(agentToolAllowsGenericDetailsFallback("research_source")).toBe(
+      false,
+    );
+    expect(agentToolAllowsGenericDetailsFallback("custom_tool")).toBe(true);
+    expect(
+      agentToolGenericDetailsLedgerProjection(
+        "research_source",
+        invalid,
+        { rawSource: "PRIVATE_RAW_SOURCE" },
+      ),
+    ).toEqual({});
+    expect(
+      JSON.stringify(
+        agentToolGenericDetailsLedgerProjection(
+          "research_source",
+          invalid,
+          { rawSource: "PRIVATE_RAW_SOURCE" },
+        ),
+      ),
+    ).not.toContain("PRIVATE_RAW_SOURCE");
   });
 
   it("redacts Web Fetch Source IDs while retaining exact content bindings", () => {
@@ -195,6 +231,7 @@ function details(
     kind: "napier.research-source",
     schemaVersion: 1,
     action,
+    sourceKind: "browser",
     sourceId: "source_fixture0001",
     sourceContentSha256: "a".repeat(64),
     sourceUrlSha256: "b".repeat(64),
@@ -209,9 +246,22 @@ function details(
     sourceSetSha256: "f".repeat(64),
     browserSessionOperation: 2,
     browserSessionIdSha256: "1".repeat(64),
+    browserActiveTabId: "tab_1",
+    browserTabCount: 1,
+    browserTabSetSha256: "6".repeat(64),
     browserExecutableSha256: "2".repeat(64),
     browserVersionSha256: "3".repeat(64),
     browserLimitsSha256: "4".repeat(64),
     browserNetworkDestinationsSha256: "5".repeat(64),
+    ...(action === "cite"
+      ? {
+          citationId: "citation_fixture0001",
+          citationTokenSha256: "7".repeat(64),
+          citationStartLine: 1,
+          citationEndLine: 2,
+          citationQuoteSha256: "8".repeat(64),
+          citationClaimSha256: "9".repeat(64),
+        }
+      : {}),
   };
 }

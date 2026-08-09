@@ -18,6 +18,8 @@ import type { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store
 import { captureToolInvocationResult } from "./tool-invocation-result-capture.js";
 import type { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 import type { LocalStore } from "./store.js";
+import { isSkillLoadFailureV1 } from "@napier/contracts/skill-load";
+import { isSkillLoadAgentTool } from "./skill-load-tool.js";
 
 export interface AgentToolResultLifecycleOptions {
   store: LocalStore;
@@ -123,16 +125,30 @@ export class AgentToolResultLifecycle {
       });
       return reused.patch;
     }
+    const typedSkillFailure = isSkillLoadFailureV1(input.result.details);
+    const effectiveIsError = input.isError || typedSkillFailure;
     await captureToolInvocationResult(
       this.options.store,
       this.options.resultCapsules,
       this.options.run,
       this.captured.get(input.toolCall.id),
       input.result,
-      input.isError,
+      effectiveIsError,
       this.options.onEvent,
     );
-    return undefined;
+    return typedSkillFailure && !input.isError ? { isError: true } : undefined;
+  }
+
+  startedProjection(
+    toolName: string,
+    args: unknown,
+  ): Record<string, JsonValue> {
+    const tool = this.definitions.get(toolName);
+    if (!isSkillLoadAgentTool(tool)) return {};
+    const selection = tool.selection(args);
+    return selection
+      ? { details: JSON.parse(JSON.stringify(selection)) as JsonValue }
+      : {};
   }
 
   toolCallArguments(args: unknown, fallback: JsonValue): JsonValue {

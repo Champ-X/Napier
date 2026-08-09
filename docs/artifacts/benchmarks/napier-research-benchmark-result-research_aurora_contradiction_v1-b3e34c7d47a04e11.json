@@ -1,7 +1,7 @@
 {
   "kind": "napier.research-benchmark-result",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-02T14:11:29.960Z",
+  "generatedAt": "2026-08-04T12:33:05.762Z",
   "caseId": "research_aurora_contradiction_v1",
   "caseSha256": "dbd96a9b2a6a86025a45d61d4830fc544706f5cadc2897ef0a1dc56884560550",
   "status": "passed",
@@ -16,22 +16,22 @@
     "cliVersion": "0.1.0"
   },
   "run": {
-    "threadId": "thread_993b67809fc24c719e30",
-    "runId": "run_779a455607614d21b98f",
+    "threadId": "thread_86bb85a8ca4a4395b92a",
+    "runId": "run_2c4c87f152c7479ea069",
     "status": "completed",
-    "durationMs": 31840,
+    "durationMs": 49443,
     "usage": {
-      "inputTokens": 7462,
-      "outputTokens": 4187,
-      "cacheReadTokens": 38272,
+      "inputTokens": 8300,
+      "outputTokens": 7117,
+      "cacheReadTokens": 81920,
       "cacheWriteTokens": 0,
-      "costUsd": 0.0023242016000000003
+      "costUsd": 0.003384136
     }
   },
   "report": {
     "pathSha256": "2f0e1e1c11ac5095433cdcf806b9aebc236dc335294d587c2360abb4a8db2b43",
-    "fileSha256": "bd5e17d2765a92394f7f1a08819699a414e77015a6f0951126afb268f61708c4",
-    "fileBytes": 682
+    "fileSha256": "0bb3a63925302aea1173b0929b1f76f4eceb71cba0294206ea285a10c4a36972",
+    "fileBytes": 1047
   },
   "evaluation": {
     "kind": "napier.research-benchmark-evaluation",
@@ -56,21 +56,21 @@
     "secondarySourceCount": 1,
     "contradictionFound": true,
     "reportVerified": true,
-    "reportFileSha256": "bd5e17d2765a92394f7f1a08819699a414e77015a6f0951126afb268f61708c4",
-    "reportFileBytes": 682,
+    "reportFileSha256": "0bb3a63925302aea1173b0929b1f76f4eceb71cba0294206ea285a10c4a36972",
+    "reportFileBytes": 1047,
     "replayValid": true,
     "credentialLeakDetected": false,
     "diagnostics": [],
-    "contentSha256": "41b906a6278196a847328ff143c77e0844f670a8b65945876fb59021b76ef198"
+    "contentSha256": "a39d6b02d52ccde959adec6e0bcb307882e7badf48e70939e6111ac70ad148f3"
   },
   "ledger": {
-    "eventId": "event_e6312cf228dc436585e3",
-    "eventSeq": 2352,
-    "eventSha256": "04b86e00bfb4fbcde6de22b9bb83a0b896672c1e504e254ff2e127c56ac41436",
-    "eventStreamSha256": "e233d2d209f9180ad9eb1ed9bec4a7c491f546cd093afdf64218a7d05e927c4e",
-    "bundleFileName": "napier-research-benchmark-ledger-research_aurora_contradiction_v1-9502abdc0176439a.json",
-    "bundleSha256": "9502abdc0176439a34c325d5790ab7de9a6938b986ac01b977a371c4615fc739",
-    "bundleBytes": 67902
+    "eventId": "event_8f6b88bc8fc545cb84bf",
+    "eventSeq": 4638,
+    "eventSha256": "c194be1656648654740d1da1f01b278f2771ccad95dd1a1067d4c9c454e86b76",
+    "eventStreamSha256": "2c307610d856e7ece76006f2fc5a3c277d0cf133d8ffb408153931f88cad59f3",
+    "bundleFileName": "napier-research-benchmark-ledger-research_aurora_contradiction_v1-ee8237d8588e6be5.json",
+    "bundleSha256": "ee8237d8588e6be58af894e84433fb92f9cfba6809d53be6e63e1d8027ecf0c6",
+    "bundleBytes": 84752
   },
-  "contentSha256": "9ded7844fa70d0cd21f299bc41a10dfa5d83258faf604682289420abbcc4683e"
+  "contentSha256": "b3e34c7d47a04e112497bb71ca5db99b9808088887bc8b7ad0f2d94f74e6f04e"
 }

@@ -15,7 +15,7 @@ import type {
 
 export const DEFAULT_AGENT_CAPABILITY_CONTRACT_ID =
   "napier.default-agent.capabilities" as const;
-export const DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION = 2 as const;
+export const DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION = 3 as const;
 
 export const DEFAULT_AGENT_CAPABILITY_TOOLS = [
   "list_files",
@@ -119,10 +119,28 @@ export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256 = sha256(
   }),
 );
 
+export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3: ManagedCapabilityPayload =
+  deepFreeze({
+    ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2,
+    enabledTools: sortedUnique([
+      ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledTools,
+      "skill_load",
+    ]),
+  });
+
+export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256 = sha256(
+  canonicalJson({
+    schemaVersion: 1,
+    contractId: DEFAULT_AGENT_CAPABILITY_CONTRACT_ID,
+    contractVersion: 3,
+    ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3,
+  }),
+);
+
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION =
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2;
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3;
 export const DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256 =
-  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256;
+  DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256;
 
 export const DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY: readonly AgentCapabilityContractRecommendation[] =
   deepFreeze([
@@ -140,6 +158,14 @@ export const DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY: readonly AgentCapability
       recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256,
       recommendation: managedCapabilityPayload(
         DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2,
+      ),
+    },
+    {
+      contractId: DEFAULT_AGENT_CAPABILITY_CONTRACT_ID,
+      contractVersion: 3,
+      recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3_SHA256,
+      recommendation: managedCapabilityPayload(
+        DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V3,
       ),
     },
   ]);

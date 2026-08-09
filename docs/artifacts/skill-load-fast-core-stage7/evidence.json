@@ -1,0 +1,15 @@
+{
+  "kind": "napier.skill-load-fast-core-stage7-evidence",
+  "schemaVersion": 1,
+  "result": "passed",
+  "readmeSha256": "46afb39e48b7c3ad56e5dc4ce3a04a3a1c31f6f66fe6768e0d0490fa2a510e17",
+  "realProviderSha256": "4081a2da5586be01e1dd533a7a5875b5102b55d1f1c0f99f07af07418f5511f5",
+  "verifiedAttemptLedgerSha256": "35e776bf2ccd78c568faac5b20ba361fc41a97d1a0313bf4d4509864a1dabad9",
+  "unverifiableChronologyNotesSha256": "6e98847287270a92abb609c9763f706f9efb0610862e4049b173de836ff52ef7",
+  "securityCleanupSha256": "41822b3fd876cd7f857db673870d522c7b27d06795d632dc7b5289b6d584b1af",
+  "finalCheckSha256": "1bfd0336605a35ce07c8aa36efbe32780b49c52b2878159083189b5dc9b632be",
+  "finalCheckReceiptSha256": "5988992a6d9f89a10144f0f4a43c0609960f4e04cab51c29afdb368123e99b9c",
+  "retainedCanaryScanReceiptSha256": "77c2180f0d8a63aa149c8a802f4220aec7bf33d4b37c317106ccebae4be0e825",
+  "publicWorkingTreeScanReceiptSha256": "61a5ae4d881a66bcd796508d29c3a577d936b27c541f36f38deb3389378de640",
+  "stagedIndexScanReceiptSha256": "f418ef9c925146a96bc98e6d7572ee8486f2c14e0b94be473e91475bcc18e543"
+}

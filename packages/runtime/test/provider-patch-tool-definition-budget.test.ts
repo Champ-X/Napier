@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { createWorkspacePatchTool } from "../src/workspace-patch-tool.js";
 
-const MAX_PATCH_TOOL_DEFINITION_BYTES = 3 * 1024;
+const MAX_PATCH_TOOL_DEFINITION_BYTES = 2.25 * 1024;
 
 describe("Provider Patch tool definition budget", () => {
-  it("keeps the Patch definition within three KiB", () => {
+  it("keeps the Patch definition within two and a quarter KiB", () => {
     const tool = createWorkspacePatchTool({
       workspaceRoot: "/workspace",
       dataRoot: "/data",

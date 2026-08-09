@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -29,6 +29,14 @@ describe("Agent Web Fetch raw Source delivery", () => {
     const workspaceRoot = path.join(root, "workspace");
     await mkdir(workspaceRoot);
     await mkdir(path.join(workspaceRoot, "artifacts"));
+    for (const name of ["research-brief", "data-analysis"]) {
+      const directory = path.join(workspaceRoot, "skills", name);
+      await mkdir(directory, { recursive: true });
+      await writeFile(
+        path.join(directory, "SKILL.md"),
+        `---\nname: ${name}\ndescription: ${name} fixture.\n---\n\n# ${name}\n`,
+      );
+    }
     const sourceUrl = "https://example.com/report.pdf";
     const pdfBody = minimalPdf("Agent raw PDF delivery.");
     const request = vi.fn(

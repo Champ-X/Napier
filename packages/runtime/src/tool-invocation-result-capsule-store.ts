@@ -22,13 +22,23 @@ export class ToolInvocationResultCapsuleStore {
   private readonly capsules: LocalPrivateCapsuleStore<ToolInvocationResultCapsule>;
   readonly rootPath: string;
 
-  constructor(dataRoot: string) {
+  constructor(
+    dataRoot: string,
+    maxObjects = MAX_TOOL_INVOCATION_RESULT_CAPSULES,
+  ) {
+    if (
+      !Number.isSafeInteger(maxObjects) ||
+      maxObjects < 1 ||
+      maxObjects > MAX_TOOL_INVOCATION_RESULT_CAPSULES
+    ) {
+      throw new Error("Tool invocation result capsule object limit is invalid");
+    }
     this.capsules = new LocalPrivateCapsuleStore({
       dataRoot,
       directory: "tool-invocation-results",
       label: "Tool invocation result",
       maxObjectBytes: MAX_TOOL_INVOCATION_RESULT_CAPSULE_BYTES,
-      maxObjects: MAX_TOOL_INVOCATION_RESULT_CAPSULES,
+      maxObjects,
       maxStorageBytes: MAX_TOOL_INVOCATION_RESULT_CAPSULE_STORAGE_BYTES,
       parse(serialized) {
         return validateToolInvocationResultCapsule(JSON.parse(serialized));

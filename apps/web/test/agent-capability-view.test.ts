@@ -14,7 +14,7 @@ describe("Agent capability Web surfaces", () => {
       "Browser · Read only · interact no",
     );
     expect(agentCapabilityDetailText(agent)).toBe(
-      "Read only · 4 tools · Browser read yes · Browser interact no",
+      "Read only · 5 tools · Browser read yes · Browser interact no",
     );
     expect(agentCapabilityBadgeText(agent)).not.toContain("interact yes");
   });

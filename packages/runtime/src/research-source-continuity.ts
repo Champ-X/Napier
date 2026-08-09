@@ -1,3 +1,5 @@
+import { parseResearchSourceEvidenceV1 } from "@napier/contracts/skill-load";
+
 import type { BrowserSessionOwner } from "./browser-session-model.js";
 import {
   type ResearchSourceCitationRecord,
@@ -87,23 +89,35 @@ export class ResearchSourceContinuity {
     const receipts = events.flatMap((event) => {
       const payload = record(event.payload);
       const details = record(payload?.["details"]);
-      const candidate =
-        event.type === "context.research_sources"
-          ? payload
-          : details?.["stateCapsule"];
-      if (!candidate) return [];
-      const validated = validateResearchSourceCapsuleReceipt(candidate);
-      if (
-        event.type === "tool.completed" &&
-        (details?.["sourceCount"] !== validated.sourceCount ||
-          details["citationCount"] !== validated.citationCount ||
-          details["sourceSetSha256"] !== validated.sourceSetSha256)
-      ) {
-        throw new Error(
-          "Research Source continuity receipt conflicts with Tool evidence",
-        );
+      if (event.type === "context.research_sources") {
+        return payload ? [validateResearchSourceCapsuleReceipt(payload)] : [];
       }
-      return [validated];
+      const rawReceipt = details?.["stateCapsule"];
+      if (rawReceipt) {
+        const validated = validateResearchSourceCapsuleReceipt(rawReceipt);
+        if (
+          details?.["sourceCount"] !== validated.sourceCount ||
+          details["citationCount"] !== validated.citationCount ||
+          details["sourceSetSha256"] !== validated.sourceSetSha256
+        ) {
+          throw new Error(
+            "Research Source continuity receipt conflicts with Tool evidence",
+          );
+        }
+        return [validated];
+      }
+      const evidence = parseResearchSourceEvidenceV1(details);
+      return evidence?.continuityCapsuleContentSha256
+        ? [
+            {
+              sourceRunId: parent.id,
+              sourceCount: evidence.sourceCount,
+              citationCount: evidence.citationCount,
+              sourceSetSha256: evidence.sourceSetSha256,
+              capsuleSha256: evidence.continuityCapsuleContentSha256,
+            },
+          ]
+        : [];
     });
     const receipt = receipts.at(-1);
     if (!receipt) return undefined;

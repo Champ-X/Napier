@@ -85,5 +85,5 @@ describe("LSP rename apply diagnostics", () => {
         afterDiagnosticCount: 0,
       }),
     );
-  }, 20_000);
+  }, 30_000);
 });

@@ -14,7 +14,7 @@ import type {
 
 import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import {
   MODEL_INVOCATION_EXPERIMENT_EXECUTION,
@@ -56,7 +56,7 @@ export interface RunModelInvocationExperimentOptions {
 }
 
 export class ModelInvocationExperimentRuntime {
-  private readonly workerId = createId("modelexperiment");
+  private readonly workerId = createProcessLeaseOwnerId("modelexperiment");
 
   constructor(
     private readonly store: LocalStore,

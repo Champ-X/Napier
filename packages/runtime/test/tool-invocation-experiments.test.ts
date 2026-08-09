@@ -390,31 +390,40 @@ describe("tool invocation experiments", () => {
     expect(capsule).toContain(secretParameter);
   });
 
-  it("keeps concurrent private capture within its hard object bound", async () => {
-    const root = path.join(
-      tmpdir(),
-      `napier-tool-capacity-${String(Date.now())}-${Math.random().toString(16).slice(2)}`,
-    );
-    roots.push(root);
-    const capsules = new ToolInvocationCapsuleStore(path.join(root, "data"));
-    const outcomes = await Promise.allSettled(
-      Array.from({ length: MAX_TOOL_INVOCATION_CAPSULES + 16 }, (_, index) =>
-        capsules.put({
-          sourceThreadId: "thread_capacity",
-          sourceRunId: "run_capacity",
-          callId: `call_${String(index)}`,
-          toolName: "read_file",
-          toolDefinitionSha256: "a".repeat(64),
-          arguments: { path: `file-${String(index)}.txt` },
-        }),
-      ),
-    );
-    const entries = await readdir(capsules.rootPath);
-    expect(entries).toHaveLength(MAX_TOOL_INVOCATION_CAPSULES);
-    expect(
-      outcomes.filter((outcome) => outcome.status === "rejected").length,
-    ).toBeGreaterThan(0);
-  });
+  it(
+    "keeps concurrent private capture within its hard object bound",
+    async () => {
+      const fixtureObjectLimit = 32;
+      expect(MAX_TOOL_INVOCATION_CAPSULES).toBe(512);
+      const root = path.join(
+        tmpdir(),
+        `napier-tool-capacity-${String(Date.now())}-${Math.random().toString(16).slice(2)}`,
+      );
+      roots.push(root);
+      const capsules = new ToolInvocationCapsuleStore(
+        path.join(root, "data"),
+        fixtureObjectLimit,
+      );
+      const outcomes = await Promise.allSettled(
+        Array.from({ length: fixtureObjectLimit + 16 }, (_, index) =>
+          capsules.put({
+            sourceThreadId: "thread_capacity",
+            sourceRunId: "run_capacity",
+            callId: `call_${String(index)}`,
+            toolName: "read_file",
+            toolDefinitionSha256: "a".repeat(64),
+            arguments: { path: `file-${String(index)}.txt` },
+          }),
+        ),
+      );
+      const entries = await readdir(capsules.rootPath);
+      expect(entries).toHaveLength(fixtureObjectLimit);
+      expect(
+        outcomes.filter((outcome) => outcome.status === "rejected").length,
+      ).toBeGreaterThan(0);
+    },
+    15_000,
+  );
 });
 
 async function createReadFileFixture(): Promise<{

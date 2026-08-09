@@ -1,5 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { JsonValue } from "@napier/contracts";
+import { parseResearchSourceEvidenceV1 } from "@napier/contracts/skill-load";
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -202,11 +203,14 @@ export function researchSourceToolOutputLedgerProjection(
 ): Record<string, JsonValue> {
   const details =
     record(result) && record(result["details"]) ? result["details"] : {};
+  const evidence = parseResearchSourceEvidenceV1(details);
+  const publicEvidence = evidence ? toJsonValue(evidence) : null;
   return {
     outputSha256: sha256(output),
     outputBytes: Buffer.byteLength(output, "utf8"),
     outputRedacted: true,
-    resultSha256: sha256(canonicalJson(toJsonValue(details))),
+    resultSha256: sha256(canonicalJson(publicEvidence)),
+    ...(evidence ? { details: publicEvidence } : {}),
   };
 }
 

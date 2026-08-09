@@ -10,6 +10,7 @@ import {
 import { agentCapabilityPresetUpdate } from "@napier/contracts/agent-capabilities";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { applyAgentCapabilityPresetOverride } from "../src/agent-capability-override.js";
 import {
   createLocalAgentRuntime,
   UnsupportedSandboxAdapter,
@@ -24,6 +25,55 @@ afterEach(async () => {
 });
 
 describe("temporary Agent capability preset overrides", () => {
+  it("uses the first-class Skill loader in every Skill-bearing preset", () => {
+    const profile = {
+      id: "agent_override",
+      name: "Override",
+      description: "Test Agent",
+      systemPrompt: "Stay bounded.",
+      model: { provider: "deepseek", id: "deepseek-v4-flash" },
+      thinkingLevel: "minimal" as const,
+      toolPolicy: "observe" as const,
+      enabledTools: ["read_file"],
+      enabledSkills: [],
+      enabledSubagents: [],
+      revision: 7,
+      createdAt: "2026-08-07T00:00:00.000Z",
+      updatedAt: "2026-08-07T00:00:00.000Z",
+    };
+    const before = JSON.stringify(profile);
+    const research = applyAgentCapabilityPresetOverride(
+      profile,
+      "research",
+      "user",
+    );
+    expect(research.enabledTools).toEqual(
+      agentCapabilityPresetUpdate("research").enabledTools,
+    );
+    expect(research.enabledTools).toContain("skill_load");
+    expect(research.enabledSkills).toEqual(["research-brief", "data-analysis"]);
+    expect(research.revision).toBe(7);
+    expect(JSON.stringify(profile)).toBe(before);
+    expect(
+      applyAgentCapabilityPresetOverride(profile, "browser", "user")
+        .enabledTools,
+    ).toContain("skill_load");
+    expect(
+      applyAgentCapabilityPresetOverride(profile, undefined, "user")
+        .enabledTools,
+    ).not.toContain("skill_load");
+    expect(() =>
+      applyAgentCapabilityPresetOverride(profile, "research", "schedule"),
+    ).toThrow(
+      "Temporary Agent capability presets are available only for user Runs",
+    );
+    expect(() =>
+      applyAgentCapabilityPresetOverride(profile, "research", "recovery"),
+    ).toThrow(
+      "Temporary Agent capability presets are available only for user Runs",
+    );
+  });
+
   it("freezes the effective preset into one user Run without revising the Agent", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-run-preset-"));
     roots.push(root);
@@ -97,6 +147,16 @@ describe("temporary Agent capability preset overrides", () => {
           text: "A scheduled Run must not gain temporary capabilities.",
           source: "schedule",
           capabilityPreset: "research",
+        }),
+      ).rejects.toThrow(
+        "Temporary Agent capability presets are available only for user Runs",
+      );
+      await expect(
+        services.runtime.runPrompt({
+          threadId: thread.id,
+          text: "A direct recovery call must not gain Browser capabilities.",
+          source: "recovery",
+          capabilityPreset: "browser",
         }),
       ).rejects.toThrow(
         "Temporary Agent capability presets are available only for user Runs",

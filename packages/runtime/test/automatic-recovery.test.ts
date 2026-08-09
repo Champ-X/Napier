@@ -9,6 +9,7 @@ import {
   type RunEvent,
   type RunRecord,
 } from "@napier/contracts";
+import { isSkillCatalogBindingV1 } from "@napier/contracts/skill-load";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -17,6 +18,7 @@ import {
 } from "../src/automatic-recovery.js";
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { ModelRegistry } from "../src/models.js";
+import { buildProjectSkillSnapshot } from "../src/project-skill-snapshot.js";
 import { RecoveryService } from "../src/recovery-service.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
 import { createRunConfigurationFingerprint } from "../src/run-config.js";
@@ -616,6 +618,126 @@ describe("safe automatic recovery", () => {
     expect(imported.automaticRecoveryAttempts[0]!.assessmentSha256).toBe(
       imported.automaticRecoveryAssessments[0]!.contentSha256,
     );
+  });
+
+  it("inherits the exact Research preset and Skill snapshot through automatic recovery", async () => {
+    const root = await createRoot();
+    const workspaceRoot = path.join(root, "workspace");
+    await Promise.all(
+      ["research-brief", "data-analysis"].map(async (name) => {
+        const skillPath = path.join(workspaceRoot, "skills", name, "SKILL.md");
+        await mkdir(path.dirname(skillPath), { recursive: true });
+        await writeFile(
+          skillPath,
+          [
+            "---",
+            `name: ${name}`,
+            `description: ${name} automatic recovery fixture.`,
+            "---",
+            "",
+            `# ${name}`,
+            "",
+            "Use only the frozen Research snapshot.",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+      }),
+    );
+    const setup = await createStore(root);
+    const base = setup.listAgents()[0]!;
+    const agent = await setup.updateAgent(base.id, {
+      model: { provider: "faux-auto-research", id: "faux-1" },
+      automaticRecovery: {
+        mode: "safe_read_only",
+        maxAttempts: 2,
+        backoffMs: 1_000,
+      },
+    });
+    const before = structuredClone(agent);
+    const snapshot = await buildProjectSkillSnapshot(workspaceRoot, [
+      "research-brief",
+      "data-analysis",
+    ]);
+    const thread = await setup.createThread({
+      title: "Research automatic recovery",
+      agentId: agent.id,
+    });
+    const interrupted = await setup.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      capabilityPreset: "research",
+      skillCatalogSha256: snapshot.manifest.catalogSha256,
+    });
+    await setup.appendEvent({
+      threadId: thread.id,
+      runId: interrupted.id,
+      type: "run.started",
+      category: "lifecycle",
+      visibility: "debug",
+      payload: { capabilityPreset: "research" },
+    });
+    await setup.appendEvent({
+      threadId: thread.id,
+      runId: interrupted.id,
+      type: "context.skills",
+      category: "system",
+      visibility: "debug",
+      payload: snapshot.binding,
+    });
+    await setup.appendEvent({
+      threadId: thread.id,
+      runId: interrupted.id,
+      type: "message.user",
+      category: "message",
+      visibility: "user",
+      payload: { role: "user", text: "Continue bounded Research automatically." },
+    });
+    await setup.finishRun(interrupted.id, "interrupted");
+
+    const faux = fauxProvider({ provider: "faux-auto-research" });
+    faux.setResponses([
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toContain("skill_load");
+        return fauxAssistantMessage("Research recovery stayed snapshot-bound.");
+      },
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(setup, registry);
+    const recovery = new RecoveryService(setup, runtime, {
+      workerId: "recoveryworker_research",
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 1_050));
+    const result = await recovery.sweep();
+    const attempt = setup.listAutomaticRecoveryAttempts(thread.id)[0]!;
+    const recovered = setup
+      .listRuns(thread.id)
+      .find((run) => run.id === attempt.recoveryRunId)!;
+    const events = (await setup.listEvents(thread.id)).filter(
+      (event) => event.runId === recovered.id,
+    );
+
+    expect(result).toEqual(expect.objectContaining({ completed: 1, failed: 0 }));
+    expect(attempt.status).toBe("completed");
+    expect(recovered).toEqual(expect.objectContaining({
+      source: "recovery",
+      parentRunId: interrupted.id,
+    }));
+    expect(recovered.configuration).toEqual(expect.objectContaining({
+      executionMode: "safe_read_only_recovery",
+      enabledSkills: ["data-analysis", "research-brief"],
+      enabledTools: expect.arrayContaining(["skill_load"]),
+      skillCatalogSha256: snapshot.manifest.catalogSha256,
+    }));
+    expect(events.find((event) => event.type === "run.started")?.payload).toEqual(
+      expect.objectContaining({ capabilityPreset: "research" }),
+    );
+    expect(isSkillCatalogBindingV1(
+      events.find((event) => event.type === "context.skills")?.payload,
+    )).toBe(true);
+    expect(setup.getAgent(agent.id)).toEqual(before);
   });
 
   it("fails closed when the interrupted Run Skill catalog drifts before automatic recovery", async () => {

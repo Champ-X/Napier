@@ -34,12 +34,21 @@ describe("workspace patch Agent tool", () => {
     expect(tool.parameters).toEqual(
       expect.objectContaining({
         type: "object",
-        anyOf: expect.arrayContaining([
-          expect.objectContaining({ type: "object" }),
-        ]),
+        additionalProperties: false,
+        required: ["operation", "path", "expectedSha256"],
+        properties: expect.objectContaining({
+          operation: expect.objectContaining({ anyOf: expect.any(Array) }),
+        }),
       }),
     );
-    expect((tool.parameters as { anyOf?: unknown[] }).anyOf).toHaveLength(4);
+    expect(
+      (
+        tool.parameters as {
+          properties: { operation: { anyOf: unknown[] } };
+        }
+      ).properties.operation.anyOf,
+    ).toHaveLength(4);
+    expect(tool.parameters).not.toHaveProperty("anyOf");
   });
 
   it("settles Run-owned sessions before mutating the workspace", async () => {

@@ -12,6 +12,12 @@ export const BASE_COMMIT = "c9f225388cf40766b9002365121242758abf18d8";
 export const IMPLEMENTATION_COMMIT = "d81f77b64998fd786aa7a514f53494adb255e1e5";
 export const EVIDENCE_SELF_PATH =
   "docs/artifacts/sdk-capability-parity-stage7/evidence.json";
+export const REPAIR_CONTENT_EXCLUDED_PATHS = [
+  EVIDENCE_SELF_PATH,
+  "docs/artifacts/skill-load-fast-core-stage7/evidence.json",
+  "docs/artifacts/skill-load-fast-core-stage7/final-check.json",
+  "docs/artifacts/skill-load-fast-core-stage7/security-cleanup.json",
+];
 export const CAPTURE_OUTPUT_PATHS = [
   "docs/artifacts/sdk-capability-parity-stage7/README.md",
   EVIDENCE_SELF_PATH,
@@ -154,20 +160,31 @@ export async function repairSnapshotForPaths(
   overrides = new Map(),
 ) {
   const files = {};
+  const deletedPaths = [];
   for (const file of changedPaths) {
-    if (file === EVIDENCE_SELF_PATH) continue;
-    files[file] = contentRecord(await currentBytes(file, overrides));
+    if (REPAIR_CONTENT_EXCLUDED_PATHS.includes(file)) continue;
+    const bytes = await currentBytes(file, overrides).catch((error) => {
+      if (error?.code === "ENOENT") return undefined;
+      throw error;
+    });
+    if (bytes === undefined) {
+      deletedPaths.push(file);
+      continue;
+    }
+    files[file] = contentRecord(bytes);
   }
   const snapshot = {
     relativeTo: IMPLEMENTATION_COMMIT,
     changedPaths,
     files,
-    excludedContent: [
-      {
-        path: EVIDENCE_SELF_PATH,
-        reason: "self_content_hash_bound_by_external_stage8_repair_commit",
-      },
-    ],
+    deletedPaths,
+    excludedContent: REPAIR_CONTENT_EXCLUDED_PATHS.map((file) => ({
+      path: file,
+      reason:
+        file === EVIDENCE_SELF_PATH
+          ? "self_content_hash_bound_by_external_stage8_repair_commit"
+          : "self_referential_stage7_final_receipt_closure",
+    })),
   };
   return { ...snapshot, manifestSha256: digestJson(snapshot) };
 }
@@ -187,6 +204,7 @@ export async function currentRepairPaths() {
       ...worktree,
       ...taskUntracked,
       ...CAPTURE_OUTPUT_PATHS,
+      ...REPAIR_CONTENT_EXCLUDED_PATHS,
     ]),
   ].sort();
 }

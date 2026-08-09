@@ -4,7 +4,7 @@ import type {
   WorkspacePatchDiagnosticsDetails,
   WriteLinkedTestVerificationDetails,
 } from "@napier/contracts";
-import { Type } from "typebox";
+import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type {
@@ -17,116 +17,47 @@ const MAX_PATCH_EDITS = 32;
 const SHA256_PATTERN = "^[a-f0-9]{64}$";
 const SHA256_PATTERN_RE = /^[a-f0-9]{64}$/u;
 
-const applyPatchVariants = Type.Union([
-  Type.Object(
-    {
-      operation: Type.Literal("create"),
-      path: Type.String({
-        minLength: 1,
-      }),
-      expectedSha256: Type.Null(),
-      content: Type.String({
-        maxLength: MAX_PATCH_BYTES,
-      }),
-      createParentDirectories: Type.Optional(Type.Boolean()),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      operation: Type.Literal("replace"),
-      path: Type.String({
-        minLength: 1,
-      }),
-      expectedSha256: Type.String({
-        pattern: SHA256_PATTERN,
-      }),
-      edits: Type.Array(
+const applyPatchSchema = Type.Object(
+  {
+    operation: Type.Union([
+      Type.Literal("create"),
+      Type.Literal("replace"),
+      Type.Literal("hashline_replace"),
+      Type.Literal("hashrange_replace"),
+    ]),
+    path: Type.String({ minLength: 1 }),
+    expectedSha256: Type.Union([
+      Type.Null(),
+      Type.String({ pattern: SHA256_PATTERN }),
+    ]),
+    content: Type.Optional(Type.String({ maxLength: MAX_PATCH_BYTES })),
+    createParentDirectories: Type.Optional(Type.Boolean()),
+    edits: Type.Optional(
+      Type.Array(
         Type.Object(
           {
-            oldText: Type.String({
-              minLength: 1,
-              maxLength: MAX_PATCH_BYTES,
-            }),
-            newText: Type.String({
-              maxLength: MAX_PATCH_BYTES,
-            }),
-          },
-          { additionalProperties: false },
-        ),
-        { minItems: 1, maxItems: MAX_PATCH_EDITS },
-      ),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      operation: Type.Literal("hashline_replace"),
-      path: Type.String({
-        minLength: 1,
-      }),
-      expectedSha256: Type.String({
-        pattern: SHA256_PATTERN,
-      }),
-      edits: Type.Array(
-        Type.Object(
-          {
-            line: Type.Optional(
-              Type.Integer({
-                minimum: 1,
-              }),
+            oldText: Type.Optional(
+              Type.String({ minLength: 1, maxLength: MAX_PATCH_BYTES }),
             ),
-            anchorSha256: Type.String({
-              pattern: SHA256_PATTERN,
-            }),
-            newText: Type.String({
-              maxLength: MAX_PATCH_BYTES,
-            }),
+            line: Type.Optional(Type.Integer({ minimum: 1 })),
+            startLine: Type.Optional(Type.Integer({ minimum: 1 })),
+            endLine: Type.Optional(Type.Integer({ minimum: 1 })),
+            anchorSha256: Type.Optional(
+              Type.String({ pattern: SHA256_PATTERN }),
+            ),
+            rangeSha256: Type.Optional(
+              Type.String({ pattern: SHA256_PATTERN }),
+            ),
+            newText: Type.String({ maxLength: MAX_PATCH_BYTES }),
           },
           { additionalProperties: false },
         ),
         { minItems: 1, maxItems: MAX_PATCH_EDITS },
       ),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      operation: Type.Literal("hashrange_replace"),
-      path: Type.String({
-        minLength: 1,
-      }),
-      expectedSha256: Type.String({
-        pattern: SHA256_PATTERN,
-      }),
-      edits: Type.Array(
-        Type.Object(
-          {
-            startLine: Type.Integer({
-              minimum: 1,
-            }),
-            endLine: Type.Integer({
-              minimum: 1,
-            }),
-            rangeSha256: Type.String({
-              pattern: SHA256_PATTERN,
-            }),
-            newText: Type.String({
-              maxLength: MAX_PATCH_BYTES,
-            }),
-          },
-          { additionalProperties: false },
-        ),
-        { minItems: 1, maxItems: MAX_PATCH_EDITS },
-      ),
-    },
-    { additionalProperties: false },
-  ),
-]);
-const applyPatchSchema = Type.Unsafe<WorkspacePatchInput>({
-  type: "object",
-  anyOf: applyPatchVariants.anyOf,
-});
+    ),
+  },
+  { additionalProperties: false },
+);
 
 export interface WorkspacePatchObservationState {
   fileSha256: string;
@@ -187,7 +118,7 @@ export function createWorkspacePatchTool(
       "Atomically create/edit one workspace-relative UTF-8 file. create requires expectedSha256=null, full content, and optional parent directories. Existing-file operations require complete expectedSha256 from read_file/read_symbol: replace uses oldText that occurs once; hashline_replace uses optional 1-based line + anchorSha256; hashrange_replace uses inclusive lines + rangeSha256. newText may expand content; empty newText deletes the match/range. Enabled LSP diagnostics run before/after supported writes; verification selects bounded reverse-dependent tests.",
     parameters: applyPatchSchema,
     async execute(_toolCallId, rawInput, signal) {
-      const input = rawInput as WorkspacePatchInput;
+      const input = parseWorkspacePatchInput(rawInput);
       if (signal?.aborted) {
         throw new Error("Workspace patch was aborted before session cleanup");
       }
@@ -384,6 +315,107 @@ export function unavailableWorkspacePatchObservation(
 
 function workspacePatchCallSha256(args: unknown): string {
   return sha256(canonicalJson({ toolName: "apply_patch", args }));
+}
+
+function parseWorkspacePatchInput(
+  value: Static<typeof applyPatchSchema>,
+): WorkspacePatchInput {
+  if (value.operation === "create") {
+    if (
+      value.expectedSha256 !== null ||
+      value.content === undefined ||
+      value.edits !== undefined
+    ) {
+      invalidPatchFields();
+    }
+    return {
+      operation: value.operation,
+      path: value.path,
+      expectedSha256: null,
+      content: value.content,
+      ...(value.createParentDirectories !== undefined
+        ? { createParentDirectories: value.createParentDirectories }
+        : {}),
+    };
+  }
+  if (
+    typeof value.expectedSha256 !== "string" ||
+    value.content !== undefined ||
+    value.createParentDirectories !== undefined ||
+    value.edits === undefined
+  ) {
+    invalidPatchFields();
+  }
+  if (value.operation === "replace") {
+    return {
+      operation: value.operation,
+      path: value.path,
+      expectedSha256: value.expectedSha256,
+      edits: value.edits.map((edit) => {
+        if (
+          edit.oldText === undefined ||
+          edit.line !== undefined ||
+          edit.startLine !== undefined ||
+          edit.endLine !== undefined ||
+          edit.anchorSha256 !== undefined ||
+          edit.rangeSha256 !== undefined
+        ) {
+          invalidPatchFields();
+        }
+        return { oldText: edit.oldText, newText: edit.newText };
+      }),
+    };
+  }
+  if (value.operation === "hashline_replace") {
+    return {
+      operation: value.operation,
+      path: value.path,
+      expectedSha256: value.expectedSha256,
+      edits: value.edits.map((edit) => {
+        if (
+          edit.oldText !== undefined ||
+          edit.startLine !== undefined ||
+          edit.endLine !== undefined ||
+          edit.anchorSha256 === undefined ||
+          edit.rangeSha256 !== undefined
+        ) {
+          invalidPatchFields();
+        }
+        return {
+          ...(edit.line !== undefined ? { line: edit.line } : {}),
+          anchorSha256: edit.anchorSha256,
+          newText: edit.newText,
+        };
+      }),
+    };
+  }
+  return {
+    operation: value.operation,
+    path: value.path,
+    expectedSha256: value.expectedSha256,
+    edits: value.edits.map((edit) => {
+      if (
+        edit.oldText !== undefined ||
+        edit.line !== undefined ||
+        edit.startLine === undefined ||
+        edit.endLine === undefined ||
+        edit.anchorSha256 !== undefined ||
+        edit.rangeSha256 === undefined
+      ) {
+        invalidPatchFields();
+      }
+      return {
+        startLine: edit.startLine,
+        endLine: edit.endLine,
+        rangeSha256: edit.rangeSha256,
+        newText: edit.newText,
+      };
+    }),
+  };
+}
+
+function invalidPatchFields(): never {
+  throw new Error("Workspace patch fields do not match operation");
 }
 
 function patchOperation(

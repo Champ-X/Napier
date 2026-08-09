@@ -190,6 +190,7 @@ export const contextCopy = {
     web_fetch_save: "Web Fetch Save",
     browser: "Browser Session",
     research_source: "Research Source",
+    skill_load: "Load Project Skill",
     verify_workspace: "Sandbox verify",
   },
   skills: "Available skills",

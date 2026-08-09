@@ -106,7 +106,7 @@ describe("replan draft model review", () => {
         reviewSchemaSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         modelContextEnvelope: expect.objectContaining({
           kind: "napier.model-context-envelope",
-          schemaVersion: 1,
+          schemaVersion: 2,
           turnIndex: 0,
           messageCount: 1,
           toolCount: 0,

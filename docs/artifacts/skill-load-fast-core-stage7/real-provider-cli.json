@@ -1,0 +1,119 @@
+{
+  "kind": "napier.skill-load-fast-core-real-provider-cli",
+  "schemaVersion": 1,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "protocol": "openai-completions",
+  "capabilityPath": "persistent_default_profile",
+  "capabilityContractVersion": 3,
+  "capabilityProjectionSha256": "f5e93ef5c0fc71b048f3031fbd42c9c2c5de873a701d8030be982afde66082d8",
+  "runScopedPreset": false,
+  "credentialLocator": "DEEPSEEK_API_KEY",
+  "cliEntrypointSha256": "8d90047290b7540fd48675061c9809f5edb61c4712b863149fbbba63040229d4",
+  "promptSha256": "21cc7142af6c80f43db88e9863e5996dcf5345a6d769a20b3868ed9baed508b7",
+  "exitCode": 0,
+  "stdoutBytes": 1347693,
+  "stderrBytes": 0,
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "rawJsonlSha256": "9c99fe8f49caf20d0be935ed55490a0abee1fa9e1ee24767552c919cc0882815",
+  "frameCount": 1626,
+  "runIdSha256": "6cd64df6687b5cd7021b25713d4cd777c361edc4325c5e67cae64cbcdb7d9781",
+  "runStatus": "completed",
+  "snapshotSha256": "7dba296b81e39be3012c93872a2476a7d90447b7e9259bea5cd8b1e96d90a750",
+  "skillCopies": [
+    {
+      "name": "research-brief",
+      "relativePath": "skills/research-brief/SKILL.md",
+      "contentSha256": "e16d803879271613589555d1a8d77ea866a960a038de980fab7f0a8f95b3726f"
+    },
+    {
+      "name": "data-analysis",
+      "relativePath": "skills/data-analysis/SKILL.md",
+      "contentSha256": "18513a1136169aa75a48dd579d20c29b43afe0e825d7397ce5a0275d49a17b33"
+    }
+  ],
+  "catalogSha256": "e1faff2488f9fbbf102414091be235494c4347ba2c2e4729ffc29435ac459c87",
+  "availabilitySetSha256": "2413b49e00d3b606b101a2a6578710073b4cb3128fdf074641fc520ee61f25ba",
+  "snapshotManifestSha256": "f1c89cc4bb07715bdd462af6ff2eeb135157e091648151634b01207da7d08969",
+  "bindingContentSha256": "2ae1bc843df296e0a30eb3869be4cf26303f91c6f9c37de3dca3c081d03e0e8a",
+  "toolSequence": [
+    {
+      "seq": 264,
+      "toolName": "skill_load",
+      "status": "completed",
+      "operation": "skill.load"
+    },
+    {
+      "seq": 266,
+      "toolName": "web_search",
+      "status": "completed"
+    },
+    {
+      "seq": 429,
+      "toolName": "web_search",
+      "status": "completed"
+    },
+    {
+      "seq": 430,
+      "toolName": "web_fetch",
+      "status": "completed",
+      "action": "fetch"
+    },
+    {
+      "seq": 1087,
+      "toolName": "research_source",
+      "status": "completed",
+      "action": "capture_fetch"
+    },
+    {
+      "seq": 1443,
+      "toolName": "research_source",
+      "status": "completed",
+      "action": "cite"
+    }
+  ],
+  "application": {
+    "state": "applied",
+    "mode": "citation_adjacent",
+    "projectionSha256": "bc959407487c6acc3018806f4fe1c5d53f1a8b55a6fd6b1a20d1caea365d79fd",
+    "receiptContentSha256": "46057d27d860cae076f5c9c16e67d17282b57bdd673674cfcf0cedef4709695a",
+    "citationTokenSha256": "acb6b8b58f5378f77ada31312dff6036b927169a8ab5fbc701a2f23c7e6989ef",
+    "contextSeq": 2,
+    "selectedSeq": 261,
+    "terminalSeq": 264,
+    "captureSeq": 1087,
+    "citeSeq": 1443,
+    "applicationSeq": 1615
+  },
+  "replay": {
+    "status": "valid",
+    "contentSha256": "f3ed5bb383ee0a6bcfb3d7fdffdd6a397dcabbe8b28f29b5a589ebddd49de528",
+    "eventStreamSha256": "687b078ccf1c88c1f10e59367dbc45bd79383b36363d343dd7edf98c5becfe60",
+    "eventCount": 1624,
+    "runCount": 1
+  },
+  "profileBeforeSha256": "4b810eb543ecf26babba9541ccf1e24e482e035cd73c23bf2d99cec261100743",
+  "profileAfterSha256": "4b810eb543ecf26babba9541ccf1e24e482e035cd73c23bf2d99cec261100743",
+  "revisionCountBefore": 1,
+  "revisionCountAfter": 1,
+  "verifiedAttemptLedger": [
+    {
+      "ordinal": 3,
+      "result": "passed",
+      "exitCode": 0,
+      "payloadSha256": "50ce55042ee3b0fb49a7298129c4c49a3b4865e7b15de92127510949af118ccd"
+    }
+  ],
+  "unverifiableChronologyNotes": [
+    {
+      "ordinal": 1,
+      "verification": "unverifiable",
+      "note": "No independently retained sanitized receipt exists; result, reason, exit code, timestamp, and payload hash were not reconstructed."
+    },
+    {
+      "ordinal": 2,
+      "verification": "unverifiable",
+      "note": "No independently retained sanitized receipt exists; result, reason, exit code, timestamp, and payload hash were not reconstructed."
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import { emptyUsage, type JsonValue, type RunRecord } from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
 import { assessToolCall } from "./policy.js";
 import type { LocalStore } from "./store.js";
 import {
@@ -62,7 +62,7 @@ export class ExecutionPlanWorkflowKernelRun {
     private readonly ledger: ExecutionPlanWorkflowLedger,
     workerPrefix: "workflowjs" | "workflowpy",
   ) {
-    this.workerId = createId(workerPrefix);
+    this.workerId = createProcessLeaseOwnerId(workerPrefix);
   }
 
   async execute(

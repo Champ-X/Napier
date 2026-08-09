@@ -2,17 +2,17 @@
   "type": "napier.web-dist-audit",
   "schemaVersion": 1,
   "ok": true,
-  "fileCount": 104,
+  "fileCount": 131,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-hEbGfGl-.js",
-    "sizeBytes": 147992,
+    "path": "apps/web/dist/assets/index-DSfprKay.js",
+    "sizeBytes": 151891,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "f0d2272c61f7e3d7063d7ca4ea285361f79fbf07c2c3313657cf61bf9b89b0db"
+    "sha256": "8fb66c98e7e5da04e6d75e60004fc5fb83b40240e0756d470279d46c4a061354"
   },
-  "distContentSha256": "f0d2272c61f7e3d7063d7ca4ea285361f79fbf07c2c3313657cf61bf9b89b0db",
+  "distContentSha256": "8fb66c98e7e5da04e6d75e60004fc5fb83b40240e0756d470279d46c4a061354",
   "errors": []
 }

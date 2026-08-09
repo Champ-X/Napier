@@ -28,7 +28,7 @@ describe("Agent capability Store state integration", () => {
       ...original,
       enabledSkills: [...original.enabledSkills, "stage8-proof"],
       revision: 2,
-      updatedAt: "2026-08-07T07:00:00.000Z",
+      updatedAt: after(original.createdAt, 1),
     };
     expect(updatedAgentCapabilityBinding(state, original, updated)).toEqual(
       expect.objectContaining({
@@ -53,7 +53,7 @@ describe("Agent capability Store state integration", () => {
     const rolledBack = {
       ...target,
       revision: 3,
-      updatedAt: "2026-08-07T07:01:00.000Z",
+      updatedAt: after(target.createdAt, 1),
     };
 
     expect(
@@ -81,7 +81,7 @@ describe("Agent capability Store state integration", () => {
     const updated = {
       ...original,
       revision: 2,
-      updatedAt: "2026-08-07T07:02:00.000Z",
+      updatedAt: after(original.createdAt, 2),
     };
 
     expect(storedAgentCapabilityBinding(state, original.id, 1)).toEqual({
@@ -104,12 +104,12 @@ describe("Agent capability Store state integration", () => {
       ...target,
       name: "Current before rollback",
       revision: 2,
-      updatedAt: "2026-08-07T07:03:00.000Z",
+      updatedAt: after(target.createdAt, 3),
     };
     const rolledBack = {
       ...target,
       revision: 3,
-      updatedAt: "2026-08-07T07:04:00.000Z",
+      updatedAt: after(target.createdAt, 4),
     };
     const futureBinding = {
       ...createSeededCapabilityBinding(target),
@@ -151,6 +151,10 @@ describe("Agent capability Store state integration", () => {
     );
   });
 });
+
+function after(timestamp: string, minutes: number): string {
+  return new Date(Date.parse(timestamp) + minutes * 60_000).toISOString();
+}
 
 function expectValid(lookup: CapabilityBindingLookup): void {
   expect(lookup.status).toBe("valid");

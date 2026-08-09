@@ -272,7 +272,7 @@ describe("Agent coder Subagent", () => {
       model: { provider: faux.provider.id, id: "faux-1" },
     });
 
-    expect(run.status).toBe("completed");
+    expect(run.status, run.error).toBe("completed");
     expect(parentAfterApply, parentAfterApply).toContain(
       "Subagent worktree apply: applied",
     );

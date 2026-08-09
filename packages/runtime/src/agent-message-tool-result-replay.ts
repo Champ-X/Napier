@@ -9,8 +9,14 @@ import type {
   ToolInvocationCapsuleReceipt,
   ToolInvocationResultCapsuleReceipt,
 } from "@napier/contracts";
+import type { SkillCatalogBindingV1 } from "@napier/contracts/skill-load";
+import {
+  isSkillCatalogBindingV1,
+  isSkillLoadReceiptV1,
+} from "@napier/contracts/skill-load";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import type { AgentMessageExperimentExecution } from "./agent-message-experiment-execution.js";
 import {
   replayableToolResult,
   type ToolInvocationResultCapsule,
@@ -22,6 +28,11 @@ import {
   toolInvocationArgumentsSha256,
   validateToolInvocationCapsuleReceipt,
 } from "./tool-invocation-capsule.js";
+import type { ProjectSkillSnapshot } from "./project-skill-snapshot.js";
+import {
+  validateSkillLoadFrozenReplay,
+  validateSkillSnapshotForContinuation,
+} from "./skill-load-replay.js";
 
 export const AGENT_MESSAGE_TOOL_RESULT_REPLAY: unique symbol = Symbol(
   "napier.agent-message-tool-result-replay",
@@ -45,7 +56,28 @@ export interface FrozenToolResultPlan {
   entries: FrozenToolResultEntry[];
   sourceResultSetSha256: string;
   unavailableCount: number;
+  sourceSkillBinding?: SkillCatalogBindingV1;
 }
+
+export function validateAgentMessageToolResultReplay(
+  experiment: AgentMessageExperimentExecution | undefined,
+  replay: FrozenToolResultReplayController | undefined,
+): void {
+  if (
+    (experiment?.toolResultMode === "reuse_source") !== Boolean(replay) ||
+    (replay &&
+      (replay.sourceThreadId !== experiment?.sourceThreadId ||
+        replay.sourceRunId !== experiment.sourceRunId ||
+        replay.plan.entries.length !== experiment.sourceReusableToolResultCount ||
+        replay.plan.sourceResultSetSha256 !== experiment.sourceToolResultSetSha256))
+  ) {
+    throw new Error("Agent message experiment tool result replay is invalid");
+  }
+}
+
+type SequencedFrozenToolResultEntry = FrozenToolResultEntry & {
+  invocationSeq: number;
+};
 
 interface Reservation {
   entry: FrozenToolResultEntry;
@@ -59,6 +91,7 @@ export class FrozenToolResultReplayController {
   private divergenceCount = 0;
   private readonly reservations = new Map<string, Reservation>();
   private readonly reused: Reservation[] = [];
+  private skillSnapshotValidated = false;
 
   constructor(
     readonly sourceThreadId: string,
@@ -70,12 +103,38 @@ export class FrozenToolResultReplayController {
     }
   }
 
+  validateTargetSkillSnapshot(snapshot?: ProjectSkillSnapshot): void {
+    const skillEntries = this.plan.entries.filter(
+      (entry) => entry.toolName === "skill_load",
+    );
+    if (skillEntries.length === 0) {
+      this.skillSnapshotValidated = true;
+      return;
+    }
+    if (!snapshot) {
+      throw new Error("Frozen Skill load replay requires a Research snapshot");
+    }
+    const binding = this.plan.sourceSkillBinding;
+    validateSkillSnapshotForContinuation(binding, snapshot);
+    for (const entry of skillEntries) {
+      validateSkillLoadFrozenReplay(binding, snapshot, entry.capsule);
+    }
+    this.skillSnapshotValidated = true;
+  }
+
   reserve(
     targetCallId: string,
     tool: AgentTool | undefined,
     toolName: string,
     args: unknown,
   ): { block: boolean; reason?: string } {
+    if (toolName === "skill_load" && !this.skillSnapshotValidated) {
+      this.divergenceCount += 1;
+      return {
+        block: true,
+        reason: "Frozen Skill load replay snapshot was not validated",
+      };
+    }
     if (this.divergenceCount > 0) {
       return {
         block: true,
@@ -201,84 +260,33 @@ export async function projectFrozenToolResultPlan(
   capsules: ToolInvocationResultCapsuleStore,
 ): Promise<FrozenToolResultPlan> {
   const sourceEvents = events.filter((event) => event.runId === sourceRunId);
+  const skillBindings: SkillCatalogBindingV1[] = [];
+  for (const event of sourceEvents) {
+    if (
+      event.type === "context.skills" &&
+      isSkillCatalogBindingV1(event.payload)
+    ) {
+      skillBindings.push(event.payload);
+    }
+  }
+  const sourceSkillBinding =
+    skillBindings.length === 1 ? skillBindings[0] : undefined;
   const invocationEvents = sourceEvents.filter(
     (event) => event.type === "context.tool_invocation",
   );
-  const entries: Array<FrozenToolResultEntry & { invocationSeq: number }> = [];
+  const entries: SequencedFrozenToolResultEntry[] = [];
   let unavailableCount = 0;
   for (const invocationEvent of invocationEvents) {
-    const invocation = validateToolInvocationCapsuleReceipt(
-      invocationEvent.payload,
+    const entry = await projectFrozenToolResultEntry(
+      sourceEvents,
+      sourceThreadId,
+      sourceRunId,
+      capsules,
+      invocationEvent,
+      sourceSkillBinding,
     );
-    const resultEvents = sourceEvents.filter(
-      (event) =>
-        event.type === "context.tool_result" &&
-        event.seq > invocationEvent.seq &&
-        receiptCallId(event) === invocation.callId,
-    );
-    if (resultEvents.length !== 1) {
-      unavailableCount += 1;
-      continue;
-    }
-    const resultEvent = resultEvents[0]!;
-    const resultReceipt = validateToolInvocationResultCapsuleReceipt(
-      resultEvent.payload,
-    );
-    const terminalEvents = sourceEvents.filter(
-      (event) =>
-        event.seq > resultEvent.seq &&
-        (event.type === "tool.completed" || event.type === "tool.failed") &&
-        toolEventBinding(event, invocation),
-    );
-    if (
-      resultReceipt.callId !== invocation.callId ||
-      resultReceipt.toolName !== invocation.toolName ||
-      resultReceipt.invocationCapsuleSha256 !== invocation.capsuleSha256 ||
-      resultReceipt.toolDefinitionSha256 !== invocation.toolDefinitionSha256 ||
-      resultReceipt.argumentsSha256 !== invocation.argumentsSha256 ||
-      terminalEvents.length !== 1 ||
-      !terminalBinding(terminalEvents[0]!, resultReceipt)
-    ) {
-      unavailableCount += 1;
-      continue;
-    }
-    try {
-      const capsule = await capsules.read(resultReceipt.capsuleSha256);
-      if (
-        capsule.sourceThreadId !== sourceThreadId ||
-        capsule.sourceRunId !== sourceRunId ||
-        capsule.callId !== resultReceipt.callId ||
-        capsule.toolName !== resultReceipt.toolName ||
-        capsule.invocationCapsuleSha256 !==
-          resultReceipt.invocationCapsuleSha256 ||
-        capsule.toolDefinitionSha256 !== resultReceipt.toolDefinitionSha256 ||
-        capsule.argumentsSha256 !== resultReceipt.argumentsSha256 ||
-        capsule.isError !== resultReceipt.isError ||
-        capsule.resultSha256 !== resultReceipt.resultSha256 ||
-        capsule.outputTextSha256 !== resultReceipt.outputTextSha256 ||
-        capsule.outputTextBytes !== resultReceipt.outputTextBytes ||
-        capsule.contentSha256 !== resultReceipt.capsuleSha256
-      ) {
-        unavailableCount += 1;
-        continue;
-      }
-      entries.push({
-        sourceCallId: invocation.callId,
-        toolName: invocation.toolName,
-        toolDefinitionSha256: invocation.toolDefinitionSha256,
-        argumentsSha256: invocation.argumentsSha256,
-        invocationCapsuleSha256: invocation.capsuleSha256,
-        resultCapsuleSha256: resultReceipt.capsuleSha256,
-        resultSha256: resultReceipt.resultSha256,
-        outputTextSha256: resultReceipt.outputTextSha256,
-        outputTextBytes: resultReceipt.outputTextBytes,
-        isError: resultReceipt.isError,
-        capsule,
-        invocationSeq: invocationEvent.seq,
-      });
-    } catch {
-      unavailableCount += 1;
-    }
+    if (entry) entries.push(entry);
+    else unavailableCount += 1;
   }
   entries.sort((left, right) => left.invocationSeq - right.invocationSeq);
   const projectedEntries = entries.map(
@@ -288,7 +296,126 @@ export async function projectFrozenToolResultPlan(
     entries: projectedEntries,
     sourceResultSetSha256: frozenToolResultSetSha256(projectedEntries),
     unavailableCount,
+    ...(sourceSkillBinding ? { sourceSkillBinding } : {}),
   };
+}
+
+async function projectFrozenToolResultEntry(
+  sourceEvents: RunEvent[],
+  sourceThreadId: string,
+  sourceRunId: string,
+  capsules: ToolInvocationResultCapsuleStore,
+  invocationEvent: RunEvent,
+  sourceSkillBinding: SkillCatalogBindingV1 | undefined,
+): Promise<SequencedFrozenToolResultEntry | undefined> {
+  const invocation = validateToolInvocationCapsuleReceipt(
+    invocationEvent.payload,
+  );
+  const resultEvents = sourceEvents.filter(
+    (event) =>
+      event.type === "context.tool_result" &&
+      event.seq > invocationEvent.seq &&
+      receiptCallId(event) === invocation.callId,
+  );
+  if (resultEvents.length !== 1) return undefined;
+  const resultEvent = resultEvents[0]!;
+  const resultReceipt = validateToolInvocationResultCapsuleReceipt(
+    resultEvent.payload,
+  );
+  const terminalEvents = sourceEvents.filter(
+    (event) =>
+      event.seq > resultEvent.seq &&
+      (event.type === "tool.completed" || event.type === "tool.failed") &&
+      toolEventBinding(event, invocation),
+  );
+  if (
+    !resultBindsInvocation(resultReceipt, invocation) ||
+    terminalEvents.length !== 1 ||
+    !terminalBinding(terminalEvents[0]!, resultReceipt)
+  ) {
+    return undefined;
+  }
+  try {
+    const capsule = await capsules.read(resultReceipt.capsuleSha256);
+    if (
+      !capsuleBindsResult(
+        capsule,
+        resultReceipt,
+        sourceThreadId,
+        sourceRunId,
+      ) ||
+      !skillLoadSourceBindingIsValid(capsule, sourceSkillBinding)
+    ) {
+      return undefined;
+    }
+    return {
+      sourceCallId: invocation.callId,
+      toolName: invocation.toolName,
+      toolDefinitionSha256: invocation.toolDefinitionSha256,
+      argumentsSha256: invocation.argumentsSha256,
+      invocationCapsuleSha256: invocation.capsuleSha256,
+      resultCapsuleSha256: resultReceipt.capsuleSha256,
+      resultSha256: resultReceipt.resultSha256,
+      outputTextSha256: resultReceipt.outputTextSha256,
+      outputTextBytes: resultReceipt.outputTextBytes,
+      isError: resultReceipt.isError,
+      capsule,
+      invocationSeq: invocationEvent.seq,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function resultBindsInvocation(
+  result: ToolInvocationResultCapsuleReceipt,
+  invocation: ToolInvocationCapsuleReceipt,
+): boolean {
+  return (
+    result.callId === invocation.callId &&
+    result.toolName === invocation.toolName &&
+    result.invocationCapsuleSha256 === invocation.capsuleSha256 &&
+    result.toolDefinitionSha256 === invocation.toolDefinitionSha256 &&
+    result.argumentsSha256 === invocation.argumentsSha256
+  );
+}
+
+function capsuleBindsResult(
+  capsule: ToolInvocationResultCapsule,
+  result: ToolInvocationResultCapsuleReceipt,
+  sourceThreadId: string,
+  sourceRunId: string,
+): boolean {
+  return (
+    capsule.sourceThreadId === sourceThreadId &&
+    capsule.sourceRunId === sourceRunId &&
+    capsule.callId === result.callId &&
+    capsule.toolName === result.toolName &&
+    capsule.invocationCapsuleSha256 === result.invocationCapsuleSha256 &&
+    capsule.toolDefinitionSha256 === result.toolDefinitionSha256 &&
+    capsule.argumentsSha256 === result.argumentsSha256 &&
+    capsule.isError === result.isError &&
+    capsule.resultSha256 === result.resultSha256 &&
+    capsule.outputTextSha256 === result.outputTextSha256 &&
+    capsule.outputTextBytes === result.outputTextBytes &&
+    capsule.contentSha256 === result.capsuleSha256
+  );
+}
+
+function skillLoadSourceBindingIsValid(
+  capsule: ToolInvocationResultCapsule,
+  binding: SkillCatalogBindingV1 | undefined,
+): boolean {
+  if (capsule.toolName !== "skill_load") return true;
+  if (!binding) return false;
+  // Source receipts must at least bind to the source Run catalog here. Full
+  // target-entry equality is checked against the freshly acquired snapshot.
+  const details = capsule.result.details;
+  return (
+    isSkillLoadReceiptV1(details) &&
+    details.catalogSha256 === binding.catalogSha256 &&
+    details.snapshotManifestSha256 === binding.snapshotManifestSha256
+  );
 }
 
 export function frozenToolResultSetSha256(

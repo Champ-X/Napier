@@ -52,6 +52,7 @@ const WORKSPACE_READ_TOOLS: AgentToolName[] = [
   "git_inspect",
 ];
 const DATA_TOOLS: AgentToolName[] = ["data_frame", "sqlite_query"];
+const SKILL_TOOLS: AgentToolName[] = ["skill_load"];
 const RESEARCH_TOOLS: AgentToolName[] = [
   "web_search",
   "web_fetch",
@@ -117,6 +118,7 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
     "workspace",
     [
       ...WORKSPACE_READ_TOOLS,
+      ...SKILL_TOOLS,
       ...DATA_TOOLS,
       ...CODE_INTELLIGENCE_TOOLS,
       ...CODE_WRITE_TOOLS,
@@ -130,7 +132,7 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
     "Research",
     "Search, fetch, render, capture, and cite public sources without workspace writes.",
     "observe",
-    [...WORKSPACE_READ_TOOLS, ...DATA_TOOLS, ...RESEARCH_TOOLS],
+    [...WORKSPACE_READ_TOOLS, ...SKILL_TOOLS, ...DATA_TOOLS, ...RESEARCH_TOOLS],
     ["research-brief", "data-analysis"],
     ["researcher", "reviewer", "general"],
   ),
@@ -139,7 +141,7 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
     "Data",
     "Inspect and transform local tabular or SQLite data without changing workspace files.",
     "observe",
-    [...WORKSPACE_READ_TOOLS, ...DATA_TOOLS],
+    [...WORKSPACE_READ_TOOLS, ...SKILL_TOOLS, ...DATA_TOOLS],
     ["data-analysis"],
     ["reviewer", "general"],
   ),
@@ -148,7 +150,7 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
     "Browser",
     "Read dynamic public pages and capture citations; form interaction remains blocked.",
     "observe",
-    [...RESEARCH_TOOLS],
+    [...SKILL_TOOLS, ...RESEARCH_TOOLS],
     ["research-brief", "browser-automation"],
     ["researcher", "reviewer"],
   ),
@@ -159,6 +161,7 @@ export const AGENT_CAPABILITY_PRESETS: readonly AgentCapabilityPreset[] = [
     "workspace",
     [
       ...WORKSPACE_READ_TOOLS,
+      ...SKILL_TOOLS,
       ...DATA_TOOLS,
       ...RESEARCH_TOOLS,
       ...RESEARCH_WRITE_TOOLS,
@@ -290,6 +293,7 @@ function unique<Value extends string>(values: readonly Value[]): Value[] {
 function isAgentToolName(value: string): value is AgentToolName {
   return [
     ...WORKSPACE_READ_TOOLS,
+    ...SKILL_TOOLS,
     ...DATA_TOOLS,
     ...RESEARCH_TOOLS,
     ...CODE_INTELLIGENCE_TOOLS,

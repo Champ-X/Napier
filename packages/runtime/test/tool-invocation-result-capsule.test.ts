@@ -61,14 +61,19 @@ describe("Tool invocation result capsule store", () => {
   });
 
   it("keeps concurrent private results within the exact object bound", async () => {
+    const fixtureObjectLimit = 32;
+    expect(MAX_TOOL_INVOCATION_RESULT_CAPSULES).toBe(512);
     const root = await mkdtemp(
       path.join(tmpdir(), "napier-tool-result-capsules-"),
     );
     temporaryRoots.push(root);
-    const store = new ToolInvocationResultCapsuleStore(root);
+    const store = new ToolInvocationResultCapsuleStore(
+      root,
+      fixtureObjectLimit,
+    );
     const attempts = await Promise.allSettled(
       Array.from(
-        { length: MAX_TOOL_INVOCATION_RESULT_CAPSULES + 8 },
+        { length: fixtureObjectLimit + 8 },
         async (_, index) => {
           const callId = `call_result_${String(index).padStart(4, "0")}`;
           const invocation = createToolInvocationCapsule({
@@ -99,12 +104,12 @@ describe("Tool invocation result capsule store", () => {
     );
     expect(
       attempts.filter((attempt) => attempt.status === "fulfilled"),
-    ).toHaveLength(MAX_TOOL_INVOCATION_RESULT_CAPSULES);
+    ).toHaveLength(fixtureObjectLimit);
     expect(
       attempts.filter((attempt) => attempt.status === "rejected"),
     ).toHaveLength(8);
     const entries = await readdir(store.rootPath);
-    expect(entries).toHaveLength(MAX_TOOL_INVOCATION_RESULT_CAPSULES);
+    expect(entries).toHaveLength(fixtureObjectLimit);
     expect((await stat(store.rootPath)).mode & 0o777).toBe(0o700);
     for (const entry of entries.slice(0, 8)) {
       expect((await stat(path.join(store.rootPath, entry))).mode & 0o777).toBe(

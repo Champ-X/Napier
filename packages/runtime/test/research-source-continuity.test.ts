@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { parseResearchSourceEvidenceV1 } from "@napier/contracts/skill-load";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
@@ -37,6 +38,68 @@ afterEach(async () => {
 });
 
 describe("Research Source continuity", () => {
+  it("restores private state from only the normalized public capsule address", async () => {
+    const fixture = await continuityFixture();
+    const capsules = new ResearchSourceCapsuleStore(fixture.dataRoot);
+    const parent = new RunResearchSourceManager(
+      { capturePage: vi.fn(async () => sourceCapture()) },
+      fixture.workspaceRoot,
+      undefined,
+      capsules,
+      fixture.store,
+    );
+    const owner = { threadId: fixture.threadId, runId: fixture.parentRunId };
+    const captured = await parent.execute(owner, { action: "capture" });
+    const publicEvidence = parseResearchSourceEvidenceV1(captured.details)!;
+    expect(publicEvidence).not.toHaveProperty("stateCapsule");
+    expect(publicEvidence.continuityCapsuleContentSha256).toBe(
+      captured.details.stateCapsule!.capsuleSha256,
+    );
+    await appendResearchCompletion(fixture.store, owner, publicEvidence);
+    expect(JSON.stringify(await fixture.store.listEvents(fixture.threadId))).not.toContain(
+      "SOURCE_PRIVATE_RESTART_TEXT",
+    );
+    await fixture.store.finishRun(fixture.parentRunId, "interrupted");
+    const child = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: fixture.agentId,
+      source: "recovery",
+      parentRunId: fixture.parentRunId,
+    });
+    const reopened = new RunResearchSourceManager(
+      { capturePage: vi.fn() },
+      fixture.workspaceRoot,
+      undefined,
+      capsules,
+      fixture.store,
+    );
+
+    const checkpoint = await reopened.prepareRecovery({
+      threadId: fixture.threadId,
+      runId: child.id,
+    });
+    const cited = await reopened.execute(
+      { threadId: fixture.threadId, runId: child.id },
+      {
+        action: "cite",
+        sourceId: publicEvidence.action === "capture" ? publicEvidence.sourceId : "",
+        sourceContentSha256:
+          publicEvidence.action === "capture"
+            ? publicEvidence.sourceContentSha256
+            : "",
+        startLine: 1,
+        endLine: 1,
+        claim: "Private recovery remains locally available.",
+      },
+    );
+
+    expect(checkpoint).toEqual(
+      expect.objectContaining({ sourceRunId: child.id, sourceCount: 1 }),
+    );
+    expect(cited.output).toContain("SOURCE_PRIVATE_RESTART_TEXT");
+    fixture.store.close();
+  });
+
   it("adopts and Replay-binds an immediate completed user continuation", async () => {
     const fixture = await continuityFixture();
     const capsules = new ResearchSourceCapsuleStore(fixture.dataRoot);

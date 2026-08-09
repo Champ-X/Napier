@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import type { AgentMessageExperimentResult, RunEvent } from "@napier/contracts";
+import { isSkillCatalogBindingV1 } from "@napier/contracts/skill-load";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { AgentMessageExperimentRuntime } from "../src/agent-message-experiments.js";
@@ -202,6 +203,88 @@ describe("Agent message checkpoint experiments", () => {
       }),
     ).rejects.toThrow("Branch capability");
     expect(fixture.store.listRuns(ordinary.id)).toHaveLength(0);
+  });
+
+  it("inherits the exact Research preset and Skill snapshot in an agent-message experiment", async () => {
+    const fixture = await createFixture();
+    await Promise.all(
+      ["research-brief", "data-analysis"].map(async (name) => {
+        const skillPath = path.join(
+          fixture.workspaceRoot,
+          "skills",
+          name,
+          "SKILL.md",
+        );
+        await mkdir(path.dirname(skillPath), { recursive: true });
+        await writeFile(
+          skillPath,
+          [
+            "---",
+            `name: ${name}`,
+            `description: ${name} agent-message experiment fixture.`,
+            "---",
+            "",
+            `# ${name}`,
+            "",
+            "Use only the frozen Research snapshot.",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+      }),
+    );
+    const before = structuredClone(fixture.store.getAgent(fixture.agentId));
+    fixture.provider.setResponses([fauxAssistantMessage("source answer")]);
+    const sourceRun = await fixture.runtime.runPrompt({
+      threadId: fixture.sourceThreadId,
+      text: "Re-run this bounded Research checkpoint.",
+      model: { provider: "faux-agent-message-experiment", id: "faux-1" },
+      capabilityPreset: "research",
+    });
+    const sourceEvents = await fixture.store.listEvents(fixture.sourceThreadId);
+    const sourceMessage = sourceEvents.find(
+      (event) => event.runId === sourceRun.id && event.type === "message.user",
+    )!;
+    const request = checkpointRequest({
+      runId: sourceRun.id,
+      messageSeq: sourceMessage.seq,
+    });
+    const preview = await fixture.experiments.preview(
+      fixture.sourceThreadId,
+      request,
+    );
+    fixture.provider.setResponses([
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toContain("skill_load");
+        return fauxAssistantMessage("Research experiment stayed snapshot-bound.");
+      },
+    ]);
+
+    const result = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+    });
+    const targetRun = fixture.store.listRuns(result.targetThreadId)[1]!;
+    const targetEvents = (await fixture.store.listEvents(result.targetThreadId))
+      .filter((event) => event.runId === targetRun.id);
+
+    expect(result.status).toBe("completed");
+    expect(targetRun.configuration).toEqual(expect.objectContaining({
+      executionMode: "agent_experiment_read_only",
+      enabledSkills: ["data-analysis", "research-brief"],
+      enabledTools: expect.arrayContaining(["skill_load"]),
+      skillCatalogSha256: sourceRun.configuration?.skillCatalogSha256,
+    }));
+    expect(
+      targetEvents.find((event) => event.type === "run.started")?.payload,
+    ).toEqual(expect.objectContaining({ capabilityPreset: "research" }));
+    expect(isSkillCatalogBindingV1(
+      targetEvents.find((event) => event.type === "context.skills")?.payload,
+    )).toBe(true);
+    expect(fixture.store.getAgent(fixture.agentId)).toEqual(before);
   });
 
   it("cancels before mutation and safely reruns a cancelled target from the source", async () => {

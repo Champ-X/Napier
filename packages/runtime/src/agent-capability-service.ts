@@ -24,6 +24,10 @@ import {
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
 } from "./default-agent-capability-contract.js";
 import { probeMacOsSandboxAvailability } from "./macos-sandbox-availability.js";
+import {
+  buildProjectSkillSnapshot,
+  type ProjectSkillSnapshot,
+} from "./project-skill-snapshot.js";
 import { resolveContainerExecutable } from "./sandbox-container.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
@@ -57,21 +61,27 @@ export class AgentCapabilityService {
     const binding =
       bindingLookup.status === "valid" ? bindingLookup.binding : undefined;
     const restorePreview = createCapabilityRestorePreview(profile);
+    const skillInspection = await inspectSkillReadiness(
+      this.store.workspaceRoot,
+      profile.enabledSkills,
+      profile.enabledTools.includes("skill_load"),
+    );
     const runtimeExposedTools = this.capabilityRuntime
       .createTools({
         profile,
         threadId: `capability_projection_${profile.id}`,
         runId: `capability_projection_${String(profile.revision)}`,
+        ...(skillInspection.snapshot
+          ? { projectSkillSnapshot: skillInspection.snapshot }
+          : {}),
+        skillLoadAllowed: Boolean(skillInspection.snapshot),
         browserInteractionConfirmationAllowed: false,
       })
       .map((tool) => tool.name)
       .sort(compareCanonicalText);
     const readiness = [
       ...toolReadiness(profile.enabledTools, runtimeExposedTools),
-      ...(await skillReadiness(
-        this.store.workspaceRoot,
-        profile.enabledSkills,
-      )),
+      ...skillInspection.readiness,
       await this.getSandboxReadiness(),
     ].sort((left, right) => compareCanonicalText(left.id, right.id));
     const driftState = capabilityDriftState(bindingLookup, profile);
@@ -162,6 +172,17 @@ function toolReadiness(
       };
     }
     if (!exposed.has(name)) {
+      if (name === "skill_load") {
+        return {
+          id: `tool:${name}`,
+          status: "unavailable" as const,
+          configured: true,
+          allowedByPolicy: true,
+          exposed: false,
+          detail:
+            "Skill loader is policy-allowed but no safe Project Skill snapshot is available",
+        };
+      }
       return {
         id: `tool:${name}`,
         status: "blocked_by_policy" as const,
@@ -192,18 +213,84 @@ function toolReadiness(
   });
 }
 
-async function skillReadiness(
+interface SkillReadinessInspection {
+  snapshot?: ProjectSkillSnapshot;
+  readiness: CapabilityReadinessRecord[];
+}
+
+async function inspectSkillReadiness(
+  workspaceRoot: string,
+  skills: readonly string[],
+  firstClassLoaderConfigured: boolean,
+): Promise<SkillReadinessInspection> {
+  if (!firstClassLoaderConfigured) {
+    return {
+      readiness: await legacySkillReadiness(workspaceRoot, skills),
+    };
+  }
+  let snapshot: ProjectSkillSnapshot;
+  try {
+    snapshot = await buildProjectSkillSnapshot(workspaceRoot, skills);
+  } catch {
+    return {
+      readiness: await Promise.all(
+        sortedUnique(skills).map(async (name) => ({
+          id: `skill:${name}`,
+          status: (await skillFileExists(workspaceRoot, name))
+            ? ("unavailable" as const)
+            : ("missing" as const),
+          configured: true,
+          allowedByPolicy: true,
+          exposed: false,
+          detail: (await skillFileExists(workspaceRoot, name))
+            ? "Project Skill snapshot could not be safely constructed"
+            : "Configured Skill content is missing",
+        })),
+      ),
+    };
+  }
+  const requests = new Map(
+    snapshot.binding.configuredSkillRequests
+      .filter((request) => request.canonicalName)
+      .map((request) => [request.canonicalName!, request]),
+  );
+  const failures = new Map(
+    snapshot.binding.unavailableSkills.map((failure) => [
+      failure.contentSha256,
+      failure,
+    ]),
+  );
+  return {
+    snapshot,
+    readiness: sortedUnique(skills).map((name) => {
+      const request = requests.get(name);
+      const failure =
+        request?.state === "unavailable"
+          ? failures.get(request.failureContentSha256)
+          : undefined;
+      const ready =
+        request?.state === "loadable" && Boolean(snapshot.entry(name));
+      return {
+        id: `skill:${name}`,
+        status: ready ? ("ready" as const) : ("unavailable" as const),
+        configured: true,
+        allowedByPolicy: true,
+        exposed: ready,
+        detail: ready
+          ? "Skill is snapshot-bound and loadable through the production Runtime"
+          : `Skill is unavailable${failure ? ` (${failure.failureCode})` : ""}`,
+      };
+    }),
+  };
+}
+
+async function legacySkillReadiness(
   workspaceRoot: string,
   skills: readonly string[],
 ): Promise<CapabilityReadinessRecord[]> {
   return Promise.all(
     sortedUnique(skills).map(async (name) => {
-      const exists = await access(
-        path.join(workspaceRoot, "skills", name, "SKILL.md"),
-      ).then(
-        () => true,
-        () => false,
-      );
+      const exists = await skillFileExists(workspaceRoot, name);
       return {
         id: `skill:${name}`,
         status: exists ? ("catalog_only" as const) : ("missing" as const),
@@ -215,6 +302,16 @@ async function skillReadiness(
           : "Configured Skill content is missing",
       };
     }),
+  );
+}
+
+function skillFileExists(
+  workspaceRoot: string,
+  name: string,
+): Promise<boolean> {
+  return access(path.join(workspaceRoot, "skills", name, "SKILL.md")).then(
+    () => true,
+    () => false,
   );
 }
 
@@ -251,6 +348,7 @@ async function sandboxAvailable(sandbox: OsSandboxAdapter): Promise<boolean> {
     if (sandbox.id === "oci-container") {
       return (await resolveContainerExecutable()) !== undefined;
     }
+    if (sandbox.id === "host-direct") return true;
     return false;
   } catch {
     return false;

@@ -1,4 +1,5 @@
 import type { RunEvent } from "@napier/contracts";
+import { parseResearchSourceEvidenceV1 } from "@napier/contracts/skill-load";
 
 import type { ResearchBenchmarkLedgerBundle } from "./research-benchmark-types.js";
 
@@ -14,35 +15,6 @@ const RECEIPT_KEYS = keySet(
 const TOOL_PAYLOAD_KEYS = keySet(
   "callId toolName status outputTextSha256 outputTextBytes outputSha256 outputBytes outputRedacted resultSha256 details",
 );
-const LEGACY_CAPTURE_DETAILS_KEYS = keySet(
-  "kind schemaVersion action sourceKind sourceId sourceContentSha256 sourceUrlSha256 sourceOriginSha256 sourceTitleSha256 sourceTextSha256 sourceLineCount sourceTextChars sourceTruncated sourceCount citationCount sourceSetSha256 browserSessionOperation browserSessionIdSha256 browserExecutableSha256 browserVersionSha256 browserLimitsSha256 browserNetworkDestinationsSha256",
-);
-const CAPTURE_DETAILS_KEYS = keySet(
-  "kind schemaVersion action sourceKind sourceId sourceContentSha256 sourceUrlSha256 sourceOriginSha256 sourceTitleSha256 sourceTextSha256 sourceLineCount sourceTextChars sourceTruncated sourceCount citationCount sourceSetSha256 browserSessionOperation browserSessionIdSha256 browserActiveTabId browserTabCount browserTabSetSha256 browserExecutableSha256 browserVersionSha256 browserLimitsSha256 browserNetworkDestinationsSha256",
-);
-const LEGACY_CITE_DETAILS_KEYS = [
-  ...LEGACY_CAPTURE_DETAILS_KEYS,
-  "citationId",
-  "citationTokenSha256",
-  "citationStartLine",
-  "citationEndLine",
-  "citationQuoteSha256",
-  "citationClaimSha256",
-];
-const CITE_DETAILS_KEYS = [
-  ...CAPTURE_DETAILS_KEYS,
-  "citationId",
-  "citationTokenSha256",
-  "citationStartLine",
-  "citationEndLine",
-  "citationQuoteSha256",
-  "citationClaimSha256",
-];
-const VERIFY_DETAILS_KEYS = keySet(
-  "kind schemaVersion action sourceCount citationCount sourceSetSha256 reportPathSha256 reportFileSha256 reportFileBytes reportCitationCount reportCitationSetSha256",
-);
-const STATE_CAPSULE_KEY = "stateCapsule";
-const REPORT_ARTIFACT_REGISTRATION_KEY = "reportArtifactRegistration";
 
 export function validResearchBenchmarkLedgerShape(
   value: unknown,
@@ -185,161 +157,10 @@ function validResearchEvent(value: unknown): boolean {
 }
 
 function validResearchDetails(value: unknown): boolean {
-  if (!record(value) || !validResearchDetailsBase(value)) return false;
-  if (value["action"] === "verify_report") {
-    return validReportVerificationDetails(value);
-  }
-  if (!validCapturedSourceDetails(value)) return false;
-  return value["action"] === "capture" || validCitationDetails(value);
-}
-
-function validResearchDetailsBase(value: Record<string, unknown>): boolean {
   return (
-    value["kind"] === "napier.research-source" &&
-    value["schemaVersion"] === 1 &&
-    ["capture", "cite", "verify_report"].includes(String(value["action"])) &&
-    nonNegativeInteger(value["sourceCount"]) &&
-    nonNegativeInteger(value["citationCount"]) &&
-    digest(value["sourceSetSha256"]) &&
-    validStateCapsule(value[STATE_CAPSULE_KEY])
-  );
-}
-
-function validReportVerificationDetails(
-  value: Record<string, unknown>,
-): boolean {
-  return (
-    exactOptionalReportDetails(value) &&
-    digest(value["reportPathSha256"]) &&
-    digest(value["reportFileSha256"]) &&
-    nonNegativeInteger(value["reportFileBytes"]) &&
-    nonNegativeInteger(value["reportCitationCount"]) &&
-    digest(value["reportCitationSetSha256"]) &&
-    validReportArtifactRegistration(value[REPORT_ARTIFACT_REGISTRATION_KEY])
-  );
-}
-
-function exactOptionalReportDetails(value: Record<string, unknown>): boolean {
-  const keys = [...VERIFY_DETAILS_KEYS];
-  if (value[REPORT_ARTIFACT_REGISTRATION_KEY] !== undefined) {
-    keys.push(REPORT_ARTIFACT_REGISTRATION_KEY);
-  }
-  if (value[STATE_CAPSULE_KEY] !== undefined) keys.push(STATE_CAPSULE_KEY);
-  return exactKeys(value, keys);
-}
-
-function validReportArtifactRegistration(value: unknown): boolean {
-  return (
-    value === undefined ||
-    [
-      "registered",
-      "no_run_bound_plan",
-      "no_matching_artifact",
-      "artifact_not_expected",
-      "artifact_registration_failed",
-    ].includes(String(value))
-  );
-}
-
-function validCapturedSourceDetails(value: Record<string, unknown>): boolean {
-  const legacy = value["browserActiveTabId"] === undefined;
-  const keys =
-    value["action"] === "capture"
-      ? legacy
-        ? LEGACY_CAPTURE_DETAILS_KEYS
-        : CAPTURE_DETAILS_KEYS
-      : legacy
-        ? LEGACY_CITE_DETAILS_KEYS
-        : CITE_DETAILS_KEYS;
-  return (
-    exactOptionalStateCapsule(value, keys) &&
-    value["sourceKind"] === "browser" &&
-    resourceId(value["sourceId"]) &&
-    digest(value["sourceContentSha256"]) &&
-    digest(value["sourceUrlSha256"]) &&
-    digest(value["sourceOriginSha256"]) &&
-    digest(value["sourceTitleSha256"]) &&
-    digest(value["sourceTextSha256"]) &&
-    nonNegativeInteger(value["sourceLineCount"]) &&
-    nonNegativeInteger(value["sourceTextChars"]) &&
-    typeof value["sourceTruncated"] === "boolean" &&
-    nonNegativeInteger(value["browserSessionOperation"]) &&
-    digest(value["browserSessionIdSha256"]) &&
-    validOptionalBrowserTabBinding(value) &&
-    digest(value["browserExecutableSha256"]) &&
-    digest(value["browserVersionSha256"]) &&
-    digest(value["browserLimitsSha256"]) &&
-    digest(value["browserNetworkDestinationsSha256"])
-  );
-}
-
-function exactOptionalStateCapsule(
-  value: Record<string, unknown>,
-  keys: readonly string[],
-): boolean {
-  return exactKeys(
-    value,
-    value[STATE_CAPSULE_KEY] === undefined
-      ? keys
-      : [...keys, STATE_CAPSULE_KEY],
-  );
-}
-
-function validStateCapsule(value: unknown): boolean {
-  return (
-    value === undefined ||
-    (exactRecord(value, [
-      "kind",
-      "schemaVersion",
-      "sourceRunId",
-      "sourceCount",
-      "citationCount",
-      "sourceSetSha256",
-      "capsuleSha256",
-      "capsuleBytes",
-      "storage",
-      "contentSha256",
-    ]) &&
-      value["kind"] === "napier.research-source-capsule-receipt" &&
-      value["schemaVersion"] === 1 &&
-      resourceId(value["sourceRunId"]) &&
-      integerBetween(value["sourceCount"], 0, 16) &&
-      integerBetween(value["citationCount"], 0, 64) &&
-      digest(value["sourceSetSha256"]) &&
-      digest(value["capsuleSha256"]) &&
-      integerBetween(value["capsuleBytes"], 1, 2 * 1024 * 1024) &&
-      value["storage"] === "local_only" &&
-      digest(value["contentSha256"]))
-  );
-}
-
-function validOptionalBrowserTabBinding(
-  value: Record<string, unknown>,
-): boolean {
-  const absent =
-    value["browserActiveTabId"] === undefined &&
-    value["browserTabCount"] === undefined &&
-    value["browserTabSetSha256"] === undefined;
-  return (
-    absent ||
-    (tabId(value["browserActiveTabId"]) &&
-      integerBetween(value["browserTabCount"], 1, 4) &&
-      digest(value["browserTabSetSha256"]))
-  );
-}
-
-function tabId(value: unknown): value is string {
-  return typeof value === "string" && /^tab_[1-9][0-9]{0,3}$/u.test(value);
-}
-
-function validCitationDetails(value: Record<string, unknown>): boolean {
-  return (
-    resourceId(value["citationId"]) &&
-    digest(value["citationTokenSha256"]) &&
-    nonNegativeInteger(value["citationStartLine"]) &&
-    nonNegativeInteger(value["citationEndLine"]) &&
-    digest(value["citationQuoteSha256"]) &&
-    digest(value["citationClaimSha256"])
+    record(value) &&
+    value["kind"] === "napier.research-source-evidence" &&
+    parseResearchSourceEvidenceV1(value) !== undefined
   );
 }
 
@@ -433,18 +254,6 @@ function resourceId(value: unknown): value is string {
 
 function nonNegativeInteger(value: unknown): boolean {
   return Number.isSafeInteger(value) && Number(value) >= 0;
-}
-
-function integerBetween(
-  value: unknown,
-  minimum: number,
-  maximum: number,
-): boolean {
-  return (
-    Number.isSafeInteger(value) &&
-    Number(value) >= minimum &&
-    Number(value) <= maximum
-  );
 }
 
 function positiveInteger(value: unknown): boolean {

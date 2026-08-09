@@ -13,7 +13,7 @@ import {
 } from "./agent-tool-ledger.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createId, createProcessLeaseOwnerId } from "./ids.js";
 import { gitStageMutationManagerFor } from "./git-stage.js";
 import { assessToolCall } from "./policy.js";
 import { createStatelessAgentTools } from "./stateless-agent-tools.js";
@@ -57,7 +57,7 @@ export class ExecutionPlanWorkflowToolError extends Error {
 }
 
 export class ExecutionPlanWorkflowToolRuntime {
-  private readonly workerId = createId("workflowtool");
+  private readonly workerId = createProcessLeaseOwnerId("workflowtool");
 
   constructor(
     private readonly store: LocalStore,

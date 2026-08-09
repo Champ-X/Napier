@@ -10,11 +10,12 @@ import type {
 import type { EventSink } from "./event-sink.js";
 import type { AgentRuntime } from "./agent-runtime.js";
 import {
+  agentToolGenericDetailsLedgerProjection,
   agentToolInputLedgerProjection,
   agentToolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
 import { sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createId, createProcessLeaseOwnerId } from "./ids.js";
 import {
   candidateToolInvocationObservation,
   createToolInvocationExperimentComparison,
@@ -61,7 +62,7 @@ export class ToolInvocationExperimentPreviewChangedError extends Error {
 }
 
 export class ToolInvocationExperimentRuntime {
-  private readonly workerId = createId("toolexperiment");
+  private readonly workerId = createProcessLeaseOwnerId("toolexperiment");
 
   constructor(
     private readonly store: LocalStore,
@@ -270,10 +271,11 @@ export class ToolInvocationExperimentRuntime {
             outputTextSha256: targetObservation.outputSha256,
             outputTextBytes: targetObservation.outputBytes,
             ...outputProjection,
-            ...(!Object.hasOwn(outputProjection, "details") &&
-            toolResultDetails(toolResult) !== undefined
-              ? { details: toolResultDetails(toolResult)! }
-              : {}),
+            ...agentToolGenericDetailsLedgerProjection(
+              preview.sourceToolName,
+              outputProjection,
+              toolResultDetails(toolResult),
+            ),
           },
         },
         input.onEvent,

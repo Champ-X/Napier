@@ -7,7 +7,7 @@ import {
 
 import type { EventSink } from "./event-sink.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
 import type { LocalStore } from "./store.js";
 import { WORKFLOW_REDUCE_COMPLETED_EVENT } from "./workflow-reduce-evidence.js";
 import {
@@ -66,7 +66,7 @@ export class ExecutionPlanWorkflowReduceError extends Error {
 }
 
 export class ExecutionPlanWorkflowReduceRuntime {
-  private readonly workerId = createId("workflowreduce");
+  private readonly workerId = createProcessLeaseOwnerId("workflowreduce");
 
   constructor(
     private readonly store: LocalStore,

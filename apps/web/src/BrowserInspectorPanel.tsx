@@ -17,7 +17,7 @@ export function BrowserInspectorPanel({
     activeRunId !== undefined && browserLiveViewExpected(events, activeRunId);
   return (
     <section
-      className="panel-section"
+      className="panel-section browser-inspector-panel"
       aria-labelledby="browser-inspector-title"
     >
       <div className="panel-heading">

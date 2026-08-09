@@ -114,6 +114,25 @@ describe("Research outcome benchmark", () => {
       expect(serialized).not.toContain(raw);
     }
 
+    const rawShape = structuredClone(
+      artifacts.bundle,
+    ) as ResearchBenchmarkLedgerBundle;
+    const rawShapeCapture = rawShape.researchEvents.find(
+      (event) =>
+        record(record(event.payload)?.["details"])?.["action"] === "capture",
+    )!;
+    record(record(rawShapeCapture.payload)?.["details"])!["kind"] =
+      "napier.research-source";
+    rawShape.contentSha256 = sha256(
+      canonicalJson(withoutHash(rawShape) as never),
+    );
+    expect(verifyResearchBenchmarkLedgerBundle(rawShape)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        diagnostics: expect.arrayContaining(["ledger_shape_invalid"]),
+      }),
+    );
+
     const wrongSourceKind = structuredClone(
       artifacts.bundle,
     ) as ResearchBenchmarkLedgerBundle;

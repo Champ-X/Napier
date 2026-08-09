@@ -1,9 +1,8 @@
-import { createHash } from "node:crypto";
-
 import {
   runAgentLoop,
   type AgentEvent,
   type AgentMessage,
+  type Skill,
   type AgentTool,
   type StreamFn,
 } from "@earendil-works/pi-agent-core";
@@ -21,7 +20,6 @@ import {
   type ContextCheckpointSnapshot,
   type GoalEvaluation,
   type GoalState,
-  type JsonValue,
   type ModelContextEnvelopeReceipt,
   type ModelRef,
   type RunEvent,
@@ -49,17 +47,25 @@ import {
 } from "./delegation-ledger.js";
 import type { EventSink } from "./event-sink.js";
 import {
+  agentToolGenericDetailsLedgerProjection,
   agentToolCallArgumentsLedgerProjection as toolCallArgumentsLedgerProjection,
   agentToolInputLedgerProjection as toolInputLedgerProjection,
   agentToolOutputLedgerProjection as toolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
 import { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
 import type { AgentNetworkCapabilities } from "./agent-capability-runtime.js";
-import {
-  resolveOperatorDecisionCapabilityContinuation,
-  resolveAgentCapabilityProfileFromStore,
-} from "./agent-capability-override.js";
+import { resolveOperatorDecisionCapabilityContinuation } from "./agent-capability-override.js";
 import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
+import {
+  controlMessageEventKey,
+  delay,
+  formatPlanToolGuidance,
+  OperatorDecisionPendingError,
+  sha256Text,
+  splitForStreaming,
+  summarize,
+  toJsonValue,
+} from "./agent-runtime-utils.js";
 import { resolveAgentRunModel } from "./agent-run-model.js";
 import {
   contextHistoryCharacterBudget,
@@ -89,6 +95,7 @@ import { AGENT_MESSAGE_EXPERIMENT_EXECUTION } from "./agent-message-experiment-e
 import {
   AGENT_MESSAGE_TOOL_RESULT_REPLAY,
   type FrozenToolResultReplayController,
+  validateAgentMessageToolResultReplay,
 } from "./agent-message-tool-result-replay.js";
 import { createAgentMilestoneTool } from "./agent-milestone-tool.js";
 import {
@@ -136,8 +143,16 @@ import {
   reviewIndependentModelAdvisorCandidate,
 } from "./independent-model-advisor.js";
 import { ModelRegistry } from "./models.js";
-import { createId } from "./ids.js";
+import { createId, createProcessLeaseOwnerId } from "./ids.js";
+import {
+  authorizeInternalResearchRecoveryIf,
+  resolvePromptCapabilityProfile,
+} from "./internal-research-recovery-authorization.js";
 import { createOperatorDecisionTool } from "./operator-decision-tool.js";
+import {
+  prepareAutomaticSkillRecoveryOptions,
+  prepareManualSkillRecoveryOptions,
+} from "./research-recovery-options.js";
 import { formatOperatorDecisionContinuation } from "./operator-decisions.js";
 import { createPlanTools } from "./plan-tools.js";
 import {
@@ -150,12 +165,13 @@ import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
 } from "./sandbox.js";
+import { appendSkillCatalog, formatSkillCatalog } from "./skills.js";
+import { SKILL_CONTINUATION_SNAPSHOT } from "./skill-load-replay.js";
 import {
-  appendSkillCatalog,
-  formatSkillCatalog,
-  loadWorkspaceSkills,
-  type LoadedSkillCatalog,
-} from "./skills.js";
+  assertRunConfigurationSkillContext,
+  resolveAgentRunSkillContext,
+} from "./skill-run-context.js";
+import type { ProjectSkillSnapshot } from "./project-skill-snapshot.js";
 import { LocalStore } from "./store.js";
 import { SubagentCoordinator } from "./subagents.js";
 import { createUsageAccounting } from "./token-accounting.js";
@@ -198,15 +214,11 @@ type TurnSource =
   | "advisor_correction";
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
-class OperatorDecisionPendingError extends Error {
-  constructor(readonly decisionId: string) {
-    super(`Run is waiting for operator decision ${decisionId}`);
-    this.name = "OperatorDecisionPendingError";
-  }
-}
+
 export class AgentRuntime {
   private readonly activeRuns = new Map<string, Map<string, ActiveRun>>();
   private readonly workerId = createId("worker");
+  private readonly runLeaseOwnerId = createProcessLeaseOwnerId("worker");
   private readonly capabilities: AgentCapabilityRuntime;
   readonly browserLiveViews: BrowserLiveViewService;
   readonly browserSessionControls: BrowserSessionControlService;
@@ -283,13 +295,13 @@ export class AgentRuntime {
 
     const thread = this.store.getThread(options.threadId);
     const invocationSource = requestedSource ?? "user";
-    const effectiveAgentSnapshot = resolveAgentCapabilityProfileFromStore(
-      this.store,
-      thread.agentId,
-      options.agentRevision,
-      options.capabilityPreset,
-      invocationSource,
-    );
+    const { profile: effectiveAgentSnapshot, internalResearchRecovery } =
+      resolvePromptCapabilityProfile(
+        this.store,
+        thread.agentId,
+        options,
+        invocationSource,
+      );
     const modelRef = await resolveAgentRunModel(
       this.store,
       this.modelRegistry,
@@ -300,28 +312,27 @@ export class AgentRuntime {
     const workflowInvocation = isWorkflowRunSource(invocationSource);
     const messageExperiment = options[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
     const toolResultReplay = options[AGENT_MESSAGE_TOOL_RESULT_REPLAY];
-    if (
-      (messageExperiment?.toolResultMode === "reuse_source") !==
-        Boolean(toolResultReplay) ||
-      (toolResultReplay &&
-        (toolResultReplay.sourceThreadId !==
-          messageExperiment?.sourceThreadId ||
-          toolResultReplay.sourceRunId !== messageExperiment.sourceRunId ||
-          toolResultReplay.plan.entries.length !==
-            messageExperiment.sourceReusableToolResultCount ||
-          toolResultReplay.plan.sourceResultSetSha256 !==
-            messageExperiment.sourceToolResultSetSha256))
-    ) {
-      throw new Error("Agent message experiment tool result replay is invalid");
-    }
-    const skillCatalog = await loadWorkspaceSkills(
-      this.store.workspaceRoot,
-      effectiveAgentSnapshot.enabledSkills,
-    );
+    validateAgentMessageToolResultReplay(messageExperiment, toolResultReplay);
+    const firstClassSkillLoading =
+      effectiveAgentSnapshot.enabledTools.includes("skill_load");
+    const {
+      projectSkillSnapshot,
+      skillRunContext,
+      catalogSkills,
+      skillCatalogSha256,
+      skillContext,
+    } = await resolveAgentRunSkillContext({
+      workspaceRoot: this.store.workspaceRoot,
+      enabledSkills: effectiveAgentSnapshot.enabledSkills,
+      firstClassSkillLoading,
+      continuationSnapshot: options[SKILL_CONTINUATION_SNAPSHOT],
+      signal: options.signal,
+      toolResultReplay,
+    });
     const promptVariables = resolvePromptVariables({
       systemPrompt: effectiveAgentSnapshot.systemPrompt,
       definitions: effectiveAgentSnapshot.promptVariables,
-      skillCatalogText: formatSkillCatalog(skillCatalog.skills),
+      skillCatalogText: formatSkillCatalog(catalogSkills),
       ...(messageExperiment
         ? {
             resolvedAt: new Date(
@@ -333,51 +344,58 @@ export class AgentRuntime {
     const toolLoopGuardContext = createToolLoopGuardContextReceipt(
       effectiveAgentSnapshot.toolLoopGuard,
     );
-    const leasedRun = await this.store.createLeasedRun(
-      {
-        threadId: thread.id,
-        agentId: effectiveAgentSnapshot.id,
-        model: modelRef,
-        source: invocationSource,
-        ...(options.capabilityPreset
-          ? { capabilityPreset: options.capabilityPreset }
-          : {}),
-        skillCatalogSha256: skillCatalog.fingerprint.contentSha256,
-        promptVariables: {
-          catalogSha256: promptVariables.snapshot.catalogSha256,
-          snapshotSha256: promptVariables.snapshot.contentSha256,
-          renderedSystemPromptSha256:
-            promptVariables.snapshot.renderedSystemPromptSha256,
-        },
-        ...(options.agentRevision !== undefined
-          ? { agentRevision: options.agentRevision }
-          : {}),
-        ...(options.executionMode
-          ? { executionMode: options.executionMode }
-          : {}),
-        ...(options.triggerId ? { triggerId: options.triggerId } : {}),
-        ...(options[WORKFLOW_NODE_EXECUTION]
-          ? {
-              [WORKFLOW_NODE_EXECUTION]: options[WORKFLOW_NODE_EXECUTION],
-            }
-          : {}),
-        ...(options[AGENT_MESSAGE_EXPERIMENT_EXECUTION]
-          ? {
-              [AGENT_MESSAGE_EXPERIMENT_EXECUTION]:
-                options[AGENT_MESSAGE_EXPERIMENT_EXECUTION],
-            }
-          : {}),
-        ...(options.parentRunId ? { parentRunId: options.parentRunId } : {}),
-        ...(options.operatorDecisionId
-          ? { operatorDecisionId: options.operatorDecisionId }
-          : {}),
+    const createRunInput = {
+      threadId: thread.id,
+      agentId: effectiveAgentSnapshot.id,
+      model: modelRef,
+      source: invocationSource,
+      ...(options.capabilityPreset
+        ? { capabilityPreset: options.capabilityPreset }
+        : {}),
+      skillCatalogSha256,
+      promptVariables: {
+        catalogSha256: promptVariables.snapshot.catalogSha256,
+        snapshotSha256: promptVariables.snapshot.contentSha256,
+        renderedSystemPromptSha256:
+          promptVariables.snapshot.renderedSystemPromptSha256,
       },
+      ...(options.agentRevision !== undefined
+        ? { agentRevision: options.agentRevision }
+        : {}),
+      ...(options.executionMode
+        ? { executionMode: options.executionMode }
+        : {}),
+      ...(options.triggerId ? { triggerId: options.triggerId } : {}),
+      ...(options[WORKFLOW_NODE_EXECUTION]
+        ? {
+            [WORKFLOW_NODE_EXECUTION]: options[WORKFLOW_NODE_EXECUTION],
+          }
+        : {}),
+      ...(options[AGENT_MESSAGE_EXPERIMENT_EXECUTION]
+        ? {
+            [AGENT_MESSAGE_EXPERIMENT_EXECUTION]:
+              options[AGENT_MESSAGE_EXPERIMENT_EXECUTION],
+          }
+        : {}),
+      ...(options.parentRunId ? { parentRunId: options.parentRunId } : {}),
+      ...(options.operatorDecisionId
+        ? { operatorDecisionId: options.operatorDecisionId }
+        : {}),
+    };
+    const leasedRun = await this.store.createLeasedRun(
+      authorizeInternalResearchRecoveryIf(
+        createRunInput,
+        internalResearchRecovery,
+      ),
       {
-        ownerId: this.workerId,
+        ownerId: this.runLeaseOwnerId,
         ttlMs: RUN_LEASE_TTL_MS,
       },
     );
     const run = leasedRun.run;
+    if (skillRunContext) {
+      assertRunConfigurationSkillContext(run.configuration, skillRunContext);
+    }
     const agentProfile = effectiveRunProfile(effectiveAgentSnapshot, run);
     const restrictedReadOnlyExecution =
       modernRunConfiguration(run.configuration) &&
@@ -445,15 +463,7 @@ export class AgentRuntime {
           type: "context.skills",
           category: "system",
           visibility: "debug",
-          payload: toJsonValue({
-            schemaVersion: skillCatalog.fingerprint.schemaVersion,
-            skillCatalogSha256: skillCatalog.fingerprint.contentSha256,
-            requestedSkillNames: skillCatalog.fingerprint.requestedSkillNames,
-            loadedSkillNames: skillCatalog.fingerprint.loadedSkillNames,
-            missingSkillNames: skillCatalog.fingerprint.missingSkillNames,
-            diagnosticsSha256: skillCatalog.fingerprint.diagnosticsSha256,
-            skills: skillCatalog.fingerprint.skills,
-          }),
+          payload: toJsonValue(skillContext),
         },
         options.onEvent,
       );
@@ -548,7 +558,11 @@ export class AgentRuntime {
               source,
               subagents,
               restrictedReadOnlyExecution,
-              skillCatalog,
+              firstClassSkillLoading &&
+                (invocationSource === "user" ||
+                  invocationSource === "recovery"),
+              projectSkillSnapshot,
+              catalogSkills,
               runSystemPrompt,
               promptVariables.snapshot.skillCatalogInjected,
               advisorCorrection,
@@ -905,7 +919,7 @@ export class AgentRuntime {
     const events = (await this.store.listEvents(thread.id)).filter(
       (event) => event.runId === interrupted.id,
     );
-    return this.runPrompt({
+    const recoveryOptions: RunPromptOptions = {
       threadId: thread.id,
       text: buildRunRecoveryPrompt(
         interrupted,
@@ -918,7 +932,15 @@ export class AgentRuntime {
       ...(options.model ? { model: options.model } : {}),
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
-    });
+    };
+    return this.runPrompt(
+      await prepareManualSkillRecoveryOptions(
+        this.store.workspaceRoot,
+        interrupted,
+        events,
+        recoveryOptions,
+      ),
+    );
   }
   async continueOperatorDecision(
     options: ContinueOperatorDecisionOptions,
@@ -993,31 +1015,10 @@ export class AgentRuntime {
         "Interrupted Run is not eligible for safe automatic recovery",
       );
     }
-    if (
-      interrupted.configuration.schemaVersion === 3 ||
-      interrupted.configuration.schemaVersion === 4 ||
-      interrupted.configuration.schemaVersion === 5 ||
-      interrupted.configuration.schemaVersion === 6 ||
-      interrupted.configuration.schemaVersion === 7 ||
-      interrupted.configuration.schemaVersion === 8
-    ) {
-      const currentSkillCatalog = await loadWorkspaceSkills(
-        this.store.workspaceRoot,
-        interrupted.configuration.enabledSkills,
-      );
-      if (
-        currentSkillCatalog.fingerprint.contentSha256 !==
-        interrupted.configuration.skillCatalogSha256
-      ) {
-        throw new Error(
-          "Interrupted Run Skill catalog changed since interruption",
-        );
-      }
-    }
     const events = (await this.store.listEvents(thread.id)).filter(
       (event) => event.runId === interrupted.id,
     );
-    return this.runPrompt({
+    const recoveryOptions: RunPromptOptions = {
       threadId: thread.id,
       text: buildRunRecoveryPrompt(
         interrupted,
@@ -1039,7 +1040,15 @@ export class AgentRuntime {
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       ...(options.onRunCreated ? { onRunCreated: options.onRunCreated } : {}),
-    });
+    };
+    return this.runPrompt(
+      await prepareAutomaticSkillRecoveryOptions(
+        this.store.workspaceRoot,
+        interrupted,
+        events,
+        recoveryOptions,
+      ),
+    );
   }
   stop(threadId: string): boolean {
     const activeRuns = this.activeRuns.get(threadId);
@@ -1181,7 +1190,9 @@ export class AgentRuntime {
     source: TurnSource,
     subagents: SubagentCoordinator | undefined,
     restrictedReadOnlyExecution: boolean,
-    skillCatalog: LoadedSkillCatalog,
+    skillLoadAllowed: boolean,
+    projectSkillSnapshot: ProjectSkillSnapshot | undefined,
+    catalogSkills: readonly Skill[],
     resolvedSystemPrompt: string,
     skillCatalogInjected: boolean,
     advisorCorrection: boolean,
@@ -1237,7 +1248,7 @@ export class AgentRuntime {
     }
     const skillPrompt = skillCatalogInjected
       ? resolvedSystemPrompt
-      : appendSkillCatalog(resolvedSystemPrompt, skillCatalog.skills);
+      : appendSkillCatalog(resolvedSystemPrompt, catalogSkills);
     const threadRecord = this.store.getThread(run.threadId);
     const toolLoopGuardPolicy = effectiveToolLoopGuardPolicy(profile);
     let activeToolLoopGuard = latestActiveToolLoopGuard(
@@ -1260,7 +1271,7 @@ export class AgentRuntime {
           count: memoryContext.factIds.length,
           truncated: memoryContext.truncated,
           contentSha256: memoryContext.text
-            ? createHash("sha256").update(memoryContext.text).digest("hex")
+            ? sha256Text(memoryContext.text)
             : "",
         },
       },
@@ -1270,6 +1281,8 @@ export class AgentRuntime {
       profile,
       threadId: run.threadId,
       runId: run.id,
+      ...(projectSkillSnapshot ? { projectSkillSnapshot } : {}),
+      skillLoadAllowed,
       restrictedReadOnlyExecution,
       advisorCorrection,
       browserInteractionConfirmationAllowed: run.source === "user",
@@ -2110,6 +2123,10 @@ export class AgentRuntime {
               event.args,
               toolInputLedgerProjection(event.toolName, event.args),
             ),
+            ...toolResultLifecycle.startedProjection(
+              event.toolName,
+              event.args,
+            ),
           },
         },
         onEvent,
@@ -2142,10 +2159,11 @@ export class AgentRuntime {
               ? reusedProjection
               : {
                   ...outputProjection,
-                  ...(!Object.hasOwn(outputProjection, "details") &&
-                  event.result.details !== undefined
-                    ? { details: toJsonValue(event.result.details) }
-                    : {}),
+                  ...agentToolGenericDetailsLedgerProjection(
+                    event.toolName,
+                    outputProjection,
+                    event.result.details,
+                  ),
                 }),
           },
         },
@@ -3394,93 +3412,4 @@ function modernRunConfiguration(
       configuration.schemaVersion === 7 ||
       configuration.schemaVersion === 8)
   );
-}
-
-function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
-  const toolNames = new Set(tools.map((tool) => tool.name));
-  const hasCreatePlan = toolNames.has("create_plan");
-  const hasStepUpdate = toolNames.has("update_plan_step");
-  const hasArtifactUpdate = toolNames.has("update_plan_artifact");
-  const hasReplan = toolNames.has("replan_plan");
-  if (!hasCreatePlan && !hasStepUpdate && !hasArtifactUpdate && !hasReplan) {
-    return "";
-  }
-
-  const lines = [
-    "<plan_tool_protocol>",
-    "Use durable plans for multi-step work, artifact delivery, or tasks where the operator needs progress and recovery evidence.",
-  ];
-  if (hasCreatePlan) {
-    lines.push(
-      "Create one focused plan with concrete verification criteria and declared artifacts before doing substantial delivery work.",
-    );
-  }
-  if (hasStepUpdate) {
-    lines.push(
-      "Start a step before acting on it, then complete, block, skip, or reopen it with concise evidence from the current run.",
-    );
-  }
-  if (hasArtifactUpdate) {
-    lines.push(
-      "For planned file or directory artifacts, record produced evidence after the workspace bytes exist, then verify so Napier computes the digest; do not provide your own artifact hash.",
-    );
-    lines.push(
-      "Do not claim a plan is complete until every required step is settled and every required artifact is verified or explicitly superseded.",
-    );
-  }
-  if (hasReplan) {
-    lines.push(
-      "When a step is blocked, scope changes, or an artifact is missing, use replan_plan instead of silently editing the old plan shape.",
-    );
-  }
-  lines.push("</plan_tool_protocol>");
-  return lines.join("\n");
-}
-
-function toJsonValue(value: unknown): JsonValue {
-  if (value === undefined) return null;
-  try {
-    return JSON.parse(JSON.stringify(value)) as JsonValue;
-  } catch {
-    return String(value);
-  }
-}
-
-function sha256Text(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
-}
-
-function controlMessageEventKey(timestamp: number, text: string): string {
-  return `${timestamp}:${sha256Text(text)}`;
-}
-
-function summarize(text: string, limit: number): string {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  return normalized.length <= limit
-    ? normalized
-    : `${normalized.slice(0, limit - 1)}…`;
-}
-
-function splitForStreaming(text: string, parts: number): string[] {
-  const size = Math.max(1, Math.ceil(text.length / parts));
-  const chunks: string[] = [];
-  for (let index = 0; index < text.length; index += size) {
-    chunks.push(text.slice(index, index + size));
-  }
-  return chunks;
-}
-
-async function delay(milliseconds: number, signal: AbortSignal): Promise<void> {
-  if (signal.aborted) throw new DOMException("Run aborted", "AbortError");
-  await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(resolve, milliseconds);
-    signal.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(timer);
-        reject(new DOMException("Run aborted", "AbortError"));
-      },
-      { once: true },
-    );
-  });
 }

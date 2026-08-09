@@ -61,20 +61,20 @@
       "index": 1,
       "threadId": "thread_993b67809fc24c719e30",
       "status": "passed",
-      "resultFileName": "napier-research-benchmark-result-research_aurora_contradiction_v1-9ded7844fa70d0cd.json",
-      "resultSha256": "9ded7844fa70d0cd21f299bc41a10dfa5d83258faf604682289420abbcc4683e",
-      "ledgerFileName": "napier-research-benchmark-ledger-research_aurora_contradiction_v1-9502abdc0176439a.json",
-      "ledgerSha256": "9502abdc0176439a34c325d5790ab7de9a6938b986ac01b977a371c4615fc739"
+      "resultFileName": "napier-research-benchmark-result-research_aurora_contradiction_v1-d81e8fcc60131846.json",
+      "resultSha256": "d81e8fcc60131846b94bc0ae96d8d4f909bfe5504b0430a4bd78c2ce555bddb8",
+      "ledgerFileName": "napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json",
+      "ledgerSha256": "0d6ca0dd6550d2ec21f48d7c918f1b041766cdc147277649564b1d3b0589fa3c"
     },
     {
       "index": 2,
       "threadId": "thread_7859b01b6ca64720ae7d",
       "status": "passed",
-      "resultFileName": "napier-research-benchmark-result-research_aurora_contradiction_v1-d7b39fa9c99fcc19.json",
-      "resultSha256": "d7b39fa9c99fcc1905736a90703f0c486a5d2de048778fb574e47d3625f18d9c",
-      "ledgerFileName": "napier-research-benchmark-ledger-research_aurora_contradiction_v1-6efe3b93ad3865ec.json",
-      "ledgerSha256": "6efe3b93ad3865ecdac2036652322f81cdb9ae126e4cef4e9438043e78280853"
+      "resultFileName": "napier-research-benchmark-result-research_aurora_contradiction_v1-54d3d797c09043ca.json",
+      "resultSha256": "54d3d797c09043ca734706f8edfccb684937bfe553d6247954a7cf1f4816162f",
+      "ledgerFileName": "napier-research-benchmark-ledger-research_aurora_contradiction_v1-c7ef11d6c1f07ae0.json",
+      "ledgerSha256": "c7ef11d6c1f07ae038adb76f5f808bdca6d2d9a842a21d2cc45e14c4688a69a8"
     }
   ],
-  "contentSha256": "f7a821ff7a0b0723c21453855877c5038b433b847f86bfc1f6fcf51206f1b3d0"
+  "contentSha256": "06c3c6466c0b47f9e65633d7c036d497b63c56b20be0b3dfc20493d413645e1c"
 }

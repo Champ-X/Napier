@@ -9,7 +9,7 @@ import {
 import type { AgentRuntime } from "./agent-runtime.js";
 import type { EventSink } from "./event-sink.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
 import type { LocalStore } from "./store.js";
 import {
   WORKFLOW_EVENT_SCHEMA_VERSION,
@@ -55,7 +55,7 @@ export interface ExecutionPlanWorkflowMapOutcome {
 }
 
 export class ExecutionPlanWorkflowMapRuntime {
-  private readonly workerId = createId("workflowmap");
+  private readonly workerId = createProcessLeaseOwnerId("workflowmap");
   private readonly items: ExecutionPlanWorkflowMapItemRuntime;
 
   constructor(
