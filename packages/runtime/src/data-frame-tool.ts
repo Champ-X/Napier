@@ -2,7 +2,11 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { JsonValue } from "@napier/contracts";
 import { Type } from "typebox";
 
-import { executeDataFrame, type DataFrameResult } from "./data-frame.js";
+import {
+  executeDataFrame,
+  type DataFrameRequest,
+  type DataFrameResult,
+} from "./data-frame.js";
 import {
   MAX_DATA_FRAME_AGGREGATIONS,
   MAX_DATA_FRAME_CELL_BYTES,
@@ -10,7 +14,6 @@ import {
   MAX_DATA_FRAME_GROUP_COLUMNS,
   MAX_DATA_FRAME_OPERATIONS,
   MAX_DATA_FRAME_RESULT_ROWS,
-  MAX_DATA_FRAME_SORT_COLUMNS,
 } from "./data-frame-engine.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 
@@ -21,25 +24,27 @@ const cellSchema = Type.Union([
   Type.Number(),
   Type.String({ maxLength: MAX_DATA_FRAME_CELL_BYTES }),
 ]);
-const operationSchema = Type.Union([
-  Type.Object(
-    {
-      type: Type.Literal("cast"),
-      column: columnSchema,
-      dataType: Type.Union([
+const operationSchema = Type.Object(
+  {
+    type: Type.Union([
+      Type.Literal("cast"),
+      Type.Literal("filter"),
+      Type.Literal("select"),
+      Type.Literal("sort"),
+      Type.Literal("group"),
+      Type.Literal("limit"),
+    ]),
+    column: Type.Optional(columnSchema),
+    dataType: Type.Optional(
+      Type.Union([
         Type.Literal("string"),
         Type.Literal("number"),
         Type.Literal("boolean"),
       ]),
-      outputColumn: Type.Optional(columnSchema),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      type: Type.Literal("filter"),
-      column: columnSchema,
-      operator: Type.Union([
+    ),
+    outputColumn: Type.Optional(columnSchema),
+    operator: Type.Optional(
+      Type.Union([
         Type.Literal("eq"),
         Type.Literal("ne"),
         Type.Literal("gt"),
@@ -50,75 +55,35 @@ const operationSchema = Type.Union([
         Type.Literal("is_null"),
         Type.Literal("not_null"),
       ]),
-      value: Type.Optional(cellSchema),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      type: Type.Literal("select"),
-      columns: Type.Array(columnSchema, {
+    ),
+    value: Type.Optional(cellSchema),
+    columns: Type.Optional(
+      Type.Array(Type.Unknown(), {
         minItems: 1,
         maxItems: MAX_DATA_FRAME_COLUMNS,
-        uniqueItems: true,
       }),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      type: Type.Literal("sort"),
-      columns: Type.Array(
-        Type.Object(
-          {
-            column: columnSchema,
-            direction: Type.Union([Type.Literal("asc"), Type.Literal("desc")]),
-          },
-          { additionalProperties: false },
-        ),
-        { minItems: 1, maxItems: MAX_DATA_FRAME_SORT_COLUMNS },
-      ),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      type: Type.Literal("group"),
-      by: Type.Array(columnSchema, {
+    ),
+    by: Type.Optional(
+      Type.Array(columnSchema, {
         maxItems: MAX_DATA_FRAME_GROUP_COLUMNS,
         uniqueItems: true,
       }),
-      aggregations: Type.Array(
-        Type.Object(
-          {
-            operation: Type.Union([
-              Type.Literal("count"),
-              Type.Literal("sum"),
-              Type.Literal("mean"),
-              Type.Literal("min"),
-              Type.Literal("max"),
-            ]),
-            column: Type.Optional(columnSchema),
-            as: columnSchema,
-          },
-          { additionalProperties: false },
-        ),
-        { minItems: 1, maxItems: MAX_DATA_FRAME_AGGREGATIONS },
-      ),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      type: Type.Literal("limit"),
-      count: Type.Integer({
+    ),
+    aggregations: Type.Optional(
+      Type.Array(Type.Unknown(), {
+        minItems: 1,
+        maxItems: MAX_DATA_FRAME_AGGREGATIONS,
+      }),
+    ),
+    count: Type.Optional(
+      Type.Integer({
         minimum: 1,
         maximum: MAX_DATA_FRAME_RESULT_ROWS,
       }),
-    },
-    { additionalProperties: false },
-  ),
-]);
+    ),
+  },
+  { additionalProperties: false },
+);
 
 const dataFrameSchema = Type.Object(
   {
@@ -179,10 +144,14 @@ export function createDataFrameTool(
     name: "data_frame",
     label: "DataFrame",
     description:
-      "Transform one workspace JSON, JSONL, CSV, TSV, or Markdown table with ordered cast, filter, select, sort, group, and limit operations. Run inspect_data first and pass its sourceSha256; cast delimited or Markdown cells before numeric operations. No expressions, code, I/O, network, implicit numeric coercion, or nested values; output is complete live JSON only.",
+      "Transform one workspace JSON/JSONL/CSV/TSV/Markdown table. First inspect_data; bind sourceSha256. Ordered exact fields: cast(column,dataType,outputColumn?), filter(column,operator,value?), select(columns), sort(columns) entries {column,direction asc|desc}, group(by,aggregations) entries {operation count|sum|mean|min|max,column?,as}, limit(count). Cast delimited/Markdown cells before numeric work. No expressions/code/I/O/network; no implicit numeric coercion or nested values; output is complete live JSON.",
     parameters: dataFrameSchema,
     async execute(_toolCallId, input, signal) {
-      const result = await executeDataFrame(workspaceRoot, input, signal);
+      const result = await executeDataFrame(
+        workspaceRoot,
+        input as DataFrameRequest,
+        signal,
+      );
       return {
         content: [
           {
