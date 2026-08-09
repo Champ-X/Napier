@@ -15,6 +15,7 @@ export const CORE_STATELESS_READ_TOOL_NAMES = [
   "ast_query",
   "ast_edit_preview",
   "skill_load",
+  "skill_resource",
 ] as const;
 
 export const DEFAULT_AGENT_ENABLED_TOOLS = [

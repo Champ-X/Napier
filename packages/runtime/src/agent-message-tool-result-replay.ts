@@ -408,6 +408,7 @@ function skillLoadSourceBindingIsValid(
   capsule: ToolInvocationResultCapsule,
   binding: SkillCatalogBinding | undefined,
 ): boolean {
+  if (capsule.toolName === "skill_resource") return false;
   if (capsule.toolName !== "skill_load") return true;
   if (!binding) return false;
   // Source receipts must at least bind to the source Run catalog here. Full

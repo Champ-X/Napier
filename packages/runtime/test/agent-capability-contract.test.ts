@@ -195,6 +195,7 @@ describe("default Agent Capability Contract", () => {
       );
       expect(projection.runtimeExposedTools).toContain("web_search");
       expect(projection.runtimeExposedTools).toContain("skill_load");
+      expect(projection.runtimeExposedTools).toContain("skill_resource");
       expect(projection.runtimeExposedTools).not.toContain("apply_patch");
       expect(projection.readiness).toEqual(
         expect.arrayContaining([
@@ -217,6 +218,13 @@ describe("default Agent Capability Contract", () => {
           expect.objectContaining({
             id: "tool:skill_load",
             status: "ready",
+          }),
+          expect.objectContaining({
+            id: "tool:skill_resource",
+            status: "ready",
+            configured: false,
+            allowedByPolicy: true,
+            exposed: true,
           }),
         ]),
       );

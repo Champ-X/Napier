@@ -13,6 +13,10 @@ import type {
   ProjectSkillSnapshot,
   ProjectSkillSnapshotEntry,
 } from "./project-skill-snapshot.js";
+import type {
+  ProjectSkillResourceContent,
+  ProjectSkillResourceHooks,
+} from "./project-skill-resource.js";
 
 export interface StandardSkillSnapshotEntry extends StandardSkillManifestEntryV2 {
   rawContentBase64: string;
@@ -51,6 +55,12 @@ export interface StandardSkillSnapshot {
   readonly binding: Readonly<StandardSkillCatalogBindingV2>;
   readonly skills: readonly Skill[];
   entry(name: string): Readonly<StandardSkillSnapshotEntry> | undefined;
+  loadResource(
+    name: string,
+    resourcePath: string,
+    signal?: AbortSignal,
+    hooks?: ProjectSkillResourceHooks,
+  ): Promise<ProjectSkillResourceContent>;
 }
 
 export type SkillSnapshot = ProjectSkillSnapshot | StandardSkillSnapshot;
@@ -70,6 +80,11 @@ export type StandardSkillCandidate = {
   root: StandardSkillRootDescriptor;
   entry?: ProjectSkillSnapshotEntry;
   skill?: Skill;
+  loadResource?: (
+    resourcePath: string,
+    signal?: AbortSignal,
+    hooks?: ProjectSkillResourceHooks,
+  ) => Promise<ProjectSkillResourceContent>;
   failure?: StandardSkillLoadFailureV2["failureCode"];
 };
 

@@ -82,6 +82,7 @@ export class AgentCapabilityService {
       .sort(compareCanonicalText);
     const readiness = [
       ...toolReadiness(profile.enabledTools, runtimeExposedTools),
+      ...derivedSkillToolReadiness(profile.enabledTools, runtimeExposedTools),
       ...skillInspection.readiness,
       await this.getSandboxReadiness(),
     ].sort((left, right) => compareCanonicalText(left.id, right.id));
@@ -138,6 +139,26 @@ export class AgentCapabilityService {
     this.sandboxReadiness ??= inspectSandboxReadiness(this.sandbox);
     return this.sandboxReadiness;
   }
+}
+
+function derivedSkillToolReadiness(
+  configuredTools: readonly string[],
+  runtimeExposedTools: readonly string[],
+): CapabilityReadinessRecord[] {
+  if (!configuredTools.includes("skill_load")) return [];
+  const exposed = runtimeExposedTools.includes("skill_resource");
+  return [
+    {
+      id: "tool:skill_resource",
+      status: exposed ? ("ready" as const) : ("unavailable" as const),
+      configured: false,
+      allowedByPolicy: true,
+      exposed,
+      detail: exposed
+        ? "Derived read-only resource loader is exposed with skill_load; no Profile mutation is required"
+        : "Derived Skill resource loader is unavailable because no safe Skill snapshot is active",
+    },
+  ];
 }
 
 function capabilityDriftState(

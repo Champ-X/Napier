@@ -1,0 +1,104 @@
+{
+  "kind": "napier.skill-resource-dogfood",
+  "schemaVersion": 1,
+  "result": "passed",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "credentialLocator": "DEEPSEEK_API_KEY",
+  "layout": "project_standard",
+  "relativeRoot": ".agents/skills",
+  "capabilityProjectionSha256": "2f4cb976aacda5afba82100bc0db50171d6461b4b394a88a6eab05c512b0068b",
+  "cliEntrypointSha256": "8d90047290b7540fd48675061c9809f5edb61c4712b863149fbbba63040229d4",
+  "promptSha256": "680d1678f1af61cc2103d8260494e7f6f612304931d0f5e931d053501d072590",
+  "exitCode": 0,
+  "stdoutBytes": 178226,
+  "stdoutSha256": "b7ad0ae3c3b701c4c9f4142ae180c93311669eb8d04700d85d597d45c91e255f",
+  "stderrBytes": 0,
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "frameCount": 169,
+  "runIdSha256": "45ec91ffb3c08c8be482d2f24fdcd8cb7bcc52fcd525136bd110fc3ecf71232d",
+  "skillCopies": [
+    {
+      "name": "research-brief",
+      "relativePath": ".agents/skills/research-brief/SKILL.md",
+      "contentSha256": "55d0493c540ee14f26bf3e86cf7f6ec119b4b6a8348aa739789912f57d3b8308"
+    },
+    {
+      "name": "data-analysis",
+      "relativePath": ".agents/skills/data-analysis/SKILL.md",
+      "contentSha256": "18513a1136169aa75a48dd579d20c29b43afe0e825d7397ce5a0275d49a17b33"
+    }
+  ],
+  "capability": {
+    "skillLoadConfigured": true,
+    "skillResourceConfigured": false,
+    "skillResourceExposed": true,
+    "skillResourceReadiness": "ready"
+  },
+  "binding": {
+    "catalogSha256": "2e1b2c54d28ce48f8cd84a17365a0c59b4646eb65b8462847cd594c5a76d9b1c",
+    "availabilitySetSha256": "8cfc23e0937e470c2f6ad1883ad964c0ad0c06b3427675432f235ea3325e8fcd",
+    "snapshotManifestSha256": "70bbf151f4fc77b37f0552966a20bec6fa24079a54f3129fdebfe3de8154a0db",
+    "contentSha256": "a2d9ba8c3a35cc771ac89f45d3ad9c2fafe7459f28d7e67894a9cb23aa1c2536",
+    "loadableSkillNames": [
+      "data-analysis",
+      "research-brief"
+    ],
+    "baseSnapshotResourceMarkerMatches": 0
+  },
+  "skillLoad": {
+    "selectionSha256": "9d4ed06ccae7c0dcc5fd782bf59e25a3991bca23d90264b3d9161bfcf13914ac",
+    "receiptSha256": "c59ae448f784045c9ce8cdfa8d182ebc5955f3744648b495484dd1d772276601",
+    "source": "project",
+    "rootKind": "project_standard",
+    "relativePath": ".agents/skills/research-brief/SKILL.md"
+  },
+  "resourceLoad": {
+    "receiptSha256": "0ee414f24814c8f7830669f79585beab78980ff537d1c926ad5c15d93f220922",
+    "bindingSha256": "8e8470a4cd3d51699d78a1191d9171564470fd1099f158e10a1e4e720f7cd62e",
+    "rawContentSha256": "379f339f1e3720942440b502b9449f745088f55b7050f36bdc3b330b1b0749be",
+    "requestedPathSha256": "2a51d1e421628860bd021e469fea9200bf2179b0d501a9eed5d15e6b748216c8",
+    "source": "project",
+    "rootKind": "project_standard",
+    "relativePath": ".agents/skills/research-brief/references/dogfood-quality-gate.md",
+    "virtualPath": "/project/.agents/skills/research-brief/references/dogfood-quality-gate.md",
+    "sizeBytes": 247
+  },
+  "application": {
+    "assistantTextSha256": "024973538ac1c5a186be3b07386906bcf120121dc37fbf7ab656f218e76c2bba",
+    "markerSha256": "7609ab0fc121a9dbaae35f8b591193356e493a98e066e0ce3b0a00b2404275e5",
+    "markerMatched": true,
+    "durableResourceBodyCanaryMatches": 0
+  },
+  "toolSequence": [
+    {
+      "seq": 44,
+      "status": "completed",
+      "toolName": "skill_load",
+      "operation": "skill.load"
+    },
+    {
+      "seq": 74,
+      "status": "completed",
+      "toolName": "skill_resource",
+      "operation": "skill.resource.load"
+    }
+  ],
+  "replay": {
+    "status": "valid",
+    "contentSha256": "e92025ba6f5e3e303067fab29fbf52e5af49e0bec41c65cef0582a9a2c989a52",
+    "eventStreamSha256": "b7b39f5c3595e4116c0b6d4524a05ab513cf7e01efac94b047480faf25b05347",
+    "eventCount": 167,
+    "runCount": 1
+  },
+  "profileBeforeSha256": "b440f3cbe0ae0e7d59e9659da149543e45d413b95e67b412b53830c4d2ba5eb2",
+  "profileAfterSha256": "b440f3cbe0ae0e7d59e9659da149543e45d413b95e67b412b53830c4d2ba5eb2",
+  "revisionCountBefore": 1,
+  "revisionCountAfter": 1,
+  "credentialCanaryMatches": 0,
+  "rawJsonlRetained": false,
+  "resourceBodyRetained": false,
+  "privateCapsulesRetained": false,
+  "taskRootRemoved": true,
+  "contentSha256": "6f5accfa21320ed80ce1d052f85445f6450d2a874ed749550251acf10af92e52"
+}

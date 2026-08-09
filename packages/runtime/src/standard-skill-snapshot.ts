@@ -160,6 +160,8 @@ function candidateMap(
           root: scan.root,
           entry: { ...entry },
           skill,
+          loadResource: (resourcePath, signal, hooks) =>
+            scan.snapshot.loadResource(skillName, resourcePath, signal, hooks),
         });
         continue;
       }

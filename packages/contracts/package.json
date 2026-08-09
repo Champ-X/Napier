@@ -51,6 +51,10 @@
     "./skill-load-standard": {
       "types": "./dist/skill-load-standard.d.ts",
       "import": "./dist/skill-load-standard.js"
+    },
+    "./skill-resource": {
+      "types": "./dist/skill-resource.d.ts",
+      "import": "./dist/skill-resource.js"
     }
   },
   "files": [

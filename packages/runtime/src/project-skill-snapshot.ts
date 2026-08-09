@@ -33,6 +33,7 @@ import {
 } from "@napier/contracts/skill-load";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { loadProjectSkillResource, type ProjectSkillResourceContent, type ProjectSkillResourceHooks } from "./project-skill-resource.js";
 
 const NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const MAX_FILE_BYTES = 128 * 1024;
@@ -44,7 +45,7 @@ const TRUST_POLICY = {
   authorization: "same_canonical_active_user_selected_project",
   discovery: "configured_direct_skill_md_only",
   filesystem: "platform_probed_fd_or_darwin_held_parent_identity_checks",
-  resources: "denied",
+  resources: "on_demand_text_only_nofollow_64k",
   shell: "denied",
   writes: "denied",
   maxConfiguredRequests: 64,
@@ -100,6 +101,7 @@ export interface ProjectSkillSnapshot {
   readonly binding: Readonly<SkillCatalogBindingV1>;
   readonly skills: readonly Skill[];
   entry(name: string): Readonly<ProjectSkillSnapshotEntry> | undefined;
+  loadResource(name: string, resourcePath: string, signal?: AbortSignal, hooks?: ProjectSkillResourceHooks): Promise<ProjectSkillResourceContent>;
 }
 
 export class ProjectSkillSnapshotError extends Error {
@@ -265,7 +267,7 @@ export async function buildProjectSkillSnapshot(
   await assertAnchorCurrent(anchor, signal);
   check(signal);
   const byName = new Map(entries.map((entry) => [entry.canonicalName, entry]));
-  return deepFreeze({ content, manifest, binding, skills, entry: (skillName: string) => byName.get(skillName) });
+  return deepFreeze({ content, manifest, binding, skills, entry: (skillName: string) => byName.get(skillName), loadResource: (skillName: string, resourcePath: string, resourceSignal?: AbortSignal, resourceHooks?: ProjectSkillResourceHooks) => { const entry=byName.get(skillName); if(!entry) throw new Error("Skill resource request is not snapshot-bound"); return loadProjectSkillResource(canonicalWorkspace,entry,resourcePath,resourceSignal,resourceHooks); } });
   } finally { await Promise.all([anchor.handle.close(), anchor.workspaceHandle.close()]); }
 }
 

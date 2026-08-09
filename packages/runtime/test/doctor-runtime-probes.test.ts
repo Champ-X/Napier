@@ -58,6 +58,8 @@ describe("Skill loader Doctor probe", () => {
             present: 1,
             admitted: 1,
             productionCall: true,
+            resourceToolConstructed: true,
+            resourceProductionCall: false,
             catalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
           }),
         }),

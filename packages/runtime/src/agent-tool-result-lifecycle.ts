@@ -10,6 +10,7 @@ import type {
   RunRecord,
   ToolInvocationCapsuleReceipt,
 } from "@napier/contracts";
+import { isSkillResourceLoadFailureV1 } from "@napier/contracts/skill-resource";
 
 import type { FrozenToolResultReplayController } from "./agent-message-tool-result-replay.js";
 import { captureToolInvocation } from "./tool-invocation-capture.js";
@@ -125,7 +126,9 @@ export class AgentToolResultLifecycle {
       });
       return reused.patch;
     }
-    const typedSkillFailure = isSkillLoadFailure(input.result.details);
+    const typedSkillFailure =
+      isSkillLoadFailure(input.result.details) ||
+      isSkillResourceLoadFailureV1(input.result.details);
     const effectiveIsError = input.isError || typedSkillFailure;
     await captureToolInvocationResult(
       this.options.store,

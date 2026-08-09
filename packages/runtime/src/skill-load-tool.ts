@@ -13,6 +13,10 @@ import {
   type SkillLoadSelection,
 } from "./skill-load-contracts.js";
 import type { SkillSnapshot } from "./standard-skill-snapshot.js";
+import {
+  createSkillAccessState,
+  type SkillAccessState,
+} from "./skill-access-state.js";
 
 const NAME_PATTERN = "^[a-z0-9]+(?:-[a-z0-9]+)*$";
 const NAME = new RegExp(NAME_PATTERN, "u");
@@ -28,6 +32,7 @@ export interface SkillLoadAgentTool extends AgentTool<any> {
 
 export function createSkillLoadTool(
   snapshot: SkillSnapshot,
+  access: SkillAccessState = createSkillAccessState(),
 ): SkillLoadAgentTool {
   const tool: SkillLoadAgentTool = {
     name: "skill_load",
@@ -137,6 +142,7 @@ export function createSkillLoadTool(
           );
         }
         check(signal);
+        access.markSkillLoaded(requested);
         return {
           content: [{ type: "text", text: entry.formattedInvocation }],
           details: receipt,

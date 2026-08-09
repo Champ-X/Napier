@@ -20,12 +20,20 @@ import {
   skillLoadInputLedgerProjection,
   skillLoadOutputLedgerProjection,
 } from "./skill-load-tool.js";
+import {
+  skillResourceArgumentsLedgerProjection,
+  skillResourceInputLedgerProjection,
+  skillResourceOutputLedgerProjection,
+} from "./skill-resource-tool.js";
 
 export function specializedToolCallProjection(
   toolName: string,
   args: unknown,
 ): JsonValue | undefined {
-  if (toolName === "skill_load") return skillLoadArgumentsLedgerProjection(args);
+  if (toolName === "skill_load")
+    return skillLoadArgumentsLedgerProjection(args);
+  if (toolName === "skill_resource")
+    return skillResourceArgumentsLedgerProjection(args);
   return (
     agentDataToolCallProjection(toolName, args) ??
     agentProcessToolCallProjection(toolName, args) ??
@@ -38,6 +46,8 @@ export function specializedToolInputProjection(
   args: unknown,
 ): Record<string, JsonValue> | undefined {
   if (toolName === "skill_load") return skillLoadInputLedgerProjection(args);
+  if (toolName === "skill_resource")
+    return skillResourceInputLedgerProjection(args);
   return (
     agentDataToolInputProjection(toolName, args) ??
     agentProcessToolInputProjection(toolName, args) ??
@@ -55,6 +65,12 @@ export function specializedToolOutputProjection(
       string,
       JsonValue
     >;
+  }
+  if (toolName === "skill_resource") {
+    return skillResourceOutputLedgerProjection(
+      output,
+      result,
+    ) as unknown as Record<string, JsonValue>;
   }
   return (
     agentDataToolOutputProjection(toolName, output, result) ??

@@ -10,6 +10,11 @@ import {
   isStandardSkillLoadReceiptV2,
   isStandardSkillLoadSelectionV2,
 } from "@napier/contracts/skill-load-standard";
+import {
+  isSkillResourceLoadFailureV1,
+  isSkillResourceLoadReceiptV1,
+  type SkillResourceFailureCode,
+} from "@napier/contracts/skill-resource";
 
 export interface SkillLoadToolEventTraceView {
   skillLoadName?: string;
@@ -25,6 +30,40 @@ export interface SkillLoadToolEventTraceView {
   skillLoadRawContentSha256?: string;
   skillLoadInvocationSha256?: string;
   skillLoadRelativePathSha256?: string;
+}
+
+export interface SkillResourceToolEventTraceView {
+  skillResourceName?: string;
+  skillResourcePath?: string;
+  skillResourceState?: "loaded" | "failed";
+  skillResourceFailureCode?: SkillResourceFailureCode;
+  skillResourceSource?: "project" | "user" | "composite";
+  skillResourceRootKind?: StandardSkillRootKind;
+  skillResourceCandidateRootKinds?: StandardSkillRootKind[];
+  skillResourceCatalogSha256?: string;
+  skillResourceSnapshotManifestSha256?: string;
+  skillResourceReceiptSha256?: string;
+  skillResourceFailureSha256?: string;
+  skillResourceRawContentSha256?: string;
+  skillResourceBindingSha256?: string;
+  skillResourceRequestedPathSha256?: string;
+}
+
+export interface SkillToolEventTraceView
+  extends SkillLoadToolEventTraceView, SkillResourceToolEventTraceView {}
+
+export function skillToolEventEvidence(
+  toolName: string,
+  value: unknown,
+): SkillToolEventTraceView {
+  return {
+    ...(toolName === "skill_load" ? skillLoadEventEvidence(value) : {}),
+    ...(toolName === "skill_resource" ? skillResourceEventEvidence(value) : {}),
+  };
+}
+
+export function skillToolSummaryParts(view: SkillToolEventTraceView): string[] {
+  return [...skillLoadSummaryParts(view), ...skillResourceSummaryParts(view)];
 }
 
 export function skillLoadEventEvidence(
@@ -127,6 +166,74 @@ export function skillLoadSummaryParts(
     ...hash("skill-failure", view.skillLoadFailureSha256),
     ...hash("skill-content", view.skillLoadRawContentSha256),
     ...hash("skill-invocation", view.skillLoadInvocationSha256),
+  ];
+}
+
+export function skillResourceEventEvidence(
+  value: unknown,
+): SkillResourceToolEventTraceView | undefined {
+  if (isSkillResourceLoadReceiptV1(value)) {
+    return {
+      skillResourceName: value.skillName,
+      skillResourcePath: value.resourcePath,
+      skillResourceState: "loaded",
+      skillResourceSource: value.source,
+      skillResourceRootKind: value.rootKind,
+      skillResourceCatalogSha256: value.catalogSha256,
+      skillResourceSnapshotManifestSha256: value.snapshotManifestSha256,
+      skillResourceReceiptSha256: value.contentSha256,
+      skillResourceRawContentSha256: value.rawContentSha256,
+      skillResourceBindingSha256: value.resourceBindingSha256,
+      skillResourceRequestedPathSha256: value.requestedResourcePathSha256,
+    };
+  }
+  if (isSkillResourceLoadFailureV1(value)) {
+    return {
+      ...(value.skillName ? { skillResourceName: value.skillName } : {}),
+      ...(value.resourcePath ? { skillResourcePath: value.resourcePath } : {}),
+      skillResourceState: "failed",
+      skillResourceFailureCode: value.failureCode,
+      skillResourceSource: "composite",
+      skillResourceCandidateRootKinds: value.candidateRootKinds,
+      skillResourceCatalogSha256: value.catalogSha256,
+      skillResourceSnapshotManifestSha256: value.snapshotManifestSha256,
+      skillResourceFailureSha256: value.contentSha256,
+    };
+  }
+  return undefined;
+}
+
+export function skillResourceSummaryParts(
+  view: SkillResourceToolEventTraceView,
+): string[] {
+  if (!view.skillResourceState) return [];
+  return [
+    `skill-resource ${view.skillResourceName ?? "unknown"}`,
+    `resource-state ${view.skillResourceState}`,
+    ...(view.skillResourcePath
+      ? [`resource-path ${view.skillResourcePath}`]
+      : []),
+    ...(view.skillResourceFailureCode
+      ? [`resource-failure-code ${view.skillResourceFailureCode}`]
+      : []),
+    ...(view.skillResourceSource
+      ? [`resource-source ${view.skillResourceSource}`]
+      : []),
+    ...(view.skillResourceRootKind
+      ? [`resource-root ${view.skillResourceRootKind}`]
+      : []),
+    ...(view.skillResourceCandidateRootKinds?.length
+      ? [
+          `resource-candidates ${view.skillResourceCandidateRootKinds.join(",")}`,
+        ]
+      : []),
+    ...hash("resource-catalog", view.skillResourceCatalogSha256),
+    ...hash("resource-manifest", view.skillResourceSnapshotManifestSha256),
+    ...hash("resource-receipt", view.skillResourceReceiptSha256),
+    ...hash("resource-failure", view.skillResourceFailureSha256),
+    ...hash("resource-content", view.skillResourceRawContentSha256),
+    ...hash("resource-binding", view.skillResourceBindingSha256),
+    ...hash("resource-path", view.skillResourceRequestedPathSha256),
   ];
 }
 

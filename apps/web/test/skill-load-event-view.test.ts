@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest";
 import {
   skillLoadEventEvidence,
   skillLoadSummaryParts,
+  skillResourceEventEvidence,
+  skillResourceSummaryParts,
 } from "../src/skill-load-event-view";
 import {
   toolEventTraceSummary,
@@ -162,22 +164,109 @@ describe("Skill load Trace projection", () => {
       "skill-candidates project_standard,user_standard",
     );
   });
+
+  it("renders resource provenance without projecting private resource content", () => {
+    const bindingInput = {
+      skillName: "user-brief",
+      resourcePath: "references/checklist.md",
+      rawContentSha256: "4".repeat(64),
+      catalogSha256: "1".repeat(64),
+      snapshotManifestSha256: "3".repeat(64),
+    };
+    const loaded = withHash({
+      kind: "napier.skill-resource-load-receipt",
+      schemaVersion: 1,
+      operation: "skill.resource.load",
+      agentToolName: "skill_resource",
+      state: "loaded",
+      skillName: "user-brief",
+      requestedNameSha256: hash("user-brief"),
+      source: "user",
+      rootKind: "user_standard",
+      resourcePath: "references/checklist.md",
+      requestedResourcePathSha256: hash("references/checklist.md"),
+      relativePath: ".agents/skills/user-brief/references/checklist.md",
+      virtualPath: "/user/.agents/skills/user-brief/references/checklist.md",
+      sizeBytes: 81,
+      lineCount: 4,
+      rawContentSha256: "4".repeat(64),
+      catalogSha256: "1".repeat(64),
+      snapshotManifestSha256: "3".repeat(64),
+      resourceBindingSha256: hash(canonical(bindingInput)),
+    });
+    const event = toolEvent(loaded, "skill_resource");
+    const view = toolEventTraceView(event);
+
+    expect(skillResourceEventEvidence(loaded)).toEqual(
+      expect.objectContaining({
+        skillResourceName: "user-brief",
+        skillResourcePath: "references/checklist.md",
+        skillResourceState: "loaded",
+        skillResourceSource: "user",
+        skillResourceRootKind: "user_standard",
+        skillResourceReceiptSha256: loaded.contentSha256,
+      }),
+    );
+    expect(skillResourceSummaryParts(view!)).toContain(
+      "resource-root user_standard",
+    );
+    expect(toolEventTraceSummary(event)).toContain(
+      `resource-binding ${loaded.resourceBindingSha256.slice(0, 12)}`,
+    );
+    expect(JSON.stringify(view)).not.toContain("PRIVATE_RESOURCE_BODY");
+    expect(JSON.stringify(view)).not.toContain("/Users/");
+
+    const failure = withHash({
+      kind: "napier.skill-resource-load-failure",
+      schemaVersion: 1,
+      operation: "skill.resource.load",
+      agentToolName: "skill_resource",
+      source: "composite",
+      state: "failed",
+      failureCode: "resource_untrusted",
+      requestedNameSha256: hash("user-brief"),
+      requestedResourcePathSha256: hash("references/checklist.md"),
+      skillName: "user-brief",
+      resourcePath: "references/checklist.md",
+      candidateRootKinds: ["user_standard"],
+      catalogSha256: "1".repeat(64),
+      snapshotManifestSha256: "3".repeat(64),
+      diagnosticSha256: "5".repeat(64),
+    });
+    const failureView = toolEventTraceView(
+      toolEvent(failure, "skill_resource", "failed"),
+    );
+    expect(failureView).toEqual(
+      expect.objectContaining({
+        skillResourceState: "failed",
+        skillResourceFailureCode: "resource_untrusted",
+        skillResourceCandidateRootKinds: ["user_standard"],
+      }),
+    );
+    expect(skillResourceSummaryParts(failureView!)).toContain(
+      "resource-failure-code resource_untrusted",
+    );
+  });
 });
 
-function toolEvent(details: JsonValue): RunEvent {
+function toolEvent(
+  details: JsonValue,
+  toolName = "skill_load",
+  state: "completed" | "failed" = "completed",
+): RunEvent {
   return {
     id: "event_skill_load_12345678",
     threadId: "thread_skillload12345678",
     runId: "run_skill_load_12345678",
     seq: 5,
-    type: "tool.completed",
+    type: state === "completed" ? "tool.completed" : "tool.failed",
     category: "tool",
     visibility: "user",
     createdAt: "2026-08-07T00:00:00.000Z",
     payload: {
       callId: "call_skill_load_12345678",
-      toolName: "skill_load",
-      status: "completed",
+      toolName,
+      status: state,
       effect: "read",
       details,
       output: "PRIVATE_SKILL_BODY",

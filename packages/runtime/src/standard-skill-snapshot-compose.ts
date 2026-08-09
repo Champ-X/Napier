@@ -13,6 +13,10 @@ import {
   isStandardSkillLoadFailureV2,
   isStandardSkillSnapshotManifestV2,
 } from "@napier/contracts/skill-load-standard";
+import {
+  skillResourceRelativePath,
+  skillResourceVirtualPath,
+} from "@napier/contracts/skill-resource";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -31,7 +35,7 @@ const TRUST_POLICY = {
   conflicts: "fail_closed_no_implicit_precedence",
   userRoot: "local_os_user_home_agents_skills",
   rootScanner: "project_skill_snapshot_v1",
-  resources: "denied",
+  resources: "on_demand_text_only_nofollow_64k",
   shell: "denied",
   writes: "denied",
   maxConfiguredRequests: 64,
@@ -84,7 +88,7 @@ export function composeStandardSkillSnapshot(
       continue;
     }
     const candidate = candidates[0]!;
-    if (!candidate.entry || !candidate.skill) {
+    if (!candidate.entry || !candidate.skill || !candidate.loadResource) {
       resolutions.set(
         position,
         unavailable(
@@ -129,6 +133,9 @@ function finalizeComposite(
   );
   const entries = converted.map((item) => item.entry);
   const skills = converted.map((item) => item.skill);
+  const resourceLoaders = new Map(
+    converted.map((item) => [item.entry.canonicalName, item.loadResource]),
+  );
   const observedRootKinds = scans.map((scan) => scan.root.kind).sort(compare);
   const rootIdentities = scans.map((scan) => ({
     rootKind: scan.root.kind,
@@ -184,6 +191,7 @@ function finalizeComposite(
     availabilitySetSha256,
     entries,
     skills,
+    resourceLoaders,
     unavailableSkills,
     unavailableFailureContentSha256s,
   });
@@ -263,6 +271,10 @@ function createCompositeObjects(input: {
   availabilitySetSha256: string;
   entries: StandardSkillSnapshotEntry[];
   skills: Skill[];
+  resourceLoaders: ReadonlyMap<
+    string,
+    NonNullable<StandardSkillCandidate["loadResource"]>
+  >;
   unavailableSkills: StandardSkillLoadFailureV2[];
   unavailableFailureContentSha256s: string[];
 }): StandardSkillSnapshot {
@@ -343,6 +355,13 @@ function createCompositeObjects(input: {
     binding,
     skills: input.skills,
     entry: (skillName: string) => byName.get(skillName),
+    loadResource: (skillName, resourcePath, signal, hooks) => {
+      const loader = input.resourceLoaders.get(skillName);
+      if (!loader) {
+        throw new Error("Skill resource request is not snapshot-bound");
+      }
+      return loader(resourcePath, signal, hooks);
+    },
   });
 }
 
@@ -366,7 +385,25 @@ function convertCandidate(candidate: StandardSkillCandidate) {
     invocationSha256: sha256(formattedInvocation),
     formattedInvocation,
   };
-  return { entry, skill };
+  const loadResource: NonNullable<
+    StandardSkillCandidate["loadResource"]
+  > = async (resourcePath, signal, hooks) => {
+    const resource = await candidate.loadResource!(resourcePath, signal, hooks);
+    return {
+      ...resource,
+      relativePath: skillResourceRelativePath(
+        rootKind,
+        original.canonicalName,
+        resourcePath,
+      ),
+      virtualPath: skillResourceVirtualPath(
+        rootKind,
+        original.canonicalName,
+        resourcePath,
+      ),
+    };
+  };
+  return { entry, skill, loadResource };
 }
 
 function publicEntry(

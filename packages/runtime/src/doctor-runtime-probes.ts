@@ -5,6 +5,8 @@ import { createRequire } from "node:module";
 import { resolveCommandRuntimeBinding } from "./command-runtime.js";
 import { isSkillLoadReceipt } from "./skill-load-contracts.js";
 import { createSkillLoadTool } from "./skill-load-tool.js";
+import { createSkillAccessState } from "./skill-access-state.js";
+import { createSkillResourceTool } from "./skill-resource-tool.js";
 import {
   buildStandardSkillSnapshot,
   discoverStandardSkillNames,
@@ -127,7 +129,8 @@ export async function probeSkillsRuntime(
     );
     const name = snapshot.binding.loadableSkillNames[0];
     if (!name) throw new Error("No Skill passed snapshot admission");
-    const result = await createSkillLoadTool(snapshot).execute(
+    const access = createSkillAccessState();
+    const result = await createSkillLoadTool(snapshot, access).execute(
       "doctor_skill_load",
       { name },
       new AbortController().signal,
@@ -135,14 +138,20 @@ export async function probeSkillsRuntime(
     if (!isSkillLoadReceipt(result.details)) {
       throw new Error("Production Skill load did not return a valid receipt");
     }
+    const resourceTool = createSkillResourceTool(snapshot, access);
+    if (resourceTool.name !== "skill_resource") {
+      throw new Error("Derived Skill resource tool was not constructed");
+    }
     return {
       status: "ready",
       code: "skills_ready",
-      message: `Production Skill loader loaded 1 of ${String(snapshot.binding.loadableSkillNames.length)} admitted project or user Skills`,
+      message: `Production Skill loader loaded 1 of ${String(snapshot.binding.loadableSkillNames.length)} admitted project or user Skills; the derived resource tool is available and reads content only when referenced`,
       evidence: {
         present: present.length,
         admitted: snapshot.binding.loadableSkillNames.length,
         productionCall: true,
+        resourceToolConstructed: true,
+        resourceProductionCall: false,
         catalogSha256: snapshot.binding.catalogSha256,
         source: result.details.source,
         ...(result.details.schemaVersion === 2

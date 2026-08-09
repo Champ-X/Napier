@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "11bf9f8a1045b673ee392bbc4e4f815e36b3b7cffb5249c026272d541db9cc52",
+      "stdoutSha256": "403a978132f7381f5c360ddfe36a056bc5be86cfddd35fd02b02c9e67e005b08",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "1e000a730d4b89e1d0ca91a72252c62425d7dabbc5fe863fb04dea03895787b8",
-      "receiptSha256": "a883f868a74deb8345c27e70a021acb920cd086538734c1d23ada29baa0c3a1a"
+      "evidenceSha256": "9732f75784763bf1ea82e68b586d5998855cf26abf89858e5fa0e595e53a7607",
+      "receiptSha256": "722f37c6f857b82d9d53c4dcaeef62ed57da009506a99c6fe5cb23d283c6a3bb"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "203fd29230a66a2b626542f58231b64447d7f8e1c056d4e3fb229ef0db6607cd",
+      "stdoutSha256": "391b0bfa1448dad57770bbbc3f41842f88d3c0fb63cb3e5097413465aea67ce8",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "b0044620b91dcf7296aee705919c7085304d7d1196be91b1541e2c27184874cb",
-      "receiptSha256": "c8eb376653169c5cf1df2aa7d37ac82f1cc697cfe5c8725616741aab4442a78e"
+      "evidenceSha256": "5b6feea215bde3194e2204ad72df7de011715e3baa6e75bb36ca4de51ca77120",
+      "receiptSha256": "c943d24cd25e343254674302d96454d356122900e3b7f20a32b6d9e4f8071313"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -642,6 +642,7 @@
         "docs/artifacts/skill-load-fast-core-stage7/real-provider-cli.json",
         "docs/artifacts/skill-load-fast-core-stage7/security-cleanup.json",
         "docs/artifacts/skill-load-standard-stage1/dogfood.json",
+        "docs/artifacts/skill-resource-stage0/dogfood.json",
         "docs/artifacts/web-dist-0.1.0.sha256",
         "docs/artifacts/web-dist-audit-0.1.0.json",
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json",
@@ -657,10 +658,12 @@
         "packages/contracts/src/skill-load-standard.ts",
         "packages/contracts/src/skill-load-validation.ts",
         "packages/contracts/src/skill-load.ts",
+        "packages/contracts/src/skill-resource.ts",
         "packages/contracts/test/agent-capability-contract.test.ts",
         "packages/contracts/test/research-source-evidence.test.ts",
         "packages/contracts/test/skill-load-standard.test.ts",
         "packages/contracts/test/skill-load.test.ts",
+        "packages/contracts/test/skill-resource.test.ts",
         "packages/runtime/package.json",
         "packages/runtime/src/agent-capability-override.ts",
         "packages/runtime/src/agent-capability-runtime.ts",
@@ -706,6 +709,7 @@
         "packages/runtime/src/plan-tools.ts",
         "packages/runtime/src/plans.ts",
         "packages/runtime/src/policy.ts",
+        "packages/runtime/src/project-skill-resource.ts",
         "packages/runtime/src/project-skill-snapshot.ts",
         "packages/runtime/src/prompt-evidence-otel.ts",
         "packages/runtime/src/prompt-invariant-core.ts",
@@ -718,9 +722,11 @@
         "packages/runtime/src/sandbox-container.ts",
         "packages/runtime/src/sandbox-host-direct.ts",
         "packages/runtime/src/sandbox.ts",
+        "packages/runtime/src/skill-access-state.ts",
         "packages/runtime/src/skill-load-contracts.ts",
         "packages/runtime/src/skill-load-replay.ts",
         "packages/runtime/src/skill-load-tool.ts",
+        "packages/runtime/src/skill-resource-tool.ts",
         "packages/runtime/src/skill-run-context.ts",
         "packages/runtime/src/source-continuity-guidance.ts",
         "packages/runtime/src/sqlite-query-tool.ts",
@@ -786,6 +792,7 @@
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts",
         "packages/runtime/test/plans.test.ts",
         "packages/runtime/test/policy.test.ts",
+        "packages/runtime/test/project-skill-resource.test.ts",
         "packages/runtime/test/project-skill-snapshot.test.ts",
         "packages/runtime/test/prompt-invariant-core-runtime.test.ts",
         "packages/runtime/test/prompt-invariant-core.test.ts",
@@ -816,6 +823,7 @@
         "packages/runtime/test/sandbox-host-direct.test.ts",
         "packages/runtime/test/sandbox.test.ts",
         "packages/runtime/test/skill-load-recovery-replay.test.ts",
+        "packages/runtime/test/skill-resource-tool.test.ts",
         "packages/runtime/test/source-continuity-preparation.test.ts",
         "packages/runtime/test/standard-skill-load-run.test.ts",
         "packages/runtime/test/standard-skill-snapshot.test.ts",
@@ -842,6 +850,8 @@
         "scripts/run-skill-load-fast-core-evidence.mjs",
         "scripts/run-skill-load-fast-core-evidence.test.mjs",
         "scripts/run-skill-load-final-check.mjs",
+        "scripts/run-skill-resource-dogfood.mjs",
+        "scripts/run-skill-resource-dogfood.test.mjs",
         "scripts/run-standard-skill-directory-dogfood.mjs",
         "scripts/run-standard-skill-directory-dogfood.test.mjs",
         "scripts/run-web-ui-e2e.mjs",
@@ -1178,8 +1188,8 @@
           "lines": 388
         },
         "apps/web/src/skill-load-event-view.ts": {
-          "sha256": "0a273130246f97d3f139be08a473b8af3eb7faf025a9ffe680902aa4c3e25af8",
-          "lines": 135
+          "sha256": "7f7972504bb121f0b051b055094853821b86e49546bc6913acc9c4c017b82fb9",
+          "lines": 242
         },
         "apps/web/src/styles.css": {
           "sha256": "17614d79f4148fce63177d5aeb65039403d1c4a96b489d0084aa827675813772",
@@ -1194,8 +1204,8 @@
           "lines": 32
         },
         "apps/web/src/tool-event-view.ts": {
-          "sha256": "4227c4c62e7b2f4b4b4dbcc2b7a8d110e7f1b41bdae7186b2696cba14a6dd382",
-          "lines": 681
+          "sha256": "7d5efd95e1d88ba25cf4a84885141faae9fc0bda26b6157cd9e185528f9c56e8",
+          "lines": 678
         },
         "apps/web/src/tool-result-reuse-event-view.ts": {
           "sha256": "575e0607535c720a0f290de8dad8653261c109ffb6946e74bee1cf2c59fdc6cf",
@@ -1354,8 +1364,8 @@
           "lines": 23
         },
         "apps/web/test/skill-load-event-view.test.ts": {
-          "sha256": "2c2784abf230f4ac54d895067ef4076097aae1f393099560c328d1668f720ce0",
-          "lines": 186
+          "sha256": "b8a8be8b7424700219608cde23d4d8adb3bd216add8a14929a4743de43c3e4b1",
+          "lines": 275
         },
         "apps/web/test/task-completion-summary.test.ts": {
           "sha256": "db056e14c50f2eb3d66336248b40a0f38edbbdb7ca3649f5a5a280a63536a21c",
@@ -1374,7 +1384,7 @@
           "lines": 37
         },
         "docs/architecture-budget.json": {
-          "sha256": "d0ba3e70c665454a1436eb5a521e681e9f9241280c77c5b2441bd084ab1c5120",
+          "sha256": "b5dc0769724c7d4c0e47e37bec6f6e1cd495eab492b63ca7a49bf4ad7b664201",
           "lines": 259
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
@@ -1438,7 +1448,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "45c2a6e0f8c64b0a2370637152501245de11618c5e7cfe12bfcad179572e0ff8",
+          "sha256": "35f54a8130924c4d8e56dd1478a0e764093b7ef6d8469f7b3c6ae9c45f523b42",
           "lines": 871
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -1450,11 +1460,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "1e000a730d4b89e1d0ca91a72252c62425d7dabbc5fe863fb04dea03895787b8",
+          "sha256": "9732f75784763bf1ea82e68b586d5998855cf26abf89858e5fa0e595e53a7607",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "b0044620b91dcf7296aee705919c7085304d7d1196be91b1541e2c27184874cb",
+          "sha256": "5b6feea215bde3194e2204ad72df7de011715e3baa6e75bb36ca4de51ca77120",
           "lines": 69
         },
         "docs/artifacts/skill-load-fast-core-stage7/README.md": {
@@ -1469,12 +1479,16 @@
           "sha256": "21c36ac9d67fcf0e0baa7c358b52bbd9bbd8f35508f576e7a7643a771184a496",
           "lines": 111
         },
+        "docs/artifacts/skill-resource-stage0/dogfood.json": {
+          "sha256": "b4c213a6a79833c510f9d160659f5e54c50cf1e6a63e7ea77df257f2a2ee99c2",
+          "lines": 104
+        },
         "docs/artifacts/web-dist-0.1.0.sha256": {
-          "sha256": "41e620a46c637d6f5ec0b62d46f819e57d43aee196997246e9da4cf4311fcfb9",
+          "sha256": "2eec4e7bf718be1de2a710a34c50e12283c5247d59b1ccede635be84848b2e38",
           "lines": 131
         },
         "docs/artifacts/web-dist-audit-0.1.0.json": {
-          "sha256": "5fb5abf6f678fd8648db4c98dcf9d730198bf0ecb4c53175f23997ea082576f7",
+          "sha256": "d8c9883ab900967e5d5a85b24c83254cf6af7b7da24ca94d8f126d9a648fb809",
           "lines": 18
         },
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json": {
@@ -1486,8 +1500,8 @@
           "lines": 97
         },
         "packages/contracts/package.json": {
-          "sha256": "5d4c4cb605ef044640cf56efd1dadae35509066c57e827c8670b7d67ccb71c37",
-          "lines": 64
+          "sha256": "c7c91f8734bffa5ec82d6ea656ca142815ea9c98cca0d653be7a0d896e22d53b",
+          "lines": 68
         },
         "packages/contracts/src/agent-capabilities.ts": {
           "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -1529,6 +1543,10 @@
           "sha256": "749e57694dcfc33f9b1bbc9e357a1537c9a07f534e0eae01fc0dc3b7805b5779",
           "lines": 457
         },
+        "packages/contracts/src/skill-resource.ts": {
+          "sha256": "13a7602714e820957fdf182f7f05ba509bad94d0ad3fcd77e6116eca05f07e21",
+          "lines": 306
+        },
         "packages/contracts/test/agent-capability-contract.test.ts": {
           "sha256": "c960c1358a313641344d2502acf8b61acf4d5444c5cbd83488a2668ee44ecf71",
           "lines": 340
@@ -1545,6 +1563,10 @@
           "sha256": "ff4ac8ce8c822cf7852a7b7cd9b71e9973948c3128b28c555d47f72a8c25e171",
           "lines": 309
         },
+        "packages/contracts/test/skill-resource.test.ts": {
+          "sha256": "f1b751e3a4ca17f7dff2b95c5fcc1712e56f5e62bf85bff08660bcabdaa9be05",
+          "lines": 106
+        },
         "packages/runtime/package.json": {
           "sha256": "53c9cd1b94466656bd0bfb4d39004909d4fd986bf99f0092bb30c9128bbe9588",
           "lines": 100
@@ -1554,12 +1576,12 @@
           "lines": 196
         },
         "packages/runtime/src/agent-capability-runtime.ts": {
-          "sha256": "f7848963237aa0ae7cb26b63ffb7640d35dfc56cb155270184dba9fb153798ad",
-          "lines": 469
+          "sha256": "deff9a13e4efaf91ee80ebbf9fee88e380e246c9b99cccb25026f3cc2506a105",
+          "lines": 475
         },
         "packages/runtime/src/agent-capability-service.ts": {
-          "sha256": "54ab3c3f312dbda054a729e8fdf3a8c6b8950582961c137a8090e9b49b137c35",
-          "lines": 423
+          "sha256": "840a9dab9caa7955d67c67a28cce59a608489748a05c83be8352780fa2a53c0a",
+          "lines": 444
         },
         "packages/runtime/src/agent-message-experiment-source.ts": {
           "sha256": "e54a2138ef5baf8846b9463cce5612bcdf17baa93698a1ef79570da6a215c3e7",
@@ -1570,8 +1592,8 @@
           "lines": 338
         },
         "packages/runtime/src/agent-message-tool-result-replay.ts": {
-          "sha256": "cdfe819934a78ac237d3eaceac2acc418a8546cfb60fc30ca2f505b990d323be",
-          "lines": 495
+          "sha256": "53e8d0d8f941deb81de200ba63dead6ce75baa2e826a5ec764bcf23461944520",
+          "lines": 496
         },
         "packages/runtime/src/agent-milestone-tool.ts": {
           "sha256": "0b8be82e59dd0b3346a4cf8d3c2e168100a76d07ad786c5873b0e91e0a053162",
@@ -1594,12 +1616,12 @@
           "lines": 472
         },
         "packages/runtime/src/agent-tool-result-lifecycle.ts": {
-          "sha256": "1d3501726045a59ec2ddba201b18c9ae4d8d89710ac1e2157cccee770fd0bf60",
-          "lines": 197
+          "sha256": "119ac9c924bf83979cefd0338a8113f5c79ad4a70786452e36ab68b162ed6454",
+          "lines": 200
         },
         "packages/runtime/src/agent-tool-specialized-ledger.ts": {
-          "sha256": "19d0f6140c691560c15a8cd5b431701c2b7251548be9d4d5545bdcfe278aec3a",
-          "lines": 64
+          "sha256": "92cdc186790dbb4cbc7ee92b9c93856214c924ad76658933779e8b04bb34aff2",
+          "lines": 80
         },
         "packages/runtime/src/browser-tool.ts": {
           "sha256": "75add4d020cd2a45d37339faea7895d76804f8017a8384b88089d1416fdafa5c",
@@ -1626,8 +1648,8 @@
           "lines": 439
         },
         "packages/runtime/src/doctor-runtime-probes.ts": {
-          "sha256": "2e97cd494d4e7c0b9049dfe14c21e1bc8fe6f3604dc587577a7d7904e3755ce5",
-          "lines": 266
+          "sha256": "fdae9cbed06df53614ca23334070ba34705ed8618521a4cc57f56c61548065f0",
+          "lines": 275
         },
         "packages/runtime/src/git-commit-tool.ts": {
           "sha256": "4ca318421f8b391a9838d77e6491f1e61f305e6df574a03acb6afb300fe5d9f6",
@@ -1725,9 +1747,13 @@
           "sha256": "909744ea392bfad7ac134fc51c5840a94b8f6cc72b40d993959d13748c5f8bc6",
           "lines": 412
         },
+        "packages/runtime/src/project-skill-resource.ts": {
+          "sha256": "62a17eddea8fd4e415fb0242188b7012d2309a55d291bb6883fdcd0716d588fe",
+          "lines": 397
+        },
         "packages/runtime/src/project-skill-snapshot.ts": {
-          "sha256": "91df07b1cb5bb07e227fe55ed7d66de77db825e2746ccf740168c2217e8a94b3",
-          "lines": 453
+          "sha256": "9a4cc681cba193ceb5a4d52e7794abd6993e34379b41d091dc55edd98c8bfacb",
+          "lines": 455
         },
         "packages/runtime/src/prompt-evidence-otel.ts": {
           "sha256": "ff70c1fb94a13479d49b901c9d4905f61f2c4856b7c8b1fbca1991bd9137f462",
@@ -1742,8 +1768,8 @@
           "lines": 334
         },
         "packages/runtime/src/read-only-tool-names.ts": {
-          "sha256": "0666e1e63eba51e18a14d8d5224cceb11f75c36ff7fa6dc7d2952ae3d69d1883",
-          "lines": 39
+          "sha256": "f83ed12a862a10a7c788f410bae287aecc7810ff9efbce5fbd8d9ce9dd520295",
+          "lines": 40
         },
         "packages/runtime/src/replay.ts": {
           "sha256": "cfd59a26a897cdf9adcf0813b5718b7b8fbc3d1fa22b4daa9ebe6fc92eb6cc10",
@@ -1773,6 +1799,10 @@
           "sha256": "4c881f4bc127fa80dcc737616d1feb27b4237698add30307ff0a85a24d42dfb4",
           "lines": 542
         },
+        "packages/runtime/src/skill-access-state.ts": {
+          "sha256": "12d10a84d4b6da5e05c4453ce9866cc6f6d81626174e9e63e8341e4184224e3e",
+          "lines": 35
+        },
         "packages/runtime/src/skill-load-contracts.ts": {
           "sha256": "19f6be08b570cdf94650d0c3448ec38a01209f9b2b4ee12ddc21fd34d467d043",
           "lines": 71
@@ -1782,8 +1812,12 @@
           "lines": 181
         },
         "packages/runtime/src/skill-load-tool.ts": {
-          "sha256": "3ee676977e9bef8cbf099d4191b9ed9abc0600c8e70c51df51dc0262586d3751",
-          "lines": 325
+          "sha256": "532a75c67590acd20d150a2128e0750334b2e2b84215c9101cf99f17ba6e8b9d",
+          "lines": 331
+        },
+        "packages/runtime/src/skill-resource-tool.ts": {
+          "sha256": "fb8df70891ee6dd23df08d56d97f7d6da5ae7d158292d0c6206aba1d924ecfe2",
+          "lines": 395
         },
         "packages/runtime/src/skill-run-context.ts": {
           "sha256": "8f4978ec8b646972c01c5f5aac7aed8a1eaf99f8c56072879dbc45684704f307",
@@ -1802,16 +1836,16 @@
           "lines": 98
         },
         "packages/runtime/src/standard-skill-snapshot-compose.ts": {
-          "sha256": "7525d481791b7c69c9387647fcf039685eec349e18873ff7b56fd98684cc5ca6",
-          "lines": 424
+          "sha256": "dba04121d1d36a6b0a9fb6e2fc613e442c032369b46869513929ff5d97963691",
+          "lines": 461
         },
         "packages/runtime/src/standard-skill-snapshot-types.ts": {
-          "sha256": "b6a452e17e2606c3e0a50ec7f25e97bfe7886f8b0ead7d551b40c971646b6a65",
-          "lines": 83
+          "sha256": "325a15ad46a4bfd7d8a6d5345bc0354b8cb6cdbf36b92232c55f1492244caa9b",
+          "lines": 98
         },
         "packages/runtime/src/standard-skill-snapshot.ts": {
-          "sha256": "b3d4a531adb615b7bf4021739f4682dfa9d51e40c7637062573d84881a71e987",
-          "lines": 260
+          "sha256": "e440e4fcf9b20a7cd936bc53d036c7e902f970e432c6943258024595891f3859",
+          "lines": 262
         },
         "packages/runtime/src/store.ts": {
           "sha256": "4d09cc9a06fbbbd6c98ad9654b11b0c69d0f2d3c0c29082d406508bf75beb70c",
@@ -1934,12 +1968,12 @@
           "lines": 463
         },
         "packages/runtime/test/agent-capability-contract-v2.test.ts": {
-          "sha256": "2a91d171229b92ed39e6c1e7a8a4c1d40e7e4438ee1d8b0f39fb9d18674ceeb0",
+          "sha256": "10e73b3e1eac0ecfe5961114babff4e30603e94feaed2b08d61aea1d8da6d0e6",
           "lines": 264
         },
         "packages/runtime/test/agent-capability-contract.test.ts": {
-          "sha256": "7ae60e9513444b2404c41a1e0ef3932b0a7640af0a18d8a655d17e452217c65f",
-          "lines": 990
+          "sha256": "c2df96f49c51a2c299f26db5106c7f58793303b8a53e2f67beb51cd8ae5958dc",
+          "lines": 998
         },
         "packages/runtime/test/agent-capability-override.test.ts": {
           "sha256": "e93d2dee0d35c0ef5fe020d1e6a02dd740a4de7d5ba76a230e55157708e31c4d",
@@ -1998,8 +2032,8 @@
           "lines": 261
         },
         "packages/runtime/test/doctor-runtime-probes.test.ts": {
-          "sha256": "0331a0677e36a67d5b3b879377352f25d9e794862998f2cf7d1632cb8e2029fe",
-          "lines": 94
+          "sha256": "8d5bd057054bd09fe088d23c59a0bd9533393a32be36a46c98b9e377a28a021b",
+          "lines": 96
         },
         "packages/runtime/test/independent-model-advisor.test.ts": {
           "sha256": "6c8c017ae18bf2735e9bdbc1023d898a213c73dc61fee94cb81baf1bfa47ddff",
@@ -2042,8 +2076,12 @@
           "lines": 848
         },
         "packages/runtime/test/policy.test.ts": {
-          "sha256": "73c29b1b3dfad69f0074c9e40f029dd4a950a90136a1012edbb142b5796d2923",
-          "lines": 628
+          "sha256": "719bec05c3b8a76accbfd90d7946e59edd58a07bf43c5aa25f01503a8c2445b0",
+          "lines": 646
+        },
+        "packages/runtime/test/project-skill-resource.test.ts": {
+          "sha256": "83c807ea998ec55b8f3407b817bcb59257f5063649ca583df8338d4d01f905b6",
+          "lines": 191
         },
         "packages/runtime/test/project-skill-snapshot.test.ts": {
           "sha256": "500e7a58e706dc61643cc017f33c769e251275e197630250f3d7c29002a7872d",
@@ -2122,8 +2160,8 @@
           "lines": 37
         },
         "packages/runtime/test/provider-tool-schema.test.ts": {
-          "sha256": "5c2bb085ad21e1579cd2b6561cef304674f0d579d322df2240c7c56f1b420c0a",
-          "lines": 78
+          "sha256": "c6ed28b414e4a43f2b272928b7d2947a233943b230a918e82bb7340601d203db",
+          "lines": 108
         },
         "packages/runtime/test/provider-workspace-file-tool-definition-budget.test.ts": {
           "sha256": "c9159e0a5fea6f41a091cb149024a3dda15a5c97ce4e6aa566506e249f114af8",
@@ -2165,17 +2203,21 @@
           "sha256": "00072bb644f6cd533a17cb48ea874d6ec9c85486e5a478e35c36032276c956f7",
           "lines": 210
         },
+        "packages/runtime/test/skill-resource-tool.test.ts": {
+          "sha256": "cca30802cb1e592b7fb92d44e2dc092bb0452a636925aab5573fe90975fe63ac",
+          "lines": 215
+        },
         "packages/runtime/test/source-continuity-preparation.test.ts": {
           "sha256": "858654d8ae8a1d77aad002f6c13e5794b16a9f885f0b75fb0c63cff1a25ba9e1",
           "lines": 66
         },
         "packages/runtime/test/standard-skill-load-run.test.ts": {
-          "sha256": "46c2908629b2e023ff7525a4e712bdf3fa4c99bbc1cfb8c2cadedf451211fa5e",
-          "lines": 146
+          "sha256": "907574ab1a4b4e81f9abc658997fd8a100532ac8e3a0504f05d8f8a36f9b2426",
+          "lines": 265
         },
         "packages/runtime/test/standard-skill-snapshot.test.ts": {
-          "sha256": "ae15439a5be0dacbe5e9da3c75128e75f6ffd02383ac7111647f306d40c7cb44",
-          "lines": 324
+          "sha256": "a196351d6223c4625666538a3783c667ca1ba9b17f8e26f09cd16d4a4ff5a215",
+          "lines": 352
         },
         "packages/runtime/test/subagent-outcome-review.test.ts": {
           "sha256": "c47a093608b4c1f0b17bca94ea66d47feb0ab1b1003e88f7059f761481ef15dc",
@@ -2269,6 +2311,14 @@
           "sha256": "5f2196bf044c52f041dd795875c0fbe7a630b8cb5f005187fc584c0431e3c8cf",
           "lines": 223
         },
+        "scripts/run-skill-resource-dogfood.mjs": {
+          "sha256": "56b01a7b75a5d6be4efa3e18b0ac0522acdb6c9eff822817cb84cbd5a85436ad",
+          "lines": 470
+        },
+        "scripts/run-skill-resource-dogfood.test.mjs": {
+          "sha256": "52ddb6fc72c0d4a355facb612f80c1f324566a95b8574a36bb104b1979545990",
+          "lines": 71
+        },
         "scripts/run-standard-skill-directory-dogfood.mjs": {
           "sha256": "c5edc1dfe04ceec7bd752222da26c864b661fd706200815943edb307a66a12c6",
           "lines": 370
@@ -2286,7 +2336,7 @@
           "lines": 459
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "4b19e22b2f413a71d127f3dde3935a944397ffcd7287ebd1d9866e0f0e97e63a",
+          "sha256": "405a2a20f2e900e219df71bf4d0326353decda3463e7bcf8059149f99244247e",
           "lines": 287
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -2359,7 +2409,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "3e6974b0a6abae2932c581dc969c8fcaf3c91b0334c381530b2a7d1337c67b0c"
+      "manifestSha256": "f92f349c7e08976fb7b32de8ead0b45ba9a2dd0c5dcc8fb3784b5159bfa3325d"
     },
     "executionClosure": {
       "algorithm": {
@@ -2562,6 +2612,7 @@
             "packages/contracts/dist/skill-load-standard.js",
             "packages/contracts/dist/skill-load-validation.js",
             "packages/contracts/dist/skill-load.js",
+            "packages/contracts/dist/skill-resource.js",
             "packages/contracts/dist/workflow-experiments.js",
             "packages/runtime/dist/agent-capability-bindings.js",
             "packages/runtime/dist/agent-capability-override.js",
@@ -2836,6 +2887,7 @@
             "packages/runtime/dist/private-source-model-content.js",
             "packages/runtime/dist/process-guardian-worker-source.js",
             "packages/runtime/dist/process-guardian.js",
+            "packages/runtime/dist/project-skill-resource.js",
             "packages/runtime/dist/project-skill-snapshot.js",
             "packages/runtime/dist/prompt-evidence-otel.js",
             "packages/runtime/dist/prompt-invariant-core.js",
@@ -2888,11 +2940,13 @@
             "packages/runtime/dist/sandbox.js",
             "packages/runtime/dist/sandboxed-process.js",
             "packages/runtime/dist/schedules.js",
+            "packages/runtime/dist/skill-access-state.js",
             "packages/runtime/dist/skill-content.js",
             "packages/runtime/dist/skill-load-contracts.js",
             "packages/runtime/dist/skill-load-replay.js",
             "packages/runtime/dist/skill-load-tool.js",
             "packages/runtime/dist/skill-packages.js",
+            "packages/runtime/dist/skill-resource-tool.js",
             "packages/runtime/dist/skill-run-context.js",
             "packages/runtime/dist/skills.js",
             "packages/runtime/dist/source-continuity-guidance.js",
@@ -3313,6 +3367,7 @@
             "packages/contracts/src/skill-load-standard.ts",
             "packages/contracts/src/skill-load-validation.ts",
             "packages/contracts/src/skill-load.ts",
+            "packages/contracts/src/skill-resource.ts",
             "packages/contracts/src/workflow-experiments.ts",
             "packages/runtime/src/agent-capability-bindings.ts",
             "packages/runtime/src/agent-capability-override.ts",
@@ -3587,6 +3642,7 @@
             "packages/runtime/src/private-source-model-content.ts",
             "packages/runtime/src/process-guardian-worker-source.ts",
             "packages/runtime/src/process-guardian.ts",
+            "packages/runtime/src/project-skill-resource.ts",
             "packages/runtime/src/project-skill-snapshot.ts",
             "packages/runtime/src/prompt-evidence-otel.ts",
             "packages/runtime/src/prompt-invariant-core.ts",
@@ -3639,11 +3695,13 @@
             "packages/runtime/src/sandbox.ts",
             "packages/runtime/src/sandboxed-process.ts",
             "packages/runtime/src/schedules.ts",
+            "packages/runtime/src/skill-access-state.ts",
             "packages/runtime/src/skill-content.ts",
             "packages/runtime/src/skill-load-contracts.ts",
             "packages/runtime/src/skill-load-replay.ts",
             "packages/runtime/src/skill-load-tool.ts",
             "packages/runtime/src/skill-packages.ts",
+            "packages/runtime/src/skill-resource-tool.ts",
             "packages/runtime/src/skill-run-context.ts",
             "packages/runtime/src/skills.ts",
             "packages/runtime/src/source-continuity-guidance.ts",
@@ -3927,16 +3985,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 749,
-            "sourceCounterparts": 744,
+            "executionFiles": 753,
+            "sourceCounterparts": 748,
             "packageManifests": 2,
-            "allFiles": 1495
+            "allFiles": 1503
           },
           "executionAreaCounts": {
             "apps/cli/dist": 56,
             "apps/server/dist": 100,
-            "packages/contracts/dist": 21,
-            "packages/runtime/dist": 564,
+            "packages/contracts/dist": 22,
+            "packages/runtime/dist": 567,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -5270,13 +5328,17 @@
               "sha256": "70c165eb8e117fa1072299dc14547adc1d84b02ae360368e07b8532d5f0b81b2",
               "lines": 330
             },
+            "packages/contracts/dist/skill-resource.js": {
+              "sha256": "05c94acbc7172a5716d154097a9640692adcbe135c1c01bee89fdc497f52f422",
+              "lines": 185
+            },
             "packages/contracts/dist/workflow-experiments.js": {
               "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
               "lines": 1
             },
             "packages/contracts/package.json": {
-              "sha256": "5d4c4cb605ef044640cf56efd1dadae35509066c57e827c8670b7d67ccb71c37",
-              "lines": 64
+              "sha256": "c7c91f8734bffa5ec82d6ea656ca142815ea9c98cca0d653be7a0d896e22d53b",
+              "lines": 68
             },
             "packages/contracts/src/agent-capabilities.ts": {
               "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -5358,6 +5420,10 @@
               "sha256": "749e57694dcfc33f9b1bbc9e357a1537c9a07f534e0eae01fc0dc3b7805b5779",
               "lines": 457
             },
+            "packages/contracts/src/skill-resource.ts": {
+              "sha256": "13a7602714e820957fdf182f7f05ba509bad94d0ad3fcd77e6116eca05f07e21",
+              "lines": 306
+            },
             "packages/contracts/src/workflow-experiments.ts": {
               "sha256": "2a47b551e5e0e177daae525d6e7fab885967e5c3e3e9f424617ba8af2e29cfda",
               "lines": 226
@@ -5371,12 +5437,12 @@
               "lines": 96
             },
             "packages/runtime/dist/agent-capability-runtime.js": {
-              "sha256": "4eea48fe73adafcff58650e55b042d48f99ffaaf7868bfdf0343fdea0b67d874",
-              "lines": 311
+              "sha256": "b66f88499874a1463855313bbe9fac245ba82107ef8a5cd7021657384e0c3cb1",
+              "lines": 314
             },
             "packages/runtime/dist/agent-capability-service.js": {
-              "sha256": "ece8cef3a9a0259ce4538b7cc3296164eadfc5d445b9d409b1add1bbfaaf0745",
-              "lines": 318
+              "sha256": "d1d320cda75dab335751a914427b18cbd6b3554a819be467cd5e3562c0bd0a66",
+              "lines": 336
             },
             "packages/runtime/dist/agent-capability-store-mutations.js": {
               "sha256": "d71f8d5e9baf899d92e018b5214d0a82728fe800b33a7ca10f27235e1bc64828",
@@ -5423,8 +5489,8 @@
               "lines": 237
             },
             "packages/runtime/dist/agent-message-tool-result-replay.js": {
-              "sha256": "aa98724271065d1c10b5190b0c5fe2245d980c6f48e6495049f79b688a586ed0",
-              "lines": 307
+              "sha256": "e02c470ae525b04275756ad2dba718794d71ce84953610a36f5fc3f5019e2bcb",
+              "lines": 309
             },
             "packages/runtime/dist/agent-milestone-tool.js": {
               "sha256": "979882e0c4e42d1d7327a4481c3170724c6d6077280c98381673bb9fd384e62e",
@@ -5479,16 +5545,16 @@
               "lines": 191
             },
             "packages/runtime/dist/agent-tool-result-lifecycle.js": {
-              "sha256": "8a5185ff69f7d47eaa72c60ecc8f19bd015ad726eaf9351a94a6cad459309382",
-              "lines": 132
+              "sha256": "9fd5ce4fc4e391bc2e09c1affda0ace4e2fd2732baa47d3aa776ecd1a8ede49e",
+              "lines": 134
             },
             "packages/runtime/dist/agent-tool-result-text.js": {
               "sha256": "9a9f24082e70a46f2905bcad93b96058a7c7a54f0471e9e52146d68ce02c8d32",
               "lines": 17
             },
             "packages/runtime/dist/agent-tool-specialized-ledger.js": {
-              "sha256": "bd8d87321f8da73fd753c039286b5cea893dfc1d5b9016976ac3ed1f53e14d19",
-              "lines": 26
+              "sha256": "735104a4dfc3148779c303df6c1346b4291f74a77f8afe819eb6385cf5a541ac",
+              "lines": 34
             },
             "packages/runtime/dist/agents.js": {
               "sha256": "b2c2aa81b82863b5ce96db00f1c23472e95e604b40ab1c791f41fe7a8186712d",
@@ -5755,8 +5821,8 @@
               "lines": 124
             },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "85dddd7b716bf9e6c783fd48fef35c1dad851927c200deb6efe639096b005b81",
-              "lines": 210
+              "sha256": "8197366749115f5076307347f9b31d6d108b5913686ec8dd6f94ebef2f94f52d",
+              "lines": 219
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -6454,9 +6520,13 @@
               "sha256": "e8f67dfce915010f6e991462e14944efe9bdb07b3727e3d475f745dfe99f5004",
               "lines": 243
             },
+            "packages/runtime/dist/project-skill-resource.js": {
+              "sha256": "92600d7fd7685d748dd8688eedf8b28b1cee13714609143667899d811e41e41e",
+              "lines": 233
+            },
             "packages/runtime/dist/project-skill-snapshot.js": {
-              "sha256": "8aa7179f3db6688ee7abc018570650f15c31c609e8c768337e7e8cc545bc6adb",
-              "lines": 517
+              "sha256": "13ebd180b6becd71ee1ce677c3603508a99d52fcfbd6358df99bc2c9b623f3e4",
+              "lines": 519
             },
             "packages/runtime/dist/prompt-evidence-otel.js": {
               "sha256": "84bd1d49fa01808467fc8c71580b62577b5b63cb675fd8690140d1cc73181350",
@@ -6507,8 +6577,8 @@
               "lines": 268
             },
             "packages/runtime/dist/read-only-tool-names.js": {
-              "sha256": "bd797a995c0ecb163503013fbb6656fff518f7f1d28ece5d1725e9f7f752efbf",
-              "lines": 37
+              "sha256": "2bdb6084ca6210e1f078f03db911f07eeb945aa89a6a8417db12101216dc9975",
+              "lines": 38
             },
             "packages/runtime/dist/read-only-tool-policy.js": {
               "sha256": "c8231759fba882fe9ab20274dea958ff0dffcec63bb2bff1a89e4748bff44061",
@@ -6662,6 +6732,10 @@
               "sha256": "f56796daf0a791266fe3d0d0fdd3825251947b1767b880dbe0cddc4fe86e70da",
               "lines": 232
             },
+            "packages/runtime/dist/skill-access-state.js": {
+              "sha256": "cc1eef3fb62684958ca2aa800c2bcbcdfe8cfb1de8f4c2d915ee5be419ce17c5",
+              "lines": 27
+            },
             "packages/runtime/dist/skill-content.js": {
               "sha256": "650bde62d8d4c09dbc40c336080f0f7bb5e3d65f62978ddde950323fa5ca2263",
               "lines": 203
@@ -6675,12 +6749,16 @@
               "lines": 96
             },
             "packages/runtime/dist/skill-load-tool.js": {
-              "sha256": "83da8adbe58b2aa02219c8bfa5b77d8a6f803feee9899b83e2505b8fc6d92a8b",
-              "lines": 226
+              "sha256": "34d946e64afa0241273d81306fc74000720bddae302c62308dd6642af3450eb9",
+              "lines": 228
             },
             "packages/runtime/dist/skill-packages.js": {
               "sha256": "1b87e0f34f5591794c32612c6e97f5db0e76edb3788ab5fd2efb29e20fa4770d",
               "lines": 556
+            },
+            "packages/runtime/dist/skill-resource-tool.js": {
+              "sha256": "b3fb8813610712852f04c132fabd60374c93f2d8b86d1d6614c5e7a41e312703",
+              "lines": 256
             },
             "packages/runtime/dist/skill-run-context.js": {
               "sha256": "d9c4235a6736eebe737607f54fe6f0aa7ed2ad12cdb30396ab8b729d26cee821",
@@ -6743,12 +6821,12 @@
               "lines": 69
             },
             "packages/runtime/dist/standard-skill-snapshot-compose.js": {
-              "sha256": "78dc29671d950d5cfb218073c74e22bca29852e067a535f93372214a1767eecd",
-              "lines": 290
+              "sha256": "705abcac642367a429db25eb21da84762e2ff2f25efd4310f0b2f1a466d6bfea",
+              "lines": 308
             },
             "packages/runtime/dist/standard-skill-snapshot.js": {
-              "sha256": "f394d5caeef27be45bc05c5587c408963437d3f0767eb14aad1f65af94d4f6f3",
-              "lines": 166
+              "sha256": "94afcf2e451d0fee54739408acd04eaf2a8cd40a66c104eef79a5a6de0cff16c",
+              "lines": 167
             },
             "packages/runtime/dist/stateless-agent-tools.js": {
               "sha256": "4bf94173a0ce5cae5144e1cb5964ffda9092fd09f0311a602f38ba43a929d1ec",
@@ -7631,12 +7709,12 @@
               "lines": 196
             },
             "packages/runtime/src/agent-capability-runtime.ts": {
-              "sha256": "f7848963237aa0ae7cb26b63ffb7640d35dfc56cb155270184dba9fb153798ad",
-              "lines": 469
+              "sha256": "deff9a13e4efaf91ee80ebbf9fee88e380e246c9b99cccb25026f3cc2506a105",
+              "lines": 475
             },
             "packages/runtime/src/agent-capability-service.ts": {
-              "sha256": "54ab3c3f312dbda054a729e8fdf3a8c6b8950582961c137a8090e9b49b137c35",
-              "lines": 423
+              "sha256": "840a9dab9caa7955d67c67a28cce59a608489748a05c83be8352780fa2a53c0a",
+              "lines": 444
             },
             "packages/runtime/src/agent-capability-store-mutations.ts": {
               "sha256": "689c17f83e485ac2164d59b3cf99258fcac0d568ed31d19783b3ab6f187016c1",
@@ -7683,8 +7761,8 @@
               "lines": 338
             },
             "packages/runtime/src/agent-message-tool-result-replay.ts": {
-              "sha256": "cdfe819934a78ac237d3eaceac2acc418a8546cfb60fc30ca2f505b990d323be",
-              "lines": 495
+              "sha256": "53e8d0d8f941deb81de200ba63dead6ce75baa2e826a5ec764bcf23461944520",
+              "lines": 496
             },
             "packages/runtime/src/agent-milestone-tool.ts": {
               "sha256": "0b8be82e59dd0b3346a4cf8d3c2e168100a76d07ad786c5873b0e91e0a053162",
@@ -7739,16 +7817,16 @@
               "lines": 328
             },
             "packages/runtime/src/agent-tool-result-lifecycle.ts": {
-              "sha256": "1d3501726045a59ec2ddba201b18c9ae4d8d89710ac1e2157cccee770fd0bf60",
-              "lines": 197
+              "sha256": "119ac9c924bf83979cefd0338a8113f5c79ad4a70786452e36ab68b162ed6454",
+              "lines": 200
             },
             "packages/runtime/src/agent-tool-result-text.ts": {
               "sha256": "cce91085f30007e392a92dd939342e3626a663a7d9c29e48032058b6cc560d92",
               "lines": 21
             },
             "packages/runtime/src/agent-tool-specialized-ledger.ts": {
-              "sha256": "19d0f6140c691560c15a8cd5b431701c2b7251548be9d4d5545bdcfe278aec3a",
-              "lines": 64
+              "sha256": "92cdc186790dbb4cbc7ee92b9c93856214c924ad76658933779e8b04bb34aff2",
+              "lines": 80
             },
             "packages/runtime/src/agents.ts": {
               "sha256": "99c942cc878f442f2ec1186c36ae143733c0c64fb9408c2ab872ee4a2d1ce7df",
@@ -8015,8 +8093,8 @@
               "lines": 173
             },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "2e97cd494d4e7c0b9049dfe14c21e1bc8fe6f3604dc587577a7d7904e3755ce5",
-              "lines": 266
+              "sha256": "fdae9cbed06df53614ca23334070ba34705ed8618521a4cc57f56c61548065f0",
+              "lines": 275
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -8714,9 +8792,13 @@
               "sha256": "0f51b0e109463b5e5210b248331caa5bc2ddccf965b53dde39cb94a5b01df940",
               "lines": 354
             },
+            "packages/runtime/src/project-skill-resource.ts": {
+              "sha256": "62a17eddea8fd4e415fb0242188b7012d2309a55d291bb6883fdcd0716d588fe",
+              "lines": 397
+            },
             "packages/runtime/src/project-skill-snapshot.ts": {
-              "sha256": "91df07b1cb5bb07e227fe55ed7d66de77db825e2746ccf740168c2217e8a94b3",
-              "lines": 453
+              "sha256": "9a4cc681cba193ceb5a4d52e7794abd6993e34379b41d091dc55edd98c8bfacb",
+              "lines": 455
             },
             "packages/runtime/src/prompt-evidence-otel.ts": {
               "sha256": "ff70c1fb94a13479d49b901c9d4905f61f2c4856b7c8b1fbca1991bd9137f462",
@@ -8767,8 +8849,8 @@
               "lines": 434
             },
             "packages/runtime/src/read-only-tool-names.ts": {
-              "sha256": "0666e1e63eba51e18a14d8d5224cceb11f75c36ff7fa6dc7d2952ae3d69d1883",
-              "lines": 39
+              "sha256": "f83ed12a862a10a7c788f410bae287aecc7810ff9efbce5fbd8d9ce9dd520295",
+              "lines": 40
             },
             "packages/runtime/src/read-only-tool-policy.ts": {
               "sha256": "6c1814f363f2e9fe1ec782eb9c3458e0969c0ba30f08435b6b6aefde38093f0c",
@@ -8922,6 +9004,10 @@
               "sha256": "fff047f509cf4e38ca6e65a57344b1225a29499468e6072c35778a838183db20",
               "lines": 292
             },
+            "packages/runtime/src/skill-access-state.ts": {
+              "sha256": "12d10a84d4b6da5e05c4453ce9866cc6f6d81626174e9e63e8341e4184224e3e",
+              "lines": 35
+            },
             "packages/runtime/src/skill-content.ts": {
               "sha256": "a9a69b30fbcb097936f4cb8415fbc6c4cfb414323a3af3c74ff79728e328a8f0",
               "lines": 263
@@ -8935,12 +9021,16 @@
               "lines": 181
             },
             "packages/runtime/src/skill-load-tool.ts": {
-              "sha256": "3ee676977e9bef8cbf099d4191b9ed9abc0600c8e70c51df51dc0262586d3751",
-              "lines": 325
+              "sha256": "532a75c67590acd20d150a2128e0750334b2e2b84215c9101cf99f17ba6e8b9d",
+              "lines": 331
             },
             "packages/runtime/src/skill-packages.ts": {
               "sha256": "9158172565e636889d410bd63ee857600f55908815d672d9e9bdb532357ed724",
               "lines": 754
+            },
+            "packages/runtime/src/skill-resource-tool.ts": {
+              "sha256": "fb8df70891ee6dd23df08d56d97f7d6da5ae7d158292d0c6206aba1d924ecfe2",
+              "lines": 395
             },
             "packages/runtime/src/skill-run-context.ts": {
               "sha256": "8f4978ec8b646972c01c5f5aac7aed8a1eaf99f8c56072879dbc45684704f307",
@@ -9003,12 +9093,12 @@
               "lines": 98
             },
             "packages/runtime/src/standard-skill-snapshot-compose.ts": {
-              "sha256": "7525d481791b7c69c9387647fcf039685eec349e18873ff7b56fd98684cc5ca6",
-              "lines": 424
+              "sha256": "dba04121d1d36a6b0a9fb6e2fc613e442c032369b46869513929ff5d97963691",
+              "lines": 461
             },
             "packages/runtime/src/standard-skill-snapshot.ts": {
-              "sha256": "b3d4a531adb615b7bf4021739f4682dfa9d51e40c7637062573d84881a71e987",
-              "lines": 260
+              "sha256": "e440e4fcf9b20a7cd936bc53d036c7e902f970e432c6943258024595891f3859",
+              "lines": 262
             },
             "packages/runtime/src/stateless-agent-tools.ts": {
               "sha256": "fd222cbe09996d2d9d5c46bd3e9beca7d9081eb00f2f310aeebfdcc2ffacf90c",
@@ -9923,7 +10013,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "38b491b79d7b60410df6645ca5b4f1643a4b7ec1a0981862cb97f71855d133e1"
+          "manifestSha256": "d766cdb07e6b6155e4f297c4eb24b47b4a6ddfec198d0bdd36a04885a3256ce6"
         },
         "productionServerTrace": {
           "roots": [
@@ -10057,6 +10147,7 @@
             "packages/contracts/dist/skill-load-standard.js",
             "packages/contracts/dist/skill-load-validation.js",
             "packages/contracts/dist/skill-load.js",
+            "packages/contracts/dist/skill-resource.js",
             "packages/contracts/dist/workflow-experiments.js",
             "packages/runtime/dist/agent-capability-bindings.js",
             "packages/runtime/dist/agent-capability-override.js",
@@ -10329,6 +10420,7 @@
             "packages/runtime/dist/private-source-model-content.js",
             "packages/runtime/dist/process-guardian-worker-source.js",
             "packages/runtime/dist/process-guardian.js",
+            "packages/runtime/dist/project-skill-resource.js",
             "packages/runtime/dist/project-skill-snapshot.js",
             "packages/runtime/dist/prompt-evidence-otel.js",
             "packages/runtime/dist/prompt-invariant-core.js",
@@ -10381,11 +10473,13 @@
             "packages/runtime/dist/sandbox.js",
             "packages/runtime/dist/sandboxed-process.js",
             "packages/runtime/dist/schedules.js",
+            "packages/runtime/dist/skill-access-state.js",
             "packages/runtime/dist/skill-content.js",
             "packages/runtime/dist/skill-load-contracts.js",
             "packages/runtime/dist/skill-load-replay.js",
             "packages/runtime/dist/skill-load-tool.js",
             "packages/runtime/dist/skill-packages.js",
+            "packages/runtime/dist/skill-resource-tool.js",
             "packages/runtime/dist/skill-run-context.js",
             "packages/runtime/dist/skills.js",
             "packages/runtime/dist/source-continuity-guidance.js",
@@ -10749,6 +10843,7 @@
             "packages/contracts/src/skill-load-standard.ts",
             "packages/contracts/src/skill-load-validation.ts",
             "packages/contracts/src/skill-load.ts",
+            "packages/contracts/src/skill-resource.ts",
             "packages/contracts/src/workflow-experiments.ts",
             "packages/runtime/src/agent-capability-bindings.ts",
             "packages/runtime/src/agent-capability-override.ts",
@@ -11021,6 +11116,7 @@
             "packages/runtime/src/private-source-model-content.ts",
             "packages/runtime/src/process-guardian-worker-source.ts",
             "packages/runtime/src/process-guardian.ts",
+            "packages/runtime/src/project-skill-resource.ts",
             "packages/runtime/src/project-skill-snapshot.ts",
             "packages/runtime/src/prompt-evidence-otel.ts",
             "packages/runtime/src/prompt-invariant-core.ts",
@@ -11073,11 +11169,13 @@
             "packages/runtime/src/sandbox.ts",
             "packages/runtime/src/sandboxed-process.ts",
             "packages/runtime/src/schedules.ts",
+            "packages/runtime/src/skill-access-state.ts",
             "packages/runtime/src/skill-content.ts",
             "packages/runtime/src/skill-load-contracts.ts",
             "packages/runtime/src/skill-load-replay.ts",
             "packages/runtime/src/skill-load-tool.ts",
             "packages/runtime/src/skill-packages.ts",
+            "packages/runtime/src/skill-resource-tool.ts",
             "packages/runtime/src/skill-run-context.ts",
             "packages/runtime/src/skills.ts",
             "packages/runtime/src/source-continuity-guidance.ts",
@@ -11361,16 +11459,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 690,
-            "sourceCounterparts": 686,
+            "executionFiles": 694,
+            "sourceCounterparts": 690,
             "packageManifests": 3,
-            "allFiles": 1379
+            "allFiles": 1387
           },
           "executionAreaCounts": {
             "apps/server/dist": 101,
             "other": 1,
-            "packages/contracts/dist": 21,
-            "packages/runtime/dist": 561,
+            "packages/contracts/dist": 22,
+            "packages/runtime/dist": 564,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
@@ -12263,13 +12361,17 @@
               "sha256": "70c165eb8e117fa1072299dc14547adc1d84b02ae360368e07b8532d5f0b81b2",
               "lines": 330
             },
+            "packages/contracts/dist/skill-resource.js": {
+              "sha256": "05c94acbc7172a5716d154097a9640692adcbe135c1c01bee89fdc497f52f422",
+              "lines": 185
+            },
             "packages/contracts/dist/workflow-experiments.js": {
               "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
               "lines": 1
             },
             "packages/contracts/package.json": {
-              "sha256": "5d4c4cb605ef044640cf56efd1dadae35509066c57e827c8670b7d67ccb71c37",
-              "lines": 64
+              "sha256": "c7c91f8734bffa5ec82d6ea656ca142815ea9c98cca0d653be7a0d896e22d53b",
+              "lines": 68
             },
             "packages/contracts/src/agent-capabilities.ts": {
               "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -12351,6 +12453,10 @@
               "sha256": "749e57694dcfc33f9b1bbc9e357a1537c9a07f534e0eae01fc0dc3b7805b5779",
               "lines": 457
             },
+            "packages/contracts/src/skill-resource.ts": {
+              "sha256": "13a7602714e820957fdf182f7f05ba509bad94d0ad3fcd77e6116eca05f07e21",
+              "lines": 306
+            },
             "packages/contracts/src/workflow-experiments.ts": {
               "sha256": "2a47b551e5e0e177daae525d6e7fab885967e5c3e3e9f424617ba8af2e29cfda",
               "lines": 226
@@ -12364,12 +12470,12 @@
               "lines": 96
             },
             "packages/runtime/dist/agent-capability-runtime.js": {
-              "sha256": "4eea48fe73adafcff58650e55b042d48f99ffaaf7868bfdf0343fdea0b67d874",
-              "lines": 311
+              "sha256": "b66f88499874a1463855313bbe9fac245ba82107ef8a5cd7021657384e0c3cb1",
+              "lines": 314
             },
             "packages/runtime/dist/agent-capability-service.js": {
-              "sha256": "ece8cef3a9a0259ce4538b7cc3296164eadfc5d445b9d409b1add1bbfaaf0745",
-              "lines": 318
+              "sha256": "d1d320cda75dab335751a914427b18cbd6b3554a819be467cd5e3562c0bd0a66",
+              "lines": 336
             },
             "packages/runtime/dist/agent-capability-store-mutations.js": {
               "sha256": "d71f8d5e9baf899d92e018b5214d0a82728fe800b33a7ca10f27235e1bc64828",
@@ -12416,8 +12522,8 @@
               "lines": 237
             },
             "packages/runtime/dist/agent-message-tool-result-replay.js": {
-              "sha256": "aa98724271065d1c10b5190b0c5fe2245d980c6f48e6495049f79b688a586ed0",
-              "lines": 307
+              "sha256": "e02c470ae525b04275756ad2dba718794d71ce84953610a36f5fc3f5019e2bcb",
+              "lines": 309
             },
             "packages/runtime/dist/agent-milestone-tool.js": {
               "sha256": "979882e0c4e42d1d7327a4481c3170724c6d6077280c98381673bb9fd384e62e",
@@ -12472,16 +12578,16 @@
               "lines": 191
             },
             "packages/runtime/dist/agent-tool-result-lifecycle.js": {
-              "sha256": "8a5185ff69f7d47eaa72c60ecc8f19bd015ad726eaf9351a94a6cad459309382",
-              "lines": 132
+              "sha256": "9fd5ce4fc4e391bc2e09c1affda0ace4e2fd2732baa47d3aa776ecd1a8ede49e",
+              "lines": 134
             },
             "packages/runtime/dist/agent-tool-result-text.js": {
               "sha256": "9a9f24082e70a46f2905bcad93b96058a7c7a54f0471e9e52146d68ce02c8d32",
               "lines": 17
             },
             "packages/runtime/dist/agent-tool-specialized-ledger.js": {
-              "sha256": "bd8d87321f8da73fd753c039286b5cea893dfc1d5b9016976ac3ed1f53e14d19",
-              "lines": 26
+              "sha256": "735104a4dfc3148779c303df6c1346b4291f74a77f8afe819eb6385cf5a541ac",
+              "lines": 34
             },
             "packages/runtime/dist/agents.js": {
               "sha256": "b2c2aa81b82863b5ce96db00f1c23472e95e604b40ab1c791f41fe7a8186712d",
@@ -13439,9 +13545,13 @@
               "sha256": "e8f67dfce915010f6e991462e14944efe9bdb07b3727e3d475f745dfe99f5004",
               "lines": 243
             },
+            "packages/runtime/dist/project-skill-resource.js": {
+              "sha256": "92600d7fd7685d748dd8688eedf8b28b1cee13714609143667899d811e41e41e",
+              "lines": 233
+            },
             "packages/runtime/dist/project-skill-snapshot.js": {
-              "sha256": "8aa7179f3db6688ee7abc018570650f15c31c609e8c768337e7e8cc545bc6adb",
-              "lines": 517
+              "sha256": "13ebd180b6becd71ee1ce677c3603508a99d52fcfbd6358df99bc2c9b623f3e4",
+              "lines": 519
             },
             "packages/runtime/dist/prompt-evidence-otel.js": {
               "sha256": "84bd1d49fa01808467fc8c71580b62577b5b63cb675fd8690140d1cc73181350",
@@ -13492,8 +13602,8 @@
               "lines": 268
             },
             "packages/runtime/dist/read-only-tool-names.js": {
-              "sha256": "bd797a995c0ecb163503013fbb6656fff518f7f1d28ece5d1725e9f7f752efbf",
-              "lines": 37
+              "sha256": "2bdb6084ca6210e1f078f03db911f07eeb945aa89a6a8417db12101216dc9975",
+              "lines": 38
             },
             "packages/runtime/dist/read-only-tool-policy.js": {
               "sha256": "c8231759fba882fe9ab20274dea958ff0dffcec63bb2bff1a89e4748bff44061",
@@ -13647,6 +13757,10 @@
               "sha256": "f56796daf0a791266fe3d0d0fdd3825251947b1767b880dbe0cddc4fe86e70da",
               "lines": 232
             },
+            "packages/runtime/dist/skill-access-state.js": {
+              "sha256": "cc1eef3fb62684958ca2aa800c2bcbcdfe8cfb1de8f4c2d915ee5be419ce17c5",
+              "lines": 27
+            },
             "packages/runtime/dist/skill-content.js": {
               "sha256": "650bde62d8d4c09dbc40c336080f0f7bb5e3d65f62978ddde950323fa5ca2263",
               "lines": 203
@@ -13660,12 +13774,16 @@
               "lines": 96
             },
             "packages/runtime/dist/skill-load-tool.js": {
-              "sha256": "83da8adbe58b2aa02219c8bfa5b77d8a6f803feee9899b83e2505b8fc6d92a8b",
-              "lines": 226
+              "sha256": "34d946e64afa0241273d81306fc74000720bddae302c62308dd6642af3450eb9",
+              "lines": 228
             },
             "packages/runtime/dist/skill-packages.js": {
               "sha256": "1b87e0f34f5591794c32612c6e97f5db0e76edb3788ab5fd2efb29e20fa4770d",
               "lines": 556
+            },
+            "packages/runtime/dist/skill-resource-tool.js": {
+              "sha256": "b3fb8813610712852f04c132fabd60374c93f2d8b86d1d6614c5e7a41e312703",
+              "lines": 256
             },
             "packages/runtime/dist/skill-run-context.js": {
               "sha256": "d9c4235a6736eebe737607f54fe6f0aa7ed2ad12cdb30396ab8b729d26cee821",
@@ -13728,12 +13846,12 @@
               "lines": 69
             },
             "packages/runtime/dist/standard-skill-snapshot-compose.js": {
-              "sha256": "78dc29671d950d5cfb218073c74e22bca29852e067a535f93372214a1767eecd",
-              "lines": 290
+              "sha256": "705abcac642367a429db25eb21da84762e2ff2f25efd4310f0b2f1a466d6bfea",
+              "lines": 308
             },
             "packages/runtime/dist/standard-skill-snapshot.js": {
-              "sha256": "f394d5caeef27be45bc05c5587c408963437d3f0767eb14aad1f65af94d4f6f3",
-              "lines": 166
+              "sha256": "94afcf2e451d0fee54739408acd04eaf2a8cd40a66c104eef79a5a6de0cff16c",
+              "lines": 167
             },
             "packages/runtime/dist/stateless-agent-tools.js": {
               "sha256": "4bf94173a0ce5cae5144e1cb5964ffda9092fd09f0311a602f38ba43a929d1ec",
@@ -14612,12 +14730,12 @@
               "lines": 196
             },
             "packages/runtime/src/agent-capability-runtime.ts": {
-              "sha256": "f7848963237aa0ae7cb26b63ffb7640d35dfc56cb155270184dba9fb153798ad",
-              "lines": 469
+              "sha256": "deff9a13e4efaf91ee80ebbf9fee88e380e246c9b99cccb25026f3cc2506a105",
+              "lines": 475
             },
             "packages/runtime/src/agent-capability-service.ts": {
-              "sha256": "54ab3c3f312dbda054a729e8fdf3a8c6b8950582961c137a8090e9b49b137c35",
-              "lines": 423
+              "sha256": "840a9dab9caa7955d67c67a28cce59a608489748a05c83be8352780fa2a53c0a",
+              "lines": 444
             },
             "packages/runtime/src/agent-capability-store-mutations.ts": {
               "sha256": "689c17f83e485ac2164d59b3cf99258fcac0d568ed31d19783b3ab6f187016c1",
@@ -14664,8 +14782,8 @@
               "lines": 338
             },
             "packages/runtime/src/agent-message-tool-result-replay.ts": {
-              "sha256": "cdfe819934a78ac237d3eaceac2acc418a8546cfb60fc30ca2f505b990d323be",
-              "lines": 495
+              "sha256": "53e8d0d8f941deb81de200ba63dead6ce75baa2e826a5ec764bcf23461944520",
+              "lines": 496
             },
             "packages/runtime/src/agent-milestone-tool.ts": {
               "sha256": "0b8be82e59dd0b3346a4cf8d3c2e168100a76d07ad786c5873b0e91e0a053162",
@@ -14720,16 +14838,16 @@
               "lines": 328
             },
             "packages/runtime/src/agent-tool-result-lifecycle.ts": {
-              "sha256": "1d3501726045a59ec2ddba201b18c9ae4d8d89710ac1e2157cccee770fd0bf60",
-              "lines": 197
+              "sha256": "119ac9c924bf83979cefd0338a8113f5c79ad4a70786452e36ab68b162ed6454",
+              "lines": 200
             },
             "packages/runtime/src/agent-tool-result-text.ts": {
               "sha256": "cce91085f30007e392a92dd939342e3626a663a7d9c29e48032058b6cc560d92",
               "lines": 21
             },
             "packages/runtime/src/agent-tool-specialized-ledger.ts": {
-              "sha256": "19d0f6140c691560c15a8cd5b431701c2b7251548be9d4d5545bdcfe278aec3a",
-              "lines": 64
+              "sha256": "92cdc186790dbb4cbc7ee92b9c93856214c924ad76658933779e8b04bb34aff2",
+              "lines": 80
             },
             "packages/runtime/src/agents.ts": {
               "sha256": "99c942cc878f442f2ec1186c36ae143733c0c64fb9408c2ab872ee4a2d1ce7df",
@@ -15687,9 +15805,13 @@
               "sha256": "0f51b0e109463b5e5210b248331caa5bc2ddccf965b53dde39cb94a5b01df940",
               "lines": 354
             },
+            "packages/runtime/src/project-skill-resource.ts": {
+              "sha256": "62a17eddea8fd4e415fb0242188b7012d2309a55d291bb6883fdcd0716d588fe",
+              "lines": 397
+            },
             "packages/runtime/src/project-skill-snapshot.ts": {
-              "sha256": "91df07b1cb5bb07e227fe55ed7d66de77db825e2746ccf740168c2217e8a94b3",
-              "lines": 453
+              "sha256": "9a4cc681cba193ceb5a4d52e7794abd6993e34379b41d091dc55edd98c8bfacb",
+              "lines": 455
             },
             "packages/runtime/src/prompt-evidence-otel.ts": {
               "sha256": "ff70c1fb94a13479d49b901c9d4905f61f2c4856b7c8b1fbca1991bd9137f462",
@@ -15740,8 +15862,8 @@
               "lines": 434
             },
             "packages/runtime/src/read-only-tool-names.ts": {
-              "sha256": "0666e1e63eba51e18a14d8d5224cceb11f75c36ff7fa6dc7d2952ae3d69d1883",
-              "lines": 39
+              "sha256": "f83ed12a862a10a7c788f410bae287aecc7810ff9efbce5fbd8d9ce9dd520295",
+              "lines": 40
             },
             "packages/runtime/src/read-only-tool-policy.ts": {
               "sha256": "6c1814f363f2e9fe1ec782eb9c3458e0969c0ba30f08435b6b6aefde38093f0c",
@@ -15895,6 +16017,10 @@
               "sha256": "fff047f509cf4e38ca6e65a57344b1225a29499468e6072c35778a838183db20",
               "lines": 292
             },
+            "packages/runtime/src/skill-access-state.ts": {
+              "sha256": "12d10a84d4b6da5e05c4453ce9866cc6f6d81626174e9e63e8341e4184224e3e",
+              "lines": 35
+            },
             "packages/runtime/src/skill-content.ts": {
               "sha256": "a9a69b30fbcb097936f4cb8415fbc6c4cfb414323a3af3c74ff79728e328a8f0",
               "lines": 263
@@ -15908,12 +16034,16 @@
               "lines": 181
             },
             "packages/runtime/src/skill-load-tool.ts": {
-              "sha256": "3ee676977e9bef8cbf099d4191b9ed9abc0600c8e70c51df51dc0262586d3751",
-              "lines": 325
+              "sha256": "532a75c67590acd20d150a2128e0750334b2e2b84215c9101cf99f17ba6e8b9d",
+              "lines": 331
             },
             "packages/runtime/src/skill-packages.ts": {
               "sha256": "9158172565e636889d410bd63ee857600f55908815d672d9e9bdb532357ed724",
               "lines": 754
+            },
+            "packages/runtime/src/skill-resource-tool.ts": {
+              "sha256": "fb8df70891ee6dd23df08d56d97f7d6da5ae7d158292d0c6206aba1d924ecfe2",
+              "lines": 395
             },
             "packages/runtime/src/skill-run-context.ts": {
               "sha256": "8f4978ec8b646972c01c5f5aac7aed8a1eaf99f8c56072879dbc45684704f307",
@@ -15976,12 +16106,12 @@
               "lines": 98
             },
             "packages/runtime/src/standard-skill-snapshot-compose.ts": {
-              "sha256": "7525d481791b7c69c9387647fcf039685eec349e18873ff7b56fd98684cc5ca6",
-              "lines": 424
+              "sha256": "dba04121d1d36a6b0a9fb6e2fc613e442c032369b46869513929ff5d97963691",
+              "lines": 461
             },
             "packages/runtime/src/standard-skill-snapshot.ts": {
-              "sha256": "b3d4a531adb615b7bf4021739f4682dfa9d51e40c7637062573d84881a71e987",
-              "lines": 260
+              "sha256": "e440e4fcf9b20a7cd936bc53d036c7e902f970e432c6943258024595891f3859",
+              "lines": 262
             },
             "packages/runtime/src/stateless-agent-tools.ts": {
               "sha256": "fd222cbe09996d2d9d5c46bd3e9beca7d9081eb00f2f310aeebfdcc2ffacf90c",
@@ -16892,7 +17022,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "cc4954763eff5c682f5d28fc641d0f4c5ba566bf6557bf13938f43bb2791c79f"
+          "manifestSha256": "f2a356abcfe93a48bb0cf35fafe26dde8994291b67673a286eee3b9e4d553405"
         }
       },
       "excludedCategories": [
@@ -16921,9 +17051,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "22cb42fe1f7d1b720d6930859f0e943d63fd6a77d4caf23fa2d43ca4cfbac323"
+      "manifestSha256": "39906f99a617f1a90fa371dab3b65fbe5e6431d58e050f156e6dc74d9fffcffc"
     },
-    "manifestSha256": "c7ab47d2a9b291604e226eaeaaf0b5d57c1d3ca1724282639246a30102ede02e"
+    "manifestSha256": "f4ecaf92ac96dd5caa315f6f1ebc87d276ac9a8ddf9a0a8ead0362d70da9c391"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -17111,11 +17241,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "1e000a730d4b89e1d0ca91a72252c62425d7dabbc5fe863fb04dea03895787b8"
+      "sha256": "9732f75784763bf1ea82e68b586d5998855cf26abf89858e5fa0e595e53a7607"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "b0044620b91dcf7296aee705919c7085304d7d1196be91b1541e2c27184874cb"
+      "sha256": "5b6feea215bde3194e2204ad72df7de011715e3baa6e75bb36ca4de51ca77120"
     }
   }
 }

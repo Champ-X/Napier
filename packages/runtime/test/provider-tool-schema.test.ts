@@ -10,6 +10,8 @@ import { createTypescriptAstTools } from "../src/typescript-ast-tool.js";
 import { createWorkspaceFilePreviewTool } from "../src/workspace-file-tools.js";
 import { createWorkspaceProcessTool } from "../src/workspace-process-tool.js";
 import { createSkillLoadTool } from "../src/skill-load-tool.js";
+import { createSkillAccessState } from "../src/skill-access-state.js";
+import { createSkillResourceTool } from "../src/skill-resource-tool.js";
 
 describe("Provider tool schema compatibility", () => {
   it("publishes the exact provider-safe skill_load schema", () => {
@@ -26,6 +28,34 @@ describe("Provider tool schema compatibility", () => {
             minLength: 1,
             maxLength: 64,
             pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          }),
+        },
+      }),
+    );
+  });
+
+  it("publishes the exact provider-safe skill_resource schema", () => {
+    const tool = createSkillResourceTool(
+      undefined as never,
+      createSkillAccessState(),
+    );
+    expect(tool.name).toBe("skill_resource");
+    expect(tool.parameters).toEqual(
+      expect.objectContaining({
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "path"],
+        properties: {
+          name: expect.objectContaining({
+            type: "string",
+            minLength: 1,
+            maxLength: 64,
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          }),
+          path: expect.objectContaining({
+            type: "string",
+            minLength: 3,
+            maxLength: 240,
           }),
         },
       }),

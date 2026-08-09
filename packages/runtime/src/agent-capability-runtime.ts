@@ -37,6 +37,8 @@ import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 import { createSkillLoadTool } from "./skill-load-tool.js";
+import { createSkillAccessState } from "./skill-access-state.js";
+import { createSkillResourceTool } from "./skill-resource-tool.js";
 
 interface AgentCapabilityOwner {
   threadId: string;
@@ -160,7 +162,11 @@ export class AgentCapabilityRuntime {
       options.projectSkillSnapshot &&
       options.profile.enabledTools.includes("skill_load")
     ) {
-      tools.push(createSkillLoadTool(options.projectSkillSnapshot));
+      const access = createSkillAccessState();
+      tools.push(
+        createSkillLoadTool(options.projectSkillSnapshot, access),
+        createSkillResourceTool(options.projectSkillSnapshot, access),
+      );
     }
     if (
       !options.advisorCorrection &&

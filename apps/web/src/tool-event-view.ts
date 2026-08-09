@@ -35,9 +35,9 @@ import {
   type ResearchSourceToolEventTraceView,
 } from "./research-source-event-view";
 import {
-  skillLoadEventEvidence,
-  skillLoadSummaryParts,
-  type SkillLoadToolEventTraceView,
+  skillToolEventEvidence,
+  skillToolSummaryParts,
+  type SkillToolEventTraceView,
 } from "./skill-load-event-view";
 import {
   sqliteQueryEventEvidence,
@@ -108,7 +108,7 @@ export interface ToolEventTraceView
     VerificationToolEventTraceView,
     WriteLinkedTestEventTraceView,
     WorkspaceReadToolEventTraceView,
-    SkillLoadToolEventTraceView,
+    SkillToolEventTraceView,
     ToolResultReuseEventTraceView {
   toolName: string;
   status: string;
@@ -203,10 +203,7 @@ export function toolEventTraceView(
     toolName === "run_command"
       ? commandToolEventEvidence(event.payload["details"])
       : undefined;
-  const gitEvidence = gitToolEventEvidence(
-    toolName,
-    event.payload["details"],
-  );
+  const gitEvidence = gitToolEventEvidence(toolName, event.payload["details"]);
   const browserEvidence =
     toolName === "browser"
       ? browserEventEvidence(event.payload["details"])
@@ -215,10 +212,10 @@ export function toolEventTraceView(
     toolName === "research_source"
       ? researchSourceEventEvidence(event.payload["details"])
       : undefined;
-  const skillLoadEvidence =
-    toolName === "skill_load"
-      ? skillLoadEventEvidence(event.payload["details"])
-      : undefined;
+  const skillEvidence = skillToolEventEvidence(
+    toolName,
+    event.payload["details"],
+  );
   const sqliteQueryEvidence =
     toolName === "sqlite_query"
       ? sqliteQueryEventEvidence(event.payload["details"])
@@ -269,7 +266,7 @@ export function toolEventTraceView(
     ...(gitEvidence ? gitEvidence : {}),
     ...(browserEvidence ? browserEvidence : {}),
     ...(researchSourceEvidence ? researchSourceEvidence : {}),
-    ...(skillLoadEvidence ? skillLoadEvidence : {}),
+    ...skillEvidence,
     ...(sqliteQueryEvidence ? sqliteQueryEvidence : {}),
     ...(dataFrameEvidence ?? {}),
     ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
@@ -303,7 +300,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...gitToolSummaryParts(view),
     ...browserSummaryParts(view),
     ...researchSourceSummaryParts(view),
-    ...skillLoadSummaryParts(view),
+    ...skillToolSummaryParts(view),
     ...sqliteQuerySummaryParts(view),
     ...dataFrameSummaryParts(view),
     ...javascriptKernelSummaryParts(view),

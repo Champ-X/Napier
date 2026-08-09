@@ -52,6 +52,17 @@ async function putSkill(
   await writeFile(path.join(directory, "SKILL.md"), text);
 }
 
+async function putResource(
+  ownerRoot: string,
+  name: string,
+  resourcePath: string,
+  text: string,
+): Promise<void> {
+  const target = path.join(ownerRoot, "skills", name, resourcePath);
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, text);
+}
+
 async function setup() {
   return {
     workspace: await temporary("standard-workspace"),
@@ -109,6 +120,12 @@ describe("standard project and user Skill snapshots", () => {
   it("loads a user-standard Skill without leaking the user home path", async () => {
     const { workspace, home } = await setup();
     await putSkill(path.join(home, ".agents"), "user-brief");
+    await putResource(
+      path.join(home, ".agents"),
+      "user-brief",
+      "references/checklist.md",
+      "# User checklist\n\nKeep the result bounded.\n",
+    );
 
     const snapshot = await buildStandardSkillSnapshot(
       workspace,
@@ -146,6 +163,17 @@ describe("standard project and user Skill snapshots", () => {
       state: "loaded",
     });
     expect(JSON.stringify(result)).not.toContain(home);
+
+    const resource = await snapshot.loadResource(
+      "user-brief",
+      "references/checklist.md",
+    );
+    expect(resource).toMatchObject({
+      relativePath: ".agents/skills/user-brief/references/checklist.md",
+      virtualPath: "/user/.agents/skills/user-brief/references/checklist.md",
+    });
+    expect(resource.text).toContain("Keep the result bounded");
+    expect(JSON.stringify(resource)).not.toContain(home);
   });
 
   it("fails closed when the same Skill is present in multiple roots", async () => {

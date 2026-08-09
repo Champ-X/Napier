@@ -3,6 +3,24 @@ import { describe, expect, it } from "vitest";
 import { assessToolCall, isPathInsideWorkspace } from "../src/policy.js";
 
 describe("workspace policy", () => {
+  it("allows the derived Skill resource reader under observe policy", () => {
+    expect(
+      assessToolCall(
+        "observe",
+        "skill_resource",
+        {
+          name: "research-brief",
+          path: "references/checklist.md",
+        },
+        "/workspace",
+      ),
+    ).toEqual({
+      allowed: true,
+      risk: "low",
+      reason: "read-only workspace operation",
+    });
+  });
+
   it("confines addressed paths to the workspace", () => {
     expect(isPathInsideWorkspace("src/index.ts", "/workspace")).toBe(true);
     expect(isPathInsideWorkspace("../secrets.txt", "/workspace")).toBe(false);
