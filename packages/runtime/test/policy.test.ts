@@ -311,6 +311,13 @@ describe("workspace policy", () => {
         reason: "internal durable-ledger update",
       }),
     );
+    expect(assessToolCall("observe", "replan_plan", {}, "/workspace")).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+        reason: "internal durable-ledger update",
+      }),
+    );
     expect(
       assessToolCall("observe", "record_run_milestone", {}, "/workspace"),
     ).toEqual(

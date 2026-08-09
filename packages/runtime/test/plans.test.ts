@@ -562,6 +562,51 @@ describe("execution plans", () => {
     );
   });
 
+  it("settles produced non-workspace artifacts without weakening file verification", () => {
+    const created = createExecutionPlan("thread-external-artifact", {
+      objective: "Publish an external recovery report.",
+      steps: [
+        {
+          id: "publish",
+          title: "Publish report",
+          description: "Publish the recovery result.",
+          verification: "The report URL is recorded with evidence.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "report",
+          path: "ledger://recovery-report",
+          kind: "other",
+          description: "External recovery report.",
+        },
+      ],
+    });
+    const running = transitionPlanStep(created, "publish", {
+      action: "start",
+      runId: "run-publish",
+    });
+    const completedStep = transitionPlanStep(running, "publish", {
+      action: "complete",
+      evidence: "The recovery report was published.",
+    });
+    expect(completedStep.status).toBe("active");
+
+    const produced = updateArtifactManifest(completedStep, "report", {
+      status: "produced",
+      sourceRunId: "run-publish",
+      evidence: "The durable report locator was recorded.",
+    });
+
+    expect(produced.status).toBe("completed");
+    expect(produced.artifacts[0]).toEqual(
+      expect.objectContaining({
+        kind: "other",
+        status: "produced",
+      }),
+    );
+  });
+
   it("binds artifact event path and evidence hashes", () => {
     const plan = createDeliveryPlan();
     const produced = updateArtifactManifest(plan, "runtime-change", {

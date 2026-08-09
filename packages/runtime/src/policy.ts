@@ -34,6 +34,7 @@ const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
   "update_plan_step",
   "update_plan_artifact",
+  "replan_plan",
   "record_run_milestone",
   "request_operator_decision",
 ]);

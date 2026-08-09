@@ -1320,20 +1320,20 @@ function derivePlanStatus(plan: ExecutionPlan): ExecutionPlan["status"] {
   );
   const artifactsSettled = plan.artifacts.every(
     (artifact) =>
-      artifact.status === "verified" || artifact.status === "superseded",
+      artifact.status === "verified" ||
+      artifact.status === "superseded" ||
+      (["url", "other"].includes(artifact.kind) &&
+        artifact.status === "produced"),
   );
-  if (stepsSettled && artifactsSettled) {
-    return "completed";
-  }
+  if (stepsSettled && artifactsSettled) return "completed";
   if (
     (plan.steps.some((step) => step.status === "blocked") ||
       plan.artifacts.some((artifact) => artifact.status === "missing")) &&
     !plan.steps.some(
       (step) => step.status === "ready" || step.status === "running",
     )
-  ) {
+  )
     return "blocked";
-  }
   return "active";
 }
 
