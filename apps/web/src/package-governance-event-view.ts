@@ -1,5 +1,7 @@
 import type { RunEvent } from "@napier/contracts";
 
+import { skillLifecycleEventTraceSummary } from "./skill-lifecycle-event-view";
+
 export interface PackageGovernanceEventTraceView {
   action: string;
   family: "skill" | "prompt" | "inspector";
@@ -107,6 +109,9 @@ export function packageGovernanceEventTraceSummary(
   event: RunEvent,
 ): string | undefined {
   if (!isPackageGovernancePrefix(event.type)) return undefined;
+  if (event.type === "skill.lifecycle") {
+    return skillLifecycleEventTraceSummary(event);
+  }
   if (!PACKAGE_GOVERNANCE_EVENT.test(event.type)) return event.category;
   const view = packageGovernanceEventTraceView(event);
   if (!view) return PACKAGE_RECEIPT_SUMMARY;
@@ -245,7 +250,9 @@ function shaField(
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {

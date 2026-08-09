@@ -10,6 +10,7 @@ import {
 } from "@earendil-works/pi-ai";
 import type { StreamFrame } from "@napier/contracts";
 import { isSkillCatalogBindingV1 } from "@napier/contracts/skill-load";
+import { isSkillLifecycleProjectionV1 } from "@napier/contracts/skill-lifecycle";
 import {
   createLocalAgentRuntime,
   UnsupportedSandboxAdapter,
@@ -101,6 +102,20 @@ describe("Research Skill load CLI", () => {
         }),
       }),
     );
+    const lifecycle = events.find(
+      (event) =>
+        event.type === "skill.lifecycle" &&
+        event.payload?.skillName === "research-brief",
+    );
+    expect(isSkillLifecycleProjectionV1(lifecycle?.payload)).toBe(true);
+    expect(lifecycle?.payload).toEqual(
+      expect.objectContaining({
+        skillName: "research-brief",
+        state: "loaded",
+        source: "project",
+        rootKind: "project_legacy",
+      }),
+    );
     expect(stdout.text()).not.toContain("PRIVATE_research-brief");
     expect(stdout.text()).not.toContain(workspaceRoot);
 
@@ -111,6 +126,18 @@ describe("Research Skill load CLI", () => {
     });
     try {
       const agent = reopened.store.listAgents()[0]!;
+      const persistedThread = reopened.store.listThreads()[0]!;
+      const persistedLifecycle = (
+        await reopened.store.listEvents(persistedThread.id)
+      ).find(
+        (event) =>
+          event.type === "skill.lifecycle" &&
+          event.payload?.skillName === "research-brief",
+      );
+      expect(isSkillLifecycleProjectionV1(persistedLifecycle?.payload)).toBe(
+        true,
+      );
+      expect(persistedLifecycle?.payload).toEqual(lifecycle?.payload);
       expect(agent.enabledTools).toContain("skill_load");
       expect(agent.enabledSkills).toEqual([
         "artifact-studio",

@@ -12,6 +12,7 @@ import {
   isStandardSkillLoadReceiptV2,
   isStandardSkillLoadSelectionV2,
 } from "@napier/contracts/skill-load-standard";
+import { isSkillLifecycleProjectionV1 } from "@napier/contracts/skill-lifecycle";
 import { isSkillResourceLoadReceiptV1 } from "@napier/contracts/skill-resource";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -128,6 +129,18 @@ describe("standard Skill production Run", () => {
           relativePath: ".agents/skills/research-brief/SKILL.md",
         }),
       );
+      const lifecycle = events.find(
+        (event) => event.runId === run.id && event.type === "skill.lifecycle",
+      );
+      expect(isSkillLifecycleProjectionV1(lifecycle?.payload)).toBe(true);
+      expect(lifecycle?.payload).toEqual(
+        expect.objectContaining({
+          skillName: "research-brief",
+          state: "loaded",
+          source: "project",
+          rootKind: "project_standard",
+        }),
+      );
 
       const durable = JSON.stringify(events);
       expect(durable).not.toContain("PRIVATE_STANDARD_RESEARCH_BRIEF");
@@ -229,6 +242,18 @@ describe("standard Skill production Run", () => {
         }),
       );
       expect(record(completed?.payload)?.outputRedacted).toBe(true);
+      const lifecycle = events.find(
+        (event) => event.runId === run.id && event.type === "skill.lifecycle",
+      );
+      expect(isSkillLifecycleProjectionV1(lifecycle?.payload)).toBe(true);
+      expect(lifecycle?.payload).toEqual(
+        expect.objectContaining({
+          skillName: "research-brief",
+          state: "loaded",
+          source: "project",
+          rootKind: "project_standard",
+        }),
+      );
       const durable = JSON.stringify(events);
       expect(durable).not.toContain("PRIVATE_STANDARD_RESOURCE");
       expect(durable).not.toContain("Confirm every claim has a citation");

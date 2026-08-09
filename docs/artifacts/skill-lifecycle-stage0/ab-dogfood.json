@@ -1,0 +1,302 @@
+{
+  "kind": "napier.skill-lifecycle-ab-dogfood",
+  "schemaVersion": 1,
+  "result": "passed",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "credentialLocator": "DEEPSEEK_API_KEY",
+  "comparisonPolicy": {
+    "sameModel": true,
+    "samePromptWithinTask": true,
+    "samePresetWithinTask": true,
+    "isolatedWorkspaceAndState": true,
+    "productionCli": true,
+    "trialCountPerVariant": 1
+  },
+  "cliEntrypointSha256": "8d90047290b7540fd48675061c9809f5edb61c4712b863149fbbba63040229d4",
+  "campaigns": [
+    {
+      "task": "software_delivery",
+      "preset": "coding",
+      "skillName": "software-delivery",
+      "promptSha256": "6aadfffa72550d48ee3fc667e9e77c6fa5838394cd37065684b920636384e1d2",
+      "withSkill": {
+        "variant": "with-skill",
+        "outcomePassed": true,
+        "durationMs": 11063,
+        "exitCode": 0,
+        "runIdSha256": "cdc978c7ad0a4f13a036348a94e80bf56bc666445cf830d49204616a93526336",
+        "stdoutBytes": 477663,
+        "stdoutSha256": "5b51d7daa50e8805e788ef83156d4692032bb8499872ab92480697f3c71e05ab",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "usage": {
+          "inputTokens": 16538,
+          "outputTokens": 857,
+          "cacheReadTokens": 57984,
+          "cacheWriteTokens": 0,
+          "totalTokens": 75379,
+          "costUsd": 0.0027176352000000004
+        },
+        "toolCallCount": 4,
+        "modelTurnCount": 5,
+        "catalogState": "loadable",
+        "lifecycle": {
+          "state": "applied",
+          "applicationMode": "software_change_observed",
+          "proofEventCount": 2,
+          "contentSha256": "b293453e88e75045d72979e06be520256b6154f34e93ab3d74f63471906e2316"
+        },
+        "toolSequence": [
+          {
+            "seq": 76,
+            "toolName": "skill_load",
+            "status": "completed"
+          },
+          {
+            "seq": 80,
+            "toolName": "read_file",
+            "status": "completed"
+          },
+          {
+            "seq": 233,
+            "toolName": "apply_patch",
+            "status": "completed"
+          },
+          {
+            "seq": 275,
+            "toolName": "read_file",
+            "status": "completed"
+          }
+        ],
+        "replay": {
+          "status": "valid",
+          "contentSha256": "93fcce672a5102ae81bca4cec71f43c0cb473fdd53567d017e9f7d5b19c85f86",
+          "eventStreamSha256": "4b3f56ab1fdc91ae308193e1ea56fa1dc4f6668ed30d850430d15d3f0075e68b",
+          "eventCount": 618
+        },
+        "profileBeforeSha256": "8e815892f0b54d0ce690138962c1b3bd4c548a4175b226f5286ab364766846df",
+        "profileAfterSha256": "8e815892f0b54d0ce690138962c1b3bd4c548a4175b226f5286ab364766846df",
+        "revisionCountBefore": 1,
+        "revisionCountAfter": 1
+      },
+      "withoutSkill": {
+        "variant": "without-skill",
+        "outcomePassed": true,
+        "durationMs": 10238,
+        "exitCode": 0,
+        "runIdSha256": "cced954901ed0b998eaccc92af7a0483a39c644a9b2cbc5a235d98dadfb0ad4a",
+        "stdoutBytes": 398055,
+        "stdoutSha256": "d5230e53639c72f92dd5638d918731528c2649ec24b5662e63ebcec44fbb32c4",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "usage": {
+          "inputTokens": 16208,
+          "outputTokens": 731,
+          "cacheReadTokens": 56832,
+          "cacheWriteTokens": 0,
+          "totalTokens": 73771,
+          "costUsd": 0.0026329296000000006
+        },
+        "toolCallCount": 4,
+        "modelTurnCount": 5,
+        "catalogState": "unavailable",
+        "lifecycle": {
+          "state": "unavailable",
+          "proofEventCount": 0,
+          "contentSha256": "e5bc0cb855ef8a0f490bdaeef7e185038cd91a3f4a845be46d9d13939c544815"
+        },
+        "toolSequence": [
+          {
+            "seq": 200,
+            "toolName": "skill_load",
+            "status": "failed"
+          },
+          {
+            "seq": 204,
+            "toolName": "read_file",
+            "status": "completed"
+          },
+          {
+            "seq": 292,
+            "toolName": "apply_patch",
+            "status": "completed"
+          },
+          {
+            "seq": 303,
+            "toolName": "read_file",
+            "status": "completed"
+          }
+        ],
+        "replay": {
+          "status": "valid",
+          "contentSha256": "d45e2f21c9b1005bd5e10be6a71b92eb8cd367f78c9aba2ad407351b1b9dc4ca",
+          "eventStreamSha256": "54fd903f85248e345a1e944d867f285b1c704b202d7d67dfc3df2204ca4d94ce",
+          "eventCount": 493
+        },
+        "profileBeforeSha256": "025d1d87b48bb7e83cb0491307277872bd845d4b1859c2edcc820c08df62faa5",
+        "profileAfterSha256": "025d1d87b48bb7e83cb0491307277872bd845d4b1859c2edcc820c08df62faa5",
+        "revisionCountBefore": 1,
+        "revisionCountAfter": 1
+      },
+      "delta": {
+        "outcomePassed": 0,
+        "durationMs": 825,
+        "inputTokens": 330,
+        "outputTokens": 126,
+        "totalTokens": 1608,
+        "costUsd": 0.0000847055999999998,
+        "toolCallCount": 0,
+        "modelTurnCount": 0
+      },
+      "skillImpactObserved": true
+    },
+    {
+      "task": "research",
+      "preset": "research",
+      "skillName": "research-brief",
+      "promptSha256": "524005c09e1c76565a788b9f3d8da30a6faa52df0d67b3b3a96ce7c7a94d5802",
+      "withSkill": {
+        "variant": "with-skill",
+        "outcomePassed": true,
+        "durationMs": 23796,
+        "exitCode": 0,
+        "runIdSha256": "ac2075ffafd2e03bfaaddcd1f42d356bdbfc14d99dc35f55d1a085f0f6637522",
+        "stdoutBytes": 1869788,
+        "stdoutSha256": "9920404cde0191f606dac1199ca9678cb478b71dcef8a60313da0ad255f2d985",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "usage": {
+          "inputTokens": 20443,
+          "outputTokens": 2735,
+          "cacheReadTokens": 55040,
+          "cacheWriteTokens": 0,
+          "totalTokens": 78218,
+          "costUsd": 0.0037819320000000004
+        },
+        "toolCallCount": 4,
+        "modelTurnCount": 5,
+        "catalogState": "loadable",
+        "lifecycle": {
+          "state": "applied",
+          "applicationMode": "research_evidence_cited",
+          "proofEventCount": 2,
+          "contentSha256": "314c873e859720257e212f25762da0f94b1486f4ded3f968f05b0999da0ea226"
+        },
+        "toolSequence": [
+          {
+            "seq": 596,
+            "toolName": "skill_load",
+            "status": "completed"
+          },
+          {
+            "seq": 598,
+            "toolName": "web_fetch",
+            "status": "completed",
+            "action": "fetch"
+          },
+          {
+            "seq": 1563,
+            "toolName": "research_source",
+            "status": "completed",
+            "action": "capture_fetch"
+          },
+          {
+            "seq": 1738,
+            "toolName": "research_source",
+            "status": "completed",
+            "action": "cite"
+          }
+        ],
+        "replay": {
+          "status": "valid",
+          "contentSha256": "7b2a9ef5a507da4400d553725269b5d668391bbe9803cc7f8b023a60237ad65b",
+          "eventStreamSha256": "7803c201791c565fc742086e1bac3decf0943057e156fa08c674c4afc2d9ae67",
+          "eventCount": 2318
+        },
+        "profileBeforeSha256": "03a00cad44cd6401f53b2211c11a819bcb134198955d50dced630003eea06ee2",
+        "profileAfterSha256": "03a00cad44cd6401f53b2211c11a819bcb134198955d50dced630003eea06ee2",
+        "revisionCountBefore": 1,
+        "revisionCountAfter": 1
+      },
+      "withoutSkill": {
+        "variant": "without-skill",
+        "outcomePassed": true,
+        "durationMs": 16164,
+        "exitCode": 0,
+        "runIdSha256": "bdcbe18758b93fbd80694670fa96694d6a659fc284b234e6211acf2f09bd1384",
+        "stdoutBytes": 1133487,
+        "stdoutSha256": "dabbf1698232c172b14bc3816a88760113ff6ad4c56b0c131aff1611364de7ef",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "usage": {
+          "inputTokens": 18224,
+          "outputTokens": 1756,
+          "cacheReadTokens": 50048,
+          "cacheWriteTokens": 0,
+          "totalTokens": 70028,
+          "costUsd": 0.0031831744
+        },
+        "toolCallCount": 4,
+        "modelTurnCount": 5,
+        "catalogState": "unavailable",
+        "lifecycle": {
+          "state": "unavailable",
+          "proofEventCount": 0,
+          "contentSha256": "67618a638d9477c22fb45812c3a1f9a6640601ae1e3f5a2bead9139653f443b1"
+        },
+        "toolSequence": [
+          {
+            "seq": 223,
+            "toolName": "skill_load",
+            "status": "failed"
+          },
+          {
+            "seq": 225,
+            "toolName": "web_fetch",
+            "status": "completed",
+            "action": "fetch"
+          },
+          {
+            "seq": 848,
+            "toolName": "research_source",
+            "status": "completed",
+            "action": "capture_fetch"
+          },
+          {
+            "seq": 1056,
+            "toolName": "research_source",
+            "status": "completed",
+            "action": "cite"
+          }
+        ],
+        "replay": {
+          "status": "valid",
+          "contentSha256": "d0a57f6ffa03c477505ff95ea773dfc5bd09d5478b3b40792a58c15512b8eac4",
+          "eventStreamSha256": "b25717574d5575deb0e21bc781e7bc04361450551f0b68ef9aee85406e4bf8e4",
+          "eventCount": 1337
+        },
+        "profileBeforeSha256": "ccaca6ae31c0de49621e837126f806bc8f1a89a3d7190b7778c655ef91a9793b",
+        "profileAfterSha256": "ccaca6ae31c0de49621e837126f806bc8f1a89a3d7190b7778c655ef91a9793b",
+        "revisionCountBefore": 1,
+        "revisionCountAfter": 1
+      },
+      "delta": {
+        "outcomePassed": 0,
+        "durationMs": 7632,
+        "inputTokens": 2219,
+        "outputTokens": 979,
+        "totalTokens": 8190,
+        "costUsd": 0.0005987576000000003,
+        "toolCallCount": 0,
+        "modelTurnCount": 0
+      },
+      "skillImpactObserved": true
+    }
+  ],
+  "credentialCanaryMatches": 0,
+  "rawJsonlRetained": false,
+  "privateSkillContentRetained": false,
+  "taskRootRemoved": true,
+  "contentSha256": "aa1966953ed82796756e3448518262d35245e6cab2b6546f8fb2b1bbaf91dc7e"
+}

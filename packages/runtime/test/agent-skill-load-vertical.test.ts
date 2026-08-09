@@ -12,6 +12,7 @@ import {
   parseResearchSourceEvidenceV1,
   projectSkillApplicationV1,
 } from "@napier/contracts/skill-load";
+import { isSkillLifecycleProjectionV1 } from "@napier/contracts/skill-lifecycle";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
@@ -97,7 +98,9 @@ describe("Research Skill load vertical", () => {
         },
         (context) => {
           const text = JSON.stringify(context.messages);
-          const sourceId = /Research Source: (source_[a-z0-9]+)/u.exec(text)?.[1];
+          const sourceId = /Research Source: (source_[a-z0-9]+)/u.exec(
+            text,
+          )?.[1];
           const contentSha256 = /Capture SHA-256: ([a-f0-9]{64})/u.exec(
             text,
           )?.[1];
@@ -134,31 +137,31 @@ describe("Research Skill load vertical", () => {
       });
       expect(run.status, run.error).toBe("completed");
       const events = await services.store.listEvents(thread.id);
-      const researchEvidence = events
-        .filter(
-          (event) =>
-            event.type === "tool.completed" &&
-            record(event.payload)?.toolName === "research_source",
-        )
-        .map((event) =>
-          parseResearchSourceEvidenceV1(record(event.payload)?.details),
-        );
+      const researchEvents = events.filter(
+        (event) =>
+          event.type === "tool.completed" &&
+          record(event.payload)?.toolName === "research_source",
+      );
+      const researchEvidence = researchEvents.map((event) =>
+        parseResearchSourceEvidenceV1(record(event.payload)?.details),
+      );
       expect(researchEvidence.map((item) => item?.action)).toEqual([
         "capture_fetch",
         "cite",
       ]);
       expect(
         researchEvidence.map((item) => item?.continuityCapsuleContentSha256),
-      ).toEqual([expect.stringMatching(/^[a-f0-9]{64}$/u), expect.stringMatching(/^[a-f0-9]{64}$/u)]);
+      ).toEqual([
+        expect.stringMatching(/^[a-f0-9]{64}$/u),
+        expect.stringMatching(/^[a-f0-9]{64}$/u),
+      ]);
       expect(researchEvidence[0]?.sourceId).toBe(researchEvidence[1]?.sourceId);
       const finalAssistant = events.findLast(
         (event) => event.type === "message.assistant",
       );
       const finalText = String(record(finalAssistant?.payload)?.text ?? "");
       const citationLine = finalText.split("\n").at(-1)!;
-      expect(
-        createHash("sha256").update(citationLine).digest("hex"),
-      ).toBe(
+      expect(createHash("sha256").update(citationLine).digest("hex")).toBe(
         researchEvidence[1]?.action === "cite"
           ? researchEvidence[1].citationTokenSha256
           : undefined,
@@ -176,6 +179,18 @@ describe("Research Skill load vertical", () => {
       expect(projection!.terminalSeq).toBeLessThan(projection!.captureSeq!);
       expect(projection!.captureSeq).toBeLessThan(projection!.citeSeq!);
       expect(projection!.citeSeq).toBeLessThan(projection!.applicationSeq!);
+      const lifecycleEvent = events.find(
+        (event) => event.runId === run.id && event.type === "skill.lifecycle",
+      );
+      expect(isSkillLifecycleProjectionV1(lifecycleEvent?.payload)).toBe(true);
+      expect(lifecycleEvent?.payload).toEqual(
+        expect.objectContaining({
+          state: "applied",
+          skillName: "research-brief",
+          applicationMode: "research_evidence_cited",
+          proofEventSeqs: researchEvents.map((event) => event.seq),
+        }),
+      );
       const durable = JSON.stringify(events);
       expect(durable).not.toContain("Use bounded evidence.");
       expect(durable).not.toContain("PRIVATE_SOURCE_BODY");

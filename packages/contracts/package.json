@@ -55,6 +55,10 @@
     "./skill-resource": {
       "types": "./dist/skill-resource.d.ts",
       "import": "./dist/skill-resource.js"
+    },
+    "./skill-lifecycle": {
+      "types": "./dist/skill-lifecycle.d.ts",
+      "import": "./dist/skill-lifecycle.js"
     }
   },
   "files": [

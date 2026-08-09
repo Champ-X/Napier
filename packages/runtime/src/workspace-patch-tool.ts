@@ -242,11 +242,16 @@ export function workspacePatchToolOutputLedgerProjection(
     details && hash(details["resultSha256"])
       ? details["resultSha256"]
       : undefined;
+  const afterSha256 =
+    details && hash(details["afterSha256"])
+      ? details["afterSha256"]
+      : undefined;
   return {
     outputSha256: sha256(output),
     outputBytes: Buffer.byteLength(output, "utf8"),
     outputRedacted: true,
     ...(resultSha256 ? { resultSha256 } : {}),
+    ...(afterSha256 ? { afterSha256 } : {}),
   };
 }
 

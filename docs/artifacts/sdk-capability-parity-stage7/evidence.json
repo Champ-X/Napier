@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "403a978132f7381f5c360ddfe36a056bc5be86cfddd35fd02b02c9e67e005b08",
+      "stdoutSha256": "0a03ea752c2635c8df11a0093ed559e3ea5464120c5a52279785da8dd457677c",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "9732f75784763bf1ea82e68b586d5998855cf26abf89858e5fa0e595e53a7607",
-      "receiptSha256": "722f37c6f857b82d9d53c4dcaeef62ed57da009506a99c6fe5cb23d283c6a3bb"
+      "evidenceSha256": "896ed517d3014118ccb8b7e2592a80ffac922c082ab997fc99073882bd1dc2e4",
+      "receiptSha256": "45606ddb5acf2cf5ae0c349b5421fca828332d84bd32926d2ebea772ed458f1d"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "391b0bfa1448dad57770bbbc3f41842f88d3c0fb63cb3e5097413465aea67ce8",
+      "stdoutSha256": "70a7f43f54b38acc76a3f101c9fb6229f1eadd46fc0f99a7fc9fdb1f81f20236",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "5b6feea215bde3194e2204ad72df7de011715e3baa6e75bb36ca4de51ca77120",
-      "receiptSha256": "c943d24cd25e343254674302d96454d356122900e3b7f20a32b6d9e4f8071313"
+      "evidenceSha256": "c4c551d482e81425c6f49f071a1b605b0121d0a04359e0b78d7ad06dbbd191dd",
+      "receiptSha256": "c8b8904304e399f7b82e70ff8fdf6045376e286165f42b352d053d0eaf427022"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -564,7 +564,9 @@
         "apps/web/src/model-adapter-view.ts",
         "apps/web/src/model-context-envelope-copy.ts",
         "apps/web/src/model-context-envelope-view.ts",
+        "apps/web/src/package-governance-event-view.ts",
         "apps/web/src/research-source-event-view.ts",
+        "apps/web/src/skill-lifecycle-event-view.ts",
         "apps/web/src/skill-load-event-view.ts",
         "apps/web/src/styles.css",
         "apps/web/src/task-narrative-view-model.ts",
@@ -609,6 +611,7 @@
         "apps/web/test/model-context-envelope-view.test.ts",
         "apps/web/test/research-source-event-view.test.ts",
         "apps/web/test/responsive-inspector.test.ts",
+        "apps/web/test/skill-lifecycle-event-view.test.ts",
         "apps/web/test/skill-load-event-view.test.ts",
         "apps/web/test/task-completion-summary.test.ts",
         "apps/web/test/task-narrative-view-model.test.ts",
@@ -636,6 +639,7 @@
         "docs/artifacts/sdk-capability-parity-stage7/evidence.json",
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json",
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json",
+        "docs/artifacts/skill-lifecycle-stage0/ab-dogfood.json",
         "docs/artifacts/skill-load-fast-core-stage7/README.md",
         "docs/artifacts/skill-load-fast-core-stage7/evidence.json",
         "docs/artifacts/skill-load-fast-core-stage7/final-check.json",
@@ -653,6 +657,7 @@
         "packages/contracts/src/agent-tool-names.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/model-context-envelope.ts",
+        "packages/contracts/src/skill-lifecycle.ts",
         "packages/contracts/src/skill-load-research.ts",
         "packages/contracts/src/skill-load-standard-types.ts",
         "packages/contracts/src/skill-load-standard.ts",
@@ -661,6 +666,7 @@
         "packages/contracts/src/skill-resource.ts",
         "packages/contracts/test/agent-capability-contract.test.ts",
         "packages/contracts/test/research-source-evidence.test.ts",
+        "packages/contracts/test/skill-lifecycle.test.ts",
         "packages/contracts/test/skill-load-standard.test.ts",
         "packages/contracts/test/skill-load.test.ts",
         "packages/contracts/test/skill-resource.test.ts",
@@ -689,6 +695,7 @@
         "packages/runtime/src/git-inspect-tool.ts",
         "packages/runtime/src/git-stage-tool.ts",
         "packages/runtime/src/ids.ts",
+        "packages/runtime/src/import-boundary-format.ts",
         "packages/runtime/src/internal-research-recovery-authorization.ts",
         "packages/runtime/src/javascript-kernel-tool.ts",
         "packages/runtime/src/local-agent-runtime.ts",
@@ -723,6 +730,7 @@
         "packages/runtime/src/sandbox-host-direct.ts",
         "packages/runtime/src/sandbox.ts",
         "packages/runtime/src/skill-access-state.ts",
+        "packages/runtime/src/skill-lifecycle-projection.ts",
         "packages/runtime/src/skill-load-contracts.ts",
         "packages/runtime/src/skill-load-replay.ts",
         "packages/runtime/src/skill-load-tool.ts",
@@ -822,6 +830,7 @@
         "packages/runtime/test/run-lease-reconciliation.test.ts",
         "packages/runtime/test/sandbox-host-direct.test.ts",
         "packages/runtime/test/sandbox.test.ts",
+        "packages/runtime/test/skill-lifecycle-projection.test.ts",
         "packages/runtime/test/skill-load-recovery-replay.test.ts",
         "packages/runtime/test/skill-resource-tool.test.ts",
         "packages/runtime/test/source-continuity-preparation.test.ts",
@@ -847,6 +856,8 @@
         "scripts/prompt-regression-matrix.test.mjs",
         "scripts/refresh-skill-load-fast-core-evidence.mjs",
         "scripts/run-prompt-regression-matrix.mjs",
+        "scripts/run-skill-lifecycle-ab-dogfood.mjs",
+        "scripts/run-skill-lifecycle-ab-dogfood.test.mjs",
         "scripts/run-skill-load-fast-core-evidence.mjs",
         "scripts/run-skill-load-fast-core-evidence.test.mjs",
         "scripts/run-skill-load-final-check.mjs",
@@ -859,6 +870,7 @@
         "scripts/sdk-capability-parity-evidence.test.mjs",
         "scripts/sdk-capability-parity-identity.mjs",
         "scripts/sdk-capability-parity-stage7-history.mjs",
+        "scripts/skill-lifecycle-ab-process.mjs",
         "scripts/skill-load-fast-core-evidence-lib.mjs",
         "scripts/web-ui-e2e-contract.mjs",
         "scripts/web-ui-e2e-contract.test.mjs",
@@ -936,8 +948,8 @@
           "lines": 454
         },
         "apps/cli/test/skill-load-research-cli.test.ts": {
-          "sha256": "c70c447be7c12411dbc66ff5b717a7800b42bd4706782c7684fe0d3d7b620de2",
-          "lines": 163
+          "sha256": "f603844f0148027267ead0d1e4e2260a59f246f3fd7cb31f21c54cc90bdca004",
+          "lines": 190
         },
         "apps/cli/test/tui-cli.test.ts": {
           "sha256": "93c120b595e2be0103b06bb8c641d395d69dcd85b6d3d3348a4566e1228de737",
@@ -1183,9 +1195,17 @@
           "sha256": "adfd156ddb876b03e3d1cefcb7be3bbcd6c197b84dc2fe91f8cc61e84f460b6c",
           "lines": 292
         },
+        "apps/web/src/package-governance-event-view.ts": {
+          "sha256": "ef00b5d4d8e22488e3627eaaaca26edea3f8ce494533131cf7d2621e7dbbf63a",
+          "lines": 260
+        },
         "apps/web/src/research-source-event-view.ts": {
           "sha256": "18ed47fbd55a35d0e74e4dddb34b3104796d0ef88f77bbdcdc14075e24e703e4",
           "lines": 388
+        },
+        "apps/web/src/skill-lifecycle-event-view.ts": {
+          "sha256": "6b3a3d687624b632bc17c70526dbabf5b1a07594b5820fa18b1a02409726659b",
+          "lines": 78
         },
         "apps/web/src/skill-load-event-view.ts": {
           "sha256": "7f7972504bb121f0b051b055094853821b86e49546bc6913acc9c4c017b82fb9",
@@ -1363,6 +1383,10 @@
           "sha256": "13490f1c13f52d11259eac0789cacd4ee7a24735ed6e243d0d21b361955361c8",
           "lines": 23
         },
+        "apps/web/test/skill-lifecycle-event-view.test.ts": {
+          "sha256": "2e4a398cbd666563ca65f339a855400b497d77ee703dd5ab48ec1032a4f55532",
+          "lines": 128
+        },
         "apps/web/test/skill-load-event-view.test.ts": {
           "sha256": "b8a8be8b7424700219608cde23d4d8adb3bd216add8a14929a4743de43c3e4b1",
           "lines": 275
@@ -1384,7 +1408,7 @@
           "lines": 37
         },
         "docs/architecture-budget.json": {
-          "sha256": "b5dc0769724c7d4c0e47e37bec6f6e1cd495eab492b63ca7a49bf4ad7b664201",
+          "sha256": "fb8a7b892ac944cdc1ff56ede2691752ee8ed1307c7994a107e0bea7fd641a0b",
           "lines": 259
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
@@ -1448,7 +1472,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "35f54a8130924c4d8e56dd1478a0e764093b7ef6d8469f7b3c6ae9c45f523b42",
+          "sha256": "e50214564932aa3b89adde55fb144b0b0cf9891b3cd040f35daa581b2fd6cdcc",
           "lines": 871
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -1460,12 +1484,16 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "9732f75784763bf1ea82e68b586d5998855cf26abf89858e5fa0e595e53a7607",
+          "sha256": "896ed517d3014118ccb8b7e2592a80ffac922c082ab997fc99073882bd1dc2e4",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "5b6feea215bde3194e2204ad72df7de011715e3baa6e75bb36ca4de51ca77120",
+          "sha256": "c4c551d482e81425c6f49f071a1b605b0121d0a04359e0b78d7ad06dbbd191dd",
           "lines": 69
+        },
+        "docs/artifacts/skill-lifecycle-stage0/ab-dogfood.json": {
+          "sha256": "782baaa47740ccad8599efcfcdcb839fb4c741bc1c82a3dc6e52fd283a8e7d7e",
+          "lines": 302
         },
         "docs/artifacts/skill-load-fast-core-stage7/README.md": {
           "sha256": "46afb39e48b7c3ad56e5dc4ce3a04a3a1c31f6f66fe6768e0d0490fa2a510e17",
@@ -1484,11 +1512,11 @@
           "lines": 104
         },
         "docs/artifacts/web-dist-0.1.0.sha256": {
-          "sha256": "2eec4e7bf718be1de2a710a34c50e12283c5247d59b1ccede635be84848b2e38",
+          "sha256": "765db9497179c85405b0ba1c58ee562ad87b775e9d59edc99f93e25fb7a80757",
           "lines": 131
         },
         "docs/artifacts/web-dist-audit-0.1.0.json": {
-          "sha256": "d8c9883ab900967e5d5a85b24c83254cf6af7b7da24ca94d8f126d9a648fb809",
+          "sha256": "e088351acf65b7b1ee8cac69e3ce8de6d1ffb095ea9d4d115aeefda0f9208a83",
           "lines": 18
         },
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json": {
@@ -1500,8 +1528,8 @@
           "lines": 97
         },
         "packages/contracts/package.json": {
-          "sha256": "c7c91f8734bffa5ec82d6ea656ca142815ea9c98cca0d653be7a0d896e22d53b",
-          "lines": 68
+          "sha256": "63fd61b92e71fa2c9b2bd1b9ef3a93e32bb74e8ebbba71de467866164b66c4cf",
+          "lines": 72
         },
         "packages/contracts/src/agent-capabilities.ts": {
           "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -1522,6 +1550,10 @@
         "packages/contracts/src/model-context-envelope.ts": {
           "sha256": "da22b7e54bda888f2d34ed9b9e1fe63c90fd7d41d6ff6b01dfc6aa67afe234d9",
           "lines": 32
+        },
+        "packages/contracts/src/skill-lifecycle.ts": {
+          "sha256": "5320220753ad6b389e6bc6f374f360292e9a746b6438f3020538ce139eb3c4a5",
+          "lines": 246
         },
         "packages/contracts/src/skill-load-research.ts": {
           "sha256": "d23cbb972473354cf27e488ee8e539586e46a8bd458e4c84d4de50bfb4fdfad9",
@@ -1554,6 +1586,10 @@
         "packages/contracts/test/research-source-evidence.test.ts": {
           "sha256": "59d9c9b1236a95605ee95aeb5b4dca1cdf791673015248a7655f700a6db0c044",
           "lines": 237
+        },
+        "packages/contracts/test/skill-lifecycle.test.ts": {
+          "sha256": "74eb59cb413b5a13026ecfebaedaa9cc18d216c87d77961f64c7eef99b6395ca",
+          "lines": 136
         },
         "packages/contracts/test/skill-load-standard.test.ts": {
           "sha256": "5f4ec86bf667de014be39c4ce9b97d5f7eabb18e02d96ba76db668ee07ed5612",
@@ -1608,8 +1644,8 @@
           "lines": 100
         },
         "packages/runtime/src/agent-runtime.ts": {
-          "sha256": "b0c04a0673556fc173769bc158d9887e270f7c54dc07d4ec28ee5d5898aec6b0",
-          "lines": 3415
+          "sha256": "592b09d90bed7c9565299477b49ad4ed1807e30744b80c0422d0323c434209ac",
+          "lines": 3402
         },
         "packages/runtime/src/agent-tool-ledger.ts": {
           "sha256": "6c7116250473f1f4cb655164b882074c72b2330334c6e0775fa552f9b656d1bf",
@@ -1666,6 +1702,10 @@
         "packages/runtime/src/ids.ts": {
           "sha256": "cb9b4e04eba914393ad80ddd04fc69eef8247a3d569e07427b28899c032fa595",
           "lines": 53
+        },
+        "packages/runtime/src/import-boundary-format.ts": {
+          "sha256": "d0a457cf2acc668ee015d078e34f719c9d18795a5d9596160291ee69a0f72369",
+          "lines": 40
         },
         "packages/runtime/src/internal-research-recovery-authorization.ts": {
           "sha256": "24c0778a153ff86e83af9a8791fbb4474c8cdf8c6e1f0b5a69bb66edc4748645",
@@ -1802,6 +1842,10 @@
         "packages/runtime/src/skill-access-state.ts": {
           "sha256": "12d10a84d4b6da5e05c4453ce9866cc6f6d81626174e9e63e8341e4184224e3e",
           "lines": 35
+        },
+        "packages/runtime/src/skill-lifecycle-projection.ts": {
+          "sha256": "eb1516804d8eabb08b3f0e4e7ffbba29e4d7b890ccfcbcc34f3a675ca9090376",
+          "lines": 477
         },
         "packages/runtime/src/skill-load-contracts.ts": {
           "sha256": "19f6be08b570cdf94650d0c3448ec38a01209f9b2b4ee12ddc21fd34d467d043",
@@ -1952,8 +1996,8 @@
           "lines": 418
         },
         "packages/runtime/src/workspace-patch-tool.ts": {
-          "sha256": "e0ac0cb6c1915cfb1508725ae830f145f0cf633e247d776e0260d960834827ed",
-          "lines": 446
+          "sha256": "ee6969beb29046074845035eb557673fca5dbca5593b0b13e07800167730685c",
+          "lines": 451
         },
         "packages/runtime/src/workspace-process-tool.ts": {
           "sha256": "811bf0b2ffb651ec1f759f18fedb7b9cdf36b787bcf13a3756d1506f7d15b604",
@@ -2000,8 +2044,8 @@
           "lines": 4948
         },
         "packages/runtime/test/agent-skill-load-vertical.test.ts": {
-          "sha256": "2ac21bcd12e9058ef34c76f465e8966ecc552947ba3de0392de6f2c777980d5c",
-          "lines": 193
+          "sha256": "202a086c09c76958d218ece4ed1362f309df59aea57bfe27d21652b95dff843b",
+          "lines": 208
         },
         "packages/runtime/test/agent-skill-load.test.ts": {
           "sha256": "b8fac6c3929c129b1cbdcef9d395a08e0b0e4966c317d84a2ffeabbc7327a673",
@@ -2199,6 +2243,10 @@
           "sha256": "ac40f047f8f9695843856b5d2abf425a36c0cbfe652b31c8aee8f6d7dcf944f0",
           "lines": 579
         },
+        "packages/runtime/test/skill-lifecycle-projection.test.ts": {
+          "sha256": "e3343cd8ed3ea1144ddb73ac3836428cb59574b11c5e37cfff3e9f9b117fb192",
+          "lines": 385
+        },
         "packages/runtime/test/skill-load-recovery-replay.test.ts": {
           "sha256": "00072bb644f6cd533a17cb48ea874d6ec9c85486e5a478e35c36032276c956f7",
           "lines": 210
@@ -2212,8 +2260,8 @@
           "lines": 66
         },
         "packages/runtime/test/standard-skill-load-run.test.ts": {
-          "sha256": "907574ab1a4b4e81f9abc658997fd8a100532ac8e3a0504f05d8f8a36f9b2426",
-          "lines": 265
+          "sha256": "790bf2f2b1758613fecff071add6e030a1313f4e1db0b0fc0b0db6ad3d339b80",
+          "lines": 290
         },
         "packages/runtime/test/standard-skill-snapshot.test.ts": {
           "sha256": "a196351d6223c4625666538a3783c667ca1ba9b17f8e26f09cd16d4a4ff5a215",
@@ -2244,8 +2292,8 @@
           "lines": 369
         },
         "packages/runtime/test/workspace-patch-tool.test.ts": {
-          "sha256": "079a6cf58d25b80b6e1768ec8998f6594cc4477310e188438ed942683b207cb4",
-          "lines": 325
+          "sha256": "391a6da2302c5792fd75f31721175e05ca65a6843b3f644c29554ee1d5a1c1ba",
+          "lines": 326
         },
         "packages/runtime/test/workspace-search-coverage.test.ts": {
           "sha256": "b34d63ff85d70f74bb4184dc8c2d9c6c3ced0bef429a99090635087b72f5c067",
@@ -2299,6 +2347,14 @@
           "sha256": "e32b5411e17399bd86109a53b6059afcd5e9540136e81e928664e49a79a5fc52",
           "lines": 56
         },
+        "scripts/run-skill-lifecycle-ab-dogfood.mjs": {
+          "sha256": "c686a706723fc953529f9c98d5f41093ca6fc845c31395ac5030d922b738f0ad",
+          "lines": 485
+        },
+        "scripts/run-skill-lifecycle-ab-dogfood.test.mjs": {
+          "sha256": "5f5519b16c1b8133a71dd9ec498c1a137e4eaa7c9e64eb3f2b06e38a90fdb407",
+          "lines": 82
+        },
         "scripts/run-skill-load-fast-core-evidence.mjs": {
           "sha256": "4350de4dd8a7683c710c9158040e75f686c2395c28993cc5a9e51ed04052e52c",
           "lines": 662
@@ -2336,7 +2392,7 @@
           "lines": 459
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "405a2a20f2e900e219df71bf4d0326353decda3463e7bcf8059149f99244247e",
+          "sha256": "390fb4ea694c2789d90ba28bdf1e0b3b640aed434139fe2e4d5be08bc00fc44b",
           "lines": 287
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -2346,6 +2402,10 @@
         "scripts/sdk-capability-parity-stage7-history.mjs": {
           "sha256": "9eaab480df84dbb132143ccf49a2f874c0581d25ef3390de8f6e8dcae60d4c20",
           "lines": 253
+        },
+        "scripts/skill-lifecycle-ab-process.mjs": {
+          "sha256": "1417481bb8030330b7324ed15f1c6613e6546e845e29fe52544ff0277a114856",
+          "lines": 96
         },
         "scripts/skill-load-fast-core-evidence-lib.mjs": {
           "sha256": "1e7617c337c5251bb967b8339f27fef498fcdebb1129632e0fcfd325bbae55c9",
@@ -2409,7 +2469,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "f92f349c7e08976fb7b32de8ead0b45ba9a2dd0c5dcc8fb3784b5159bfa3325d"
+      "manifestSha256": "e4192c41c19eeb26ab094d0ab4dba1faf5ed65bda63df8ed0582aa10ccc517ec"
     },
     "executionClosure": {
       "algorithm": {
@@ -2607,6 +2667,7 @@
             "packages/contracts/dist/management-http.js",
             "packages/contracts/dist/provider-setup.js",
             "packages/contracts/dist/rpc.js",
+            "packages/contracts/dist/skill-lifecycle.js",
             "packages/contracts/dist/skill-load-research.js",
             "packages/contracts/dist/skill-load-standard-types.js",
             "packages/contracts/dist/skill-load-standard.js",
@@ -2801,6 +2862,7 @@
             "packages/runtime/dist/git-tool-policy.js",
             "packages/runtime/dist/goals.js",
             "packages/runtime/dist/ids.js",
+            "packages/runtime/dist/import-boundary-format.js",
             "packages/runtime/dist/inbound-dead-letters.js",
             "packages/runtime/dist/independent-model-advisor.js",
             "packages/runtime/dist/index.js",
@@ -2942,6 +3004,7 @@
             "packages/runtime/dist/schedules.js",
             "packages/runtime/dist/skill-access-state.js",
             "packages/runtime/dist/skill-content.js",
+            "packages/runtime/dist/skill-lifecycle-projection.js",
             "packages/runtime/dist/skill-load-contracts.js",
             "packages/runtime/dist/skill-load-replay.js",
             "packages/runtime/dist/skill-load-tool.js",
@@ -3362,6 +3425,7 @@
             "packages/contracts/src/management-http.ts",
             "packages/contracts/src/provider-setup.ts",
             "packages/contracts/src/rpc.ts",
+            "packages/contracts/src/skill-lifecycle.ts",
             "packages/contracts/src/skill-load-research.ts",
             "packages/contracts/src/skill-load-standard-types.ts",
             "packages/contracts/src/skill-load-standard.ts",
@@ -3556,6 +3620,7 @@
             "packages/runtime/src/git-tool-policy.ts",
             "packages/runtime/src/goals.ts",
             "packages/runtime/src/ids.ts",
+            "packages/runtime/src/import-boundary-format.ts",
             "packages/runtime/src/inbound-dead-letters.ts",
             "packages/runtime/src/independent-model-advisor.ts",
             "packages/runtime/src/index.ts",
@@ -3697,6 +3762,7 @@
             "packages/runtime/src/schedules.ts",
             "packages/runtime/src/skill-access-state.ts",
             "packages/runtime/src/skill-content.ts",
+            "packages/runtime/src/skill-lifecycle-projection.ts",
             "packages/runtime/src/skill-load-contracts.ts",
             "packages/runtime/src/skill-load-replay.ts",
             "packages/runtime/src/skill-load-tool.ts",
@@ -3985,16 +4051,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 753,
-            "sourceCounterparts": 748,
+            "executionFiles": 756,
+            "sourceCounterparts": 751,
             "packageManifests": 2,
-            "allFiles": 1503
+            "allFiles": 1509
           },
           "executionAreaCounts": {
             "apps/cli/dist": 56,
             "apps/server/dist": 100,
-            "packages/contracts/dist": 22,
-            "packages/runtime/dist": 567,
+            "packages/contracts/dist": 23,
+            "packages/runtime/dist": 569,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -5308,6 +5374,10 @@
               "sha256": "dd2b771fc43378468c9ffb6c2cc93919e5069bec57317813d790cd7ce582c146",
               "lines": 1
             },
+            "packages/contracts/dist/skill-lifecycle.js": {
+              "sha256": "61a44f42bd52afc437ff253437411d051b166a58faab6a17c8c6973ddf3d9846",
+              "lines": 153
+            },
             "packages/contracts/dist/skill-load-research.js": {
               "sha256": "597c5a468eb08524cb2c0cbf725ece25fb347d23704a697586b5a98be7bdfc43",
               "lines": 139
@@ -5337,8 +5407,8 @@
               "lines": 1
             },
             "packages/contracts/package.json": {
-              "sha256": "c7c91f8734bffa5ec82d6ea656ca142815ea9c98cca0d653be7a0d896e22d53b",
-              "lines": 68
+              "sha256": "63fd61b92e71fa2c9b2bd1b9ef3a93e32bb74e8ebbba71de467866164b66c4cf",
+              "lines": 72
             },
             "packages/contracts/src/agent-capabilities.ts": {
               "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -5399,6 +5469,10 @@
             "packages/contracts/src/rpc.ts": {
               "sha256": "6cfdfed9c6db1c826a63601ce02f7cd72ee95a91477dd9a9952968899a384b5d",
               "lines": 383
+            },
+            "packages/contracts/src/skill-lifecycle.ts": {
+              "sha256": "5320220753ad6b389e6bc6f374f360292e9a746b6438f3020538ce139eb3c4a5",
+              "lines": 246
             },
             "packages/contracts/src/skill-load-research.ts": {
               "sha256": "d23cbb972473354cf27e488ee8e539586e46a8bd458e4c84d4de50bfb4fdfad9",
@@ -5525,8 +5599,8 @@
               "lines": 78
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "27cef599d486e989cb411ff77cb1eef655cece431ae3709f5bd8d0ed0471ce29",
-              "lines": 2322
+              "sha256": "e81c6f0b64a1f497f777a285ce46c7118f7afbfecbc4c8d2689a350b61890a27",
+              "lines": 2299
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "8b8aae5a5b13b8b797b2bd36886b394b48981892da6befe795c1657567bcad9a",
@@ -6176,6 +6250,10 @@
               "sha256": "d40e9107a567639ebdfb8014a4835e7990b9d8c6598a5182156b2a8e86645d0e",
               "lines": 41
             },
+            "packages/runtime/dist/import-boundary-format.js": {
+              "sha256": "6d00f4784440fe108e31daa53c098b222a95b81b225a866f0600f5974c3b55ba",
+              "lines": 28
+            },
             "packages/runtime/dist/inbound-dead-letters.js": {
               "sha256": "cb84a2cdb33c64ad332544f1568dc831b4735d0adfdff8f691a7da666ad9ad8c",
               "lines": 759
@@ -6739,6 +6817,10 @@
             "packages/runtime/dist/skill-content.js": {
               "sha256": "650bde62d8d4c09dbc40c336080f0f7bb5e3d65f62978ddde950323fa5ca2263",
               "lines": 203
+            },
+            "packages/runtime/dist/skill-lifecycle-projection.js": {
+              "sha256": "8bb28583ccf944a6c83bfcc571a1749f8eb5a333cb435eb0302b9791416dfdac",
+              "lines": 335
             },
             "packages/runtime/dist/skill-load-contracts.js": {
               "sha256": "f73f6416a4d6c1aef995eb6433a66917406bbdcb7bf97a9db1dffc39ab8f0026",
@@ -7525,8 +7607,8 @@
               "lines": 167
             },
             "packages/runtime/dist/workspace-patch-tool.js": {
-              "sha256": "c428d619ba2ad1c14df1d602e98065aaa31661a5ad4644bfa81524121365a5fa",
-              "lines": 303
+              "sha256": "d2a24cc0d4a3b1c9df00a5d0f6a60048d756e99598782810a71360cadddcac83",
+              "lines": 307
             },
             "packages/runtime/dist/workspace-process-admission.js": {
               "sha256": "397693c6da9d5f7850862ae2c04838def05764e8161ddc8ac790ba9babfa6b32",
@@ -7797,8 +7879,8 @@
               "lines": 100
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "b0c04a0673556fc173769bc158d9887e270f7c54dc07d4ec28ee5d5898aec6b0",
-              "lines": 3415
+              "sha256": "592b09d90bed7c9565299477b49ad4ed1807e30744b80c0422d0323c434209ac",
+              "lines": 3402
             },
             "packages/runtime/src/agent-sessions.ts": {
               "sha256": "a574277be8cf473bec7156a598d18b254925a2d2553b64fb01415345d46b3a77",
@@ -8448,6 +8530,10 @@
               "sha256": "cb9b4e04eba914393ad80ddd04fc69eef8247a3d569e07427b28899c032fa595",
               "lines": 53
             },
+            "packages/runtime/src/import-boundary-format.ts": {
+              "sha256": "d0a457cf2acc668ee015d078e34f719c9d18795a5d9596160291ee69a0f72369",
+              "lines": 40
+            },
             "packages/runtime/src/inbound-dead-letters.ts": {
               "sha256": "7948951384ef974669ba0ba0e138054b41e183856a7bc2eae994dc779017cf6d",
               "lines": 1108
@@ -9011,6 +9097,10 @@
             "packages/runtime/src/skill-content.ts": {
               "sha256": "a9a69b30fbcb097936f4cb8415fbc6c4cfb414323a3af3c74ff79728e328a8f0",
               "lines": 263
+            },
+            "packages/runtime/src/skill-lifecycle-projection.ts": {
+              "sha256": "eb1516804d8eabb08b3f0e4e7ffbba29e4d7b890ccfcbcc34f3a675ca9090376",
+              "lines": 477
             },
             "packages/runtime/src/skill-load-contracts.ts": {
               "sha256": "19f6be08b570cdf94650d0c3448ec38a01209f9b2b4ee12ddc21fd34d467d043",
@@ -9797,8 +9887,8 @@
               "lines": 267
             },
             "packages/runtime/src/workspace-patch-tool.ts": {
-              "sha256": "e0ac0cb6c1915cfb1508725ae830f145f0cf633e247d776e0260d960834827ed",
-              "lines": 446
+              "sha256": "ee6969beb29046074845035eb557673fca5dbca5593b0b13e07800167730685c",
+              "lines": 451
             },
             "packages/runtime/src/workspace-process-admission.ts": {
               "sha256": "3623bd036bfeffcc6702a2776e61dd9a6d04649c5f2ba67c91742803aaefa78c",
@@ -10013,7 +10103,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "d766cdb07e6b6155e4f297c4eb24b47b4a6ddfec198d0bdd36a04885a3256ce6"
+          "manifestSha256": "7c0dcfbc4d4fface30893a038d7256a8fb8a3696d16e47d15b01c103a8854686"
         },
         "productionServerTrace": {
           "roots": [
@@ -10142,6 +10232,7 @@
             "packages/contracts/dist/management-http.js",
             "packages/contracts/dist/provider-setup.js",
             "packages/contracts/dist/rpc.js",
+            "packages/contracts/dist/skill-lifecycle.js",
             "packages/contracts/dist/skill-load-research.js",
             "packages/contracts/dist/skill-load-standard-types.js",
             "packages/contracts/dist/skill-load-standard.js",
@@ -10334,6 +10425,7 @@
             "packages/runtime/dist/git-tool-policy.js",
             "packages/runtime/dist/goals.js",
             "packages/runtime/dist/ids.js",
+            "packages/runtime/dist/import-boundary-format.js",
             "packages/runtime/dist/inbound-dead-letters.js",
             "packages/runtime/dist/independent-model-advisor.js",
             "packages/runtime/dist/index.js",
@@ -10475,6 +10567,7 @@
             "packages/runtime/dist/schedules.js",
             "packages/runtime/dist/skill-access-state.js",
             "packages/runtime/dist/skill-content.js",
+            "packages/runtime/dist/skill-lifecycle-projection.js",
             "packages/runtime/dist/skill-load-contracts.js",
             "packages/runtime/dist/skill-load-replay.js",
             "packages/runtime/dist/skill-load-tool.js",
@@ -10838,6 +10931,7 @@
             "packages/contracts/src/management-http.ts",
             "packages/contracts/src/provider-setup.ts",
             "packages/contracts/src/rpc.ts",
+            "packages/contracts/src/skill-lifecycle.ts",
             "packages/contracts/src/skill-load-research.ts",
             "packages/contracts/src/skill-load-standard-types.ts",
             "packages/contracts/src/skill-load-standard.ts",
@@ -11030,6 +11124,7 @@
             "packages/runtime/src/git-tool-policy.ts",
             "packages/runtime/src/goals.ts",
             "packages/runtime/src/ids.ts",
+            "packages/runtime/src/import-boundary-format.ts",
             "packages/runtime/src/inbound-dead-letters.ts",
             "packages/runtime/src/independent-model-advisor.ts",
             "packages/runtime/src/index.ts",
@@ -11171,6 +11266,7 @@
             "packages/runtime/src/schedules.ts",
             "packages/runtime/src/skill-access-state.ts",
             "packages/runtime/src/skill-content.ts",
+            "packages/runtime/src/skill-lifecycle-projection.ts",
             "packages/runtime/src/skill-load-contracts.ts",
             "packages/runtime/src/skill-load-replay.ts",
             "packages/runtime/src/skill-load-tool.ts",
@@ -11459,16 +11555,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 694,
-            "sourceCounterparts": 690,
+            "executionFiles": 697,
+            "sourceCounterparts": 693,
             "packageManifests": 3,
-            "allFiles": 1387
+            "allFiles": 1393
           },
           "executionAreaCounts": {
             "apps/server/dist": 101,
             "other": 1,
-            "packages/contracts/dist": 22,
-            "packages/runtime/dist": 564,
+            "packages/contracts/dist": 23,
+            "packages/runtime/dist": 566,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
@@ -12341,6 +12437,10 @@
               "sha256": "dd2b771fc43378468c9ffb6c2cc93919e5069bec57317813d790cd7ce582c146",
               "lines": 1
             },
+            "packages/contracts/dist/skill-lifecycle.js": {
+              "sha256": "61a44f42bd52afc437ff253437411d051b166a58faab6a17c8c6973ddf3d9846",
+              "lines": 153
+            },
             "packages/contracts/dist/skill-load-research.js": {
               "sha256": "597c5a468eb08524cb2c0cbf725ece25fb347d23704a697586b5a98be7bdfc43",
               "lines": 139
@@ -12370,8 +12470,8 @@
               "lines": 1
             },
             "packages/contracts/package.json": {
-              "sha256": "c7c91f8734bffa5ec82d6ea656ca142815ea9c98cca0d653be7a0d896e22d53b",
-              "lines": 68
+              "sha256": "63fd61b92e71fa2c9b2bd1b9ef3a93e32bb74e8ebbba71de467866164b66c4cf",
+              "lines": 72
             },
             "packages/contracts/src/agent-capabilities.ts": {
               "sha256": "9f4a572d3f1db22d57956d57da2dbd00058d0e8162432c72b50e0622924c9133",
@@ -12432,6 +12532,10 @@
             "packages/contracts/src/rpc.ts": {
               "sha256": "6cfdfed9c6db1c826a63601ce02f7cd72ee95a91477dd9a9952968899a384b5d",
               "lines": 383
+            },
+            "packages/contracts/src/skill-lifecycle.ts": {
+              "sha256": "5320220753ad6b389e6bc6f374f360292e9a746b6438f3020538ce139eb3c4a5",
+              "lines": 246
             },
             "packages/contracts/src/skill-load-research.ts": {
               "sha256": "d23cbb972473354cf27e488ee8e539586e46a8bd458e4c84d4de50bfb4fdfad9",
@@ -12558,8 +12662,8 @@
               "lines": 78
             },
             "packages/runtime/dist/agent-runtime.js": {
-              "sha256": "27cef599d486e989cb411ff77cb1eef655cece431ae3709f5bd8d0ed0471ce29",
-              "lines": 2322
+              "sha256": "e81c6f0b64a1f497f777a285ce46c7118f7afbfecbc4c8d2689a350b61890a27",
+              "lines": 2299
             },
             "packages/runtime/dist/agent-sessions.js": {
               "sha256": "8b8aae5a5b13b8b797b2bd36886b394b48981892da6befe795c1657567bcad9a",
@@ -13201,6 +13305,10 @@
               "sha256": "d40e9107a567639ebdfb8014a4835e7990b9d8c6598a5182156b2a8e86645d0e",
               "lines": 41
             },
+            "packages/runtime/dist/import-boundary-format.js": {
+              "sha256": "6d00f4784440fe108e31daa53c098b222a95b81b225a866f0600f5974c3b55ba",
+              "lines": 28
+            },
             "packages/runtime/dist/inbound-dead-letters.js": {
               "sha256": "cb84a2cdb33c64ad332544f1568dc831b4735d0adfdff8f691a7da666ad9ad8c",
               "lines": 759
@@ -13764,6 +13872,10 @@
             "packages/runtime/dist/skill-content.js": {
               "sha256": "650bde62d8d4c09dbc40c336080f0f7bb5e3d65f62978ddde950323fa5ca2263",
               "lines": 203
+            },
+            "packages/runtime/dist/skill-lifecycle-projection.js": {
+              "sha256": "8bb28583ccf944a6c83bfcc571a1749f8eb5a333cb435eb0302b9791416dfdac",
+              "lines": 335
             },
             "packages/runtime/dist/skill-load-contracts.js": {
               "sha256": "f73f6416a4d6c1aef995eb6433a66917406bbdcb7bf97a9db1dffc39ab8f0026",
@@ -14546,8 +14658,8 @@
               "lines": 167
             },
             "packages/runtime/dist/workspace-patch-tool.js": {
-              "sha256": "c428d619ba2ad1c14df1d602e98065aaa31661a5ad4644bfa81524121365a5fa",
-              "lines": 303
+              "sha256": "d2a24cc0d4a3b1c9df00a5d0f6a60048d756e99598782810a71360cadddcac83",
+              "lines": 307
             },
             "packages/runtime/dist/workspace-process-admission.js": {
               "sha256": "397693c6da9d5f7850862ae2c04838def05764e8161ddc8ac790ba9babfa6b32",
@@ -14818,8 +14930,8 @@
               "lines": 100
             },
             "packages/runtime/src/agent-runtime.ts": {
-              "sha256": "b0c04a0673556fc173769bc158d9887e270f7c54dc07d4ec28ee5d5898aec6b0",
-              "lines": 3415
+              "sha256": "592b09d90bed7c9565299477b49ad4ed1807e30744b80c0422d0323c434209ac",
+              "lines": 3402
             },
             "packages/runtime/src/agent-sessions.ts": {
               "sha256": "a574277be8cf473bec7156a598d18b254925a2d2553b64fb01415345d46b3a77",
@@ -15461,6 +15573,10 @@
               "sha256": "cb9b4e04eba914393ad80ddd04fc69eef8247a3d569e07427b28899c032fa595",
               "lines": 53
             },
+            "packages/runtime/src/import-boundary-format.ts": {
+              "sha256": "d0a457cf2acc668ee015d078e34f719c9d18795a5d9596160291ee69a0f72369",
+              "lines": 40
+            },
             "packages/runtime/src/inbound-dead-letters.ts": {
               "sha256": "7948951384ef974669ba0ba0e138054b41e183856a7bc2eae994dc779017cf6d",
               "lines": 1108
@@ -16024,6 +16140,10 @@
             "packages/runtime/src/skill-content.ts": {
               "sha256": "a9a69b30fbcb097936f4cb8415fbc6c4cfb414323a3af3c74ff79728e328a8f0",
               "lines": 263
+            },
+            "packages/runtime/src/skill-lifecycle-projection.ts": {
+              "sha256": "eb1516804d8eabb08b3f0e4e7ffbba29e4d7b890ccfcbcc34f3a675ca9090376",
+              "lines": 477
             },
             "packages/runtime/src/skill-load-contracts.ts": {
               "sha256": "19f6be08b570cdf94650d0c3448ec38a01209f9b2b4ee12ddc21fd34d467d043",
@@ -16806,8 +16926,8 @@
               "lines": 267
             },
             "packages/runtime/src/workspace-patch-tool.ts": {
-              "sha256": "e0ac0cb6c1915cfb1508725ae830f145f0cf633e247d776e0260d960834827ed",
-              "lines": 446
+              "sha256": "ee6969beb29046074845035eb557673fca5dbca5593b0b13e07800167730685c",
+              "lines": 451
             },
             "packages/runtime/src/workspace-process-admission.ts": {
               "sha256": "3623bd036bfeffcc6702a2776e61dd9a6d04649c5f2ba67c91742803aaefa78c",
@@ -17022,7 +17142,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "f2a356abcfe93a48bb0cf35fafe26dde8994291b67673a286eee3b9e4d553405"
+          "manifestSha256": "d26d3339960c30031e6d710165677673e70cf949af94f8eb5661bb4eb7b9477c"
         }
       },
       "excludedCategories": [
@@ -17051,9 +17171,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "39906f99a617f1a90fa371dab3b65fbe5e6431d58e050f156e6dc74d9fffcffc"
+      "manifestSha256": "7ea21f4e7f00ebd5fa07096ff0163b9d5c970b01d51435f0e1cd84084a23c3bb"
     },
-    "manifestSha256": "f4ecaf92ac96dd5caa315f6f1ebc87d276ac9a8ddf9a0a8ead0362d70da9c391"
+    "manifestSha256": "4032b72fff49d7fdac68cfc522817bfe4ce520255b417f6ceee88653b8a6ce81"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -17241,11 +17361,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "9732f75784763bf1ea82e68b586d5998855cf26abf89858e5fa0e595e53a7607"
+      "sha256": "896ed517d3014118ccb8b7e2592a80ffac922c082ab997fc99073882bd1dc2e4"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "5b6feea215bde3194e2204ad72df7de011715e3baa6e75bb36ca4de51ca77120"
+      "sha256": "c4c551d482e81425c6f49f071a1b605b0121d0a04359e0b78d7ad06dbbd191dd"
     }
   }
 }

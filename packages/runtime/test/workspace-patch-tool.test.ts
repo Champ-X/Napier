@@ -161,6 +161,7 @@ describe("workspace patch Agent tool", () => {
         outputRedacted: true,
         outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         resultSha256: result.details.resultSha256,
+        afterSha256: updatedSha256,
       }),
     );
     expect(JSON.stringify(durable)).not.toContain("PRIVATE");
