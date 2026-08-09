@@ -1,8 +1,16 @@
 import { Cable, ShieldCheck } from "lucide-react";
 
+import type { RunEvent } from "@napier/contracts";
+
+import {
+  compiledPromptPackageViews,
+  type CompiledPromptPackageView,
+} from "./compiled-prompt-package-view";
 import type { ModelAdapterView } from "./model-adapter-view";
+import { modelAdapterViews } from "./model-adapter-view";
 import { modelContextEnvelopeCopy } from "./model-context-envelope-copy";
 import type { ModelContextEnvelopeView } from "./model-context-envelope-view";
+import { modelContextEnvelopeViews } from "./model-context-envelope-view";
 
 const adapterCopy = {
   eyebrow: "MODEL ADAPTER",
@@ -13,6 +21,137 @@ const adapterCopy = {
   source: "Source",
   receipt: "Receipt",
 } as const;
+
+const promptPackageCopy = {
+  eyebrow: "PROMPT PACKAGE",
+  title: "Compiled context layers",
+  empty: "No compiled Prompt package has been recorded for this Thread.",
+  promptBytes: "Prompt bytes",
+  estimatedTokens: "Est. tokens",
+  tools: "Tools",
+  segments: "Segments",
+  adapter: "Adapter",
+  partition: "Partition",
+  receipt: "Receipt",
+} as const;
+
+const layerLabels: Record<
+  CompiledPromptPackageView["layers"][number]["id"],
+  string
+> = {
+  invariant_core: "Invariant Core",
+  effective_capabilities: "Effective Capabilities",
+  task_skill_overlay: "Task / Skill Overlay",
+  workspace_context: "Workspace Context",
+  model_adapter: "Model Adapter",
+};
+
+export function ModelPromptTraceLedgers({
+  events,
+}: {
+  events: readonly RunEvent[];
+}) {
+  return (
+    <>
+      <CompiledPromptPackageLedger
+        packages={compiledPromptPackageViews(events)}
+      />
+      <ModelAdapterLedger adapters={modelAdapterViews(events)} />
+      <ModelContextEnvelopeLedger
+        envelopes={modelContextEnvelopeViews(events)}
+      />
+    </>
+  );
+}
+
+export function CompiledPromptPackageLedger({
+  packages,
+}: {
+  packages: CompiledPromptPackageView[];
+}) {
+  return (
+    <section
+      className="tool-loop-guard-ledger model-context-envelope-ledger"
+      aria-labelledby="compiled-prompt-package-title"
+    >
+      <header>
+        <div>
+          <span>{promptPackageCopy.eyebrow}</span>
+          <h3 id="compiled-prompt-package-title">{promptPackageCopy.title}</h3>
+        </div>
+        <span>{String(packages.length).padStart(2, "0")}</span>
+      </header>
+      {packages.length === 0 ? (
+        <p>{promptPackageCopy.empty}</p>
+      ) : (
+        <ol>
+          {packages
+            .slice()
+            .reverse()
+            .map((promptPackage) => (
+              <li
+                className="tool-loop-guard-card model-context-envelope-card"
+                key={`${promptPackage.eventSeq}:${promptPackage.contentSha256}`}
+              >
+                <header>
+                  <span>
+                    <ShieldCheck size={11} aria-hidden="true" />
+                    Turn {promptPackage.turnIndex} · lossless
+                  </span>
+                  <code>
+                    #{String(promptPackage.eventSeq).padStart(3, "0")}
+                  </code>
+                </header>
+                <dl>
+                  <div>
+                    <dt>{promptPackageCopy.promptBytes}</dt>
+                    <dd>{promptPackage.systemPromptBytes}</dd>
+                  </div>
+                  <div>
+                    <dt>{promptPackageCopy.estimatedTokens}</dt>
+                    <dd>{promptPackage.estimatedTokens}</dd>
+                  </div>
+                  <div>
+                    <dt>{promptPackageCopy.tools}</dt>
+                    <dd>{promptPackage.toolCount}</dd>
+                  </div>
+                  <div>
+                    <dt>{promptPackageCopy.segments}</dt>
+                    <dd>{promptPackage.segmentCount}</dd>
+                  </div>
+                </dl>
+                {promptPackage.layers.map((layer) => (
+                  <p key={layer.id}>
+                    <span>{layerLabels[layer.id]}</span>
+                    <code title={layer.contentSha256}>
+                      {layer.bytes} B · ~{layer.estimatedTokens} tok ·{" "}
+                      {layer.contentSha256.slice(0, 12)}
+                    </code>
+                  </p>
+                ))}
+                <p>
+                  <span>{promptPackageCopy.adapter}</span>
+                  <code>{promptPackage.adapterId}</code>
+                </p>
+                <p>
+                  <span>{promptPackageCopy.partition}</span>
+                  <code title={promptPackage.partitionSha256}>
+                    {promptPackage.partitionSha256.slice(0, 12)}
+                  </code>
+                </p>
+                <footer>
+                  <span>{promptPackageCopy.receipt}</span>
+                  <code title={promptPackage.contentSha256}>
+                    {promptPackage.contentSha256.slice(0, 12)}
+                  </code>
+                </footer>
+              </li>
+            ))}
+        </ol>
+      )}
+    </section>
+  );
+}
 
 export function ModelAdapterLedger({
   adapters,

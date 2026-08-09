@@ -13,6 +13,10 @@ import type {
 import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
 import {
+  COMPILED_PROMPT_PACKAGE_EVENT,
+  createCompiledPromptPackageReceipt,
+} from "./compiled-prompt-package.js";
+import {
   applyModelAdapterOptions,
   modelAdapterReceipt,
 } from "./model-adapters.js";
@@ -42,6 +46,23 @@ export async function captureModelInvocation(
         category: "model",
         visibility: "debug",
         payload: JSON.parse(JSON.stringify(adapter)),
+      },
+      onEvent,
+    );
+    const promptPackage = createCompiledPromptPackageReceipt({
+      systemPrompt: context.systemPrompt ?? "",
+      envelope,
+      adapter,
+    });
+    await append(
+      store,
+      {
+        threadId: run.threadId,
+        runId: run.id,
+        type: COMPILED_PROMPT_PACKAGE_EVENT,
+        category: "model",
+        visibility: "debug",
+        payload: JSON.parse(JSON.stringify(promptPackage)),
       },
       onEvent,
     );

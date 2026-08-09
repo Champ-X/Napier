@@ -31,12 +31,7 @@ import {
 } from "./agent-milestone-api";
 import { agentMilestoneCopy } from "./agent-milestone-copy";
 import { copy } from "./copy";
-import { modelAdapterViews } from "./model-adapter-view";
-import { modelContextEnvelopeViews } from "./model-context-envelope-view";
-import {
-  ModelAdapterLedger,
-  ModelContextEnvelopeLedger,
-} from "./ModelContextTraceLedgers";
+import { ModelPromptTraceLedgers } from "./ModelContextTraceLedgers";
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
 import {
   independentModelAdvisorVerificationState,
@@ -95,8 +90,6 @@ export default function TracePanel({
   const threadId = runs[0]?.threadId ?? events[0]?.threadId;
   const milestoneEventSeq = latestAgentMilestoneEventSeq(events);
   const advisorReviews = independentModelAdvisorReviewViews(events);
-  const contextEnvelopes = modelContextEnvelopeViews(events);
-  const modelAdapters = modelAdapterViews(events);
   const loopGuardTriggers = toolLoopGuardTriggerViews(events);
   const summaryCoverage = traceSummaryCoverageView(events);
   const summaryCoverageGenericTypesKey =
@@ -309,8 +302,7 @@ export default function TracePanel({
         milestones={milestones}
         unavailable={milestonesUnavailable}
       />
-      <ModelAdapterLedger adapters={modelAdapters} />
-      <ModelContextEnvelopeLedger envelopes={contextEnvelopes} />
+      <ModelPromptTraceLedgers events={events} />
       <IndependentAdvisorLedger reviews={advisorReviews} />
       <ToolLoopGuardLedger triggers={loopGuardTriggers} />
       <DelegationLedger

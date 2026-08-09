@@ -152,6 +152,22 @@ describe("Context event trace view", () => {
     expect(contextEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects compiled Prompt package receipts without layer contents", () => {
+    const event = contextEvent("context.prompt_package", {
+      kind: "napier.compiled-prompt-package",
+      schemaVersion: 1,
+      packageVersion: "napier.prompt-context.v1",
+      contentSha256: "9".repeat(64),
+      layers: [{ content: "TOP_SECRET_LAYER" }],
+      systemPrompt: "TOP_SECRET_SYSTEM_PROMPT",
+    });
+
+    expect(contextEventTraceSummary(event)).toBe(
+      `context / prompt_package / schema 1 / content ${"9".repeat(12)}`,
+    );
+    expect(contextEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("projects local tool invocation capsules without arguments", () => {
     const event = contextEvent("context.tool_invocation", {
       kind: "napier.tool-invocation-capsule-receipt",

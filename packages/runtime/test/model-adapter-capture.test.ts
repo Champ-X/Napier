@@ -70,7 +70,12 @@ describe("Model adapter capture", () => {
         (event) =>
           event.runId === run.id && event.type === "context.model_adapter",
       );
+      const promptPackageEvents = events.filter(
+        (event) =>
+          event.runId === run.id && event.type === "context.prompt_package",
+      );
       expect(adapterEvents.length).toBe(observedOptions.length);
+      expect(promptPackageEvents.length).toBe(adapterEvents.length);
       expect(adapterEvents[0]?.payload).toEqual(
         expect.objectContaining({
           kind: "napier.model-adapter-selection",
@@ -85,6 +90,38 @@ describe("Model adapter capture", () => {
         }),
       );
       expect(JSON.stringify(adapterEvents)).not.toContain(privatePrompt);
+      expect(promptPackageEvents[0]?.payload).toEqual(
+        expect.objectContaining({
+          kind: "napier.compiled-prompt-package",
+          schemaVersion: 1,
+          packageVersion: "napier.prompt-context.v1",
+          turnIndex: 0,
+          classification: "conservative_tagged_v1",
+          tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4",
+          lossless: true,
+          layers: expect.arrayContaining([
+            expect.objectContaining({ id: "invariant_core" }),
+            expect.objectContaining({ id: "effective_capabilities" }),
+            expect.objectContaining({ id: "task_skill_overlay" }),
+            expect.objectContaining({ id: "workspace_context" }),
+            expect.objectContaining({
+              id: "model_adapter",
+              contentSha256: adapterEvents[0]?.payload["contentSha256"],
+            }),
+          ]),
+          effectiveCapabilities: expect.objectContaining({
+            toolCount: expect.any(Number),
+            toolNameSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            toolDefinitionSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          }),
+          modelAdapter: {
+            adapterId: "napier.anthropic-messages.v1",
+            adapterContentSha256: adapterEvents[0]?.payload["contentSha256"],
+          },
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      );
+      expect(JSON.stringify(promptPackageEvents)).not.toContain(privatePrompt);
       const invocation = events.find(
         (event) =>
           event.runId === run.id &&
