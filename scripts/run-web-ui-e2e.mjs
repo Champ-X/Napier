@@ -25,8 +25,13 @@ import {
   verifyWebUiRecoveryNarrative,
   verifyWebUiServerRestart,
 } from "./web-ui-e2e-narrative.mjs";
+import {
+  DEFAULT_WEB_UI_LAYOUT_BASELINE,
+  verifyWebUiLayoutBaseline,
+  writeWebUiLayoutBaseline,
+} from "./web-ui-layout-baseline.mjs";
 
-const receiptPath = parseArguments(process.argv.slice(2));
+const options = parseArguments(process.argv.slice(2));
 const temporaryRoot = await createWebUiE2eRoot();
 const receipt = createReceipt();
 let browserRuntime;
@@ -100,9 +105,15 @@ if (operationError || cleanupErrors.length > 0) {
 }
 
 assertWebUiE2eReceipt(receipt);
+receipt.layoutBaseline = options.writeLayoutBaseline
+  ? await writeWebUiLayoutBaseline(receipt, options.layoutBaselinePath)
+  : await verifyWebUiLayoutBaseline(receipt, options.layoutBaselinePath);
 const serialized = `${JSON.stringify(receipt, null, 2)}\n`;
-if (receiptPath) {
-  await writeFile(receiptPath, serialized, { encoding: "utf8", mode: 0o600 });
+if (options.receiptPath) {
+  await writeFile(options.receiptPath, serialized, {
+    encoding: "utf8",
+    mode: 0o600,
+  });
 }
 process.stdout.write(serialized);
 
@@ -142,6 +153,7 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
     const openFocusTarget =
       viewport.layout === "drawer" ? await openDrawer(page) : "";
     const geometry = await page.evaluate(readGeometry);
+    const layoutSnapshot = await page.evaluate(readLayoutSnapshot);
     const opened = viewport.layout === "drawer";
     const keyboard = await verifyKeyboardNavigation(page);
     const browserInspector = await verifyBrowserInspector(page);
@@ -170,6 +182,7 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
           geometry.horizontalOverflowPx,
         ),
       },
+      layoutSnapshot,
       keyboard,
       browserInspector,
       narrative: { ...narrative, refreshPreserved },
@@ -259,6 +272,17 @@ async function verifyBrowserInspector(page) {
       HTMLButtonElement
         ? document.querySelector(".browser-inspector-card button").disabled
         : false,
+    layoutRect: (() => {
+      const element = document.querySelector(".browser-inspector-card");
+      if (!(element instanceof HTMLElement)) return null;
+      const value = element.getBoundingClientRect();
+      return {
+        x: Math.round(value.x),
+        y: Math.round(value.y),
+        width: Math.round(value.width),
+        height: Math.round(value.height),
+      };
+    })(),
   }));
   await page.locator("#inspector-group-activity").click();
   return receipt;
@@ -383,6 +407,28 @@ function readGeometry() {
   };
 }
 
+function readLayoutSnapshot() {
+  const rect = (selector) => {
+    const element = document.querySelector(selector);
+    if (!(element instanceof HTMLElement)) return null;
+    const value = element.getBoundingClientRect();
+    return {
+      x: Math.round(value.x),
+      y: Math.round(value.y),
+      width: Math.round(value.width),
+      height: Math.round(value.height),
+    };
+  };
+  return {
+    workbench: rect(".workbench"),
+    header: rect(".workbench-header"),
+    narrative: rect(".task-narrative"),
+    conversation: rect(".conversation"),
+    composer: rect(".composer"),
+    inspector: rect(".inspector"),
+  };
+}
+
 function createReceipt() {
   return {
     schemaVersion: 1,
@@ -403,11 +449,30 @@ function createReceipt() {
 }
 
 function parseArguments(args) {
-  if (args.length === 0) return undefined;
-  if (args.length === 2 && args[0] === "--receipt") {
-    return path.resolve(args[1]);
+  const options = {
+    layoutBaselinePath: DEFAULT_WEB_UI_LAYOUT_BASELINE,
+    receiptPath: undefined,
+    writeLayoutBaseline: false,
+  };
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === "--write-layout-baseline") {
+      options.writeLayoutBaseline = true;
+      continue;
+    }
+    if (argument === "--receipt" || argument === "--layout-baseline") {
+      const value = args[index + 1];
+      if (!value) throw new Error(`${argument} requires a path`);
+      if (argument === "--receipt") options.receiptPath = path.resolve(value);
+      else options.layoutBaselinePath = path.resolve(value);
+      index += 1;
+      continue;
+    }
+    throw new Error(
+      "Usage: node scripts/run-web-ui-e2e.mjs [--receipt <path>] [--layout-baseline <path>] [--write-layout-baseline]",
+    );
   }
-  throw new Error("Usage: node scripts/run-web-ui-e2e.mjs [--receipt <path>]");
+  return options;
 }
 
 async function cleanup(label, action) {

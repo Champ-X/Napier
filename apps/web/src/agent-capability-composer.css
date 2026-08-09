@@ -169,3 +169,33 @@
     border-left: 0;
   }
 }
+
+@media (max-width: 780px) {
+  .agent-capability-composer {
+    gap: 4px;
+    padding: 4px 5px;
+  }
+
+  .composer-mode {
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+
+  .composer-readiness-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .composer-readiness-item {
+    padding: 3px 4px;
+    font-size: 7px;
+  }
+
+  .agent-capability-composer-status {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .agent-capability-composer-contract,
+  .agent-capability-composer-readiness {
+    display: none !important;
+  }
+}

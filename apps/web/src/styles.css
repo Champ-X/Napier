@@ -831,11 +831,23 @@ button:disabled {
   color: var(--ledger);
 }
 
+.browser-inspector-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  contain: inline-size;
+}
+
 .browser-inspector-card {
   display: grid;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   grid-template-columns: 24px minmax(0, 1fr);
   gap: 10px;
   padding: 14px;
+  overflow: hidden;
   background: var(--paper);
   border: 1px solid var(--rule);
 }
@@ -854,9 +866,11 @@ button:disabled {
   margin-top: 5px;
   font-size: 11px;
   color: var(--ink-soft);
+  overflow-wrap: anywhere;
 }
 
 .browser-inspector-card button {
+  max-width: 100%;
   min-height: 44px;
   grid-column: 2;
   justify-self: start;
@@ -1533,6 +1547,7 @@ button:disabled {
 
 .run-decision-dockets {
   grid-area: decisions;
+  max-height: min(220px, 32vh);
   min-height: 0;
   padding: 0 24px 14px 69px;
   overflow: auto;
@@ -2654,6 +2669,7 @@ button:disabled {
   display: grid;
   min-width: 0;
   min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   background:
     repeating-linear-gradient(
@@ -15495,6 +15511,7 @@ button:disabled {
   }
 
   .run-decision-dockets {
+    max-height: 130px;
     padding-right: 12px;
     padding-left: 41px;
   }
@@ -15623,8 +15640,14 @@ button:disabled {
   }
 
   .composer {
+    margin-bottom: 10px;
     margin-right: 12px;
     margin-left: 41px;
+    padding-bottom: 7px;
+  }
+
+  .composer textarea {
+    min-height: 52px;
   }
 
   .composer-footer,

@@ -108,6 +108,28 @@ export function assertViewportReceipt(viewport) {
   assert.equal(viewport.inspector.minimumGroupHeight >= 44, true);
   assert.equal(viewport.inspector.minimumToolHeight >= 44, true);
   assert.equal(viewport.geometry.horizontalOverflowPx, 0);
+  for (const key of [
+    "workbench",
+    "header",
+    "narrative",
+    "conversation",
+    "composer",
+    "inspector",
+  ]) {
+    assertLayoutRect(
+      viewport.layoutSnapshot[key],
+      `${String(viewport.width)}:${key}`,
+      key === "conversation",
+    );
+  }
+  assert.equal(viewport.layoutSnapshot.conversation.height >= 100, true);
+  assert.equal(
+    within(
+      viewport.layoutSnapshot.inspector,
+      viewport.browserInspector.layoutRect,
+    ),
+    true,
+  );
   assert.equal(viewport.keyboard.manualActivationPreserved, true);
   assert.equal(viewport.keyboard.groupNavigationPassed, true);
   assert.equal(viewport.keyboard.toolNavigationPassed, true);
@@ -117,6 +139,7 @@ export function assertViewportReceipt(viewport) {
     "inspector-tab-browser",
   );
   assert.equal(viewport.browserInspector.title, "Browser");
+  assertLayoutRect(viewport.browserInspector.layoutRect, "browserInspector");
   assert.equal(
     viewport.browserInspector.actionDisabled,
     true,
@@ -163,3 +186,25 @@ export function assertViewportReceipt(viewport) {
 }
 
 const SHA256 = /^[a-f0-9]{64}$/u;
+
+function assertLayoutRect(value, label, allowZeroHeight = false) {
+  assert.ok(value, `${label} layout rectangle is missing`);
+  for (const key of ["x", "y", "width", "height"]) {
+    assert.equal(Number.isInteger(value[key]), true);
+  }
+  assert.equal(value.width > 0, true, `${label} width ${String(value.width)}`);
+  assert.equal(
+    allowZeroHeight ? value.height >= 0 : value.height > 0,
+    true,
+    `${label} height ${String(value.height)}`,
+  );
+}
+
+function within(container, candidate) {
+  return (
+    candidate.x >= container.x &&
+    candidate.y >= container.y &&
+    candidate.x + candidate.width <= container.x + container.width &&
+    candidate.y + candidate.height <= container.y + container.height
+  );
+}

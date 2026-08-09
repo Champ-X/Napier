@@ -49,7 +49,7 @@ describe("Web UI E2E receipt contract", () => {
     const result = await runScript(["--unknown"]);
     expect(result.code).not.toBe(0);
     expect(result.stderr).toContain(
-      "Usage: node scripts/run-web-ui-e2e.mjs [--receipt <path>]",
+      "Usage: node scripts/run-web-ui-e2e.mjs [--receipt <path>] [--layout-baseline <path>] [--write-layout-baseline]",
     );
   });
 });
@@ -107,6 +107,19 @@ function validReceipt() {
         drawerWithinViewport: viewport.layout === "drawer",
         navigationLabelOverflowPx: 0,
       },
+      layoutSnapshot: Object.fromEntries(
+        [
+          "workbench",
+          "header",
+          "narrative",
+          "conversation",
+          "composer",
+          "inspector",
+        ].map((key) => [
+          key,
+          { x: 0, y: 0, width: 100, height: key === "conversation" ? 100 : 50 },
+        ]),
+      ),
       keyboard: {
         manualActivationPreserved: true,
         groupNavigationPassed: true,
@@ -117,6 +130,7 @@ function validReceipt() {
         panelLabelledBy: "inspector-tab-browser",
         title: "Browser",
         actionDisabled: true,
+        layoutRect: { x: 0, y: 0, width: 100, height: 50 },
       },
       narrative: {
         ...WEB_UI_NARRATIVE_EXPECTATION,
