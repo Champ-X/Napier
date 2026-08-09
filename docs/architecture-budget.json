@@ -231,7 +231,7 @@
     "packages/runtime/src/workspace-process-rollback-events.ts": 54,
     "packages/runtime/src/workspace-process-tool-result.ts": 53,
     "packages/runtime/src/workspace-process-tool.ts": 31,
-    "packages/runtime/src/workspace-tool-guidance.ts": 57,
+    "packages/runtime/src/workspace-tool-guidance.ts": 22,
     "packages/runtime/src/write-linked-resolution-config.ts": 42
   },
   "publicExports": {

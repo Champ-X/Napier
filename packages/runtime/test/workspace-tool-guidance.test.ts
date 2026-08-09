@@ -6,6 +6,30 @@ import { createTypescriptAstTools } from "../src/typescript-ast-tool.js";
 import { formatWorkspaceToolGuidance } from "../src/workspace-tool-guidance.js";
 
 describe("workspace tool guidance", () => {
+  it("keeps default observe guidance within three KiB", () => {
+    const guidance = formatWorkspaceToolGuidance(
+      [
+        "list_files",
+        "read_file",
+        "search_files",
+        "list_symbols",
+        "inspect_data",
+        "data_frame",
+        "sqlite_query",
+        "inspect_code",
+        "read_symbol",
+        "web_search",
+        "web_fetch",
+        "browser",
+        "research_source",
+      ].map((name) => ({ name }) as AgentTool),
+    );
+
+    expect(Buffer.byteLength(guidance, "utf8")).toBeLessThanOrEqual(3_072);
+    expect(guidance).not.toContain("apply_patch");
+    expect(guidance).not.toContain("unavailable OS Sandbox");
+  });
+
   it("does not recommend unavailable heuristic tools for LSP symbols alone", () => {
     const guidance = formatWorkspaceToolGuidance([
       createLspSymbolsTool({
@@ -22,6 +46,7 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain(
       "Use lsp_symbols for the real TypeScript or JavaScript semantic outline",
     );
+    expect(guidance).toContain("unavailable OS Sandbox");
     expect(guidance).not.toContain(
       "use list_symbols, inspect_code, and read_symbol",
     );
@@ -30,6 +55,7 @@ describe("workspace tool guidance", () => {
   it("requires AST previews to return through CAS and verification", () => {
     const guidance = formatWorkspaceToolGuidance([
       ...createTypescriptAstTools("/workspace"),
+      { name: "apply_patch" } as AgentTool,
     ]);
 
     expect(guidance).toContain(
@@ -37,6 +63,58 @@ describe("workspace tool guidance", () => {
     );
     expect(guidance).toContain("ast_edit_preview never writes");
     expect(guidance).toContain("Apply it through apply_patch");
+  });
+
+  it("does not advertise unavailable cross-tool workflows", () => {
+    const cases = [
+      {
+        tools: ["ast_query", "ast_edit_preview"],
+        absent: ["apply_patch"],
+      },
+      {
+        tools: ["lsp_rename"],
+        absent: ["apply_patch", "lsp_rename_apply"],
+      },
+      {
+        tools: ["lsp_code_actions"],
+        absent: ["apply_patch", "lsp_code_action_apply"],
+      },
+      {
+        tools: ["run_command"],
+        absent: ["verify_workspace"],
+      },
+      {
+        tools: ["data_frame"],
+        absent: ["inspect_data"],
+      },
+      {
+        tools: ["web_fetch"],
+        absent: ["Browser", "browser_fallback"],
+      },
+      {
+        tools: ["research_source"],
+        absent: ["Browser", "web_fetch"],
+      },
+      {
+        tools: ["git_inspect"],
+        absent: [
+          "apply_patch",
+          "git_stage_preview",
+          "git_stage_apply",
+          "git_commit_preview",
+          "git_commit_apply",
+        ],
+      },
+    ];
+
+    for (const candidate of cases) {
+      const guidance = formatWorkspaceToolGuidance(
+        candidate.tools.map((name) => ({ name }) as AgentTool),
+      );
+      for (const unavailable of candidate.absent) {
+        expect(guidance, candidate.tools.join(",")).not.toContain(unavailable);
+      }
+    }
   });
 
   it("binds direct LSP rename application to one fresh preview", () => {
@@ -173,7 +251,7 @@ describe("workspace tool guidance", () => {
       "call research_source capture_fetch with its exact Web Source ID",
     );
     expect(guidance).toContain(
-      "A citation token proves only the captured range-to-claim binding",
+      "A citation token proves only that range-to-claim binding",
     );
     expect(guidance).toContain("capture disconfirming evidence");
     expect(guidance).toContain(
