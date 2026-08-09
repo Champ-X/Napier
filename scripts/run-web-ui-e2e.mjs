@@ -45,6 +45,14 @@ try {
     assertViewportReceipt(viewportReceipt);
     receipt.viewports.push(viewportReceipt);
   }
+  receipt.reconnect = await verifyServerRestart(
+    browserRuntime.browser,
+    serverRuntime,
+    temporaryRoot,
+    receipt.fixture,
+  );
+  serverRuntime = receipt.reconnect.runtime;
+  delete receipt.reconnect.runtime;
   receipt.status = "passed";
 } catch (error) {
   operationError = error;
@@ -94,7 +102,7 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
       height: viewport.height,
     });
     await page.goto(origin, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "commit",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
     await page.locator("#inspector-group-activity").waitFor({
@@ -190,13 +198,59 @@ async function readNarrative(page, expected) {
 
 async function refreshPreservesNarrative(page, origin, expected, before) {
   await page.reload({
-    waitUntil: "domcontentloaded",
+    waitUntil: "commit",
     timeout: WEB_UI_START_TIMEOUT_MS,
   });
   const after = await readNarrative(page, expected);
   assert.deepEqual(after, before);
   assert.equal(page.url(), `${origin}/`);
   return true;
+}
+
+async function verifyServerRestart(browser, runtime, root, expected) {
+  const origin = runtime.origin;
+  const port = Number(new URL(origin).port);
+  const context = browser.contexts()[0];
+  assert.ok(context, "Web UI E2E Browser context is unavailable");
+  const page = await context.newPage();
+  let restarted;
+  try {
+    await page.setViewportSize({ width: 1_600, height: 900 });
+    await page.goto(origin, {
+      waitUntil: "commit",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const before = await readNarrative(page, expected);
+    await runtime.close();
+    const disconnected = await page.evaluate(async () => {
+      try {
+        await fetch("/api/health", { cache: "no-store" });
+        return false;
+      } catch {
+        return true;
+      }
+    });
+    restarted = await startProductionWebServer(root, port);
+    assert.equal(restarted.origin, origin);
+    await page.reload({
+      waitUntil: "commit",
+      timeout: WEB_UI_START_TIMEOUT_MS,
+    });
+    const after = await readNarrative(page, expected);
+    assert.deepEqual(after, before);
+    return {
+      disconnected,
+      samePort: restarted.origin === origin,
+      narrativePreserved: true,
+      restartStartupDurationMs: restarted.receipt.startupDurationMs,
+      runtime: restarted,
+    };
+  } catch (error) {
+    await restarted?.close().catch(() => undefined);
+    throw error;
+  } finally {
+    await page.close();
+  }
 }
 
 async function openDrawer(page) {
@@ -382,6 +436,7 @@ function createReceipt() {
     server: {},
     browser: {},
     viewports: [],
+    reconnect: {},
     cleanup: {
       browserClosed: false,
       serverClosed: false,

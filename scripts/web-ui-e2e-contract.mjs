@@ -62,6 +62,11 @@ export function assertWebUiE2eReceipt(receipt) {
     WEB_UI_E2E_VIEWPORTS,
   );
   receipt.viewports.forEach(assertViewportReceipt);
+  assert.equal(receipt?.reconnect?.disconnected, true);
+  assert.equal(receipt?.reconnect?.samePort, true);
+  assert.equal(receipt?.reconnect?.narrativePreserved, true);
+  assert.equal(receipt?.reconnect?.restartStartupDurationMs >= 0, true);
+  assert.equal(receipt?.reconnect?.runtime, undefined);
   assert.equal(receipt?.cleanup?.browserClosed, true);
   assert.equal(receipt?.cleanup?.serverClosed, true);
   assert.equal(receipt?.cleanup?.temporaryRootRemoved, true);

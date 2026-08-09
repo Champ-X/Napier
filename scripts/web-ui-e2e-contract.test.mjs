@@ -123,6 +123,12 @@ function validReceipt() {
         bytes: 42,
       },
     })),
+    reconnect: {
+      disconnected: true,
+      samePort: true,
+      narrativePreserved: true,
+      restartStartupDurationMs: 3,
+    },
     cleanup: {
       browserClosed: true,
       serverClosed: true,

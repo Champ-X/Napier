@@ -41,14 +41,14 @@ export async function productionEntryReceipt() {
   };
 }
 
-export async function startProductionWebServer(root) {
+export async function startProductionWebServer(root, port = 0) {
   const startedAt = performance.now();
   const child = spawn(process.execPath, [SERVER_ENTRY], {
     cwd: process.cwd(),
     env: {
       LANG: "C",
       NAPIER_HOME: path.join(root, "state"),
-      NAPIER_PORT: "0",
+      NAPIER_PORT: String(port),
       NAPIER_WORKSPACE: path.join(root, "workspace"),
       NODE_ENV: "test",
       NO_PROXY: "127.0.0.1,localhost",
