@@ -46,6 +46,10 @@ import {
   conversationSubagents,
   type ConversationSubagent,
 } from "./conversation-subagent-view-model";
+import {
+  conversationToolActivities,
+  type ConversationToolActivity,
+} from "./conversation-tool-activity-view-model";
 import { copy } from "./copy";
 import {
   conversationActivities,
@@ -59,6 +63,7 @@ import { ConversationNetworkActivityCard } from "./ConversationNetworkActivityCa
 import { ConversationPlanCard } from "./ConversationPlanCard";
 import { ConversationRecoveryCard } from "./ConversationRecoveryCard";
 import { ConversationSubagentCard } from "./ConversationSubagentCard";
+import { ConversationToolActivityCard } from "./ConversationToolActivityCard";
 import {
   MessageMarkdown,
   type MessageCitationLink,
@@ -100,6 +105,11 @@ type FeedItem =
       kind: "recovery";
       seq: number;
       recovery: ConversationRecovery;
+    }
+  | {
+      kind: "tool";
+      seq: number;
+      activity: ConversationToolActivity;
     };
 
 export function ConversationLedger({
@@ -129,6 +139,11 @@ export function ConversationLedger({
   const citationLinks: MessageCitationLink[] =
     conversationCitationLinks(citations);
   const citationEventIds = new Set(citations.map((citation) => citation.id));
+  const citationCallIds = new Set(
+    events
+      .filter((event) => citationEventIds.has(event.id))
+      .flatMap((event) => eventCallId(event) ?? []),
+  );
   const networkActivities = conversationNetworkActivities(events);
   const networkCallIds = new Set(
     networkActivities.map((activity) => activity.callId),
@@ -136,6 +151,13 @@ export function ConversationLedger({
   const browserActivities = conversationBrowserActivities(events);
   const browserCallIds = new Set(
     browserActivities.map((activity) => activity.callId),
+  );
+  const toolItems = conversationToolActivities(
+    events,
+    new Set([...citationCallIds, ...networkCallIds, ...browserCallIds]),
+  );
+  const toolEventIds = new Set(
+    toolItems.flatMap((activity) => activity.eventIds),
   );
   const planItems = conversationPlans(events, plans);
   const planIds = new Set(planItems.map((item) => item.plan.id));
@@ -164,6 +186,7 @@ export function ConversationLedger({
     return (
       !citationEventIds.has(event.id) &&
       !recoveryEventIds.has(event.id) &&
+      !toolEventIds.has(event.id) &&
       (!callId || !networkCallIds.has(callId)) &&
       (!callId || !browserCallIds.has(callId)) &&
       (!planId || !planIds.has(planId)) &&
@@ -222,6 +245,11 @@ export function ConversationLedger({
       kind: "recovery" as const,
       seq: recovery.seq,
       recovery,
+    })),
+    ...toolItems.map((activity) => ({
+      kind: "tool" as const,
+      seq: activity.seq,
+      activity,
     })),
   ].sort((left, right) => left.seq - right.seq);
 
@@ -285,10 +313,15 @@ export function ConversationLedger({
             key={`subagent-${item.subagent.task.id}`}
             item={item.subagent}
           />
-        ) : (
+        ) : item.kind === "recovery" ? (
           <ConversationRecoveryCard
             key={`recovery-${item.recovery.id}`}
             item={item.recovery}
+          />
+        ) : (
+          <ConversationToolActivityCard
+            key={`tool-${item.activity.callId}`}
+            activity={item.activity}
           />
         ),
       )}

@@ -304,6 +304,10 @@
   border-left-color: var(--vermilion);
 }
 
+.conversation-tool-activity.status-blocked {
+  border-left-color: var(--vermilion);
+}
+
 .conversation-network-activity > summary {
   display: grid;
   min-height: 42px;
