@@ -64,41 +64,34 @@ const workspaceProcessSchema = Type.Union([
   ),
   Type.Object(
     {
-      action: Type.Literal("resize"),
+      action: Type.Union([
+        Type.Literal("resize"),
+        Type.Literal("input"),
+        Type.Literal("poll"),
+        Type.Literal("cancel"),
+      ]),
       processId: Type.String({
         pattern: "^process_[a-z0-9]{8,80}$",
       }),
-      columns: Type.Integer({
-        minimum: MIN_TERMINAL_COLUMNS,
-        maximum: MAX_TERMINAL_COLUMNS,
-      }),
-      rows: Type.Integer({
-        minimum: MIN_TERMINAL_ROWS,
-        maximum: MAX_TERMINAL_ROWS,
-      }),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("input"),
-      processId: Type.String({
-        pattern: "^process_[a-z0-9]{8,80}$",
-      }),
-      text: Type.String({
-        maxLength: MAX_WORKSPACE_PROCESS_INPUT_BYTES,
-      }),
+      columns: Type.Optional(
+        Type.Integer({
+          minimum: MIN_TERMINAL_COLUMNS,
+          maximum: MAX_TERMINAL_COLUMNS,
+        }),
+      ),
+      rows: Type.Optional(
+        Type.Integer({
+          minimum: MIN_TERMINAL_ROWS,
+          maximum: MAX_TERMINAL_ROWS,
+        }),
+      ),
+      text: Type.Optional(
+        Type.String({
+          maxLength: MAX_WORKSPACE_PROCESS_INPUT_BYTES,
+        }),
+      ),
       appendNewline: Type.Optional(Type.Boolean()),
       close: Type.Optional(Type.Boolean()),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("poll"),
-      processId: Type.String({
-        pattern: "^process_[a-z0-9]{8,80}$",
-      }),
       afterCursor: Type.Optional(Type.Integer({ minimum: 0 })),
       waitMs: Type.Optional(
         Type.Integer({
@@ -106,15 +99,6 @@ const workspaceProcessSchema = Type.Union([
           maximum: MAX_WORKSPACE_PROCESS_POLL_WAIT_MS,
         }),
       ),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("cancel"),
-      processId: Type.String({
-        pattern: "^process_[a-z0-9]{8,80}$",
-      }),
     },
     { additionalProperties: false },
   ),
@@ -136,6 +120,7 @@ export function createWorkspaceProcessTool(
     parameters: workspaceProcessSchema,
     async execute(_toolCallId, input, signal) {
       assertExclusiveProcessIoMode(input);
+      assertProcessControlFields(input);
       if (input.action === "preview_write") {
         const preview = await manager.previewWrite({
           ...context,
@@ -186,7 +171,7 @@ export function createWorkspaceProcessTool(
         const receipt = await manager.writeInput({
           ...context,
           processId: input.processId,
-          text: input.text,
+          text: input.text!,
           ...(input.appendNewline === true ? { appendNewline: true } : {}),
           ...(input.close === true ? { close: true } : {}),
           initiatedBy: "agent",
@@ -214,8 +199,8 @@ export function createWorkspaceProcessTool(
         const receipt = await manager.resize({
           ...context,
           processId: input.processId,
-          columns: input.columns,
-          rows: input.rows,
+          columns: input.columns!,
+          rows: input.rows!,
           initiatedBy: "agent",
           ...(signal ? { signal } : {}),
         });
@@ -346,6 +331,39 @@ function assertExclusiveProcessIoMode(
     input.terminal !== undefined
   ) {
     throw new Error("Choose either interactive pipe mode or terminal PTY mode");
+  }
+}
+
+function assertProcessControlFields(
+  input: Static<typeof workspaceProcessSchema>,
+): void {
+  if (
+    input.action !== "resize" &&
+    input.action !== "input" &&
+    input.action !== "poll" &&
+    input.action !== "cancel"
+  ) {
+    return;
+  }
+  const hasSize = input.columns !== undefined || input.rows !== undefined;
+  const hasInput =
+    input.text !== undefined ||
+    input.appendNewline !== undefined ||
+    input.close !== undefined;
+  const hasPoll = input.afterCursor !== undefined || input.waitMs !== undefined;
+  const valid =
+    input.action === "resize"
+      ? input.columns !== undefined &&
+        input.rows !== undefined &&
+        !hasInput &&
+        !hasPoll
+      : input.action === "input"
+        ? input.text !== undefined && !hasSize && !hasPoll
+        : input.action === "poll"
+          ? !hasSize && !hasInput
+          : !hasSize && !hasInput && !hasPoll;
+  if (!valid) {
+    throw new Error("Workspace Process fields do not match action");
   }
 }
 
