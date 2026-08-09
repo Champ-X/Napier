@@ -79,7 +79,7 @@
     "packages/runtime/src/store.ts": 14390,
     "packages/runtime/src/thread-bundles.ts": 2460,
     "packages/runtime/src/tool-loop-guard.ts": 551,
-    "packages/runtime/src/tools.ts": 1807,
+    "packages/runtime/src/tools.ts": 1778,
     "packages/runtime/src/typescript-ast.ts": 507,
     "packages/runtime/src/workflow-blueprints.ts": 720,
     "packages/runtime/src/workflow-experiment-comparison-protocol.ts": 727,

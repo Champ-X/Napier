@@ -57,56 +57,39 @@ const SHA256_PATTERN = "^[a-f0-9]{64}$";
 const SHA256_PATTERN_RE = /^[a-f0-9]{64}$/;
 
 const listFilesSchema = Type.Object({
-  path: Type.Optional(
-    Type.String({
-      description: "Workspace-relative directory. Defaults to '.'.",
-    }),
-  ),
+  path: Type.Optional(Type.String()),
   depth: Type.Optional(Type.Integer({ minimum: 0, maximum: 4 })),
 });
 
 const readFileSchema = Type.Object({
-  path: Type.String({ description: "Workspace-relative file path." }),
+  path: Type.String(),
   startLine: Type.Optional(Type.Integer({ minimum: 1 })),
   endLine: Type.Optional(Type.Integer({ minimum: 1 })),
 });
 
 const searchFilesSchema = Type.Object({
   query: Type.String({ minLength: 1 }),
-  path: Type.Optional(
-    Type.String({
-      description: "Workspace-relative directory. Defaults to '.'.",
-    }),
-  ),
+  path: Type.Optional(Type.String()),
 });
 
 const listSymbolsSchema = Type.Object({
-  path: Type.Optional(
-    Type.String({
-      description: "Workspace-relative directory. Defaults to '.'.",
-    }),
-  ),
+  path: Type.Optional(Type.String()),
   maxFiles: Type.Optional(
     Type.Integer({
       minimum: 1,
       maximum: MAX_CODE_INDEX_FILES,
-      description: "Maximum code files to inspect.",
     }),
   ),
   maxSymbols: Type.Optional(
     Type.Integer({
       minimum: 1,
       maximum: MAX_CODE_INDEX_SYMBOLS,
-      description: "Maximum symbols to return across inspected files.",
     }),
   ),
 });
 
 const inspectDataSchema = Type.Object({
-  path: Type.String({
-    description:
-      "Workspace-relative JSON, JSONL, CSV, TSV, or Markdown table file path.",
-  }),
+  path: Type.String(),
   format: Type.Optional(
     Type.Union([
       Type.Literal("auto"),
@@ -121,54 +104,40 @@ const inspectDataSchema = Type.Object({
     Type.Integer({
       minimum: 1,
       maximum: MAX_STRUCTURED_DATA_SAMPLE_ROWS,
-      description: "Maximum structured sample rows to return.",
     }),
   ),
 });
 
 const inspectCodeSchema = Type.Object({
-  path: Type.String({
-    description:
-      "Workspace-relative TypeScript, JavaScript, Python, or Go file path.",
-  }),
+  path: Type.String(),
   maxSymbols: Type.Optional(
     Type.Integer({
       minimum: 1,
       maximum: MAX_CODE_SYMBOLS,
-      description: "Maximum code symbols to return.",
     }),
   ),
 });
 
 const readSymbolSchema = Type.Object({
-  path: Type.String({
-    description:
-      "Workspace-relative TypeScript, JavaScript, Python, or Go file path.",
-  }),
+  path: Type.String(),
   line: Type.Integer({
     minimum: 1,
-    description: "1-based symbol line from list_symbols or inspect_code.",
   }),
   lineSha256: Type.Optional(
     Type.String({
       pattern: SHA256_PATTERN,
-      description:
-        "Optional SHA-256 of the exact symbol line from list_symbols or inspect_code.",
     }),
   ),
   maxLines: Type.Optional(
     Type.Integer({
       minimum: 1,
       maximum: MAX_SYMBOL_READ_LINES,
-      description: "Maximum source lines to return.",
     }),
   ),
   contextLines: Type.Optional(
     Type.Integer({
       minimum: 0,
       maximum: MAX_SYMBOL_CONTEXT_LINES,
-      description:
-        "Context lines to include before and after the symbol range.",
     }),
   ),
 });
@@ -1201,7 +1170,8 @@ export function createWorkspaceTools(
   const listFiles: AgentTool<typeof listFilesSchema, WorkspaceListDetails> = {
     name: "list_files",
     label: "List files",
-    description: "List files and directories inside the configured workspace.",
+    description:
+      "List a workspace-relative directory (default '.') to bounded depth.",
     parameters: listFilesSchema,
     async execute(_toolCallId, input) {
       const resolved = await resolveWorkspacePath(
@@ -1238,7 +1208,7 @@ export function createWorkspaceTools(
   const readTextFile: AgentTool<typeof readFileSchema, WorkspaceReadDetails> = {
     name: "read_file",
     label: "Read file",
-    description: `Read a UTF-8 text file inside the workspace, up to ${MAX_READ_BYTES / 1024} KB.`,
+    description: `Read a workspace-relative UTF-8 file or 1-based line range, up to ${MAX_READ_BYTES / 1024} KB.`,
     parameters: readFileSchema,
     async execute(_toolCallId, input) {
       const resolved = await resolveWorkspacePath(workspaceRoot, input.path);
@@ -1308,7 +1278,8 @@ export function createWorkspaceTools(
   > = {
     name: "search_files",
     label: "Search files",
-    description: "Search UTF-8 workspace files for a literal text query.",
+    description:
+      "Search UTF-8 files for literal text under a workspace-relative directory (default '.').",
     parameters: searchFilesSchema,
     async execute(_toolCallId, input) {
       const resolved = await resolveWorkspacePath(
@@ -1378,7 +1349,7 @@ export function createWorkspaceTools(
     name: "list_symbols",
     label: "List symbols",
     description:
-      "List a bounded TypeScript, JavaScript, Python, and Go symbol index for a workspace directory.",
+      "List a bounded TypeScript, JavaScript, Python, or Go symbol index under a workspace-relative directory (default '.').",
     parameters: listSymbolsSchema,
     async execute(_toolCallId, input) {
       const resolved = await resolveWorkspacePath(
@@ -1533,7 +1504,7 @@ export function createWorkspaceTools(
     name: "inspect_data",
     label: "Inspect data",
     description:
-      "Inspect a UTF-8 JSON, JSONL, CSV, TSV, or Markdown table workspace file and return bounded schema/sample evidence.",
+      "Inspect a workspace-relative UTF-8 JSON, JSONL, CSV, TSV, or Markdown table and return bounded schema/sample evidence.",
     parameters: inspectDataSchema,
     async execute(_toolCallId, input) {
       const resolved = await resolveWorkspacePath(workspaceRoot, input.path);
@@ -1596,7 +1567,7 @@ export function createWorkspaceTools(
     name: "inspect_code",
     label: "Inspect code",
     description:
-      "Inspect a UTF-8 TypeScript, JavaScript, Python, or Go workspace file and return a bounded symbol outline.",
+      "Inspect a workspace-relative UTF-8 TypeScript, JavaScript, Python, or Go file and return a bounded symbol outline.",
     parameters: inspectCodeSchema,
     async execute(_toolCallId, input) {
       const resolved = await resolveWorkspacePath(workspaceRoot, input.path);
@@ -1670,7 +1641,7 @@ export function createWorkspaceTools(
     name: "read_symbol",
     label: "Read symbol",
     description:
-      "Read a bounded source range for a TypeScript, JavaScript, Python, or Go symbol line.",
+      "Read bounded source around a 1-based symbol line from list_symbols/inspect_code in a workspace-relative TypeScript, JavaScript, Python, or Go file; optional lineSha256 guards that line.",
     parameters: readSymbolSchema,
     async execute(_toolCallId, input) {
       const resolved = await resolveWorkspacePath(workspaceRoot, input.path);
