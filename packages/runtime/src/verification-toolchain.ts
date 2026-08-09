@@ -37,7 +37,7 @@ export async function resolveVerificationToolchain(input: {
   }
   const verifierPath = await realpath(verifierLexical);
   if (
-    verifierPath !== verifierLexical ||
+    !isPathInside(verifierPath, root) ||
     !(await stat(verifierPath)).isFile()
   ) {
     throw new Error("verification toolchain verifier must be a regular file");
