@@ -23,21 +23,12 @@ const applyPatchVariants = Type.Union([
       operation: Type.Literal("create"),
       path: Type.String({
         minLength: 1,
-        description: "Workspace-relative path for a new UTF-8 text file.",
       }),
-      expectedSha256: Type.Null({
-        description: "Must be null to assert that the file does not exist.",
-      }),
+      expectedSha256: Type.Null(),
       content: Type.String({
         maxLength: MAX_PATCH_BYTES,
-        description: "Complete UTF-8 content for the new file.",
       }),
-      createParentDirectories: Type.Optional(
-        Type.Boolean({
-          description:
-            "When true, create missing workspace-relative parent directories before creating the file.",
-        }),
-      ),
+      createParentDirectories: Type.Optional(Type.Boolean()),
     },
     { additionalProperties: false },
   ),
@@ -46,12 +37,9 @@ const applyPatchVariants = Type.Union([
       operation: Type.Literal("replace"),
       path: Type.String({
         minLength: 1,
-        description: "Workspace-relative path for an existing UTF-8 file.",
       }),
       expectedSha256: Type.String({
         pattern: SHA256_PATTERN,
-        description:
-          "SHA-256 of the complete current file, obtained from read_file.",
       }),
       edits: Type.Array(
         Type.Object(
@@ -59,12 +47,9 @@ const applyPatchVariants = Type.Union([
             oldText: Type.String({
               minLength: 1,
               maxLength: MAX_PATCH_BYTES,
-              description:
-                "Exact text that must occur once in the current edit buffer.",
             }),
             newText: Type.String({
               maxLength: MAX_PATCH_BYTES,
-              description: "Replacement text. Empty text removes the match.",
             }),
           },
           { additionalProperties: false },
@@ -79,12 +64,9 @@ const applyPatchVariants = Type.Union([
       operation: Type.Literal("hashline_replace"),
       path: Type.String({
         minLength: 1,
-        description: "Workspace-relative path for an existing UTF-8 file.",
       }),
       expectedSha256: Type.String({
         pattern: SHA256_PATTERN,
-        description:
-          "SHA-256 of the complete current file, obtained from read_file.",
       }),
       edits: Type.Array(
         Type.Object(
@@ -92,19 +74,13 @@ const applyPatchVariants = Type.Union([
             line: Type.Optional(
               Type.Integer({
                 minimum: 1,
-                description:
-                  "Optional 1-based line number from read_file. When omitted, the anchor hash must identify exactly one line.",
               }),
             ),
             anchorSha256: Type.String({
               pattern: SHA256_PATTERN,
-              description:
-                "SHA-256 of the exact line content from read_file lineAnchors.",
             }),
             newText: Type.String({
               maxLength: MAX_PATCH_BYTES,
-              description:
-                "Replacement line content. May include newlines to expand the matched line into a block.",
             }),
           },
           { additionalProperties: false },
@@ -119,33 +95,24 @@ const applyPatchVariants = Type.Union([
       operation: Type.Literal("hashrange_replace"),
       path: Type.String({
         minLength: 1,
-        description: "Workspace-relative path for an existing UTF-8 file.",
       }),
       expectedSha256: Type.String({
         pattern: SHA256_PATTERN,
-        description:
-          "SHA-256 of the complete current file, obtained from read_file or read_symbol.",
       }),
       edits: Type.Array(
         Type.Object(
           {
             startLine: Type.Integer({
               minimum: 1,
-              description: "1-based inclusive start line from read_symbol.",
             }),
             endLine: Type.Integer({
               minimum: 1,
-              description: "1-based inclusive end line from read_symbol.",
             }),
             rangeSha256: Type.String({
               pattern: SHA256_PATTERN,
-              description:
-                "SHA-256 of the exact source range from read_symbol.",
             }),
             newText: Type.String({
               maxLength: MAX_PATCH_BYTES,
-              description:
-                "Replacement range content. Empty text removes the range.",
             }),
           },
           { additionalProperties: false },
@@ -217,7 +184,7 @@ export function createWorkspacePatchTool(
     name: "apply_patch",
     label: "Apply patch",
     description:
-      "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file or read_symbol. Enabled LSP diagnostics run before and after supported writes; enabled verification automatically selects and runs bounded reverse-dependent tests.",
+      "Atomically create/edit one workspace-relative UTF-8 file. create requires expectedSha256=null, full content, and optional parent directories. Existing-file operations require complete expectedSha256 from read_file/read_symbol: replace uses oldText that occurs once; hashline_replace uses optional 1-based line + anchorSha256; hashrange_replace uses inclusive lines + rangeSha256. newText may expand content; empty newText deletes the match/range. Enabled LSP diagnostics run before/after supported writes; verification selects bounded reverse-dependent tests.",
     parameters: applyPatchSchema,
     async execute(_toolCallId, rawInput, signal) {
       const input = rawInput as WorkspacePatchInput;
