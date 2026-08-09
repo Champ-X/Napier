@@ -8,14 +8,10 @@ const operatorDecisionSchema = Type.Object(
     header: Type.String({
       minLength: 1,
       maxLength: 12,
-      description:
-        "A short 1-12 character label for the decision, such as Scope or Deploy.",
     }),
     question: Type.String({
       minLength: 1,
       maxLength: 4096,
-      description:
-        "The specific operator-owned question that blocks further work.",
     }),
     options: Type.Array(
       Type.Object(
@@ -23,12 +19,10 @@ const operatorDecisionSchema = Type.Object(
           label: Type.String({
             minLength: 1,
             maxLength: 80,
-            description: "A concise option label.",
           }),
           description: Type.String({
             minLength: 1,
             maxLength: 400,
-            description: "The concrete implication of selecting this option.",
           }),
         },
         { additionalProperties: false },
@@ -36,13 +30,9 @@ const operatorDecisionSchema = Type.Object(
       {
         minItems: 2,
         maxItems: 4,
-        description: "Two to four distinct choices.",
       },
     ),
-    multiSelect: Type.Boolean({
-      description:
-        "Whether the operator may select more than one predefined option.",
-    }),
+    multiSelect: Type.Boolean(),
   },
   { additionalProperties: false },
 );
@@ -68,7 +58,7 @@ export function createOperatorDecisionTool(
     name: "request_operator_decision",
     label: "Request operator decision",
     description:
-      "Pause the current task on one genuinely operator-owned choice. Use only when repository evidence, the request, and sensible defaults cannot resolve the decision. This must be the only tool call in the assistant turn. The Run ends after the durable request is recorded; the answer resumes work in a linked continuation Run.",
+      "Pause on one genuinely operator-owned choice only after evidence, the request, and sensible defaults cannot resolve it. Provide a 1-12 character header, one blocking question, 2-4 labeled options with implications, and multiSelect. This must be the turn's only tool call; recording ends the Run until the operator answer starts a linked continuation.",
     parameters: operatorDecisionSchema,
     executionMode: "sequential",
     async execute(_toolCallId, input) {

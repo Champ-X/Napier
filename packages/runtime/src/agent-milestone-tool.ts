@@ -20,13 +20,9 @@ const agentMilestoneSchema = Type.Object(
     summary: Type.String({ minLength: 1, maxLength: 4_000 }),
     completedItems: Type.Array(milestoneItemSchema, {
       maxItems: 12,
-      description:
-        "Concrete work completed since the previous milestone. Use an empty array when none is complete yet.",
     }),
     openLoops: Type.Array(milestoneItemSchema, {
       maxItems: 12,
-      description:
-        "Unfinished work, blockers, or verification still required. Use an empty array only when the phase is genuinely closed.",
     }),
   },
   { additionalProperties: false },
@@ -55,7 +51,7 @@ export function createAgentMilestoneTool(
     name: "record_run_milestone",
     label: "Record run milestone",
     description:
-      "Record an immutable, durable progress snapshot after a meaningful phase boundary. Include concrete completed work and every open loop. The runtime automatically binds all same-Run Ledger events since the previous milestone as hash evidence. Do not call after every minor action.",
+      "Record one durable snapshot only at a meaningful planning, execution, verification, or delivery boundary, not after minor actions. Include a short title, summary, concrete completedItems, and every unfinished blocker or check in openLoops. The runtime hash-binds same-Run Ledger events since the prior milestone.",
     parameters: agentMilestoneSchema,
     executionMode: "sequential",
     async execute(_toolCallId, input) {
