@@ -2642,18 +2642,20 @@ button:disabled {
 
 .inspector-groups button {
   display: inline-flex;
-  min-height: 28px;
+  min-height: 44px;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
   gap: 5px;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 9px;
   color: var(--ink-faint);
   cursor: pointer;
   background: transparent;
   border: 0;
   border-bottom: 2px solid transparent;
   letter-spacing: 0.06em;
+  white-space: nowrap;
   text-transform: uppercase;
 }
 
@@ -2663,22 +2665,27 @@ button:disabled {
 }
 
 .inspector-tabs {
-  display: grid;
+  display: flex;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+  overflow: auto hidden;
   padding: 4px 9px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
 }
 
 .inspector-tabs button {
   position: relative;
   display: flex;
+  min-width: 58px;
+  min-height: 44px;
+  flex: 1 0 58px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   gap: 2px;
   padding: 5px 2px 7px;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--ink-faint);
   cursor: pointer;
   background: transparent;

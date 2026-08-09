@@ -282,7 +282,7 @@ export function useWorkspaceViewModel() {
   const [bootstrap, setBootstrap] = useState<LiveReadyBootstrapResponse>();
   const [detail, setDetail] = useState<WebThreadDetail>();
   const [selectedThreadId, setSelectedThreadId] = useState<string>();
-  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("trace");
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("plan");
   const [selectedModelKey, setSelectedModelKey] = useState("napier/demo");
   const [composer, setComposer] = useState("");
   const [threadRunSessions, setThreadRunSessions] =

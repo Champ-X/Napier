@@ -16,9 +16,9 @@ import { copy } from "./copy";
 import { InspectorTabButton } from "./InspectorTabButton";
 import type { InspectorTab } from "./use-workspace-view-model";
 
-type InspectorGroupId = "activity" | "files" | "inspect";
+export type InspectorGroupId = "activity" | "files" | "inspect";
 
-const GROUPS: ReadonlyArray<{
+export const INSPECTOR_GROUPS: ReadonlyArray<{
   id: InspectorGroupId;
   label: string;
   icon: typeof Activity;
@@ -27,24 +27,32 @@ const GROUPS: ReadonlyArray<{
 }> = [
   {
     id: "activity",
-    label: "Activity",
+    label: "Activity/Plan",
     icon: Activity,
-    defaultTab: "trace",
-    tabs: ["trace", "processes", "plan", "goal"],
+    defaultTab: "plan",
+    tabs: ["plan", "goal"],
   },
   {
     id: "files",
-    label: "Files",
+    label: "Files/Artifacts",
     icon: FolderArchive,
     defaultTab: "files",
-    tabs: ["files", "lab"],
+    tabs: ["files"],
   },
   {
     id: "inspect",
     label: "Inspect",
     icon: Search,
     defaultTab: "context",
-    tabs: ["context", "memory", "extensions", "automations"],
+    tabs: [
+      "context",
+      "trace",
+      "processes",
+      "lab",
+      "memory",
+      "extensions",
+      "automations",
+    ],
   },
 ];
 
@@ -68,13 +76,17 @@ export function InspectorNavigation({
   activeTab: InspectorTab;
   onChange: (tab: InspectorTab) => void;
 }) {
-  const activeGroup =
-    GROUPS.find((group) => group.tabs.includes(activeTab)) ?? GROUPS[0]!;
+  const activeGroup = inspectorGroup(activeTab);
+  const visibleTabs = inspectorTabs(activeTab);
 
   return (
     <nav className="inspector-navigation" aria-label="Inspector navigation">
-      <div className="inspector-groups" role="tablist" aria-label="Inspector sections">
-        {GROUPS.map((group) => {
+      <div
+        className="inspector-groups"
+        role="tablist"
+        aria-label="Inspector sections"
+      >
+        {INSPECTOR_GROUPS.map((group) => {
           const Icon = group.icon;
           const active = group.id === activeGroup.id;
           return (
@@ -92,8 +104,12 @@ export function InspectorNavigation({
           );
         })}
       </div>
-      <div className="inspector-tabs" role="tablist" aria-label={`${activeGroup.label} tools`}>
-        {activeGroup.tabs.map((tab) => {
+      <div
+        className="inspector-tabs"
+        role="tablist"
+        aria-label={`${activeGroup.label} tools`}
+      >
+        {visibleTabs.map((tab) => {
           const Icon = TAB_ICONS[tab];
           return (
             <InspectorTabButton
@@ -110,4 +126,18 @@ export function InspectorNavigation({
       </div>
     </nav>
   );
+}
+
+export function inspectorGroup(activeTab: InspectorTab) {
+  return (
+    INSPECTOR_GROUPS.find((group) => group.tabs.includes(activeTab)) ??
+    INSPECTOR_GROUPS[0]!
+  );
+}
+
+export function inspectorTabs(
+  activeTab: InspectorTab,
+): readonly InspectorTab[] {
+  const group = inspectorGroup(activeTab);
+  return [activeTab, ...group.tabs.filter((tab) => tab !== activeTab)];
 }
