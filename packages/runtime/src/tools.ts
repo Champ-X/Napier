@@ -41,6 +41,7 @@ export type {
 } from "./workspace-patch-model.js";
 
 const MAX_LIST_ENTRIES = 300;
+const MAX_SEARCH_ENTRIES = 10_000;
 const MAX_READ_BYTES = 96 * 1024;
 const MAX_READ_LINE_ANCHORS = 80;
 const MAX_HASHABLE_TEXT_BYTES = 2 * 1024 * 1024;
@@ -1173,13 +1174,10 @@ function createLineAnchors(
   };
 }
 
-async function walkFiles(root: string, depth: number): Promise<string[]> {
+async function walkFiles(root: string, depth: number, max = MAX_LIST_ENTRIES) {
   const output: string[] = [];
-  const visit = async (
-    directory: string,
-    remainingDepth: number,
-  ): Promise<void> => {
-    if (output.length >= MAX_LIST_ENTRIES) return;
+  const visit = async (directory: string, remaining: number): Promise<void> => {
+    if (output.length >= max) return;
     const entries = await readdir(directory, { withFileTypes: true });
     entries.sort((left, right) => left.name.localeCompare(right.name));
     for (const entry of entries) {
@@ -1187,10 +1185,10 @@ async function walkFiles(root: string, depth: number): Promise<string[]> {
         continue;
       const absolute = path.join(directory, entry.name);
       output.push(absolute);
-      if (entry.isDirectory() && remainingDepth > 0) {
-        await visit(absolute, remainingDepth - 1);
+      if (entry.isDirectory() && remaining > 0) {
+        await visit(absolute, remaining - 1);
       }
-      if (output.length >= MAX_LIST_ENTRIES) return;
+      if (output.length >= max) return;
     }
   };
   await visit(root, depth);
@@ -1318,7 +1316,7 @@ export function createWorkspaceTools(
         input.path ?? ".",
       );
       const target = resolved.target;
-      const files = await walkFiles(target, 8);
+      const files = await walkFiles(target, 8, MAX_SEARCH_ENTRIES);
       const lines: string[] = [];
       const matches: WorkspaceSearchMatch[] = [];
       for (const file of files) {
@@ -1363,7 +1361,9 @@ export function createWorkspaceTools(
         ],
         details: {
           count: matches.length,
-          truncated: matches.length >= MAX_SEARCH_MATCHES,
+          truncated:
+            matches.length >= MAX_SEARCH_MATCHES ||
+            files.length >= MAX_SEARCH_ENTRIES,
           matchSetSha256: sha256(JSON.stringify(matches)),
           matches,
         },
