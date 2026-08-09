@@ -191,7 +191,7 @@ export function createPlanTools(
     name: "create_plan",
     label: "Create execution plan",
     description:
-      "Create one durable dependency-aware execution plan for this thread. Use for multi-step work that needs explicit verification.",
+      "Create a durable dependency-aware plan for multi-step work with explicit verification.",
     parameters: createPlanSchema,
     async execute(_toolCallId, input) {
       const plan = await store.createPlan(
@@ -210,7 +210,7 @@ export function createPlanTools(
     name: "update_plan_step",
     label: "Update plan step",
     description:
-      "Start, complete, block, skip, or explicitly reopen a durable plan step. Completion and skipping require concrete evidence.",
+      "Start, complete, block, skip, or reopen a plan step; complete/skip require concrete evidence.",
     parameters: transitionPlanStepSchema,
     async execute(_toolCallId, input) {
       const current = assertPlanThread(store, input.planId, run.threadId);
@@ -272,7 +272,7 @@ export function createPlanTools(
     name: "replan_plan",
     label: "Replan execution plan",
     description:
-      "Apply a governed revision to a durable plan. Requires the current revision, concrete reason, and evidence; can supersede stale steps/artifacts, redirect dependencies, and append replacement work.",
+      "Apply a governed plan revision with current revision, reason, and evidence; supersede stale steps/artifacts, redirect dependencies, or add replacements.",
     parameters: replanPlanSchema,
     async execute(_toolCallId, input) {
       const current = assertPlanThread(store, input.planId, run.threadId);
@@ -347,7 +347,7 @@ export function createPlanTools(
     name: "update_plan_artifact",
     label: "Update plan artifact",
     description:
-      "Record or verify a planned artifact. File and directory verification reads the actual workspace bytes and computes SHA-256; the model cannot supply the digest.",
+      "Record or verify a planned artifact. File/directory verification hashes actual workspace bytes; the model cannot supply the digest.",
     parameters: updatePlanArtifactSchema,
     async execute(_toolCallId, input) {
       const current = assertPlanThread(store, input.planId, run.threadId);
