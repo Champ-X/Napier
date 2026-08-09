@@ -1,6 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { JsonValue } from "@napier/contracts";
-import { Type } from "typebox";
+import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -92,46 +92,11 @@ const nodeDebuggerSchema = Type.Union([
   ),
   Type.Object(
     {
-      action: Type.Literal("stack_trace"),
-      processId,
-      timeoutMs: actionTimeout,
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("scopes"),
-      processId,
-      frameId: Type.Integer({ minimum: 1 }),
-      timeoutMs: actionTimeout,
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("variables"),
-      processId,
-      variablesReference: Type.Integer({ minimum: 1 }),
-      timeoutMs: actionTimeout,
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      action: Type.Literal("evaluate"),
-      processId,
-      frameId: Type.Integer({ minimum: 1 }),
-      expression: Type.String({
-        minLength: 1,
-        maxLength: MAX_NODE_DEBUG_EXPRESSION_CHARS,
-      }),
-      timeoutMs: actionTimeout,
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
       action: Type.Union([
+        Type.Literal("stack_trace"),
+        Type.Literal("scopes"),
+        Type.Literal("variables"),
+        Type.Literal("evaluate"),
         Type.Literal("continue"),
         Type.Literal("next"),
         Type.Literal("step_in"),
@@ -139,6 +104,14 @@ const nodeDebuggerSchema = Type.Union([
         Type.Literal("cancel"),
       ]),
       processId,
+      frameId: Type.Optional(Type.Integer({ minimum: 1 })),
+      variablesReference: Type.Optional(Type.Integer({ minimum: 1 })),
+      expression: Type.Optional(
+        Type.String({
+          minLength: 1,
+          maxLength: MAX_NODE_DEBUG_EXPRESSION_CHARS,
+        }),
+      ),
       timeoutMs: actionTimeout,
     },
     { additionalProperties: false },
@@ -157,6 +130,7 @@ export function createNodeDebuggerTool(
       "Launch/control one Run-owned Node DAP session in the read-only offline OS Sandbox: set source breakpoints; inspect stack/scopes/variables; evaluate paused-frame expressions with throwOnSideEffect; continue/step/cancel. All paths are workspace-relative. path launches JS/Node-executable TS unless compiled TS supplies paired programPath + external-v3 sourceMapPath for original coordinates. Retain processId while paused; timeoutMs bounds each action. Source, paths, values, expressions, args, and output are live-only.",
     parameters: nodeDebuggerSchema,
     async execute(_toolCallId, input, signal) {
+      assertDebuggerControlFields(input);
       let result: NodeDebuggerActionResult;
       if (input.action === "launch") {
         result = await manager.launch({
@@ -186,7 +160,7 @@ export function createNodeDebuggerTool(
         result = await manager.scopes({
           ...context,
           processId: input.processId,
-          frameId: input.frameId,
+          frameId: input.frameId!,
           timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
           ...(signal ? { signal } : {}),
         });
@@ -194,7 +168,7 @@ export function createNodeDebuggerTool(
         result = await manager.variables({
           ...context,
           processId: input.processId,
-          variablesReference: input.variablesReference,
+          variablesReference: input.variablesReference!,
           timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
           ...(signal ? { signal } : {}),
         });
@@ -202,8 +176,8 @@ export function createNodeDebuggerTool(
         result = await manager.evaluate({
           ...context,
           processId: input.processId,
-          frameId: input.frameId,
-          expression: input.expression,
+          frameId: input.frameId!,
+          expression: input.expression!,
           timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
           ...(signal ? { signal } : {}),
         });
@@ -341,6 +315,24 @@ function debuggerAction(
 
 function nodeDebuggerCallSha256(args: unknown): string {
   return sha256(canonicalJson({ toolName: "node_debugger", args }));
+}
+
+function assertDebuggerControlFields(
+  input: Static<typeof nodeDebuggerSchema>,
+): void {
+  if (input.action === "launch") return;
+  const hasFrame = input.frameId !== undefined;
+  const hasVariables = input.variablesReference !== undefined;
+  const hasExpression = input.expression !== undefined;
+  const valid =
+    input.action === "scopes"
+      ? hasFrame && !hasVariables && !hasExpression
+      : input.action === "variables"
+        ? !hasFrame && hasVariables && !hasExpression
+        : input.action === "evaluate"
+          ? hasFrame && !hasVariables && hasExpression
+          : !hasFrame && !hasVariables && !hasExpression;
+  if (!valid) throw new Error("Node debugger fields do not match action");
 }
 
 function hash(value: unknown): value is string {
