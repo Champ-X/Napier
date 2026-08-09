@@ -99,8 +99,15 @@ describe("Model adapter capture", () => {
       expect(promptPackageEvents[0]?.payload).toEqual(
         expect.objectContaining({
           kind: "napier.compiled-prompt-package",
-          schemaVersion: 1,
-          packageVersion: "napier.prompt-context.v1",
+          schemaVersion: 2,
+          packageVersion: "napier.prompt-context.v2",
+          purpose: "agent_turn",
+          invariantCore: expect.objectContaining({
+            status: "bound",
+            version: "napier.invariant-core.v1",
+            contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            bytes: expect.any(Number),
+          }),
           turnIndex: 0,
           classification: "conservative_tagged_v1",
           tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4",

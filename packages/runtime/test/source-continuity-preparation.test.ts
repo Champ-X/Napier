@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { PROMPT_INVARIANT_CORE_VERSION } from "../src/prompt-invariant-core.js";
+import { appendSourceContinuityGuidance } from "../src/source-continuity-guidance.js";
 import { prepareNetworkSourceContinuity } from "../src/research-source-recovery-context.js";
 
 describe("Source continuity preparation", () => {
@@ -42,5 +44,23 @@ describe("Source continuity preparation", () => {
         record: vi.fn(),
       }),
     ).resolves.toBe("");
+  });
+
+  it("compiles the invariant Core even when Source continuity is inapplicable", async () => {
+    const profile = "Internal invocation profile";
+    const guidance = await prepareNetworkSourceContinuity({
+      threadId: "thread_continuity",
+      runId: "run_continuity",
+      invocationSource: "goal_continuation",
+      automaticRecovery: false,
+      sourceContinuityRequired: false,
+      enabledTools: [],
+      prepare: vi.fn(),
+      record: vi.fn(),
+    });
+
+    expect(appendSourceContinuityGuidance(profile, guidance)).toContain(
+      `<napier_invariant_core version="${PROMPT_INVARIANT_CORE_VERSION}">`,
+    );
   });
 });

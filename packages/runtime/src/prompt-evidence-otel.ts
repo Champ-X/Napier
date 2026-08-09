@@ -21,6 +21,11 @@ export const PROMPT_EVIDENCE_OTEL_KEYS = new Set([
   "napier.event.payload.model_api",
   "napier.event.payload.package_version",
   "napier.event.payload.partition_sha256",
+  "napier.event.payload.prompt_invariant_core_bytes",
+  "napier.event.payload.prompt_invariant_core_content_sha256",
+  "napier.event.payload.prompt_invariant_core_status",
+  "napier.event.payload.prompt_invariant_core_version",
+  "napier.event.payload.purpose",
   "napier.event.payload.schema_version",
   "napier.event.payload.segment_count",
   "napier.event.payload.system_prompt_bytes",
@@ -73,6 +78,21 @@ function compiledPromptOtelAttributes(
     "napier.event.payload.lossless": receipt.lossless,
     "napier.event.payload.package_version": receipt.packageVersion,
     "napier.event.payload.partition_sha256": receipt.partitionSha256,
+    "napier.event.payload.prompt_invariant_core_status":
+      receipt.invariantCore?.status ?? "legacy_unavailable",
+    ...(receipt.invariantCore?.status === "bound"
+      ? {
+          "napier.event.payload.prompt_invariant_core_bytes":
+            receipt.invariantCore.bytes,
+          "napier.event.payload.prompt_invariant_core_content_sha256":
+            receipt.invariantCore.contentSha256,
+          "napier.event.payload.prompt_invariant_core_version":
+            receipt.invariantCore.version,
+        }
+      : {}),
+    ...(receipt.purpose
+      ? { "napier.event.payload.purpose": receipt.purpose }
+      : {}),
     "napier.event.payload.schema_version": receipt.schemaVersion,
     "napier.event.payload.segment_count": receipt.segmentCount,
     "napier.event.payload.system_prompt_bytes": receipt.systemPromptBytes,

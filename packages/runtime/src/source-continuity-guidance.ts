@@ -1,5 +1,6 @@
 import type { RunEvent } from "@napier/contracts";
 
+import { compilePromptInvariantCore } from "./prompt-invariant-core.js";
 import { validateResearchSourceCapsuleReceipt } from "./research-source-capsule.js";
 import { validateWebFetchStateCapsuleReceipt } from "./web-fetch-capsule.js";
 
@@ -30,5 +31,6 @@ export function appendSourceContinuityGuidance(
   systemPrompt: string,
   guidance: string,
 ): string {
-  return guidance ? `${systemPrompt}\n\n${guidance}` : systemPrompt;
+  const compiled = compilePromptInvariantCore(systemPrompt);
+  return guidance ? `${compiled}\n\n${guidance}` : compiled;
 }

@@ -41,6 +41,7 @@ describe("Model Adapter ledger", () => {
           runId: "run_prompt_package",
           turnIndex: 2,
           packageVersion: "napier.prompt-context.v1",
+          invariantCore: { status: "legacy_unavailable" },
           classification: "conservative_tagged_v1",
           tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4",
           systemPromptBytes: 120,
@@ -80,11 +81,66 @@ describe("Model Adapter ledger", () => {
     expect(text).toContain("Task / Skill Overlay");
     expect(text).toContain("Workspace Context");
     expect(text).toContain("Model Adapter");
+    expect(text).toContain("legacy unavailable");
     expect(text).toContain("120");
     expect(text).toContain("~10 tok");
     expect(text).toContain("napier.anthropic-messages.v1");
     expect(text).not.toContain("TOP_SECRET_SYSTEM_PROMPT");
     expect(text).not.toContain("read_file");
+  });
+
+  it("renders the bound Invariant Core version without Prompt content", () => {
+    const tree = CompiledPromptPackageLedger({
+      packages: [
+        {
+          eventSeq: 32,
+          runId: "run_prompt_package_v2",
+          turnIndex: 0,
+          packageVersion: "napier.prompt-context.v2",
+          purpose: "agent_turn",
+          invariantCore: {
+            status: "bound",
+            version: "napier.invariant-core.v1",
+            contentSha256:
+              "4bd4be0290317713104cbeb5dca77e3ec62757849e3bea0fb14645f54beeadda",
+            bytes: 922,
+          },
+          classification: "conservative_tagged_v1",
+          tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4",
+          systemPromptBytes: 120,
+          estimatedTokens: 31,
+          segmentCount: 5,
+          systemPromptSha256: "a".repeat(64),
+          partitionSha256: "b".repeat(64),
+          layers: [
+            layer("invariant_core", 40, 10, 2, "c"),
+            layer("effective_capabilities", 30, 8, 1, "d"),
+            layer("task_skill_overlay", 20, 5, 1, "e"),
+            layer("workspace_context", 30, 8, 1, "1"),
+            {
+              id: "model_adapter",
+              source: "request_options",
+              segmentCount: 0,
+              bytes: 0,
+              estimatedTokens: 0,
+              contentSha256: "2".repeat(64),
+            },
+          ],
+          toolCount: 4,
+          toolNameSetSha256: "3".repeat(64),
+          toolDefinitionSetSha256: "4".repeat(64),
+          adapterId: "napier.anthropic-messages.v1",
+          adapterContentSha256: "2".repeat(64),
+          contentSha256: "5".repeat(64),
+        },
+      ],
+    });
+    const text = visibleText(tree);
+
+    expect(text).toContain("napier.invariant-core.v1");
+    expect(text).toContain("922 B");
+    expect(text).toContain("4bd4be029031");
+    expect(text).not.toContain("Identity and scope");
   });
 });
 

@@ -31,6 +31,7 @@ const promptPackageCopy = {
   tools: "Tools",
   segments: "Segments",
   adapter: "Adapter",
+  core: "Core",
   partition: "Partition",
   receipt: "Receipt",
 } as const;
@@ -132,6 +133,20 @@ export function CompiledPromptPackageLedger({
                 <p>
                   <span>{promptPackageCopy.adapter}</span>
                   <code>{promptPackage.adapterId}</code>
+                </p>
+                <p>
+                  <span>{promptPackageCopy.core}</span>
+                  <code
+                    title={
+                      promptPackage.invariantCore.status === "bound"
+                        ? promptPackage.invariantCore.contentSha256
+                        : undefined
+                    }
+                  >
+                    {promptPackage.invariantCore.status === "bound"
+                      ? `${promptPackage.invariantCore.version} · ${promptPackage.invariantCore.bytes} B · ${promptPackage.invariantCore.contentSha256.slice(0, 12)}`
+                      : promptPackage.invariantCore.status.replaceAll("_", " ")}
+                  </code>
                 </p>
                 <p>
                   <span>{promptPackageCopy.partition}</span>

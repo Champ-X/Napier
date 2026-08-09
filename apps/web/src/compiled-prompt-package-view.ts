@@ -20,7 +20,22 @@ export interface CompiledPromptPackageView {
   eventSeq: number;
   runId: string;
   turnIndex: number;
-  packageVersion: "napier.prompt-context.v1";
+  packageVersion: "napier.prompt-context.v1" | "napier.prompt-context.v2";
+  purpose?:
+    | "agent_turn"
+    | "context_compaction"
+    | "goal_evaluation"
+    | "memory_extraction";
+  invariantCore:
+    | {
+        status: "bound";
+        version: "napier.invariant-core.v1";
+        contentSha256: string;
+        bytes: number;
+      }
+    | {
+        status: "not_applicable" | "legacy_unavailable";
+      };
   classification: "conservative_tagged_v1";
   tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4";
   systemPromptBytes: number;
@@ -41,6 +56,9 @@ export interface CompiledPromptPackageView {
 }
 
 const HASH = /^[a-f0-9]{64}$/u;
+const PROMPT_INVARIANT_CORE_CONTENT_SHA256 =
+  "4bd4be0290317713104cbeb5dca77e3ec62757849e3bea0fb14645f54beeadda";
+const PROMPT_INVARIANT_CORE_BYTES = 922;
 const LAYER_IDS: readonly PromptLayerId[] = [
   "invariant_core",
   "effective_capabilities",
@@ -66,80 +84,198 @@ const ALLOWED_KEYS = new Set([
   "modelAdapter",
   "contentSha256",
 ]);
+const V2_ALLOWED_KEYS = new Set([...ALLOWED_KEYS, "purpose", "invariantCore"]);
 
 export function compiledPromptPackageViews(
   events: readonly RunEvent[],
 ): CompiledPromptPackageView[] {
-  return events.flatMap((event): CompiledPromptPackageView[] => {
-    if (event.type !== "context.prompt_package" || !record(event.payload)) {
-      return [];
-    }
-    const payload = event.payload;
-    if (
-      Object.keys(payload).length !== ALLOWED_KEYS.size ||
-      Object.keys(payload).some((key) => !ALLOWED_KEYS.has(key)) ||
-      payload["kind"] !== "napier.compiled-prompt-package" ||
-      payload["schemaVersion"] !== 1 ||
-      payload["packageVersion"] !== "napier.prompt-context.v1" ||
-      payload["classification"] !== "conservative_tagged_v1" ||
-      payload["tokenEstimateMethod"] !== "sum_layer_ceil_utf8_bytes_div_4" ||
-      payload["lossless"] !== true
-    ) {
-      return [];
-    }
-    const turnIndex = integer(payload["turnIndex"]);
-    const systemPromptBytes = integer(payload["systemPromptBytes"]);
-    const estimatedTokens = integer(payload["estimatedTokens"]);
-    const segmentCount = integer(payload["segmentCount"]);
-    const systemPromptSha256 = hash(payload["systemPromptSha256"]);
-    const partitionSha256 = hash(payload["partitionSha256"]);
-    const contentSha256 = hash(payload["contentSha256"]);
-    const layers = layerViews(payload["layers"]);
-    const capabilities = capabilityView(payload["effectiveCapabilities"]);
-    const adapter = adapterView(payload["modelAdapter"]);
-    if (
-      turnIndex === undefined ||
-      systemPromptBytes === undefined ||
-      estimatedTokens === undefined ||
-      segmentCount === undefined ||
-      !systemPromptSha256 ||
-      !partitionSha256 ||
-      !contentSha256 ||
-      !layers ||
-      !capabilities ||
-      !adapter ||
-      layers
-        .filter((layer) => layer.source === "system_prompt")
-        .reduce((total, layer) => total + layer.bytes, 0) !==
-        systemPromptBytes ||
-      layers.reduce((total, layer) => total + layer.estimatedTokens, 0) !==
-        estimatedTokens ||
-      layers.reduce((total, layer) => total + layer.segmentCount, 0) !==
-        segmentCount ||
-      layers.at(-1)?.contentSha256 !== adapter.adapterContentSha256
-    ) {
-      return [];
-    }
-    return [
-      {
-        eventSeq: event.seq,
-        runId: event.runId,
-        turnIndex,
-        packageVersion: "napier.prompt-context.v1",
-        classification: "conservative_tagged_v1",
-        tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4",
-        systemPromptBytes,
-        estimatedTokens,
-        segmentCount,
-        systemPromptSha256,
-        partitionSha256,
-        layers,
-        ...capabilities,
-        ...adapter,
-        contentSha256,
-      },
-    ];
+  return events.flatMap((event) => {
+    const view = compiledPromptPackageView(event);
+    return view ? [view] : [];
   });
+}
+
+function compiledPromptPackageView(
+  event: RunEvent,
+): CompiledPromptPackageView | undefined {
+  if (event.type !== "context.prompt_package" || !record(event.payload)) {
+    return undefined;
+  }
+  const payload = event.payload;
+  const generation = packageGeneration(payload);
+  if (!generation || !validPackageShape(payload, generation)) return undefined;
+  const scalars = scalarView(payload);
+  const layers = layerViews(payload["layers"]);
+  const capabilities = capabilityView(payload["effectiveCapabilities"]);
+  const adapter = adapterView(payload["modelAdapter"]);
+  const purpose =
+    generation === "modern" ? purposeView(payload["purpose"]) : undefined;
+  const invariantCore =
+    generation === "modern"
+      ? invariantCoreView(payload["invariantCore"], purpose)
+      : { status: "legacy_unavailable" as const };
+  if (
+    !scalars ||
+    !layers ||
+    !capabilities ||
+    !adapter ||
+    !invariantCore ||
+    !validLayerTotals(layers, scalars, adapter)
+  ) {
+    return undefined;
+  }
+  return {
+    eventSeq: event.seq,
+    runId: event.runId,
+    packageVersion:
+      generation === "modern"
+        ? "napier.prompt-context.v2"
+        : "napier.prompt-context.v1",
+    ...(purpose ? { purpose } : {}),
+    invariantCore,
+    classification: "conservative_tagged_v1",
+    tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4",
+    ...scalars,
+    layers,
+    ...capabilities,
+    ...adapter,
+  };
+}
+
+type PackageGeneration = "legacy" | "modern";
+
+function packageGeneration(
+  payload: Record<string, unknown>,
+): PackageGeneration | undefined {
+  if (
+    payload["schemaVersion"] === 2 &&
+    payload["packageVersion"] === "napier.prompt-context.v2"
+  ) {
+    return "modern";
+  }
+  if (
+    payload["schemaVersion"] === 1 &&
+    payload["packageVersion"] === "napier.prompt-context.v1"
+  ) {
+    return "legacy";
+  }
+  return undefined;
+}
+
+function validPackageShape(
+  payload: Record<string, unknown>,
+  generation: PackageGeneration,
+): boolean {
+  const allowedKeys = generation === "modern" ? V2_ALLOWED_KEYS : ALLOWED_KEYS;
+  return [
+    Object.keys(payload).length === allowedKeys.size,
+    Object.keys(payload).every((key) => allowedKeys.has(key)),
+    payload["kind"] === "napier.compiled-prompt-package",
+    payload["classification"] === "conservative_tagged_v1",
+    payload["tokenEstimateMethod"] === "sum_layer_ceil_utf8_bytes_div_4",
+    payload["lossless"] === true,
+  ].every(Boolean);
+}
+
+function scalarView(
+  payload: Record<string, unknown>,
+):
+  | Pick<
+      CompiledPromptPackageView,
+      | "turnIndex"
+      | "systemPromptBytes"
+      | "estimatedTokens"
+      | "segmentCount"
+      | "systemPromptSha256"
+      | "partitionSha256"
+      | "contentSha256"
+    >
+  | undefined {
+  const values = {
+    turnIndex: integer(payload["turnIndex"]),
+    systemPromptBytes: integer(payload["systemPromptBytes"]),
+    estimatedTokens: integer(payload["estimatedTokens"]),
+    segmentCount: integer(payload["segmentCount"]),
+    systemPromptSha256: hash(payload["systemPromptSha256"]),
+    partitionSha256: hash(payload["partitionSha256"]),
+    contentSha256: hash(payload["contentSha256"]),
+  };
+  return Object.values(values).every((value) => value !== undefined)
+    ? (values as Pick<
+        CompiledPromptPackageView,
+        | "turnIndex"
+        | "systemPromptBytes"
+        | "estimatedTokens"
+        | "segmentCount"
+        | "systemPromptSha256"
+        | "partitionSha256"
+        | "contentSha256"
+      >)
+    : undefined;
+}
+
+function validLayerTotals(
+  layers: CompiledPromptLayerView[],
+  scalars: Pick<
+    CompiledPromptPackageView,
+    "systemPromptBytes" | "estimatedTokens" | "segmentCount"
+  >,
+  adapter: Pick<
+    CompiledPromptPackageView,
+    "adapterId" | "adapterContentSha256"
+  >,
+): boolean {
+  return [
+    layers
+      .filter((layer) => layer.source === "system_prompt")
+      .reduce((total, layer) => total + layer.bytes, 0) ===
+      scalars.systemPromptBytes,
+    layers.reduce((total, layer) => total + layer.estimatedTokens, 0) ===
+      scalars.estimatedTokens,
+    layers.reduce((total, layer) => total + layer.segmentCount, 0) ===
+      scalars.segmentCount,
+    layers.at(-1)?.contentSha256 === adapter.adapterContentSha256,
+  ].every(Boolean);
+}
+
+function purposeView(
+  input: unknown,
+): CompiledPromptPackageView["purpose"] | undefined {
+  return input === "agent_turn" ||
+    input === "context_compaction" ||
+    input === "goal_evaluation" ||
+    input === "memory_extraction"
+    ? input
+    : undefined;
+}
+
+function invariantCoreView(
+  input: unknown,
+  purpose: CompiledPromptPackageView["purpose"] | undefined,
+): CompiledPromptPackageView["invariantCore"] | undefined {
+  if (!record(input) || !purpose) return undefined;
+  if (
+    purpose !== "agent_turn" &&
+    Object.keys(input).length === 1 &&
+    input["status"] === "not_applicable"
+  ) {
+    return { status: "not_applicable" };
+  }
+  const contentSha256 = hash(input["contentSha256"]);
+  const bytes = integer(input["bytes"]);
+  return purpose === "agent_turn" &&
+    Object.keys(input).length === 4 &&
+    input["status"] === "bound" &&
+    input["version"] === "napier.invariant-core.v1" &&
+    contentSha256 === PROMPT_INVARIANT_CORE_CONTENT_SHA256 &&
+    bytes === PROMPT_INVARIANT_CORE_BYTES
+    ? {
+        status: "bound",
+        version: "napier.invariant-core.v1",
+        contentSha256,
+        bytes,
+      }
+    : undefined;
 }
 
 function layerViews(input: unknown): CompiledPromptLayerView[] | undefined {

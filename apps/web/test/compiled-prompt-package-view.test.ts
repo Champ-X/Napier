@@ -24,6 +24,7 @@ describe("compiled Prompt package trace view", () => {
         runId: "run_prompt_package",
         turnIndex: 2,
         packageVersion: "napier.prompt-context.v1",
+        invariantCore: { status: "legacy_unavailable" },
         classification: "conservative_tagged_v1",
         tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4",
         systemPromptBytes: 120,
@@ -53,6 +54,39 @@ describe("compiled Prompt package trace view", () => {
         contentSha256: "5".repeat(64),
       },
     ]);
+  });
+
+  it("projects a bound v2 Invariant Core and rejects binding drift", () => {
+    const modern = receipt();
+    modern["schemaVersion"] = 2;
+    modern["packageVersion"] = "napier.prompt-context.v2";
+    modern["purpose"] = "agent_turn";
+    modern["invariantCore"] = {
+      status: "bound",
+      version: "napier.invariant-core.v1",
+      contentSha256:
+        "4bd4be0290317713104cbeb5dca77e3ec62757849e3bea0fb14645f54beeadda",
+      bytes: 922,
+    };
+    const drifted = structuredClone(modern);
+    (drifted["invariantCore"] as Record<string, JsonValue>)["version"] =
+      "napier.invariant-core.v2";
+
+    expect(compiledPromptPackageViews([event(modern), event(drifted)])).toEqual(
+      [
+        expect.objectContaining({
+          packageVersion: "napier.prompt-context.v2",
+          purpose: "agent_turn",
+          invariantCore: {
+            status: "bound",
+            version: "napier.invariant-core.v1",
+            contentSha256:
+              "4bd4be0290317713104cbeb5dca77e3ec62757849e3bea0fb14645f54beeadda",
+            bytes: 922,
+          },
+        }),
+      ],
+    );
   });
 });
 

@@ -18,6 +18,11 @@ import {
   validateOpenTelemetryTraceArtifact,
   verifyOpenTelemetryTraceArtifact,
 } from "../src/opentelemetry.js";
+import {
+  compilePromptInvariantCore,
+  PROMPT_INVARIANT_CORE_CONTENT_SHA256,
+  PROMPT_INVARIANT_CORE_VERSION,
+} from "../src/prompt-invariant-core.js";
 import { LocalStore } from "../src/store.js";
 
 const temporaryRoots: string[] = [];
@@ -45,17 +50,19 @@ describe("OpenTelemetry Prompt evidence", () => {
       agentId: agent.id,
       model: { provider: "anthropic", id: "claude-test" },
     });
-    const systemPrompt = [
-      "OTLP_SECRET_INVARIANT",
-      "<workspace_tool_protocol>OTLP_SECRET_TOOL_RULE</workspace_tool_protocol>",
+    const systemPrompt = compilePromptInvariantCore(
       [
-        "The following skills provide specialized instructions for specific tasks.",
-        "<available_skills>",
-        "<skill><name>OTLP_SECRET_SKILL</name></skill>",
-        "</available_skills>",
+        "OTLP_SECRET_INVARIANT",
+        "<workspace_tool_protocol>OTLP_SECRET_TOOL_RULE</workspace_tool_protocol>",
+        [
+          "The following skills provide specialized instructions for specific tasks.",
+          "<available_skills>",
+          "<skill><name>OTLP_SECRET_SKILL</name></skill>",
+          "</available_skills>",
+        ].join("\n"),
+        "<memory_context>OTLP_SECRET_WORKSPACE</memory_context>",
       ].join("\n"),
-      "<memory_context>OTLP_SECRET_WORKSPACE</memory_context>",
-    ].join("\n");
+    );
     const envelope = createModelContextEnvelopeReceipt({
       turnIndex: 7,
       systemPrompt,
@@ -73,6 +80,7 @@ describe("OpenTelemetry Prompt evidence", () => {
       systemPrompt,
       envelope,
       adapter,
+      purpose: "agent_turn",
     });
     await store.appendEvent({
       threadId: thread.id,
@@ -127,6 +135,16 @@ describe("OpenTelemetry Prompt evidence", () => {
       "napier.event.payload.lossless": true,
       "napier.event.payload.package_version": promptPackage.packageVersion,
       "napier.event.payload.partition_sha256": promptPackage.partitionSha256,
+      "napier.event.payload.prompt_invariant_core_bytes":
+        promptPackage.invariantCore?.status === "bound"
+          ? promptPackage.invariantCore.bytes
+          : undefined,
+      "napier.event.payload.prompt_invariant_core_content_sha256":
+        PROMPT_INVARIANT_CORE_CONTENT_SHA256,
+      "napier.event.payload.prompt_invariant_core_status": "bound",
+      "napier.event.payload.prompt_invariant_core_version":
+        PROMPT_INVARIANT_CORE_VERSION,
+      "napier.event.payload.purpose": "agent_turn",
       "napier.event.payload.schema_version": promptPackage.schemaVersion,
       "napier.event.payload.segment_count": promptPackage.segmentCount,
       "napier.event.payload.system_prompt_bytes":
@@ -192,6 +210,7 @@ describe("OpenTelemetry Prompt evidence", () => {
       systemPrompt,
       envelope,
       adapter,
+      purpose: "context_compaction",
     });
     await store.appendEvent({
       threadId: thread.id,

@@ -5,36 +5,44 @@ import {
   createCompiledPromptPackageReceipt,
   validateCompiledPromptPackageReceipt,
 } from "../src/compiled-prompt-package.js";
+import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import { modelAdapterReceipt } from "../src/model-adapters.js";
+import {
+  compilePromptInvariantCore,
+  PROMPT_INVARIANT_CORE_CONTENT_SHA256,
+  PROMPT_INVARIANT_CORE_VERSION,
+} from "../src/prompt-invariant-core.js";
 
 describe("compiled Prompt package", () => {
   it("partitions a real-shaped Prompt losslessly into five hash-only layers", () => {
-    const systemPrompt = [
-      "Invariant identity and completion rules. 中文",
+    const systemPrompt = compilePromptInvariantCore(
       [
-        "<workspace_tool_protocol>",
-        "Only describe tools that are available.",
-        "</workspace_tool_protocol>",
-      ].join("\n"),
-      [
-        "The following skills provide specialized instructions for specific tasks.",
-        "<available_skills>",
-        "  <skill><name>artifact-studio</name></skill>",
-        "</available_skills>",
-      ].join("\n"),
-      [
-        "<memory_context>",
-        "Reviewed workspace fact.",
-        "</memory_context>",
-      ].join("\n"),
-      [
-        "<plan_tool_protocol>",
-        "Verify planned artifacts.",
-        "</plan_tool_protocol>",
-      ].join("\n"),
-      "Unclassified trailing rules stay in the invariant layer.",
-    ].join("\n\n");
+        "Invariant identity and completion rules. 中文",
+        [
+          "<workspace_tool_protocol>",
+          "Only describe tools that are available.",
+          "</workspace_tool_protocol>",
+        ].join("\n"),
+        [
+          "The following skills provide specialized instructions for specific tasks.",
+          "<available_skills>",
+          "  <skill><name>artifact-studio</name></skill>",
+          "</available_skills>",
+        ].join("\n"),
+        [
+          "<memory_context>",
+          "Reviewed workspace fact.",
+          "</memory_context>",
+        ].join("\n"),
+        [
+          "<plan_tool_protocol>",
+          "Verify planned artifacts.",
+          "</plan_tool_protocol>",
+        ].join("\n"),
+        "Unclassified trailing rules stay in the invariant layer.",
+      ].join("\n\n"),
+    );
     const envelope = createModelContextEnvelopeReceipt({
       turnIndex: 3,
       systemPrompt,
@@ -53,13 +61,21 @@ describe("compiled Prompt package", () => {
       systemPrompt,
       envelope,
       adapter,
+      purpose: "agent_turn",
     });
 
     expect(receipt).toEqual(
       expect.objectContaining({
         kind: "napier.compiled-prompt-package",
-        schemaVersion: 1,
+        schemaVersion: 2,
         packageVersion: COMPILED_PROMPT_PACKAGE_VERSION,
+        purpose: "agent_turn",
+        invariantCore: {
+          status: "bound",
+          version: PROMPT_INVARIANT_CORE_VERSION,
+          contentSha256: PROMPT_INVARIANT_CORE_CONTENT_SHA256,
+          bytes: expect.any(Number),
+        },
         turnIndex: 3,
         classification: "conservative_tagged_v1",
         tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4",
@@ -115,6 +131,26 @@ describe("compiled Prompt package", () => {
       contentSha256: adapter.contentSha256,
     });
     expect(validateCompiledPromptPackageReceipt(receipt)).toEqual(receipt);
+    const {
+      purpose: _purpose,
+      invariantCore: _invariantCore,
+      contentSha256: _contentSha256,
+      ...legacyContent
+    } = receipt;
+    const legacy = {
+      ...legacyContent,
+      schemaVersion: 1 as const,
+      packageVersion: "napier.prompt-context.v1" as const,
+    };
+    expect(
+      validateCompiledPromptPackageReceipt({
+        ...legacy,
+        contentSha256: sha256(canonicalJson(legacy)),
+      }),
+    ).toEqual({
+      ...legacy,
+      contentSha256: sha256(canonicalJson(legacy)),
+    });
     const serialized = JSON.stringify(receipt);
     expect(serialized).not.toContain("Invariant identity");
     expect(serialized).not.toContain("artifact-studio");
@@ -137,6 +173,7 @@ describe("compiled Prompt package", () => {
         systemPrompt: `${systemPrompt} drift`,
         envelope,
         adapter,
+        purpose: "context_compaction",
       }),
     ).toThrow("envelope binding");
 
@@ -144,6 +181,7 @@ describe("compiled Prompt package", () => {
       systemPrompt,
       envelope,
       adapter,
+      purpose: "context_compaction",
     });
     const layers = structuredClone(receipt.layers);
     layers[0]!.bytes += 1;
@@ -168,6 +206,38 @@ describe("compiled Prompt package", () => {
         contentSha256: "f".repeat(64),
       }),
     ).toThrow("hash mismatch");
+  });
+
+  it("rejects v2 Invariant Core binding drift before content hash trust", () => {
+    const systemPrompt = compilePromptInvariantCore("Agent profile");
+    const envelope = createModelContextEnvelopeReceipt({
+      turnIndex: 0,
+      systemPrompt,
+      messages: [],
+      tools: [],
+    });
+    const receipt = createCompiledPromptPackageReceipt({
+      systemPrompt,
+      envelope,
+      adapter: modelAdapterReceipt(model("anthropic-messages")),
+      purpose: "agent_turn",
+    });
+
+    expect(() =>
+      validateCompiledPromptPackageReceipt({
+        ...receipt,
+        invariantCore: {
+          ...receipt.invariantCore,
+          contentSha256: "0".repeat(64),
+        },
+      }),
+    ).toThrow("Invariant Core binding");
+    expect(() =>
+      validateCompiledPromptPackageReceipt({
+        ...receipt,
+        purpose: "context_compaction",
+      }),
+    ).toThrow("Invariant Core binding");
   });
 });
 

@@ -93,6 +93,7 @@ function evidence(turnIndex = 0, sequenceOffset = 0) {
     systemPrompt,
     envelope,
     adapter,
+    purpose: "context_compaction",
   });
   const envelopeEvent = event(
     1 + sequenceOffset,

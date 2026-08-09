@@ -53,6 +53,7 @@ export async function captureModelInvocation(
       systemPrompt: context.systemPrompt ?? "",
       envelope,
       adapter,
+      purpose,
     });
     await append(
       store,

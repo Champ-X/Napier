@@ -1,53 +1,32 @@
-import type { ModelContextEnvelopeReceipt } from "@napier/contracts";
+import type {
+  ModelContextEnvelopeReceipt,
+  ModelInvocationPurpose,
+} from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { ModelAdapterReceipt } from "./model-adapters.js";
 import { validateModelAdapterReceipt } from "./model-adapters.js";
+import {
+  COMPILED_PROMPT_PACKAGE_VERSION,
+  createPromptInvariantCoreBinding,
+  PROMPT_LAYER_IDS,
+  validateCompiledPromptPackageReceipt,
+  type CompiledPromptLayerReceipt,
+  type CompiledPromptPackageReceipt,
+  type PromptLayerId,
+} from "./compiled-prompt-package-receipt.js";
 
 export const COMPILED_PROMPT_PACKAGE_EVENT = "context.prompt_package";
-export const COMPILED_PROMPT_PACKAGE_VERSION = "napier.prompt-context.v1";
-
-export type PromptLayerId =
-  | "invariant_core"
-  | "effective_capabilities"
-  | "task_skill_overlay"
-  | "workspace_context"
-  | "model_adapter";
-
-export interface CompiledPromptLayerReceipt {
-  id: PromptLayerId;
-  source: "system_prompt" | "request_options";
-  segmentCount: number;
-  bytes: number;
-  estimatedTokens: number;
-  contentSha256: string;
-}
-
-export interface CompiledPromptPackageReceipt {
-  kind: "napier.compiled-prompt-package";
-  schemaVersion: 1;
-  packageVersion: typeof COMPILED_PROMPT_PACKAGE_VERSION;
-  turnIndex: number;
-  classification: "conservative_tagged_v1";
-  tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4";
-  systemPromptSha256: string;
-  systemPromptBytes: number;
-  estimatedTokens: number;
-  segmentCount: number;
-  partitionSha256: string;
-  lossless: true;
-  layers: CompiledPromptLayerReceipt[];
-  effectiveCapabilities: {
-    toolCount: number;
-    toolNameSetSha256: string;
-    toolDefinitionSetSha256: string;
-  };
-  modelAdapter: {
-    adapterId: ModelAdapterReceipt["adapterId"];
-    adapterContentSha256: string;
-  };
-  contentSha256: string;
-}
+export {
+  COMPILED_PROMPT_PACKAGE_VERSION,
+  validateCompiledPromptPackageReceipt,
+};
+export type {
+  CompiledPromptLayerReceipt,
+  CompiledPromptPackageReceipt,
+  PromptInvariantCoreBinding,
+  PromptLayerId,
+} from "./compiled-prompt-package-receipt.js";
 
 interface PromptSegment {
   id: Exclude<PromptLayerId, "model_adapter">;
@@ -61,14 +40,6 @@ interface TaggedRegion {
   end: number;
 }
 
-const HASH = /^[a-f0-9]{64}$/u;
-const LAYER_IDS: readonly PromptLayerId[] = [
-  "invariant_core",
-  "effective_capabilities",
-  "task_skill_overlay",
-  "workspace_context",
-  "model_adapter",
-];
 const TAGGED_BLOCKS: ReadonlyArray<{
   id: TaggedRegion["id"];
   pattern: RegExp;
@@ -97,6 +68,7 @@ export function createCompiledPromptPackageReceipt(input: {
   systemPrompt: string;
   envelope: ModelContextEnvelopeReceipt;
   adapter: ModelAdapterReceipt;
+  purpose: ModelInvocationPurpose;
 }): CompiledPromptPackageReceipt {
   const adapter = validateModelAdapterReceipt(input.adapter);
   if (
@@ -118,7 +90,7 @@ export function createCompiledPromptPackageReceipt(input: {
     bytes: bytes(segment.text),
     contentSha256: sha256(segment.text),
   }));
-  const layers = LAYER_IDS.map((id): CompiledPromptLayerReceipt => {
+  const layers = PROMPT_LAYER_IDS.map((id): CompiledPromptLayerReceipt => {
     if (id === "model_adapter") {
       return {
         id,
@@ -147,8 +119,13 @@ export function createCompiledPromptPackageReceipt(input: {
   });
   const content = {
     kind: "napier.compiled-prompt-package" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     packageVersion: COMPILED_PROMPT_PACKAGE_VERSION,
+    purpose: input.purpose,
+    invariantCore: createPromptInvariantCoreBinding(
+      input.systemPrompt,
+      input.purpose,
+    ),
     turnIndex: input.envelope.turnIndex,
     classification: "conservative_tagged_v1" as const,
     tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4" as const,
@@ -176,80 +153,6 @@ export function createCompiledPromptPackageReceipt(input: {
     ...content,
     contentSha256: sha256(canonicalJson(content)),
   });
-}
-
-export function validateCompiledPromptPackageReceipt(
-  input: unknown,
-): CompiledPromptPackageReceipt {
-  const value = record(input);
-  const keys = [
-    "kind",
-    "schemaVersion",
-    "packageVersion",
-    "turnIndex",
-    "classification",
-    "tokenEstimateMethod",
-    "systemPromptSha256",
-    "systemPromptBytes",
-    "estimatedTokens",
-    "segmentCount",
-    "partitionSha256",
-    "lossless",
-    "layers",
-    "effectiveCapabilities",
-    "modelAdapter",
-    "contentSha256",
-  ];
-  if (
-    Object.keys(value).length !== keys.length ||
-    keys.some((key) => !(key in value)) ||
-    value["kind"] !== "napier.compiled-prompt-package" ||
-    value["schemaVersion"] !== 1 ||
-    value["packageVersion"] !== COMPILED_PROMPT_PACKAGE_VERSION ||
-    !nonNegativeInteger(value["turnIndex"]) ||
-    value["classification"] !== "conservative_tagged_v1" ||
-    value["tokenEstimateMethod"] !== "sum_layer_ceil_utf8_bytes_div_4" ||
-    !hash(value["systemPromptSha256"]) ||
-    !nonNegativeInteger(value["systemPromptBytes"]) ||
-    !nonNegativeInteger(value["estimatedTokens"]) ||
-    !nonNegativeInteger(value["segmentCount"]) ||
-    !hash(value["partitionSha256"]) ||
-    value["lossless"] !== true ||
-    !Array.isArray(value["layers"]) ||
-    !hash(value["contentSha256"])
-  ) {
-    throw new Error("Compiled Prompt package receipt is invalid");
-  }
-  const layers = validateLayers(value["layers"]);
-  const effectiveCapabilities = validateEffectiveCapabilities(
-    value["effectiveCapabilities"],
-  );
-  const modelAdapter = validateAdapterBinding(value["modelAdapter"]);
-  const promptLayers = layers.filter(
-    (layer) => layer.source === "system_prompt",
-  );
-  if (
-    promptLayers.reduce((total, layer) => total + layer.bytes, 0) !==
-      value["systemPromptBytes"] ||
-    layers.reduce((total, layer) => total + layer.estimatedTokens, 0) !==
-      value["estimatedTokens"] ||
-    layers.reduce((total, layer) => total + layer.segmentCount, 0) !==
-      value["segmentCount"] ||
-    layers.at(-1)?.contentSha256 !== modelAdapter.adapterContentSha256
-  ) {
-    throw new Error("Compiled Prompt package layer totals are invalid");
-  }
-  const receipt = {
-    ...structuredClone(value),
-    layers,
-    effectiveCapabilities,
-    modelAdapter,
-  } as unknown as CompiledPromptPackageReceipt;
-  const { contentSha256, ...content } = receipt;
-  if (sha256(canonicalJson(content)) !== contentSha256) {
-    throw new Error("Compiled Prompt package receipt hash mismatch");
-  }
-  return receipt;
 }
 
 function partitionPrompt(systemPrompt: string): PromptSegment[] {
@@ -295,95 +198,10 @@ function partitionPrompt(systemPrompt: string): PromptSegment[] {
   return segments.filter((segment) => segment.text.length > 0);
 }
 
-function validateLayers(input: unknown[]): CompiledPromptLayerReceipt[] {
-  if (input.length !== LAYER_IDS.length) {
-    throw new Error("Compiled Prompt package layers are invalid");
-  }
-  return input.map((item, index) => {
-    const layer = record(item);
-    if (
-      Object.keys(layer).length !== 6 ||
-      layer["id"] !== LAYER_IDS[index] ||
-      (layer["source"] !== "system_prompt" &&
-        layer["source"] !== "request_options") ||
-      !nonNegativeInteger(layer["segmentCount"]) ||
-      !nonNegativeInteger(layer["bytes"]) ||
-      !nonNegativeInteger(layer["estimatedTokens"]) ||
-      !hash(layer["contentSha256"])
-    ) {
-      throw new Error("Compiled Prompt package layer is invalid");
-    }
-    if (
-      layer["id"] === "model_adapter"
-        ? layer["source"] !== "request_options" ||
-          layer["segmentCount"] !== 0 ||
-          layer["bytes"] !== 0 ||
-          layer["estimatedTokens"] !== 0
-        : layer["source"] !== "system_prompt" ||
-          (layer["segmentCount"] === 0
-            ? layer["bytes"] !== 0 || layer["estimatedTokens"] !== 0
-            : layer["bytes"] === 0 ||
-              layer["estimatedTokens"] !== estimateTokens(layer["bytes"]))
-    ) {
-      throw new Error("Compiled Prompt package layer source is invalid");
-    }
-    return structuredClone(layer) as unknown as CompiledPromptLayerReceipt;
-  });
-}
-
-function validateEffectiveCapabilities(
-  input: unknown,
-): CompiledPromptPackageReceipt["effectiveCapabilities"] {
-  const value = record(input);
-  if (
-    Object.keys(value).length !== 3 ||
-    !nonNegativeInteger(value["toolCount"]) ||
-    !hash(value["toolNameSetSha256"]) ||
-    !hash(value["toolDefinitionSetSha256"])
-  ) {
-    throw new Error("Compiled Prompt package capabilities are invalid");
-  }
-  return structuredClone(
-    value,
-  ) as unknown as CompiledPromptPackageReceipt["effectiveCapabilities"];
-}
-
-function validateAdapterBinding(
-  input: unknown,
-): CompiledPromptPackageReceipt["modelAdapter"] {
-  const value = record(input);
-  if (
-    Object.keys(value).length !== 2 ||
-    (value["adapterId"] !== "napier.anthropic-messages.v1" &&
-      value["adapterId"] !== "napier.openai-family.v1" &&
-      value["adapterId"] !== "napier.generic.v1") ||
-    !hash(value["adapterContentSha256"])
-  ) {
-    throw new Error("Compiled Prompt package Adapter binding is invalid");
-  }
-  return structuredClone(
-    value,
-  ) as unknown as CompiledPromptPackageReceipt["modelAdapter"];
-}
-
 function estimateTokens(byteCount: number): number {
   return Math.ceil(byteCount / 4);
 }
 
 function bytes(value: string): number {
   return Buffer.byteLength(value, "utf8");
-}
-
-function hash(value: unknown): value is string {
-  return typeof value === "string" && HASH.test(value);
-}
-
-function nonNegativeInteger(value: unknown): value is number {
-  return Number.isSafeInteger(value) && Number(value) >= 0;
-}
-
-function record(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
 }
