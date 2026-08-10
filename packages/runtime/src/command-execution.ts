@@ -408,7 +408,7 @@ function validateCommandRequest(input: CommandExecutionRequest): void {
 
 function validateProviderRuntimeBinding(
   binding: {
-    runtime: CommandRuntime;
+    runtime: string;
     executable: string;
     executableSha256: string;
     executableSearchPaths?: string[];

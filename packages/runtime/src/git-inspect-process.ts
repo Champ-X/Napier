@@ -49,6 +49,7 @@ export interface GitInspectProcessResult {
   durationMs: number;
   sandboxSha256: string;
   executableSha256: string;
+  runtimeIdentitySha256?: string;
   argumentSetSha256: string;
   environmentSha256: string;
   resourceLimitsSha256: string;
@@ -86,18 +87,17 @@ export async function runGitProcess(
 ): Promise<GitInspectProcessResult> {
   validateGitArguments(args);
   validateGitStdin(isolation);
-  const operation = isolation
-    ? isolation.operation === "commit"
-      ? "Git commit"
-      : isolation.operation === "branch"
-        ? "Git branch creation"
-        : isolation.operation === "switch"
-          ? "Git branch switch"
-          : isolation.operation === "review"
-            ? "Git review promotion"
-            : "Git stage preparation"
-    : "Git inspection";
-  if (options.sandbox.id === "oci-container") {
+  const operation = gitOperationLabel(isolation);
+  const providerBinding = await options.sandbox.resolveCommandRuntime?.("git");
+  if (providerBinding) {
+    validateGitProviderBinding(providerBinding);
+    if (options.gitExecutable !== undefined) {
+      throw new Error(
+        "Image-bound Git runtime does not accept a host executable override",
+      );
+    }
+  }
+  if (options.sandbox.id === "oci-container" && !providerBinding) {
     throw new Error(
       `${operation} requires a local OS sandbox until container runtime identity binding is available`,
     );
@@ -118,8 +118,12 @@ export async function runGitProcess(
   const approvedCapabilities = isolation
     ? (["process.spawn", "workspace.read", "workspace.write"] as const)
     : (["process.spawn", "workspace.read"] as const);
-  const executable = await resolveGitExecutable(options.gitExecutable);
-  const executableSha256 = await sha256File(executable);
+  const executable = providerBinding
+    ? providerBinding.executable
+    : await resolveGitExecutable(options.gitExecutable);
+  const executableSha256 = providerBinding
+    ? providerBinding.executableSha256
+    : await sha256File(executable);
   const resourceLimits = {
     wallTimeMs: timeoutMs,
     outputCharsPerStream: MAX_GIT_PROCESS_OUTPUT_CHARS,
@@ -127,6 +131,9 @@ export async function runGitProcess(
     cpuLimit: "sandbox_backend_default",
     memoryLimit: "sandbox_backend_default",
     approvedCapabilities,
+    ...(providerBinding
+      ? { runtimeIdentitySha256: providerBinding.runtimeIdentitySha256 }
+      : {}),
     workspaceWritePathSha256: (isolation?.workspaceWritePaths ?? []).map(
       (value) => sha256(path.resolve(value)),
     ),
@@ -159,7 +166,10 @@ export async function runGitProcess(
       abortedMessage: `${operation} was aborted`,
     });
   } finally {
-    if ((await sha256File(executable).catch(() => "")) !== executableSha256) {
+    if (
+      !providerBinding &&
+      (await sha256File(executable).catch(() => "")) !== executableSha256
+    ) {
       throw new Error(
         `Git executable changed during ${operation.toLowerCase()}`,
       );
@@ -179,10 +189,46 @@ export async function runGitProcess(
     durationMs: execution.durationMs,
     sandboxSha256: sha256(options.sandbox.id),
     executableSha256,
+    ...(providerBinding
+      ? { runtimeIdentitySha256: providerBinding.runtimeIdentitySha256 }
+      : {}),
     argumentSetSha256: sha256(canonicalJson(args)),
     environmentSha256: sha256(canonicalJson(environment)),
     resourceLimitsSha256: sha256(canonicalJson(resourceLimits)),
   };
+}
+
+function gitOperationLabel(isolation: GitProcessIsolation | undefined): string {
+  switch (isolation?.operation) {
+    case "commit":
+      return "Git commit";
+    case "branch":
+      return "Git branch creation";
+    case "switch":
+      return "Git branch switch";
+    case "review":
+      return "Git review promotion";
+    case "stage":
+      return "Git stage preparation";
+    default:
+      return isolation ? "Git stage preparation" : "Git inspection";
+  }
+}
+
+function validateGitProviderBinding(binding: {
+  runtime: string;
+  executable: string;
+  executableSha256: string;
+  runtimeIdentitySha256: string;
+}): void {
+  if (
+    binding.runtime !== "git" ||
+    !path.posix.isAbsolute(binding.executable) ||
+    !/^[a-f0-9]{64}$/u.test(binding.executableSha256) ||
+    !/^[a-f0-9]{64}$/u.test(binding.runtimeIdentitySha256)
+  ) {
+    throw new Error("Provider Git runtime identity is invalid");
+  }
 }
 
 function validateGitStdin(isolation: GitProcessIsolation | undefined): void {

@@ -85,6 +85,12 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
       "Direct host execution runs with no OS isolation. Prefer a container image (NAPIER_CONTAINER_SANDBOX_IMAGE) or a native OS sandbox; keep NAPIER_HOST_DIRECT_SANDBOX enabled only on trusted machines you control.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
+  sandbox_git_unavailable: {
+    id: "repair_git_runtime",
+    instruction:
+      "Install Git in the active host sandbox or trusted OCI image, then rerun the production Sandbox checks.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
   skills_missing: {
     id: "repair_skill_loader",
     instruction:

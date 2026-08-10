@@ -6723,11 +6723,15 @@ from reviewed capabilities. Missing sandbox prerequisites, remote daemon
 contexts, and unsupported host user mapping fail closed; a container or VM
 remains the recommended outer boundary for production third-party code.
 
-Image-bound command identity covers Node, Shell, and an optional Python
-interpreter. Python 3.9+ is admitted only when the mapped container user can run
-the same isolated standard-library imports required by the persistent Kernel;
-Doctor executes a bounded command through the active provider instead of
-falling back to a host-only availability check.
+Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
+and the fixed Git operation graph. Python 3.9+ is admitted only when the mapped
+container user can run the same isolated standard-library imports required by
+the persistent Kernel. Git remains unavailable to generic command tools: the
+image path, version, executable hash, and provider identity are bound into the
+existing inspection/stage/commit/branch/review receipts, with only private Git
+state writable during preview. Doctor executes bounded production commands for
+the active provider, including Git, instead of falling back to host-only
+availability checks.
 
 ## License
 

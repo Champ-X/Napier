@@ -27,7 +27,7 @@ export interface SandboxedProcess {
   terminate(): Promise<void>;
 }
 
-export type SandboxCommandRuntime = "node" | "python" | "shell";
+export type SandboxCommandRuntime = "git" | "node" | "python" | "shell";
 
 export interface SandboxCommandRuntimeBinding {
   runtime: SandboxCommandRuntime;

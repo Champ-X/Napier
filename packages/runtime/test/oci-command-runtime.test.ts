@@ -41,6 +41,7 @@ const IMAGE_ID = `sha256:${"a".repeat(64)}`;
 const NODE_SHA256 = "b".repeat(64);
 const SHELL_SHA256 = "c".repeat(64);
 const PYTHON_SHA256 = "d".repeat(64);
+const GIT_SHA256 = "e".repeat(64);
 const REQUESTED_IMAGE = "ghcr.io/example/napier-sandbox:node24";
 const USER_IDS = { userId: 501, groupId: 20 } as const;
 const DAEMON_ENDPOINT = "unix:///controlled/docker.sock";
@@ -741,6 +742,11 @@ function identityClient(
       shell: {
         executable: "/bin/dash",
         executableSha256: SHELL_SHA256,
+      },
+      git: {
+        executable: "/usr/bin/git",
+        executableSha256: GIT_SHA256,
+        version: "git version 2.51.0",
       },
       python: options.pythonUnavailable
         ? null

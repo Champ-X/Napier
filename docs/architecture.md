@@ -5541,11 +5541,12 @@ stable call/result hashes, and structured command details. The Tool Loop Guard
 understands these redacted projections, so repeated commands remain detectable
 without persisting command or output text.
 
-Local command execution currently supports macOS sandbox-exec and Linux
-Bubblewrap. It fails closed on unsupported adapters and OCI until host/image
-runtime identity binding exists. Wall time, output, and process-group
-termination are enforced; hard per-command CPU/memory quotas require an OCI or
-managed session backend and remain an explicit gap. Foreground
+Local command execution supports macOS sandbox-exec, Linux Bubblewrap, and an
+opt-in OCI provider. OCI production launches bind the immutable image, local
+daemon, numeric execution user, and the selected in-image executable identity;
+an unavailable or changed identity fails closed. Wall time, output, and
+process-group termination are enforced; hard per-command CPU/memory quotas are
+provided by OCI and remain unavailable in the local OS adapters. Foreground
 `run_command` remains pipe-only; PTY is available through the managed Process
 Session below. Writes, package installation, and inherited environment
 variables are not part of either surface. The public generic command/process
@@ -5554,7 +5555,8 @@ protocol that binds a recognized system interpreter and a bounded no-site
 bootstrap dependency set proven to cover the worker's loaded module files,
 without granting models an arbitrary Python argv surface. Git remains outside
 that generic runtime enum and is available only through the fixed operation
-graph below.
+graph below; OCI resolves its executable, version, and byte hash from the image
+before those operations can launch.
 
 The macOS adapter runs one cached, one-second, deny-default `sandbox-exec`
 profile probe before launching the first task process. This distinguishes an
@@ -5574,7 +5576,8 @@ git_inspect(status | diff | conflict)
   -> require canonical workspace root with a direct non-symlink .git directory
   -> reject gitfile, metadata symlink, active index lock, protected/escaping path
   -> snapshot no-follow HEAD/current ref/packed refs/index/config/shallow
-  -> resolve and hash fixed /usr/bin/git
+  -> resolve and hash fixed host Git, or bind the OCI image Git path, version,
+     executable hash, immutable image, local daemon, and numeric user identity
   -> list local config key names with --no-includes
   -> reject include paths, filter clean/smudge/process,
      diff command/textconv, core.attributesFile,
@@ -5593,7 +5596,8 @@ git_inspect(status | diff | conflict)
      external diff, textconv, and submodule traversal
   -> execute read-only/offline in the existing OS Sandbox
   -> cap each stream at 128 KiB and reject truncated or stderr-bearing output
-  -> rehash Git executable and repository metadata
+  -> rehash host Git when applicable and revalidate repository metadata;
+     OCI revalidates its full provider identity before every launch
   -> return paths/hunks/conflict text live; persist counts and hashes only,
      including the selected Sandbox backend hash
 ```
@@ -5617,6 +5621,16 @@ before process admission.
 the central Agent Ledger module. Web validation lives in
 `git-inspect-event-view.ts`; extracting legacy workspace-read validation into
 `workspace-read-event-view.ts` reduces the central Tool Trace module.
+
+For OCI, the fixed runtime probe runs as the mapped container UID:GID and
+accepts Git only when a bounded `git --version` succeeds. The resulting path,
+version, executable hash, and transitive provider identity are bound into every
+Git process resource receipt. Multi-process inspect, stage, and commit paths
+reject identity drift. Read operations mount the workspace read-only; private
+stage/commit state adds only its reviewed ephemeral subtree as writable, so
+image-bound Git does not gain a generic command or workspace-write surface.
+Doctor requires both its normal production process probe and this production
+Git probe before reporting the active coding Sandbox ready.
 
 The direct `.git` boundary deliberately excludes linked worktrees, worktree
 config, split indexes, sparse checkout, graft metadata, SHA-256 object
@@ -8005,7 +8019,7 @@ external daemon by controlled production-path tests; the actual host Doctor
 continues to report `python_provider_unavailable`,
 `shell_provider_unavailable`, and `sandbox_unavailable` when the configured
 local Docker server cannot be reached. Real isolated-daemon E2E, non-POSIX
-host-user mapping, image-bound Git/LSP/debugger assets, and bounded service-port
+host-user mapping, image-bound LSP/debugger assets, and bounded service-port
 projection remain explicit gaps.
 
 Both adapters create a private temporary HOME and add workspace read/write

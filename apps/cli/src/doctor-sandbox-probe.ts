@@ -1,5 +1,6 @@
 import { createPlatformSandboxAdapter } from "@napier/runtime";
 import {
+  probeGitRuntime,
   probeSandboxProcessRuntime,
   sandboxIsolationStrength,
 } from "@napier/runtime/doctor-probes";
@@ -30,6 +31,24 @@ export async function defaultSandboxProbe(
     return sandboxUnavailableCheck(Date.now() - startedAt, signal);
   }
   const isolation = sandboxIsolationStrength(sandbox.id);
+  const git = await probeGitRuntime(workspaceRoot, signal, sandbox);
+  if (git.status !== "ready") {
+    return {
+      id: "sandbox",
+      status: "warning",
+      required: false,
+      code: "sandbox_git_unavailable",
+      message: `${git.message} (${isolation.summary})`,
+      durationMs: Date.now() - startedAt,
+      evidence: {
+        adapter: sandbox.id,
+        isolationLevel: isolation.level,
+        networkDeniedByDefault: isolation.networkDeniedByDefault,
+        resourceLimited: isolation.resourceLimited,
+        productionCall: false,
+      },
+    };
+  }
   if (sandbox.id === "host-direct") {
     return {
       id: "sandbox",
@@ -44,6 +63,7 @@ export async function defaultSandboxProbe(
         networkDeniedByDefault: isolation.networkDeniedByDefault,
         resourceLimited: isolation.resourceLimited,
         productionCall: true,
+        gitProductionCall: true,
       },
     };
   }
@@ -60,6 +80,7 @@ export async function defaultSandboxProbe(
       networkDeniedByDefault: isolation.networkDeniedByDefault,
       resourceLimited: isolation.resourceLimited,
       productionCall: true,
+      gitProductionCall: true,
     },
   };
 }

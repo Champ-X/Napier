@@ -375,6 +375,7 @@ function aggregateGitInspectProcesses(
         process.stderr.length > 0 ||
         process.sandboxSha256 !== first.sandboxSha256 ||
         process.executableSha256 !== first.executableSha256 ||
+        process.runtimeIdentitySha256 !== first.runtimeIdentitySha256 ||
         process.environmentSha256 !== first.environmentSha256,
     )
   ) {

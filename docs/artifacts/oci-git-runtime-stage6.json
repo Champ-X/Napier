@@ -1,0 +1,107 @@
+{
+  "kind": "napier.oci-git-runtime-stage6",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-10T02:20:10Z",
+  "controlledProductionPath": {
+    "externalDaemonUsed": false,
+    "immutableImageIdUsed": true,
+    "numericExecutionUserUsedForProbe": true,
+    "gitVersionProbeExecuted": true,
+    "gitExecutableHashBound": true,
+    "gitVersionBound": true,
+    "runtimeIdentityRecordedInResourceReceipt": true,
+    "publicGenericGitCommandExposed": false,
+    "controlledClientExecutedRealGit": true,
+    "repositoryInspectionStatus": "succeeded",
+    "workspaceRootReadOnly": true,
+    "privateGitStateOnlyWritable": true,
+    "privateIndexCreated": true,
+    "repositoryIndexModified": false,
+    "missingImageGitRejected": true,
+    "hostExecutableOverrideRejected": true,
+    "gitDoctorProductionProbe": "ready",
+    "sandboxReadinessRequiresGitProductionCall": true
+  },
+  "actualHost": {
+    "containerCliPresent": true,
+    "containerServerReachable": false,
+    "configuredImage": true,
+    "doctorStatus": "degraded",
+    "gitProductionProbeReached": false,
+    "gitProductionProbeReason": "sandbox_provider_unavailable",
+    "pythonDoctorCode": "python_provider_unavailable",
+    "shellDoctorCode": "shell_provider_unavailable",
+    "sandboxDoctorCode": "sandbox_unavailable",
+    "reportedIsolationLevel": "container",
+    "codingSendBoundary": "blocked"
+  },
+  "verification": {
+    "focusedTestFiles": 27,
+    "focusedTests": 81,
+    "productionDoctorInvocations": 1,
+    "sourceFiles": 1189,
+    "testFiles": 626,
+    "architectureCycles": 0
+  },
+  "retryLedger": [
+    {
+      "category": "test_setup_error",
+      "productFailure": false,
+      "cause": "the temporary macOS workspace path was not canonical because /var resolves through /private/var",
+      "resolution": "canonicalized the controlled workspace before constructing mount expectations",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "test_expectation_error",
+      "productFailure": false,
+      "cause": "the assertion expected the injected identity-probe client to observe the separate production launch",
+      "resolution": "asserted the identity-probe invocation separately while the fake executable continued to validate the real launch argv",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "architecture_gate",
+      "productFailure": true,
+      "cause": "the first extraction left one function one point above complexity budget and introduced a type-only import cycle",
+      "resolution": "extracted the Git operation label and removed the reverse Doctor probe type dependency",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "evidence_capture_timeout",
+      "productFailure": false,
+      "cause": "the first SDK parity recapture exceeded its fixed 45 second child-command limit during a cold transform",
+      "resolution": "reran the formal command independently to a clean pass, then recaptured successfully from the warmed deterministic build",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "evidence_closure_expectation",
+      "productFailure": false,
+      "cause": "the SDK evidence verifier retained the pre-slice deterministic closure counts after two production modules entered both execution graphs",
+      "resolution": "updated both exact closure and runtime-dist counts from the newly captured manifest",
+      "finalStatus": "passed"
+    }
+  ],
+  "retention": {
+    "credentialValues": false,
+    "rawDockerOutput": false,
+    "rawDoctorReport": false,
+    "rawDaemonEndpoint": false,
+    "numericHostUserIds": false,
+    "gitExecutablePath": false,
+    "repositoryPaths": false,
+    "repositoryRefs": false,
+    "repositoryContent": false,
+    "absoluteTemporaryPaths": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "image-bound LSP and debugger identities",
+      "bounded port and local-service projection",
+      "real isolated Docker daemon E2E",
+      "non-POSIX host user mapping",
+      "cross-platform isolated provider casebook"
+    ]
+  },
+  "contentSha256": "2b3f3f254706cfab25d7a8f06c8a1d0c2a1a48c759fa31d44450e16b65fe769c"
+}

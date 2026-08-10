@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "71ddc12bf4783d68a803f6b0294a2591159bfe2381acb01daedaafcd5401622b",
+      "stdoutSha256": "6ea72583957b11bcab6c15f94646bd1149c4f78dd562c7a96bc29ef58c13db77",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "88cf8b4f64270e2a73963db5666410851f2e99418fc4cc76bbe3864e8cfa5723",
-      "receiptSha256": "fe96281f3d8d9f956421cf1973fbfcc94a3e8189dc089c9cd1ae57a58a092e85"
+      "evidenceSha256": "3cff329766e4ead48d17c893dd95740884bcd54ba17f1e95db6762cc63c60be0",
+      "receiptSha256": "cd4d855423bda5c3e1d4a1311ce5f068505478f8aa8fb32ff577cc45678245d4"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "d626ac587ec5b2814e8ec19456e8b93d1ed6ee0bcf4df8161f2ef44d2e3fe502",
+      "stdoutSha256": "f873b95a34d9de63eb6c967b96cdaf477bba883b36bc6417d61cc92a62f2bd04",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "b94bd63f56fe5ac6f345ac75affa09ab6751cb1420f6be93633ba15ba876c6ce",
-      "receiptSha256": "51a85bb32f3baa31f289755c7d078ec704a59739425c8b5ca0651715cfe04332"
+      "evidenceSha256": "130d78492f06bc28257ebf1bdfa2c257b48ec39ff831233beca3749176c635b7",
+      "receiptSha256": "219c26b0b52e795048ae39c8095c6777b25b47253b214a2c039c025d4b276a26"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -636,6 +636,7 @@
         "docs/artifacts/benchmarks/napier-research-benchmark-series-research_aurora_contradiction_v1-6766737f84f84714.json",
         "docs/artifacts/management-openapi-0.1.0.json",
         "docs/artifacts/management-openapi-compatibility-0.1.0.json",
+        "docs/artifacts/oci-git-runtime-stage6.json",
         "docs/artifacts/oci-pty-cleanup-stage3.json",
         "docs/artifacts/oci-python-runtime-stage5.json",
         "docs/artifacts/oci-runtime-identity-stage2.json",
@@ -700,11 +701,17 @@
         "packages/runtime/src/command-tool.ts",
         "packages/runtime/src/compiled-prompt-package-receipt.ts",
         "packages/runtime/src/compiled-prompt-package.ts",
+        "packages/runtime/src/container-runtime-probe-source.ts",
         "packages/runtime/src/data-frame-tool.ts",
         "packages/runtime/src/default-agent-capability-contract.ts",
+        "packages/runtime/src/doctor-git-runtime-probe.ts",
         "packages/runtime/src/doctor-runtime-probes.ts",
+        "packages/runtime/src/git-commit-private.ts",
         "packages/runtime/src/git-commit-tool.ts",
+        "packages/runtime/src/git-inspect-process.ts",
         "packages/runtime/src/git-inspect-tool.ts",
+        "packages/runtime/src/git-inspect.ts",
+        "packages/runtime/src/git-stage-private-index.ts",
         "packages/runtime/src/git-stage-tool.ts",
         "packages/runtime/src/ids.ts",
         "packages/runtime/src/import-boundary-format.ts",
@@ -822,6 +829,7 @@
         "packages/runtime/test/model-context-envelope.test.ts",
         "packages/runtime/test/model-prompt-evidence-bindings.test.ts",
         "packages/runtime/test/oci-command-runtime.test.ts",
+        "packages/runtime/test/oci-git-runtime.test.ts",
         "packages/runtime/test/oci-python-kernel.test.ts",
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts",
         "packages/runtime/test/plans.test.ts",
@@ -876,6 +884,7 @@
         "scripts/capture-sdk-capability-parity.mjs",
         "scripts/check-architecture.mjs",
         "scripts/check-architecture.test.mjs",
+        "scripts/check-oci-git-runtime-stage6.test.mjs",
         "scripts/check-oci-pty-cleanup-stage3.test.mjs",
         "scripts/check-oci-python-runtime-stage5.test.mjs",
         "scripts/check-oci-runtime-identity-stage2.test.mjs",
@@ -917,8 +926,8 @@
       ],
       "files": {
         "README.md": {
-          "sha256": "3cc0cf25ce1fff4c82b30f7d8d678f263cdf36fcefdec94c7e4f5b4a3f172292",
-          "lines": 6734
+          "sha256": "190c92e8377b6faa641ae480237a90a17d3583ab90f2bb31147a3f2ca1136e3e",
+          "lines": 6738
         },
         "apps/cli/src/cli-invocation.ts": {
           "sha256": "191c62ea7c42ee68514e89af3826bd371e34c9c6a4affcd7018d798f42536df9",
@@ -945,12 +954,12 @@
           "lines": 432
         },
         "apps/cli/src/doctor-remediation.ts": {
-          "sha256": "e9ea28adf1e1886eeb5ef06c9d20c3c679d4ddd3063458f75d986fdf7362422e",
-          "lines": 225
+          "sha256": "95d4d2dc0aa3cd8db3009bde933ee21c05601b6285489d86d1b1e885bdfe3086",
+          "lines": 231
         },
         "apps/cli/src/doctor-sandbox-probe.ts": {
-          "sha256": "efe8011b862c3de15ee11289a1e52ed2670b38714cbe360d81155769044e130c",
-          "lines": 110
+          "sha256": "879b6ad69c2d3f06fa648ce0dbb74280e3b91fbe7930b245ef0c9f1d26ce47ea",
+          "lines": 131
         },
         "apps/cli/src/research-benchmark-ledger-shape.ts": {
           "sha256": "d869a313ea9b5bf597c12c2b30f3be1331839ce6dadb3b8e37a0aef5b2a160ad",
@@ -969,8 +978,8 @@
           "lines": 725
         },
         "apps/cli/test/doctor-cli.test.ts": {
-          "sha256": "a97dd9198df9bd1f9cee204f24e384c967e4a60359a01fa0bb8a71b7e6327695",
-          "lines": 568
+          "sha256": "60b33e55d6bba6b554687cadd81905487bd0cd75d16c188d21452c213789bb28",
+          "lines": 612
         },
         "apps/cli/test/open-web-research-benchmark.test.ts": {
           "sha256": "b4087548790de21d717fc353bb798e8830fb2af624e4cbc884c989c7980b1939",
@@ -1461,8 +1470,8 @@
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "e2049a2db38bf1342f9f90506602fbf1a51227a7b6b5899053a8ae8818b16b73",
-          "lines": 9005
+          "sha256": "77b66b2fd2072696a556702b393090cb917ed2c7f64c37badd7385d46a7caabc",
+          "lines": 9019
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -1516,6 +1525,10 @@
           "sha256": "ea47cf300b4d411c233d5fd1e9f6a2b78baf806ee5e004bad0b608e9ef643745",
           "lines": 5880
         },
+        "docs/artifacts/oci-git-runtime-stage6.json": {
+          "sha256": "fd44998bad48df3f6f1597380f93d8f8cc596a9a8f91dd8b40646ce0989d7b15",
+          "lines": 107
+        },
         "docs/artifacts/oci-pty-cleanup-stage3.json": {
           "sha256": "e3a06347269b610474b15e16526dbb69518f08e0a48af7e1f69db449da6cb911",
           "lines": 73
@@ -1553,11 +1566,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "88cf8b4f64270e2a73963db5666410851f2e99418fc4cc76bbe3864e8cfa5723",
+          "sha256": "3cff329766e4ead48d17c893dd95740884bcd54ba17f1e95db6762cc63c60be0",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "b94bd63f56fe5ac6f345ac75affa09ab6751cb1420f6be93633ba15ba876c6ce",
+          "sha256": "130d78492f06bc28257ebf1bdfa2c257b48ec39ff831233beca3749176c635b7",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -1737,7 +1750,7 @@
           "lines": 464
         },
         "packages/runtime/src/command-execution.ts": {
-          "sha256": "ee7da95c51a65e229ae5b858b64b415ff9e38edbd04166efa760596d6b33cda7",
+          "sha256": "d462cbdedaa2167b22dcd5ecedb0f146e7416efa0d257c13fa70accb21e3c96b",
           "lines": 498
         },
         "packages/runtime/src/command-runtime.ts": {
@@ -1756,6 +1769,10 @@
           "sha256": "ff9061504dcef7231b26031d2e1c7b633e62af79fe45aa4fdc4f23da9a7ce6f9",
           "lines": 207
         },
+        "packages/runtime/src/container-runtime-probe-source.ts": {
+          "sha256": "49b4f51d4e2277b09e06c8ef337cff425452d0fb4f9a30f62f4e0a925a353f05",
+          "lines": 64
+        },
         "packages/runtime/src/data-frame-tool.ts": {
           "sha256": "45f4162d27e5b120726664d28398bf3ad038561e8ba8b6999d1f8525fe07aa6c",
           "lines": 370
@@ -1764,16 +1781,36 @@
           "sha256": "caae5fb90e2ee18a33daec10d65aaf9b5906baf74946f76d90f7d696bee2ba01",
           "lines": 439
         },
+        "packages/runtime/src/doctor-git-runtime-probe.ts": {
+          "sha256": "96827fb30a300829137b364a124c7b5d84ef07b00ae2c8b21d17f3a82ef83ae5",
+          "lines": 66
+        },
         "packages/runtime/src/doctor-runtime-probes.ts": {
-          "sha256": "907be35ae362fa2316c21225c127d96bbd26982fc58dabe7bffdd8db96a11a9a",
-          "lines": 460
+          "sha256": "7b585bac8f405b88954ca6e1ac72b3946dadf7236a2830c2ee69a1e7f681604c",
+          "lines": 462
+        },
+        "packages/runtime/src/git-commit-private.ts": {
+          "sha256": "e7e7eb48b86c1e80e7abe39c8f8561a9525e285228dbc49243c8c52472d06e49",
+          "lines": 346
         },
         "packages/runtime/src/git-commit-tool.ts": {
           "sha256": "4ca318421f8b391a9838d77e6491f1e61f305e6df574a03acb6afb300fe5d9f6",
           "lines": 260
         },
+        "packages/runtime/src/git-inspect-process.ts": {
+          "sha256": "79f65622d4205c86f64a36c2b93d0b00e6cfd3901e48141586b0a2fe9903db68",
+          "lines": 341
+        },
         "packages/runtime/src/git-inspect-tool.ts": {
           "sha256": "391380d3ad7e76b1edc2a90c54bc755727bb69bb614d1f2b14f36e939469ccf9",
+          "lines": 463
+        },
+        "packages/runtime/src/git-inspect.ts": {
+          "sha256": "240940c1798787767bb18755e83f06c46ea3ac41c2244ac568b6c16f02f05740",
+          "lines": 395
+        },
+        "packages/runtime/src/git-stage-private-index.ts": {
+          "sha256": "d59ced396432a40fa2ae805a0b25dbe106361e95b16e751e7fabf46323fd2dc2",
           "lines": 463
         },
         "packages/runtime/src/git-stage-tool.ts": {
@@ -1921,8 +1958,8 @@
           "lines": 232
         },
         "packages/runtime/src/sandbox-container-runtime.ts": {
-          "sha256": "d26e794d906b956935b4dc951f91276808c0473a414fe1261ebea1d90336a048",
-          "lines": 455
+          "sha256": "8c99481f0a08cf83738b3ba43e2ef19a1313013c978adce59d36b16391b9375c",
+          "lines": 438
         },
         "packages/runtime/src/sandbox-container.ts": {
           "sha256": "09db75556d33bba5131e4ce07c62eb1685f182843dc95207c619fd75c2729ae6",
@@ -1945,7 +1982,7 @@
           "lines": 172
         },
         "packages/runtime/src/sandbox-types.ts": {
-          "sha256": "7c129764bbd2e0300aa55a4e082dd27b605ed563fc1e48e7bd5ab953e281517d",
+          "sha256": "f760e2056994125d81d0e1a8d5654cb25af63475880437edfc5a6728d85bbf6d",
           "lines": 52
         },
         "packages/runtime/src/sandbox.ts": {
@@ -2205,8 +2242,8 @@
           "lines": 261
         },
         "packages/runtime/test/doctor-runtime-probes.test.ts": {
-          "sha256": "23d38d0806e927748ebb1a1b5876e2913318c59e3cc04116bd15b1a208b8a4b8",
-          "lines": 181
+          "sha256": "83d3032a7dfeddaabfad489d5839233c199de4295f5e85814a497e2e114a47c5",
+          "lines": 221
         },
         "packages/runtime/test/independent-model-advisor.test.ts": {
           "sha256": "6c8c017ae18bf2735e9bdbc1023d898a213c73dc61fee94cb81baf1bfa47ddff",
@@ -2241,12 +2278,16 @@
           "lines": 159
         },
         "packages/runtime/test/oci-command-runtime.test.ts": {
-          "sha256": "ebb63092fdcbee636ba5b3ab1e674e3e050dec14a85f2e20e891ee27dd4d0f87",
-          "lines": 845
+          "sha256": "4b70e3d0806e218c0db65c69af46ba58676eb7a9ceca4aa162dabb252742c40e",
+          "lines": 851
+        },
+        "packages/runtime/test/oci-git-runtime.test.ts": {
+          "sha256": "e217a430954357ff9a95ca364a6bf8af3b8beb36efaafd2d309f9699d412caab",
+          "lines": 208
         },
         "packages/runtime/test/oci-python-kernel.test.ts": {
-          "sha256": "6ff62a2641f9c188786eaaaa8730952721d131cd1b71e1df9669cff676f23e77",
-          "lines": 167
+          "sha256": "ce5692589f8e5f56656029f5f11313250117e1e086b74d9649186e367125d6a9",
+          "lines": 172
         },
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts": {
           "sha256": "28b61ca4f3468defaa1443ffa13cd15d60f638f3d05bb9ee91ffaaa6bb754a2b",
@@ -2460,6 +2501,10 @@
           "sha256": "28b13505fcc5574ab5a573dd766c92309ab60b85f0710339e68ac140d65a3ae6",
           "lines": 282
         },
+        "scripts/check-oci-git-runtime-stage6.test.mjs": {
+          "sha256": "81e532e083b709f69150dc4cbe24c1c0ec5afc1870fcabad941130a22198b273",
+          "lines": 60
+        },
         "scripts/check-oci-pty-cleanup-stage3.test.mjs": {
           "sha256": "d5c06f6a606aad068919bbe33c5a318cc74b980c4003a6074aa20c4874303f67",
           "lines": 62
@@ -2557,7 +2602,7 @@
           "lines": 459
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "f6c77bf1c570d0c3b919b228f8f7e53cddd71dc45df50d4d225a6836de37ab35",
+          "sha256": "2a83addcb0efe8875d2493ac7579374ba5713a43cd8fba5c9f21525062870b27",
           "lines": 287
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -2634,7 +2679,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "5b7dae683907706b1786d29d2feb01b92e29bb9951ba4c67def923ad3c4e1427"
+      "manifestSha256": "4c64b4831dda9d5d2499083f0950eaaa60e972464c83b7961b5f2327688560e0"
     },
     "executionClosure": {
       "algorithm": {
@@ -2927,6 +2972,7 @@
             "packages/runtime/dist/compaction.js",
             "packages/runtime/dist/compiled-prompt-package-receipt.js",
             "packages/runtime/dist/compiled-prompt-package.js",
+            "packages/runtime/dist/container-runtime-probe-source.js",
             "packages/runtime/dist/credential-references.js",
             "packages/runtime/dist/credentials.js",
             "packages/runtime/dist/dap-protocol.js",
@@ -2938,6 +2984,7 @@
             "packages/runtime/dist/data-tool-policy.js",
             "packages/runtime/dist/default-agent-capability-contract.js",
             "packages/runtime/dist/delegation-ledger.js",
+            "packages/runtime/dist/doctor-git-runtime-probe.js",
             "packages/runtime/dist/doctor-runtime-probes.js",
             "packages/runtime/dist/ed25519.js",
             "packages/runtime/dist/embedded-agents.js",
@@ -3690,6 +3737,7 @@
             "packages/runtime/src/compaction.ts",
             "packages/runtime/src/compiled-prompt-package-receipt.ts",
             "packages/runtime/src/compiled-prompt-package.ts",
+            "packages/runtime/src/container-runtime-probe-source.ts",
             "packages/runtime/src/credential-references.ts",
             "packages/runtime/src/credentials.ts",
             "packages/runtime/src/dap-protocol.ts",
@@ -3701,6 +3749,7 @@
             "packages/runtime/src/data-tool-policy.ts",
             "packages/runtime/src/default-agent-capability-contract.ts",
             "packages/runtime/src/delegation-ledger.ts",
+            "packages/runtime/src/doctor-git-runtime-probe.ts",
             "packages/runtime/src/doctor-runtime-probes.ts",
             "packages/runtime/src/ed25519.ts",
             "packages/runtime/src/embedded-agents.ts",
@@ -4226,16 +4275,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 761,
-            "sourceCounterparts": 756,
+            "executionFiles": 763,
+            "sourceCounterparts": 758,
             "packageManifests": 2,
-            "allFiles": 1519
+            "allFiles": 1523
           },
           "executionAreaCounts": {
             "apps/cli/dist": 56,
             "apps/server/dist": 100,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 574,
+            "packages/runtime/dist": 576,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -4350,16 +4399,16 @@
               "lines": 293
             },
             "apps/cli/dist/doctor-remediation.js": {
-              "sha256": "586cf7b47bebd6d51ab3341ebe9ada04d342c40b6f6c63a1b06226cc1a914696",
-              "lines": 163
+              "sha256": "893e28533609203ffc7cc45771d4c0fce30ff921c3f1d48aa693d0560d2b7b42",
+              "lines": 168
             },
             "apps/cli/dist/doctor-report.js": {
               "sha256": "38224ea022081f836c6f7be729c654d043ea0c5bd17ff66af96fa0804557d5ef",
               "lines": 69
             },
             "apps/cli/dist/doctor-sandbox-probe.js": {
-              "sha256": "0650262701aa27f0725d94690be67c21331098c4053b2877212fc9f8cd30de60",
-              "lines": 91
+              "sha256": "8598d605ca0e8d636b040392758ae970236fa60ab01c9b85e7f4803be31957b6",
+              "lines": 111
             },
             "apps/cli/dist/interactive-capability-status.js": {
               "sha256": "dd09284f0b2f488b7fd3eb1e6f1725da7ca52db70341a5f914019e089c59d58f",
@@ -4574,16 +4623,16 @@
               "lines": 432
             },
             "apps/cli/src/doctor-remediation.ts": {
-              "sha256": "e9ea28adf1e1886eeb5ef06c9d20c3c679d4ddd3063458f75d986fdf7362422e",
-              "lines": 225
+              "sha256": "95d4d2dc0aa3cd8db3009bde933ee21c05601b6285489d86d1b1e885bdfe3086",
+              "lines": 231
             },
             "apps/cli/src/doctor-report.ts": {
               "sha256": "ceea3f56edff1fda3fd9a4c3659fbf7b7899c1430a0584bf1514281e365bbcfd",
               "lines": 113
             },
             "apps/cli/src/doctor-sandbox-probe.ts": {
-              "sha256": "efe8011b862c3de15ee11289a1e52ed2670b38714cbe360d81155769044e130c",
-              "lines": 110
+              "sha256": "879b6ad69c2d3f06fa648ce0dbb74280e3b91fbe7930b245ef0c9f1d26ce47ea",
+              "lines": 131
             },
             "apps/cli/src/interactive-capability-status.ts": {
               "sha256": "a5e71f3bc9c56ca34c2de42828cdf25e4b1454712adfa1c9f6a464f9e6870edc",
@@ -6025,6 +6074,10 @@
               "sha256": "89b8b04a9219ba7b381b0afe460879f731a92b6d9218b2c41a7cf808c8cc6e99",
               "lines": 140
             },
+            "packages/runtime/dist/container-runtime-probe-source.js": {
+              "sha256": "59748a4e9eb11542d2a407ea3919157394a78922e118b9835f2db3085ea65c78",
+              "lines": 63
+            },
             "packages/runtime/dist/credential-references.js": {
               "sha256": "70b97d01a6f5ea4e982e449c059f42a2e30abf4a69fbc68362eb5d464498cd0d",
               "lines": 81
@@ -6069,9 +6122,13 @@
               "sha256": "9d309b90b29ac4b515d11ab46b4ce4e326454334aa6d3482ff33d4c06c2b8832",
               "lines": 124
             },
+            "packages/runtime/dist/doctor-git-runtime-probe.js": {
+              "sha256": "f41234c5bc83ef8e236b107cafebb461ec732b624afd4b20d524f57e4bb415e4",
+              "lines": 42
+            },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "ac1019e9e62b7f8a049045273125867df2a4df2937f0881ff20dffc892cddaad",
-              "lines": 361
+              "sha256": "a30392eb601518c23a2f8f9f7e9e9dae476a3bedb1b8c932b48330eb37379aa9",
+              "lines": 362
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -6254,8 +6311,8 @@
               "lines": 31
             },
             "packages/runtime/dist/git-commit-private.js": {
-              "sha256": "c95e558e35cb55f5277fd72406588061718a08b8d92fdbf6c283ed71d201e730",
-              "lines": 200
+              "sha256": "fbb192bdc8681552fcc396cbc3720af172b3c6489335cc6b931bd20bf6b617e0",
+              "lines": 201
             },
             "packages/runtime/dist/git-commit-recovery.js": {
               "sha256": "620952d7a8ea33587b5b3628504ff309b23bb2c49c26aacc9c55a474f0eaaf31",
@@ -6306,16 +6363,16 @@
               "lines": 43
             },
             "packages/runtime/dist/git-inspect-process.js": {
-              "sha256": "efb7923d39c0dac9bf262e7ce55edf0127cdaede8519705b62d2eb6ec0b39250",
-              "lines": 211
+              "sha256": "8285a91b2a15339a972ac5b3214b2307c72056e34da9b82bf7a6d6b6f14bffe1",
+              "lines": 243
             },
             "packages/runtime/dist/git-inspect-tool.js": {
               "sha256": "4da87e3bb89c95afd92d28044cf9f9860172225c875e197bd75f5e3be4982b1f",
               "lines": 353
             },
             "packages/runtime/dist/git-inspect.js": {
-              "sha256": "33aae3649c63f4ecff93d1f5cad5ac8e240afbd950cec29ba282349a65f317ea",
-              "lines": 230
+              "sha256": "44d53dc39c6e1c99ab7a409fa0a45bb06065335599283ea153fbe704c0f65593",
+              "lines": 231
             },
             "packages/runtime/dist/git-path-set.js": {
               "sha256": "cab1eeb57a052022d07ebd38ba1f84c38c87e9c30e4db73cdf6836d73fe11b5d",
@@ -6390,8 +6447,8 @@
               "lines": 57
             },
             "packages/runtime/dist/git-stage-private-index.js": {
-              "sha256": "56dbba93bfc99a29ec19fba58015bca0d2af1546ad05e2d68354daf175d89b0a",
-              "lines": 328
+              "sha256": "ce2fc165d631e73acc223ad5df19836a3a95afdb2089db0f092ea88d2095233d",
+              "lines": 329
             },
             "packages/runtime/dist/git-stage-private-mutation.js": {
               "sha256": "94ed8495ae512a90ac38a4eb8f48d9a930dddd3eb0483ccac7e036417fedf80e",
@@ -6962,8 +7019,8 @@
               "lines": 60
             },
             "packages/runtime/dist/sandbox-container-runtime.js": {
-              "sha256": "572b569eb236e12299e5232884138e3c0f13c0d32955aa454e30e47f4490bccf",
-              "lines": 312
+              "sha256": "1bfe0bf487f4c964fe10acf3141e3ea2912495b62815a5801fc9ff815d64bbd1",
+              "lines": 287
             },
             "packages/runtime/dist/sandbox-container.js": {
               "sha256": "493458712a4a73643b3b56d2eedc32d2a458bc52789b6fac7279442c24697fb0",
@@ -8302,7 +8359,7 @@
               "lines": 258
             },
             "packages/runtime/src/command-execution.ts": {
-              "sha256": "ee7da95c51a65e229ae5b858b64b415ff9e38edbd04166efa760596d6b33cda7",
+              "sha256": "d462cbdedaa2167b22dcd5ecedb0f146e7416efa0d257c13fa70accb21e3c96b",
               "lines": 498
             },
             "packages/runtime/src/command-runtime.ts": {
@@ -8324,6 +8381,10 @@
             "packages/runtime/src/compiled-prompt-package.ts": {
               "sha256": "ff9061504dcef7231b26031d2e1c7b633e62af79fe45aa4fdc4f23da9a7ce6f9",
               "lines": 207
+            },
+            "packages/runtime/src/container-runtime-probe-source.ts": {
+              "sha256": "49b4f51d4e2277b09e06c8ef337cff425452d0fb4f9a30f62f4e0a925a353f05",
+              "lines": 64
             },
             "packages/runtime/src/credential-references.ts": {
               "sha256": "4b6b407902816631f1befa89792b29b0dbfe2872dca9220ecafb4ceb050e5813",
@@ -8369,9 +8430,13 @@
               "sha256": "0e4c952df191018019a243af57b4f691d056694baf2abe402dfe04da37739f94",
               "lines": 173
             },
+            "packages/runtime/src/doctor-git-runtime-probe.ts": {
+              "sha256": "96827fb30a300829137b364a124c7b5d84ef07b00ae2c8b21d17f3a82ef83ae5",
+              "lines": 66
+            },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "907be35ae362fa2316c21225c127d96bbd26982fc58dabe7bffdd8db96a11a9a",
-              "lines": 460
+              "sha256": "7b585bac8f405b88954ca6e1ac72b3946dadf7236a2830c2ee69a1e7f681604c",
+              "lines": 462
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -8554,8 +8619,8 @@
               "lines": 46
             },
             "packages/runtime/src/git-commit-private.ts": {
-              "sha256": "41e4851bccfd2c7fee98b16e45369af2bde219270a002c1b838278ccef0190f6",
-              "lines": 345
+              "sha256": "e7e7eb48b86c1e80e7abe39c8f8561a9525e285228dbc49243c8c52472d06e49",
+              "lines": 346
             },
             "packages/runtime/src/git-commit-recovery.ts": {
               "sha256": "8a025fb2f5c961967f478931b2422a5665731a7edd1f336414d42b5e7303a674",
@@ -8606,16 +8671,16 @@
               "lines": 65
             },
             "packages/runtime/src/git-inspect-process.ts": {
-              "sha256": "f42257e0f5869e728dddca3a112085accf7c3060fc2751b38197d4ef40f31a40",
-              "lines": 295
+              "sha256": "79f65622d4205c86f64a36c2b93d0b00e6cfd3901e48141586b0a2fe9903db68",
+              "lines": 341
             },
             "packages/runtime/src/git-inspect-tool.ts": {
               "sha256": "391380d3ad7e76b1edc2a90c54bc755727bb69bb614d1f2b14f36e939469ccf9",
               "lines": 463
             },
             "packages/runtime/src/git-inspect.ts": {
-              "sha256": "fc0bfaf551206c30907c460e10a0e263012d953feae1240ce8a950bbd5609cb4",
-              "lines": 394
+              "sha256": "240940c1798787767bb18755e83f06c46ea3ac41c2244ac568b6c16f02f05740",
+              "lines": 395
             },
             "packages/runtime/src/git-path-set.ts": {
               "sha256": "d201694216c89ce692e24277c5180acc90e290af66ebb969556327defe202740",
@@ -8690,8 +8755,8 @@
               "lines": 79
             },
             "packages/runtime/src/git-stage-private-index.ts": {
-              "sha256": "3851fe02b74fa15263c8d0cf56f6c77020c01c47141c6fcf83ce4697510cb623",
-              "lines": 462
+              "sha256": "d59ced396432a40fa2ae805a0b25dbe106361e95b16e751e7fabf46323fd2dc2",
+              "lines": 463
             },
             "packages/runtime/src/git-stage-private-mutation.ts": {
               "sha256": "1ca1c4ce3a2cf81050b37600d3974dfeaecc36657569081330e1670117ab377a",
@@ -9262,8 +9327,8 @@
               "lines": 94
             },
             "packages/runtime/src/sandbox-container-runtime.ts": {
-              "sha256": "d26e794d906b956935b4dc951f91276808c0473a414fe1261ebea1d90336a048",
-              "lines": 455
+              "sha256": "8c99481f0a08cf83738b3ba43e2ef19a1313013c978adce59d36b16391b9375c",
+              "lines": 438
             },
             "packages/runtime/src/sandbox-container.ts": {
               "sha256": "09db75556d33bba5131e4ce07c62eb1685f182843dc95207c619fd75c2729ae6",
@@ -10318,7 +10383,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "1ee16b75caea08a90c05c8232af82105ef725322c2cdaa14c343f41228322ab6"
+          "manifestSha256": "3787cabcbeced3459f8f3237806a6520e83d441cf146ba1ab68cf8e6662589c7"
         },
         "productionServerTrace": {
           "roots": [
@@ -10541,6 +10606,7 @@
             "packages/runtime/dist/compaction.js",
             "packages/runtime/dist/compiled-prompt-package-receipt.js",
             "packages/runtime/dist/compiled-prompt-package.js",
+            "packages/runtime/dist/container-runtime-probe-source.js",
             "packages/runtime/dist/credential-references.js",
             "packages/runtime/dist/credentials.js",
             "packages/runtime/dist/dap-protocol.js",
@@ -10552,6 +10618,7 @@
             "packages/runtime/dist/data-tool-policy.js",
             "packages/runtime/dist/default-agent-capability-contract.js",
             "packages/runtime/dist/delegation-ledger.js",
+            "packages/runtime/dist/doctor-git-runtime-probe.js",
             "packages/runtime/dist/doctor-runtime-probes.js",
             "packages/runtime/dist/ed25519.js",
             "packages/runtime/dist/embedded-agents.js",
@@ -11246,6 +11313,7 @@
             "packages/runtime/src/compaction.ts",
             "packages/runtime/src/compiled-prompt-package-receipt.ts",
             "packages/runtime/src/compiled-prompt-package.ts",
+            "packages/runtime/src/container-runtime-probe-source.ts",
             "packages/runtime/src/credential-references.ts",
             "packages/runtime/src/credentials.ts",
             "packages/runtime/src/dap-protocol.ts",
@@ -11257,6 +11325,7 @@
             "packages/runtime/src/data-tool-policy.ts",
             "packages/runtime/src/default-agent-capability-contract.ts",
             "packages/runtime/src/delegation-ledger.ts",
+            "packages/runtime/src/doctor-git-runtime-probe.ts",
             "packages/runtime/src/doctor-runtime-probes.ts",
             "packages/runtime/src/ed25519.ts",
             "packages/runtime/src/embedded-agents.ts",
@@ -11782,16 +11851,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 703,
-            "sourceCounterparts": 699,
+            "executionFiles": 705,
+            "sourceCounterparts": 701,
             "packageManifests": 3,
-            "allFiles": 1405
+            "allFiles": 1409
           },
           "executionAreaCounts": {
             "apps/server/dist": 101,
             "other": 1,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 572,
+            "packages/runtime/dist": 574,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
@@ -13136,6 +13205,10 @@
               "sha256": "89b8b04a9219ba7b381b0afe460879f731a92b6d9218b2c41a7cf808c8cc6e99",
               "lines": 140
             },
+            "packages/runtime/dist/container-runtime-probe-source.js": {
+              "sha256": "59748a4e9eb11542d2a407ea3919157394a78922e118b9835f2db3085ea65c78",
+              "lines": 63
+            },
             "packages/runtime/dist/credential-references.js": {
               "sha256": "70b97d01a6f5ea4e982e449c059f42a2e30abf4a69fbc68362eb5d464498cd0d",
               "lines": 81
@@ -13180,9 +13253,13 @@
               "sha256": "9d309b90b29ac4b515d11ab46b4ce4e326454334aa6d3482ff33d4c06c2b8832",
               "lines": 124
             },
+            "packages/runtime/dist/doctor-git-runtime-probe.js": {
+              "sha256": "f41234c5bc83ef8e236b107cafebb461ec732b624afd4b20d524f57e4bb415e4",
+              "lines": 42
+            },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "ac1019e9e62b7f8a049045273125867df2a4df2937f0881ff20dffc892cddaad",
-              "lines": 361
+              "sha256": "a30392eb601518c23a2f8f9f7e9e9dae476a3bedb1b8c932b48330eb37379aa9",
+              "lines": 362
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -13365,8 +13442,8 @@
               "lines": 31
             },
             "packages/runtime/dist/git-commit-private.js": {
-              "sha256": "c95e558e35cb55f5277fd72406588061718a08b8d92fdbf6c283ed71d201e730",
-              "lines": 200
+              "sha256": "fbb192bdc8681552fcc396cbc3720af172b3c6489335cc6b931bd20bf6b617e0",
+              "lines": 201
             },
             "packages/runtime/dist/git-commit-recovery.js": {
               "sha256": "620952d7a8ea33587b5b3628504ff309b23bb2c49c26aacc9c55a474f0eaaf31",
@@ -13417,16 +13494,16 @@
               "lines": 43
             },
             "packages/runtime/dist/git-inspect-process.js": {
-              "sha256": "efb7923d39c0dac9bf262e7ce55edf0127cdaede8519705b62d2eb6ec0b39250",
-              "lines": 211
+              "sha256": "8285a91b2a15339a972ac5b3214b2307c72056e34da9b82bf7a6d6b6f14bffe1",
+              "lines": 243
             },
             "packages/runtime/dist/git-inspect-tool.js": {
               "sha256": "4da87e3bb89c95afd92d28044cf9f9860172225c875e197bd75f5e3be4982b1f",
               "lines": 353
             },
             "packages/runtime/dist/git-inspect.js": {
-              "sha256": "33aae3649c63f4ecff93d1f5cad5ac8e240afbd950cec29ba282349a65f317ea",
-              "lines": 230
+              "sha256": "44d53dc39c6e1c99ab7a409fa0a45bb06065335599283ea153fbe704c0f65593",
+              "lines": 231
             },
             "packages/runtime/dist/git-path-set.js": {
               "sha256": "cab1eeb57a052022d07ebd38ba1f84c38c87e9c30e4db73cdf6836d73fe11b5d",
@@ -13501,8 +13578,8 @@
               "lines": 57
             },
             "packages/runtime/dist/git-stage-private-index.js": {
-              "sha256": "56dbba93bfc99a29ec19fba58015bca0d2af1546ad05e2d68354daf175d89b0a",
-              "lines": 328
+              "sha256": "ce2fc165d631e73acc223ad5df19836a3a95afdb2089db0f092ea88d2095233d",
+              "lines": 329
             },
             "packages/runtime/dist/git-stage-private-mutation.js": {
               "sha256": "94ed8495ae512a90ac38a4eb8f48d9a930dddd3eb0483ccac7e036417fedf80e",
@@ -14073,8 +14150,8 @@
               "lines": 60
             },
             "packages/runtime/dist/sandbox-container-runtime.js": {
-              "sha256": "572b569eb236e12299e5232884138e3c0f13c0d32955aa454e30e47f4490bccf",
-              "lines": 312
+              "sha256": "1bfe0bf487f4c964fe10acf3141e3ea2912495b62815a5801fc9ff815d64bbd1",
+              "lines": 287
             },
             "packages/runtime/dist/sandbox-container.js": {
               "sha256": "493458712a4a73643b3b56d2eedc32d2a458bc52789b6fac7279442c24697fb0",
@@ -15405,7 +15482,7 @@
               "lines": 258
             },
             "packages/runtime/src/command-execution.ts": {
-              "sha256": "ee7da95c51a65e229ae5b858b64b415ff9e38edbd04166efa760596d6b33cda7",
+              "sha256": "d462cbdedaa2167b22dcd5ecedb0f146e7416efa0d257c13fa70accb21e3c96b",
               "lines": 498
             },
             "packages/runtime/src/command-runtime.ts": {
@@ -15427,6 +15504,10 @@
             "packages/runtime/src/compiled-prompt-package.ts": {
               "sha256": "ff9061504dcef7231b26031d2e1c7b633e62af79fe45aa4fdc4f23da9a7ce6f9",
               "lines": 207
+            },
+            "packages/runtime/src/container-runtime-probe-source.ts": {
+              "sha256": "49b4f51d4e2277b09e06c8ef337cff425452d0fb4f9a30f62f4e0a925a353f05",
+              "lines": 64
             },
             "packages/runtime/src/credential-references.ts": {
               "sha256": "4b6b407902816631f1befa89792b29b0dbfe2872dca9220ecafb4ceb050e5813",
@@ -15472,9 +15553,13 @@
               "sha256": "0e4c952df191018019a243af57b4f691d056694baf2abe402dfe04da37739f94",
               "lines": 173
             },
+            "packages/runtime/src/doctor-git-runtime-probe.ts": {
+              "sha256": "96827fb30a300829137b364a124c7b5d84ef07b00ae2c8b21d17f3a82ef83ae5",
+              "lines": 66
+            },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "907be35ae362fa2316c21225c127d96bbd26982fc58dabe7bffdd8db96a11a9a",
-              "lines": 460
+              "sha256": "7b585bac8f405b88954ca6e1ac72b3946dadf7236a2830c2ee69a1e7f681604c",
+              "lines": 462
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -15657,8 +15742,8 @@
               "lines": 46
             },
             "packages/runtime/src/git-commit-private.ts": {
-              "sha256": "41e4851bccfd2c7fee98b16e45369af2bde219270a002c1b838278ccef0190f6",
-              "lines": 345
+              "sha256": "e7e7eb48b86c1e80e7abe39c8f8561a9525e285228dbc49243c8c52472d06e49",
+              "lines": 346
             },
             "packages/runtime/src/git-commit-recovery.ts": {
               "sha256": "8a025fb2f5c961967f478931b2422a5665731a7edd1f336414d42b5e7303a674",
@@ -15709,16 +15794,16 @@
               "lines": 65
             },
             "packages/runtime/src/git-inspect-process.ts": {
-              "sha256": "f42257e0f5869e728dddca3a112085accf7c3060fc2751b38197d4ef40f31a40",
-              "lines": 295
+              "sha256": "79f65622d4205c86f64a36c2b93d0b00e6cfd3901e48141586b0a2fe9903db68",
+              "lines": 341
             },
             "packages/runtime/src/git-inspect-tool.ts": {
               "sha256": "391380d3ad7e76b1edc2a90c54bc755727bb69bb614d1f2b14f36e939469ccf9",
               "lines": 463
             },
             "packages/runtime/src/git-inspect.ts": {
-              "sha256": "fc0bfaf551206c30907c460e10a0e263012d953feae1240ce8a950bbd5609cb4",
-              "lines": 394
+              "sha256": "240940c1798787767bb18755e83f06c46ea3ac41c2244ac568b6c16f02f05740",
+              "lines": 395
             },
             "packages/runtime/src/git-path-set.ts": {
               "sha256": "d201694216c89ce692e24277c5180acc90e290af66ebb969556327defe202740",
@@ -15793,8 +15878,8 @@
               "lines": 79
             },
             "packages/runtime/src/git-stage-private-index.ts": {
-              "sha256": "3851fe02b74fa15263c8d0cf56f6c77020c01c47141c6fcf83ce4697510cb623",
-              "lines": 462
+              "sha256": "d59ced396432a40fa2ae805a0b25dbe106361e95b16e751e7fabf46323fd2dc2",
+              "lines": 463
             },
             "packages/runtime/src/git-stage-private-mutation.ts": {
               "sha256": "1ca1c4ce3a2cf81050b37600d3974dfeaecc36657569081330e1670117ab377a",
@@ -16365,8 +16450,8 @@
               "lines": 94
             },
             "packages/runtime/src/sandbox-container-runtime.ts": {
-              "sha256": "d26e794d906b956935b4dc951f91276808c0473a414fe1261ebea1d90336a048",
-              "lines": 455
+              "sha256": "8c99481f0a08cf83738b3ba43e2ef19a1313013c978adce59d36b16391b9375c",
+              "lines": 438
             },
             "packages/runtime/src/sandbox-container.ts": {
               "sha256": "09db75556d33bba5131e4ce07c62eb1685f182843dc95207c619fd75c2729ae6",
@@ -17417,7 +17502,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "75d77c0b406f129815128e75dba5c912933fb9a24ee5ca9e11b5c8dfbbb6a038"
+          "manifestSha256": "c7d2942d45a94a155fa7f9f6934d14c2faeb09e2c66cdf9da005a88ae649bc8c"
         }
       },
       "excludedCategories": [
@@ -17446,9 +17531,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "b104bece1a5477e816fb49ef6fa68942b6c40e78d348be9edaeaa8cf0a583640"
+      "manifestSha256": "b929979442e3177d728c10603059d17a381c465d0cceea9b64ae538e376a292e"
     },
-    "manifestSha256": "ee526b233c5c2f9de1bdb6aa55f5417f3ee71ce14d561381df7f56026f2d5fcb"
+    "manifestSha256": "9b5026877b2f503589421447ed46bbccdec8e633a220d637c40222cb2b954ef2"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -17636,11 +17721,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "88cf8b4f64270e2a73963db5666410851f2e99418fc4cc76bbe3864e8cfa5723"
+      "sha256": "3cff329766e4ead48d17c893dd95740884bcd54ba17f1e95db6762cc63c60be0"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "b94bd63f56fe5ac6f345ac75affa09ab6751cb1420f6be93633ba15ba876c6ce"
+      "sha256": "130d78492f06bc28257ebf1bdfa2c257b48ec39ff831233beca3749176c635b7"
     }
   }
 }

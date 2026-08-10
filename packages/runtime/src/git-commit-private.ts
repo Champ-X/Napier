@@ -337,7 +337,8 @@ function assertSameRuntime(processes: GitInspectProcessResult[]): void {
     processes.some(
       (item) =>
         item.sandboxSha256 !== first.sandboxSha256 ||
-        item.executableSha256 !== first.executableSha256,
+        item.executableSha256 !== first.executableSha256 ||
+        item.runtimeIdentitySha256 !== first.runtimeIdentitySha256,
     )
   ) {
     throw new Error("Git commit runtime identity changed");

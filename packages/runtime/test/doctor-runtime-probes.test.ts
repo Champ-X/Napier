@@ -5,6 +5,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  probeGitRuntime,
   probePythonRuntime,
   probeShellRuntime,
   probeSkillsRuntime,
@@ -118,6 +119,45 @@ describe("Python Doctor probe", () => {
       expect.objectContaining({
         status: "unavailable",
         code: "python_provider_unavailable",
+      }),
+    );
+  });
+});
+
+describe("Git Doctor probe", () => {
+  it("executes the production Git command through the active provider", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-doctor-git-"));
+    try {
+      await expect(
+        probeGitRuntime(root, undefined, new HostDirectSandboxAdapter()),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          status: "ready",
+          code: "git_ready",
+          evidence: expect.objectContaining({
+            adapter: "host-direct",
+            productionCall: true,
+            executableSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            resourceLimitsSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            exitCode: 0,
+          }),
+        }),
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not report Git ready when the active provider cannot launch", async () => {
+    const result = await probeGitRuntime(
+      process.cwd(),
+      undefined,
+      new UnsupportedSandboxAdapter("doctor-test"),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "unavailable",
+        code: "git_provider_unavailable",
       }),
     );
   });

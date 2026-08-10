@@ -48,6 +48,8 @@ export interface SandboxIsolationStrength {
   summary: string;
 }
 
+export { probeGitRuntime } from "./doctor-git-runtime-probe.js";
+
 /**
  * Describes the isolation an OS sandbox adapter actually enforces, so Doctor can
  * report isolation strength and degradation impact instead of only the adapter
