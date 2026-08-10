@@ -6708,14 +6708,20 @@ exceptions: macOS uses `/usr/bin/sandbox-exec`; Linux requires
 `/usr/bin/bwrap` and usable kernel or setuid namespace support. Windows or
 explicitly containerized deployments can opt into an OCI adapter by configuring
 `NAPIER_CONTAINER_SANDBOX_IMAGE`; it uses an absolute Docker-compatible
-executable, read-only root filesystem, capability-derived workspace mounts,
-and `--network none` unless networking is approved. Scoped Process writes keep
-the workspace root read-only and add only the preview-bound writable mounts.
-These adapters launch only an explicitly selected absolute executable, avoid
-shell invocation, and derive network and workspace access from reviewed
-capabilities. Missing sandbox prerequisites and unsupported platforms fail
-closed; a container or VM remains the recommended outer boundary for
-production third-party code.
+executable and accepts only a local Docker daemon. A mutable image reference is
+used for inspection only; production launches use the resulting immutable image
+ID and revalidate the client, daemon, and numeric host UID/GID identity before
+reuse. Containers run as that UID:GID with a read-only root filesystem, bounded
+private tmpfs storage, capability-derived workspace mounts, and `--network none`
+unless networking is approved. Scoped Process writes keep the workspace root
+read-only and add only the preview-bound writable mounts. OCI PTY sessions use
+the production guardian and an unpredictable container name so normal exit,
+cancel, and parent death remove the exact resource without relying on Docker
+auto-remove. These adapters launch only an explicitly selected absolute
+executable, avoid shell invocation, and derive network and workspace access
+from reviewed capabilities. Missing sandbox prerequisites, remote daemon
+contexts, and unsupported host user mapping fail closed; a container or VM
+remains the recommended outer boundary for production third-party code.
 
 ## License
 

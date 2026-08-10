@@ -10,6 +10,8 @@ import {
   resolveContainerImageIdentity,
   type ContainerClient,
   type ContainerImageIdentity,
+  type ContainerUserIdentity,
+  type ContainerUserIds,
   validateOciContainerName,
 } from "./sandbox-container-runtime.js";
 import {
@@ -42,6 +44,8 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   private readonly executable: string | undefined;
   private readonly containerClient: ContainerClient | undefined;
   private readonly terminalLauncher: typeof launchTerminalSandboxWrapper;
+  private readonly userIds: ContainerUserIds | undefined;
+  private readonly daemonEndpoint: string | undefined;
   private imageIdentity: Promise<ContainerImageIdentity> | undefined;
   private readonly runtimeBindings = new Map<
     SandboxCommandRuntime,
@@ -55,6 +59,8 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       spawnProcess?: typeof spawn;
       containerClient?: ContainerClient;
       terminalLauncher?: typeof launchTerminalSandboxWrapper;
+      userIds?: ContainerUserIds;
+      daemonEndpoint?: string;
     } = {},
   ) {
     this.executable = options.executable;
@@ -62,6 +68,8 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     this.spawnProcess = options.spawnProcess ?? spawn;
     this.terminalLauncher =
       options.terminalLauncher ?? launchTerminalSandboxWrapper;
+    this.userIds = options.userIds;
+    this.daemonEndpoint = options.daemonEndpoint;
   }
 
   private readonly spawnProcess: typeof spawn;
@@ -109,6 +117,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
         sandboxHome,
         identity.imageId,
         containerName,
+        identity.user,
       );
       const target = {
         command: identity.clientExecutable,
@@ -138,6 +147,8 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
                   identity,
                   containerName,
                   this.containerClient,
+                  this.userIds,
+                  this.daemonEndpoint,
                 ),
             }),
         spawnProcess: this.spawnProcess,
@@ -156,6 +167,8 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       await this.resolveImage(executable),
       runtime,
       this.containerClient,
+      this.userIds,
+      this.daemonEndpoint,
     );
   }
 
@@ -166,10 +179,17 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       this.image,
       executable,
       this.containerClient,
+      this.userIds,
+      this.daemonEndpoint,
     );
     try {
       const identity = await this.imageIdentity;
-      await assertContainerImageIdentityStable(identity);
+      await assertContainerImageIdentityStable(
+        identity,
+        this.containerClient,
+        this.userIds,
+        this.daemonEndpoint,
+      );
       return identity;
     } catch (error) {
       this.imageIdentity = undefined;
@@ -184,6 +204,7 @@ export function buildOciContainerArgs(
   sandboxHome: string,
   image: string,
   containerName: string,
+  user: ContainerUserIdentity,
 ): string[] {
   validateLaunchRequest(request);
   if (!path.isAbsolute(sandboxHome)) {
@@ -191,6 +212,7 @@ export function buildOciContainerArgs(
   }
   validateContainerImage(image);
   validateOciContainerName(containerName);
+  validateContainerUserIdentity(user);
   serializeContainerEnvironment(request.env);
   const capabilities = new Set(request.approvedCapabilities);
   const writePaths = scopedWorkspaceWritePaths(request);
@@ -201,6 +223,8 @@ export function buildOciContainerArgs(
     "--init",
     "--name",
     containerName,
+    "--user",
+    `${String(user.userId)}:${String(user.groupId)}`,
     ...(request.terminal ? ["--interactive", "--tty"] : []),
     "--cap-drop",
     "ALL",
@@ -216,9 +240,9 @@ export function buildOciContainerArgs(
     capabilities.has("network.connect") ? "bridge" : "none",
     "--read-only",
     "--tmpfs",
-    "/tmp:rw,nosuid,nodev,size=64m",
+    "/tmp:rw,nosuid,nodev,size=64m,mode=1777",
     "--tmpfs",
-    "/home/napier:rw,nosuid,nodev,size=64m",
+    `/home/napier:rw,nosuid,nodev,size=64m,mode=0700,uid=${String(user.userId)},gid=${String(user.groupId)}`,
     "--workdir",
     workspaceMounted ? request.cwd : "/tmp",
     "--env",
@@ -265,4 +289,18 @@ function containerEnvironmentFile(sandboxHome: string): string {
 
 function createContainerName(): string {
   return `napier-${randomBytes(16).toString("hex")}`;
+}
+
+function validateContainerUserIdentity(user: ContainerUserIdentity): void {
+  if (
+    !Number.isSafeInteger(user.userId) ||
+    user.userId < 0 ||
+    user.userId > 2_147_483_647 ||
+    !Number.isSafeInteger(user.groupId) ||
+    user.groupId < 0 ||
+    user.groupId > 2_147_483_647 ||
+    !/^[a-f0-9]{64}$/u.test(user.identitySha256)
+  ) {
+    throw new Error("OCI container user identity is invalid");
+  }
 }

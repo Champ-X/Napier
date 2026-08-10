@@ -17,6 +17,7 @@ import type {
 const IMAGE_ID = /^sha256:[a-f0-9]{64}$/u;
 const FILE_SHA256 = /^[a-f0-9]{64}$/u;
 const OCI_CONTAINER_NAME = /^napier-[a-f0-9]{32}$/u;
+const MAX_POSIX_ID = 2_147_483_647;
 const CONTAINER_CLIENT_TIMEOUT_MS = 10_000;
 const MAX_CONTAINER_IDENTITY_OUTPUT_BYTES = 4_096;
 const RUNTIME_IDENTITY_SOURCE = String.raw`
@@ -33,7 +34,25 @@ export interface ContainerImageIdentity {
   imageId: string;
   clientExecutable: string;
   clientExecutableSha256: string;
+  daemon: ContainerDaemonIdentity;
+  user: ContainerUserIdentity;
   identitySha256: string;
+}
+
+export interface ContainerDaemonIdentity {
+  location: "local";
+  endpointSha256: string;
+}
+
+export interface ContainerUserIdentity {
+  userId: number;
+  groupId: number;
+  identitySha256: string;
+}
+
+export interface ContainerUserIds {
+  userId: number;
+  groupId: number;
 }
 
 export type ContainerClient = (
@@ -55,6 +74,8 @@ export async function resolveContainerImageIdentity(
   image: string,
   injectedExecutable?: string,
   client: ContainerClient = runContainerClient,
+  injectedUserIds?: ContainerUserIds,
+  injectedDaemonEndpoint?: string,
 ): Promise<ContainerImageIdentity> {
   validateContainerImage(image);
   const executable = await resolveContainerLaunchExecutable(injectedExecutable);
@@ -63,6 +84,11 @@ export async function resolveContainerImageIdentity(
     throw new Error("OCI container client identity is unavailable");
   }
   const clientExecutableSha256 = await sha256File(clientExecutable);
+  const daemon = await resolveContainerDaemonIdentity(
+    clientExecutable,
+    client,
+    injectedDaemonEndpoint,
+  );
   const imageId = (
     await client(clientExecutable, [
       "image",
@@ -75,23 +101,106 @@ export async function resolveContainerImageIdentity(
   if (!IMAGE_ID.test(imageId)) {
     throw new Error("OCI container image did not resolve to an immutable ID");
   }
+  const user = resolveContainerUserIdentity(injectedUserIds);
   return {
     imageId,
     clientExecutable,
     clientExecutableSha256,
+    daemon,
+    user,
     identitySha256: sha256(
       canonicalJson({
         kind: "napier.oci-image-identity",
         imageId,
         clientExecutablePathSha256: sha256(clientExecutable),
         clientExecutableSha256,
+        daemonEndpointSha256: daemon.endpointSha256,
+        userIdentitySha256: user.identitySha256,
       }),
     ),
   };
 }
 
+export async function resolveContainerDaemonIdentity(
+  clientExecutable: string,
+  client: ContainerClient = runContainerClient,
+  injectedEndpoint?: string,
+): Promise<ContainerDaemonIdentity> {
+  const explicitHost = process.env["DOCKER_HOST"]?.trim();
+  const explicitContext = process.env["DOCKER_CONTEXT"]?.trim();
+  const endpoint = (
+    injectedEndpoint ??
+    (explicitHost && !explicitContext
+      ? explicitHost
+      : await client(clientExecutable, [
+          "context",
+          "inspect",
+          "--format",
+          "{{.Endpoints.docker.Host}}",
+        ]))
+  ).trim();
+  if (
+    endpoint.length === 0 ||
+    endpoint.length > 500 ||
+    /[\u0000-\u001f\u007f]/u.test(endpoint) ||
+    !isLocalContainerEndpoint(endpoint)
+  ) {
+    throw new Error("OCI sandbox requires a local Docker daemon endpoint");
+  }
+  return {
+    location: "local",
+    endpointSha256: sha256(endpoint),
+  };
+}
+
+export function resolveContainerUserIdentity(
+  injected?: ContainerUserIds,
+): ContainerUserIdentity {
+  const observed =
+    injected ??
+    (typeof process.getuid === "function" &&
+    typeof process.getgid === "function"
+      ? { userId: process.getuid(), groupId: process.getgid() }
+      : undefined);
+  if (
+    !observed ||
+    !Number.isSafeInteger(observed.userId) ||
+    observed.userId < 0 ||
+    observed.userId > MAX_POSIX_ID ||
+    !Number.isSafeInteger(observed.groupId) ||
+    observed.groupId < 0 ||
+    observed.groupId > MAX_POSIX_ID
+  ) {
+    throw new Error("OCI container host user identity is unavailable");
+  }
+  return {
+    userId: observed.userId,
+    groupId: observed.groupId,
+    identitySha256: sha256(
+      canonicalJson({
+        kind: "napier.oci-user-identity",
+        userId: observed.userId,
+        groupId: observed.groupId,
+      }),
+    ),
+  };
+}
+
+function isLocalContainerEndpoint(endpoint: string): boolean {
+  if (endpoint.startsWith("unix://")) {
+    return endpoint.slice("unix://".length).startsWith("/");
+  }
+  const lower = endpoint.toLowerCase();
+  return (
+    lower.startsWith("npipe:////./pipe/") || /^fd:\/\/(?:[0-9]+)?$/u.test(lower)
+  );
+}
+
 export async function assertContainerImageIdentityStable(
   identity: ContainerImageIdentity,
+  client: ContainerClient = runContainerClient,
+  injectedUserIds?: ContainerUserIds,
+  injectedDaemonEndpoint?: string,
 ): Promise<void> {
   if (
     (await sha256File(identity.clientExecutable)) !==
@@ -99,19 +208,38 @@ export async function assertContainerImageIdentityStable(
   ) {
     throw new Error("OCI container client identity changed");
   }
+  const daemon = await resolveContainerDaemonIdentity(
+    identity.clientExecutable,
+    client,
+    injectedDaemonEndpoint,
+  );
+  if (daemon.endpointSha256 !== identity.daemon.endpointSha256) {
+    throw new Error("OCI container daemon identity changed");
+  }
+  const user = resolveContainerUserIdentity(injectedUserIds);
+  if (user.identitySha256 !== identity.user.identitySha256) {
+    throw new Error("OCI container host user identity changed");
+  }
 }
 
 export async function resolveContainerCommandRuntime(
   identity: ContainerImageIdentity,
   runtime: SandboxCommandRuntime,
   client: ContainerClient = runContainerClient,
+  injectedUserIds?: ContainerUserIds,
+  injectedDaemonEndpoint?: string,
 ): Promise<SandboxCommandRuntimeBinding> {
   if (runtime === "python") {
     throw new Error(
       "OCI image-bound Python runtime identity is not implemented",
     );
   }
-  await assertContainerImageIdentityStable(identity);
+  await assertContainerImageIdentityStable(
+    identity,
+    client,
+    injectedUserIds,
+    injectedDaemonEndpoint,
+  );
   const output = await client(identity.clientExecutable, [
     "run",
     "--rm",
@@ -166,9 +294,16 @@ export async function removeContainerResource(
   identity: ContainerImageIdentity,
   containerName: string,
   client: ContainerClient = runContainerClient,
+  injectedUserIds?: ContainerUserIds,
+  injectedDaemonEndpoint?: string,
 ): Promise<void> {
   validateOciContainerName(containerName);
-  await assertContainerImageIdentityStable(identity);
+  await assertContainerImageIdentityStable(
+    identity,
+    client,
+    injectedUserIds,
+    injectedDaemonEndpoint,
+  );
   try {
     await client(identity.clientExecutable, [
       "container",

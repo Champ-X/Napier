@@ -355,6 +355,9 @@ async function activeProcessProbe(input: {
         productionCall: true,
         pty: input.terminal === true,
         executableSha256: prepared.executableSha256,
+        ...(prepared.runtimeIdentitySha256
+          ? { runtimeIdentitySha256: prepared.runtimeIdentitySha256 }
+          : {}),
         commandSha256:
           io?.commandSha256 ?? sha256(canonicalJson(prepared.receipt)),
         exitCode: result.exitCode!,

@@ -6201,14 +6201,16 @@ records interruption rather than completion. The guardian proves cleanup of
 the managed target group and descendants observed before they reparent. A
 rapid double-fork that is created and reparented entirely between scans remains
 a platform race; kernel-enforced descendant containment, cross-restart
-reattachment, and successful settlement are not claimed. OCI guarding remains
-fail-closed until container runtime identity binding exists. Hard total RSS
-quotas, package-backed Python, remote sandboxes, reattachment, and writer
-attribution remain outside this slice. PTY mode supplies real terminal
+reattachment, and successful settlement are not claimed. OCI launches bind a
+random 128-bit-prefixed container name to the same guardian cleanup protocol;
+normal exit, cancellation, and parent death force-remove that exact name and
+verify it is absent without relying on Docker `--rm`. Hard total RSS quotas for
+host adapters, package-backed Python, remote sandboxes, reattachment, and
+writer attribution remain outside this slice. PTY mode supplies real terminal
 stdin/stdout, sizing, control bytes, and process-group cancellation, but does
-not grant shell access, cross-restart attach, a durable screen buffer, or
-Napier job-control commands. The JavaScript/Python kernels and Node debugger
-below remain read-only typed protocols over the same Process Session service.
+not grant cross-restart attach, a durable screen buffer, or Napier job-control
+commands. The JavaScript/Python kernels and Node debugger below remain
+read-only typed protocols over the same Process Session service.
 
 ## Persistent JavaScript Kernel Flow
 
@@ -7967,13 +7969,35 @@ and approved workspace access; executable arguments begin after Bubblewrap's
 `--` boundary. Verification receives a read-only workspace bind and never
 `--share-net`.
 
-The OCI adapter is opt-in through an explicit image (`NAPIER_CONTAINER_SANDBOX_IMAGE`
-or runtime options). It uses an absolute Docker-compatible executable, `--rm`,
-`--init`, `--cap-drop ALL`, `no-new-privileges`, a read-only root filesystem,
-a private `/tmp`, and `--network none` unless `network.connect` is approved.
-Workspace mounts are read-only unless `workspace.write` is separately
-approved. Environment values are passed through the container process
-environment while command arguments contain only variable names.
+The OCI adapter is opt-in through an explicit image
+(`NAPIER_CONTAINER_SANDBOX_IMAGE` or runtime options). It resolves and hashes
+an absolute Docker-compatible client, accepts only a local Unix socket, Windows
+named pipe, or inherited-fd daemon endpoint, and retains only the endpoint hash
+in runtime identity. Remote `ssh://` and `tcp://` contexts fail before image
+inspection because bind mounts resolve on the daemon host. A requested mutable
+tag is used only by `docker image inspect`; every production launch uses its
+immutable image ID and revalidates client bytes, daemon identity, and the
+numeric host UID/GID before reuse.
+
+The container runs with `--user UID:GID`, `--init`, `--cap-drop ALL`,
+`no-new-privileges`, a read-only root filesystem, a mode-1777 bounded `/tmp`, a
+UID/GID-owned mode-0700 bounded home tmpfs, PID/CPU/memory limits, and
+`--network none` unless `network.connect` is approved. Workspace mounts are
+read-only unless `workspace.write` is separately approved; scoped writes keep
+the workspace root read-only and add only the reviewed subtrees as writable
+binds. Target environment values travel through a mode-0600 env file and never
+become Docker argv. The Docker client receives only its fixed configuration
+allowlist, not the target command environment.
+
+Each launch owns an unpredictable container name. Pipe cleanup and the PTY
+guardian force-remove the exact resource on exit or cancellation and fail with
+a non-success cleanup result if the name remains. The adapter does not rely on
+Docker auto-remove. The client/daemon/user binding is covered without an
+external daemon by controlled production-path tests; the actual host Doctor
+continues to report `shell_provider_unavailable` and `sandbox_unavailable` when
+the configured local Docker server cannot be reached. Real isolated-daemon E2E,
+non-POSIX host-user mapping, image-bound Python/Git/LSP/debugger assets, and
+bounded service-port projection remain explicit gaps.
 
 Both adapters create a private temporary HOME and add workspace read/write
 rules only for separately approved capabilities. Stdio receives no ambient

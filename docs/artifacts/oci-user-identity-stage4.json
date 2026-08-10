@@ -1,0 +1,62 @@
+{
+  "kind": "napier.oci-user-identity-stage4",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-10T01:38:01Z",
+  "controlledProductionPath": {
+    "externalDaemonUsed": false,
+    "localDaemonEndpointRequired": true,
+    "remoteSshEndpointRejected": true,
+    "remoteTcpEndpointRejected": true,
+    "remoteNamedPipeEndpointRejected": true,
+    "daemonEndpointHashBound": true,
+    "containerClientExecutableBound": true,
+    "numericHostUserIdentityBound": true,
+    "identityRevalidatedBeforeReuse": true,
+    "runtimeReceiptChangesWithUserIdentity": true,
+    "containerExecutionUserBound": true,
+    "temporaryDirectoryMode": "1777",
+    "homeTmpfsOwnerBound": true,
+    "workspaceRootMount": "read_only",
+    "scopedWriteMount": "read_write",
+    "controlledWriteOwnerMatchedHost": true,
+    "doctorRuntimeIdentityEvidenceEnabled": true
+  },
+  "actualHost": {
+    "containerCliPresent": true,
+    "containerServerReachable": false,
+    "configuredImage": true,
+    "doctorStatus": "degraded",
+    "shellDoctorCode": "shell_provider_unavailable",
+    "sandboxDoctorCode": "sandbox_unavailable",
+    "reportedIsolationLevel": "container",
+    "codingSendBoundary": "blocked"
+  },
+  "verification": {
+    "focusedTestFiles": 2,
+    "focusedTests": 28,
+    "productionDoctorInvocations": 1,
+    "architectureCycles": 0
+  },
+  "retryLedger": [],
+  "retention": {
+    "credentialValues": false,
+    "rawDockerOutput": false,
+    "rawDoctorReport": false,
+    "rawDaemonEndpoint": false,
+    "numericHostUserIds": false,
+    "requestedImageReference": false,
+    "absoluteTemporaryPaths": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "image-bound Python, Git, LSP, and debugger identities",
+      "bounded port and local-service projection",
+      "real isolated Docker daemon E2E",
+      "non-POSIX host user mapping",
+      "cross-platform isolated provider casebook"
+    ]
+  },
+  "contentSha256": "4516e2eb36bd4f6108504bbb46def2467eca1adcff878e82c8c39e3666e306db"
+}

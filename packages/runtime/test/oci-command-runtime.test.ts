@@ -1,7 +1,15 @@
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -17,7 +25,13 @@ import {
   probeShellRuntime,
 } from "../src/doctor-runtime-probes.js";
 import { OciContainerSandboxAdapter } from "../src/sandbox.js";
-import type { ContainerClient } from "../src/sandbox-container-runtime.js";
+import {
+  assertContainerImageIdentityStable,
+  resolveContainerDaemonIdentity,
+  resolveContainerImageIdentity,
+  resolveContainerUserIdentity,
+  type ContainerClient,
+} from "../src/sandbox-container-runtime.js";
 import { PROCESS_GUARDIAN_SPEC_ENV } from "../src/process-guardian-worker-source.js";
 import { bindWorkspaceProcessIo } from "../src/workspace-process-terminal.js";
 
@@ -25,6 +39,8 @@ const IMAGE_ID = `sha256:${"a".repeat(64)}`;
 const NODE_SHA256 = "b".repeat(64);
 const SHELL_SHA256 = "c".repeat(64);
 const REQUESTED_IMAGE = "ghcr.io/example/napier-sandbox:node24";
+const USER_IDS = { userId: 501, groupId: 20 } as const;
+const DAEMON_ENDPOINT = "unix:///controlled/docker.sock";
 const temporaryRoots: string[] = [];
 const posixIt = process.platform === "win32" ? it.skip : it;
 
@@ -37,6 +53,95 @@ afterEach(async () => {
 });
 
 describe("OCI image-bound command runtime", () => {
+  it("accepts only hashed local daemon endpoints", async () => {
+    const client = identityClient();
+    const unix = await resolveContainerDaemonIdentity(
+      process.execPath,
+      client,
+      DAEMON_ENDPOINT,
+    );
+    const pipe = await resolveContainerDaemonIdentity(
+      process.execPath,
+      client,
+      "npipe:////./pipe/docker_engine",
+    );
+
+    expect(unix).toEqual({
+      location: "local",
+      endpointSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+    });
+    expect(pipe.endpointSha256).not.toBe(unix.endpointSha256);
+    expect(unix).not.toHaveProperty("endpoint");
+    expect(client).not.toHaveBeenCalled();
+    await expect(
+      resolveContainerDaemonIdentity(
+        process.execPath,
+        client,
+        "ssh://builder.example.invalid",
+      ),
+    ).rejects.toThrow("local Docker daemon endpoint");
+    await expect(
+      resolveContainerDaemonIdentity(
+        process.execPath,
+        client,
+        "tcp://127.0.0.1:2375",
+      ),
+    ).rejects.toThrow("local Docker daemon endpoint");
+    await expect(
+      resolveContainerDaemonIdentity(
+        process.execPath,
+        client,
+        "npipe:////remote-builder/pipe/docker_engine",
+      ),
+    ).rejects.toThrow("local Docker daemon endpoint");
+  });
+
+  it("validates and hashes the numeric host user identity", () => {
+    const identity = resolveContainerUserIdentity(USER_IDS);
+
+    expect(identity).toEqual({
+      ...USER_IDS,
+      identitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+    });
+    expect(resolveContainerUserIdentity(USER_IDS)).toEqual(identity);
+    expect(() =>
+      resolveContainerUserIdentity({ userId: -1, groupId: 20 }),
+    ).toThrow("host user identity is unavailable");
+    expect(() =>
+      resolveContainerUserIdentity({
+        userId: 501,
+        groupId: 2_147_483_648,
+      }),
+    ).toThrow("host user identity is unavailable");
+  });
+
+  it("rejects daemon or host user drift before reusing an image identity", async () => {
+    const identity = await resolveContainerImageIdentity(
+      REQUESTED_IMAGE,
+      process.execPath,
+      identityClient(),
+      USER_IDS,
+      DAEMON_ENDPOINT,
+    );
+
+    await expect(
+      assertContainerImageIdentityStable(
+        identity,
+        identityClient(),
+        USER_IDS,
+        "unix:///controlled/other-docker.sock",
+      ),
+    ).rejects.toThrow("daemon identity changed");
+    await expect(
+      assertContainerImageIdentityStable(
+        identity,
+        identityClient(),
+        { userId: 502, groupId: 20 },
+        DAEMON_ENDPOINT,
+      ),
+    ).rejects.toThrow("host user identity changed");
+  });
+
   it("pins a mutable tag and runs Node argv with container runtime identity", async () => {
     const workspaceRoot = await temporaryWorkspace();
     const client = identityClient();
@@ -46,6 +151,8 @@ describe("OCI image-bound command runtime", () => {
       executable: process.execPath,
       containerClient: client,
       spawnProcess: spawnProcess as never,
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
     });
 
     const result = await new CommandRunner({ workspaceRoot, sandbox }).run({
@@ -68,6 +175,10 @@ describe("OCI image-bound command runtime", () => {
     expect(dockerArgs).toContain(IMAGE_ID);
     expect(dockerArgs).not.toContain(REQUESTED_IMAGE);
     expect(dockerArgs).not.toContain("--rm");
+    expect(dockerArgs).toEqual(expect.arrayContaining(["--user", "501:20"]));
+    expect(dockerArgs.join("\0")).toContain(
+      "--tmpfs\0/home/napier:rw,nosuid,nodev,size=64m,mode=0700,uid=501,gid=20",
+    );
     expect(dockerArgs.slice(dockerArgs.indexOf(IMAGE_ID))).toEqual([
       IMAGE_ID,
       "/usr/local/bin/node",
@@ -108,6 +219,38 @@ describe("OCI image-bound command runtime", () => {
     expect(child.kill).not.toHaveBeenCalled();
   });
 
+  it("changes the runtime receipt when the numeric execution user changes", async () => {
+    const workspaceRoot = await temporaryWorkspace();
+    const first = await prepareCommandExecution(
+      {
+        workspaceRoot,
+        sandbox: new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+          executable: process.execPath,
+          containerClient: identityClient(),
+          userIds: USER_IDS,
+          daemonEndpoint: DAEMON_ENDPOINT,
+        }),
+      },
+      { runtime: "node", args: ["--version"] },
+    );
+    const second = await prepareCommandExecution(
+      {
+        workspaceRoot,
+        sandbox: new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+          executable: process.execPath,
+          containerClient: identityClient(),
+          userIds: { userId: 502, groupId: 20 },
+          daemonEndpoint: DAEMON_ENDPOINT,
+        }),
+      },
+      { runtime: "node", args: ["--version"] },
+    );
+
+    expect(first.runtimeIdentitySha256).toMatch(/^[a-f0-9]{64}$/u);
+    expect(second.runtimeIdentitySha256).toMatch(/^[a-f0-9]{64}$/u);
+    expect(first.runtimeIdentitySha256).not.toBe(second.runtimeIdentitySha256);
+  });
+
   it("runs the production Shell PTY through a cleanup-bound guardian", async () => {
     const workspaceRoot = await temporaryWorkspace();
     const client = identityClient();
@@ -118,6 +261,8 @@ describe("OCI image-bound command runtime", () => {
       containerClient: client,
       spawnProcess: spawnProcess as never,
       terminalLauncher: terminal.launcher,
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
     });
 
     await expect(
@@ -130,6 +275,7 @@ describe("OCI image-bound command runtime", () => {
           adapter: "oci-container",
           productionCall: true,
           pty: true,
+          runtimeIdentitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         }),
       }),
     );
@@ -161,6 +307,8 @@ describe("OCI image-bound command runtime", () => {
       executable: process.execPath,
       containerClient: client,
       spawnProcess: spawnProcess as never,
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
     });
 
     await expect(
@@ -173,6 +321,7 @@ describe("OCI image-bound command runtime", () => {
           adapter: "oci-container",
           productionCall: true,
           pty: false,
+          runtimeIdentitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         }),
       }),
     );
@@ -187,6 +336,8 @@ describe("OCI image-bound command runtime", () => {
     const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
       executable: process.execPath,
       containerClient: client,
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
     });
     await expect(
       prepareCommandExecution(
@@ -204,6 +355,8 @@ describe("OCI image-bound command runtime", () => {
       executable: process.execPath,
       containerClient: client,
       spawnProcess: spawnProcess as never,
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
     });
 
     await expect(
@@ -252,6 +405,8 @@ describe("OCI image-bound command runtime", () => {
       const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
         executable,
         containerClient: identityClient(),
+        userIds: USER_IDS,
+        daemonEndpoint: DAEMON_ENDPOINT,
       });
 
       await expect(
@@ -302,6 +457,8 @@ describe("OCI image-bound command runtime", () => {
       const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
         executable,
         containerClient: identityClient(),
+        userIds: USER_IDS,
+        daemonEndpoint: DAEMON_ENDPOINT,
       });
       const prepared = await prepareCommandExecution(
         { workspaceRoot, sandbox },
@@ -332,6 +489,61 @@ describe("OCI image-bound command runtime", () => {
       await expect(readFile(cleanupLog, "utf8")).resolves.toMatch(
         /^napier-[a-f0-9]{32}$/u,
       );
+    },
+    15_000,
+  );
+
+  posixIt(
+    "maps a scoped writable mount to the host numeric owner",
+    async () => {
+      const userId = process.getuid!();
+      const groupId = process.getgid!();
+      const workspaceRoot = await temporaryWorkspace();
+      const writeRoot = path.join(workspaceRoot, "generated");
+      const outputPath = path.join(writeRoot, "owned.txt");
+      await mkdir(writeRoot);
+      const fakeRoot = await temporaryWorkspace();
+      const executable = path.join(fakeRoot, "fake-container-client");
+      await writeFile(
+        executable,
+        [
+          "#!/usr/bin/env node",
+          'const fs = require("node:fs");',
+          "const args = process.argv.slice(2);",
+          `if (args[args.indexOf("--user") + 1] !== ${JSON.stringify(`${String(userId)}:${String(groupId)}`)}) process.exit(65);`,
+          "const mounts = args.flatMap((value, index) => value === '--mount' ? [args[index + 1]] : []);",
+          `if (!mounts.includes(${JSON.stringify(`type=bind,source=${workspaceRoot},target=${workspaceRoot},readonly`)})) process.exit(66);`,
+          `if (!mounts.includes(${JSON.stringify(`type=bind,source=${writeRoot},target=${writeRoot}`)})) process.exit(67);`,
+          "fs.writeFileSync(args.at(-1), 'owned');",
+          "",
+        ].join("\n"),
+        { mode: 0o755 },
+      );
+      const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+        executable,
+        containerClient: identityClient(),
+        userIds: { userId, groupId },
+        daemonEndpoint: DAEMON_ENDPOINT,
+      });
+      const child = await sandbox.launch({
+        command: "/usr/local/bin/node",
+        args: [outputPath],
+        cwd: workspaceRoot,
+        env: {},
+        workspaceRoot,
+        workspaceWritePaths: [writeRoot],
+        approvedCapabilities: [
+          "process.spawn",
+          "workspace.read",
+          "workspace.write",
+        ],
+      });
+
+      await expect(child.exit).resolves.toEqual({ code: 0, signal: null });
+      const output = await stat(outputPath);
+      expect(output.uid).toBe(userId);
+      expect(output.gid).toBe(groupId);
+      await expect(readFile(outputPath, "utf8")).resolves.toBe("owned");
     },
     15_000,
   );
