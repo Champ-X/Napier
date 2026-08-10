@@ -149,6 +149,54 @@ describe("Agent capability HTTP", () => {
     );
   });
 
+  it("projects a temporary preset without changing persistent capability state", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-capability-http-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "state"),
+      env: {},
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const agent = services.store.listAgents()[0]!;
+    const revisions = services.store.listAgentRevisions(agent.id);
+
+    const response = await app.request(
+      `/api/agents/${agent.id}/capabilities?preset=browser`,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-napier-capability-preset")).toBe("browser");
+    const projection =
+      (await response.json()) as EffectiveAgentCapabilityProjectionV1;
+    expect(projection).toEqual(
+      expect.objectContaining({
+        capabilityPreset: "browser",
+        agentRevision: agent.revision,
+        toolPolicy: "observe",
+        configuredTools: expect.arrayContaining(["browser", "skill_load"]),
+        runtimeExposedTools: expect.arrayContaining(["browser", "skill_load"]),
+      }),
+    );
+    expect(response.headers.get("x-napier-content-sha256")).toBe(
+      sha256Json(projection),
+    );
+    expect(services.store.getAgent(agent.id)).toEqual(agent);
+    expect(services.store.listAgentRevisions(agent.id)).toEqual(revisions);
+
+    for (const query of ["preset=unknown", "preset=browser&preset=coding", "extra=1"]) {
+      expect(
+        (
+          await app.request(
+            `/api/agents/${agent.id}/capabilities?${query}`,
+          )
+        ).status,
+      ).toBe(400);
+    }
+  });
+
   it("distinguishes validation, persistence, and internal failures", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-capability-http-"));
     roots.push(root);

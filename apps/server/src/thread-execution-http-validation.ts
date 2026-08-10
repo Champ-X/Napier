@@ -1,4 +1,8 @@
 import type { PromptRequest, ResumeRunRequest } from "@napier/contracts";
+import {
+  AGENT_CAPABILITY_PRESET_IDS,
+  type AgentCapabilityPresetId,
+} from "@napier/contracts/agent-capabilities";
 
 import { parseModelRef, requestRecord } from "./http-request-validation.js";
 
@@ -28,6 +32,7 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   const record = requestRecord(input, [
     "text",
     "model",
+    "capabilityPreset",
     "sourceContinuityRunId",
   ]);
   if (!record) return undefined;
@@ -43,6 +48,16 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   const model =
     record["model"] === undefined ? undefined : parseModelRef(record["model"]);
   if (record["model"] !== undefined && !model) return undefined;
+  const capabilityPreset = record["capabilityPreset"];
+  if (
+    capabilityPreset !== undefined &&
+    (typeof capabilityPreset !== "string" ||
+      !AGENT_CAPABILITY_PRESET_IDS.includes(
+        capabilityPreset as AgentCapabilityPresetId,
+      ))
+  ) {
+    return undefined;
+  }
   const sourceContinuityRunId = record["sourceContinuityRunId"];
   if (
     sourceContinuityRunId !== undefined &&
@@ -54,6 +69,9 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   return {
     text,
     ...(model ? { model } : {}),
+    ...(typeof capabilityPreset === "string"
+      ? { capabilityPreset: capabilityPreset as AgentCapabilityPresetId }
+      : {}),
     ...(typeof sourceContinuityRunId === "string"
       ? { sourceContinuityRunId }
       : {}),

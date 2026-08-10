@@ -40,7 +40,8 @@ export function Composer({
     | "openOperatorDecision"
     | "browserInteractionConfirmation"
     | "setInspectorTab"
-    | "commitAgentConfiguration"
+    | "nextRunCapabilityPreset"
+    | "setNextRunCapabilityPreset"
   >;
   activeAgent: AgentProfile | undefined;
   activeModel: SelectedModelAvailability;
@@ -48,6 +49,7 @@ export function Composer({
 }) {
   const [runReadiness, setRunReadiness] =
     useState<ComposerRunReadiness>(initialComposerRunReadiness);
+  const readinessPending = composerReadinessPending(runReadiness);
   const canSubmit = canStartRun && runReadiness.canRun;
   const submit = useCallback(() => {
     if (vm.isRunning || canSubmit) void vm.submit();
@@ -55,6 +57,7 @@ export function Composer({
   return (
     <form
       className="composer"
+      data-run-readiness={readinessPending ? "checking" : runReadiness.level}
       onSubmit={(event) => {
         event.preventDefault();
         submit();
@@ -98,9 +101,9 @@ export function Composer({
             <LazyComposerCapabilityControl
               agent={activeAgent}
               disabled={vm.isRunning || !vm.detail}
-              threadId={vm.detail?.thread.id}
+              selectedPreset={vm.nextRunCapabilityPreset}
+              onSelectedPresetChange={vm.setNextRunCapabilityPreset}
               onReview={() => vm.setInspectorTab("context")}
-              onAgentUpdated={vm.commitAgentConfiguration}
               onReadinessChange={setRunReadiness}
             />
           </Suspense>
@@ -154,45 +157,62 @@ export function Composer({
             className="run-button"
             type="submit"
             disabled={!canSubmit}
-            aria-describedby={
-              !activeModel.configured
-                ? MODEL_WARNING_ID
-                : !runReadiness.canRun
-                  ? READINESS_WARNING_ID
-                  : undefined
-            }
+            aria-describedby={runButtonDescription(
+              activeModel.configured,
+              runReadiness,
+              readinessPending,
+            )}
           >
             <Send size={14} aria-hidden="true" />
             {copy.send}
           </button>
         )}
       </div>
-      {!vm.isRunning && !activeModel.configured ? (
-        <p id={MODEL_WARNING_ID} className="composer-model-warning" role="status">
-          {copy.modelUnavailableHint}
-        </p>
-      ) : null}
-      {!vm.isRunning &&
-      activeModel.configured &&
-      runReadiness.level === "blocked" ? (
-        <p
-          id={READINESS_WARNING_ID}
-          className="composer-model-warning"
-          role="alert"
-        >
-          {runReadiness.message}
-        </p>
-      ) : null}
-      {!vm.isRunning &&
-      activeModel.configured &&
-      runReadiness.level === "warn" &&
-      runReadiness.message ? (
-        <p className="composer-readiness-warning" role="status">
-          {runReadiness.message}
-        </p>
-      ) : null}
+      <ComposerReadinessNotices
+        running={vm.isRunning}
+        modelConfigured={activeModel.configured}
+        readiness={runReadiness}
+        pending={readinessPending}
+      />
     </form>
   );
+}
+
+function ComposerReadinessNotices({
+  running,
+  modelConfigured,
+  readiness,
+  pending,
+}: {
+  running: boolean;
+  modelConfigured: boolean;
+  readiness: ComposerRunReadiness;
+  pending: boolean;
+}) {
+  if (running) return null;
+  if (!modelConfigured) {
+    return (
+      <p id={MODEL_WARNING_ID} className="composer-model-warning" role="status">
+        {copy.modelUnavailableHint}
+      </p>
+    );
+  }
+  if (!pending && readiness.level === "blocked") {
+    return (
+      <p
+        id={READINESS_WARNING_ID}
+        className="composer-model-warning"
+        role="alert"
+      >
+        {readiness.message}
+      </p>
+    );
+  }
+  return readiness.level === "warn" && readiness.message ? (
+    <p className="composer-readiness-warning" role="status">
+      {readiness.message}
+    </p>
+  ) : null;
 }
 
 function handleComposerKeys(
@@ -203,6 +223,22 @@ function handleComposerKeys(
     event.preventDefault();
     submit();
   }
+}
+
+function composerReadinessPending(readiness: ComposerRunReadiness): boolean {
+  return readiness.items.every((item) => item.value === "Checking");
+}
+
+function runButtonDescription(
+  modelConfigured: boolean,
+  readiness: ComposerRunReadiness,
+  pending: boolean,
+): string | undefined {
+  return !modelConfigured
+    ? MODEL_WARNING_ID
+    : !pending && !readiness.canRun
+      ? READINESS_WARNING_ID
+      : undefined;
 }
 
 export default Composer;

@@ -1,4 +1,8 @@
 import type { ToolPolicyMode } from "./execution-core.js";
+import {
+  AGENT_CAPABILITY_PRESET_IDS,
+  type AgentCapabilityPresetId,
+} from "./agent-capabilities.js";
 
 export const CAPABILITY_MANAGED_FIELDS = [
   "toolPolicy",
@@ -106,6 +110,7 @@ export interface EffectiveAgentCapabilityProjectionV1 {
   runtimeExposedTools: string[];
   configuredSkills: string[];
   configuredSubagents: string[];
+  capabilityPreset?: AgentCapabilityPresetId;
   readiness: CapabilityReadinessRecord[];
   restorePreview: CapabilityRestorePreviewV1;
   projectionSha256: string;
@@ -185,7 +190,7 @@ export function isEffectiveAgentCapabilityProjectionV1(
         "restorePreview",
         "projectionSha256",
       ],
-      ["legacySignatureSha256"],
+      ["legacySignatureSha256", "capabilityPreset"],
     ) ||
     value.kind !== "napier.effective-agent-capabilities" ||
     value.schemaVersion !== 1 ||
@@ -204,6 +209,7 @@ export function isEffectiveAgentCapabilityProjectionV1(
     !stringArray(value.runtimeExposedTools) ||
     !stringArray(value.configuredSkills) ||
     !stringArray(value.configuredSubagents) ||
+    !optionalCapabilityPreset(value.capabilityPreset) ||
     !denseArray(value.readiness) ||
     !value.readiness.every(capabilityReadinessRecord) ||
     !capabilityRestorePreview(value.restorePreview) ||
@@ -213,6 +219,13 @@ export function isEffectiveAgentCapabilityProjectionV1(
     return false;
   }
   return true;
+}
+
+function optionalCapabilityPreset(value: unknown): boolean {
+  return (
+    value === undefined ||
+    member(value, AGENT_CAPABILITY_PRESET_IDS)
+  );
 }
 
 function capabilityReadinessRecord(value: unknown): boolean {

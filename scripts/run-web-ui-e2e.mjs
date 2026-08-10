@@ -137,6 +137,25 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
       state: "attached",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
+    await page.waitForFunction(
+      () => {
+        const composer = document.querySelector(
+          ".agent-capability-composer",
+        );
+        return (
+          composer &&
+          !composer.classList.contains("state-loading") &&
+          document.querySelector(".composer")?.getAttribute(
+            "data-run-readiness",
+          ) !== "checking" &&
+          ![...document.querySelectorAll(".composer-readiness-item")].some(
+            (item) => item.textContent?.includes("Checking"),
+          )
+        );
+      },
+      undefined,
+      { timeout: WEB_UI_START_TIMEOUT_MS },
+    );
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(250);
     const narrative = await readWebUiNarrative(page, expectedNarrative);

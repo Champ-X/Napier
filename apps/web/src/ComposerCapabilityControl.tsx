@@ -1,11 +1,8 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo } from "react";
 import { AlertTriangle, ArrowRight, ShieldCheck } from "lucide-react";
 
 import type { AgentProfile } from "@napier/contracts";
-import {
-  agentCapabilityPresetUpdate,
-  type AgentCapabilityPresetId,
-} from "@napier/contracts/agent-capabilities";
+import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
 import { agentCapabilityBadgeText } from "./agent-capability-view-model";
 import {
@@ -21,8 +18,6 @@ import {
   composerRunReadiness,
   type ComposerRunReadiness,
 } from "./composer-readiness-view-model";
-import { updateAgentProfile } from "./context-api";
-import { formatApiErrorMessage } from "./api-error";
 import { useAgentCapabilityProjection } from "./use-agent-capability-projection";
 import "./agent-capability-composer.css";
 
@@ -31,26 +26,27 @@ const LazySandboxSetupCard = lazy(() => import("./SandboxSetupCard"));
 export function ComposerCapabilityControl({
   agent,
   disabled,
-  threadId,
+  selectedPreset,
+  onSelectedPresetChange,
   onReview,
-  onAgentUpdated,
   onReadinessChange,
 }: {
   agent: AgentProfile | undefined;
   disabled: boolean;
-  threadId: string | undefined;
+  selectedPreset: AgentCapabilityPresetId | undefined;
+  onSelectedPresetChange: (
+    preset: AgentCapabilityPresetId | undefined,
+  ) => void;
   onReview: () => void;
-  onAgentUpdated: (agent: AgentProfile) => void;
   onReadinessChange: (readiness: ComposerRunReadiness) => void;
 }) {
-  const { projection, refresh, loading, error } = useAgentCapabilityProjection(
+  const { projection, loading, error } = useAgentCapabilityProjection(
     agent?.id,
     agent?.revision,
+    selectedPreset,
   );
-  const [busyMode, setBusyMode] = useState<AgentCapabilityPresetId>();
-  const [applyError, setApplyError] = useState<string>();
   const summary = agentCapabilityComposerSummary(projection, loading, error);
-  const modes = composerModes(agent);
+  const modes = composerModes(agent, selectedPreset);
   const activeMode = modes.find((mode) => mode.active);
   const activeDependency = activeMode
     ? composerModeDependency(activeMode.id, projection)
@@ -59,41 +55,29 @@ export function ComposerCapabilityControl({
     () =>
       composerRunReadiness(
         agent,
-        busyMode ? undefined : projection,
-        loading || Boolean(busyMode),
+        projection,
+        loading,
         error,
+        selectedPreset,
       ),
-    [agent, busyMode, error, loading, projection],
+    [agent, error, loading, projection, selectedPreset],
   );
 
   useEffect(() => {
     onReadinessChange(runReadiness);
   }, [onReadinessChange, runReadiness]);
 
-  const applyMode = async (modeId: AgentCapabilityPresetId): Promise<void> => {
-    if (!agent || disabled || busyMode) return;
-    setBusyMode(modeId);
-    setApplyError(undefined);
-    try {
-      const updated = await updateAgentProfile(agent.id, {
-        ...agentCapabilityPresetUpdate(modeId),
-        ...(threadId ? { threadId } : {}),
-      });
-      onAgentUpdated(updated);
-      await refresh().catch(() => undefined);
-    } catch (reason) {
-      setApplyError(formatApiErrorMessage(reason));
-    } finally {
-      setBusyMode(undefined);
-    }
-  };
-
   return (
     <div
       className={`agent-capability-composer state-${projection?.driftState ?? "loading"}`}
-      aria-label="Task mode and effective Agent capabilities"
+      aria-label="Next-run task mode and effective Agent capabilities"
+      data-scope="next-run-only"
     >
-      <div className="composer-mode-row" role="group" aria-label="Task mode">
+      <div
+        className="composer-mode-row"
+        role="group"
+        aria-label="Next-run task mode"
+      >
         {modes.map((mode) => {
           const dependency = composerModeDependency(mode.id, projection);
           return (
@@ -102,18 +86,19 @@ export function ComposerCapabilityControl({
               type="button"
               className={`composer-mode${mode.active ? " is-active" : ""} dep-${dependency.level}`}
               aria-pressed={mode.active}
-              disabled={disabled || Boolean(busyMode)}
+              disabled={disabled}
               title={
                 dependency.message
                   ? `${mode.summary}\n\n${dependency.message}`
                   : mode.summary
               }
-              onClick={() => void applyMode(mode.id)}
+              onClick={() => onSelectedPresetChange(mode.id)}
             >
               {dependency.level === "blocked" ? (
                 <AlertTriangle size={11} aria-hidden="true" />
               ) : null}
-              {busyMode === mode.id ? `${mode.label}…` : mode.label}
+              {mode.label}
+              {mode.temporary ? <span>1×</span> : null}
             </button>
           );
         })}
@@ -150,11 +135,6 @@ export function ComposerCapabilityControl({
           </span>
         ))}
       </div>
-      {applyError ? (
-        <p className="composer-mode-error" role="alert">
-          {applyError}
-        </p>
-      ) : null}
       <div className="agent-capability-composer-status">
         <span className="agent-capability-composer-profile">
           {projection && projection.driftState !== "current" ? (
@@ -162,7 +142,11 @@ export function ComposerCapabilityControl({
           ) : (
             <ShieldCheck size={13} aria-hidden="true" />
           )}
-          {agent ? agentCapabilityBadgeText(agent) : "Read only"}
+          {selectedPreset
+            ? `${activeMode?.label ?? selectedPreset} 1×`
+            : agent
+              ? agentCapabilityBadgeText(agent)
+              : "Read only"}
         </span>
         <span className="agent-capability-composer-contract">
           {summary.contract}
@@ -174,12 +158,19 @@ export function ComposerCapabilityControl({
         ) : null}
         <button
           type="button"
+          aria-label={
+            selectedPreset ? "Use Agent default" : "Edit Agent default"
+          }
           onClick={() => {
-            onReview();
-            focusCapabilityContract();
+            if (selectedPreset) {
+              onSelectedPresetChange(undefined);
+            } else {
+              onReview();
+              focusCapabilityContract();
+            }
           }}
         >
-          Review / restore
+          {selectedPreset ? "Use default" : "Edit default"}
           <ArrowRight size={11} aria-hidden="true" />
         </button>
       </div>

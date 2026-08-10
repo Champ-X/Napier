@@ -672,6 +672,12 @@ Skills, and Subagents into each Run configuration and records the preset ID in
 the private `run.started` lifecycle evidence, but it does not update the Agent
 or append a profile revision. Chat and TUI apply the selected preset to every
 new prompt in that process and report the effective temporary status.
+The Web Composer uses the same Runtime projection for **Next run only**.
+Selecting a mode does not save the Agent. Its preset is hash-bound in the
+projection body/header and Prompt stream, then consumed only after a matching
+`run.started` event. A failure before Run creation keeps the selection for
+retry; refresh or changing Threads returns to the Agent default. Use
+**Edit Agent default** and save in Context for an explicit persistent revision.
 `/resume`, recovery, schedules, channels, Workflows, and experiments cannot
 select a temporary preset. An operator-decision continuation reuses the origin
 Run's recorded preset and fails closed if its revision, model, or capabilities

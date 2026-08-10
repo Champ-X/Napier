@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { EffectiveAgentCapabilityProjectionV1 } from "@napier/contracts/agent-capability-contract";
+import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
 import { getAgentCapabilities } from "./agent-capability-api";
 import { formatApiErrorMessage } from "./api-error";
@@ -10,6 +11,7 @@ export const SANDBOX_READY_EVENT = "napier:sandbox-ready";
 export function useAgentCapabilityProjection(
   agentId: string | undefined,
   agentRevision: number | undefined,
+  presetId?: AgentCapabilityPresetId,
 ) {
   const [projection, setProjection] =
     useState<EffectiveAgentCapabilityProjectionV1>();
@@ -23,7 +25,7 @@ export function useAgentCapabilityProjection(
     setLoading(true);
     setError(undefined);
     try {
-      const value = await getAgentCapabilities(agentId);
+      const value = await getAgentCapabilities(agentId, presetId);
       if (request === requestSequence.current) setProjection(value);
       return value;
     } catch (reason) {
@@ -34,7 +36,7 @@ export function useAgentCapabilityProjection(
     } finally {
       if (request === requestSequence.current) setLoading(false);
     }
-  }, [agentId]);
+  }, [agentId, presetId]);
 
   useEffect(() => {
     requestSequence.current += 1;

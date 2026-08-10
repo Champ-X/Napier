@@ -6591,16 +6591,6 @@ export interface CreateThreadRequest {
   title?: string;
   agentId?: string;
 }
-export interface PromptRequest {
-  text: string;
-  model?: ModelRef;
-  sourceContinuityRunId?: string;
-}
-
-export interface ResumeRunRequest {
-  runId?: string;
-  model?: ModelRef;
-}
 
 export interface SetGoalRequest {
   objective: string;
@@ -6613,6 +6603,7 @@ export interface CreateBranchRequest {
 }
 
 export * from "./execution-core.js";
+export type * from "./thread-execution.js";
 export type * from "./execution-channels.js";
 export * from "./execution-runs.js";
 export * from "./execution-workflows.js";

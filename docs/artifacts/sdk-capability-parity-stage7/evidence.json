@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "acf986cb51893e95e43f2c1c8bd2fe038ce0534db277312c9cb6af82e70f078e",
+      "stdoutSha256": "6e6031a452b1354dc267e8bc7a9ac1bed8f175f350ea546f21a11c62a78be672",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "037fe27016a2dbaa295bc2cc48be97653e30b062947439b6f8579fbce1244551",
-      "receiptSha256": "dc97de914dd57ab2e62b359966119b8325e8ff890d0c8e3e47cec5aa1b09aef9"
+      "evidenceSha256": "be8c92ded5425d463c7117dbd219caf017ba06246b95cf799a5b2ab6e8029771",
+      "receiptSha256": "4844a574a3f0000bec858cc80ab3659e81a7028c937425037518c54ccf759c32"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "9f979aac61aaa0ea96b5275964a7ba428bf1e5d0593ee62bffd9b490da3530bc",
+      "stdoutSha256": "0ff57c9d74f35f24714734a71b3b00a68309d414b3407657b3914113464e893c",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "7a463a83c2b7c35d30a1701957c2ae01bc2c22fe863aab34e4fca75143bcc395",
-      "receiptSha256": "bef9869403638762a9f00476eceb1345db1b63b1c76d468f72efe69b126da940"
+      "evidenceSha256": "4ef91a780d96683e3118255bb15193db72e24a929cad505bc3d7714114d2b8fd",
+      "receiptSha256": "39ad699466256086e0321a8d17f32fbb7527b23942c471e01baaa77a1424251c"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -520,16 +520,23 @@
         "apps/cli/test/terminal-browser-cli.test.ts",
         "apps/cli/test/tui-cli.test.ts",
         "apps/cli/test/tui-terminal.test.ts",
+        "apps/server/src/agent-capability-http.ts",
         "apps/server/src/app.ts",
         "apps/server/src/bootstrap-http.ts",
         "apps/server/src/bundled-skills.ts",
         "apps/server/src/credential-http.ts",
         "apps/server/src/sandbox-setup-http.ts",
         "apps/server/src/server-service-options.ts",
+        "apps/server/src/thread-execution-http-response.ts",
+        "apps/server/src/thread-execution-http-validation.ts",
+        "apps/server/src/thread-execution-http.ts",
+        "apps/server/test/agent-capability-http.test.ts",
         "apps/server/test/bootstrap-http.test.ts",
         "apps/server/test/bundled-skills.test.ts",
         "apps/server/test/node-debugger.test.ts",
         "apps/server/test/sandbox-setup-http.test.ts",
+        "apps/server/test/thread-capability-preset-http.test.ts",
+        "apps/server/test/thread-execution-http-validation.test.ts",
         "apps/web/src/AgentCapabilityStatusBadge.tsx",
         "apps/web/src/App.tsx",
         "apps/web/src/BrowserInspectorPanel.tsx",
@@ -565,8 +572,10 @@
         "apps/web/src/WelcomePanel.tsx",
         "apps/web/src/WorkbenchNotices.tsx",
         "apps/web/src/WorkspaceProcessLocalServiceRow.tsx",
+        "apps/web/src/agent-capability-api.ts",
         "apps/web/src/agent-capability-composer-summary.ts",
         "apps/web/src/agent-capability-composer.css",
+        "apps/web/src/api.ts",
         "apps/web/src/compiled-prompt-package-view.ts",
         "apps/web/src/composer-mode-view-model.ts",
         "apps/web/src/composer-readiness-types.ts",
@@ -590,6 +599,7 @@
         "apps/web/src/model-adapter-view.ts",
         "apps/web/src/model-context-envelope-copy.ts",
         "apps/web/src/model-context-envelope-view.ts",
+        "apps/web/src/next-run-capability-preset-execution.ts",
         "apps/web/src/node-debugger-event-view.ts",
         "apps/web/src/package-governance-event-view.ts",
         "apps/web/src/research-source-event-view.ts",
@@ -597,23 +607,28 @@
         "apps/web/src/sandbox-setup-view-model.ts",
         "apps/web/src/skill-lifecycle-event-view.ts",
         "apps/web/src/skill-load-event-view.ts",
+        "apps/web/src/stream-run-response-contract.ts",
         "apps/web/src/styles.css",
         "apps/web/src/task-narrative-view-model.ts",
+        "apps/web/src/thread-detail-view-state.ts",
         "apps/web/src/thread-location.ts",
         "apps/web/src/tool-event-view.ts",
         "apps/web/src/tool-result-reuse-event-view.ts",
         "apps/web/src/use-agent-capability-projection.ts",
         "apps/web/src/use-new-thread.ts",
+        "apps/web/src/use-next-run-capability-preset.ts",
         "apps/web/src/use-select-thread.ts",
         "apps/web/src/use-thread-trash.ts",
         "apps/web/src/use-workspace-view-model.ts",
         "apps/web/src/workspace-process-copy.ts",
         "apps/web/src/workspace-process-event-view.ts",
         "apps/web/src/workspace-process-view-model.ts",
+        "apps/web/test/ComposerCapabilityControl.test.tsx",
         "apps/web/test/ConversationArtifactCard.test.tsx",
         "apps/web/test/ConversationRecoveryCard.test.tsx",
         "apps/web/test/ConversationToolActivityCard.test.tsx",
         "apps/web/test/SandboxSetupCard.test.tsx",
+        "apps/web/test/agent-capability-api.test.ts",
         "apps/web/test/agent-capability-composer.test.ts",
         "apps/web/test/agent-capability-view.test.ts",
         "apps/web/test/browser-inspector-panel.test.ts",
@@ -651,8 +666,10 @@
         "apps/web/test/skill-load-event-view.test.ts",
         "apps/web/test/task-completion-summary.test.ts",
         "apps/web/test/task-narrative-view-model.test.ts",
+        "apps/web/test/temporary-capability-preset-api.test.ts",
         "apps/web/test/thread-location.test.ts",
         "apps/web/test/tool-event-view.test.ts",
+        "apps/web/test/use-next-run-capability-preset.test.ts",
         "apps/web/test/workbench-layout.test.ts",
         "apps/web/test/workspace-process-event-view.test.ts",
         "apps/web/test/workspace-process-view-model.test.ts",
@@ -717,6 +734,7 @@
         "packages/contracts/src/skill-load-validation.ts",
         "packages/contracts/src/skill-load.ts",
         "packages/contracts/src/skill-resource.ts",
+        "packages/contracts/src/thread-execution.ts",
         "packages/contracts/src/workspace-process.ts",
         "packages/contracts/test/agent-capability-contract.test.ts",
         "packages/contracts/test/research-source-evidence.test.ts",
@@ -1027,8 +1045,8 @@
       ],
       "files": {
         "README.md": {
-          "sha256": "32d6f10bbc868b2d45f857cfe6f6b9d309d462e0f0bdc802adf5945d93370cb2",
-          "lines": 6778
+          "sha256": "faa5bcf3b8d4ff30c03baec23ada8e638d365e2960237f0d96e0e68962a7ac75",
+          "lines": 6784
         },
         "apps/cli/src/cli-doctor-options.ts": {
           "sha256": "673d949b09e902f5042b2571ce2d97a8448b41804695a807add3b0005d7f8490",
@@ -1166,6 +1184,10 @@
           "sha256": "46cd8be0ac6d192900d9ef2f16bc0a84131f1246d06b95ec2609cc8c6c7dd8a2",
           "lines": 221
         },
+        "apps/server/src/agent-capability-http.ts": {
+          "sha256": "92cadbfbea92dab40b253ae54ef1ee19d32d1cfedaf40d328f1c3099e8dd4678",
+          "lines": 163
+        },
         "apps/server/src/app.ts": {
           "sha256": "fd98bca00a6c4161351d5bd65e0bfffce13bf2cbdf8e7595ad2201b188eed3c1",
           "lines": 14515
@@ -1190,6 +1212,22 @@
           "sha256": "da9d61d53564bb67eef5af96b8ca3c4a45e07d99c659ec4ca054cb48c5b10884",
           "lines": 17
         },
+        "apps/server/src/thread-execution-http-response.ts": {
+          "sha256": "6bc46583da2afa5293096204b2a07ee0fe4629176e94d7ab405b9b8b05d691bc",
+          "lines": 84
+        },
+        "apps/server/src/thread-execution-http-validation.ts": {
+          "sha256": "e9da8ea5e8a0535c7ffc92acf7ca02bb04164e31c12a1e1f6fbfc423a7801e55",
+          "lines": 79
+        },
+        "apps/server/src/thread-execution-http.ts": {
+          "sha256": "c0ee4def4f881f6f920fa9c566ff024100731e88ecec5153859604c5b67385a4",
+          "lines": 224
+        },
+        "apps/server/test/agent-capability-http.test.ts": {
+          "sha256": "86a1d0be5afc054f40a18614c3f752fb9bd4ef673e159c64324f929d2a7853e3",
+          "lines": 300
+        },
         "apps/server/test/bootstrap-http.test.ts": {
           "sha256": "e58978cbe88e6f139b3fe03216561dcc7daec9b65e8a407d3bd10cb0f6df542a",
           "lines": 269
@@ -1206,6 +1244,14 @@
           "sha256": "d999b39d9fb03a8b7c057716f0dedb1329598d6149e64fc6a844bdcdea27a7be",
           "lines": 263
         },
+        "apps/server/test/thread-capability-preset-http.test.ts": {
+          "sha256": "4365f4c87c8589565ee456ab7da6368c746c37da4506f9a551cdd408f591597b",
+          "lines": 118
+        },
+        "apps/server/test/thread-execution-http-validation.test.ts": {
+          "sha256": "bddb394b9b9430c1c57b2643b222db8177ffb5e88af45b6857331acadb4b5179",
+          "lines": 90
+        },
         "apps/web/src/App.tsx": {
           "sha256": "99e7f621f0d4fe831d2100caacecf9f8f4914e943020eb5c80ebfc88d0fbc6d8",
           "lines": 459
@@ -1219,12 +1265,12 @@
           "lines": 358
         },
         "apps/web/src/Composer.tsx": {
-          "sha256": "6c93809d141ad4a32aed5461a6cd1f5110d8b967a227599fea82ae49fd47e549",
-          "lines": 208
+          "sha256": "54ed903657042acd8ee601c7e38b025c2b6b6ff2bbdcf9e241af9b34e593a20a",
+          "lines": 244
         },
         "apps/web/src/ComposerCapabilityControl.tsx": {
-          "sha256": "90002cb585ce576c2b7792dc04627a04fa55960bd88f0051bae013255b8294c0",
-          "lines": 190
+          "sha256": "b127806823eb38382ddd47a2cf10039b0c7bc3d4d4757c64190fe087ee0ebac0",
+          "lines": 181
         },
         "apps/web/src/ContextOptionGroup.tsx": {
           "sha256": "22322df6b00c54467a06b80de5f392d55283b2e3ae67209484abcc1bed3730e4",
@@ -1342,29 +1388,37 @@
           "sha256": "3773556899de9cd040cc6d7d57ddcc6e0020c5f9eb0affa2a420625dc3f9fe7f",
           "lines": 55
         },
+        "apps/web/src/agent-capability-api.ts": {
+          "sha256": "958b41c14967577952b970837e950345fc9f053c0547844da43a869452d1a07c",
+          "lines": 38
+        },
         "apps/web/src/agent-capability-composer-summary.ts": {
           "sha256": "05422b6b9220d1b08119d8173a5970260b678a8c162fccc2e34850946860ae73",
           "lines": 45
         },
         "apps/web/src/agent-capability-composer.css": {
-          "sha256": "5b8ce877ae5114b498aed9cc2967c7aa61f74bdd15d95f558b5e4d4af14dea00",
-          "lines": 201
+          "sha256": "f12fc0b88f12de6c5ab7e9b745853aad328f6a0634fd77fb3b8af0d730738e92",
+          "lines": 240
+        },
+        "apps/web/src/api.ts": {
+          "sha256": "e8d6c0cbb1ccc175275d0a3167a69d843620645bc1456f91f2760ae40cf1709f",
+          "lines": 1918
         },
         "apps/web/src/compiled-prompt-package-view.ts": {
           "sha256": "5f6c943867fb263b09d55002f8e735e137b87e990903fe7d249acd7ffed5cf0d",
           "lines": 385
         },
         "apps/web/src/composer-mode-view-model.ts": {
-          "sha256": "83bace450e4eed209ba13466384a065d57c842fef17c61c3604328160c80e459",
-          "lines": 100
+          "sha256": "23ab87a07f29aeefdc92b3bdf59b8aef6a47f6595ddb31cf027e0121abee5572",
+          "lines": 103
         },
         "apps/web/src/composer-readiness-types.ts": {
           "sha256": "71a1daef6e8106adf33e069506620b62a4b5defc3111c409dc476eb6ed47217d",
           "lines": 48
         },
         "apps/web/src/composer-readiness-view-model.ts": {
-          "sha256": "c8d51c7b2e7625f4386c15d2014ac40e7d4004ab7c030b97258330f6962a60ea",
-          "lines": 269
+          "sha256": "3ef4ccd012a32342e23f26969ab2a42d19c1f1fdf9d4e958b4f34590048bbed7",
+          "lines": 276
         },
         "apps/web/src/context-copy.ts": {
           "sha256": "80678abad65858c305ef20635acf20f2ef8503b010b9120fa298474774185326",
@@ -1442,6 +1496,10 @@
           "sha256": "adfd156ddb876b03e3d1cefcb7be3bbcd6c197b84dc2fe91f8cc61e84f460b6c",
           "lines": 292
         },
+        "apps/web/src/next-run-capability-preset-execution.ts": {
+          "sha256": "5047bfef1155a7faa6d1c150119280a2f142d5879aa43a653cfa50e38157b09b",
+          "lines": 53
+        },
         "apps/web/src/node-debugger-event-view.ts": {
           "sha256": "451444de7699b643a28950415a8b436bcf91c2853f3bc83cb59b9324bea11d1b",
           "lines": 353
@@ -1470,6 +1528,10 @@
           "sha256": "7f7972504bb121f0b051b055094853821b86e49546bc6913acc9c4c017b82fb9",
           "lines": 242
         },
+        "apps/web/src/stream-run-response-contract.ts": {
+          "sha256": "3657ab5d8074c4042e0d53a904e5b7a31784f60ca51168006a1f0da24c92cba5",
+          "lines": 167
+        },
         "apps/web/src/styles.css": {
           "sha256": "0459a124bcc2dd8fe75eba4eb269ed1fa03d27ca3a8ccb964838fe5b67224a02",
           "lines": 15865
@@ -1477,6 +1539,10 @@
         "apps/web/src/task-narrative-view-model.ts": {
           "sha256": "9cfdee3bc75a7eb83a5f8266dda6a5485b7418f8bb142b40af2c08d7f4c9462c",
           "lines": 326
+        },
+        "apps/web/src/thread-detail-view-state.ts": {
+          "sha256": "e23c15f17bb0a6573886aa5fbd80694ec04776b20940f7782c03a0aa66cbea4f",
+          "lines": 41
         },
         "apps/web/src/thread-location.ts": {
           "sha256": "6b7267d982ea96b13581d3b3d1a0ad7c9238d3cc479830fa080dd1746441257e",
@@ -1491,12 +1557,16 @@
           "lines": 104
         },
         "apps/web/src/use-agent-capability-projection.ts": {
-          "sha256": "088d0229c0ca647fdda8155d0d6960c75a344f47834f049c478fb03282ea2d47",
-          "lines": 60
+          "sha256": "29f0a070876060812b7908bf4203fe5b5b46fbcf97157440261daf1dc41397bd",
+          "lines": 62
         },
         "apps/web/src/use-new-thread.ts": {
           "sha256": "d1e3abcd451e3de92f58f837f7ede9398d68d06ab6dd3933e427ee2f4ba113fb",
           "lines": 31
+        },
+        "apps/web/src/use-next-run-capability-preset.ts": {
+          "sha256": "7962ededde01d4b3e8f9809f04d59eb2eb4eb28f760a0a65136a4e84db410ce0",
+          "lines": 26
         },
         "apps/web/src/use-select-thread.ts": {
           "sha256": "44bb38b34445ef24f6693ffe69dcbc949a93aea259951d175b673216c442cafe",
@@ -1507,7 +1577,7 @@
           "lines": 108
         },
         "apps/web/src/use-workspace-view-model.ts": {
-          "sha256": "cdff82c8c0770df51a3d0dc59f79cd3bbd3328f95925a4d6b8336ff157bce3d9",
+          "sha256": "4700174a60f1ad95241ce1c673fedbaa2c4b154f25ea88249b858283fca3c61b",
           "lines": 2359
         },
         "apps/web/src/workspace-process-copy.ts": {
@@ -1521,6 +1591,10 @@
         "apps/web/src/workspace-process-view-model.ts": {
           "sha256": "9c5c9c829df6857b8d926106af1521be15de7ae43954a29ecbfed3d2e98def1c",
           "lines": 254
+        },
+        "apps/web/test/ComposerCapabilityControl.test.tsx": {
+          "sha256": "fae123d14b756f160a983e854798ea0bdf2ee9d3bc4ebe0e2ceea4d4b546c771",
+          "lines": 228
         },
         "apps/web/test/ConversationArtifactCard.test.tsx": {
           "sha256": "3c6631db75f6a60d539a16101a9aba10d99eef84805aaa4013b0646f146b01ef",
@@ -1537,6 +1611,10 @@
         "apps/web/test/SandboxSetupCard.test.tsx": {
           "sha256": "5f4675275b4244fe319e595cc225fe68b2d4475bfafd3ff519843bce926e1d3d",
           "lines": 176
+        },
+        "apps/web/test/agent-capability-api.test.ts": {
+          "sha256": "0494903a661ab25ccefd4b48317b6ddfe6d261c5bc1a9548439bcdd5e6028e5b",
+          "lines": 185
         },
         "apps/web/test/agent-capability-composer.test.ts": {
           "sha256": "f6a5951f14193948ac7eee06ad37214b5cf2606696ca828f9b359e08cc5c0307",
@@ -1686,6 +1764,10 @@
           "sha256": "29b7fad0a2d6f1e3fcd5d1e1f26c13358befdc4e50d50e4d121c51b2333a67c8",
           "lines": 512
         },
+        "apps/web/test/temporary-capability-preset-api.test.ts": {
+          "sha256": "8cefb62d26d27bd15fbe6540b28cf361d3a2c096e0c045858609e772d7c7e84e",
+          "lines": 126
+        },
         "apps/web/test/thread-location.test.ts": {
           "sha256": "eb96c47c0ff08b20302534a34a391c9ece49a09412d8c80fc2c2efe4f25e6adc",
           "lines": 53
@@ -1693,6 +1775,10 @@
         "apps/web/test/tool-event-view.test.ts": {
           "sha256": "c470342052f378ff826f8e0e2d14ec59ed7ab81803196776d22c6ea9e4c5d1fc",
           "lines": 1690
+        },
+        "apps/web/test/use-next-run-capability-preset.test.ts": {
+          "sha256": "7ada1662f50abaa2bd778516e191c1b0809c0112ddef58a6c4a0e0cefc8e13f0",
+          "lines": 128
         },
         "apps/web/test/workbench-layout.test.ts": {
           "sha256": "02ff5b0a6e45c57c4fc6a8af26fde2cba7b79bb75e0779bbf46c32481369ef27",
@@ -1711,12 +1797,12 @@
           "lines": 24
         },
         "docs/architecture-budget.json": {
-          "sha256": "c466d77c4d3785cffca2bffba9241e4dad64899a09ba704ffebdcd8005185637",
+          "sha256": "d721ee118ef1a6bd72c80ca1e45050bad919c9efaeae2efda180f8ccddf2beb9",
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "715f93f7441b688c5586e6fcd86b61b83b25bee28b8143b8634b5976bf888d45",
-          "lines": 9030
+          "sha256": "61fe22dcd8f46db9baed516a1c4f1da336fa96c9ea99248cc39dc42bb6b507d6",
+          "lines": 9037
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -1763,7 +1849,7 @@
           "lines": 80
         },
         "docs/artifacts/management-openapi-0.1.0.json": {
-          "sha256": "f01f53829297d3d303127574824bcb8b3848da4a9569f59bd04ce02fbeb61d16",
+          "sha256": "390d7ffa0995e7ee50b7b4a2e52f4aba291a318ab3e3d92feb0fa431c598d743",
           "lines": 15507
         },
         "docs/artifacts/management-openapi-compatibility-0.1.0.json": {
@@ -1811,7 +1897,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "777d3823be54f967b8d104e45d46e283b2bd307b14cdb0746d63f3565700612f",
+          "sha256": "195cfa3101f670d416762bbe82a29f212d7806b2e3da7818bd93e9463687d982",
           "lines": 871
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -1823,11 +1909,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "037fe27016a2dbaa295bc2cc48be97653e30b062947439b6f8579fbce1244551",
+          "sha256": "be8c92ded5425d463c7117dbd219caf017ba06246b95cf799a5b2ab6e8029771",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "7a463a83c2b7c35d30a1701957c2ae01bc2c22fe863aab34e4fca75143bcc395",
+          "sha256": "4ef91a780d96683e3118255bb15193db72e24a929cad505bc3d7714114d2b8fd",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -1855,15 +1941,15 @@
           "lines": 104
         },
         "docs/artifacts/web-dist-0.1.0.sha256": {
-          "sha256": "def2f43d6a41e35348fa2b6277a020e28473224684c9f2bb5f2cb005144f7d9a",
-          "lines": 137
+          "sha256": "3dae1e00f561f21a01740a71ede2e176998421ca96ebb3cab1589ecadbe8f457",
+          "lines": 139
         },
         "docs/artifacts/web-dist-audit-0.1.0.json": {
-          "sha256": "3322754fbb283883a72cce48a0d9d21469c055ec4c844fc11c009e8390b1c315",
+          "sha256": "d11e50961bd1a364611448bf46e19cb6cd07052a71cd59c1592d9a8bfe672262",
           "lines": 18
         },
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json": {
-          "sha256": "92a11651684732ce134e51a76da747a08604cc1208d863e4a1bd0aea82a39475",
+          "sha256": "cc181007a4224e9f96527c85cd85436037da77bc791fec26fdd4a3704a3ac0b9",
           "lines": 202
         },
         "docs/napier-interview-deep-dive.zh-CN.md": {
@@ -1887,16 +1973,16 @@
           "lines": 303
         },
         "packages/contracts/src/agent-capability-contract.ts": {
-          "sha256": "43403e6b64b11cb9e8536fe5f68c7de9dff569b4d5d9499565b0dbb7fd5a1de8",
-          "lines": 328
+          "sha256": "e9d2ab4e6e7eabfeb95976963a0815ab802d8946da4ebbe37ea7cd8b6a28160c",
+          "lines": 341
         },
         "packages/contracts/src/agent-tool-names.ts": {
           "sha256": "c251fcd9538827e6530d4227224964248d0f5223583b34d427c2aee6facc41e7",
           "lines": 49
         },
         "packages/contracts/src/index.ts": {
-          "sha256": "06269a68f54b8d014fd473c756edb2371c6c2d82045e636d6e016dfde7e004b9",
-          "lines": 6747
+          "sha256": "ced74ea09b16edf8ed60bc3d6a4badeb57ec9635d65c7dc15ea443e1f22f7c24",
+          "lines": 6738
         },
         "packages/contracts/src/model-context-envelope.ts": {
           "sha256": "da22b7e54bda888f2d34ed9b9e1fe63c90fd7d41d6ff6b01dfc6aa67afe234d9",
@@ -1934,13 +2020,17 @@
           "sha256": "13a7602714e820957fdf182f7f05ba509bad94d0ad3fcd77e6116eca05f07e21",
           "lines": 306
         },
+        "packages/contracts/src/thread-execution.ts": {
+          "sha256": "abc1db9bbf60007a361c337f4b6ab0d7a6a56efd97f85403f11b17456ab30594",
+          "lines": 14
+        },
         "packages/contracts/src/workspace-process.ts": {
           "sha256": "2d4805e2cf77e07095ba393638983d316c19dc0406febf089550799eeb476040",
           "lines": 280
         },
         "packages/contracts/test/agent-capability-contract.test.ts": {
-          "sha256": "c960c1358a313641344d2502acf8b61acf4d5444c5cbd83488a2668ee44ecf71",
-          "lines": 340
+          "sha256": "ba58f5457a3e6142df2f4899005f40638f4bb2cb033d3f80999bc6e5e6421506",
+          "lines": 352
         },
         "packages/contracts/test/research-source-evidence.test.ts": {
           "sha256": "59d9c9b1236a95605ee95aeb5b4dca1cdf791673015248a7655f700a6db0c044",
@@ -1975,8 +2065,8 @@
           "lines": 475
         },
         "packages/runtime/src/agent-capability-service.ts": {
-          "sha256": "f069255201e5c273af3408f2bc31e5338d1a827c0cc02250f4a42f6f36336fc1",
-          "lines": 438
+          "sha256": "463ee1526299df84433ed7ea04e89c86fab85da6b6521e3a36dc029124c85bc1",
+          "lines": 459
         },
         "packages/runtime/src/agent-message-experiment-source.ts": {
           "sha256": "e54a2138ef5baf8846b9463cce5612bcdf17baa93698a1ef79570da6a215c3e7",
@@ -3099,8 +3189,8 @@
           "lines": 68
         },
         "scripts/run-web-ui-e2e.mjs": {
-          "sha256": "05d37a355d9d47fd1fcfaace670bbac35999479b553ab057cd3630a1b62b4b4d",
-          "lines": 492
+          "sha256": "7e343d33d10d3cc701ec43decac26320709b5d30dd5b2aee5162edbb29045ccd",
+          "lines": 511
         },
         "scripts/sdk-capability-parity-evidence.mjs": {
           "sha256": "9dacb8eae28a8d2e090e923dcb72a5594de727f5169f27cd5de03fc0f902912e",
@@ -3139,8 +3229,8 @@
           "lines": 196
         },
         "scripts/web-ui-e2e-narrative.mjs": {
-          "sha256": "5b1bbe61f6c3fce2c1f917441876e2d1b2addbb07ab48cd3806b4adc494acc24",
-          "lines": 186
+          "sha256": "06b160c911ad3a457df99829763d2177c5dd2e4ce955447d205de9b08328454d",
+          "lines": 198
         },
         "scripts/web-ui-e2e-runtime.mjs": {
           "sha256": "cfbbc6d48fb428c96fdf8a67ab35f2f0a228ac63fdc4e861cc6f49abba94c0f9",
@@ -3184,7 +3274,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "0dac79f910569e2d3fc5fc0e138c050196faf564d08db37ad8fef73ee8f0ae79"
+      "manifestSha256": "f4fa11ca133e212e550803751e61f1604cd4b2a4c5a7be73eced0a793719145a"
     },
     "executionClosure": {
       "algorithm": {
@@ -5312,8 +5402,8 @@
               "lines": 12
             },
             "apps/server/dist/agent-capability-http.js": {
-              "sha256": "894f0b1a7b6ab5f95f447a26bd4c9fbdc183f0248be28918f01bd0aaad5e3caf",
-              "lines": 78
+              "sha256": "38aa2bd134245b21bb736c5005dd0949b1d69a3b52a918ab276b58307a11b7ca",
+              "lines": 98
             },
             "apps/server/dist/agent-message-experiment-http.js": {
               "sha256": "373002640008888bb1d1cecdafb354236e2616e2d0f51da969572ed60a4b5c4c",
@@ -5648,16 +5738,16 @@
               "lines": 139
             },
             "apps/server/dist/thread-execution-http-response.js": {
-              "sha256": "2cd1d94b72a8f2dd97cb9005ac3e0c33af6c7ff91329c2a3e25582bf8dfdc38a",
-              "lines": 43
+              "sha256": "445deef3dedb1605c754833f22baacca82b424e20d7f1ba00d13da12e38c41e5",
+              "lines": 46
             },
             "apps/server/dist/thread-execution-http-validation.js": {
-              "sha256": "a43b18f844b0b5631b78b1536a06a0091c9b2f18d8235a206916a03ce249bf42",
-              "lines": 52
+              "sha256": "1d9dc8e2d39f20323e3d07fee3fc448a5cf23ad504f07c6c2c53d4a72c98f113",
+              "lines": 63
             },
             "apps/server/dist/thread-execution-http.js": {
-              "sha256": "62ebc4fbf0f285643b5af35bc7b4c3f22a13e5f65369d2a45d0d440251a33690",
-              "lines": 122
+              "sha256": "621cad51de5d6d3742de87d318cbd3b24319aefa1618af0fba9c5c26bea54c15",
+              "lines": 125
             },
             "apps/server/dist/thread-lifecycle-http-response.js": {
               "sha256": "29f03bce2190466a25eadfae478bc718e4289a63a0a86648b0fed05d3bb201c0",
@@ -5716,8 +5806,8 @@
               "lines": 8
             },
             "apps/server/src/agent-capability-http.ts": {
-              "sha256": "28f2f3159c598601824d44e88173e180cf9cd71f4ffed46cfdd5a42f2a1b9da5",
-              "lines": 128
+              "sha256": "92cadbfbea92dab40b253ae54ef1ee19d32d1cfedaf40d328f1c3099e8dd4678",
+              "lines": 163
             },
             "apps/server/src/agent-message-experiment-http.ts": {
               "sha256": "f869edc57adfb7417a3fcc8cf5b55c973c4d61f00a5a6335511f3447234378aa",
@@ -6052,16 +6142,16 @@
               "lines": 273
             },
             "apps/server/src/thread-execution-http-response.ts": {
-              "sha256": "4dc93c8ae30341688502a8845a10d7f632e8b792b516f8399418d35374a7250c",
-              "lines": 80
+              "sha256": "6bc46583da2afa5293096204b2a07ee0fe4629176e94d7ab405b9b8b05d691bc",
+              "lines": 84
             },
             "apps/server/src/thread-execution-http-validation.ts": {
-              "sha256": "e8589de52db13488ce6873226cddb575dac8fdb06d27748b3bd260a7b892750a",
-              "lines": 61
+              "sha256": "e9da8ea5e8a0535c7ffc92acf7ca02bb04164e31c12a1e1f6fbfc423a7801e55",
+              "lines": 79
             },
             "apps/server/src/thread-execution-http.ts": {
-              "sha256": "3974be5980e41099c8584be30f3657019ca6f87d3a1dc75bdfc67c604d776c35",
-              "lines": 220
+              "sha256": "c0ee4def4f881f6f920fa9c566ff024100731e88ecec5153859604c5b67385a4",
+              "lines": 224
             },
             "apps/server/src/thread-lifecycle-http-response.ts": {
               "sha256": "4f5068c7f550691352f89d2dd266889f3f1c578652521ff6766722de0209fb8b",
@@ -6124,8 +6214,8 @@
               "lines": 184
             },
             "packages/contracts/dist/agent-capability-contract.js": {
-              "sha256": "4dba56c159e7483d26ed4e6335969a521881329cf89e9e730a3a688ddfbfac42",
-              "lines": 172
+              "sha256": "d139ef0cd9c05709e70057887880fbe210b9b90880d127f2acf0ab3e061abea5",
+              "lines": 178
             },
             "packages/contracts/dist/agent-tool-names.js": {
               "sha256": "4a53076776caccbdf47234aeedbfe0affc61fe275fb728aa8be19131cfb7edc0",
@@ -6220,8 +6310,8 @@
               "lines": 303
             },
             "packages/contracts/src/agent-capability-contract.ts": {
-              "sha256": "43403e6b64b11cb9e8536fe5f68c7de9dff569b4d5d9499565b0dbb7fd5a1de8",
-              "lines": 328
+              "sha256": "e9d2ab4e6e7eabfeb95976963a0815ab802d8946da4ebbe37ea7cd8b6a28160c",
+              "lines": 341
             },
             "packages/contracts/src/agent-tool-names.ts": {
               "sha256": "c251fcd9538827e6530d4227224964248d0f5223583b34d427c2aee6facc41e7",
@@ -6260,8 +6350,8 @@
               "lines": 439
             },
             "packages/contracts/src/index.ts": {
-              "sha256": "06269a68f54b8d014fd473c756edb2371c6c2d82045e636d6e016dfde7e004b9",
-              "lines": 6747
+              "sha256": "ced74ea09b16edf8ed60bc3d6a4badeb57ec9635d65c7dc15ea443e1f22f7c24",
+              "lines": 6738
             },
             "packages/contracts/src/management-http.ts": {
               "sha256": "d6ac585f05200d8850edb1ea79522bed1dbe6190fdf80d0271df8f660fd2ca27",
@@ -6320,8 +6410,8 @@
               "lines": 314
             },
             "packages/runtime/dist/agent-capability-service.js": {
-              "sha256": "b21d68e29e1f89fc51007ea551bc551fe7aa85171e35000f720bc082ed31a35a",
-              "lines": 319
+              "sha256": "a112e454ba37ccdb82d3605ddb06753663f36beffa8b496d198ae3d0b4c9b313",
+              "lines": 329
             },
             "packages/runtime/dist/agent-capability-store-mutations.js": {
               "sha256": "d71f8d5e9baf899d92e018b5214d0a82728fe800b33a7ca10f27235e1bc64828",
@@ -8720,8 +8810,8 @@
               "lines": 475
             },
             "packages/runtime/src/agent-capability-service.ts": {
-              "sha256": "f069255201e5c273af3408f2bc31e5338d1a827c0cc02250f4a42f6f36336fc1",
-              "lines": 438
+              "sha256": "463ee1526299df84433ed7ea04e89c86fab85da6b6521e3a36dc029124c85bc1",
+              "lines": 459
             },
             "packages/runtime/src/agent-capability-store-mutations.ts": {
               "sha256": "689c17f83e485ac2164d59b3cf99258fcac0d568ed31d19783b3ab6f187016c1",
@@ -11148,7 +11238,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "799a126598b7b18b7e1a74808e93f06864b00cc61946468be066b31e47a15cb8"
+          "manifestSha256": "ecdea48f788ff12a5d59fcac3a1766773981968e06ed0fc24b8f8e01eb7e69a5"
         },
         "productionServerTrace": {
           "roots": [
@@ -12679,8 +12769,8 @@
           },
           "files": {
             "apps/server/dist/agent-capability-http.js": {
-              "sha256": "894f0b1a7b6ab5f95f447a26bd4c9fbdc183f0248be28918f01bd0aaad5e3caf",
-              "lines": 78
+              "sha256": "38aa2bd134245b21bb736c5005dd0949b1d69a3b52a918ab276b58307a11b7ca",
+              "lines": 98
             },
             "apps/server/dist/agent-message-experiment-http.js": {
               "sha256": "373002640008888bb1d1cecdafb354236e2616e2d0f51da969572ed60a4b5c4c",
@@ -13019,16 +13109,16 @@
               "lines": 139
             },
             "apps/server/dist/thread-execution-http-response.js": {
-              "sha256": "2cd1d94b72a8f2dd97cb9005ac3e0c33af6c7ff91329c2a3e25582bf8dfdc38a",
-              "lines": 43
+              "sha256": "445deef3dedb1605c754833f22baacca82b424e20d7f1ba00d13da12e38c41e5",
+              "lines": 46
             },
             "apps/server/dist/thread-execution-http-validation.js": {
-              "sha256": "a43b18f844b0b5631b78b1536a06a0091c9b2f18d8235a206916a03ce249bf42",
-              "lines": 52
+              "sha256": "1d9dc8e2d39f20323e3d07fee3fc448a5cf23ad504f07c6c2c53d4a72c98f113",
+              "lines": 63
             },
             "apps/server/dist/thread-execution-http.js": {
-              "sha256": "62ebc4fbf0f285643b5af35bc7b4c3f22a13e5f65369d2a45d0d440251a33690",
-              "lines": 122
+              "sha256": "621cad51de5d6d3742de87d318cbd3b24319aefa1618af0fba9c5c26bea54c15",
+              "lines": 125
             },
             "apps/server/dist/thread-lifecycle-http-response.js": {
               "sha256": "29f03bce2190466a25eadfae478bc718e4289a63a0a86648b0fed05d3bb201c0",
@@ -13087,8 +13177,8 @@
               "lines": 8
             },
             "apps/server/src/agent-capability-http.ts": {
-              "sha256": "28f2f3159c598601824d44e88173e180cf9cd71f4ffed46cfdd5a42f2a1b9da5",
-              "lines": 128
+              "sha256": "92cadbfbea92dab40b253ae54ef1ee19d32d1cfedaf40d328f1c3099e8dd4678",
+              "lines": 163
             },
             "apps/server/src/agent-message-experiment-http.ts": {
               "sha256": "f869edc57adfb7417a3fcc8cf5b55c973c4d61f00a5a6335511f3447234378aa",
@@ -13427,16 +13517,16 @@
               "lines": 273
             },
             "apps/server/src/thread-execution-http-response.ts": {
-              "sha256": "4dc93c8ae30341688502a8845a10d7f632e8b792b516f8399418d35374a7250c",
-              "lines": 80
+              "sha256": "6bc46583da2afa5293096204b2a07ee0fe4629176e94d7ab405b9b8b05d691bc",
+              "lines": 84
             },
             "apps/server/src/thread-execution-http-validation.ts": {
-              "sha256": "e8589de52db13488ce6873226cddb575dac8fdb06d27748b3bd260a7b892750a",
-              "lines": 61
+              "sha256": "e9da8ea5e8a0535c7ffc92acf7ca02bb04164e31c12a1e1f6fbfc423a7801e55",
+              "lines": 79
             },
             "apps/server/src/thread-execution-http.ts": {
-              "sha256": "3974be5980e41099c8584be30f3657019ca6f87d3a1dc75bdfc67c604d776c35",
-              "lines": 220
+              "sha256": "c0ee4def4f881f6f920fa9c566ff024100731e88ecec5153859604c5b67385a4",
+              "lines": 224
             },
             "apps/server/src/thread-lifecycle-http-response.ts": {
               "sha256": "4f5068c7f550691352f89d2dd266889f3f1c578652521ff6766722de0209fb8b",
@@ -13499,8 +13589,8 @@
               "lines": 184
             },
             "packages/contracts/dist/agent-capability-contract.js": {
-              "sha256": "4dba56c159e7483d26ed4e6335969a521881329cf89e9e730a3a688ddfbfac42",
-              "lines": 172
+              "sha256": "d139ef0cd9c05709e70057887880fbe210b9b90880d127f2acf0ab3e061abea5",
+              "lines": 178
             },
             "packages/contracts/dist/agent-tool-names.js": {
               "sha256": "4a53076776caccbdf47234aeedbfe0affc61fe275fb728aa8be19131cfb7edc0",
@@ -13595,8 +13685,8 @@
               "lines": 303
             },
             "packages/contracts/src/agent-capability-contract.ts": {
-              "sha256": "43403e6b64b11cb9e8536fe5f68c7de9dff569b4d5d9499565b0dbb7fd5a1de8",
-              "lines": 328
+              "sha256": "e9d2ab4e6e7eabfeb95976963a0815ab802d8946da4ebbe37ea7cd8b6a28160c",
+              "lines": 341
             },
             "packages/contracts/src/agent-tool-names.ts": {
               "sha256": "c251fcd9538827e6530d4227224964248d0f5223583b34d427c2aee6facc41e7",
@@ -13635,8 +13725,8 @@
               "lines": 439
             },
             "packages/contracts/src/index.ts": {
-              "sha256": "06269a68f54b8d014fd473c756edb2371c6c2d82045e636d6e016dfde7e004b9",
-              "lines": 6747
+              "sha256": "ced74ea09b16edf8ed60bc3d6a4badeb57ec9635d65c7dc15ea443e1f22f7c24",
+              "lines": 6738
             },
             "packages/contracts/src/management-http.ts": {
               "sha256": "d6ac585f05200d8850edb1ea79522bed1dbe6190fdf80d0271df8f660fd2ca27",
@@ -13695,8 +13785,8 @@
               "lines": 314
             },
             "packages/runtime/dist/agent-capability-service.js": {
-              "sha256": "b21d68e29e1f89fc51007ea551bc551fe7aa85171e35000f720bc082ed31a35a",
-              "lines": 319
+              "sha256": "a112e454ba37ccdb82d3605ddb06753663f36beffa8b496d198ae3d0b4c9b313",
+              "lines": 329
             },
             "packages/runtime/dist/agent-capability-store-mutations.js": {
               "sha256": "d71f8d5e9baf899d92e018b5214d0a82728fe800b33a7ca10f27235e1bc64828",
@@ -16087,8 +16177,8 @@
               "lines": 475
             },
             "packages/runtime/src/agent-capability-service.ts": {
-              "sha256": "f069255201e5c273af3408f2bc31e5338d1a827c0cc02250f4a42f6f36336fc1",
-              "lines": 438
+              "sha256": "463ee1526299df84433ed7ea04e89c86fab85da6b6521e3a36dc029124c85bc1",
+              "lines": 459
             },
             "packages/runtime/src/agent-capability-store-mutations.ts": {
               "sha256": "689c17f83e485ac2164d59b3cf99258fcac0d568ed31d19783b3ab6f187016c1",
@@ -18507,7 +18597,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "2184fdde7852cde08e0aeb653bb0979e296d43e5e5c6e2413fae45f78e24c3d0"
+          "manifestSha256": "c9c5fb72b73673e08b4b304983a9388468720051465f86737af1012dfa9ecf6e"
         }
       },
       "excludedCategories": [
@@ -18536,9 +18626,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "33fb62890e031c6dc2b07cc2fda81b2d28d34d533d1e8bb06d95e3bedfc51504"
+      "manifestSha256": "b2ebf6d2509aaefee17648de8793b1c1c2e5bf1cf723bf5747a412e14d2e5658"
     },
-    "manifestSha256": "4b37743edbe8516062b3e88117bf3ed4d5f711262dfedc3f4762377b1cb3a730"
+    "manifestSha256": "c50fc65fea57d632c9f8121279bb0aa711dea667ba9fffaf53bce2d527f64b7c"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -18726,11 +18816,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "037fe27016a2dbaa295bc2cc48be97653e30b062947439b6f8579fbce1244551"
+      "sha256": "be8c92ded5425d463c7117dbd219caf017ba06246b95cf799a5b2ab6e8029771"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "7a463a83c2b7c35d30a1701957c2ae01bc2c22fe863aab34e4fca75143bcc395"
+      "sha256": "4ef91a780d96683e3118255bb15193db72e24a929cad505bc3d7714114d2b8fd"
     }
   }
 }

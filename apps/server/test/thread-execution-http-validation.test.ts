@@ -69,4 +69,22 @@ describe("Thread execution HTTP validation", () => {
       }),
     ).toBeUndefined();
   });
+
+  it("accepts only a shared temporary capability preset ID", () => {
+    expect(
+      parsePromptRequest({
+        text: "Use one temporary mode.",
+        capabilityPreset: "safe_automation",
+      }),
+    ).toEqual({
+      text: "Use one temporary mode.",
+      capabilityPreset: "safe_automation",
+    });
+    expect(
+      parsePromptRequest({
+        text: "Reject unknown authority.",
+        capabilityPreset: "unrestricted_everything",
+      }),
+    ).toBeUndefined();
+  });
 });

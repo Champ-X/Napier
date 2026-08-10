@@ -3,6 +3,10 @@ import { homedir } from "node:os";
 import path from "node:path";
 
 import { AGENT_TOOL_NAMES, type AgentProfile } from "@napier/contracts";
+import {
+  agentCapabilityPresetUpdate,
+  type AgentCapabilityPresetId,
+} from "@napier/contracts/agent-capabilities";
 import type {
   CapabilityDriftState,
   CapabilityReadinessRecord,
@@ -49,22 +53,35 @@ export class AgentCapabilityService {
 
   async project(
     agentId: string,
+    presetId?: AgentCapabilityPresetId,
   ): Promise<EffectiveAgentCapabilityProjectionV1> {
     const profile = this.store.getAgent(agentId);
     const bindingLookup = this.store.getAgentCapabilityBinding(
       agentId,
       profile.revision,
     );
-    return this.projectSnapshot(profile, bindingLookup);
+    return this.projectSnapshot(
+      profile,
+      bindingLookup,
+      presetId
+        ? {
+            ...profile,
+            ...agentCapabilityPresetUpdate(presetId),
+          }
+        : profile,
+      presetId,
+    );
   }
 
   private async projectSnapshot(
-    profile: AgentProfile,
+    persistedProfile: AgentProfile,
     bindingLookup: CapabilityBindingLookup,
+    profile: AgentProfile = persistedProfile,
+    presetId?: AgentCapabilityPresetId,
   ): Promise<EffectiveAgentCapabilityProjectionV1> {
     const binding =
       bindingLookup.status === "valid" ? bindingLookup.binding : undefined;
-    const restorePreview = createCapabilityRestorePreview(profile);
+    const restorePreview = createCapabilityRestorePreview(persistedProfile);
     const skillInspection = await inspectSkillReadiness(
       this.store.workspaceRoot,
       profile.enabledSkills,
@@ -89,7 +106,7 @@ export class AgentCapabilityService {
       ...skillInspection.readiness,
       await this.getSandboxReadiness(),
     ].sort((left, right) => compareCanonicalText(left.id, right.id));
-    const driftState = capabilityDriftState(bindingLookup, profile);
+    const driftState = capabilityDriftState(bindingLookup, persistedProfile);
     const projection = {
       kind: "napier.effective-agent-capabilities" as const,
       schemaVersion: 1 as const,
@@ -111,6 +128,7 @@ export class AgentCapabilityService {
       runtimeExposedTools: sortedUnique(runtimeExposedTools),
       configuredSkills: sortedUnique(profile.enabledSkills),
       configuredSubagents: sortedUnique(profile.enabledSubagents ?? []),
+      ...(presetId ? { capabilityPreset: presetId } : {}),
       readiness,
       restorePreview,
     };
@@ -429,6 +447,9 @@ function projectionHashPayload(
     runtimeExposedTools: projection.runtimeExposedTools,
     configuredSkills: projection.configuredSkills,
     configuredSubagents: projection.configuredSubagents,
+    ...(projection.capabilityPreset
+      ? { capabilityPreset: projection.capabilityPreset }
+      : {}),
     readiness: projection.readiness,
   };
 }

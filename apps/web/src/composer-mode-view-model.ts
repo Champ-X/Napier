@@ -12,6 +12,7 @@ export interface ComposerMode {
   label: string;
   summary: string;
   active: boolean;
+  temporary: boolean;
   requiresSandbox: boolean;
 }
 
@@ -39,13 +40,15 @@ export function composerModes(
         "toolPolicy" | "enabledTools" | "enabledSkills" | "enabledSubagents"
       >
     | undefined,
+  selectedPreset?: AgentCapabilityPresetId,
 ): ComposerMode[] {
   const activeId = profile ? agentCapabilityStatus(profile).presetId : "custom";
   return AGENT_CAPABILITY_PRESETS.map((preset) => ({
     id: preset.id,
     label: preset.label,
     summary: preset.summary,
-    active: preset.id === activeId,
+    active: preset.id === (selectedPreset ?? activeId),
+    temporary: preset.id === selectedPreset,
     requiresSandbox: SANDBOX_PRESETS.has(preset.id),
   }));
 }

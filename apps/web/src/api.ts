@@ -143,7 +143,6 @@ import {
   NapierStreamFrameIdError,
   NapierStreamFrameOrderError,
   NapierStreamRunIdentityError,
-  NapierStreamResponseContractError,
   NapierStreamSnapshotEventError,
   NapierStreamSnapshotMissingError,
   NapierStreamSnapshotRunError,
@@ -156,6 +155,7 @@ import {
   throwNapierApiError,
 } from "./api-error";
 import { type ParsedSseJsonRecord, readSseJsonRecords } from "./sse-json";
+import { type StreamRunExpectation, verifyStreamRunPresetEvidence, verifyStreamRunResponseContract } from "./stream-run-response-contract";
 
 const TERMINAL_RUN_STATUSES = new Set([
   "completed",
@@ -221,8 +221,6 @@ const THREAD_DETAIL_ARRAY_FIELDS = [
   "operatorDecisions",
 ] as const;
 const SHA256 = /^[a-f0-9]{64}$/;
-const RUN_STREAM_ERROR_MESSAGE = "Run failed while streaming.";
-const RUN_STREAM_ERROR_CODE = "run_failed";
 
 export function getHealth(): Promise<HealthResponse> {
   return requestJson("/api/health");
@@ -1272,6 +1270,9 @@ export async function streamPrompt(
       kind: "prompt",
       threadId,
       ...(body.model ? { model: body.model } : {}),
+      ...(body.capabilityPreset
+        ? { capabilityPreset: body.capabilityPreset }
+        : {}),
     },
     onFrame,
   );
@@ -1311,24 +1312,6 @@ export async function continueOperatorDecision(
     onFrame,
   );
 }
-
-type StreamRunExpectation =
-  | {
-      kind: "prompt";
-      threadId: string;
-      model?: PromptRequest["model"];
-    }
-  | {
-      kind: "resume";
-      threadId: string;
-      runId?: string;
-      model?: ResumeRunRequest["model"];
-    }
-  | {
-      kind: "operator_decision";
-      threadId: string;
-      decisionId: string;
-    };
 
 export interface ParsedStreamFrame {
   frame: StreamFrame;
@@ -1380,6 +1363,7 @@ async function streamRunFrames(
       });
     }
     verifyStreamThreadIdentity(path, expectation.threadId, frame, frameSha256);
+    verifyStreamRunPresetEvidence(path, expectation, frame);
     streamRunId = verifyStreamRunIdentity(
       path,
       streamRunId,
@@ -1643,106 +1627,6 @@ function verifyStreamRunIdentity(
     actualRunId,
     frameSha256,
   });
-}
-
-async function verifyStreamRunResponseContract(
-  path: string,
-  response: Response,
-  expectation: StreamRunExpectation,
-): Promise<void> {
-  expectHeaderIncludes(path, response, "content-type", "text/event-stream");
-  expectHeader(path, response, "cache-control", "no-cache");
-  expectHeader(path, response, "x-napier-thread-id", expectation.threadId);
-  expectHeader(
-    path,
-    response,
-    expectation.kind === "operator_decision"
-      ? "x-napier-operator-decision-id"
-      : expectation.kind === "prompt"
-        ? "x-napier-prompt-requested"
-        : "x-napier-resume-requested",
-    expectation.kind === "operator_decision" ? expectation.decisionId : "true",
-  );
-  if (expectation.kind === "resume") {
-    expectOptionalHeader(path, response, "x-napier-run-id", expectation.runId);
-  }
-  const expectedModel =
-    expectation.kind === "operator_decision" ? undefined : expectation.model;
-  expectOptionalHeader(
-    path,
-    response,
-    "x-napier-model-provider",
-    expectedModel?.provider,
-  );
-  expectOptionalHeader(path, response, "x-napier-model-id", expectedModel?.id);
-  expectHeader(
-    path,
-    response,
-    "x-napier-stream-error-code",
-    RUN_STREAM_ERROR_CODE,
-  );
-  expectHeader(path, response, "x-napier-stream-error-diagnostic", "sha256");
-  expectHeader(
-    path,
-    response,
-    "x-napier-stream-error-message-sha256",
-    await sha256Text(RUN_STREAM_ERROR_MESSAGE),
-  );
-}
-
-function expectHeader(
-  path: string,
-  response: Response,
-  header: string,
-  expected: string,
-): void {
-  const actual = response.headers.get(header) ?? undefined;
-  if (actual !== expected) {
-    throw new NapierStreamResponseContractError(path, {
-      status: response.status,
-      header,
-      expected,
-      ...(actual !== undefined ? { actual } : {}),
-    });
-  }
-}
-
-function expectOptionalHeader(
-  path: string,
-  response: Response,
-  header: string,
-  expected: string | undefined,
-): void {
-  if (expected === undefined) {
-    const actual = response.headers.get(header) ?? undefined;
-    if (actual !== undefined) {
-      throw new NapierStreamResponseContractError(path, {
-        status: response.status,
-        header,
-        expected: "absent",
-        actual,
-      });
-    }
-    return;
-  }
-  expectHeader(path, response, header, expected);
-}
-
-function expectHeaderIncludes(
-  path: string,
-  response: Response,
-  header: string,
-  expected: string,
-): void {
-  const actual = response.headers.get(header) ?? undefined;
-  if (!actual?.toLowerCase().includes(expected)) {
-    throw new NapierStreamResponseContractError(path, {
-      status: response.status,
-      header,
-      expected,
-      ...(actual !== undefined ? { actual } : {}),
-    });
-  }
 }
 
 export async function validateStreamFrameRecord(

@@ -50,10 +50,14 @@ export function setThreadPromptStreamHeaders(
   context: Context,
   threadId: string,
   model: PromptRequest["model"] | undefined,
+  capabilityPreset: PromptRequest["capabilityPreset"] | undefined,
   sourceContinuityRunId?: string,
 ): void {
   context.header("X-Napier-Thread-Id", threadId);
   context.header("X-Napier-Prompt-Requested", "true");
+  if (capabilityPreset) {
+    context.header("X-Napier-Capability-Preset", capabilityPreset);
+  }
   if (sourceContinuityRunId) {
     context.header("X-Napier-Source-Continuity-Run-Id", sourceContinuityRunId);
   }

@@ -55,6 +55,47 @@ describe("Agent capability Web API", () => {
     ]);
   });
 
+  it("requests and verifies a hash-bound temporary preset projection", async () => {
+    const projection = {
+      ...fixtureProjection(),
+      capabilityPreset: "browser" as const,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        bodyResponse(projection, {
+          "X-Napier-Capability-Preset": "browser",
+        }),
+      ),
+    );
+
+    await expect(
+      getAgentCapabilities("agent_napier", "browser"),
+    ).resolves.toEqual(projection);
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/agents/agent_napier/capabilities?preset=browser",
+      expect.any(Object),
+    );
+  });
+
+  it("fails closed when preset projection evidence drifts", async () => {
+    const projection = {
+      ...fixtureProjection(),
+      capabilityPreset: "browser" as const,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        bodyResponse(projection, {
+          "X-Napier-Capability-Preset": "coding",
+        }),
+      ),
+    );
+    await expect(
+      getAgentCapabilities("agent_napier", "browser"),
+    ).rejects.toThrow("preset evidence does not match");
+  });
+
   it("rejects a projection whose body evidence was tampered", async () => {
     const projection = fixtureProjection();
     const response = bodyResponse(projection);
@@ -125,7 +166,10 @@ function fixtureProjection(): EffectiveAgentCapabilityProjectionV1 {
   };
 }
 
-function bodyResponse(value: unknown): Response {
+function bodyResponse(
+  value: unknown,
+  additionalHeaders: Record<string, string> = {},
+): Response {
   const text = JSON.stringify(value);
   const sha256 = createHash("sha256").update(text).digest("hex");
   return new Response(text, {
@@ -135,6 +179,7 @@ function bodyResponse(value: unknown): Response {
       "Cache-Control": "no-store",
       "X-Napier-Content-SHA256": sha256,
       "X-Napier-Content-SHA256-Mode": "body",
+      ...additionalHeaders,
     },
   });
 }

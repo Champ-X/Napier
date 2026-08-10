@@ -6,8 +6,20 @@ import {
 } from "./web-ui-e2e-runtime.mjs";
 
 export async function readWebUiNarrative(page, expected) {
-  await page.locator(".task-narrative-current strong").waitFor({
-    state: "visible",
+  await page.waitForFunction((target) => {
+    const text = (selector) =>
+      document.querySelector(selector)?.textContent?.trim() ?? "";
+    return (
+      text(".thread-heading h1") === target.title &&
+      text(".task-narrative-current > span") === target.phase &&
+      text(".task-narrative-current strong") === target.currentAction &&
+      text(".task-narrative-completed p") === target.completedItem &&
+      text(".task-narrative-blocker p") === target.blocker &&
+      text(".task-narrative-next p") === target.nextStep &&
+      text(".task-narrative-completed small").replace(/^Outputs · /u, "") ===
+        target.artifactPath
+    );
+  }, expected, {
     timeout: WEB_UI_START_TIMEOUT_MS,
   });
   const narrative = await page.evaluate(() => {

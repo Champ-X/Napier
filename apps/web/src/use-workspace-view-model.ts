@@ -69,7 +69,6 @@ import {
   signExtensionPackageChannelIndex as signExtensionPackageChannelIndexApi,
   signExtensionPackage as signExtensionPackageApi,
   stopRun,
-  streamPrompt,
   verifyExtensionPackageChannelIndex as verifyExtensionPackageChannelIndexApi,
   verifyExtensionPackageLockfile as verifyExtensionPackageLockfileApi,
   verifyOpenTelemetryTraceArtifact as verifyOpenTelemetryTraceArtifactApi,
@@ -111,8 +110,10 @@ import {
 import { messagePayload } from "./message-payload";
 import { commitThreadLocation, threadIdFromLocation } from "./thread-location";
 import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
+import { executeLoadedNextRunPrompt, useNextRunCapabilityPreset } from "./use-next-run-capability-preset";
 import {
   upsertThread,
+  upsertThreadControlMessage,
 } from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
 import { useThreadNavigation } from "./use-thread-navigation";
@@ -333,6 +334,11 @@ export function useWorkspaceViewModel() {
   const [isLoading, setIsLoading] = useState(true);
   const [operatorDecisionBusy, setOperatorDecisionBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const {
+    preset: nextRunCapabilityPreset,
+    setPreset: setNextRunCapabilityPreset,
+    consumePreset: consumeNextRunCapabilityPreset,
+  } = useNextRunCapabilityPreset(detail?.thread.id);
   const selectedThreadIdRef = useRef<string | undefined>(undefined);
   const threadDetailCacheRef = useRef(new Map<string, WebThreadDetail>());
   selectedThreadIdRef.current = selectedThreadId;
@@ -592,17 +598,7 @@ export function useWorkspaceViewModel() {
             },
           );
           setDetail((current) =>
-            current
-              ? {
-                  ...current,
-                  runControlMessages: [
-                    ...current.runControlMessages.filter(
-                      (candidate) => candidate.id !== message.id,
-                    ),
-                    message,
-                  ],
-                }
-              : current,
+            upsertThreadControlMessage(current, message),
           );
         } catch (queueError) {
           setComposer(text);
@@ -615,28 +611,30 @@ export function useWorkspaceViewModel() {
         return;
       }
       const threadId = detail.thread.id;
+      const capabilityPreset = nextRunCapabilityPreset;
       setComposer("");
-      startRunUi(threadId, detail);
-      try {
-        await streamPrompt(
+      await executeLoadedNextRunPrompt({
           threadId,
-          { text, model: parseModelKey(selectedModelKey) },
-          streamFrameHandler(threadId),
-        );
-        await refreshBootstrap(threadId);
-      } catch (runError) {
-        setRunError(threadId, runError);
-      } finally {
-        finishRunUi(threadId);
-      }
+          text,
+          model: parseModelKey(selectedModelKey),
+          ...(capabilityPreset ? { capabilityPreset } : {}),
+          onStart: () => startRunUi(threadId, detail),
+          onRefresh: () => refreshBootstrap(threadId),
+          onError: (error) => setRunError(threadId, error), restoreInput: setComposer,
+          onFinish: () => finishRunUi(threadId),
+          onPresetConsumed: consumeNextRunCapabilityPreset,
+          onFrame: streamFrameHandler(threadId),
+        });
     },
     [
       activeRunId,
       composer,
+      consumeNextRunCapabilityPreset,
       controlMessageMode,
       detail,
       finishRunUi,
       isRunning,
+      nextRunCapabilityPreset,
       openOperatorDecision,
       refreshBootstrap,
       selectedModel.configured,
@@ -2105,6 +2103,7 @@ export function useWorkspaceViewModel() {
     selectedModelKey,
     selectedModel,
     composer,
+    nextRunCapabilityPreset,
     activeRunId,
     controlMessageMode,
     goalDraft,
@@ -2148,6 +2147,7 @@ export function useWorkspaceViewModel() {
     setInspectorTab,
     setSelectedModelKey,
     setComposer,
+    setNextRunCapabilityPreset,
     setControlMessageMode,
     setGoalDraft,
     setMemoryDraft,

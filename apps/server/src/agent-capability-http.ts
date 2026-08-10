@@ -1,4 +1,8 @@
 import type { RestoreRecommendedCapabilitiesRequestV1 } from "@napier/contracts/agent-capability-contract";
+import {
+  AGENT_CAPABILITY_PRESET_IDS,
+  type AgentCapabilityPresetId,
+} from "@napier/contracts/agent-capabilities";
 import type { LocalAgentRuntimeServices } from "@napier/runtime";
 import {
   CapabilityRestoreConflictError,
@@ -26,11 +30,21 @@ export function registerAgentCapabilityHttp(
   },
 ): void {
   app.get("/api/agents/:agentId/capabilities", async (context) => {
+    const preset = parseCapabilityPreset(context);
+    if (preset === null) {
+      return jsonError(context, "Capability projection request is invalid", 400);
+    }
     try {
       const projection = await services.agentCapabilities.project(
         context.req.param("agentId"),
+        preset,
       );
-      setProjectionHeaders(context, projection.projectionSha256, projection);
+      setProjectionHeaders(
+        context,
+        projection.projectionSha256,
+        projection,
+        preset,
+      );
       return context.json(projection);
     } catch (error) {
       return capabilityErrorResponse(context, error);
@@ -117,12 +131,33 @@ function parseRestoreRequest(
   };
 }
 
+function parseCapabilityPreset(
+  context: Context,
+): AgentCapabilityPresetId | undefined | null {
+  const parameters = new URL(context.req.url).searchParams;
+  if (
+    [...parameters.keys()].some((key) => key !== "preset") ||
+    parameters.getAll("preset").length > 1
+  ) {
+    return null;
+  }
+  const preset = parameters.get("preset");
+  if (preset === null) return undefined;
+  return AGENT_CAPABILITY_PRESET_IDS.includes(
+    preset as AgentCapabilityPresetId,
+  )
+    ? (preset as AgentCapabilityPresetId)
+    : null;
+}
+
 function setProjectionHeaders(
   context: Context,
   sha256: string,
   body: unknown,
+  preset?: AgentCapabilityPresetId,
 ): void {
   context.header("Cache-Control", "no-store");
   context.header("X-Napier-Agent-Capability-Projection-SHA256", sha256);
+  if (preset) context.header("X-Napier-Capability-Preset", preset);
   setBodyContentSha256Header(context, body);
 }

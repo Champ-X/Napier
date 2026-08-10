@@ -159,6 +159,7 @@ function registerPromptHttp(
       context,
       threadId,
       body.model,
+      body.capabilityPreset,
       body.sourceContinuityRunId,
     );
     return streamAgentRun(context, services, threadId, (onEvent) =>
@@ -166,6 +167,9 @@ function registerPromptHttp(
         threadId,
         text: body.text,
         ...(body.model ? { model: body.model } : {}),
+        ...(body.capabilityPreset
+          ? { capabilityPreset: body.capabilityPreset }
+          : {}),
         ...(body.sourceContinuityRunId
           ? { sourceContinuityRunId: body.sourceContinuityRunId }
           : {}),

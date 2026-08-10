@@ -74,6 +74,18 @@ describe("effective Agent capability projection validator", () => {
         legacySignatureSha256: undefined,
       }),
     ).toBe(true);
+    expect(
+      isEffectiveAgentCapabilityProjectionV1({
+        ...validProjection,
+        capabilityPreset: "browser",
+      }),
+    ).toBe(true);
+    expect(
+      isEffectiveAgentCapabilityProjectionV1({
+        ...validProjection,
+        capabilityPreset: "unrestricted_everything",
+      }),
+    ).toBe(false);
   });
 
   it.each(invalidProjections)("rejects %s", (_name, value) => {

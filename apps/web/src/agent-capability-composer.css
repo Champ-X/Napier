@@ -1,4 +1,5 @@
 .agent-capability-composer {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -6,6 +7,19 @@
   background: rgb(238 231 217 / 62%);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--ledger);
+}
+
+.agent-capability-composer::after {
+  position: absolute;
+  top: 2px;
+  right: 8px;
+  padding: 0 4px;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ledger);
+  letter-spacing: 0.08em;
+  content: "NEXT RUN ONLY";
+  background: rgb(238 231 217 / 92%);
 }
 
 .agent-capability-composer.state-stale,
@@ -33,6 +47,15 @@
   background: rgb(255 255 255 / 55%);
   border: 1px solid var(--rule);
   border-radius: 999px;
+}
+
+.composer-mode > span {
+  display: inline;
+  gap: 0;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .composer-mode:hover:not(:disabled) {
@@ -154,6 +177,15 @@
   border: 1px solid var(--ledger);
 }
 
+@media (min-width: 1400px) {
+  .agent-capability-composer-status > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 @media (max-width: 920px) {
   .composer-readiness-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -173,7 +205,14 @@
 @media (max-width: 780px) {
   .agent-capability-composer {
     gap: 4px;
-    padding: 4px 5px;
+    padding: 4px 5px 19px;
+  }
+
+  .agent-capability-composer::after {
+    top: auto;
+    right: 5px;
+    bottom: 4px;
+    background: transparent;
   }
 
   .composer-mode {

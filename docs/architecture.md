@@ -670,9 +670,16 @@ Chat/TUI /status
   -> resolve the current Thread Agent or requested default Agent
   -> overlay the process preset, when present, and render effective Run truth
 Web
-  -> composer badge renders the same projection
+  -> composer mode buttons select a process-local next-Run preset only
+  -> preset projection is computed by the same Server Runtime and hash-bound
+     in its body, response header, Prompt request, and run.started evidence
+  -> selection is consumed only after a matching user Run starts; a pre-Run
+     HTTP or model failure preserves it for retry, while reload/thread change clears it
+  -> Agent profile and revision history remain unchanged
+  -> composer badge renders the same effective next-Run projection
   -> Context preset selector fills existing form fields only
-  -> Save Agent profile uses the existing HTTP validation/revision path
+  -> Save Agent profile is the explicit persistent-default action and uses the
+     existing HTTP validation/revision path
   -> active Browser Session exposes one bounded no-store viewport SSE segment
   -> each segment samples 32 times, suppresses unchanged visual/takeover state,
      and self-hashes every emitted PNG frame plus its terminal counters
