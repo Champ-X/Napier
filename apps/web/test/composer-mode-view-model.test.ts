@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   composerModeDependency,
+  composerModeNeedsSandboxSetup,
   composerModePolicyLabel,
   composerModes,
 } from "../src/composer-mode-view-model";
@@ -52,9 +53,19 @@ describe("Composer task modes", () => {
     const coding = composerModeDependency("coding", projection("unavailable"));
     expect(coding.level).toBe("blocked");
     expect(coding.message).toContain("Sandbox is unavailable");
+    expect(composerModeNeedsSandboxSetup("coding", coding)).toBe(true);
     expect(
       composerModeDependency("safe_automation", projection("unavailable")).level,
     ).toBe("blocked");
+  });
+
+  it("does not offer Sandbox setup for unrelated blocked dependencies", () => {
+    expect(
+      composerModeNeedsSandboxSetup("browser", {
+        level: "blocked",
+        message: "Browser unavailable",
+      }),
+    ).toBe(false);
   });
 
   it("allows process-capable modes when the sandbox is available", () => {

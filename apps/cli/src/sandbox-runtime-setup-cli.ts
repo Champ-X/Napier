@@ -1,65 +1,18 @@
 import path from "node:path";
 
-import {
-  canonicalJson,
-  OciContainerSandboxAdapter,
-  sha256,
-} from "@napier/runtime";
-import { saveSandboxInstallation } from "@napier/runtime/sandbox-installation";
-import {
-  probeDapRuntime,
-  probeGitRuntime,
-  probeLocalServiceRuntime,
-  probeLspRuntime,
-  probePythonRuntime,
-  probeSandboxProcessRuntime,
-  probeShellRuntime,
-} from "@napier/runtime/doctor-probes";
-import {
-  buildOfficialSandboxRuntime,
-  inspectOfficialSandboxRuntime,
-  type SandboxRuntimeInspection,
-} from "@napier/runtime/sandbox-runtime-setup";
+import { createPlatformSandboxAdapter, sha256 } from "@napier/runtime";
+import { SandboxSetupService } from "@napier/runtime/sandbox-setup-service";
+import { SwitchableSandboxAdapter } from "@napier/runtime/sandbox-switchable";
 
 import type { CliSetupOptions } from "./cli-setup-options.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
 import type { CliIo } from "./cli-runtime.js";
-import type {
-  CliSandboxRuntimeSetupDependencies,
-  SandboxInstallationIdentity,
-  SandboxRuntimeVerification,
-} from "./sandbox-runtime-setup-model.js";
+import type { CliSandboxRuntimeSetupDependencies } from "./sandbox-runtime-setup-model.js";
 import { canonicalWorkspace } from "./workspace-path.js";
-
-interface SandboxRuntimeSetupPreview {
-  kind: "napier.sandbox-runtime-setup-preview";
-  schemaVersion: 1;
-  component: "sandbox";
-  status: SandboxRuntimeInspection["status"];
-  imageReference: string;
-  imageId?: string;
-  dockerfileSha256: string;
-  contextSha256: string;
-  platform: NodeJS.Platform;
-  arch: string;
-  contentSha256: string;
-}
-
-interface SandboxRuntimeSetupResult {
-  kind: "napier.sandbox-runtime-setup-result";
-  schemaVersion: 1;
-  component: "sandbox";
-  action: "built" | "reused";
-  status: "ready";
-  imageReference: string;
-  imageId: string;
-  dockerfileSha256: string;
-  contextSha256: string;
-  identitySha256: string;
-  installationSha256: string;
-  checks: SandboxRuntimeVerification["checks"];
-  contentSha256: string;
-}
+import type {
+  SandboxSetupPreview,
+  SandboxSetupResult,
+} from "@napier/contracts/sandbox-setup";
 
 export async function executeSandboxRuntimeSetup(
   options: CliSetupOptions,
@@ -77,51 +30,22 @@ export async function executeSandboxRuntimeSetup(
       io.cwd,
       options.dataRoot ?? path.join(workspaceRoot, ".napier"),
     );
-    const inspect = dependencies.inspect ?? inspectOfficialSandboxRuntime;
-    const inspection = await inspect();
-    const preview = createSandboxRuntimeSetupPreview(inspection);
+    const setup = new SandboxSetupService(
+      workspaceRoot,
+      dataRoot,
+      new SwitchableSandboxAdapter(createPlatformSandboxAdapter()),
+      dependencies,
+    );
+    const preview = await setup.preview();
     if (!options.apply) {
       await writeSandboxRuntimeSetupOutput(preview, options.jsonl, io);
       return ["unsupported", "runtime_unavailable"].includes(preview.status)
         ? 1
         : 0;
     }
-    if (options.expectedPreviewSha256 !== preview.contentSha256) {
-      throw new Error("Sandbox setup preview is stale");
-    }
-    if (
-      inspection.status === "unsupported" ||
-      inspection.status === "runtime_unavailable"
-    ) {
-      throw new Error("Official Sandbox runtime is unavailable on this host");
-    }
-    const ready =
-      inspection.status === "ready" && inspection.identity
-        ? {
-            ...inspection,
-            status: "ready" as const,
-            identity: inspection.identity,
-          }
-        : await buildOfficialSandboxRuntime(
-            { signal },
-            {
-              inspect,
-              ...(dependencies.runBuild
-                ? { runBuild: dependencies.runBuild }
-                : {}),
-            },
-          );
-    const verification = await (dependencies.verify ?? verifySandboxRuntime)({
-      workspaceRoot,
-      dataRoot,
-      imageReference: ready.target.imageReference,
-      identity: ready.identity,
+    const result = await setup.apply(
+      { expectedPreviewSha256: options.expectedPreviewSha256! },
       signal,
-    });
-    const result = createSandboxRuntimeSetupResult(
-      ready,
-      inspection.status === "ready" ? "reused" : "built",
-      verification,
     );
     await writeSandboxRuntimeSetupOutput(result, options.jsonl, io);
     return 0;
@@ -137,104 +61,8 @@ export async function executeSandboxRuntimeSetup(
   }
 }
 
-function createSandboxRuntimeSetupPreview(
-  inspection: SandboxRuntimeInspection,
-): SandboxRuntimeSetupPreview {
-  const withoutHash = {
-    kind: "napier.sandbox-runtime-setup-preview" as const,
-    schemaVersion: 1 as const,
-    component: "sandbox" as const,
-    status: inspection.status,
-    imageReference: inspection.target.imageReference,
-    ...(inspection.identity ? { imageId: inspection.identity.imageId } : {}),
-    dockerfileSha256: inspection.target.dockerfileSha256,
-    contextSha256: inspection.target.contextSha256,
-    platform: inspection.target.platform,
-    arch: inspection.target.arch,
-  };
-  return {
-    ...withoutHash,
-    contentSha256: sha256(canonicalJson(withoutHash)),
-  };
-}
-
-function createSandboxRuntimeSetupResult(
-  inspection: SandboxRuntimeInspection & {
-    status: "ready";
-    identity: SandboxInstallationIdentity;
-  },
-  action: SandboxRuntimeSetupResult["action"],
-  verification: SandboxRuntimeVerification,
-): SandboxRuntimeSetupResult {
-  const withoutHash = {
-    kind: "napier.sandbox-runtime-setup-result" as const,
-    schemaVersion: 1 as const,
-    component: "sandbox" as const,
-    action,
-    status: "ready" as const,
-    imageReference: inspection.target.imageReference,
-    imageId: inspection.identity.imageId,
-    dockerfileSha256: inspection.target.dockerfileSha256,
-    contextSha256: inspection.target.contextSha256,
-    identitySha256: inspection.identity.identitySha256,
-    installationSha256: verification.installation.contentSha256,
-    checks: verification.checks,
-  };
-  return {
-    ...withoutHash,
-    contentSha256: sha256(canonicalJson(withoutHash)),
-  };
-}
-
-async function verifySandboxRuntime(input: {
-  workspaceRoot: string;
-  dataRoot: string;
-  imageReference: string;
-  identity: SandboxInstallationIdentity;
-  signal: AbortSignal;
-}): Promise<SandboxRuntimeVerification> {
-  const sandbox = new OciContainerSandboxAdapter(input.identity.imageId);
-  const probes = {
-    node: await probeSandboxProcessRuntime(
-      input.workspaceRoot,
-      input.signal,
-      sandbox,
-    ),
-    shell: await probeShellRuntime(input.workspaceRoot, input.signal, sandbox),
-    python: await probePythonRuntime(
-      input.workspaceRoot,
-      input.signal,
-      sandbox,
-    ),
-    git: await probeGitRuntime(input.workspaceRoot, input.signal, sandbox),
-    lsp: await probeLspRuntime(input.workspaceRoot, input.signal, sandbox),
-    dap: await probeDapRuntime(input.workspaceRoot, input.signal, sandbox),
-    service: await probeLocalServiceRuntime(
-      input.workspaceRoot,
-      input.signal,
-      sandbox,
-    ),
-  };
-  for (const [name, probe] of Object.entries(probes)) {
-    if (probe.status !== "ready") {
-      throw new Error(`Official Sandbox ${name} verification failed`);
-    }
-  }
-  const installation = await saveSandboxInstallation(
-    input.dataRoot,
-    input.imageReference,
-    input.identity,
-  );
-  return {
-    checks: Object.fromEntries(
-      Object.entries(probes).map(([name, probe]) => [name, probe.code]),
-    ) as SandboxRuntimeVerification["checks"],
-    installation,
-  };
-}
-
 async function writeSandboxRuntimeSetupOutput(
-  output: SandboxRuntimeSetupPreview | SandboxRuntimeSetupResult,
+  output: SandboxSetupPreview | SandboxSetupResult,
   jsonl: boolean,
   io: CliIo,
 ): Promise<void> {

@@ -83,6 +83,13 @@ export function composerModeDependency(
   return { level: "ready", message: "" };
 }
 
+export function composerModeNeedsSandboxSetup(
+  modeId: AgentCapabilityPresetId,
+  dependency: ComposerModeDependency,
+): boolean {
+  return SANDBOX_PRESETS.has(modeId) && dependency.level === "blocked";
+}
+
 export function composerModePolicyLabel(modeId: AgentCapabilityPresetId): string {
   const preset = agentCapabilityPreset(modeId);
   return preset.toolPolicy === "observe"

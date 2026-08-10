@@ -69,6 +69,19 @@ export async function saveSandboxInstallation(
   now = new Date(),
 ): Promise<SandboxInstallation> {
   await mkdir(path.resolve(dataRoot), { recursive: true });
+  const installation = createSandboxInstallation(imageReference, identity, now);
+  await writeConfiguration(
+    configurationPath(dataRoot),
+    `${canonicalJson(installation)}\n`,
+  );
+  return installation;
+}
+
+export function createSandboxInstallation(
+  imageReference: string,
+  identity: ContainerImageIdentity,
+  now = new Date(),
+): SandboxInstallation {
   const withoutHash = {
     kind: "napier.sandbox-installation" as const,
     schemaVersion: 1 as const,
@@ -85,10 +98,6 @@ export async function saveSandboxInstallation(
     ...withoutHash,
     contentSha256: sha256(canonicalJson(withoutHash)),
   };
-  await writeConfiguration(
-    configurationPath(dataRoot),
-    `${canonicalJson(installation)}\n`,
-  );
   return installation;
 }
 

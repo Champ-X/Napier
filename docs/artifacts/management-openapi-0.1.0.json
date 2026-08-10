@@ -7028,6 +7028,76 @@
         "x-napier-source-route": "POST /api/setup/providers"
       }
     },
+    "/api/setup/sandbox": {
+      "get": {
+        "operationId": "get-setup-sandbox",
+        "tags": [
+          "setup"
+        ],
+        "summary": "GET /api/setup/sandbox",
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/setup/sandbox"
+      },
+      "post": {
+        "operationId": "post-setup-sandbox",
+        "tags": [
+          "setup"
+        ],
+        "summary": "POST /api/setup/sandbox",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/setup/sandbox"
+      }
+    },
     "/api/skills/content/apply": {
       "post": {
         "operationId": "post-skills-content-apply",
@@ -15420,6 +15490,7 @@
     "apps/server/src/plan-progress-http.ts",
     "apps/server/src/provider-setup-http.ts",
     "apps/server/src/run-evaluation-http.ts",
+    "apps/server/src/sandbox-setup-http.ts",
     "apps/server/src/schedule-http.ts",
     "apps/server/src/thread-control-http.ts",
     "apps/server/src/thread-evaluation-http.ts",
@@ -15430,7 +15501,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "269e2835829f21d80c4b87be483525450d4c3ec2d9b88ceda2b86a8e03ebc3e2",
-  "x-napier-route-count": 270,
-  "x-napier-route-set-sha256": "794788f62d33bf0122fa23f990ea47a5d69eb33e7f9ff321fe4727dd4b52654a"
+  "x-napier-source-sha256": "fb3366d23ef74e386d84c59240cd8f3fc84ae1f37946f7d75f5be965ea4fd39d",
+  "x-napier-route-count": 272,
+  "x-napier-route-set-sha256": "adc0602d69a01698f8ae3cba141c8cff5ab5a18b6c4bbc8dbf7f1442866b9cdd"
 }

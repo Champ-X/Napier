@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowRight, ShieldCheck } from "lucide-react";
 
 import type { AgentProfile } from "@napier/contracts";
@@ -14,6 +14,7 @@ import {
 } from "./agent-capability-composer-summary";
 import {
   composerModeDependency,
+  composerModeNeedsSandboxSetup,
   composerModes,
 } from "./composer-mode-view-model";
 import {
@@ -24,6 +25,8 @@ import { updateAgentProfile } from "./context-api";
 import { formatApiErrorMessage } from "./api-error";
 import { useAgentCapabilityProjection } from "./use-agent-capability-projection";
 import "./agent-capability-composer.css";
+
+const LazySandboxSetupCard = lazy(() => import("./SandboxSetupCard"));
 
 export function ComposerCapabilityControl({
   agent,
@@ -123,7 +126,19 @@ export function ComposerCapabilityControl({
           {activeDependency.message}
         </p>
       ) : null}
-      <div className="composer-readiness-row" aria-label="Current run readiness">
+      {activeMode &&
+      activeDependency &&
+      composerModeNeedsSandboxSetup(activeMode.id, activeDependency) ? (
+        <div className="composer-sandbox-setup">
+          <Suspense fallback={<div className="sandbox-setup-card" />}>
+            <LazySandboxSetupCard />
+          </Suspense>
+        </div>
+      ) : null}
+      <div
+        className="composer-readiness-row"
+        aria-label="Current run readiness"
+      >
         {runReadiness.items.map((item) => (
           <span
             key={item.id}

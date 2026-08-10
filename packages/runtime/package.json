@@ -28,6 +28,14 @@
       "types": "./dist/sandbox-runtime-setup.d.ts",
       "import": "./dist/sandbox-runtime-setup.js"
     },
+    "./sandbox-setup-service": {
+      "types": "./dist/sandbox-setup-service.d.ts",
+      "import": "./dist/sandbox-setup-service.js"
+    },
+    "./sandbox-switchable": {
+      "types": "./dist/sandbox-switchable.d.ts",
+      "import": "./dist/sandbox-switchable.js"
+    },
     "./sandbox-installation": {
       "types": "./dist/sandbox-installation.d.ts",
       "import": "./dist/sandbox-installation.js"

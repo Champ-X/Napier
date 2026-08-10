@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ContainerImageIdentity } from "@napier/runtime/sandbox-container-runtime";
 import type { SandboxRuntimeInspection } from "@napier/runtime/sandbox-runtime-setup";
+import { UnsupportedSandboxAdapter } from "@napier/runtime";
 
 import { parseCliArgs, runCli } from "../src/cli.js";
 import type { CliIo } from "../src/cli-runtime.js";
@@ -134,27 +135,17 @@ describe("Napier Sandbox setup CLI", () => {
     const fixture = await createFixture();
     const preview = await previewFor(fixture);
     const stdout = new CaptureWritable();
-    const verify = vi.fn(async (input) => {
-      const { saveSandboxInstallation } =
-        await import("@napier/runtime/sandbox-installation");
-      return {
-        checks: {
-          node: "sandbox_process_ready",
-          shell: "shell_ready",
-          python: "python_ready",
-          git: "git_ready",
-          lsp: "lsp_ready",
-          dap: "dap_ready",
-          service: "service_ready",
-        },
-        installation: await saveSandboxInstallation(
-          input.dataRoot,
-          input.imageReference,
-          input.identity,
-          new Date("2026-08-11T00:00:00.000Z"),
-        ),
-      };
-    });
+    const verify = vi.fn(async () => ({
+      checks: {
+        node: "sandbox_process_ready",
+        shell: "shell_ready",
+        python: "python_ready",
+        git: "git_ready",
+        lsp: "lsp_ready",
+        dap: "dap_ready",
+        service: "service_ready",
+      },
+    }));
 
     const code = await runCli(
       [
@@ -174,6 +165,8 @@ describe("Napier Sandbox setup CLI", () => {
         sandboxSetup: {
           inspect: async () => inspection("ready", identity()),
           verify,
+          activate: async () =>
+            new UnsupportedSandboxAdapter("sandbox-setup-activated"),
         },
       },
     );

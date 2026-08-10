@@ -1,8 +1,11 @@
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
+import { lazy, Suspense } from "react";
 import { ChevronRight, Sparkles } from "lucide-react";
 
 import { copy } from "./copy";
 import { ProviderSetupCard } from "./ProviderSetupCard";
+
+const LazySandboxSetupCard = lazy(() => import("./SandboxSetupCard"));
 
 export function WelcomePanel({
   canStart,
@@ -37,6 +40,9 @@ export function WelcomePanel({
         onBootstrapUpdated={onBootstrapUpdated}
         threadId={threadId}
       />
+      <Suspense fallback={<div className="sandbox-setup-card" />}>
+        <LazySandboxSetupCard />
+      </Suspense>
       <div className="principle-row" aria-label="Napier principles">
         <span>LOCAL FIRST</span>
         <span>EVENT SOURCED</span>

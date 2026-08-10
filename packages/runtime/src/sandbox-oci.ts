@@ -51,6 +51,7 @@ import { launchTerminalSandboxWrapper } from "./sandbox-terminal.js";
 
 export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   readonly id = "oci-container";
+  readonly setupIdentitySha256: string | undefined;
   private readonly executable: string | undefined;
   private readonly containerClient: ContainerClient | undefined;
   private readonly terminalLauncher: typeof launchTerminalSandboxWrapper;
@@ -103,6 +104,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     this.createLocalServiceProjection =
       options.createLocalServiceProjection ?? createHostProjection;
     this.expectedIdentity = options.expectedIdentity;
+    this.setupIdentitySha256 = options.expectedIdentity?.identitySha256;
   }
 
   private readonly spawnProcess: typeof spawn;

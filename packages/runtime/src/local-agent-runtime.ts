@@ -23,6 +23,11 @@ import {
   type OsSandboxAdapter,
 } from "./sandbox.js";
 import { createConfiguredSandboxAdapter } from "./sandbox-installation.js";
+import {
+  SandboxSetupService,
+  type SandboxSetupServiceDependencies,
+} from "./sandbox-setup-service.js";
+import { SwitchableSandboxAdapter } from "./sandbox-switchable.js";
 import { LocalStore } from "./store.js";
 import type { WebSearchExecutor } from "./web-search-model.js";
 import { WebSearchProviderRegistry } from "./web-search-providers.js";
@@ -39,6 +44,7 @@ export interface LocalAgentRuntimeOptions {
   env?: Readonly<Record<string, string | undefined>>;
   keychain?: KeychainSecretStore;
   sandbox?: OsSandboxAdapter;
+  sandboxSetup?: SandboxSetupServiceDependencies;
   browserSessions?: RunBrowserSessionManager;
   browserInteractionConfirmation?: {
     available?: boolean;
@@ -63,6 +69,7 @@ export interface LocalAgentRuntimeServices {
   browserInteractionConfirmations: BrowserInteractionConfirmationManager;
   browserSessionPauses: BrowserSessionPauseManager;
   providerSetup: ProviderSetupService;
+  sandboxSetup: SandboxSetupService;
   runtime: AgentRuntime;
   agentCapabilities: AgentCapabilityService;
   embeddedAgents: EmbeddedAgentService;
@@ -95,13 +102,14 @@ export async function createLocalAgentRuntime(
       ...(options.keychain ? { keychain: options.keychain } : {}),
     });
     const models = new ModelRegistry(credentials);
-    const sandbox =
+    const initialSandbox =
       options.sandbox ??
       (await createConfiguredSandboxAdapter({
         dataRoot,
         ...(options.env ? { env: options.env } : {}),
       })) ??
       createPlatformSandboxAdapter();
+    const sandbox = new SwitchableSandboxAdapter(initialSandbox);
     extensions = new McpExtensionManager({ store, sandbox });
     workspaceProcesses = new WorkspaceProcessManager({
       store,
@@ -129,6 +137,12 @@ export async function createLocalAgentRuntime(
       credentials,
       models,
       options.env ?? process.env,
+    );
+    const sandboxSetup = new SandboxSetupService(
+      workspaceRoot,
+      dataRoot,
+      sandbox,
+      options.sandboxSetup,
     );
     const network = {
       webSearch:
@@ -206,6 +220,7 @@ export async function createLocalAgentRuntime(
       browserInteractionConfirmations,
       browserSessionPauses,
       providerSetup,
+      sandboxSetup,
       runtime,
       agentCapabilities,
       embeddedAgents,

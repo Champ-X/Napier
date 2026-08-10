@@ -6726,6 +6726,12 @@ npm run --silent napier -- setup \
 npm run --silent napier -- doctor --workspace . --offline --jsonl
 ```
 
+The Web workbench exposes the same hash-bound setup as a process-plane docket
+when Coding or Safe Automation is blocked. Applying it verifies the same seven
+production paths, persists the same identity receipt, hot-switches the current
+Server Runtime for new work, and refreshes Composer readiness without a page or
+Server restart.
+
 The exact-preview apply builds `docker/napier-sandbox/Dockerfile` against its
 digest-pinned multi-architecture Node base, verifies Node, Shell, Python, Git,
 TypeScript LSP, Node DAP, and a loopback local service through production

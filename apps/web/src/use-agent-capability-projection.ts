@@ -5,6 +5,8 @@ import type { EffectiveAgentCapabilityProjectionV1 } from "@napier/contracts/age
 import { getAgentCapabilities } from "./agent-capability-api";
 import { formatApiErrorMessage } from "./api-error";
 
+export const SANDBOX_READY_EVENT = "napier:sandbox-ready";
+
 export function useAgentCapabilityProjection(
   agentId: string | undefined,
   agentRevision: number | undefined,
@@ -45,6 +47,14 @@ export function useAgentCapabilityProjection(
       requestSequence.current += 1;
     };
   }, [agentId, agentRevision, refresh]);
+
+  useEffect(() => {
+    const reload = (): void => {
+      void refresh().catch(() => undefined);
+    };
+    window.addEventListener(SANDBOX_READY_EVENT, reload);
+    return () => window.removeEventListener(SANDBOX_READY_EVENT, reload);
+  }, [refresh]);
 
   return { projection, setProjection, refresh, loading, error, setError };
 }

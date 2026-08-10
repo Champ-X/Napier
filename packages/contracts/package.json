@@ -44,6 +44,10 @@
       "types": "./dist/provider-setup.d.ts",
       "import": "./dist/provider-setup.js"
     },
+    "./sandbox-setup": {
+      "types": "./dist/sandbox-setup.d.ts",
+      "import": "./dist/sandbox-setup.js"
+    },
     "./skill-load": {
       "types": "./dist/skill-load.d.ts",
       "import": "./dist/skill-load.js"

@@ -2,6 +2,7 @@ import type { CredentialReference } from "@napier/contracts";
 import {
   createId,
   type CredentialReferenceStore,
+  type LocalAgentRuntimeServices,
   type LocalStore,
   type ModelRegistry,
 } from "@napier/runtime";
@@ -25,6 +26,7 @@ import {
   parseSetCredentialReferenceStatusRequest,
 } from "./credential-http-validation.js";
 import { registerProviderSetupHttp } from "./provider-setup-http.js";
+import { registerSandboxSetupHttp } from "./sandbox-setup-http.js";
 
 const MAX_CREDENTIAL_REQUEST_BYTES = 8 * 1024;
 const MAX_CREDENTIAL_SECRET_REQUEST_BYTES = 16 * 1024;
@@ -43,6 +45,7 @@ export interface CredentialHttpServices {
   models: ModelRegistry;
   credentials: CredentialReferenceStore;
   providerSetup: ProviderSetupService;
+  sandboxSetup: LocalAgentRuntimeServices["sandboxSetup"];
 }
 
 export function registerCredentialHttp(
@@ -50,6 +53,7 @@ export function registerCredentialHttp(
   services: CredentialHttpServices,
 ): void {
   registerProviderSetupHttp(app, services.providerSetup);
+  registerSandboxSetupHttp(app, services.sandboxSetup);
   app.get("/api/credentials", (context) => {
     const references = services.store.listCredentialReferences();
     setCredentialReferenceListHeaders(context, references);

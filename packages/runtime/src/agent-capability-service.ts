@@ -39,6 +39,7 @@ const KNOWN_TOOL_NAMES = new Set<string>(AGENT_TOOL_NAMES);
 
 export class AgentCapabilityService {
   private sandboxReadiness: Promise<CapabilityReadinessRecord> | undefined;
+  private sandboxReadinessVersion = -1;
 
   constructor(
     private readonly store: LocalStore,
@@ -138,6 +139,11 @@ export class AgentCapabilityService {
   }
 
   private getSandboxReadiness(): Promise<CapabilityReadinessRecord> {
+    const version = this.sandbox.readinessVersion ?? 0;
+    if (this.sandboxReadinessVersion !== version) {
+      this.sandboxReadiness = undefined;
+      this.sandboxReadinessVersion = version;
+    }
     this.sandboxReadiness ??= inspectSandboxReadiness(
       this.sandbox,
       this.store.workspaceRoot,

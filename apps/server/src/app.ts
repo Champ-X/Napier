@@ -201,9 +201,7 @@ import {
   createLocalAgentRuntime,
   EvaluationCasebookQualificationService,
   EvaluationSuiteService,
-  type KeychainSecretStore,
   type LocalAgentRuntimeServices,
-  type OsSandboxAdapter,
   createEvaluationCasebookQualificationReceipt,
   createEvaluationSuiteGateReceipt,
   createId,
@@ -249,7 +247,6 @@ import { cors } from "hono/cors";
 import {
   ReceiptTrustAnchorDirectoryDiscoveryError,
   ReceiptTrustAnchorDirectoryDiscoveryService,
-  type ReceiptTrustAnchorDirectoryDiscoveryOptions,
 } from "./receipt-trust-directory-discovery.js";
 import {
   errorMessage,
@@ -317,11 +314,11 @@ import {
 import {
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery as createHostedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectorySubscriptionService,
-  type ReceiptTrustAnchorDirectorySubscriptionServiceOptions,
 } from "./receipt-trust-directory-subscriptions.js";
 import { registerAgentProfileHttp } from "./agent-profile-http.js";
 import { registerWorkspaceProcessHttp } from "./workspace-process-http.js";
 import { inferWorkspaceRoot } from "./workspace-root.js";
+import type { ServerServiceOptions } from "./server-service-options.js";
 export { inferWorkspaceRoot } from "./workspace-root.js";
 
 export interface NapierServices extends Pick<
@@ -340,6 +337,7 @@ export interface NapierServices extends Pick<
   | "workspaceFileMutations"
   | "workspaceProcesses"
   | "providerSetup"
+  | "sandboxSetup"
 > {
   evaluations: RunEvaluationService;
   evaluationCasebookQualifications: EvaluationCasebookQualificationService;
@@ -357,16 +355,9 @@ const MAX_EVALUATION_REQUEST_BYTES = 64 * 1024;
 const MAX_EXTENSION_ADMIN_REQUEST_BYTES = 64 * 1024;
 const MAX_TRUST_ADMIN_REQUEST_BYTES = 8 * 1024;
 const MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES = 64 * 1024;
-export async function createServices(options?: {
-  dataRoot?: string;
-  workspaceRoot?: string;
-  env?: Readonly<Record<string, string | undefined>>;
-  startAutomation?: boolean;
-  keychain?: KeychainSecretStore;
-  sandbox?: OsSandboxAdapter;
-  receiptTrustDirectoryDiscovery?: ReceiptTrustAnchorDirectoryDiscoveryOptions;
-  receiptTrustDirectorySubscriptions?: ReceiptTrustAnchorDirectorySubscriptionServiceOptions;
-}): Promise<NapierServices> {
+export async function createServices(
+  options?: ServerServiceOptions,
+): Promise<NapierServices> {
   const workspaceRoot = path.resolve(
     options?.workspaceRoot ??
       process.env["NAPIER_WORKSPACE"] ??
@@ -384,6 +375,7 @@ export async function createServices(options?: {
     browserInteractionConfirmation: { available: true },
     ...(options?.keychain ? { keychain: options.keychain } : {}),
     ...(options?.sandbox ? { sandbox: options.sandbox } : {}),
+    ...(options?.sandboxSetup ? { sandboxSetup: options.sandboxSetup } : {}),
   });
   const {
     store,
@@ -400,6 +392,7 @@ export async function createServices(options?: {
     toolInvocationExperiments,
     agentCapabilities,
     providerSetup,
+    sandboxSetup,
   } = local;
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
@@ -445,6 +438,7 @@ export async function createServices(options?: {
     workspaceFileMutations,
     workspaceProcesses,
     providerSetup,
+    sandboxSetup,
     receiptTrustDirectories,
     receiptTrustDirectorySubscriptions,
     shutdownLocalRuntime: local.shutdown,
