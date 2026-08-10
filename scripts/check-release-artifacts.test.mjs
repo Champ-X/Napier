@@ -52,6 +52,8 @@ describe("release artifacts audit", () => {
     expect(result.artifacts.map((artifact) => artifact.kind)).toEqual([
       "package-lock-audit",
       "runtime-environment-audit",
+      "sandbox-image-sbom",
+      "sandbox-image-provenance",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -1013,6 +1015,20 @@ async function createFixture() {
   await createProductPerformanceFixture(root);
   await createManagementOpenApiFixture(root);
   await createManagementOpenApiCompatibilityFixture(root);
+  await mkdir(path.join(root, "docker/napier-sandbox"), { recursive: true });
+  await cp(
+    path.resolve("docker/napier-sandbox/Dockerfile"),
+    path.join(root, "docker/napier-sandbox/Dockerfile"),
+  );
+  for (const fileName of [
+    "sandbox-image-sbom-0.1.0.cdx.json",
+    "sandbox-image-provenance-0.1.0.json",
+  ]) {
+    await cp(
+      path.resolve("docs/artifacts", fileName),
+      path.join(root, "docs/artifacts", fileName),
+    );
+  }
   await createWorkflowBenchmarkFixture(root);
   await mkdir(path.join(root, "benchmark-results"), { recursive: true });
   for (const fileName of [

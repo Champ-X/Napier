@@ -6767,8 +6767,29 @@ paths, then atomically writes only hashed image/client/daemon/user identities
 to `.napier/sandbox.json` with mode `0600`. Subsequent Web and CLI runtimes
 automatically use the immutable image ID; users do not edit an internal Agent
 Profile or export an image variable. The source checkout currently builds this
-image locally as `napier-sandbox:0.1.0`; registry publication, SBOM, and signing
-remain release work and are not implied by local setup.
+image locally as `napier-sandbox:0.1.0`; registry publication and signing remain
+release work and are not implied by local setup.
+
+The repository retains a local single-platform CycloneDX 1.5 inventory at
+`docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json` plus a hash-bound provenance
+receipt at `docs/artifacts/sandbox-image-provenance-0.1.0.json`. Generation
+runs `dpkg-query`, the pinned npm lockfile, and fixed toolchain probes inside
+the immutable image with no network, a read-only root, all capabilities
+dropped, no-new-privileges, and bounded PID/memory/CPU limits:
+
+```bash
+npm run write:sandbox-image-sbom
+npm run check:sandbox-image-sbom
+npm run check:sandbox-image-sbom:live
+```
+
+The ordinary check is offline and binds the stored SBOM to the current
+Dockerfile/context and provenance receipt. The live check replays the same
+bounded collection against the current local Docker image and daemon. The
+receipt deliberately states `registryPublished=false`, `signed=false`,
+`attested=false`, and `scope=local-single-platform`; it is evidence for the
+current arm64 image, not proof of multi-architecture registry publication or
+signature.
 
 The OCI adapter accepts only a local Docker daemon. A mutable image reference
 is used for setup inspection only; production launches use the resolved

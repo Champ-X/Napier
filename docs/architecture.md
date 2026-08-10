@@ -695,6 +695,9 @@ Web
   -> Run cancellation or Session loss records hash-only cancellation and rejects waiters
   -> writable Browser calls pause inside beforeToolCall
   -> hash-only pending evidence opens a one-use confirmation docket
+  -> exact request-hash approval resumes the same Run and Browser Session
+  -> rejection, timeout, cancellation, mismatch, or restart fails closed
+```
 
 Sandbox removal reuses the exact-preview setup authority rather than adding an
 unbounded administrative delete. Runtime inspects only the bounded regular
@@ -708,9 +711,19 @@ platform fallback. Drift restores the tombstone and fails closed. Invalid
 bounded regular files can be removed by raw-byte CAS; symlinks, directories,
 empty, and oversized bindings never receive an automatic removal authority.
 No path executes an OCI image delete because images may be shared by Workspaces.
-  -> exact request-hash approval resumes the same Run and Browser Session
-  -> rejection, timeout, cancellation, mismatch, or restart fails closed
-```
+
+The local Sandbox image supply-chain boundary is represented by a CycloneDX
+1.5 SBOM and a separate `napier.sandbox-image-provenance` receipt. Collection
+runs only against the resolved immutable image ID on a local Docker endpoint,
+inside a network-disabled, read-only, capability-dropped,
+no-new-privileges container with fixed PID/memory/CPU limits. The SBOM contains
+sorted Debian, npm, and Node runtime components; the receipt binds the current
+Dockerfile/context, image ID/digests/platform/size/labels, daemon endpoint hash,
+toolchain versions, collection limits, component-set hash, and exact SBOM file
+hash. Offline verification recomputes source and artifact projections; the
+explicit live mode replays collection. Publication fields remain false for
+registry, signing, and attestation, so this evidence cannot be mistaken for a
+multi-platform signed release.
 
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath; the 7,025-line Contracts root

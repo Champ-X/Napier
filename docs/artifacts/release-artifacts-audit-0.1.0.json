@@ -6,18 +6,30 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "5d365abb52541f7f99cea0515d3b2e35353ff000e3565effcc35d093dab8ef97",
+  "artifactSetSha256": "609f9757fd17868cf0b536a9df074f8c45069b5e76a5753dfeaeaa184eae7ac5",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "9f5d9402395b47f947c720cefc9c7e6f577ed7aadb77feb53fec66f7e343a17f",
+      "sha256": "d86e05d135dfa1189da5996a2acb86be3a47c36e55b12561d1baf74d2b4f91a4",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "22a63414af0bd7052658aec79a43d010dfd4fec81991f9bdcc009b83af97e61f",
+      "sha256": "58c25df0c4984dbd77180af89c1002a38ad50515586e439587a4f2b754dfcf82",
+      "valid": true
+    },
+    {
+      "kind": "sandbox-image-sbom",
+      "path": "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
+      "sha256": "f521a6a66afa29e17bd348185fb75f0ef19d3da9731f29b79c56728a00033ce5",
+      "valid": true
+    },
+    {
+      "kind": "sandbox-image-provenance",
+      "path": "docs/artifacts/sandbox-image-provenance-0.1.0.json",
+      "sha256": "c628ca038f0a14ceea9344bd15f1087615539154e9261d0daacb2f962f2c7ccd",
       "valid": true
     },
     {

@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { verifyPackageLockReceipt } from "./check-package-lock.mjs";
 import { verifyRuntimeEnvironmentReceipt } from "./check-runtime-environment.mjs";
+import { verifySandboxImageArtifacts } from "./check-sandbox-image-sbom.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -49,6 +50,10 @@ const defaultPackageLockReceiptPath =
   "docs/artifacts/package-lock-audit-0.1.0.json";
 const defaultRuntimeEnvironmentReceiptPath =
   "docs/artifacts/runtime-environment-audit-0.1.0.json";
+const defaultSandboxImageSbomPath =
+  "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json";
+const defaultSandboxImageProvenancePath =
+  "docs/artifacts/sandbox-image-provenance-0.1.0.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -120,6 +125,10 @@ export async function auditReleaseArtifacts(options = {}) {
   const runtimeEnvironmentReceiptPath =
     options.runtimeEnvironmentReceiptPath ??
     defaultRuntimeEnvironmentReceiptPath;
+  const sandboxImageSbomPath =
+    options.sandboxImageSbomPath ?? defaultSandboxImageSbomPath;
+  const sandboxImageProvenancePath =
+    options.sandboxImageProvenancePath ?? defaultSandboxImageProvenancePath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -495,6 +504,18 @@ export async function auditReleaseArtifacts(options = {}) {
       artifactReferences: browserConfirmedFormSeriesArtifactReferences,
       verifySeries: verifyBrowserConfirmedFormBenchmarkSeries,
     });
+  const sandboxImageVerification = await verifySandboxImageArtifacts({
+    repoRoot,
+    sbomPath: sandboxImageSbomPath,
+    verifyReceiptPath: sandboxImageProvenancePath,
+  });
+  if (!sandboxImageVerification.valid) {
+    errors.push(
+      ...sandboxImageVerification.errors.map(
+        (error) => `Sandbox image SBOM: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -527,6 +548,18 @@ export async function auditReleaseArtifacts(options = {}) {
       path: runtimeEnvironmentVerification.receiptPath,
       sha256: runtimeEnvironmentVerification.receiptSha256,
       valid: runtimeEnvironmentVerification.valid,
+    },
+    {
+      kind: "sandbox-image-sbom",
+      path: sandboxImageVerification.sbomPath,
+      sha256: sandboxImageVerification.sbomSha256,
+      valid: sandboxImageVerification.valid,
+    },
+    {
+      kind: "sandbox-image-provenance",
+      path: sandboxImageVerification.receiptPath,
+      sha256: sandboxImageVerification.receiptSha256,
+      valid: sandboxImageVerification.valid,
     },
     {
       kind: "product-performance-baseline",
