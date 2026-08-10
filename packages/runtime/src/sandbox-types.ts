@@ -27,8 +27,21 @@ export interface SandboxedProcess {
   terminate(): Promise<void>;
 }
 
+export type SandboxCommandRuntime = "node" | "python" | "shell";
+
+export interface SandboxCommandRuntimeBinding {
+  runtime: SandboxCommandRuntime;
+  executable: string;
+  executableSha256: string;
+  executableSearchPaths?: string[];
+  runtimeIdentitySha256: string;
+}
+
 export interface OsSandboxAdapter {
   readonly id: string;
+  resolveCommandRuntime?(
+    runtime: SandboxCommandRuntime,
+  ): Promise<SandboxCommandRuntimeBinding>;
   launch(request: SandboxLaunchRequest): Promise<SandboxedProcess>;
 }
 

@@ -458,7 +458,10 @@ describe("OS sandbox adapters", () => {
     expect(restrictedCommand).toContain("--read-only");
     expect(restrictedCommand).not.toContain("/workspace");
     expect(restrictedCommand).not.toContain("transient-secret");
-    expect(restrictedCommand).toContain("--env\0NAPIER_SECRET_TOKEN");
+    expect(restrictedCommand).toContain(
+      "--env-file\0/tmp/napier-sandbox/environment.list",
+    );
+    expect(restrictedCommand).not.toContain("NAPIER_SECRET_TOKEN");
     expect(
       restricted.slice(
         restricted.indexOf("ghcr.io/example/napier-sandbox:node22"),
@@ -621,5 +624,27 @@ describe("OS sandbox adapters", () => {
         "bad image",
       ),
     ).toThrow("OCI container sandbox image is invalid");
+    expect(() =>
+      buildOciContainerArgs(
+        {
+          ...BASE_REQUEST,
+          env: { HOME: "/host-controlled" },
+          approvedCapabilities: ["process.spawn"],
+        },
+        "/tmp/napier-sandbox",
+        "alpine:3.20",
+      ),
+    ).toThrow("environment name is reserved: HOME");
+    expect(() =>
+      buildOciContainerArgs(
+        {
+          ...BASE_REQUEST,
+          env: { TOKEN: "line-one\nline-two" },
+          approvedCapabilities: ["process.spawn"],
+        },
+        "/tmp/napier-sandbox",
+        "alpine:3.20",
+      ),
+    ).toThrow("environment value is invalid: TOKEN");
   });
 });

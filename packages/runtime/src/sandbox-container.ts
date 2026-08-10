@@ -8,7 +8,9 @@ export const CONTAINER_IMAGE_ENV = "NAPIER_CONTAINER_SANDBOX_IMAGE";
 const CONTAINER_EXECUTABLE_CANDIDATES = ["docker"] as const;
 const CONTAINER_SCRATCH_DIR_ENV = "NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR";
 const CONTAINER_PROBE_TIMEOUT_MS = 3_000;
-const CONTAINER_PROBE_ENV = [
+const MAX_CONTAINER_ENVIRONMENT_ENTRIES = 128;
+const MAX_CONTAINER_ENVIRONMENT_BYTES = 64 * 1024;
+const CONTAINER_CLIENT_ENV_NAMES = [
   "DOCKER_CERT_PATH",
   "DOCKER_CONFIG",
   "DOCKER_CONTEXT",
@@ -60,12 +62,7 @@ export async function probeContainerRuntimeAvailability(
     options.pathValue,
   );
   if (!executable || options.signal?.aborted) return false;
-  const env = Object.fromEntries(
-    CONTAINER_PROBE_ENV.flatMap((name) => {
-      const value = process.env[name];
-      return value === undefined ? [] : [[name, value]];
-    }),
-  );
+  const env = containerClientEnvironment();
   return new Promise<boolean>((resolve) => {
     let settled = false;
     const finish = (available: boolean): void => {
@@ -93,6 +90,55 @@ export async function probeContainerRuntimeAvailability(
     options.signal?.addEventListener("abort", abort, { once: true });
     if (options.signal?.aborted) abort();
   });
+}
+
+export function containerClientEnvironment(): Record<string, string> {
+  return Object.fromEntries(
+    CONTAINER_CLIENT_ENV_NAMES.flatMap((name) => {
+      const value = process.env[name];
+      return value === undefined ? [] : [[name, value]];
+    }),
+  );
+}
+
+/**
+ * Serializes command-only environment values for Docker's --env-file input.
+ * Keeping these values out of the Docker client process prevents command
+ * variables such as PATH, HOME, DOCKER_*, or loader settings from changing
+ * which daemon/client configuration performs the sandbox launch.
+ */
+export function serializeContainerEnvironment(
+  environment: Record<string, string>,
+): string {
+  const entries = Object.entries(environment).sort(([left], [right]) =>
+    left < right ? -1 : left > right ? 1 : 0,
+  );
+  if (entries.length > MAX_CONTAINER_ENVIRONMENT_ENTRIES) {
+    throw new Error(
+      `Container sandbox environment must contain at most ${MAX_CONTAINER_ENVIRONMENT_ENTRIES} entries`,
+    );
+  }
+  const lines = entries.map(([name, value]) => {
+    validateContainerEnvName(name);
+    if (name === "HOME" || name === "TMPDIR") {
+      throw new Error(
+        `Container sandbox environment name is reserved: ${name}`,
+      );
+    }
+    if (/[\u0000\r\n]/u.test(value)) {
+      throw new Error(
+        `Container sandbox environment value is invalid: ${name}`,
+      );
+    }
+    return `${name}=${value}`;
+  });
+  const serialized = lines.length > 0 ? `${lines.join("\n")}\n` : "";
+  if (Buffer.byteLength(serialized, "utf8") > MAX_CONTAINER_ENVIRONMENT_BYTES) {
+    throw new Error(
+      `Container sandbox environment must be at most ${MAX_CONTAINER_ENVIRONMENT_BYTES} bytes`,
+    );
+  }
+  return serialized;
 }
 
 /**

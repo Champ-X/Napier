@@ -148,6 +148,9 @@ function formatCommandResult(result: CommandExecutionResult): string {
     `Command SHA-256: ${details.commandSha256}`,
     `Arguments: ${details.argumentCount} / ${details.argumentSetSha256}`,
     `Executable SHA-256: ${details.executableSha256}`,
+    ...(details.runtimeIdentitySha256
+      ? [`Runtime identity SHA-256: ${details.runtimeIdentitySha256}`]
+      : []),
     `Exit: ${String(details.exitCode)} / ${String(details.signal)}`,
     `Duration: ${details.durationMs} ms`,
     `stdout SHA-256: ${details.stdoutSha256}`,

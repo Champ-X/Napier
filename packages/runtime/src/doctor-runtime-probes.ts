@@ -373,7 +373,7 @@ function processProbeFailure(
   error: unknown,
 ): RuntimeCapabilityProbe {
   const message = error instanceof Error ? error.message : String(error);
-  if (runtime === "shell" && /node-pty|PTY launch/iu.test(message)) {
+  if (runtime === "shell" && /node-pty|PTY launch failed/iu.test(message)) {
     return {
       status: "unavailable",
       code: "shell_missing",
@@ -388,7 +388,10 @@ function processProbeFailure(
       message: "No supported system shell runtime is available",
     };
   }
-  const incompatible = /container runtime identity binding/iu.test(message);
+  const incompatible =
+    /container runtime identity binding|image-bound terminal runtime support|image-bound Python runtime identity/iu.test(
+      message,
+    );
   return {
     status: "unavailable",
     code:

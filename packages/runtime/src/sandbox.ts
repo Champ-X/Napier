@@ -6,14 +6,13 @@ import path from "node:path";
 import * as macProfile from "./macos-sandbox-profile.js";
 import { probeMacOsSandboxAvailability } from "./macos-sandbox-availability.js";
 import { createParentGuardedTerminalLaunch } from "./process-guardian.js";
-import {
-  containerScratchBaseDir,
-  CONTAINER_IMAGE_ENV,
-  resolveContainerLaunchExecutable,
-  validateContainerEnvName,
-  validateContainerImage,
-} from "./sandbox-container.js";
+import { CONTAINER_IMAGE_ENV } from "./sandbox-container.js";
 import { HostDirectSandboxAdapter } from "./sandbox-host-direct.js";
+import {
+  scopedWorkspaceWritePaths,
+  validateLaunchRequest,
+} from "./sandbox-launch-policy.js";
+import { OciContainerSandboxAdapter } from "./sandbox-oci.js";
 import { launchSandboxProcess } from "./sandbox-process-lifecycle.js";
 import type {
   OsSandboxAdapter,
@@ -21,10 +20,7 @@ import type {
   SandboxedProcess,
   SandboxLaunchRequest,
 } from "./sandbox-types.js";
-import {
-  launchTerminalSandboxWrapper,
-  validateTerminalDimensions,
-} from "./sandbox-terminal.js";
+import { launchTerminalSandboxWrapper } from "./sandbox-terminal.js";
 import { UnsupportedSandboxAdapter } from "./unsupported-sandbox.js";
 
 export type {
@@ -34,10 +30,13 @@ export type {
   SandboxLaunchRequest,
 } from "./sandbox-types.js";
 export { UnsupportedSandboxAdapter } from "./unsupported-sandbox.js";
+export {
+  buildOciContainerArgs,
+  OciContainerSandboxAdapter,
+} from "./sandbox-oci.js";
 
 const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
 const BUBBLEWRAP_EXEC = "/usr/bin/bwrap";
-const MAX_SANDBOX_PATHS = 8;
 const LINUX_RUNTIME_READ_PATHS = [
   "/lib",
   "/lib64",
@@ -172,50 +171,6 @@ export class LinuxBubblewrapSandboxAdapter implements OsSandboxAdapter {
   }
 }
 
-export class OciContainerSandboxAdapter implements OsSandboxAdapter {
-  readonly id = "oci-container";
-  private readonly executable: string | undefined;
-
-  constructor(
-    private readonly image: string,
-    options: { executable?: string; spawnProcess?: typeof spawn } = {},
-  ) {
-    this.executable = options.executable;
-    this.spawnProcess = options.spawnProcess ?? spawn;
-  }
-
-  private readonly spawnProcess: typeof spawn;
-
-  async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
-    validateLaunchRequest(request);
-    if (request.terminal) {
-      throw new Error(
-        "OCI PTY launch requires image-bound terminal runtime support",
-      );
-    }
-    if (request.parentDeathGuard) {
-      throw new Error(
-        "OCI parent-death guarding requires container runtime identity binding",
-      );
-    }
-    validateContainerImage(this.image);
-    const executable = await resolveContainerLaunchExecutable(this.executable);
-    const sandboxHome = await mkdtemp(
-      path.join(await containerScratchBaseDir(), "napier-process-sandbox-"),
-    );
-    const args = buildOciContainerArgs(request, sandboxHome, this.image);
-    return launchSandboxProcess({
-      command: executable,
-      args,
-      cwd: "/",
-      env: containerProcessEnv(request.env),
-      sandboxHome,
-      parentDeathGuard: false,
-      spawnProcess: this.spawnProcess,
-    });
-  }
-}
-
 export function buildMacOsSandboxProfile(
   request: SandboxLaunchRequest,
   sandboxHome: string,
@@ -343,175 +298,6 @@ export function buildLinuxBubblewrapArgs(
   return args;
 }
 
-export function buildOciContainerArgs(
-  request: SandboxLaunchRequest,
-  sandboxHome: string,
-  image: string,
-): string[] {
-  validateLaunchRequest(request);
-  if (!path.isAbsolute(sandboxHome)) {
-    throw new Error("Container sandbox home must be absolute");
-  }
-  validateContainerImage(image);
-  const capabilities = new Set(request.approvedCapabilities);
-  const writePaths = scopedWorkspaceWritePaths(request);
-  const workspaceMounted =
-    capabilities.has("workspace.read") || capabilities.has("workspace.write");
-  const args = [
-    "run",
-    "--rm",
-    "--init",
-    "--cap-drop",
-    "ALL",
-    "--security-opt",
-    "no-new-privileges",
-    "--pids-limit",
-    "256",
-    "--memory",
-    "1g",
-    "--cpus",
-    "2",
-    "--network",
-    capabilities.has("network.connect") ? "bridge" : "none",
-    "--read-only",
-    "--tmpfs",
-    "/tmp:rw,nosuid,nodev,size=64m",
-    "--mount",
-    bindMount(sandboxHome, "/tmp", false),
-    "--workdir",
-    workspaceMounted ? request.cwd : "/tmp",
-    "--env",
-    "HOME=/tmp",
-    "--env",
-    "TMPDIR=/tmp",
-  ];
-  for (const key of Object.keys(request.env).sort()) {
-    validateContainerEnvName(key);
-    args.push("--env", key);
-  }
-  if (workspaceMounted) {
-    args.push(
-      "--mount",
-      bindMount(
-        request.workspaceRoot,
-        request.workspaceRoot,
-        !capabilities.has("workspace.write") || writePaths.length > 0,
-      ),
-    );
-    for (const writePath of writePaths) {
-      args.push("--mount", bindMount(writePath, writePath, false));
-    }
-  }
-  for (const runtimePath of request.runtimeReadPaths ?? []) {
-    args.push("--mount", bindMount(runtimePath, runtimePath, true));
-  }
-  args.push(image, request.command, ...request.args);
-  return args;
-}
-
-function validateLaunchRequest(request: SandboxLaunchRequest): void {
-  if (!path.isAbsolute(request.command)) {
-    throw new Error("Sandboxed commands must use an absolute executable path");
-  }
-  if (!path.isAbsolute(request.cwd)) {
-    throw new Error("Sandboxed process cwd must be absolute");
-  }
-  if (!path.isAbsolute(request.workspaceRoot)) {
-    throw new Error("Sandbox workspace root must be absolute");
-  }
-  if (!isPathInside(request.cwd, request.workspaceRoot)) {
-    throw new Error("Sandboxed process cwd must stay inside the workspace");
-  }
-  if (!request.approvedCapabilities.includes("process.spawn")) {
-    throw new Error("Sandbox launch requires approved process.spawn");
-  }
-  if (
-    request.approvedCapabilities.includes("workspace.write") &&
-    !request.approvedCapabilities.includes("workspace.read")
-  ) {
-    throw new Error("workspace.write requires workspace.read");
-  }
-  scopedWorkspaceWritePaths(request);
-  if (
-    request.runtimeReadPaths !== undefined &&
-    (request.runtimeReadPaths.length > MAX_SANDBOX_PATHS ||
-      request.runtimeReadPaths.some(
-        (runtimePath) =>
-          !path.isAbsolute(runtimePath) ||
-          path.resolve(runtimePath) === path.parse(runtimePath).root ||
-          /[\u0000-\u001f\u007f]/u.test(runtimePath),
-      ))
-  ) {
-    throw new Error(
-      `Sandbox runtime read paths must contain at most ${MAX_SANDBOX_PATHS} absolute non-root paths`,
-    );
-  }
-  validateTerminalDimensions(request.terminal);
-}
-
-function scopedWorkspaceWritePaths(request: SandboxLaunchRequest): string[] {
-  const paths = request.workspaceWritePaths ?? [];
-  if (
-    paths.length > 0 &&
-    !request.approvedCapabilities.includes("workspace.write")
-  ) {
-    throw new Error("Sandbox workspace write paths require workspace.write");
-  }
-  if (
-    paths.length > MAX_SANDBOX_PATHS ||
-    paths.some(
-      (writePath) =>
-        !path.isAbsolute(writePath) ||
-        path.resolve(writePath) === path.resolve(request.workspaceRoot) ||
-        !isPathInside(writePath, request.workspaceRoot) ||
-        /[\u0000-\u001f\u007f]/u.test(writePath),
-    ) ||
-    new Set(paths.map((writePath) => path.resolve(writePath))).size !==
-      paths.length
-  ) {
-    throw new Error(
-      `Sandbox workspace write paths must contain at most ${MAX_SANDBOX_PATHS} distinct absolute non-root workspace paths`,
-    );
-  }
-  const resolved = paths.map((writePath) => path.resolve(writePath)).sort();
-  if (
-    resolved.some((candidate, index) =>
-      resolved.some(
-        (other, otherIndex) =>
-          index !== otherIndex && isPathInside(candidate, other),
-      ),
-    )
-  ) {
-    throw new Error("Sandbox workspace write paths cannot overlap");
-  }
-  return resolved;
-}
-
-function bindMount(source: string, target: string, readonly: boolean): string {
-  return [
-    "type=bind",
-    `source=${path.resolve(source)}`,
-    `target=${path.resolve(target)}`,
-    readonly ? "readonly" : "",
-  ]
-    .filter(Boolean)
-    .join(",");
-}
-
-function containerProcessEnv(
-  env: Record<string, string>,
-): Record<string, string> {
-  return {
-    ...Object.fromEntries(
-      Object.entries(process.env).filter(
-        (entry): entry is [string, string] =>
-          entry[0].startsWith("DOCKER_") && typeof entry[1] === "string",
-      ),
-    ),
-    ...env,
-  };
-}
-
 function destinationDirectories(targets: readonly string[]): string[] {
   const directories = new Set<string>();
   for (const target of targets) {
@@ -529,14 +315,4 @@ function destinationDirectories(targets: readonly string[]): string[] {
 
 function pathDepth(value: string): number {
   return value.split(path.sep).filter(Boolean).length;
-}
-
-function isPathInside(candidate: string, root: string): boolean {
-  const relative = path.relative(path.resolve(root), path.resolve(candidate));
-  return (
-    relative === "" ||
-    (!relative.startsWith(`..${path.sep}`) &&
-      relative !== ".." &&
-      !path.isAbsolute(relative))
-  );
 }

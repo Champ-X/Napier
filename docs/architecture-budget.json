@@ -74,7 +74,7 @@
     "packages/runtime/src/receipt-trust-directory-subscriptions.ts": 8392,
     "packages/runtime/src/receipt-trust.ts": 1524,
     "packages/runtime/src/run-config.ts": 953,
-    "packages/runtime/src/sandbox.ts": 542,
+    "packages/runtime/src/sandbox.ts": 318,
     "packages/runtime/src/skill-packages.ts": 754,
     "packages/runtime/src/store.ts": 14387,
     "packages/runtime/src/thread-bundles.ts": 2460,

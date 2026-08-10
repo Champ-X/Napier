@@ -54,6 +54,7 @@ export interface CommandExecutionDetails {
   argumentCount: number;
   argumentSetSha256: string;
   environmentSha256: string;
+  runtimeIdentitySha256?: string;
   runtimeAssetSetSha256?: string;
   runtimeReadPathSetSha256?: string;
   resourceLimitsSha256: string;
@@ -93,6 +94,8 @@ export interface PreparedCommandExecution {
   cwd: string;
   executable: string;
   executableSha256: string;
+  bindingLocation: "host" | "provider";
+  runtimeIdentitySha256?: string;
   runtimeAssets: CommandRuntimeAsset[];
   runtimeReadPaths: string[];
   runtimeReadPathIdentities: CommandRuntimeReadPathIdentity[];
@@ -117,6 +120,7 @@ export interface PreparedCommandExecution {
     argumentCount: number;
     argumentSetSha256: string;
     environmentSha256: string;
+    runtimeIdentitySha256?: string;
     runtimeAssetSetSha256?: string;
     runtimeReadPathSetSha256?: string;
     resourceLimitsSha256: string;
@@ -174,24 +178,37 @@ export async function prepareCommandExecution(
   const workspaceRoot = await realpath(path.resolve(options.workspaceRoot));
   const cwd = await resolveWorkspaceDirectory(workspaceRoot, input.cwd ?? ".");
   const cwdPath = path.relative(workspaceRoot, cwd) || ".";
-  const binding = await resolveCommandRuntimeBinding(
+  const providerBinding = await options.sandbox.resolveCommandRuntime?.(
     input.runtime,
-    options.executables,
   );
+  if (providerBinding) {
+    validateProviderRuntimeBinding(providerBinding, input.runtime);
+    if (options.executables?.[input.runtime] !== undefined) {
+      throw new Error(
+        "Provider-bound command runtimes do not accept host executable overrides",
+      );
+    }
+  }
+  const hostBinding = providerBinding
+    ? undefined
+    : await resolveCommandRuntimeBinding(input.runtime, options.executables);
+  const binding = providerBinding ?? hostBinding!;
+  if (providerBinding && (options.runtimeReadPaths?.length ?? 0) > 0) {
+    throw new Error(
+      "Image-bound command runtimes cannot mount host runtime read paths",
+    );
+  }
+  const runtimeAssets = hostBinding?.runtimeAssets ?? [];
   const runtimeReadPathBinding = await resolveCommandRuntimeReadPaths([
-    ...binding.runtimeReadPaths,
+    ...(hostBinding?.runtimeReadPaths ?? []),
     ...(options.runtimeReadPaths ?? []),
   ]);
   const runtimeReadPaths = runtimeReadPathBinding.paths;
-  const environment =
-    input.runtime === "python"
-      ? FIXED_PYTHON_ENVIRONMENT
-      : input.runtime === "shell"
-        ? {
-            ...FIXED_ENVIRONMENT,
-            PATH: binding.executableSearchPaths!.join(path.delimiter),
-          }
-        : FIXED_ENVIRONMENT;
+  const environment = commandEnvironment(
+    input.runtime,
+    binding.executableSearchPaths,
+    providerBinding !== undefined,
+  );
   const launchArgs =
     input.runtime === "shell"
       ? shellInvocationArgs(input.args[0]!)
@@ -203,7 +220,7 @@ export async function prepareCommandExecution(
     processGroupTermination: true,
     cpuLimit: "sandbox_backend_default",
     memoryLimit: "sandbox_backend_default",
-    runtimeAssetCount: binding.runtimeAssets.length,
+    runtimeAssetCount: runtimeAssets.length,
     runtimeReadPathCount: runtimeReadPaths.length,
   };
   const receipt = {
@@ -214,8 +231,11 @@ export async function prepareCommandExecution(
     argumentCount: input.args.length,
     argumentSetSha256: sha256(canonicalJson(input.args)),
     environmentSha256: sha256(canonicalJson(environment)),
-    ...(binding.runtimeAssetSetSha256
-      ? { runtimeAssetSetSha256: binding.runtimeAssetSetSha256 }
+    ...(providerBinding
+      ? { runtimeIdentitySha256: providerBinding.runtimeIdentitySha256 }
+      : {}),
+    ...(hostBinding?.runtimeAssetSetSha256
+      ? { runtimeAssetSetSha256: hostBinding.runtimeAssetSetSha256 }
       : {}),
     ...(runtimeReadPaths.length > 0
       ? {
@@ -228,7 +248,7 @@ export async function prepareCommandExecution(
     workspaceAccess: "read_only" as const,
     networkAccess: "denied" as const,
   };
-  if (options.sandbox.id === "oci-container") {
+  if (options.sandbox.id === "oci-container" && !providerBinding) {
     throw new Error(
       "Host-bound command runtimes require a local OS sandbox until container runtime identity binding is available",
     );
@@ -241,7 +261,11 @@ export async function prepareCommandExecution(
     cwd,
     executable: binding.executable,
     executableSha256: binding.executableSha256,
-    runtimeAssets: binding.runtimeAssets,
+    bindingLocation: providerBinding ? "provider" : "host",
+    ...(providerBinding
+      ? { runtimeIdentitySha256: providerBinding.runtimeIdentitySha256 }
+      : {}),
+    runtimeAssets,
     runtimeReadPaths,
     runtimeReadPathIdentities: runtimeReadPathBinding.identities,
     timeoutMs,
@@ -261,6 +285,7 @@ export async function prepareCommandExecution(
 export async function assertCommandRuntimeStable(
   prepared: PreparedCommandExecution,
 ): Promise<void> {
+  if (prepared.bindingLocation === "provider") return;
   await assertCommandRuntimeBindingStable(prepared);
 }
 
@@ -300,6 +325,11 @@ export function finalizeCommandExecution(
       argumentCount: prepared.receipt.argumentCount,
       argumentSetSha256: prepared.receipt.argumentSetSha256,
       environmentSha256: prepared.receipt.environmentSha256,
+      ...(prepared.receipt.runtimeIdentitySha256
+        ? {
+            runtimeIdentitySha256: prepared.receipt.runtimeIdentitySha256,
+          }
+        : {}),
       ...(prepared.receipt.runtimeAssetSetSha256
         ? {
             runtimeAssetSetSha256: prepared.receipt.runtimeAssetSetSha256,
@@ -374,6 +404,55 @@ function validateCommandRequest(input: CommandExecutionRequest): void {
       `command timeoutMs must be ${MIN_COMMAND_TIMEOUT_MS}-${MAX_COMMAND_TIMEOUT_MS}`,
     );
   }
+}
+
+function validateProviderRuntimeBinding(
+  binding: {
+    runtime: CommandRuntime;
+    executable: string;
+    executableSha256: string;
+    executableSearchPaths?: string[];
+    runtimeIdentitySha256: string;
+  },
+  runtime: CommandRuntime,
+): void {
+  if (
+    binding.runtime !== runtime ||
+    !path.posix.isAbsolute(binding.executable) ||
+    !/^[a-f0-9]{64}$/u.test(binding.executableSha256) ||
+    !/^[a-f0-9]{64}$/u.test(binding.runtimeIdentitySha256) ||
+    (runtime === "shell" &&
+      (!binding.executableSearchPaths ||
+        binding.executableSearchPaths.length === 0 ||
+        binding.executableSearchPaths.length > 8 ||
+        binding.executableSearchPaths.some(
+          (candidate) =>
+            !path.posix.isAbsolute(candidate) ||
+            /[\u0000-\u001f\u007f]/u.test(candidate),
+        )))
+  ) {
+    throw new Error("Provider command runtime identity is invalid");
+  }
+}
+
+function commandEnvironment(
+  runtime: CommandRuntime,
+  executableSearchPaths: readonly string[] | undefined,
+  providerBound: boolean,
+): Record<string, string> {
+  if (runtime === "python") return { ...FIXED_PYTHON_ENVIRONMENT };
+  if (runtime === "shell") {
+    if (!executableSearchPaths || executableSearchPaths.length === 0) {
+      throw new Error("Shell runtime search paths are unavailable");
+    }
+    return {
+      ...FIXED_ENVIRONMENT,
+      PATH: executableSearchPaths.join(
+        providerBound ? path.posix.delimiter : path.delimiter,
+      ),
+    };
+  }
+  return { ...FIXED_ENVIRONMENT };
 }
 
 async function resolveWorkspaceDirectory(

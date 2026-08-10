@@ -1,0 +1,57 @@
+{
+  "kind": "napier.oci-runtime-identity-stage2",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-10T00:58:27Z",
+  "controlledAdapter": {
+    "externalDaemonUsed": false,
+    "mutableImageReferenceUse": "inspect_only",
+    "productionRunReference": "immutable_image_id",
+    "containerClientExecutableBound": true,
+    "dockerClientEnvironmentIsolated": true,
+    "commandEnvironmentRelay": "mode_0600_env_file",
+    "nodeArgvStatus": "succeeded",
+    "nodeRuntimeIdentityRecorded": true,
+    "nodeDoctorProductionProbe": "ready",
+    "shellRuntimeIdentityRecorded": true,
+    "shellPtyStatus": "provider_incompatible",
+    "requestedMutableReferencePassedToRun": false,
+    "workspaceMount": "read_only",
+    "network": "denied"
+  },
+  "actualHost": {
+    "containerCliPresent": true,
+    "containerServerReachable": false,
+    "configuredImage": true,
+    "shellDoctorCode": "shell_provider_unavailable",
+    "sandboxDoctorCode": "sandbox_unavailable",
+    "reportedIsolationLevel": "container",
+    "codingSendBoundary": "blocked"
+  },
+  "verification": {
+    "focusedTestFiles": 4,
+    "focusedTests": 43,
+    "architectureCycles": 0,
+    "sandboxSourceLinesBeforeExtraction": 542,
+    "sandboxSourceLinesAfterExtraction": 318
+  },
+  "retention": {
+    "credentialValues": false,
+    "rawDockerOutput": false,
+    "rawDoctorReport": false,
+    "requestedImageReference": false,
+    "absoluteTemporaryPaths": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "OCI PTY and container cleanup on parent death",
+      "container UID mapping and writable ownership",
+      "image-bound Python, Git, LSP, and debugger identities",
+      "bounded port and local-service projection",
+      "real isolated Docker daemon E2E",
+      "cross-platform isolated provider casebook"
+    ]
+  },
+  "contentSha256": "c062210e791b9eabb5e30ebe60a5204c4760bb3ea1d65f019a52f50c19c0ccb8"
+}
