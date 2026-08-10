@@ -138,6 +138,7 @@ describe("StdioMcpClient", () => {
       cwd: "/workspace/services/fixture",
       env: { MCP_TOKEN: "transient-secret" },
       workspaceRoot: "/workspace",
+      stdinMode: "open",
       approvedCapabilities: [
         "process.spawn",
         "workspace.read",

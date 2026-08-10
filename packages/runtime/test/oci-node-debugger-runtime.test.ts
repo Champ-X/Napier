@@ -275,7 +275,7 @@ function realIdentityClient(): ContainerClient {
       args[args.indexOf("--user") + 1] !==
         `${String(process.getuid!())}:${String(process.getgid!())}` ||
       args[args.indexOf("--pids-limit") + 1] !== "32" ||
-      args[args.indexOf("--memory") + 1] !== "128m" ||
+      args[args.indexOf("--memory") + 1] !== "256m" ||
       args[args.indexOf("--cpus") + 1] !== "0.25" ||
       !args.includes("--read-only") ||
       !args.includes("no-new-privileges")

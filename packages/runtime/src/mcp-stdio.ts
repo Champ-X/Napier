@@ -74,6 +74,7 @@ export class StdioMcpClient implements McpClient {
       env,
       workspaceRoot: path.resolve(this.options.workspaceRoot),
       approvedCapabilities: this.options.approvedCapabilities,
+      stdinMode: "open",
     });
     this.process = child;
     child.stdout.on("data", (chunk: Buffer | string) => {

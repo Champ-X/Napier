@@ -44,7 +44,7 @@ afterEach(async () => {
 });
 
 describe("OCI local service policy", () => {
-  it("publishes one high container port on ephemeral host loopback inside an internal network", async () => {
+  it("keeps a local service on an internal network without Docker port publishing", async () => {
     const request = await serviceRequest();
     const args = buildOciContainerArgs(
       request,
@@ -59,17 +59,11 @@ describe("OCI local service policy", () => {
     );
 
     expect(args).toEqual(
-      expect.arrayContaining([
-        "--network",
-        NETWORK_NAME,
-        "--publish",
-        "127.0.0.1::31879/tcp",
-        "--read-only",
-      ]),
+      expect.arrayContaining(["--network", NETWORK_NAME, "--read-only"]),
     );
     expect(args).not.toContain("bridge");
     expect(args).not.toContain("none");
-    expect(args.filter((value) => value === "--publish")).toHaveLength(1);
+    expect(args).not.toContain("--publish");
   });
 
   it("rejects privileged ports, cross-origin health paths, outbound access, and PTY mode", async () => {
@@ -128,9 +122,6 @@ describe("OCI local service policy", () => {
       calls.push(args);
       if (args[0] === "image") return `${IMAGE_ID}\n`;
       if (args[0] === "network") return `${"e".repeat(64)}\n`;
-      if (args[0] === "container" && args[1] === "port") {
-        return `127.0.0.1:${String(address.port)}\n`;
-      }
       throw new Error("unexpected container call");
     });
     try {
@@ -148,10 +139,12 @@ describe("OCI local service policy", () => {
         USER_IDS,
         DAEMON_ENDPOINT,
       );
+      let projectionClosed = false;
       const service = await resolveContainerLocalService({
         identity,
         containerName: CONTAINER_NAME,
         networkName: NETWORK_NAME,
+        nodeExecutable: process.execPath,
         service: {
           protocol: "http",
           containerPort: 31_879,
@@ -161,6 +154,12 @@ describe("OCI local service policy", () => {
         client,
         injectedUserIds: USER_IDS,
         injectedDaemonEndpoint: DAEMON_ENDPOINT,
+        createProjection: async () => ({
+          hostPort: address.port,
+          close: async () => {
+            projectionClosed = true;
+          },
+        }),
       });
 
       expect(calls).toContainEqual([
@@ -173,13 +172,7 @@ describe("OCI local service policy", () => {
         "io.napier.resource=workspace-process",
         NETWORK_NAME,
       ]);
-      expect(calls).toContainEqual([
-        "container",
-        "port",
-        CONTAINER_NAME,
-        "31879/tcp",
-      ]);
-      expect(service).toEqual(
+      expect(service.binding).toEqual(
         expect.objectContaining({
           protocol: "http",
           containerPort: 31_879,
@@ -191,9 +184,11 @@ describe("OCI local service policy", () => {
           readyAt: expect.any(String),
         }),
       );
-      expect(JSON.stringify(service)).not.toContain("/ready");
-      expect(JSON.stringify(service)).not.toContain(NETWORK_NAME);
-      expect(JSON.stringify(service)).not.toContain(CONTAINER_NAME);
+      expect(JSON.stringify(service.binding)).not.toContain("/ready");
+      expect(JSON.stringify(service.binding)).not.toContain(NETWORK_NAME);
+      expect(JSON.stringify(service.binding)).not.toContain(CONTAINER_NAME);
+      await service.close();
+      expect(projectionClosed).toBe(true);
     } finally {
       await new Promise<void>((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve())),
@@ -210,9 +205,6 @@ describe("OCI local service policy", () => {
       if (args[0] === "image") return `${IMAGE_ID}\n`;
       if (args[0] === "network" && args[1] === "create") {
         return `${"e".repeat(64)}\n`;
-      }
-      if (args[0] === "container" && args[1] === "port") {
-        return `127.0.0.1:${String(hostPort)}\n`;
       }
       if (
         (args[0] === "container" && args[1] === "rm") ||
@@ -242,6 +234,10 @@ describe("OCI local service policy", () => {
       spawnProcess: spawnProcess as never,
       userIds: USER_IDS,
       daemonEndpoint: DAEMON_ENDPOINT,
+      createLocalServiceProjection: async () => ({
+        hostPort,
+        close: async () => undefined,
+      }),
     });
 
     const child = await sandbox.launch({
@@ -278,11 +274,10 @@ describe("OCI local service policy", () => {
       expect.arrayContaining([
         "--network",
         expect.stringMatching(/^napier-network-[a-f0-9]{32}$/u),
-        "--publish",
-        "127.0.0.1::31879/tcp",
         "--read-only",
       ]),
     );
+    expect(dockerArgs).not.toContain("--publish");
 
     await child.terminate();
     await waitForLoopbackHttpServiceClosed(hostPort);

@@ -237,6 +237,7 @@ function fakeContainerClientSource(
     `const imageIndex = args.indexOf(${JSON.stringify(IMAGE_ID)});`,
     "if (imageIndex < 0) process.exit(65);",
     `if (args[imageIndex + 1] !== ${JSON.stringify(process.execPath)}) process.exit(66);`,
+    "if (args.includes('--stdio') && (!args.includes('--interactive') || args.includes('--tty'))) process.exit(71);",
     "const mounts = args.flatMap((value, index) => value === '--mount' ? [args[index + 1]] : []);",
     `if (mounts.length !== 1 || mounts[0] !== ${JSON.stringify(readonlyMount)}) process.exit(67);`,
     `if (mounts.some((mount) => mount.includes(${JSON.stringify(assets.languageServerRoot)}) || mount.includes(${JSON.stringify(assets.typescriptRoot)}))) process.exit(68);`,

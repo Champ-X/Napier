@@ -37,6 +37,14 @@ export function validateLaunchRequest(request: SandboxLaunchRequest): void {
   scopedWorkspaceWritePaths(request);
   validateSandboxLocalService(request);
   if (
+    request.stdinMode === "open" &&
+    (request.terminal !== undefined || request.localService !== undefined)
+  ) {
+    throw new Error(
+      "Sandbox open stdin cannot be combined with PTY or local service mode",
+    );
+  }
+  if (
     request.runtimeReadPaths !== undefined &&
     (request.runtimeReadPaths.length > MAX_SANDBOX_PATHS ||
       request.runtimeReadPaths.some(

@@ -264,6 +264,7 @@ async function runOneShotSession<T>(
     env: { ...LSP_FIXED_ENVIRONMENT },
     workspaceRoot: prepared.workspaceRoot,
     approvedCapabilities: ["process.spawn", "workspace.read"],
+    stdinMode: "open",
     ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
   });
   return runLspProtocolSession(child, request, prepareOperation, signal);

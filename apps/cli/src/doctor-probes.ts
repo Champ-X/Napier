@@ -5,6 +5,10 @@ import {
   sha256,
 } from "@napier/runtime";
 import {
+  createPlatformSandboxAdapter,
+  type OsSandboxAdapter,
+} from "@napier/runtime";
+import {
   probeDapRuntime,
   probeLspRuntime,
   probeLocalServiceRuntime,
@@ -57,6 +61,7 @@ export async function runDoctorProbes(input: {
   env: Readonly<Record<string, string | undefined>>;
   signal: AbortSignal;
   dependencies?: DoctorProbeDependencies;
+  sandbox?: OsSandboxAdapter;
 }): Promise<DoctorCheck[]> {
   const dependencies = input.dependencies ?? {};
   const runtime = dependencies.runtime ?? defaultRuntimeProbe;
@@ -97,34 +102,55 @@ export async function runDoctorProbes(input: {
       dependencies.lsp
         ? dependencies.lsp(input.workspaceRoot, input.signal)
         : localCapabilityCheck("lsp", () =>
-            probeLspRuntime(input.workspaceRoot, input.signal),
+            probeLspRuntime(
+              input.workspaceRoot,
+              input.signal,
+              input.sandbox ?? createPlatformSandboxAdapter(),
+            ),
           ),
       dependencies.dap
         ? dependencies.dap(input.workspaceRoot, input.signal)
         : localCapabilityCheck("dap", () =>
-            probeDapRuntime(input.workspaceRoot, input.signal),
+            probeDapRuntime(
+              input.workspaceRoot,
+              input.signal,
+              input.sandbox ?? createPlatformSandboxAdapter(),
+            ),
           ),
       dependencies.python
         ? dependencies.python(input.workspaceRoot, input.signal)
         : localCapabilityCheck("python", () =>
-            probePythonRuntime(input.workspaceRoot, input.signal),
+            probePythonRuntime(
+              input.workspaceRoot,
+              input.signal,
+              input.sandbox ?? createPlatformSandboxAdapter(),
+            ),
           ),
       dependencies.shell
         ? dependencies.shell(input.workspaceRoot, input.signal)
         : localCapabilityCheck("shell", () =>
-            probeShellRuntime(input.workspaceRoot, input.signal),
+            probeShellRuntime(
+              input.workspaceRoot,
+              input.signal,
+              input.sandbox ?? createPlatformSandboxAdapter(),
+            ),
           ),
       dependencies.service
         ? dependencies.service(input.workspaceRoot, input.signal)
         : localCapabilityCheck("service", () =>
-            probeLocalServiceRuntime(input.workspaceRoot, input.signal),
+            probeLocalServiceRuntime(
+              input.workspaceRoot,
+              input.signal,
+              input.sandbox ?? createPlatformSandboxAdapter(),
+            ),
           ),
     ])),
   );
   input.signal.throwIfAborted();
   const sandbox =
     dependencies.sandbox ??
-    ((workspace, signal) => defaultSandboxProbe(workspace, signal));
+    ((workspace, signal) =>
+      defaultSandboxProbe(workspace, signal, input.sandbox));
   if (!input.options.online) {
     checks.push(
       await safeProbe(

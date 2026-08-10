@@ -1,6 +1,8 @@
 import { realpath } from "node:fs/promises";
+import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { runLspProtocolSession } from "./lsp-protocol-session.js";
 import {
   assertLspRuntimeStable,
   lspProviderRuntimeLimitEvidence,
@@ -12,10 +14,9 @@ import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
 } from "./sandbox.js";
-import { runSandboxedProcess } from "./sandboxed-process.js";
 
 const LSP_PROBE_TIMEOUT_MS = 5_000;
-const LSP_PROBE_MAX_OUTPUT_CHARS = 1_024;
+const LSP_PROBE_SOURCE = "export const napierDoctorReady: string = 'ready';\n";
 
 interface LspRuntimeCapabilityProbe {
   status: "ready" | "available_unverified" | "unavailable";
@@ -41,35 +42,42 @@ export async function probeLspRuntime(
           [assets.languageServerRoot, assets.typescriptRoot],
           undefined,
         );
-    const result = await runSandboxedProcess({
-      sandbox,
-      launch: {
-        command: assets.nodeExecutable,
-        args: [assets.languageServerPath, "--version"],
-        cwd: canonicalWorkspace,
-        env: { ...LSP_FIXED_ENVIRONMENT },
-        workspaceRoot: canonicalWorkspace,
-        approvedCapabilities: ["process.spawn", "workspace.read"],
-        ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
-      },
-      timeoutMs: LSP_PROBE_TIMEOUT_MS,
-      maxOutputChars: LSP_PROBE_MAX_OUTPUT_CHARS,
-      ...(signal ? { signal } : {}),
-      abortedMessage: "LSP production probe was aborted",
+    const child = await sandbox.launch({
+      command: assets.nodeExecutable,
+      args: [assets.languageServerPath, "--stdio", "--log-level", "1"],
+      cwd: canonicalWorkspace,
+      env: { ...LSP_FIXED_ENVIRONMENT },
+      workspaceRoot: canonicalWorkspace,
+      approvedCapabilities: ["process.spawn", "workspace.read"],
+      stdinMode: "open",
+      ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
     });
-    if (
-      result.status !== "exited" ||
-      result.exitCode !== 0 ||
-      result.stderr !== "" ||
-      result.stdout.trim() !== assets.languageServerVersion
-    ) {
+    const result = await runLspProtocolSession(
+      child,
+      {
+        label: "LSP Doctor probe",
+        abortedMessage: "LSP production probe was aborted",
+        workspaceRoot: canonicalWorkspace,
+        target: path.join(canonicalWorkspace, ".napier-doctor-probe.ts"),
+        language: "typescript",
+        source: LSP_PROBE_SOURCE,
+        timeoutMs: LSP_PROBE_TIMEOUT_MS,
+        typescriptServerPath: assets.typescriptServerPath,
+      },
+      (connection, targetUri) => async () =>
+        connection.sendRequest("textDocument/documentSymbol", {
+          textDocument: { uri: targetUri },
+        }),
+      signal,
+    );
+    if (result.protocolBytes <= 0 || result.stderrTruncated) {
       throw new Error("LSP production probe returned an invalid result");
     }
     await assertLspRuntimeStable(assets, "LSP production probe", sandbox);
     return {
       status: "ready",
       code: "lsp_ready",
-      message: `The active ${sandbox.id} provider completed a bounded TypeScript language-server command through the production execution path`,
+      message: `The active ${sandbox.id} provider completed a bounded TypeScript language-server stdio handshake through the production execution path`,
       evidence: {
         adapter: sandbox.id,
         productionCall: true,
@@ -83,13 +91,16 @@ export async function probeLspRuntime(
           canonicalJson({
             ...lspProviderRuntimeLimitEvidence(assets),
             timeoutMs: LSP_PROBE_TIMEOUT_MS,
-            maxOutputChars: LSP_PROBE_MAX_OUTPUT_CHARS,
             environment: LSP_FIXED_ENVIRONMENT,
-            expectedVersion: assets.languageServerVersion,
+            protocol: "initialize_document_symbol_shutdown",
+            virtualDocumentBytes: Buffer.byteLength(LSP_PROBE_SOURCE),
             processGroupTermination: true,
           }),
         ),
-        exitCode: result.exitCode,
+        stdioHandshake: true,
+        protocolBytes: result.protocolBytes,
+        stderrChars: result.stderr.length,
+        stderrSha256: sha256(result.stderr),
       },
     };
   } catch (error) {

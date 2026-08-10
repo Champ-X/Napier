@@ -35,7 +35,10 @@ export async function runSandboxedProcess(
   options: RunSandboxedProcessOptions,
 ): Promise<SandboxedProcessResult> {
   const startedAt = Date.now();
-  const child = await options.sandbox.launch(options.launch);
+  const child = await options.sandbox.launch({
+    ...options.launch,
+    ...(options.stdin !== undefined ? { stdinMode: "open" as const } : {}),
+  });
   child.stdin.on("error", () => undefined);
   child.stdin.end(options.stdin);
 

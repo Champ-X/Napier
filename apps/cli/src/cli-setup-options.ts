@@ -6,7 +6,7 @@ export const MAX_SETUP_TIMEOUT_MS = 15 * 60 * 1_000;
 export interface CliSetupOptions {
   workspace: string;
   dataRoot?: string;
-  component?: "browser";
+  component?: "browser" | "sandbox";
   providerId?: string;
   expectedPreviewSha256?: string;
   timeoutMs?: number;
@@ -72,10 +72,14 @@ function setupProvider(value: string | undefined): string | undefined {
   return providerId;
 }
 
-function setupComponent(value: string | undefined): "browser" | undefined {
+function setupComponent(
+  value: string | undefined,
+): "browser" | "sandbox" | undefined {
   const component = value?.trim().toLowerCase();
   if (component === undefined) return undefined;
-  if (component !== "browser") throw new Error("--component must be browser");
+  if (component !== "browser" && component !== "sandbox") {
+    throw new Error("--component must be browser or sandbox");
+  }
   return component;
 }
 
@@ -91,7 +95,7 @@ function setupPreviewHash(value: string | undefined): string | undefined {
 }
 
 function validateSetupSelection(input: {
-  component: "browser" | undefined;
+  component: "browser" | "sandbox" | undefined;
   providerId: string | undefined;
   expectedPreviewSha256: string | undefined;
   apply: boolean;
@@ -101,7 +105,7 @@ function validateSetupSelection(input: {
   if (input.component && input.providerId) {
     throw new Error("--component and --provider are mutually exclusive");
   }
-  if (input.component && input.hasDataRoot) {
+  if (input.component === "browser" && input.hasDataRoot) {
     throw new Error("--data-root is unavailable for Browser setup");
   }
   if (
@@ -115,7 +119,7 @@ function validateSetupSelection(input: {
     throw new Error("--apply requires --expected-preview");
   }
   if (!input.component && input.hasTimeout) {
-    throw new Error("--timeout-ms requires --component browser");
+    throw new Error("--timeout-ms requires --component browser or sandbox");
   }
 }
 

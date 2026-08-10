@@ -17,18 +17,19 @@ import type { DoctorCheck } from "./doctor-report.js";
 export async function defaultSandboxProbe(
   workspaceRoot: string,
   signal: AbortSignal,
+  configuredSandbox = createPlatformSandboxAdapter(),
 ): Promise<DoctorCheck> {
   const startedAt = Date.now();
-  const sandbox = createPlatformSandboxAdapter();
+  const sandbox = configuredSandbox;
   let result;
   try {
     result = await probeSandboxProcessRuntime(workspaceRoot, signal, sandbox);
   } catch (error) {
     if (signal.aborted) throw error;
-    return sandboxUnavailableCheck(Date.now() - startedAt, signal);
+    return sandboxUnavailableCheck(Date.now() - startedAt, signal, sandbox.id);
   }
   if (result.status !== "ready") {
-    return sandboxUnavailableCheck(Date.now() - startedAt, signal);
+    return sandboxUnavailableCheck(Date.now() - startedAt, signal, sandbox.id);
   }
   const isolation = sandboxIsolationStrength(sandbox.id);
   const git = await probeGitRuntime(workspaceRoot, signal, sandbox);
@@ -105,9 +106,26 @@ export function sandboxFailure(
 async function sandboxUnavailableCheck(
   durationMs: number,
   signal: AbortSignal,
+  adapterId = createPlatformSandboxAdapter().id,
 ): Promise<DoctorCheck> {
   signal.throwIfAborted();
-  const isolation = sandboxIsolationStrength(createPlatformSandboxAdapter().id);
+  const isolation = sandboxIsolationStrength(adapterId);
+  if (adapterId === "oci-container") {
+    return {
+      id: "sandbox",
+      status: "warning",
+      required: false,
+      code: "sandbox_configured_unavailable",
+      message:
+        "The configured OCI Sandbox could not complete its production probe. Start the same local Docker daemon or rerun Sandbox setup to repair the verified image.",
+      durationMs,
+      evidence: {
+        adapter: adapterId,
+        isolationLevel: isolation.level,
+        configured: true,
+      },
+    };
+  }
   const imageConfigured = Boolean(
     process.env["NAPIER_CONTAINER_SANDBOX_IMAGE"]?.trim(),
   );

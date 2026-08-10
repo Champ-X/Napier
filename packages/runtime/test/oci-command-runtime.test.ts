@@ -146,6 +146,25 @@ describe("OCI image-bound command runtime", () => {
     ).rejects.toThrow("host user identity changed");
   });
 
+  it("rejects an installed Sandbox identity that no longer matches setup", async () => {
+    const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+      executable: process.execPath,
+      containerClient: identityClient(),
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
+      expectedIdentity: {
+        clientExecutableSha256: "f".repeat(64),
+        daemonEndpointSha256: "e".repeat(64),
+        userIdentitySha256: "d".repeat(64),
+        identitySha256: "c".repeat(64),
+      },
+    });
+
+    await expect(sandbox.resolveCommandRuntime("node")).rejects.toThrow(
+      "Configured Sandbox runtime identity changed",
+    );
+  });
+
   it("pins a mutable tag and runs Node argv with container runtime identity", async () => {
     const workspaceRoot = await temporaryWorkspace();
     const client = identityClient();

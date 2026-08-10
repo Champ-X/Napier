@@ -75,9 +75,20 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   sandbox_container_available: {
     id: "enable_container_sandbox",
     instruction:
-      "A container runtime was found. Set NAPIER_CONTAINER_SANDBOX_IMAGE to a trusted image (for example alpine:3.20) to enable a container sandbox; on VM-backed runtimes like colima also set NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR to a mount-shared path.",
-    verifyCommand:
-      "NAPIER_CONTAINER_SANDBOX_IMAGE='IMAGE' napier doctor --workspace 'WORKSPACE_PATH' --offline",
+      "A local container runtime is ready. Run napier setup --workspace 'WORKSPACE_PATH' --component sandbox, then apply its exact preview to build and verify the supported toolchain.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  sandbox_configured_unavailable: {
+    id: "repair_configured_sandbox",
+    instruction:
+      "Start the same local Docker daemon, then rerun Doctor. If the image or daemon identity changed, rerun exact-preview Sandbox setup to rebuild and persist a verified installation.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  sandbox_configured_invalid: {
+    id: "repair_invalid_sandbox",
+    instruction:
+      "Rerun napier setup --workspace 'WORKSPACE_PATH' --component sandbox, inspect the new preview, and explicitly apply its exact SHA-256 to replace the invalid persisted configuration.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
   sandbox_host_direct: {
     id: "prefer_isolated_sandbox",

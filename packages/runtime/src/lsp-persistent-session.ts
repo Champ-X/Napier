@@ -7,7 +7,6 @@ import {
   StreamMessageWriter,
   type MessageConnection,
 } from "vscode-jsonrpc/node.js";
-
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   initializeLspConnection,
@@ -281,6 +280,7 @@ class PersistentLspProtocolSession {
       env: { ...LSP_FIXED_ENVIRONMENT },
       workspaceRoot: request.workspaceRoot,
       approvedCapabilities: ["process.spawn", "workspace.read"],
+      stdinMode: "open",
       ...(request.runtimeLocation === "provider"
         ? {}
         : {

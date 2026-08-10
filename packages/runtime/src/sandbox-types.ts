@@ -12,6 +12,7 @@ export interface SandboxLaunchRequest {
   runtimeReadPaths?: string[];
   workspaceWritePaths?: string[];
   parentDeathGuard?: boolean;
+  stdinMode?: "open";
   signal?: AbortSignal;
   localService?: SandboxLocalServiceRequest;
   terminal?: {

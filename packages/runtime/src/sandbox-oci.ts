@@ -15,6 +15,7 @@ import {
   validateOciContainerName,
 } from "./sandbox-container-runtime.js";
 import {
+  createHostProjection,
   createContainerServiceNetwork,
   resolveContainerLocalService,
   validateContainerServiceNetworkName,
@@ -55,6 +56,15 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   private readonly terminalLauncher: typeof launchTerminalSandboxWrapper;
   private readonly userIds: ContainerUserIds | undefined;
   private readonly daemonEndpoint: string | undefined;
+  private readonly createLocalServiceProjection: typeof createHostProjection;
+  private readonly expectedIdentity:
+    | {
+        clientExecutableSha256: string;
+        daemonEndpointSha256: string;
+        userIdentitySha256: string;
+        identitySha256: string;
+      }
+    | undefined;
   private imageIdentity: Promise<ContainerImageIdentity> | undefined;
   private readonly runtimeBindings = new Map<
     SandboxCommandRuntime,
@@ -74,6 +84,13 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       terminalLauncher?: typeof launchTerminalSandboxWrapper;
       userIds?: ContainerUserIds;
       daemonEndpoint?: string;
+      createLocalServiceProjection?: typeof createHostProjection;
+      expectedIdentity?: {
+        clientExecutableSha256: string;
+        daemonEndpointSha256: string;
+        userIdentitySha256: string;
+        identitySha256: string;
+      };
     } = {},
   ) {
     this.executable = options.executable;
@@ -83,6 +100,9 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       options.terminalLauncher ?? launchTerminalSandboxWrapper;
     this.userIds = options.userIds;
     this.daemonEndpoint = options.daemonEndpoint;
+    this.createLocalServiceProjection =
+      options.createLocalServiceProjection ?? createHostProjection;
+    this.expectedIdentity = options.expectedIdentity;
   }
 
   private readonly spawnProcess: typeof spawn;
@@ -148,6 +168,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       env: clientEnvironment,
     };
     let child: SandboxedProcess | undefined;
+    let closeLocalServiceProjection: (() => Promise<void>) | undefined;
     try {
       await writeFile(
         containerEnvironmentFile(sandboxHome),
@@ -194,23 +215,33 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
         ...(request.parentDeathGuard
           ? { guardianCleanup: cleanup }
           : {
-              beforeCleanup: () =>
-                removeContainerLaunchResources(
+              beforeCleanup: async () => {
+                await closeLocalServiceProjection?.();
+                await removeContainerLaunchResources(
                   identity,
                   containerName,
                   networkName,
                   this.containerClient,
                   this.userIds,
                   this.daemonEndpoint,
-                ),
+                );
+              },
             }),
+        ...(request.parentDeathGuard
+          ? {
+              beforeCleanup: async () => {
+                await closeLocalServiceProjection?.();
+              },
+            }
+          : {}),
         spawnProcess: this.spawnProcess,
       });
       if (!request.localService || !networkName) return child;
-      const localService = await resolveContainerLocalService({
+      const projection = await resolveContainerLocalService({
         identity,
         containerName,
         networkName,
+        nodeExecutable: request.command,
         service: request.localService,
         child,
         ...(this.containerClient ? { client: this.containerClient } : {}),
@@ -219,8 +250,10 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
           ? { injectedDaemonEndpoint: this.daemonEndpoint }
           : {}),
         ...(request.signal ? { signal: request.signal } : {}),
+        createProjection: this.createLocalServiceProjection,
       });
-      return { ...child, localService };
+      closeLocalServiceProjection = projection.close;
+      return { ...child, localService: projection.binding };
     } catch (error) {
       if (child) {
         await child.terminate().catch(() => undefined);
@@ -284,6 +317,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     );
     try {
       const identity = await this.imageIdentity;
+      this.assertExpectedIdentity(identity);
       await assertContainerImageIdentityStable(
         identity,
         this.containerClient,
@@ -297,6 +331,19 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       this.lspRuntimeBinding = undefined;
       this.nodeDebuggerRuntimeBinding = undefined;
       throw error;
+    }
+  }
+
+  private assertExpectedIdentity(identity: ContainerImageIdentity): void {
+    const expected = this.expectedIdentity;
+    if (
+      expected &&
+      (identity.clientExecutableSha256 !== expected.clientExecutableSha256 ||
+        identity.daemon.endpointSha256 !== expected.daemonEndpointSha256 ||
+        identity.user.identitySha256 !== expected.userIdentitySha256 ||
+        identity.identitySha256 !== expected.identitySha256)
+    ) {
+      throw new Error("Configured Sandbox runtime identity changed");
     }
   }
 }
@@ -336,7 +383,11 @@ export function buildOciContainerArgs(
     containerName,
     "--user",
     `${String(user.userId)}:${String(user.groupId)}`,
-    ...(request.terminal ? ["--interactive", "--tty"] : []),
+    ...(request.terminal
+      ? ["--interactive", "--tty"]
+      : request.stdinMode === "open"
+        ? ["--interactive"]
+        : []),
     "--cap-drop",
     "ALL",
     "--security-opt",
@@ -353,12 +404,6 @@ export function buildOciContainerArgs(
       : capabilities.has("network.connect")
         ? "bridge"
         : "none",
-    ...(request.localService
-      ? [
-          "--publish",
-          `127.0.0.1::${String(request.localService.containerPort)}/tcp`,
-        ]
-      : []),
     "--read-only",
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=64m,mode=1777",

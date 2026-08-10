@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Writable } from "node:stream";
@@ -511,6 +511,87 @@ describe("Napier Doctor CLI", () => {
         }),
       ]),
     );
+  });
+
+  it("preserves configured OCI intent when the local daemon is unavailable", async () => {
+    const fixture = await createFixture();
+    const stdout = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--model",
+        "napier/demo",
+        "--offline",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      doctorDependencies({
+        model: passed("model", "demo_model_ready"),
+        sandbox: warning("sandbox", "sandbox_configured_unavailable"),
+      }),
+    );
+
+    expect(code).toBe(0);
+    const report = JSON.parse(stdout.text()) as {
+      remediations: Array<{
+        id: string;
+        instruction: string;
+        verifyCommand: string;
+      }>;
+    };
+    expect(report.remediations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "repair_configured_sandbox",
+          instruction: expect.stringContaining("same local Docker daemon"),
+          verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+        }),
+      ]),
+    );
+  });
+
+  it("reports an invalid persisted Sandbox configuration without blaming the workspace", async () => {
+    const fixture = await createFixture();
+    const dataRoot = path.join(fixture.workspace, ".napier");
+    await mkdir(dataRoot);
+    await writeFile(path.join(dataRoot, "sandbox.json"), '{"invalid":true}\n');
+    const stdout = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--model",
+        "napier/demo",
+        "--offline",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      { createRuntime: vi.fn() },
+    );
+
+    expect(code).toBe(0);
+    const report = JSON.parse(stdout.text()) as {
+      status: string;
+      checks: DoctorCheck[];
+      remediations: Array<{ id: string }>;
+    };
+    expect(report.status).toBe("degraded");
+    expect(report.checks).toEqual([
+      expect.objectContaining({
+        id: "sandbox",
+        status: "warning",
+        required: false,
+        code: "sandbox_configured_invalid",
+      }),
+    ]);
+    expect(report.remediations).toEqual([
+      expect.objectContaining({ id: "repair_invalid_sandbox" }),
+    ]);
   });
 });
 

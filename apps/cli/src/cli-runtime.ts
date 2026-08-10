@@ -7,6 +7,7 @@ import type {
 
 import type { DoctorProbeDependencies } from "./doctor-probes.js";
 import type { BrowserRuntimeSetupDependencies } from "./browser-runtime-setup-model.js";
+import type { CliSandboxRuntimeSetupDependencies } from "./sandbox-runtime-setup-model.js";
 
 export interface CliIo {
   cwd: string;
@@ -23,4 +24,5 @@ export interface RunCliDependencies {
   ): Promise<LocalAgentRuntimeServices>;
   doctor?: DoctorProbeDependencies;
   browserSetup?: BrowserRuntimeSetupDependencies;
+  sandboxSetup?: CliSandboxRuntimeSetupDependencies;
 }

@@ -565,6 +565,19 @@ describe("OS sandbox adapters", () => {
     ).join("\0");
     expect(terminal).toContain("--interactive\0--tty");
     expect(terminal).not.toContain("--rm");
+    const openPipe = buildOciContainerArgs(
+      {
+        ...BASE_REQUEST,
+        stdinMode: "open",
+        approvedCapabilities: ["process.spawn"],
+      },
+      "/tmp/napier-sandbox",
+      "ghcr.io/example/napier-sandbox:node22",
+      OCI_CONTAINER_NAME,
+      OCI_USER_IDENTITY,
+    ).join("\0");
+    expect(openPipe).toContain("--interactive");
+    expect(openPipe).not.toContain("--tty");
   });
 
   it("rejects relative executables and write-only workspace access", () => {
@@ -656,6 +669,20 @@ describe("OS sandbox adapters", () => {
         "/tmp/napier-sandbox",
       ),
     ).toThrow("cannot overlap");
+    expect(() =>
+      buildOciContainerArgs(
+        {
+          ...BASE_REQUEST,
+          stdinMode: "open",
+          terminal: { columns: 80, rows: 24 },
+          approvedCapabilities: ["process.spawn"],
+        },
+        "/tmp/napier-sandbox",
+        "alpine:3.20",
+        OCI_CONTAINER_NAME,
+        OCI_USER_IDENTITY,
+      ),
+    ).toThrow("cannot be combined with PTY");
     expect(() =>
       buildOciContainerArgs(
         {

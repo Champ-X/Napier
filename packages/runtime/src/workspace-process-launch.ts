@@ -139,6 +139,7 @@ export async function launchWorkspaceProcess(input: {
     }
     child = await input.options.sandbox.launch({
       ...io.launch,
+      ...(request.interactive === true ? { stdinMode: "open" as const } : {}),
       ...(request.signal ? { signal: request.signal } : {}),
     });
   } catch (error) {

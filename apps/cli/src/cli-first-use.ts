@@ -6,6 +6,7 @@ import { parseSetupOptions } from "./cli-setup-options.js";
 import { executeDoctor } from "./doctor-cli.js";
 import type { CliFirstUseAction } from "./cli-first-use-model.js";
 import { executeSetup } from "./setup-cli.js";
+import { executeSandboxRuntimeSetup } from "./sandbox-runtime-setup-cli.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 
 export function isFirstUseCliAction(action: {
@@ -47,6 +48,14 @@ export async function executeFirstUseCliAction(
         action.options,
         io,
         dependencies.browserSetup,
+        signal,
+      );
+    }
+    if (action.options.component === "sandbox") {
+      return executeSandboxRuntimeSetup(
+        action.options,
+        io,
+        dependencies.sandboxSetup,
         signal,
       );
     }

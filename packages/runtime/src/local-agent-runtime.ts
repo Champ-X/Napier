@@ -22,6 +22,7 @@ import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
 } from "./sandbox.js";
+import { createConfiguredSandboxAdapter } from "./sandbox-installation.js";
 import { LocalStore } from "./store.js";
 import type { WebSearchExecutor } from "./web-search-model.js";
 import { WebSearchProviderRegistry } from "./web-search-providers.js";
@@ -94,7 +95,13 @@ export async function createLocalAgentRuntime(
       ...(options.keychain ? { keychain: options.keychain } : {}),
     });
     const models = new ModelRegistry(credentials);
-    const sandbox = options.sandbox ?? createPlatformSandboxAdapter();
+    const sandbox =
+      options.sandbox ??
+      (await createConfiguredSandboxAdapter({
+        dataRoot,
+        ...(options.env ? { env: options.env } : {}),
+      })) ??
+      createPlatformSandboxAdapter();
     extensions = new McpExtensionManager({ store, sandbox });
     workspaceProcesses = new WorkspaceProcessManager({
       store,

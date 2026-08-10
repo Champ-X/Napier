@@ -6704,27 +6704,54 @@ shell, package installation, arbitrary host networking, an existing user
 browser, or unreviewed local file access.
 
 This in-process policy is defense in depth, not an operating-system sandbox.
-General shell execution remains disabled. Stdio MCP, structured workspace
-verification, the foreground command runner, Workspace Process Sessions, and
-the JavaScript/Python kernels, and the Node debugger are the narrow process
-exceptions: macOS uses `/usr/bin/sandbox-exec`; Linux requires
-`/usr/bin/bwrap` and usable kernel or setuid namespace support. Windows or
-explicitly containerized deployments can opt into an OCI adapter by configuring
-`NAPIER_CONTAINER_SANDBOX_IMAGE`; it uses an absolute Docker-compatible
-executable and accepts only a local Docker daemon. A mutable image reference is
-used for inspection only; production launches use the resulting immutable image
-ID and revalidate the client, daemon, and numeric host UID/GID identity before
-reuse. Containers run as that UID:GID with a read-only root filesystem, bounded
-private tmpfs storage, capability-derived workspace mounts, and `--network none`
-unless networking is approved. Scoped Process writes keep the workspace root
-read-only and add only the preview-bound writable mounts. OCI PTY sessions use
-the production guardian and an unpredictable container name so normal exit,
-cancel, and parent death remove the exact resource without relying on Docker
-auto-remove. These adapters launch only an explicitly selected absolute
-executable, avoid shell invocation, and derive network and workspace access
-from reviewed capabilities. Missing sandbox prerequisites, remote daemon
-contexts, and unsupported host user mapping fail closed; a container or VM
-remains the recommended outer boundary for production third-party code.
+Stdio MCP, structured workspace verification, the foreground command runner,
+Workspace Process Sessions, JavaScript/Python kernels, and the Node debugger
+are the reviewed process surfaces. macOS may use `/usr/bin/sandbox-exec` and
+Linux may use `/usr/bin/bwrap`, but the supported cross-platform setup is the
+repository's pinned OCI toolchain:
+
+```bash
+npm run --silent napier -- setup \
+  --workspace . \
+  --component sandbox \
+  --jsonl
+
+npm run --silent napier -- setup \
+  --workspace . \
+  --component sandbox \
+  --expected-preview <contentSha256> \
+  --apply \
+  --jsonl
+
+npm run --silent napier -- doctor --workspace . --offline --jsonl
+```
+
+The exact-preview apply builds `docker/napier-sandbox/Dockerfile` against its
+digest-pinned multi-architecture Node base, verifies Node, Shell, Python, Git,
+TypeScript LSP, Node DAP, and a loopback local service through production
+paths, then atomically writes only hashed image/client/daemon/user identities
+to `.napier/sandbox.json` with mode `0600`. Subsequent Web and CLI runtimes
+automatically use the immutable image ID; users do not edit an internal Agent
+Profile or export an image variable. The source checkout currently builds this
+image locally as `napier-sandbox:0.1.0`; registry publication, SBOM, and signing
+remain release work and are not implied by local setup.
+
+The OCI adapter accepts only a local Docker daemon. A mutable image reference
+is used for setup inspection only; production launches use the resolved
+immutable image ID and revalidate the client, daemon, and numeric host UID/GID
+identity before reuse. Containers run as that UID:GID with a read-only root
+filesystem, bounded private tmpfs storage, capability-derived workspace
+mounts, and `--network none` unless networking is approved. Scoped Process
+writes keep the workspace root read-only and add only preview-bound writable
+mounts. Local services remain on a Docker `--internal` network; Napier projects
+an ephemeral `127.0.0.1` listener through bounded `docker exec` streams rather
+than enabling container egress or Docker port publishing. OCI PTY sessions use
+the production guardian and unpredictable resource names so normal exit,
+cancel, and parent death remove the exact container/network without relying on
+Docker auto-remove. Missing prerequisites, remote daemon contexts, daemon or
+identity drift, and unsupported host user mapping fail closed. Doctor reports
+`sandbox_configured_unavailable` with the exact restart/rebuild recovery path
+instead of silently falling back to host-direct execution.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only

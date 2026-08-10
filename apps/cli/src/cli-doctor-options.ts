@@ -8,6 +8,7 @@ export const MAX_DOCTOR_TIMEOUT_MS = 120_000;
 
 export interface CliDoctorOptions {
   workspace: string;
+  dataRoot?: string;
   model?: ModelRef;
   credentialEnv?: string;
   timeoutMs: number;
@@ -17,6 +18,7 @@ export interface CliDoctorOptions {
 
 export const DOCTOR_VALUE_OPTIONS = new Set([
   "--workspace",
+  "--data-root",
   "--model",
   "--credential-env",
   "--timeout-ms",
@@ -37,6 +39,9 @@ export function parseDoctorOptions(
       timeoutMs: doctorTimeout(values.get("--timeout-ms")),
       online: !flags.has("--offline"),
       jsonl,
+      ...(values.has("--data-root")
+        ? { dataRoot: requiredValue(values, "--data-root") }
+        : {}),
       ...(model ? { model } : {}),
       ...(credentialEnv ? { credentialEnv } : {}),
     },

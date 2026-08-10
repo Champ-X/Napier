@@ -3,6 +3,8 @@ import path from "node:path";
 import { writeJsonLine, writeLine } from "./cli-output.js";
 import type { CliDoctorOptions } from "./cli-doctor-options.js";
 import type { CliIo } from "./cli-runtime.js";
+import { createPlatformSandboxAdapter } from "@napier/runtime";
+import { createConfiguredSandboxAdapter } from "@napier/runtime/sandbox-installation";
 import {
   createDoctorReport,
   formatDoctorReport,
@@ -24,8 +26,22 @@ export async function executeDoctor(
   const signal = parentSignal
     ? AbortSignal.any([parentSignal, timeoutSignal])
     : timeoutSignal;
+  let workspaceReady = false;
+  let loadingSandbox = false;
   try {
     const workspaceRoot = await canonicalWorkspace(options.workspace, io.cwd);
+    workspaceReady = true;
+    const dataRoot = path.resolve(
+      io.cwd,
+      options.dataRoot ?? path.join(workspaceRoot, ".napier"),
+    );
+    loadingSandbox = true;
+    const sandbox =
+      (await createConfiguredSandboxAdapter({
+        dataRoot,
+        env: io.env,
+      })) ?? createPlatformSandboxAdapter();
+    loadingSandbox = false;
     signal.throwIfAborted();
     const checks = await withinSignal(
       runDoctorProbes({
@@ -34,6 +50,7 @@ export async function executeDoctor(
         env: io.env,
         signal,
         dependencies,
+        sandbox,
       }),
       signal,
     );
@@ -52,19 +69,29 @@ export async function executeDoctor(
       ...(options.model ? { model: options.model } : {}),
       checks: [
         {
-          id: signal.aborted ? "runtime" : "workspace",
-          status: "failed",
-          required: true,
-          code: signal.aborted ? "doctor_cancelled" : "workspace_unavailable",
+          id: signal.aborted
+            ? "runtime"
+            : workspaceReady && loadingSandbox
+              ? "sandbox"
+              : "workspace",
+          status: workspaceReady && loadingSandbox ? "warning" : "failed",
+          required: !(workspaceReady && loadingSandbox),
+          code: signal.aborted
+            ? "doctor_cancelled"
+            : workspaceReady && loadingSandbox
+              ? "sandbox_configured_invalid"
+              : "workspace_unavailable",
           message: signal.aborted
             ? "Doctor was cancelled or exceeded its time budget"
-            : "Workspace is missing, inaccessible, or not a directory",
+            : workspaceReady && loadingSandbox
+              ? "The persisted Sandbox configuration is invalid or unreadable; process tasks fail closed until exact-preview Sandbox setup repairs it"
+              : "Workspace is missing, inaccessible, or not a directory",
           durationMs: 0,
         },
       ],
     });
     await writeDoctorReport(report, options.jsonl, io);
-    return 1;
+    return report.status === "blocked" ? 1 : 0;
   }
 }
 

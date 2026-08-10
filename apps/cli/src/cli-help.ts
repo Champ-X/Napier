@@ -33,7 +33,7 @@ Commands:
   tui                    Open the full-screen local Agent terminal
   capabilities           Inspect, preview, or apply an Agent capability preset
   doctor                 Diagnose first-use model, network, Browser, and Sandbox readiness
-  setup                  Configure a Provider locator or pinned Browser runtime
+  setup                  Configure a Provider, pinned Browser, or Sandbox runtime
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
   experiment             Re-run a historical Agent message read-only
@@ -57,11 +57,11 @@ Doctor options:
   --timeout-ms <ms>      Total Doctor time budget (default ${DEFAULT_DOCTOR_TIMEOUT_MS}, max ${MAX_DOCTOR_TIMEOUT_MS})
 
 Setup options:
-  --component browser    Preview or apply the pinned Playwright Chromium runtime
+  --component <name>     Preview or apply the pinned browser or sandbox runtime
   --provider <id>        Standard Provider selected from setup preview
   --expected-preview     Exact setup preview SHA-256 required for apply
-  --timeout-ms <ms>      Browser install/verification budget (default ${DEFAULT_SETUP_TIMEOUT_MS}, max ${MAX_SETUP_TIMEOUT_MS})
-  --apply                Apply the exact Provider or Browser preview
+  --timeout-ms <ms>      Component install/verification budget (default ${DEFAULT_SETUP_TIMEOUT_MS}, max ${MAX_SETUP_TIMEOUT_MS})
+  --apply                Apply the exact Provider, Browser, or Sandbox preview
   --jsonl                Emit one setup preview or result JSON object
 
 Capability options:
