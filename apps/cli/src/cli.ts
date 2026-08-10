@@ -28,6 +28,10 @@ import {
   type CliWorkflowOptions,
 } from "./cli-options.js";
 import { cliRunPromptOptions } from "./cli-run-options.js";
+import {
+  assertCliResumeReadiness,
+  prepareCliRunTarget,
+} from "./cli-run-readiness.js";
 import { executeCliInvocation } from "./cli-invocation.js";
 import { createCliWorkflowExperimentRequest } from "./cli-workflow-experiment.js";
 import { executeAgentMessageExperimentCli } from "./agent-message-experiment-cli.js";
@@ -140,11 +144,20 @@ async function executeRun(
     parentSignal,
     options.threadId ?? "thread_cli_preflight",
     true,
-    async (services) => {
+    async (services, signal) => {
+      const { existing, agent } = await prepareCliRunTarget(
+        services,
+        options,
+        signal,
+        dependencies.runReadiness,
+      );
       await configureCliModelCredential(services, options, io.env);
-      const thread = options.threadId
-        ? existingThread(services, options)
-        : await newThread(services, options);
+      const thread =
+        existing ??
+        (await services.store.createThread({
+          title: options.title ?? "CLI one-shot",
+          agentId: agent.id,
+        }));
       return {
         threadId: thread.id,
         invoke: (signal, onEvent) =>
@@ -169,8 +182,15 @@ async function executeResume(
     parentSignal,
     options.threadId,
     false,
-    (services) => {
+    async (services, signal) => {
       services.store.getThread(options.threadId);
+      await assertCliResumeReadiness(
+        services,
+        options.threadId,
+        options.runId,
+        signal,
+        dependencies.runReadiness,
+      );
       return {
         threadId: options.threadId,
         invoke: (signal, onEvent) =>
@@ -528,31 +548,6 @@ async function createWorkflowThread(
   if (!agent) throw new Error("No Agent profile is available");
   return services.store.createThread({
     title: options.title ?? "CLI Workflow",
-    agentId: agent.id,
-  });
-}
-
-function existingThread(
-  services: LocalAgentRuntimeServices,
-  options: CliRunOptions,
-) {
-  const thread = services.store.getThread(options.threadId!);
-  if (options.agentId && options.agentId !== thread.agentId) {
-    throw new Error("Existing Thread Agent does not match --agent");
-  }
-  return thread;
-}
-
-async function newThread(
-  services: LocalAgentRuntimeServices,
-  options: CliRunOptions,
-) {
-  const agent = options.agentId
-    ? services.store.getAgent(options.agentId)
-    : services.store.listAgents()[0];
-  if (!agent) throw new Error("No Agent profile is available");
-  return services.store.createThread({
-    title: options.title ?? "CLI one-shot",
     agentId: agent.id,
   });
 }

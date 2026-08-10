@@ -8,7 +8,14 @@ import {
 } from "@napier/runtime";
 
 import type { CliChatOptions } from "./cli-chat-options.js";
+import { cliErrorFrame } from "./cli-public-error.js";
 import { configureCliModelCredential } from "./cli-model-credential.js";
+import {
+  activeCliAgent,
+  assertCliResumeReadiness,
+  assertCliRunReadiness,
+  cliRunReadinessNotice,
+} from "./cli-run-readiness.js";
 import { recommendedCliRunModel } from "./cli-default-run-model.js";
 import { writeLine } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
@@ -144,7 +151,15 @@ export async function executeTui(
       } else if (action.kind === "changed") {
         scheduleRender();
       } else if (action.kind === "submit") {
-        void handleSubmission(action.value).catch(failSession);
+        void handleSubmission(action.value).catch((error) => {
+          const notice = cliRunReadinessNotice(error, state.currentThreadId());
+          if (!notice) {
+            failSession(error);
+            return;
+          }
+          state.setNotice(notice);
+          scheduleRender();
+        });
       }
     }
   };
@@ -205,7 +220,7 @@ export async function executeTui(
           failSession(error);
           return;
         }
-        const frame = streamRunErrorFrame(
+        const frame = cliErrorFrame(
           state.currentThreadId() ?? "thread_cli_tui",
           error,
         );
@@ -269,7 +284,7 @@ export async function executeTui(
           state.setModel(
             await recommendedCliRunModel(
               services!,
-              activeTuiAgent(
+              activeCliAgent(
                 services!,
                 options.agentId,
                 state.currentThreadId(),
@@ -285,13 +300,13 @@ export async function executeTui(
             state.setModelSilently(
               await recommendedCliRunModel(
                 services!,
-                activeTuiAgent(services!, undefined, command.threadId),
+                activeCliAgent(services!, undefined, command.threadId),
               ),
             );
           }
           state.setCapabilities(
             interactiveCapabilityStatus(
-              activeTuiAgent(services!, undefined, command.threadId),
+              activeCliAgent(services!, undefined, command.threadId),
               options.capabilityPreset,
               services!.browserInteractionConfirmations.available,
             ),
@@ -302,13 +317,13 @@ export async function executeTui(
             state.setModelSilently(
               await recommendedCliRunModel(
                 services!,
-                activeTuiAgent(services!, options.agentId, undefined),
+                activeCliAgent(services!, options.agentId, undefined),
               ),
             );
           }
           state.setCapabilities(
             interactiveCapabilityStatus(
-              activeTuiAgent(services!, options.agentId, undefined),
+              activeCliAgent(services!, options.agentId, undefined),
               options.capabilityPreset,
               services!.browserInteractionConfirmations.available,
             ),
@@ -316,15 +331,22 @@ export async function executeTui(
         } else if (command.kind === "clear") {
           state.clearTranscript();
         } else if (command.kind === "resume") {
-          startOperation("resume", (signal, onEvent) =>
-            services!.embeddedAgents.resume({
+          startOperation("resume", async (signal, onEvent) => {
+            await assertCliResumeReadiness(
+              services!,
+              state.currentThreadId()!,
+              command.runId,
+              signal,
+              dependencies.runReadiness,
+            );
+            return services!.embeddedAgents.resume({
               threadId: state.currentThreadId()!,
               ...(command.runId ? { runId: command.runId } : {}),
               ...(state.currentModel() ? { model: state.currentModel()! } : {}),
               signal,
               onEvent,
-            }),
-          );
+            });
+          });
           return;
         }
       } catch (error) {
@@ -335,6 +357,13 @@ export async function executeTui(
     }
 
     const prompt = raw.startsWith("//") ? raw.slice(1) : raw;
+    await assertCliRunReadiness(
+      services!,
+      activeCliAgent(services!, options.agentId, state.currentThreadId()),
+      options.capabilityPreset,
+      sessionController.signal,
+      dependencies.runReadiness,
+    );
     state.beginPrompt(prompt);
     startOperation("prompt", (signal, onEvent) =>
       services!.embeddedAgents.run({
@@ -386,17 +415,18 @@ export async function executeTui(
       services.browserInteractionConfirmations,
     );
     sessionController.signal.throwIfAborted();
+    const initialAgent = activeCliAgent(
+      services,
+      options.agentId,
+      state.currentThreadId(),
+    );
     await configureCliModelCredential(services, options, io.env);
     state.setModelSilently(
-      options.model ??
-        (await recommendedCliRunModel(
-          services,
-          activeTuiAgent(services, options.agentId, state.currentThreadId()),
-        )),
+      options.model ?? (await recommendedCliRunModel(services, initialAgent)),
     );
     state.setCapabilities(
       interactiveCapabilityStatus(
-        activeTuiAgent(services, options.agentId, state.currentThreadId()),
+        initialAgent,
         options.capabilityPreset,
         services.browserInteractionConfirmations.available,
       ),
@@ -448,19 +478,6 @@ export async function executeTui(
     return 1;
   }
   return await exit.promise;
-}
-
-function activeTuiAgent(
-  services: LocalAgentRuntimeServices,
-  requestedAgentId: string | undefined,
-  threadId: string | undefined,
-) {
-  if (threadId) {
-    return services.store.getAgent(services.store.getThread(threadId).agentId);
-  }
-  return requestedAgentId
-    ? services.store.getAgent(requestedAgentId)
-    : services.store.listAgents()[0]!;
 }
 
 function deferred<T>(): { promise: Promise<T>; resolve(value: T): void } {

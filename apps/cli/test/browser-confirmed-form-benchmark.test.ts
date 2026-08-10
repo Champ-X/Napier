@@ -356,6 +356,13 @@ async function executeFormalCli(
         services.models.registerProvider(provider.provider);
         return services;
       },
+      runReadiness: {
+        processSandbox: async () => ({
+          status: "ready",
+          code: "shell_ready",
+          message: "Controlled confirmed-form process readiness",
+        }),
+      },
     },
     request.signal,
   );

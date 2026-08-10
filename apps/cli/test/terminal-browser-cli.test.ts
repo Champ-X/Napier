@@ -267,7 +267,7 @@ describe("terminal Browser interaction confirmation", () => {
         ),
       );
 
-      expect(code).toBe(0);
+      expect(code, stderr.text() || stdout.text()).toBe(0);
       expect(operations).toEqual(["start"]);
       expect(stdout.text()).toContain(
         `ONE_SHOT_${mode.toUpperCase()}_READ_ONLY`,
@@ -519,6 +519,17 @@ function browserDependencies(
       services.models.registerProvider(provider.provider);
       return services;
     },
+    runReadiness: readyRunReadiness(),
+  };
+}
+
+function readyRunReadiness() {
+  return {
+    processSandbox: async () => ({
+      status: "ready" as const,
+      code: "shell_ready",
+      message: "Controlled Browser fixture process readiness",
+    }),
   };
 }
 

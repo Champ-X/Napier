@@ -174,6 +174,47 @@ describe("Napier full-screen TUI", () => {
     }
   });
 
+  it("keeps TUI available but blocks a process preset before creating a Run", async () => {
+    const fixture = await createFixture();
+    const input = new RawTtyInput();
+    const stdout = new TtyCapture();
+    const running = runCli(
+      [
+        "tui",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--preset",
+        "coding",
+      ],
+      tuiIo(fixture.root, input, stdout, new CaptureWritable()),
+      providersDependencies([]),
+    );
+    await ready(stdout);
+    input.write("Modify the workspace.\r");
+    await waitForFrame(stdout, "requires a supported process Sandbox");
+    input.write("/exit\r");
+
+    expect(await running).toBe(0);
+    expect(input.rawModes).toEqual([true, false]);
+    const reopened = await createLocalAgentRuntime({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("tui-run-gate-inspect"),
+    });
+    try {
+      expect(reopened.store.listThreads()).toHaveLength(1);
+      expect(
+        reopened.store
+          .listThreads()
+          .flatMap((thread) => reopened.store.listRuns(thread.id)),
+      ).toHaveLength(1);
+    } finally {
+      await reopened.shutdown();
+    }
+  });
+
   it("runs durable turns, renders body-free tools, switches model and Thread, and shows operator waiting", async () => {
     const fixture = await createFixture();
     await writeFile(

@@ -13,6 +13,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { parseCliArgs, runCli, type RunCliDependencies } from "../src/cli.js";
+import { assertCliResumeReadiness } from "../src/cli-run-readiness.js";
 
 const roots: string[] = [];
 
@@ -81,13 +82,7 @@ describe("temporary capability preset CLI", () => {
     const stdin = ttyInput();
     const stderr = new CaptureWritable();
     const running = runCli(
-      [
-        "chat",
-        "--workspace",
-        workspaceRoot,
-        "--preset",
-        "safe_automation",
-      ],
+      ["chat", "--workspace", workspaceRoot, "--preset", "safe_automation"],
       {
         cwd: root,
         env: {},
@@ -167,6 +162,66 @@ describe("temporary capability preset CLI", () => {
     }
   });
 
+  it("blocks process presets before one-shot model, credential, Thread, or Run mutation", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-cli-run-gate-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "state");
+    await mkdir(workspaceRoot);
+    const provider = fauxProvider({ provider: "run-gate" });
+    provider.setResponses([fauxAssistantMessage("MUST_NOT_RUN")]);
+    const stderr = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "run",
+        "--workspace",
+        workspaceRoot,
+        "--data-root",
+        dataRoot,
+        "--model",
+        "run-gate/faux-1",
+        "--credential-env",
+        "RUN_GATE_KEY",
+        "--prompt",
+        "Modify the workspace.",
+        "--preset",
+        "coding",
+      ],
+      {
+        cwd: root,
+        env: { RUN_GATE_KEY: "PRIVATE_RUN_GATE_KEY" },
+        stdout: new CaptureWritable(),
+        stderr,
+      },
+      dependencies(provider),
+    );
+
+    expect(code).toBe(1);
+    expect(provider.state.callCount).toBe(0);
+    expect(stderr.text()).toContain("requires a supported process Sandbox");
+    expect(stderr.text()).toContain("--component sandbox");
+    expect(stderr.text()).not.toContain("PRIVATE_RUN_GATE_KEY");
+
+    const reopened = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      env: { RUN_GATE_KEY: "PRIVATE_RUN_GATE_KEY" },
+      sandbox: new UnsupportedSandboxAdapter("run-gate-inspect"),
+    });
+    try {
+      expect(reopened.store.listThreads()).toHaveLength(1);
+      expect(reopened.store.listCredentialReferences()).toEqual([]);
+      expect(
+        reopened.store
+          .listThreads()
+          .flatMap((thread) => reopened.store.listRuns(thread.id)),
+      ).toHaveLength(1);
+    } finally {
+      await reopened.shutdown();
+    }
+  });
+
   it("uses and reports the temporary preset for each Chat turn", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-chat-preset-"));
     roots.push(root);
@@ -226,6 +281,103 @@ describe("temporary capability preset CLI", () => {
       );
     } finally {
       await reopened.shutdown();
+    }
+  });
+
+  it("keeps Chat available but blocks a process preset before creating a Run", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-chat-run-gate-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "state");
+    await mkdir(workspaceRoot);
+    const input = ttyInput();
+    const stderr = new CaptureWritable();
+    const running = runCli(
+      [
+        "chat",
+        "--workspace",
+        workspaceRoot,
+        "--data-root",
+        dataRoot,
+        "--preset",
+        "coding",
+      ],
+      {
+        cwd: root,
+        env: {},
+        stdin: input,
+        stdout: new CaptureWritable(),
+        stderr,
+      },
+      dependencies(),
+    );
+    await vi.waitFor(() => expect(stderr.text()).toContain("chat ready"));
+    input.end("Modify the workspace.\n/exit\n");
+
+    expect(await running).toBe(0);
+    expect(stderr.text()).toContain("requires a supported process Sandbox");
+    expect(stderr.text()).toContain("--component sandbox");
+    const reopened = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("chat-run-gate-inspect"),
+    });
+    try {
+      expect(reopened.store.listThreads()).toHaveLength(1);
+      expect(
+        reopened.store
+          .listThreads()
+          .flatMap((thread) => reopened.store.listRuns(thread.id)),
+      ).toHaveLength(1);
+    } finally {
+      await reopened.shutdown();
+    }
+  });
+
+  it("blocks recovery from a frozen Coding Run while allowing frozen Research", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-resume-gate-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "state");
+    await mkdir(workspaceRoot);
+    const services = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("resume-gate-test"),
+    });
+    try {
+      const agent = services.store.listAgents()[0]!;
+      const codingThread = await services.store.createThread({
+        title: "Coding recovery",
+        agentId: agent.id,
+      });
+      const coding = await services.store.createRun({
+        threadId: codingThread.id,
+        agentId: agent.id,
+        capabilityPreset: "coding",
+      });
+      await services.store.finishRun(coding.id, "interrupted");
+
+      await expect(
+        assertCliResumeReadiness(services, codingThread.id, coding.id),
+      ).rejects.toThrow("Sandbox is unavailable");
+
+      const researchThread = await services.store.createThread({
+        title: "Research recovery",
+        agentId: agent.id,
+      });
+      const research = await services.store.createRun({
+        threadId: researchThread.id,
+        agentId: agent.id,
+        capabilityPreset: "research",
+      });
+      await services.store.finishRun(research.id, "interrupted");
+
+      await expect(
+        assertCliResumeReadiness(services, researchThread.id, research.id),
+      ).resolves.toBeUndefined();
+    } finally {
+      await services.shutdown();
     }
   });
 });

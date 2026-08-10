@@ -10,7 +10,13 @@ import {
 } from "@napier/runtime";
 
 import type { CliChatOptions } from "./cli-chat-options.js";
+import { cliErrorFrame } from "./cli-public-error.js";
 import { configureCliModelCredential } from "./cli-model-credential.js";
+import {
+  activeCliAgent,
+  assertCliResumeReadiness,
+  assertCliRunReadiness,
+} from "./cli-run-readiness.js";
 import {
   contextualCliRunModel,
   recommendedCliRunModel,
@@ -112,12 +118,8 @@ export async function executeInteractive(
       browserInteractionConfirmation: { available: true },
     });
     parentSignal?.throwIfAborted();
+    const initialAgent = activeCliAgent(services, options.agentId, threadId);
     await configureCliModelCredential(services, options, io.env);
-    const initialAgent = activeInteractiveAgent(
-      services,
-      options.agentId,
-      threadId,
-    );
     model ??= await recommendedCliRunModel(services, initialAgent);
     capabilities = interactiveCapabilityStatus(
       initialAgent,
@@ -136,10 +138,9 @@ export async function executeInteractive(
     readline = inputLoop;
     inputLoop.on("SIGINT", interrupt);
     const inputQueue = new InteractiveLineQueue();
-    const confirmations =
-      new TerminalBrowserInteractionConfirmationController(
-        services.browserInteractionConfirmations,
-      );
+    const confirmations = new TerminalBrowserInteractionConfirmationController(
+      services.browserInteractionConfirmations,
+    );
     const submitConfirmation = async (line: string): Promise<void> => {
       const result = await confirmations.submit(line);
       if (result === "invalid") {
@@ -148,10 +149,7 @@ export async function executeInteractive(
           "[confirm] Type approve or reject; Ctrl-C cancels the Run.",
         );
       } else if (result === "settling") {
-        await writeLine(
-          io.stderr,
-          "[confirm] Decision is already settling.",
-        );
+        await writeLine(io.stderr, "[confirm] Decision is already settling.");
       } else if (result === "failed") {
         await writeLine(
           io.stderr,
@@ -171,7 +169,9 @@ export async function executeInteractive(
       inputQueue.close();
       if (confirmations.hasPending()) activeController?.abort();
     });
-    const renderEvent = async (event: Parameters<typeof renderer.render>[0]) => {
+    const renderEvent = async (
+      event: Parameters<typeof renderer.render>[0],
+    ) => {
       const confirmation = confirmations.applyEvent(event);
       if (!confirmation) {
         await renderer.render(event);
@@ -241,7 +241,7 @@ export async function executeInteractive(
             automaticModel = true;
             model = await recommendedCliRunModel(
               services,
-              activeInteractiveAgent(services, options.agentId, threadId),
+              activeCliAgent(services, options.agentId, threadId),
             );
             await writeLine(
               io.stderr,
@@ -259,13 +259,13 @@ export async function executeInteractive(
             nextTitle = undefined;
             lastRun = undefined;
             capabilities = interactiveCapabilityStatus(
-              activeInteractiveAgent(services, undefined, threadId),
+              activeCliAgent(services, undefined, threadId),
               options.capabilityPreset,
               services.browserInteractionConfirmations.available,
             );
             model = await contextualCliRunModel(
               services,
-              activeInteractiveAgent(services, undefined, threadId),
+              activeCliAgent(services, undefined, threadId),
               automaticModel,
               model,
             );
@@ -275,13 +275,13 @@ export async function executeInteractive(
             threadId = undefined;
             lastRun = undefined;
             capabilities = interactiveCapabilityStatus(
-              activeInteractiveAgent(services, options.agentId, undefined),
+              activeCliAgent(services, options.agentId, undefined),
               options.capabilityPreset,
               services.browserInteractionConfirmations.available,
             );
             model = await contextualCliRunModel(
               services,
-              activeInteractiveAgent(services, options.agentId, undefined),
+              activeCliAgent(services, options.agentId, undefined),
               automaticModel,
               model,
             );
@@ -293,14 +293,22 @@ export async function executeInteractive(
             const execution = await invoke(
               options.timeoutMs,
               sessionController.signal,
-              (signal) =>
-                services!.embeddedAgents.resume({
+              async (signal) => {
+                await assertCliResumeReadiness(
+                  services!,
+                  threadId!,
+                  command.runId,
+                  signal,
+                  dependencies.runReadiness,
+                );
+                return services!.embeddedAgents.resume({
                   threadId: threadId!,
                   ...(command.runId ? { runId: command.runId } : {}),
                   ...(model ? { model } : {}),
                   signal,
                   onEvent: renderEvent,
-                }),
+                });
+              },
               (controller) => {
                 activeController = controller;
               },
@@ -329,8 +337,15 @@ export async function executeInteractive(
         const execution = await invoke(
           options.timeoutMs,
           sessionController.signal,
-          (signal) =>
-            services!.embeddedAgents.run({
+          async (signal) => {
+            await assertCliRunReadiness(
+              services!,
+              activeCliAgent(services!, options.agentId, threadId),
+              options.capabilityPreset,
+              signal,
+              dependencies.runReadiness,
+            );
+            return services!.embeddedAgents.run({
               prompt: text,
               ...(threadId ? { threadId } : {}),
               ...(options.agentId ? { agentId: options.agentId } : {}),
@@ -341,7 +356,8 @@ export async function executeInteractive(
                 : {}),
               signal,
               onEvent: renderEvent,
-            }),
+            });
+          },
           (controller) => {
             activeController = controller;
           },
@@ -357,7 +373,7 @@ export async function executeInteractive(
           nextTitle = undefined;
           lastRun = execution.run;
           capabilities = interactiveCapabilityStatus(
-            activeInteractiveAgent(services, undefined, threadId),
+            activeCliAgent(services, undefined, threadId),
             options.capabilityPreset,
             services.browserInteractionConfirmations.available,
           );
@@ -386,19 +402,6 @@ export async function executeInteractive(
     readline?.close();
     await services?.shutdown().catch(() => undefined);
   }
-}
-
-function activeInteractiveAgent(
-  services: LocalAgentRuntimeServices,
-  requestedAgentId: string | undefined,
-  threadId: string | undefined,
-) {
-  if (threadId) {
-    return services.store.getAgent(services.store.getThread(threadId).agentId);
-  }
-  return requestedAgentId
-    ? services.store.getAgent(requestedAgentId)
-    : services.store.listAgents()[0]!;
 }
 
 async function invoke(
@@ -435,10 +438,7 @@ async function invoke(
     if (timedOut) {
       await writeLine(stderr, `Napier turn timed out after ${timeoutMs} ms.`);
     } else {
-      const frame = streamRunErrorFrame(
-        threadId ?? "thread_cli_interactive",
-        error,
-      );
+      const frame = cliErrorFrame(threadId ?? "thread_cli_interactive", error);
       await writeLine(
         stderr,
         `Napier turn failed: ${frame.message} (${frame.diagnosticSha256.slice(0, 12)})`,

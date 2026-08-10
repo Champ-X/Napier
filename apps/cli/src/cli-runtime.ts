@@ -8,6 +8,7 @@ import type {
 import type { DoctorProbeDependencies } from "./doctor-probes.js";
 import type { BrowserRuntimeSetupDependencies } from "./browser-runtime-setup-model.js";
 import type { CliSandboxRuntimeSetupDependencies } from "./sandbox-runtime-setup-model.js";
+import type { CliRunReadinessDependencies } from "./cli-run-readiness.js";
 
 export interface CliIo {
   cwd: string;
@@ -25,4 +26,5 @@ export interface RunCliDependencies {
   doctor?: DoctorProbeDependencies;
   browserSetup?: BrowserRuntimeSetupDependencies;
   sandboxSetup?: CliSandboxRuntimeSetupDependencies;
+  runReadiness?: CliRunReadinessDependencies;
 }

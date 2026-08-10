@@ -36,6 +36,7 @@ export async function executeCliInvocation(
   browserInteractionConfirmation: boolean,
   prepare: (
     services: LocalAgentRuntimeServices,
+    signal: AbortSignal,
   ) => PreparedCliInvocation | Promise<PreparedCliInvocation>,
 ): Promise<number> {
   let services: LocalAgentRuntimeServices | undefined;
@@ -65,7 +66,7 @@ export async function executeCliInvocation(
         ? { browserInteractionConfirmation: { available: true } }
         : {}),
     });
-    const invocation = await prepare(services);
+    const invocation = await prepare(services, controller.signal);
     threadId = invocation.threadId;
     const thread = services.store.getThread(threadId);
     const eventWriter = options.jsonl

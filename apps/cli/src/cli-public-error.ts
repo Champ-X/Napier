@@ -10,6 +10,8 @@ const PUBLIC_MESSAGES = {
     "The selected credential reference is unavailable. Restore its environment credential and retry.",
   model_unavailable:
     "The selected model is unavailable after credential bootstrap. Verify the provider/model, then run napier doctor with the same --model and --credential-env.",
+  sandbox_unavailable:
+    "This task mode requires a supported process Sandbox. Run `napier setup --workspace 'WORKSPACE_PATH' --component sandbox`, apply its exact preview, then verify with `napier doctor --workspace 'WORKSPACE_PATH' --offline`.",
 } as const;
 
 export type CliPublicErrorCode = keyof typeof PUBLIC_MESSAGES;
@@ -17,7 +19,10 @@ export type CliPublicErrorCode = keyof typeof PUBLIC_MESSAGES;
 export class CliPublicError extends Error {
   readonly publicMessage: string;
 
-  constructor(publicCode: CliPublicErrorCode, diagnosticMessage: string) {
+  constructor(
+    readonly publicCode: CliPublicErrorCode,
+    diagnosticMessage: string,
+  ) {
     super(diagnosticMessage);
     this.name = "CliPublicError";
     this.publicMessage = PUBLIC_MESSAGES[publicCode];

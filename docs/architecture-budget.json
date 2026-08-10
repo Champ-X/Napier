@@ -6,7 +6,7 @@
     "maxFunctionComplexity": 25
   },
   "lineOverrides": {
-    "apps/cli/src/cli.ts": 578,
+    "apps/cli/src/cli.ts": 573,
     "apps/cli/test/rpc-cli.test.ts": 1065,
     "apps/cli/test/workflow-cli.test.ts": 2912,
     "apps/server/src/app.ts": 14521,
