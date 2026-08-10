@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowRight, ShieldCheck } from "lucide-react";
 
 import type { AgentProfile } from "@napier/contracts";
@@ -40,6 +40,7 @@ export function ComposerCapabilityControl({
   onReview: () => void;
   onReadinessChange: (readiness: ComposerRunReadiness) => void;
 }) {
+  const [sandboxOpen, setSandboxOpen] = useState(false);
   const { projection, loading, error } = useAgentCapabilityProjection(
     agent?.id,
     agent?.revision,
@@ -61,6 +62,11 @@ export function ComposerCapabilityControl({
         selectedPreset,
       ),
     [agent, error, loading, projection, selectedPreset],
+  );
+  const sandboxBlocked = Boolean(
+    activeMode &&
+      activeDependency &&
+      composerModeNeedsSandboxSetup(activeMode.id, activeDependency),
   );
 
   useEffect(() => {
@@ -111,9 +117,7 @@ export function ComposerCapabilityControl({
           {activeDependency.message}
         </p>
       ) : null}
-      {activeMode &&
-      activeDependency &&
-      composerModeNeedsSandboxSetup(activeMode.id, activeDependency) ? (
+      {sandboxBlocked || sandboxOpen ? (
         <div className="composer-sandbox-setup">
           <Suspense fallback={<div className="sandbox-setup-card" />}>
             <LazySandboxSetupCard />
@@ -124,16 +128,31 @@ export function ComposerCapabilityControl({
         className="composer-readiness-row"
         aria-label="Current run readiness"
       >
-        {runReadiness.items.map((item) => (
-          <span
-            key={item.id}
-            className={`composer-readiness-item state-${item.state}`}
-            title={item.detail}
-          >
-            <strong>{item.label}</strong>
-            {item.value}
-          </span>
-        ))}
+        {runReadiness.items.map((item) =>
+          item.id === "sandbox" ? (
+            <button
+              key={item.id}
+              type="button"
+              className={`composer-readiness-item manage state-${item.state}`}
+              title={`${item.detail} Manage Sandbox setup.`}
+              aria-expanded={sandboxBlocked || sandboxOpen}
+              disabled={disabled}
+              onClick={() => setSandboxOpen((current) => !current)}
+            >
+              <strong>{item.label}</strong>
+              {item.value}
+            </button>
+          ) : (
+            <span
+              key={item.id}
+              className={`composer-readiness-item state-${item.state}`}
+              title={item.detail}
+            >
+              <strong>{item.label}</strong>
+              {item.value}
+            </span>
+          ),
+        )}
       </div>
       <div className="agent-capability-composer-status">
         <span className="agent-capability-composer-profile">

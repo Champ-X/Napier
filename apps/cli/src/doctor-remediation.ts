@@ -81,13 +81,13 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   sandbox_configured_unavailable: {
     id: "repair_configured_sandbox",
     instruction:
-      "Start the same local Docker daemon, then rerun Doctor. If the image or daemon identity changed, rerun exact-preview Sandbox setup to rebuild and persist a verified installation.",
+      "Start the same local Docker daemon and rerun Doctor, or use exact-preview Sandbox --uninstall to remove the Napier binding and return to the platform fallback. If identity changed, rerun Setup to replace it.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
   sandbox_configured_invalid: {
     id: "repair_invalid_sandbox",
     instruction:
-      "Rerun napier setup --workspace 'WORKSPACE_PATH' --component sandbox, inspect the new preview, and explicitly apply its exact SHA-256 to replace the invalid persisted configuration.",
+      "Run napier setup --workspace 'WORKSPACE_PATH' --component sandbox --uninstall, inspect its exact preview, and apply that SHA-256 to remove the invalid binding; then rerun Setup only if OCI isolation is still wanted.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
   sandbox_host_direct: {

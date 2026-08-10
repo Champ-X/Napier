@@ -11,6 +11,7 @@ export interface CliSetupOptions {
   expectedPreviewSha256?: string;
   timeoutMs?: number;
   apply: boolean;
+  uninstall?: boolean;
   jsonl: boolean;
 }
 
@@ -22,7 +23,7 @@ export const SETUP_VALUE_OPTIONS = new Set([
   "--expected-preview",
   "--timeout-ms",
 ]);
-export const SETUP_FLAG_OPTIONS = new Set(["--apply"]);
+export const SETUP_FLAG_OPTIONS = new Set(["--apply", "--uninstall"]);
 
 export function parseSetupOptions(
   values: Map<string, string>,
@@ -39,6 +40,7 @@ export function parseSetupOptions(
     providerId,
     expectedPreviewSha256,
     apply: flags.has("--apply"),
+    uninstall: flags.has("--uninstall"),
     hasDataRoot: values.has("--data-root"),
     hasTimeout: values.has("--timeout-ms"),
   });
@@ -57,6 +59,7 @@ export function parseSetupOptions(
         : {}),
       ...(providerId ? { providerId } : {}),
       ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
+      ...(flags.has("--uninstall") ? { uninstall: true } : {}),
     },
   };
 }
@@ -99,11 +102,15 @@ function validateSetupSelection(input: {
   providerId: string | undefined;
   expectedPreviewSha256: string | undefined;
   apply: boolean;
+  uninstall: boolean;
   hasDataRoot: boolean;
   hasTimeout: boolean;
 }): void {
   if (input.component && input.providerId) {
     throw new Error("--component and --provider are mutually exclusive");
+  }
+  if (input.uninstall && input.component !== "sandbox") {
+    throw new Error("--uninstall requires --component sandbox");
   }
   if (input.component === "browser" && input.hasDataRoot) {
     throw new Error("--data-root is unavailable for Browser setup");

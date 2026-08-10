@@ -33,6 +33,42 @@ export interface ApplySandboxSetupRequest {
   expectedPreviewSha256: string;
 }
 
+export interface SandboxUninstallPreview {
+  kind: "napier.sandbox-runtime-uninstall-preview";
+  schemaVersion: 1;
+  component: "sandbox";
+  status: "installed" | "invalid" | "not_installed";
+  active: boolean;
+  imageRetained: true;
+  bindingSha256?: string;
+  imageReference?: string;
+  imageId?: string;
+  identitySha256?: string;
+  installationSha256?: string;
+  fallbackSandbox: string;
+  contentSha256: string;
+}
+
+export interface ApplySandboxUninstallRequest {
+  expectedPreviewSha256: string;
+}
+
+export interface SandboxUninstallResult {
+  kind: "napier.sandbox-runtime-uninstall-result";
+  schemaVersion: 1;
+  component: "sandbox";
+  action: "uninstalled";
+  status: "removed";
+  imageRetained: true;
+  bindingSha256: string;
+  imageReference?: string;
+  imageId?: string;
+  identitySha256?: string;
+  installationSha256?: string;
+  fallbackSandbox: string;
+  contentSha256: string;
+}
+
 export interface SandboxSetupResult {
   kind: "napier.sandbox-runtime-setup-result";
   schemaVersion: 1;

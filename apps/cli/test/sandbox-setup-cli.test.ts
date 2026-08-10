@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ContainerImageIdentity } from "@napier/runtime/sandbox-container-runtime";
 import type { SandboxRuntimeInspection } from "@napier/runtime/sandbox-runtime-setup";
 import { UnsupportedSandboxAdapter } from "@napier/runtime";
+import { saveSandboxInstallation } from "@napier/runtime/sandbox-installation";
 
 import { parseCliArgs, runCli } from "../src/cli.js";
 import type { CliIo } from "../src/cli-runtime.js";
@@ -47,6 +48,37 @@ describe("Napier Sandbox setup CLI", () => {
         jsonl: true,
       },
     });
+    expect(
+      parseCliArgs([
+        "setup",
+        "--workspace",
+        ".",
+        "--component",
+        "sandbox",
+        "--uninstall",
+        "--jsonl",
+      ]),
+    ).toEqual({
+      kind: "setup",
+      options: {
+        workspace: ".",
+        component: "sandbox",
+        timeoutMs: 300_000,
+        apply: false,
+        uninstall: true,
+        jsonl: true,
+      },
+    });
+    expect(() =>
+      parseCliArgs([
+        "setup",
+        "--workspace",
+        ".",
+        "--component",
+        "browser",
+        "--uninstall",
+      ]),
+    ).toThrow("--uninstall requires --component sandbox");
   });
 
   it("previews without building or creating persistent state", async () => {
@@ -217,6 +249,99 @@ describe("Napier Sandbox setup CLI", () => {
     await expect(
       access(path.join(fixture.workspace, ".napier")),
     ).rejects.toThrow();
+  });
+
+  it("previews and exact-applies Sandbox uninstall without deleting the image", async () => {
+    const fixture = await createFixture();
+    const dataRoot = path.join(fixture.workspace, ".napier");
+    await saveSandboxInstallation(
+      dataRoot,
+      "napier-sandbox:0.1.0",
+      identity(),
+    );
+    const output = new CaptureWritable();
+    const fallback = new UnsupportedSandboxAdapter("platform-fallback");
+    const dependencies = {
+      createRuntime: vi.fn(),
+      sandboxSetup: {
+        inspect: vi.fn(),
+        fallback: () => fallback,
+      },
+    };
+
+    expect(
+      await runCli(
+        [
+          "setup",
+          "--workspace",
+          fixture.workspace,
+          "--component",
+          "sandbox",
+          "--uninstall",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, {}, output),
+        dependencies,
+      ),
+    ).toBe(0);
+    const preview = JSON.parse(output.text()) as {
+      status: string;
+      imageRetained: boolean;
+      contentSha256: string;
+    };
+    expect(preview).toEqual(
+      expect.objectContaining({
+        status: "installed",
+        imageRetained: true,
+      }),
+    );
+
+    expect(
+      await runCli(
+        [
+          "setup",
+          "--workspace",
+          fixture.workspace,
+          "--component",
+          "sandbox",
+          "--uninstall",
+          "--expected-preview",
+          "0".repeat(64),
+          "--apply",
+        ],
+        cliIo(fixture.root, {}),
+        dependencies,
+      ),
+    ).toBe(1);
+    await expect(access(path.join(dataRoot, "sandbox.json"))).resolves.toBeUndefined();
+
+    const result = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "setup",
+          "--workspace",
+          fixture.workspace,
+          "--component",
+          "sandbox",
+          "--uninstall",
+          "--expected-preview",
+          preview.contentSha256,
+          "--apply",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, {}, result),
+        dependencies,
+      ),
+    ).toBe(0);
+    expect(JSON.parse(result.text())).toEqual(
+      expect.objectContaining({
+        action: "uninstalled",
+        imageRetained: true,
+        fallbackSandbox: "unsupported",
+      }),
+    );
+    await expect(access(path.join(dataRoot, "sandbox.json"))).rejects.toThrow();
   });
 });
 

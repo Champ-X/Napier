@@ -18,11 +18,13 @@ import { ModelInvocationExperimentRuntime } from "./model-invocation-experiments
 import { ProviderSetupService } from "./provider-setup.js";
 import { ToolInvocationExperimentRuntime } from "./tool-invocation-experiments.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
+import type { OsSandboxAdapter } from "./sandbox.js";
 import {
-  createPlatformSandboxAdapter,
-  type OsSandboxAdapter,
-} from "./sandbox.js";
-import { createConfiguredSandboxAdapter } from "./sandbox-installation.js";
+  createConfiguredSandboxAdapter,
+  createInvalidSandboxInstallationAdapter,
+  createSandboxFallbackAdapter,
+  inspectSandboxInstallationBinding,
+} from "./sandbox-installation.js";
 import {
   SandboxSetupService,
   type SandboxSetupServiceDependencies,
@@ -102,13 +104,27 @@ export async function createLocalAgentRuntime(
       ...(options.keychain ? { keychain: options.keychain } : {}),
     });
     const models = new ModelRegistry(credentials);
+    const fallbackSandbox =
+      options.sandbox ??
+      createSandboxFallbackAdapter({
+        ...(options.env ? { env: options.env } : {}),
+      });
+    const configuredSandbox = options.sandbox
+      ? undefined
+      : await createConfiguredSandboxAdapter({
+          dataRoot,
+          ...(options.env ? { env: options.env } : {}),
+        }).catch(async (error) => {
+          const binding = await inspectSandboxInstallationBinding(dataRoot);
+          if (binding.status === "invalid") {
+            return createInvalidSandboxInstallationAdapter();
+          }
+          throw error;
+        });
     const initialSandbox =
       options.sandbox ??
-      (await createConfiguredSandboxAdapter({
-        dataRoot,
-        ...(options.env ? { env: options.env } : {}),
-      })) ??
-      createPlatformSandboxAdapter();
+      configuredSandbox ??
+      fallbackSandbox;
     const sandbox = new SwitchableSandboxAdapter(initialSandbox);
     extensions = new McpExtensionManager({ store, sandbox });
     workspaceProcesses = new WorkspaceProcessManager({
@@ -142,7 +158,10 @@ export async function createLocalAgentRuntime(
       workspaceRoot,
       dataRoot,
       sandbox,
-      options.sandboxSetup,
+      {
+        ...options.sandboxSetup,
+        fallback: options.sandboxSetup?.fallback ?? (() => fallbackSandbox),
+      },
     );
     const network = {
       webSearch:

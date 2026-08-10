@@ -129,6 +129,26 @@
   text-transform: uppercase;
 }
 
+.composer-readiness-item.manage {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 5px;
+  font-size: 7px;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.composer-readiness-item.manage:hover:not(:disabled) {
+  border-color: var(--ledger);
+}
+
+.composer-readiness-item.manage:disabled {
+  cursor: not-allowed;
+}
+
 .composer-readiness-item.state-warn {
   border-left-color: var(--ochre);
 }

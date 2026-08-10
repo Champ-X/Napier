@@ -7098,6 +7098,76 @@
         "x-napier-source-route": "POST /api/setup/sandbox"
       }
     },
+    "/api/setup/sandbox/uninstall": {
+      "get": {
+        "operationId": "get-setup-sandbox-uninstall",
+        "tags": [
+          "setup"
+        ],
+        "summary": "GET /api/setup/sandbox/uninstall",
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/setup/sandbox/uninstall"
+      },
+      "post": {
+        "operationId": "post-setup-sandbox-uninstall",
+        "tags": [
+          "setup"
+        ],
+        "summary": "POST /api/setup/sandbox/uninstall",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/setup/sandbox/uninstall"
+      }
+    },
     "/api/skills/content/apply": {
       "post": {
         "operationId": "post-skills-content-apply",
@@ -15501,7 +15571,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "77eb98c22f31f76ed786cc7de4e360aba4796734efa6e0c42f45e3d6ae1f8b33",
-  "x-napier-route-count": 272,
-  "x-napier-route-set-sha256": "adc0602d69a01698f8ae3cba141c8cff5ab5a18b6c4bbc8dbf7f1442866b9cdd"
+  "x-napier-source-sha256": "089038ed9855c3d612cea5796776e7991598211c80d6325243ea8bb17786a11c",
+  "x-napier-route-count": 274,
+  "x-napier-route-set-sha256": "d331742ca50be45eab482e08cbdf3e6d049e529eb1e6596bad92bee77b408174"
 }

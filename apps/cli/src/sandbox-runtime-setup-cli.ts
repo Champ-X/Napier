@@ -1,6 +1,10 @@
 import path from "node:path";
 
-import { createPlatformSandboxAdapter, sha256 } from "@napier/runtime";
+import { sha256 } from "@napier/runtime";
+import {
+  createConfiguredSandboxAdapter,
+  createSandboxFallbackAdapter,
+} from "@napier/runtime/sandbox-installation";
 import { SandboxSetupService } from "@napier/runtime/sandbox-setup-service";
 import { SwitchableSandboxAdapter } from "@napier/runtime/sandbox-switchable";
 
@@ -12,6 +16,8 @@ import { canonicalWorkspace } from "./workspace-path.js";
 import type {
   SandboxSetupPreview,
   SandboxSetupResult,
+  SandboxUninstallPreview,
+  SandboxUninstallResult,
 } from "@napier/contracts/sandbox-setup";
 
 export async function executeSandboxRuntimeSetup(
@@ -30,23 +36,44 @@ export async function executeSandboxRuntimeSetup(
       io.cwd,
       options.dataRoot ?? path.join(workspaceRoot, ".napier"),
     );
+    const fallback = createSandboxFallbackAdapter({ env: io.env });
+    const current =
+      options.uninstall
+        ? (await createConfiguredSandboxAdapter({
+            dataRoot,
+            env: io.env,
+          }).catch(() => fallback)) ?? fallback
+        : (await createConfiguredSandboxAdapter({
+            dataRoot,
+            env: io.env,
+          })) ?? fallback;
     const setup = new SandboxSetupService(
       workspaceRoot,
       dataRoot,
-      new SwitchableSandboxAdapter(createPlatformSandboxAdapter()),
-      dependencies,
+      new SwitchableSandboxAdapter(current),
+      {
+        ...dependencies,
+        fallback: dependencies.fallback ?? (() => fallback),
+      },
     );
-    const preview = await setup.preview();
+    const preview = options.uninstall
+      ? await setup.uninstallPreview()
+      : await setup.preview();
     if (!options.apply) {
       await writeSandboxRuntimeSetupOutput(preview, options.jsonl, io);
-      return ["unsupported", "runtime_unavailable"].includes(preview.status)
+      return preview.kind === "napier.sandbox-runtime-setup-preview" &&
+        ["unsupported", "runtime_unavailable"].includes(preview.status)
         ? 1
         : 0;
     }
-    const result = await setup.apply(
-      { expectedPreviewSha256: options.expectedPreviewSha256! },
-      signal,
-    );
+    const result = options.uninstall
+      ? await setup.uninstall({
+          expectedPreviewSha256: options.expectedPreviewSha256!,
+        })
+      : await setup.apply(
+          { expectedPreviewSha256: options.expectedPreviewSha256! },
+          signal,
+        );
     await writeSandboxRuntimeSetupOutput(result, options.jsonl, io);
     return 0;
   } catch (error) {
@@ -62,7 +89,11 @@ export async function executeSandboxRuntimeSetup(
 }
 
 async function writeSandboxRuntimeSetupOutput(
-  output: SandboxSetupPreview | SandboxSetupResult,
+  output:
+    | SandboxSetupPreview
+    | SandboxSetupResult
+    | SandboxUninstallPreview
+    | SandboxUninstallResult,
   jsonl: boolean,
   io: CliIo,
 ): Promise<void> {
@@ -91,6 +122,42 @@ async function writeSandboxRuntimeSetupOutput(
                   : "Apply the exact preview to build, verify, and persist this image.",
                 `Apply: napier setup --workspace 'WORKSPACE_PATH' --component sandbox --expected-preview ${output.contentSha256} --apply`,
               ]),
+      ].join("\n"),
+    );
+    return;
+  }
+  if (output.kind === "napier.sandbox-runtime-uninstall-preview") {
+    await writeLine(
+      io.stdout,
+      [
+        "Sandbox runtime uninstall",
+        `Status: ${output.status}`,
+        `Fallback: ${output.fallbackSandbox}`,
+        "Image: retained in the local OCI cache",
+        ...(output.status !== "not_installed" && output.bindingSha256
+          ? [
+              `Preview SHA-256: ${output.contentSha256}`,
+              `Apply: napier setup --workspace 'WORKSPACE_PATH' --component sandbox --uninstall --expected-preview ${output.contentSha256} --apply`,
+            ]
+          : [
+              output.status === "not_installed"
+                ? "No Napier Sandbox installation binding is configured."
+                : "The binding is not a bounded regular file and cannot be safely removed automatically.",
+            ]),
+      ].join("\n"),
+    );
+    return;
+  }
+  if (output.kind === "napier.sandbox-runtime-uninstall-result") {
+    await writeLine(
+      io.stdout,
+      [
+        "Sandbox runtime: uninstalled",
+        `Fallback: ${output.fallbackSandbox}`,
+        ...(output.imageId
+          ? [`Image ID retained: ${output.imageId}`]
+          : ["Persisted invalid binding removed; no image identity was trusted."]),
+        "Status: removed",
       ].join("\n"),
     );
     return;

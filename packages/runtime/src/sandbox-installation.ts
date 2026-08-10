@@ -5,6 +5,7 @@ import {
   mkdir,
   open,
   readFile,
+  readdir,
   realpath,
   rename,
   rm,
@@ -16,6 +17,7 @@ import {
   type ContainerImageIdentity,
   resolveContainerImageIdentity,
 } from "./sandbox-container-runtime.js";
+import { createPlatformSandboxAdapter } from "./sandbox.js";
 import { OciContainerSandboxAdapter } from "./sandbox-oci.js";
 import type { OsSandboxAdapter } from "./sandbox-types.js";
 
@@ -37,11 +39,55 @@ export interface SandboxInstallation {
   contentSha256: string;
 }
 
+export interface SandboxInstallationBinding {
+  status: "installed" | "invalid" | "not_installed";
+  bindingSha256?: string;
+  installation?: SandboxInstallation;
+}
+
+export async function inspectSandboxInstallationBinding(
+  dataRoot: string,
+): Promise<SandboxInstallationBinding> {
+  const filePath = configurationPath(dataRoot);
+  await recoverInterruptedSandboxRemoval(filePath);
+  let bytes: Buffer;
+  try {
+    const info = await lstat(filePath);
+    if (!info.isFile() || info.size <= 0 || info.size > MAX_CONFIG_BYTES) {
+      return { status: "invalid" };
+    }
+    bytes = await readFile(filePath);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return { status: "not_installed" };
+    }
+    throw error;
+  }
+  const bindingSha256 = sha256(bytes);
+  try {
+    return {
+      status: "installed",
+      bindingSha256,
+      installation: validateSandboxInstallation(
+        JSON.parse(bytes.toString("utf8")) as unknown,
+      ),
+    };
+  } catch {
+    return { status: "invalid", bindingSha256 };
+  }
+}
+
 export async function loadSandboxInstallation(
   dataRoot: string,
 ): Promise<SandboxInstallation | undefined> {
   try {
     const filePath = configurationPath(dataRoot);
+    await recoverInterruptedSandboxRemoval(filePath);
     const info = await lstat(filePath);
     if (!info.isFile() || info.size <= 0 || info.size > MAX_CONFIG_BYTES) {
       throw new Error("Sandbox installation file is invalid");
@@ -75,6 +121,35 @@ export async function saveSandboxInstallation(
     `${canonicalJson(installation)}\n`,
   );
   return installation;
+}
+
+export async function removeSandboxInstallation(
+  dataRoot: string,
+  expectedBindingSha256: string,
+): Promise<void> {
+  const root = await realpath(path.resolve(dataRoot));
+  const filePath = path.join(root, CONFIG_FILE);
+  const tombstone = `${filePath}.${process.pid}.${randomBytes(8).toString("hex")}.remove`;
+  await rename(filePath, tombstone);
+  try {
+    const info = await lstat(tombstone);
+    if (!info.isFile() || info.size <= 0 || info.size > MAX_CONFIG_BYTES) {
+      throw new Error("Sandbox installation file is invalid");
+    }
+    const bytes = await readFile(tombstone);
+    if (sha256(bytes) !== expectedBindingSha256) {
+      throw new Error("Sandbox uninstall preview is stale");
+    }
+  } catch (error) {
+    await rename(tombstone, filePath);
+    throw error;
+  }
+  try {
+    await rm(tombstone);
+  } catch (error) {
+    await rename(tombstone, filePath);
+    throw error;
+  }
 }
 
 export function createSandboxInstallation(
@@ -117,6 +192,28 @@ export async function createConfiguredSandboxAdapter(input: {
       identitySha256: installation.identitySha256,
     },
   });
+}
+
+export function createSandboxFallbackAdapter(input: {
+  env?: Readonly<Record<string, string | undefined>>;
+} = {}): OsSandboxAdapter {
+  const environment = input.env ?? process.env;
+  const explicitImage =
+    environment["NAPIER_CONTAINER_SANDBOX_IMAGE"]?.trim();
+  return explicitImage
+    ? new OciContainerSandboxAdapter(explicitImage)
+    : createPlatformSandboxAdapter(process.platform, { containerImage: "" });
+}
+
+export function createInvalidSandboxInstallationAdapter(): OsSandboxAdapter {
+  return {
+    id: "configured-sandbox-invalid",
+    async launch() {
+      throw new Error(
+        "Persisted Sandbox configuration is invalid; process tasks fail closed",
+      );
+    },
+  };
 }
 
 export async function assertSandboxInstallationCurrent(
@@ -219,4 +316,45 @@ async function writeConfiguration(
     await handle?.close().catch(() => undefined);
     await rm(temporary, { force: true }).catch(() => undefined);
   }
+}
+
+async function recoverInterruptedSandboxRemoval(
+  filePath: string,
+): Promise<void> {
+  const directory = path.dirname(filePath);
+  let names: string[];
+  try {
+    names = await readdir(directory);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return;
+    }
+    throw error;
+  }
+  const tombstones = names.filter((name) =>
+    /^sandbox\.json\.[0-9]+\.[a-f0-9]{16}\.remove$/u.test(name),
+  );
+  if (tombstones.length === 0) return;
+  try {
+    await lstat(filePath);
+    throw new Error("Sandbox removal recovery found conflicting bindings");
+  } catch (error) {
+    if (
+      !error ||
+      typeof error !== "object" ||
+      !("code" in error) ||
+      error.code !== "ENOENT"
+    ) {
+      throw error;
+    }
+  }
+  if (tombstones.length !== 1) {
+    throw new Error("Sandbox removal recovery is ambiguous");
+  }
+  await rename(path.join(directory, tombstones[0]!), filePath);
 }

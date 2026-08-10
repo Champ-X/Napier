@@ -62,6 +62,7 @@ Setup options:
   --expected-preview     Exact setup preview SHA-256 required for apply
   --timeout-ms <ms>      Component install/verification budget (default ${DEFAULT_SETUP_TIMEOUT_MS}, max ${MAX_SETUP_TIMEOUT_MS})
   --apply                Apply the exact Provider, Browser, or Sandbox preview
+  --uninstall            Preview/remove the persisted Sandbox binding; retain image
   --jsonl                Emit one setup preview or result JSON object
 
 Capability options:

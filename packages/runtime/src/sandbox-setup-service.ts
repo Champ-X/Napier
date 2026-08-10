@@ -1,8 +1,11 @@
 import type {
   ApplySandboxSetupRequest,
+  ApplySandboxUninstallRequest,
   SandboxSetupChecks,
   SandboxSetupPreview,
   SandboxSetupResult,
+  SandboxUninstallPreview,
+  SandboxUninstallResult,
 } from "@napier/contracts/sandbox-setup";
 
 import {
@@ -16,8 +19,12 @@ import {
 } from "./doctor-runtime-probes.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
+  createSandboxFallbackAdapter,
   createSandboxInstallation,
+  inspectSandboxInstallationBinding,
+  removeSandboxInstallation,
   saveSandboxInstallation,
+  type SandboxInstallationBinding,
   type SandboxInstallation,
 } from "./sandbox-installation.js";
 import { OciContainerSandboxAdapter } from "./sandbox-oci.js";
@@ -46,6 +53,17 @@ export interface SandboxSetupServiceDependencies extends SandboxRuntimeSetupDepe
     workspaceRoot: string;
     signal: AbortSignal;
   }) => Promise<OsSandboxAdapter>;
+  loadInstallation?: (
+    dataRoot: string,
+  ) => Promise<SandboxInstallation | undefined>;
+  inspectInstallation?: (
+    dataRoot: string,
+  ) => Promise<SandboxInstallationBinding>;
+  removeInstallation?: (
+    dataRoot: string,
+    expectedBindingSha256: string,
+  ) => Promise<void>;
+  fallback?: () => OsSandboxAdapter;
 }
 
 export class SandboxSetupService {
@@ -150,6 +168,73 @@ export class SandboxSetupService {
       this.applying = false;
     }
   }
+
+  async uninstallPreview(): Promise<SandboxUninstallPreview> {
+    const binding = await this.inspectBinding();
+    const fallback = (
+      this.dependencies.fallback ??
+      (() => createSandboxFallbackAdapter())
+    )();
+    return createSandboxUninstallPreview(
+      binding,
+      this.sandbox.setupIdentitySha256,
+      fallback.id,
+    );
+  }
+
+  async uninstall(
+    request: ApplySandboxUninstallRequest,
+  ): Promise<SandboxUninstallResult> {
+    if (this.applying) throw new Error("Sandbox setup is already running");
+    this.applying = true;
+    try {
+      const binding = await this.inspectBinding();
+      const fallback = (
+        this.dependencies.fallback ??
+        (() => createSandboxFallbackAdapter())
+      )();
+      const preview = createSandboxUninstallPreview(
+        binding,
+        this.sandbox.setupIdentitySha256,
+        fallback.id,
+      );
+      if (request.expectedPreviewSha256 !== preview.contentSha256) {
+        throw new Error("Sandbox uninstall preview is stale");
+      }
+      if (binding.status === "not_installed") {
+        throw new Error("Sandbox installation is not configured");
+      }
+      if (!binding.bindingSha256) {
+        throw new Error("Sandbox installation cannot be safely removed");
+      }
+      await (
+        this.dependencies.removeInstallation ?? removeSandboxInstallation
+      )(this.dataRoot, binding.bindingSha256);
+      this.sandbox.replace(fallback);
+      return createSandboxUninstallResult(binding, fallback.id);
+    } finally {
+      this.applying = false;
+    }
+  }
+
+  private async inspectBinding(): Promise<SandboxInstallationBinding> {
+    if (this.dependencies.inspectInstallation) {
+      return this.dependencies.inspectInstallation(this.dataRoot);
+    }
+    if (this.dependencies.loadInstallation) {
+      const installation = await this.dependencies.loadInstallation(
+        this.dataRoot,
+      );
+      return installation
+        ? {
+            status: "installed",
+            bindingSha256: installation.contentSha256,
+            installation,
+          }
+        : { status: "not_installed" };
+    }
+    return inspectSandboxInstallationBinding(this.dataRoot);
+  }
 }
 
 async function activateInstalledSandbox(input: {
@@ -186,6 +271,41 @@ export function createSandboxSetupPreview(
     contextSha256: inspection.target.contextSha256,
     platform: inspection.target.platform,
     arch: inspection.target.arch,
+  };
+  return {
+    ...withoutHash,
+    contentSha256: sha256(canonicalJson(withoutHash)),
+  };
+}
+
+export function createSandboxUninstallPreview(
+  binding: SandboxInstallationBinding,
+  activeIdentitySha256: string | undefined,
+  fallbackSandbox: string,
+): SandboxUninstallPreview {
+  const installation = binding.installation;
+  const withoutHash = {
+    kind: "napier.sandbox-runtime-uninstall-preview" as const,
+    schemaVersion: 1 as const,
+    component: "sandbox" as const,
+    status: binding.status,
+    active: Boolean(
+      installation &&
+      activeIdentitySha256 === installation.identitySha256,
+    ),
+    imageRetained: true as const,
+    ...(binding.bindingSha256
+      ? { bindingSha256: binding.bindingSha256 }
+      : {}),
+    ...(installation
+      ? {
+          imageReference: installation.imageReference,
+          imageId: installation.imageId,
+          identitySha256: installation.identitySha256,
+          installationSha256: installation.contentSha256,
+        }
+      : {}),
+    fallbackSandbox,
   };
   return {
     ...withoutHash,
@@ -269,6 +389,35 @@ function createSandboxSetupResult(
     identitySha256: inspection.identity.identitySha256,
     installationSha256: installation.contentSha256,
     checks,
+  };
+  return {
+    ...withoutHash,
+    contentSha256: sha256(canonicalJson(withoutHash)),
+  };
+}
+
+function createSandboxUninstallResult(
+  binding: SandboxInstallationBinding,
+  fallbackSandbox: string,
+): SandboxUninstallResult {
+  const installation = binding.installation;
+  const withoutHash = {
+    kind: "napier.sandbox-runtime-uninstall-result" as const,
+    schemaVersion: 1 as const,
+    component: "sandbox" as const,
+    action: "uninstalled" as const,
+    status: "removed" as const,
+    imageRetained: true as const,
+    bindingSha256: binding.bindingSha256!,
+    ...(installation
+      ? {
+          imageReference: installation.imageReference,
+          imageId: installation.imageId,
+          identitySha256: installation.identitySha256,
+          installationSha256: installation.contentSha256,
+        }
+      : {}),
+    fallbackSandbox,
   };
   return {
     ...withoutHash,

@@ -1,9 +1,17 @@
-import type { SandboxSetupPreview } from "@napier/contracts/sandbox-setup";
+import type {
+  SandboxSetupPreview,
+  SandboxUninstallPreview,
+} from "@napier/contracts/sandbox-setup";
 import { Box, Check, RefreshCw, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { formatApiErrorMessage } from "./api-error";
-import { applySandboxSetup, getSandboxSetupPreview } from "./sandbox-setup-api";
+import {
+  applySandboxSetup,
+  applySandboxUninstall,
+  getSandboxSetupPreview,
+  getSandboxUninstallPreview,
+} from "./sandbox-setup-api";
 import {
   sandboxSetupCopy,
   sandboxSetupReady,
@@ -16,9 +24,12 @@ export function SandboxSetupCard({
   onActivated?: () => void | Promise<void>;
 }) {
   const [preview, setPreview] = useState<SandboxSetupPreview>();
-  const [busy, setBusy] = useState<"loading" | "applying" | undefined>(
+  const [busy, setBusy] = useState<
+    "loading" | "applying" | "uninstalling" | undefined
+  >(
     "loading",
   );
+  const [removal, setRemoval] = useState<SandboxUninstallPreview>();
   const [error, setError] = useState<string>();
 
   const loadPreview = useCallback(async () => {
@@ -60,6 +71,40 @@ export function SandboxSetupCard({
       setBusy(undefined);
     }
   }, [onActivated, preview]);
+
+  const reviewRemoval = useCallback(async () => {
+    setBusy("loading");
+    setError(undefined);
+    try {
+      setRemoval(await getSandboxUninstallPreview());
+    } catch (reviewError) {
+      setError(formatApiErrorMessage(reviewError));
+    } finally {
+      setBusy(undefined);
+    }
+  }, []);
+
+  const uninstall = useCallback(async () => {
+    if (!removal || removal.status === "not_installed") return;
+    setBusy("uninstalling");
+    setError(undefined);
+    try {
+      await applySandboxUninstall({
+        expectedPreviewSha256: removal.contentSha256,
+      });
+      setRemoval(undefined);
+      setPreview(await getSandboxSetupPreview());
+      window.dispatchEvent(new Event(SANDBOX_READY_EVENT));
+      await onActivated?.();
+    } catch (uninstallError) {
+      setError(formatApiErrorMessage(uninstallError));
+      await getSandboxUninstallPreview()
+        .then(setRemoval)
+        .catch(() => undefined);
+    } finally {
+      setBusy(undefined);
+    }
+  }, [onActivated, removal]);
 
   const copy = preview ? sandboxSetupCopy(preview) : undefined;
   const imageReady = sandboxSetupReady(preview);
@@ -114,6 +159,15 @@ export function SandboxSetupCard({
               ? "The current Web Runtime now routes new process work through the verified immutable image."
               : copy.detail}
           </p>
+          {removal ? (
+            <div className="sandbox-uninstall-preview" role="status">
+              <strong>Remove Napier binding?</strong>
+              <span>
+                Fallback · {removal.fallbackSandbox} · image retained locally
+              </span>
+              <code>{removal.contentSha256.slice(0, 12)}</code>
+            </div>
+          ) : null}
           <footer>
             <span className="sandbox-setup-boundary">
               {preview.status === "runtime_unavailable" ? (
@@ -123,19 +177,74 @@ export function SandboxSetupCard({
               )}
               Local daemon · no remote endpoint
             </span>
-            {ready ? (
-              <span className="provider-setup-ready" role="status">
-                <Check size={13} aria-hidden="true" />
-                Coding runtime ready
-              </span>
+            {removal ? (
+              <div className="sandbox-setup-actions">
+                {removal.status !== "not_installed" &&
+                removal.bindingSha256 ? (
+                  <>
+                    <button
+                      type="button"
+                      className="secondary"
+                      disabled={Boolean(busy)}
+                      onClick={() => setRemoval(undefined)}
+                    >
+                      Keep active
+                    </button>
+                    <button
+                      type="button"
+                      disabled={Boolean(busy)}
+                      onClick={() => void uninstall()}
+                    >
+                      {busy === "uninstalling"
+                        ? "Removing binding…"
+                        : "Remove binding"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => setRemoval(undefined)}
+                  >
+                    {removal.status === "not_installed"
+                      ? "No binding · close"
+                      : "Cannot safely remove · close"}
+                  </button>
+                )}
+              </div>
+            ) : ready ? (
+              <div className="sandbox-setup-actions">
+                <span className="provider-setup-ready" role="status">
+                  <Check size={13} aria-hidden="true" />
+                  Coding runtime ready
+                </span>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={Boolean(busy)}
+                  onClick={() => void reviewRemoval()}
+                >
+                  Review removal
+                </button>
+              </div>
             ) : (
-              <button
-                type="button"
-                disabled={!copy.actionable || busy === "applying"}
-                onClick={() => void apply()}
-              >
-                {busy === "applying" ? "Verifying toolchain…" : copy.action}
-              </button>
+              <div className="sandbox-setup-actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={Boolean(busy)}
+                  onClick={() => void reviewRemoval()}
+                >
+                  Review saved binding
+                </button>
+                <button
+                  type="button"
+                  disabled={!copy.actionable || busy === "applying"}
+                  onClick={() => void apply()}
+                >
+                  {busy === "applying" ? "Verifying toolchain…" : copy.action}
+                </button>
+              </div>
             )}
           </footer>
         </>

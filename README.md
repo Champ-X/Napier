@@ -6729,6 +6729,20 @@ npm run --silent napier -- setup \
   --apply \
   --jsonl
 
+npm run --silent napier -- setup \
+  --workspace . \
+  --component sandbox \
+  --uninstall \
+  --jsonl
+
+npm run --silent napier -- setup \
+  --workspace . \
+  --component sandbox \
+  --uninstall \
+  --expected-preview <contentSha256> \
+  --apply \
+  --jsonl
+
 npm run --silent napier -- doctor --workspace . --offline --jsonl
 ```
 
@@ -6737,6 +6751,14 @@ when Coding or Safe Automation is blocked. Applying it verifies the same seven
 production paths, persists the same identity receipt, hot-switches the current
 Server Runtime for new work, and refreshes Composer readiness without a page or
 Server restart.
+
+Sandbox uninstall is also exact-preview bound. It removes only Napier's private
+`.napier/sandbox.json` binding, hot-switches a running Web Server to the same
+explicit environment or platform fallback used at startup, and retains the
+verified image in the local OCI cache because other Workspaces may share it.
+Stale previews and changed binding bytes fail closed. A bounded invalid regular
+binding can be removed by its raw byte hash; symlinks, directories, empty, or
+oversized bindings are reported but never removed automatically.
 
 The exact-preview apply builds `docker/napier-sandbox/Dockerfile` against its
 digest-pinned multi-architecture Node base, verifies Node, Shell, Python, Git,

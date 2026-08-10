@@ -695,6 +695,19 @@ Web
   -> Run cancellation or Session loss records hash-only cancellation and rejects waiters
   -> writable Browser calls pause inside beforeToolCall
   -> hash-only pending evidence opens a one-use confirmation docket
+
+Sandbox removal reuses the exact-preview setup authority rather than adding an
+unbounded administrative delete. Runtime inspects only the bounded regular
+`sandbox.json` binding, hashes its raw bytes, and returns an uninstall preview
+with active state, trusted image identity when parseable, fallback adapter, and
+an explicit `imageRetained: true` claim. Apply rechecks the exact preview,
+renames only that file to an unpredictable same-directory tombstone, validates
+the byte hash, removes the tombstone, then hot-switches the shared
+`SwitchableSandboxAdapter` to the startup-equivalent explicit environment or
+platform fallback. Drift restores the tombstone and fails closed. Invalid
+bounded regular files can be removed by raw-byte CAS; symlinks, directories,
+empty, and oversized bindings never receive an automatic removal authority.
+No path executes an OCI image delete because images may be shared by Workspaces.
   -> exact request-hash approval resumes the same Run and Browser Session
   -> rejection, timeout, cancellation, mismatch, or restart fails closed
 ```

@@ -6,6 +6,8 @@ import { PassThrough } from "node:stream";
 import type {
   SandboxSetupPreview,
   SandboxSetupResult,
+  SandboxUninstallPreview,
+  SandboxUninstallResult,
 } from "@napier/contracts/sandbox-setup";
 import type {
   OsSandboxAdapter,
@@ -124,6 +126,68 @@ describe("Sandbox setup HTTP", () => {
     await expect(
       access(path.join(dataRoot, "sandbox.json")),
     ).resolves.toBeUndefined();
+
+    const uninstallResponse = await app.request(
+      "/api/setup/sandbox/uninstall",
+    );
+    expect(uninstallResponse.status).toBe(200);
+    const uninstallPreview =
+      (await uninstallResponse.json()) as SandboxUninstallPreview;
+    expect(uninstallPreview).toEqual(
+      expect.objectContaining({
+        status: "installed",
+        active: true,
+        imageRetained: true,
+        fallbackSandbox: "unsupported",
+      }),
+    );
+    const staleUninstall = await app.request(
+      "/api/setup/sandbox/uninstall",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ expectedPreviewSha256: "0".repeat(64) }),
+      },
+    );
+    expect(staleUninstall.status).toBe(409);
+    await expect(
+      access(path.join(dataRoot, "sandbox.json")),
+    ).resolves.toBeUndefined();
+
+    const uninstallApply = await app.request(
+      "/api/setup/sandbox/uninstall",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          expectedPreviewSha256: uninstallPreview.contentSha256,
+        }),
+      },
+    );
+    expect(uninstallApply.status).toBe(200);
+    expect(
+      (await uninstallApply.json()) as SandboxUninstallResult,
+    ).toEqual(
+      expect.objectContaining({
+        action: "uninstalled",
+        imageRetained: true,
+        fallbackSandbox: "unsupported",
+      }),
+    );
+    await expect(access(path.join(dataRoot, "sandbox.json"))).rejects.toThrow();
+    expect(
+      sandboxRecord(await services.agentCapabilities.project(agent.id)),
+    ).toEqual(
+      expect.objectContaining({
+        id: "sandbox:unsupported",
+        status: "unavailable",
+      }),
+    );
+    expect(services.store.listThreads()).toEqual(beforeThreads);
+    expect(services.store.getAgent(agent.id)).toEqual(agent);
+    expect(services.store.listAgentRevisions(agent.id)).toHaveLength(
+      beforeRevisionCount,
+    );
   });
 
   it("leaves no persisted installation when hot activation fails", async () => {
@@ -195,6 +259,8 @@ function dependencies() {
       },
     }),
     activate: async () => new ReadySandboxAdapter(),
+    fallback: () =>
+      new UnsupportedSandboxAdapter("sandbox-http-before"),
   };
 }
 

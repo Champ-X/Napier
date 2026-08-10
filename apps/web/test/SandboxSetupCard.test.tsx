@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   SandboxSetupPreview,
   SandboxSetupResult,
+  SandboxUninstallPreview,
+  SandboxUninstallResult,
 } from "@napier/contracts/sandbox-setup";
 
 import { SandboxSetupCard } from "../src/SandboxSetupCard";
@@ -68,6 +70,56 @@ describe("SandboxSetupCard", () => {
     expect(container.textContent).toContain("Coding runtime ready");
     expect(activationEvents).toBe(1);
   });
+
+  it("requires an exact removal review and retains the shared image", async () => {
+    const { container, window } = installDom();
+    const ready = await sandboxPreview("ready");
+    const removal = await sandboxUninstallPreview();
+    const result = await sandboxUninstallResult(removal);
+    const inactive = { ...ready, active: false };
+    inactive.contentSha256 = await sha256Text(
+      canonicalJson(
+        Object.fromEntries(
+          Object.entries(inactive).filter(([key]) => key !== "contentSha256"),
+        ),
+      ),
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(stableResponse(ready))
+      .mockResolvedValueOnce(stableResponse(removal))
+      .mockResolvedValueOnce(stableResponse(result))
+      .mockResolvedValueOnce(stableResponse(inactive));
+    vi.stubGlobal("fetch", fetchMock);
+    let readinessEvents = 0;
+    window.addEventListener(SANDBOX_READY_EVENT, () => {
+      readinessEvents += 1;
+    });
+    const root = createRoot(container);
+    roots.push(root);
+    root.render(<SandboxSetupCard />);
+    await waitFor(() => container.textContent?.includes("Review removal"));
+
+    findElementByText<HTMLButtonElement>(container, "Review removal")!.click();
+    await waitFor(() => container.textContent?.includes("Remove binding"));
+    expect(container.textContent).toContain("image retained locally");
+    expect(container.textContent).toContain("macos-sandbox-exec");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    findElementByText<HTMLButtonElement>(container, "Remove binding")!.click();
+    await waitFor(() => container.textContent?.includes("Enable coding runtime"));
+    expect(fetchMock.mock.calls[2]).toEqual([
+      "/api/setup/sandbox/uninstall",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          expectedPreviewSha256: removal.contentSha256,
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("docker rmi");
+    expect(readinessEvents).toBe(1);
+  });
 });
 
 async function sandboxPreview(
@@ -116,6 +168,50 @@ async function sandboxResult(
       dap: "dap_ready",
       service: "service_ready",
     },
+  };
+  return {
+    ...content,
+    contentSha256: await sha256Text(canonicalJson(content)),
+  };
+}
+
+async function sandboxUninstallPreview(): Promise<SandboxUninstallPreview> {
+  const content = {
+    kind: "napier.sandbox-runtime-uninstall-preview" as const,
+    schemaVersion: 1 as const,
+    component: "sandbox" as const,
+    status: "installed" as const,
+    active: true,
+    imageRetained: true as const,
+    bindingSha256: "f".repeat(64),
+    imageReference: "napier-sandbox:0.1.0",
+    imageId: `sha256:${"a".repeat(64)}`,
+    identitySha256: "d".repeat(64),
+    installationSha256: "e".repeat(64),
+    fallbackSandbox: "macos-sandbox-exec",
+  };
+  return {
+    ...content,
+    contentSha256: await sha256Text(canonicalJson(content)),
+  };
+}
+
+async function sandboxUninstallResult(
+  preview: SandboxUninstallPreview,
+): Promise<SandboxUninstallResult> {
+  const content = {
+    kind: "napier.sandbox-runtime-uninstall-result" as const,
+    schemaVersion: 1 as const,
+    component: "sandbox" as const,
+    action: "uninstalled" as const,
+    status: "removed" as const,
+    imageRetained: true as const,
+    bindingSha256: preview.bindingSha256!,
+    imageReference: preview.imageReference!,
+    imageId: preview.imageId!,
+    identitySha256: preview.identitySha256!,
+    installationSha256: preview.installationSha256!,
+    fallbackSandbox: preview.fallbackSandbox,
   };
   return {
     ...content,

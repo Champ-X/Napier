@@ -110,6 +110,22 @@ async function sandboxUnavailableCheck(
 ): Promise<DoctorCheck> {
   signal.throwIfAborted();
   const isolation = sandboxIsolationStrength(adapterId);
+  if (adapterId === "configured-sandbox-invalid") {
+    return {
+      id: "sandbox",
+      status: "warning",
+      required: false,
+      code: "sandbox_configured_invalid",
+      message:
+        "The persisted Sandbox binding is invalid. Process tasks fail closed until exact-preview uninstall removes it or Setup replaces it.",
+      durationMs,
+      evidence: {
+        adapter: adapterId,
+        isolationLevel: isolation.level,
+        configured: true,
+      },
+    };
+  }
   if (adapterId === "oci-container") {
     return {
       id: "sandbox",

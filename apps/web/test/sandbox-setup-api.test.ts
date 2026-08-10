@@ -1,12 +1,16 @@
 import type {
   SandboxSetupPreview,
   SandboxSetupResult,
+  SandboxUninstallPreview,
+  SandboxUninstallResult,
 } from "@napier/contracts/sandbox-setup";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   applySandboxSetup,
+  applySandboxUninstall,
   getSandboxSetupPreview,
+  getSandboxUninstallPreview,
 } from "../src/sandbox-setup-api";
 import { canonicalJson, sha256Text } from "../src/stable-digest";
 
@@ -58,6 +62,35 @@ describe("Sandbox setup Web API", () => {
 
     await expect(getSandboxSetupPreview()).rejects.toThrow("hash mismatch");
   });
+
+  it("previews and applies only the exact uninstall hash", async () => {
+    const preview = await sandboxUninstallPreview();
+    const result = await sandboxUninstallResult(preview);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(stableResponse(preview))
+      .mockResolvedValueOnce(stableResponse(result));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getSandboxUninstallPreview()).resolves.toEqual(preview);
+    await expect(
+      applySandboxUninstall({
+        expectedPreviewSha256: preview.contentSha256,
+      }),
+    ).resolves.toEqual(result);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "/api/setup/sandbox/uninstall",
+    );
+    expect(fetchMock.mock.calls[1]).toEqual([
+      "/api/setup/sandbox/uninstall",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          expectedPreviewSha256: preview.contentSha256,
+        }),
+      }),
+    ]);
+  });
 });
 
 async function sandboxPreview(): Promise<SandboxSetupPreview> {
@@ -103,6 +136,50 @@ async function sandboxResult(
       dap: "dap_ready",
       service: "service_ready",
     },
+  };
+  return {
+    ...content,
+    contentSha256: await sha256Text(canonicalJson(content)),
+  };
+}
+
+async function sandboxUninstallPreview(): Promise<SandboxUninstallPreview> {
+  const content = {
+    kind: "napier.sandbox-runtime-uninstall-preview" as const,
+    schemaVersion: 1 as const,
+    component: "sandbox" as const,
+    status: "installed" as const,
+    active: true,
+    imageRetained: true as const,
+    bindingSha256: "f".repeat(64),
+    imageReference: "napier-sandbox:0.1.0",
+    imageId: `sha256:${"c".repeat(64)}`,
+    identitySha256: "d".repeat(64),
+    installationSha256: "e".repeat(64),
+    fallbackSandbox: "macos-sandbox-exec",
+  };
+  return {
+    ...content,
+    contentSha256: await sha256Text(canonicalJson(content)),
+  };
+}
+
+async function sandboxUninstallResult(
+  preview: SandboxUninstallPreview,
+): Promise<SandboxUninstallResult> {
+  const content = {
+    kind: "napier.sandbox-runtime-uninstall-result" as const,
+    schemaVersion: 1 as const,
+    component: "sandbox" as const,
+    action: "uninstalled" as const,
+    status: "removed" as const,
+    imageRetained: true as const,
+    bindingSha256: preview.bindingSha256!,
+    imageReference: preview.imageReference!,
+    imageId: preview.imageId!,
+    identitySha256: preview.identitySha256!,
+    installationSha256: preview.installationSha256!,
+    fallbackSandbox: preview.fallbackSandbox,
   };
   return {
     ...content,
