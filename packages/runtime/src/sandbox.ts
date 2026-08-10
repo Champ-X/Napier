@@ -10,7 +10,7 @@ import { CONTAINER_IMAGE_ENV } from "./sandbox-container.js";
 import { HostDirectSandboxAdapter } from "./sandbox-host-direct.js";
 import {
   scopedWorkspaceWritePaths,
-  validateLaunchRequest,
+  validateNonContainerLaunchRequest,
 } from "./sandbox-launch-policy.js";
 import { OciContainerSandboxAdapter } from "./sandbox-oci.js";
 import { launchSandboxProcess } from "./sandbox-process-lifecycle.js";
@@ -79,7 +79,7 @@ export class MacOsSandboxAdapter implements OsSandboxAdapter {
   ) {}
 
   async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
-    validateLaunchRequest(request);
+    validateNonContainerLaunchRequest(request, this.id);
     try {
       await access(this.executable);
     } catch {
@@ -132,7 +132,7 @@ export class LinuxBubblewrapSandboxAdapter implements OsSandboxAdapter {
   ) {}
 
   async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
-    validateLaunchRequest(request);
+    validateNonContainerLaunchRequest(request, this.id);
     try {
       await access(this.executable);
     } catch {
@@ -175,7 +175,7 @@ export function buildMacOsSandboxProfile(
   request: SandboxLaunchRequest,
   sandboxHome: string,
 ): string {
-  validateLaunchRequest(request);
+  validateNonContainerLaunchRequest(request, "macos-sandbox-exec");
   const capabilities = new Set(request.approvedCapabilities);
   const writePaths = scopedWorkspaceWritePaths(request);
   const metadataPaths = destinationDirectories([
@@ -239,7 +239,7 @@ export function buildLinuxBubblewrapArgs(
   request: SandboxLaunchRequest,
   sandboxHome: string,
 ): string[] {
-  validateLaunchRequest(request);
+  validateNonContainerLaunchRequest(request, "linux-bubblewrap");
   if (!path.isAbsolute(sandboxHome)) {
     throw new Error("Linux sandbox home must be absolute");
   }

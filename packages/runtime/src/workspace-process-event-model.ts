@@ -9,4 +9,4 @@ export type WorkspaceProcessSessionInput = Omit<
   | "workspaceRollbackAvailable"
   | "workspaceCompensationStatus"
   | "contentSha256"
-> & { schemaVersion?: 1 | 2 | 3 | 4 | 5 | 6 | 7 };
+> & { schemaVersion?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 };

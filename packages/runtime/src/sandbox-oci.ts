@@ -5,7 +5,7 @@ import path from "node:path";
 
 import {
   assertContainerImageIdentityStable,
-  removeContainerResource,
+  removeContainerLaunchResources,
   resolveContainerCommandRuntime,
   resolveContainerImageIdentity,
   type ContainerClient,
@@ -14,6 +14,11 @@ import {
   type ContainerUserIds,
   validateOciContainerName,
 } from "./sandbox-container-runtime.js";
+import {
+  createContainerServiceNetwork,
+  resolveContainerLocalService,
+  validateContainerServiceNetworkName,
+} from "./sandbox-container-service.js";
 import { resolveContainerLspRuntime } from "./sandbox-container-lsp-runtime.js";
 import { resolveContainerNodeDebuggerRuntime } from "./sandbox-container-node-debugger-runtime.js";
 import {
@@ -130,26 +135,41 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       path.join(await containerScratchBaseDir(), "napier-process-sandbox-"),
     );
     const containerName = createContainerName();
+    const networkName = request.localService
+      ? createContainerServiceNetworkName()
+      : undefined;
     const clientEnvironment = containerClientEnvironment();
     const cleanup: ParentGuardedOciCleanup = {
       kind: "oci-container",
       command: identity.clientExecutable,
       commandSha256: identity.clientExecutableSha256,
       containerName,
+      ...(networkName ? { networkName } : {}),
       env: clientEnvironment,
     };
+    let child: SandboxedProcess | undefined;
     try {
       await writeFile(
         containerEnvironmentFile(sandboxHome),
         serializeContainerEnvironment(request.env),
         { encoding: "utf8", flag: "wx", mode: 0o600 },
       );
+      if (networkName) {
+        await createContainerServiceNetwork(
+          identity,
+          networkName,
+          this.containerClient,
+          this.userIds,
+          this.daemonEndpoint,
+        );
+      }
       const args = buildOciContainerArgs(
         request,
         sandboxHome,
         identity.imageId,
         containerName,
         identity.user,
+        networkName,
       );
       const target = {
         command: identity.clientExecutable,
@@ -167,7 +187,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
           sandboxHome,
         });
       }
-      return await launchSandboxProcess({
+      child = await launchSandboxProcess({
         ...target,
         sandboxHome,
         parentDeathGuard: request.parentDeathGuard === true,
@@ -175,9 +195,10 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
           ? { guardianCleanup: cleanup }
           : {
               beforeCleanup: () =>
-                removeContainerResource(
+                removeContainerLaunchResources(
                   identity,
                   containerName,
+                  networkName,
                   this.containerClient,
                   this.userIds,
                   this.daemonEndpoint,
@@ -185,7 +206,34 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
             }),
         spawnProcess: this.spawnProcess,
       });
+      if (!request.localService || !networkName) return child;
+      const localService = await resolveContainerLocalService({
+        identity,
+        containerName,
+        networkName,
+        service: request.localService,
+        child,
+        ...(this.containerClient ? { client: this.containerClient } : {}),
+        ...(this.userIds ? { injectedUserIds: this.userIds } : {}),
+        ...(this.daemonEndpoint
+          ? { injectedDaemonEndpoint: this.daemonEndpoint }
+          : {}),
+        ...(request.signal ? { signal: request.signal } : {}),
+      });
+      return { ...child, localService };
     } catch (error) {
+      if (child) {
+        await child.terminate().catch(() => undefined);
+      } else if (networkName) {
+        await removeContainerLaunchResources(
+          identity,
+          containerName,
+          networkName,
+          this.containerClient,
+          this.userIds,
+          this.daemonEndpoint,
+        ).catch(() => undefined);
+      }
       await rm(sandboxHome, { recursive: true, force: true });
       throw error;
     }
@@ -259,6 +307,7 @@ export function buildOciContainerArgs(
   image: string,
   containerName: string,
   user: ContainerUserIdentity,
+  serviceNetworkName?: string,
 ): string[] {
   validateLaunchRequest(request);
   if (!path.isAbsolute(sandboxHome)) {
@@ -267,6 +316,14 @@ export function buildOciContainerArgs(
   validateContainerImage(image);
   validateOciContainerName(containerName);
   validateContainerUserIdentity(user);
+  if (request.localService) {
+    if (!serviceNetworkName) {
+      throw new Error("OCI local service network identity is required");
+    }
+    validateContainerServiceNetworkName(serviceNetworkName);
+  } else if (serviceNetworkName !== undefined) {
+    throw new Error("OCI local service network identity is unexpected");
+  }
   serializeContainerEnvironment(request.env);
   const capabilities = new Set(request.approvedCapabilities);
   const writePaths = scopedWorkspaceWritePaths(request);
@@ -291,7 +348,17 @@ export function buildOciContainerArgs(
     "--cpus",
     "2",
     "--network",
-    capabilities.has("network.connect") ? "bridge" : "none",
+    request.localService
+      ? serviceNetworkName!
+      : capabilities.has("network.connect")
+        ? "bridge"
+        : "none",
+    ...(request.localService
+      ? [
+          "--publish",
+          `127.0.0.1::${String(request.localService.containerPort)}/tcp`,
+        ]
+      : []),
     "--read-only",
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=64m,mode=1777",
@@ -343,6 +410,10 @@ function containerEnvironmentFile(sandboxHome: string): string {
 
 function createContainerName(): string {
   return `napier-${randomBytes(16).toString("hex")}`;
+}
+
+function createContainerServiceNetworkName(): string {
+  return `napier-network-${randomBytes(16).toString("hex")}`;
 }
 
 function validateContainerUserIdentity(user: ContainerUserIdentity): void {

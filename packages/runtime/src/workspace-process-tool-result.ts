@@ -1,6 +1,7 @@
 import type {
   WorkspaceProcessDeltaStatus,
   WorkspaceProcessInputReceipt,
+  WorkspaceProcessNetworkAccess,
   WorkspaceProcessOutputChunk,
   WorkspaceProcessResizeReceipt,
   WorkspaceProcessSession,
@@ -29,7 +30,12 @@ export interface WorkspaceProcessToolDetails {
   sandbox?: string;
   isolation?: "enforced" | "none";
   workspaceAccess?: "read_only" | "scoped_write";
-  networkAccess?: "denied";
+  networkAccess?: WorkspaceProcessNetworkAccess;
+  localServiceStatus?: "ready" | "closed";
+  localServiceUrl?: string;
+  localServiceContainerPort?: number;
+  localServiceHostPort?: number;
+  localServiceIdentitySha256?: string;
   writeScopeCount?: number;
   writeScopeSetSha256?: string;
   failureRecovery?: "restore_scopes";
@@ -78,6 +84,7 @@ export function workspaceProcessToolResult(
     ...sandboxDetails(session.sandbox),
     workspaceAccess: session.workspaceAccess,
     networkAccess: session.networkAccess,
+    ...workspaceProcessLocalServiceDetails(session),
     ...(session.writeScopeCount !== undefined
       ? { writeScopeCount: session.writeScopeCount }
       : {}),
@@ -131,6 +138,7 @@ export function workspaceProcessToolResult(
         ...sandboxDetails(session.sandbox),
         workspaceAccess: session.workspaceAccess,
         networkAccess: session.networkAccess,
+        localService: workspaceProcessLocalServiceResultValue(session),
         writeScopeCount: session.writeScopeCount ?? null,
         writeScopeSetSha256: session.writeScopeSetSha256 ?? null,
         failureRecovery: session.failureRecovery ?? null,
@@ -160,6 +168,7 @@ export function workspaceProcessToolResult(
     `Cursor: ${details.nextCursor}`,
     `Output available: ${String(session.outputAvailable)}`,
     ...processIsolationLines(session),
+    ...workspaceProcessLocalServiceLines(session),
     ...(session.writeScopeCount !== undefined
       ? [
           `Write scopes: ${session.writeScopeCount} / ${session.writeScopeSetSha256}`,
@@ -185,7 +194,7 @@ export function workspaceProcessToolResult(
         ]
       : []),
     `Workspace delta: ${session.workspaceDeltaStatus ?? "pending"}`,
-    `${session.schemaVersion >= 5 ? "Workspace changed paths" : "Workspace changed files"}: ${
+    `${session.workspaceAccess === "scoped_write" ? "Workspace changed paths" : "Workspace changed files"}: ${
       session.workspaceDeltaStatus === "indeterminate"
         ? "unknown"
         : (session.workspaceChangedFileCount ?? "unknown")
@@ -287,6 +296,40 @@ function sandboxDetails(sandbox: string): {
     sandbox,
     isolation: sandbox === "host-direct" ? "none" : "enforced",
   };
+}
+
+function workspaceProcessLocalServiceDetails(
+  session: WorkspaceProcessSession,
+): Partial<WorkspaceProcessToolDetails> {
+  const service = session.localService;
+  return service
+    ? {
+        localServiceStatus: service.status,
+        ...(service.status === "ready" ? { localServiceUrl: service.url } : {}),
+        localServiceContainerPort: service.containerPort,
+        localServiceHostPort: service.hostPort,
+        localServiceIdentitySha256: service.identitySha256,
+      }
+    : {};
+}
+
+function workspaceProcessLocalServiceLines(
+  session: WorkspaceProcessSession,
+): string[] {
+  const service = session.localService;
+  return service
+    ? [
+        `Local service: ${service.status}${service.status === "ready" ? ` / ${service.url}` : ""}`,
+        `Local service ports: container ${service.containerPort} / host ${service.hostPort}`,
+        `Local service identity SHA-256: ${service.identitySha256}`,
+      ]
+    : [];
+}
+
+function workspaceProcessLocalServiceResultValue(
+  session: WorkspaceProcessSession,
+): WorkspaceProcessSession["localService"] | null {
+  return session.localService ?? null;
 }
 
 function processIsolationLines(session: WorkspaceProcessSession): string[] {

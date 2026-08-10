@@ -54,6 +54,51 @@ describe("Workspace Process view model", () => {
     );
   });
 
+  it("shows a loopback link only while a bounded local service is ready", () => {
+    const service = {
+      protocol: "http" as const,
+      containerPort: 31_879,
+      host: "127.0.0.1" as const,
+      hostPort: 45_678,
+      url: "http://127.0.0.1:45678/",
+      healthPathSha256: "7".repeat(64),
+      identitySha256: "8".repeat(64),
+      readyAt: "2026-08-10T00:00:00.000Z",
+    };
+    const ready = workspaceProcessCardView({
+      ...fixture(),
+      schemaVersion: 8,
+      status: "running",
+      networkAccess: "outbound_denied_loopback_service",
+      localService: { ...service, status: "ready" },
+    });
+    expect(ready).toEqual(
+      expect.objectContaining({
+        scopeLabel:
+          "Workspace read-only · Outbound network denied · Loopback service only",
+        localService: {
+          status: "ready",
+          label: "Ready on container 31879 → host 45678",
+          url: "http://127.0.0.1:45678/",
+          identitySha256: "888888888888",
+        },
+      }),
+    );
+
+    const closed = workspaceProcessCardView({
+      ...fixture(),
+      schemaVersion: 8,
+      networkAccess: "outbound_denied_loopback_service",
+      localService: { ...service, status: "closed" },
+    });
+    expect(closed.localService).toEqual({
+      status: "closed",
+      label: "Closed · container 31879 → former host 45678",
+      identitySha256: "888888888888",
+    });
+    expect(closed.localService).not.toHaveProperty("url");
+  });
+
   it("projects interactive stdin state and rejects stale request tokens", () => {
     expect(
       workspaceProcessCardView({

@@ -23,6 +23,7 @@ import {
   unavailableWorkspacePathSnapshot,
 } from "./workspace-snapshot.js";
 import { createWorkspaceProcessWriteSnapshot } from "./workspace-process-write-snapshot.js";
+import { closedWorkspaceProcessLocalService } from "./workspace-process-local-service.js";
 
 export interface WorkspaceProcessWorkspaceSettlement {
   afterSnapshot: WorkspacePathSnapshot;
@@ -81,6 +82,7 @@ export async function settleWorkspaceProcessExecution(input: {
       ...workspaceProcessStableSessionInput(input.session),
       schemaVersion: input.session.schemaVersion,
       status,
+      ...closedWorkspaceProcessLocalService(input.session),
       ...(input.session.schemaVersion >= 3 ? { stdinOpen: false } : {}),
       settledAt,
       durationMs: Math.max(

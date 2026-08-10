@@ -21,6 +21,7 @@ import type {
 
 const IMAGE_ID = /^sha256:[a-f0-9]{64}$/u;
 const OCI_CONTAINER_NAME = /^napier-[a-f0-9]{32}$/u;
+const OCI_NETWORK_NAME = /^napier-network-[a-f0-9]{32}$/u;
 const MAX_POSIX_ID = 2_147_483_647;
 const CONTAINER_CLIENT_TIMEOUT_MS = 10_000;
 const MAX_CONTAINER_IDENTITY_OUTPUT_BYTES = 4_096;
@@ -334,13 +335,78 @@ export async function removeContainerResource(
   }
 }
 
+export async function removeContainerNetworkResource(
+  identity: ContainerImageIdentity,
+  networkName: string,
+  client: ContainerClient = runContainerClient,
+  injectedUserIds?: ContainerUserIds,
+  injectedDaemonEndpoint?: string,
+): Promise<void> {
+  if (!OCI_NETWORK_NAME.test(networkName)) {
+    throw new Error("OCI local service network identity is invalid");
+  }
+  await assertContainerImageIdentityStable(
+    identity,
+    client,
+    injectedUserIds,
+    injectedDaemonEndpoint,
+  );
+  try {
+    await client(identity.clientExecutable, ["network", "rm", networkName]);
+    return;
+  } catch {
+    const remaining = await client(identity.clientExecutable, [
+      "network",
+      "ls",
+      "--filter",
+      `name=^${networkName}$`,
+      "--format",
+      "{{.ID}}",
+    ]);
+    if (remaining.trim() === "") return;
+    throw new Error("OCI local service network cleanup failed");
+  }
+}
+
+export async function removeContainerLaunchResources(
+  identity: ContainerImageIdentity,
+  containerName: string,
+  networkName: string | undefined,
+  client: ContainerClient = runContainerClient,
+  injectedUserIds?: ContainerUserIds,
+  injectedDaemonEndpoint?: string,
+): Promise<void> {
+  let containerError: unknown;
+  try {
+    await removeContainerResource(
+      identity,
+      containerName,
+      client,
+      injectedUserIds,
+      injectedDaemonEndpoint,
+    );
+  } catch (error) {
+    containerError = error;
+  }
+  if (networkName) {
+    await removeContainerNetworkResource(
+      identity,
+      networkName,
+      client,
+      injectedUserIds,
+      injectedDaemonEndpoint,
+    );
+  }
+  if (containerError) throw containerError;
+}
+
 export function validateOciContainerName(containerName: string): void {
   if (!OCI_CONTAINER_NAME.test(containerName)) {
     throw new Error("OCI container resource identity is invalid");
   }
 }
 
-function runContainerClient(
+export function runContainerClient(
   executable: string,
   args: readonly string[],
 ): Promise<string> {

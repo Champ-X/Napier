@@ -13,6 +13,12 @@ export interface WorkspaceProcessCardView {
   durationLabel: string;
   runtimeLabel: string;
   scopeLabel: string;
+  localService?: {
+    status: "ready" | "closed";
+    label: string;
+    url?: string;
+    identitySha256: string;
+  };
   failureRecovery?: "restore_scopes";
   compensationStatus?: WorkspaceProcessSession["workspaceCompensationStatus"];
   limitLabel: string;
@@ -60,7 +66,24 @@ export function workspaceProcessCardView(
         ? "Host direct · no workspace, network, or resource isolation"
         : session.workspaceAccess === "scoped_write"
           ? `Workspace scoped write · ${session.writeScopeCount ?? 0} scope${session.writeScopeCount === 1 ? "" : "s"} · ${session.writeScopeSetSha256?.slice(0, 12) ?? "unavailable"} · Network denied`
-          : "Workspace read-only · Network denied",
+          : session.networkAccess === "outbound_denied_loopback_service"
+            ? "Workspace read-only · Outbound network denied · Loopback service only"
+            : "Workspace read-only · Network denied",
+    ...(session.localService
+      ? {
+          localService: {
+            status: session.localService.status,
+            label:
+              session.localService.status === "ready"
+                ? `Ready on container ${session.localService.containerPort} → host ${session.localService.hostPort}`
+                : `Closed · container ${session.localService.containerPort} → former host ${session.localService.hostPort}`,
+            ...(session.localService.status === "ready"
+              ? { url: session.localService.url }
+              : {}),
+            identitySha256: session.localService.identitySha256.slice(0, 12),
+          },
+        }
+      : {}),
     ...(session.failureRecovery
       ? {
           failureRecovery: session.failureRecovery,

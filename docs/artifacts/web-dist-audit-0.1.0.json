@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 131,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CVEc7_IK.js",
+    "path": "apps/web/dist/assets/index-Qsl2eHNq.js",
     "sizeBytes": 151876,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "7d8c34d27d19e5ce2bde4bf51fb03e396e3ae51ed018147114770e6fd4393eef"
+    "sha256": "5a0a4e800c6bbfb2312ff44de55bb88a26ddb2a6ec32793481593872c137974b"
   },
-  "distContentSha256": "7d8c34d27d19e5ce2bde4bf51fb03e396e3ae51ed018147114770e6fd4393eef",
+  "distContentSha256": "5a0a4e800c6bbfb2312ff44de55bb88a26ddb2a6ec32793481593872c137974b",
   "errors": []
 }

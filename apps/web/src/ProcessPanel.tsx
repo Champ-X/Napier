@@ -23,6 +23,10 @@ import {
   workspaceProcessSelectionRequestIsCurrent,
 } from "./workspace-process-view-model";
 import { WorkspaceProcessRollback } from "./WorkspaceProcessRollback";
+import {
+  WorkspaceProcessFailureRecoveryRow,
+  WorkspaceProcessLocalServiceRow,
+} from "./WorkspaceProcessLocalServiceRow";
 
 export default function ProcessPanel({
   threadId,
@@ -444,14 +448,14 @@ export default function ProcessPanel({
                     <dt>{copy.limits}</dt>
                     <dd>{card.limitLabel}</dd>
                   </div>
+                  <WorkspaceProcessLocalServiceRow
+                    service={card.localService}
+                    label={copy.localService}
+                  />
                   {card.failureRecovery ? (
-                    <div>
-                      <dt>{copy.failureRecovery}</dt>
-                      <dd>
-                        {copy.failureRecoveryRestore} ·{" "}
-                        {compensationLabel(card.compensationStatus)}
-                      </dd>
-                    </div>
+                    <WorkspaceProcessFailureRecoveryRow
+                      status={card.compensationStatus}
+                    />
                   ) : null}
                   <div>
                     <dt>{copy.output}</dt>
@@ -684,17 +688,6 @@ export default function ProcessPanel({
       )}
     </section>
   );
-}
-
-function compensationLabel(
-  status: WorkspaceProcessSession["workspaceCompensationStatus"],
-): string {
-  if (status === "not_needed") return copy.compensationNotNeeded;
-  if (status === "restored") return copy.compensationRestored;
-  if (status === "reverted") return copy.compensationReverted;
-  if (status === "indeterminate") return copy.compensationIndeterminate;
-  if (status === "unavailable") return copy.compensationUnavailable;
-  return copy.compensationPending;
 }
 
 function formatDeltaMetadata(

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   probeGitRuntime,
+  probeLocalServiceRuntime,
   probePythonRuntime,
   probeShellRuntime,
   probeSkillsRuntime,
@@ -78,6 +79,22 @@ describe("Shell Doctor probe", () => {
       expect.objectContaining({
         status: "unavailable",
         code: "shell_provider_unavailable",
+      }),
+    );
+  });
+});
+
+describe("local service Doctor probe", () => {
+  it("fails closed when the active provider cannot publish a bounded service", async () => {
+    const result = await probeLocalServiceRuntime(
+      process.cwd(),
+      undefined,
+      new HostDirectSandboxAdapter(),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "unavailable",
+        code: "service_provider_unavailable",
       }),
     );
   });

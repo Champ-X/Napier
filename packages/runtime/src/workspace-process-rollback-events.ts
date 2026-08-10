@@ -255,6 +255,7 @@ function rollbackEvidenceMatchesSession(
   event: RunEvent,
 ): boolean {
   return (
+    session.workspaceAccess === "scoped_write" &&
     session.schemaVersion >= 6 &&
     session.status !== "running" &&
     evidence.threadId === event.threadId &&

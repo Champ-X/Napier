@@ -13,7 +13,8 @@ export interface DoctorCheck {
     | "lsp"
     | "dap"
     | "python"
-    | "shell";
+    | "shell"
+    | "service";
   status: DoctorCheckStatus;
   required: boolean;
   code: string;

@@ -157,6 +157,12 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
       "Select a process Sandbox with runtime identity and PTY support; the configured provider cannot run Shell Sessions yet.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
+  service_provider_unavailable: {
+    id: "repair_local_service_provider",
+    instruction:
+      "Configure a local OCI provider that can create an internal bridge, publish one ephemeral 127.0.0.1 port, complete the HTTP health probe, and clean up both container and network resources.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
   search_unavailable: networkRemediation(),
   fetch_unavailable: networkRemediation(),
   browser_unavailable: networkRemediation(),

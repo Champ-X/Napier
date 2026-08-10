@@ -2,7 +2,7 @@ export const workspaceProcessCopy = {
   eyebrow: "SANDBOX SESSIONS",
   title: "Workspace processes",
   description:
-    "Observe bounded background Node work, including one-use preview-bound writes to explicit workspace scopes. Shell and network access remain denied.",
+    "Observe bounded Node and shell work, preview-bound writes, and OCI services projected only to an ephemeral 127.0.0.1 port with outbound network denied.",
   refresh: "Refresh",
   cancel: "Cancel process",
   cancelling: "Cancelling...",
@@ -85,6 +85,7 @@ export const workspaceProcessCopy = {
   settled: "Settled",
   duration: "Duration",
   limits: "Limits",
+  localService: "Local service",
   scope: "Scope",
   output: "Output",
   error: "Process Sessions could not be loaded.",

@@ -1,0 +1,124 @@
+{
+  "kind": "napier.oci-local-service-stage9",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-10T04:45:00Z",
+  "controlledProductionPath": {
+    "externalDaemonUsed": false,
+    "immutableImageIdUsed": true,
+    "numericExecutionUserUsed": true,
+    "workspaceRootReadOnly": true,
+    "containerFilesystemReadOnly": true,
+    "oneHttpServicePerProcess": true,
+    "privilegedContainerPortsRejected": true,
+    "internalBridgeCreated": true,
+    "outboundNetworkDenied": true,
+    "hostBinding": "127.0.0.1:ephemeral",
+    "healthCheckBounded": true,
+    "healthPathContentRetained": false,
+    "realHttpChildReached": true,
+    "containerAndNetworkCleanupVerified": true,
+    "closedPortVerified": true,
+    "workspaceProcessSchemaVersion": 8,
+    "restartReplayVerified": true,
+    "hostDirectRejected": true,
+    "webLinkOnlyWhileReady": true,
+    "doctorProductionProbe": "ready"
+  },
+  "actualHost": {
+    "containerCliPresent": true,
+    "containerServerReachable": false,
+    "colimaRunning": false,
+    "doctorStatus": "degraded",
+    "serviceProductionProbeReached": false,
+    "serviceDoctorCode": "service_provider_unavailable",
+    "sandboxDoctorCode": "sandbox_unavailable",
+    "serviceRemediation": "repair_local_service_provider",
+    "localServiceReadyClaimed": false
+  },
+  "realModelDogfood": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "realModel": true,
+    "realHttpChild": true,
+    "sandbox": "controlled-oci-client",
+    "externalDaemonClaimed": false,
+    "immutableImageUsed": true,
+    "internalNetworkCreated": true,
+    "loopbackPortProjected": true,
+    "workspaceProcessToolCompletions": 2,
+    "sessionSchemaVersion": 8,
+    "terminalStatus": "cancelled",
+    "serviceStatus": "closed",
+    "containerCleanupVerified": true,
+    "networkCleanupVerified": true,
+    "credentialCanaryMatches": 0,
+    "eventStreamSha256": "4a9e4d33b7b1f8e4fe168743c6b97f25a3193d45ef20e5d6fda5821663b2588d",
+    "temporaryWorkspaceRetained": false
+  },
+  "verification": {
+    "focusedTestFiles": 8,
+    "focusedTests": 57,
+    "productionDoctorInvocations": 1,
+    "realModelRuns": 1,
+    "sourceFiles": 1210,
+    "testFiles": 630,
+    "architectureCycles": 0
+  },
+  "retryLedger": [
+    {
+      "category": "schema8_replay",
+      "productFailure": true,
+      "cause": "the terminal-field parser initially admitted only session schemas 4 through 7 and silently discarded valid schema 8 service sessions on restart",
+      "resolution": "extended the shared pipe terminal validator through schema 8 and locked cancellation plus restart replay in a dedicated integration test",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "rollback_projection",
+      "productFailure": true,
+      "cause": "newer session version checks could project scoped-write rollback fields onto a read-only schema 8 service session",
+      "resolution": "gated recovery and rollback projection on scoped_write workspace access instead of version alone",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "provider_definition_budget",
+      "productFailure": false,
+      "cause": "the first service guidance exceeded the fixed provider tool-definition byte budget",
+      "resolution": "compressed the model-facing description while retaining redaction, write transaction, Delta, loopback, egress, bind-address, and host-direct semantics",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "actual_daemon",
+      "productFailure": false,
+      "cause": "the installed Docker CLI cannot reach its local daemon and Colima is not running",
+      "resolution": "production Doctor reports service_provider_unavailable without a ready claim; controlled OCI execution and separately labelled real-model Dogfood provide non-substitutable evidence while daemon E2E remains open",
+      "finalStatus": "externally_blocked"
+    }
+  ],
+  "retention": {
+    "credentialValues": false,
+    "rawDockerOutput": false,
+    "rawDoctorReport": false,
+    "rawDaemonEndpoint": false,
+    "numericHostUserIds": false,
+    "containerName": false,
+    "networkName": false,
+    "healthPathContent": false,
+    "workspacePaths": false,
+    "sourceContent": false,
+    "modelReasoning": false,
+    "threadOrRunIds": false,
+    "absoluteTemporaryPaths": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "real isolated Docker daemon E2E",
+      "non-POSIX host user mapping",
+      "cross-platform isolated provider casebook",
+      "complete install-build-test-service-cancel-recovery acceptance",
+      "full file-network-secret-resource failure injection"
+    ]
+  },
+  "contentSha256": "46461d0f53eacd46e76ea3977aeb05f7baa65382463032b81fb5e9729586bd3d"
+}

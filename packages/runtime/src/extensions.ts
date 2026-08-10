@@ -14,16 +14,9 @@ import type {
 } from "@napier/contracts";
 
 import { createId, nowIso } from "./ids.js";
+import { EXTENSION_CAPABILITIES } from "./extension-capabilities.js";
 
-const CAPABILITIES = new Set<ExtensionCapability>([
-  "network.connect",
-  "secrets.env",
-  "process.spawn",
-  "workspace.read",
-  "workspace.write",
-  "external.read",
-  "external.write",
-]);
+const CAPABILITIES: ReadonlySet<ExtensionCapability> = EXTENSION_CAPABILITIES;
 const HEADER_NAME = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]{1,128}$/;
 const ENV_NAME = /^[A-Za-z_][A-Za-z0-9_]{0,127}$/;
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);

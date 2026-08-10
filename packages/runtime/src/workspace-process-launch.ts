@@ -21,6 +21,11 @@ import {
   validateWorkspaceProcessTerminalSize,
 } from "./workspace-process-terminal.js";
 import {
+  type WorkspaceProcessLocalServiceRequest,
+  validateWorkspaceProcessLocalServiceRequest,
+  workspaceProcessLocalServiceProjection,
+} from "./workspace-process-local-service.js";
+import {
   type PreparedWorkspaceProcessWrite,
   WorkspaceProcessWritePreviewManager,
   type WorkspaceProcessWriteRuntimeState,
@@ -36,6 +41,7 @@ export interface WorkspaceProcessLaunchRequest {
   command: CommandExecutionRequest;
   interactive?: boolean;
   terminal?: WorkspaceProcessTerminalSize;
+  localService?: WorkspaceProcessLocalServiceRequest;
   signal?: AbortSignal;
 }
 
@@ -72,7 +78,12 @@ export async function launchWorkspaceProcess(input: {
   shuttingDown(): boolean;
 }): Promise<LaunchedWorkspaceProcess> {
   const { request } = input;
-  assertLaunchRequest(request, input.privateProtocol, input.shuttingDown());
+  assertLaunchRequest(
+    request,
+    input.privateProtocol,
+    input.writePreviewId !== undefined,
+    input.shuttingDown(),
+  );
   const commandOptions = processCommandOptions(request, input.options);
   const processId = createId("process");
   let prepared: PreparedCommandExecution;
@@ -110,7 +121,11 @@ export async function launchWorkspaceProcess(input: {
       });
     } else {
       prepared = await prepareCommandExecution(commandOptions, request.command);
-      io = bindWorkspaceProcessIo(prepared, request.terminal);
+      io = bindWorkspaceProcessIo(
+        prepared,
+        request.terminal,
+        request.localService,
+      );
       beforeSnapshot = await createWorkspacePathSnapshot(
         prepared.workspaceRoot,
         prepared.workspaceRoot,
@@ -122,7 +137,10 @@ export async function launchWorkspaceProcess(input: {
     if (request.signal?.aborted) {
       throw new Error("workspace process start was aborted");
     }
-    child = await input.options.sandbox.launch(io.launch);
+    child = await input.options.sandbox.launch({
+      ...io.launch,
+      ...(request.signal ? { signal: request.signal } : {}),
+    });
   } catch (error) {
     await input.recovery?.remove(processId);
     await writeLock?.release();
@@ -136,6 +154,12 @@ export async function launchWorkspaceProcess(input: {
     await abandonLaunch(input.recovery, processId, child, writeLock);
     throw new Error("The selected Sandbox does not support PTY resize");
   }
+  if (Boolean(request.localService) !== Boolean(child.localService)) {
+    await abandonLaunch(input.recovery, processId, child, writeLock);
+    throw new Error(
+      "The selected Sandbox did not bind the requested local service",
+    );
+  }
   if (request.interactive !== true && !request.terminal) child.stdin.end();
   const session = createRunningSession({
     processId,
@@ -143,6 +167,7 @@ export async function launchWorkspaceProcess(input: {
     prepared,
     beforeSnapshot,
     io,
+    child,
     ...(write ? { write } : {}),
     ...(recoveryBinding ? { recoveryBinding } : {}),
   });
@@ -164,11 +189,18 @@ function createRunningSession(input: {
   prepared: PreparedCommandExecution;
   beforeSnapshot: WorkspacePathSnapshot;
   io: ReturnType<typeof bindWorkspaceProcessIo>;
+  child: SandboxedProcess;
   write?: PreparedWorkspaceProcessWrite;
   recoveryBinding?: WorkspaceProcessRecoveryBinding;
 }): WorkspaceProcessSession {
   return createWorkspaceProcessSession({
-    schemaVersion: input.write ? (input.write.failureRecovery ? 7 : 6) : 4,
+    schemaVersion: input.child.localService
+      ? 8
+      : input.write
+        ? input.write.failureRecovery
+          ? 7
+          : 6
+        : 4,
     id: input.processId,
     threadId: input.request.threadId,
     runId: input.request.runId,
@@ -176,7 +208,16 @@ function createRunningSession(input: {
     status: "running",
     sandbox: input.prepared.sandboxId,
     workspaceAccess: input.write ? "scoped_write" : "read_only",
-    networkAccess: "denied",
+    networkAccess: input.child.localService
+      ? "outbound_denied_loopback_service"
+      : "denied",
+    ...(input.child.localService
+      ? {
+          localService: workspaceProcessLocalServiceProjection(
+            input.child.localService,
+          ),
+        }
+      : {}),
     argumentCount: input.prepared.receipt.argumentCount,
     commandSha256: input.io.commandSha256,
     executableSha256: input.prepared.executableSha256,
@@ -224,6 +265,7 @@ function assertLaunchRequest(
     | PrivateProtocolWorkspaceProcessLaunchRequest
     | PrivateWorkspaceProcessLaunchRequest,
   privateProtocol: boolean,
+  writePreview: boolean,
   shuttingDown: boolean,
 ): void {
   if (shuttingDown) {
@@ -240,6 +282,13 @@ function assertLaunchRequest(
   if (privateProtocol && request.terminal !== undefined) {
     throw new Error("Private Process protocols cannot use PTY mode");
   }
+  validateWorkspaceProcessLocalServiceRequest({
+    ...(request.localService ? { localService: request.localService } : {}),
+    ...(request.interactive ? { interactive: request.interactive } : {}),
+    ...(request.terminal ? { terminal: request.terminal } : {}),
+    privateProtocol,
+    writePreview,
+  });
   if ("privateWorkspace" in request && !privateProtocol) {
     throw new Error(
       "Private Process workspace scope requires the private protocol path",

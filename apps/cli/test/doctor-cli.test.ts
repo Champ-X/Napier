@@ -95,8 +95,8 @@ describe("Napier Doctor CLI", () => {
         schemaVersion: 2,
         status: "ready",
         online: true,
-        checkCount: 12,
-        passedCount: 12,
+        checkCount: 13,
+        passedCount: 13,
         warningCount: 0,
         failedCount: 0,
         skippedCount: 0,
@@ -337,7 +337,7 @@ describe("Napier Doctor CLI", () => {
       }),
     );
   });
-  it("checks local Skills, LSP, DAP, Python, and Shell readiness", async () => {
+  it("checks local Skills, LSP, DAP, Python, Shell, and service readiness", async () => {
     const fixture = await createFixture();
     const stdout = new CaptureWritable();
 
@@ -366,9 +366,16 @@ describe("Napier Doctor CLI", () => {
       checks: DoctorCheck[];
       remediations: Array<{ id: string; priority: string; checkIds: string[] }>;
     };
-    expect(report.checkCount).toBe(12);
+    expect(report.checkCount).toBe(13);
     expect(report.checks.map((check) => check.id)).toEqual(
-      expect.arrayContaining(["skills", "lsp", "dap", "python", "shell"]),
+      expect.arrayContaining([
+        "skills",
+        "lsp",
+        "dap",
+        "python",
+        "shell",
+        "service",
+      ]),
     );
     const python = report.checks.find((check) => check.id === "python");
     expect(python).toEqual(
@@ -531,6 +538,8 @@ function doctorDependencies(
       dap: async () => overrides.dap ?? passed("dap", "dap_ready"),
       python: async () => overrides.python ?? passed("python", "python_ready"),
       shell: async () => overrides.shell ?? passed("shell", "shell_ready"),
+      service: async () =>
+        overrides.service ?? passed("service", "service_ready"),
     },
   };
 }
@@ -544,6 +553,7 @@ function passed(id: DoctorCheck["id"], code: string): DoctorCheck {
     "dap",
     "python",
     "shell",
+    "service",
   ]);
   return {
     id,

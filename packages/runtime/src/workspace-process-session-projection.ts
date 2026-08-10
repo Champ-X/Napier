@@ -7,7 +7,9 @@ export function projectInactiveWorkspaceProcessSession(
   session: WorkspaceProcessSession,
   recovery?: WorkspaceProcessRecoveryManager,
 ): WorkspaceProcessSession {
-  if (session.schemaVersion < 6) return session;
+  if (session.schemaVersion < 6 || session.workspaceAccess !== "scoped_write") {
+    return session;
+  }
   const compensationStatus = recovery?.compensationStatus(session);
   return workspaceProcessSessionWithRuntimeState(session, {
     nextCursor: session.nextCursor,

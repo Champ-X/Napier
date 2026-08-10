@@ -68,6 +68,7 @@ describe("process guardian", () => {
             observedDescendants: true,
           },
           terminal: null,
+          localService: null,
         }),
       ),
     );
@@ -278,12 +279,17 @@ describe("process guardian", () => {
       const executable = path.join(cwd, "fake-container-client");
       const cleanupLog = path.join(cwd, "cleanup.log");
       const containerName = `napier-${"e".repeat(32)}`;
+      const networkName = `napier-network-${"d".repeat(32)}`;
       await writeFile(
         executable,
         [
           "#!/bin/sh",
           'if [ "$1" = "container" ]; then',
-          '  printf "%s" "$4" > "$CLEANUP_LOG"',
+          '  printf "container:%s\\n" "$4" >> "$CLEANUP_LOG"',
+          "  exit 0",
+          "fi",
+          'if [ "$1" = "network" ]; then',
+          '  printf "network:%s\\n" "$3" >> "$CLEANUP_LOG"',
           "  exit 0",
           "fi",
           "trap 'exit 0' HUP INT TERM",
@@ -304,6 +310,7 @@ describe("process guardian", () => {
             executableSha256,
             cleanupLog,
             containerName,
+            networkName,
           }),
         ],
         {
@@ -322,7 +329,9 @@ describe("process guardian", () => {
       parent.kill("SIGKILL");
       await parentExit;
       await waitForProcessesToExit([guardianPid, targetPid]);
-      await expect(waitForFile(cleanupLog)).resolves.toBe(containerName);
+      await expect(waitForFile(cleanupLog)).resolves.toBe(
+        `container:${containerName}\nnetwork:${networkName}\n`,
+      );
       livePids.delete(guardianPid);
       livePids.delete(targetPid);
     },
@@ -573,6 +582,7 @@ function cleanupParentHarnessSource(input: {
   executableSha256: string;
   cleanupLog: string;
   containerName: string;
+  networkName: string;
 }): string {
   return `
     import { spawn } from "node:child_process";
@@ -599,6 +609,7 @@ function cleanupParentHarnessSource(input: {
           command: ${JSON.stringify(input.executable)},
           commandSha256: ${JSON.stringify(input.executableSha256)},
           containerName: ${JSON.stringify(input.containerName)},
+          networkName: ${JSON.stringify(input.networkName)},
           env: {
             PATH: "/usr/bin:/bin",
             CLEANUP_LOG: ${JSON.stringify(input.cleanupLog)},

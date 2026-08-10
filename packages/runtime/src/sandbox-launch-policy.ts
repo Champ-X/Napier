@@ -1,11 +1,18 @@
 import path from "node:path";
 
 import type { SandboxLaunchRequest } from "./sandbox-types.js";
+import {
+  rejectLocalServiceForProvider,
+  validateSandboxLocalService,
+} from "./sandbox-local-service-policy.js";
 import { validateTerminalDimensions } from "./sandbox-terminal.js";
 
 const MAX_SANDBOX_PATHS = 8;
 
 export function validateLaunchRequest(request: SandboxLaunchRequest): void {
+  if (request.signal?.aborted) {
+    throw new Error("Sandbox launch was aborted");
+  }
   if (!path.isAbsolute(request.command)) {
     throw new Error("Sandboxed commands must use an absolute executable path");
   }
@@ -28,6 +35,7 @@ export function validateLaunchRequest(request: SandboxLaunchRequest): void {
     throw new Error("workspace.write requires workspace.read");
   }
   scopedWorkspaceWritePaths(request);
+  validateSandboxLocalService(request);
   if (
     request.runtimeReadPaths !== undefined &&
     (request.runtimeReadPaths.length > MAX_SANDBOX_PATHS ||
@@ -43,6 +51,14 @@ export function validateLaunchRequest(request: SandboxLaunchRequest): void {
     );
   }
   validateTerminalDimensions(request.terminal);
+}
+
+export function validateNonContainerLaunchRequest(
+  request: SandboxLaunchRequest,
+  providerId: string,
+): void {
+  validateLaunchRequest(request);
+  rejectLocalServiceForProvider(request, providerId);
 }
 
 export function scopedWorkspaceWritePaths(

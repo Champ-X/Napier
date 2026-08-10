@@ -201,6 +201,7 @@ export class WorkspaceProcessRecoveryManager {
 
   available(session: WorkspaceProcessSession): boolean {
     if (
+      session.workspaceAccess !== "scoped_write" ||
       session.schemaVersion < 6 ||
       session.status === "running" ||
       !session.recoverySnapshotSha256 ||
@@ -385,6 +386,7 @@ export class WorkspaceProcessRecoveryManager {
   ): boolean {
     const binding = workspaceProcessRecoveryBinding(manifest);
     return (
+      session.workspaceAccess === "scoped_write" &&
       session.schemaVersion >= 6 &&
       session.status !== "running" &&
       session.workspaceDeltaStatus === "changed" &&

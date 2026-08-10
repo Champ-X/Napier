@@ -199,6 +199,7 @@ export function workspaceProcessEventTraceSummary(
     ...(status ? [`status ${status}`] : []),
     ...(runtime ? [`runtime ${runtime}`] : []),
     ...processIsolationTraceParts(event.payload),
+    ...workspaceProcessLocalServiceTraceParts(event.payload),
     ...(writeScopeCount !== undefined
       ? [`write-scopes ${writeScopeCount}`]
       : []),
@@ -281,7 +282,33 @@ function processIsolationTraceParts(
       : !hostDirect && payload["workspaceAccess"] === "read_only"
         ? ["access read-only"]
         : []),
+    ...(payload["networkAccess"] === "outbound_denied_loopback_service"
+      ? ["outbound denied", "loopback service"]
+      : payload["networkAccess"] === "denied"
+        ? ["network denied"]
+        : []),
   ];
+}
+
+function workspaceProcessLocalServiceTraceParts(
+  payload: Record<string, JsonValue>,
+): string[] {
+  const service = record(payload["localService"])
+    ? payload["localService"]
+    : undefined;
+  const identity = stringMatch(service?.["identitySha256"], SHA256);
+  const hostPort = integer(service?.["hostPort"]);
+  return [
+    ...(service?.["status"] === "ready" || service?.["status"] === "closed"
+      ? [`service ${service["status"]}`]
+      : []),
+    ...(hostPort !== undefined ? [`service-host-port ${hostPort}`] : []),
+    ...(identity ? [`service ${identity.slice(0, 12)}`] : []),
+  ];
+}
+
+function record(value: unknown): value is Record<string, JsonValue> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function stringMatch(value: unknown, pattern: RegExp): string | undefined {

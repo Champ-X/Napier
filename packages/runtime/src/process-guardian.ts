@@ -28,6 +28,7 @@ export interface ParentGuardedOciCleanup {
   command: string;
   commandSha256: string;
   containerName: string;
+  networkName?: string;
   env: Record<string, string>;
 }
 

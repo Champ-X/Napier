@@ -7,6 +7,7 @@ import {
 import {
   probeDapRuntime,
   probeLspRuntime,
+  probeLocalServiceRuntime,
   probePythonRuntime,
   probeShellRuntime,
   probeSkillsRuntime,
@@ -44,6 +45,10 @@ export interface DoctorProbeDependencies {
   dap?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
   python?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
   shell?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
+  service?: (
+    workspaceRoot: string,
+    signal: AbortSignal,
+  ) => Promise<DoctorCheck>;
 }
 
 export async function runDoctorProbes(input: {
@@ -108,6 +113,11 @@ export async function runDoctorProbes(input: {
         ? dependencies.shell(input.workspaceRoot, input.signal)
         : localCapabilityCheck("shell", () =>
             probeShellRuntime(input.workspaceRoot, input.signal),
+          ),
+      dependencies.service
+        ? dependencies.service(input.workspaceRoot, input.signal)
+        : localCapabilityCheck("service", () =>
+            probeLocalServiceRuntime(input.workspaceRoot, input.signal),
           ),
     ])),
   );

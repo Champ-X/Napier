@@ -19,7 +19,6 @@ import type {
   CommandRunnerOptions,
   PreparedCommandExecution,
 } from "./command-execution.js";
-import { nowIso } from "./ids.js";
 import type { NodeDebuggerRuntimeIdentity } from "./node-debugger-runtime.js";
 import type { SandboxedProcess } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
@@ -71,6 +70,7 @@ import {
 } from "./workspace-process-node-debugger-runtime.js";
 import { workspaceProcessResizeReceiptPayload } from "./workspace-process-resize-events.js";
 import { projectInactiveWorkspaceProcessSession } from "./workspace-process-session-projection.js";
+import { createInterruptedWorkspaceProcessSession } from "./workspace-process-interrupted-session.js";
 import {
   type PreviewWorkspaceProcessWriteRequest,
   type PreparedWorkspaceProcessWrite,
@@ -192,18 +192,8 @@ export class WorkspaceProcessManager {
       for (const session of sessions.filter(
         (candidate) => candidate.status === "running",
       )) {
-        const interrupted = createWorkspaceProcessSession({
-          schemaVersion: session.schemaVersion,
-          ...stableSessionInput(session),
-          status: "interrupted",
-          ...(session.schemaVersion >= 3 ? { stdinOpen: false } : {}),
-          settledAt: nowIso(),
-          stdoutChars: session.stdoutChars,
-          stderrChars: session.stderrChars,
-          stdoutTruncated: session.stdoutTruncated,
-          stderrTruncated: session.stderrTruncated,
-          nextCursor: session.nextCursor,
-          interruptionReason:
+        const interrupted = createInterruptedWorkspaceProcessSession(session, {
+          reason:
             "The Runtime restarted before this Process Session reached a terminal state; its outcome is unknown.",
         });
         await this.appendSession(
@@ -717,6 +707,7 @@ export class WorkspaceProcessManager {
       this.notifyChange(entry);
     }
     if (
+      session.workspaceAccess === "scoped_write" &&
       session.schemaVersion >= 6 &&
       session.workspaceDeltaStatus !== "changed"
     ) {
@@ -756,18 +747,13 @@ export class WorkspaceProcessManager {
     entry.parentSignal?.removeEventListener("abort", entry.parentAbort!);
     delete entry.workspaceDelta;
     entry.compensationPending = false;
-    entry.session = createWorkspaceProcessSession({
-      ...stableSessionInput(entry.session),
-      schemaVersion: entry.session.schemaVersion,
-      status: "interrupted",
-      ...(entry.session.schemaVersion >= 3 ? { stdinOpen: false } : {}),
-      settledAt: nowIso(),
+    entry.session = createInterruptedWorkspaceProcessSession(entry.session, {
       stdoutChars: entry.stdout.chars,
       stderrChars: entry.stderr.chars,
       stdoutTruncated: entry.stdout.truncated,
       stderrTruncated: entry.stderr.truncated,
       nextCursor: entry.nextCursor,
-      interruptionReason:
+      reason:
         "Process settlement evidence could not be persisted; the outcome is unknown.",
     });
     this.notifyChange(entry);
@@ -840,7 +826,6 @@ export class WorkspaceProcessManager {
     if (!session) throw new Error("Workspace Process Session not found");
     return session;
   }
-
   private runtimeSession(
     entry: ActiveWorkspaceProcess,
   ): WorkspaceProcessSession {
@@ -851,7 +836,8 @@ export class WorkspaceProcessManager {
       nextCursor: entry.nextCursor,
       outputAvailable: !entry.privateProtocol,
       workspaceDeltaAvailable: Boolean(entry.workspaceDelta),
-      ...(entry.session.schemaVersion >= 6
+      ...(entry.session.workspaceAccess === "scoped_write" &&
+      entry.session.schemaVersion >= 6
         ? {
             workspaceRollbackAvailable:
               this.recovery?.available(entry.session) === true,

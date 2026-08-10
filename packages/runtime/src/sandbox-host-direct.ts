@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { launchSandboxProcess } from "./sandbox-process-lifecycle.js";
+import { validateNonContainerLaunchRequest } from "./sandbox-launch-policy.js";
 import { launchTerminalSandboxWrapper } from "./sandbox-terminal.js";
 import type {
   OsSandboxAdapter,
@@ -34,6 +35,7 @@ export class HostDirectSandboxAdapter implements OsSandboxAdapter {
   }
 
   async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
+    validateNonContainerLaunchRequest(request, this.id);
     const sandboxHome = await mkdtemp(
       path.join(tmpdir(), "napier-host-direct-"),
     );

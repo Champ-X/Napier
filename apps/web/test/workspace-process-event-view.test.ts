@@ -158,6 +158,39 @@ describe("Workspace Process event view", () => {
     expect(summary).not.toContain("PRIVATE_WRITE_SCOPE");
   });
 
+  it("summarizes local service isolation and identity without health paths", () => {
+    const event: RunEvent = {
+      id: "event_1234567890abcdef1234",
+      threadId: "thread_1234567890abcdef1234",
+      runId: "run_1234567890abcdef1234",
+      seq: 6,
+      type: "workspace.process.started",
+      category: "lifecycle",
+      visibility: "user",
+      createdAt: "2026-08-10T00:00:00.000Z",
+      payload: {
+        id: "process_1234567890abcdef1234",
+        status: "running",
+        runtime: "node",
+        sandbox: "oci-container",
+        workspaceAccess: "read_only",
+        networkAccess: "outbound_denied_loopback_service",
+        localService: {
+          status: "ready",
+          hostPort: 45_678,
+          identitySha256: "8".repeat(64),
+          healthPath: "/PRIVATE_READY_PATH",
+        },
+      },
+    };
+
+    const summary = workspaceProcessEventTraceSummary(event);
+    expect(summary).toContain(
+      "sandbox oci-container / access read-only / outbound denied / loopback service / service ready / service-host-port 45678 / service 888888888888",
+    );
+    expect(summary).not.toContain("PRIVATE_READY_PATH");
+  });
+
   it("summarizes rollback evidence without recovery paths or error text", () => {
     const attempt: RunEvent = {
       id: "event_1234567890abcdef1200",

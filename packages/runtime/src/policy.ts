@@ -341,11 +341,7 @@ export function assessToolCall(
           : "medium",
       reason:
         toolName === "workspace_process"
-          ? processAction === "start_write"
-            ? "fresh preview-bound scoped workspace Process write"
-            : processAction === "preview_write"
-              ? "read-only scoped workspace Process write preview"
-              : "bounded background Process Session lifecycle"
+          ? workspaceProcessPolicyReason(input, processAction)
           : toolName === "javascript_kernel"
             ? "persistent sandboxed JavaScript state lifecycle"
             : toolName === "python_kernel"
@@ -382,6 +378,27 @@ export function assessToolCall(
     risk: "high",
     reason: `tool "${toolName}" is not registered in the policy`,
   };
+}
+
+function workspaceProcessPolicyReason(
+  input: JsonValue,
+  action: string | undefined,
+): string {
+  if (action === "start" && record(input)?.["service"] !== undefined) {
+    return "bounded egress-denied loopback service lifecycle";
+  }
+  if (action === "start_write") {
+    return "fresh preview-bound scoped workspace Process write";
+  }
+  return action === "preview_write"
+    ? "read-only scoped workspace Process write preview"
+    : "bounded background Process Session lifecycle";
+}
+
+function record(value: JsonValue): Record<string, JsonValue> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value
+    : undefined;
 }
 
 function workspaceWritePathDenial(

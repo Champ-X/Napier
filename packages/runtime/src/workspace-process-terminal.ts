@@ -15,6 +15,12 @@ import {
 } from "./sandbox-terminal.js";
 import { createWorkspaceProcessSession } from "./workspace-process-events.js";
 import { createWorkspaceProcessResizeReceipt } from "./workspace-process-resize-events.js";
+import {
+  LOCAL_SERVICE_HTTP_ATTEMPT_TIMEOUT_MS,
+  LOCAL_SERVICE_READY_TIMEOUT_MS,
+} from "./sandbox-local-service-health.js";
+import { validateSandboxLocalServiceRequest } from "./sandbox-local-service-policy.js";
+import type { SandboxLocalServiceRequest } from "./sandbox-types.js";
 
 export const MAX_WORKSPACE_PROCESS_RESIZES = 64;
 export const WORKSPACE_PROCESS_TERMINAL_TYPE = "xterm-256color";
@@ -49,8 +55,15 @@ export interface BoundWorkspaceProcessIo {
 export function bindWorkspaceProcessIo(
   prepared: PreparedCommandExecution,
   terminal?: WorkspaceProcessTerminalSize,
+  localService?: SandboxLocalServiceRequest,
 ): BoundWorkspaceProcessIo {
   validateWorkspaceProcessTerminalSize(terminal);
+  if (localService) {
+    validateSandboxLocalServiceRequest(localService);
+    if (terminal) {
+      throw new Error("Workspace local services cannot use terminal PTY mode");
+    }
+  }
   const terminalBinding = terminal
     ? {
         terminalType: WORKSPACE_PROCESS_TERMINAL_TYPE,
@@ -64,17 +77,38 @@ export function bindWorkspaceProcessIo(
         TERM: WORKSPACE_PROCESS_TERMINAL_TYPE,
       }
     : prepared.launch.env;
+  const localServiceBinding = localService
+    ? {
+        protocol: localService.protocol,
+        containerPort: localService.containerPort,
+        healthPathSha256: sha256(localService.healthPath),
+        hostBinding: "127.0.0.1:ephemeral",
+        outboundNetwork: "denied_internal_network",
+        readyTimeoutMs: LOCAL_SERVICE_READY_TIMEOUT_MS,
+        attemptTimeoutMs: LOCAL_SERVICE_HTTP_ATTEMPT_TIMEOUT_MS,
+      }
+    : null;
   return {
     launch: {
       ...prepared.launch,
       env: environment,
       parentDeathGuard: true,
       ...(terminal ? { terminal } : {}),
+      ...(localService
+        ? {
+            localService,
+            approvedCapabilities: [
+              ...prepared.launch.approvedCapabilities,
+              "network.listen" as const,
+            ],
+          }
+        : {}),
     },
     commandSha256: sha256(
       canonicalJson({
         command: prepared.receipt,
         terminal: terminalBinding ?? null,
+        localService: localServiceBinding,
       }),
     ),
     environmentSha256: terminal
@@ -85,6 +119,7 @@ export function bindWorkspaceProcessIo(
         commandResourceLimitsSha256: prepared.receipt.resourceLimitsSha256,
         parentDeathGuard: WORKSPACE_PROCESS_PARENT_GUARD,
         terminal: terminalBinding ?? null,
+        localService: localServiceBinding,
       }),
     ),
     session: terminal

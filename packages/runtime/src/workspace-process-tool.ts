@@ -59,6 +59,21 @@ const workspaceProcessSchema = Type.Union([
           { additionalProperties: false },
         ),
       ),
+      service: Type.Optional(
+        Type.Object(
+          {
+            containerPort: Type.Integer({ minimum: 1_024, maximum: 65_535 }),
+            healthPath: Type.Optional(
+              Type.String({
+                minLength: 1,
+                maxLength: 256,
+                pattern: "^/[^\\u0000-\\u001f\\u007f#]*$",
+              }),
+            ),
+          },
+          { additionalProperties: false },
+        ),
+      ),
     },
     { additionalProperties: false },
   ),
@@ -116,10 +131,11 @@ export function createWorkspaceProcessTool(
     name: "workspace_process",
     label: "Workspace process",
     description:
-      "Manage background Process Sessions. Node keeps literal argv; shell requires one script in args and runs it with a fixed command PATH, no inherited environment, and either interactive pipe or bounded PTY. Then input, poll, resize PTY, or cancel. Text is ephemeral and Ledger-redacted. Isolated providers deny network and start read-only; writes require preview_write with 1-8 existing scopes then one-use start_write, and settlement reports the observed Delta. Explicit host-direct mode has no OS isolation and every result warns that workspace, network, and resource boundaries are not enforced.",
+      "Processes: start/input/poll/resize/cancel; text is redacted. Starts are read-only. Writes use preview_write (1-8 scopes) then start_write; reports Delta. A service exposes one health-checked OCI HTTP port on ephemeral 127.0.0.1 with outbound denied; bind 0.0.0.0. Host-direct has no isolation and rejects services.",
     parameters: workspaceProcessSchema,
     async execute(_toolCallId, input, signal) {
       assertExclusiveProcessIoMode(input);
+      assertProcessServiceMode(input);
       assertProcessControlFields(input);
       if (input.action === "preview_write") {
         const preview = await manager.previewWrite({
@@ -163,6 +179,7 @@ export function createWorkspaceProcessTool(
           ...("interactive" in input && input.interactive === true
             ? { interactive: true }
             : {}),
+          ...workspaceProcessLocalServiceStartOptions(input.service),
           ...(signal ? { signal } : {}),
         });
         return toolResult("start", session, []);
@@ -254,6 +271,7 @@ export function workspaceProcessToolCallArgumentsLedgerProjection(
     ...(value["appendNewline"] === true ? { appendNewline: true } : {}),
     ...(value["close"] === true ? { close: true } : {}),
     ...(value["interactive"] === true ? { interactive: true } : {}),
+    ...workspaceProcessLocalServiceLedgerProjection(value["service"]),
     ...(value["failureRecovery"] === "restore_scopes"
       ? { failureRecovery: value["failureRecovery"] }
       : {}),
@@ -322,6 +340,38 @@ function workspaceProcessCallSha256(args: unknown): string {
   return sha256(canonicalJson({ toolName: "workspace_process", args }));
 }
 
+function workspaceProcessLocalServiceStartOptions(
+  service: { containerPort: number; healthPath?: string } | undefined,
+): Pick<
+  import("./workspace-process-launch.js").WorkspaceProcessLaunchRequest,
+  "localService"
+> {
+  return service
+    ? {
+        localService: {
+          protocol: "http",
+          containerPort: service.containerPort,
+          healthPath: service.healthPath ?? "/",
+        },
+      }
+    : {};
+}
+
+function workspaceProcessLocalServiceLedgerProjection(
+  value: unknown,
+): Record<string, JsonValue> {
+  if (!record(value) || !Number.isSafeInteger(value["containerPort"])) {
+    return {};
+  }
+  return {
+    localService: true,
+    serviceContainerPort: Number(value["containerPort"]),
+    serviceHealthPathSha256: sha256(
+      typeof value["healthPath"] === "string" ? value["healthPath"] : "/",
+    ),
+  };
+}
+
 function assertExclusiveProcessIoMode(
   input: Static<typeof workspaceProcessSchema>,
 ): void {
@@ -331,6 +381,18 @@ function assertExclusiveProcessIoMode(
     input.terminal !== undefined
   ) {
     throw new Error("Choose either interactive pipe mode or terminal PTY mode");
+  }
+}
+
+function assertProcessServiceMode(
+  input: Static<typeof workspaceProcessSchema>,
+): void {
+  if (
+    input.action === "start" &&
+    input.service !== undefined &&
+    (input.interactive === true || input.terminal !== undefined)
+  ) {
+    throw new Error("Local services cannot use interactive or PTY input");
   }
 }
 

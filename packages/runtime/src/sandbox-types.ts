@@ -12,10 +12,29 @@ export interface SandboxLaunchRequest {
   runtimeReadPaths?: string[];
   workspaceWritePaths?: string[];
   parentDeathGuard?: boolean;
+  signal?: AbortSignal;
+  localService?: SandboxLocalServiceRequest;
   terminal?: {
     columns: number;
     rows: number;
   };
+}
+
+export interface SandboxLocalServiceRequest {
+  protocol: "http";
+  containerPort: number;
+  healthPath: string;
+}
+
+export interface SandboxLocalServiceBinding {
+  protocol: "http";
+  containerPort: number;
+  host: "127.0.0.1";
+  hostPort: number;
+  url: string;
+  healthPathSha256: string;
+  identitySha256: string;
+  readyAt: string;
 }
 
 export interface SandboxedProcess {
@@ -23,6 +42,7 @@ export interface SandboxedProcess {
   stdout: Readable;
   stderr: Readable;
   exit: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
+  localService?: SandboxLocalServiceBinding;
   resize?(columns: number, rows: number): Promise<void>;
   terminate(): Promise<void>;
 }

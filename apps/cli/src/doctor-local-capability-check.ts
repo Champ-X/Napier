@@ -2,7 +2,13 @@ import type { RuntimeCapabilityProbe } from "@napier/runtime/doctor-probes";
 
 import type { DoctorCheck } from "./doctor-report.js";
 
-export type LocalCapabilityId = "skills" | "lsp" | "dap" | "python" | "shell";
+export type LocalCapabilityId =
+  | "skills"
+  | "lsp"
+  | "dap"
+  | "python"
+  | "shell"
+  | "service";
 
 /**
  * Maps a runtime capability probe to a Doctor check. Local capabilities are

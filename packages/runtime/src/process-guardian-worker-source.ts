@@ -63,6 +63,9 @@ function validCleanup(value, targetCommand) {
     /^[a-f0-9]{64}$/.test(value.commandSha256) &&
     typeof value.containerName === "string" &&
     /^napier-[a-f0-9]{32}$/.test(value.containerName) &&
+    (value.networkName === undefined ||
+      (typeof value.networkName === "string" &&
+        /^napier-network-[a-f0-9]{32}$/.test(value.networkName))) &&
     value.env &&
     typeof value.env === "object" &&
     !Array.isArray(value.env) &&
@@ -254,7 +257,17 @@ function cleanupTargetResource() {
     ["container", "rm", "--force", spec.cleanup.containerName],
     cleanupOptions(spec.cleanup.env),
   );
-  if (successfulCleanupCommand(remove)) return true;
+  const containerClean = successfulCleanupCommand(remove) || containerMissing();
+  if (!containerClean || !spec.cleanup.networkName) return containerClean;
+  const networkRemove = spawnSync(
+    spec.cleanup.command,
+    ["network", "rm", spec.cleanup.networkName],
+    cleanupOptions(spec.cleanup.env),
+  );
+  return successfulCleanupCommand(networkRemove) || networkMissing();
+}
+
+function containerMissing() {
   const remaining = spawnSync(
     spec.cleanup.command,
     [
@@ -263,6 +276,22 @@ function cleanupTargetResource() {
       "--all",
       "--filter",
       "name=^/" + spec.cleanup.containerName + "$",
+      "--format",
+      "{{.ID}}",
+    ],
+    cleanupOptions(spec.cleanup.env),
+  );
+  return successfulCleanupCommand(remaining) && remaining.stdout.trim() === "";
+}
+
+function networkMissing() {
+  const remaining = spawnSync(
+    spec.cleanup.command,
+    [
+      "network",
+      "ls",
+      "--filter",
+      "name=^" + spec.cleanup.networkName + "$",
       "--format",
       "{{.ID}}",
     ],
