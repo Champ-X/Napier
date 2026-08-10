@@ -16,6 +16,7 @@ import type {
 
 const IMAGE_ID = /^sha256:[a-f0-9]{64}$/u;
 const FILE_SHA256 = /^[a-f0-9]{64}$/u;
+const OCI_CONTAINER_NAME = /^napier-[a-f0-9]{32}$/u;
 const CONTAINER_CLIENT_TIMEOUT_MS = 10_000;
 const MAX_CONTAINER_IDENTITY_OUTPUT_BYTES = 4_096;
 const RUNTIME_IDENTITY_SOURCE = String.raw`
@@ -159,6 +160,42 @@ export async function resolveContainerCommandRuntime(
       }),
     ),
   };
+}
+
+export async function removeContainerResource(
+  identity: ContainerImageIdentity,
+  containerName: string,
+  client: ContainerClient = runContainerClient,
+): Promise<void> {
+  validateOciContainerName(containerName);
+  await assertContainerImageIdentityStable(identity);
+  try {
+    await client(identity.clientExecutable, [
+      "container",
+      "rm",
+      "--force",
+      containerName,
+    ]);
+    return;
+  } catch {
+    const remaining = await client(identity.clientExecutable, [
+      "container",
+      "ls",
+      "--all",
+      "--filter",
+      `name=^/${containerName}$`,
+      "--format",
+      "{{.ID}}",
+    ]);
+    if (remaining.trim() === "") return;
+    throw new Error("OCI container resource cleanup failed");
+  }
+}
+
+export function validateOciContainerName(containerName: string): void {
+  if (!OCI_CONTAINER_NAME.test(containerName)) {
+    throw new Error("OCI container resource identity is invalid");
+  }
 }
 
 function runContainerClient(

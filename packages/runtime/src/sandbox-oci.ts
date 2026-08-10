@@ -1,13 +1,16 @@
 import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
   assertContainerImageIdentityStable,
+  removeContainerResource,
   resolveContainerCommandRuntime,
   resolveContainerImageIdentity,
   type ContainerClient,
   type ContainerImageIdentity,
+  validateOciContainerName,
 } from "./sandbox-container-runtime.js";
 import {
   containerScratchBaseDir,
@@ -16,6 +19,10 @@ import {
   serializeContainerEnvironment,
   validateContainerImage,
 } from "./sandbox-container.js";
+import {
+  createParentGuardedTerminalLaunch,
+  type ParentGuardedOciCleanup,
+} from "./process-guardian.js";
 import {
   scopedWorkspaceWritePaths,
   validateLaunchRequest,
@@ -28,11 +35,13 @@ import type {
   SandboxCommandRuntimeBinding,
   SandboxLaunchRequest,
 } from "./sandbox-types.js";
+import { launchTerminalSandboxWrapper } from "./sandbox-terminal.js";
 
 export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   readonly id = "oci-container";
   private readonly executable: string | undefined;
   private readonly containerClient: ContainerClient | undefined;
+  private readonly terminalLauncher: typeof launchTerminalSandboxWrapper;
   private imageIdentity: Promise<ContainerImageIdentity> | undefined;
   private readonly runtimeBindings = new Map<
     SandboxCommandRuntime,
@@ -45,11 +54,14 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       executable?: string;
       spawnProcess?: typeof spawn;
       containerClient?: ContainerClient;
+      terminalLauncher?: typeof launchTerminalSandboxWrapper;
     } = {},
   ) {
     this.executable = options.executable;
     this.containerClient = options.containerClient;
     this.spawnProcess = options.spawnProcess ?? spawn;
+    this.terminalLauncher =
+      options.terminalLauncher ?? launchTerminalSandboxWrapper;
   }
 
   private readonly spawnProcess: typeof spawn;
@@ -71,22 +83,21 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
 
   async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
     validateLaunchRequest(request);
-    if (request.terminal) {
-      throw new Error(
-        "OCI PTY launch requires image-bound terminal runtime support",
-      );
-    }
-    if (request.parentDeathGuard) {
-      throw new Error(
-        "OCI parent-death guarding requires container runtime identity binding",
-      );
-    }
     validateContainerImage(this.image);
     const executable = await resolveContainerLaunchExecutable(this.executable);
     const identity = await this.resolveImage(executable);
     const sandboxHome = await mkdtemp(
       path.join(await containerScratchBaseDir(), "napier-process-sandbox-"),
     );
+    const containerName = createContainerName();
+    const clientEnvironment = containerClientEnvironment();
+    const cleanup: ParentGuardedOciCleanup = {
+      kind: "oci-container",
+      command: identity.clientExecutable,
+      commandSha256: identity.clientExecutableSha256,
+      containerName,
+      env: clientEnvironment,
+    };
     try {
       await writeFile(
         containerEnvironmentFile(sandboxHome),
@@ -97,14 +108,38 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
         request,
         sandboxHome,
         identity.imageId,
+        containerName,
       );
-      return await launchSandboxProcess({
+      const target = {
         command: identity.clientExecutable,
         args,
         cwd: "/",
-        env: containerClientEnvironment(),
+        env: clientEnvironment,
+        cleanup,
+      };
+      if (request.terminal) {
+        const guarded = createParentGuardedTerminalLaunch(target);
+        return await this.terminalLauncher({
+          ...guarded,
+          columns: request.terminal.columns,
+          rows: request.terminal.rows,
+          sandboxHome,
+        });
+      }
+      return await launchSandboxProcess({
+        ...target,
         sandboxHome,
-        parentDeathGuard: false,
+        parentDeathGuard: request.parentDeathGuard === true,
+        ...(request.parentDeathGuard
+          ? { guardianCleanup: cleanup }
+          : {
+              beforeCleanup: () =>
+                removeContainerResource(
+                  identity,
+                  containerName,
+                  this.containerClient,
+                ),
+            }),
         spawnProcess: this.spawnProcess,
       });
     } catch (error) {
@@ -148,12 +183,14 @@ export function buildOciContainerArgs(
   request: SandboxLaunchRequest,
   sandboxHome: string,
   image: string,
+  containerName: string,
 ): string[] {
   validateLaunchRequest(request);
   if (!path.isAbsolute(sandboxHome)) {
     throw new Error("Container sandbox home must be absolute");
   }
   validateContainerImage(image);
+  validateOciContainerName(containerName);
   serializeContainerEnvironment(request.env);
   const capabilities = new Set(request.approvedCapabilities);
   const writePaths = scopedWorkspaceWritePaths(request);
@@ -161,8 +198,10 @@ export function buildOciContainerArgs(
     capabilities.has("workspace.read") || capabilities.has("workspace.write");
   const args = [
     "run",
-    "--rm",
     "--init",
+    "--name",
+    containerName,
+    ...(request.terminal ? ["--interactive", "--tty"] : []),
     "--cap-drop",
     "ALL",
     "--security-opt",
@@ -178,12 +217,12 @@ export function buildOciContainerArgs(
     "--read-only",
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=64m",
-    "--mount",
-    bindMount(sandboxHome, "/tmp", false),
+    "--tmpfs",
+    "/home/napier:rw,nosuid,nodev,size=64m",
     "--workdir",
     workspaceMounted ? request.cwd : "/tmp",
     "--env",
-    "HOME=/tmp",
+    "HOME=/home/napier",
     "--env",
     "TMPDIR=/tmp",
     "--env-file",
@@ -222,4 +261,8 @@ function bindMount(source: string, target: string, readonly: boolean): string {
 
 function containerEnvironmentFile(sandboxHome: string): string {
   return path.join(sandboxHome, "environment.list");
+}
+
+function createContainerName(): string {
+  return `napier-${randomBytes(16).toString("hex")}`;
 }

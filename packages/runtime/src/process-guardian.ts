@@ -20,6 +20,15 @@ export interface ParentGuardedProcessLaunch {
   args: string[];
   cwd: string;
   env: Record<string, string>;
+  cleanup?: ParentGuardedOciCleanup;
+}
+
+export interface ParentGuardedOciCleanup {
+  kind: "oci-container";
+  command: string;
+  commandSha256: string;
+  containerName: string;
+  env: Record<string, string>;
 }
 
 export interface ParentGuardedProcess extends SandboxedProcess {
@@ -125,6 +134,14 @@ function guardianSpec(
     args: [...request.args],
     cwd: request.cwd,
     env: { ...request.env },
+    ...(request.cleanup
+      ? {
+          cleanup: {
+            ...request.cleanup,
+            env: { ...request.cleanup.env },
+          },
+        }
+      : {}),
     ...(options.statusFd ? { statusFd: options.statusFd } : {}),
   };
 }

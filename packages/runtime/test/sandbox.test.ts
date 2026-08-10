@@ -31,6 +31,7 @@ const BASE_REQUEST = {
   workspaceRoot: "/workspace",
   approvedCapabilities: ["process.spawn"] as const,
 };
+const OCI_CONTAINER_NAME = `napier-${"d".repeat(32)}`;
 
 describe("OS sandbox adapters", () => {
   it("denies network and workspace access unless separately approved", () => {
@@ -451,11 +452,26 @@ describe("OS sandbox adapters", () => {
       },
       "/tmp/napier-sandbox",
       "ghcr.io/example/napier-sandbox:node22",
+      OCI_CONTAINER_NAME,
     );
     const restrictedCommand = restricted.join("\0");
-    expect(restricted.slice(0, 3)).toEqual(["run", "--rm", "--init"]);
+    expect(restricted.slice(0, 4)).toEqual([
+      "run",
+      "--init",
+      "--name",
+      OCI_CONTAINER_NAME,
+    ]);
     expect(restrictedCommand).toContain("--network\0none");
     expect(restrictedCommand).toContain("--read-only");
+    expect(restrictedCommand).toContain(
+      "--tmpfs\0/tmp:rw,nosuid,nodev,size=64m",
+    );
+    expect(restrictedCommand).toContain(
+      "--tmpfs\0/home/napier:rw,nosuid,nodev,size=64m",
+    );
+    expect(restrictedCommand).not.toContain(
+      "source=/tmp/napier-sandbox,target=/tmp",
+    );
     expect(restrictedCommand).not.toContain("/workspace");
     expect(restrictedCommand).not.toContain("transient-secret");
     expect(restrictedCommand).toContain(
@@ -484,6 +500,7 @@ describe("OS sandbox adapters", () => {
       },
       "/tmp/napier-sandbox",
       "ghcr.io/example/napier-sandbox:node22",
+      OCI_CONTAINER_NAME,
     ).join("\0");
     expect(writableNetwork).toContain("--network\0bridge");
     expect(writableNetwork).toContain(
@@ -504,6 +521,7 @@ describe("OS sandbox adapters", () => {
       },
       "/tmp/napier-sandbox",
       "ghcr.io/example/napier-sandbox:node22",
+      OCI_CONTAINER_NAME,
     ).join("\0");
     expect(scopedWrite).toContain(
       "--mount\0type=bind,source=/workspace,target=/workspace,readonly",
@@ -519,10 +537,23 @@ describe("OS sandbox adapters", () => {
       },
       "/tmp/napier-sandbox",
       "ghcr.io/example/napier-sandbox:node22",
+      OCI_CONTAINER_NAME,
     ).join("\0");
     expect(runtimeAssets).toContain(
       "--mount\0type=bind,source=/opt/napier/lsp,target=/opt/napier/lsp,readonly",
     );
+    const terminal = buildOciContainerArgs(
+      {
+        ...BASE_REQUEST,
+        terminal: { columns: 80, rows: 24 },
+        approvedCapabilities: ["process.spawn"],
+      },
+      "/tmp/napier-sandbox",
+      "ghcr.io/example/napier-sandbox:node22",
+      OCI_CONTAINER_NAME,
+    ).join("\0");
+    expect(terminal).toContain("--interactive\0--tty");
+    expect(terminal).not.toContain("--rm");
   });
 
   it("rejects relative executables and write-only workspace access", () => {
@@ -622,6 +653,7 @@ describe("OS sandbox adapters", () => {
         },
         "/tmp/napier-sandbox",
         "bad image",
+        OCI_CONTAINER_NAME,
       ),
     ).toThrow("OCI container sandbox image is invalid");
     expect(() =>
@@ -633,6 +665,7 @@ describe("OS sandbox adapters", () => {
         },
         "/tmp/napier-sandbox",
         "alpine:3.20",
+        OCI_CONTAINER_NAME,
       ),
     ).toThrow("environment name is reserved: HOME");
     expect(() =>
@@ -644,7 +677,19 @@ describe("OS sandbox adapters", () => {
         },
         "/tmp/napier-sandbox",
         "alpine:3.20",
+        OCI_CONTAINER_NAME,
       ),
     ).toThrow("environment value is invalid: TOKEN");
+    expect(() =>
+      buildOciContainerArgs(
+        {
+          ...BASE_REQUEST,
+          approvedCapabilities: ["process.spawn"],
+        },
+        "/tmp/napier-sandbox",
+        "alpine:3.20",
+        "user-controlled-name",
+      ),
+    ).toThrow("resource identity is invalid");
   });
 });

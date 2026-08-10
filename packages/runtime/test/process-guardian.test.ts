@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -14,6 +14,7 @@ import {
   PROCESS_GUARDIAN_WORKER_SOURCE,
 } from "../src/process-guardian-worker-source.js";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
+import { sha256File } from "../src/command-runtime.js";
 import type { PreparedCommandExecution } from "../src/command-execution.js";
 import { bindWorkspaceProcessIo } from "../src/workspace-process-terminal.js";
 
@@ -271,6 +272,112 @@ describe("process guardian", () => {
   );
 
   posixIt(
+    "removes a cleanup-bound OCI resource after an ungraceful parent exit",
+    async () => {
+      const cwd = await temporaryRoot();
+      const executable = path.join(cwd, "fake-container-client");
+      const cleanupLog = path.join(cwd, "cleanup.log");
+      const containerName = `napier-${"e".repeat(32)}`;
+      await writeFile(
+        executable,
+        [
+          "#!/bin/sh",
+          'if [ "$1" = "container" ]; then',
+          '  printf "%s" "$4" > "$CLEANUP_LOG"',
+          "  exit 0",
+          "fi",
+          "trap 'exit 0' HUP INT TERM",
+          "while :; do sleep 1; done",
+          "",
+        ].join("\n"),
+        { mode: 0o755 },
+      );
+      const executableSha256 = await sha256File(executable);
+      const parent = spawn(
+        process.execPath,
+        [
+          "--input-type=module",
+          "--eval",
+          cleanupParentHarnessSource({
+            workerSource: PROCESS_GUARDIAN_WORKER_SOURCE,
+            executable,
+            executableSha256,
+            cleanupLog,
+            containerName,
+          }),
+        ],
+        {
+          cwd,
+          env: {},
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      );
+      const parentExit = childExit(parent);
+      const ready = await readJsonLine(parent.stdout!);
+      const guardianPid = Number(ready["guardianPid"]);
+      const targetPid = Number(ready["targetPid"]);
+      livePids.add(guardianPid);
+      livePids.add(targetPid);
+
+      parent.kill("SIGKILL");
+      await parentExit;
+      await waitForProcessesToExit([guardianPid, targetPid]);
+      await expect(waitForFile(cleanupLog)).resolves.toBe(containerName);
+      livePids.delete(guardianPid);
+      livePids.delete(targetPid);
+    },
+    15_000,
+  );
+
+  posixIt(
+    "reports a cleanup failure instead of claiming target success",
+    async () => {
+      const cwd = await temporaryRoot();
+      const executable = path.join(cwd, "failing-container-client");
+      const containerName = `napier-${"f".repeat(32)}`;
+      await writeFile(
+        executable,
+        [
+          "#!/bin/sh",
+          'if [ "$1" = "container" ] && [ "$2" = "rm" ]; then exit 1; fi',
+          'if [ "$1" = "container" ] && [ "$2" = "ls" ]; then',
+          '  printf "%s\\n" "still-present"',
+          "  exit 0",
+          "fi",
+          "trap 'exit 0' HUP INT TERM",
+          "while :; do sleep 1; done",
+          "",
+        ].join("\n"),
+        { mode: 0o755 },
+      );
+      const guarded = await launchParentGuardedProcess({
+        command: executable,
+        args: ["run"],
+        cwd,
+        env: { PATH: "/usr/bin:/bin" },
+        cleanup: {
+          kind: "oci-container",
+          command: executable,
+          commandSha256: await sha256File(executable),
+          containerName,
+          env: { PATH: "/usr/bin:/bin" },
+        },
+      });
+      livePids.add(guarded.guardianPid);
+      livePids.add(guarded.targetPid);
+
+      await guarded.terminate();
+      await expect(guarded.exit).resolves.toEqual({
+        code: 75,
+        signal: null,
+      });
+      livePids.delete(guarded.guardianPid);
+      livePids.delete(guarded.targetPid);
+    },
+    15_000,
+  );
+
+  posixIt(
     "tracks and terminates an observed detached descendant after parent loss",
     async () => {
       const cwd = await temporaryRoot();
@@ -314,11 +421,7 @@ describe("process guardian", () => {
 
       parent.kill("SIGKILL");
       await parentExit;
-      await waitForProcessesToExit([
-        guardianPid,
-        targetPid,
-        descendantPid,
-      ]);
+      await waitForProcessesToExit([guardianPid, targetPid, descendantPid]);
       for (const pid of [guardianPid, targetPid, descendantPid]) {
         livePids.delete(pid);
         expect(isProcessAlive(pid)).toBe(false);
@@ -409,6 +512,16 @@ async function waitForPidFile(filePath: string): Promise<number> {
   throw new Error("Detached descendant did not publish its PID");
 }
 
+async function waitForFile(filePath: string): Promise<string> {
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    const value = await readFile(filePath, "utf8").catch(() => "");
+    if (value) return value;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error("Cleanup worker did not publish its resource identity");
+}
+
 function parentHarnessSource(
   workerSource: string,
   targetSource = "setInterval(() => {}, 1000)",
@@ -434,6 +547,63 @@ function parentHarnessSource(
         args: ["--input-type=module", "--eval", ${JSON.stringify(targetSource)}],
         cwd: process.cwd(),
         env: { LANG: "C" },
+        statusFd: 4,
+      }));
+    });
+    let status = "";
+    guardian.stdio[4].setEncoding("utf8");
+    guardian.stdio[4].on("data", (chunk) => {
+      status += chunk;
+      const newline = status.indexOf("\\n");
+      if (newline < 0) return;
+      const message = JSON.parse(status.slice(0, newline));
+      if (message.type !== "ready") process.exit(73);
+      process.stdout.write(JSON.stringify({
+        guardianPid: guardian.pid,
+        targetPid: message.pid,
+      }) + "\\n");
+      setInterval(() => {}, 1000);
+    });
+  `;
+}
+
+function cleanupParentHarnessSource(input: {
+  workerSource: string;
+  executable: string;
+  executableSha256: string;
+  cleanupLog: string;
+  containerName: string;
+}): string {
+  return `
+    import { spawn } from "node:child_process";
+    const guardian = spawn(
+      process.execPath,
+      ["--input-type=module", "--eval", ${JSON.stringify(input.workerSource)}],
+      {
+        cwd: process.cwd(),
+        env: { LANG: "C", LC_ALL: "C", NO_COLOR: "1" },
+        detached: true,
+        shell: false,
+        stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"],
+      },
+    );
+    guardian.once("spawn", () => {
+      guardian.stdio[3].end(JSON.stringify({
+        parentPid: process.pid,
+        command: ${JSON.stringify(input.executable)},
+        args: ["run"],
+        cwd: process.cwd(),
+        env: { PATH: "/usr/bin:/bin" },
+        cleanup: {
+          kind: "oci-container",
+          command: ${JSON.stringify(input.executable)},
+          commandSha256: ${JSON.stringify(input.executableSha256)},
+          containerName: ${JSON.stringify(input.containerName)},
+          env: {
+            PATH: "/usr/bin:/bin",
+            CLEANUP_LOG: ${JSON.stringify(input.cleanupLog)},
+          },
+        },
         statusFd: 4,
       }));
     });

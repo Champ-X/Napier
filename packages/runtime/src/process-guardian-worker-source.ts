@@ -2,6 +2,7 @@ export const PROCESS_GUARDIAN_SPEC_ENV = "NAPIER_PRIVATE_PROCESS_GUARDIAN_SPEC";
 
 export const PROCESS_GUARDIAN_WORKER_SOURCE = String.raw`
 import { spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { isAbsolute } from "node:path";
 import { readFileSync, writeSync } from "node:fs";
 
@@ -11,6 +12,8 @@ const PARENT_WATCH_MS = 100;
 const DESCENDANT_SCAN_MS = 2000;
 const PROCESS_SCAN_TIMEOUT_MS = 1000;
 const PROCESS_SCAN_MAX_BYTES = 4 * 1024 * 1024;
+const CLEANUP_TIMEOUT_MS = 10000;
+const CLEANUP_MAX_BYTES = 4096;
 const PS_EXECUTABLE = "/bin/ps";
 let target;
 let targetExit;
@@ -44,7 +47,31 @@ function validSpec(value) {
     Object.entries(value.env).every(
       ([key, item]) => typeof key === "string" && typeof item === "string",
     ) &&
+    (value.cleanup === undefined || validCleanup(value.cleanup, value.command)) &&
     (value.statusFd === undefined || value.statusFd === 4)
+  );
+}
+
+function validCleanup(value, targetCommand) {
+  return (
+    value &&
+    typeof value === "object" &&
+    value.kind === "oci-container" &&
+    value.command === targetCommand &&
+    isAbsolute(value.command) &&
+    typeof value.commandSha256 === "string" &&
+    /^[a-f0-9]{64}$/.test(value.commandSha256) &&
+    typeof value.containerName === "string" &&
+    /^napier-[a-f0-9]{32}$/.test(value.containerName) &&
+    value.env &&
+    typeof value.env === "object" &&
+    !Array.isArray(value.env) &&
+    Object.entries(value.env).every(
+      ([key, item]) =>
+        /^[A-Z_][A-Z0-9_]{0,127}$/.test(key) &&
+        typeof item === "string" &&
+        !/[\u0000-\u001f\u007f]/.test(item),
+    )
   );
 }
 
@@ -211,18 +238,69 @@ async function stopTarget() {
   await targetExit;
 }
 
+function cleanupTargetResource() {
+  if (!spec.cleanup) return true;
+  let executableSha256;
+  try {
+    executableSha256 = createHash("sha256")
+      .update(readFileSync(spec.cleanup.command))
+      .digest("hex");
+  } catch {
+    return false;
+  }
+  if (executableSha256 !== spec.cleanup.commandSha256) return false;
+  const remove = spawnSync(
+    spec.cleanup.command,
+    ["container", "rm", "--force", spec.cleanup.containerName],
+    cleanupOptions(spec.cleanup.env),
+  );
+  if (successfulCleanupCommand(remove)) return true;
+  const remaining = spawnSync(
+    spec.cleanup.command,
+    [
+      "container",
+      "ls",
+      "--all",
+      "--filter",
+      "name=^/" + spec.cleanup.containerName + "$",
+      "--format",
+      "{{.ID}}",
+    ],
+    cleanupOptions(spec.cleanup.env),
+  );
+  return successfulCleanupCommand(remaining) && remaining.stdout.trim() === "";
+}
+
+function cleanupOptions(env) {
+  return {
+    encoding: "utf8",
+    env,
+    timeout: CLEANUP_TIMEOUT_MS,
+    killSignal: "SIGKILL",
+    maxBuffer: CLEANUP_MAX_BYTES,
+    windowsHide: true,
+  };
+}
+
+function successfulCleanupCommand(result) {
+  return !result.error && result.status === 0 && result.signal === null;
+}
+
 async function shutdown(exitCode = 0) {
   if (closing) return;
   closing = true;
   if (parentWatch) clearInterval(parentWatch);
   if (descendantWatch) clearInterval(descendantWatch);
   await stopTarget();
-  process.exit(exitCode);
+  process.exit(cleanupTargetResource() ? exitCode : 75);
 }
 
 for (const signal of ["SIGHUP", "SIGINT", "SIGTERM"]) {
   process.on(signal, () => void shutdown());
 }
+process.on("SIGWINCH", () => {
+  signalTargetGroup("SIGWINCH", refreshTrackedProcesses());
+});
 
 let spec;
 try {
@@ -291,7 +369,15 @@ if (!closing) {
   clearInterval(parentWatch);
   clearInterval(descendantWatch);
   await stopTarget();
-  report({ type: "exit", code: exit.code, signal: exit.signal }, spec.statusFd);
-  process.exit(0);
+  const cleaned = cleanupTargetResource();
+  report(
+    {
+      type: "exit",
+      code: cleaned ? exit.code : 75,
+      signal: cleaned ? exit.signal : null,
+    },
+    spec.statusFd,
+  );
+  process.exit(cleaned ? 0 : 75);
 }
 `;

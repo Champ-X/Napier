@@ -6,6 +6,7 @@ import {
 import { rm } from "node:fs/promises";
 
 import { launchParentGuardedProcess } from "./process-guardian.js";
+import type { ParentGuardedOciCleanup } from "./process-guardian.js";
 import type { SandboxedProcess } from "./sandbox-types.js";
 
 const PROCESS_STOP_GRACE_MS = 2_000;
@@ -17,6 +18,8 @@ export async function launchSandboxProcess(input: {
   env: Record<string, string>;
   sandboxHome: string;
   parentDeathGuard: boolean;
+  guardianCleanup?: ParentGuardedOciCleanup;
+  beforeCleanup?: () => Promise<void>;
   spawnProcess?: typeof spawn;
 }): Promise<SandboxedProcess> {
   let child: SandboxedProcess;
@@ -28,17 +31,27 @@ export async function launchSandboxProcess(input: {
             args: input.args,
             cwd: input.cwd,
             env: input.env,
+            ...(input.guardianCleanup
+              ? { cleanup: input.guardianCleanup }
+              : {}),
           },
           input.spawnProcess,
         )
       : await launchDetachedProcess(input);
   } catch (error) {
-    await rm(input.sandboxHome, { recursive: true, force: true });
+    await cleanupSandbox(input);
     throw error;
   }
-  const exit = child.exit.finally(async () => {
-    await rm(input.sandboxHome, { recursive: true, force: true });
-  });
+  const exit = child.exit.then(
+    async (result) => {
+      await cleanupSandbox(input);
+      return result;
+    },
+    async (error: unknown) => {
+      await cleanupSandbox(input);
+      throw error;
+    },
+  );
   return {
     ...child,
     exit,
@@ -47,6 +60,17 @@ export async function launchSandboxProcess(input: {
       await exit;
     },
   };
+}
+
+async function cleanupSandbox(input: {
+  sandboxHome: string;
+  beforeCleanup?: () => Promise<void>;
+}): Promise<void> {
+  try {
+    await input.beforeCleanup?.();
+  } finally {
+    await rm(input.sandboxHome, { recursive: true, force: true });
+  }
 }
 
 async function launchDetachedProcess(input: {

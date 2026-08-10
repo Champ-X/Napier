@@ -1,0 +1,73 @@
+{
+  "kind": "napier.oci-pty-cleanup-stage3",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-10T01:18:48Z",
+  "controlledProductionPath": {
+    "externalDaemonUsed": false,
+    "realNodePtyUsed": true,
+    "realGuardianWorkerUsed": true,
+    "immutableImageIdUsed": true,
+    "containerClientExecutableBound": true,
+    "containerResourceIdentity": "random_128_bit_prefixed_name",
+    "containerOwnsCleanupIdentity": false,
+    "dockerAutoRemoveReliedOn": false,
+    "shellDoctorProductionProbe": "ready",
+    "ptyInteractiveFlags": true,
+    "ptyResizeSignalRelayed": true,
+    "normalExitCleanupObserved": true,
+    "explicitCancelCleanupObserved": true,
+    "parentSigkillCleanupObserved": true,
+    "cleanupFailureExitCode": 75,
+    "cleanupFailureReportedAsSuccess": false,
+    "rootFilesystem": "read_only",
+    "scratchStorage": "two_bounded_64m_tmpfs_mounts",
+    "commandEnvironmentRelay": "mode_0600_env_file",
+    "dockerClientEnvironmentIsolated": true
+  },
+  "actualHost": {
+    "containerCliPresent": true,
+    "containerServerReachable": false,
+    "configuredImage": true,
+    "doctorStatus": "degraded",
+    "shellDoctorCode": "shell_provider_unavailable",
+    "sandboxDoctorCode": "sandbox_unavailable",
+    "reportedIsolationLevel": "container",
+    "codingSendBoundary": "blocked"
+  },
+  "verification": {
+    "lifecycleTestFiles": 3,
+    "lifecycleTests": 33,
+    "architectureSourceFiles": 1187,
+    "architectureTestFiles": 624,
+    "architectureCycles": 0
+  },
+  "retryLedger": [
+    {
+      "category": "verification_invocation_error",
+      "productFailure": false,
+      "cause": "unsupported custom reporter name",
+      "resolution": "reran the same focused test set with the default reporter",
+      "finalStatus": "passed"
+    }
+  ],
+  "retention": {
+    "credentialValues": false,
+    "rawDockerOutput": false,
+    "rawDoctorReport": false,
+    "requestedImageReference": false,
+    "containerResourceNames": false,
+    "absoluteTemporaryPaths": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "container UID mapping and writable ownership",
+      "image-bound Python, Git, LSP, and debugger identities",
+      "bounded port and local-service projection",
+      "real isolated Docker daemon E2E",
+      "cross-platform isolated provider casebook"
+    ]
+  },
+  "contentSha256": "7ff6ec64ec33ba0dbc4a423b3bdab17ed8d54723f757c35d120e1db966a8af38"
+}
