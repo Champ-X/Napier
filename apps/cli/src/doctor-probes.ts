@@ -42,7 +42,7 @@ export interface DoctorProbeDependencies {
   skills?: (workspaceRoot: string) => Promise<DoctorCheck>;
   lsp?: () => Promise<DoctorCheck>;
   dap?: () => Promise<DoctorCheck>;
-  python?: () => Promise<DoctorCheck>;
+  python?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
   shell?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
 }
 
@@ -96,8 +96,10 @@ export async function runDoctorProbes(input: {
         ? dependencies.dap()
         : localCapabilityCheck("dap", probeDapRuntime),
       dependencies.python
-        ? dependencies.python()
-        : localCapabilityCheck("python", probePythonRuntime),
+        ? dependencies.python(input.workspaceRoot, input.signal)
+        : localCapabilityCheck("python", () =>
+            probePythonRuntime(input.workspaceRoot, input.signal),
+          ),
       dependencies.shell
         ? dependencies.shell(input.workspaceRoot, input.signal)
         : localCapabilityCheck("shell", () =>

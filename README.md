@@ -6723,6 +6723,12 @@ from reviewed capabilities. Missing sandbox prerequisites, remote daemon
 contexts, and unsupported host user mapping fail closed; a container or VM
 remains the recommended outer boundary for production third-party code.
 
+Image-bound command identity covers Node, Shell, and an optional Python
+interpreter. Python 3.9+ is admitted only when the mapped container user can run
+the same isolated standard-library imports required by the persistent Kernel;
+Doctor executes a bounded command through the active provider instead of
+falling back to a host-only availability check.
+
 ## License
 
 Napier is released under the [MIT License](./LICENSE).

@@ -5,6 +5,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  probePythonRuntime,
   probeShellRuntime,
   probeSkillsRuntime,
   sandboxIsolationStrength,
@@ -76,6 +77,47 @@ describe("Shell Doctor probe", () => {
       expect.objectContaining({
         status: "unavailable",
         code: "shell_provider_unavailable",
+      }),
+    );
+  });
+});
+
+describe("Python Doctor probe", () => {
+  it("executes the production Python command through the active provider", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-doctor-python-"));
+    try {
+      await expect(
+        probePythonRuntime(root, undefined, new HostDirectSandboxAdapter()),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          status: "ready",
+          code: "python_ready",
+          evidence: expect.objectContaining({
+            adapter: "host-direct",
+            productionCall: true,
+            pty: false,
+            runtimeAssetCount: expect.any(Number),
+            executableSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            commandSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            exitCode: 0,
+          }),
+        }),
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not report Python ready when the active provider cannot launch", async () => {
+    const result = await probePythonRuntime(
+      process.cwd(),
+      undefined,
+      new UnsupportedSandboxAdapter("doctor-test"),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "unavailable",
+        code: "python_provider_unavailable",
       }),
     );
   });

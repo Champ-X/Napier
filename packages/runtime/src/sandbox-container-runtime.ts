@@ -20,14 +20,44 @@ const OCI_CONTAINER_NAME = /^napier-[a-f0-9]{32}$/u;
 const MAX_POSIX_ID = 2_147_483_647;
 const CONTAINER_CLIENT_TIMEOUT_MS = 10_000;
 const MAX_CONTAINER_IDENTITY_OUTPUT_BYTES = 4_096;
+const PYTHON_RUNTIME_PROBE_SOURCE = [
+  "import ast,base64,builtins,json,os,resource,signal,sys,threading,time,tracemalloc,types,zlib",
+  'print(json.dumps({"executable":os.path.realpath(sys.executable),"version":".".join(str(value) for value in sys.version_info[:3])}))',
+].join("\n");
 const RUNTIME_IDENTITY_SOURCE = String.raw`
 const crypto = require("node:crypto");
+const childProcess = require("node:child_process");
 const fs = require("node:fs");
 const hash = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 const identity = (file) => { const executable = fs.realpathSync(file); return { executable, executableSha256: hash(executable) }; };
 let shell = null;
 try { shell = identity("/bin/sh"); } catch {}
-process.stdout.write(JSON.stringify({ node: identity(process.execPath), shell }));
+let python = null;
+for (const candidate of ["/usr/local/bin/python3", "/usr/bin/python3", "/opt/conda/bin/python3", "python3"]) {
+  try {
+    const result = childProcess.spawnSync(candidate, ["-I", "-B", "-S", "-c", ${JSON.stringify(PYTHON_RUNTIME_PROBE_SOURCE)}], {
+      encoding: "utf8",
+      env: {
+        CI: "1",
+        LANG: "C",
+        LC_ALL: "C",
+        PATH: process.env.PATH || "/usr/local/bin:/usr/bin:/bin",
+        PYTHONDONTWRITEBYTECODE: "1",
+        PYTHONHASHSEED: "0",
+        PYTHONNOUSERSITE: "1",
+      },
+      timeout: 2000,
+      maxBuffer: 2048,
+      windowsHide: true,
+    });
+    if (result.status !== 0) continue;
+    const observed = JSON.parse(result.stdout);
+    if (typeof observed.executable !== "string" || typeof observed.version !== "string") continue;
+    python = { ...identity(observed.executable), version: observed.version };
+    break;
+  } catch {}
+}
+process.stdout.write(JSON.stringify({ node: identity(process.execPath), shell, python }));
 `;
 
 export interface ContainerImageIdentity {
@@ -63,11 +93,16 @@ export type ContainerClient = (
 interface ContainerRuntimeIdentityOutput {
   node: ContainerExecutableIdentity;
   shell: ContainerExecutableIdentity | null;
+  python: ContainerPythonIdentity | null;
 }
 
 interface ContainerExecutableIdentity {
   executable: string;
   executableSha256: string;
+}
+
+interface ContainerPythonIdentity extends ContainerExecutableIdentity {
+  version: string;
 }
 
 export async function resolveContainerImageIdentity(
@@ -229,11 +264,6 @@ export async function resolveContainerCommandRuntime(
   injectedUserIds?: ContainerUserIds,
   injectedDaemonEndpoint?: string,
 ): Promise<SandboxCommandRuntimeBinding> {
-  if (runtime === "python") {
-    throw new Error(
-      "OCI image-bound Python runtime identity is not implemented",
-    );
-  }
   await assertContainerImageIdentityStable(
     identity,
     client,
@@ -250,6 +280,8 @@ export async function resolveContainerCommandRuntime(
     "--security-opt",
     "no-new-privileges",
     "--read-only",
+    "--user",
+    `${String(identity.user.userId)}:${String(identity.user.groupId)}`,
     "--pids-limit",
     "32",
     "--memory",
@@ -263,7 +295,12 @@ export async function resolveContainerCommandRuntime(
     RUNTIME_IDENTITY_SOURCE,
   ]);
   const observed = parseRuntimeIdentity(output);
-  const selected = runtime === "node" ? observed.node : observed.shell;
+  const selected =
+    runtime === "node"
+      ? observed.node
+      : runtime === "shell"
+        ? observed.shell
+        : observed.python;
   if (!selected) {
     throw new Error(`OCI image-bound ${runtime} runtime is unavailable`);
   }
@@ -285,6 +322,9 @@ export async function resolveContainerCommandRuntime(
         runtime,
         executable: selected.executable,
         executableSha256: selected.executableSha256,
+        ...(runtime === "python"
+          ? { pythonVersion: observed.python!.version }
+          : {}),
       }),
     ),
   };
@@ -374,7 +414,24 @@ function parseRuntimeIdentity(output: string): ContainerRuntimeIdentityOutput {
     node: executableIdentity(record["node"]),
     shell:
       record["shell"] === null ? null : executableIdentity(record["shell"]),
+    python:
+      record["python"] === null
+        ? null
+        : pythonExecutableIdentity(record["python"]),
   };
+}
+
+function pythonExecutableIdentity(value: unknown): ContainerPythonIdentity {
+  const executable = executableIdentity(value);
+  const version = (value as Record<string, unknown>)["version"];
+  if (typeof version !== "string") {
+    throw new Error("OCI container Python identity is invalid");
+  }
+  const match = /^3\.(\d+)\.(\d+)$/u.exec(version);
+  if (!match || Number(match[1]) < 9) {
+    throw new Error("OCI container Python identity is invalid");
+  }
+  return { ...executable, version };
 }
 
 function executableIdentity(value: unknown): ContainerExecutableIdentity {

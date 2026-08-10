@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "4b649993d5df63bb0dd781beb15d9a330ac90f90512d86e3e02cdbfc4a352ff5",
+      "stdoutSha256": "71ddc12bf4783d68a803f6b0294a2591159bfe2381acb01daedaafcd5401622b",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "197aa0865185de079e14af87281525d2c58eae77df868c0ae65f762219563175",
-      "receiptSha256": "e6ba77d0e66dd709ad23dd0f52da8618e8aea3f78b1e924b7dc18876f2f21599"
+      "evidenceSha256": "88cf8b4f64270e2a73963db5666410851f2e99418fc4cc76bbe3864e8cfa5723",
+      "receiptSha256": "fe96281f3d8d9f956421cf1973fbfcc94a3e8189dc089c9cd1ae57a58a092e85"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "2012217c0f18505e368b9f8cddfada5dea311624dee51e9589eae884e553382e",
+      "stdoutSha256": "d626ac587ec5b2814e8ec19456e8b93d1ed6ee0bcf4df8161f2ef44d2e3fe502",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "3dcb698bb78e6b5d77b9b727f794b0cb55f670fc6799f9ce77bc3a2659d87726",
-      "receiptSha256": "cb8b5adb6dbe256bebd9d36d15a125e3ad67cb71bfd4c1f5958702c8cba28504"
+      "evidenceSha256": "b94bd63f56fe5ac6f345ac75affa09ab6751cb1420f6be93633ba15ba876c6ce",
+      "receiptSha256": "51a85bb32f3baa31f289755c7d078ec704a59739425c8b5ca0651715cfe04332"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -637,6 +637,7 @@
         "docs/artifacts/management-openapi-0.1.0.json",
         "docs/artifacts/management-openapi-compatibility-0.1.0.json",
         "docs/artifacts/oci-pty-cleanup-stage3.json",
+        "docs/artifacts/oci-python-runtime-stage5.json",
         "docs/artifacts/oci-runtime-identity-stage2.json",
         "docs/artifacts/oci-user-identity-stage4.json",
         "docs/artifacts/package-lock-audit-0.1.0.json",
@@ -821,6 +822,7 @@
         "packages/runtime/test/model-context-envelope.test.ts",
         "packages/runtime/test/model-prompt-evidence-bindings.test.ts",
         "packages/runtime/test/oci-command-runtime.test.ts",
+        "packages/runtime/test/oci-python-kernel.test.ts",
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts",
         "packages/runtime/test/plans.test.ts",
         "packages/runtime/test/policy.test.ts",
@@ -875,6 +877,7 @@
         "scripts/check-architecture.mjs",
         "scripts/check-architecture.test.mjs",
         "scripts/check-oci-pty-cleanup-stage3.test.mjs",
+        "scripts/check-oci-python-runtime-stage5.test.mjs",
         "scripts/check-oci-runtime-identity-stage2.test.mjs",
         "scripts/check-oci-user-identity-stage4.test.mjs",
         "scripts/check-release-artifacts.mjs",
@@ -914,8 +917,8 @@
       ],
       "files": {
         "README.md": {
-          "sha256": "43daa0953715b36c14d3648db88b78cf1f6df0ce8f80006311d8bd8082d1bce3",
-          "lines": 6728
+          "sha256": "3cc0cf25ce1fff4c82b30f7d8d678f263cdf36fcefdec94c7e4f5b4a3f172292",
+          "lines": 6734
         },
         "apps/cli/src/cli-invocation.ts": {
           "sha256": "191c62ea7c42ee68514e89af3826bd371e34c9c6a4affcd7018d798f42536df9",
@@ -938,12 +941,12 @@
           "lines": 38
         },
         "apps/cli/src/doctor-probes.ts": {
-          "sha256": "dc5605187031cf4f8861cf449fed806ae05c7440c5a97c343ed7ee1e0e61202e",
-          "lines": 430
+          "sha256": "b47693f3e95f78db81a6106dc5b4e80b40e806e21509a065dcaa7664d193ee77",
+          "lines": 432
         },
         "apps/cli/src/doctor-remediation.ts": {
-          "sha256": "aac6a28c2dc9ab9e3de445da9c8372f51c47a24622799e452b8d67395d43fa90",
-          "lines": 219
+          "sha256": "e9ea28adf1e1886eeb5ef06c9d20c3c679d4ddd3063458f75d986fdf7362422e",
+          "lines": 225
         },
         "apps/cli/src/doctor-sandbox-probe.ts": {
           "sha256": "efe8011b862c3de15ee11289a1e52ed2670b38714cbe360d81155769044e130c",
@@ -1458,8 +1461,8 @@
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "47b816e19e747f6db60ec848d365d52db72a2c0518fbba9e839402d0e282ab06",
-          "lines": 8996
+          "sha256": "e2049a2db38bf1342f9f90506602fbf1a51227a7b6b5899053a8ae8818b16b73",
+          "lines": 9005
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -1517,6 +1520,10 @@
           "sha256": "e3a06347269b610474b15e16526dbb69518f08e0a48af7e1f69db449da6cb911",
           "lines": 73
         },
+        "docs/artifacts/oci-python-runtime-stage5.json": {
+          "sha256": "0f188f1cbd910fd9962d32da8000191daaa25ed5ee95abb54d3dd2cb5b28877e",
+          "lines": 87
+        },
         "docs/artifacts/oci-runtime-identity-stage2.json": {
           "sha256": "6f27962c871d19c264228f4a8f31715882fcb93d869b878c8a4396b55b6c4e9b",
           "lines": 57
@@ -1546,11 +1553,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "197aa0865185de079e14af87281525d2c58eae77df868c0ae65f762219563175",
+          "sha256": "88cf8b4f64270e2a73963db5666410851f2e99418fc4cc76bbe3864e8cfa5723",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "3dcb698bb78e6b5d77b9b727f794b0cb55f670fc6799f9ce77bc3a2659d87726",
+          "sha256": "b94bd63f56fe5ac6f345ac75affa09ab6751cb1420f6be93633ba15ba876c6ce",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -1758,8 +1765,8 @@
           "lines": 439
         },
         "packages/runtime/src/doctor-runtime-probes.ts": {
-          "sha256": "ca5c1e7c1a8bebb077d0baeabf409f8ad70a31ef5c31572ae2366b0b366db536",
-          "lines": 417
+          "sha256": "907be35ae362fa2316c21225c127d96bbd26982fc58dabe7bffdd8db96a11a9a",
+          "lines": 460
         },
         "packages/runtime/src/git-commit-tool.ts": {
           "sha256": "4ca318421f8b391a9838d77e6491f1e61f305e6df574a03acb6afb300fe5d9f6",
@@ -1914,8 +1921,8 @@
           "lines": 232
         },
         "packages/runtime/src/sandbox-container-runtime.ts": {
-          "sha256": "d4a59e897f206a31bd8eedd085fd9ac20dbd890ec7b0f97938325695b31a9efd",
-          "lines": 398
+          "sha256": "d26e794d906b956935b4dc951f91276808c0473a414fe1261ebea1d90336a048",
+          "lines": 455
         },
         "packages/runtime/src/sandbox-container.ts": {
           "sha256": "09db75556d33bba5131e4ce07c62eb1685f182843dc95207c619fd75c2729ae6",
@@ -2198,8 +2205,8 @@
           "lines": 261
         },
         "packages/runtime/test/doctor-runtime-probes.test.ts": {
-          "sha256": "a9234f33e7932a44a2dca841273a3db053aca6bae728eb343f43298ee317ebcf",
-          "lines": 139
+          "sha256": "23d38d0806e927748ebb1a1b5876e2913318c59e3cc04116bd15b1a208b8a4b8",
+          "lines": 181
         },
         "packages/runtime/test/independent-model-advisor.test.ts": {
           "sha256": "6c8c017ae18bf2735e9bdbc1023d898a213c73dc61fee94cb81baf1bfa47ddff",
@@ -2234,8 +2241,12 @@
           "lines": 159
         },
         "packages/runtime/test/oci-command-runtime.test.ts": {
-          "sha256": "350e571d0f1b81379ad2efa15c79d4b35d3c4ed410d8e39d653ddda74988de5d",
-          "lines": 663
+          "sha256": "ebb63092fdcbee636ba5b3ab1e674e3e050dec14a85f2e20e891ee27dd4d0f87",
+          "lines": 845
+        },
+        "packages/runtime/test/oci-python-kernel.test.ts": {
+          "sha256": "6ff62a2641f9c188786eaaaa8730952721d131cd1b71e1df9669cff676f23e77",
+          "lines": 167
         },
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts": {
           "sha256": "28b61ca4f3468defaa1443ffa13cd15d60f638f3d05bb9ee91ffaaa6bb754a2b",
@@ -2453,6 +2464,10 @@
           "sha256": "d5c06f6a606aad068919bbe33c5a318cc74b980c4003a6074aa20c4874303f67",
           "lines": 62
         },
+        "scripts/check-oci-python-runtime-stage5.test.mjs": {
+          "sha256": "182c2d2b4734029b6b666d566e53d60e5d6643462ec4a25f2fd045fb6f54c729",
+          "lines": 62
+        },
         "scripts/check-oci-runtime-identity-stage2.test.mjs": {
           "sha256": "074db08187d11adf3fca529ba2cee8fdcc71273b060fea6b0860674944d1eceb",
           "lines": 60
@@ -2619,7 +2634,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "f069a91820c7f8a204e964e9400f382195eab0e59eb59415344dd5d5bf02ed2f"
+      "manifestSha256": "5b7dae683907706b1786d29d2feb01b92e29bb9951ba4c67def923ad3c4e1427"
     },
     "executionClosure": {
       "algorithm": {
@@ -4331,12 +4346,12 @@
               "lines": 30
             },
             "apps/cli/dist/doctor-probes.js": {
-              "sha256": "95e177142c1f4312ae7f571a57bd31aa8865799a17b3a4f86b6ddeaf41ac75c0",
+              "sha256": "8299265cd1ce9a36e389d10a6c7f973056b1ba226a318a6c0cfbd6b82521caf7",
               "lines": 293
             },
             "apps/cli/dist/doctor-remediation.js": {
-              "sha256": "f4616f5ad7395ab593ec1cccb508ea95ce4db2e711377ab516d6dc1844fe20ad",
-              "lines": 158
+              "sha256": "586cf7b47bebd6d51ab3341ebe9ada04d342c40b6f6c63a1b06226cc1a914696",
+              "lines": 163
             },
             "apps/cli/dist/doctor-report.js": {
               "sha256": "38224ea022081f836c6f7be729c654d043ea0c5bd17ff66af96fa0804557d5ef",
@@ -4555,12 +4570,12 @@
               "lines": 38
             },
             "apps/cli/src/doctor-probes.ts": {
-              "sha256": "dc5605187031cf4f8861cf449fed806ae05c7440c5a97c343ed7ee1e0e61202e",
-              "lines": 430
+              "sha256": "b47693f3e95f78db81a6106dc5b4e80b40e806e21509a065dcaa7664d193ee77",
+              "lines": 432
             },
             "apps/cli/src/doctor-remediation.ts": {
-              "sha256": "aac6a28c2dc9ab9e3de445da9c8372f51c47a24622799e452b8d67395d43fa90",
-              "lines": 219
+              "sha256": "e9ea28adf1e1886eeb5ef06c9d20c3c679d4ddd3063458f75d986fdf7362422e",
+              "lines": 225
             },
             "apps/cli/src/doctor-report.ts": {
               "sha256": "ceea3f56edff1fda3fd9a4c3659fbf7b7899c1430a0584bf1514281e365bbcfd",
@@ -6055,8 +6070,8 @@
               "lines": 124
             },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "86a06099c5a81cd34014ab90b57f701cf5bc44984361c1d057ccb6d36a6f0fb3",
-              "lines": 325
+              "sha256": "ac1019e9e62b7f8a049045273125867df2a4df2937f0881ff20dffc892cddaad",
+              "lines": 361
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -6947,8 +6962,8 @@
               "lines": 60
             },
             "packages/runtime/dist/sandbox-container-runtime.js": {
-              "sha256": "0c4bb1eefad8ccf47f12efcbd9b607370c2404f9aae7c42b2912bc6725e7bb1f",
-              "lines": 261
+              "sha256": "572b569eb236e12299e5232884138e3c0f13c0d32955aa454e30e47f4490bccf",
+              "lines": 312
             },
             "packages/runtime/dist/sandbox-container.js": {
               "sha256": "493458712a4a73643b3b56d2eedc32d2a458bc52789b6fac7279442c24697fb0",
@@ -8355,8 +8370,8 @@
               "lines": 173
             },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "ca5c1e7c1a8bebb077d0baeabf409f8ad70a31ef5c31572ae2366b0b366db536",
-              "lines": 417
+              "sha256": "907be35ae362fa2316c21225c127d96bbd26982fc58dabe7bffdd8db96a11a9a",
+              "lines": 460
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -9247,8 +9262,8 @@
               "lines": 94
             },
             "packages/runtime/src/sandbox-container-runtime.ts": {
-              "sha256": "d4a59e897f206a31bd8eedd085fd9ac20dbd890ec7b0f97938325695b31a9efd",
-              "lines": 398
+              "sha256": "d26e794d906b956935b4dc951f91276808c0473a414fe1261ebea1d90336a048",
+              "lines": 455
             },
             "packages/runtime/src/sandbox-container.ts": {
               "sha256": "09db75556d33bba5131e4ce07c62eb1685f182843dc95207c619fd75c2729ae6",
@@ -10303,7 +10318,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "f1825068e31fa2221b55985459c04a6dc3293feab7bed80975af004fec31ae46"
+          "manifestSha256": "1ee16b75caea08a90c05c8232af82105ef725322c2cdaa14c343f41228322ab6"
         },
         "productionServerTrace": {
           "roots": [
@@ -13166,8 +13181,8 @@
               "lines": 124
             },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "86a06099c5a81cd34014ab90b57f701cf5bc44984361c1d057ccb6d36a6f0fb3",
-              "lines": 325
+              "sha256": "ac1019e9e62b7f8a049045273125867df2a4df2937f0881ff20dffc892cddaad",
+              "lines": 361
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -14058,8 +14073,8 @@
               "lines": 60
             },
             "packages/runtime/dist/sandbox-container-runtime.js": {
-              "sha256": "0c4bb1eefad8ccf47f12efcbd9b607370c2404f9aae7c42b2912bc6725e7bb1f",
-              "lines": 261
+              "sha256": "572b569eb236e12299e5232884138e3c0f13c0d32955aa454e30e47f4490bccf",
+              "lines": 312
             },
             "packages/runtime/dist/sandbox-container.js": {
               "sha256": "493458712a4a73643b3b56d2eedc32d2a458bc52789b6fac7279442c24697fb0",
@@ -15458,8 +15473,8 @@
               "lines": 173
             },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "ca5c1e7c1a8bebb077d0baeabf409f8ad70a31ef5c31572ae2366b0b366db536",
-              "lines": 417
+              "sha256": "907be35ae362fa2316c21225c127d96bbd26982fc58dabe7bffdd8db96a11a9a",
+              "lines": 460
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -16350,8 +16365,8 @@
               "lines": 94
             },
             "packages/runtime/src/sandbox-container-runtime.ts": {
-              "sha256": "d4a59e897f206a31bd8eedd085fd9ac20dbd890ec7b0f97938325695b31a9efd",
-              "lines": 398
+              "sha256": "d26e794d906b956935b4dc951f91276808c0473a414fe1261ebea1d90336a048",
+              "lines": 455
             },
             "packages/runtime/src/sandbox-container.ts": {
               "sha256": "09db75556d33bba5131e4ce07c62eb1685f182843dc95207c619fd75c2729ae6",
@@ -17402,7 +17417,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "37cac436f23ff8cc37ba0c7b48b93a1ef76d1ebd951dc9dade8e1d64fbef844f"
+          "manifestSha256": "75d77c0b406f129815128e75dba5c912933fb9a24ee5ca9e11b5c8dfbbb6a038"
         }
       },
       "excludedCategories": [
@@ -17431,9 +17446,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "ff7e3bd01b705090a9a606dea322f6d3c9d74d96911960548d58e3c4fb1464e1"
+      "manifestSha256": "b104bece1a5477e816fb49ef6fa68942b6c40e78d348be9edaeaa8cf0a583640"
     },
-    "manifestSha256": "c65867832f77e924b133cef04ffe04e1416606fa917be96a90b1ec7e162aec84"
+    "manifestSha256": "ee526b233c5c2f9de1bdb6aa55f5417f3ee71ce14d561381df7f56026f2d5fcb"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -17621,11 +17636,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "197aa0865185de079e14af87281525d2c58eae77df868c0ae65f762219563175"
+      "sha256": "88cf8b4f64270e2a73963db5666410851f2e99418fc4cc76bbe3864e8cfa5723"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "3dcb698bb78e6b5d77b9b727f794b0cb55f670fc6799f9ce77bc3a2659d87726"
+      "sha256": "b94bd63f56fe5ac6f345ac75affa09ab6751cb1420f6be93633ba15ba876c6ce"
     }
   }
 }

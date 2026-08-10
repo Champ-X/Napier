@@ -20,7 +20,9 @@ import {
   CommandRunner,
   prepareCommandExecution,
 } from "../src/command-execution.js";
+import { resolveCommandRuntimeBinding } from "../src/command-runtime.js";
 import {
+  probePythonRuntime,
   probeSandboxProcessRuntime,
   probeShellRuntime,
 } from "../src/doctor-runtime-probes.js";
@@ -38,6 +40,7 @@ import { bindWorkspaceProcessIo } from "../src/workspace-process-terminal.js";
 const IMAGE_ID = `sha256:${"a".repeat(64)}`;
 const NODE_SHA256 = "b".repeat(64);
 const SHELL_SHA256 = "c".repeat(64);
+const PYTHON_SHA256 = "d".repeat(64);
 const REQUESTED_IMAGE = "ghcr.io/example/napier-sandbox:node24";
 const USER_IDS = { userId: 501, groupId: 20 } as const;
 const DAEMON_ENDPOINT = "unix:///controlled/docker.sock";
@@ -250,6 +253,172 @@ describe("OCI image-bound command runtime", () => {
     expect(second.runtimeIdentitySha256).toMatch(/^[a-f0-9]{64}$/u);
     expect(first.runtimeIdentitySha256).not.toBe(second.runtimeIdentitySha256);
   });
+
+  it("runs Python argv through the image-bound interpreter identity", async () => {
+    const workspaceRoot = await temporaryWorkspace();
+    const client = identityClient();
+    const { environmentFile, spawnProcess } =
+      spawnedContainer("Python 3.12.8\n");
+    const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+      executable: process.execPath,
+      containerClient: client,
+      spawnProcess: spawnProcess as never,
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
+    });
+
+    const result = await new CommandRunner({ workspaceRoot, sandbox }).run({
+      runtime: "python",
+      args: ["--version"],
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        stdout: "Python 3.12.8\n",
+        details: expect.objectContaining({
+          runtime: "python",
+          status: "succeeded",
+          executableSha256: PYTHON_SHA256,
+          runtimeIdentitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      }),
+    );
+    const dockerArgs = spawnProcess.mock.calls[0]?.[1] as string[];
+    expect(dockerArgs.slice(dockerArgs.indexOf(IMAGE_ID))).toEqual([
+      IMAGE_ID,
+      "/usr/local/bin/python3",
+      "--version",
+    ]);
+    expect(environmentFile.value).toBe(
+      "CI=1\nFORCE_COLOR=0\nLANG=C\nLC_ALL=C\nNO_COLOR=1\nPYTHONDONTWRITEBYTECODE=1\nPYTHONHASHSEED=0\nPYTHONNOUSERSITE=1\n",
+    );
+    expect(client.mock.calls[1]?.[1]).toEqual(
+      expect.arrayContaining(["--user", "501:20", IMAGE_ID]),
+    );
+  });
+
+  it("fails closed when the immutable image has no Python runtime", async () => {
+    const workspaceRoot = await temporaryWorkspace();
+    const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+      executable: process.execPath,
+      containerClient: identityClient({ pythonUnavailable: true }),
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
+    });
+
+    await expect(
+      prepareCommandExecution(
+        { workspaceRoot, sandbox },
+        { runtime: "python", args: ["--version"] },
+      ),
+    ).rejects.toThrow("image-bound python runtime is unavailable");
+
+    const unsupported = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+      executable: process.execPath,
+      containerClient: identityClient({ pythonVersion: "3.8.20" }),
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
+    });
+    await expect(
+      prepareCommandExecution(
+        { workspaceRoot, sandbox: unsupported },
+        { runtime: "python", args: ["--version"] },
+      ),
+    ).rejects.toThrow("Python identity is invalid");
+  });
+
+  it("lets Doctor verify the production Python path against the pinned image", async () => {
+    const workspaceRoot = await temporaryWorkspace();
+    const { spawnProcess } = spawnedContainer("napier_python_probe_v1");
+    const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+      executable: process.execPath,
+      containerClient: identityClient(),
+      spawnProcess: spawnProcess as never,
+      userIds: USER_IDS,
+      daemonEndpoint: DAEMON_ENDPOINT,
+    });
+
+    await expect(
+      probePythonRuntime(workspaceRoot, undefined, sandbox),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: "ready",
+        code: "python_ready",
+        evidence: expect.objectContaining({
+          adapter: "oci-container",
+          productionCall: true,
+          pty: false,
+          runtimeAssetCount: 0,
+          runtimeIdentitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      }),
+    );
+    const dockerArgs = spawnProcess.mock.calls[0]?.[1] as string[];
+    const imageIndex = dockerArgs.indexOf(IMAGE_ID);
+    expect(dockerArgs.slice(imageIndex, imageIndex + 2)).toEqual([
+      IMAGE_ID,
+      "/usr/local/bin/python3",
+    ]);
+  });
+
+  posixIt(
+    "executes the image-bound Python argv through the production pipe lifecycle",
+    async () => {
+      const workspaceRoot = await temporaryWorkspace();
+      const hostPython = await resolveCommandRuntimeBinding("python");
+      const fakeRoot = await temporaryWorkspace();
+      const executable = path.join(fakeRoot, "fake-container-client");
+      await writeFile(
+        executable,
+        [
+          `#!${process.execPath}`,
+          'const { spawnSync } = require("node:child_process");',
+          "const args = process.argv.slice(2);",
+          `const imageIndex = args.indexOf(${JSON.stringify(IMAGE_ID)});`,
+          "if (imageIndex < 0) process.exit(65);",
+          `if (args[imageIndex + 1] !== ${JSON.stringify("/usr/local/bin/python3")}) process.exit(66);`,
+          `const result = spawnSync(${JSON.stringify(hostPython.executable)}, args.slice(imageIndex + 2), {`,
+          '  stdio: "inherit",',
+          "  env: { CI: '1', LANG: 'C', LC_ALL: 'C', PYTHONDONTWRITEBYTECODE: '1', PYTHONHASHSEED: '0', PYTHONNOUSERSITE: '1' },",
+          "});",
+          "if (result.error) process.exit(67);",
+          "process.exit(result.status ?? 68);",
+          "",
+        ].join("\n"),
+        { mode: 0o755 },
+      );
+      const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+        executable,
+        containerClient: identityClient(),
+        userIds: USER_IDS,
+        daemonEndpoint: DAEMON_ENDPOINT,
+      });
+
+      const result = await new CommandRunner({ workspaceRoot, sandbox }).run({
+        runtime: "python",
+        args: [
+          "-I",
+          "-B",
+          "-S",
+          "-c",
+          'print("napier_oci_python_probe_v1", end="")',
+        ],
+      });
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          stdout: "napier_oci_python_probe_v1",
+          stderr: "",
+          details: expect.objectContaining({
+            status: "succeeded",
+            sandbox: "oci-container",
+            runtimeIdentitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          }),
+        }),
+      );
+    },
+    15_000,
+  );
 
   it("runs the production Shell PTY through a cleanup-bound guardian", async () => {
     const workspaceRoot = await temporaryWorkspace();
@@ -549,7 +718,13 @@ describe("OCI image-bound command runtime", () => {
   );
 });
 
-function identityClient(options: { cleanupFailure?: boolean } = {}) {
+function identityClient(
+  options: {
+    cleanupFailure?: boolean;
+    pythonUnavailable?: boolean;
+    pythonVersion?: string;
+  } = {},
+) {
   return vi.fn<ContainerClient>(async (_executable, args) => {
     if (args[0] === "image") return `${IMAGE_ID}\n`;
     if (args[0] === "container") {
@@ -567,6 +742,13 @@ function identityClient(options: { cleanupFailure?: boolean } = {}) {
         executable: "/bin/dash",
         executableSha256: SHELL_SHA256,
       },
+      python: options.pythonUnavailable
+        ? null
+        : {
+            executable: "/usr/local/bin/python3",
+            executableSha256: PYTHON_SHA256,
+            version: options.pythonVersion ?? "3.12.8",
+          },
     });
   });
 }

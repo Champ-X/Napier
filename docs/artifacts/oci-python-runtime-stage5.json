@@ -1,0 +1,87 @@
+{
+  "kind": "napier.oci-python-runtime-stage5",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-10T01:53:28Z",
+  "controlledProductionPath": {
+    "externalDaemonUsed": false,
+    "immutableImageIdUsed": true,
+    "numericExecutionUserUsedForProbe": true,
+    "isolatedPythonFlags": ["-I", "-B", "-S"],
+    "kernelBootstrapImportsVerified": true,
+    "interpreterExecutableHashBound": true,
+    "interpreterVersionBound": true,
+    "interpreterVersionFloor": "3.9",
+    "hostPythonPathsMounted": false,
+    "runCommandStatus": "succeeded",
+    "controlledClientExecutedRealPython": true,
+    "persistentKernelStarted": true,
+    "persistentKernelStateObserved": true,
+    "persistentKernelCancelled": true,
+    "kernelSourceRetainedInLedger": false,
+    "pythonDoctorProductionProbe": "ready",
+    "missingImagePythonRejected": true,
+    "runtimeIdentityRecorded": true
+  },
+  "actualHost": {
+    "containerCliPresent": true,
+    "containerServerReachable": false,
+    "configuredImage": true,
+    "doctorStatus": "degraded",
+    "pythonDoctorCode": "python_provider_unavailable",
+    "shellDoctorCode": "shell_provider_unavailable",
+    "sandboxDoctorCode": "sandbox_unavailable",
+    "reportedIsolationLevel": "container",
+    "codingSendBoundary": "blocked"
+  },
+  "verification": {
+    "focusedTestFiles": 4,
+    "focusedTests": 36,
+    "productionDoctorInvocations": 1,
+    "architectureCycles": 0
+  },
+  "retryLedger": [
+    {
+      "category": "test_expectation_error",
+      "productFailure": false,
+      "cause": "the assertion required an absent optional runtime-asset field to exist with an undefined value",
+      "resolution": "removed the invalid property expectation and retained the provider runtime identity assertion",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "test_expectation_error",
+      "productFailure": false,
+      "cause": "the assertion expected an internal runtime identity field in the public Process projection",
+      "resolution": "asserted the projected executable and transitive command receipt identities instead",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "typecheck_failure",
+      "productFailure": true,
+      "cause": "the first Python version-floor parser did not narrow the unknown JSON field before returning it",
+      "resolution": "added an explicit string guard before semantic-version parsing",
+      "finalStatus": "passed"
+    }
+  ],
+  "retention": {
+    "credentialValues": false,
+    "rawDockerOutput": false,
+    "rawDoctorReport": false,
+    "rawDaemonEndpoint": false,
+    "numericHostUserIds": false,
+    "pythonExecutablePath": false,
+    "pythonSource": false,
+    "absoluteTemporaryPaths": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "image-bound Git, LSP, and debugger identities",
+      "bounded port and local-service projection",
+      "real isolated Docker daemon E2E",
+      "non-POSIX host user mapping",
+      "cross-platform isolated provider casebook"
+    ]
+  },
+  "contentSha256": "d055a287cce0d22be8fa6c991eb88d552d82acd5432bbcc11fc492bf5d852c19"
+}

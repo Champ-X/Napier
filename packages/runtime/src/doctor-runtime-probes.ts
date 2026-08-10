@@ -26,6 +26,7 @@ const require = createRequire(import.meta.url);
 const MAX_PROBED_SKILLS = 64;
 const PROCESS_PROBE_MARKER = "napier_process_probe_v1";
 const SHELL_PROBE_MARKER = "napier_shell_probe_v1";
+const PYTHON_PROBE_MARKER = "napier_python_probe_v1";
 const PROCESS_PROBE_TIMEOUT_MS = 5_000;
 
 export type RuntimeCapabilityStatus =
@@ -238,7 +239,27 @@ export async function probeDapRuntime(): Promise<RuntimeCapabilityProbe> {
  * relies on, so an unavailable interpreter or missing standard-library asset is
  * reported honestly.
  */
-export async function probePythonRuntime(): Promise<RuntimeCapabilityProbe> {
+export async function probePythonRuntime(
+  workspaceRoot?: string,
+  signal?: AbortSignal,
+  sandbox: OsSandboxAdapter = createPlatformSandboxAdapter(),
+): Promise<RuntimeCapabilityProbe> {
+  if (workspaceRoot) {
+    return activeProcessProbe({
+      workspaceRoot,
+      sandbox,
+      runtime: "python",
+      args: [
+        "-I",
+        "-B",
+        "-S",
+        "-c",
+        `print(${JSON.stringify(PYTHON_PROBE_MARKER)}, end="")`,
+      ],
+      marker: PYTHON_PROBE_MARKER,
+      ...(signal ? { signal } : {}),
+    });
+  }
   try {
     const binding = await resolveCommandRuntimeBinding("python");
     return {
@@ -310,7 +331,7 @@ export async function probeShellRuntime(
 async function activeProcessProbe(input: {
   workspaceRoot: string;
   sandbox: OsSandboxAdapter;
-  runtime: "node" | "shell";
+  runtime: "node" | "python" | "shell";
   args: string[];
   marker: string;
   terminal?: boolean;
@@ -345,11 +366,18 @@ async function activeProcessProbe(input: {
     if (!ready) return processProbeFailure(input.runtime, "probe_result");
     return {
       status: "ready",
-      code: input.runtime === "shell" ? "shell_ready" : "sandbox_process_ready",
+      code:
+        input.runtime === "shell"
+          ? "shell_ready"
+          : input.runtime === "python"
+            ? "python_ready"
+            : "sandbox_process_ready",
       message:
         input.runtime === "shell"
           ? `The active ${input.sandbox.id} provider completed a bounded shell command through the production PTY path`
-          : `The active ${input.sandbox.id} provider completed a bounded command through the production execution path`,
+          : input.runtime === "python"
+            ? `The active ${input.sandbox.id} provider completed a bounded Python command through the production execution path`
+            : `The active ${input.sandbox.id} provider completed a bounded command through the production execution path`,
       evidence: {
         adapter: input.sandbox.id,
         productionCall: true,
@@ -357,6 +385,9 @@ async function activeProcessProbe(input: {
         executableSha256: prepared.executableSha256,
         ...(prepared.runtimeIdentitySha256
           ? { runtimeIdentitySha256: prepared.runtimeIdentitySha256 }
+          : {}),
+        ...(input.runtime === "python"
+          ? { runtimeAssetCount: prepared.runtimeAssets.length }
           : {}),
         commandSha256:
           io?.commandSha256 ?? sha256(canonicalJson(prepared.receipt)),
@@ -372,10 +403,22 @@ async function activeProcessProbe(input: {
 }
 
 function processProbeFailure(
-  runtime: "node" | "shell",
+  runtime: "node" | "python" | "shell",
   error: unknown,
 ): RuntimeCapabilityProbe {
   const message = error instanceof Error ? error.message : String(error);
+  if (runtime === "python") {
+    const missing = /python runtime (?:is|assets are) unavailable/iu.test(
+      message,
+    );
+    return {
+      status: "unavailable",
+      code: missing ? "python_missing" : "python_provider_unavailable",
+      message: missing
+        ? "The active provider has no usable python3 interpreter and required standard library; Python tools fail closed"
+        : "The active provider could not complete the production Python command probe; Python tools fail closed",
+    };
+  }
   if (runtime === "shell" && /node-pty|PTY launch failed/iu.test(message)) {
     return {
       status: "unavailable",
@@ -392,7 +435,7 @@ function processProbeFailure(
     };
   }
   const incompatible =
-    /container runtime identity binding|image-bound terminal runtime support|image-bound Python runtime identity/iu.test(
+    /container runtime identity binding|image-bound terminal runtime support/iu.test(
       message,
     );
   return {

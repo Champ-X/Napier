@@ -106,7 +106,13 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   python_missing: {
     id: "repair_python_runtime",
     instruction:
-      "Install a python3 interpreter with its standard library (for example Xcode Command Line Tools on macOS) before Python tasks.",
+      "Install a python3 interpreter with its standard library in the active host sandbox or trusted OCI image before Python tasks.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  python_provider_unavailable: {
+    id: "repair_python_provider",
+    instruction:
+      "Configure an active process Sandbox that can launch the production Python path, then rerun Doctor.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
   shell_missing: {

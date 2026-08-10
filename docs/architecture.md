@@ -6350,8 +6350,16 @@ argv, resource limits, runtime path hashes, and hashes for the bounded
 bootstrap dependency source, existing bytecode, and native-extension files.
 The worker disables site initialization, and a host regression proves the set
 covers every module file loaded by the real worker imports. Preparation and
-settlement rehash those assets. Python remains fail-closed for OCI until
-image runtime identity is defined.
+settlement rehash those assets. For OCI, the immutable-image identity probe
+runs a Python 3.9+ candidate interpreter as the mapped host UID:GID with the same
+`-I -B -S` mode and imports every worker bootstrap dependency. The provider
+binding records its canonical executable hash and semantic version inside the
+image/daemon/user runtime identity; neither host Python nor host stdlib paths
+are mounted. Both `run_command` and the private persistent Python Kernel then
+launch that absolute image interpreter through the ordinary bounded Process
+path. A missing interpreter/import set, daemon failure, or identity drift fails
+closed, and Doctor reports ready only after the active provider executes the
+production Python marker command.
 
 The fixed worker source is zlib-compressed and canonical-base64 chunked across
 bounded ASCII argv items; the uncompressed bytes are bound by
@@ -7994,10 +8002,11 @@ guardian force-remove the exact resource on exit or cancellation and fail with
 a non-success cleanup result if the name remains. The adapter does not rely on
 Docker auto-remove. The client/daemon/user binding is covered without an
 external daemon by controlled production-path tests; the actual host Doctor
-continues to report `shell_provider_unavailable` and `sandbox_unavailable` when
-the configured local Docker server cannot be reached. Real isolated-daemon E2E,
-non-POSIX host-user mapping, image-bound Python/Git/LSP/debugger assets, and
-bounded service-port projection remain explicit gaps.
+continues to report `python_provider_unavailable`,
+`shell_provider_unavailable`, and `sandbox_unavailable` when the configured
+local Docker server cannot be reached. Real isolated-daemon E2E, non-POSIX
+host-user mapping, image-bound Git/LSP/debugger assets, and bounded service-port
+projection remain explicit gaps.
 
 Both adapters create a private temporary HOME and add workspace read/write
 rules only for separately approved capabilities. Stdio receives no ambient
