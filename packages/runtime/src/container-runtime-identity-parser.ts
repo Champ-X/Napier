@@ -27,11 +27,16 @@ export interface ContainerLspIdentity {
   typescriptServerSha256: string;
 }
 
+export interface ContainerNodeDebuggerIdentity {
+  nodeVersion: string;
+}
+
 export interface ContainerRuntimeIdentityOutput {
   node: ContainerExecutableIdentity;
   shell: ContainerExecutableIdentity | null;
   git: ContainerGitIdentity | null;
   lsp: ContainerLspIdentity | null;
+  debugger: ContainerNodeDebuggerIdentity | null;
   python: ContainerPythonIdentity | null;
 }
 
@@ -54,11 +59,30 @@ export function parseContainerRuntimeIdentity(
       record["shell"] === null ? null : executableIdentity(record["shell"]),
     git: record["git"] === null ? null : gitExecutableIdentity(record["git"]),
     lsp: record["lsp"] === null ? null : lspIdentity(record["lsp"]),
+    debugger:
+      record["debugger"] === null
+        ? null
+        : nodeDebuggerIdentity(record["debugger"]),
     python:
       record["python"] === null
         ? null
         : pythonExecutableIdentity(record["python"]),
   };
+}
+
+function nodeDebuggerIdentity(value: unknown): ContainerNodeDebuggerIdentity {
+  if (!record(value) || typeof value["nodeVersion"] !== "string") {
+    throw new Error("OCI container Node debugger identity is invalid");
+  }
+  const match = /^(\d+)\.(\d+)\.(\d+)$/u.exec(value["nodeVersion"]);
+  if (
+    !match ||
+    Number(match[1]) < 22 ||
+    (Number(match[1]) === 22 && Number(match[2]) < 19)
+  ) {
+    throw new Error("OCI container Node debugger identity is invalid");
+  }
+  return { nodeVersion: value["nodeVersion"] };
 }
 
 function lspIdentity(value: unknown): ContainerLspIdentity {

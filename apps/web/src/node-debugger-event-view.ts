@@ -39,6 +39,7 @@ export interface NodeDebuggerToolEventTraceView {
   nodeDebuggerModuleSetSha256?: string;
   nodeDebuggerWorkerSha256?: string;
   nodeDebuggerRuntimeExecutableSha256?: string;
+  nodeDebuggerRuntimeIdentitySha256?: string;
   nodeDebuggerRuntimeCommandSha256?: string;
   nodeDebuggerDapRequestSha256?: string;
   nodeDebuggerDapResponseSha256?: string;
@@ -69,7 +70,7 @@ export function nodeDebuggerEventEvidence(
   const schemaVersion = value["schemaVersion"];
   if (
     value["kind"] !== "napier.node-debugger" ||
-    (schemaVersion !== 1 && schemaVersion !== 2) ||
+    !nodeDebuggerSchemaVersion(schemaVersion) ||
     typeof action !== "string" ||
     !ACTIONS.has(action) ||
     !debugState(state) ||
@@ -79,16 +80,16 @@ export function nodeDebuggerEventEvidence(
   }
   const sourceBytes = integerInRange(value["sourceBytes"], 0, 1024 * 1024);
   const sourceMapMode =
-    schemaVersion === 2 &&
+    schemaVersion >= 2 &&
     (value["sourceMapMode"] === "none" || value["sourceMapMode"] === "external")
       ? value["sourceMapMode"]
       : undefined;
   const programBytes =
-    schemaVersion === 2
+    schemaVersion >= 2
       ? integerInRange(value["programBytes"], 0, 1024 * 1024)
       : undefined;
   const sourceMapBytes =
-    schemaVersion === 2 && sourceMapMode === "external"
+    schemaVersion >= 2 && sourceMapMode === "external"
       ? integerInRange(value["sourceMapBytes"], 0, 1024 * 1024)
       : undefined;
   const moduleCount = integerInRange(value["moduleCount"], 1, 256);
@@ -111,17 +112,18 @@ export function nodeDebuggerEventEvidence(
     "resultSha256",
   ].map((key) => sha256(value[key]));
   const programPathSha256 =
-    schemaVersion === 2 ? sha256(value["programPathSha256"]) : undefined;
+    schemaVersion >= 2 ? sha256(value["programPathSha256"]) : undefined;
   const programSha256 =
-    schemaVersion === 2 ? sha256(value["programSha256"]) : undefined;
+    schemaVersion >= 2 ? sha256(value["programSha256"]) : undefined;
   const sourceMapPathSha256 =
-    schemaVersion === 2 && sourceMapMode === "external"
+    schemaVersion >= 2 && sourceMapMode === "external"
       ? sha256(value["sourceMapPathSha256"])
       : undefined;
   const sourceMapSha256 =
-    schemaVersion === 2 && sourceMapMode === "external"
+    schemaVersion >= 2 && sourceMapMode === "external"
       ? sha256(value["sourceMapSha256"])
       : undefined;
+  const runtimeIdentity = runtimeIdentityEvidence(value, schemaVersion);
   if (
     sourceBytes === undefined ||
     moduleCount === undefined ||
@@ -134,7 +136,7 @@ export function nodeDebuggerEventEvidence(
     typeof value["outputTruncated"] !== "boolean" ||
     !nodeVersion ||
     hashes.some((hash) => !hash) ||
-    (schemaVersion === 2 &&
+    (schemaVersion >= 2 &&
       (!sourceMapMode ||
         programBytes === undefined ||
         !programPathSha256 ||
@@ -146,6 +148,7 @@ export function nodeDebuggerEventEvidence(
           : value["sourceMapBytes"] !== undefined ||
             value["sourceMapPathSha256"] !== undefined ||
             value["sourceMapSha256"] !== undefined))) ||
+    !runtimeIdentity.valid ||
     (value["reason"] !== undefined &&
       (typeof value["reason"] !== "string" ||
         !["breakpoint", "exception", "pause", "step"].includes(
@@ -213,12 +216,37 @@ export function nodeDebuggerEventEvidence(
     nodeDebuggerModuleSetSha256: hashes[2]!,
     nodeDebuggerWorkerSha256: hashes[3]!,
     nodeDebuggerRuntimeExecutableSha256: hashes[4]!,
+    ...runtimeIdentity.trace,
     nodeDebuggerRuntimeCommandSha256: hashes[5]!,
     nodeDebuggerDapRequestSha256: hashes[6]!,
     nodeDebuggerDapResponseSha256: hashes[7]!,
     nodeDebuggerDapEventSha256: hashes[8]!,
     nodeDebuggerResultSha256: hashes[9]!,
   };
+}
+
+function nodeDebuggerSchemaVersion(value: unknown): value is 1 | 2 | 3 {
+  return value === 1 || value === 2 || value === 3;
+}
+
+function runtimeIdentityEvidence(
+  value: Record<string, unknown>,
+  schemaVersion: 1 | 2 | 3,
+): {
+  valid: boolean;
+  trace: Pick<
+    NodeDebuggerToolEventTraceView,
+    "nodeDebuggerRuntimeIdentitySha256"
+  >;
+} {
+  if (schemaVersion !== 3) return { valid: true, trace: {} };
+  const identity = sha256(value["runtimeIdentitySha256"]);
+  return identity
+    ? {
+        valid: true,
+        trace: { nodeDebuggerRuntimeIdentitySha256: identity },
+      }
+    : { valid: false, trace: {} };
 }
 
 export function nodeDebuggerSummaryParts(
@@ -263,6 +291,7 @@ export function nodeDebuggerSummaryParts(
     ...hashSummary("debug-program", view.nodeDebuggerProgramSha256),
     ...hashSummary("debug-source-map", view.nodeDebuggerSourceMapSha256),
     ...hashSummary("debug-modules", view.nodeDebuggerModuleSetSha256),
+    ...hashSummary("debug-runtime", view.nodeDebuggerRuntimeIdentitySha256),
     ...hashSummary("dap-request", view.nodeDebuggerDapRequestSha256),
     ...hashSummary("dap-response", view.nodeDebuggerDapResponseSha256),
     ...hashSummary("dap-events", view.nodeDebuggerDapEventSha256),

@@ -1,5 +1,3 @@
-import { createRequire } from "node:module";
-
 import {
   assertCommandRuntimeStable,
   prepareCommandExecution,
@@ -7,6 +5,11 @@ import {
 } from "./command-execution.js";
 import { resolveCommandRuntimeBinding } from "./command-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  assertNodeDebuggerRuntimeStable,
+  nodeDebuggerRuntimeLimitEvidence,
+  resolveNodeDebuggerRuntime,
+} from "./node-debugger-runtime.js";
 import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
@@ -22,7 +25,6 @@ import {
 } from "./standard-skill-snapshot.js";
 import { bindWorkspaceProcessIo } from "./workspace-process-terminal.js";
 
-const require = createRequire(import.meta.url);
 const MAX_PROBED_SKILLS = 64;
 const PROCESS_PROBE_MARKER = "napier_process_probe_v1";
 const SHELL_PROBE_MARKER = "napier_shell_probe_v1";
@@ -187,27 +189,61 @@ export async function probeSkillsRuntime(
   }
 }
 
-/**
- * Debug adapter readiness. The Node debugger drives a PTY-hosted inspector, so
- * DAP is ready only when the node-pty helper resolves against the current Node
- * runtime.
- */
-export async function probeDapRuntime(): Promise<RuntimeCapabilityProbe> {
+/** Executes the exact Worker-to-main-thread Inspector primitive used by DAP. */
+export async function probeDapRuntime(
+  workspaceRoot = process.cwd(),
+  signal?: AbortSignal,
+  sandbox: OsSandboxAdapter = createPlatformSandboxAdapter(),
+): Promise<RuntimeCapabilityProbe> {
   try {
-    require.resolve("node-pty");
-    return {
-      status: "available_unverified",
-      code: "dap_ready",
-      message:
-        "Node debug adapter dependencies (node-pty, inspector) are available",
-      evidence: { inspector: typeof process.pid === "number" },
+    const resolution = {
+      sandbox,
+      workspaceRoot,
+      ...(signal ? { signal } : {}),
     };
-  } catch {
+    const runtime = await resolveNodeDebuggerRuntime(resolution);
+    await assertNodeDebuggerRuntimeStable(
+      runtime,
+      resolution,
+      "Node debugger Doctor probe",
+    );
+    const limits = nodeDebuggerRuntimeLimitEvidence();
+    return {
+      status: "ready",
+      code: "dap_ready",
+      message: `The active ${sandbox.id} provider completed the bounded production Node Inspector Worker probe used by the debug adapter`,
+      evidence: {
+        adapter: sandbox.id,
+        productionCall: true,
+        runtimeLocation: runtime.location,
+        nodeVersion: runtime.nodeVersion,
+        nodeExecutableSha256: runtime.nodeExecutableSha256,
+        runtimeIdentitySha256: runtime.runtimeIdentitySha256,
+        ...limits,
+        resourceLimitsSha256: sha256(
+          canonicalJson({
+            ...limits,
+            environment: "fixed",
+            networkAccess: "denied",
+            workspaceAccess: "read_only",
+            processGroupTermination: true,
+          }),
+        ),
+      },
+    };
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    const message = error instanceof Error ? error.message : String(error);
+    const missing =
+      /image-bound Node debugger runtime is unavailable|Node debugger runtime primitives are unavailable/iu.test(
+        message,
+      );
     return {
       status: "unavailable",
-      code: "dap_missing",
-      message:
-        "node-pty is not installed; the Node debug adapter cannot attach until dependencies are repaired",
+      code: missing ? "dap_missing" : "dap_provider_unavailable",
+      message: missing
+        ? "The active provider has no identity-bound Node runtime with the required Inspector Worker and SourceMap primitives; debugger tasks fail closed"
+        : "The active provider could not complete the production Node debugger runtime probe; debugger tasks fail closed",
     };
   }
 }

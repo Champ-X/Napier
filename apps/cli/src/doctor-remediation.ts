@@ -112,7 +112,13 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   dap_missing: {
     id: "repair_debug_adapter",
     instruction:
-      "Reinstall dependencies so node-pty rebuilds for this Node version; the Node debug adapter cannot attach without it.",
+      "Install Node 22 or newer with Worker, Inspector, SourceMap, and zlib support in the active host sandbox or trusted OCI image; debugger tasks fail closed without an identity-bound runtime.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  dap_provider_unavailable: {
+    id: "repair_debug_adapter_provider",
+    instruction:
+      "Configure an active process Sandbox that can launch its identity-bound Node Inspector Worker probe, then rerun Doctor.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
   python_missing: {

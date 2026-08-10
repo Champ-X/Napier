@@ -20,6 +20,7 @@ import type {
   PreparedCommandExecution,
 } from "./command-execution.js";
 import { nowIso } from "./ids.js";
+import type { NodeDebuggerRuntimeIdentity } from "./node-debugger-runtime.js";
 import type { SandboxedProcess } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
 import {
@@ -64,7 +65,12 @@ import type {
   WorkspaceSnapshotDelta,
 } from "./workspace-snapshot.js";
 import { settleWorkspaceProcessExecution } from "./workspace-process-settlement.js";
+import {
+  resolveWorkspaceProcessNodeDebuggerRuntime,
+  type WorkspaceProcessNodeDebuggerRuntimeOptions,
+} from "./workspace-process-node-debugger-runtime.js";
 import { workspaceProcessResizeReceiptPayload } from "./workspace-process-resize-events.js";
+import { projectInactiveWorkspaceProcessSession } from "./workspace-process-session-projection.js";
 import {
   type PreviewWorkspaceProcessWriteRequest,
   type PreparedWorkspaceProcessWrite,
@@ -85,7 +91,6 @@ export {
   MAX_WORKSPACE_PROCESS_INPUT_WRITES,
   MAX_WORKSPACE_PROCESS_TOTAL_INPUT_BYTES,
 } from "./workspace-process-input.js";
-
 type ForcedWorkspaceProcessStatus =
   | "timed_out"
   | "output_capped"
@@ -226,6 +231,13 @@ export class WorkspaceProcessManager {
     request: PrivateProtocolWorkspaceProcessLaunchRequest,
   ): Promise<WorkspaceProcessSession> {
     return this.startProcess(request, true);
+  }
+
+  async resolveNodeDebuggerRuntime(
+    options: WorkspaceProcessNodeDebuggerRuntimeOptions = {},
+  ): Promise<NodeDebuggerRuntimeIdentity> {
+    this.assertReady();
+    return resolveWorkspaceProcessNodeDebuggerRuntime(this.options, options);
   }
 
   async previewWrite(
@@ -374,21 +386,7 @@ export class WorkspaceProcessManager {
     return sessions.map((session) => {
       const entry = this.entries.get(session.id);
       if (entry) return this.runtimeSession(entry);
-      return session.schemaVersion >= 6
-        ? workspaceProcessSessionWithRuntimeState(session, {
-            nextCursor: session.nextCursor,
-            outputAvailable: false,
-            workspaceDeltaAvailable: false,
-            workspaceRollbackAvailable:
-              this.recovery?.available(session) === true,
-            ...(this.recovery?.compensationStatus(session)
-              ? {
-                  workspaceCompensationStatus:
-                    this.recovery.compensationStatus(session),
-                }
-              : {}),
-          })
-        : session;
+      return projectInactiveWorkspaceProcessSession(session, this.recovery);
     });
   }
 

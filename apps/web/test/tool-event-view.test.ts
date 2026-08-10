@@ -418,7 +418,7 @@ describe("Tool event trace view", () => {
   it("validates source-mapped Node debugger evidence and conditional hashes", () => {
     const details = {
       kind: "napier.node-debugger",
-      schemaVersion: 2,
+      schemaVersion: 3,
       action: "launch",
       processId: "process_12345678901234567890",
       state: "paused",
@@ -446,6 +446,7 @@ describe("Tool event trace view", () => {
       nodeVersion: "24.16.0",
       workerSha256: "8".repeat(64),
       runtimeExecutableSha256: "9".repeat(64),
+      runtimeIdentitySha256: "f".repeat(64),
       runtimeCommandSha256: "a".repeat(64),
       dapRequestSequenceSha256: "b".repeat(64),
       dapResponseSequenceSha256: "c".repeat(64),
@@ -458,7 +459,6 @@ describe("Tool event trace view", () => {
       effect: "write",
       details,
     });
-
     expect(toolEventTraceView(event)).toEqual(
       expect.objectContaining({
         nodeDebuggerSourceMapMode: "external",

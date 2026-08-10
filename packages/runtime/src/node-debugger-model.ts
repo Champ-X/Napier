@@ -94,6 +94,7 @@ export interface NodeDebuggerActionResult {
   nodeVersion: string;
   workerSha256: string;
   runtimeExecutableSha256: string;
+  runtimeIdentitySha256: string;
   runtimeCommandSha256: string;
   dapRequestSequenceSha256: string;
   dapResponseSequenceSha256: string;
@@ -141,6 +142,7 @@ export function validateLaunchResponse(
   source: WorkspaceSourceFile,
   program: WorkspaceSourceFile,
   sourceMap?: WorkspaceSourceFile,
+  expectedNodeVersion?: string,
 ): string {
   if (
     !record(body) ||
@@ -155,7 +157,9 @@ export function validateLaunchResponse(
       : body["sourceMapSha256"] !== undefined ||
         body["sourceMapPath"] !== undefined) ||
     typeof body["nodeVersion"] !== "string" ||
-    !/^\d+\.\d+\.\d+$/u.test(body["nodeVersion"])
+    !/^\d+\.\d+\.\d+$/u.test(body["nodeVersion"]) ||
+    (expectedNodeVersion !== undefined &&
+      body["nodeVersion"] !== expectedNodeVersion)
   ) {
     throw new Error("DAP launch response is invalid");
   }

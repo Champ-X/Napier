@@ -15,6 +15,7 @@ import {
   validateOciContainerName,
 } from "./sandbox-container-runtime.js";
 import { resolveContainerLspRuntime } from "./sandbox-container-lsp-runtime.js";
+import { resolveContainerNodeDebuggerRuntime } from "./sandbox-container-node-debugger-runtime.js";
 import {
   containerScratchBaseDir,
   containerClientEnvironment,
@@ -37,6 +38,7 @@ import type {
   SandboxCommandRuntime,
   SandboxCommandRuntimeBinding,
   SandboxLspRuntimeBinding,
+  SandboxNodeDebuggerRuntimeBinding,
   SandboxLaunchRequest,
 } from "./sandbox-types.js";
 import { launchTerminalSandboxWrapper } from "./sandbox-terminal.js";
@@ -54,6 +56,9 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     Promise<SandboxCommandRuntimeBinding>
   >();
   private lspRuntimeBinding: Promise<SandboxLspRuntimeBinding> | undefined;
+  private nodeDebuggerRuntimeBinding:
+    | Promise<SandboxNodeDebuggerRuntimeBinding>
+    | undefined;
 
   constructor(
     private readonly image: string,
@@ -100,6 +105,18 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       return await this.lspRuntimeBinding;
     } catch (error) {
       this.lspRuntimeBinding = undefined;
+      throw error;
+    }
+  }
+
+  async resolveNodeDebuggerRuntime(): Promise<SandboxNodeDebuggerRuntimeBinding> {
+    const executable = await resolveContainerLaunchExecutable(this.executable);
+    await this.resolveImage(executable);
+    this.nodeDebuggerRuntimeBinding ??= this.resolveNodeDebugger();
+    try {
+      return await this.nodeDebuggerRuntimeBinding;
+    } catch (error) {
+      this.nodeDebuggerRuntimeBinding = undefined;
       throw error;
     }
   }
@@ -197,6 +214,16 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     );
   }
 
+  private async resolveNodeDebugger(): Promise<SandboxNodeDebuggerRuntimeBinding> {
+    const executable = await resolveContainerLaunchExecutable(this.executable);
+    return resolveContainerNodeDebuggerRuntime(
+      await this.resolveImage(executable),
+      this.containerClient,
+      this.userIds,
+      this.daemonEndpoint,
+    );
+  }
+
   private async resolveImage(
     executable: string,
   ): Promise<ContainerImageIdentity> {
@@ -220,6 +247,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       this.imageIdentity = undefined;
       this.runtimeBindings.clear();
       this.lspRuntimeBinding = undefined;
+      this.nodeDebuggerRuntimeBinding = undefined;
       throw error;
     }
   }

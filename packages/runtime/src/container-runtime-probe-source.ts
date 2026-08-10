@@ -1,3 +1,8 @@
+import {
+  NODE_DEBUGGER_RUNTIME_PROBE_ARGUMENTS,
+  NODE_DEBUGGER_RUNTIME_PROBE_MARKER,
+} from "./node-debugger-runtime-probe-source.js";
+
 const PYTHON_RUNTIME_PROBE_SOURCE = [
   "import ast,base64,builtins,json,os,resource,signal,sys,threading,time,tracemalloc,types,zlib",
   'print(json.dumps({"executable":os.path.realpath(sys.executable),"version":".".join(str(value) for value in sys.version_info[:3])}))',
@@ -100,6 +105,22 @@ for (const moduleRoot of moduleRoots) {
     break;
   } catch {}
 }
+let debugger_ = null;
+try {
+  const result = childProcess.spawnSync(process.execPath, ${JSON.stringify([...NODE_DEBUGGER_RUNTIME_PROBE_ARGUMENTS])}, {
+    encoding: "utf8",
+    env: { CI: "1", LANG: "C", LC_ALL: "C", NO_COLOR: "1" },
+    timeout: 2500,
+    maxBuffer: 2048,
+    windowsHide: true,
+  });
+  if (result.status === 0 && result.stderr === "") {
+    const observed = JSON.parse(result.stdout);
+    if (observed.marker === ${JSON.stringify(NODE_DEBUGGER_RUNTIME_PROBE_MARKER)} && typeof observed.nodeVersion === "string") {
+      debugger_ = { nodeVersion: observed.nodeVersion };
+    }
+  }
+} catch {}
 let python = null;
 for (const candidate of ["/usr/local/bin/python3", "/usr/bin/python3", "/opt/conda/bin/python3", "python3"]) {
   try {
@@ -125,5 +146,5 @@ for (const candidate of ["/usr/local/bin/python3", "/usr/bin/python3", "/opt/con
     break;
   } catch {}
 }
-process.stdout.write(JSON.stringify({ node: identity(process.execPath), shell, git, lsp, python }));
+process.stdout.write(JSON.stringify({ node: identity(process.execPath), shell, git, lsp, debugger: debugger_, python }));
 `;

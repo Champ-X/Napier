@@ -91,7 +91,7 @@
     "packages/runtime/src/workflow-schemas.ts": 608,
     "packages/runtime/src/workspace-file-mutations.ts": 748,
     "packages/runtime/src/workspace-process-events.ts": 603,
-    "packages/runtime/src/workspace-processes.ts": 942,
+    "packages/runtime/src/workspace-processes.ts": 940,
     "packages/runtime/test/agent-runtime.test.ts": 4948,
     "packages/runtime/test/model-advisor.test.ts": 1089,
     "packages/runtime/test/opentelemetry.test.ts": 1337,

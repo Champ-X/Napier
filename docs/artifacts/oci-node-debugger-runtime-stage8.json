@@ -1,0 +1,131 @@
+{
+  "kind": "napier.oci-node-debugger-runtime-stage8",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-10T03:44:00Z",
+  "controlledProductionPath": {
+    "externalDaemonUsed": false,
+    "immutableImageIdUsed": true,
+    "numericExecutionUserUsedForProbe": true,
+    "imageNodeExecutableHashAndVersionBound": true,
+    "inspectorWorkerSourceMapAndZlibPrimitivesProbed": true,
+    "runtimeIdentityRecordedInDebuggerReceipt": true,
+    "debuggerReceiptSchemaVersion": 3,
+    "controlledClientExecutedRealDapProtocol": true,
+    "breakpointPaused": true,
+    "localEvaluationStatus": "ok",
+    "localEvaluationType": "number",
+    "targetExitCode": 0,
+    "workspaceRootReadOnly": true,
+    "networkDenied": true,
+    "hostRuntimeMountsAdded": false,
+    "missingImageDebuggerRejected": true,
+    "malformedImageDebuggerIdentityRejected": true,
+    "hostExecutableOverrideRejected": true,
+    "dapDoctorProductionProbe": "ready"
+  },
+  "actualHost": {
+    "containerCliPresent": true,
+    "containerServerReachable": false,
+    "configuredImage": true,
+    "doctorStatus": "degraded",
+    "dapProductionProbeReached": false,
+    "dapProductionProbeReason": "sandbox_provider_unavailable",
+    "dapDoctorCode": "dap_provider_unavailable",
+    "lspDoctorCode": "lsp_provider_unavailable",
+    "pythonDoctorCode": "python_provider_unavailable",
+    "shellDoctorCode": "shell_provider_unavailable",
+    "sandboxDoctorCode": "sandbox_unavailable",
+    "reportedIsolationLevel": "container",
+    "codingSendBoundary": "blocked"
+  },
+  "realModelDogfood": {
+    "model": "deepseek/deepseek-v4-flash",
+    "builtCliUsed": true,
+    "isolatedTemporaryWorkspaceUsed": true,
+    "explicitHostDirectSandboxUsed": true,
+    "ociDaemonClaimed": false,
+    "debuggerActions": ["launch", "stack_trace", "evaluate", "continue"],
+    "debuggerReceiptSchemaVersion": 3,
+    "runtimeIdentityStableAcrossActions": true,
+    "breakpointPaused": true,
+    "evaluationStatus": "ok",
+    "evaluationType": "number",
+    "targetExitCode": 0,
+    "runStatus": "completed",
+    "finalToken": "AGENT_OCI_DEBUGGER_OK",
+    "temporaryWorkspaceRetained": false
+  },
+  "verification": {
+    "focusedTestFiles": 10,
+    "focusedTests": 77,
+    "productionDoctorInvocations": 4,
+    "realModelRuns": 1,
+    "sourceFiles": 1199,
+    "testFiles": 628,
+    "architectureCycles": 0
+  },
+  "retryLedger": [
+    {
+      "category": "runtime_probe_deadline",
+      "productFailure": true,
+      "cause": "the first capability probe waited for an Inspector Runtime.enable callback that can remain pending under the test runner",
+      "resolution": "the final probe actively connects and disconnects the same Worker-to-main-thread Inspector primitive without depending on an unrelated protocol callback",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "architecture_boundary",
+      "productFailure": true,
+      "cause": "the initial implementation expanded NodeDebuggerManager, WorkspaceProcessManager, and Web evidence parsing beyond their fixed budgets",
+      "resolution": "runtime launch, workspace binding, inactive projection, and schema-3 parsing moved to bounded leaf modules; the WorkspaceProcess budget decreased from 942 to 940 lines",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "extraction_import",
+      "productFailure": false,
+      "cause": "the projection extraction initially removed a helper import still used by active Session projection",
+      "resolution": "restored the active projection import while retaining the smaller core file and reran the complete typecheck",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "sdk_execution_closure",
+      "productFailure": false,
+      "cause": "the immutable SDK capability evidence correctly detected six new Runtime source counterparts and the refreshed release and Web manifests",
+      "resolution": "recaptured the repository-provided Stage 8 repair snapshot after the final build and raised only the exact deterministic closure counts by six files",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "actual_daemon",
+      "productFailure": false,
+      "cause": "the installed Docker CLI cannot reach the configured local daemon",
+      "resolution": "Doctor now reports dap_provider_unavailable; controlled OCI execution and a separately labelled host-direct real-model Dogfood provide non-substitutable evidence while the daemon E2E remains open",
+      "finalStatus": "externally_blocked"
+    }
+  ],
+  "retention": {
+    "credentialValues": false,
+    "rawDockerOutput": false,
+    "rawDoctorReport": false,
+    "rawDaemonEndpoint": false,
+    "numericHostUserIds": false,
+    "nodeExecutablePath": false,
+    "workspacePaths": false,
+    "sourceContent": false,
+    "expressionText": false,
+    "evaluatedValue": false,
+    "rawDapFrames": false,
+    "modelReasoning": false,
+    "threadOrRunIds": false,
+    "absoluteTemporaryPaths": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "bounded port and local-service projection",
+      "real isolated Docker daemon E2E",
+      "non-POSIX host user mapping",
+      "cross-platform isolated provider casebook"
+    ]
+  },
+  "contentSha256": "b3459455e9bd0bf0a1e32970405347495cdb4971ef6362627b7f5f629fddf3a8"
+}

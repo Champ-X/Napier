@@ -3,6 +3,7 @@ import type { WorkspaceProcessManager } from "./workspace-processes.js";
 
 export type NodeDebuggerProcessManager = Pick<
   WorkspaceProcessManager,
+  | "resolveNodeDebuggerRuntime"
   | "startPrivateProtocol"
   | "writePrivateProtocolInput"
   | "outputPrivateProtocol"
@@ -16,6 +17,13 @@ export function createPrivateWorkspaceNodeDebuggerProcesses(options: {
 }): NodeDebuggerProcessManager {
   const runtimeReadPaths = [...(options.runtimeReadPaths ?? [])];
   return {
+    resolveNodeDebuggerRuntime(request = {}) {
+      return options.processes.resolveNodeDebuggerRuntime({
+        ...request,
+        workspaceRoot: options.workspaceRoot,
+        ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
+      });
+    },
     startPrivateProtocol(request) {
       const scoped: PrivateWorkspaceProcessLaunchRequest = {
         ...request,

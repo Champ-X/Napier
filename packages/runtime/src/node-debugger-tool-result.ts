@@ -6,7 +6,7 @@ export const MAX_NODE_DEBUGGER_TOOL_OUTPUT_BYTES = 32 * 1024;
 
 export interface NodeDebuggerToolDetails {
   kind: "napier.node-debugger";
-  schemaVersion: 2;
+  schemaVersion: 3;
   action: NodeDebuggerActionResult["action"];
   processId: string;
   state: NodeDebuggerActionResult["state"];
@@ -37,6 +37,7 @@ export interface NodeDebuggerToolDetails {
   nodeVersion: string;
   workerSha256: string;
   runtimeExecutableSha256: string;
+  runtimeIdentitySha256: string;
   runtimeCommandSha256: string;
   dapRequestSequenceSha256: string;
   dapResponseSequenceSha256: string;
@@ -52,7 +53,7 @@ export function formatNodeDebuggerToolResult(
 } {
   const details: NodeDebuggerToolDetails = {
     kind: "napier.node-debugger",
-    schemaVersion: 2,
+    schemaVersion: 3,
     action: result.action,
     processId: result.processId,
     state: result.state,
@@ -93,6 +94,7 @@ export function formatNodeDebuggerToolResult(
     nodeVersion: result.nodeVersion,
     workerSha256: result.workerSha256,
     runtimeExecutableSha256: result.runtimeExecutableSha256,
+    runtimeIdentitySha256: result.runtimeIdentitySha256,
     runtimeCommandSha256: result.runtimeCommandSha256,
     dapRequestSequenceSha256: result.dapRequestSequenceSha256,
     dapResponseSequenceSha256: result.dapResponseSequenceSha256,

@@ -14,7 +14,6 @@ import {
   MAX_NODE_DEBUG_OUTPUT_ENTRIES,
   MAX_NODE_DEBUG_SOURCE_BYTES,
   NODE_DEBUGGER_PROTOCOL_FAILURE_MARKER,
-  NODE_DEBUGGER_WORKER_ARGUMENTS,
   NODE_DEBUGGER_WORKER_FAILURE_MARKER,
   NODE_DEBUGGER_WORKER_SHA256,
 } from "./node-debugger-worker.js";
@@ -46,6 +45,7 @@ import {
   loadNodeDebuggerSourceBinding,
 } from "./node-debugger-source-binding.js";
 import type { NodeDebuggerProcessManager } from "./node-debugger-process.js";
+import { startBoundNodeDebuggerProcess } from "./node-debugger-runtime-launch.js";
 import { MAX_WORKSPACE_PROCESS_POLL_WAIT_MS } from "./workspace-processes.js";
 import type { WorkspaceSourceFile } from "./workspace-source.js";
 
@@ -81,6 +81,7 @@ interface RegisteredNodeDebugger {
   exitCode?: number;
   nodeVersion: string;
   runtimeExecutableSha256: string;
+  runtimeIdentitySha256: string;
   runtimeCommandSha256: string;
   cursor: number;
   requestSequence: number;
@@ -142,16 +143,11 @@ export class NodeDebuggerManager {
       maxBytes: MAX_NODE_DEBUG_SOURCE_BYTES,
     });
     validateBreakpointLines(request.breakpoints, source.source);
-    const session = await this.processes.startPrivateProtocol({
+    const { session, runtime } = await startBoundNodeDebuggerProcess({
+      processes: this.processes,
       threadId: request.threadId,
       runId: request.runId,
-      command: {
-        runtime: "node",
-        args: [...NODE_DEBUGGER_WORKER_ARGUMENTS],
-        cwd: ".",
-        timeoutMs: sessionTimeoutMs,
-      },
-      interactive: true,
+      sessionTimeoutMs,
       ...(request.signal ? { signal: request.signal } : {}),
     });
     const registration: RegisteredNodeDebugger = {
@@ -163,8 +159,9 @@ export class NodeDebuggerManager {
       breakpointCount: request.breakpoints.length,
       processId: session.id,
       state: "starting",
-      nodeVersion: process.versions.node,
+      nodeVersion: runtime.nodeVersion,
       runtimeExecutableSha256: session.executableSha256,
+      runtimeIdentitySha256: runtime.runtimeIdentitySha256,
       runtimeCommandSha256: session.commandSha256,
       cursor: session.nextCursor,
       requestSequence: 1,
@@ -228,6 +225,7 @@ export class NodeDebuggerManager {
         source,
         program,
         sourceMap,
+        runtime.nodeVersion,
       );
       await this.sendRequest(
         registration,
@@ -864,6 +862,7 @@ export class NodeDebuggerManager {
       nodeVersion: registration.nodeVersion,
       workerSha256: NODE_DEBUGGER_WORKER_SHA256,
       runtimeExecutableSha256: registration.runtimeExecutableSha256,
+      runtimeIdentitySha256: registration.runtimeIdentitySha256,
       runtimeCommandSha256: registration.runtimeCommandSha256,
       dapRequestSequenceSha256: sha256(canonicalJson(evidence.requestHashes)),
       dapResponseSequenceSha256: sha256(canonicalJson(evidence.responseHashes)),
@@ -909,6 +908,7 @@ export class NodeDebuggerManager {
       nodeVersion: registration.nodeVersion,
       workerSha256: NODE_DEBUGGER_WORKER_SHA256,
       runtimeExecutableSha256: registration.runtimeExecutableSha256,
+      runtimeIdentitySha256: registration.runtimeIdentitySha256,
       runtimeCommandSha256: registration.runtimeCommandSha256,
       dapRequestSequenceSha256: base.dapRequestSequenceSha256,
       dapResponseSequenceSha256: base.dapResponseSequenceSha256,

@@ -749,6 +749,7 @@ function identityClient(
         version: "git version 2.51.0",
       },
       lsp: null,
+      debugger: null,
       python: options.pythonUnavailable
         ? null
         : {

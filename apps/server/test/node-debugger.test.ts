@@ -180,7 +180,7 @@ describe("Node debugger HTTP Agent path", () => {
     expect(completed[0]?.payload["details"]).toEqual(
       expect.objectContaining({
         kind: "napier.node-debugger",
-        schemaVersion: 2,
+        schemaVersion: 3,
         action: "launch",
         state: "paused",
         reason: "breakpoint",

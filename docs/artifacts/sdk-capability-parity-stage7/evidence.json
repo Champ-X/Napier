@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "4eabd844e4fcfbb9814a4a9f08cfcfc4dd7c8a24747f78485d124ead23232828",
+      "stdoutSha256": "7d3c559f5a7ab02532146f921da26f82b192bd311aea30660d7c83bb2aa7b566",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "7a1f43e8c2474ee779206b2f28c7790bb52706c879a4c9957dfa38a7a3450c0b",
-      "receiptSha256": "35f425caf5b7e4e62355c91e1a62d44378529ed27c1ca293ff87c92acff3366d"
+      "evidenceSha256": "1dd0f0a298d968627bdecd31be29c29be64c160b47ef584a38c2f952ae5b8c3e",
+      "receiptSha256": "51c1f271a46f19d471ec50b6b9b75ed00960456af9c4acdbdfc2d1e758b83027"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "d63b238ce89d2e75c5d0ca4d8bf3dfe77050f228299b8bb600a402aabcde8716",
+      "stdoutSha256": "1baf8455eaaa6753ff56443978f698c5a4c4650ccbbed900620769f3dc730dbb",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "c255a6e2771da325f14b584bdadef08f24064f548db54e7b258f13e2db42ab28",
-      "receiptSha256": "2e541492c3db225fd00a5517ce6f100ae2115e1352b52667e1db5446d86c6efd"
+      "evidenceSha256": "514f0327a105e452524fc599465d889162ff56696b188e8657687f0644be666b",
+      "receiptSha256": "aa779d2ae86f84ee755f89ad489915d309da22036ee5f72d33205f2fbfc86541"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -508,6 +508,7 @@
         "apps/server/src/bundled-skills.ts",
         "apps/server/test/bootstrap-http.test.ts",
         "apps/server/test/bundled-skills.test.ts",
+        "apps/server/test/node-debugger.test.ts",
         "apps/web/src/AgentCapabilityStatusBadge.tsx",
         "apps/web/src/App.tsx",
         "apps/web/src/BrowserInspectorPanel.tsx",
@@ -564,6 +565,7 @@
         "apps/web/src/model-adapter-view.ts",
         "apps/web/src/model-context-envelope-copy.ts",
         "apps/web/src/model-context-envelope-view.ts",
+        "apps/web/src/node-debugger-event-view.ts",
         "apps/web/src/package-governance-event-view.ts",
         "apps/web/src/research-source-event-view.ts",
         "apps/web/src/skill-lifecycle-event-view.ts",
@@ -618,6 +620,7 @@
         "apps/web/test/task-completion-summary.test.ts",
         "apps/web/test/task-narrative-view-model.test.ts",
         "apps/web/test/thread-location.test.ts",
+        "apps/web/test/tool-event-view.test.ts",
         "apps/web/test/workbench-layout.test.ts",
         "apps/web/test/workspace-process-event-view.test.ts",
         "apps/web/test/workspace-process-view-model.test.ts",
@@ -638,6 +641,7 @@
         "docs/artifacts/management-openapi-compatibility-0.1.0.json",
         "docs/artifacts/oci-git-runtime-stage6.json",
         "docs/artifacts/oci-lsp-runtime-stage7.json",
+        "docs/artifacts/oci-node-debugger-runtime-stage8.json",
         "docs/artifacts/oci-pty-cleanup-stage3.json",
         "docs/artifacts/oci-python-runtime-stage5.json",
         "docs/artifacts/oci-runtime-identity-stage2.json",
@@ -742,7 +746,14 @@
         "packages/runtime/src/model-invocation-experiments.ts",
         "packages/runtime/src/model-prompt-evidence-bindings.ts",
         "packages/runtime/src/models.ts",
+        "packages/runtime/src/node-debugger-model.ts",
+        "packages/runtime/src/node-debugger-process.ts",
+        "packages/runtime/src/node-debugger-runtime-launch.ts",
+        "packages/runtime/src/node-debugger-runtime-probe-source.ts",
+        "packages/runtime/src/node-debugger-runtime.ts",
+        "packages/runtime/src/node-debugger-tool-result.ts",
         "packages/runtime/src/node-debugger-tool.ts",
+        "packages/runtime/src/node-debugger.ts",
         "packages/runtime/src/opentelemetry-payload-projection.ts",
         "packages/runtime/src/opentelemetry.ts",
         "packages/runtime/src/operator-decision-tool.ts",
@@ -762,6 +773,7 @@
         "packages/runtime/src/research-source-continuity.ts",
         "packages/runtime/src/research-source-tool.ts",
         "packages/runtime/src/sandbox-container-lsp-runtime.ts",
+        "packages/runtime/src/sandbox-container-node-debugger-runtime.ts",
         "packages/runtime/src/sandbox-container-runtime.ts",
         "packages/runtime/src/sandbox-container.ts",
         "packages/runtime/src/sandbox-host-direct.ts",
@@ -812,9 +824,12 @@
         "packages/runtime/src/workspace-file-tools.ts",
         "packages/runtime/src/workspace-patch-tool.ts",
         "packages/runtime/src/workspace-process-events.ts",
+        "packages/runtime/src/workspace-process-node-debugger-runtime.ts",
+        "packages/runtime/src/workspace-process-session-projection.ts",
         "packages/runtime/src/workspace-process-tool-result.ts",
         "packages/runtime/src/workspace-process-tool.ts",
         "packages/runtime/src/workspace-process-write-tool-schema.ts",
+        "packages/runtime/src/workspace-processes.ts",
         "packages/runtime/src/workspace-tool-guidance.ts",
         "packages/runtime/test/agent-capability-contract-v2.test.ts",
         "packages/runtime/test/agent-capability-contract.test.ts",
@@ -823,6 +838,7 @@
         "packages/runtime/test/agent-capability-store-state.test.ts",
         "packages/runtime/test/agent-coder-subagent.test.ts",
         "packages/runtime/test/agent-message-experiments.test.ts",
+        "packages/runtime/test/agent-node-debugger.test.ts",
         "packages/runtime/test/agent-runtime.test.ts",
         "packages/runtime/test/agent-skill-load-vertical.test.ts",
         "packages/runtime/test/agent-skill-load.test.ts",
@@ -846,6 +862,7 @@
         "packages/runtime/test/oci-command-runtime.test.ts",
         "packages/runtime/test/oci-git-runtime.test.ts",
         "packages/runtime/test/oci-lsp-runtime.test.ts",
+        "packages/runtime/test/oci-node-debugger-runtime.test.ts",
         "packages/runtime/test/oci-python-kernel.test.ts",
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts",
         "packages/runtime/test/plans.test.ts",
@@ -967,12 +984,12 @@
           "lines": 38
         },
         "apps/cli/src/doctor-probes.ts": {
-          "sha256": "db498c56fddc746e67d34c6d19d6610a1514209f5558b00e170dea50fb035dc6",
-          "lines": 434
+          "sha256": "4772081c58ca295a2080b0df1a343134f8fc2f048f49c420d4c81e83a76af4c5",
+          "lines": 436
         },
         "apps/cli/src/doctor-remediation.ts": {
-          "sha256": "26a0d6ff8a07e6b432a9a84f2d20e0dd7f0d17553b1b59a572cbc7c8ca66002d",
-          "lines": 237
+          "sha256": "f453ecc1d73dd6c4372bba096b70988a7dd9f864430e5bbff3dbd28e5d9d93f5",
+          "lines": 243
         },
         "apps/cli/src/doctor-sandbox-probe.ts": {
           "sha256": "879b6ad69c2d3f06fa648ce0dbb74280e3b91fbe7930b245ef0c9f1d26ce47ea",
@@ -1033,6 +1050,10 @@
         "apps/server/test/bundled-skills.test.ts": {
           "sha256": "a1472108c205a8f94f99a01493f87b7e2e3661b028d6589c83e16802deb1c6cb",
           "lines": 15
+        },
+        "apps/server/test/node-debugger.test.ts": {
+          "sha256": "d5e0dc436ce16dee8ea5ea82566302331d6ccb01b8290daeddc4a8d0c413845d",
+          "lines": 294
         },
         "apps/web/src/App.tsx": {
           "sha256": "99e7f621f0d4fe831d2100caacecf9f8f4914e943020eb5c80ebfc88d0fbc6d8",
@@ -1254,6 +1275,10 @@
           "sha256": "adfd156ddb876b03e3d1cefcb7be3bbcd6c197b84dc2fe91f8cc61e84f460b6c",
           "lines": 292
         },
+        "apps/web/src/node-debugger-event-view.ts": {
+          "sha256": "451444de7699b643a28950415a8b436bcf91c2853f3bc83cb59b9324bea11d1b",
+          "lines": 353
+        },
         "apps/web/src/package-governance-event-view.ts": {
           "sha256": "ef00b5d4d8e22488e3627eaaaca26edea3f8ce494533131cf7d2621e7dbbf63a",
           "lines": 260
@@ -1470,6 +1495,10 @@
           "sha256": "eb96c47c0ff08b20302534a34a391c9ece49a09412d8c80fc2c2efe4f25e6adc",
           "lines": 53
         },
+        "apps/web/test/tool-event-view.test.ts": {
+          "sha256": "c470342052f378ff826f8e0e2d14ec59ed7ab81803196776d22c6ea9e4c5d1fc",
+          "lines": 1690
+        },
         "apps/web/test/workbench-layout.test.ts": {
           "sha256": "02ff5b0a6e45c57c4fc6a8af26fde2cba7b79bb75e0779bbf46c32481369ef27",
           "lines": 37
@@ -1483,7 +1512,7 @@
           "lines": 298
         },
         "docs/architecture-budget.json": {
-          "sha256": "3101019106f317733d39ed03f88f5ee11c1801d35f3e13df2f053558a29f52d3",
+          "sha256": "0fe269a6927fe14d27c818bd1f27bc90534ba40dc320d55c8da7fbd13164be7f",
           "lines": 259
         },
         "docs/architecture.md": {
@@ -1550,6 +1579,10 @@
           "sha256": "3b7a7090bfbbc074a9d567eec65f68b101a4fa7833062c63fa4fa7480f502cc3",
           "lines": 117
         },
+        "docs/artifacts/oci-node-debugger-runtime-stage8.json": {
+          "sha256": "747bfb6ed0bf8a8dbfd218306d461988b46cf7eca42a1af5b2a5f9b2a869ee8c",
+          "lines": 131
+        },
         "docs/artifacts/oci-pty-cleanup-stage3.json": {
           "sha256": "e3a06347269b610474b15e16526dbb69518f08e0a48af7e1f69db449da6cb911",
           "lines": 73
@@ -1575,7 +1608,7 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "aa56b8e9d6df85fc32ee8511086cde7ad62650c52eb800a206bcafa4b83ebb49",
+          "sha256": "43a87f3b3170ebe206d65c86ca7988bc26161de17709b8a21e6c0f07ff29b83b",
           "lines": 871
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -1587,11 +1620,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "7a1f43e8c2474ee779206b2f28c7790bb52706c879a4c9957dfa38a7a3450c0b",
+          "sha256": "1dd0f0a298d968627bdecd31be29c29be64c160b47ef584a38c2f952ae5b8c3e",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "c255a6e2771da325f14b584bdadef08f24064f548db54e7b258f13e2db42ab28",
+          "sha256": "514f0327a105e452524fc599465d889162ff56696b188e8657687f0644be666b",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -1619,11 +1652,11 @@
           "lines": 104
         },
         "docs/artifacts/web-dist-0.1.0.sha256": {
-          "sha256": "9a288508f4c87b350068014ee0af0aec25a2aa693c473eababa21f6619492397",
+          "sha256": "7d8c34d27d19e5ce2bde4bf51fb03e396e3ae51ed018147114770e6fd4393eef",
           "lines": 131
         },
         "docs/artifacts/web-dist-audit-0.1.0.json": {
-          "sha256": "013a3cbccdb076f5c44dfee8e8bd07203e94712a7b5838ab21069db834f28642",
+          "sha256": "1133b38d28230b06c28a5a3d030407052f2700f179fbe0d40c9c95fe4a1071ef",
           "lines": 18
         },
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json": {
@@ -1791,12 +1824,12 @@
           "lines": 207
         },
         "packages/runtime/src/container-runtime-identity-parser.ts": {
-          "sha256": "150c831684a320f4f2dbb0c8a26cfafd74f6fd452c95dd8aca9ea70a9acf2b7a",
-          "lines": 159
+          "sha256": "ad3d2b2fc31e597a68f79e4f171297294108a94463da5b3968a55eb7f4dd7a0b",
+          "lines": 183
         },
         "packages/runtime/src/container-runtime-probe-source.ts": {
-          "sha256": "961e9bba13aa37b3eb3a7eb2906766234478d145a89273c490f3458c2f33d8d3",
-          "lines": 129
+          "sha256": "6856a3284e793ebbf274aed3210ba0fc06a8cbf911c62721ba25ed9ab38ec659",
+          "lines": 150
         },
         "packages/runtime/src/data-frame-tool.ts": {
           "sha256": "45f4162d27e5b120726664d28398bf3ad038561e8ba8b6999d1f8525fe07aa6c",
@@ -1815,8 +1848,8 @@
           "lines": 110
         },
         "packages/runtime/src/doctor-runtime-probes.ts": {
-          "sha256": "e7cd035185f776e1d53e0b2920736083e7d20e0b49f24a367873e25f5e527742",
-          "lines": 438
+          "sha256": "40b25e1c59ef793d79811eac2e7116097c1e50d977006697f8ccdb44fb41432c",
+          "lines": 474
         },
         "packages/runtime/src/git-commit-private.ts": {
           "sha256": "e7e7eb48b86c1e80e7abe39c8f8561a9525e285228dbc49243c8c52472d06e49",
@@ -1950,9 +1983,37 @@
           "sha256": "c1e666008c603ab96fdded4a0ce542dbb18ba8055fea6c35a9f1f0f110822957",
           "lines": 167
         },
+        "packages/runtime/src/node-debugger-model.ts": {
+          "sha256": "f8a4dd8621551b956f8a168212254ad5672b7cb8f5bcf62688b55602bbcc154e",
+          "lines": 407
+        },
+        "packages/runtime/src/node-debugger-process.ts": {
+          "sha256": "17fc567041de0f019130d96639535216f684a73722f55526eddfce2e7230c17a",
+          "lines": 48
+        },
+        "packages/runtime/src/node-debugger-runtime-launch.ts": {
+          "sha256": "7e0bfd3139f931e263a9f8d71030accab8f9a1c5c48ea02b28a5b721ba3acead",
+          "lines": 39
+        },
+        "packages/runtime/src/node-debugger-runtime-probe-source.ts": {
+          "sha256": "6dc98b479d0ecc0ed28e55f244dc25d72227cee4a3caaa1a903ad9b65d7ef415",
+          "lines": 57
+        },
+        "packages/runtime/src/node-debugger-runtime.ts": {
+          "sha256": "29bdd66a3e95a37d4052146759cc13ed39b3a30078dafc54deab3fded8b0e75c",
+          "lines": 205
+        },
+        "packages/runtime/src/node-debugger-tool-result.ts": {
+          "sha256": "20187357ab0598c62546c7c90caddf8194cc5988c32b63ae5c03e7342fb5a37b",
+          "lines": 194
+        },
         "packages/runtime/src/node-debugger-tool.ts": {
           "sha256": "190e9eb1f2e7ddd1f4a9bf0a367b10178adbafd5f26ffe1f50bfc76d68987503",
           "lines": 344
+        },
+        "packages/runtime/src/node-debugger.ts": {
+          "sha256": "2b05cf8fb6a1e86ec259ba01465ff39adc182b10da621fc836bb0869b4d86f59",
+          "lines": 987
         },
         "packages/runtime/src/opentelemetry-payload-projection.ts": {
           "sha256": "68287bcf6c69f4366b1137c3196d3eb9afebb169bc2d97f64da4fb4a1c23a391",
@@ -2030,6 +2091,10 @@
           "sha256": "64d8dd572542419196cc6faf40911285dc18f2960cceb1ba892dc2448d1806dd",
           "lines": 41
         },
+        "packages/runtime/src/sandbox-container-node-debugger-runtime.ts": {
+          "sha256": "d694058f9bae5448fe9111ce91038a36fde74e94548b80ecaa9656685fc43f0b",
+          "lines": 41
+        },
         "packages/runtime/src/sandbox-container-runtime.ts": {
           "sha256": "332176010cca3583fd18a00e1e31f0b7ffbbe90463cb1886b055fa10e148bcb0",
           "lines": 367
@@ -2047,16 +2112,16 @@
           "lines": 96
         },
         "packages/runtime/src/sandbox-oci.ts": {
-          "sha256": "659d44743840633a6cd3d5198469e318dcdd29bd3efb5a9103e58d8ed7d9cd24",
-          "lines": 332
+          "sha256": "e9210109637f965c00aae1d7ab6531793b33ead7a87baff5018bba184658818e",
+          "lines": 360
         },
         "packages/runtime/src/sandbox-process-lifecycle.ts": {
           "sha256": "4bdf7d378b433ffd5a29e03d1d032f21ccf6a652744a16da1f9d31fef53a3fee",
           "lines": 172
         },
         "packages/runtime/src/sandbox-types.ts": {
-          "sha256": "070296a988e735f19cd71ed58d442f87d96f157c3fcf8cb0f282f78016a6d1a1",
-          "lines": 68
+          "sha256": "58d208bf4a5498bf231eb236cab7f57c05d653bab40563033a5303a18310e519",
+          "lines": 77
         },
         "packages/runtime/src/sandbox.ts": {
           "sha256": "b35dc1d7c03ec2669036b805105860e4bd8bc8f6de0048f23958792baa49e385",
@@ -2230,6 +2295,14 @@
           "sha256": "677ff2f08e73ec5d45c789594020fd3fd867cbd01812dc015d9ed60e51d48d55",
           "lines": 603
         },
+        "packages/runtime/src/workspace-process-node-debugger-runtime.ts": {
+          "sha256": "6f8789d8a39cd69c1280b33b830563d56f236e3b327ea5c6d6c15042cd259b99",
+          "lines": 30
+        },
+        "packages/runtime/src/workspace-process-session-projection.ts": {
+          "sha256": "c8b61eb762c937e6b4414e38dab1afe33da813b700d7fd52a38eab424b5263e7",
+          "lines": 21
+        },
         "packages/runtime/src/workspace-process-tool-result.ts": {
           "sha256": "b138ad5e3cb714a80547adf4c6b1a17dc680c40254976afcaa116511836ba51c",
           "lines": 308
@@ -2241,6 +2314,10 @@
         "packages/runtime/src/workspace-process-write-tool-schema.ts": {
           "sha256": "37efb87a352753d6daaf6f3d705c20d2d79bde48b373aba42cfe8ece0e1d1b0d",
           "lines": 73
+        },
+        "packages/runtime/src/workspace-processes.ts": {
+          "sha256": "6067ea17d8168add4bacb24779155503cd98075d8885dbd3310ca19d9beecaf8",
+          "lines": 940
         },
         "packages/runtime/src/workspace-tool-guidance.ts": {
           "sha256": "eaf094d886b50d6e1b9558b0f26e6084729ec9dfadcbdfe7b13359c7efb4e419",
@@ -2273,6 +2350,10 @@
         "packages/runtime/test/agent-message-experiments.test.ts": {
           "sha256": "de267b7c4ede6b1458ff5856706fd66c5b66bd6cf1070bae71c2524cbf109ef2",
           "lines": 550
+        },
+        "packages/runtime/test/agent-node-debugger.test.ts": {
+          "sha256": "4541d414697124e4abb485bcfccb070bbc0b5a9051066b1717d5ea063b0e33d5",
+          "lines": 427
         },
         "packages/runtime/test/agent-runtime.test.ts": {
           "sha256": "c84720a256ae89641b800c320d44817eb4c9b84916034a0cd75e3adf4af6be71",
@@ -2355,20 +2436,24 @@
           "lines": 159
         },
         "packages/runtime/test/oci-command-runtime.test.ts": {
-          "sha256": "9676587565cdcb112c5f1069f00841bc1082ad42fc9d53912b3d8cb8c5b1b52f",
-          "lines": 852
+          "sha256": "560ac030369493133f446f0d4d03c724b6ab4fa2afcc67396c8a8adb5f450aa1",
+          "lines": 853
         },
         "packages/runtime/test/oci-git-runtime.test.ts": {
-          "sha256": "3abebda0050378745daea637fb4c98bd023a26149c738b315c0ddefd0891564e",
-          "lines": 209
+          "sha256": "4e3c4bae88c41ab2d50e9412d5464dba8179c2b75fbb7cf1802cb26612054873",
+          "lines": 210
         },
         "packages/runtime/test/oci-lsp-runtime.test.ts": {
-          "sha256": "e7ae38077a5e6600a87151ff6c72b921f7b5c41164d5326b1d901021f2a9d448",
-          "lines": 252
+          "sha256": "aa54f2c19b183242df2134d39186d22bb17196597b9a9432283c2b9b6ceef258",
+          "lines": 253
+        },
+        "packages/runtime/test/oci-node-debugger-runtime.test.ts": {
+          "sha256": "923445bc8ca841ac328e80abc4ec1ad4fada4c4e40c5fd0b3b7d709fe2b6d707",
+          "lines": 359
         },
         "packages/runtime/test/oci-python-kernel.test.ts": {
-          "sha256": "80cf277209e56342da5c9ec7119ca9012b61f70e3bbe6a990839880bf170545e",
-          "lines": 173
+          "sha256": "3176c72b4735004792662adc0e2f13edaf5d76a788bb9d6c6dca139f7ecf5ef4",
+          "lines": 174
         },
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts": {
           "sha256": "28b61ca4f3468defaa1443ffa13cd15d60f638f3d05bb9ee91ffaaa6bb754a2b",
@@ -2687,7 +2772,7 @@
           "lines": 459
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "9a6cad15140887a8d20ce0708b5c34bd0c20d5c60342598d97daf11b1f55920a",
+          "sha256": "a69e6705b9f071bc97339c8fe6db3395d419f3c86d498a9ea3b9000eb6a6480b",
           "lines": 287
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -2764,7 +2849,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "0b5ad7905387d016479a7c8e4ad706ca115a00a5f064a456e2e27f19f2168910"
+      "manifestSha256": "cab67422030e8cbadf9914d96266dbccdf1b8215a6aa1dc25e2bd984b47c4f02"
     },
     "executionClosure": {
       "algorithm": {
@@ -3232,6 +3317,9 @@
             "packages/runtime/dist/models.js",
             "packages/runtime/dist/node-debugger-model.js",
             "packages/runtime/dist/node-debugger-process.js",
+            "packages/runtime/dist/node-debugger-runtime-launch.js",
+            "packages/runtime/dist/node-debugger-runtime-probe-source.js",
+            "packages/runtime/dist/node-debugger-runtime.js",
             "packages/runtime/dist/node-debugger-source-binding.js",
             "packages/runtime/dist/node-debugger-source-map-worker.js",
             "packages/runtime/dist/node-debugger-tool-result.js",
@@ -3297,6 +3385,7 @@
             "packages/runtime/dist/run-replay.js",
             "packages/runtime/dist/run-stream.js",
             "packages/runtime/dist/sandbox-container-lsp-runtime.js",
+            "packages/runtime/dist/sandbox-container-node-debugger-runtime.js",
             "packages/runtime/dist/sandbox-container-runtime.js",
             "packages/runtime/dist/sandbox-container.js",
             "packages/runtime/dist/sandbox-host-direct.js",
@@ -3515,6 +3604,7 @@
             "packages/runtime/dist/workspace-process-events.js",
             "packages/runtime/dist/workspace-process-input.js",
             "packages/runtime/dist/workspace-process-launch.js",
+            "packages/runtime/dist/workspace-process-node-debugger-runtime.js",
             "packages/runtime/dist/workspace-process-observation.js",
             "packages/runtime/dist/workspace-process-recovery-entry.js",
             "packages/runtime/dist/workspace-process-recovery-files.js",
@@ -3527,6 +3617,7 @@
             "packages/runtime/dist/workspace-process-rollback-preview-store.js",
             "packages/runtime/dist/workspace-process-rollback-transaction.js",
             "packages/runtime/dist/workspace-process-runtime-session.js",
+            "packages/runtime/dist/workspace-process-session-projection.js",
             "packages/runtime/dist/workspace-process-settlement.js",
             "packages/runtime/dist/workspace-process-terminal.js",
             "packages/runtime/dist/workspace-process-tool-result.js",
@@ -4001,6 +4092,9 @@
             "packages/runtime/src/models.ts",
             "packages/runtime/src/node-debugger-model.ts",
             "packages/runtime/src/node-debugger-process.ts",
+            "packages/runtime/src/node-debugger-runtime-launch.ts",
+            "packages/runtime/src/node-debugger-runtime-probe-source.ts",
+            "packages/runtime/src/node-debugger-runtime.ts",
             "packages/runtime/src/node-debugger-source-binding.ts",
             "packages/runtime/src/node-debugger-source-map-worker.ts",
             "packages/runtime/src/node-debugger-tool-result.ts",
@@ -4066,6 +4160,7 @@
             "packages/runtime/src/run-replay.ts",
             "packages/runtime/src/run-stream.ts",
             "packages/runtime/src/sandbox-container-lsp-runtime.ts",
+            "packages/runtime/src/sandbox-container-node-debugger-runtime.ts",
             "packages/runtime/src/sandbox-container-runtime.ts",
             "packages/runtime/src/sandbox-container.ts",
             "packages/runtime/src/sandbox-host-direct.ts",
@@ -4284,6 +4379,7 @@
             "packages/runtime/src/workspace-process-events.ts",
             "packages/runtime/src/workspace-process-input.ts",
             "packages/runtime/src/workspace-process-launch.ts",
+            "packages/runtime/src/workspace-process-node-debugger-runtime.ts",
             "packages/runtime/src/workspace-process-observation.ts",
             "packages/runtime/src/workspace-process-recovery-entry.ts",
             "packages/runtime/src/workspace-process-recovery-files.ts",
@@ -4296,6 +4392,7 @@
             "packages/runtime/src/workspace-process-rollback-preview-store.ts",
             "packages/runtime/src/workspace-process-rollback-transaction.ts",
             "packages/runtime/src/workspace-process-runtime-session.ts",
+            "packages/runtime/src/workspace-process-session-projection.ts",
             "packages/runtime/src/workspace-process-settlement.ts",
             "packages/runtime/src/workspace-process-terminal.ts",
             "packages/runtime/src/workspace-process-tool-result.ts",
@@ -4368,16 +4465,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 767,
-            "sourceCounterparts": 762,
+            "executionFiles": 773,
+            "sourceCounterparts": 768,
             "packageManifests": 2,
-            "allFiles": 1531
+            "allFiles": 1543
           },
           "executionAreaCounts": {
             "apps/cli/dist": 56,
             "apps/server/dist": 100,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 580,
+            "packages/runtime/dist": 586,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -4488,12 +4585,12 @@
               "lines": 30
             },
             "apps/cli/dist/doctor-probes.js": {
-              "sha256": "d1d760dcbd0c5df2e0f78edd290d54f46bfc4a28d22a01272dd709d580fbd9b8",
+              "sha256": "122021ff3a4357ce5be2c5262a61cb0c0b14b44ace40d84b8b64a0f40baf53f2",
               "lines": 293
             },
             "apps/cli/dist/doctor-remediation.js": {
-              "sha256": "68d853bd7da7466529f55812b9db7757ad024fd389e375b6f2d4a982cc7afeb1",
-              "lines": 173
+              "sha256": "6c721a64d8d5adece39c88d19bdd302d0eb2cbbc72fc34f5d6416f2380fbfbe9",
+              "lines": 178
             },
             "apps/cli/dist/doctor-report.js": {
               "sha256": "38224ea022081f836c6f7be729c654d043ea0c5bd17ff66af96fa0804557d5ef",
@@ -4712,12 +4809,12 @@
               "lines": 38
             },
             "apps/cli/src/doctor-probes.ts": {
-              "sha256": "db498c56fddc746e67d34c6d19d6610a1514209f5558b00e170dea50fb035dc6",
-              "lines": 434
+              "sha256": "4772081c58ca295a2080b0df1a343134f8fc2f048f49c420d4c81e83a76af4c5",
+              "lines": 436
             },
             "apps/cli/src/doctor-remediation.ts": {
-              "sha256": "26a0d6ff8a07e6b432a9a84f2d20e0dd7f0d17553b1b59a572cbc7c8ca66002d",
-              "lines": 237
+              "sha256": "f453ecc1d73dd6c4372bba096b70988a7dd9f864430e5bbff3dbd28e5d9d93f5",
+              "lines": 243
             },
             "apps/cli/src/doctor-report.ts": {
               "sha256": "ceea3f56edff1fda3fd9a4c3659fbf7b7899c1430a0584bf1514281e365bbcfd",
@@ -6168,12 +6265,12 @@
               "lines": 140
             },
             "packages/runtime/dist/container-runtime-identity-parser.js": {
-              "sha256": "1edc276ccbcad35a5dece7178a487247bae09e24062bd6705853deb4ceadb143",
-              "lines": 105
+              "sha256": "e1d905e0cd5e544a7f3293aa6be355aa83159e3c4e7757400d06332434e8ae49",
+              "lines": 120
             },
             "packages/runtime/dist/container-runtime-probe-source.js": {
-              "sha256": "918db3e52445eccbb1f16731c7934965c6b563b7ce715fee6c7496dec0b42929",
-              "lines": 128
+              "sha256": "5f75106f92fd3161f77f4beb7908ca22a3e47edd23210640117bedc09c1e78f4",
+              "lines": 145
             },
             "packages/runtime/dist/credential-references.js": {
               "sha256": "70b97d01a6f5ea4e982e449c059f42a2e30abf4a69fbc68362eb5d464498cd0d",
@@ -6228,8 +6325,8 @@
               "lines": 81
             },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "fef777ea40777bbb9cf41b841ffeed1af610c2bcfddb9aedd48d2595f6ce3da2",
-              "lines": 340
+              "sha256": "4013f0e0bfc982a5c47f3a99f2383ffb8caf34273ef12370ce9b3ff8c2ed06f7",
+              "lines": 363
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -6860,12 +6957,24 @@
               "lines": 121
             },
             "packages/runtime/dist/node-debugger-model.js": {
-              "sha256": "5d368d63f45a6139b0d63a04d56052a322f66f1b1bc3345b0114d2cb312d639c",
-              "lines": 228
+              "sha256": "ed16f4c279ddcdefcf04f0c52e9dabebdee1518f8dcbc3494b17cf82558a392b",
+              "lines": 230
             },
             "packages/runtime/dist/node-debugger-process.js": {
-              "sha256": "21f2d5e5beac8b4cbe7a15b15b28f3e23944aff64ad5a0b80698858d2d610995",
-              "lines": 18
+              "sha256": "51c9aae23ee95a03e80f8b6490b9ec9e98d2be8504cd87ce25aa67963ccc8fed",
+              "lines": 25
+            },
+            "packages/runtime/dist/node-debugger-runtime-launch.js": {
+              "sha256": "6dc7bc1f897a558190453af26d3c838d1a26ec17b7ce22cb73f5a156d7a81588",
+              "lines": 25
+            },
+            "packages/runtime/dist/node-debugger-runtime-probe-source.js": {
+              "sha256": "6498f93127e7033feae718591c8cc91ebb629b0d1b3ae3cf8b3a9ca62c5b8040",
+              "lines": 53
+            },
+            "packages/runtime/dist/node-debugger-runtime.js": {
+              "sha256": "dae30850ba400ef82ea17fed90f6ec06f4efb058c5ea1355368fee9a126c59c7",
+              "lines": 140
             },
             "packages/runtime/dist/node-debugger-source-binding.js": {
               "sha256": "4f6f7f2c4bcee6afc206b302493dbe2235e9127706fe96488dafc234fcc55129",
@@ -6876,8 +6985,8 @@
               "lines": 401
             },
             "packages/runtime/dist/node-debugger-tool-result.js": {
-              "sha256": "3f81fb0a0cd445c0a47242cb06537da5848a6aebd3487060ccfb6e96ff4b820e",
-              "lines": 125
+              "sha256": "653ebb518d39afda212f32d22433e2f92802b2e9405ae37ac7796ddbbc9cc4f0",
+              "lines": 126
             },
             "packages/runtime/dist/node-debugger-tool.js": {
               "sha256": "d65f2a5b1395ab3dca081ffadcc0352908e1a34871ecee443d9b7ddc4045fe57",
@@ -6888,8 +6997,8 @@
               "lines": 908
             },
             "packages/runtime/dist/node-debugger.js": {
-              "sha256": "87152c52c5c5d2ea7560d28e7facbfdecd52df60ed94e8d105e2e23c75645bd4",
-              "lines": 573
+              "sha256": "11dd099ae42c07f66f1509ffa03b9525d783e1e51eca49287961dee1c797c8e1",
+              "lines": 572
             },
             "packages/runtime/dist/opentelemetry-payload-projection.js": {
               "sha256": "bf979f53e5a4c8edd3103a09a108472c835acdd129553fd62be7c9c3ca8db4b4",
@@ -7127,6 +7236,10 @@
               "sha256": "47bab3a34b32bfeafc93f6a60530eaec896547d18d331cba6d6957075448ac73",
               "lines": 22
             },
+            "packages/runtime/dist/sandbox-container-node-debugger-runtime.js": {
+              "sha256": "ba11421e5214ba73714743b0e379155841670725d6d8b6b5cc4ba74bd7eb95b8",
+              "lines": 22
+            },
             "packages/runtime/dist/sandbox-container-runtime.js": {
               "sha256": "daf96e06bf8e0c77be5d4d44f9adcb8863b956ff8698cf474a20edcc21ed2beb",
               "lines": 231
@@ -7144,8 +7257,8 @@
               "lines": 61
             },
             "packages/runtime/dist/sandbox-oci.js": {
-              "sha256": "94f2aecc5f33d19b2ac47b55c1e46e1452d3c99d8e24e8c1343c3b327d10c343",
-              "lines": 218
+              "sha256": "55301d624a91847bcaff98398163f7169d61431d4f9403e3b91220c8c9a3cb6a",
+              "lines": 237
             },
             "packages/runtime/dist/sandbox-process-lifecycle.js": {
               "sha256": "662cf635507941e23256f92ce615f4bccfa27ddd9f4330487da2f22eb75b907b",
@@ -7999,6 +8112,10 @@
               "sha256": "9eededef0612fe8685426dd1c6d99d6e4003af540c47ba8ca3d4643458065500",
               "lines": 194
             },
+            "packages/runtime/dist/workspace-process-node-debugger-runtime.js": {
+              "sha256": "4f65ee585001b01b6122492074f9369f0227af2c678fa68d7dec6d4fa4f0b149",
+              "lines": 16
+            },
             "packages/runtime/dist/workspace-process-observation.js": {
               "sha256": "90d468c34c67f389a587c1bfbce38b017727da351be4eeccfd19ffab46aa848d",
               "lines": 68
@@ -8047,6 +8164,10 @@
               "sha256": "c2cfd493ed9b7cc06c5d8f60b46efd16a9cebafa191621259f9db62f7246cb93",
               "lines": 22
             },
+            "packages/runtime/dist/workspace-process-session-projection.js": {
+              "sha256": "3d417e193c0bdc2fde49628f79241f4a88854c40a63a654d7aab8cbb53898c3b",
+              "lines": 15
+            },
             "packages/runtime/dist/workspace-process-settlement.js": {
               "sha256": "ea12b2cde24bf587fc000f3b34e446bafc1571d8d7c776520d958b7affb5ef7f",
               "lines": 93
@@ -8076,8 +8197,8 @@
               "lines": 47
             },
             "packages/runtime/dist/workspace-processes.js": {
-              "sha256": "914ea099460866f8b20563f8080d2eea3d570532326e754ac5fd5f3d42ba12b0",
-              "lines": 609
+              "sha256": "29644e0511042043c588e6d53a43d6d8fc276b18988c7cda84ee15d6da7679e4",
+              "lines": 603
             },
             "packages/runtime/dist/workspace-seed.js": {
               "sha256": "9824e352d8ba3e6e29d445709903f9e2369f5a084082721e3b60afef799de8db",
@@ -8492,12 +8613,12 @@
               "lines": 207
             },
             "packages/runtime/src/container-runtime-identity-parser.ts": {
-              "sha256": "150c831684a320f4f2dbb0c8a26cfafd74f6fd452c95dd8aca9ea70a9acf2b7a",
-              "lines": 159
+              "sha256": "ad3d2b2fc31e597a68f79e4f171297294108a94463da5b3968a55eb7f4dd7a0b",
+              "lines": 183
             },
             "packages/runtime/src/container-runtime-probe-source.ts": {
-              "sha256": "961e9bba13aa37b3eb3a7eb2906766234478d145a89273c490f3458c2f33d8d3",
-              "lines": 129
+              "sha256": "6856a3284e793ebbf274aed3210ba0fc06a8cbf911c62721ba25ed9ab38ec659",
+              "lines": 150
             },
             "packages/runtime/src/credential-references.ts": {
               "sha256": "4b6b407902816631f1befa89792b29b0dbfe2872dca9220ecafb4ceb050e5813",
@@ -8552,8 +8673,8 @@
               "lines": 110
             },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "e7cd035185f776e1d53e0b2920736083e7d20e0b49f24a367873e25f5e527742",
-              "lines": 438
+              "sha256": "40b25e1c59ef793d79811eac2e7116097c1e50d977006697f8ccdb44fb41432c",
+              "lines": 474
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -9184,12 +9305,24 @@
               "lines": 167
             },
             "packages/runtime/src/node-debugger-model.ts": {
-              "sha256": "917f32eae286b872c3c14fdb7db8d4e2d7c1b55fff13fa303324c07b455503a2",
-              "lines": 403
+              "sha256": "f8a4dd8621551b956f8a168212254ad5672b7cb8f5bcf62688b55602bbcc154e",
+              "lines": 407
             },
             "packages/runtime/src/node-debugger-process.ts": {
-              "sha256": "ef976c3ea6750ccb79b59cc759d857a89e737b8c29bff996449dbc627ced3595",
-              "lines": 40
+              "sha256": "17fc567041de0f019130d96639535216f684a73722f55526eddfce2e7230c17a",
+              "lines": 48
+            },
+            "packages/runtime/src/node-debugger-runtime-launch.ts": {
+              "sha256": "7e0bfd3139f931e263a9f8d71030accab8f9a1c5c48ea02b28a5b721ba3acead",
+              "lines": 39
+            },
+            "packages/runtime/src/node-debugger-runtime-probe-source.ts": {
+              "sha256": "6dc98b479d0ecc0ed28e55f244dc25d72227cee4a3caaa1a903ad9b65d7ef415",
+              "lines": 57
+            },
+            "packages/runtime/src/node-debugger-runtime.ts": {
+              "sha256": "29bdd66a3e95a37d4052146759cc13ed39b3a30078dafc54deab3fded8b0e75c",
+              "lines": 205
             },
             "packages/runtime/src/node-debugger-source-binding.ts": {
               "sha256": "e42c749af012062a7c792fce9aeffd581e83d6ee65cf31cfe1af75c154391836",
@@ -9200,8 +9333,8 @@
               "lines": 401
             },
             "packages/runtime/src/node-debugger-tool-result.ts": {
-              "sha256": "a4ffc2feb24b9699ecc58c8cdfe56dd20efd77d268a73fec580a14f03c903a36",
-              "lines": 192
+              "sha256": "20187357ab0598c62546c7c90caddf8194cc5988c32b63ae5c03e7342fb5a37b",
+              "lines": 194
             },
             "packages/runtime/src/node-debugger-tool.ts": {
               "sha256": "190e9eb1f2e7ddd1f4a9bf0a367b10178adbafd5f26ffe1f50bfc76d68987503",
@@ -9212,7 +9345,7 @@
               "lines": 922
             },
             "packages/runtime/src/node-debugger.ts": {
-              "sha256": "a7aed86edef944ef9408857bbb0cb3abd9f7132e2061c1641f4f2b6bba106290",
+              "sha256": "2b05cf8fb6a1e86ec259ba01465ff39adc182b10da621fc836bb0869b4d86f59",
               "lines": 987
             },
             "packages/runtime/src/opentelemetry-payload-projection.ts": {
@@ -9451,6 +9584,10 @@
               "sha256": "64d8dd572542419196cc6faf40911285dc18f2960cceb1ba892dc2448d1806dd",
               "lines": 41
             },
+            "packages/runtime/src/sandbox-container-node-debugger-runtime.ts": {
+              "sha256": "d694058f9bae5448fe9111ce91038a36fde74e94548b80ecaa9656685fc43f0b",
+              "lines": 41
+            },
             "packages/runtime/src/sandbox-container-runtime.ts": {
               "sha256": "332176010cca3583fd18a00e1e31f0b7ffbbe90463cb1886b055fa10e148bcb0",
               "lines": 367
@@ -9468,8 +9605,8 @@
               "lines": 96
             },
             "packages/runtime/src/sandbox-oci.ts": {
-              "sha256": "659d44743840633a6cd3d5198469e318dcdd29bd3efb5a9103e58d8ed7d9cd24",
-              "lines": 332
+              "sha256": "e9210109637f965c00aae1d7ab6531793b33ead7a87baff5018bba184658818e",
+              "lines": 360
             },
             "packages/runtime/src/sandbox-process-lifecycle.ts": {
               "sha256": "4bdf7d378b433ffd5a29e03d1d032f21ccf6a652744a16da1f9d31fef53a3fee",
@@ -10323,6 +10460,10 @@
               "sha256": "1f252296e90d356312bef9643c296ccb7269a3c45d7f09010f07574c4f7678d1",
               "lines": 307
             },
+            "packages/runtime/src/workspace-process-node-debugger-runtime.ts": {
+              "sha256": "6f8789d8a39cd69c1280b33b830563d56f236e3b327ea5c6d6c15042cd259b99",
+              "lines": 30
+            },
             "packages/runtime/src/workspace-process-observation.ts": {
               "sha256": "9221a2068aca339e8838ee27b13fcfdad2035c708f5d2eeb329122062944978f",
               "lines": 106
@@ -10371,6 +10512,10 @@
               "sha256": "8a54210a1719efaf08e83814e310939ba87a48e624792aa383f9ebf29f4931da",
               "lines": 35
             },
+            "packages/runtime/src/workspace-process-session-projection.ts": {
+              "sha256": "c8b61eb762c937e6b4414e38dab1afe33da813b700d7fd52a38eab424b5263e7",
+              "lines": 21
+            },
             "packages/runtime/src/workspace-process-settlement.ts": {
               "sha256": "d7c9709d2e0fd72e1754a9a43296cb5c2f0c9476196b537d9f6368302f5a1a74",
               "lines": 162
@@ -10400,8 +10545,8 @@
               "lines": 73
             },
             "packages/runtime/src/workspace-processes.ts": {
-              "sha256": "300895030d7e3bae142014e06d759912d4ba7d9ae9063dc6e0445085cd4472fb",
-              "lines": 942
+              "sha256": "6067ea17d8168add4bacb24779155503cd98075d8885dbd3310ca19d9beecaf8",
+              "lines": 940
             },
             "packages/runtime/src/workspace-seed.ts": {
               "sha256": "2b8e4175f84aff8791eb4eed365129a23e0cc1d97dc53ea834c921f0de2c213d",
@@ -10508,7 +10653,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "26fb32df2503762c7057718686ca2ce190c4189017aa1650846c29cc6a6dbdf9"
+          "manifestSha256": "11b9b01843cd3ebd9e139f7ecd394e473aac8707fdbc0ce9d74a90c6e127ad6f"
         },
         "productionServerTrace": {
           "roots": [
@@ -10906,6 +11051,9 @@
             "packages/runtime/dist/models.js",
             "packages/runtime/dist/node-debugger-model.js",
             "packages/runtime/dist/node-debugger-process.js",
+            "packages/runtime/dist/node-debugger-runtime-launch.js",
+            "packages/runtime/dist/node-debugger-runtime-probe-source.js",
+            "packages/runtime/dist/node-debugger-runtime.js",
             "packages/runtime/dist/node-debugger-source-binding.js",
             "packages/runtime/dist/node-debugger-source-map-worker.js",
             "packages/runtime/dist/node-debugger-tool-result.js",
@@ -10971,6 +11119,7 @@
             "packages/runtime/dist/run-replay.js",
             "packages/runtime/dist/run-stream.js",
             "packages/runtime/dist/sandbox-container-lsp-runtime.js",
+            "packages/runtime/dist/sandbox-container-node-debugger-runtime.js",
             "packages/runtime/dist/sandbox-container-runtime.js",
             "packages/runtime/dist/sandbox-container.js",
             "packages/runtime/dist/sandbox-host-direct.js",
@@ -11188,6 +11337,7 @@
             "packages/runtime/dist/workspace-process-events.js",
             "packages/runtime/dist/workspace-process-input.js",
             "packages/runtime/dist/workspace-process-launch.js",
+            "packages/runtime/dist/workspace-process-node-debugger-runtime.js",
             "packages/runtime/dist/workspace-process-observation.js",
             "packages/runtime/dist/workspace-process-recovery-entry.js",
             "packages/runtime/dist/workspace-process-recovery-files.js",
@@ -11200,6 +11350,7 @@
             "packages/runtime/dist/workspace-process-rollback-preview-store.js",
             "packages/runtime/dist/workspace-process-rollback-transaction.js",
             "packages/runtime/dist/workspace-process-runtime-session.js",
+            "packages/runtime/dist/workspace-process-session-projection.js",
             "packages/runtime/dist/workspace-process-settlement.js",
             "packages/runtime/dist/workspace-process-terminal.js",
             "packages/runtime/dist/workspace-process-tool-result.js",
@@ -11617,6 +11768,9 @@
             "packages/runtime/src/models.ts",
             "packages/runtime/src/node-debugger-model.ts",
             "packages/runtime/src/node-debugger-process.ts",
+            "packages/runtime/src/node-debugger-runtime-launch.ts",
+            "packages/runtime/src/node-debugger-runtime-probe-source.ts",
+            "packages/runtime/src/node-debugger-runtime.ts",
             "packages/runtime/src/node-debugger-source-binding.ts",
             "packages/runtime/src/node-debugger-source-map-worker.ts",
             "packages/runtime/src/node-debugger-tool-result.ts",
@@ -11682,6 +11836,7 @@
             "packages/runtime/src/run-replay.ts",
             "packages/runtime/src/run-stream.ts",
             "packages/runtime/src/sandbox-container-lsp-runtime.ts",
+            "packages/runtime/src/sandbox-container-node-debugger-runtime.ts",
             "packages/runtime/src/sandbox-container-runtime.ts",
             "packages/runtime/src/sandbox-container.ts",
             "packages/runtime/src/sandbox-host-direct.ts",
@@ -11899,6 +12054,7 @@
             "packages/runtime/src/workspace-process-events.ts",
             "packages/runtime/src/workspace-process-input.ts",
             "packages/runtime/src/workspace-process-launch.ts",
+            "packages/runtime/src/workspace-process-node-debugger-runtime.ts",
             "packages/runtime/src/workspace-process-observation.ts",
             "packages/runtime/src/workspace-process-recovery-entry.ts",
             "packages/runtime/src/workspace-process-recovery-files.ts",
@@ -11911,6 +12067,7 @@
             "packages/runtime/src/workspace-process-rollback-preview-store.ts",
             "packages/runtime/src/workspace-process-rollback-transaction.ts",
             "packages/runtime/src/workspace-process-runtime-session.ts",
+            "packages/runtime/src/workspace-process-session-projection.ts",
             "packages/runtime/src/workspace-process-settlement.ts",
             "packages/runtime/src/workspace-process-terminal.ts",
             "packages/runtime/src/workspace-process-tool-result.ts",
@@ -11984,16 +12141,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 709,
-            "sourceCounterparts": 705,
+            "executionFiles": 715,
+            "sourceCounterparts": 711,
             "packageManifests": 3,
-            "allFiles": 1417
+            "allFiles": 1429
           },
           "executionAreaCounts": {
             "apps/server/dist": 101,
             "other": 1,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 578,
+            "packages/runtime/dist": 584,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
@@ -13339,12 +13496,12 @@
               "lines": 140
             },
             "packages/runtime/dist/container-runtime-identity-parser.js": {
-              "sha256": "1edc276ccbcad35a5dece7178a487247bae09e24062bd6705853deb4ceadb143",
-              "lines": 105
+              "sha256": "e1d905e0cd5e544a7f3293aa6be355aa83159e3c4e7757400d06332434e8ae49",
+              "lines": 120
             },
             "packages/runtime/dist/container-runtime-probe-source.js": {
-              "sha256": "918db3e52445eccbb1f16731c7934965c6b563b7ce715fee6c7496dec0b42929",
-              "lines": 128
+              "sha256": "5f75106f92fd3161f77f4beb7908ca22a3e47edd23210640117bedc09c1e78f4",
+              "lines": 145
             },
             "packages/runtime/dist/credential-references.js": {
               "sha256": "70b97d01a6f5ea4e982e449c059f42a2e30abf4a69fbc68362eb5d464498cd0d",
@@ -13399,8 +13556,8 @@
               "lines": 81
             },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "fef777ea40777bbb9cf41b841ffeed1af610c2bcfddb9aedd48d2595f6ce3da2",
-              "lines": 340
+              "sha256": "4013f0e0bfc982a5c47f3a99f2383ffb8caf34273ef12370ce9b3ff8c2ed06f7",
+              "lines": 363
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -14031,12 +14188,24 @@
               "lines": 121
             },
             "packages/runtime/dist/node-debugger-model.js": {
-              "sha256": "5d368d63f45a6139b0d63a04d56052a322f66f1b1bc3345b0114d2cb312d639c",
-              "lines": 228
+              "sha256": "ed16f4c279ddcdefcf04f0c52e9dabebdee1518f8dcbc3494b17cf82558a392b",
+              "lines": 230
             },
             "packages/runtime/dist/node-debugger-process.js": {
-              "sha256": "21f2d5e5beac8b4cbe7a15b15b28f3e23944aff64ad5a0b80698858d2d610995",
-              "lines": 18
+              "sha256": "51c9aae23ee95a03e80f8b6490b9ec9e98d2be8504cd87ce25aa67963ccc8fed",
+              "lines": 25
+            },
+            "packages/runtime/dist/node-debugger-runtime-launch.js": {
+              "sha256": "6dc7bc1f897a558190453af26d3c838d1a26ec17b7ce22cb73f5a156d7a81588",
+              "lines": 25
+            },
+            "packages/runtime/dist/node-debugger-runtime-probe-source.js": {
+              "sha256": "6498f93127e7033feae718591c8cc91ebb629b0d1b3ae3cf8b3a9ca62c5b8040",
+              "lines": 53
+            },
+            "packages/runtime/dist/node-debugger-runtime.js": {
+              "sha256": "dae30850ba400ef82ea17fed90f6ec06f4efb058c5ea1355368fee9a126c59c7",
+              "lines": 140
             },
             "packages/runtime/dist/node-debugger-source-binding.js": {
               "sha256": "4f6f7f2c4bcee6afc206b302493dbe2235e9127706fe96488dafc234fcc55129",
@@ -14047,8 +14216,8 @@
               "lines": 401
             },
             "packages/runtime/dist/node-debugger-tool-result.js": {
-              "sha256": "3f81fb0a0cd445c0a47242cb06537da5848a6aebd3487060ccfb6e96ff4b820e",
-              "lines": 125
+              "sha256": "653ebb518d39afda212f32d22433e2f92802b2e9405ae37ac7796ddbbc9cc4f0",
+              "lines": 126
             },
             "packages/runtime/dist/node-debugger-tool.js": {
               "sha256": "d65f2a5b1395ab3dca081ffadcc0352908e1a34871ecee443d9b7ddc4045fe57",
@@ -14059,8 +14228,8 @@
               "lines": 908
             },
             "packages/runtime/dist/node-debugger.js": {
-              "sha256": "87152c52c5c5d2ea7560d28e7facbfdecd52df60ed94e8d105e2e23c75645bd4",
-              "lines": 573
+              "sha256": "11dd099ae42c07f66f1509ffa03b9525d783e1e51eca49287961dee1c797c8e1",
+              "lines": 572
             },
             "packages/runtime/dist/opentelemetry-payload-projection.js": {
               "sha256": "bf979f53e5a4c8edd3103a09a108472c835acdd129553fd62be7c9c3ca8db4b4",
@@ -14298,6 +14467,10 @@
               "sha256": "47bab3a34b32bfeafc93f6a60530eaec896547d18d331cba6d6957075448ac73",
               "lines": 22
             },
+            "packages/runtime/dist/sandbox-container-node-debugger-runtime.js": {
+              "sha256": "ba11421e5214ba73714743b0e379155841670725d6d8b6b5cc4ba74bd7eb95b8",
+              "lines": 22
+            },
             "packages/runtime/dist/sandbox-container-runtime.js": {
               "sha256": "daf96e06bf8e0c77be5d4d44f9adcb8863b956ff8698cf474a20edcc21ed2beb",
               "lines": 231
@@ -14315,8 +14488,8 @@
               "lines": 61
             },
             "packages/runtime/dist/sandbox-oci.js": {
-              "sha256": "94f2aecc5f33d19b2ac47b55c1e46e1452d3c99d8e24e8c1343c3b327d10c343",
-              "lines": 218
+              "sha256": "55301d624a91847bcaff98398163f7169d61431d4f9403e3b91220c8c9a3cb6a",
+              "lines": 237
             },
             "packages/runtime/dist/sandbox-process-lifecycle.js": {
               "sha256": "662cf635507941e23256f92ce615f4bccfa27ddd9f4330487da2f22eb75b907b",
@@ -15166,6 +15339,10 @@
               "sha256": "9eededef0612fe8685426dd1c6d99d6e4003af540c47ba8ca3d4643458065500",
               "lines": 194
             },
+            "packages/runtime/dist/workspace-process-node-debugger-runtime.js": {
+              "sha256": "4f65ee585001b01b6122492074f9369f0227af2c678fa68d7dec6d4fa4f0b149",
+              "lines": 16
+            },
             "packages/runtime/dist/workspace-process-observation.js": {
               "sha256": "90d468c34c67f389a587c1bfbce38b017727da351be4eeccfd19ffab46aa848d",
               "lines": 68
@@ -15214,6 +15391,10 @@
               "sha256": "c2cfd493ed9b7cc06c5d8f60b46efd16a9cebafa191621259f9db62f7246cb93",
               "lines": 22
             },
+            "packages/runtime/dist/workspace-process-session-projection.js": {
+              "sha256": "3d417e193c0bdc2fde49628f79241f4a88854c40a63a654d7aab8cbb53898c3b",
+              "lines": 15
+            },
             "packages/runtime/dist/workspace-process-settlement.js": {
               "sha256": "ea12b2cde24bf587fc000f3b34e446bafc1571d8d7c776520d958b7affb5ef7f",
               "lines": 93
@@ -15243,8 +15424,8 @@
               "lines": 47
             },
             "packages/runtime/dist/workspace-processes.js": {
-              "sha256": "914ea099460866f8b20563f8080d2eea3d570532326e754ac5fd5f3d42ba12b0",
-              "lines": 609
+              "sha256": "29644e0511042043c588e6d53a43d6d8fc276b18988c7cda84ee15d6da7679e4",
+              "lines": 603
             },
             "packages/runtime/dist/workspace-seed.js": {
               "sha256": "9824e352d8ba3e6e29d445709903f9e2369f5a084082721e3b60afef799de8db",
@@ -15655,12 +15836,12 @@
               "lines": 207
             },
             "packages/runtime/src/container-runtime-identity-parser.ts": {
-              "sha256": "150c831684a320f4f2dbb0c8a26cfafd74f6fd452c95dd8aca9ea70a9acf2b7a",
-              "lines": 159
+              "sha256": "ad3d2b2fc31e597a68f79e4f171297294108a94463da5b3968a55eb7f4dd7a0b",
+              "lines": 183
             },
             "packages/runtime/src/container-runtime-probe-source.ts": {
-              "sha256": "961e9bba13aa37b3eb3a7eb2906766234478d145a89273c490f3458c2f33d8d3",
-              "lines": 129
+              "sha256": "6856a3284e793ebbf274aed3210ba0fc06a8cbf911c62721ba25ed9ab38ec659",
+              "lines": 150
             },
             "packages/runtime/src/credential-references.ts": {
               "sha256": "4b6b407902816631f1befa89792b29b0dbfe2872dca9220ecafb4ceb050e5813",
@@ -15715,8 +15896,8 @@
               "lines": 110
             },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "e7cd035185f776e1d53e0b2920736083e7d20e0b49f24a367873e25f5e527742",
-              "lines": 438
+              "sha256": "40b25e1c59ef793d79811eac2e7116097c1e50d977006697f8ccdb44fb41432c",
+              "lines": 474
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -16347,12 +16528,24 @@
               "lines": 167
             },
             "packages/runtime/src/node-debugger-model.ts": {
-              "sha256": "917f32eae286b872c3c14fdb7db8d4e2d7c1b55fff13fa303324c07b455503a2",
-              "lines": 403
+              "sha256": "f8a4dd8621551b956f8a168212254ad5672b7cb8f5bcf62688b55602bbcc154e",
+              "lines": 407
             },
             "packages/runtime/src/node-debugger-process.ts": {
-              "sha256": "ef976c3ea6750ccb79b59cc759d857a89e737b8c29bff996449dbc627ced3595",
-              "lines": 40
+              "sha256": "17fc567041de0f019130d96639535216f684a73722f55526eddfce2e7230c17a",
+              "lines": 48
+            },
+            "packages/runtime/src/node-debugger-runtime-launch.ts": {
+              "sha256": "7e0bfd3139f931e263a9f8d71030accab8f9a1c5c48ea02b28a5b721ba3acead",
+              "lines": 39
+            },
+            "packages/runtime/src/node-debugger-runtime-probe-source.ts": {
+              "sha256": "6dc98b479d0ecc0ed28e55f244dc25d72227cee4a3caaa1a903ad9b65d7ef415",
+              "lines": 57
+            },
+            "packages/runtime/src/node-debugger-runtime.ts": {
+              "sha256": "29bdd66a3e95a37d4052146759cc13ed39b3a30078dafc54deab3fded8b0e75c",
+              "lines": 205
             },
             "packages/runtime/src/node-debugger-source-binding.ts": {
               "sha256": "e42c749af012062a7c792fce9aeffd581e83d6ee65cf31cfe1af75c154391836",
@@ -16363,8 +16556,8 @@
               "lines": 401
             },
             "packages/runtime/src/node-debugger-tool-result.ts": {
-              "sha256": "a4ffc2feb24b9699ecc58c8cdfe56dd20efd77d268a73fec580a14f03c903a36",
-              "lines": 192
+              "sha256": "20187357ab0598c62546c7c90caddf8194cc5988c32b63ae5c03e7342fb5a37b",
+              "lines": 194
             },
             "packages/runtime/src/node-debugger-tool.ts": {
               "sha256": "190e9eb1f2e7ddd1f4a9bf0a367b10178adbafd5f26ffe1f50bfc76d68987503",
@@ -16375,7 +16568,7 @@
               "lines": 922
             },
             "packages/runtime/src/node-debugger.ts": {
-              "sha256": "a7aed86edef944ef9408857bbb0cb3abd9f7132e2061c1641f4f2b6bba106290",
+              "sha256": "2b05cf8fb6a1e86ec259ba01465ff39adc182b10da621fc836bb0869b4d86f59",
               "lines": 987
             },
             "packages/runtime/src/opentelemetry-payload-projection.ts": {
@@ -16614,6 +16807,10 @@
               "sha256": "64d8dd572542419196cc6faf40911285dc18f2960cceb1ba892dc2448d1806dd",
               "lines": 41
             },
+            "packages/runtime/src/sandbox-container-node-debugger-runtime.ts": {
+              "sha256": "d694058f9bae5448fe9111ce91038a36fde74e94548b80ecaa9656685fc43f0b",
+              "lines": 41
+            },
             "packages/runtime/src/sandbox-container-runtime.ts": {
               "sha256": "332176010cca3583fd18a00e1e31f0b7ffbbe90463cb1886b055fa10e148bcb0",
               "lines": 367
@@ -16631,8 +16828,8 @@
               "lines": 96
             },
             "packages/runtime/src/sandbox-oci.ts": {
-              "sha256": "659d44743840633a6cd3d5198469e318dcdd29bd3efb5a9103e58d8ed7d9cd24",
-              "lines": 332
+              "sha256": "e9210109637f965c00aae1d7ab6531793b33ead7a87baff5018bba184658818e",
+              "lines": 360
             },
             "packages/runtime/src/sandbox-process-lifecycle.ts": {
               "sha256": "4bdf7d378b433ffd5a29e03d1d032f21ccf6a652744a16da1f9d31fef53a3fee",
@@ -17482,6 +17679,10 @@
               "sha256": "1f252296e90d356312bef9643c296ccb7269a3c45d7f09010f07574c4f7678d1",
               "lines": 307
             },
+            "packages/runtime/src/workspace-process-node-debugger-runtime.ts": {
+              "sha256": "6f8789d8a39cd69c1280b33b830563d56f236e3b327ea5c6d6c15042cd259b99",
+              "lines": 30
+            },
             "packages/runtime/src/workspace-process-observation.ts": {
               "sha256": "9221a2068aca339e8838ee27b13fcfdad2035c708f5d2eeb329122062944978f",
               "lines": 106
@@ -17530,6 +17731,10 @@
               "sha256": "8a54210a1719efaf08e83814e310939ba87a48e624792aa383f9ebf29f4931da",
               "lines": 35
             },
+            "packages/runtime/src/workspace-process-session-projection.ts": {
+              "sha256": "c8b61eb762c937e6b4414e38dab1afe33da813b700d7fd52a38eab424b5263e7",
+              "lines": 21
+            },
             "packages/runtime/src/workspace-process-settlement.ts": {
               "sha256": "d7c9709d2e0fd72e1754a9a43296cb5c2f0c9476196b537d9f6368302f5a1a74",
               "lines": 162
@@ -17559,8 +17764,8 @@
               "lines": 73
             },
             "packages/runtime/src/workspace-processes.ts": {
-              "sha256": "300895030d7e3bae142014e06d759912d4ba7d9ae9063dc6e0445085cd4472fb",
-              "lines": 942
+              "sha256": "6067ea17d8168add4bacb24779155503cd98075d8885dbd3310ca19d9beecaf8",
+              "lines": 940
             },
             "packages/runtime/src/workspace-seed.ts": {
               "sha256": "2b8e4175f84aff8791eb4eed365129a23e0cc1d97dc53ea834c921f0de2c213d",
@@ -17667,7 +17872,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "008eaf3da7892362224befbf99caecb659b7ff919d7fdf0001a97e5647205240"
+          "manifestSha256": "a8134d3620ababc3519a605964f6ea3de54db4419a2212aaca6613898311a7df"
         }
       },
       "excludedCategories": [
@@ -17696,9 +17901,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "1c563b1ffd71540af77e70974a58b353b2a92959bd44bc8fe221e1eeb139259f"
+      "manifestSha256": "36fd1ff738c4b82feaab00d89dd982d303bbde878fa8af359f3168965b4563e3"
     },
-    "manifestSha256": "4066673f6beebe3af8adb1b0f9d560f73de3a1b4d1b41494355f4778a8e80089"
+    "manifestSha256": "96fe269da8c8adcfdaacc1ac4a8929688fbbd98ff63d1e75b054b66621684cdb"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -17886,11 +18091,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "7a1f43e8c2474ee779206b2f28c7790bb52706c879a4c9957dfa38a7a3450c0b"
+      "sha256": "1dd0f0a298d968627bdecd31be29c29be64c160b47ef584a38c2f952ae5b8c3e"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "c255a6e2771da325f14b584bdadef08f24064f548db54e7b258f13e2db42ab28"
+      "sha256": "514f0327a105e452524fc599465d889162ff56696b188e8657687f0644be666b"
     }
   }
 }

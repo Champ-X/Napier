@@ -52,12 +52,21 @@ export interface SandboxLspRuntimeBinding {
   runtimeIdentitySha256: string;
 }
 
+export interface SandboxNodeDebuggerRuntimeBinding {
+  runtime: "node-debugger";
+  nodeExecutable: string;
+  nodeExecutableSha256: string;
+  nodeVersion: string;
+  runtimeIdentitySha256: string;
+}
+
 export interface OsSandboxAdapter {
   readonly id: string;
   resolveCommandRuntime?(
     runtime: SandboxCommandRuntime,
   ): Promise<SandboxCommandRuntimeBinding>;
   resolveLspRuntime?(): Promise<SandboxLspRuntimeBinding>;
+  resolveNodeDebuggerRuntime?(): Promise<SandboxNodeDebuggerRuntimeBinding>;
   launch(request: SandboxLaunchRequest): Promise<SandboxedProcess>;
 }
 

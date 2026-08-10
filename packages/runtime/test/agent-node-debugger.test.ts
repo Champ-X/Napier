@@ -228,7 +228,7 @@ describe("Agent Node debugger integration", () => {
     expect(debuggerEvents.at(-1)?.payload["details"]).toEqual(
       expect.objectContaining({
         kind: "napier.node-debugger",
-        schemaVersion: 2,
+        schemaVersion: 3,
         action: "continue",
         state: "terminated",
         exitCode: 0,
