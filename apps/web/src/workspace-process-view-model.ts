@@ -56,9 +56,11 @@ export function workspaceProcessCardView(
         : `${session.durationMs.toLocaleString()} ms`,
     runtimeLabel: `${session.runtime} · ${session.sandbox}${terminalLabel}`,
     scopeLabel:
-      session.workspaceAccess === "scoped_write"
-        ? `Workspace scoped write · ${session.writeScopeCount ?? 0} scope${session.writeScopeCount === 1 ? "" : "s"} · ${session.writeScopeSetSha256?.slice(0, 12) ?? "unavailable"} · Network denied`
-        : "Workspace read-only · Network denied",
+      session.sandbox === "host-direct"
+        ? "Host direct · no workspace, network, or resource isolation"
+        : session.workspaceAccess === "scoped_write"
+          ? `Workspace scoped write · ${session.writeScopeCount ?? 0} scope${session.writeScopeCount === 1 ? "" : "s"} · ${session.writeScopeSetSha256?.slice(0, 12) ?? "unavailable"} · Network denied`
+          : "Workspace read-only · Network denied",
     ...(session.failureRecovery
       ? {
           failureRecovery: session.failureRecovery,

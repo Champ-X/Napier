@@ -24,12 +24,14 @@ import {
   DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
 } from "./default-agent-capability-contract.js";
-import { probeMacOsSandboxAvailability } from "./macos-sandbox-availability.js";
+import {
+  probeShellRuntime,
+  type RuntimeCapabilityProbe,
+} from "./doctor-runtime-probes.js";
 import {
   buildStandardSkillSnapshot,
   type SkillSnapshot,
 } from "./standard-skill-snapshot.js";
-import { resolveContainerExecutable } from "./sandbox-container.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
 
@@ -136,7 +138,10 @@ export class AgentCapabilityService {
   }
 
   private getSandboxReadiness(): Promise<CapabilityReadinessRecord> {
-    this.sandboxReadiness ??= inspectSandboxReadiness(this.sandbox);
+    this.sandboxReadiness ??= inspectSandboxReadiness(
+      this.sandbox,
+      this.store.workspaceRoot,
+    );
     return this.sandboxReadiness;
   }
 }
@@ -378,42 +383,25 @@ async function standardSkillFileExists(
 
 export async function inspectSandboxReadiness(
   sandbox: OsSandboxAdapter,
-  availability: (
+  workspaceRoot: string,
+  probe: (
+    workspaceRoot: string,
+    signal: AbortSignal | undefined,
     sandbox: OsSandboxAdapter,
-  ) => Promise<boolean> = sandboxAvailable,
+  ) => Promise<RuntimeCapabilityProbe> = probeShellRuntime,
 ): Promise<CapabilityReadinessRecord> {
-  const available = await availability(sandbox);
+  const result = await probe(workspaceRoot, undefined, sandbox);
+  const available = result.status === "ready";
   return {
     id: `sandbox:${sandbox.id}`,
-    status: available ? "available_unverified" : "unavailable",
+    status: available ? "ready" : "unavailable",
     configured: true,
     allowedByPolicy: false,
     exposed: false,
     detail: available
-      ? "Sandbox provider is available; effective process access remains policy-blocked until a tool is exposed"
-      : "Sandbox provider is unavailable; process capabilities fail closed",
+      ? `Sandbox provider completed the production shell PTY probe; effective process access remains policy-controlled (${result.message})`
+      : result.message,
   };
-}
-
-async function sandboxAvailable(sandbox: OsSandboxAdapter): Promise<boolean> {
-  try {
-    if (sandbox.id === "unsupported") return false;
-    if (sandbox.id === "macos-sandbox-exec") {
-      await probeMacOsSandboxAvailability();
-      return true;
-    }
-    if (sandbox.id === "linux-bubblewrap") {
-      await access("/usr/bin/bwrap");
-      return true;
-    }
-    if (sandbox.id === "oci-container") {
-      return (await resolveContainerExecutable()) !== undefined;
-    }
-    if (sandbox.id === "host-direct") return true;
-    return false;
-  } catch {
-    return false;
-  }
 }
 
 function projectionHashPayload(

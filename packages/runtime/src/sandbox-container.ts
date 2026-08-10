@@ -1,11 +1,22 @@
 import { constants as fsConstants } from "node:fs";
 import { access, mkdir } from "node:fs/promises";
+import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 export const CONTAINER_IMAGE_ENV = "NAPIER_CONTAINER_SANDBOX_IMAGE";
 const CONTAINER_EXECUTABLE_CANDIDATES = ["docker"] as const;
 const CONTAINER_SCRATCH_DIR_ENV = "NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR";
+const CONTAINER_PROBE_TIMEOUT_MS = 3_000;
+const CONTAINER_PROBE_ENV = [
+  "DOCKER_CERT_PATH",
+  "DOCKER_CONFIG",
+  "DOCKER_CONTEXT",
+  "DOCKER_HOST",
+  "DOCKER_TLS_VERIFY",
+  "HOME",
+  "PATH",
+] as const;
 
 /**
  * Resolves a container runtime executable from PATH so the OCI sandbox works
@@ -28,6 +39,60 @@ export async function resolveContainerExecutable(
     }
   }
   return undefined;
+}
+
+/**
+ * Verifies that the resolved Docker client can reach a server. A CLI binary on
+ * PATH alone is not runtime readiness (for example Docker Desktop may be
+ * stopped), so Doctor uses this bounded server-version call before suggesting
+ * the container fallback.
+ */
+export async function probeContainerRuntimeAvailability(
+  options: {
+    candidates?: readonly string[];
+    pathValue?: string;
+    timeoutMs?: number;
+    signal?: AbortSignal;
+  } = {},
+): Promise<boolean> {
+  const executable = await resolveContainerExecutable(
+    options.candidates,
+    options.pathValue,
+  );
+  if (!executable || options.signal?.aborted) return false;
+  const env = Object.fromEntries(
+    CONTAINER_PROBE_ENV.flatMap((name) => {
+      const value = process.env[name];
+      return value === undefined ? [] : [[name, value]];
+    }),
+  );
+  return new Promise<boolean>((resolve) => {
+    let settled = false;
+    const finish = (available: boolean): void => {
+      if (settled) return;
+      settled = true;
+      options.signal?.removeEventListener("abort", abort);
+      resolve(available);
+    };
+    const child = execFile(
+      executable,
+      ["version", "--format", "{{.Server.Version}}"],
+      {
+        env,
+        timeout: options.timeoutMs ?? CONTAINER_PROBE_TIMEOUT_MS,
+        killSignal: "SIGKILL",
+        maxBuffer: 4_096,
+        windowsHide: true,
+      },
+      (error, stdout) => finish(!error && stdout.trim().length > 0),
+    );
+    const abort = (): void => {
+      child.kill("SIGKILL");
+      finish(false);
+    };
+    options.signal?.addEventListener("abort", abort, { once: true });
+    if (options.signal?.aborted) abort();
+  });
 }
 
 /**

@@ -3217,7 +3217,7 @@ export interface WorkspaceProcessWritePreview {
   id: string;
   threadId: string;
   runId: string;
-  runtime: "node" | "python";
+  runtime: "node" | "python" | "shell";
   sandbox: string;
   argumentCount: number;
   commandSha256: string;
@@ -3247,7 +3247,7 @@ export interface WorkspaceProcessSession {
   id: string;
   threadId: string;
   runId: string;
-  runtime: "node" | "python";
+  runtime: "node" | "python" | "shell";
   status: WorkspaceProcessStatus;
   sandbox: string;
   workspaceAccess: WorkspaceProcessAccess;

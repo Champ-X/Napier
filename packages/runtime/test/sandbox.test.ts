@@ -18,7 +18,10 @@ import {
   MacOsSandboxAdapter,
   OciContainerSandboxAdapter,
 } from "../src/sandbox.js";
-import { resolveContainerExecutable } from "../src/sandbox-container.js";
+import {
+  probeContainerRuntimeAvailability,
+  resolveContainerExecutable,
+} from "../src/sandbox-container.js";
 
 const BASE_REQUEST = {
   command: "/opt/napier/bin/mcp-server",
@@ -39,6 +42,10 @@ describe("OS sandbox adapters", () => {
       "/tmp/napier-sandbox",
     );
     expect(restricted).toContain("(deny default)");
+    expect(restricted).toContain(
+      '(allow process-exec (literal "/opt/napier/bin/mcp-server"))',
+    );
+    expect(restricted).not.toContain("(allow process-exec)\n");
     expect(restricted).toContain('(literal "/opt/napier/bin/mcp-server")');
     expect(restricted).toContain('(allow file-read-data (literal "/"))');
     expect(restricted).toContain(
@@ -101,6 +108,12 @@ describe("OS sandbox adapters", () => {
     expect(runtimeAssets).toContain(
       '(allow file-read* (subpath "/opt/napier/typescript"))',
     );
+    expect(runtimeAssets).toContain(
+      '(allow process-exec (subpath "/opt/napier/lsp"))',
+    );
+    expect(runtimeAssets).toContain(
+      '(allow process-exec (subpath "/opt/napier/typescript"))',
+    );
   });
 
   it("fails closed on platforms without an implemented adapter", async () => {
@@ -139,7 +152,9 @@ describe("OS sandbox adapters", () => {
         preferContainer: true,
       }).id,
     ).toBe("oci-container");
-    expect(createPlatformSandboxAdapter("darwin").id).toBe("macos-sandbox-exec");
+    expect(createPlatformSandboxAdapter("darwin").id).toBe(
+      "macos-sandbox-exec",
+    );
     expect(createPlatformSandboxAdapter("linux").id).toBe("linux-bubblewrap");
   });
 
@@ -147,12 +162,43 @@ describe("OS sandbox adapters", () => {
     const dir = await mkdtemp(path.join(tmpdir(), "napier-container-bin-"));
     const executable = path.join(dir, "docker");
     await writeFile(executable, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
-    await expect(
-      resolveContainerExecutable(["docker"], dir),
-    ).resolves.toBe(executable);
+    await expect(resolveContainerExecutable(["docker"], dir)).resolves.toBe(
+      executable,
+    );
     await expect(
       resolveContainerExecutable(["docker"], path.join(dir, "empty")),
     ).resolves.toBeUndefined();
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("distinguishes a reachable container server from a CLI-only install", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "napier-container-probe-"));
+    const executable = path.join(dir, "docker");
+    await writeFile(executable, "#!/bin/sh\nprintf '25.0.0'\n", {
+      mode: 0o755,
+    });
+    await expect(
+      probeContainerRuntimeAvailability({
+        candidates: ["docker"],
+        pathValue: dir,
+      }),
+    ).resolves.toBe(true);
+    await writeFile(executable, "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    await expect(
+      probeContainerRuntimeAvailability({
+        candidates: ["docker"],
+        pathValue: dir,
+      }),
+    ).resolves.toBe(false);
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      probeContainerRuntimeAvailability({
+        candidates: ["docker"],
+        pathValue: dir,
+        signal: controller.signal,
+      }),
+    ).resolves.toBe(false);
     await rm(dir, { recursive: true, force: true });
   });
 

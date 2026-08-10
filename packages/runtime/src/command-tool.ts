@@ -52,7 +52,7 @@ export function createCommandTool(
     name: "run_command",
     label: "Run command",
     description:
-      "Run Node with literal argv (no shell/interpolation/env expansion) in a bounded OS sandbox. Optional workspace-relative cwd defaults root; timeoutMs bounds wall time. Workspace is read-only/offline, inherited env denied, output capped.",
+      "Run Node with literal argv (no shell/interpolation/env expansion) via the active process provider. workspace-relative cwd defaults root; timeoutMs bounds runtime. Isolated providers are read-only/offline, deny inherited env, and cap output. Explicit host-direct has no OS isolation; results are labeled.",
     parameters: commandSchema,
     async execute(_toolCallId, input, signal) {
       const result = await runner.run(input, signal);
@@ -137,8 +137,14 @@ function formatCommandResult(result: CommandExecutionResult): string {
   return [
     `Command ${details.status.toUpperCase()}: ${details.runtime}`,
     `Sandbox: ${details.sandbox}`,
-    "Workspace: read-only",
-    "Network: denied",
+    ...(details.sandbox === "host-direct"
+      ? [
+          "Isolation: none",
+          "WARNING: host-direct does not enforce workspace, network, or resource boundaries.",
+          "Workspace policy (not enforced): read-only",
+          "Network policy (not enforced): denied",
+        ]
+      : ["Isolation: enforced", "Workspace: read-only", "Network: denied"]),
     `Command SHA-256: ${details.commandSha256}`,
     `Arguments: ${details.argumentCount} / ${details.argumentSetSha256}`,
     `Executable SHA-256: ${details.executableSha256}`,

@@ -25,7 +25,7 @@ const workspaceProcessSchema = Type.Union([
   Type.Object(
     {
       action: Type.Literal("start"),
-      runtime: Type.Literal("node"),
+      runtime: Type.Union([Type.Literal("node"), Type.Literal("shell")]),
       args: Type.Array(
         Type.String({
           maxLength: 2_048,
@@ -116,7 +116,7 @@ export function createWorkspaceProcessTool(
     name: "workspace_process",
     label: "Workspace process",
     description:
-      "Manage background Node Process Sessions: start with explicit argv, offline fixed environment, and either interactive pipe or bounded PTY; then input, poll, resize PTY, or cancel. Text is ephemeral and Ledger-redacted. Starts are read-only; writes require preview_write with 1-8 existing scopes then one-use start_write. Sandbox keeps other paths read-only and settlement verifies the observed Delta.",
+      "Manage background Process Sessions. Node keeps literal argv; shell requires one script in args and runs it with a fixed command PATH, no inherited environment, and either interactive pipe or bounded PTY. Then input, poll, resize PTY, or cancel. Text is ephemeral and Ledger-redacted. Isolated providers deny network and start read-only; writes require preview_write with 1-8 existing scopes then one-use start_write, and settlement reports the observed Delta. Explicit host-direct mode has no OS isolation and every result warns that workspace, network, and resource boundaries are not enforced.",
     parameters: workspaceProcessSchema,
     async execute(_toolCallId, input, signal) {
       assertExclusiveProcessIoMode(input);

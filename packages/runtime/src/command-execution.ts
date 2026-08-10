@@ -5,6 +5,7 @@ import {
   assertCommandRuntimeBindingStable,
   resolveCommandRuntimeBinding,
   resolveCommandRuntimeReadPaths,
+  shellInvocationArgs,
   type CommandRuntime,
   type CommandRuntimeAsset,
   type CommandRuntimeReadPathIdentity,
@@ -183,7 +184,18 @@ export async function prepareCommandExecution(
   ]);
   const runtimeReadPaths = runtimeReadPathBinding.paths;
   const environment =
-    input.runtime === "python" ? FIXED_PYTHON_ENVIRONMENT : FIXED_ENVIRONMENT;
+    input.runtime === "python"
+      ? FIXED_PYTHON_ENVIRONMENT
+      : input.runtime === "shell"
+        ? {
+            ...FIXED_ENVIRONMENT,
+            PATH: binding.executableSearchPaths!.join(path.delimiter),
+          }
+        : FIXED_ENVIRONMENT;
+  const launchArgs =
+    input.runtime === "shell"
+      ? shellInvocationArgs(input.args[0]!)
+      : [...input.args];
   const timeoutMs = input.timeoutMs ?? DEFAULT_COMMAND_TIMEOUT_MS;
   const resourceLimits = {
     wallTimeMs: timeoutMs,
@@ -218,7 +230,7 @@ export async function prepareCommandExecution(
   };
   if (options.sandbox.id === "oci-container") {
     throw new Error(
-      "run_command requires a local OS sandbox until container runtime identity binding is available",
+      "Host-bound command runtimes require a local OS sandbox until container runtime identity binding is available",
     );
   }
   return {
@@ -235,7 +247,7 @@ export async function prepareCommandExecution(
     timeoutMs,
     launch: {
       command: binding.executable,
-      args: [...input.args],
+      args: launchArgs,
       cwd,
       env: { ...environment },
       workspaceRoot,
@@ -319,7 +331,11 @@ export function finalizeCommandExecution(
 }
 
 function validateCommandRequest(input: CommandExecutionRequest): void {
-  if (input.runtime !== "node" && input.runtime !== "python") {
+  if (
+    input.runtime !== "node" &&
+    input.runtime !== "python" &&
+    input.runtime !== "shell"
+  ) {
     throw new Error(`Unsupported command runtime: ${String(input.runtime)}`);
   }
   if (
@@ -335,6 +351,9 @@ function validateCommandRequest(input: CommandExecutionRequest): void {
       MAX_TOTAL_ARGUMENT_CHARS
   ) {
     throw new Error("command args exceed the bounded explicit argv contract");
+  }
+  if (input.runtime === "shell" && input.args.length !== 1) {
+    throw new Error("shell runtime requires exactly one explicit script");
   }
   if (
     input.cwd !== undefined &&

@@ -1,8 +1,17 @@
-import { constants as fsConstants } from "node:fs";
-import { access } from "node:fs/promises";
 import { createRequire } from "node:module";
 
+import {
+  assertCommandRuntimeStable,
+  prepareCommandExecution,
+  type PreparedCommandExecution,
+} from "./command-execution.js";
 import { resolveCommandRuntimeBinding } from "./command-runtime.js";
+import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  createPlatformSandboxAdapter,
+  type OsSandboxAdapter,
+} from "./sandbox.js";
+import { runSandboxedProcess } from "./sandboxed-process.js";
 import { isSkillLoadReceipt } from "./skill-load-contracts.js";
 import { createSkillLoadTool } from "./skill-load-tool.js";
 import { createSkillAccessState } from "./skill-access-state.js";
@@ -11,9 +20,13 @@ import {
   buildStandardSkillSnapshot,
   discoverStandardSkillNames,
 } from "./standard-skill-snapshot.js";
+import { bindWorkspaceProcessIo } from "./workspace-process-terminal.js";
 
 const require = createRequire(import.meta.url);
 const MAX_PROBED_SKILLS = 64;
+const PROCESS_PROBE_MARKER = "napier_process_probe_v1";
+const SHELL_PROBE_MARKER = "napier_shell_probe_v1";
+const PROCESS_PROBE_TIMEOUT_MS = 5_000;
 
 export type RuntimeCapabilityStatus =
   | "ready"
@@ -250,26 +263,149 @@ export async function probePythonRuntime(): Promise<RuntimeCapabilityProbe> {
   }
 }
 
+/** Executes the same bounded Node pipe path used by run_command. */
+export async function probeSandboxProcessRuntime(
+  workspaceRoot: string,
+  signal?: AbortSignal,
+  sandbox: OsSandboxAdapter = createPlatformSandboxAdapter(),
+): Promise<RuntimeCapabilityProbe> {
+  return activeProcessProbe({
+    workspaceRoot,
+    sandbox,
+    runtime: "node",
+    args: [
+      "-e",
+      `process.stdout.write(${JSON.stringify(PROCESS_PROBE_MARKER)})`,
+    ],
+    marker: PROCESS_PROBE_MARKER,
+    ...(signal ? { signal } : {}),
+  });
+}
+
 /**
- * Interactive shell readiness. PTY-backed terminals and background processes
- * depend on node-pty; without it, shell sessions fail closed.
+ * Executes the production shell preparation, Sandbox, parent guard, and PTY
+ * path. Merely resolving node-pty or a shell executable is never reported as
+ * ready.
  */
-export async function probeShellRuntime(): Promise<RuntimeCapabilityProbe> {
+export async function probeShellRuntime(
+  workspaceRoot: string,
+  signal?: AbortSignal,
+  sandbox: OsSandboxAdapter = createPlatformSandboxAdapter(),
+): Promise<RuntimeCapabilityProbe> {
+  const script =
+    process.platform === "win32"
+      ? `node -e "process.stdout.write('${SHELL_PROBE_MARKER}')"`
+      : `node -e 'process.stdout.write("${SHELL_PROBE_MARKER}")'`;
+  return activeProcessProbe({
+    workspaceRoot,
+    sandbox,
+    runtime: "shell",
+    args: [script],
+    marker: SHELL_PROBE_MARKER,
+    terminal: true,
+    ...(signal ? { signal } : {}),
+  });
+}
+
+async function activeProcessProbe(input: {
+  workspaceRoot: string;
+  sandbox: OsSandboxAdapter;
+  runtime: "node" | "shell";
+  args: string[];
+  marker: string;
+  terminal?: boolean;
+  signal?: AbortSignal;
+}): Promise<RuntimeCapabilityProbe> {
+  let prepared: PreparedCommandExecution | undefined;
   try {
-    const specifier = require.resolve("node-pty");
-    await access(specifier, fsConstants.R_OK);
+    prepared = await prepareCommandExecution(
+      { workspaceRoot: input.workspaceRoot, sandbox: input.sandbox },
+      {
+        runtime: input.runtime,
+        args: input.args,
+        timeoutMs: PROCESS_PROBE_TIMEOUT_MS,
+      },
+    );
+    const io = input.terminal
+      ? bindWorkspaceProcessIo(prepared, { columns: 80, rows: 24 })
+      : undefined;
+    const result = await runSandboxedProcess({
+      sandbox: input.sandbox,
+      launch: io?.launch ?? prepared.launch,
+      timeoutMs: PROCESS_PROBE_TIMEOUT_MS,
+      maxOutputChars: 256,
+      ...(input.signal ? { signal: input.signal } : {}),
+      abortedMessage: "Runtime process probe was cancelled",
+    });
+    const ready =
+      result.status === "exited" &&
+      result.exitCode === 0 &&
+      result.stdout === input.marker &&
+      result.stderr === "";
+    if (!ready) return processProbeFailure(input.runtime, "probe_result");
     return {
-      status: "available_unverified",
-      code: "shell_ready",
+      status: "ready",
+      code: input.runtime === "shell" ? "shell_ready" : "sandbox_process_ready",
       message:
-        "PTY-backed shell sessions are available through the node-pty helper",
+        input.runtime === "shell"
+          ? `The active ${input.sandbox.id} provider completed a bounded shell command through the production PTY path`
+          : `The active ${input.sandbox.id} provider completed a bounded command through the production execution path`,
+      evidence: {
+        adapter: input.sandbox.id,
+        productionCall: true,
+        pty: input.terminal === true,
+        executableSha256: prepared.executableSha256,
+        commandSha256:
+          io?.commandSha256 ?? sha256(canonicalJson(prepared.receipt)),
+        exitCode: result.exitCode!,
+      },
     };
-  } catch {
+  } catch (error) {
+    if (input.signal?.aborted) throw error;
+    return processProbeFailure(input.runtime, error);
+  } finally {
+    if (prepared) await assertCommandRuntimeStable(prepared);
+  }
+}
+
+function processProbeFailure(
+  runtime: "node" | "shell",
+  error: unknown,
+): RuntimeCapabilityProbe {
+  const message = error instanceof Error ? error.message : String(error);
+  if (runtime === "shell" && /node-pty|PTY launch/iu.test(message)) {
     return {
       status: "unavailable",
       code: "shell_missing",
       message:
-        "node-pty is unavailable; PTY shell and background process tools fail closed",
+        "The production PTY helper is unavailable; shell sessions fail closed",
     };
   }
+  if (runtime === "shell" && /shell runtime/iu.test(message)) {
+    return {
+      status: "unavailable",
+      code: "shell_runtime_missing",
+      message: "No supported system shell runtime is available",
+    };
+  }
+  const incompatible = /container runtime identity binding/iu.test(message);
+  return {
+    status: "unavailable",
+    code:
+      runtime === "shell"
+        ? incompatible
+          ? "shell_provider_incompatible"
+          : "shell_provider_unavailable"
+        : incompatible
+          ? "sandbox_provider_incompatible"
+          : "sandbox_provider_unavailable",
+    message:
+      runtime === "shell"
+        ? incompatible
+          ? "The active provider cannot bind the shell runtime identity or PTY yet; shell sessions fail closed"
+          : "The active provider could not complete the production shell PTY probe; shell sessions fail closed"
+        : incompatible
+          ? "The active provider cannot bind the command runtime identity yet; process capabilities fail closed"
+          : "The active provider could not complete the production command probe; process capabilities fail closed",
+  };
 }

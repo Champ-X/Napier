@@ -1,4 +1,4 @@
-import type { RunEvent } from "@napier/contracts";
+import type { JsonValue, RunEvent } from "@napier/contracts";
 
 const EVENT =
   /^workspace\.process\.(started|input|resized|settled|interrupted|rollback_started|rolled_back)$/u;
@@ -155,10 +155,7 @@ export function workspaceProcessEventTraceSummary(
   }
   const processId = stringMatch(event.payload["id"], PROCESS_ID);
   const status = stringMatch(event.payload["status"], STATUS);
-  const runtime =
-    event.payload["runtime"] === "node" || event.payload["runtime"] === "python"
-      ? event.payload["runtime"]
-      : undefined;
+  const runtime = processRuntime(event.payload);
   const argumentCount = integer(event.payload["argumentCount"]);
   const stdoutChars = integer(event.payload["stdoutChars"]);
   const stderrChars = integer(event.payload["stderrChars"]);
@@ -201,11 +198,7 @@ export function workspaceProcessEventTraceSummary(
     ...(processId ? [`id ${processId.slice(-10)}`] : []),
     ...(status ? [`status ${status}`] : []),
     ...(runtime ? [`runtime ${runtime}`] : []),
-    ...(event.payload["workspaceAccess"] === "scoped_write"
-      ? ["access scoped-write"]
-      : event.payload["workspaceAccess"] === "read_only"
-        ? ["access read-only"]
-        : []),
+    ...processIsolationTraceParts(event.payload),
     ...(writeScopeCount !== undefined
       ? [`write-scopes ${writeScopeCount}`]
       : []),
@@ -263,6 +256,32 @@ export function workspaceProcessEventTraceSummary(
       ? ["after-snapshot-truncated"]
       : []),
   ].join(" / ");
+}
+
+function processRuntime(
+  payload: Record<string, JsonValue>,
+): "node" | "python" | "shell" | undefined {
+  const runtime = payload["runtime"];
+  return runtime === "node" || runtime === "python" || runtime === "shell"
+    ? runtime
+    : undefined;
+}
+
+function processIsolationTraceParts(
+  payload: Record<string, JsonValue>,
+): string[] {
+  const sandbox =
+    typeof payload["sandbox"] === "string" ? payload["sandbox"] : undefined;
+  const hostDirect = sandbox === "host-direct";
+  return [
+    ...(sandbox ? [`sandbox ${sandbox}`] : []),
+    ...(hostDirect ? ["isolation none", "access policy not enforced"] : []),
+    ...(!hostDirect && payload["workspaceAccess"] === "scoped_write"
+      ? ["access scoped-write"]
+      : !hostDirect && payload["workspaceAccess"] === "read_only"
+        ? ["access read-only"]
+        : []),
+  ];
 }
 
 function stringMatch(value: unknown, pattern: RegExp): string | undefined {

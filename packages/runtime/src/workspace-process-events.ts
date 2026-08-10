@@ -286,7 +286,7 @@ function parseWorkspaceProcessSession(
     !RESOURCE_ID.test(value["threadId"]) ||
     typeof value["runId"] !== "string" ||
     !RESOURCE_ID.test(value["runId"]) ||
-    (value["runtime"] !== "node" && value["runtime"] !== "python") ||
+    !["node", "python", "shell"].includes(value["runtime"] as string) ||
     typeof value["sandbox"] !== "string" ||
     (value["workspaceAccess"] !== "read_only" &&
       value["workspaceAccess"] !== "scoped_write") ||

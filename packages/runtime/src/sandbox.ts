@@ -3,6 +3,7 @@ import { access, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import * as macProfile from "./macos-sandbox-profile.js";
 import { probeMacOsSandboxAvailability } from "./macos-sandbox-availability.js";
 import { createParentGuardedTerminalLaunch } from "./process-guardian.js";
 import {
@@ -36,8 +37,7 @@ export { UnsupportedSandboxAdapter } from "./unsupported-sandbox.js";
 
 const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
 const BUBBLEWRAP_EXEC = "/usr/bin/bwrap";
-const MAX_RUNTIME_READ_PATHS = 8;
-const MAX_WORKSPACE_WRITE_PATHS = 8;
+const MAX_SANDBOX_PATHS = 8;
 const LINUX_RUNTIME_READ_PATHS = [
   "/lib",
   "/lib64",
@@ -234,40 +234,44 @@ export function buildMacOsSandboxProfile(
     "(version 1)",
     "(deny default)",
     "(allow process-fork)",
-    `(allow process-exec (literal ${sandboxLiteral(request.command)}))`,
+    ...macProfile.processExecRules(request.command, request.runtimeReadPaths),
     "(allow signal (target self))",
     "(allow sysctl-read)",
     '(allow mach-lookup (global-name "com.apple.system.logger"))',
     '(allow file-read-data (literal "/"))',
     "(allow file-read-metadata",
     ...metadataPaths.map(
-      (directory) => `  (literal ${sandboxLiteral(directory)})`,
+      (directory) => `  (literal ${macProfile.literal(directory)})`,
     ),
     ")",
     "(allow file-read*",
     '  (subpath "/System")',
     '  (subpath "/usr/lib")',
     '  (subpath "/private/etc")',
-    `  (literal ${sandboxLiteral(request.command)})`,
+    `  (literal ${macProfile.literal(request.command)})`,
     ")",
-    `(allow file-read* file-write* (subpath ${sandboxLiteral(sandboxHome)}))`,
+    `(allow file-read* file-write* (subpath ${macProfile.literal(sandboxHome)}))`,
   ];
   if (
     capabilities.has("workspace.read") ||
     capabilities.has("workspace.write")
   ) {
     rules.push(
-      `(allow file-read* (subpath ${sandboxLiteral(request.workspaceRoot)}))`,
+      `(allow file-read* (subpath ${macProfile.literal(request.workspaceRoot)}))`,
     );
   }
   for (const runtimePath of request.runtimeReadPaths ?? []) {
-    rules.push(`(allow file-read* (subpath ${sandboxLiteral(runtimePath)}))`);
+    rules.push(
+      `(allow file-read* (subpath ${macProfile.literal(runtimePath)}))`,
+    );
   }
   if (capabilities.has("workspace.write")) {
     for (const writePath of writePaths.length > 0
       ? writePaths
       : [request.workspaceRoot]) {
-      rules.push(`(allow file-write* (subpath ${sandboxLiteral(writePath)}))`);
+      rules.push(
+        `(allow file-write* (subpath ${macProfile.literal(writePath)}))`,
+      );
     }
   }
   if (capabilities.has("network.connect")) {
@@ -430,7 +434,7 @@ function validateLaunchRequest(request: SandboxLaunchRequest): void {
   scopedWorkspaceWritePaths(request);
   if (
     request.runtimeReadPaths !== undefined &&
-    (request.runtimeReadPaths.length > MAX_RUNTIME_READ_PATHS ||
+    (request.runtimeReadPaths.length > MAX_SANDBOX_PATHS ||
       request.runtimeReadPaths.some(
         (runtimePath) =>
           !path.isAbsolute(runtimePath) ||
@@ -439,7 +443,7 @@ function validateLaunchRequest(request: SandboxLaunchRequest): void {
       ))
   ) {
     throw new Error(
-      `Sandbox runtime read paths must contain at most ${MAX_RUNTIME_READ_PATHS} absolute non-root paths`,
+      `Sandbox runtime read paths must contain at most ${MAX_SANDBOX_PATHS} absolute non-root paths`,
     );
   }
   validateTerminalDimensions(request.terminal);
@@ -454,7 +458,7 @@ function scopedWorkspaceWritePaths(request: SandboxLaunchRequest): string[] {
     throw new Error("Sandbox workspace write paths require workspace.write");
   }
   if (
-    paths.length > MAX_WORKSPACE_WRITE_PATHS ||
+    paths.length > MAX_SANDBOX_PATHS ||
     paths.some(
       (writePath) =>
         !path.isAbsolute(writePath) ||
@@ -466,7 +470,7 @@ function scopedWorkspaceWritePaths(request: SandboxLaunchRequest): string[] {
       paths.length
   ) {
     throw new Error(
-      `Sandbox workspace write paths must contain at most ${MAX_WORKSPACE_WRITE_PATHS} distinct absolute non-root workspace paths`,
+      `Sandbox workspace write paths must contain at most ${MAX_SANDBOX_PATHS} distinct absolute non-root workspace paths`,
     );
   }
   const resolved = paths.map((writePath) => path.resolve(writePath)).sort();
@@ -535,8 +539,4 @@ function isPathInside(candidate: string, root: string): boolean {
       relative !== ".." &&
       !path.isAbsolute(relative))
   );
-}
-
-function sandboxLiteral(value: string): string {
-  return JSON.stringify(path.resolve(value));
 }

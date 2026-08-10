@@ -251,8 +251,8 @@ function executionToolGuidance(toolNames: ReadonlySet<string>): string[] {
       : []),
     ...(toolNames.has("workspace_process")
       ? [
-          "Use workspace_process for background Node sessions; choose pipe for closeable stdin or PTY for terminal-aware programs. Poll by cursor to terminal status and cancel unused sessions. PTY output is merged; resize only its Process ID.",
-          "Input is live-only: never send secrets or blindly retry after unknown outcome. Ordinary sessions are read-only/offline; scoped writes require preview_write on explicit existing paths, one-use start_write, workspaceWriteScopeStatus=within_scope, and exact Delta inspection.",
+          "Use workspace_process for background Node or shell sessions; Node uses literal argv, while shell accepts exactly one explicit script in args. Choose pipe for closeable stdin or PTY for terminal-aware programs. Poll by cursor to terminal status and cancel unused sessions. PTY output is merged; resize only its Process ID.",
+          "Input is live-only: never send secrets or blindly retry after unknown outcome. Isolated-provider sessions start read-only/offline; scoped writes require preview_write on explicit existing paths, one-use start_write, workspaceWriteScopeStatus=within_scope, and exact Delta inspection. Host-direct is an explicit unisolated escape path: its workspace, network, and resource policies are not enforced, so treat every host-direct warning as authoritative.",
           "Outside-scope, drifted, or indeterminate observations have unknown attribution; keep them fail-visible and do not blame concurrent changes on the session.",
         ]
       : []),

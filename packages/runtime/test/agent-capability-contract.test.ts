@@ -668,18 +668,19 @@ describe("default Agent Capability Contract", () => {
     }
   });
 
-  it("never reports an available but policy-blocked Sandbox as ready", async () => {
+  it("reports only a successful production probe as ready while preserving policy control", async () => {
     const readiness = await inspectSandboxReadiness(
       new UnsupportedSandboxAdapter("available-test"),
-      async () => true,
-    );
-    expect(readiness).toEqual(
-      expect.objectContaining({
-        status: "available_unverified",
-        allowedByPolicy: false,
-        exposed: false,
+      "/workspace",
+      async () => ({
+        status: "ready",
+        code: "shell_ready",
+        message: "production probe passed",
       }),
     );
+    expect(readiness.status).toBe("ready");
+    expect(readiness.allowedByPolicy).toBe(false);
+    expect(readiness.exposed).toBe(false);
   });
 
   it("restores only an exact revision and hash-bound preview", async () => {

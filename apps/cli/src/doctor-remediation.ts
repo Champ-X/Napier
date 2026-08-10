@@ -115,6 +115,24 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
       "Reinstall dependencies so node-pty rebuilds; PTY shell and background process tools fail closed without it.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
+  shell_runtime_missing: {
+    id: "repair_shell_runtime",
+    instruction:
+      "Install a supported system shell runtime, then rerun the production PTY readiness probe.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  shell_provider_unavailable: {
+    id: "repair_shell_provider",
+    instruction:
+      "Configure an active process Sandbox that can launch the production shell PTY path, then rerun Doctor.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  shell_provider_incompatible: {
+    id: "repair_shell_provider",
+    instruction:
+      "Select a process Sandbox with runtime identity and PTY support; the configured provider cannot run Shell Sessions yet.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
   search_unavailable: networkRemediation(),
   fetch_unavailable: networkRemediation(),
   browser_unavailable: networkRemediation(),

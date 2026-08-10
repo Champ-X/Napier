@@ -1,0 +1,65 @@
+{
+  "kind": "napier.shell-sandbox-stage1-dogfood",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-10T00:02:21Z",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "defaultProvider": {
+    "adapter": "macos-sandbox-exec",
+    "shellDoctorCode": "shell_provider_unavailable",
+    "sandboxDoctorCode": "sandbox_unavailable",
+    "capabilityStatus": "unavailable",
+    "codingSendBoundary": "blocked",
+    "containerCliPresent": true,
+    "containerServerReachable": false
+  },
+  "explicitHostDirectProvider": {
+    "adapter": "host-direct",
+    "shellDoctorCode": "shell_ready",
+    "sandboxDoctorCode": "sandbox_host_direct",
+    "productionCall": true,
+    "isolation": "none",
+    "warningVisible": true
+  },
+  "modelDogfood": {
+    "threadId": "thread_407c00ffb9f34663ac92",
+    "runId": "run_ff56b0fd9f114a6d8093",
+    "status": "completed",
+    "sessionRuntime": "shell",
+    "ioMode": "pty",
+    "sessionStatus": "succeeded",
+    "observedCommands": ["node --version", "npm --version", "git --version"],
+    "observedVersions": [
+      "v24.16.0",
+      "11.13.0",
+      "git version 2.50.1 (Apple Git-155)"
+    ],
+    "workspaceDeltaStatus": "unchanged",
+    "workspaceChangedFileCount": 0,
+    "sandboxLabelObservedByModel": "Sandbox: host-direct",
+    "isolationWarningObservedByModel": "WARNING: host-direct does not enforce workspace, network, or resource boundaries.",
+    "eventCount": 536,
+    "eventStreamSha256": "328350955fbf3be76f87ae02acf679e5a2a9147365ee46ea9f242325b4a11046"
+  },
+  "retention": {
+    "credentialValues": false,
+    "rawProviderPayload": false,
+    "rawJsonl": false,
+    "promptBody": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "OCI image-bound runtime identity",
+      "OCI PTY and parent-death handling",
+      "environment reference whitelist",
+      "port and local-service projection",
+      "cross-platform isolated provider E2E",
+      "write, cancellation, and recovery casebook"
+    ]
+  },
+  "contentSha256": "b409989774a880587552eec70a0cb089b450bf58ae4e75bcd7a3e7cdea41ffc3"
+}

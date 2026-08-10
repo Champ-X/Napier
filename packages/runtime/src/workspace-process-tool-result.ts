@@ -26,7 +26,10 @@ export interface WorkspaceProcessToolDetails {
   status?: WorkspaceProcessStatus;
   nextCursor: number;
   outputAvailable: boolean;
+  sandbox?: string;
+  isolation?: "enforced" | "none";
   workspaceAccess?: "read_only" | "scoped_write";
+  networkAccess?: "denied";
   writeScopeCount?: number;
   writeScopeSetSha256?: string;
   failureRecovery?: "restore_scopes";
@@ -72,7 +75,9 @@ export function workspaceProcessToolResult(
     status: session.status,
     nextCursor: chunks.at(-1)?.cursor ?? session.nextCursor,
     outputAvailable: session.outputAvailable,
+    ...sandboxDetails(session.sandbox),
     workspaceAccess: session.workspaceAccess,
+    networkAccess: session.networkAccess,
     ...(session.writeScopeCount !== undefined
       ? { writeScopeCount: session.writeScopeCount }
       : {}),
@@ -123,7 +128,9 @@ export function workspaceProcessToolResult(
         action,
         processId: session.id,
         status: session.status,
+        ...sandboxDetails(session.sandbox),
         workspaceAccess: session.workspaceAccess,
+        networkAccess: session.networkAccess,
         writeScopeCount: session.writeScopeCount ?? null,
         writeScopeSetSha256: session.writeScopeSetSha256 ?? null,
         failureRecovery: session.failureRecovery ?? null,
@@ -152,7 +159,7 @@ export function workspaceProcessToolResult(
     `Process ${session.id}: ${session.status}`,
     `Cursor: ${details.nextCursor}`,
     `Output available: ${String(session.outputAvailable)}`,
-    `Workspace access: ${session.workspaceAccess}`,
+    ...processIsolationLines(session),
     ...(session.writeScopeCount !== undefined
       ? [
           `Write scopes: ${session.writeScopeCount} / ${session.writeScopeSetSha256}`,
@@ -216,6 +223,7 @@ export function workspaceProcessWritePreviewToolResult(
     nextCursor: 0,
     outputAvailable: false,
     chunkCount: 0,
+    ...sandboxDetails(preview.sandbox),
     workspaceAccess: "scoped_write",
     writeScopeCount: preview.writeScopeCount,
     writeScopeSetSha256: preview.writeScopeSetSha256,
@@ -233,6 +241,7 @@ export function workspaceProcessWritePreviewToolResult(
       canonicalJson({
         previewId: preview.id,
         previewSha256: preview.contentSha256,
+        ...sandboxDetails(preview.sandbox),
         commandSha256: preview.commandSha256,
         workspaceBeforeSha256: preview.workspaceBeforeSha256,
         writeScopeCount: preview.writeScopeCount,
@@ -249,6 +258,13 @@ export function workspaceProcessWritePreviewToolResult(
           `Scoped write preview ${preview.id}`,
           `Preview SHA-256: ${preview.contentSha256}`,
           `Command SHA-256: ${preview.commandSha256}`,
+          `Sandbox: ${preview.sandbox}`,
+          `Isolation: ${preview.sandbox === "host-direct" ? "none" : "enforced"}`,
+          ...(preview.sandbox === "host-direct"
+            ? [
+                "WARNING: host-direct does not enforce the previewed write scopes, network, or resource boundaries.",
+              ]
+            : []),
           `Workspace before SHA-256: ${preview.workspaceBeforeSha256}`,
           `Workspace: ${preview.workspaceBeforeFileCount} files / ${preview.workspaceBeforeBytes} bytes`,
           `Write scopes: ${preview.writeScopeCount} / ${preview.writeScopeSetSha256}`,
@@ -261,4 +277,32 @@ export function workspaceProcessWritePreviewToolResult(
     ],
     details,
   };
+}
+
+function sandboxDetails(sandbox: string): {
+  sandbox: string;
+  isolation: "enforced" | "none";
+} {
+  return {
+    sandbox,
+    isolation: sandbox === "host-direct" ? "none" : "enforced",
+  };
+}
+
+function processIsolationLines(session: WorkspaceProcessSession): string[] {
+  const details = sandboxDetails(session.sandbox);
+  return [
+    `Sandbox: ${details.sandbox}`,
+    `Isolation: ${details.isolation}`,
+    ...(details.isolation === "none"
+      ? [
+          "WARNING: host-direct does not enforce workspace, network, or resource boundaries.",
+          `Workspace access policy (not enforced): ${session.workspaceAccess}`,
+          `Network access policy (not enforced): ${session.networkAccess}`,
+        ]
+      : [
+          `Workspace access: ${session.workspaceAccess}`,
+          `Network access: ${session.networkAccess}`,
+        ]),
+  ];
 }

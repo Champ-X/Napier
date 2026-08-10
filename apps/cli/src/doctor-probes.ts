@@ -12,10 +12,7 @@ import {
   probeSkillsRuntime,
 } from "@napier/runtime/doctor-probes";
 
-import {
-  defaultSandboxProbe,
-  sandboxFailure,
-} from "./doctor-sandbox-probe.js";
+import { defaultSandboxProbe, sandboxFailure } from "./doctor-sandbox-probe.js";
 import { localCapabilityCheck } from "./doctor-local-capability-check.js";
 import {
   normalizeWebSearchRequest,
@@ -46,7 +43,7 @@ export interface DoctorProbeDependencies {
   lsp?: () => Promise<DoctorCheck>;
   dap?: () => Promise<DoctorCheck>;
   python?: () => Promise<DoctorCheck>;
-  shell?: () => Promise<DoctorCheck>;
+  shell?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
 }
 
 export async function runDoctorProbes(input: {
@@ -102,8 +99,10 @@ export async function runDoctorProbes(input: {
         ? dependencies.python()
         : localCapabilityCheck("python", probePythonRuntime),
       dependencies.shell
-        ? dependencies.shell()
-        : localCapabilityCheck("shell", probeShellRuntime),
+        ? dependencies.shell(input.workspaceRoot, input.signal)
+        : localCapabilityCheck("shell", () =>
+            probeShellRuntime(input.workspaceRoot, input.signal),
+          ),
     ])),
   );
   input.signal.throwIfAborted();

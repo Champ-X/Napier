@@ -36,7 +36,7 @@ export const workspaceProcessWriteActionSchema = Type.Union([
   Type.Object(
     {
       action: Type.Literal("preview_write"),
-      runtime: Type.Literal("node"),
+      runtime: Type.Union([Type.Literal("node"), Type.Literal("shell")]),
       args: Type.Array(argument, { maxItems: 64 }),
       cwd,
       timeoutMs,

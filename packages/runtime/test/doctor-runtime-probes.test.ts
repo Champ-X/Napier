@@ -5,9 +5,12 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  probeShellRuntime,
   probeSkillsRuntime,
   sandboxIsolationStrength,
 } from "../src/doctor-runtime-probes.js";
+import { HostDirectSandboxAdapter } from "../src/sandbox-host-direct.js";
+import { UnsupportedSandboxAdapter } from "../src/unsupported-sandbox.js";
 
 describe("sandbox isolation strength", () => {
   it("reports container isolation with resource limits for OCI", () => {
@@ -35,6 +38,46 @@ describe("sandbox isolation strength", () => {
     expect(strength.level).toBe("none");
     expect(strength.networkDeniedByDefault).toBe(false);
     expect(strength.summary).toContain("fail closed");
+  });
+});
+
+describe("Shell Doctor probe", () => {
+  it("executes the production shell, child command, parent guard, and PTY path", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-doctor-shell-"));
+    try {
+      await expect(
+        probeShellRuntime(root, undefined, new HostDirectSandboxAdapter()),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          status: "ready",
+          code: "shell_ready",
+          evidence: expect.objectContaining({
+            adapter: "host-direct",
+            productionCall: true,
+            pty: true,
+            executableSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            commandSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            exitCode: 0,
+          }),
+        }),
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not report Shell ready when the active provider cannot launch", async () => {
+    const result = await probeShellRuntime(
+      process.cwd(),
+      undefined,
+      new UnsupportedSandboxAdapter("doctor-test"),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "unavailable",
+        code: "shell_provider_unavailable",
+      }),
+    );
   });
 });
 

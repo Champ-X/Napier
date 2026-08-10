@@ -1,9 +1,9 @@
+import { createPlatformSandboxAdapter } from "@napier/runtime";
 import {
-  createPlatformSandboxAdapter,
-  runSandboxedProcess,
-} from "@napier/runtime";
-import { sandboxIsolationStrength } from "@napier/runtime/doctor-probes";
-import { resolveContainerExecutable } from "@napier/runtime/sandbox-container";
+  probeSandboxProcessRuntime,
+  sandboxIsolationStrength,
+} from "@napier/runtime/doctor-probes";
+import { probeContainerRuntimeAvailability } from "@napier/runtime/sandbox-container";
 
 import type { DoctorCheck } from "./doctor-report.js";
 
@@ -19,45 +19,16 @@ export async function defaultSandboxProbe(
 ): Promise<DoctorCheck> {
   const startedAt = Date.now();
   const sandbox = createPlatformSandboxAdapter();
-  const container = sandbox.id === "oci-container";
-  const launch = container
-    ? {
-        command: "/bin/true",
-        args: [] as string[],
-        env: { LANG: "C", LC_ALL: "C", PATH: "/usr/bin:/bin" },
-      }
-    : {
-        command: process.execPath,
-        args: ["-e", "process.exit(0)"],
-        env: { LANG: "C", LC_ALL: "C", PATH: process.env.PATH ?? "" },
-      };
   let result;
   try {
-    result = await runSandboxedProcess({
-      sandbox,
-      launch: {
-        command: launch.command,
-        args: launch.args,
-        cwd: workspaceRoot,
-        env: launch.env,
-        workspaceRoot,
-        approvedCapabilities: ["process.spawn"],
-      },
-      timeoutMs: container ? 60_000 : 5_000,
-      maxOutputChars: 256,
-      signal,
-      abortedMessage: "Doctor sandbox probe was cancelled",
-    });
+    result = await probeSandboxProcessRuntime(workspaceRoot, signal, sandbox);
   } catch (error) {
     if (signal.aborted) throw error;
-    return sandboxUnavailableCheck(Date.now() - startedAt);
+    return sandboxUnavailableCheck(Date.now() - startedAt, signal);
   }
-  const passed =
-    result.status === "exited" &&
-    result.exitCode === 0 &&
-    !result.stdout &&
-    !result.stderr;
-  if (!passed) return sandboxUnavailableCheck(Date.now() - startedAt);
+  if (result.status !== "ready") {
+    return sandboxUnavailableCheck(Date.now() - startedAt, signal);
+  }
   const isolation = sandboxIsolationStrength(sandbox.id);
   if (sandbox.id === "host-direct") {
     return {
@@ -72,6 +43,7 @@ export async function defaultSandboxProbe(
         isolationLevel: isolation.level,
         networkDeniedByDefault: isolation.networkDeniedByDefault,
         resourceLimited: isolation.resourceLimited,
+        productionCall: true,
       },
     };
   }
@@ -87,11 +59,15 @@ export async function defaultSandboxProbe(
       isolationLevel: isolation.level,
       networkDeniedByDefault: isolation.networkDeniedByDefault,
       resourceLimited: isolation.resourceLimited,
+      productionCall: true,
     },
   };
 }
 
-export function sandboxFailure(_error: unknown, durationMs: number): DoctorCheck {
+export function sandboxFailure(
+  _error: unknown,
+  durationMs: number,
+): DoctorCheck {
   const isolation = sandboxIsolationStrength(createPlatformSandboxAdapter().id);
   return {
     id: "sandbox",
@@ -107,15 +83,18 @@ export function sandboxFailure(_error: unknown, durationMs: number): DoctorCheck
 
 async function sandboxUnavailableCheck(
   durationMs: number,
+  signal: AbortSignal,
 ): Promise<DoctorCheck> {
+  signal.throwIfAborted();
   const isolation = sandboxIsolationStrength(createPlatformSandboxAdapter().id);
   const imageConfigured = Boolean(
     process.env["NAPIER_CONTAINER_SANDBOX_IMAGE"]?.trim(),
   );
-  const container = !imageConfigured
-    ? await resolveContainerExecutable()
-    : undefined;
-  if (container) {
+  const containerReady = !imageConfigured
+    ? await probeContainerRuntimeAvailability({ signal })
+    : false;
+  signal.throwIfAborted();
+  if (containerReady) {
     return {
       id: "sandbox",
       status: "warning",

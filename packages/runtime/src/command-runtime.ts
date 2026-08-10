@@ -8,6 +8,11 @@ import { access, readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  defaultShellExecutable,
+  resolveShellCommandRuntimePaths,
+} from "./shell-command-runtime.js";
+export { shellInvocationArgs } from "./shell-command-runtime.js";
 
 const MAX_RUNTIME_ASSET_FILES = 128;
 const MAX_RUNTIME_READ_PATHS = 8;
@@ -87,7 +92,7 @@ const PYTHON_RUNTIME_EXTENSION_PREFIXES = [
   "zlib.",
 ] as const;
 
-export type CommandRuntime = "node" | "python";
+export type CommandRuntime = "node" | "python" | "shell";
 
 export interface CommandRuntimeAsset {
   path: string;
@@ -97,6 +102,7 @@ export interface CommandRuntimeAsset {
 export interface CommandRuntimeBinding {
   executable: string;
   executableSha256: string;
+  executableSearchPaths?: string[];
   runtimeReadPaths: string[];
   runtimeAssets: CommandRuntimeAsset[];
   runtimeAssetSetSha256?: string;
@@ -116,7 +122,9 @@ export async function resolveCommandRuntimeBinding(
     overrides?.[runtime] ??
     (runtime === "node"
       ? process.execPath
-      : await defaultPythonExecutable(process.platform));
+      : runtime === "python"
+        ? await defaultPythonExecutable(process.platform)
+        : await defaultShellExecutable(process.platform));
   if (!path.isAbsolute(candidate)) {
     throw new Error(`${runtime} executable must use an absolute path`);
   }
@@ -142,6 +150,30 @@ export async function resolveCommandRuntimeBinding(
       runtimeAssets: [],
     };
   }
+  if (runtime === "shell") {
+    const nodeExecutable = overrides?.node ?? process.execPath;
+    const paths = await resolveShellCommandRuntimePaths(
+      resolved,
+      process.platform,
+      nodeExecutable,
+    );
+    let nodeAsset: CommandRuntimeAsset;
+    try {
+      const nodePath = await realpath(nodeExecutable);
+      if (!(await stat(nodePath)).isFile()) throw new Error();
+      nodeAsset = { path: nodePath, sha256: await sha256File(nodePath) };
+    } catch {
+      throw new Error("shell Node command runtime is unavailable");
+    }
+    return {
+      executable: resolved,
+      executableSha256,
+      executableSearchPaths: paths.executableSearchPaths,
+      runtimeReadPaths: paths.runtimeReadPaths,
+      runtimeAssets: [nodeAsset],
+      runtimeAssetSetSha256: runtimeAssetSetSha256([nodeAsset]),
+    };
+  }
   const runtimeRoot = await pythonRuntimeRoot(resolved, process.platform);
   let runtimeAssets: CommandRuntimeAsset[];
   try {
@@ -154,15 +186,19 @@ export async function resolveCommandRuntimeBinding(
     executableSha256,
     runtimeReadPaths: [runtimeRoot],
     runtimeAssets,
-    runtimeAssetSetSha256: sha256(
-      canonicalJson(
-        runtimeAssets.map((asset) => ({
-          pathSha256: sha256(asset.path),
-          sha256: asset.sha256,
-        })),
-      ),
-    ),
+    runtimeAssetSetSha256: runtimeAssetSetSha256(runtimeAssets),
   };
+}
+
+function runtimeAssetSetSha256(runtimeAssets: CommandRuntimeAsset[]): string {
+  return sha256(
+    canonicalJson(
+      runtimeAssets.map((asset) => ({
+        pathSha256: sha256(asset.path),
+        sha256: asset.sha256,
+      })),
+    ),
+  );
 }
 
 export async function resolveCommandRuntimeReadPaths(

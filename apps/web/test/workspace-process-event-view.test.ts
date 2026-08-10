@@ -106,6 +106,19 @@ describe("Workspace Process event view", () => {
         },
       }),
     ).toContain("runtime python");
+    expect(
+      workspaceProcessEventTraceSummary({
+        ...event,
+        payload: {
+          ...(event.payload as Record<string, JsonValue>),
+          runtime: "shell",
+          sandbox: "host-direct",
+          workspaceAccess: "read_only",
+        },
+      }),
+    ).toContain(
+      "runtime shell / sandbox host-direct / isolation none / access policy not enforced",
+    );
   });
 
   it("summarizes scoped write bindings without paths or preview bodies", () => {

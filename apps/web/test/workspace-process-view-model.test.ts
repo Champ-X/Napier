@@ -42,6 +42,18 @@ describe("Workspace Process view model", () => {
     );
   });
 
+  it("keeps the lack of host-direct isolation visible on every Process card", () => {
+    const view = workspaceProcessCardView({
+      ...fixture(),
+      sandbox: "host-direct",
+      runtime: "shell",
+    });
+    expect(view.runtimeLabel).toContain("shell · host-direct");
+    expect(view.scopeLabel).toBe(
+      "Host direct · no workspace, network, or resource isolation",
+    );
+  });
+
   it("projects interactive stdin state and rejects stale request tokens", () => {
     expect(
       workspaceProcessCardView({

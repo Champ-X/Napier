@@ -20,6 +20,7 @@ import {
   CommandRunner,
   prepareCommandExecution,
 } from "../src/command-execution.js";
+import { shellInvocationArgs } from "../src/command-runtime.js";
 import { createCommandTool } from "../src/command-tool.js";
 import type {
   OsSandboxAdapter,
@@ -45,6 +46,7 @@ async function createWorkspace(): Promise<{
   workspaceRoot: string;
   executables: {
     node: string;
+    shell: string;
   };
 }> {
   const root = await mkdtemp(path.join(tmpdir(), "napier-command-"));
@@ -61,6 +63,7 @@ async function createWorkspace(): Promise<{
   );
   const executables = {
     node: path.join(bin, "node"),
+    shell: path.join(bin, "sh"),
   };
   await Promise.all(
     Object.values(executables).map(async (file) => {
@@ -77,13 +80,14 @@ function createFakeSandbox(
     stderr?: string;
     exitCode?: number;
     hang?: boolean;
+    id?: string;
     onLaunch?: (request: SandboxLaunchRequest) => Promise<void> | void;
   } = {},
 ) {
   const launchRequests: SandboxLaunchRequest[] = [];
   const terminateCalls: Array<ReturnType<typeof vi.fn>> = [];
   const sandbox: OsSandboxAdapter = {
-    id: "fake-command-sandbox",
+    id: options.id ?? "fake-command-sandbox",
     async launch(request) {
       launchRequests.push(structuredClone(request));
       await options.onLaunch?.(request);
@@ -136,6 +140,16 @@ function createFakeSandbox(
 }
 
 describe("sandboxed command execution", () => {
+  it("uses non-login POSIX shell scripts and bounded Windows cmd invocation", () => {
+    expect(shellInvocationArgs("echo ok", "linux")).toEqual(["-c", "echo ok"]);
+    expect(shellInvocationArgs("echo ok", "win32")).toEqual([
+      "/d",
+      "/s",
+      "/c",
+      "echo ok",
+    ]);
+  });
+
   it("binds the fixed Python interpreter and runtime assets without host environment", async () => {
     const { workspaceRoot } = await createWorkspace();
     const fake = createFakeSandbox();
@@ -278,6 +292,66 @@ describe("sandboxed command execution", () => {
         NO_COLOR: "1",
       }),
     );
+  });
+
+  it("binds one shell script to a fixed PATH without changing the low-level Node argv contract", async () => {
+    const { root, workspaceRoot, executables } = await createWorkspace();
+    const fake = createFakeSandbox({ stdout: "shell-ok" });
+    const runner = new CommandRunner({
+      workspaceRoot,
+      sandbox: fake.sandbox,
+      executables,
+    });
+
+    const result = await runner.run({
+      runtime: "shell",
+      args: ["node --version && printf shell-ok"],
+    });
+
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        runtime: "shell",
+        status: "succeeded",
+        argumentCount: 1,
+        runtimeAssetSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    const request = fake.launchRequests[0]!;
+    expect(request.command).toBe(await realpath(executables.shell));
+    expect(request.args).toEqual(["-c", "node --version && printf shell-ok"]);
+    expect(request.env).toEqual(
+      expect.objectContaining({
+        PATH: expect.any(String),
+        CI: "1",
+      }),
+    );
+    expect(request.env["PATH"]?.split(path.delimiter)).toContain(
+      await realpath(path.join(root, "bin")),
+    );
+    expect(request.runtimeReadPaths).toEqual(
+      expect.arrayContaining([
+        await realpath(root),
+        await realpath(path.join(root, "bin")),
+      ]),
+    );
+    expect(request.env).not.toHaveProperty("NAPIER_LIVE");
+  });
+
+  it("fails closed when the Node command bound into a shell PATH drifts", async () => {
+    const { workspaceRoot, executables } = await createWorkspace();
+    const fake = createFakeSandbox({
+      onLaunch: async () => {
+        await writeFile(executables.node, "#!/bin/sh\nexit 9\n");
+        await chmod(executables.node, 0o755);
+      },
+    });
+    await expect(
+      new CommandRunner({
+        workspaceRoot,
+        sandbox: fake.sandbox,
+        executables,
+      }).run({ runtime: "shell", args: ["node --version"] }),
+    ).rejects.toThrow("command runtime assets changed during execution");
   });
 
   it("returns non-zero, timeout, and output-cap outcomes as structured evidence", async () => {
@@ -463,6 +537,12 @@ describe("sandboxed command execution", () => {
     await expect(
       runner.run({ runtime: "python3" as "node", args: [] }),
     ).rejects.toThrow("Unsupported command runtime");
+    await expect(runner.run({ runtime: "shell", args: [] })).rejects.toThrow(
+      "exactly one explicit script",
+    );
+    await expect(
+      runner.run({ runtime: "shell", args: ["true", "false"] }),
+    ).rejects.toThrow("exactly one explicit script");
     await expect(
       new CommandRunner({
         workspaceRoot,
@@ -523,5 +603,23 @@ describe("sandboxed command execution", () => {
       }),
     );
     expect(result.content[0]?.text).toContain("STDOUT\nresult");
+  });
+
+  it("warns on every host-direct command result that isolation is not enforced", async () => {
+    const { workspaceRoot, executables } = await createWorkspace();
+    const fake = createFakeSandbox({ id: "host-direct", stdout: "result\n" });
+    const tool = createCommandTool({
+      workspaceRoot,
+      sandbox: fake.sandbox,
+      executables,
+    });
+    const result = await tool.execute("command-host-direct", {
+      runtime: "node",
+      args: ["--version"],
+    });
+    expect(result.content[0]?.text).toContain("Isolation: none");
+    expect(result.content[0]?.text).toContain(
+      "host-direct does not enforce workspace, network, or resource boundaries",
+    );
   });
 });
