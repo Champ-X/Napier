@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "6ea72583957b11bcab6c15f94646bd1149c4f78dd562c7a96bc29ef58c13db77",
+      "stdoutSha256": "4eabd844e4fcfbb9814a4a9f08cfcfc4dd7c8a24747f78485d124ead23232828",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "3cff329766e4ead48d17c893dd95740884bcd54ba17f1e95db6762cc63c60be0",
-      "receiptSha256": "cd4d855423bda5c3e1d4a1311ce5f068505478f8aa8fb32ff577cc45678245d4"
+      "evidenceSha256": "7a1f43e8c2474ee779206b2f28c7790bb52706c879a4c9957dfa38a7a3450c0b",
+      "receiptSha256": "35f425caf5b7e4e62355c91e1a62d44378529ed27c1ca293ff87c92acff3366d"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "f873b95a34d9de63eb6c967b96cdaf477bba883b36bc6417d61cc92a62f2bd04",
+      "stdoutSha256": "d63b238ce89d2e75c5d0ca4d8bf3dfe77050f228299b8bb600a402aabcde8716",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "130d78492f06bc28257ebf1bdfa2c257b48ec39ff831233beca3749176c635b7",
-      "receiptSha256": "219c26b0b52e795048ae39c8095c6777b25b47253b214a2c039c025d4b276a26"
+      "evidenceSha256": "c255a6e2771da325f14b584bdadef08f24064f548db54e7b258f13e2db42ab28",
+      "receiptSha256": "2e541492c3db225fd00a5517ce6f100ae2115e1352b52667e1db5446d86c6efd"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -637,6 +637,7 @@
         "docs/artifacts/management-openapi-0.1.0.json",
         "docs/artifacts/management-openapi-compatibility-0.1.0.json",
         "docs/artifacts/oci-git-runtime-stage6.json",
+        "docs/artifacts/oci-lsp-runtime-stage7.json",
         "docs/artifacts/oci-pty-cleanup-stage3.json",
         "docs/artifacts/oci-python-runtime-stage5.json",
         "docs/artifacts/oci-runtime-identity-stage2.json",
@@ -701,10 +702,12 @@
         "packages/runtime/src/command-tool.ts",
         "packages/runtime/src/compiled-prompt-package-receipt.ts",
         "packages/runtime/src/compiled-prompt-package.ts",
+        "packages/runtime/src/container-runtime-identity-parser.ts",
         "packages/runtime/src/container-runtime-probe-source.ts",
         "packages/runtime/src/data-frame-tool.ts",
         "packages/runtime/src/default-agent-capability-contract.ts",
         "packages/runtime/src/doctor-git-runtime-probe.ts",
+        "packages/runtime/src/doctor-lsp-runtime-probe.ts",
         "packages/runtime/src/doctor-runtime-probes.ts",
         "packages/runtime/src/git-commit-private.ts",
         "packages/runtime/src/git-commit-tool.ts",
@@ -718,10 +721,20 @@
         "packages/runtime/src/internal-research-recovery-authorization.ts",
         "packages/runtime/src/javascript-kernel-tool.ts",
         "packages/runtime/src/local-agent-runtime.ts",
+        "packages/runtime/src/lsp-code-actions.ts",
         "packages/runtime/src/lsp-definition-tool.ts",
+        "packages/runtime/src/lsp-definition.ts",
         "packages/runtime/src/lsp-diagnostics-tool.ts",
+        "packages/runtime/src/lsp-diagnostics.ts",
+        "packages/runtime/src/lsp-persistent-session.ts",
+        "packages/runtime/src/lsp-protocol-session.ts",
         "packages/runtime/src/lsp-references-tool.ts",
+        "packages/runtime/src/lsp-references.ts",
+        "packages/runtime/src/lsp-rename.ts",
+        "packages/runtime/src/lsp-runtime-assets.ts",
+        "packages/runtime/src/lsp-source-session.ts",
         "packages/runtime/src/lsp-symbols-tool.ts",
+        "packages/runtime/src/lsp-symbols.ts",
         "packages/runtime/src/macos-sandbox-profile.ts",
         "packages/runtime/src/model-adapters.ts",
         "packages/runtime/src/model-context-envelope.ts",
@@ -748,6 +761,7 @@
         "packages/runtime/src/research-recovery-options.ts",
         "packages/runtime/src/research-source-continuity.ts",
         "packages/runtime/src/research-source-tool.ts",
+        "packages/runtime/src/sandbox-container-lsp-runtime.ts",
         "packages/runtime/src/sandbox-container-runtime.ts",
         "packages/runtime/src/sandbox-container.ts",
         "packages/runtime/src/sandbox-host-direct.ts",
@@ -823,6 +837,7 @@
         "packages/runtime/test/independent-model-advisor.test.ts",
         "packages/runtime/test/launch-skills-quality.test.ts",
         "packages/runtime/test/local-agent-runtime.test.ts",
+        "packages/runtime/test/lsp-diagnostics.test.ts",
         "packages/runtime/test/lsp-rename-apply-diagnostics.test.ts",
         "packages/runtime/test/model-adapter-capture.test.ts",
         "packages/runtime/test/model-adapters.test.ts",
@@ -830,6 +845,7 @@
         "packages/runtime/test/model-prompt-evidence-bindings.test.ts",
         "packages/runtime/test/oci-command-runtime.test.ts",
         "packages/runtime/test/oci-git-runtime.test.ts",
+        "packages/runtime/test/oci-lsp-runtime.test.ts",
         "packages/runtime/test/oci-python-kernel.test.ts",
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts",
         "packages/runtime/test/plans.test.ts",
@@ -885,6 +901,7 @@
         "scripts/check-architecture.mjs",
         "scripts/check-architecture.test.mjs",
         "scripts/check-oci-git-runtime-stage6.test.mjs",
+        "scripts/check-oci-lsp-runtime-stage7.test.mjs",
         "scripts/check-oci-pty-cleanup-stage3.test.mjs",
         "scripts/check-oci-python-runtime-stage5.test.mjs",
         "scripts/check-oci-runtime-identity-stage2.test.mjs",
@@ -926,8 +943,8 @@
       ],
       "files": {
         "README.md": {
-          "sha256": "190c92e8377b6faa641ae480237a90a17d3583ab90f2bb31147a3f2ca1136e3e",
-          "lines": 6738
+          "sha256": "bf4366654f4d68a6e6fd2ad087e7ff903fd65fdb72b84fd9d8490fb4d77705e1",
+          "lines": 6745
         },
         "apps/cli/src/cli-invocation.ts": {
           "sha256": "191c62ea7c42ee68514e89af3826bd371e34c9c6a4affcd7018d798f42536df9",
@@ -950,12 +967,12 @@
           "lines": 38
         },
         "apps/cli/src/doctor-probes.ts": {
-          "sha256": "b47693f3e95f78db81a6106dc5b4e80b40e806e21509a065dcaa7664d193ee77",
-          "lines": 432
+          "sha256": "db498c56fddc746e67d34c6d19d6610a1514209f5558b00e170dea50fb035dc6",
+          "lines": 434
         },
         "apps/cli/src/doctor-remediation.ts": {
-          "sha256": "95d4d2dc0aa3cd8db3009bde933ee21c05601b6285489d86d1b1e885bdfe3086",
-          "lines": 231
+          "sha256": "26a0d6ff8a07e6b432a9a84f2d20e0dd7f0d17553b1b59a572cbc7c8ca66002d",
+          "lines": 237
         },
         "apps/cli/src/doctor-sandbox-probe.ts": {
           "sha256": "879b6ad69c2d3f06fa648ce0dbb74280e3b91fbe7930b245ef0c9f1d26ce47ea",
@@ -1470,8 +1487,8 @@
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "77b66b2fd2072696a556702b393090cb917ed2c7f64c37badd7385d46a7caabc",
-          "lines": 9019
+          "sha256": "715f93f7441b688c5586e6fcd86b61b83b25bee28b8143b8634b5976bf888d45",
+          "lines": 9030
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -1529,6 +1546,10 @@
           "sha256": "fd44998bad48df3f6f1597380f93d8f8cc596a9a8f91dd8b40646ce0989d7b15",
           "lines": 107
         },
+        "docs/artifacts/oci-lsp-runtime-stage7.json": {
+          "sha256": "3b7a7090bfbbc074a9d567eec65f68b101a4fa7833062c63fa4fa7480f502cc3",
+          "lines": 117
+        },
         "docs/artifacts/oci-pty-cleanup-stage3.json": {
           "sha256": "e3a06347269b610474b15e16526dbb69518f08e0a48af7e1f69db449da6cb911",
           "lines": 73
@@ -1566,11 +1587,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "3cff329766e4ead48d17c893dd95740884bcd54ba17f1e95db6762cc63c60be0",
+          "sha256": "7a1f43e8c2474ee779206b2f28c7790bb52706c879a4c9957dfa38a7a3450c0b",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "130d78492f06bc28257ebf1bdfa2c257b48ec39ff831233beca3749176c635b7",
+          "sha256": "c255a6e2771da325f14b584bdadef08f24064f548db54e7b258f13e2db42ab28",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -1769,9 +1790,13 @@
           "sha256": "ff9061504dcef7231b26031d2e1c7b633e62af79fe45aa4fdc4f23da9a7ce6f9",
           "lines": 207
         },
+        "packages/runtime/src/container-runtime-identity-parser.ts": {
+          "sha256": "150c831684a320f4f2dbb0c8a26cfafd74f6fd452c95dd8aca9ea70a9acf2b7a",
+          "lines": 159
+        },
         "packages/runtime/src/container-runtime-probe-source.ts": {
-          "sha256": "49b4f51d4e2277b09e06c8ef337cff425452d0fb4f9a30f62f4e0a925a353f05",
-          "lines": 64
+          "sha256": "961e9bba13aa37b3eb3a7eb2906766234478d145a89273c490f3458c2f33d8d3",
+          "lines": 129
         },
         "packages/runtime/src/data-frame-tool.ts": {
           "sha256": "45f4162d27e5b120726664d28398bf3ad038561e8ba8b6999d1f8525fe07aa6c",
@@ -1785,9 +1810,13 @@
           "sha256": "96827fb30a300829137b364a124c7b5d84ef07b00ae2c8b21d17f3a82ef83ae5",
           "lines": 66
         },
+        "packages/runtime/src/doctor-lsp-runtime-probe.ts": {
+          "sha256": "de5e3915553e665bb9768c2761d5d3a58da075f09a047c0be91c2cc655003654",
+          "lines": 110
+        },
         "packages/runtime/src/doctor-runtime-probes.ts": {
-          "sha256": "7b585bac8f405b88954ca6e1ac72b3946dadf7236a2830c2ee69a1e7f681604c",
-          "lines": 462
+          "sha256": "e7cd035185f776e1d53e0b2920736083e7d20e0b49f24a367873e25f5e527742",
+          "lines": 438
         },
         "packages/runtime/src/git-commit-private.ts": {
           "sha256": "e7e7eb48b86c1e80e7abe39c8f8561a9525e285228dbc49243c8c52472d06e49",
@@ -1837,21 +1866,61 @@
           "sha256": "1a3ad35628c944c182d1d51d38c9a685caba4549d1ed8e85789cdb1b349c4033",
           "lines": 243
         },
+        "packages/runtime/src/lsp-code-actions.ts": {
+          "sha256": "7f924d2b4418be491929363078c74d799cb780906de1cbfc6deee37a6ec023bf",
+          "lines": 206
+        },
         "packages/runtime/src/lsp-definition-tool.ts": {
           "sha256": "7ad084be0adfb8ed9a07f2cc99f3b8a2ade0557d21615e46ad2ca296043340c5",
           "lines": 158
+        },
+        "packages/runtime/src/lsp-definition.ts": {
+          "sha256": "3ebb1e180908a753a60bbe4bc92bbcf276c832a7265b163c1ad0251b18ae1a21",
+          "lines": 159
         },
         "packages/runtime/src/lsp-diagnostics-tool.ts": {
           "sha256": "f0a833d7daaa25449c240d452d758cc622644d665de942ea14cd4ebd24b80d58",
           "lines": 158
         },
+        "packages/runtime/src/lsp-diagnostics.ts": {
+          "sha256": "1ffd777f9ce7c56d465c1ba28bbb1e9291ab3b74a6edf44e322c8ddab023f761",
+          "lines": 146
+        },
+        "packages/runtime/src/lsp-persistent-session.ts": {
+          "sha256": "db90f48e55a780c970c8ceae8ffcf375ab1c4b6b48b38f1ab3d68fdb4e24eef9",
+          "lines": 500
+        },
+        "packages/runtime/src/lsp-protocol-session.ts": {
+          "sha256": "7c6d8f0a4414191309491b9d0af4ce11d2d959701087d9d8572caec07b759344",
+          "lines": 483
+        },
         "packages/runtime/src/lsp-references-tool.ts": {
           "sha256": "fa467244bbcd1c3262d206842e32d12992fcbe860ca9650c91fe7664b79fbe0f",
           "lines": 169
         },
+        "packages/runtime/src/lsp-references.ts": {
+          "sha256": "8e5f05667595557c5179318e4fb55f457e4e91515a21c39f56a910b65687334d",
+          "lines": 169
+        },
+        "packages/runtime/src/lsp-rename.ts": {
+          "sha256": "694578e73e54010e652df0ff5f417b8e84dc0a6407f030bc0a83b03f54b96a9a",
+          "lines": 248
+        },
+        "packages/runtime/src/lsp-runtime-assets.ts": {
+          "sha256": "7ae13a58a27794eb48eccc2505a4f67d49163e53206d881adcb90434c3d80c7c",
+          "lines": 313
+        },
+        "packages/runtime/src/lsp-source-session.ts": {
+          "sha256": "3d5d991d53e5ec37769b97f945c57d1033f40c340f84daddd2e0de8c59ebe801",
+          "lines": 304
+        },
         "packages/runtime/src/lsp-symbols-tool.ts": {
           "sha256": "bb119ca523d81dc297ddd402991b461d7d10fcc643c15727d3f2985af6e23e5a",
           "lines": 193
+        },
+        "packages/runtime/src/lsp-symbols.ts": {
+          "sha256": "eebcb3172d39957e1df38a4a76fe427a97ea9cbeed39311dc9acb3510ab83bf4",
+          "lines": 154
         },
         "packages/runtime/src/macos-sandbox-profile.ts": {
           "sha256": "56962f4dfb04d3d695747f12927d430cf68fc935f517a4136e22c7eb95d942ff",
@@ -1957,9 +2026,13 @@
           "sha256": "c7adf14b066cf06e8b4b5582a598d6ed8b3afa4b8383d6a640261432c5f94876",
           "lines": 232
         },
+        "packages/runtime/src/sandbox-container-lsp-runtime.ts": {
+          "sha256": "64d8dd572542419196cc6faf40911285dc18f2960cceb1ba892dc2448d1806dd",
+          "lines": 41
+        },
         "packages/runtime/src/sandbox-container-runtime.ts": {
-          "sha256": "8c99481f0a08cf83738b3ba43e2ef19a1313013c978adce59d36b16391b9375c",
-          "lines": 438
+          "sha256": "332176010cca3583fd18a00e1e31f0b7ffbbe90463cb1886b055fa10e148bcb0",
+          "lines": 367
         },
         "packages/runtime/src/sandbox-container.ts": {
           "sha256": "09db75556d33bba5131e4ce07c62eb1685f182843dc95207c619fd75c2729ae6",
@@ -1974,16 +2047,16 @@
           "lines": 96
         },
         "packages/runtime/src/sandbox-oci.ts": {
-          "sha256": "8acfba020a53bea18a5f67b3cc7de01159ac68dc61f58cf5aa4c1928268bad97",
-          "lines": 306
+          "sha256": "659d44743840633a6cd3d5198469e318dcdd29bd3efb5a9103e58d8ed7d9cd24",
+          "lines": 332
         },
         "packages/runtime/src/sandbox-process-lifecycle.ts": {
           "sha256": "4bdf7d378b433ffd5a29e03d1d032f21ccf6a652744a16da1f9d31fef53a3fee",
           "lines": 172
         },
         "packages/runtime/src/sandbox-types.ts": {
-          "sha256": "f760e2056994125d81d0e1a8d5654cb25af63475880437edfc5a6728d85bbf6d",
-          "lines": 52
+          "sha256": "070296a988e735f19cd71ed58d442f87d96f157c3fcf8cb0f282f78016a6d1a1",
+          "lines": 68
         },
         "packages/runtime/src/sandbox.ts": {
           "sha256": "b35dc1d7c03ec2669036b805105860e4bd8bc8f6de0048f23958792baa49e385",
@@ -2257,6 +2330,10 @@
           "sha256": "7bc4876e8accbd3dea83e64ea7169a2b50b0bceceaab2b243365b06ee3eb02bf",
           "lines": 165
         },
+        "packages/runtime/test/lsp-diagnostics.test.ts": {
+          "sha256": "c9b558bb4346e2e5e2dd764c8ebd7136bd399726f62134ee3b8fa8e1d300eb94",
+          "lines": 601
+        },
         "packages/runtime/test/lsp-rename-apply-diagnostics.test.ts": {
           "sha256": "ae168b411f35f4d185020e036a02331d89c025964345de4def683e1e544391cc",
           "lines": 89
@@ -2278,16 +2355,20 @@
           "lines": 159
         },
         "packages/runtime/test/oci-command-runtime.test.ts": {
-          "sha256": "4b70e3d0806e218c0db65c69af46ba58676eb7a9ceca4aa162dabb252742c40e",
-          "lines": 851
+          "sha256": "9676587565cdcb112c5f1069f00841bc1082ad42fc9d53912b3d8cb8c5b1b52f",
+          "lines": 852
         },
         "packages/runtime/test/oci-git-runtime.test.ts": {
-          "sha256": "e217a430954357ff9a95ca364a6bf8af3b8beb36efaafd2d309f9699d412caab",
-          "lines": 208
+          "sha256": "3abebda0050378745daea637fb4c98bd023a26149c738b315c0ddefd0891564e",
+          "lines": 209
+        },
+        "packages/runtime/test/oci-lsp-runtime.test.ts": {
+          "sha256": "e7ae38077a5e6600a87151ff6c72b921f7b5c41164d5326b1d901021f2a9d448",
+          "lines": 252
         },
         "packages/runtime/test/oci-python-kernel.test.ts": {
-          "sha256": "ce5692589f8e5f56656029f5f11313250117e1e086b74d9649186e367125d6a9",
-          "lines": 172
+          "sha256": "80cf277209e56342da5c9ec7119ca9012b61f70e3bbe6a990839880bf170545e",
+          "lines": 173
         },
         "packages/runtime/test/opentelemetry-prompt-evidence.test.ts": {
           "sha256": "28b61ca4f3468defaa1443ffa13cd15d60f638f3d05bb9ee91ffaaa6bb754a2b",
@@ -2505,6 +2586,10 @@
           "sha256": "81e532e083b709f69150dc4cbe24c1c0ec5afc1870fcabad941130a22198b273",
           "lines": 60
         },
+        "scripts/check-oci-lsp-runtime-stage7.test.mjs": {
+          "sha256": "86669aff25c850bf67c7fb7b120db684f1803ce6361ef7e35b2f5c83c8926205",
+          "lines": 74
+        },
         "scripts/check-oci-pty-cleanup-stage3.test.mjs": {
           "sha256": "d5c06f6a606aad068919bbe33c5a318cc74b980c4003a6074aa20c4874303f67",
           "lines": 62
@@ -2602,7 +2687,7 @@
           "lines": 459
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "2a83addcb0efe8875d2493ac7579374ba5713a43cd8fba5c9f21525062870b27",
+          "sha256": "9a6cad15140887a8d20ce0708b5c34bd0c20d5c60342598d97daf11b1f55920a",
           "lines": 287
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -2679,7 +2764,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "4c64b4831dda9d5d2499083f0950eaaa60e972464c83b7961b5f2327688560e0"
+      "manifestSha256": "0b5ad7905387d016479a7c8e4ad706ca115a00a5f064a456e2e27f19f2168910"
     },
     "executionClosure": {
       "algorithm": {
@@ -2972,6 +3057,7 @@
             "packages/runtime/dist/compaction.js",
             "packages/runtime/dist/compiled-prompt-package-receipt.js",
             "packages/runtime/dist/compiled-prompt-package.js",
+            "packages/runtime/dist/container-runtime-identity-parser.js",
             "packages/runtime/dist/container-runtime-probe-source.js",
             "packages/runtime/dist/credential-references.js",
             "packages/runtime/dist/credentials.js",
@@ -2985,6 +3071,7 @@
             "packages/runtime/dist/default-agent-capability-contract.js",
             "packages/runtime/dist/delegation-ledger.js",
             "packages/runtime/dist/doctor-git-runtime-probe.js",
+            "packages/runtime/dist/doctor-lsp-runtime-probe.js",
             "packages/runtime/dist/doctor-runtime-probes.js",
             "packages/runtime/dist/ed25519.js",
             "packages/runtime/dist/embedded-agents.js",
@@ -3114,6 +3201,7 @@
             "packages/runtime/dist/lsp-rename-tool.js",
             "packages/runtime/dist/lsp-rename-workspace-edit.js",
             "packages/runtime/dist/lsp-rename.js",
+            "packages/runtime/dist/lsp-runtime-assets.js",
             "packages/runtime/dist/lsp-runtime-read-paths.js",
             "packages/runtime/dist/lsp-source-session.js",
             "packages/runtime/dist/lsp-symbol-model.js",
@@ -3208,6 +3296,7 @@
             "packages/runtime/dist/run-recovery-prompt.js",
             "packages/runtime/dist/run-replay.js",
             "packages/runtime/dist/run-stream.js",
+            "packages/runtime/dist/sandbox-container-lsp-runtime.js",
             "packages/runtime/dist/sandbox-container-runtime.js",
             "packages/runtime/dist/sandbox-container.js",
             "packages/runtime/dist/sandbox-host-direct.js",
@@ -3737,6 +3826,7 @@
             "packages/runtime/src/compaction.ts",
             "packages/runtime/src/compiled-prompt-package-receipt.ts",
             "packages/runtime/src/compiled-prompt-package.ts",
+            "packages/runtime/src/container-runtime-identity-parser.ts",
             "packages/runtime/src/container-runtime-probe-source.ts",
             "packages/runtime/src/credential-references.ts",
             "packages/runtime/src/credentials.ts",
@@ -3750,6 +3840,7 @@
             "packages/runtime/src/default-agent-capability-contract.ts",
             "packages/runtime/src/delegation-ledger.ts",
             "packages/runtime/src/doctor-git-runtime-probe.ts",
+            "packages/runtime/src/doctor-lsp-runtime-probe.ts",
             "packages/runtime/src/doctor-runtime-probes.ts",
             "packages/runtime/src/ed25519.ts",
             "packages/runtime/src/embedded-agents.ts",
@@ -3879,6 +3970,7 @@
             "packages/runtime/src/lsp-rename-tool.ts",
             "packages/runtime/src/lsp-rename-workspace-edit.ts",
             "packages/runtime/src/lsp-rename.ts",
+            "packages/runtime/src/lsp-runtime-assets.ts",
             "packages/runtime/src/lsp-runtime-read-paths.ts",
             "packages/runtime/src/lsp-source-session.ts",
             "packages/runtime/src/lsp-symbol-model.ts",
@@ -3973,6 +4065,7 @@
             "packages/runtime/src/run-recovery-prompt.ts",
             "packages/runtime/src/run-replay.ts",
             "packages/runtime/src/run-stream.ts",
+            "packages/runtime/src/sandbox-container-lsp-runtime.ts",
             "packages/runtime/src/sandbox-container-runtime.ts",
             "packages/runtime/src/sandbox-container.ts",
             "packages/runtime/src/sandbox-host-direct.ts",
@@ -4275,16 +4368,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 763,
-            "sourceCounterparts": 758,
+            "executionFiles": 767,
+            "sourceCounterparts": 762,
             "packageManifests": 2,
-            "allFiles": 1523
+            "allFiles": 1531
           },
           "executionAreaCounts": {
             "apps/cli/dist": 56,
             "apps/server/dist": 100,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 576,
+            "packages/runtime/dist": 580,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -4395,12 +4488,12 @@
               "lines": 30
             },
             "apps/cli/dist/doctor-probes.js": {
-              "sha256": "8299265cd1ce9a36e389d10a6c7f973056b1ba226a318a6c0cfbd6b82521caf7",
+              "sha256": "d1d760dcbd0c5df2e0f78edd290d54f46bfc4a28d22a01272dd709d580fbd9b8",
               "lines": 293
             },
             "apps/cli/dist/doctor-remediation.js": {
-              "sha256": "893e28533609203ffc7cc45771d4c0fce30ff921c3f1d48aa693d0560d2b7b42",
-              "lines": 168
+              "sha256": "68d853bd7da7466529f55812b9db7757ad024fd389e375b6f2d4a982cc7afeb1",
+              "lines": 173
             },
             "apps/cli/dist/doctor-report.js": {
               "sha256": "38224ea022081f836c6f7be729c654d043ea0c5bd17ff66af96fa0804557d5ef",
@@ -4619,12 +4712,12 @@
               "lines": 38
             },
             "apps/cli/src/doctor-probes.ts": {
-              "sha256": "b47693f3e95f78db81a6106dc5b4e80b40e806e21509a065dcaa7664d193ee77",
-              "lines": 432
+              "sha256": "db498c56fddc746e67d34c6d19d6610a1514209f5558b00e170dea50fb035dc6",
+              "lines": 434
             },
             "apps/cli/src/doctor-remediation.ts": {
-              "sha256": "95d4d2dc0aa3cd8db3009bde933ee21c05601b6285489d86d1b1e885bdfe3086",
-              "lines": 231
+              "sha256": "26a0d6ff8a07e6b432a9a84f2d20e0dd7f0d17553b1b59a572cbc7c8ca66002d",
+              "lines": 237
             },
             "apps/cli/src/doctor-report.ts": {
               "sha256": "ceea3f56edff1fda3fd9a4c3659fbf7b7899c1430a0584bf1514281e365bbcfd",
@@ -6074,9 +6167,13 @@
               "sha256": "89b8b04a9219ba7b381b0afe460879f731a92b6d9218b2c41a7cf808c8cc6e99",
               "lines": 140
             },
+            "packages/runtime/dist/container-runtime-identity-parser.js": {
+              "sha256": "1edc276ccbcad35a5dece7178a487247bae09e24062bd6705853deb4ceadb143",
+              "lines": 105
+            },
             "packages/runtime/dist/container-runtime-probe-source.js": {
-              "sha256": "59748a4e9eb11542d2a407ea3919157394a78922e118b9835f2db3085ea65c78",
-              "lines": 63
+              "sha256": "918db3e52445eccbb1f16731c7934965c6b563b7ce715fee6c7496dec0b42929",
+              "lines": 128
             },
             "packages/runtime/dist/credential-references.js": {
               "sha256": "70b97d01a6f5ea4e982e449c059f42a2e30abf4a69fbc68362eb5d464498cd0d",
@@ -6126,9 +6223,13 @@
               "sha256": "f41234c5bc83ef8e236b107cafebb461ec732b624afd4b20d524f57e4bb415e4",
               "lines": 42
             },
+            "packages/runtime/dist/doctor-lsp-runtime-probe.js": {
+              "sha256": "962312d02119f321fd43d82a932088ffa723a4e308e8ebb6b03d386ba449412a",
+              "lines": 81
+            },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "a30392eb601518c23a2f8f9f7e9e9dae476a3bedb1b8c932b48330eb37379aa9",
-              "lines": 362
+              "sha256": "fef777ea40777bbb9cf41b841ffeed1af610c2bcfddb9aedd48d2595f6ce3da2",
+              "lines": 340
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -6563,24 +6664,24 @@
               "lines": 156
             },
             "packages/runtime/dist/lsp-code-actions.js": {
-              "sha256": "eff1fd5d458fdf7c09d919ac2a14cf6752821eb5e6fbbd0255c7748281b69ada",
-              "lines": 130
+              "sha256": "405bec1f163cba930051c06543633cbabe96934331c7ba937c680c931b042475",
+              "lines": 132
             },
             "packages/runtime/dist/lsp-definition-tool.js": {
               "sha256": "2ed94184aaddf896751c0b5a21271d602cc468e0895363471a4f1570b46bc99d",
               "lines": 118
             },
             "packages/runtime/dist/lsp-definition.js": {
-              "sha256": "bcb11195a31be953f235f84f154e9025e1f86d395b783776c58c136c039dba00",
-              "lines": 99
+              "sha256": "f8d2d4dafe219bcac036a4a93d3bd186995d1e16b2e201ac2efbf45d1d5267f2",
+              "lines": 101
             },
             "packages/runtime/dist/lsp-diagnostics-tool.js": {
               "sha256": "7c8ce49c613ad57b95a6d3a51c835f6e42b0d595a39e62af54c2035f5827cc89",
               "lines": 116
             },
             "packages/runtime/dist/lsp-diagnostics.js": {
-              "sha256": "96b5c2d5b309653e965c91750594686a3339acfb89fefd8439e2288e8e5bc3cd",
-              "lines": 85
+              "sha256": "23a14afd123e404bbdba7cc8cd9c1f5aa270092b8afabf950992eb0d03754696",
+              "lines": 87
             },
             "packages/runtime/dist/lsp-locations.js": {
               "sha256": "0279ea39865db4b64d59be5c8b92ea8563ae86a2ea1e543f083cca379b731474",
@@ -6591,8 +6692,8 @@
               "lines": 259
             },
             "packages/runtime/dist/lsp-persistent-session.js": {
-              "sha256": "06e231fe297ffabc2ed890f1ac554690d22e529f0c6f5a2b8df7601be5791012",
-              "lines": 359
+              "sha256": "512ead5fe1d86a07264d4aea05a6a670cb4d7d937400966d3d406d333d3f2206",
+              "lines": 371
             },
             "packages/runtime/dist/lsp-protocol-session.js": {
               "sha256": "c2d93767fea0fc0e5a4d9c331573c1f7075ab337cf76dbc479daeb49c6ebc43a",
@@ -6603,8 +6704,8 @@
               "lines": 126
             },
             "packages/runtime/dist/lsp-references.js": {
-              "sha256": "e563feb9f640185b41cfd7fdcd5d53697f6ebda1eb5c40366b6e7430ae8f28e4",
-              "lines": 106
+              "sha256": "f7934fcec71e4124514800c3f1f2de9618f4e127bad7877b3286eab8f72814b2",
+              "lines": 108
             },
             "packages/runtime/dist/lsp-rename-apply-diagnostics.js": {
               "sha256": "59ffd81f60f0e3ebe730316ee59755866e07d92ce16a642481eb741c2ce4b825",
@@ -6639,16 +6740,20 @@
               "lines": 241
             },
             "packages/runtime/dist/lsp-rename.js": {
-              "sha256": "16809f40f8ed9688aadbaba988fab7f9df3b300daa9d4ee55569a2eb9a4ca661",
-              "lines": 150
+              "sha256": "a93b325ef202b466252f5868a5692099d264b28993046efe71750a809bba20c1",
+              "lines": 152
+            },
+            "packages/runtime/dist/lsp-runtime-assets.js": {
+              "sha256": "c005b034ecda1641fa219f72287a2887c5344a0000c895def232d7717a93bd49",
+              "lines": 217
             },
             "packages/runtime/dist/lsp-runtime-read-paths.js": {
               "sha256": "7cb7c8ae7c2424311b97300543ed6b1d8d3ee2ac29d2356d94516eddc3a5c927",
               "lines": 12
             },
             "packages/runtime/dist/lsp-source-session.js": {
-              "sha256": "d152f8ec5636830a2bbaa1b521c82616d02481854dd4b7636a10a21a92c8b619",
-              "lines": 315
+              "sha256": "0fe6a34eef84ed20d5fefbf26a09af82e8687f3ebf713ec53bcd50fed016336e",
+              "lines": 184
             },
             "packages/runtime/dist/lsp-symbol-model.js": {
               "sha256": "c9b4b630351afba4ece0326cbb4fa59fc20224365bff5393bfccd5514f6a56b2",
@@ -6663,8 +6768,8 @@
               "lines": 125
             },
             "packages/runtime/dist/lsp-symbols.js": {
-              "sha256": "97406d380065d3e3352b3e7cccfc15304dfbf646f0b9db1240974fe678143f5e",
-              "lines": 103
+              "sha256": "c93fd228b9d41ae27498c89bd0e67991c58d786e1147f838cb28f8280f4a9d2b",
+              "lines": 105
             },
             "packages/runtime/dist/lsp-workspace-edit-mutation.js": {
               "sha256": "01379a92d400495624fbb922c9a43957df6f97a91672eda16201c1d1af5f4e8f",
@@ -7018,9 +7123,13 @@
               "sha256": "045ea8204d521895f0343351b9ff42acabe0a666f4a8b6546d2de16e9223155a",
               "lines": 60
             },
+            "packages/runtime/dist/sandbox-container-lsp-runtime.js": {
+              "sha256": "47bab3a34b32bfeafc93f6a60530eaec896547d18d331cba6d6957075448ac73",
+              "lines": 22
+            },
             "packages/runtime/dist/sandbox-container-runtime.js": {
-              "sha256": "1bfe0bf487f4c964fe10acf3141e3ea2912495b62815a5801fc9ff815d64bbd1",
-              "lines": 287
+              "sha256": "daf96e06bf8e0c77be5d4d44f9adcb8863b956ff8698cf474a20edcc21ed2beb",
+              "lines": 231
             },
             "packages/runtime/dist/sandbox-container.js": {
               "sha256": "493458712a4a73643b3b56d2eedc32d2a458bc52789b6fac7279442c24697fb0",
@@ -7035,8 +7144,8 @@
               "lines": 61
             },
             "packages/runtime/dist/sandbox-oci.js": {
-              "sha256": "6a7ac65fb0cac667d1b90099d2dc4f65df8a7a28cccac5cddbe2650e6d1722ca",
-              "lines": 199
+              "sha256": "94f2aecc5f33d19b2ac47b55c1e46e1452d3c99d8e24e8c1343c3b327d10c343",
+              "lines": 218
             },
             "packages/runtime/dist/sandbox-process-lifecycle.js": {
               "sha256": "662cf635507941e23256f92ce615f4bccfa27ddd9f4330487da2f22eb75b907b",
@@ -8382,9 +8491,13 @@
               "sha256": "ff9061504dcef7231b26031d2e1c7b633e62af79fe45aa4fdc4f23da9a7ce6f9",
               "lines": 207
             },
+            "packages/runtime/src/container-runtime-identity-parser.ts": {
+              "sha256": "150c831684a320f4f2dbb0c8a26cfafd74f6fd452c95dd8aca9ea70a9acf2b7a",
+              "lines": 159
+            },
             "packages/runtime/src/container-runtime-probe-source.ts": {
-              "sha256": "49b4f51d4e2277b09e06c8ef337cff425452d0fb4f9a30f62f4e0a925a353f05",
-              "lines": 64
+              "sha256": "961e9bba13aa37b3eb3a7eb2906766234478d145a89273c490f3458c2f33d8d3",
+              "lines": 129
             },
             "packages/runtime/src/credential-references.ts": {
               "sha256": "4b6b407902816631f1befa89792b29b0dbfe2872dca9220ecafb4ceb050e5813",
@@ -8434,9 +8547,13 @@
               "sha256": "96827fb30a300829137b364a124c7b5d84ef07b00ae2c8b21d17f3a82ef83ae5",
               "lines": 66
             },
+            "packages/runtime/src/doctor-lsp-runtime-probe.ts": {
+              "sha256": "de5e3915553e665bb9768c2761d5d3a58da075f09a047c0be91c2cc655003654",
+              "lines": 110
+            },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "7b585bac8f405b88954ca6e1ac72b3946dadf7236a2830c2ee69a1e7f681604c",
-              "lines": 462
+              "sha256": "e7cd035185f776e1d53e0b2920736083e7d20e0b49f24a367873e25f5e527742",
+              "lines": 438
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -8871,24 +8988,24 @@
               "lines": 228
             },
             "packages/runtime/src/lsp-code-actions.ts": {
-              "sha256": "d3d208ec2e0201e5d1459fedeefd0716160c9fc06435cf1482002c84c94d4c26",
-              "lines": 204
+              "sha256": "7f924d2b4418be491929363078c74d799cb780906de1cbfc6deee37a6ec023bf",
+              "lines": 206
             },
             "packages/runtime/src/lsp-definition-tool.ts": {
               "sha256": "7ad084be0adfb8ed9a07f2cc99f3b8a2ade0557d21615e46ad2ca296043340c5",
               "lines": 158
             },
             "packages/runtime/src/lsp-definition.ts": {
-              "sha256": "29c0a0418b780e29d6a7b91e5a3140f328f30b3b8894427d8b5e15edc3143ca5",
-              "lines": 157
+              "sha256": "3ebb1e180908a753a60bbe4bc92bbcf276c832a7265b163c1ad0251b18ae1a21",
+              "lines": 159
             },
             "packages/runtime/src/lsp-diagnostics-tool.ts": {
               "sha256": "f0a833d7daaa25449c240d452d758cc622644d665de942ea14cd4ebd24b80d58",
               "lines": 158
             },
             "packages/runtime/src/lsp-diagnostics.ts": {
-              "sha256": "ec148c5a551bd74a756efb647cbb7c6c51f65a768371249efcdec32ce65e1d7e",
-              "lines": 144
+              "sha256": "1ffd777f9ce7c56d465c1ba28bbb1e9291ab3b74a6edf44e322c8ddab023f761",
+              "lines": 146
             },
             "packages/runtime/src/lsp-locations.ts": {
               "sha256": "fcc426e14670c0a2d7671f0c612975edbbcda46438d3b30b33f330cefca784c3",
@@ -8899,20 +9016,20 @@
               "lines": 347
             },
             "packages/runtime/src/lsp-persistent-session.ts": {
-              "sha256": "ad97430bcf5ed862b63d68fc73b5d96bf175ecf75fbf437ee86d8814bece7c78",
-              "lines": 486
+              "sha256": "db90f48e55a780c970c8ceae8ffcf375ab1c4b6b48b38f1ab3d68fdb4e24eef9",
+              "lines": 500
             },
             "packages/runtime/src/lsp-protocol-session.ts": {
-              "sha256": "eb942ac7b7b5fe57fa6aebbceb0ebfd2c1562b25b6f1ad497a1d1464dccaaa55",
-              "lines": 482
+              "sha256": "7c6d8f0a4414191309491b9d0af4ce11d2d959701087d9d8572caec07b759344",
+              "lines": 483
             },
             "packages/runtime/src/lsp-references-tool.ts": {
               "sha256": "fa467244bbcd1c3262d206842e32d12992fcbe860ca9650c91fe7664b79fbe0f",
               "lines": 169
             },
             "packages/runtime/src/lsp-references.ts": {
-              "sha256": "11edc6e7be4a41972224c0d4d04fd3c8ba76333b184da9f766bd42062fc84208",
-              "lines": 167
+              "sha256": "8e5f05667595557c5179318e4fb55f457e4e91515a21c39f56a910b65687334d",
+              "lines": 169
             },
             "packages/runtime/src/lsp-rename-apply-diagnostics.ts": {
               "sha256": "f5dc87aaea0712dcef7a7c8e2f6332f36cd88a4f4623880e8cc0d0b7df5677f4",
@@ -8947,16 +9064,20 @@
               "lines": 394
             },
             "packages/runtime/src/lsp-rename.ts": {
-              "sha256": "e87daa4f88a639b9078c29a7aab8481a571c2fad78347afcfce088c32e7bb35a",
-              "lines": 246
+              "sha256": "694578e73e54010e652df0ff5f417b8e84dc0a6407f030bc0a83b03f54b96a9a",
+              "lines": 248
+            },
+            "packages/runtime/src/lsp-runtime-assets.ts": {
+              "sha256": "7ae13a58a27794eb48eccc2505a4f67d49163e53206d881adcb90434c3d80c7c",
+              "lines": 313
             },
             "packages/runtime/src/lsp-runtime-read-paths.ts": {
               "sha256": "656dbc6653189a5082a9f13fefe341dabcc72bf390529430e99127cd1e50f2c3",
               "lines": 23
             },
             "packages/runtime/src/lsp-source-session.ts": {
-              "sha256": "394c802a3bd45bace5073026e8efd6e37aa5304eb820bc038d91fdee10b422c1",
-              "lines": 494
+              "sha256": "3d5d991d53e5ec37769b97f945c57d1033f40c340f84daddd2e0de8c59ebe801",
+              "lines": 304
             },
             "packages/runtime/src/lsp-symbol-model.ts": {
               "sha256": "c1eadf1452cd98b6f1b9dde4328c92b6fe85f5b2b2ed0235a91139313dc39fbb",
@@ -8971,8 +9092,8 @@
               "lines": 193
             },
             "packages/runtime/src/lsp-symbols.ts": {
-              "sha256": "b7aad4489b23a3120e095c7b2b68494cc97b4a22e174481e1016179f6982af3c",
-              "lines": 152
+              "sha256": "eebcb3172d39957e1df38a4a76fe427a97ea9cbeed39311dc9acb3510ab83bf4",
+              "lines": 154
             },
             "packages/runtime/src/lsp-workspace-edit-mutation.ts": {
               "sha256": "fa7447f30ba958b4b87adc115b54489905880a7723125f49137df88352ad3d92",
@@ -9326,9 +9447,13 @@
               "sha256": "57118a17f6c995bf910147c369e55d6be7f93d5f6db6e2eac6c9a8e361908c39",
               "lines": 94
             },
+            "packages/runtime/src/sandbox-container-lsp-runtime.ts": {
+              "sha256": "64d8dd572542419196cc6faf40911285dc18f2960cceb1ba892dc2448d1806dd",
+              "lines": 41
+            },
             "packages/runtime/src/sandbox-container-runtime.ts": {
-              "sha256": "8c99481f0a08cf83738b3ba43e2ef19a1313013c978adce59d36b16391b9375c",
-              "lines": 438
+              "sha256": "332176010cca3583fd18a00e1e31f0b7ffbbe90463cb1886b055fa10e148bcb0",
+              "lines": 367
             },
             "packages/runtime/src/sandbox-container.ts": {
               "sha256": "09db75556d33bba5131e4ce07c62eb1685f182843dc95207c619fd75c2729ae6",
@@ -9343,8 +9468,8 @@
               "lines": 96
             },
             "packages/runtime/src/sandbox-oci.ts": {
-              "sha256": "8acfba020a53bea18a5f67b3cc7de01159ac68dc61f58cf5aa4c1928268bad97",
-              "lines": 306
+              "sha256": "659d44743840633a6cd3d5198469e318dcdd29bd3efb5a9103e58d8ed7d9cd24",
+              "lines": 332
             },
             "packages/runtime/src/sandbox-process-lifecycle.ts": {
               "sha256": "4bdf7d378b433ffd5a29e03d1d032f21ccf6a652744a16da1f9d31fef53a3fee",
@@ -10383,7 +10508,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "3787cabcbeced3459f8f3237806a6520e83d441cf146ba1ab68cf8e6662589c7"
+          "manifestSha256": "26fb32df2503762c7057718686ca2ce190c4189017aa1650846c29cc6a6dbdf9"
         },
         "productionServerTrace": {
           "roots": [
@@ -10606,6 +10731,7 @@
             "packages/runtime/dist/compaction.js",
             "packages/runtime/dist/compiled-prompt-package-receipt.js",
             "packages/runtime/dist/compiled-prompt-package.js",
+            "packages/runtime/dist/container-runtime-identity-parser.js",
             "packages/runtime/dist/container-runtime-probe-source.js",
             "packages/runtime/dist/credential-references.js",
             "packages/runtime/dist/credentials.js",
@@ -10619,6 +10745,7 @@
             "packages/runtime/dist/default-agent-capability-contract.js",
             "packages/runtime/dist/delegation-ledger.js",
             "packages/runtime/dist/doctor-git-runtime-probe.js",
+            "packages/runtime/dist/doctor-lsp-runtime-probe.js",
             "packages/runtime/dist/doctor-runtime-probes.js",
             "packages/runtime/dist/ed25519.js",
             "packages/runtime/dist/embedded-agents.js",
@@ -10748,6 +10875,7 @@
             "packages/runtime/dist/lsp-rename-tool.js",
             "packages/runtime/dist/lsp-rename-workspace-edit.js",
             "packages/runtime/dist/lsp-rename.js",
+            "packages/runtime/dist/lsp-runtime-assets.js",
             "packages/runtime/dist/lsp-runtime-read-paths.js",
             "packages/runtime/dist/lsp-source-session.js",
             "packages/runtime/dist/lsp-symbol-model.js",
@@ -10842,6 +10970,7 @@
             "packages/runtime/dist/run-recovery-prompt.js",
             "packages/runtime/dist/run-replay.js",
             "packages/runtime/dist/run-stream.js",
+            "packages/runtime/dist/sandbox-container-lsp-runtime.js",
             "packages/runtime/dist/sandbox-container-runtime.js",
             "packages/runtime/dist/sandbox-container.js",
             "packages/runtime/dist/sandbox-host-direct.js",
@@ -11313,6 +11442,7 @@
             "packages/runtime/src/compaction.ts",
             "packages/runtime/src/compiled-prompt-package-receipt.ts",
             "packages/runtime/src/compiled-prompt-package.ts",
+            "packages/runtime/src/container-runtime-identity-parser.ts",
             "packages/runtime/src/container-runtime-probe-source.ts",
             "packages/runtime/src/credential-references.ts",
             "packages/runtime/src/credentials.ts",
@@ -11326,6 +11456,7 @@
             "packages/runtime/src/default-agent-capability-contract.ts",
             "packages/runtime/src/delegation-ledger.ts",
             "packages/runtime/src/doctor-git-runtime-probe.ts",
+            "packages/runtime/src/doctor-lsp-runtime-probe.ts",
             "packages/runtime/src/doctor-runtime-probes.ts",
             "packages/runtime/src/ed25519.ts",
             "packages/runtime/src/embedded-agents.ts",
@@ -11455,6 +11586,7 @@
             "packages/runtime/src/lsp-rename-tool.ts",
             "packages/runtime/src/lsp-rename-workspace-edit.ts",
             "packages/runtime/src/lsp-rename.ts",
+            "packages/runtime/src/lsp-runtime-assets.ts",
             "packages/runtime/src/lsp-runtime-read-paths.ts",
             "packages/runtime/src/lsp-source-session.ts",
             "packages/runtime/src/lsp-symbol-model.ts",
@@ -11549,6 +11681,7 @@
             "packages/runtime/src/run-recovery-prompt.ts",
             "packages/runtime/src/run-replay.ts",
             "packages/runtime/src/run-stream.ts",
+            "packages/runtime/src/sandbox-container-lsp-runtime.ts",
             "packages/runtime/src/sandbox-container-runtime.ts",
             "packages/runtime/src/sandbox-container.ts",
             "packages/runtime/src/sandbox-host-direct.ts",
@@ -11851,16 +11984,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 705,
-            "sourceCounterparts": 701,
+            "executionFiles": 709,
+            "sourceCounterparts": 705,
             "packageManifests": 3,
-            "allFiles": 1409
+            "allFiles": 1417
           },
           "executionAreaCounts": {
             "apps/server/dist": 101,
             "other": 1,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 574,
+            "packages/runtime/dist": 578,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
@@ -13205,9 +13338,13 @@
               "sha256": "89b8b04a9219ba7b381b0afe460879f731a92b6d9218b2c41a7cf808c8cc6e99",
               "lines": 140
             },
+            "packages/runtime/dist/container-runtime-identity-parser.js": {
+              "sha256": "1edc276ccbcad35a5dece7178a487247bae09e24062bd6705853deb4ceadb143",
+              "lines": 105
+            },
             "packages/runtime/dist/container-runtime-probe-source.js": {
-              "sha256": "59748a4e9eb11542d2a407ea3919157394a78922e118b9835f2db3085ea65c78",
-              "lines": 63
+              "sha256": "918db3e52445eccbb1f16731c7934965c6b563b7ce715fee6c7496dec0b42929",
+              "lines": 128
             },
             "packages/runtime/dist/credential-references.js": {
               "sha256": "70b97d01a6f5ea4e982e449c059f42a2e30abf4a69fbc68362eb5d464498cd0d",
@@ -13257,9 +13394,13 @@
               "sha256": "f41234c5bc83ef8e236b107cafebb461ec732b624afd4b20d524f57e4bb415e4",
               "lines": 42
             },
+            "packages/runtime/dist/doctor-lsp-runtime-probe.js": {
+              "sha256": "962312d02119f321fd43d82a932088ffa723a4e308e8ebb6b03d386ba449412a",
+              "lines": 81
+            },
             "packages/runtime/dist/doctor-runtime-probes.js": {
-              "sha256": "a30392eb601518c23a2f8f9f7e9e9dae476a3bedb1b8c932b48330eb37379aa9",
-              "lines": 362
+              "sha256": "fef777ea40777bbb9cf41b841ffeed1af610c2bcfddb9aedd48d2595f6ce3da2",
+              "lines": 340
             },
             "packages/runtime/dist/ed25519.js": {
               "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330",
@@ -13694,24 +13835,24 @@
               "lines": 156
             },
             "packages/runtime/dist/lsp-code-actions.js": {
-              "sha256": "eff1fd5d458fdf7c09d919ac2a14cf6752821eb5e6fbbd0255c7748281b69ada",
-              "lines": 130
+              "sha256": "405bec1f163cba930051c06543633cbabe96934331c7ba937c680c931b042475",
+              "lines": 132
             },
             "packages/runtime/dist/lsp-definition-tool.js": {
               "sha256": "2ed94184aaddf896751c0b5a21271d602cc468e0895363471a4f1570b46bc99d",
               "lines": 118
             },
             "packages/runtime/dist/lsp-definition.js": {
-              "sha256": "bcb11195a31be953f235f84f154e9025e1f86d395b783776c58c136c039dba00",
-              "lines": 99
+              "sha256": "f8d2d4dafe219bcac036a4a93d3bd186995d1e16b2e201ac2efbf45d1d5267f2",
+              "lines": 101
             },
             "packages/runtime/dist/lsp-diagnostics-tool.js": {
               "sha256": "7c8ce49c613ad57b95a6d3a51c835f6e42b0d595a39e62af54c2035f5827cc89",
               "lines": 116
             },
             "packages/runtime/dist/lsp-diagnostics.js": {
-              "sha256": "96b5c2d5b309653e965c91750594686a3339acfb89fefd8439e2288e8e5bc3cd",
-              "lines": 85
+              "sha256": "23a14afd123e404bbdba7cc8cd9c1f5aa270092b8afabf950992eb0d03754696",
+              "lines": 87
             },
             "packages/runtime/dist/lsp-locations.js": {
               "sha256": "0279ea39865db4b64d59be5c8b92ea8563ae86a2ea1e543f083cca379b731474",
@@ -13722,8 +13863,8 @@
               "lines": 259
             },
             "packages/runtime/dist/lsp-persistent-session.js": {
-              "sha256": "06e231fe297ffabc2ed890f1ac554690d22e529f0c6f5a2b8df7601be5791012",
-              "lines": 359
+              "sha256": "512ead5fe1d86a07264d4aea05a6a670cb4d7d937400966d3d406d333d3f2206",
+              "lines": 371
             },
             "packages/runtime/dist/lsp-protocol-session.js": {
               "sha256": "c2d93767fea0fc0e5a4d9c331573c1f7075ab337cf76dbc479daeb49c6ebc43a",
@@ -13734,8 +13875,8 @@
               "lines": 126
             },
             "packages/runtime/dist/lsp-references.js": {
-              "sha256": "e563feb9f640185b41cfd7fdcd5d53697f6ebda1eb5c40366b6e7430ae8f28e4",
-              "lines": 106
+              "sha256": "f7934fcec71e4124514800c3f1f2de9618f4e127bad7877b3286eab8f72814b2",
+              "lines": 108
             },
             "packages/runtime/dist/lsp-rename-apply-diagnostics.js": {
               "sha256": "59ffd81f60f0e3ebe730316ee59755866e07d92ce16a642481eb741c2ce4b825",
@@ -13770,16 +13911,20 @@
               "lines": 241
             },
             "packages/runtime/dist/lsp-rename.js": {
-              "sha256": "16809f40f8ed9688aadbaba988fab7f9df3b300daa9d4ee55569a2eb9a4ca661",
-              "lines": 150
+              "sha256": "a93b325ef202b466252f5868a5692099d264b28993046efe71750a809bba20c1",
+              "lines": 152
+            },
+            "packages/runtime/dist/lsp-runtime-assets.js": {
+              "sha256": "c005b034ecda1641fa219f72287a2887c5344a0000c895def232d7717a93bd49",
+              "lines": 217
             },
             "packages/runtime/dist/lsp-runtime-read-paths.js": {
               "sha256": "7cb7c8ae7c2424311b97300543ed6b1d8d3ee2ac29d2356d94516eddc3a5c927",
               "lines": 12
             },
             "packages/runtime/dist/lsp-source-session.js": {
-              "sha256": "d152f8ec5636830a2bbaa1b521c82616d02481854dd4b7636a10a21a92c8b619",
-              "lines": 315
+              "sha256": "0fe6a34eef84ed20d5fefbf26a09af82e8687f3ebf713ec53bcd50fed016336e",
+              "lines": 184
             },
             "packages/runtime/dist/lsp-symbol-model.js": {
               "sha256": "c9b4b630351afba4ece0326cbb4fa59fc20224365bff5393bfccd5514f6a56b2",
@@ -13794,8 +13939,8 @@
               "lines": 125
             },
             "packages/runtime/dist/lsp-symbols.js": {
-              "sha256": "97406d380065d3e3352b3e7cccfc15304dfbf646f0b9db1240974fe678143f5e",
-              "lines": 103
+              "sha256": "c93fd228b9d41ae27498c89bd0e67991c58d786e1147f838cb28f8280f4a9d2b",
+              "lines": 105
             },
             "packages/runtime/dist/lsp-workspace-edit-mutation.js": {
               "sha256": "01379a92d400495624fbb922c9a43957df6f97a91672eda16201c1d1af5f4e8f",
@@ -14149,9 +14294,13 @@
               "sha256": "045ea8204d521895f0343351b9ff42acabe0a666f4a8b6546d2de16e9223155a",
               "lines": 60
             },
+            "packages/runtime/dist/sandbox-container-lsp-runtime.js": {
+              "sha256": "47bab3a34b32bfeafc93f6a60530eaec896547d18d331cba6d6957075448ac73",
+              "lines": 22
+            },
             "packages/runtime/dist/sandbox-container-runtime.js": {
-              "sha256": "1bfe0bf487f4c964fe10acf3141e3ea2912495b62815a5801fc9ff815d64bbd1",
-              "lines": 287
+              "sha256": "daf96e06bf8e0c77be5d4d44f9adcb8863b956ff8698cf474a20edcc21ed2beb",
+              "lines": 231
             },
             "packages/runtime/dist/sandbox-container.js": {
               "sha256": "493458712a4a73643b3b56d2eedc32d2a458bc52789b6fac7279442c24697fb0",
@@ -14166,8 +14315,8 @@
               "lines": 61
             },
             "packages/runtime/dist/sandbox-oci.js": {
-              "sha256": "6a7ac65fb0cac667d1b90099d2dc4f65df8a7a28cccac5cddbe2650e6d1722ca",
-              "lines": 199
+              "sha256": "94f2aecc5f33d19b2ac47b55c1e46e1452d3c99d8e24e8c1343c3b327d10c343",
+              "lines": 218
             },
             "packages/runtime/dist/sandbox-process-lifecycle.js": {
               "sha256": "662cf635507941e23256f92ce615f4bccfa27ddd9f4330487da2f22eb75b907b",
@@ -15505,9 +15654,13 @@
               "sha256": "ff9061504dcef7231b26031d2e1c7b633e62af79fe45aa4fdc4f23da9a7ce6f9",
               "lines": 207
             },
+            "packages/runtime/src/container-runtime-identity-parser.ts": {
+              "sha256": "150c831684a320f4f2dbb0c8a26cfafd74f6fd452c95dd8aca9ea70a9acf2b7a",
+              "lines": 159
+            },
             "packages/runtime/src/container-runtime-probe-source.ts": {
-              "sha256": "49b4f51d4e2277b09e06c8ef337cff425452d0fb4f9a30f62f4e0a925a353f05",
-              "lines": 64
+              "sha256": "961e9bba13aa37b3eb3a7eb2906766234478d145a89273c490f3458c2f33d8d3",
+              "lines": 129
             },
             "packages/runtime/src/credential-references.ts": {
               "sha256": "4b6b407902816631f1befa89792b29b0dbfe2872dca9220ecafb4ceb050e5813",
@@ -15557,9 +15710,13 @@
               "sha256": "96827fb30a300829137b364a124c7b5d84ef07b00ae2c8b21d17f3a82ef83ae5",
               "lines": 66
             },
+            "packages/runtime/src/doctor-lsp-runtime-probe.ts": {
+              "sha256": "de5e3915553e665bb9768c2761d5d3a58da075f09a047c0be91c2cc655003654",
+              "lines": 110
+            },
             "packages/runtime/src/doctor-runtime-probes.ts": {
-              "sha256": "7b585bac8f405b88954ca6e1ac72b3946dadf7236a2830c2ee69a1e7f681604c",
-              "lines": 462
+              "sha256": "e7cd035185f776e1d53e0b2920736083e7d20e0b49f24a367873e25f5e527742",
+              "lines": 438
             },
             "packages/runtime/src/ed25519.ts": {
               "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c",
@@ -15994,24 +16151,24 @@
               "lines": 228
             },
             "packages/runtime/src/lsp-code-actions.ts": {
-              "sha256": "d3d208ec2e0201e5d1459fedeefd0716160c9fc06435cf1482002c84c94d4c26",
-              "lines": 204
+              "sha256": "7f924d2b4418be491929363078c74d799cb780906de1cbfc6deee37a6ec023bf",
+              "lines": 206
             },
             "packages/runtime/src/lsp-definition-tool.ts": {
               "sha256": "7ad084be0adfb8ed9a07f2cc99f3b8a2ade0557d21615e46ad2ca296043340c5",
               "lines": 158
             },
             "packages/runtime/src/lsp-definition.ts": {
-              "sha256": "29c0a0418b780e29d6a7b91e5a3140f328f30b3b8894427d8b5e15edc3143ca5",
-              "lines": 157
+              "sha256": "3ebb1e180908a753a60bbe4bc92bbcf276c832a7265b163c1ad0251b18ae1a21",
+              "lines": 159
             },
             "packages/runtime/src/lsp-diagnostics-tool.ts": {
               "sha256": "f0a833d7daaa25449c240d452d758cc622644d665de942ea14cd4ebd24b80d58",
               "lines": 158
             },
             "packages/runtime/src/lsp-diagnostics.ts": {
-              "sha256": "ec148c5a551bd74a756efb647cbb7c6c51f65a768371249efcdec32ce65e1d7e",
-              "lines": 144
+              "sha256": "1ffd777f9ce7c56d465c1ba28bbb1e9291ab3b74a6edf44e322c8ddab023f761",
+              "lines": 146
             },
             "packages/runtime/src/lsp-locations.ts": {
               "sha256": "fcc426e14670c0a2d7671f0c612975edbbcda46438d3b30b33f330cefca784c3",
@@ -16022,20 +16179,20 @@
               "lines": 347
             },
             "packages/runtime/src/lsp-persistent-session.ts": {
-              "sha256": "ad97430bcf5ed862b63d68fc73b5d96bf175ecf75fbf437ee86d8814bece7c78",
-              "lines": 486
+              "sha256": "db90f48e55a780c970c8ceae8ffcf375ab1c4b6b48b38f1ab3d68fdb4e24eef9",
+              "lines": 500
             },
             "packages/runtime/src/lsp-protocol-session.ts": {
-              "sha256": "eb942ac7b7b5fe57fa6aebbceb0ebfd2c1562b25b6f1ad497a1d1464dccaaa55",
-              "lines": 482
+              "sha256": "7c6d8f0a4414191309491b9d0af4ce11d2d959701087d9d8572caec07b759344",
+              "lines": 483
             },
             "packages/runtime/src/lsp-references-tool.ts": {
               "sha256": "fa467244bbcd1c3262d206842e32d12992fcbe860ca9650c91fe7664b79fbe0f",
               "lines": 169
             },
             "packages/runtime/src/lsp-references.ts": {
-              "sha256": "11edc6e7be4a41972224c0d4d04fd3c8ba76333b184da9f766bd42062fc84208",
-              "lines": 167
+              "sha256": "8e5f05667595557c5179318e4fb55f457e4e91515a21c39f56a910b65687334d",
+              "lines": 169
             },
             "packages/runtime/src/lsp-rename-apply-diagnostics.ts": {
               "sha256": "f5dc87aaea0712dcef7a7c8e2f6332f36cd88a4f4623880e8cc0d0b7df5677f4",
@@ -16070,16 +16227,20 @@
               "lines": 394
             },
             "packages/runtime/src/lsp-rename.ts": {
-              "sha256": "e87daa4f88a639b9078c29a7aab8481a571c2fad78347afcfce088c32e7bb35a",
-              "lines": 246
+              "sha256": "694578e73e54010e652df0ff5f417b8e84dc0a6407f030bc0a83b03f54b96a9a",
+              "lines": 248
+            },
+            "packages/runtime/src/lsp-runtime-assets.ts": {
+              "sha256": "7ae13a58a27794eb48eccc2505a4f67d49163e53206d881adcb90434c3d80c7c",
+              "lines": 313
             },
             "packages/runtime/src/lsp-runtime-read-paths.ts": {
               "sha256": "656dbc6653189a5082a9f13fefe341dabcc72bf390529430e99127cd1e50f2c3",
               "lines": 23
             },
             "packages/runtime/src/lsp-source-session.ts": {
-              "sha256": "394c802a3bd45bace5073026e8efd6e37aa5304eb820bc038d91fdee10b422c1",
-              "lines": 494
+              "sha256": "3d5d991d53e5ec37769b97f945c57d1033f40c340f84daddd2e0de8c59ebe801",
+              "lines": 304
             },
             "packages/runtime/src/lsp-symbol-model.ts": {
               "sha256": "c1eadf1452cd98b6f1b9dde4328c92b6fe85f5b2b2ed0235a91139313dc39fbb",
@@ -16094,8 +16255,8 @@
               "lines": 193
             },
             "packages/runtime/src/lsp-symbols.ts": {
-              "sha256": "b7aad4489b23a3120e095c7b2b68494cc97b4a22e174481e1016179f6982af3c",
-              "lines": 152
+              "sha256": "eebcb3172d39957e1df38a4a76fe427a97ea9cbeed39311dc9acb3510ab83bf4",
+              "lines": 154
             },
             "packages/runtime/src/lsp-workspace-edit-mutation.ts": {
               "sha256": "fa7447f30ba958b4b87adc115b54489905880a7723125f49137df88352ad3d92",
@@ -16449,9 +16610,13 @@
               "sha256": "57118a17f6c995bf910147c369e55d6be7f93d5f6db6e2eac6c9a8e361908c39",
               "lines": 94
             },
+            "packages/runtime/src/sandbox-container-lsp-runtime.ts": {
+              "sha256": "64d8dd572542419196cc6faf40911285dc18f2960cceb1ba892dc2448d1806dd",
+              "lines": 41
+            },
             "packages/runtime/src/sandbox-container-runtime.ts": {
-              "sha256": "8c99481f0a08cf83738b3ba43e2ef19a1313013c978adce59d36b16391b9375c",
-              "lines": 438
+              "sha256": "332176010cca3583fd18a00e1e31f0b7ffbbe90463cb1886b055fa10e148bcb0",
+              "lines": 367
             },
             "packages/runtime/src/sandbox-container.ts": {
               "sha256": "09db75556d33bba5131e4ce07c62eb1685f182843dc95207c619fd75c2729ae6",
@@ -16466,8 +16631,8 @@
               "lines": 96
             },
             "packages/runtime/src/sandbox-oci.ts": {
-              "sha256": "8acfba020a53bea18a5f67b3cc7de01159ac68dc61f58cf5aa4c1928268bad97",
-              "lines": 306
+              "sha256": "659d44743840633a6cd3d5198469e318dcdd29bd3efb5a9103e58d8ed7d9cd24",
+              "lines": 332
             },
             "packages/runtime/src/sandbox-process-lifecycle.ts": {
               "sha256": "4bdf7d378b433ffd5a29e03d1d032f21ccf6a652744a16da1f9d31fef53a3fee",
@@ -17502,7 +17667,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "c7d2942d45a94a155fa7f9f6934d14c2faeb09e2c66cdf9da005a88ae649bc8c"
+          "manifestSha256": "008eaf3da7892362224befbf99caecb659b7ff919d7fdf0001a97e5647205240"
         }
       },
       "excludedCategories": [
@@ -17531,9 +17696,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "b929979442e3177d728c10603059d17a381c465d0cceea9b64ae538e376a292e"
+      "manifestSha256": "1c563b1ffd71540af77e70974a58b353b2a92959bd44bc8fe221e1eeb139259f"
     },
-    "manifestSha256": "9b5026877b2f503589421447ed46bbccdec8e633a220d637c40222cb2b954ef2"
+    "manifestSha256": "4066673f6beebe3af8adb1b0f9d560f73de3a1b4d1b41494355f4778a8e80089"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -17721,11 +17886,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "3cff329766e4ead48d17c893dd95740884bcd54ba17f1e95db6762cc63c60be0"
+      "sha256": "7a1f43e8c2474ee779206b2f28c7790bb52706c879a4c9957dfa38a7a3450c0b"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "130d78492f06bc28257ebf1bdfa2c257b48ec39ff831233beca3749176c635b7"
+      "sha256": "c255a6e2771da325f14b584bdadef08f24064f548db54e7b258f13e2db42ab28"
     }
   }
 }

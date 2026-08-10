@@ -49,6 +49,7 @@ export interface SandboxIsolationStrength {
 }
 
 export { probeGitRuntime } from "./doctor-git-runtime-probe.js";
+export { probeLspRuntime } from "./doctor-lsp-runtime-probe.js";
 
 /**
  * Describes the isolation an OS sandbox adapter actually enforces, so Doctor can
@@ -182,31 +183,6 @@ export async function probeSkillsRuntime(
       message:
         "Project or user Skills were found, but the production Skill loader could not safely load one",
       evidence: { present: present.length, productionCall: false },
-    };
-  }
-}
-
-/**
- * TypeScript LSP readiness. Resolves the exact language-server and tsserver
- * entry points the LSP session launches so a missing dependency is reported
- * before a task relies on diagnostics or rename.
- */
-export async function probeLspRuntime(): Promise<RuntimeCapabilityProbe> {
-  try {
-    require.resolve("typescript-language-server/lib/cli.mjs");
-    require.resolve("typescript/lib/tsserver.js");
-    return {
-      status: "available_unverified",
-      code: "lsp_ready",
-      message:
-        "TypeScript language server and tsserver entry points are installed",
-    };
-  } catch {
-    return {
-      status: "unavailable",
-      code: "lsp_missing",
-      message:
-        "TypeScript language server is not installed; reinstall dependencies to enable LSP tools",
     };
   }
 }

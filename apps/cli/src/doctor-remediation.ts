@@ -100,7 +100,13 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   lsp_missing: {
     id: "repair_lsp_runtime",
     instruction:
-      "Reinstall dependencies so typescript-language-server and typescript resolve; LSP tools fail closed without them.",
+      "Install typescript-language-server and typescript in the active host sandbox or trusted OCI image; LSP tools fail closed without identity-bound assets.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
+  lsp_provider_unavailable: {
+    id: "repair_lsp_provider",
+    instruction:
+      "Configure an active process Sandbox that can launch its identity-bound TypeScript language server, then rerun Doctor.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
   dap_missing: {

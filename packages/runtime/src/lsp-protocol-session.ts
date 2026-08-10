@@ -51,6 +51,7 @@ export interface LspProtocolSessionRequest {
   languageServerRoot?: string;
   typescriptRoot?: string;
   runtimeIdentitySha256?: string;
+  runtimeLocation?: "host" | "provider";
 }
 
 export interface LspProtocolSessionResult<T> {

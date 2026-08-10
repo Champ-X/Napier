@@ -1,6 +1,7 @@
 import type { LspReferencesDetails } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { lspProviderRuntimeLimitEvidence } from "./lsp-runtime-assets.js";
 import {
   DEFAULT_LSP_DIAGNOSTICS_TIMEOUT_MS,
   LSP_FIXED_ENVIRONMENT,
@@ -136,6 +137,7 @@ export class LspReferencesRunner {
       environmentSha256: sha256(canonicalJson(LSP_FIXED_ENVIRONMENT)),
       resourceLimitsSha256: sha256(
         canonicalJson({
+          ...lspProviderRuntimeLimitEvidence(prepared.assets),
           timeoutMs: request.timeoutMs ?? DEFAULT_LSP_DIAGNOSTICS_TIMEOUT_MS,
           maxSourceFileBytes: MAX_LSP_DIAGNOSTIC_FILE_BYTES,
           maxTargetFileBytes: MAX_LSP_DIAGNOSTIC_FILE_BYTES,

@@ -141,6 +141,7 @@ function identityClient() {
         executableSha256: "e".repeat(64),
         version: "git version 2.51.0",
       },
+      lsp: null,
       python: {
         executable: "/usr/local/bin/python3",
         executableSha256: "d".repeat(64),

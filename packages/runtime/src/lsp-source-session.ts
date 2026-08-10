@@ -1,11 +1,16 @@
-import { createRequire } from "node:module";
-import { readFile, readdir, realpath, stat } from "node:fs/promises";
+import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
 import type { LspDiagnosticLanguage } from "@napier/contracts";
 
 import { sha256File } from "./command-execution.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  assertLspRuntimeStable,
+  resolveLspRuntimeAssets,
+  type LspRuntimeAssets,
+  type LspRuntimeResolutionOptions,
+} from "./lsp-runtime-assets.js";
 import {
   type LspProtocolExecutor,
   type LspProtocolSessionRequest,
@@ -29,8 +34,6 @@ export const LSP_FIXED_ENVIRONMENT = {
 } as const;
 
 const MIN_LSP_DIAGNOSTICS_TIMEOUT_MS = 1_000;
-const MAX_TYPESCRIPT_RUNTIME_FILES = 512;
-const MAX_TYPESCRIPT_RUNTIME_BYTES = 64 * 1024 * 1024;
 const LANGUAGE_BY_EXTENSION = new Map<string, LspDiagnosticLanguage>([
   [".ts", "typescript"],
   [".mts", "typescript"],
@@ -41,7 +44,6 @@ const LANGUAGE_BY_EXTENSION = new Map<string, LspDiagnosticLanguage>([
   [".cjs", "javascript"],
   [".jsx", "javascriptreact"],
 ]);
-const require = createRequire(import.meta.url);
 
 export interface LspSourceRequest {
   path: string;
@@ -49,28 +51,12 @@ export interface LspSourceRequest {
   signal?: AbortSignal;
 }
 
-export interface LspDiagnosticsRunnerOptions {
+export interface LspDiagnosticsRunnerOptions extends LspRuntimeResolutionOptions {
   workspaceRoot: string;
-  sandbox: OsSandboxAdapter;
-  nodeExecutable?: string;
-  languageServerPath?: string;
-  typescriptServerPath?: string;
-  runtimeReadPaths?: string[];
   session?: LspProtocolExecutor;
 }
 
-export interface LspRuntimeAssets {
-  nodeExecutable: string;
-  nodeExecutableSha256: string;
-  languageServerPath: string;
-  languageServerRoot: string;
-  languageServerVersion: string;
-  languageServerSha256: string;
-  typescriptServerPath: string;
-  typescriptRoot: string;
-  typescriptVersion: string;
-  typescriptServerSha256: string;
-}
+export type { LspRuntimeAssets } from "./lsp-runtime-assets.js";
 
 export interface PreparedLspSource {
   workspaceRoot: string;
@@ -82,12 +68,6 @@ export interface PreparedLspSource {
   fileBytes: number;
   timeoutMs: number;
   assets: LspRuntimeAssets;
-}
-
-interface LspRuntimeAssetOptions {
-  nodeExecutable?: string;
-  languageServerPath?: string;
-  typescriptServerPath?: string;
 }
 
 export class LspDiagnosticsTargetDriftError extends Error {
@@ -128,11 +108,6 @@ export async function runBoundLspSourceSession<T>(
       `${labels.label} cannot add runtime paths to a persistent LSP Session`,
     );
   }
-  if (options.sandbox.id === "oci-container") {
-    throw new Error(
-      `${labels.label} requires a local OS sandbox until container runtime asset identity binding is available`,
-    );
-  }
   const startedAt = Date.now();
   const protocolRequest = createProtocolRequest(prepared, labels);
   const execution = options.session
@@ -154,7 +129,7 @@ export async function runBoundLspSourceSession<T>(
     prepared.fileSha256,
     labels.label,
   );
-  await assertLspRuntimeStable(prepared.assets, labels.label);
+  await assertLspRuntimeStable(prepared.assets, labels.label, options.sandbox);
   return {
     prepared,
     execution,
@@ -253,13 +228,18 @@ function createProtocolRequest(
     languageServerPath: prepared.assets.languageServerPath,
     languageServerRoot: prepared.assets.languageServerRoot,
     typescriptRoot: prepared.assets.typescriptRoot,
-    runtimeIdentitySha256: sha256(
-      canonicalJson({
-        nodeExecutableSha256: prepared.assets.nodeExecutableSha256,
-        languageServerSha256: prepared.assets.languageServerSha256,
-        typescriptServerSha256: prepared.assets.typescriptServerSha256,
-      }),
-    ),
+    runtimeIdentitySha256:
+      prepared.assets.runtimeIdentitySha256 ??
+      sha256(
+        canonicalJson({
+          nodeExecutableSha256: prepared.assets.nodeExecutableSha256,
+          languageServerSha256: prepared.assets.languageServerSha256,
+          typescriptServerSha256: prepared.assets.typescriptServerSha256,
+        }),
+      ),
+    runtimeLocation: prepared.assets.runtimeIdentitySha256
+      ? "provider"
+      : "host",
   };
 }
 
@@ -271,10 +251,12 @@ async function runOneShotSession<T>(
   additionalRuntimeReadPaths: string[] | undefined,
   signal?: AbortSignal,
 ): Promise<LspProtocolSessionResult<T>> {
-  const runtimeReadPaths = await resolveLspRuntimeReadPaths(
-    [prepared.assets.languageServerRoot, prepared.assets.typescriptRoot],
-    additionalRuntimeReadPaths,
-  );
+  const runtimeReadPaths = prepared.assets.runtimeIdentitySha256
+    ? []
+    : await resolveLspRuntimeReadPaths(
+        [prepared.assets.languageServerRoot, prepared.assets.typescriptRoot],
+        additionalRuntimeReadPaths,
+      );
   const child = await sandbox.launch({
     command: prepared.assets.nodeExecutable,
     args: [prepared.assets.languageServerPath, "--stdio", "--log-level", "1"],
@@ -282,85 +264,9 @@ async function runOneShotSession<T>(
     env: { ...LSP_FIXED_ENVIRONMENT },
     workspaceRoot: prepared.workspaceRoot,
     approvedCapabilities: ["process.spawn", "workspace.read"],
-    runtimeReadPaths,
+    ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
   });
   return runLspProtocolSession(child, request, prepareOperation, signal);
-}
-
-async function resolveLspRuntimeAssets(
-  options: LspRuntimeAssetOptions,
-): Promise<LspRuntimeAssets> {
-  const nodeExecutable = await realpath(
-    options.nodeExecutable ?? process.execPath,
-  );
-  const languageServerPath = await realpath(
-    options.languageServerPath ??
-      require.resolve("typescript-language-server/lib/cli.mjs"),
-  );
-  const typescriptServerPath = await realpath(
-    options.typescriptServerPath ??
-      require.resolve("typescript/lib/tsserver.js"),
-  );
-  const languageServerRoot = await realpath(
-    path.resolve(languageServerPath, "../.."),
-  );
-  const typescriptRoot = await realpath(
-    path.resolve(typescriptServerPath, "../.."),
-  );
-  const languageServerPackage = path.join(languageServerRoot, "package.json");
-  const typescriptPackage = path.join(typescriptRoot, "package.json");
-  const typescriptRuntime = path.join(
-    path.dirname(typescriptServerPath),
-    "typescript.js",
-  );
-  const [languageServerVersion, typescriptVersion] = await Promise.all([
-    packageVersion(languageServerPackage, "TypeScript language server"),
-    packageVersion(typescriptPackage, "TypeScript"),
-  ]);
-  const [nodeExecutableSha256, languageServerSha256, typescriptServerSha256] =
-    await Promise.all([
-      sha256File(nodeExecutable),
-      assetSetSha256([
-        ["package.json", languageServerPackage],
-        ["lib/cli.mjs", languageServerPath],
-      ]),
-      typescriptAssetSetSha256(
-        typescriptPackage,
-        path.dirname(typescriptRuntime),
-      ),
-    ]);
-  return {
-    nodeExecutable,
-    nodeExecutableSha256,
-    languageServerPath,
-    languageServerRoot,
-    languageServerVersion,
-    languageServerSha256,
-    typescriptServerPath,
-    typescriptRoot,
-    typescriptVersion,
-    typescriptServerSha256,
-  };
-}
-
-async function assertLspRuntimeStable(
-  assets: LspRuntimeAssets,
-  label: string,
-): Promise<void> {
-  const current = await resolveLspRuntimeAssets({
-    nodeExecutable: assets.nodeExecutable,
-    languageServerPath: assets.languageServerPath,
-    typescriptServerPath: assets.typescriptServerPath,
-  });
-  if (
-    current.nodeExecutableSha256 !== assets.nodeExecutableSha256 ||
-    current.languageServerVersion !== assets.languageServerVersion ||
-    current.languageServerSha256 !== assets.languageServerSha256 ||
-    current.typescriptVersion !== assets.typescriptVersion ||
-    current.typescriptServerSha256 !== assets.typescriptServerSha256
-  ) {
-    throw new Error(`${label} runtime assets changed during execution`);
-  }
 }
 
 async function assertLspTargetStable(
@@ -385,102 +291,6 @@ async function assertLspTargetStable(
       label,
     );
   }
-}
-
-async function packageVersion(
-  packageJsonPath: string,
-  label: string,
-): Promise<string> {
-  let value: unknown;
-  try {
-    value = JSON.parse(await readFile(packageJsonPath, "utf8")) as unknown;
-  } catch {
-    throw new Error(`${label} package metadata is unavailable`);
-  }
-  if (!record(value) || typeof value["version"] !== "string") {
-    throw new Error(`${label} package version is invalid`);
-  }
-  return value["version"];
-}
-
-async function assetSetSha256(
-  assets: Array<[relativePath: string, absolutePath: string]>,
-): Promise<string> {
-  const entries = await Promise.all(
-    assets.map(async ([relativePath, absolutePath]) => {
-      const info = await stat(absolutePath);
-      if (!info.isFile()) throw new Error("LSP runtime asset must be a file");
-      return {
-        path: relativePath,
-        bytes: info.size,
-        sha256: await sha256File(absolutePath),
-      };
-    }),
-  );
-  return sha256(canonicalJson(entries));
-}
-
-async function typescriptAssetSetSha256(
-  packageJsonPath: string,
-  libDirectory: string,
-): Promise<string> {
-  const runtimeFiles = await collectRuntimeFiles(libDirectory);
-  const assets: Array<[relativePath: string, absolutePath: string]> = [
-    ["package.json", packageJsonPath],
-    ...runtimeFiles
-      .map((absolutePath): [string, string] => [
-        `lib/${path.relative(libDirectory, absolutePath).split(path.sep).join("/")}`,
-        absolutePath,
-      ])
-      .sort((left, right) => left[0].localeCompare(right[0])),
-  ];
-  const entries = await Promise.all(
-    assets.map(async ([relativePath, absolutePath]) => {
-      const info = await stat(absolutePath);
-      return {
-        path: relativePath,
-        bytes: info.size,
-        sha256: await sha256File(absolutePath),
-      };
-    }),
-  );
-  const totalBytes = entries.reduce((total, entry) => total + entry.bytes, 0);
-  if (totalBytes > MAX_TYPESCRIPT_RUNTIME_BYTES) {
-    throw new Error("TypeScript runtime asset set exceeds its byte boundary");
-  }
-  return sha256(canonicalJson(entries));
-}
-
-async function collectRuntimeFiles(root: string): Promise<string[]> {
-  const files: string[] = [];
-  const visit = async (directory: string): Promise<void> => {
-    const entries = await readdir(directory, { withFileTypes: true });
-    entries.sort((left, right) => left.name.localeCompare(right.name));
-    for (const entry of entries) {
-      if (entry.isSymbolicLink() || /[\u0000-\u001f\u007f]/u.test(entry.name)) {
-        throw new Error("TypeScript runtime asset set is invalid");
-      }
-      const absolutePath = path.join(directory, entry.name);
-      if (entry.isDirectory()) {
-        await visit(absolutePath);
-      } else if (entry.isFile()) {
-        files.push(absolutePath);
-        if (files.length > MAX_TYPESCRIPT_RUNTIME_FILES) {
-          throw new Error(
-            "TypeScript runtime asset set exceeds its file boundary",
-          );
-        }
-      } else {
-        throw new Error("TypeScript runtime asset set is invalid");
-      }
-    }
-  };
-  await visit(root);
-  return files;
-}
-
-function record(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function isPathInside(candidate: string, root: string): boolean {

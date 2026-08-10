@@ -180,7 +180,7 @@ describe("LSP diagnostics runner", () => {
           },
         },
       }).run({ path: "target.ts" }),
-    ).rejects.toThrow("local OS sandbox");
+    ).rejects.toThrow("image-bound LSP runtime identity");
     expect(ociLaunches).toBe(0);
   });
 

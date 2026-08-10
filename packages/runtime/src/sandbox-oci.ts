@@ -14,6 +14,7 @@ import {
   type ContainerUserIds,
   validateOciContainerName,
 } from "./sandbox-container-runtime.js";
+import { resolveContainerLspRuntime } from "./sandbox-container-lsp-runtime.js";
 import {
   containerScratchBaseDir,
   containerClientEnvironment,
@@ -35,6 +36,7 @@ import type {
   SandboxedProcess,
   SandboxCommandRuntime,
   SandboxCommandRuntimeBinding,
+  SandboxLspRuntimeBinding,
   SandboxLaunchRequest,
 } from "./sandbox-types.js";
 import { launchTerminalSandboxWrapper } from "./sandbox-terminal.js";
@@ -51,6 +53,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     SandboxCommandRuntime,
     Promise<SandboxCommandRuntimeBinding>
   >();
+  private lspRuntimeBinding: Promise<SandboxLspRuntimeBinding> | undefined;
 
   constructor(
     private readonly image: string,
@@ -85,6 +88,18 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       return await resolving;
     } catch (error) {
       this.runtimeBindings.delete(runtime);
+      throw error;
+    }
+  }
+
+  async resolveLspRuntime(): Promise<SandboxLspRuntimeBinding> {
+    const executable = await resolveContainerLaunchExecutable(this.executable);
+    await this.resolveImage(executable);
+    this.lspRuntimeBinding ??= this.resolveLsp();
+    try {
+      return await this.lspRuntimeBinding;
+    } catch (error) {
+      this.lspRuntimeBinding = undefined;
       throw error;
     }
   }
@@ -172,6 +187,16 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     );
   }
 
+  private async resolveLsp(): Promise<SandboxLspRuntimeBinding> {
+    const executable = await resolveContainerLaunchExecutable(this.executable);
+    return resolveContainerLspRuntime(
+      await this.resolveImage(executable),
+      this.containerClient,
+      this.userIds,
+      this.daemonEndpoint,
+    );
+  }
+
   private async resolveImage(
     executable: string,
   ): Promise<ContainerImageIdentity> {
@@ -194,6 +219,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     } catch (error) {
       this.imageIdentity = undefined;
       this.runtimeBindings.clear();
+      this.lspRuntimeBinding = undefined;
       throw error;
     }
   }

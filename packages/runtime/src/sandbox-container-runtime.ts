@@ -4,6 +4,10 @@ import path from "node:path";
 
 import { sha256File } from "./command-runtime.js";
 import { CONTAINER_RUNTIME_IDENTITY_SOURCE } from "./container-runtime-probe-source.js";
+import {
+  parseContainerRuntimeIdentity,
+  type ContainerRuntimeIdentityOutput,
+} from "./container-runtime-identity-parser.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   containerClientEnvironment,
@@ -16,7 +20,6 @@ import type {
 } from "./sandbox-types.js";
 
 const IMAGE_ID = /^sha256:[a-f0-9]{64}$/u;
-const FILE_SHA256 = /^[a-f0-9]{64}$/u;
 const OCI_CONTAINER_NAME = /^napier-[a-f0-9]{32}$/u;
 const MAX_POSIX_ID = 2_147_483_647;
 const CONTAINER_CLIENT_TIMEOUT_MS = 10_000;
@@ -51,26 +54,6 @@ export type ContainerClient = (
   executable: string,
   args: readonly string[],
 ) => Promise<string>;
-
-interface ContainerRuntimeIdentityOutput {
-  node: ContainerExecutableIdentity;
-  shell: ContainerExecutableIdentity | null;
-  git: ContainerGitIdentity | null;
-  python: ContainerPythonIdentity | null;
-}
-
-interface ContainerExecutableIdentity {
-  executable: string;
-  executableSha256: string;
-}
-
-interface ContainerPythonIdentity extends ContainerExecutableIdentity {
-  version: string;
-}
-
-interface ContainerGitIdentity extends ContainerExecutableIdentity {
-  version: string;
-}
 
 export async function resolveContainerImageIdentity(
   image: string,
@@ -231,37 +214,12 @@ export async function resolveContainerCommandRuntime(
   injectedUserIds?: ContainerUserIds,
   injectedDaemonEndpoint?: string,
 ): Promise<SandboxCommandRuntimeBinding> {
-  await assertContainerImageIdentityStable(
+  const observed = await probeContainerRuntimeIdentity(
     identity,
     client,
     injectedUserIds,
     injectedDaemonEndpoint,
   );
-  const output = await client(identity.clientExecutable, [
-    "run",
-    "--rm",
-    "--network",
-    "none",
-    "--cap-drop",
-    "ALL",
-    "--security-opt",
-    "no-new-privileges",
-    "--read-only",
-    "--user",
-    `${String(identity.user.userId)}:${String(identity.user.groupId)}`,
-    "--pids-limit",
-    "32",
-    "--memory",
-    "128m",
-    "--cpus",
-    "0.25",
-    "--entrypoint",
-    "node",
-    identity.imageId,
-    "-e",
-    CONTAINER_RUNTIME_IDENTITY_SOURCE,
-  ]);
-  const observed = parseRuntimeIdentity(output);
   const selected =
     runtime === "node"
       ? observed.node
@@ -298,6 +256,45 @@ export async function resolveContainerCommandRuntime(
       }),
     ),
   };
+}
+
+export async function probeContainerRuntimeIdentity(
+  identity: ContainerImageIdentity,
+  client: ContainerClient = runContainerClient,
+  injectedUserIds?: ContainerUserIds,
+  injectedDaemonEndpoint?: string,
+): Promise<ContainerRuntimeIdentityOutput> {
+  await assertContainerImageIdentityStable(
+    identity,
+    client,
+    injectedUserIds,
+    injectedDaemonEndpoint,
+  );
+  const output = await client(identity.clientExecutable, [
+    "run",
+    "--rm",
+    "--network",
+    "none",
+    "--cap-drop",
+    "ALL",
+    "--security-opt",
+    "no-new-privileges",
+    "--read-only",
+    "--user",
+    `${String(identity.user.userId)}:${String(identity.user.groupId)}`,
+    "--pids-limit",
+    "32",
+    "--memory",
+    "128m",
+    "--cpus",
+    "0.25",
+    "--entrypoint",
+    "node",
+    identity.imageId,
+    "-e",
+    CONTAINER_RUNTIME_IDENTITY_SOURCE,
+  ]);
+  return parseContainerRuntimeIdentity(output);
 }
 
 export async function removeContainerResource(
@@ -367,72 +364,4 @@ function runContainerClient(
       },
     );
   });
-}
-
-function parseRuntimeIdentity(output: string): ContainerRuntimeIdentityOutput {
-  let value: unknown;
-  try {
-    value = JSON.parse(output);
-  } catch {
-    throw new Error("OCI container runtime identity output is invalid");
-  }
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("OCI container runtime identity output is invalid");
-  }
-  const record = value as Record<string, unknown>;
-  return {
-    node: executableIdentity(record["node"]),
-    shell:
-      record["shell"] === null ? null : executableIdentity(record["shell"]),
-    git: record["git"] === null ? null : gitExecutableIdentity(record["git"]),
-    python:
-      record["python"] === null
-        ? null
-        : pythonExecutableIdentity(record["python"]),
-  };
-}
-
-function gitExecutableIdentity(value: unknown): ContainerGitIdentity {
-  const executable = executableIdentity(value);
-  const version = (value as Record<string, unknown>)["version"];
-  if (
-    typeof version !== "string" ||
-    !/^git version [^\u0000-\u001f\u007f]{1,160}$/u.test(version)
-  ) {
-    throw new Error("OCI container Git identity is invalid");
-  }
-  return { ...executable, version };
-}
-
-function pythonExecutableIdentity(value: unknown): ContainerPythonIdentity {
-  const executable = executableIdentity(value);
-  const version = (value as Record<string, unknown>)["version"];
-  if (typeof version !== "string") {
-    throw new Error("OCI container Python identity is invalid");
-  }
-  const match = /^3\.(\d+)\.(\d+)$/u.exec(version);
-  if (!match || Number(match[1]) < 9) {
-    throw new Error("OCI container Python identity is invalid");
-  }
-  return { ...executable, version };
-}
-
-function executableIdentity(value: unknown): ContainerExecutableIdentity {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("OCI container executable identity is invalid");
-  }
-  const record = value as Record<string, unknown>;
-  if (
-    typeof record["executable"] !== "string" ||
-    !record["executable"].startsWith("/") ||
-    /[\u0000-\u001f\u007f]/u.test(record["executable"]) ||
-    typeof record["executableSha256"] !== "string" ||
-    !FILE_SHA256.test(record["executableSha256"])
-  ) {
-    throw new Error("OCI container executable identity is invalid");
-  }
-  return {
-    executable: record["executable"],
-    executableSha256: record["executableSha256"],
-  };
 }

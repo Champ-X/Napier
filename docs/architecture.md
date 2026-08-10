@@ -5088,8 +5088,9 @@ superiority claim.
 ## TypeScript LSP Code Intelligence Flow
 
 The LSP tools are implemented outside the oversized workspace-tool module.
-`lsp-source-session.ts` owns shared target/runtime preparation, one-shot or
-injected execution, and post-operation freshness checks;
+`lsp-source-session.ts` owns shared target preparation, one-shot or injected
+execution, and post-operation freshness checks; `lsp-runtime-assets.ts` owns
+host asset hashing plus provider-bound runtime admission and drift checks;
 `lsp-diagnostics.ts` owns only diagnostic result projection;
 `lsp-protocol-session.ts` owns standard initialize/document-sync operations and
 the bounded one-shot JSON-RPC lifecycle; `lsp-persistent-session.ts` owns
@@ -5104,9 +5105,12 @@ Agent selects lsp_diagnostics + workspace-relative source path
   -> require workspace/unrestricted policy and enabled tool
   -> canonicalize the workspace and target; reject escape, symlink,
      protected roots, unsupported extension, invalid UTF-8, or >1 MiB
-  -> resolve and hash the current Node executable
-  -> resolve versioned typescript-language-server and TypeScript assets
-  -> bind those assets as Napier-managed read-only Sandbox runtime paths
+  -> resolve and hash the current Node executable plus versioned
+     typescript-language-server and TypeScript assets from the active provider
+  -> for local OS adapters, bind those host assets as Napier-managed read-only
+     Sandbox runtime paths
+  -> for OCI, bind the immutable image/runtime identity and add no host runtime
+     mounts
   -> reuse the healthy Run-owned server when workspace/runtime hashes match,
      otherwise launch Node with the bundled entrypoint and fixed environment
   -> initialize once with explicit tsserver path and automatic typing disabled
@@ -5278,12 +5282,16 @@ guidance. Web symbol and quick-fix projections never read symbol
 names/details/signatures, action titles, paths, diagnostic messages, commands,
 opaque data, or edit bodies.
 
-The Sandbox launch contract supports at most eight explicit absolute
-non-root `runtimeReadPaths`. macOS adds read-only profile rules, Bubblewrap
-adds read-only binds, and OCI adds read-only mounts. Existing command and
-Process Session launches omit this field, so their capability surface is
-unchanged. OCI LSP remains fail-closed until host/image runtime asset identity
-is defined.
+The Sandbox launch contract supports at most eight explicit absolute non-root
+`runtimeReadPaths`. macOS adds read-only profile rules and Bubblewrap adds
+read-only binds. Existing command and Process Session launches omit this field,
+so their capability surface is unchanged. OCI LSP uses a separate provider SPI:
+an in-image fixed probe binds Node, language-server and complete TypeScript
+runtime hashes to the immutable image/local daemon/numeric user identity. Its
+one-shot and persistent launches reject host overrides and host runtime mounts;
+missing or drifting image assets fail closed. Every LSP resource-limits receipt
+transitively binds the provider identity. Doctor reports ready only after the
+same adapter completes a bounded production language-server version call.
 
 The language server runs as untrusted code output inside the Capability Plane:
 diagnostic prose is not treated as instructions, related-information paths are
@@ -5556,7 +5564,8 @@ bootstrap dependency set proven to cover the worker's loaded module files,
 without granting models an arbitrary Python argv surface. Git remains outside
 that generic runtime enum and is available only through the fixed operation
 graph below; OCI resolves its executable, version, and byte hash from the image
-before those operations can launch.
+before those operations can launch. TypeScript LSP likewise uses its own narrow
+provider binding rather than expanding the public command runtime enum.
 
 The macOS adapter runs one cached, one-second, deny-default `sandbox-exec`
 profile probe before launching the first task process. This distinguishes an
@@ -8016,11 +8025,13 @@ guardian force-remove the exact resource on exit or cancellation and fail with
 a non-success cleanup result if the name remains. The adapter does not rely on
 Docker auto-remove. The client/daemon/user binding is covered without an
 external daemon by controlled production-path tests; the actual host Doctor
-continues to report `python_provider_unavailable`,
-`shell_provider_unavailable`, and `sandbox_unavailable` when the configured
-local Docker server cannot be reached. Real isolated-daemon E2E, non-POSIX
-host-user mapping, image-bound LSP/debugger assets, and bounded service-port
-projection remain explicit gaps.
+continues to report `lsp_provider_unavailable`,
+`python_provider_unavailable`, `shell_provider_unavailable`, and
+`sandbox_unavailable` when the configured local Docker server cannot be
+reached. The LSP path is otherwise covered by a controlled production launch
+that runs the real protocol and persistent reuse without host runtime mounts.
+Real isolated-daemon E2E, non-POSIX host-user mapping, image-bound debugger
+assets, and bounded service-port projection remain explicit gaps.
 
 Both adapters create a private temporary HOME and add workspace read/write
 rules only for separately approved capabilities. Stdio receives no ambient

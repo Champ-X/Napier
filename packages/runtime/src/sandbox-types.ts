@@ -37,11 +37,27 @@ export interface SandboxCommandRuntimeBinding {
   runtimeIdentitySha256: string;
 }
 
+export interface SandboxLspRuntimeBinding {
+  runtime: "lsp";
+  nodeExecutable: string;
+  nodeExecutableSha256: string;
+  languageServerPath: string;
+  languageServerRoot: string;
+  languageServerVersion: string;
+  languageServerSha256: string;
+  typescriptServerPath: string;
+  typescriptRoot: string;
+  typescriptVersion: string;
+  typescriptServerSha256: string;
+  runtimeIdentitySha256: string;
+}
+
 export interface OsSandboxAdapter {
   readonly id: string;
   resolveCommandRuntime?(
     runtime: SandboxCommandRuntime,
   ): Promise<SandboxCommandRuntimeBinding>;
+  resolveLspRuntime?(): Promise<SandboxLspRuntimeBinding>;
   launch(request: SandboxLaunchRequest): Promise<SandboxedProcess>;
 }
 

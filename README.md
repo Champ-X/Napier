@@ -3735,8 +3735,9 @@ compressed worker bytes, argv, resource limits, and versioned runtime root are
 hash-bound. The OS Sandbox mounts the exact Python version root read-only.
 Runtime preparation and post-settlement verification rehash the executable and
 bound assets; a host regression proves that set covers every module file
-actually loaded by the worker. OCI execution remains fail-closed until
-host/image runtime identity is defined.
+actually loaded by the worker. OCI instead binds the image interpreter path,
+version, byte hash, and mapped-user standard-library import probe; host Python
+assets are never mounted into that provider.
 
 Each snippet is limited to 16 KiB and 1-2,000 ms; the whole kernel lasts
 10-120 seconds. Live previews are capped at 4,096 characters, console capture
@@ -4020,9 +4021,11 @@ keeps that read-only, offline server available for later LSP tools; direct
 Runner calls and stateless Workflow Tool nodes retain the one-shot lifecycle.
 The selected file is canonicalized inside the workspace, symlinks and
 protected roots are rejected, UTF-8 and 1 MiB limits are enforced, and the
-process runs read-only and offline with a fixed secret-free environment. The
-server and TypeScript assets are separately read-only-bound into the Sandbox
-and checked for digest drift after execution.
+process runs read-only and offline with a fixed secret-free environment. Local
+OS adapters separately read-only-bind the server and TypeScript assets. OCI
+adapters instead resolve their paths, versions, and digests inside the bound
+immutable image, mount no host runtime directory, and revalidate that provider
+identity after execution.
 
 Compiler source locations, codes, and messages are returned only to the live
 Agent. Durable tool evidence retains path/file hashes, language, package
@@ -6724,14 +6727,18 @@ contexts, and unsupported host user mapping fail closed; a container or VM
 remains the recommended outer boundary for production third-party code.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
-and the fixed Git operation graph. Python 3.9+ is admitted only when the mapped
-container user can run the same isolated standard-library imports required by
-the persistent Kernel. Git remains unavailable to generic command tools: the
-image path, version, executable hash, and provider identity are bound into the
-existing inspection/stage/commit/branch/review receipts, with only private Git
-state writable during preview. Doctor executes bounded production commands for
-the active provider, including Git, instead of falling back to host-only
-availability checks.
+the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only
+when the mapped container user can run the same isolated standard-library
+imports required by the persistent Kernel. Git remains unavailable to generic
+command tools: the image path, version, executable hash, and provider identity
+are bound into the existing inspection/stage/commit/branch/review receipts,
+with only private Git state writable during preview. OCI LSP similarly binds
+the image's Node, `typescript-language-server`, complete TypeScript runtime
+asset set, and provider identity into diagnostics/navigation/edit-preview
+receipts while keeping the workspace read-only and mounting no host toolchain.
+Doctor executes bounded production commands for the active provider, including
+Git and the language server, instead of falling back to host-only availability
+checks.
 
 ## License
 

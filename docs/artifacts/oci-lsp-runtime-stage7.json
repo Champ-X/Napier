@@ -1,0 +1,117 @@
+{
+  "kind": "napier.oci-lsp-runtime-stage7",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-10T03:03:04Z",
+  "controlledProductionPath": {
+    "externalDaemonUsed": false,
+    "immutableImageIdUsed": true,
+    "numericExecutionUserUsedForProbe": true,
+    "imageNodeExecutableHashBound": true,
+    "languageServerPathVersionAndHashBound": true,
+    "typescriptPathVersionAndCompleteAssetSetHashBound": true,
+    "runtimeIdentityRecordedInResourceReceipt": true,
+    "publicGenericLspCommandExposed": false,
+    "controlledClientExecutedRealLspProtocol": true,
+    "semanticDiagnosticCode": "2322",
+    "persistentSessionReused": true,
+    "workspaceRootReadOnly": true,
+    "hostRuntimeMountsAdded": false,
+    "missingImageLspRejected": true,
+    "malformedImageLspIdentityRejected": true,
+    "hostAssetOverrideRejected": true,
+    "hostRuntimeMountOverrideRejected": true,
+    "lspDoctorProductionProbe": "ready"
+  },
+  "actualHost": {
+    "containerCliPresent": true,
+    "containerServerReachable": false,
+    "configuredImage": true,
+    "doctorStatus": "degraded",
+    "lspProductionProbeReached": false,
+    "lspProductionProbeReason": "sandbox_provider_unavailable",
+    "lspDoctorCode": "lsp_provider_unavailable",
+    "pythonDoctorCode": "python_provider_unavailable",
+    "shellDoctorCode": "shell_provider_unavailable",
+    "sandboxDoctorCode": "sandbox_unavailable",
+    "reportedIsolationLevel": "container",
+    "codingSendBoundary": "blocked"
+  },
+  "verification": {
+    "focusedTestFiles": 6,
+    "focusedTests": 37,
+    "productionDoctorInvocations": 2,
+    "sourceFiles": 1193,
+    "testFiles": 627,
+    "architectureCycles": 0
+  },
+  "retryLedger": [
+    {
+      "category": "extraction_cleanup",
+      "productFailure": false,
+      "cause": "the first runtime-asset extraction left the copied helper block in its original module",
+      "resolution": "removed the duplicate helpers in bounded patches and kept runtime admission in one leaf module",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "compile_boundary",
+      "productFailure": true,
+      "cause": "the new asset module initially imported a provider-only binding from the narrower public Sandbox barrel",
+      "resolution": "imported the internal SPI type from its leaf module while preserving the public Sandbox surface",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "test_expectation_drift",
+      "productFailure": false,
+      "cause": "one legacy test still expected OCI LSP to reject every container instead of requiring image-bound assets",
+      "resolution": "updated the assertion to the new fail-closed missing-image-identity contract",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "architecture_gate",
+      "productFailure": true,
+      "cause": "persistent LSP Session launch branching exceeded the per-file line budget by seven lines",
+      "resolution": "kept provider admission in the asset resolver and compacted the Session module back to its 500-line boundary",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "evidence_capture_order",
+      "productFailure": false,
+      "cause": "the first SDK closure recapture preceded the final Runtime build, so the later full build legitimately changed dist hashes",
+      "resolution": "fixed the order to final source, full Runtime build, evidence recapture, then immutable verification",
+      "finalStatus": "passed"
+    },
+    {
+      "category": "shared_gate_timeout",
+      "productFailure": false,
+      "cause": "an existing deterministic Coding Benchmark exceeded its 15 second test-local timeout during the first parallel root suite",
+      "resolution": "reran the exact failed test independently before repeating the complete gate",
+      "finalStatus": "passed"
+    }
+  ],
+  "retention": {
+    "credentialValues": false,
+    "rawDockerOutput": false,
+    "rawDoctorReport": false,
+    "rawDaemonEndpoint": false,
+    "numericHostUserIds": false,
+    "nodeExecutablePath": false,
+    "languageServerPath": false,
+    "typescriptServerPath": false,
+    "workspacePaths": false,
+    "sourceContent": false,
+    "diagnosticMessage": false,
+    "absoluteTemporaryPaths": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "image-bound debugger identity",
+      "bounded port and local-service projection",
+      "real isolated Docker daemon E2E",
+      "non-POSIX host user mapping",
+      "cross-platform isolated provider casebook"
+    ]
+  },
+  "contentSha256": "c998821c2c88b480e4bacc1615ec1af3ac83c9069e6b60f72abc13d59304b15a"
+}

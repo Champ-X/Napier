@@ -51,12 +51,10 @@ const LSP_SESSION_LIMITS_SHA256 = sha256(
     processGroupTermination: true,
   }),
 );
-
 export interface LspSessionOwner {
   threadId: string;
   runId: string;
 }
-
 interface RunSession {
   protocol: PersistentLspProtocolSession;
   runtimeIdentitySha256: string;
@@ -283,7 +281,14 @@ class PersistentLspProtocolSession {
       env: { ...LSP_FIXED_ENVIRONMENT },
       workspaceRoot: request.workspaceRoot,
       approvedCapabilities: ["process.spawn", "workspace.read"],
-      runtimeReadPaths: [request.languageServerRoot!, request.typescriptRoot!],
+      ...(request.runtimeLocation === "provider"
+        ? {}
+        : {
+            runtimeReadPaths: [
+              request.languageServerRoot!,
+              request.typescriptRoot!,
+            ],
+          }),
     });
     const session = new PersistentLspProtocolSession(child);
     registerLspClientHandlers(session.connection, request.workspaceRoot);
@@ -435,6 +440,15 @@ function assertPersistentRequest(
   if (!request.runtimeIdentitySha256) {
     throw new Error(
       `${request.label} persistent Session runtime identity is invalid`,
+    );
+  }
+  if (
+    request.runtimeLocation !== undefined &&
+    request.runtimeLocation !== "host" &&
+    request.runtimeLocation !== "provider"
+  ) {
+    throw new Error(
+      `${request.label} persistent Session runtime location is invalid`,
     );
   }
 }

@@ -748,6 +748,7 @@ function identityClient(
         executableSha256: GIT_SHA256,
         version: "git version 2.51.0",
       },
+      lsp: null,
       python: options.pythonUnavailable
         ? null
         : {
