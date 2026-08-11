@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "2b5c61f69d0a52fd732741a8875b7948609d58e26d49da1c28ddf081a728ead9",
+      "stdoutSha256": "18933aef2d9ad48a7af1e0b8969282027acee9383596f32cbc6459b3588ad894",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "f091c0bbba541653e05fb03ab7d52c848491ff8b2305f4ebe2970003acff8bda",
-      "receiptSha256": "7449b15dd3ed517596b5ddce612b3e728eab1e14f2793b5faca4a75905c3c42d"
+      "evidenceSha256": "452fd6458d191844b4aadd1398366f66bd7371583b42338f6c8f46c8c092cf91",
+      "receiptSha256": "e6239c56c417660faf900b7ec609be7ce68c5ff10207f61922c8440cc83706fd"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "49c4f764a24156a90b1a83c1132fae1b19faae37ad02fc50536342df3b7c0bf7",
+      "stdoutSha256": "d16672459585ed32e5c95db4122d99438a3e773553fe380d2ff21de5e7bba5b9",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "64511e02b774729ccb7add0924be3d3c3f8c57dd463350648333aed87556c4aa",
-      "receiptSha256": "0d06ba1892fd01eb5b2a1bbc65aab26ac1fb0eb1f3870e7d93f5b6171e48c5e1"
+      "evidenceSha256": "d24f59c76cb3a2c007dbd67230b55d16a4628c96031c739d4811cb8c17ca1454",
+      "receiptSha256": "c1bc61199b93fac3d205d3dd377aa863752f50156812c827dc7f19a96cc0d67e"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -967,6 +967,7 @@
         "packages/runtime/src/write-linked-test-lifecycle-selection.ts",
         "packages/runtime/src/write-linked-test-lifecycle.ts",
         "packages/runtime/src/write-linked-test-verification.ts",
+        "packages/runtime/test/agent-browser-confirmation-freshness.test.ts",
         "packages/runtime/test/agent-capability-contract-v2.test.ts",
         "packages/runtime/test/agent-capability-contract.test.ts",
         "packages/runtime/test/agent-capability-override.test.ts",
@@ -2153,11 +2154,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "f091c0bbba541653e05fb03ab7d52c848491ff8b2305f4ebe2970003acff8bda",
+          "sha256": "452fd6458d191844b4aadd1398366f66bd7371583b42338f6c8f46c8c092cf91",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "64511e02b774729ccb7add0924be3d3c3f8c57dd463350648333aed87556c4aa",
+          "sha256": "d24f59c76cb3a2c007dbd67230b55d16a4628c96031c739d4811cb8c17ca1454",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3084,6 +3085,10 @@
           "sha256": "0f78dff1c9dd7ab01950f9307964912349083e35d85ee3546d8a468a4cd248ed",
           "lines": 388
         },
+        "packages/runtime/test/agent-browser-confirmation-freshness.test.ts": {
+          "sha256": "1c319abb6de70f0c8aa5bf2d53f34de7ec42af9f34402738d5b919f8bb100d5d",
+          "lines": 191
+        },
         "packages/runtime/test/agent-capability-contract-v2.test.ts": {
           "sha256": "3de10a0074495962607cfbfb83cf81b67111d548fdfff59264b5f15306d6a9c4",
           "lines": 264
@@ -3109,8 +3114,8 @@
           "lines": 416
         },
         "packages/runtime/test/agent-message-experiments.test.ts": {
-          "sha256": "05b76f2e5fc8622762d219ab508d2f98943010f2ce3a7ab7237a1e5fde228a8a",
-          "lines": 563
+          "sha256": "6c6fd14b89c8d902717a320e172ebfe500aa111e9e3023bfc4fc98f7b90cc05d",
+          "lines": 582
         },
         "packages/runtime/test/agent-node-debugger.test.ts": {
           "sha256": "4541d414697124e4abb485bcfccb070bbc0b5a9051066b1717d5ea063b0e33d5",
@@ -3934,7 +3939,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "0c149e89cbf5de4cde968ab482ac4bd99c20df474f1c7995b563b192ba8979a6"
+      "manifestSha256": "fed23842a8f5e7159922783d63f77b9b7d73cc8b69e2a11cb256cdf9b66062ac"
     },
     "executionClosure": {
       "algorithm": {
@@ -19628,7 +19633,7 @@
       ],
       "manifestSha256": "b8fde94d21967c5cbf97c175640b2db44b31c48e10671a1465e62d823ba67c40"
     },
-    "manifestSha256": "edc3ade4255e5d8552ac736b3ea438873c24bc6819e5601cda604705f47b48ad"
+    "manifestSha256": "2daeeb5f85e3b2a7114b1221a8bd812443bd0b311aa1a401d8d272305626dc12"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -19816,11 +19821,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "f091c0bbba541653e05fb03ab7d52c848491ff8b2305f4ebe2970003acff8bda"
+      "sha256": "452fd6458d191844b4aadd1398366f66bd7371583b42338f6c8f46c8c092cf91"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "64511e02b774729ccb7add0924be3d3c3f8c57dd463350648333aed87556c4aa"
+      "sha256": "d24f59c76cb3a2c007dbd67230b55d16a4628c96031c739d4811cb8c17ca1454"
     }
   }
 }

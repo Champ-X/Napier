@@ -344,14 +344,33 @@ describe("Agent message checkpoint experiments", () => {
         return fauxAssistantMessage("timed-out candidate");
       },
     ]);
-    const timedOut = await fixture.experiments.run({
-      sourceThreadId: fixture.sourceThreadId,
-      request: {
-        ...request,
-        expectedPreviewSha256: preview.previewSha256,
-      },
-      signal: AbortSignal.timeout(20),
-    });
+    const timeoutController = new AbortController();
+    let timeout: NodeJS.Timeout | undefined;
+    const timedOut = await fixture.experiments
+      .run({
+        sourceThreadId: fixture.sourceThreadId,
+        request: {
+          ...request,
+          expectedPreviewSha256: preview.previewSha256,
+        },
+        signal: timeoutController.signal,
+        onEvent: (event) => {
+          if (event.type !== "agent.experiment.started") return;
+          timeout = setTimeout(
+            () =>
+              timeoutController.abort(
+                new DOMException(
+                  "The operation was aborted due to timeout",
+                  "TimeoutError",
+                ),
+              ),
+            20,
+          );
+        },
+      })
+      .finally(() => {
+        if (timeout) clearTimeout(timeout);
+      });
     expect(timedOut.status).toBe("cancelled");
     expect(timedOut.targetThreadId).not.toBe(cancelled.targetThreadId);
 

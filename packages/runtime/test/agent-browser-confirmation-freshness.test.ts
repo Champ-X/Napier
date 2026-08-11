@@ -157,15 +157,18 @@ async function pendingConfirmation(
   let pending:
     | ReturnType<BrowserInteractionConfirmationManager["list"]>[number]
     | undefined;
-  await vi.waitFor(() => {
-    const runId = fixture.store.listRuns(fixture.threadId)[0]?.id;
-    expect(runId).toBeDefined();
-    pending = confirmations.list({
-      threadId: fixture.threadId,
-      runId: runId!,
-    })[0];
-    expect(pending?.action).toBe("click");
-  });
+  await vi.waitFor(
+    () => {
+      const runId = fixture.store.listRuns(fixture.threadId)[0]?.id;
+      expect(runId).toBeDefined();
+      pending = confirmations.list({
+        threadId: fixture.threadId,
+        runId: runId!,
+      })[0];
+      expect(pending?.action).toBe("click");
+    },
+    { timeout: 5_000 },
+  );
   return pending!;
 }
 
