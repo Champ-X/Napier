@@ -417,6 +417,95 @@ describe("Agent capability presets", () => {
     ]);
     await after.shutdown();
   });
+
+  it("renders an auditable restore command without non-managed Profile text", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier capability 'cli-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace 'quoted");
+    const dataRoot = path.join(root, "state 'quoted");
+    await mkdir(workspaceRoot);
+    let services = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("capability-inspect"),
+    });
+    const seeded = services.store.listAgents()[0]!;
+    const legacy = await services.store.updateAgent(seeded.id, {
+      name: "PRIVATE_PROFILE_NAME",
+      systemPrompt: "PRIVATE_PROFILE_PROMPT",
+      enabledTools: ["list_files"],
+      enabledSkills: ["research-brief"],
+      enabledSubagents: ["reviewer"],
+    });
+    await services.shutdown();
+
+    const jsonOut = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "capabilities",
+          "--workspace",
+          workspaceRoot,
+          "--data-root",
+          dataRoot,
+          "--restore-recommended",
+          "--jsonl",
+        ],
+        cliIo(root, jsonOut, new CaptureWritable()),
+        dependencies(),
+      ),
+    ).toBe(0);
+    const preview = JSON.parse(jsonOut.text());
+    const humanOut = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "capabilities",
+          "--workspace",
+          workspaceRoot,
+          "--data-root",
+          dataRoot,
+          "--restore-recommended",
+        ],
+        cliIo(root, humanOut, new CaptureWritable()),
+        dependencies(),
+      ),
+    ).toBe(0);
+
+    expect(humanOut.text()).toContain(
+      `Restore operations (${String(preview.projection.restorePreview.operations.length)}):`,
+    );
+    expect(humanOut.text()).toContain(
+      'HIGH workspace_write · enabledTools add "apply_patch"',
+    );
+    expect(humanOut.text()).toContain(
+      [
+        "Apply: napier capabilities",
+        "--workspace",
+        shellArgument(workspaceRoot),
+        "--data-root",
+        shellArgument(dataRoot),
+        "--agent",
+        shellArgument(legacy.id),
+        "--restore-recommended",
+        "--expected-revision",
+        String(legacy.revision),
+        "--diff-sha256",
+        preview.projection.restorePreview.diffSha256,
+        "--apply",
+      ].join(" "),
+    );
+    expect(humanOut.text()).not.toContain("PRIVATE_PROFILE_NAME");
+    expect(humanOut.text()).not.toContain("PRIVATE_PROFILE_PROMPT");
+
+    services = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("capability-inspect"),
+    });
+    expect(services.store.getAgent(legacy.id).revision).toBe(legacy.revision);
+    await services.shutdown();
+  });
 });
 
 function dependencies(): RunCliDependencies {
@@ -483,4 +572,8 @@ class CaptureWritable extends Writable {
   text(): string {
     return this.chunks.join("");
   }
+}
+
+function shellArgument(value: string): string {
+  return `'${value.replaceAll("'", `'\\''`)}'`;
 }

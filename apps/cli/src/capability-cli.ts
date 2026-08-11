@@ -134,7 +134,7 @@ export async function executeCapabilities(
     if (options.jsonl) {
       await writeJsonLine(io.stdout, result);
     } else {
-      await writeLine(io.stdout, formatCapabilities(result));
+      await writeLine(io.stdout, formatCapabilities(result, options));
     }
     return 0;
   } catch (error) {
@@ -148,8 +148,12 @@ export async function executeCapabilities(
   }
 }
 
-function formatCapabilities(result: CapabilityCliResult): string {
+function formatCapabilities(
+  result: CapabilityCliResult,
+  options: CliCapabilityOptions,
+): string {
   const status = result.status;
+  const restore = result.projection?.restorePreview;
   return [
     `Agent: ${result.agentId} rev ${result.agentRevision}`,
     `Action: ${result.action}`,
@@ -161,7 +165,19 @@ function formatCapabilities(result: CapabilityCliResult): string {
       ? [
           `Contract: ${result.projection.driftState} · ${result.projection.ownership}`,
           `Projection: ${result.projection.projectionSha256}`,
-          `Restore diff: ${result.projection.restorePreview.diffSha256} (${String(result.projection.restorePreview.operations.length)} operations)`,
+          `Restore diff: ${restore!.diffSha256} (${String(restore!.operations.length)} operations)`,
+        ]
+      : []),
+    ...(result.action === "restore_preview"
+      ? [
+          `Restore operations (${String(restore!.operations.length)}):`,
+          ...(restore!.operations.length === 0
+            ? ["  none"]
+            : restore!.operations.map(
+                (operation) =>
+                  `  ${operation.risk.toUpperCase()} ${operation.effect} · ${operation.field} ${operation.operation} ${JSON.stringify(operation.value)}`,
+              )),
+          `Apply: ${restoreApplyCommand(options, result.agentId, restore!.agentRevision, restore!.diffSha256)}`,
         ]
       : []),
     ...(result.action === "status"
@@ -173,6 +189,34 @@ function formatCapabilities(result: CapabilityCliResult): string {
         ]
       : []),
   ].join("\n");
+}
+
+function restoreApplyCommand(
+  options: CliCapabilityOptions,
+  agentId: string,
+  revision: number,
+  diffSha256: string,
+): string {
+  return [
+    "napier capabilities",
+    "--workspace",
+    shellArgument(options.workspace),
+    ...(options.dataRoot
+      ? ["--data-root", shellArgument(options.dataRoot)]
+      : []),
+    "--agent",
+    shellArgument(agentId),
+    "--restore-recommended",
+    "--expected-revision",
+    String(revision),
+    "--diff-sha256",
+    diffSha256,
+    "--apply",
+  ].join(" ");
+}
+
+function shellArgument(value: string): string {
+  return `'${value.replaceAll("'", `'\\''`)}'`;
 }
 
 function browserInteractionLabel(

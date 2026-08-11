@@ -608,6 +608,24 @@ grants `unrestricted`, and Web preset selection only fills the existing form
 until the user saves it. Chat/TUI `/status` and the Web composer display the
 same preset and permission labels.
 
+Older or explicitly customized Profiles can inspect the current default
+contract without mutation:
+
+```bash
+npm run --silent napier -- capabilities \
+  --workspace . \
+  --restore-recommended
+```
+
+Human output lists every add/remove/replace operation with its effect and
+`LOW`/`MEDIUM`/`HIGH` risk, then prints one shell-safe apply command bound to
+the Agent ID, current revision, and exact diff SHA-256. Restore changes only
+the four managed capability fields: policy, tools, Skills, and Subagents.
+Agent name, description, system Prompt, model, thinking level, budgets, and
+advisor settings remain unchanged. Concurrent Profile changes make the command
+fail closed; rerun the preview instead of reusing a stale command. JSONL keeps
+the complete typed restore preview for automation.
+
 Safe Automation and custom writable profiles can expose Browser
 `click`/`type`/`select`/`upload`/`download` only in entries with an explicit
 one-use confirmation surface: Web, Chat, TUI, and human one-shot `run` when
