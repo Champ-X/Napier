@@ -959,6 +959,75 @@ Doctor/Docker output, and credentials. This is fresh virtualized Linux host
 acceptance only. Windows host execution, external registry publication,
 release signing identity/transparency, and external attestation remain open.
 
+The external publication control plane is a manual GitHub Actions workflow,
+`.github/workflows/publish-sandbox.yml`. It is `workflow_dispatch` only, binds
+checkout and every third-party Action to full commit SHAs, accepts an exact
+40-character commit equal to the current `main` tip, and runs the complete
+repository release gate before any registry mutation. Workflow permissions are
+explicit: `contents:read`, `packages:write`, and `id-token:write`. GitHub's
+Artifact Attestations service is intentionally not used: this personal-account
+private repository is not on Enterprise Cloud, where private-repository
+attestations are supported.
+
+The release gate is host-portable rather than tied to the machine that wrote
+the retained receipt. `napier.runtime-environment-audit` schema 2 binds the
+exact Node/component identity and a fixed host matrix limited to currently
+proven macOS arm64 and Linux arm64/x64 paths; verification admits the current
+host only when both match. Branch switching separately requires Git 2.46.0+
+for the atomic `update-ref --stdin` symbolic-ref transaction. The Ubuntu job
+builds SHA-256-verified Git 2.46.4 before tests, while the dual-architecture
+Sandbox image binds Git 2.47.3 and Python 3.13.5 on Debian Trixie. Unsupported
+Git fails during the fixed version preflight, before preview or recovery can
+mutate repository state. On Ubuntu 24.04, the workflow also installs Chromium
+host libraries, downloads the pinned browser through Napier's installer, and
+adds one path-specific AppArmor profile granting `userns,` to that exact executable.
+It then uses the formal Browser Setup preview/exact-apply path before
+`npm run check` and requires `chromiumSandbox=true`. Web E2E therefore receives
+the same pinned, sandboxed, product-verified Chromium runtime as a new user
+instead of relying on runner preinstallation or `--no-sandbox`.
+Responsive geometry remains an exact release gate, but its schema-2 receipt is
+host-scoped because the product intentionally uses native system font stacks:
+Darwin and Linux each retain a separate exact baseline, cross-host replay is
+rejected, and an OS without a retained baseline fails closed.
+
+Publication is split into two states because personal-account GHCR packages are
+private on first creation and making one public is an irreversible package
+administrator decision. `bootstrap` publishes one private commit tag with no
+BuildKit attestation, keyless signature, external attestation, anonymous-pull,
+or completion claim. After the administrator makes the package public, `release`
+publishes version and commit tags for one dual-platform index. The release arm
+requires:
+
+1. exact `linux/amd64` and `linux/arm64` remote descriptors plus BuildKit SBOM
+   and provenance descriptors;
+2. anonymous digest pulls and real Node execution on both platforms;
+3. keyless GitHub OIDC Cosign signing and verification with a Rekor entry;
+4. a registry-stored keyless SLSA provenance v1 attestation verified against
+   the repository, workflow identity, source digest, predicate, and Rekor;
+5. an uploaded hash-only external publication receipt plus Sigstore
+   verification bundles.
+
+The commit tag is the idempotency key for retries. If it already exists, the
+workflow reuses its digest; the immutable version tag may be created once or
+must already resolve to that same digest. Authenticated execution verifies both
+platform images and their source-context/source-revision labels before signing.
+Anonymous execution repeats both platforms with an empty Docker config, so
+public availability is proven independently from `GITHUB_TOKEN`.
+
+Both keyless operations use Sigstore's public-good Fulcio/Rekor services. The
+public verification record necessarily exposes the repository/workflow
+identity, source commit, image digest, certificate, signature or attestation
+metadata, and log timing. No repository credential, workspace file, private
+key, or prompt/log content is sent as signing material.
+
+Local static verification rejects automatic triggers, mutable Action tags,
+missing release-only conditions, missing anonymous pull, disabled transparency
+checks, overclaimed Windows execution, or `s1Complete=true`. This proves that
+the release path is executable and fail-closed, not that it has executed.
+External publication becomes accepted evidence only after a successful
+`release` run and review of its uploaded receipt. Windows host product
+acceptance remains independent and open.
+
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath. The Contracts root remains at
 its hard 6,738-line budget; image-bound verifier version and runtime identity

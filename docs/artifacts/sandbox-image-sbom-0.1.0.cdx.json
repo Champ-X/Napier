@@ -7,7 +7,7 @@
       "type": "container",
       "name": "napier-sandbox",
       "version": "0.1.0",
-      "bom-ref": "pkg:oci/napier-sandbox@sha256%3Aef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
+      "bom-ref": "pkg:oci/napier-sandbox@sha256%3Aaac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
       "properties": [
         {
           "name": "napier.image.reference",
@@ -23,7 +23,7 @@
         },
         {
           "name": "napier.source.context-sha256",
-          "value": "d36e200e04523a53d528b1cb9a21f53af8afc8cda7c1a126146910a6811a6007"
+          "value": "6c76e506c368c10ff530806bddde67dcd07d269102c62965cb3ff4b4cbd3cbca"
         }
       ]
     },
@@ -42,9 +42,9 @@
     {
       "type": "library",
       "name": "adduser",
-      "version": "3.134",
-      "bom-ref": "pkg:deb/debian/adduser@3.134?arch=all",
-      "purl": "pkg:deb/debian/adduser@3.134?arch=all",
+      "version": "3.152",
+      "bom-ref": "pkg:deb/debian/adduser@3.152?arch=all",
+      "purl": "pkg:deb/debian/adduser@3.152?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -59,9 +59,9 @@
     {
       "type": "library",
       "name": "apt",
-      "version": "2.6.1",
-      "bom-ref": "pkg:deb/debian/apt@2.6.1?arch=arm64",
-      "purl": "pkg:deb/debian/apt@2.6.1?arch=arm64",
+      "version": "3.0.3",
+      "bom-ref": "pkg:deb/debian/apt@3.0.3?arch=arm64",
+      "purl": "pkg:deb/debian/apt@3.0.3?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -76,9 +76,9 @@
     {
       "type": "library",
       "name": "base-files",
-      "version": "12.4+deb12u14",
-      "bom-ref": "pkg:deb/debian/base-files@12.4%2Bdeb12u14?arch=arm64",
-      "purl": "pkg:deb/debian/base-files@12.4%2Bdeb12u14?arch=arm64",
+      "version": "13.8+deb13u5",
+      "bom-ref": "pkg:deb/debian/base-files@13.8%2Bdeb13u5?arch=arm64",
+      "purl": "pkg:deb/debian/base-files@13.8%2Bdeb13u5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -93,9 +93,9 @@
     {
       "type": "library",
       "name": "base-passwd",
-      "version": "3.6.1",
-      "bom-ref": "pkg:deb/debian/base-passwd@3.6.1?arch=arm64",
-      "purl": "pkg:deb/debian/base-passwd@3.6.1?arch=arm64",
+      "version": "3.6.7",
+      "bom-ref": "pkg:deb/debian/base-passwd@3.6.7?arch=arm64",
+      "purl": "pkg:deb/debian/base-passwd@3.6.7?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -110,9 +110,9 @@
     {
       "type": "library",
       "name": "bash",
-      "version": "5.2.15-2+b13",
-      "bom-ref": "pkg:deb/debian/bash@5.2.15-2%2Bb13?arch=arm64",
-      "purl": "pkg:deb/debian/bash@5.2.15-2%2Bb13?arch=arm64",
+      "version": "5.2.37-2+b9",
+      "bom-ref": "pkg:deb/debian/bash@5.2.37-2%2Bb9?arch=arm64",
+      "purl": "pkg:deb/debian/bash@5.2.37-2%2Bb9?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -127,9 +127,9 @@
     {
       "type": "library",
       "name": "bsdutils",
-      "version": "1:2.38.1-5+deb12u3",
-      "bom-ref": "pkg:deb/debian/bsdutils@1%3A2.38.1-5%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/bsdutils@1%3A2.38.1-5%2Bdeb12u3?arch=arm64",
+      "version": "1:2.41-5",
+      "bom-ref": "pkg:deb/debian/bsdutils@1%3A2.41-5?arch=arm64",
+      "purl": "pkg:deb/debian/bsdutils@1%3A2.41-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -144,9 +144,9 @@
     {
       "type": "library",
       "name": "ca-certificates",
-      "version": "20250419~deb12u1",
-      "bom-ref": "pkg:deb/debian/ca-certificates@20250419~deb12u1?arch=all",
-      "purl": "pkg:deb/debian/ca-certificates@20250419~deb12u1?arch=all",
+      "version": "20250419",
+      "bom-ref": "pkg:deb/debian/ca-certificates@20250419?arch=all",
+      "purl": "pkg:deb/debian/ca-certificates@20250419?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -161,9 +161,9 @@
     {
       "type": "library",
       "name": "coreutils",
-      "version": "9.1-1",
-      "bom-ref": "pkg:deb/debian/coreutils@9.1-1?arch=arm64",
-      "purl": "pkg:deb/debian/coreutils@9.1-1?arch=arm64",
+      "version": "9.7-3",
+      "bom-ref": "pkg:deb/debian/coreutils@9.7-3?arch=arm64",
+      "purl": "pkg:deb/debian/coreutils@9.7-3?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -178,9 +178,9 @@
     {
       "type": "library",
       "name": "dash",
-      "version": "0.5.12-2",
-      "bom-ref": "pkg:deb/debian/dash@0.5.12-2?arch=arm64",
-      "purl": "pkg:deb/debian/dash@0.5.12-2?arch=arm64",
+      "version": "0.5.12-12",
+      "bom-ref": "pkg:deb/debian/dash@0.5.12-12?arch=arm64",
+      "purl": "pkg:deb/debian/dash@0.5.12-12?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -195,9 +195,9 @@
     {
       "type": "library",
       "name": "debconf",
-      "version": "1.5.82",
-      "bom-ref": "pkg:deb/debian/debconf@1.5.82?arch=all",
-      "purl": "pkg:deb/debian/debconf@1.5.82?arch=all",
+      "version": "1.5.91",
+      "bom-ref": "pkg:deb/debian/debconf@1.5.91?arch=all",
+      "purl": "pkg:deb/debian/debconf@1.5.91?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -212,9 +212,9 @@
     {
       "type": "library",
       "name": "debian-archive-keyring",
-      "version": "2023.3+deb12u2",
-      "bom-ref": "pkg:deb/debian/debian-archive-keyring@2023.3%2Bdeb12u2?arch=all",
-      "purl": "pkg:deb/debian/debian-archive-keyring@2023.3%2Bdeb12u2?arch=all",
+      "version": "2025.1",
+      "bom-ref": "pkg:deb/debian/debian-archive-keyring@2025.1?arch=all",
+      "purl": "pkg:deb/debian/debian-archive-keyring@2025.1?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -229,9 +229,9 @@
     {
       "type": "library",
       "name": "debianutils",
-      "version": "5.7-0.5~deb12u1",
-      "bom-ref": "pkg:deb/debian/debianutils@5.7-0.5~deb12u1?arch=arm64",
-      "purl": "pkg:deb/debian/debianutils@5.7-0.5~deb12u1?arch=arm64",
+      "version": "5.23.2",
+      "bom-ref": "pkg:deb/debian/debianutils@5.23.2?arch=arm64",
+      "purl": "pkg:deb/debian/debianutils@5.23.2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -246,9 +246,9 @@
     {
       "type": "library",
       "name": "diffutils",
-      "version": "1:3.8-4",
-      "bom-ref": "pkg:deb/debian/diffutils@1%3A3.8-4?arch=arm64",
-      "purl": "pkg:deb/debian/diffutils@1%3A3.8-4?arch=arm64",
+      "version": "1:3.10-4",
+      "bom-ref": "pkg:deb/debian/diffutils@1%3A3.10-4?arch=arm64",
+      "purl": "pkg:deb/debian/diffutils@1%3A3.10-4?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -263,26 +263,9 @@
     {
       "type": "library",
       "name": "dpkg",
-      "version": "1.21.23",
-      "bom-ref": "pkg:deb/debian/dpkg@1.21.23?arch=arm64",
-      "purl": "pkg:deb/debian/dpkg@1.21.23?arch=arm64",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "e2fsprogs",
-      "version": "1.47.0-2+b2",
-      "bom-ref": "pkg:deb/debian/e2fsprogs@1.47.0-2%2Bb2?arch=arm64",
-      "purl": "pkg:deb/debian/e2fsprogs@1.47.0-2%2Bb2?arch=arm64",
+      "version": "1.22.22",
+      "bom-ref": "pkg:deb/debian/dpkg@1.22.22?arch=arm64",
+      "purl": "pkg:deb/debian/dpkg@1.22.22?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -297,9 +280,9 @@
     {
       "type": "library",
       "name": "findutils",
-      "version": "4.9.0-4",
-      "bom-ref": "pkg:deb/debian/findutils@4.9.0-4?arch=arm64",
-      "purl": "pkg:deb/debian/findutils@4.9.0-4?arch=arm64",
+      "version": "4.10.0-3",
+      "bom-ref": "pkg:deb/debian/findutils@4.10.0-3?arch=arm64",
+      "purl": "pkg:deb/debian/findutils@4.10.0-3?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -313,10 +296,10 @@
     },
     {
       "type": "library",
-      "name": "gcc-12-base:arm64",
-      "version": "12.2.0-14+deb12u1",
-      "bom-ref": "pkg:deb/debian/gcc-12-base%3Aarm64@12.2.0-14%2Bdeb12u1?arch=arm64",
-      "purl": "pkg:deb/debian/gcc-12-base%3Aarm64@12.2.0-14%2Bdeb12u1?arch=arm64",
+      "name": "gcc-14-base:arm64",
+      "version": "14.2.0-19",
+      "bom-ref": "pkg:deb/debian/gcc-14-base%3Aarm64@14.2.0-19?arch=arm64",
+      "purl": "pkg:deb/debian/gcc-14-base%3Aarm64@14.2.0-19?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -331,9 +314,9 @@
     {
       "type": "library",
       "name": "git-man",
-      "version": "1:2.39.5-0+deb12u3",
-      "bom-ref": "pkg:deb/debian/git-man@1%3A2.39.5-0%2Bdeb12u3?arch=all",
-      "purl": "pkg:deb/debian/git-man@1%3A2.39.5-0%2Bdeb12u3?arch=all",
+      "version": "1:2.47.3-0+deb13u1",
+      "bom-ref": "pkg:deb/debian/git-man@1%3A2.47.3-0%2Bdeb13u1?arch=all",
+      "purl": "pkg:deb/debian/git-man@1%3A2.47.3-0%2Bdeb13u1?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -348,26 +331,9 @@
     {
       "type": "library",
       "name": "git",
-      "version": "1:2.39.5-0+deb12u2",
-      "bom-ref": "pkg:deb/debian/git@1%3A2.39.5-0%2Bdeb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/git@1%3A2.39.5-0%2Bdeb12u2?arch=arm64",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "gpgv",
-      "version": "2.2.40-1.1+deb12u2",
-      "bom-ref": "pkg:deb/debian/gpgv@2.2.40-1.1%2Bdeb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/gpgv@2.2.40-1.1%2Bdeb12u2?arch=arm64",
+      "version": "1:2.47.3-0+deb13u1",
+      "bom-ref": "pkg:deb/debian/git@1%3A2.47.3-0%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/git@1%3A2.47.3-0%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -382,9 +348,9 @@
     {
       "type": "library",
       "name": "grep",
-      "version": "3.8-5",
-      "bom-ref": "pkg:deb/debian/grep@3.8-5?arch=arm64",
-      "purl": "pkg:deb/debian/grep@3.8-5?arch=arm64",
+      "version": "3.11-4+b1",
+      "bom-ref": "pkg:deb/debian/grep@3.11-4%2Bb1?arch=arm64",
+      "purl": "pkg:deb/debian/grep@3.11-4%2Bb1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -399,9 +365,9 @@
     {
       "type": "library",
       "name": "gzip",
-      "version": "1.12-1",
-      "bom-ref": "pkg:deb/debian/gzip@1.12-1?arch=arm64",
-      "purl": "pkg:deb/debian/gzip@1.12-1?arch=arm64",
+      "version": "1.13-1",
+      "bom-ref": "pkg:deb/debian/gzip@1.13-1?arch=arm64",
+      "purl": "pkg:deb/debian/gzip@1.13-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -416,9 +382,9 @@
     {
       "type": "library",
       "name": "hostname",
-      "version": "3.23+nmu1",
-      "bom-ref": "pkg:deb/debian/hostname@3.23%2Bnmu1?arch=arm64",
-      "purl": "pkg:deb/debian/hostname@3.23%2Bnmu1?arch=arm64",
+      "version": "3.25",
+      "bom-ref": "pkg:deb/debian/hostname@3.25?arch=arm64",
+      "purl": "pkg:deb/debian/hostname@3.25?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -433,9 +399,9 @@
     {
       "type": "library",
       "name": "init-system-helpers",
-      "version": "1.65.2+deb12u1",
-      "bom-ref": "pkg:deb/debian/init-system-helpers@1.65.2%2Bdeb12u1?arch=all",
-      "purl": "pkg:deb/debian/init-system-helpers@1.65.2%2Bdeb12u1?arch=all",
+      "version": "1.69~deb13u1",
+      "bom-ref": "pkg:deb/debian/init-system-helpers@1.69~deb13u1?arch=all",
+      "purl": "pkg:deb/debian/init-system-helpers@1.69~deb13u1?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -450,9 +416,9 @@
     {
       "type": "library",
       "name": "libacl1:arm64",
-      "version": "2.3.1-3",
-      "bom-ref": "pkg:deb/debian/libacl1%3Aarm64@2.3.1-3?arch=arm64",
-      "purl": "pkg:deb/debian/libacl1%3Aarm64@2.3.1-3?arch=arm64",
+      "version": "2.3.2-2+b1",
+      "bom-ref": "pkg:deb/debian/libacl1%3Aarm64@2.3.2-2%2Bb1?arch=arm64",
+      "purl": "pkg:deb/debian/libacl1%3Aarm64@2.3.2-2%2Bb1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -466,10 +432,10 @@
     },
     {
       "type": "library",
-      "name": "libapt-pkg6.0:arm64",
-      "version": "2.6.1",
-      "bom-ref": "pkg:deb/debian/libapt-pkg6.0%3Aarm64@2.6.1?arch=arm64",
-      "purl": "pkg:deb/debian/libapt-pkg6.0%3Aarm64@2.6.1?arch=arm64",
+      "name": "libapt-pkg7.0:arm64",
+      "version": "3.0.3",
+      "bom-ref": "pkg:deb/debian/libapt-pkg7.0%3Aarm64@3.0.3?arch=arm64",
+      "purl": "pkg:deb/debian/libapt-pkg7.0%3Aarm64@3.0.3?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -484,9 +450,9 @@
     {
       "type": "library",
       "name": "libattr1:arm64",
-      "version": "1:2.5.1-4",
-      "bom-ref": "pkg:deb/debian/libattr1%3Aarm64@1%3A2.5.1-4?arch=arm64",
-      "purl": "pkg:deb/debian/libattr1%3Aarm64@1%3A2.5.1-4?arch=arm64",
+      "version": "1:2.5.2-3",
+      "bom-ref": "pkg:deb/debian/libattr1%3Aarm64@1%3A2.5.2-3?arch=arm64",
+      "purl": "pkg:deb/debian/libattr1%3Aarm64@1%3A2.5.2-3?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -501,9 +467,9 @@
     {
       "type": "library",
       "name": "libaudit-common",
-      "version": "1:3.0.9-1",
-      "bom-ref": "pkg:deb/debian/libaudit-common@1%3A3.0.9-1?arch=all",
-      "purl": "pkg:deb/debian/libaudit-common@1%3A3.0.9-1?arch=all",
+      "version": "1:4.0.2-2",
+      "bom-ref": "pkg:deb/debian/libaudit-common@1%3A4.0.2-2?arch=all",
+      "purl": "pkg:deb/debian/libaudit-common@1%3A4.0.2-2?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -518,9 +484,9 @@
     {
       "type": "library",
       "name": "libaudit1:arm64",
-      "version": "1:3.0.9-1",
-      "bom-ref": "pkg:deb/debian/libaudit1%3Aarm64@1%3A3.0.9-1?arch=arm64",
-      "purl": "pkg:deb/debian/libaudit1%3Aarm64@1%3A3.0.9-1?arch=arm64",
+      "version": "1:4.0.2-2+b2",
+      "bom-ref": "pkg:deb/debian/libaudit1%3Aarm64@1%3A4.0.2-2%2Bb2?arch=arm64",
+      "purl": "pkg:deb/debian/libaudit1%3Aarm64@1%3A4.0.2-2%2Bb2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -535,9 +501,9 @@
     {
       "type": "library",
       "name": "libblkid1:arm64",
-      "version": "2.38.1-5+deb12u3",
-      "bom-ref": "pkg:deb/debian/libblkid1%3Aarm64@2.38.1-5%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/libblkid1%3Aarm64@2.38.1-5%2Bdeb12u3?arch=arm64",
+      "version": "2.41-5",
+      "bom-ref": "pkg:deb/debian/libblkid1%3Aarm64@2.41-5?arch=arm64",
+      "purl": "pkg:deb/debian/libblkid1%3Aarm64@2.41-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -552,9 +518,26 @@
     {
       "type": "library",
       "name": "libbrotli1:arm64",
-      "version": "1.0.9-2+b6",
-      "bom-ref": "pkg:deb/debian/libbrotli1%3Aarm64@1.0.9-2%2Bb6?arch=arm64",
-      "purl": "pkg:deb/debian/libbrotli1%3Aarm64@1.0.9-2%2Bb6?arch=arm64",
+      "version": "1.1.0-2+b7",
+      "bom-ref": "pkg:deb/debian/libbrotli1%3Aarm64@1.1.0-2%2Bb7?arch=arm64",
+      "purl": "pkg:deb/debian/libbrotli1%3Aarm64@1.1.0-2%2Bb7?arch=arm64",
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "debian"
+        },
+        {
+          "name": "napier.package.arch",
+          "value": "arm64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "libbsd0:arm64",
+      "version": "0.12.2-2",
+      "bom-ref": "pkg:deb/debian/libbsd0%3Aarm64@0.12.2-2?arch=arm64",
+      "purl": "pkg:deb/debian/libbsd0%3Aarm64@0.12.2-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -569,9 +552,9 @@
     {
       "type": "library",
       "name": "libbz2-1.0:arm64",
-      "version": "1.0.8-5+b1",
-      "bom-ref": "pkg:deb/debian/libbz2-1.0%3Aarm64@1.0.8-5%2Bb1?arch=arm64",
-      "purl": "pkg:deb/debian/libbz2-1.0%3Aarm64@1.0.8-5%2Bb1?arch=arm64",
+      "version": "1.0.8-6",
+      "bom-ref": "pkg:deb/debian/libbz2-1.0%3Aarm64@1.0.8-6?arch=arm64",
+      "purl": "pkg:deb/debian/libbz2-1.0%3Aarm64@1.0.8-6?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -586,9 +569,9 @@
     {
       "type": "library",
       "name": "libc-bin",
-      "version": "2.36-9+deb12u14",
-      "bom-ref": "pkg:deb/debian/libc-bin@2.36-9%2Bdeb12u14?arch=arm64",
-      "purl": "pkg:deb/debian/libc-bin@2.36-9%2Bdeb12u14?arch=arm64",
+      "version": "2.41-12+deb13u3",
+      "bom-ref": "pkg:deb/debian/libc-bin@2.41-12%2Bdeb13u3?arch=arm64",
+      "purl": "pkg:deb/debian/libc-bin@2.41-12%2Bdeb13u3?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -603,9 +586,9 @@
     {
       "type": "library",
       "name": "libc6:arm64",
-      "version": "2.36-9+deb12u14",
-      "bom-ref": "pkg:deb/debian/libc6%3Aarm64@2.36-9%2Bdeb12u14?arch=arm64",
-      "purl": "pkg:deb/debian/libc6%3Aarm64@2.36-9%2Bdeb12u14?arch=arm64",
+      "version": "2.41-12+deb13u3",
+      "bom-ref": "pkg:deb/debian/libc6%3Aarm64@2.41-12%2Bdeb13u3?arch=arm64",
+      "purl": "pkg:deb/debian/libc6%3Aarm64@2.41-12%2Bdeb13u3?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -620,9 +603,9 @@
     {
       "type": "library",
       "name": "libcap-ng0:arm64",
-      "version": "0.8.3-1+b3",
-      "bom-ref": "pkg:deb/debian/libcap-ng0%3Aarm64@0.8.3-1%2Bb3?arch=arm64",
-      "purl": "pkg:deb/debian/libcap-ng0%3Aarm64@0.8.3-1%2Bb3?arch=arm64",
+      "version": "0.8.5-4+b1",
+      "bom-ref": "pkg:deb/debian/libcap-ng0%3Aarm64@0.8.5-4%2Bb1?arch=arm64",
+      "purl": "pkg:deb/debian/libcap-ng0%3Aarm64@0.8.5-4%2Bb1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -637,9 +620,9 @@
     {
       "type": "library",
       "name": "libcap2:arm64",
-      "version": "1:2.66-4+deb12u3+b1",
-      "bom-ref": "pkg:deb/debian/libcap2%3Aarm64@1%3A2.66-4%2Bdeb12u3%2Bb1?arch=arm64",
-      "purl": "pkg:deb/debian/libcap2%3Aarm64@1%3A2.66-4%2Bdeb12u3%2Bb1?arch=arm64",
+      "version": "1:2.75-10+deb13u1+b1",
+      "bom-ref": "pkg:deb/debian/libcap2%3Aarm64@1%3A2.75-10%2Bdeb13u1%2Bb1?arch=arm64",
+      "purl": "pkg:deb/debian/libcap2%3Aarm64@1%3A2.75-10%2Bdeb13u1%2Bb1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -654,9 +637,9 @@
     {
       "type": "library",
       "name": "libcom-err2:arm64",
-      "version": "1.47.0-2+b2",
-      "bom-ref": "pkg:deb/debian/libcom-err2%3Aarm64@1.47.0-2%2Bb2?arch=arm64",
-      "purl": "pkg:deb/debian/libcom-err2%3Aarm64@1.47.0-2%2Bb2?arch=arm64",
+      "version": "1.47.2-3+b11",
+      "bom-ref": "pkg:deb/debian/libcom-err2%3Aarm64@1.47.2-3%2Bb11?arch=arm64",
+      "purl": "pkg:deb/debian/libcom-err2%3Aarm64@1.47.2-3%2Bb11?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -671,9 +654,9 @@
     {
       "type": "library",
       "name": "libcrypt1:arm64",
-      "version": "1:4.4.33-2",
-      "bom-ref": "pkg:deb/debian/libcrypt1%3Aarm64@1%3A4.4.33-2?arch=arm64",
-      "purl": "pkg:deb/debian/libcrypt1%3Aarm64@1%3A4.4.33-2?arch=arm64",
+      "version": "1:4.4.38-1",
+      "bom-ref": "pkg:deb/debian/libcrypt1%3Aarm64@1%3A4.4.38-1?arch=arm64",
+      "purl": "pkg:deb/debian/libcrypt1%3Aarm64@1%3A4.4.38-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -687,10 +670,10 @@
     },
     {
       "type": "library",
-      "name": "libcurl3-gnutls:arm64",
-      "version": "7.88.1-10+deb12u15",
-      "bom-ref": "pkg:deb/debian/libcurl3-gnutls%3Aarm64@7.88.1-10%2Bdeb12u15?arch=arm64",
-      "purl": "pkg:deb/debian/libcurl3-gnutls%3Aarm64@7.88.1-10%2Bdeb12u15?arch=arm64",
+      "name": "libcurl3t64-gnutls:arm64",
+      "version": "8.14.1-2+deb13u4",
+      "bom-ref": "pkg:deb/debian/libcurl3t64-gnutls%3Aarm64@8.14.1-2%2Bdeb13u4?arch=arm64",
+      "purl": "pkg:deb/debian/libcurl3t64-gnutls%3Aarm64@8.14.1-2%2Bdeb13u4?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -704,10 +687,10 @@
     },
     {
       "type": "library",
-      "name": "libdb5.3:arm64",
-      "version": "5.3.28+dfsg2-1",
-      "bom-ref": "pkg:deb/debian/libdb5.3%3Aarm64@5.3.28%2Bdfsg2-1?arch=arm64",
-      "purl": "pkg:deb/debian/libdb5.3%3Aarm64@5.3.28%2Bdfsg2-1?arch=arm64",
+      "name": "libdb5.3t64:arm64",
+      "version": "5.3.28+dfsg2-9",
+      "bom-ref": "pkg:deb/debian/libdb5.3t64%3Aarm64@5.3.28%2Bdfsg2-9?arch=arm64",
+      "purl": "pkg:deb/debian/libdb5.3t64%3Aarm64@5.3.28%2Bdfsg2-9?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -722,9 +705,9 @@
     {
       "type": "library",
       "name": "libdebconfclient0:arm64",
-      "version": "0.270",
-      "bom-ref": "pkg:deb/debian/libdebconfclient0%3Aarm64@0.270?arch=arm64",
-      "purl": "pkg:deb/debian/libdebconfclient0%3Aarm64@0.270?arch=arm64",
+      "version": "0.280",
+      "bom-ref": "pkg:deb/debian/libdebconfclient0%3Aarm64@0.280?arch=arm64",
+      "purl": "pkg:deb/debian/libdebconfclient0%3Aarm64@0.280?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -739,9 +722,9 @@
     {
       "type": "library",
       "name": "liberror-perl",
-      "version": "0.17029-2",
-      "bom-ref": "pkg:deb/debian/liberror-perl@0.17029-2?arch=all",
-      "purl": "pkg:deb/debian/liberror-perl@0.17029-2?arch=all",
+      "version": "0.17030-1",
+      "bom-ref": "pkg:deb/debian/liberror-perl@0.17030-1?arch=all",
+      "purl": "pkg:deb/debian/liberror-perl@0.17030-1?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -756,26 +739,9 @@
     {
       "type": "library",
       "name": "libexpat1:arm64",
-      "version": "2.5.0-1+deb12u2",
-      "bom-ref": "pkg:deb/debian/libexpat1%3Aarm64@2.5.0-1%2Bdeb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/libexpat1%3Aarm64@2.5.0-1%2Bdeb12u2?arch=arm64",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "libext2fs2:arm64",
-      "version": "1.47.0-2+b2",
-      "bom-ref": "pkg:deb/debian/libext2fs2%3Aarm64@1.47.0-2%2Bb2?arch=arm64",
-      "purl": "pkg:deb/debian/libext2fs2%3Aarm64@1.47.0-2%2Bb2?arch=arm64",
+      "version": "2.8.2-1~deb13u1",
+      "bom-ref": "pkg:deb/debian/libexpat1%3Aarm64@2.8.2-1~deb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libexpat1%3Aarm64@2.8.2-1~deb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -790,9 +756,9 @@
     {
       "type": "library",
       "name": "libffi8:arm64",
-      "version": "3.4.4-1",
-      "bom-ref": "pkg:deb/debian/libffi8%3Aarm64@3.4.4-1?arch=arm64",
-      "purl": "pkg:deb/debian/libffi8%3Aarm64@3.4.4-1?arch=arm64",
+      "version": "3.4.8-2",
+      "bom-ref": "pkg:deb/debian/libffi8%3Aarm64@3.4.8-2?arch=arm64",
+      "purl": "pkg:deb/debian/libffi8%3Aarm64@3.4.8-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -807,9 +773,9 @@
     {
       "type": "library",
       "name": "libgcc-s1:arm64",
-      "version": "12.2.0-14+deb12u1",
-      "bom-ref": "pkg:deb/debian/libgcc-s1%3Aarm64@12.2.0-14%2Bdeb12u1?arch=arm64",
-      "purl": "pkg:deb/debian/libgcc-s1%3Aarm64@12.2.0-14%2Bdeb12u1?arch=arm64",
+      "version": "14.2.0-19",
+      "bom-ref": "pkg:deb/debian/libgcc-s1%3Aarm64@14.2.0-19?arch=arm64",
+      "purl": "pkg:deb/debian/libgcc-s1%3Aarm64@14.2.0-19?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -823,10 +789,10 @@
     },
     {
       "type": "library",
-      "name": "libgcrypt20:arm64",
-      "version": "1.10.1-3+deb12u1",
-      "bom-ref": "pkg:deb/debian/libgcrypt20%3Aarm64@1.10.1-3%2Bdeb12u1?arch=arm64",
-      "purl": "pkg:deb/debian/libgcrypt20%3Aarm64@1.10.1-3%2Bdeb12u1?arch=arm64",
+      "name": "libgdbm-compat4t64:arm64",
+      "version": "1.24-2",
+      "bom-ref": "pkg:deb/debian/libgdbm-compat4t64%3Aarm64@1.24-2?arch=arm64",
+      "purl": "pkg:deb/debian/libgdbm-compat4t64%3Aarm64@1.24-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -840,27 +806,10 @@
     },
     {
       "type": "library",
-      "name": "libgdbm-compat4:arm64",
-      "version": "1.23-3",
-      "bom-ref": "pkg:deb/debian/libgdbm-compat4%3Aarm64@1.23-3?arch=arm64",
-      "purl": "pkg:deb/debian/libgdbm-compat4%3Aarm64@1.23-3?arch=arm64",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "libgdbm6:arm64",
-      "version": "1.23-3",
-      "bom-ref": "pkg:deb/debian/libgdbm6%3Aarm64@1.23-3?arch=arm64",
-      "purl": "pkg:deb/debian/libgdbm6%3Aarm64@1.23-3?arch=arm64",
+      "name": "libgdbm6t64:arm64",
+      "version": "1.24-2",
+      "bom-ref": "pkg:deb/debian/libgdbm6t64%3Aarm64@1.24-2?arch=arm64",
+      "purl": "pkg:deb/debian/libgdbm6t64%3Aarm64@1.24-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -875,9 +824,9 @@
     {
       "type": "library",
       "name": "libgmp10:arm64",
-      "version": "2:6.2.1+dfsg1-1.1",
-      "bom-ref": "pkg:deb/debian/libgmp10%3Aarm64@2%3A6.2.1%2Bdfsg1-1.1?arch=arm64",
-      "purl": "pkg:deb/debian/libgmp10%3Aarm64@2%3A6.2.1%2Bdfsg1-1.1?arch=arm64",
+      "version": "2:6.3.0+dfsg-3",
+      "bom-ref": "pkg:deb/debian/libgmp10%3Aarm64@2%3A6.3.0%2Bdfsg-3?arch=arm64",
+      "purl": "pkg:deb/debian/libgmp10%3Aarm64@2%3A6.3.0%2Bdfsg-3?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -891,27 +840,10 @@
     },
     {
       "type": "library",
-      "name": "libgnutls30:arm64",
-      "version": "3.7.9-2+deb12u7",
-      "bom-ref": "pkg:deb/debian/libgnutls30%3Aarm64@3.7.9-2%2Bdeb12u7?arch=arm64",
-      "purl": "pkg:deb/debian/libgnutls30%3Aarm64@3.7.9-2%2Bdeb12u7?arch=arm64",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "libgpg-error0:arm64",
-      "version": "1.46-1",
-      "bom-ref": "pkg:deb/debian/libgpg-error0%3Aarm64@1.46-1?arch=arm64",
-      "purl": "pkg:deb/debian/libgpg-error0%3Aarm64@1.46-1?arch=arm64",
+      "name": "libgnutls30t64:arm64",
+      "version": "3.8.9-3+deb13u4",
+      "bom-ref": "pkg:deb/debian/libgnutls30t64%3Aarm64@3.8.9-3%2Bdeb13u4?arch=arm64",
+      "purl": "pkg:deb/debian/libgnutls30t64%3Aarm64@3.8.9-3%2Bdeb13u4?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -926,9 +858,9 @@
     {
       "type": "library",
       "name": "libgssapi-krb5-2:arm64",
-      "version": "1.20.1-2+deb12u5",
-      "bom-ref": "pkg:deb/debian/libgssapi-krb5-2%3Aarm64@1.20.1-2%2Bdeb12u5?arch=arm64",
-      "purl": "pkg:deb/debian/libgssapi-krb5-2%3Aarm64@1.20.1-2%2Bdeb12u5?arch=arm64",
+      "version": "1.21.3-5+deb13u1",
+      "bom-ref": "pkg:deb/debian/libgssapi-krb5-2%3Aarm64@1.21.3-5%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libgssapi-krb5-2%3Aarm64@1.21.3-5%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -942,10 +874,10 @@
     },
     {
       "type": "library",
-      "name": "libhogweed6:arm64",
-      "version": "3.8.1-2",
-      "bom-ref": "pkg:deb/debian/libhogweed6%3Aarm64@3.8.1-2?arch=arm64",
-      "purl": "pkg:deb/debian/libhogweed6%3Aarm64@3.8.1-2?arch=arm64",
+      "name": "libhogweed6t64:arm64",
+      "version": "3.10.1-1",
+      "bom-ref": "pkg:deb/debian/libhogweed6t64%3Aarm64@3.10.1-1?arch=arm64",
+      "purl": "pkg:deb/debian/libhogweed6t64%3Aarm64@3.10.1-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -960,9 +892,9 @@
     {
       "type": "library",
       "name": "libidn2-0:arm64",
-      "version": "2.3.3-1+b1",
-      "bom-ref": "pkg:deb/debian/libidn2-0%3Aarm64@2.3.3-1%2Bb1?arch=arm64",
-      "purl": "pkg:deb/debian/libidn2-0%3Aarm64@2.3.3-1%2Bb1?arch=arm64",
+      "version": "2.3.8-2",
+      "bom-ref": "pkg:deb/debian/libidn2-0%3Aarm64@2.3.8-2?arch=arm64",
+      "purl": "pkg:deb/debian/libidn2-0%3Aarm64@2.3.8-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -977,9 +909,9 @@
     {
       "type": "library",
       "name": "libk5crypto3:arm64",
-      "version": "1.20.1-2+deb12u5",
-      "bom-ref": "pkg:deb/debian/libk5crypto3%3Aarm64@1.20.1-2%2Bdeb12u5?arch=arm64",
-      "purl": "pkg:deb/debian/libk5crypto3%3Aarm64@1.20.1-2%2Bdeb12u5?arch=arm64",
+      "version": "1.21.3-5+deb13u1",
+      "bom-ref": "pkg:deb/debian/libk5crypto3%3Aarm64@1.21.3-5%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libk5crypto3%3Aarm64@1.21.3-5%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -994,9 +926,9 @@
     {
       "type": "library",
       "name": "libkeyutils1:arm64",
-      "version": "1.6.3-2",
-      "bom-ref": "pkg:deb/debian/libkeyutils1%3Aarm64@1.6.3-2?arch=arm64",
-      "purl": "pkg:deb/debian/libkeyutils1%3Aarm64@1.6.3-2?arch=arm64",
+      "version": "1.6.3-6",
+      "bom-ref": "pkg:deb/debian/libkeyutils1%3Aarm64@1.6.3-6?arch=arm64",
+      "purl": "pkg:deb/debian/libkeyutils1%3Aarm64@1.6.3-6?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1011,9 +943,9 @@
     {
       "type": "library",
       "name": "libkrb5-3:arm64",
-      "version": "1.20.1-2+deb12u5",
-      "bom-ref": "pkg:deb/debian/libkrb5-3%3Aarm64@1.20.1-2%2Bdeb12u5?arch=arm64",
-      "purl": "pkg:deb/debian/libkrb5-3%3Aarm64@1.20.1-2%2Bdeb12u5?arch=arm64",
+      "version": "1.21.3-5+deb13u1",
+      "bom-ref": "pkg:deb/debian/libkrb5-3%3Aarm64@1.21.3-5%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libkrb5-3%3Aarm64@1.21.3-5%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1028,9 +960,9 @@
     {
       "type": "library",
       "name": "libkrb5support0:arm64",
-      "version": "1.20.1-2+deb12u5",
-      "bom-ref": "pkg:deb/debian/libkrb5support0%3Aarm64@1.20.1-2%2Bdeb12u5?arch=arm64",
-      "purl": "pkg:deb/debian/libkrb5support0%3Aarm64@1.20.1-2%2Bdeb12u5?arch=arm64",
+      "version": "1.21.3-5+deb13u1",
+      "bom-ref": "pkg:deb/debian/libkrb5support0%3Aarm64@1.21.3-5%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libkrb5support0%3Aarm64@1.21.3-5%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1044,10 +976,27 @@
     },
     {
       "type": "library",
-      "name": "libldap-2.5-0:arm64",
-      "version": "2.5.13+dfsg-5",
-      "bom-ref": "pkg:deb/debian/libldap-2.5-0%3Aarm64@2.5.13%2Bdfsg-5?arch=arm64",
-      "purl": "pkg:deb/debian/libldap-2.5-0%3Aarm64@2.5.13%2Bdfsg-5?arch=arm64",
+      "name": "liblastlog2-2:arm64",
+      "version": "2.41-5",
+      "bom-ref": "pkg:deb/debian/liblastlog2-2%3Aarm64@2.41-5?arch=arm64",
+      "purl": "pkg:deb/debian/liblastlog2-2%3Aarm64@2.41-5?arch=arm64",
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "debian"
+        },
+        {
+          "name": "napier.package.arch",
+          "value": "arm64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "libldap2:arm64",
+      "version": "2.6.10+dfsg-1",
+      "bom-ref": "pkg:deb/debian/libldap2%3Aarm64@2.6.10%2Bdfsg-1?arch=arm64",
+      "purl": "pkg:deb/debian/libldap2%3Aarm64@2.6.10%2Bdfsg-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1062,9 +1011,9 @@
     {
       "type": "library",
       "name": "liblz4-1:arm64",
-      "version": "1.9.4-1",
-      "bom-ref": "pkg:deb/debian/liblz4-1%3Aarm64@1.9.4-1?arch=arm64",
-      "purl": "pkg:deb/debian/liblz4-1%3Aarm64@1.9.4-1?arch=arm64",
+      "version": "1.10.0-4",
+      "bom-ref": "pkg:deb/debian/liblz4-1%3Aarm64@1.10.0-4?arch=arm64",
+      "purl": "pkg:deb/debian/liblz4-1%3Aarm64@1.10.0-4?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1079,9 +1028,9 @@
     {
       "type": "library",
       "name": "liblzma5:arm64",
-      "version": "5.4.1-1",
-      "bom-ref": "pkg:deb/debian/liblzma5%3Aarm64@5.4.1-1?arch=arm64",
-      "purl": "pkg:deb/debian/liblzma5%3Aarm64@5.4.1-1?arch=arm64",
+      "version": "5.8.1-1",
+      "bom-ref": "pkg:deb/debian/liblzma5%3Aarm64@5.8.1-1?arch=arm64",
+      "purl": "pkg:deb/debian/liblzma5%3Aarm64@5.8.1-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1096,9 +1045,9 @@
     {
       "type": "library",
       "name": "libmd0:arm64",
-      "version": "1.0.4-2",
-      "bom-ref": "pkg:deb/debian/libmd0%3Aarm64@1.0.4-2?arch=arm64",
-      "purl": "pkg:deb/debian/libmd0%3Aarm64@1.0.4-2?arch=arm64",
+      "version": "1.1.0-2+b1",
+      "bom-ref": "pkg:deb/debian/libmd0%3Aarm64@1.1.0-2%2Bb1?arch=arm64",
+      "purl": "pkg:deb/debian/libmd0%3Aarm64@1.1.0-2%2Bb1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1113,9 +1062,9 @@
     {
       "type": "library",
       "name": "libmount1:arm64",
-      "version": "2.38.1-5+deb12u3",
-      "bom-ref": "pkg:deb/debian/libmount1%3Aarm64@2.38.1-5%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/libmount1%3Aarm64@2.38.1-5%2Bdeb12u3?arch=arm64",
+      "version": "2.41-5",
+      "bom-ref": "pkg:deb/debian/libmount1%3Aarm64@2.41-5?arch=arm64",
+      "purl": "pkg:deb/debian/libmount1%3Aarm64@2.41-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1130,9 +1079,9 @@
     {
       "type": "library",
       "name": "libncursesw6:arm64",
-      "version": "6.4-4",
-      "bom-ref": "pkg:deb/debian/libncursesw6%3Aarm64@6.4-4?arch=arm64",
-      "purl": "pkg:deb/debian/libncursesw6%3Aarm64@6.4-4?arch=arm64",
+      "version": "6.5+20250216-2",
+      "bom-ref": "pkg:deb/debian/libncursesw6%3Aarm64@6.5%2B20250216-2?arch=arm64",
+      "purl": "pkg:deb/debian/libncursesw6%3Aarm64@6.5%2B20250216-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1146,10 +1095,10 @@
     },
     {
       "type": "library",
-      "name": "libnettle8:arm64",
-      "version": "3.8.1-2",
-      "bom-ref": "pkg:deb/debian/libnettle8%3Aarm64@3.8.1-2?arch=arm64",
-      "purl": "pkg:deb/debian/libnettle8%3Aarm64@3.8.1-2?arch=arm64",
+      "name": "libnettle8t64:arm64",
+      "version": "3.10.1-1",
+      "bom-ref": "pkg:deb/debian/libnettle8t64%3Aarm64@3.10.1-1?arch=arm64",
+      "purl": "pkg:deb/debian/libnettle8t64%3Aarm64@3.10.1-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1164,9 +1113,9 @@
     {
       "type": "library",
       "name": "libnghttp2-14:arm64",
-      "version": "1.52.0-1+deb12u3",
-      "bom-ref": "pkg:deb/debian/libnghttp2-14%3Aarm64@1.52.0-1%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/libnghttp2-14%3Aarm64@1.52.0-1%2Bdeb12u3?arch=arm64",
+      "version": "1.64.0-1.1+deb13u1",
+      "bom-ref": "pkg:deb/debian/libnghttp2-14%3Aarm64@1.64.0-1.1%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libnghttp2-14%3Aarm64@1.64.0-1.1%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1180,10 +1129,44 @@
     },
     {
       "type": "library",
-      "name": "libnsl2:arm64",
-      "version": "1.3.0-2",
-      "bom-ref": "pkg:deb/debian/libnsl2%3Aarm64@1.3.0-2?arch=arm64",
-      "purl": "pkg:deb/debian/libnsl2%3Aarm64@1.3.0-2?arch=arm64",
+      "name": "libnghttp3-9:arm64",
+      "version": "1.8.0-1",
+      "bom-ref": "pkg:deb/debian/libnghttp3-9%3Aarm64@1.8.0-1?arch=arm64",
+      "purl": "pkg:deb/debian/libnghttp3-9%3Aarm64@1.8.0-1?arch=arm64",
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "debian"
+        },
+        {
+          "name": "napier.package.arch",
+          "value": "arm64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "libngtcp2-16:arm64",
+      "version": "1.11.0-1+deb13u1",
+      "bom-ref": "pkg:deb/debian/libngtcp2-16%3Aarm64@1.11.0-1%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libngtcp2-16%3Aarm64@1.11.0-1%2Bdeb13u1?arch=arm64",
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "debian"
+        },
+        {
+          "name": "napier.package.arch",
+          "value": "arm64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "libngtcp2-crypto-gnutls8:arm64",
+      "version": "1.11.0-1+deb13u1",
+      "bom-ref": "pkg:deb/debian/libngtcp2-crypto-gnutls8%3Aarm64@1.11.0-1%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libngtcp2-crypto-gnutls8%3Aarm64@1.11.0-1%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1198,9 +1181,9 @@
     {
       "type": "library",
       "name": "libp11-kit0:arm64",
-      "version": "0.24.1-2",
-      "bom-ref": "pkg:deb/debian/libp11-kit0%3Aarm64@0.24.1-2?arch=arm64",
-      "purl": "pkg:deb/debian/libp11-kit0%3Aarm64@0.24.1-2?arch=arm64",
+      "version": "0.25.5-3",
+      "bom-ref": "pkg:deb/debian/libp11-kit0%3Aarm64@0.25.5-3?arch=arm64",
+      "purl": "pkg:deb/debian/libp11-kit0%3Aarm64@0.25.5-3?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1215,9 +1198,9 @@
     {
       "type": "library",
       "name": "libpam-modules:arm64",
-      "version": "1.5.2-6+deb12u2",
-      "bom-ref": "pkg:deb/debian/libpam-modules%3Aarm64@1.5.2-6%2Bdeb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/libpam-modules%3Aarm64@1.5.2-6%2Bdeb12u2?arch=arm64",
+      "version": "1.7.0-5",
+      "bom-ref": "pkg:deb/debian/libpam-modules%3Aarm64@1.7.0-5?arch=arm64",
+      "purl": "pkg:deb/debian/libpam-modules%3Aarm64@1.7.0-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1232,9 +1215,9 @@
     {
       "type": "library",
       "name": "libpam-modules-bin",
-      "version": "1.5.2-6+deb12u2",
-      "bom-ref": "pkg:deb/debian/libpam-modules-bin@1.5.2-6%2Bdeb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/libpam-modules-bin@1.5.2-6%2Bdeb12u2?arch=arm64",
+      "version": "1.7.0-5",
+      "bom-ref": "pkg:deb/debian/libpam-modules-bin@1.7.0-5?arch=arm64",
+      "purl": "pkg:deb/debian/libpam-modules-bin@1.7.0-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1249,9 +1232,9 @@
     {
       "type": "library",
       "name": "libpam-runtime",
-      "version": "1.5.2-6+deb12u2",
-      "bom-ref": "pkg:deb/debian/libpam-runtime@1.5.2-6%2Bdeb12u2?arch=all",
-      "purl": "pkg:deb/debian/libpam-runtime@1.5.2-6%2Bdeb12u2?arch=all",
+      "version": "1.7.0-5",
+      "bom-ref": "pkg:deb/debian/libpam-runtime@1.7.0-5?arch=all",
+      "purl": "pkg:deb/debian/libpam-runtime@1.7.0-5?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1266,9 +1249,9 @@
     {
       "type": "library",
       "name": "libpam0g:arm64",
-      "version": "1.5.2-6+deb12u2",
-      "bom-ref": "pkg:deb/debian/libpam0g%3Aarm64@1.5.2-6%2Bdeb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/libpam0g%3Aarm64@1.5.2-6%2Bdeb12u2?arch=arm64",
+      "version": "1.7.0-5",
+      "bom-ref": "pkg:deb/debian/libpam0g%3Aarm64@1.7.0-5?arch=arm64",
+      "purl": "pkg:deb/debian/libpam0g%3Aarm64@1.7.0-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1283,9 +1266,9 @@
     {
       "type": "library",
       "name": "libpcre2-8-0:arm64",
-      "version": "10.42-1",
-      "bom-ref": "pkg:deb/debian/libpcre2-8-0%3Aarm64@10.42-1?arch=arm64",
-      "purl": "pkg:deb/debian/libpcre2-8-0%3Aarm64@10.42-1?arch=arm64",
+      "version": "10.46-1~deb13u1",
+      "bom-ref": "pkg:deb/debian/libpcre2-8-0%3Aarm64@10.46-1~deb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libpcre2-8-0%3Aarm64@10.46-1~deb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1299,10 +1282,10 @@
     },
     {
       "type": "library",
-      "name": "libperl5.36:arm64",
-      "version": "5.36.0-7+deb12u3",
-      "bom-ref": "pkg:deb/debian/libperl5.36%3Aarm64@5.36.0-7%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/libperl5.36%3Aarm64@5.36.0-7%2Bdeb12u3?arch=arm64",
+      "name": "libperl5.40:arm64",
+      "version": "5.40.1-6",
+      "bom-ref": "pkg:deb/debian/libperl5.40%3Aarm64@5.40.1-6?arch=arm64",
+      "purl": "pkg:deb/debian/libperl5.40%3Aarm64@5.40.1-6?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1316,10 +1299,10 @@
     },
     {
       "type": "library",
-      "name": "libpsl5:arm64",
-      "version": "0.21.2-1",
-      "bom-ref": "pkg:deb/debian/libpsl5%3Aarm64@0.21.2-1?arch=arm64",
-      "purl": "pkg:deb/debian/libpsl5%3Aarm64@0.21.2-1?arch=arm64",
+      "name": "libpsl5t64:arm64",
+      "version": "0.21.2-1.1+b1",
+      "bom-ref": "pkg:deb/debian/libpsl5t64%3Aarm64@0.21.2-1.1%2Bb1?arch=arm64",
+      "purl": "pkg:deb/debian/libpsl5t64%3Aarm64@0.21.2-1.1%2Bb1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1334,9 +1317,9 @@
     {
       "type": "library",
       "name": "libpython3-stdlib:arm64",
-      "version": "3.11.2-1+b1",
-      "bom-ref": "pkg:deb/debian/libpython3-stdlib%3Aarm64@3.11.2-1%2Bb1?arch=arm64",
-      "purl": "pkg:deb/debian/libpython3-stdlib%3Aarm64@3.11.2-1%2Bb1?arch=arm64",
+      "version": "3.13.5-1",
+      "bom-ref": "pkg:deb/debian/libpython3-stdlib%3Aarm64@3.13.5-1?arch=arm64",
+      "purl": "pkg:deb/debian/libpython3-stdlib%3Aarm64@3.13.5-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1350,10 +1333,10 @@
     },
     {
       "type": "library",
-      "name": "libpython3.11-minimal:arm64",
-      "version": "3.11.2-6+deb12u8",
-      "bom-ref": "pkg:deb/debian/libpython3.11-minimal%3Aarm64@3.11.2-6%2Bdeb12u8?arch=arm64",
-      "purl": "pkg:deb/debian/libpython3.11-minimal%3Aarm64@3.11.2-6%2Bdeb12u8?arch=arm64",
+      "name": "libpython3.13-minimal:arm64",
+      "version": "3.13.5-2+deb13u4",
+      "bom-ref": "pkg:deb/debian/libpython3.13-minimal%3Aarm64@3.13.5-2%2Bdeb13u4?arch=arm64",
+      "purl": "pkg:deb/debian/libpython3.13-minimal%3Aarm64@3.13.5-2%2Bdeb13u4?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1367,10 +1350,10 @@
     },
     {
       "type": "library",
-      "name": "libpython3.11-stdlib:arm64",
-      "version": "3.11.2-6+deb12u8",
-      "bom-ref": "pkg:deb/debian/libpython3.11-stdlib%3Aarm64@3.11.2-6%2Bdeb12u8?arch=arm64",
-      "purl": "pkg:deb/debian/libpython3.11-stdlib%3Aarm64@3.11.2-6%2Bdeb12u8?arch=arm64",
+      "name": "libpython3.13-stdlib:arm64",
+      "version": "3.13.5-2+deb13u4",
+      "bom-ref": "pkg:deb/debian/libpython3.13-stdlib%3Aarm64@3.13.5-2%2Bdeb13u4?arch=arm64",
+      "purl": "pkg:deb/debian/libpython3.13-stdlib%3Aarm64@3.13.5-2%2Bdeb13u4?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1384,10 +1367,10 @@
     },
     {
       "type": "library",
-      "name": "libreadline8:arm64",
-      "version": "8.2-1.3",
-      "bom-ref": "pkg:deb/debian/libreadline8%3Aarm64@8.2-1.3?arch=arm64",
-      "purl": "pkg:deb/debian/libreadline8%3Aarm64@8.2-1.3?arch=arm64",
+      "name": "libreadline8t64:arm64",
+      "version": "8.2-6",
+      "bom-ref": "pkg:deb/debian/libreadline8t64%3Aarm64@8.2-6?arch=arm64",
+      "purl": "pkg:deb/debian/libreadline8t64%3Aarm64@8.2-6?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1402,9 +1385,9 @@
     {
       "type": "library",
       "name": "librtmp1:arm64",
-      "version": "2.4+20151223.gitfa8646d.1-2+b2",
-      "bom-ref": "pkg:deb/debian/librtmp1%3Aarm64@2.4%2B20151223.gitfa8646d.1-2%2Bb2?arch=arm64",
-      "purl": "pkg:deb/debian/librtmp1%3Aarm64@2.4%2B20151223.gitfa8646d.1-2%2Bb2?arch=arm64",
+      "version": "2.4+20151223.gitfa8646d.1-2+b5",
+      "bom-ref": "pkg:deb/debian/librtmp1%3Aarm64@2.4%2B20151223.gitfa8646d.1-2%2Bb5?arch=arm64",
+      "purl": "pkg:deb/debian/librtmp1%3Aarm64@2.4%2B20151223.gitfa8646d.1-2%2Bb5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1419,9 +1402,9 @@
     {
       "type": "library",
       "name": "libsasl2-2:arm64",
-      "version": "2.1.28+dfsg-10",
-      "bom-ref": "pkg:deb/debian/libsasl2-2%3Aarm64@2.1.28%2Bdfsg-10?arch=arm64",
-      "purl": "pkg:deb/debian/libsasl2-2%3Aarm64@2.1.28%2Bdfsg-10?arch=arm64",
+      "version": "2.1.28+dfsg1-9",
+      "bom-ref": "pkg:deb/debian/libsasl2-2%3Aarm64@2.1.28%2Bdfsg1-9?arch=arm64",
+      "purl": "pkg:deb/debian/libsasl2-2%3Aarm64@2.1.28%2Bdfsg1-9?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1436,9 +1419,9 @@
     {
       "type": "library",
       "name": "libsasl2-modules-db:arm64",
-      "version": "2.1.28+dfsg-10",
-      "bom-ref": "pkg:deb/debian/libsasl2-modules-db%3Aarm64@2.1.28%2Bdfsg-10?arch=arm64",
-      "purl": "pkg:deb/debian/libsasl2-modules-db%3Aarm64@2.1.28%2Bdfsg-10?arch=arm64",
+      "version": "2.1.28+dfsg1-9",
+      "bom-ref": "pkg:deb/debian/libsasl2-modules-db%3Aarm64@2.1.28%2Bdfsg1-9?arch=arm64",
+      "purl": "pkg:deb/debian/libsasl2-modules-db%3Aarm64@2.1.28%2Bdfsg1-9?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1453,9 +1436,9 @@
     {
       "type": "library",
       "name": "libseccomp2:arm64",
-      "version": "2.5.4-1+deb12u1",
-      "bom-ref": "pkg:deb/debian/libseccomp2%3Aarm64@2.5.4-1%2Bdeb12u1?arch=arm64",
-      "purl": "pkg:deb/debian/libseccomp2%3Aarm64@2.5.4-1%2Bdeb12u1?arch=arm64",
+      "version": "2.6.0-2",
+      "bom-ref": "pkg:deb/debian/libseccomp2%3Aarm64@2.6.0-2?arch=arm64",
+      "purl": "pkg:deb/debian/libseccomp2%3Aarm64@2.6.0-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1470,9 +1453,9 @@
     {
       "type": "library",
       "name": "libselinux1:arm64",
-      "version": "3.4-1+b6",
-      "bom-ref": "pkg:deb/debian/libselinux1%3Aarm64@3.4-1%2Bb6?arch=arm64",
-      "purl": "pkg:deb/debian/libselinux1%3Aarm64@3.4-1%2Bb6?arch=arm64",
+      "version": "3.8.1-1",
+      "bom-ref": "pkg:deb/debian/libselinux1%3Aarm64@3.8.1-1?arch=arm64",
+      "purl": "pkg:deb/debian/libselinux1%3Aarm64@3.8.1-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1487,9 +1470,9 @@
     {
       "type": "library",
       "name": "libsemanage-common",
-      "version": "3.4-1",
-      "bom-ref": "pkg:deb/debian/libsemanage-common@3.4-1?arch=all",
-      "purl": "pkg:deb/debian/libsemanage-common@3.4-1?arch=all",
+      "version": "3.8.1-1",
+      "bom-ref": "pkg:deb/debian/libsemanage-common@3.8.1-1?arch=all",
+      "purl": "pkg:deb/debian/libsemanage-common@3.8.1-1?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1504,9 +1487,9 @@
     {
       "type": "library",
       "name": "libsemanage2:arm64",
-      "version": "3.4-1+b5",
-      "bom-ref": "pkg:deb/debian/libsemanage2%3Aarm64@3.4-1%2Bb5?arch=arm64",
-      "purl": "pkg:deb/debian/libsemanage2%3Aarm64@3.4-1%2Bb5?arch=arm64",
+      "version": "3.8.1-1",
+      "bom-ref": "pkg:deb/debian/libsemanage2%3Aarm64@3.8.1-1?arch=arm64",
+      "purl": "pkg:deb/debian/libsemanage2%3Aarm64@3.8.1-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1521,9 +1504,9 @@
     {
       "type": "library",
       "name": "libsepol2:arm64",
-      "version": "3.4-2.1",
-      "bom-ref": "pkg:deb/debian/libsepol2%3Aarm64@3.4-2.1?arch=arm64",
-      "purl": "pkg:deb/debian/libsepol2%3Aarm64@3.4-2.1?arch=arm64",
+      "version": "3.8.1-1",
+      "bom-ref": "pkg:deb/debian/libsepol2%3Aarm64@3.8.1-1?arch=arm64",
+      "purl": "pkg:deb/debian/libsepol2%3Aarm64@3.8.1-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1538,9 +1521,9 @@
     {
       "type": "library",
       "name": "libsmartcols1:arm64",
-      "version": "2.38.1-5+deb12u3",
-      "bom-ref": "pkg:deb/debian/libsmartcols1%3Aarm64@2.38.1-5%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/libsmartcols1%3Aarm64@2.38.1-5%2Bdeb12u3?arch=arm64",
+      "version": "2.41-5",
+      "bom-ref": "pkg:deb/debian/libsmartcols1%3Aarm64@2.41-5?arch=arm64",
+      "purl": "pkg:deb/debian/libsmartcols1%3Aarm64@2.41-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1555,9 +1538,9 @@
     {
       "type": "library",
       "name": "libsqlite3-0:arm64",
-      "version": "3.40.1-2+deb12u2",
-      "bom-ref": "pkg:deb/debian/libsqlite3-0%3Aarm64@3.40.1-2%2Bdeb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/libsqlite3-0%3Aarm64@3.40.1-2%2Bdeb12u2?arch=arm64",
+      "version": "3.46.1-7+deb13u1",
+      "bom-ref": "pkg:deb/debian/libsqlite3-0%3Aarm64@3.46.1-7%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libsqlite3-0%3Aarm64@3.46.1-7%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1571,10 +1554,10 @@
     },
     {
       "type": "library",
-      "name": "libss2:arm64",
-      "version": "1.47.0-2+b2",
-      "bom-ref": "pkg:deb/debian/libss2%3Aarm64@1.47.0-2%2Bb2?arch=arm64",
-      "purl": "pkg:deb/debian/libss2%3Aarm64@1.47.0-2%2Bb2?arch=arm64",
+      "name": "libssh2-1t64:arm64",
+      "version": "1.11.1-1+deb13u1",
+      "bom-ref": "pkg:deb/debian/libssh2-1t64%3Aarm64@1.11.1-1%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libssh2-1t64%3Aarm64@1.11.1-1%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1588,27 +1571,10 @@
     },
     {
       "type": "library",
-      "name": "libssh2-1:arm64",
-      "version": "1.10.0-3+b1",
-      "bom-ref": "pkg:deb/debian/libssh2-1%3Aarm64@1.10.0-3%2Bb1?arch=arm64",
-      "purl": "pkg:deb/debian/libssh2-1%3Aarm64@1.10.0-3%2Bb1?arch=arm64",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "libssl3:arm64",
-      "version": "3.0.20-1~deb12u2",
-      "bom-ref": "pkg:deb/debian/libssl3%3Aarm64@3.0.20-1~deb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/libssl3%3Aarm64@3.0.20-1~deb12u2?arch=arm64",
+      "name": "libssl3t64:arm64",
+      "version": "3.5.6-1~deb13u2",
+      "bom-ref": "pkg:deb/debian/libssl3t64%3Aarm64@3.5.6-1~deb13u2?arch=arm64",
+      "purl": "pkg:deb/debian/libssl3t64%3Aarm64@3.5.6-1~deb13u2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1623,9 +1589,9 @@
     {
       "type": "library",
       "name": "libstdc++6:arm64",
-      "version": "12.2.0-14+deb12u1",
-      "bom-ref": "pkg:deb/debian/libstdc%2B%2B6%3Aarm64@12.2.0-14%2Bdeb12u1?arch=arm64",
-      "purl": "pkg:deb/debian/libstdc%2B%2B6%3Aarm64@12.2.0-14%2Bdeb12u1?arch=arm64",
+      "version": "14.2.0-19",
+      "bom-ref": "pkg:deb/debian/libstdc%2B%2B6%3Aarm64@14.2.0-19?arch=arm64",
+      "purl": "pkg:deb/debian/libstdc%2B%2B6%3Aarm64@14.2.0-19?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1640,9 +1606,9 @@
     {
       "type": "library",
       "name": "libsystemd0:arm64",
-      "version": "252.39-1~deb12u2",
-      "bom-ref": "pkg:deb/debian/libsystemd0%3Aarm64@252.39-1~deb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/libsystemd0%3Aarm64@252.39-1~deb12u2?arch=arm64",
+      "version": "257.13-1~deb13u1",
+      "bom-ref": "pkg:deb/debian/libsystemd0%3Aarm64@257.13-1~deb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libsystemd0%3Aarm64@257.13-1~deb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1657,9 +1623,9 @@
     {
       "type": "library",
       "name": "libtasn1-6:arm64",
-      "version": "4.19.0-2+deb12u1",
-      "bom-ref": "pkg:deb/debian/libtasn1-6%3Aarm64@4.19.0-2%2Bdeb12u1?arch=arm64",
-      "purl": "pkg:deb/debian/libtasn1-6%3Aarm64@4.19.0-2%2Bdeb12u1?arch=arm64",
+      "version": "4.20.0-2+deb13u1",
+      "bom-ref": "pkg:deb/debian/libtasn1-6%3Aarm64@4.20.0-2%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libtasn1-6%3Aarm64@4.20.0-2%2Bdeb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1674,43 +1640,9 @@
     {
       "type": "library",
       "name": "libtinfo6:arm64",
-      "version": "6.4-4",
-      "bom-ref": "pkg:deb/debian/libtinfo6%3Aarm64@6.4-4?arch=arm64",
-      "purl": "pkg:deb/debian/libtinfo6%3Aarm64@6.4-4?arch=arm64",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "libtirpc-common",
-      "version": "1.3.3+ds-1",
-      "bom-ref": "pkg:deb/debian/libtirpc-common@1.3.3%2Bds-1?arch=all",
-      "purl": "pkg:deb/debian/libtirpc-common@1.3.3%2Bds-1?arch=all",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "all"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "libtirpc3:arm64",
-      "version": "1.3.3+ds-1",
-      "bom-ref": "pkg:deb/debian/libtirpc3%3Aarm64@1.3.3%2Bds-1?arch=arm64",
-      "purl": "pkg:deb/debian/libtirpc3%3Aarm64@1.3.3%2Bds-1?arch=arm64",
+      "version": "6.5+20250216-2",
+      "bom-ref": "pkg:deb/debian/libtinfo6%3Aarm64@6.5%2B20250216-2?arch=arm64",
+      "purl": "pkg:deb/debian/libtinfo6%3Aarm64@6.5%2B20250216-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1725,9 +1657,9 @@
     {
       "type": "library",
       "name": "libudev1:arm64",
-      "version": "252.39-1~deb12u2",
-      "bom-ref": "pkg:deb/debian/libudev1%3Aarm64@252.39-1~deb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/libudev1%3Aarm64@252.39-1~deb12u2?arch=arm64",
+      "version": "257.13-1~deb13u1",
+      "bom-ref": "pkg:deb/debian/libudev1%3Aarm64@257.13-1~deb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/libudev1%3Aarm64@257.13-1~deb13u1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1741,10 +1673,10 @@
     },
     {
       "type": "library",
-      "name": "libunistring2:arm64",
-      "version": "1.0-2",
-      "bom-ref": "pkg:deb/debian/libunistring2%3Aarm64@1.0-2?arch=arm64",
-      "purl": "pkg:deb/debian/libunistring2%3Aarm64@1.0-2?arch=arm64",
+      "name": "libunistring5:arm64",
+      "version": "1.3-2",
+      "bom-ref": "pkg:deb/debian/libunistring5%3Aarm64@1.3-2?arch=arm64",
+      "purl": "pkg:deb/debian/libunistring5%3Aarm64@1.3-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1759,9 +1691,9 @@
     {
       "type": "library",
       "name": "libuuid1:arm64",
-      "version": "2.38.1-5+deb12u3",
-      "bom-ref": "pkg:deb/debian/libuuid1%3Aarm64@2.38.1-5%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/libuuid1%3Aarm64@2.38.1-5%2Bdeb12u3?arch=arm64",
+      "version": "2.41-5",
+      "bom-ref": "pkg:deb/debian/libuuid1%3Aarm64@2.41-5?arch=arm64",
+      "purl": "pkg:deb/debian/libuuid1%3Aarm64@2.41-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1776,9 +1708,9 @@
     {
       "type": "library",
       "name": "libxxhash0:arm64",
-      "version": "0.8.1-1",
-      "bom-ref": "pkg:deb/debian/libxxhash0%3Aarm64@0.8.1-1?arch=arm64",
-      "purl": "pkg:deb/debian/libxxhash0%3Aarm64@0.8.1-1?arch=arm64",
+      "version": "0.8.3-2",
+      "bom-ref": "pkg:deb/debian/libxxhash0%3Aarm64@0.8.3-2?arch=arm64",
+      "purl": "pkg:deb/debian/libxxhash0%3Aarm64@0.8.3-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1793,9 +1725,9 @@
     {
       "type": "library",
       "name": "libzstd1:arm64",
-      "version": "1.5.4+dfsg2-5",
-      "bom-ref": "pkg:deb/debian/libzstd1%3Aarm64@1.5.4%2Bdfsg2-5?arch=arm64",
-      "purl": "pkg:deb/debian/libzstd1%3Aarm64@1.5.4%2Bdfsg2-5?arch=arm64",
+      "version": "1.5.7+dfsg-1",
+      "bom-ref": "pkg:deb/debian/libzstd1%3Aarm64@1.5.7%2Bdfsg-1?arch=arm64",
+      "purl": "pkg:deb/debian/libzstd1%3Aarm64@1.5.7%2Bdfsg-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1804,32 +1736,32 @@
         {
           "name": "napier.package.arch",
           "value": "arm64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "login.defs",
+      "version": "1:4.17.4-2",
+      "bom-ref": "pkg:deb/debian/login.defs@1%3A4.17.4-2?arch=all",
+      "purl": "pkg:deb/debian/login.defs@1%3A4.17.4-2?arch=all",
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "debian"
+        },
+        {
+          "name": "napier.package.arch",
+          "value": "all"
         }
       ]
     },
     {
       "type": "library",
       "name": "login",
-      "version": "1:4.13+dfsg1-1+deb12u2",
-      "bom-ref": "pkg:deb/debian/login@1%3A4.13%2Bdfsg1-1%2Bdeb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/login@1%3A4.13%2Bdfsg1-1%2Bdeb12u2?arch=arm64",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "arm64"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "logsave",
-      "version": "1.47.0-2+b2",
-      "bom-ref": "pkg:deb/debian/logsave@1.47.0-2%2Bb2?arch=arm64",
-      "purl": "pkg:deb/debian/logsave@1.47.0-2%2Bb2?arch=arm64",
+      "version": "1:4.16.0-2+really2.41-5",
+      "bom-ref": "pkg:deb/debian/login@1%3A4.16.0-2%2Breally2.41-5?arch=arm64",
+      "purl": "pkg:deb/debian/login@1%3A4.16.0-2%2Breally2.41-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1844,9 +1776,9 @@
     {
       "type": "library",
       "name": "mawk",
-      "version": "1.3.4.20200120-3.1",
-      "bom-ref": "pkg:deb/debian/mawk@1.3.4.20200120-3.1?arch=arm64",
-      "purl": "pkg:deb/debian/mawk@1.3.4.20200120-3.1?arch=arm64",
+      "version": "1.3.4.20250131-1",
+      "bom-ref": "pkg:deb/debian/mawk@1.3.4.20250131-1?arch=arm64",
+      "purl": "pkg:deb/debian/mawk@1.3.4.20250131-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1861,9 +1793,9 @@
     {
       "type": "library",
       "name": "media-types",
-      "version": "10.0.0",
-      "bom-ref": "pkg:deb/debian/media-types@10.0.0?arch=all",
-      "purl": "pkg:deb/debian/media-types@10.0.0?arch=all",
+      "version": "13.0.0",
+      "bom-ref": "pkg:deb/debian/media-types@13.0.0?arch=all",
+      "purl": "pkg:deb/debian/media-types@13.0.0?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1878,9 +1810,9 @@
     {
       "type": "library",
       "name": "mount",
-      "version": "2.38.1-5+deb12u3",
-      "bom-ref": "pkg:deb/debian/mount@2.38.1-5%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/mount@2.38.1-5%2Bdeb12u3?arch=arm64",
+      "version": "2.41-5",
+      "bom-ref": "pkg:deb/debian/mount@2.41-5?arch=arm64",
+      "purl": "pkg:deb/debian/mount@2.41-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1895,9 +1827,9 @@
     {
       "type": "library",
       "name": "ncurses-base",
-      "version": "6.4-4",
-      "bom-ref": "pkg:deb/debian/ncurses-base@6.4-4?arch=all",
-      "purl": "pkg:deb/debian/ncurses-base@6.4-4?arch=all",
+      "version": "6.5+20250216-2",
+      "bom-ref": "pkg:deb/debian/ncurses-base@6.5%2B20250216-2?arch=all",
+      "purl": "pkg:deb/debian/ncurses-base@6.5%2B20250216-2?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1912,9 +1844,43 @@
     {
       "type": "library",
       "name": "ncurses-bin",
-      "version": "6.4-4",
-      "bom-ref": "pkg:deb/debian/ncurses-bin@6.4-4?arch=arm64",
-      "purl": "pkg:deb/debian/ncurses-bin@6.4-4?arch=arm64",
+      "version": "6.5+20250216-2",
+      "bom-ref": "pkg:deb/debian/ncurses-bin@6.5%2B20250216-2?arch=arm64",
+      "purl": "pkg:deb/debian/ncurses-bin@6.5%2B20250216-2?arch=arm64",
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "debian"
+        },
+        {
+          "name": "napier.package.arch",
+          "value": "arm64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netbase",
+      "version": "6.5",
+      "bom-ref": "pkg:deb/debian/netbase@6.5?arch=all",
+      "purl": "pkg:deb/debian/netbase@6.5?arch=all",
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "debian"
+        },
+        {
+          "name": "napier.package.arch",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "openssl-provider-legacy",
+      "version": "3.5.6-1~deb13u2",
+      "bom-ref": "pkg:deb/debian/openssl-provider-legacy@3.5.6-1~deb13u2?arch=arm64",
+      "purl": "pkg:deb/debian/openssl-provider-legacy@3.5.6-1~deb13u2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1929,9 +1895,9 @@
     {
       "type": "library",
       "name": "openssl",
-      "version": "3.0.20-1~deb12u2",
-      "bom-ref": "pkg:deb/debian/openssl@3.0.20-1~deb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/openssl@3.0.20-1~deb12u2?arch=arm64",
+      "version": "3.5.6-1~deb13u2",
+      "bom-ref": "pkg:deb/debian/openssl@3.5.6-1~deb13u2?arch=arm64",
+      "purl": "pkg:deb/debian/openssl@3.5.6-1~deb13u2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1946,9 +1912,9 @@
     {
       "type": "library",
       "name": "passwd",
-      "version": "1:4.13+dfsg1-1+deb12u2",
-      "bom-ref": "pkg:deb/debian/passwd@1%3A4.13%2Bdfsg1-1%2Bdeb12u2?arch=arm64",
-      "purl": "pkg:deb/debian/passwd@1%3A4.13%2Bdfsg1-1%2Bdeb12u2?arch=arm64",
+      "version": "1:4.17.4-2",
+      "bom-ref": "pkg:deb/debian/passwd@1%3A4.17.4-2?arch=arm64",
+      "purl": "pkg:deb/debian/passwd@1%3A4.17.4-2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1963,9 +1929,9 @@
     {
       "type": "library",
       "name": "perl-base",
-      "version": "5.36.0-7+deb12u3",
-      "bom-ref": "pkg:deb/debian/perl-base@5.36.0-7%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/perl-base@5.36.0-7%2Bdeb12u3?arch=arm64",
+      "version": "5.40.1-6",
+      "bom-ref": "pkg:deb/debian/perl-base@5.40.1-6?arch=arm64",
+      "purl": "pkg:deb/debian/perl-base@5.40.1-6?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1979,10 +1945,10 @@
     },
     {
       "type": "library",
-      "name": "perl-modules-5.36",
-      "version": "5.36.0-7+deb12u3",
-      "bom-ref": "pkg:deb/debian/perl-modules-5.36@5.36.0-7%2Bdeb12u3?arch=all",
-      "purl": "pkg:deb/debian/perl-modules-5.36@5.36.0-7%2Bdeb12u3?arch=all",
+      "name": "perl-modules-5.40",
+      "version": "5.40.1-6",
+      "bom-ref": "pkg:deb/debian/perl-modules-5.40@5.40.1-6?arch=all",
+      "purl": "pkg:deb/debian/perl-modules-5.40@5.40.1-6?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -1997,9 +1963,9 @@
     {
       "type": "library",
       "name": "perl",
-      "version": "5.36.0-7+deb12u3",
-      "bom-ref": "pkg:deb/debian/perl@5.36.0-7%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/perl@5.36.0-7%2Bdeb12u3?arch=arm64",
+      "version": "5.40.1-6",
+      "bom-ref": "pkg:deb/debian/perl@5.40.1-6?arch=arm64",
+      "purl": "pkg:deb/debian/perl@5.40.1-6?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2014,9 +1980,9 @@
     {
       "type": "library",
       "name": "python3-minimal",
-      "version": "3.11.2-1+b1",
-      "bom-ref": "pkg:deb/debian/python3-minimal@3.11.2-1%2Bb1?arch=arm64",
-      "purl": "pkg:deb/debian/python3-minimal@3.11.2-1%2Bb1?arch=arm64",
+      "version": "3.13.5-1",
+      "bom-ref": "pkg:deb/debian/python3-minimal@3.13.5-1?arch=arm64",
+      "purl": "pkg:deb/debian/python3-minimal@3.13.5-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2030,10 +1996,10 @@
     },
     {
       "type": "library",
-      "name": "python3.11-minimal",
-      "version": "3.11.2-6+deb12u8",
-      "bom-ref": "pkg:deb/debian/python3.11-minimal@3.11.2-6%2Bdeb12u8?arch=arm64",
-      "purl": "pkg:deb/debian/python3.11-minimal@3.11.2-6%2Bdeb12u8?arch=arm64",
+      "name": "python3.13-minimal",
+      "version": "3.13.5-2+deb13u4",
+      "bom-ref": "pkg:deb/debian/python3.13-minimal@3.13.5-2%2Bdeb13u4?arch=arm64",
+      "purl": "pkg:deb/debian/python3.13-minimal@3.13.5-2%2Bdeb13u4?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2047,10 +2013,10 @@
     },
     {
       "type": "library",
-      "name": "python3.11",
-      "version": "3.11.2-6+deb12u8",
-      "bom-ref": "pkg:deb/debian/python3.11@3.11.2-6%2Bdeb12u8?arch=arm64",
-      "purl": "pkg:deb/debian/python3.11@3.11.2-6%2Bdeb12u8?arch=arm64",
+      "name": "python3.13",
+      "version": "3.13.5-2+deb13u4",
+      "bom-ref": "pkg:deb/debian/python3.13@3.13.5-2%2Bdeb13u4?arch=arm64",
+      "purl": "pkg:deb/debian/python3.13@3.13.5-2%2Bdeb13u4?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2065,9 +2031,9 @@
     {
       "type": "library",
       "name": "python3",
-      "version": "3.11.2-1+b1",
-      "bom-ref": "pkg:deb/debian/python3@3.11.2-1%2Bb1?arch=arm64",
-      "purl": "pkg:deb/debian/python3@3.11.2-1%2Bb1?arch=arm64",
+      "version": "3.13.5-1",
+      "bom-ref": "pkg:deb/debian/python3@3.13.5-1?arch=arm64",
+      "purl": "pkg:deb/debian/python3@3.13.5-1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2082,9 +2048,9 @@
     {
       "type": "library",
       "name": "readline-common",
-      "version": "8.2-1.3",
-      "bom-ref": "pkg:deb/debian/readline-common@8.2-1.3?arch=all",
-      "purl": "pkg:deb/debian/readline-common@8.2-1.3?arch=all",
+      "version": "8.2-6",
+      "bom-ref": "pkg:deb/debian/readline-common@8.2-6?arch=all",
+      "purl": "pkg:deb/debian/readline-common@8.2-6?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2099,9 +2065,26 @@
     {
       "type": "library",
       "name": "sed",
-      "version": "4.9-1+deb12u1",
-      "bom-ref": "pkg:deb/debian/sed@4.9-1%2Bdeb12u1?arch=arm64",
-      "purl": "pkg:deb/debian/sed@4.9-1%2Bdeb12u1?arch=arm64",
+      "version": "4.9-2+deb13u1",
+      "bom-ref": "pkg:deb/debian/sed@4.9-2%2Bdeb13u1?arch=arm64",
+      "purl": "pkg:deb/debian/sed@4.9-2%2Bdeb13u1?arch=arm64",
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "debian"
+        },
+        {
+          "name": "napier.package.arch",
+          "value": "arm64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sqv",
+      "version": "1.3.0-3+b2",
+      "bom-ref": "pkg:deb/debian/sqv@1.3.0-3%2Bb2?arch=arm64",
+      "purl": "pkg:deb/debian/sqv@1.3.0-3%2Bb2?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2116,9 +2099,9 @@
     {
       "type": "library",
       "name": "sysvinit-utils",
-      "version": "3.06-4",
-      "bom-ref": "pkg:deb/debian/sysvinit-utils@3.06-4?arch=arm64",
-      "purl": "pkg:deb/debian/sysvinit-utils@3.06-4?arch=arm64",
+      "version": "3.14-4",
+      "bom-ref": "pkg:deb/debian/sysvinit-utils@3.14-4?arch=arm64",
+      "purl": "pkg:deb/debian/sysvinit-utils@3.14-4?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2133,9 +2116,9 @@
     {
       "type": "library",
       "name": "tar",
-      "version": "1.34+dfsg-1.2+deb12u1",
-      "bom-ref": "pkg:deb/debian/tar@1.34%2Bdfsg-1.2%2Bdeb12u1?arch=arm64",
-      "purl": "pkg:deb/debian/tar@1.34%2Bdfsg-1.2%2Bdeb12u1?arch=arm64",
+      "version": "1.35+dfsg-3.1",
+      "bom-ref": "pkg:deb/debian/tar@1.35%2Bdfsg-3.1?arch=arm64",
+      "purl": "pkg:deb/debian/tar@1.35%2Bdfsg-3.1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2150,9 +2133,9 @@
     {
       "type": "library",
       "name": "tzdata",
-      "version": "2026b-0+deb12u1",
-      "bom-ref": "pkg:deb/debian/tzdata@2026b-0%2Bdeb12u1?arch=all",
-      "purl": "pkg:deb/debian/tzdata@2026b-0%2Bdeb12u1?arch=all",
+      "version": "2026b-0+deb13u1",
+      "bom-ref": "pkg:deb/debian/tzdata@2026b-0%2Bdeb13u1?arch=all",
+      "purl": "pkg:deb/debian/tzdata@2026b-0%2Bdeb13u1?arch=all",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2161,49 +2144,15 @@
         {
           "name": "napier.package.arch",
           "value": "all"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "usr-is-merged",
-      "version": "37~deb12u1",
-      "bom-ref": "pkg:deb/debian/usr-is-merged@37~deb12u1?arch=all",
-      "purl": "pkg:deb/debian/usr-is-merged@37~deb12u1?arch=all",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "all"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "name": "util-linux-extra",
-      "version": "2.38.1-5+deb12u3",
-      "bom-ref": "pkg:deb/debian/util-linux-extra@2.38.1-5%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/util-linux-extra@2.38.1-5%2Bdeb12u3?arch=arm64",
-      "properties": [
-        {
-          "name": "napier.package.ecosystem",
-          "value": "debian"
-        },
-        {
-          "name": "napier.package.arch",
-          "value": "arm64"
         }
       ]
     },
     {
       "type": "library",
       "name": "util-linux",
-      "version": "2.38.1-5+deb12u3",
-      "bom-ref": "pkg:deb/debian/util-linux@2.38.1-5%2Bdeb12u3?arch=arm64",
-      "purl": "pkg:deb/debian/util-linux@2.38.1-5%2Bdeb12u3?arch=arm64",
+      "version": "2.41-5",
+      "bom-ref": "pkg:deb/debian/util-linux@2.41-5?arch=arm64",
+      "purl": "pkg:deb/debian/util-linux@2.41-5?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",
@@ -2218,9 +2167,9 @@
     {
       "type": "library",
       "name": "zlib1g:arm64",
-      "version": "1:1.2.13.dfsg-1",
-      "bom-ref": "pkg:deb/debian/zlib1g%3Aarm64@1%3A1.2.13.dfsg-1?arch=arm64",
-      "purl": "pkg:deb/debian/zlib1g%3Aarm64@1%3A1.2.13.dfsg-1?arch=arm64",
+      "version": "1:1.3.dfsg+really1.3.1-1+b1",
+      "bom-ref": "pkg:deb/debian/zlib1g%3Aarm64@1%3A1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=arm64",
+      "purl": "pkg:deb/debian/zlib1g%3Aarm64@1%3A1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=arm64",
       "properties": [
         {
           "name": "napier.package.ecosystem",

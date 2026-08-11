@@ -7037,6 +7037,67 @@ omitted. This proves a fresh virtualized Linux host path. It does **not** claim
 Windows host acceptance, external registry publication, a release signing
 identity/transparency log, or external attestation.
 
+The repository also carries a manual external publication gate at
+`.github/workflows/publish-sandbox.yml`:
+
+```bash
+npm run check:sandbox-external-release-workflow
+```
+
+It accepts the exact 40-character current `main` commit and has two deliberately
+different modes. `bootstrap` runs the full release gate and publishes only a
+private, commit-addressed GHCR image so the personal-account package can be
+created. Because a new GHCR package is private by default and changing it to
+public is an irreversible administrator action, bootstrap stops there and
+makes no signing, attestation, anonymous-pull, or S1-completion claim.
+
+After an administrator makes `napier-sandbox` public in GHCR package settings,
+rerun the same source SHA in `release` mode. That mode builds and pushes
+`linux/amd64` plus `linux/arm64`, requires remote BuildKit provenance and SBOM
+manifests, anonymously pulls and executes both platforms by immutable digest,
+creates and verifies a keyless Sigstore signature with Rekor transparency
+evidence, attaches and verifies a second keyless SLSA provenance v1 attestation
+with its own Rekor entry, and uploads the bounded public release receipt and
+verification bundles. Every external Action is pinned to a full commit SHA. The
+workflow fails before producing the receipt if any link is absent.
+
+Sigstore's public-good service records the workflow certificate, image digest,
+signature/attestation metadata, source repository, workflow identity, commit
+SHA, and transparency-log timing as public verification material. It does not
+receive repository credentials or workspace files, and private keys are never
+created or retained; the workflow's short-lived GitHub OIDC identity is the
+release signing identity.
+
+Commit and version tags are immutable. A retry may reuse the exact existing
+commit digest, but release fails if the existing version tag resolves to
+anything else. Before signing, the workflow also authenticates to pull and
+execute both platform images, rechecking the source-context and source-revision
+labels. The later anonymous pass proves public availability independently of
+the workflow token.
+
+This workflow is executable release infrastructure, not evidence that release
+already happened. Until a successful `release` run's uploaded receipt is
+reviewed and retained, external publication, release signing identity,
+transparency logging, and external attestation remain incomplete. The workflow
+also leaves `windowsHostProductAcceptance=false`; a real Windows host with a
+supported Linux-container daemon is still required separately.
+
+The retained runtime-environment receipt is deliberately portable across the
+supported host matrix rather than tied to the machine that wrote it. Schema 2
+binds the exact Node version, required SQLite/OpenSSL/libuv/V8 component
+versions, and currently proven macOS arm64 plus Linux arm64/x64 admission list;
+verification still
+fails for an unknown host or component drift. The Ubuntu release job also
+installs Chromium host libraries, grants `userns,` only to the exact pinned
+browser path through an AppArmor profile, and then verifies Chromium through
+Napier's own Browser Setup preview/exact-apply flow before running
+`npm run check`. The product receipt must retain `chromiumSandbox=true`; the
+workflow never falls back to `--no-sandbox`.
+The responsive Web E2E contract remains exact across that release path. Since
+the UI deliberately uses native system fonts, schema-2 layout receipts are
+separate for Darwin and Linux; a receipt from one OS cannot be replayed on the
+other, and unaccepted platforms fail instead of weakening geometry checks.
+
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only
 when the mapped container user can run the same isolated standard-library
@@ -7047,6 +7108,13 @@ with only private Git state writable during preview. OCI LSP similarly binds
 the image's Node, `typescript-language-server`, complete TypeScript runtime
 asset set, and provider identity into diagnostics/navigation/edit-preview
 receipts while keeping the workspace read-only and mounting no host toolchain.
+The pinned Sandbox image now uses Node 24.16.0 on Debian Trixie with Python
+3.13.5 and Git 2.47.3 on both amd64 and arm64. Branch switching runs a fixed
+`git --version` preflight and requires Git 2.46.0 or newer because its atomic
+CAS transaction depends on `update-ref --stdin` symbolic-ref support. The
+Ubuntu release job installs SHA-256-verified Git 2.46.4 before `npm run check`,
+so an older runner Git fails before preview instead of reaching an ambiguous
+HEAD mutation.
 Doctor executes bounded production commands for the active provider, including
 Git and the language server, instead of falling back to host-only availability
 checks.

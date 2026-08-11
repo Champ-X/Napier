@@ -58,7 +58,7 @@ describe("runtime environment release gate", () => {
     });
     expect(createRuntimeEnvironmentReceipt(result)).toMatchObject({
       type: "napier.runtime-environment-audit",
-      schemaVersion: 1,
+      schemaVersion: 2,
       ok: true,
       package: { name: "napier-test", version: "0.1.0" },
       node: {
@@ -67,6 +67,11 @@ describe("runtime environment release gate", () => {
         satisfies: true,
         components: passingRuntime.versions,
       },
+      supportedHosts: expect.arrayContaining([
+        { platform: "linux", arch: "x64" },
+        { platform: "darwin", arch: "arm64" },
+        { platform: "linux", arch: "arm64" },
+      ]),
       errors: [],
     });
   });
@@ -101,14 +106,14 @@ describe("runtime environment release gate", () => {
 
     expect(jsonReceipt).toMatchObject({
       type: "napier.runtime-environment-audit",
-      schemaVersion: 1,
+      schemaVersion: 2,
       ok: true,
       package: { name: "napier-test", version: "0.1.0" },
       errors: [],
     });
     expect(fileReceipt).toMatchObject({
       type: "napier.runtime-environment-audit",
-      schemaVersion: 1,
+      schemaVersion: 2,
       ok: true,
       errors: [],
     });
@@ -171,6 +176,46 @@ describe("runtime environment release gate", () => {
     expect(result.ok).toBe(false);
     expect(result.errors).toContain(
       "process.versions.sqlite must be available",
+    );
+  });
+
+  it("replays one release receipt across supported hosts with the same Node identity", async () => {
+    const { root } = await createFixture();
+    const receiptPath = path.join(
+      root,
+      "docs/artifacts/runtime-environment-audit.json",
+    );
+    const linux = await auditRuntimeEnvironment({
+      repoRoot: root,
+      ...passingRuntime,
+    });
+    await writeJson(receiptPath, createRuntimeEnvironmentReceipt(linux));
+
+    const verification = await verifyRuntimeEnvironmentReceipt({
+      repoRoot: root,
+      verifyReceiptPath: "docs/artifacts/runtime-environment-audit.json",
+      ...passingRuntime,
+      platform: "darwin",
+      arch: "arm64",
+    });
+
+    expect(verification.valid).toBe(true);
+    expect(verification.errors).toEqual([]);
+  });
+
+  it("rejects a host outside the supported release matrix", async () => {
+    const { root } = await createFixture();
+
+    const result = await auditRuntimeEnvironment({
+      repoRoot: root,
+      ...passingRuntime,
+      platform: "freebsd",
+      arch: "x64",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain(
+      "Host freebsd/x64 is not in the supported release matrix",
     );
   });
 

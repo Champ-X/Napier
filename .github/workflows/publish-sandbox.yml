@@ -1,0 +1,477 @@
+name: Publish Sandbox OCI
+
+run-name: Sandbox OCI ${{ inputs.mode }} @ ${{ inputs.source_sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Bootstrap the private package or complete the public release gate
+        required: true
+        default: bootstrap
+        type: choice
+        options:
+          - bootstrap
+          - release
+      source_sha:
+        description: Exact 40-character main-branch commit to publish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  group: sandbox-oci-publication
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: ghcr.io/champ-x/napier-sandbox
+
+jobs:
+  publish:
+    if: github.repository == 'Champ-X/Napier' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Check out the exact source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify the dispatch source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          [[ "${SOURCE_SHA}" =~ ^[a-f0-9]{40}$ ]]
+          test "${GITHUB_SHA}" = "${SOURCE_SHA}"
+          test "$(git rev-parse HEAD)" = "${SOURCE_SHA}"
+          git merge-base --is-ancestor "${SOURCE_SHA}" origin/main
+          git diff --exit-code
+          git diff --cached --exit-code
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.16.0
+          cache: npm
+
+      - name: Install the transaction-capable Git runtime
+        run: |
+          set -euo pipefail
+          version=2.46.4
+          archive="git-${version}.tar.gz"
+          source_url="https://www.kernel.org/pub/software/scm/git/${archive}"
+          expected_sha256=90956cd1bb92472d498370819c8f5fae4bbc7f851b989240ec416b173a44f7cb
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential \
+            gettext \
+            libcurl4-gnutls-dev \
+            libexpat1-dev \
+            libssl-dev \
+            zlib1g-dev
+          curl --fail --location --silent --show-error \
+            "${source_url}" \
+            --output "${RUNNER_TEMP}/${archive}"
+          echo "${expected_sha256}  ${RUNNER_TEMP}/${archive}" | sha256sum --check
+          tar -xzf "${RUNNER_TEMP}/${archive}" -C "${RUNNER_TEMP}"
+          make -C "${RUNNER_TEMP}/git-${version}" \
+            -j2 \
+            prefix=/usr \
+            NO_TCLTK=YesPlease \
+            all
+          sudo make -C "${RUNNER_TEMP}/git-${version}" \
+            prefix=/usr \
+            NO_TCLTK=YesPlease \
+            install
+          test "$(git --version)" = "git version ${version}"
+          probe_root="$(mktemp -d "${RUNNER_TEMP}/napier-git-probe.XXXXXX")"
+          trap 'rm -rf "${probe_root}"' EXIT
+          git -C "${probe_root}" init --quiet --initial-branch=main
+          git -C "${probe_root}" \
+            -c user.name='Napier Release' \
+            -c user.email='napier@example.invalid' \
+            commit --quiet --allow-empty -m initial
+          git -C "${probe_root}" branch accepted
+          commit_sha="$(git -C "${probe_root}" rev-parse HEAD)"
+          printf 'start\nverify refs/heads/accepted %s\nsymref-update HEAD refs/heads/accepted oid %s\nprepare\ncommit\n' \
+            "${commit_sha}" \
+            "${commit_sha}" \
+            | git -C "${probe_root}" update-ref --no-deref --stdin
+          test "$(git -C "${probe_root}" symbolic-ref --short HEAD)" = accepted
+
+      - name: Install the locked workspace
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Chromium host dependencies
+        run: |
+          set -euo pipefail
+          node node_modules/playwright-core/cli.js install-deps chromium
+
+      - name: Install the pinned Browser
+        id: browser_install
+        run: |
+          set -euo pipefail
+          preview="$(npm run --silent napier -- setup --workspace . --component browser --jsonl)"
+          status="$(jq -er 'select(.kind == "napier.browser-runtime-setup-preview") | .status' <<<"${preview}")"
+          revision="$(jq -er 'select(.kind == "napier.browser-runtime-setup-preview") | .browserRevision' <<<"${preview}")"
+          [[ "${revision}" =~ ^[0-9]+$ ]]
+          browser_path="${HOME}/.cache/ms-playwright/chromium-${revision}/chrome-linux/chrome"
+          if [[ "${status}" == "installable" ]]; then
+            node -e 'import("./packages/runtime/dist/browser-runtime-setup.js").then(({installPinnedBrowserRuntime})=>installPinnedBrowserRuntime({env:process.env,signal:new AbortController().signal}))'
+          elif [[ "${status}" != "installed" && "${status}" != "ready" ]]; then
+            exit 2
+          fi
+          test -x "${browser_path}"
+          echo "path=${browser_path}" >> "${GITHUB_OUTPUT}"
+
+      - name: Admit the pinned Browser to the Ubuntu user-namespace sandbox
+        env:
+          BROWSER_PATH: ${{ steps.browser_install.outputs.path }}
+        run: |
+          set -euo pipefail
+          profile_path=/etc/apparmor.d/napier-playwright-chromium
+          sudo tee "${profile_path}" >/dev/null <<EOF
+          abi <abi/4.0>,
+          include <tunables/global>
+
+          profile napier-playwright-chromium ${BROWSER_PATH} flags=(unconfined) {
+            userns,
+            include if exists <local/napier-playwright-chromium>
+          }
+          EOF
+          sudo apparmor_parser -r "${profile_path}"
+
+      - name: Verify the pinned Browser through Napier
+        run: |
+          set -euo pipefail
+          preview="$(npm run --silent napier -- setup --workspace . --component browser --jsonl)"
+          preview_sha256="$(jq -er 'select(.kind == "napier.browser-runtime-setup-preview" and (.status == "installed" or .status == "ready")) | .contentSha256' <<<"${preview}")"
+          npm run --silent napier -- setup \
+            --workspace . \
+            --component browser \
+            --expected-preview "${preview_sha256}" \
+            --apply \
+            --jsonl \
+            > release-browser-setup.json
+          jq -e 'select(.kind == "napier.browser-runtime-setup-result" and .status == "ready" and .chromiumSandbox == true)' \
+            release-browser-setup.json \
+            >/dev/null
+          rm release-browser-setup.json
+
+      - name: Run the complete release gate
+        run: npm run check
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
+        with:
+          platforms: amd64,arm64
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare immutable publication inputs
+        id: prepare
+        env:
+          MODE: ${{ inputs.mode }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          version="$(node -p 'require("./package.json").version')"
+          test "${version}" = "0.1.0"
+          context_sha256="$(jq -er '.source.contextSha256' docs/artifacts/sandbox-oci-supply-chain-stage18.json)"
+          [[ "${context_sha256}" =~ ^[a-f0-9]{64}$ ]]
+          if [[ "${MODE}" == "bootstrap" ]]; then
+            tags="${IMAGE_NAME}:bootstrap-${SOURCE_SHA}"
+          else
+            tags="${IMAGE_NAME}:sha-${SOURCE_SHA}"
+          fi
+          existing_digest=""
+          if docker buildx imagetools inspect "${tags}" > release-evidence-existing.txt 2>/dev/null; then
+            existing_digest="$(awk '/^Digest:/ {print $2; exit}' release-evidence-existing.txt)"
+            [[ "${existing_digest}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          fi
+          rm -f release-evidence-existing.txt
+          if [[ -z "${existing_digest}" ]]; then
+            build_required=true
+          else
+            build_required=false
+          fi
+          {
+            echo "version=${version}"
+            echo "context_sha256=${context_sha256}"
+            echo "build_required=${build_required}"
+            echo "existing_digest=${existing_digest}"
+            echo "tags<<EOF"
+            echo "${tags}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Build and push the dual-architecture image
+        id: push
+        if: steps.prepare.outputs.build_required == 'true'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: docker/napier-sandbox
+          file: docker/napier-sandbox/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          pull: true
+          tags: ${{ steps.prepare.outputs.tags }}
+          labels: |
+            io.napier.sandbox.context-sha256=${{ steps.prepare.outputs.context_sha256 }}
+            org.opencontainers.image.revision=${{ inputs.source_sha }}
+          provenance: ${{ inputs.mode == 'release' && 'mode=max' || 'false' }}
+          sbom: ${{ inputs.mode == 'release' }}
+
+      - name: Resolve the immutable remote digest
+        id: resolve
+        env:
+          BUILT_DIGEST: ${{ steps.push.outputs.digest }}
+          EXISTING_DIGEST: ${{ steps.prepare.outputs.existing_digest }}
+        run: |
+          set -euo pipefail
+          digest="${BUILT_DIGEST:-${EXISTING_DIGEST}}"
+          [[ "${digest}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify the remote index closure
+        env:
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-evidence
+          [[ "${DIGEST}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          docker buildx imagetools inspect "${IMAGE_NAME}@${DIGEST}" --raw > release-evidence/remote-index.json
+          test "sha256:$(sha256sum release-evidence/remote-index.json | cut -d' ' -f1)" = "${DIGEST}"
+          platforms="$(jq -r '[.manifests[] | select(.platform.os == "linux" and (.platform.architecture == "amd64" or .platform.architecture == "arm64")) | "\(.platform.os)/\(.platform.architecture)"] | sort | unique | join("\n")' release-evidence/remote-index.json)"
+          test "${platforms}" = $'linux/amd64\nlinux/arm64'
+          runnable_count="$(jq '[.manifests[] | select(.platform.os != "unknown" or .platform.architecture != "unknown")] | length' release-evidence/remote-index.json)"
+          test "${runnable_count}" -eq 2
+          attestation_count="$(jq '[.manifests[] | select(.platform.os == "unknown" and .platform.architecture == "unknown")] | length' release-evidence/remote-index.json)"
+          if [[ "${MODE}" == "release" ]]; then
+            test "${attestation_count}" -ge 2
+            : > release-evidence/buildkit-attestation-predicates.jsonl
+            while IFS= read -r attestation_digest; do
+              docker buildx imagetools inspect \
+                "${IMAGE_NAME}@${attestation_digest}" \
+                --raw \
+                > release-evidence/buildkit-attestation-manifest.json
+              jq -c \
+                '[.layers[]?.annotations?["in-toto.io/predicate-type"] | select(type == "string")][]' \
+                release-evidence/buildkit-attestation-manifest.json \
+                >> release-evidence/buildkit-attestation-predicates.jsonl
+            done < <(
+              jq -r \
+                '.manifests[] | select(.platform.os == "unknown" and .platform.architecture == "unknown") | .digest' \
+                release-evidence/remote-index.json
+            )
+            rm release-evidence/buildkit-attestation-manifest.json
+            jq -se \
+              'unique as $types |
+               ($types | any(. == "https://spdx.dev/Document")) and
+               ($types | any(startswith("https://slsa.dev/provenance/")))' \
+              release-evidence/buildkit-attestation-predicates.jsonl \
+              >/dev/null
+          else
+            test "${attestation_count}" -eq 0
+          fi
+
+      - name: Verify authenticated platform execution
+        env:
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+          CONTEXT_SHA256: ${{ steps.prepare.outputs.context_sha256 }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          reference="${IMAGE_NAME}@${DIGEST}"
+          for platform in linux/amd64 linux/arm64; do
+            docker pull --platform "${platform}" "${reference}" >/dev/null
+            observed_context="$(docker image inspect --format '{{ index .Config.Labels "io.napier.sandbox.context-sha256" }}' "${reference}")"
+            observed_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "${reference}")"
+            test "${observed_context}" = "${CONTEXT_SHA256}"
+            test "${observed_revision}" = "${SOURCE_SHA}"
+            node_version="$(docker run --rm --platform "${platform}" "${reference}" /usr/local/bin/node --version)"
+            test "${node_version}" = "v24.16.0"
+            docker image rm "${reference}" >/dev/null
+          done
+
+      - name: Prove anonymous pull and execution
+        if: inputs.mode == 'release'
+        env:
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+          CONTEXT_SHA256: ${{ steps.prepare.outputs.context_sha256 }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          anonymous_config="$(mktemp -d)"
+          cleanup() {
+            rm -rf "${anonymous_config}"
+          }
+          trap cleanup EXIT
+          printf '{"auths":{}}\n' > "${anonymous_config}/config.json"
+          reference="${IMAGE_NAME}@${DIGEST}"
+          : > release-evidence/anonymous-platforms.jsonl
+          for platform in linux/amd64 linux/arm64; do
+            docker --config "${anonymous_config}" pull --platform "${platform}" "${reference}" >/dev/null
+            observed_context="$(docker image inspect --format '{{ index .Config.Labels "io.napier.sandbox.context-sha256" }}' "${reference}")"
+            observed_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "${reference}")"
+            test "${observed_context}" = "${CONTEXT_SHA256}"
+            test "${observed_revision}" = "${SOURCE_SHA}"
+            node_version="$(docker --config "${anonymous_config}" run --rm --platform "${platform}" "${reference}" /usr/local/bin/node --version)"
+            test "${node_version}" = "v24.16.0"
+            jq -cn \
+              --arg platform "${platform}" \
+              --arg contextSha256 "${observed_context}" \
+              --arg sourceSha "${observed_revision}" \
+              --arg nodeVersion "${node_version}" \
+              '{platform:$platform,anonymousPull:true,executed:true,contextSha256:$contextSha256,sourceSha:$sourceSha,nodeVersion:$nodeVersion}' \
+              >> release-evidence/anonymous-platforms.jsonl
+            docker image rm "${reference}" >/dev/null
+          done
+
+      - name: Install Cosign
+        if: inputs.mode == 'release'
+        uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62
+        with:
+          cosign-release: v3.0.6
+
+      - name: Sign the immutable index with GitHub OIDC
+        if: inputs.mode == 'release'
+        env:
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+        run: |
+          set -euo pipefail
+          reference="${IMAGE_NAME}@${DIGEST}"
+          cosign sign \
+            --yes \
+            --bundle release-evidence/cosign.bundle.json \
+            --annotations "source-sha=${GITHUB_SHA}" \
+            "${reference}"
+          cosign verify \
+            --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/publish-sandbox.yml@${GITHUB_REF}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            --certificate-github-workflow-sha "${GITHUB_SHA}" \
+            --annotations "source-sha=${GITHUB_SHA}" \
+            "${reference}" \
+            > release-evidence/cosign.verify.json
+          test "$(jq '.verificationMaterial.tlogEntries | length' release-evidence/cosign.bundle.json)" -ge 1
+
+      - name: Create and verify the external SLSA attestation
+        if: inputs.mode == 'release'
+        env:
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+          CONTEXT_SHA256: ${{ steps.prepare.outputs.context_sha256 }}
+        run: |
+          set -euo pipefail
+          reference="${IMAGE_NAME}@${DIGEST}"
+          jq -n \
+            --arg buildType "https://napier.local/github-actions/sandbox-oci/v1" \
+            --arg repository "${GITHUB_REPOSITORY}" \
+            --arg sourceSha "${GITHUB_SHA}" \
+            --arg contextSha256 "${CONTEXT_SHA256}" \
+            --arg builderId "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/attempts/${GITHUB_RUN_ATTEMPT}" \
+            '{
+              buildDefinition:{
+                buildType:$buildType,
+                externalParameters:{
+                  repository:$repository,
+                  sourceSha:$sourceSha,
+                  platforms:["linux/amd64","linux/arm64"],
+                  contextSha256:$contextSha256
+                },
+                internalParameters:{
+                  workflow:".github/workflows/publish-sandbox.yml",
+                  releaseGate:"npm run check"
+                },
+                resolvedDependencies:[]
+              },
+              runDetails:{
+                builder:{id:$builderId},
+                metadata:{
+                  invocationId:$builderId
+                },
+                byproducts:[]
+              }
+            }' > release-evidence/slsa-provenance-v1.json
+          cosign attest \
+            --yes \
+            --type slsaprovenance1 \
+            --predicate release-evidence/slsa-provenance-v1.json \
+            --bundle release-evidence/cosign-attestation.bundle.json \
+            "${reference}"
+          cosign verify-attestation \
+            --type slsaprovenance1 \
+            --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/publish-sandbox.yml@${GITHUB_REF}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            --certificate-github-workflow-sha "${GITHUB_SHA}" \
+            "${reference}" \
+            > release-evidence/cosign-attestation.verify.json
+          test "$(jq '.verificationMaterial.tlogEntries | length' release-evidence/cosign-attestation.bundle.json)" -ge 1
+
+      - name: Publish or verify the immutable version tag
+        if: inputs.mode == 'release'
+        env:
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          version_ref="${IMAGE_NAME}:${VERSION}"
+          existing_digest=""
+          if docker buildx imagetools inspect "${version_ref}" > release-evidence-version.txt 2>/dev/null; then
+            existing_digest="$(awk '/^Digest:/ {print $2; exit}' release-evidence-version.txt)"
+            [[ "${existing_digest}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          fi
+          rm -f release-evidence-version.txt
+          if [[ -n "${existing_digest}" ]]; then
+            test "${existing_digest}" = "${DIGEST}"
+          else
+            docker buildx imagetools create \
+              --tag "${version_ref}" \
+              "${IMAGE_NAME}@${DIGEST}"
+          fi
+
+      - name: Write the external release receipt
+        if: inputs.mode == 'release'
+        env:
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+          CONTEXT_SHA256: ${{ steps.prepare.outputs.context_sha256 }}
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          node -e 'import("./scripts/sandbox-external-publication-evidence.mjs").then(({writeSandboxExternalPublicationReceipt})=>writeSandboxExternalPublicationReceipt("release-evidence"))'
+          node -e 'import("./scripts/sandbox-external-publication-evidence.mjs").then(async({verifySandboxExternalPublicationEvidence})=>{const result=await verifySandboxExternalPublicationEvidence("release-evidence");if(!result.valid){for(const error of result.errors)console.error(error);process.exit(1)}})'
+
+      - name: Upload release evidence
+        if: inputs.mode == 'release'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sandbox-external-publication-${{ inputs.source_sha }}
+          path: release-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Explain the bootstrap visibility gate
+        if: inputs.mode == 'bootstrap'
+        run: |
+          {
+            echo "### Bootstrap image published"
+            echo
+            echo "The GHCR package now exists but remains private by default."
+            echo "An administrator must make \`napier-sandbox\` public in the package settings, then rerun this workflow in \`release\` mode with the same source SHA."
+            echo "No release signing, external attestation, anonymous-pull, or S1 completion claim was made by this bootstrap run."
+          } >> "${GITHUB_STEP_SUMMARY}"

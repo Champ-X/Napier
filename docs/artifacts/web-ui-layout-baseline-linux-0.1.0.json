@@ -1,7 +1,7 @@
 {
   "kind": "napier.web-ui-layout-baseline",
   "schemaVersion": 2,
-  "platform": "darwin",
+  "platform": "linux",
   "viewports": [
     {
       "width": 1600,
@@ -24,19 +24,19 @@
           "x": 252,
           "y": 76,
           "width": 1010,
-          "height": 62
+          "height": 61
         },
         "conversation": {
           "x": 252,
-          "y": 138,
+          "y": 137,
           "width": 1010,
-          "height": 309
+          "height": 304
         },
         "composer": {
           "x": 321,
-          "y": 667,
+          "y": 661,
           "width": 917,
-          "height": 214
+          "height": 220
         },
         "inspector": {
           "x": 1262,
@@ -46,9 +46,9 @@
         },
         "browserInspector": {
           "x": 1283,
-          "y": 186,
+          "y": 184,
           "width": 297,
-          "height": 156
+          "height": 143
         }
       }
     },
@@ -66,26 +66,26 @@
         "header": {
           "x": 252,
           "y": 0,
-          "width": 616,
+          "width": 610,
           "height": 76
         },
         "narrative": {
           "x": 252,
           "y": 76,
-          "width": 616,
-          "height": 62
+          "width": 610,
+          "height": 61
         },
         "conversation": {
           "x": 252,
-          "y": 138,
-          "width": 616,
-          "height": 115
+          "y": 137,
+          "width": 610,
+          "height": 125
         },
         "composer": {
           "x": 321,
-          "y": 473,
-          "width": 523,
-          "height": 308
+          "y": 482,
+          "width": 517,
+          "height": 299
         },
         "inspector": {
           "x": 862,
@@ -95,9 +95,9 @@
         },
         "browserInspector": {
           "x": 883,
-          "y": 186,
+          "y": 184,
           "width": 297,
-          "height": 156
+          "height": 143
         }
       }
     },
@@ -122,19 +122,19 @@
           "x": 232,
           "y": 76,
           "width": 668,
-          "height": 62
+          "height": 61
         },
         "conversation": {
           "x": 232,
-          "y": 138,
+          "y": 137,
           "width": 668,
-          "height": 125
+          "height": 135
         },
         "composer": {
           "x": 301,
-          "y": 483,
+          "y": 492,
           "width": 575,
-          "height": 298
+          "height": 289
         },
         "inspector": {
           "x": 470,
@@ -144,9 +144,9 @@
         },
         "browserInspector": {
           "x": 491,
-          "y": 230,
+          "y": 228,
           "width": 389,
-          "height": 141
+          "height": 131
         }
       }
     },
@@ -171,19 +171,19 @@
           "x": 68,
           "y": 76,
           "width": 322,
-          "height": 209
+          "height": 207
         },
         "conversation": {
           "x": 68,
-          "y": 285,
+          "y": 283,
           "width": 322,
-          "height": 103
+          "height": 118
         },
         "composer": {
           "x": 109,
-          "y": 518,
+          "y": 531,
           "width": 269,
-          "height": 316
+          "height": 303
         },
         "inspector": {
           "x": 84,
@@ -193,9 +193,9 @@
         },
         "browserInspector": {
           "x": 105,
-          "y": 230,
+          "y": 228,
           "width": 265,
-          "height": 156
+          "height": 143
         }
       }
     }

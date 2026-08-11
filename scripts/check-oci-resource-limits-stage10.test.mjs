@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 
 import { describe, it } from "vitest";
 
+import { validateOciResourceLimitsEvidence } from "./check-oci-resource-limits.mjs";
 import { canonicalJson, sha256 } from "./skill-load-fast-core-evidence-lib.mjs";
 
 const artifactUrl = new URL(
@@ -74,5 +75,26 @@ describe("OCI resource limits Stage 10 evidence", () => {
     assert.doesNotMatch(serialized, /\/Users\//u);
     assert.doesNotMatch(serialized, /unix:\/\//u);
     assert.doesNotMatch(serialized, /sk-[A-Za-z0-9_-]{16,}/u);
+  });
+
+  it("rejects image and resource-policy drift", async () => {
+    const value = JSON.parse(await readFile(artifactUrl, "utf8"));
+    const provenance = JSON.parse(
+      await readFile(
+        new URL(
+          "../docs/artifacts/sandbox-image-provenance-0.1.0.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    assert.deepEqual(validateOciResourceLimitsEvidence(value, provenance), []);
+
+    const tampered = structuredClone(value);
+    tampered.observedProductionProcess.memorySwapMaxBytes = 1;
+    assert.deepEqual(
+      validateOciResourceLimitsEvidence(tampered, provenance),
+      ["OCI resource limits evidence shape is invalid"],
+    );
   });
 });

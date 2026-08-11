@@ -1,6 +1,6 @@
-import { execFile } from "node:child_process";
 import {
   access,
+  cp,
   lstat,
   mkdir,
   readFile,
@@ -8,11 +8,9 @@ import {
   realpath,
 } from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
 
 import { sha256 } from "../packages/runtime/dist/index.js";
 
-const execFileAsync = promisify(execFile);
 const OMP_PACKAGE_NAME = "@oh-my-pi/pi-coding-agent";
 
 export async function createOpenWebComparisonOmpRuntime(input) {
@@ -94,7 +92,11 @@ async function copyPackageClosure(sourceNodeModules, targetNodeModules, root) {
     }
     const targetRoot = packagePath(targetNodeModules, packageName);
     await mkdir(path.dirname(targetRoot), { recursive: true, mode: 0o700 });
-    await execFileAsync("/bin/cp", ["-cR", sourceRoot, targetRoot]);
+    await cp(sourceRoot, targetRoot, {
+      recursive: true,
+      dereference: false,
+      verbatimSymlinks: true,
+    });
   };
   await visit(root);
 }

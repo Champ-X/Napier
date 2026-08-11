@@ -11,6 +11,7 @@ import {
   IMPLEMENTATION_COMMIT,
   immutableImplementationIdentity,
   LINE_BUDGET_FILES,
+  PROTECTED_EXCLUDED_PATHS,
   repairSnapshotForPaths,
   currentRepairSnapshot,
 } from "./sdk-capability-parity-identity.mjs";
@@ -293,6 +294,11 @@ async function verifyIdentity(value, verifyCurrent) {
     [...value.repairSnapshot.deletedPaths].sort(),
     value.repairSnapshot.deletedPaths,
   );
+  for (const file of PROTECTED_EXCLUDED_PATHS) {
+    assert.equal(value.repairSnapshot.changedPaths.includes(file), false);
+    assert.equal(value.repairSnapshot.deletedPaths.includes(file), false);
+    assert.equal(value.repairSnapshot.files[file], undefined);
+  }
   for (const file of value.repairSnapshot.deletedPaths) {
     assert.ok(value.repairSnapshot.changedPaths.includes(file));
     assert.equal(value.repairSnapshot.files[file], undefined);

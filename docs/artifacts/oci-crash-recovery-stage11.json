@@ -1,11 +1,11 @@
 {
   "kind": "napier.oci-crash-recovery-stage11",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T06:42:52.016Z",
+  "generatedAt": "2026-08-11T13:27:16.845Z",
   "image": {
-    "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
+    "id": "sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
     "platform": "linux/arm64",
-    "provenanceSha256": "cea0625e085acdd78a0941229a29bfdc5c0cb3dc226cf9d0a79d6e4753778e7c"
+    "provenanceSha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb"
   },
   "implementation": {
     "resourcePolicySha256": "e95d7afc88833609b7b3ef268725c5df36148241c36430bf0f7988a967a16448",
@@ -26,8 +26,8 @@
       "index": 1,
       "runtimeSignal": "SIGKILL",
       "serviceReady": true,
-      "serviceIdentitySha256": "4810713a916870bc5fcb4e5d02239c74303dbea9c55eb5055894ced5481e22f9",
-      "endpointSha256": "e53b63d47cdc1c06d689b4c712f7587c0e733280118c99c3f4c235962f0e829e",
+      "serviceIdentitySha256": "720f324700934f85be01b013876e47dd668704d7bf9fb57507fcd95e06767880",
+      "endpointSha256": "2a655c409d336b528dbe107544b05fccf3f9f21ea6814710d120b665e5c22f4e",
       "containerDeltaCount": 1,
       "networkDeltaCount": 1,
       "scratchDeltaCount": 1,
@@ -36,14 +36,14 @@
       "scratchCleanupVerified": true,
       "endpointClosedVerified": true,
       "exactBaselineRestored": true,
-      "cleanupDurationMs": 427
+      "cleanupDurationMs": 380
     },
     {
       "index": 2,
       "runtimeSignal": "SIGKILL",
       "serviceReady": true,
-      "serviceIdentitySha256": "952afe1adfa05c052bac5bc1ff28a13d2d7cf9a6ab3800d077d3646f7cffd92a",
-      "endpointSha256": "68e3b54f63ae35f323509e9d9e6713d2aacbed078e6cc4f7505b7c809280458f",
+      "serviceIdentitySha256": "f0d5c2db9de608e5f0ab4919724ea65e09ae63540cef50101a02825e250d3fa3",
+      "endpointSha256": "6bab3704c3677c9452fee483c478a3618163358282f8345ab3663a665002d761",
       "containerDeltaCount": 1,
       "networkDeltaCount": 1,
       "scratchDeltaCount": 1,
@@ -52,7 +52,7 @@
       "scratchCleanupVerified": true,
       "endpointClosedVerified": true,
       "exactBaselineRestored": true,
-      "cleanupDurationMs": 315
+      "cleanupDurationMs": 378
     }
   ],
   "recovery": {
@@ -87,5 +87,5 @@
       "full file-network-secret-resource failure injection"
     ]
   },
-  "contentSha256": "e6e434f66b28230043431d495e033154280452b259e259313c386a002c970e6b"
+  "contentSha256": "3653fc6f04975b7e829b358e04b1f171ab008d12f72396914a66aa15c73f9e05"
 }

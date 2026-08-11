@@ -26,7 +26,7 @@ import {
   verifyWebUiServerRestart,
 } from "./web-ui-e2e-narrative.mjs";
 import {
-  DEFAULT_WEB_UI_LAYOUT_BASELINE,
+  defaultWebUiLayoutBaselinePath,
   verifyWebUiLayoutBaseline,
   writeWebUiLayoutBaseline,
 } from "./web-ui-layout-baseline.mjs";
@@ -469,7 +469,7 @@ function createReceipt() {
 
 function parseArguments(args) {
   const options = {
-    layoutBaselinePath: DEFAULT_WEB_UI_LAYOUT_BASELINE,
+    layoutBaselinePath: defaultWebUiLayoutBaselinePath(),
     receiptPath: undefined,
     writeLayoutBaseline: false,
   };

@@ -195,18 +195,17 @@ export async function currentRepairPaths() {
     gitLines(["diff", "--name-only", IMPLEMENTATION_COMMIT]),
     gitLines(["ls-files", "--others", "--exclude-standard"]),
   ]);
-  const taskUntracked = untracked.filter(
-    (file) => !PROTECTED_EXCLUDED_PATHS.includes(file),
-  );
   return [
     ...new Set([
       ...committed,
       ...worktree,
-      ...taskUntracked,
+      ...untracked,
       ...CAPTURE_OUTPUT_PATHS,
       ...REPAIR_CONTENT_EXCLUDED_PATHS,
     ]),
-  ].sort();
+  ]
+    .filter((file) => !PROTECTED_EXCLUDED_PATHS.includes(file))
+    .sort();
 }
 
 export async function deterministicExecutionClosure(overrides = new Map()) {

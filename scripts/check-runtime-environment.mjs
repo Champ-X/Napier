@@ -6,6 +6,11 @@ import { fileURLToPath } from "node:url";
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 const requiredComponents = ["sqlite", "openssl", "uv", "v8"];
+const supportedHosts = [
+  { platform: "darwin", arch: "arm64" },
+  { platform: "linux", arch: "arm64" },
+  { platform: "linux", arch: "x64" },
+];
 
 export async function auditRuntimeEnvironment(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -55,6 +60,16 @@ export async function auditRuntimeEnvironment(options = {}) {
       errors.push(`process.versions.${component} must be available`);
     }
   }
+  const platform = options.platform ?? process.platform;
+  const arch = options.arch ?? process.arch;
+  const hostSupported = supportedHosts.some(
+    (host) => host.platform === platform && host.arch === arch,
+  );
+  if (!hostSupported) {
+    errors.push(
+      `Host ${platform}/${arch} is not in the supported release matrix`,
+    );
+  }
 
   return {
     ok: errors.length === 0,
@@ -65,8 +80,9 @@ export async function auditRuntimeEnvironment(options = {}) {
     nodeVersion,
     nodeRange,
     nodeSatisfies,
-    platform: options.platform ?? process.platform,
-    arch: options.arch ?? process.arch,
+    platform,
+    arch,
+    hostSupported,
     components: componentVersions,
   };
 }
@@ -74,7 +90,7 @@ export async function auditRuntimeEnvironment(options = {}) {
 export function createRuntimeEnvironmentReceipt(result) {
   return {
     type: "napier.runtime-environment-audit",
-    schemaVersion: 1,
+    schemaVersion: 2,
     ok: result.ok,
     package: {
       name: result.packageName ?? null,
@@ -85,10 +101,9 @@ export function createRuntimeEnvironmentReceipt(result) {
       version: result.nodeVersion,
       required: result.nodeRange ?? null,
       satisfies: result.nodeSatisfies,
-      platform: result.platform,
-      arch: result.arch,
       components: result.components,
     },
+    supportedHosts,
     errors: result.errors,
   };
 }
@@ -135,7 +150,10 @@ export async function verifyRuntimeEnvironmentReceipt(options = {}) {
   }
   if (observedReceipt) {
     validateRuntimeEnvironmentReceiptShape(observedReceipt, errors);
-    if (stableJson(observedReceipt) !== stableJson(expectedReceipt)) {
+    if (
+      stableJson(observedReceipt) !== stableJson(expectedReceipt) ||
+      !currentAudit.hostSupported
+    ) {
       errors.push(
         "receipt does not match the current runtime environment audit",
       );
@@ -319,8 +337,8 @@ function validateRuntimeEnvironmentReceiptShape(receipt, errors) {
   if (receipt.type !== "napier.runtime-environment-audit") {
     errors.push("receipt type must be napier.runtime-environment-audit");
   }
-  if (receipt.schemaVersion !== 1) {
-    errors.push("receipt schemaVersion must be 1");
+  if (receipt.schemaVersion !== 2) {
+    errors.push("receipt schemaVersion must be 2");
   }
   if (receipt.ok !== true) {
     errors.push("receipt must represent a passing audit");
@@ -343,7 +361,7 @@ function validateRuntimeEnvironmentReceiptShape(receipt, errors) {
   if (!isRecord(receipt.node)) {
     errors.push("receipt node must be an object");
   } else {
-    for (const field of ["version", "required", "platform", "arch"]) {
+    for (const field of ["version", "required"]) {
       if (typeof receipt.node[field] !== "string") {
         errors.push(`receipt node.${field} must be a string`);
       }
@@ -360,6 +378,12 @@ function validateRuntimeEnvironmentReceiptShape(receipt, errors) {
         }
       }
     }
+  }
+  if (
+    !Array.isArray(receipt.supportedHosts) ||
+    stableJson(receipt.supportedHosts) !== stableJson(supportedHosts)
+  ) {
+    errors.push("receipt supportedHosts must match the release matrix");
   }
   if (!Array.isArray(receipt.errors)) {
     errors.push("receipt errors must be an array");

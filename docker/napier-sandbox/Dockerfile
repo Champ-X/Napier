@@ -1,10 +1,10 @@
-FROM node:24.16.0-bookworm-slim@sha256:2c87ef9bd3c6a3bd4b472b4bec2ce9d16354b0c574f736c476489d09f560a203
+FROM node:24.16.0-trixie-slim@sha256:45fbb3ca3b6c7e6646cd2889d0ac7bf314bb180036da792221fc2f48fe4d43fb
 
 RUN apt-get update \
   && apt-get install --yes --no-install-recommends \
-    ca-certificates \
-    git=1:2.39.5-0+deb12u2 \
-    python3=3.11.2-1+b1 \
+    ca-certificates=20250419 \
+    git=1:2.47.3-0+deb13u1 \
+    python3=3.13.5-1 \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json /opt/napier/

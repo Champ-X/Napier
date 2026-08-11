@@ -9,6 +9,11 @@ import {
 } from "./git-inspect-arguments.js";
 
 export const GIT_BRANCH_SWITCH_REFLOG_MESSAGE = "napier switch branch";
+export const MINIMUM_GIT_BRANCH_SWITCH_VERSION = "2.46.0";
+
+export function gitBranchSwitchVersionArguments(): string[] {
+  return ["--version"];
+}
 
 export function gitSwitchBranchArguments(
   repository: GitArgumentRepository,
@@ -64,6 +69,10 @@ export function gitBranchSwitchArgumentsSha256(
     canonicalJson({
       configPolicyArguments: gitConfigPolicyArguments(repository),
       configPolicySha256: gitConfigPolicySha256("switch"),
+      runtimeVersion: {
+        arguments: gitBranchSwitchVersionArguments(),
+        minimum: MINIMUM_GIT_BRANCH_SWITCH_VERSION,
+      },
       head: gitHeadCommitArguments(repository),
       target: gitRefCommitArguments(repository, "$TARGET_BRANCH_REF"),
       switch: gitSwitchBranchArguments(repository),

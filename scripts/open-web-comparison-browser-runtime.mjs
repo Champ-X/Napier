@@ -1,8 +1,13 @@
-import { execFile } from "node:child_process";
-import { lstat, mkdir, readFile, readdir, realpath } from "node:fs/promises";
+import {
+  cp,
+  lstat,
+  mkdir,
+  readFile,
+  readdir,
+  realpath,
+} from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
-import { promisify } from "node:util";
 
 import {
   canonicalJson,
@@ -10,7 +15,6 @@ import {
   sha256File,
 } from "../packages/runtime/dist/index.js";
 
-const execFileAsync = promisify(execFile);
 const MAX_RUNTIME_FILES = 1_024;
 const MAX_RUNTIME_BYTES = 512 * 1024 * 1024;
 
@@ -22,9 +26,11 @@ export async function createOpenWebComparisonBrowserRuntime(input) {
     "omp-browser-runtime-image",
   );
   await mkdir(runtimeRoot, { recursive: false, mode: 0o700 });
-  await execFileAsync("/bin/cp", ["-cR", `${sourceRoot}/.`, runtimeRoot], {
-    timeout: 120_000,
-    maxBuffer: 64 * 1024,
+  await cp(sourceRoot, runtimeRoot, {
+    recursive: true,
+    dereference: false,
+    force: true,
+    verbatimSymlinks: true,
   });
   const canonicalRuntimeRoot = await realpath(runtimeRoot);
   const executablePath = path.join(

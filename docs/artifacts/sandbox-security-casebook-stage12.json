@@ -1,11 +1,11 @@
 {
   "kind": "napier.sandbox-security-casebook-stage12",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T06:42:58.092Z",
+  "generatedAt": "2026-08-11T13:27:22.135Z",
   "image": {
-    "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
+    "id": "sha256:aac9f04b81bf3994d8c4629381ff11eb728094c7a2facd452d7ff99e224ec662",
     "platform": "linux/arm64",
-    "provenanceSha256": "cea0625e085acdd78a0941229a29bfdc5c0cb3dc226cf9d0a79d6e4753778e7c"
+    "provenanceSha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb"
   },
   "implementation": {
     "resourcePolicySha256": "e95d7afc88833609b7b3ef268725c5df36148241c36430bf0f7988a967a16448",
@@ -27,42 +27,42 @@
       "status": "passed",
       "reason": "read_only_workspace_mount",
       "evidenceSha256": "839fddb0a9f798271e4d97426259df567c61cf0c69fcd19f87dec9b04a50cf30",
-      "durationMs": 263
+      "durationMs": 193
     },
     {
       "id": "outside_read_denied",
       "status": "passed",
       "reason": "outside_path_not_mounted",
       "evidenceSha256": "7acff5264981de1b9a6b8ebc9cb244bb114ab51c034b3667fa8807d9eab1799e",
-      "durationMs": 272
+      "durationMs": 188
     },
     {
       "id": "secret_inheritance_denied",
       "status": "passed",
       "reason": "fixed_secret_free_environment",
       "evidenceSha256": "045ebc62c392e6138415d00c128edbeb395df3a8ba238dfd1f83278685acd5b6",
-      "durationMs": 256
+      "durationMs": 193
     },
     {
       "id": "private_network_denied",
       "status": "passed",
       "reason": "network_namespace_denied",
       "evidenceSha256": "52638f7aa11e30eee97bb82fb91e19b43ce05ec671bf171841de9e7c2b6b04ca",
-      "durationMs": 204
+      "durationMs": 185
     },
     {
       "id": "temporary_storage_exhausted",
       "status": "passed",
       "reason": "tmpfs_size_limit",
       "evidenceSha256": "2457cf7688cb1114703f044725357b720a9cec019cd570841bb2a23cabaf0180",
-      "durationMs": 239
+      "durationMs": 209
     },
     {
       "id": "process_limit_enforced",
       "status": "passed",
       "reason": "pids_cgroup_limit",
       "evidenceSha256": "d4b15faa70d29332e25305d12a912c6e5d75bc3083e8502bf59da34ad0269acf",
-      "durationMs": 446,
+      "durationMs": 321,
       "observedCount": 248,
       "rejectedCount": 152
     },
@@ -71,35 +71,35 @@
       "status": "passed",
       "reason": "memory_cgroup_kill",
       "evidenceSha256": "d5ce127372eac78437775c4b92a48cd9faa9996d47fa748d36f567b6b74b5ede",
-      "durationMs": 537
+      "durationMs": 583
     },
     {
       "id": "wall_time_enforced",
       "status": "passed",
       "reason": "wall_time_limit",
       "evidenceSha256": "be21ee202c61700b59be782197476e3d3fc4770319d683eab032d0a62cdd8b79",
-      "durationMs": 1132
+      "durationMs": 1122
     },
     {
       "id": "output_limit_enforced",
       "status": "passed",
       "reason": "output_character_limit",
       "evidenceSha256": "3d2045d484de619ed33906007d5a217a202e2072eba48bd594647e4da70f0355",
-      "durationMs": 217
+      "durationMs": 190
     },
     {
       "id": "cancellation_enforced",
       "status": "passed",
       "reason": "abort_terminates_process",
       "evidenceSha256": "3ae0c811738cbde00c5d411b40823897175f963352f6431b5a6f9220c83f3303",
-      "durationMs": 388
+      "durationMs": 392
     },
     {
       "id": "identity_drift_rejected",
       "status": "passed",
       "reason": "configured_identity_mismatch",
-      "evidenceSha256": "09d6b686cdbda2b7040df28f6f0b499d25efc11da1301eed36c054112f4983ed",
-      "durationMs": 128
+      "evidenceSha256": "6c0b452dfba5c0dd1c84e4b5e2876ecc331d195e663f9ddf234ee7e86a9fefa2",
+      "durationMs": 119
     }
   ],
   "resourceClosure": {
@@ -129,5 +129,5 @@
       "Windows and Linux host product acceptance"
     ]
   },
-  "contentSha256": "b84d5d7b0f828989eb18621678a06a342c69a5aae66f542cf2076ff99aa99470"
+  "contentSha256": "9b7e041b732c705c5a279af494bca24578ea897fd50f99b2e9808b635d6ce398"
 }

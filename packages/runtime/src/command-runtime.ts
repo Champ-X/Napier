@@ -28,6 +28,7 @@ const PYTHON_RUNTIME_REQUIRED_ASSETS = [
   "enum.py",
   "functools.py",
   "io.py",
+  "importlib/_bootstrap_external.py",
   "json/__init__.py",
   "json/decoder.py",
   "json/encoder.py",
@@ -81,6 +82,7 @@ const PYTHON_RUNTIME_OPTIONAL_ASSETS = [
   "traceback.py",
   "warnings.py",
   "weakref.py",
+  "zipimport.py",
 ] as const;
 const PYTHON_RUNTIME_EXTENSION_PREFIXES = [
   "_heapq.",

@@ -24,6 +24,17 @@ describe("SDK capability parity evidence verifier", () => {
     await verifyArtifacts(EVIDENCE_DIRECTORY, { verifyCurrent: true });
   }, 20_000);
 
+  test("excludes protected user files from the repair snapshot", async () => {
+    const evidence = await readJson(EVIDENCE_DIRECTORY, "evidence.json");
+    expect(evidence.identity.repairSnapshot.changedPaths).not.toContain(
+      "goal.md",
+    );
+    expect(evidence.identity.repairSnapshot.deletedPaths).not.toContain(
+      "goal.md",
+    );
+    expect(evidence.identity.repairSnapshot.files["goal.md"]).toBeUndefined();
+  });
+
   test("locks the deterministic execution closures and exclusions", async () => {
     const evidence = await readJson(EVIDENCE_DIRECTORY, "evidence.json");
     const { fourStateParity, productionServerTrace } =

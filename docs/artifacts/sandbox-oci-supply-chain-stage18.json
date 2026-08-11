@@ -1,15 +1,15 @@
 {
   "kind": "napier.sandbox-oci-supply-chain-stage18",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T09:19:41.554Z",
+  "generatedAt": "2026-08-11T13:31:06.718Z",
   "source": {
     "dockerfilePath": "docker/napier-sandbox/Dockerfile",
-    "dockerfileSha256": "8f6af9646f2239818267b25b0b948d44c62eb85a63844dc45c1dfebb77e1bcef",
+    "dockerfileSha256": "9600cd986d716f9ed7f022e0027d91f4507b472baa1439d5e96f4f3d6d788fe1",
     "packageJsonPath": "docker/napier-sandbox/package.json",
     "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
     "packageLockPath": "docker/napier-sandbox/package-lock.json",
     "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
-    "contextSha256": "d36e200e04523a53d528b1cb9a21f53af8afc8cda7c1a126146910a6811a6007"
+    "contextSha256": "6c76e506c368c10ff530806bddde67dcd07d269102c62965cb3ff4b4cbd3cbca"
   },
   "implementation": {
     "checkScriptSha256": "7b11e003c4666979f6567408c02d97a65a269806deae82d0bb3450a042b29408",
@@ -32,65 +32,65 @@
   },
   "publication": {
     "layoutVersion": "1.0.0",
-    "rootIndexSha256": "a7f812f3b6bff41c1c0671b1ca32295b5e8788902bb144cae1f03dbd2768d00e",
-    "imageIndexDigest": "sha256:eae3da56c59a40bcf11ea9a0b7bf8d827cafe626806047cb36355825898ba672",
+    "rootIndexSha256": "202ec07978cb367b3b4cc44552baf34e5e96b8a49b4ca29041210e2007eb6882",
+    "imageIndexDigest": "sha256:09d08b0f7cafb81b9a5056f25281e6eade3a7e961b9fb6d1e84c29cc4a27743a",
     "imageIndexBytes": 647,
     "platforms": [
       {
         "platform": "linux/amd64",
-        "manifestDigest": "sha256:57e009b1f94efdbf2f74ddcd3f9ece947a2c4b0d6de53ad2861955c9aab84e6d",
+        "manifestDigest": "sha256:435d8631c5e2c7aeb22c87701b2308f509e318d04e4ef5ccf4bb98e7a9444563",
         "manifestBytes": 1819,
-        "configDigest": "sha256:0afbb17aa6060f5b885e0c8f6827398738de9348c9013e67f5a929a91da9a966",
+        "configDigest": "sha256:b74213a57961d5c2f26bb70eccd155eae7d4f2cc08e71031fbf3e6f66b8591c1",
         "layerCount": 8,
-        "layerSetSha256": "e59b1e2469761cc3d6a794bcf96f21e3139cd7d25bb8eaecb2476fc7da3c448c",
-        "contextSha256": "d36e200e04523a53d528b1cb9a21f53af8afc8cda7c1a126146910a6811a6007"
+        "layerSetSha256": "55156dcb0bac7c6b231f77bcbdc999727ea4ccb4f0540c1c1ed3e25f6561441b",
+        "contextSha256": "6c76e506c368c10ff530806bddde67dcd07d269102c62965cb3ff4b4cbd3cbca"
       },
       {
         "platform": "linux/arm64",
-        "manifestDigest": "sha256:57659cba10d490c0b42c377c00708e11932c9bef4f18ab49540c877c301972b5",
+        "manifestDigest": "sha256:a5d2ee353c607383337b82e8f3af7d3092984a26081f36c8040e65ffe79e920c",
         "manifestBytes": 1819,
-        "configDigest": "sha256:7b5f4229a0c862255751d50ce24ae58f58abaddd94052a5336a166b95e53dad6",
+        "configDigest": "sha256:fba927f61573d1defc7a73fce45db49518691f09a1304cc1f522cd97f05f10b2",
         "layerCount": 8,
-        "layerSetSha256": "9e87e1136a2c88ac878273e7f0a76ac7de04e8d9d1b6835966bdb6ab8ac3932b",
-        "contextSha256": "d36e200e04523a53d528b1cb9a21f53af8afc8cda7c1a126146910a6811a6007"
+        "layerSetSha256": "1ce190b3f40e0651ba3b1c76d4787af9a0ca2e611a9a18cafcf5eba4a1bf67c2",
+        "contextSha256": "6c76e506c368c10ff530806bddde67dcd07d269102c62965cb3ff4b4cbd3cbca"
       }
     ],
     "blobCount": 21,
-    "blobBytes": 293884358,
-    "blobSetSha256": "d5853415e6e13ecd2a4f979e8a4ac352745827687cd255769982968e662c0431",
+    "blobBytes": 301459165,
+    "blobSetSha256": "158926309ebe93634f91496797af4bcbf399ed0b28b91fb02f28a760f4008872",
     "allBlobDigestsVerified": true,
     "completeReachabilityClosure": true,
-    "evidenceSha256": "bd3ceec4a0482c4372c469a67e38fef075bcc13bdb34d14b07b8a71a1c96b191",
+    "evidenceSha256": "c363667017c6504719e28fd40326f9a266ba1a333c615feda636565fb254d94e",
     "buildStatus": "passed",
-    "buildOutputSha256": "44b7c4bd21af4967ebe99049f304aa76621177795262739b47af2a305c1177bf",
+    "buildOutputSha256": "0bc8d796e6c65eac0138f134465b4ed1ce13b2ec1fdd33284df0869342fa1b38",
     "buildOutputBytes": 72,
-    "durationMs": 2280
+    "durationMs": 1568
   },
   "signing": {
     "algorithm": "Ed25519",
     "keyOrigin": "ephemeral-memory",
-    "keyId": "333fd9bad20b672e3edb4e86a99634411152d8ba92382206eb3d4cb0edd95464",
-    "publicKeySpki": "MCowBQYDK2VwAyEA0J+B6IACNtd8RqXyWDvWdmYQSpBszOZ4XOkaYdIwsZI=",
+    "keyId": "058b59d766d668a780cf202eaa508ecf37200f99cec42944dc0877b8e616eace",
+    "publicKeySpki": "MCowBQYDK2VwAyEA/tQz+cH54IkQDT5OH9LYZ4SKOsyNA25fpl+DHKAckF8=",
     "statement": {
       "kind": "napier.sandbox-oci-index-signature-statement",
       "schemaVersion": 1,
       "subject": {
         "name": "napier-sandbox",
-        "digest": "sha256:eae3da56c59a40bcf11ea9a0b7bf8d827cafe626806047cb36355825898ba672"
+        "digest": "sha256:09d08b0f7cafb81b9a5056f25281e6eade3a7e961b9fb6d1e84c29cc4a27743a"
       },
       "source": {
         "dockerfilePath": "docker/napier-sandbox/Dockerfile",
-        "dockerfileSha256": "8f6af9646f2239818267b25b0b948d44c62eb85a63844dc45c1dfebb77e1bcef",
+        "dockerfileSha256": "9600cd986d716f9ed7f022e0027d91f4507b472baa1439d5e96f4f3d6d788fe1",
         "packageJsonPath": "docker/napier-sandbox/package.json",
         "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
         "packageLockPath": "docker/napier-sandbox/package-lock.json",
         "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
-        "contextSha256": "d36e200e04523a53d528b1cb9a21f53af8afc8cda7c1a126146910a6811a6007"
+        "contextSha256": "6c76e506c368c10ff530806bddde67dcd07d269102c62965cb3ff4b4cbd3cbca"
       },
       "platformSetSha256": "99c5c9d6930bd8a556d440993c6eb9b15577e00bff3205b97b9fbf07211b5d72",
-      "publicationEvidenceSha256": "bd3ceec4a0482c4372c469a67e38fef075bcc13bdb34d14b07b8a71a1c96b191"
+      "publicationEvidenceSha256": "c363667017c6504719e28fd40326f9a266ba1a333c615feda636565fb254d94e"
     },
-    "signature": "xe2O--yla2Mtkgv2ahbaf32i_TEtzaV1tFhGyrS1S05Hn57F5UxmLEbon-iOxhXaq5a-OjFZYWbj2So72iKeDg",
+    "signature": "GITcZSP8jjtKb_ez89asbxZFGddeGd0lLFlIkCNkzHYn5aQDa44zHZ1EB7HbYm1V79v32NGHSllMDBqh2Ta9Cw",
     "verified": true,
     "privateKeyRetained": false,
     "transparencyLogRecorded": false
@@ -100,19 +100,19 @@
     "statementType": "https://in-toto.io/Statement/v1",
     "predicateType": "https://slsa.dev/provenance/v1",
     "keyOrigin": "ephemeral-memory",
-    "keyId": "b5c524e4654558fc63f274fff5f2e863d954a0e7af2266e3d3651f033c26335d",
-    "publicKeySpki": "MCowBQYDK2VwAyEAUwfsPRv0kWrE3JmQhSujVc6jv638OGmSktoCN83eY8c=",
+    "keyId": "d2355acc76b98d59b8d7fed9986c0b4f21004c6efcc3f46742d99198e2229489",
+    "publicKeySpki": "MCowBQYDK2VwAyEAEK0Sivv617weWWOk6TczaU245Rogyah6YLeMGuU+82A=",
     "envelope": {
       "payloadType": "application/vnd.in-toto+json",
-      "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiYnVpbGREZWZpbml0aW9uIjp7ImJ1aWxkVHlwZSI6Imh0dHBzOi8vbmFwaWVyLmxvY2FsL2J1aWxka2l0L29jaS1sYXlvdXQvdjEiLCJleHRlcm5hbFBhcmFtZXRlcnMiOnsicGxhdGZvcm1zIjpbImxpbnV4L2FtZDY0IiwibGludXgvYXJtNjQiXSwic291cmNlIjp7ImNvbnRleHRTaGEyNTYiOiJkMzZlMjAwZTA0NTIzYTUzZDUyOGIxY2I5YTIxZjUzYWY4YWZjOGNkYTdjMWExMjYxNDY5MTBhNjgxMWE2MDA3IiwiZG9ja2VyZmlsZVBhdGgiOiJkb2NrZXIvbmFwaWVyLXNhbmRib3gvRG9ja2VyZmlsZSIsImRvY2tlcmZpbGVTaGEyNTYiOiI4ZjZhZjk2NDZmMjIzOTgxODI2N2IyNWIwYjk0OGQ0NGM2MmViODVhNjM4NDRkYzQ1YzFkZmViYjc3ZTFiY2VmIiwicGFja2FnZUpzb25QYXRoIjoiZG9ja2VyL25hcGllci1zYW5kYm94L3BhY2thZ2UuanNvbiIsInBhY2thZ2VKc29uU2hhMjU2IjoiNGEzZWI3MTczNWU1ZjcwMjRiYmYxNmYyMmVlOTA3ZjRiNzAyNGE3YzMyNmFiZjA5ZjNkZjExNDY2MDljM2QzMSIsInBhY2thZ2VMb2NrUGF0aCI6ImRvY2tlci9uYXBpZXItc2FuZGJveC9wYWNrYWdlLWxvY2suanNvbiIsInBhY2thZ2VMb2NrU2hhMjU2IjoiNGI2MDBjMzI5N2E2M2ZjNTAxYTNjYTYxOWVhZTljYmY5M2U0ZmM4M2FkY2Q1MjdmNDk2NTk1MGExNjU4MWRjNSJ9fSwiaW50ZXJuYWxQYXJhbWV0ZXJzIjp7ImJ1aWxka2l0UHJvdmVuYW5jZUVtYmVkZGVkIjpmYWxzZSwiZXh0ZXJuYWxSZWdpc3RyeVB1Ymxpc2hlZCI6ZmFsc2UsInNib21FbWJlZGRlZCI6ZmFsc2V9LCJyZXNvbHZlZERlcGVuZGVuY2llcyI6W119LCJydW5EZXRhaWxzIjp7ImJ1aWxkZXIiOnsiaWQiOiJuYXBpZXI6YnVpbGRraXQ6Y2U4ODJiMWQ0ZTY2ZTE5MGMwZTRhODQwMGQwMzI3YTA2NTczMjRhYjI0OWI1NjQ0MzA1NTY0MjU3OGQ2MDhhNSJ9LCJtZXRhZGF0YSI6eyJmaW5pc2hlZE9uIjoiMjAyNi0wOC0xMVQwOToxOTo0MS4wNzZaIiwiaW52b2NhdGlvbklkIjoiMmVlMTk3YTE1YTI1OTUyNzQyNGY3N2YxYWQxYzM4OTVkNDYyYTY1Y2UzNmUxZGJjYjRiYjRjYWEwMWQ2MDAwZSIsInN0YXJ0ZWRPbiI6IjIwMjYtMDgtMTFUMDk6MTk6MzguNzk2WiJ9fX0sInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjEiLCJzdWJqZWN0IjpbeyJkaWdlc3QiOnsic2hhMjU2IjoiZWFlM2RhNTZjNTlhNDBiY2YxMWVhOWEwYjdiZjhkODI3Y2FmZTYyNjgwNjA0N2NiMzYzNTU4MjU4OThiYTY3MiJ9LCJuYW1lIjoibmFwaWVyLXNhbmRib3gifV19",
+      "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiYnVpbGREZWZpbml0aW9uIjp7ImJ1aWxkVHlwZSI6Imh0dHBzOi8vbmFwaWVyLmxvY2FsL2J1aWxka2l0L29jaS1sYXlvdXQvdjEiLCJleHRlcm5hbFBhcmFtZXRlcnMiOnsicGxhdGZvcm1zIjpbImxpbnV4L2FtZDY0IiwibGludXgvYXJtNjQiXSwic291cmNlIjp7ImNvbnRleHRTaGEyNTYiOiI2Yzc2ZTUwNmMzNjhjMTBmZjUzMDgwNmJkZGRlNjdkY2QwN2QyNjkxMDJjNjI5NjVjYjNmZjRiNGNiZDNjYmNhIiwiZG9ja2VyZmlsZVBhdGgiOiJkb2NrZXIvbmFwaWVyLXNhbmRib3gvRG9ja2VyZmlsZSIsImRvY2tlcmZpbGVTaGEyNTYiOiI5NjAwY2Q5ODZkNzE2ZjllZDdmMDIyZTAwMjdkOTFmNDUwN2I0NzJiYWExNDM5ZDVlOTZmNGYzZDZkNzg4ZmUxIiwicGFja2FnZUpzb25QYXRoIjoiZG9ja2VyL25hcGllci1zYW5kYm94L3BhY2thZ2UuanNvbiIsInBhY2thZ2VKc29uU2hhMjU2IjoiNGEzZWI3MTczNWU1ZjcwMjRiYmYxNmYyMmVlOTA3ZjRiNzAyNGE3YzMyNmFiZjA5ZjNkZjExNDY2MDljM2QzMSIsInBhY2thZ2VMb2NrUGF0aCI6ImRvY2tlci9uYXBpZXItc2FuZGJveC9wYWNrYWdlLWxvY2suanNvbiIsInBhY2thZ2VMb2NrU2hhMjU2IjoiNGI2MDBjMzI5N2E2M2ZjNTAxYTNjYTYxOWVhZTljYmY5M2U0ZmM4M2FkY2Q1MjdmNDk2NTk1MGExNjU4MWRjNSJ9fSwiaW50ZXJuYWxQYXJhbWV0ZXJzIjp7ImJ1aWxka2l0UHJvdmVuYW5jZUVtYmVkZGVkIjpmYWxzZSwiZXh0ZXJuYWxSZWdpc3RyeVB1Ymxpc2hlZCI6ZmFsc2UsInNib21FbWJlZGRlZCI6ZmFsc2V9LCJyZXNvbHZlZERlcGVuZGVuY2llcyI6W119LCJydW5EZXRhaWxzIjp7ImJ1aWxkZXIiOnsiaWQiOiJuYXBpZXI6YnVpbGRraXQ6Y2U4ODJiMWQ0ZTY2ZTE5MGMwZTRhODQwMGQwMzI3YTA2NTczMjRhYjI0OWI1NjQ0MzA1NTY0MjU3OGQ2MDhhNSJ9LCJtZXRhZGF0YSI6eyJmaW5pc2hlZE9uIjoiMjAyNi0wOC0xMVQxMzozMTowNi4xNTZaIiwiaW52b2NhdGlvbklkIjoiNzliOWJmZmFkZWExOTVlMzRmZWNhNjRjMzkwOTU0MTU2YjFiODEzZWYwZmE1ZjNjZWQ4ZTUwZTk0NTY1OGVlZiIsInN0YXJ0ZWRPbiI6IjIwMjYtMDgtMTFUMTM6MzE6MDQuNTg4WiJ9fX0sInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjEiLCJzdWJqZWN0IjpbeyJkaWdlc3QiOnsic2hhMjU2IjoiMDlkMDhiMGY3Y2FmYjgxYjlhNTA1NmYyNTI4MWU2ZWFkZTNhN2U5NjFiOWZiNmQxZTg0YzI5Y2M0YTI3NzQzYSJ9LCJuYW1lIjoibmFwaWVyLXNhbmRib3gifV19",
       "signatures": [
         {
-          "keyid": "b5c524e4654558fc63f274fff5f2e863d954a0e7af2266e3d3651f033c26335d",
-          "sig": "EzpLSQl/rnZAY01CLWOAqzchUu1ID25dXxhiYOmtJsAxs+HdTomg8emd89wwSF7hCQlOFpI2QgdtNNlpZPGAAg=="
+          "keyid": "d2355acc76b98d59b8d7fed9986c0b4f21004c6efcc3f46742d99198e2229489",
+          "sig": "jBuy9Oad9lcvMPAJ9K0hTT74YmtlmwPKzdvK1gB6MOH7QhazpAdLZ/pZOCr1TsBjaL9IVMUSSay1DXBgH8BTBw=="
         }
       ]
     },
-    "envelopeSha256": "5f5ea65d461d4610691ef75cf53ef42bf69feb672f3b69e8e0f2b93187f87365",
+    "envelopeSha256": "ca1746f1dd7bd7d0472dd0ac053a8af06e4ae1bed982a968442a818155633316",
     "verified": true,
     "privateKeyRetained": false,
     "externalAttestation": false
@@ -152,5 +152,5 @@
       "Windows and Linux host product acceptance"
     ]
   },
-  "contentSha256": "3a217380f79f58515749fa75fd46c0b8bbbf10d36b1b75c0c922e0e69fafa0a7"
+  "contentSha256": "edb2f907f9fe7078c4f6905677578ee2f12ffb28e4f095d48b0e358a3717f17f"
 }

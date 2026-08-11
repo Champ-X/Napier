@@ -1,6 +1,10 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { assertGitConfigPolicy } from "./git-config-policy.js";
 import {
+  gitBranchSwitchVersionArguments,
+  MINIMUM_GIT_BRANCH_SWITCH_VERSION,
+} from "./git-branch-switch-arguments.js";
+import {
   gitHeadCommitArguments,
   gitRefCommitArguments,
 } from "./git-inspect-arguments.js";
@@ -35,6 +39,13 @@ export async function prepareGitBranchSwitch(input: {
   deadline: number;
   signal?: AbortSignal;
 }): Promise<PreparedGitBranchSwitch> {
+  const version = await runGitInspectProcess(
+    input.options,
+    gitBranchSwitchVersionArguments(),
+    remainingTime(input.deadline),
+    input.signal,
+  );
+  assertGitBranchSwitchVersion(version);
   const config = await assertGitConfigPolicy(
     input.options,
     input.repository,
@@ -66,7 +77,7 @@ export async function prepareGitBranchSwitch(input: {
   ) {
     throw new Error("Git branch switch commit state changed");
   }
-  const processes = [config, head, target];
+  const processes = [version, config, head, target];
   return {
     sourceCommitSha1: headCommitSha1,
     targetCommitSha1,
@@ -78,6 +89,34 @@ export async function prepareGitBranchSwitch(input: {
     ),
     processes,
   };
+}
+
+function assertGitBranchSwitchVersion(result: GitInspectProcessResult): void {
+  const match = /^git version ([0-9]+)\.([0-9]+)\.([0-9]+)(?:[^\r\n]*)?\n?$/u.exec(
+    result.stdout,
+  );
+  if (
+    result.status !== "succeeded" ||
+    result.stderr.length > 0 ||
+    !match ||
+    !versionAtLeast(
+      match.slice(1, 4).map(Number),
+      MINIMUM_GIT_BRANCH_SWITCH_VERSION.split(".").map(Number),
+    )
+  ) {
+    throw new Error(
+      `Git branch switch requires Git ${MINIMUM_GIT_BRANCH_SWITCH_VERSION} or newer`,
+    );
+  }
+}
+
+function versionAtLeast(observed: number[], minimum: number[]): boolean {
+  for (let index = 0; index < minimum.length; index += 1) {
+    if (observed[index] !== minimum[index]) {
+      return (observed[index] ?? -1) > (minimum[index] ?? -1);
+    }
+  }
+  return true;
 }
 
 export async function assertGitBranchSwitchState(

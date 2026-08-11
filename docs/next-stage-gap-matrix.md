@@ -7241,8 +7241,10 @@ Threat boundary:
 - same-commit attachment does not claim a worktree snapshot. Napier proves its
   fixed Git operation cannot write index/worktree files; unrelated external
   worktree writes remain outside the ref transaction;
-- Git versions without `symref-update` transaction support fail closed before
-  HEAD changes. Current built Dogfood uses Apple Git 2.50.1;
+- Git versions before 2.46.0 fail during a fixed version preflight, before
+  preview recovery or HEAD changes. Current built Dogfood uses Apple Git
+  2.50.1; the dual-architecture Sandbox image uses Git 2.47.3, and the Ubuntu
+  release gate installs SHA-256-verified Git 2.46.4;
 - bounded clean divergent-tree switching is implemented in the next slice with
   checkout delta, protected/symlink path checks, complete index/worktree
   backup, restart rollback, and post-checkout evidence;

@@ -406,6 +406,26 @@ describe("preview-bound same-commit Git branch switch", () => {
     ).rejects.toThrow();
   }, 30_000);
 
+  it("rejects Git without transactional symbolic-ref support before preview", async () => {
+    const fixture = await createRepository();
+    await git(fixture.workspaceRoot, ["branch", "feature/unsupported-git"]);
+    const sandbox = directSandbox({ gitVersion: "git version 2.45.4" });
+    const manager = managerFor(fixture, sandbox);
+
+    await expect(
+      manager.preview("thread_a", "run_a", {
+        targetBranchName: "feature/unsupported-git",
+      }),
+    ).rejects.toThrow("requires Git 2.46.0 or newer");
+    expect(
+      sandbox.launches.some(
+        (request) =>
+          request.args.includes("update-ref") &&
+          request.args.includes("--stdin"),
+      ),
+    ).toBe(false);
+  });
+
   it("atomically rejects target and source symref races", async () => {
     const targetFixture = await createRepository();
     await git(targetFixture.workspaceRoot, ["branch", "feature/target-race"]);
@@ -850,6 +870,7 @@ function directSandbox(
     reportSwitchFailure?: boolean;
     stallSettlementAfterSwitch?: boolean;
     afterSwitchExit?: () => void;
+    gitVersion?: string;
   } = {},
 ): OsSandboxAdapter & { launches: SandboxLaunchRequest[] } {
   const launches: SandboxLaunchRequest[] = [];
@@ -869,9 +890,21 @@ function directSandbox(
         options.stallSettlementAfterSwitch &&
         switchStarted &&
         request.args.includes("rev-parse");
+      const versionRequest =
+        options.gitVersion !== undefined &&
+        request.args.length === 1 &&
+        request.args[0] === "--version";
       const child = spawn(
-        stall ? "/bin/sleep" : request.command,
-        stall ? ["10"] : request.args,
+        stall
+          ? "/bin/sleep"
+          : versionRequest
+            ? "/usr/bin/printf"
+            : request.command,
+        stall
+          ? ["10"]
+          : versionRequest
+            ? ["%s\n", options.gitVersion!]
+            : request.args,
         {
           cwd: request.cwd,
           env: {
