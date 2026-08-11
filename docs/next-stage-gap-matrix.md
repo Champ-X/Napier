@@ -4,6 +4,66 @@ This matrix is re-audited from the current repository before each vertical
 slice. It is not a feature wishlist or a substitute for task-success
 benchmarks.
 
+## Implemented Control Plane: Real Windows Docker Host Acceptance
+
+User scenario: a release reviewer can dispatch one exact current `main` commit
+to a dedicated Windows x64 machine running Docker Desktop in Linux-container
+mode and receive a source-bound, privacy-bounded receipt for the same production
+Sandbox lifecycle already accepted at Stage 13.
+
+Acceptance and threat boundary:
+
+- require a manual-only GitHub Actions workflow with `contents:read`, full-SHA
+  pinned Actions, and the exact runner labels `self-hosted`, `Windows`, `X64`,
+  and `napier-windows-docker`;
+- require `HEAD`, `GITHUB_SHA`, and fetched `origin/main` to equal the explicit
+  40-character dispatch SHA before install, build, or Docker mutation;
+- admit only Node 24.16.0 on `win32/x64`, GitHub
+  `runner.environment=self-hosted`, local
+  `npipe:////./pipe/docker_engine`, and a `linux/amd64` Docker server;
+- start from a clean checkout without dependencies or build output, run locked
+  `npm ci` plus the full build, and prove
+  `@lydell/node-pty-win32-x64` through its regular
+  `prebuilds/win32-x64/conpty.node` binary and a real pseudoterminal;
+- build and live-verify the official `linux/amd64` image and temporary local
+  SBOM/provenance, then call the existing Stage 13 Setup, Doctor,
+  verification, service, cancellation, restart, uninstall, and resource
+  lifecycle rather than a synthetic parallel implementation;
+- upload one no-overwrite, outside-checkout receipt containing only strict
+  versions, hashes, statuses, counts, booleans, and durations. Reject unknown
+  fields even when the outer hash is recomputed;
+- restore the checked-in evidence, exact Docker baseline, official image tag,
+  checkout, dependency/build-output absence, and temporary roots. Repeat
+  cleanup in an `always()` workflow step and fail if a dedicated runner retains
+  residue;
+- keep the real receipt outside the repository. Verification requires an
+  explicit absolute artifact path and exact expected source SHA; no synthetic
+  pending receipt may satisfy the product claim.
+
+Current result:
+
+- `verified`: the local workflow auditor accepts the manual, least-privilege,
+  SHA-pinned control plane and rejects automatic triggers, GitHub-hosted or
+  generic runners, broader permissions, mutable Actions, missing exact-main
+  checks, weak cleanup, remote Docker endpoints, non-ConPTY binaries, synthetic
+  product checks, and skipped evidence restoration;
+- `verified`: strict receipt mutation tests reject Windows/source/ConPTY/image/
+  product/resource/scope changes and unknown retained fields after hash
+  recomputation;
+- `verified`: every new production module remains below the 500-line hard
+  budget and the repository architecture audit remains cycle-free;
+- `pending`: no self-hosted runner with label `napier-windows-docker` is
+  currently registered, so no real Windows receipt has been uploaded or
+  accepted. `windowsHostProductAcceptance` must remain false in all retained
+  release evidence;
+- `blocked externally`: executing the host path requires a real dedicated
+  Windows x64 Docker Desktop/Linux-container runner. This control-plane slice
+  does not satisfy that external capacity requirement;
+- `independent blocker`: GHCR remains private. Public anonymous pull, keyless
+  signing, Rekor, and SLSA release evidence still require explicit
+  administrator authorization to make the package public and a successful
+  `release` workflow run.
+
 ## Baseline
 
 Audit date: 2026-08-05

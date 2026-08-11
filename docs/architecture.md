@@ -959,6 +959,67 @@ Doctor/Docker output, and credentials. This is fresh virtualized Linux host
 acceptance only. Windows host execution, external registry publication,
 release signing identity/transparency, and external attestation remain open.
 
+Windows host acceptance has a separate manual control plane,
+`.github/workflows/windows-host-product-acceptance.yml`. It has
+`contents:read` only and targets the exact self-hosted label conjunction
+`[self-hosted, Windows, X64, napier-windows-docker]`. Checkout and artifact
+upload Actions are full-SHA pinned. Dispatch accepts one exact 40-character
+source SHA; the job requires that SHA to equal `HEAD`, `GITHUB_SHA`, and the
+fetched `origin/main` tip before any install or build.
+
+The host harness accepts only Node 24.16.0 on `win32/x64`, GitHub's
+`runner.environment=self-hosted`, and Docker Desktop's local
+`npipe:////./pipe/docker_engine` endpoint backed by a `linux/amd64` server.
+Runtime PATH discovery expands the fixed Docker candidate to `docker.exe` on
+Windows and does not admit `.cmd` or `.bat` shims. The harness resolves the
+regular setup-node `node_modules/npm/bin/npm-cli.js` asset and executes it with
+the pinned `node.exe`, so install/build do not depend on shell-specific `.cmd`
+resolution.
+The lifecycle replaces ambient process state with a fixed system-variable
+allowlist, an empty npm user/global config bound to the public registry, an
+empty Docker auth config, and the exact local npipe endpoint. GitHub/npm/model/
+Docker credentials from the self-hosted runner are absent rather than merely
+redacted from evidence. Preflight and `always()` cleanup use a separate empty
+Docker config. Isolated home/cache/config/temp roots are removed in `finally`
+before the receipt can claim `temporaryEnvironmentRemoved=true`.
+It starts from a clean checkout with no root dependency tree or workspace build
+output, runs locked `npm ci` and the full build, validates the regular
+`@lydell/node-pty-win32-x64` ConPTY binary with a real pseudoterminal, and
+builds the current official Sandbox source for `linux/amd64`. It temporarily
+replaces the checkout's host-specific SBOM/provenance with evidence collected
+and replay-verified from that exact image, then invokes the existing Stage 13
+collector rather than implementing a second lifecycle.
+
+The receipt is source-, implementation-, Docker-context-, image-provenance-,
+and workflow-run-bound. A strict recursive whitelist admits only versions,
+hashes, statuses, counts, booleans, and durations. Unknown fields are rejected
+even with a recomputed outer hash, preventing paths, output, or other
+unreviewed material from becoming accepted evidence. The receipt is created
+with no-overwrite semantics outside the checkout and becomes authoritative
+only after the workflow replays the independent verifier and uploads that
+single JSON file.
+
+Normal completion restores the prior image tag, checked-in SBOM/provenance,
+container/network/image baseline, checkout, dependency tree, and build-output
+absence. A dedicated-runner preflight and `always()` cleanup provide the
+cancellation/restart path: they remove Napier containers, networks, acceptance
+images, the official local tag, scratch/data roots, receipt, dependencies, and
+build output; hard-reset the exact checkout; and fail if residue remains. An
+atomically replaced image-ID journal lives under the persistent self-hosted
+runner tool cache. A later dispatch first removes containers/networks, then
+uses that journal to delete image IDs added by a hard-killed predecessor and
+requires exact baseline equality before recording its own baseline. Malformed
+or unrecoverable journals fail closed. This runner is therefore intentionally
+dedicated rather than a shared workstation.
+
+Static verification covers the manual trigger, least privilege, exact runner
+labels, pinned Actions, source-main binding, identity variables, receipt
+upload, both cleanup paths, Windows/npipe/Linux-daemon checks, ConPTY package,
+Stage 13 reuse, and evidence/resource restoration. This proves a fail-closed
+control plane only. Until a matching runner executes it and the uploaded
+receipt verifies, `windowsHostProductAcceptance=true` is not an accepted
+repository fact and no retained Windows receipt exists.
+
 The external publication control plane is a manual GitHub Actions workflow,
 `.github/workflows/publish-sandbox.yml`. It is `workflow_dispatch` only, binds
 checkout and every third-party Action to full commit SHAs, accepts an exact
@@ -1032,7 +1093,8 @@ checks, overclaimed Windows execution, or `s1Complete=true`. This proves that
 the release path is executable and fail-closed, not that it has executed.
 External publication becomes accepted evidence only after a successful
 `release` run and review of its uploaded receipt. Windows host product
-acceptance remains independent and open.
+acceptance remains independent and open until its separate workflow uploads a
+receipt that passes the source-bound verifier.
 
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath. The Contracts root remains at

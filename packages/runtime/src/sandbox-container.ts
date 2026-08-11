@@ -17,7 +17,14 @@ const CONTAINER_CLIENT_ENV_NAMES = [
   "DOCKER_HOST",
   "DOCKER_TLS_VERIFY",
   "HOME",
+  "HOMEDRIVE",
+  "HOMEPATH",
   "PATH",
+  "PATHEXT",
+  "SystemRoot",
+  "TEMP",
+  "TMP",
+  "USERPROFILE",
 ] as const;
 
 /**
@@ -28,16 +35,20 @@ const CONTAINER_CLIENT_ENV_NAMES = [
 export async function resolveContainerExecutable(
   candidates: readonly string[] = CONTAINER_EXECUTABLE_CANDIDATES,
   pathValue: string | undefined = process.env["PATH"],
+  platform: NodeJS.Platform = process.platform,
 ): Promise<string | undefined> {
-  const directories = (pathValue ?? "").split(path.delimiter).filter(Boolean);
+  const delimiter = platform === "win32" ? ";" : path.delimiter;
+  const directories = (pathValue ?? "").split(delimiter).filter(Boolean);
   for (const candidate of candidates) {
-    if (path.isAbsolute(candidate)) {
-      if (await isExecutableFile(candidate)) return candidate;
-      continue;
-    }
-    for (const directory of directories) {
-      const resolved = path.join(directory, candidate);
-      if (await isExecutableFile(resolved)) return resolved;
+    for (const executableName of executableNames(candidate, platform)) {
+      if (path.isAbsolute(executableName)) {
+        if (await isExecutableFile(executableName)) return executableName;
+        continue;
+      }
+      for (const directory of directories) {
+        const resolved = path.join(directory, executableName);
+        if (await isExecutableFile(resolved)) return resolved;
+      }
     }
   }
   return undefined;
@@ -92,10 +103,12 @@ export async function probeContainerRuntimeAvailability(
   });
 }
 
-export function containerClientEnvironment(): Record<string, string> {
+export function containerClientEnvironment(
+  environment: NodeJS.ProcessEnv = process.env,
+): Record<string, string> {
   return Object.fromEntries(
     CONTAINER_CLIENT_ENV_NAMES.flatMap((name) => {
-      const value = process.env[name];
+      const value = environment[name];
       return value === undefined ? [] : [[name, value]];
     }),
   );
@@ -186,6 +199,19 @@ async function isExecutableFile(candidate: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function executableNames(
+  candidate: string,
+  platform: NodeJS.Platform,
+): string[] {
+  if (
+    platform !== "win32" ||
+    path.extname(candidate).toLowerCase() === ".exe"
+  ) {
+    return [candidate];
+  }
+  return [`${candidate}.exe`];
 }
 
 export function validateContainerImage(image: string): void {

@@ -7037,6 +7037,72 @@ omitted. This proves a fresh virtualized Linux host path. It does **not** claim
 Windows host acceptance, external registry publication, a release signing
 identity/transparency log, or external attestation.
 
+The real Windows-host acceptance control plane is the separate manual workflow
+`.github/workflows/windows-host-product-acceptance.yml`. Verify the control
+plane locally with:
+
+```bash
+npm run check:windows-host-product-acceptance-workflow
+```
+
+It can run only on a self-hosted runner carrying all four exact labels
+`self-hosted`, `Windows`, `X64`, and `napier-windows-docker`. The runner must
+provide Node 24.16.0 and Docker Desktop in Linux-container mode through the
+local `npipe:////./pipe/docker_engine` endpoint; a GitHub-hosted Windows runner,
+remote Docker endpoint, Windows-container daemon, arm64 host, or generic
+self-hosted runner is rejected.
+
+The Runtime resolves the container client as `docker.exe` on Windows rather
+than assuming POSIX executable names or accepting script shims. The host
+harness resolves setup-node's regular `npm-cli.js` and executes it with the
+pinned `node.exe`, avoiding shell-dependent `.cmd` spawning for install/build.
+
+The job checks out an exact 40-character commit equal to the current
+`origin/main` tip, starts from a dependency/build-output-free checkout, runs
+`npm ci --no-audit --no-fund` and the full build, and proves the locked
+`@lydell/node-pty-win32-x64` package by allocating a real ConPTY through
+`prebuilds/win32-x64/conpty.node`. It builds the official `linux/amd64` Sandbox
+image locally, writes and live-verifies temporary host-specific SBOM/provenance
+evidence, and then calls the same Stage 13 production lifecycle used elsewhere:
+Setup exact-apply, all nine readiness probes, zero-warning offline Doctor,
+OCI typecheck/Vitest, loopback service health/cancellation, restart
+reconciliation, uninstall, and exact resource closure.
+
+The lifecycle does not inherit the runner's GitHub, npm, model, or Docker
+credentials. It replaces the child environment with a fixed system-variable
+allowlist, an empty npm user/global config using the public registry, an empty
+Docker auth config, and the fixed local npipe endpoint. The workflow preflight
+and `always()` cleanup use their own empty Docker config as well. All isolated
+config/cache/home/temp directories are removed on success or failure.
+
+Only a strict hash/status/count receipt outside the checkout is uploaded.
+Unknown fields are rejected even if the receipt hash is recomputed; raw command
+or Docker output, Doctor/process output, paths, endpoints, resource names,
+dependency/build trees, image bytes, credentials, and prompts are not retained.
+The runner restores the original repository evidence, removes dependencies and
+build output, removes the acceptance image and official local tag, and restores
+container/network/image state. Both the normal `finally` path and the
+workflow's `always()` step clean cancellation residue and verify the dedicated
+runner is clean. A persistent, atomically replaced image-ID baseline under the
+self-hosted runner tool cache lets the next dispatch recover image layers left
+by a hard-killed prior run before it captures a new baseline; invalid or
+unrecoverable journals fail closed.
+
+After downloading a successful workflow artifact, verify it against the exact
+source checkout with:
+
+```bash
+npm run check:windows-host-product-acceptance -- \
+  --artifact-path /absolute/path/to/napier-windows-host-product-acceptance.json \
+  --source-sha <exact-40-character-main-sha>
+```
+
+The workflow and verifier are executable, fail-closed control infrastructure;
+they are not evidence that a Windows host has run. No matching runner is
+currently registered, so `windowsHostProductAcceptance` remains pending until
+a successful uploaded receipt passes the verifier. The repository deliberately
+does not retain a synthetic or pending receipt.
+
 The repository also carries a manual external publication gate at
 `.github/workflows/publish-sandbox.yml`:
 
@@ -7079,8 +7145,8 @@ This workflow is executable release infrastructure, not evidence that release
 already happened. Until a successful `release` run's uploaded receipt is
 reviewed and retained, external publication, release signing identity,
 transparency logging, and external attestation remain incomplete. The workflow
-also leaves `windowsHostProductAcceptance=false`; a real Windows host with a
-supported Linux-container daemon is still required separately.
+also leaves `windowsHostProductAcceptance=false`; the separate Windows
+acceptance workflow must produce its own successfully verified host receipt.
 
 The retained runtime-environment receipt is deliberately portable across the
 supported host matrix rather than tied to the machine that wrote it. Schema 2

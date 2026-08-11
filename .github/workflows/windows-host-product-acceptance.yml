@@ -1,0 +1,279 @@
+name: Windows Host Product Acceptance
+
+run-name: Windows Docker host acceptance @ ${{ inputs.source_sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact 40-character main-branch commit to accept
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-host-product-acceptance
+  cancel-in-progress: false
+
+jobs:
+  accept:
+    if: github.repository == 'Champ-X/Napier' && github.ref == 'refs/heads/main'
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+      - napier-windows-docker
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out the exact source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          clean: true
+          persist-credentials: false
+
+      - name: Verify the dispatch source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          if ($env:SOURCE_SHA -notmatch '^[a-f0-9]{40}$') {
+            throw "Invalid source SHA"
+          }
+          if ($env:GITHUB_SHA -ne $env:SOURCE_SHA) {
+            throw "Dispatch source is not the workflow main tip"
+          }
+          if ((git.exe rev-parse HEAD) -ne $env:SOURCE_SHA) {
+            throw "Checkout source mismatch"
+          }
+          if ((git.exe rev-parse refs/remotes/origin/main) -ne $env:SOURCE_SHA) {
+            throw "Source is not the current origin/main tip"
+          }
+          if (git.exe status --porcelain=v1 --untracked-files=all) {
+            throw "Checkout is not clean"
+          }
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.16.0
+
+      - name: Recover the dedicated runner baseline
+        env:
+          IMAGE_BASELINE_PATH: ${{ runner.tool_cache }}\napier-windows-image-baseline.txt
+          IMAGE_BASELINE_TEMP_PATH: ${{ runner.tool_cache }}\napier-windows-image-baseline.tmp
+          CONTROL_DOCKER_CONFIG: ${{ runner.temp }}\napier-windows-control-docker
+          DOCKER_HOST: npipe:////./pipe/docker_engine
+        run: |
+          $ErrorActionPreference = "Stop"
+          Remove-Item Env:DOCKER_AUTH_CONFIG -ErrorAction SilentlyContinue
+          Remove-Item Env:DOCKER_CONTEXT -ErrorAction SilentlyContinue
+          Remove-Item Env:DOCKER_CERT_PATH -ErrorAction SilentlyContinue
+          Remove-Item Env:DOCKER_TLS_VERIFY -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath $env:CONTROL_DOCKER_CONFIG -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $env:CONTROL_DOCKER_CONFIG | Out-Null
+          Set-Content -LiteralPath "$env:CONTROL_DOCKER_CONFIG\config.json" `
+            -Value '{"auths":{}}' `
+            -Encoding ascii
+          $env:DOCKER_CONFIG = $env:CONTROL_DOCKER_CONFIG
+          Remove-Item -LiteralPath $env:IMAGE_BASELINE_TEMP_PATH -Force -ErrorAction SilentlyContinue
+          docker.exe container ls --all --quiet --filter "name=napier-" |
+            ForEach-Object { docker.exe container rm --force $_ | Out-Null }
+          docker.exe network ls --quiet --filter "name=napier-network-" |
+            ForEach-Object { docker.exe network rm $_ | Out-Null }
+          if (Test-Path -LiteralPath $env:IMAGE_BASELINE_PATH) {
+            $previousBaseline = @(
+              Get-Content -LiteralPath $env:IMAGE_BASELINE_PATH |
+                Where-Object { $_ }
+            )
+            if ($previousBaseline | Where-Object { $_ -notmatch '^sha256:[a-f0-9]{64}$' }) {
+              throw "Previous Docker image baseline is invalid"
+            }
+            $currentImages = @(
+              docker.exe image ls --all --no-trunc --format "{{.ID}}" |
+                Sort-Object -Unique
+            )
+            $currentImages |
+              Where-Object { $_ -notin $previousBaseline } |
+              ForEach-Object { docker.exe image rm --force $_ | Out-Null }
+            $recoveredImages = @(
+              docker.exe image ls --all --no-trunc --format "{{.ID}}" |
+                Sort-Object -Unique
+            )
+            if (Compare-Object $previousBaseline $recoveredImages) {
+              throw "Previous Docker image baseline could not be recovered"
+            }
+          }
+          docker.exe image ls --quiet --filter "reference=napier-windows-acceptance:*" |
+            Sort-Object -Unique |
+            ForEach-Object { docker.exe image rm --force $_ | Out-Null }
+          docker.exe image ls --quiet --filter "reference=napier-sandbox:0.1.0" |
+            Sort-Object -Unique |
+            ForEach-Object { docker.exe image rm --force $_ | Out-Null }
+          Get-ChildItem -LiteralPath $env:RUNNER_TEMP -Directory |
+            Where-Object {
+              $_.Name -match '^napier-process-sandbox-' -or
+              $_.Name -match '^napier-product-acceptance-' -or
+              $_.Name -match '^napier-windows-host-environment-'
+            } |
+            Remove-Item -Recurse -Force
+          git.exe reset --hard HEAD
+          git.exe clean -ffdx
+          $imageBaseline = @(
+            docker.exe image ls --all --no-trunc --format "{{.ID}}" |
+              Sort-Object -Unique
+          )
+          if ($imageBaseline | Where-Object { $_ -notmatch '^sha256:[a-f0-9]{64}$' }) {
+            throw "Docker image baseline is invalid"
+          }
+          [System.IO.File]::WriteAllLines(
+            $env:IMAGE_BASELINE_TEMP_PATH,
+            [string[]]$imageBaseline,
+            [System.Text.Encoding]::ASCII
+          )
+          if (Test-Path -LiteralPath $env:IMAGE_BASELINE_PATH) {
+            [System.IO.File]::Replace(
+              $env:IMAGE_BASELINE_TEMP_PATH,
+              $env:IMAGE_BASELINE_PATH,
+              $null
+            )
+          } else {
+            Move-Item -LiteralPath $env:IMAGE_BASELINE_TEMP_PATH `
+              -Destination $env:IMAGE_BASELINE_PATH
+          }
+          if (git.exe status --porcelain=v1 --untracked-files=all) {
+            throw "Dedicated runner baseline recovery failed"
+          }
+
+      - name: Run the Windows Docker host lifecycle
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          RECEIPT_PATH: ${{ runner.temp }}\napier-windows-host-product-acceptance.json
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          RUNNER_OS: ${{ runner.os }}
+          RUNNER_ARCH: ${{ runner.arch }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (Test-Path -LiteralPath $env:RECEIPT_PATH) {
+            Remove-Item -LiteralPath $env:RECEIPT_PATH -Force
+          }
+          node.exe scripts/windows-host-product-acceptance-live.mjs `
+            --source-sha $env:SOURCE_SHA `
+            --output $env:RECEIPT_PATH
+
+      - name: Verify the sanitized Windows receipt
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          RECEIPT_PATH: ${{ runner.temp }}\napier-windows-host-product-acceptance.json
+        run: |
+          $ErrorActionPreference = "Stop"
+          node.exe scripts/check-windows-host-product-acceptance.mjs `
+            --source-sha $env:SOURCE_SHA `
+            --artifact-path $env:RECEIPT_PATH
+          if (git.exe status --porcelain=v1 --untracked-files=all) {
+            throw "Windows acceptance did not restore the checkout"
+          }
+
+      - name: Upload the sanitized Windows receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: napier-windows-host-product-acceptance-${{ inputs.source_sha }}
+          path: ${{ runner.temp }}\napier-windows-host-product-acceptance.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Remove acceptance output
+        if: always()
+        env:
+          RECEIPT_PATH: ${{ runner.temp }}\napier-windows-host-product-acceptance.json
+          IMAGE_BASELINE_PATH: ${{ runner.tool_cache }}\napier-windows-image-baseline.txt
+          IMAGE_BASELINE_TEMP_PATH: ${{ runner.tool_cache }}\napier-windows-image-baseline.tmp
+          CONTROL_DOCKER_CONFIG: ${{ runner.temp }}\napier-windows-control-docker
+          DOCKER_HOST: npipe:////./pipe/docker_engine
+        run: |
+          $ErrorActionPreference = "Stop"
+          Remove-Item Env:DOCKER_AUTH_CONFIG -ErrorAction SilentlyContinue
+          Remove-Item Env:DOCKER_CONTEXT -ErrorAction SilentlyContinue
+          Remove-Item Env:DOCKER_CERT_PATH -ErrorAction SilentlyContinue
+          Remove-Item Env:DOCKER_TLS_VERIFY -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $env:CONTROL_DOCKER_CONFIG -Force | Out-Null
+          Set-Content -LiteralPath "$env:CONTROL_DOCKER_CONFIG\config.json" `
+            -Value '{"auths":{}}' `
+            -Encoding ascii
+          $env:DOCKER_CONFIG = $env:CONTROL_DOCKER_CONFIG
+          docker.exe container ls --all --quiet --filter "name=napier-" |
+            ForEach-Object { docker.exe container rm --force $_ | Out-Null }
+          docker.exe network ls --quiet --filter "name=napier-network-" |
+            ForEach-Object { docker.exe network rm $_ | Out-Null }
+          docker.exe image ls --quiet --filter "reference=napier-windows-acceptance:*" |
+            Sort-Object -Unique |
+            ForEach-Object { docker.exe image rm --force $_ | Out-Null }
+          docker.exe image ls --quiet --filter "reference=napier-sandbox:0.1.0" |
+            Sort-Object -Unique |
+            ForEach-Object { docker.exe image rm --force $_ | Out-Null }
+          if (Test-Path -LiteralPath $env:IMAGE_BASELINE_PATH) {
+            $baseline = @(
+              Get-Content -LiteralPath $env:IMAGE_BASELINE_PATH |
+                Where-Object { $_ }
+            )
+            if ($baseline | Where-Object { $_ -notmatch '^sha256:[a-f0-9]{64}$' }) {
+              throw "Docker image baseline is invalid during cleanup"
+            }
+            $current = @(
+              docker.exe image ls --all --no-trunc --format "{{.ID}}" |
+                Sort-Object -Unique
+            )
+            $current |
+              Where-Object { $_ -notin $baseline } |
+              ForEach-Object { docker.exe image rm --force $_ | Out-Null }
+          }
+          Get-ChildItem -LiteralPath $env:RUNNER_TEMP -Directory |
+            Where-Object {
+              $_.Name -match '^napier-process-sandbox-' -or
+              $_.Name -match '^napier-product-acceptance-' -or
+              $_.Name -match '^napier-windows-host-environment-'
+            } |
+            Remove-Item -Recurse -Force
+          Remove-Item -LiteralPath $env:RECEIPT_PATH -Force -ErrorAction SilentlyContinue
+          git.exe reset --hard HEAD
+          git.exe clean -ffdx
+          if (docker.exe container ls --all --quiet --filter "name=napier-") {
+            throw "Napier containers remain after cleanup"
+          }
+          if (docker.exe network ls --quiet --filter "name=napier-network-") {
+            throw "Napier networks remain after cleanup"
+          }
+          if (docker.exe image ls --quiet --filter "reference=napier-windows-acceptance:*") {
+            throw "Napier acceptance images remain after cleanup"
+          }
+          if (docker.exe image ls --quiet --filter "reference=napier-sandbox:0.1.0") {
+            throw "Napier official image tag remains after cleanup"
+          }
+          if (Test-Path -LiteralPath $env:IMAGE_BASELINE_PATH) {
+            $expected = @(
+              Get-Content -LiteralPath $env:IMAGE_BASELINE_PATH |
+                Where-Object { $_ }
+            )
+            $observed = @(
+              docker.exe image ls --all --no-trunc --format "{{.ID}}" |
+                Sort-Object -Unique
+            )
+            if (Compare-Object $expected $observed) {
+              throw "Docker image baseline was not restored"
+            }
+            Remove-Item -LiteralPath $env:IMAGE_BASELINE_PATH -Force
+          }
+          Remove-Item -LiteralPath $env:IMAGE_BASELINE_TEMP_PATH -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath $env:CONTROL_DOCKER_CONFIG -Recurse -Force -ErrorAction SilentlyContinue
+          if (Test-Path -LiteralPath $env:RECEIPT_PATH) {
+            throw "Windows receipt remains after cleanup"
+          }
+          if (git.exe status --porcelain=v1 --untracked-files=all) {
+            throw "Checkout remains dirty after cleanup"
+          }

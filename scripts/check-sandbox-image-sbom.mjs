@@ -758,17 +758,21 @@ function sriDigest(integrity) {
 }
 
 async function runDocker(args) {
-  const result = await execFile("docker", args, {
+  const result = await execFile(sandboxImageDockerExecutable(), args, {
     encoding: "utf8",
     timeout: DOCKER_TIMEOUT_MS,
     maxBuffer: MAX_DOCKER_OUTPUT_BYTES,
     windowsHide: true,
-    env: dockerEnvironment(),
+    env: sandboxImageDockerEnvironment(),
   });
   return result.stdout;
 }
 
-function dockerEnvironment() {
+export function sandboxImageDockerExecutable(platform = process.platform) {
+  return platform === "win32" ? "docker.exe" : "docker";
+}
+
+export function sandboxImageDockerEnvironment(environment = process.env) {
   const names = [
     "DOCKER_CERT_PATH",
     "DOCKER_CONFIG",
@@ -776,11 +780,18 @@ function dockerEnvironment() {
     "DOCKER_HOST",
     "DOCKER_TLS_VERIFY",
     "HOME",
+    "HOMEDRIVE",
+    "HOMEPATH",
     "PATH",
+    "PATHEXT",
+    "SystemRoot",
+    "TEMP",
+    "TMP",
+    "USERPROFILE",
   ];
   return Object.fromEntries(
     names.flatMap((name) =>
-      process.env[name] === undefined ? [] : [[name, process.env[name]]],
+      environment[name] === undefined ? [] : [[name, environment[name]]],
     ),
   );
 }

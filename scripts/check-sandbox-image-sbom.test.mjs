@@ -7,6 +7,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   collectSandboxImageEvidence,
+  sandboxImageDockerExecutable,
+  sandboxImageDockerEnvironment,
   verifySandboxImageArtifacts,
 } from "./check-sandbox-image-sbom.mjs";
 
@@ -19,6 +21,31 @@ afterEach(async () => {
 });
 
 describe("Sandbox image SBOM audit", () => {
+  it("selects the native Docker executable name by host platform", () => {
+    expect(sandboxImageDockerExecutable("win32")).toBe("docker.exe");
+    expect(sandboxImageDockerExecutable("linux")).toBe("docker");
+    expect(sandboxImageDockerExecutable("darwin")).toBe("docker");
+  });
+
+  it("passes only Docker and supported host bootstrap variables", () => {
+    expect(
+      sandboxImageDockerEnvironment({
+        DOCKER_HOST: "npipe:////./pipe/docker_engine",
+        PATH: "C:\\tools",
+        SystemRoot: "C:\\Windows",
+        TEMP: "C:\\Temp",
+        USERPROFILE: "C:\\Users\\runner",
+        GITHUB_TOKEN: "secret",
+      }),
+    ).toEqual({
+      DOCKER_HOST: "npipe:////./pipe/docker_engine",
+      PATH: "C:\\tools",
+      SystemRoot: "C:\\Windows",
+      TEMP: "C:\\Temp",
+      USERPROFILE: "C:\\Users\\runner",
+    });
+  });
+
   it("creates a deterministic local-only CycloneDX projection", async () => {
     const root = await fixtureRoot();
     const first = await collectSandboxImageEvidence(

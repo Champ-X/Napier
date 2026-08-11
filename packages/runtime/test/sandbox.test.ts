@@ -1,6 +1,6 @@
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { EventEmitter } from "node:events";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -19,6 +19,7 @@ import {
   OciContainerSandboxAdapter,
 } from "../src/sandbox.js";
 import {
+  containerClientEnvironment,
   probeContainerRuntimeAvailability,
   resolveContainerExecutable,
 } from "../src/sandbox-container.js";
@@ -176,6 +177,57 @@ describe("OS sandbox adapters", () => {
       resolveContainerExecutable(["docker"], path.join(dir, "empty")),
     ).resolves.toBeUndefined();
     await rm(dir, { recursive: true, force: true });
+  });
+
+  it("resolves only the Docker executable form on Windows PATH", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-container-win-"));
+    const first = path.join(root, "first");
+    const second = path.join(root, "second");
+    await mkdir(first);
+    await mkdir(second);
+    await writeFile(path.join(first, "docker.cmd"), "untrusted", {
+      mode: 0o755,
+    });
+    const executable = path.join(second, "docker.exe");
+    await writeFile(executable, "binary", { mode: 0o755 });
+
+    await expect(
+      resolveContainerExecutable(["docker"], `${first};${second}`, "win32"),
+    ).resolves.toBe(executable);
+    await expect(
+      resolveContainerExecutable(["docker.cmd"], first, "win32"),
+    ).resolves.toBeUndefined();
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it("passes only Docker and supported host bootstrap variables to the client", () => {
+    expect(
+      containerClientEnvironment({
+        DOCKER_HOST: "npipe:////./pipe/docker_engine",
+        HOME: "C:\\Users\\runner",
+        HOMEDRIVE: "C:",
+        HOMEPATH: "\\Users\\runner",
+        PATH: "C:\\tools",
+        PATHEXT: ".COM;.EXE;.BAT;.CMD",
+        SystemRoot: "C:\\Windows",
+        TEMP: "C:\\Temp",
+        TMP: "C:\\Temp",
+        USERPROFILE: "C:\\Users\\runner",
+        GITHUB_TOKEN: "secret",
+        NPM_TOKEN: "secret",
+      }),
+    ).toEqual({
+      DOCKER_HOST: "npipe:////./pipe/docker_engine",
+      HOME: "C:\\Users\\runner",
+      HOMEDRIVE: "C:",
+      HOMEPATH: "\\Users\\runner",
+      PATH: "C:\\tools",
+      PATHEXT: ".COM;.EXE;.BAT;.CMD",
+      SystemRoot: "C:\\Windows",
+      TEMP: "C:\\Temp",
+      TMP: "C:\\Temp",
+      USERPROFILE: "C:\\Users\\runner",
+    });
   });
 
   it("distinguishes a reachable container server from a CLI-only install", async () => {
