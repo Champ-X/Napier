@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { lstat, readFile } from "node:fs/promises";
 
+import { validateLongThreadPerformanceMeasurement } from "./product-performance-long-thread.mjs";
+
 const MAX_BUDGET_BYTES = 64 * 1024;
 const MAX_REPORT_BYTES = 1024 * 1024;
 const SHA256 = /^[a-f0-9]{64}$/u;
@@ -45,6 +47,7 @@ export function validateProductPerformanceBudget(input) {
       "cliIterations",
       "cliTimeoutMs",
       "readFileIterations",
+      "longThreadIterations",
       "longThreadEventCount",
     ],
     "Performance budget sample",
@@ -52,6 +55,7 @@ export function validateProductPerformanceBudget(input) {
   integerInRange(sample.cliIterations, 1, 5, "cliIterations");
   integerInRange(sample.cliTimeoutMs, 1_000, 30_000, "cliTimeoutMs");
   integerInRange(sample.readFileIterations, 1, 100, "readFileIterations");
+  integerInRange(sample.longThreadIterations, 1, 5, "longThreadIterations");
   integerInRange(
     sample.longThreadEventCount,
     100,
@@ -99,8 +103,8 @@ export function createProductPerformanceReport({
     cliCompletionMedianMs: measurements.cli.completionMedianMs,
     runtimeBootstrapMs: measurements.runtime.bootstrapMs,
     readFileP95Ms: measurements.tool.p95Ms,
-    longThreadAppendP95Ms: measurements.longThread.appendP95Ms,
-    longThreadProjectionMs: measurements.longThread.projectionMs,
+    longThreadAppendP95Ms: measurements.longThread.appendP95MedianMs,
+    longThreadProjectionMs: measurements.longThread.projectionMedianMs,
     runtimeObservedPeakRssBytes: measurements.memory.observedPeakRssBytes,
     runtimeRssGrowthBytes: measurements.memory.rssGrowthBytes,
     databaseBytes: measurements.database.totalBytes,
@@ -115,7 +119,7 @@ export function createProductPerformanceReport({
   }));
   const content = {
     kind: "napier.product-performance-report",
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt,
     environment: structuredClone(environment),
     profile: budget.profile,
@@ -311,22 +315,10 @@ function validateMeasurements(input, sample) {
     throw new Error("Tool performance percentile is invalid");
   }
 
-  const longThread = numericRecord(
+  const longThread = validateLongThreadPerformanceMeasurement(
     measurements.longThread,
-    [
-      "eventCount",
-      "batchDurationMs",
-      "appendP50Ms",
-      "appendP95Ms",
-      "projectionMs",
-      "detailBytes",
-      "eventBytes",
-    ],
-    "Long-Thread performance measurements",
+    sample,
   );
-  if (longThread.eventCount !== sample.longThreadEventCount) {
-    throw new Error("Long-Thread event count is invalid");
-  }
   const memory = numericRecord(
     measurements.memory,
     [
@@ -360,7 +352,8 @@ function validateMeasurements(input, sample) {
     "Database performance measurements",
   );
   if (
-    database.eventCount !== sample.longThreadEventCount ||
+    database.eventCount !==
+      sample.longThreadEventCount * sample.longThreadIterations ||
     database.bytesPerEvent !== round(database.totalBytes / database.eventCount)
   ) {
     throw new Error("Database performance aggregate is invalid");

@@ -23,6 +23,7 @@ import {
   verifyReleaseArtifactsReceipt,
 } from "./check-release-artifacts.mjs";
 import { linuxHostProductAcceptanceImplementation } from "./linux-host-product-acceptance-artifact.mjs";
+import { createLongThreadPerformanceMeasurement } from "./product-performance-long-thread.mjs";
 import { createProductPerformanceReport } from "./product-performance.mjs";
 
 const temporaryRoots = [];
@@ -1576,6 +1577,7 @@ async function createProductPerformanceFixture(root) {
       cliIterations: 1,
       cliTimeoutMs: 1_000,
       readFileIterations: 1,
+      longThreadIterations: 3,
       longThreadEventCount: 100,
     },
     limits: {
@@ -1617,15 +1619,18 @@ async function createProductPerformanceFixture(root) {
         p50Ms: 3,
         p95Ms: 3,
       },
-      longThread: {
-        eventCount: 100,
-        batchDurationMs: 50,
-        appendP50Ms: 1,
-        appendP95Ms: 2,
-        projectionMs: 5,
-        detailBytes: 4_000,
-        eventBytes: 3_000,
-      },
+      longThread: createLongThreadPerformanceMeasurement(
+        [1, 2, 3].map((iteration) => ({
+          iteration,
+          eventCount: 100,
+          batchDurationMs: 50,
+          appendP50Ms: 1,
+          appendP95Ms: 2,
+          projectionMs: 5,
+          detailBytes: 4_000,
+          eventBytes: 3_000,
+        })),
+      ),
       memory: {
         initialRssBytes: 100,
         afterModuleLoadRssBytes: 200,
@@ -1636,9 +1641,9 @@ async function createProductPerformanceFixture(root) {
         rssGrowthBytes: 300,
       },
       database: {
-        eventCount: 100,
+        eventCount: 300,
         totalBytes: 5_000,
-        bytesPerEvent: 50,
+        bytesPerEvent: 16.667,
       },
     },
     environment: {

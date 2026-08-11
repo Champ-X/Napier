@@ -1560,8 +1560,12 @@ The checked `local_ci_v1` profile takes the median of three fresh built
 `napier run --jsonl` processes from spawn to `run.started`, first
 `model.text.delta`, and terminal `done`. The same isolated sample measures
 shared Runtime bootstrap, 25 production `read_file` executions, append and
-`getDetail()` latency for a 1,000-event Thread, observed process RSS, and the
-closed SQLite ledger's total bytes and bytes per event.
+`getDetail()` latency for three independent 1,000-event Threads, observed
+process RSS, and the closed SQLite ledger's total bytes and bytes per event.
+Every Long-Thread round retains its own batch, append P50/P95, projection, and
+size measurements. The unchanged append/projection budgets evaluate the median
+round, so one isolated host-I/O stall cannot become a regression result while
+two or more slow rounds still fail the gate.
 
 Limits live in
 [`docs/product-performance-budget.json`](docs/product-performance-budget.json).

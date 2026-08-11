@@ -11,6 +11,7 @@ import {
   verifyProductPerformanceReport,
   verifyProductPerformanceReportFile,
 } from "./product-performance.mjs";
+import { createLongThreadPerformanceMeasurement } from "./product-performance-long-thread.mjs";
 
 const temporaryRoots = [];
 
@@ -82,6 +83,50 @@ describe("product performance budget", () => {
         unexpected: true,
       }),
     ).toThrow("unexpected fields");
+  });
+
+  it("gates long-Thread performance on the median round without hiding sustained regression", () => {
+    const budget = fixtureBudget({
+      longThreadAppendP95Ms: 10,
+    });
+    const oneNoisyRound = fixtureMeasurements({
+      appendP95Ms: [2, 75, 3],
+    });
+    const passing = createProductPerformanceReport({
+      budget,
+      measurements: oneNoisyRound,
+      environment: {
+        nodeVersion: "24.16.0",
+        platform: "linux",
+        arch: "x64",
+      },
+      generatedAt: "2026-08-11T00:00:00.000Z",
+    });
+    expect(passing.metrics.longThreadAppendP95Ms).toBe(3);
+    expect(passing.status).toBe("passed");
+
+    const sustained = createProductPerformanceReport({
+      budget,
+      measurements: fixtureMeasurements({
+        appendP95Ms: [2, 75, 80],
+      }),
+      environment: passing.environment,
+      generatedAt: "2026-08-11T00:00:00.000Z",
+    });
+    expect(sustained.metrics.longThreadAppendP95Ms).toBe(75);
+    expect(sustained.status).toBe("failed");
+
+    const tampered = structuredClone(passing);
+    tampered.measurements.longThread.rounds[1].appendP95Ms = 4;
+    expect(verifyProductPerformanceReport(tampered, budget)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        errors: expect.arrayContaining([
+          "report_content_hash_mismatch",
+          "report_projection_mismatch",
+        ]),
+      }),
+    );
   });
 
   it("rejects a tampered saved baseline", async () => {
@@ -234,6 +279,7 @@ function fixtureBudget(limitOverrides = {}) {
       cliIterations: 3,
       cliTimeoutMs: 1_000,
       readFileIterations: 3,
+      longThreadIterations: 3,
       longThreadEventCount: 100,
     },
     limits: {
@@ -253,7 +299,8 @@ function fixtureBudget(limitOverrides = {}) {
   };
 }
 
-function fixtureMeasurements() {
+function fixtureMeasurements(options = {}) {
+  const appendP95Ms = options.appendP95Ms ?? [2, 2, 2];
   return {
     cli: {
       sampleCount: 3,
@@ -292,15 +339,18 @@ function fixtureMeasurements() {
       p50Ms: 2,
       p95Ms: 3,
     },
-    longThread: {
-      eventCount: 100,
-      batchDurationMs: 50,
-      appendP50Ms: 1,
-      appendP95Ms: 2,
-      projectionMs: 5,
-      detailBytes: 4_000,
-      eventBytes: 3_000,
-    },
+    longThread: createLongThreadPerformanceMeasurement(
+      appendP95Ms.map((p95Ms, index) => ({
+        iteration: index + 1,
+        eventCount: 100,
+        batchDurationMs: 50 + index,
+        appendP50Ms: 1,
+        appendP95Ms: p95Ms,
+        projectionMs: 5 + index,
+        detailBytes: 4_000 + index,
+        eventBytes: 3_000 + index,
+      })),
+    ),
     memory: {
       initialRssBytes: 100,
       afterModuleLoadRssBytes: 200,
@@ -311,9 +361,9 @@ function fixtureMeasurements() {
       rssGrowthBytes: 300,
     },
     database: {
-      eventCount: 100,
+      eventCount: 300,
       totalBytes: 5_000,
-      bytesPerEvent: 50,
+      bytesPerEvent: 16.667,
     },
   };
 }

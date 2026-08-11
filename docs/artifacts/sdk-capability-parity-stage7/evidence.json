@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "18933aef2d9ad48a7af1e0b8969282027acee9383596f32cbc6459b3588ad894",
+      "stdoutSha256": "ef42292bf62c5c5d2a7e6b227d7c0d1b4452230e5731b4bc4d0636afe1ea8e75",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "452fd6458d191844b4aadd1398366f66bd7371583b42338f6c8f46c8c092cf91",
-      "receiptSha256": "e6239c56c417660faf900b7ec609be7ce68c5ff10207f61922c8440cc83706fd"
+      "evidenceSha256": "2dceddd8be9f09f2ba7ddcb9e7c552bd803707a14446d52e7156135fe2624ecc",
+      "receiptSha256": "2eb95d1aa3d1445fc3fd76e5925d6a19337ff4bb03dd5591605f1ee88605c1eb"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "d16672459585ed32e5c95db4122d99438a3e773553fe380d2ff21de5e7bba5b9",
+      "stdoutSha256": "83092be832362e900b1374319481206bb8cff84582006363472526fe21ad7a30",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "d24f59c76cb3a2c007dbd67230b55d16a4628c96031c739d4811cb8c17ca1454",
-      "receiptSha256": "c1bc61199b93fac3d205d3dd377aa863752f50156812c827dc7f19a96cc0d67e"
+      "evidenceSha256": "292b41df4ec22dc09c100148414ee0582cd6cd569d7042d36e1a24a0debf7588",
+      "receiptSha256": "5b8f007d49078e968bdead29f0b0865e3f04d92515b8d143170e125410628616"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -717,6 +717,7 @@
         "docs/artifacts/oci-runtime-identity-stage2.json",
         "docs/artifacts/oci-user-identity-stage4.json",
         "docs/artifacts/package-lock-audit-0.1.0.json",
+        "docs/artifacts/product-performance-baseline-0.1.0.json",
         "docs/artifacts/prompt-regression-matrix-0.1.0.json",
         "docs/artifacts/release-artifacts-audit-0.1.0.json",
         "docs/artifacts/runtime-environment-audit-0.1.0.json",
@@ -748,6 +749,7 @@
         "docs/artifacts/web-ui-layout-baseline-linux-0.1.0.json",
         "docs/artifacts/web-ui-layout-baseline-linux-x64-0.1.0.json",
         "docs/next-stage-gap-matrix.md",
+        "docs/product-performance-budget.json",
         "package-lock.json",
         "package.json",
         "packages/contracts/package.json",
@@ -1122,6 +1124,10 @@
         "scripts/open-web-comparison-omp-runtime.mjs",
         "scripts/prepare-node-pty.mjs",
         "scripts/prepare-node-pty.test.mjs",
+        "scripts/product-performance-long-thread.mjs",
+        "scripts/product-performance-report.mjs",
+        "scripts/product-performance.mjs",
+        "scripts/product-performance.test.mjs",
         "scripts/prompt-regression-matrix.mjs",
         "scripts/prompt-regression-matrix.test.mjs",
         "scripts/refresh-skill-load-fast-core-evidence.mjs",
@@ -1186,8 +1192,8 @@
           "lines": 279
         },
         "README.md": {
-          "sha256": "7fdf5a3eed4100df086da196e00b80980456757953a6c98948a6517c4c2d25ca",
-          "lines": 7196
+          "sha256": "ac5a8e862deddc5232b99c06f94180d21746676502f2979a48cc356f5bc3d2e6",
+          "lines": 7200
         },
         "apps/cli/package.json": {
           "sha256": "10827e621b79325d37d27b5c4fbec4fbfa2dd5af2eb641aaf034d4926e3e38c4",
@@ -2101,12 +2107,16 @@
           "sha256": "3927a8d5339f648fd12e8406b8cc5a57e2efd47868fae41c75f3a0d262e79f7d",
           "lines": 20
         },
+        "docs/artifacts/product-performance-baseline-0.1.0.json": {
+          "sha256": "6c702f14f70c61fbe585598e09f447352e0d0b5a3161e6a0e49d723c4466fd05",
+          "lines": 235
+        },
         "docs/artifacts/prompt-regression-matrix-0.1.0.json": {
           "sha256": "950088298d1f40de22f8f95895846960a43ba8da32910d3a26cc31d8055c2ae3",
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "c4464b2182083fb8bfe0f7bdb46b3d8a96238fbcf3cb5f6c821d48145b498d2e",
+          "sha256": "618dc5a7b61e3dbbf67bf60a4926e2456b65b17447fc940129025bfea4285cef",
           "lines": 943
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
@@ -2154,11 +2164,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "452fd6458d191844b4aadd1398366f66bd7371583b42338f6c8f46c8c092cf91",
+          "sha256": "2dceddd8be9f09f2ba7ddcb9e7c552bd803707a14446d52e7156135fe2624ecc",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "d24f59c76cb3a2c007dbd67230b55d16a4628c96031c739d4811cb8c17ca1454",
+          "sha256": "292b41df4ec22dc09c100148414ee0582cd6cd569d7042d36e1a24a0debf7588",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -2208,6 +2218,10 @@
         "docs/next-stage-gap-matrix.md": {
           "sha256": "8afd5f98297f6c945640b1d22c130a8ac319c60dc869d136a39f370b217161b9",
           "lines": 12311
+        },
+        "docs/product-performance-budget.json": {
+          "sha256": "6c238cf77336d87462dda69341bd08bccf18f38543422af4f65c6a4600728966",
+          "lines": 25
         },
         "package-lock.json": {
           "sha256": "c864637c7a1918cc6190cb8bff5470462819d77d3e77f0c43c35b634cc61b26e",
@@ -3546,8 +3560,8 @@
           "lines": 1901
         },
         "scripts/check-release-artifacts.test.mjs": {
-          "sha256": "72f24ac6be10f7cc4ee09c3ada70ad4d581d36fc59a6d094676ecf22bf312b85",
-          "lines": 1728
+          "sha256": "1dc241e62cbbbbc69cfded1cdabd304a6433e6b39895c278dc110bd6ecd02330",
+          "lines": 1733
         },
         "scripts/check-runtime-environment.mjs": {
           "sha256": "f9f123024ea489666a92986025e422d6031dc3a80407ce58e979857d1d83fafc",
@@ -3704,6 +3718,22 @@
         "scripts/prepare-node-pty.test.mjs": {
           "sha256": "42d51010d4fe8290e443cf548846a213421fbe692cc00d1022461e0e0e28cfec",
           "lines": 84
+        },
+        "scripts/product-performance-long-thread.mjs": {
+          "sha256": "b8c46d3a402012dc202b5655c71f120d0c99c7ad88e186223c9952ae6fba8de2",
+          "lines": 215
+        },
+        "scripts/product-performance-report.mjs": {
+          "sha256": "cd5fbc2609177363d4dfdadf28c344fc042c4da5b0883351015ae0c22451156f",
+          "lines": 477
+        },
+        "scripts/product-performance.mjs": {
+          "sha256": "724b3aea24c04477b1f0c94eba41009ee53897d4f84741538e7a73280b97ff10",
+          "lines": 393
+        },
+        "scripts/product-performance.test.mjs": {
+          "sha256": "79d8e0b16e319f8b1ba19d88963377aca8632689b4ebc0cc9ad7ff789bba1f28",
+          "lines": 379
         },
         "scripts/prompt-regression-matrix.mjs": {
           "sha256": "432ff2728f366715e123bc8b01912fa5a96fe659c8bb45481d99abf17ba30349",
@@ -3939,7 +3969,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "fed23842a8f5e7159922783d63f77b9b7d73cc8b69e2a11cb256cdf9b66062ac"
+      "manifestSha256": "0c3b7d865106f292420dcd5aef75c302c31754ede37635847b4f1993ec193846"
     },
     "executionClosure": {
       "algorithm": {
@@ -19633,7 +19663,7 @@
       ],
       "manifestSha256": "b8fde94d21967c5cbf97c175640b2db44b31c48e10671a1465e62d823ba67c40"
     },
-    "manifestSha256": "2daeeb5f85e3b2a7114b1221a8bd812443bd0b311aa1a401d8d272305626dc12"
+    "manifestSha256": "45181442f9d4c37a3f8157edf1c5dd22f45559161a273f9787d39f1940634ed6"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -19821,11 +19851,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "452fd6458d191844b4aadd1398366f66bd7371583b42338f6c8f46c8c092cf91"
+      "sha256": "2dceddd8be9f09f2ba7ddcb9e7c552bd803707a14446d52e7156135fe2624ecc"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "d24f59c76cb3a2c007dbd67230b55d16a4628c96031c739d4811cb8c17ca1454"
+      "sha256": "292b41df4ec22dc09c100148414ee0582cd6cd569d7042d36e1a24a0debf7588"
     }
   }
 }

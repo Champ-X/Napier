@@ -6,6 +6,7 @@
     "cliIterations": 3,
     "cliTimeoutMs": 10000,
     "readFileIterations": 25,
+    "longThreadIterations": 3,
     "longThreadEventCount": 1000
   },
   "limits": {

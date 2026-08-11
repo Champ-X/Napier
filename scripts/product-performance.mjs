@@ -10,6 +10,7 @@ import {
   createProductPerformanceReport,
   validateProductPerformanceBudget,
 } from "./product-performance-report.mjs";
+import { measureLongThreadPerformance } from "./product-performance-long-thread.mjs";
 export {
   PRODUCT_PERFORMANCE_METRICS,
   createProductPerformanceReport,
@@ -108,54 +109,22 @@ export async function runProductPerformanceBenchmark(options = {}) {
     }
     memory.afterToolRssBytes = process.memoryUsage().rss;
 
-    const agent = services.store.listAgents()[0];
-    if (!agent) {
-      throw new Error("Performance benchmark requires the seeded Agent");
-    }
-    const thread = await services.store.createThread({
-      title: "Product performance benchmark",
-      agentId: agent.id,
+    const longThread = await measureLongThreadPerformance({
+      store: services.store,
+      iterations: budget.sample.longThreadIterations,
+      eventCount: budget.sample.longThreadEventCount,
+      signal: options.signal,
+      onRound: (roundValue) => {
+        if (roundValue.iteration === 1) {
+          memory.afterLongThreadRssBytes = process.memoryUsage().rss;
+        }
+      },
     });
-    const run = await services.store.createRun({
-      threadId: thread.id,
-      agentId: agent.id,
-    });
-    const appendDurations = [];
-    const batchStartedAt = performance.now();
-    for (
-      let index = 0;
-      index < budget.sample.longThreadEventCount;
-      index += 1
-    ) {
-      options.signal?.throwIfAborted();
-      const appendStartedAt = performance.now();
-      await services.store.appendEvent({
-        threadId: thread.id,
-        runId: run.id,
-        type: "performance.benchmark.event",
-        category: "lifecycle",
-        visibility: "debug",
-        payload: {
-          sequence: index + 1,
-          padding: "x".repeat(128),
-        },
-      });
-      appendDurations.push(round(performance.now() - appendStartedAt));
-    }
-    const batchDurationMs = round(performance.now() - batchStartedAt);
-    await services.store.finishRun(run.id, "completed");
-    const projectionStartedAt = performance.now();
-    const detail = await services.store.getDetail(thread.id);
-    const projectionMs = round(performance.now() - projectionStartedAt);
-    if (detail.events.length !== budget.sample.longThreadEventCount) {
-      throw new Error("Performance long-Thread projection is incomplete");
-    }
-    memory.afterLongThreadRssBytes = process.memoryUsage().rss;
 
     await services.shutdown();
     servicesClosed = true;
     const databaseBytes = await sqlitePersistentBytes(dataRoot);
-    const databaseEventCount = detail.events.length;
+    const databaseEventCount = longThread.totalEventCount;
     const measurements = {
       cli: {
         sampleCount: cliSamples.length,
@@ -184,15 +153,7 @@ export async function runProductPerformanceBenchmark(options = {}) {
         p50Ms: percentile(toolDurations, 0.5),
         p95Ms: percentile(toolDurations, 0.95),
       },
-      longThread: {
-        eventCount: detail.events.length,
-        batchDurationMs,
-        appendP50Ms: percentile(appendDurations, 0.5),
-        appendP95Ms: percentile(appendDurations, 0.95),
-        projectionMs,
-        detailBytes: Buffer.byteLength(JSON.stringify(detail), "utf8"),
-        eventBytes: Buffer.byteLength(JSON.stringify(detail.events), "utf8"),
-      },
+      longThread,
       memory: finalizeMemoryMeasurement(memory),
       database: {
         eventCount: databaseEventCount,
