@@ -62,6 +62,7 @@ describe("release artifacts audit", () => {
       "sandbox-portable-process-stage15",
       "sandbox-portable-lsp-stage16",
       "sandbox-portable-dap-stage17",
+      "sandbox-oci-supply-chain-stage18",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -480,6 +481,28 @@ describe("release artifacts audit", () => {
       expect.arrayContaining([
         expect.stringContaining(
           "Sandbox portable DAP: Sandbox portable DAP artifact shape is invalid",
+        ),
+      ]),
+    );
+  });
+
+  it("fails when retained Sandbox OCI signature is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/sandbox-oci-supply-chain-stage18.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.signing.signature = `${evidence.signing.signature.slice(0, -1)}A`;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "Sandbox OCI supply chain: Sandbox OCI supply-chain artifact shape is invalid",
         ),
       ]),
     );
@@ -1211,6 +1234,7 @@ async function createFixture() {
     "sandbox-portable-process-stage15.json",
     "sandbox-portable-lsp-stage16.json",
     "sandbox-portable-dap-stage17.json",
+    "sandbox-oci-supply-chain-stage18.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),
@@ -1287,6 +1311,11 @@ async function createFixture() {
     "scripts/check-sandbox-portable-dap.mjs",
     "scripts/sandbox-portable-dap-artifact.mjs",
     "scripts/sandbox-portable-dap-live.mjs",
+    "scripts/check-sandbox-oci-supply-chain.mjs",
+    "scripts/sandbox-oci-supply-chain-artifact.mjs",
+    "scripts/sandbox-oci-supply-chain-live.mjs",
+    "scripts/sandbox-oci-layout-verification.mjs",
+    "scripts/sandbox-oci-signing.mjs",
   ]) {
     await mkdir(path.join(root, path.dirname(relative)), { recursive: true });
     await cp(path.resolve(relative), path.join(root, relative));

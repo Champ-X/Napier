@@ -13,6 +13,7 @@ import { verifySandboxMultiArchitecture } from "./check-sandbox-multi-architectu
 import { verifySandboxPortableProcess } from "./check-sandbox-portable-process.mjs";
 import { verifySandboxPortableLsp } from "./check-sandbox-portable-lsp.mjs";
 import { verifySandboxPortableDap } from "./check-sandbox-portable-dap.mjs";
+import { verifySandboxOciSupplyChain } from "./check-sandbox-oci-supply-chain.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -78,6 +79,8 @@ const defaultSandboxPortableLspPath =
   "docs/artifacts/sandbox-portable-lsp-stage16.json";
 const defaultSandboxPortableDapPath =
   "docs/artifacts/sandbox-portable-dap-stage17.json";
+const defaultSandboxOciSupplyChainPath =
+  "docs/artifacts/sandbox-oci-supply-chain-stage18.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -170,6 +173,8 @@ export async function auditReleaseArtifacts(options = {}) {
     options.sandboxPortableLspPath ?? defaultSandboxPortableLspPath;
   const sandboxPortableDapPath =
     options.sandboxPortableDapPath ?? defaultSandboxPortableDapPath;
+  const sandboxOciSupplyChainPath =
+    options.sandboxOciSupplyChainPath ?? defaultSandboxOciSupplyChainPath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -662,6 +667,17 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const sandboxOciSupplyChainVerification = await verifySandboxOciSupplyChain({
+    repoRoot,
+    artifactPath: sandboxOciSupplyChainPath,
+  });
+  if (!sandboxOciSupplyChainVerification.valid) {
+    errors.push(
+      ...sandboxOciSupplyChainVerification.errors.map(
+        (error) => `Sandbox OCI supply chain: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -754,6 +770,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: sandboxPortableDapVerification.path,
       sha256: sandboxPortableDapVerification.sha256,
       valid: sandboxPortableDapVerification.valid,
+    },
+    {
+      kind: "sandbox-oci-supply-chain-stage18",
+      path: sandboxOciSupplyChainVerification.path,
+      sha256: sandboxOciSupplyChainVerification.sha256,
+      valid: sandboxOciSupplyChainVerification.valid,
     },
     {
       kind: "product-performance-baseline",

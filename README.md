@@ -6988,6 +6988,26 @@ output, paths, host IDs, or resource names. This is local macOS plus
 multi-architecture registry publication, image signing, or external
 attestation.
 
+Stage 18 closes the local OCI publication format and cryptographic-verification
+boundary without overstating release publication. BuildKit exports one
+standard OCI Image Layout containing `linux/amd64` and `linux/arm64`; the live
+harness verifies every reachable blob digest/size, both platform manifests,
+their configs/layers, and the source-context label:
+
+```bash
+npm run check:sandbox-oci-supply-chain
+npm run check:sandbox-oci-supply-chain:live
+```
+
+The image-index digest is signed with an ephemeral in-memory Ed25519 key and
+also bound into a verified DSSE in-toto Statement with a SLSA provenance v1
+predicate. No private key or OCI layout bytes are retained. The receipt keeps
+only public verification material, signatures, source/platform/blob hashes,
+counts, sizes, and resource-closure evidence. This proves local portable OCI
+publication plus cryptographic verification; it does **not** claim an external
+registry push, release signing identity, transparency-log entry, external
+attestation, or Windows/Linux host acceptance.
+
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only
 when the mapped container user can run the same isolated standard-library

@@ -916,6 +916,25 @@ excluded. It records `windowsHostExecuted=false`: actual Windows/Linux host
 product acceptance, registry publication, signing, and external attestation
 remain release work.
 
+Stage 18 adds a local standards-based publication boundary. BuildKit writes a
+temporary OCI Image Layout with one nested multi-platform index. Verification
+walks the complete descriptor graph, checks every SHA-256 and declared size,
+rejects unreachable extra blobs, requires exactly `linux/amd64` and
+`linux/arm64`, and binds each image config to the current Dockerfile/toolchain
+context hash. The index digest is signed with an in-memory Ed25519 identity.
+A second in-memory identity signs a DSSE envelope whose payload is canonical
+in-toto Statement v1 with a SLSA provenance v1 predicate and the same index,
+source, platform set, builder, and timing evidence. Offline release verification
+replays both signatures and every binding from the retained public material.
+
+The temporary OCI layout, private keys, raw build/Docker output, paths,
+resource names, daemon endpoints, and credentials are deleted or omitted.
+This is local OCI publication and local cryptographic acceptance only:
+`externalRegistryPublished=false`, `releaseSigningIdentity=false`,
+`transparencyLogRecorded=false`, and `externalAttestation=false`. Those
+external release authorities plus real Windows/Linux host acceptance remain
+open.
+
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath. The Contracts root remains at
 its hard 6,738-line budget; image-bound verifier version and runtime identity
