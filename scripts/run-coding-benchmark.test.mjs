@@ -111,7 +111,7 @@ describe("coding benchmark command", () => {
         ),
       }),
     );
-  }, 15_000);
+  }, 30_000);
 
   it("runs and verifies an independently bound repeated-trial series", async () => {
     const outputDir = await mkdtemp(

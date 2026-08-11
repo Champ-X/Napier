@@ -15,7 +15,10 @@ import {
   sha256,
   type BrowserSessionDetails,
   type LocalAgentRuntimeOptions,
+  type OsSandboxAdapter,
   type RunBrowserSessionManager,
+  type SandboxedProcess,
+  type SandboxLaunchRequest,
   UnsupportedSandboxAdapter,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -322,6 +325,35 @@ function benchmarkDependencies() {
   };
 }
 
+function processReadyBrowserSandbox(): OsSandboxAdapter {
+  return {
+    id: "confirmed-form-run",
+    async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
+      if (
+        !request.args.some((argument) =>
+          argument.includes("napier_shell_probe_v1"),
+        )
+      ) {
+        throw new Error("Confirmed-form fixture does not execute commands");
+      }
+      const stdin = new PassThrough();
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      setImmediate(() => {
+        stdout.end("napier_shell_probe_v1");
+        stderr.end();
+      });
+      return {
+        stdin,
+        stdout,
+        stderr,
+        exit: Promise.resolve({ code: 0, signal: null }),
+        terminate: async () => undefined,
+      };
+    },
+  };
+}
+
 async function executeFormalCli(
   request: BrowserConfirmedFormCliRequest,
 ): Promise<BrowserConfirmedFormCliExecution> {
@@ -344,7 +376,7 @@ async function executeFormalCli(
         const services = await createLocalAgentRuntime({
           ...options,
           browserSessions: confirmedFormSessions(),
-          sandbox: new UnsupportedSandboxAdapter("confirmed-form-run"),
+          sandbox: processReadyBrowserSandbox(),
         });
         const agent = services.store.listAgents()[0]!;
         await services.store.updateAgent(agent.id, {
@@ -368,10 +400,12 @@ async function executeFormalCli(
   );
   let firstConfirmationMs = 0;
   for (const action of request.expectedActions) {
-    await vi.waitFor(() =>
-      expect(stderr.text()).toContain(
-        `[confirm] Browser ${action} paused before execution`,
-      ),
+    await vi.waitFor(
+      () =>
+        expect(stderr.text()).toContain(
+          `[confirm] Browser ${action} paused before execution`,
+        ),
+      { timeout: 5_000 },
     );
     firstConfirmationMs ||= Math.round(performance.now() - startedAt);
     input.write("approve\n");

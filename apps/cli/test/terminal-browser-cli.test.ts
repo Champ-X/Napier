@@ -12,9 +12,12 @@ import {
   canonicalJson,
   type BrowserSessionDetails,
   createLocalAgentRuntime,
-  sha256,
   type LocalAgentRuntimeOptions,
+  type OsSandboxAdapter,
   type RunBrowserSessionManager,
+  type SandboxedProcess,
+  type SandboxLaunchRequest,
+  sha256,
   UnsupportedSandboxAdapter,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -84,10 +87,12 @@ describe("terminal Browser interaction confirmation", () => {
     );
 
     input.write("approve\n");
-    await vi.waitFor(() =>
-      expect(stderr.text()).toContain(
-        "[confirm] Browser type paused before execution",
-      ),
+    await vi.waitFor(
+      () =>
+        expect(stderr.text()).toContain(
+          "[confirm] Browser type paused before execution",
+        ),
+      { timeout: 5_000 },
     );
     await new Promise((resolve) => setTimeout(resolve, 25));
     expect(operations).toEqual(["start"]);
@@ -149,10 +154,12 @@ describe("terminal Browser interaction confirmation", () => {
       ),
     );
 
-    await vi.waitFor(() =>
-      expect(stderr.text()).toContain(
-        "[confirm] Browser type paused before execution",
-      ),
+    await vi.waitFor(
+      () =>
+        expect(stderr.text()).toContain(
+          "[confirm] Browser type paused before execution",
+        ),
+      { timeout: 5_000 },
     );
     input.write("reject\n");
 
@@ -205,10 +212,12 @@ describe("terminal Browser interaction confirmation", () => {
       ),
     );
 
-    await vi.waitFor(() =>
-      expect(stderr.text()).toContain(
-        "[confirm] Browser type paused before execution",
-      ),
+    await vi.waitFor(
+      () =>
+        expect(stderr.text()).toContain(
+          "[confirm] Browser type paused before execution",
+        ),
+      { timeout: 5_000 },
     );
     input.end();
 
@@ -514,12 +523,41 @@ function browserDependencies(
       const services = await createLocalAgentRuntime({
         ...options,
         browserSessions: sessions,
-        sandbox: new UnsupportedSandboxAdapter(`${name}-browser-test`),
+        sandbox: processReadyBrowserSandbox(`${name}-browser-test`),
       });
       services.models.registerProvider(provider.provider);
       return services;
     },
     runReadiness: readyRunReadiness(),
+  };
+}
+
+function processReadyBrowserSandbox(id: string): OsSandboxAdapter {
+  return {
+    id,
+    async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
+      if (
+        !request.args.some((argument) =>
+          argument.includes("napier_shell_probe_v1"),
+        )
+      ) {
+        throw new Error("Browser fixture does not execute Sandbox commands");
+      }
+      const stdin = new PassThrough();
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      setImmediate(() => {
+        stdout.end("napier_shell_probe_v1");
+        stderr.end();
+      });
+      return {
+        stdin,
+        stdout,
+        stderr,
+        exit: Promise.resolve({ code: 0, signal: null }),
+        terminate: async () => undefined,
+      };
+    },
   };
 }
 

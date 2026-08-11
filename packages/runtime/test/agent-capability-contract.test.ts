@@ -24,7 +24,7 @@ import {
   propagateUpdatedCapabilityBinding,
   validateCapabilityBinding,
 } from "../src/agent-capability-bindings.js";
-import { inspectSandboxReadiness } from "../src/agent-capability-service.js";
+import { inspectProcessSandboxReadiness } from "../src/process-run-readiness.js";
 import { CapabilityRestorePersistenceError } from "../src/agent-capability-store-mutations.js";
 
 const roots: string[] = [];
@@ -669,7 +669,7 @@ describe("default Agent Capability Contract", () => {
   });
 
   it("reports only a successful production probe as ready while preserving policy control", async () => {
-    const readiness = await inspectSandboxReadiness(
+    const readiness = await inspectProcessSandboxReadiness(
       new UnsupportedSandboxAdapter("available-test"),
       "/workspace",
       async () => ({

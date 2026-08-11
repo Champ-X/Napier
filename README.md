@@ -6771,6 +6771,17 @@ verification, local service, and dynamic resource enforcement. It persists the
 same identity receipt, hot-switches the current Server Runtime for new work,
 and refreshes Composer readiness without a page or Server restart.
 
+Process readiness is enforced at three layers rather than trusted to the
+disabled Send button. Composer blocks Coding and Safe Automation while the
+effective Sandbox record is unavailable. The Server independently runs the
+same fresh production Shell probe before opening SSE and returns a hash-bound
+`409` plus the exact Sandbox Setup recovery path when blocked. `AgentRuntime`
+rechecks again before creating any Run, so direct HTTP, SDK/RPC, Automation,
+Channels, and other internal callers cannot bypass the gate. Research and
+Browser presets remain usable when they do not request process execution.
+Exact-preview Setup hot-switches the shared provider and invalidates readiness;
+the next request probes the new Sandbox without restarting the Server.
+
 Sandbox uninstall is also exact-preview bound. It removes only Napier's private
 `.napier/sandbox.json` binding, hot-switches a running Web Server to the same
 explicit environment or platform fallback used at startup, and retains the

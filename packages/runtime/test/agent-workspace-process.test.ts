@@ -18,6 +18,10 @@ import {
   type OsSandboxAdapter,
   type SandboxedProcess,
 } from "../src/index.js";
+import {
+  isProcessReadinessProbe,
+  settledProcess,
+} from "./process-run-readiness-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 
@@ -460,7 +464,10 @@ describe("Agent Workspace Process integration", () => {
 function inputSettlingSandbox(output: string): OsSandboxAdapter {
   return {
     id: "agent-process-sandbox",
-    async launch() {
+    async launch(request) {
+      if (isProcessReadinessProbe(request)) {
+        return settledProcess("napier_shell_probe_v1");
+      }
       const stdin = new PassThrough();
       const stdout = new PassThrough();
       const stderr = new PassThrough();
@@ -510,6 +517,9 @@ function scopedWriteSandbox(
   return {
     id: "agent-process-write-sandbox",
     async launch(request) {
+      if (isProcessReadinessProbe(request)) {
+        return settledProcess("napier_shell_probe_v1");
+      }
       expect(request.approvedCapabilities).toEqual([
         "process.spawn",
         "workspace.read",

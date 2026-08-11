@@ -29,11 +29,12 @@ import {
   parsePromptRequest,
   parseResumeRunRequest,
 } from "./thread-execution-http-validation.js";
+import { inspectThreadPromptReadiness } from "./thread-run-readiness.js";
 
 const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
 const MAX_PROMPT_REQUEST_BYTES = 64 * 1024;
 
-type ThreadExecutionStore = Pick<LocalStore, "getDetail">;
+type ThreadExecutionStore = Pick<LocalStore, "getDetail" | "getThread">;
 type ThreadExecutionRuntime = Pick<
   AgentRuntime,
   "continueOperatorDecision" | "resumeInterruptedRun" | "runPrompt" | "stop"
@@ -43,6 +44,10 @@ export interface ThreadExecutionHttpServices {
   store: ThreadExecutionStore;
   models: ModelRegistry;
   runtime: ThreadExecutionRuntime;
+  agentCapabilities: Pick<
+    import("@napier/runtime").LocalAgentRuntimeServices["agentCapabilities"],
+    "blockedRunReadinessProjection"
+  >;
 }
 
 export function registerThreadExecutionHttp(
@@ -153,6 +158,32 @@ function registerPromptHttp(
         await assertAvailableModel(services, body.model);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
+      }
+    }
+    try {
+      const readiness = await inspectThreadPromptReadiness({
+        store: services.store,
+        agentCapabilities: services.agentCapabilities,
+        threadId,
+        ...(body.capabilityPreset
+          ? { capabilityPreset: body.capabilityPreset }
+          : {}),
+      });
+      if (!readiness.ready) {
+        context.header("X-Napier-Run-Readiness", readiness.code);
+        context.header(
+          "X-Napier-Agent-Capability-Projection-SHA256",
+          readiness.projectionSha256,
+        );
+        return jsonError(context, readiness.message, 409);
+      }
+    } catch (error) {
+      if (!errorMessage(error).startsWith("Thread not found:")) {
+        return jsonError(
+          context,
+          "Run readiness could not be verified; refresh capability readiness and retry.",
+          503,
+        );
       }
     }
     setThreadPromptStreamHeaders(

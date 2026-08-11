@@ -19,6 +19,10 @@ import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { WorkspaceProcessManager } from "../src/workspace-processes.js";
 import { controlledLspRenameSandbox } from "./lsp-rename-test-fixture.js";
+import {
+  isProcessReadinessProbe,
+  settledProcess,
+} from "./process-run-readiness-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 
@@ -369,6 +373,9 @@ function coderSandbox(): OsSandboxAdapter {
   return {
     id: "candidate-agent-sandbox",
     launch(request) {
+      if (isProcessReadinessProbe(request)) {
+        return Promise.resolve(settledProcess("napier_shell_probe_v1"));
+      }
       return request.args.includes("--stdio")
         ? lsp.launch(request)
         : verifier.launch(request);
@@ -379,7 +386,7 @@ function coderSandbox(): OsSandboxAdapter {
 function passingVerifierSandbox(): OsSandboxAdapter {
   return {
     id: "candidate-agent-verifier",
-    async launch() {
+    async launch(request) {
       const stdin = new PassThrough();
       const stdout = new PassThrough();
       const stderr = new PassThrough();

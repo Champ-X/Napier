@@ -24,7 +24,7 @@ import { exportThreadReplayBundle } from "../src/replay.js";
 import type { OsSandboxAdapter, SandboxLaunchRequest } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
-
+import { processReadySandbox } from "./process-run-readiness-test-fixture.js";
 const temporaryRoots: string[] = [];
 
 function fauxMessageWithUsage(
@@ -4185,9 +4185,9 @@ describe("AgentRuntime demo path", () => {
       agentId: agent.id,
     });
     let launchRequest: SandboxLaunchRequest | undefined;
-    const sandbox: OsSandboxAdapter = {
-      id: "fake-agent-command",
-      async launch(request) {
+    const sandbox = processReadySandbox(
+      "fake-agent-command",
+      async (request) => {
         launchRequest = structuredClone(request);
         const stdin = new PassThrough();
         const stdout = new PassThrough();
@@ -4221,7 +4221,7 @@ describe("AgentRuntime demo path", () => {
           },
         };
       },
-    };
+    );
     const faux = fauxProvider({ provider: "faux-command" });
     faux.setResponses([
       fauxAssistantMessage(

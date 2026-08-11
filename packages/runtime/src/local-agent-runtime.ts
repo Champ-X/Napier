@@ -122,9 +122,7 @@ export async function createLocalAgentRuntime(
           throw error;
         });
     const initialSandbox =
-      options.sandbox ??
-      configuredSandbox ??
-      fallbackSandbox;
+      options.sandbox ?? configuredSandbox ?? fallbackSandbox;
     const sandbox = new SwitchableSandboxAdapter(initialSandbox);
     extensions = new McpExtensionManager({ store, sandbox });
     workspaceProcesses = new WorkspaceProcessManager({

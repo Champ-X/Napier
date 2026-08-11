@@ -278,10 +278,27 @@ function record(value: unknown): Record<string, unknown> | undefined {
 function passingSandbox(): OsSandboxAdapter {
   return {
     id: "candidate-server-sandbox",
-    async launch() {
+    async launch(request) {
       const stdin = new PassThrough();
       const stdout = new PassThrough();
       const stderr = new PassThrough();
+      if (
+        request.args.some((argument) =>
+          argument.includes("napier_shell_probe_v1"),
+        )
+      ) {
+        queueMicrotask(() => {
+          stdout.end("napier_shell_probe_v1");
+          stderr.end();
+        });
+        return {
+          stdin,
+          stdout,
+          stderr,
+          exit: Promise.resolve({ code: 0, signal: null }),
+          terminate: async () => undefined,
+        };
+      }
       const exit = new Promise<{
         code: number | null;
         signal: NodeJS.Signals | null;

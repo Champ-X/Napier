@@ -12,8 +12,17 @@ describe("Thread Source continuity HTTP", () => {
     const runPrompt = vi.fn(async () => ({ id: runId, status: "completed" }));
     const app = new Hono();
     registerThreadExecutionHttp(app, {
-      store: { getDetail: vi.fn(async () => detail(threadId, runId)) },
+      store: {
+        getThread: vi.fn(() => ({
+          id: threadId,
+          agentId: "agent_sourcepin",
+        })),
+        getDetail: vi.fn(async () => detail(threadId, runId)),
+      } as never,
       models: {} as never,
+      agentCapabilities: {
+        blockedRunReadinessProjection: vi.fn(async () => undefined),
+      } as never,
       runtime: {
         runPrompt,
         resumeInterruptedRun: vi.fn(),
@@ -59,6 +68,9 @@ function detail(threadId: string, runId: string): ThreadDetail {
         status: "completed",
       },
     ],
+    agent: {
+      id: "agent_sourcepin",
+    },
     events: [],
   } as unknown as ThreadDetail;
 }

@@ -297,12 +297,12 @@ export class AgentRuntime {
     ) {
       throw new Error("This thread already has an active run");
     }
-
     const thread = this.store.getThread(options.threadId);
     const invocationSource = requestedSource ?? "user";
     const { profile: effectiveAgentSnapshot, internalResearchRecovery } =
-      resolvePromptCapabilityProfile(
+      await resolvePromptCapabilityProfile(
         this.store,
+        this.verificationSandbox,
         thread.agentId,
         options,
         invocationSource,

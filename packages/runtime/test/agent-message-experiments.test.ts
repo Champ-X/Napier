@@ -17,6 +17,7 @@ import {
 import { exportThreadReplayBundle } from "../src/replay.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
+import { processReadySandbox } from "./process-run-readiness-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 const openStores: LocalStore[] = [];
@@ -256,7 +257,9 @@ describe("Agent message checkpoint experiments", () => {
     fixture.provider.setResponses([
       (context) => {
         expect(context.tools?.map((tool) => tool.name)).toContain("skill_load");
-        return fauxAssistantMessage("Research experiment stayed snapshot-bound.");
+        return fauxAssistantMessage(
+          "Research experiment stayed snapshot-bound.",
+        );
       },
     ]);
 
@@ -268,22 +271,27 @@ describe("Agent message checkpoint experiments", () => {
       },
     });
     const targetRun = fixture.store.listRuns(result.targetThreadId)[1]!;
-    const targetEvents = (await fixture.store.listEvents(result.targetThreadId))
-      .filter((event) => event.runId === targetRun.id);
+    const targetEvents = (
+      await fixture.store.listEvents(result.targetThreadId)
+    ).filter((event) => event.runId === targetRun.id);
 
     expect(result.status).toBe("completed");
-    expect(targetRun.configuration).toEqual(expect.objectContaining({
-      executionMode: "agent_experiment_read_only",
-      enabledSkills: ["data-analysis", "research-brief"],
-      enabledTools: expect.arrayContaining(["skill_load"]),
-      skillCatalogSha256: sourceRun.configuration?.skillCatalogSha256,
-    }));
+    expect(targetRun.configuration).toEqual(
+      expect.objectContaining({
+        executionMode: "agent_experiment_read_only",
+        enabledSkills: ["data-analysis", "research-brief"],
+        enabledTools: expect.arrayContaining(["skill_load"]),
+        skillCatalogSha256: sourceRun.configuration?.skillCatalogSha256,
+      }),
+    );
     expect(
       targetEvents.find((event) => event.type === "run.started")?.payload,
     ).toEqual(expect.objectContaining({ capabilityPreset: "research" }));
-    expect(isSkillCatalogBindingV1(
-      targetEvents.find((event) => event.type === "context.skills")?.payload,
-    )).toBe(true);
+    expect(
+      isSkillCatalogBindingV1(
+        targetEvents.find((event) => event.type === "context.skills")?.payload,
+      ),
+    ).toBe(true);
     expect(fixture.store.getAgent(fixture.agentId)).toEqual(before);
   });
 
@@ -514,7 +522,12 @@ async function createFixture(): Promise<Fixture> {
   const models = new ModelRegistry();
   const provider = fauxProvider({ provider: "faux-agent-message-experiment" });
   models.registerProvider(provider.provider);
-  const runtime = new AgentRuntime(store, models);
+  const runtime = new AgentRuntime(
+    store,
+    models,
+    undefined,
+    processReadySandbox("agent-message-experiment-sandbox"),
+  );
   return {
     store,
     runtime,

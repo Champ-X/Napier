@@ -68,6 +68,10 @@
       "types": "./dist/provider-setup.d.ts",
       "import": "./dist/provider-setup.js"
     },
+    "./process-run-readiness": {
+      "types": "./dist/process-run-readiness.d.ts",
+      "import": "./dist/process-run-readiness.js"
+    },
     "./agent-capability-store-mutations": {
       "types": "./dist/agent-capability-store-mutations.d.ts",
       "import": "./dist/agent-capability-store-mutations.js"

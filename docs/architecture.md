@@ -673,6 +673,13 @@ Web
   -> composer mode buttons select a process-local next-Run preset only
   -> preset projection is computed by the same Server Runtime and hash-bound
      in its body, response header, Prompt request, and run.started evidence
+  -> Coding and Safe Automation block in Composer when Sandbox readiness is unavailable
+  -> Server repeats a fresh production probe before opening SSE and returns a
+     hash-bound 409 with exact Setup recovery without creating a Run
+  -> AgentRuntime repeats the same shared gate before Run persistence, covering
+     direct HTTP, SDK/RPC, Automation, Channels, and internal callers
+  -> Research and Browser remain available when effective process access is false
+  -> Setup hot-switch increments provider readiness and the next request probes it
   -> selection is consumed only after a matching user Run starts; a pre-Run
      HTTP or model failure preserves it for retry, while reload/thread change clears it
   -> Agent profile and revision history remain unchanged

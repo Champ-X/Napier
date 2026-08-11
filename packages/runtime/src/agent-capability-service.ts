@@ -29,22 +29,20 @@ import {
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
 } from "./default-agent-capability-contract.js";
 import {
-  probeShellRuntime,
-  type RuntimeCapabilityProbe,
-} from "./doctor-runtime-probes.js";
-import {
   buildStandardSkillSnapshot,
   type SkillSnapshot,
 } from "./standard-skill-snapshot.js";
+import {
+  ProcessRunReadinessError,
+  inspectProcessSandboxReadiness,
+  sharedProcessRunReadinessGate,
+} from "./process-run-readiness.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
 
 const KNOWN_TOOL_NAMES = new Set<string>(AGENT_TOOL_NAMES);
 
 export class AgentCapabilityService {
-  private sandboxReadiness: Promise<CapabilityReadinessRecord> | undefined;
-  private sandboxReadinessVersion = -1;
-
   constructor(
     private readonly store: LocalStore,
     private readonly sandbox: OsSandboxAdapter,
@@ -71,6 +69,36 @@ export class AgentCapabilityService {
         : profile,
       presetId,
     );
+  }
+
+  async assertRunReadiness(
+    agentId: string,
+    presetId?: AgentCapabilityPresetId,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const profile = this.store.getAgent(agentId);
+    await sharedProcessRunReadinessGate(
+      this.sandbox,
+      this.store.workspaceRoot,
+    ).assertProfile(
+      presetId
+        ? { ...profile, ...agentCapabilityPresetUpdate(presetId) }
+        : profile,
+      signal,
+    );
+  }
+
+  async blockedRunReadinessProjection(
+    agentId: string,
+    presetId?: AgentCapabilityPresetId,
+  ): Promise<EffectiveAgentCapabilityProjectionV1 | undefined> {
+    try {
+      await this.assertRunReadiness(agentId, presetId);
+      return undefined;
+    } catch (error) {
+      if (!(error instanceof ProcessRunReadinessError)) throw error;
+      return this.project(agentId, presetId);
+    }
   }
 
   private async projectSnapshot(
@@ -104,7 +132,10 @@ export class AgentCapabilityService {
       ...toolReadiness(profile.enabledTools, runtimeExposedTools),
       ...derivedSkillToolReadiness(profile.enabledTools, runtimeExposedTools),
       ...skillInspection.readiness,
-      await this.getSandboxReadiness(),
+      await sharedProcessRunReadinessGate(
+        this.sandbox,
+        this.store.workspaceRoot,
+      ).record(),
     ].sort((left, right) => compareCanonicalText(left.id, right.id));
     const driftState = capabilityDriftState(bindingLookup, persistedProfile);
     const projection = {
@@ -154,19 +185,6 @@ export class AgentCapabilityService {
         binding: commit.binding,
       }),
     };
-  }
-
-  private getSandboxReadiness(): Promise<CapabilityReadinessRecord> {
-    const version = this.sandbox.readinessVersion ?? 0;
-    if (this.sandboxReadinessVersion !== version) {
-      this.sandboxReadiness = undefined;
-      this.sandboxReadinessVersion = version;
-    }
-    this.sandboxReadiness ??= inspectSandboxReadiness(
-      this.sandbox,
-      this.store.workspaceRoot,
-    );
-    return this.sandboxReadiness;
   }
 }
 
@@ -405,28 +423,7 @@ async function standardSkillFileExists(
   return results.some(Boolean);
 }
 
-export async function inspectSandboxReadiness(
-  sandbox: OsSandboxAdapter,
-  workspaceRoot: string,
-  probe: (
-    workspaceRoot: string,
-    signal: AbortSignal | undefined,
-    sandbox: OsSandboxAdapter,
-  ) => Promise<RuntimeCapabilityProbe> = probeShellRuntime,
-): Promise<CapabilityReadinessRecord> {
-  const result = await probe(workspaceRoot, undefined, sandbox);
-  const available = result.status === "ready";
-  return {
-    id: `sandbox:${sandbox.id}`,
-    status: available ? "ready" : "unavailable",
-    configured: true,
-    allowedByPolicy: false,
-    exposed: false,
-    detail: available
-      ? `Sandbox provider completed the production shell PTY probe; effective process access remains policy-controlled (${result.message})`
-      : result.message,
-  };
-}
+export { inspectProcessSandboxReadiness as inspectSandboxReadiness };
 
 function projectionHashPayload(
   projection: Omit<EffectiveAgentCapabilityProjectionV1, "projectionSha256">,

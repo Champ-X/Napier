@@ -12,6 +12,11 @@ const repositoryRoot = path.resolve(
   "..",
 );
 const options = parseArguments(process.argv.slice(2));
+const expected = options.verifyReceiptPath
+  ? verifyPromptRegressionMatrix(
+      JSON.parse(await readFile(options.verifyReceiptPath, "utf8")),
+    )
+  : undefined;
 const artifact = await runPromptRegressionMatrix(repositoryRoot);
 const serialized = `${JSON.stringify(artifact, null, 2)}\n`;
 if (options.receiptPath) {
@@ -20,10 +25,7 @@ if (options.receiptPath) {
     mode: 0o600,
   });
 }
-if (options.verifyReceiptPath) {
-  const expected = verifyPromptRegressionMatrix(
-    JSON.parse(await readFile(options.verifyReceiptPath, "utf8")),
-  );
+if (expected) {
   if (JSON.stringify(expected) !== JSON.stringify(artifact)) {
     throw new Error(
       `Prompt regression artifact drifted: ${options.verifyReceiptPath}`,
