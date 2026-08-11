@@ -27,11 +27,32 @@ afterEach(async () => {
 });
 
 describe("node-pty install preparation", () => {
-  it("repairs only the current platform regular spawn helper", async () => {
+  it("accepts the locked Linux platform binary without a compiler", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-node-pty-"));
     temporaryRoots.push(root);
-    const helper = path.join(root, "prebuilds", "darwin-arm64", "spawn-helper");
-    await mkdir(path.dirname(helper), { recursive: true });
+    const binary = path.join(
+      root,
+      "@lydell/node-pty-linux-arm64/prebuilds/linux-arm64/pty.node",
+    );
+    await mkdir(path.dirname(binary), { recursive: true });
+    await writeFile(binary, "binary");
+
+    await expect(
+      prepareNodePty(root, "linux", "arm64"),
+    ).resolves.toBeUndefined();
+  });
+
+  it("repairs only the current Darwin platform spawn helper", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-node-pty-"));
+    temporaryRoots.push(root);
+    const platformRoot = path.join(
+      root,
+      "@lydell/node-pty-darwin-arm64/prebuilds/darwin-arm64",
+    );
+    const binary = path.join(platformRoot, "pty.node");
+    const helper = path.join(platformRoot, "spawn-helper");
+    await mkdir(platformRoot, { recursive: true });
+    await writeFile(binary, "binary");
     await writeFile(helper, "helper", { mode: 0o600 });
 
     await prepareNodePty(root, "darwin", "arm64");
@@ -40,21 +61,23 @@ describe("node-pty install preparation", () => {
     expect((await lstat(helper)).mode & 0o100).toBe(0o100);
   });
 
-  it("rejects a symlink and a missing platform helper", async () => {
+  it("rejects a symlink and a missing platform binary", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-node-pty-"));
     temporaryRoots.push(root);
     const target = path.join(root, "target");
-    const helper = path.join(root, "prebuilds", "darwin-arm64", "spawn-helper");
-    await writeFile(target, "helper");
-    await mkdir(path.dirname(helper), { recursive: true });
-    await symlink(target, helper);
+    const binary = path.join(
+      root,
+      "@lydell/node-pty-linux-arm64/prebuilds/linux-arm64/pty.node",
+    );
+    await writeFile(target, "binary");
+    await mkdir(path.dirname(binary), { recursive: true });
+    await symlink(target, binary);
 
-    await expect(prepareNodePty(root, "darwin", "arm64")).rejects.toThrow(
+    await expect(prepareNodePty(root, "linux", "arm64")).rejects.toThrow(
       "must be a regular file",
     );
-    await rm(helper);
-    await chmod(target, 0o600);
-    await expect(prepareNodePty(root, "darwin", "arm64")).rejects.toThrow(
+    await rm(binary);
+    await expect(prepareNodePty(root, "linux", "arm64")).rejects.toThrow(
       "is unavailable",
     );
   });

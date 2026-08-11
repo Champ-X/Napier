@@ -13,7 +13,7 @@ import {
   UnsupportedSandboxAdapter,
   type LocalAgentRuntimeOptions,
 } from "@napier/runtime";
-import { spawn as spawnTerminal } from "node-pty";
+import { spawn as spawnTerminal } from "@lydell/node-pty";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {

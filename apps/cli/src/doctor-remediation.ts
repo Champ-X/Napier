@@ -153,7 +153,7 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   shell_missing: {
     id: "repair_shell_runtime",
     instruction:
-      "Reinstall dependencies so node-pty rebuilds; PTY shell and background process tools fail closed without it.",
+      "Reinstall dependencies so the locked current-platform PTY binary is restored; shell and background process tools fail closed without it.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
   shell_runtime_missing: {

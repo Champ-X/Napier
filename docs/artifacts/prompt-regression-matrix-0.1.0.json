@@ -68,12 +68,12 @@
       "dimension": "user_interrupt",
       "testFile": "apps/cli/test/interactive-cli.test.ts",
       "testNameSha256": "fd348707883e04c32b26280a96f3fab7fc6af5c01fd8f513e7f2ce8643852df0",
-      "testFileSha256": "dda4f38291332d726b448e7080a71028aad43d73c3cb8a2afcb4248d260b9a83",
+      "testFileSha256": "322b50e7b22d8d937c3b231c1781c34753b7c7ab8e5f73a69fbf681ab5552319",
       "argvSha256": "c69820c3b0ba78e4ac4cac11b6fe5305419841f21ebd8b1c96328d44fe5d79ca",
       "status": "passed",
       "testFileCount": 1,
       "testCount": 1,
-      "contentSha256": "dc9d34dce9e989517ba18354f840e4c2e51cb6a232af7d8896ce612b3535d791"
+      "contentSha256": "30dc19e3e4f34f6299fb2e0ddc231281afdb9c45322a10a41d628ef9d843ade8"
     },
     {
       "id": "prompt_dangerous_action_v1",
@@ -112,5 +112,5 @@
       "contentSha256": "7bc01e2ca4ff9ebd503224107ae7bb38e409bf6a06e05a0b4e530ba06df9ff4e"
     }
   ],
-  "contentSha256": "fad17723476ed1f05222642956f2b9679c5094d0180af2910c6927d072fbb23f"
+  "contentSha256": "d85125e2d39752ec746038a67748a56c7d218430f3f4f3bb29eebd6905c0cfc4"
 }

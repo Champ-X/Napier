@@ -2,7 +2,7 @@ import { constants as osConstants } from "node:os";
 import { rm } from "node:fs/promises";
 import { PassThrough, Writable } from "node:stream";
 
-import type { IPty } from "node-pty";
+import type { IPty } from "@lydell/node-pty";
 
 import type { SandboxedProcess } from "./sandbox-types.js";
 
@@ -24,7 +24,7 @@ export interface TerminalProcessLaunch {
 export async function launchTerminalProcess(
   request: TerminalProcessLaunch,
 ): Promise<SandboxedProcess> {
-  const nodePty = await import("node-pty");
+  const nodePty = await import("@lydell/node-pty");
   let terminal: IPty;
   try {
     terminal = nodePty.spawn(request.command, request.args, {
@@ -41,7 +41,7 @@ export async function launchTerminalProcess(
       error.message.includes("posix_spawnp failed")
     ) {
       throw new Error(
-        "PTY launch failed because the node-pty spawn helper is not executable; reinstall dependencies so the Napier postinstall check can repair it",
+        "PTY launch failed because the current-platform helper is not executable; reinstall dependencies so the Napier postinstall check can repair it",
       );
     }
     throw error;

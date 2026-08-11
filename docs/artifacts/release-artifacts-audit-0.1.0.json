@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "a30d87975d4f251a07d055d3d6054576bc351e512b99a7994ab32776126f44ab",
+  "artifactSetSha256": "6d2473034cdc14f0cd339850213c488a2efcf888e5b8455ce90ccf37a93b853f",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "00b99f9ea3f0c045c8c3921e9d7778da7d8dbb46a60bec25bbe9d55edf553bad",
+      "sha256": "be98b6137b2d43623e94d7bb7d43620b0d698072d3ac8a8da454bf8d834f3a2f",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "673e235528c7581f1c976a95dc440bde88f52cfb14353a584a76423e9d3607e3",
+      "sha256": "9063434152824c63a8f0dd34f1d33e5d1be4d9bd88d6d818648cbdf662523e1d",
       "valid": true
     },
     {
@@ -84,6 +84,12 @@
       "kind": "sandbox-oci-supply-chain-stage18",
       "path": "docs/artifacts/sandbox-oci-supply-chain-stage18.json",
       "sha256": "42d88dc62a8e00108c0bda66855d75afca9ca700e28b3fcc9ed11138939221d4",
+      "valid": true
+    },
+    {
+      "kind": "linux-host-product-acceptance-stage19",
+      "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
+      "sha256": "559eab93cce567d7a544511a415dc2d15845947c8bafc386a0ac48275517746b",
       "valid": true
     },
     {

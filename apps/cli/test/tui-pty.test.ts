@@ -8,7 +8,7 @@ import {
   UnsupportedSandboxAdapter,
   verifyThreadReplayBundle,
 } from "@napier/runtime";
-import { spawn as spawnTerminal } from "node-pty";
+import { spawn as spawnTerminal } from "@lydell/node-pty";
 import { afterEach, expect, it, vi } from "vitest";
 
 const temporaryRoots: string[] = [];

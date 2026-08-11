@@ -935,6 +935,30 @@ This is local OCI publication and local cryptographic acceptance only:
 external release authorities plus real Windows/Linux host acceptance remain
 open.
 
+Stage 19 adds a real Linux-host acceptance boundary above the container daemon.
+The host orchestrator snapshots only regular repository files, excludes the
+protected `goal.md`, and streams a temporary tar archive into a Colima Ubuntu
+VM. The guest starts without dependencies or build output, verifies the pinned
+Node archive against Node's published SHA-256 list, runs `npm ci` and the full
+build, then calls the Stage 13 production lifecycle rather than a parallel test
+implementation. The lifecycle exact-applies Setup, requires all nine probes,
+runs Doctor with zero warnings, verifies TypeScript and Vitest in OCI, serves
+and cancels loopback HTTP, reconciles an interrupted process after Runtime
+restart, uninstalls the binding, and restores container/network/scratch state.
+
+The same acceptance proves the precompiled Linux PTY package can allocate a
+real pseudoterminal without a host compiler. Linux Skill discovery retains its
+fd-relative nofollow design but constructs `/proc/self/fd/<n>/.` literally;
+`path.join(fd, ".")` normalized away the child component and caused
+`O_NOFOLLOW` to reject the procfs descriptor link itself. The literal child
+path keeps the held-directory identity checks and nofollow boundary intact.
+
+Both host and guest temporary roots are removed. Receipts omit archive bytes,
+dependency trees, command output, paths, endpoints, resource names, raw
+Doctor/Docker output, and credentials. This is fresh virtualized Linux host
+acceptance only. Windows host execution, external registry publication,
+release signing identity/transparency, and external attestation remain open.
+
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath. The Contracts root remains at
 its hard 6,738-line budget; image-bound verifier version and runtime identity
@@ -6445,9 +6469,11 @@ supports resize, and terminates the PTY process group. The target executable
 still runs inside the existing OS Sandbox profile. `workspace-process-terminal.ts`
 owns initial terminal binding and resize state; resize receipt parsing is split
 into `workspace-process-resize-events.ts` rather than expanding the Process
-Manager or Store. `scripts/prepare-node-pty.mjs` corrects the locked macOS
-prebuild's missing user execute bit only for a regular current-platform helper;
-symlinks and missing helpers fail installation.
+Manager or Store. The locked `@lydell/node-pty` package delegates to one
+platform-specific optional package for macOS/Linux/Windows on arm64/x64, so
+Linux installs do not depend on a local compiler. `scripts/prepare-node-pty.mjs`
+requires a regular current-platform native binary and corrects only the Darwin
+helper's user-execute bit; symlinks and missing binaries fail installation.
 
 Graceful Server shutdown stops active process groups before closing the Store.
 Workspace Process launches also bind parent-death protection into their

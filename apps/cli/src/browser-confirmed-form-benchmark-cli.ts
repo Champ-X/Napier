@@ -3,7 +3,7 @@ import { performance } from "node:perf_hooks";
 
 import type { BrowserInteractionAction } from "@napier/contracts/browser-interaction-confirmation";
 import { sha256 } from "@napier/runtime";
-import { spawn } from "node-pty";
+import { spawn } from "@lydell/node-pty";
 
 import type { BrowserConfirmedFormBenchmarkExecution } from "./browser-confirmed-form-benchmark-types.js";
 

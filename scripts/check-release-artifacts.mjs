@@ -14,6 +14,7 @@ import { verifySandboxPortableProcess } from "./check-sandbox-portable-process.m
 import { verifySandboxPortableLsp } from "./check-sandbox-portable-lsp.mjs";
 import { verifySandboxPortableDap } from "./check-sandbox-portable-dap.mjs";
 import { verifySandboxOciSupplyChain } from "./check-sandbox-oci-supply-chain.mjs";
+import { verifyLinuxHostProductAcceptance } from "./check-linux-host-product-acceptance.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -81,6 +82,8 @@ const defaultSandboxPortableDapPath =
   "docs/artifacts/sandbox-portable-dap-stage17.json";
 const defaultSandboxOciSupplyChainPath =
   "docs/artifacts/sandbox-oci-supply-chain-stage18.json";
+const defaultLinuxHostProductAcceptancePath =
+  "docs/artifacts/linux-host-product-acceptance-stage19.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -175,6 +178,9 @@ export async function auditReleaseArtifacts(options = {}) {
     options.sandboxPortableDapPath ?? defaultSandboxPortableDapPath;
   const sandboxOciSupplyChainPath =
     options.sandboxOciSupplyChainPath ?? defaultSandboxOciSupplyChainPath;
+  const linuxHostProductAcceptancePath =
+    options.linuxHostProductAcceptancePath ??
+    defaultLinuxHostProductAcceptancePath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -678,6 +684,18 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const linuxHostProductAcceptanceVerification =
+    await verifyLinuxHostProductAcceptance({
+      repoRoot,
+      artifactPath: linuxHostProductAcceptancePath,
+    });
+  if (!linuxHostProductAcceptanceVerification.valid) {
+    errors.push(
+      ...linuxHostProductAcceptanceVerification.errors.map(
+        (error) => `Linux host product acceptance: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -776,6 +794,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: sandboxOciSupplyChainVerification.path,
       sha256: sandboxOciSupplyChainVerification.sha256,
       valid: sandboxOciSupplyChainVerification.valid,
+    },
+    {
+      kind: "linux-host-product-acceptance-stage19",
+      path: linuxHostProductAcceptanceVerification.path,
+      sha256: linuxHostProductAcceptanceVerification.sha256,
+      valid: linuxHostProductAcceptanceVerification.valid,
     },
     {
       kind: "product-performance-baseline",

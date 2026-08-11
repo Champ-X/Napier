@@ -465,9 +465,10 @@ Version `0.1.0` includes:
 
 The current release is intentionally local and single-user at the product
 boundary, while its store safely serializes multiple local runtime instances.
-General shell execution, automatic managed package upgrades, additional SaaS
-inbound adapters beyond GitHub/Slack/Linear, and distributed multi-host workers
-are next-layer capabilities, not simulated features.
+General shell execution is available only through a verified OS or OCI Sandbox;
+automatic managed package upgrades, additional SaaS inbound adapters beyond
+GitHub/Slack/Linear, and distributed multi-host workers are next-layer
+capabilities, not simulated features.
 
 The re-audited [next-stage gap matrix](docs/next-stage-gap-matrix.md) tracks
 which local execution and product slices are complete, partial, or intentionally
@@ -478,8 +479,7 @@ deferred.
 Prerequisite: Node.js `>=22.19.0`.
 
 ```bash
-npm install --ignore-scripts
-npm run postinstall
+npm install
 npm run dev
 ```
 
@@ -492,9 +492,10 @@ their status. Choose **Enable** to explicitly register one available locator;
 the secret value never leaves the Server and ambient variables alone remain
 unauthorized. Advanced and Keychain locators remain available in
 **Context → Provider credentials**.
-The explicit root `postinstall` prepares only the current-platform native PTY
-helper after the dependency install; it rejects missing, non-regular, or
-symlinked helpers.
+The locked `@lydell/node-pty` distribution installs one optional native package
+for the current supported macOS, Linux, or Windows architecture; no local C++
+toolchain is required. Root `postinstall` rejects a missing, non-regular, or
+symlinked native binary and repairs only the Darwin helper's user-execute bit.
 
 The left ledger rail supports reversible deletion. Hover a settled ledger,
 choose the trash icon, and confirm inline; Napier immediately removes it from
@@ -7007,6 +7008,34 @@ counts, sizes, and resource-closure evidence. This proves local portable OCI
 publication plus cryptographic verification; it does **not** claim an external
 registry push, release signing identity, transparency-log entry, external
 attestation, or Windows/Linux host acceptance.
+
+Stage 19 closes one real host branch rather than projecting it from macOS. A
+Colima Ubuntu 24.04 arm64 VM receives a regular-file source archive with no
+`node_modules`, build output, `goal.md`, Git metadata, credentials, or paths.
+It verifies an official Node 24.16.0 archive against Node's published
+`SHASUMS256.txt`. Replay the retained receipt or launch a fresh live run with:
+
+```bash
+npm run check:linux-host-product-acceptance
+npm run check:linux-host-product-acceptance:live
+```
+
+The live guest executes `npm ci --no-audit --no-fund` and `npm run build`, then
+requires the locked Linux PTY native package to launch a real pseudoterminal
+without a compiler. It drives the formal Sandbox Setup/Doctor path through all
+nine production probes, typecheck and test, starts and health-checks a local
+service, cancels and closes it, reconciles an interrupted process after Runtime
+restart, uninstalls the binding, and restores the container/network/scratch
+baseline. It also covers Linux `/proc/self/fd` Skill loading: the child path
+preserves `/.` so `O_NOFOLLOW` applies to the held directory's child rather than
+rejecting the procfs descriptor link.
+
+The receipt retains hashes, versions, statuses, counts, and durations only; the
+source/Node archives, clean checkout, dependency tree, command output, resource
+names, paths, endpoint URLs, and raw Doctor/Docker output are deleted or
+omitted. This proves a fresh virtualized Linux host path. It does **not** claim
+Windows host acceptance, external registry publication, a release signing
+identity/transparency log, or external attestation.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only

@@ -22,6 +22,7 @@ import {
   createReleaseArtifactsVerification,
   verifyReleaseArtifactsReceipt,
 } from "./check-release-artifacts.mjs";
+import { linuxHostProductAcceptanceImplementation } from "./linux-host-product-acceptance-artifact.mjs";
 import { createProductPerformanceReport } from "./product-performance.mjs";
 
 const temporaryRoots = [];
@@ -63,6 +64,7 @@ describe("release artifacts audit", () => {
       "sandbox-portable-lsp-stage16",
       "sandbox-portable-dap-stage17",
       "sandbox-oci-supply-chain-stage18",
+      "linux-host-product-acceptance-stage19",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -503,6 +505,28 @@ describe("release artifacts audit", () => {
       expect.arrayContaining([
         expect.stringContaining(
           "Sandbox OCI supply chain: Sandbox OCI supply-chain artifact shape is invalid",
+        ),
+      ]),
+    );
+  });
+
+  it("fails when retained Linux host acceptance is overclaimed", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/linux-host-product-acceptance-stage19.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.scope.windowsHostProductAcceptance = true;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "Linux host product acceptance: Linux host product acceptance artifact shape is invalid",
         ),
       ]),
     );
@@ -1235,6 +1259,7 @@ async function createFixture() {
     "sandbox-portable-lsp-stage16.json",
     "sandbox-portable-dap-stage17.json",
     "sandbox-oci-supply-chain-stage18.json",
+    "linux-host-product-acceptance-stage19.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),
@@ -1316,6 +1341,18 @@ async function createFixture() {
     "scripts/sandbox-oci-supply-chain-live.mjs",
     "scripts/sandbox-oci-layout-verification.mjs",
     "scripts/sandbox-oci-signing.mjs",
+    "scripts/check-linux-host-product-acceptance.mjs",
+    "scripts/linux-host-product-acceptance-artifact.mjs",
+    "scripts/linux-host-product-acceptance-guest.mjs",
+    "scripts/linux-host-product-acceptance-live.mjs",
+    "packages/runtime/src/project-skill-snapshot-acquisition.ts",
+    "packages/runtime/src/project-skill-snapshot-anchor.ts",
+    "packages/runtime/src/project-skill-snapshot-memory.ts",
+    "packages/runtime/src/project-skill-snapshot-model.ts",
+    "packages/runtime/src/project-skill-snapshot.ts",
+    "packages/runtime/src/sandbox-terminal.ts",
+    "scripts/prepare-node-pty.mjs",
+    "scripts/prepare-node-pty.test.mjs",
   ]) {
     await mkdir(path.join(root, path.dirname(relative)), { recursive: true });
     await cp(path.resolve(relative), path.join(root, relative));
@@ -1380,6 +1417,7 @@ async function createFixture() {
     path.join(root, "benchmarks/security/open-web-prompt-injection-v1"),
     { recursive: true },
   );
+  await rebindLinuxHostProductAcceptanceFixture(root);
   await execFile(process.execPath, [
     packageLockScriptPath,
     "--repo-root",
@@ -1402,6 +1440,23 @@ async function createFixture() {
     "docs/artifacts/web-dist-audit-0.1.0.json",
   ]);
   return { root };
+}
+
+async function rebindLinuxHostProductAcceptanceFixture(root) {
+  const artifactPath = path.join(
+    root,
+    "docs/artifacts/linux-host-product-acceptance-stage19.json",
+  );
+  const value = JSON.parse(await readFile(artifactPath, "utf8"));
+  value.implementation = await linuxHostProductAcceptanceImplementation(root);
+  value.guest.source.packageLockSha256 = value.implementation.packageLockSha256;
+  const { evidenceSha256: _evidenceSha256, ...guest } = value.guest;
+  value.guest.evidenceSha256 = sha256(
+    Buffer.from(canonicalJson(guest), "utf8"),
+  );
+  const { contentSha256: _contentSha256, ...content } = value;
+  value.contentSha256 = sha256(Buffer.from(canonicalJson(content), "utf8"));
+  await writeJson(artifactPath, value);
 }
 
 async function createWorkflowBenchmarkFixture(root) {

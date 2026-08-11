@@ -16,7 +16,7 @@ import {
   validateExecutionPlanWorkflowExperimentResultFrame,
   validateExecutionPlanWorkflowResultFrame,
 } from "@napier/runtime";
-import { spawn as spawnTerminal } from "node-pty";
+import { spawn as spawnTerminal } from "@lydell/node-pty";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { runCli } from "../src/cli.js";

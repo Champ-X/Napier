@@ -102,10 +102,10 @@
   "dependencies": {
     "@earendil-works/pi-agent-core": "0.82.0",
     "@earendil-works/pi-ai": "0.82.0",
+    "@lydell/node-pty": "1.2.0-beta.15",
     "@mozilla/readability": "^0.6.0",
     "@napier/contracts": "*",
     "linkedom": "^0.18.13",
-    "node-pty": "1.1.0",
     "pdfjs-dist": "^6.2.108",
     "playwright-core": "1.62.1",
     "typebox": "1.1.38",
