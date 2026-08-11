@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "6ccfb06aa6f6ff8631f25d179b976e925cc90d330441c2b4c00759cec83d6232",
+      "stdoutSha256": "381b53e46c670700fd20340b4490d9008f1c4a4ab07cde82b7282b1f75e67133",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "74eb9db7216c23238889e635c2d3d2fb9c270db2686cc6ba9b5f45a50150b780",
-      "receiptSha256": "927a981cc4047e29a411bee0f22b76fe49c0c6a15e616ea36f3c51c2d4c2cd23"
+      "evidenceSha256": "942b8e5a8f79d8a622ff4a8e96c1836a5be0ebc9931361ea31c279d7d6efd9c1",
+      "receiptSha256": "3fa11c81effa178e2020331ccbd559626fb52bc72018c3c394899a53fddf8ec9"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "2137d7906d984895526d19c504b83dddaf182cc6f70fc9d4b6a4bb61f7718a6f",
+      "stdoutSha256": "cae825df1ffa4f6a1d322f464cbd815f3b04fe572d9e88bd5761768ea445c25c",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "f1c3a2fe5bdad7e2b286fe74291ac85d4d28d6ed42499eaee8a80ae72a9782a8",
-      "receiptSha256": "061d99c8cb53f3c19477c7b6cb52da168e8b814644c1f25aa45df6a172673e3e"
+      "evidenceSha256": "5a5949b6c9100d9c81e0bdeadb25a12d0a7dcd0b40f9445b9b6f551e7338b2f1",
+      "receiptSha256": "637a29b9c23d194cca28fada5e88666f412a7c7f2dd1819470fc27aeaaef591a"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -1324,8 +1324,8 @@
           "lines": 190
         },
         "apps/cli/test/terminal-browser-cli.test.ts": {
-          "sha256": "4d93c0fa4836f86fa038abef4328c1771c8091da0793482143cbec085d9ab0cb",
-          "lines": 758
+          "sha256": "c56681f7d7648669eed3f93c1666e91b35fa74a56f68e8396e6bbbb952f36acf",
+          "lines": 762
         },
         "apps/cli/test/tui-cli.test.ts": {
           "sha256": "9c46f859e25b17a4411bb6b3b0e8cc50280402cceaa5d8771275306209de02f4",
@@ -2140,11 +2140,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "74eb9db7216c23238889e635c2d3d2fb9c270db2686cc6ba9b5f45a50150b780",
+          "sha256": "942b8e5a8f79d8a622ff4a8e96c1836a5be0ebc9931361ea31c279d7d6efd9c1",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "f1c3a2fe5bdad7e2b286fe74291ac85d4d28d6ed42499eaee8a80ae72a9782a8",
+          "sha256": "5a5949b6c9100d9c81e0bdeadb25a12d0a7dcd0b40f9445b9b6f551e7338b2f1",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3889,7 +3889,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "c038582c070d5b493504b6602386767cae36fe05502b964c137f708093a422ff"
+      "manifestSha256": "b9521d739ec013b54a7e38efbc12cb21708985323ebdaec3788a999ee48f089a"
     },
     "executionClosure": {
       "algorithm": {
@@ -19583,7 +19583,7 @@
       ],
       "manifestSha256": "9ddf394224fd5588a0495e2e03ccc604ee729587da004f94eb386b94966fd01f"
     },
-    "manifestSha256": "9471a7a3bb859e67184307a6aaa14115372d542d99d5a9fc85d99d81979044f6"
+    "manifestSha256": "d71331ec2731a7494e0a7363f3d11e94b89e77053b688f108793e9f36ee630d5"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -19771,11 +19771,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "74eb9db7216c23238889e635c2d3d2fb9c270db2686cc6ba9b5f45a50150b780"
+      "sha256": "942b8e5a8f79d8a622ff4a8e96c1836a5be0ebc9931361ea31c279d7d6efd9c1"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "f1c3a2fe5bdad7e2b286fe74291ac85d4d28d6ed42499eaee8a80ae72a9782a8"
+      "sha256": "5a5949b6c9100d9c81e0bdeadb25a12d0a7dcd0b40f9445b9b6f551e7338b2f1"
     }
   }
 }

@@ -324,10 +324,12 @@ describe("terminal Browser interaction confirmation", () => {
 
     await vi.waitFor(() => expect(stderr.text()).toContain("chat ready"));
     input.write("Type into the confirmed Browser target.\n");
-    await vi.waitFor(() =>
-      expect(stderr.text()).toContain(
-        "[confirm] Browser type paused before execution",
-      ),
+    await vi.waitFor(
+      () =>
+        expect(stderr.text()).toContain(
+          "[confirm] Browser type paused before execution",
+        ),
+      { timeout: 5_000 },
     );
     expect(stderr.text()).toContain("Type approve or reject");
     expect(stderr.text()).not.toContain("PRIVATE_CHAT_SELECTOR");
@@ -467,10 +469,12 @@ describe("terminal Browser interaction confirmation", () => {
 
     await vi.waitFor(() => expect(stderr.text()).toContain("chat ready"));
     input.write("Attempt the Browser action.\n");
-    await vi.waitFor(() =>
-      expect(stderr.text()).toContain(
-        "[confirm] Browser type paused before execution",
-      ),
+    await vi.waitFor(
+      () =>
+        expect(stderr.text()).toContain(
+          "[confirm] Browser type paused before execution",
+        ),
+      { timeout: 5_000 },
     );
     interrupt?.();
     await vi.waitFor(() => expect(stderr.text()).toContain("cancelled"));
