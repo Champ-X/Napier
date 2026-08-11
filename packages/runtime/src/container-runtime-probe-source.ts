@@ -105,6 +105,38 @@ for (const moduleRoot of moduleRoots) {
     break;
   } catch {}
 }
+let verification = null;
+for (const moduleRoot of moduleRoots) {
+  try {
+    const toolchainRoot = fs.realpathSync(path.dirname(moduleRoot));
+    const rootPackage = packageMetadata(toolchainRoot, "napier-sandbox-toolchain");
+    const packageLockPath = fs.realpathSync(path.join(toolchainRoot, "package-lock.json"));
+    const packageLockInfo = fs.statSync(packageLockPath);
+    if (!packageLockInfo.isFile() || packageLockInfo.size > 4 * 1024 * 1024) throw new Error("invalid package lock");
+    const verifier = (name, relativePath) => {
+      const root = fs.realpathSync(path.join(moduleRoot, name));
+      const metadata = packageMetadata(root, name);
+      const executable = fs.realpathSync(path.join(root, relativePath));
+      return {
+        path: executable,
+        version: metadata.version,
+        sha256: assetSetHash([
+          ["package.json", metadata.file],
+          [relativePath, executable],
+        ]),
+      };
+    };
+    verification = {
+      toolchainRoot,
+      packageJsonSha256: hash(rootPackage.file),
+      packageLockSha256: hash(packageLockPath),
+      typecheck: verifier("typescript", "bin/tsc"),
+      test: verifier("vitest", "vitest.mjs"),
+      format: verifier("prettier", "bin/prettier.cjs"),
+    };
+    break;
+  } catch {}
+}
 let debugger_ = null;
 try {
   const result = childProcess.spawnSync(process.execPath, ${JSON.stringify([...NODE_DEBUGGER_RUNTIME_PROBE_ARGUMENTS])}, {
@@ -146,5 +178,5 @@ for (const candidate of ["/usr/local/bin/python3", "/usr/bin/python3", "/opt/con
     break;
   } catch {}
 }
-process.stdout.write(JSON.stringify({ node: identity(process.execPath), shell, git, lsp, debugger: debugger_, python }));
+process.stdout.write(JSON.stringify({ node: identity(process.execPath), shell, git, lsp, verification, debugger: debugger_, python }));
 `;

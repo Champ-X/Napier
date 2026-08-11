@@ -36,6 +36,8 @@ export interface WriteLinkedTestEventTraceView {
   writeLinkedSelectionSnapshotSha256?: string;
   writeLinkedObservedSnapshotSha256?: string;
   writeLinkedVerifierSha256?: string;
+  writeLinkedVerifierVersion?: string;
+  writeLinkedRuntimeIdentitySha256?: string;
   writeLinkedStdoutSha256?: string;
   writeLinkedStderrSha256?: string;
   writeLinkedErrorSha256?: string;
@@ -168,6 +170,7 @@ export function writeLinkedTestEventEvidence(
       ? { writeLinkedStderrTruncated: true }
       : {}),
     ...hashes,
+    ...verifierVersionField(value),
   };
 }
 
@@ -272,6 +275,7 @@ function hashFields(
     selectionSnapshotSha256: "writeLinkedSelectionSnapshotSha256",
     observedSnapshotSha256: "writeLinkedObservedSnapshotSha256",
     verifierSha256: "writeLinkedVerifierSha256",
+    runtimeIdentitySha256: "writeLinkedRuntimeIdentitySha256",
     stdoutSha256: "writeLinkedStdoutSha256",
     stderrSha256: "writeLinkedStderrSha256",
     errorSha256: "writeLinkedErrorSha256",
@@ -283,6 +287,21 @@ function hashFields(
     if (digest) result[target] = digest;
   }
   return result as WriteLinkedTestEventTraceView;
+}
+
+function visibleVersion(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[A-Za-z0-9][A-Za-z0-9.+_-]{0,79}$/u.test(value)
+  );
+}
+
+function verifierVersionField(
+  value: Record<string, unknown>,
+): Pick<WriteLinkedTestEventTraceView, "writeLinkedVerifierVersion"> {
+  return visibleVersion(value["verifierVersion"])
+    ? { writeLinkedVerifierVersion: value["verifierVersion"] }
+    : {};
 }
 
 function writeLinkedStatus(value: unknown): WriteLinkedTestStatus | undefined {

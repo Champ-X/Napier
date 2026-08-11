@@ -171,6 +171,7 @@ describe("Napier Sandbox setup CLI", () => {
       checks: {
         node: "sandbox_process_ready",
         resources: "sandbox_resources_ready",
+        verification: "verification_ready",
         shell: "shell_ready",
         python: "python_ready",
         git: "git_ready",
@@ -255,11 +256,7 @@ describe("Napier Sandbox setup CLI", () => {
   it("previews and exact-applies Sandbox uninstall without deleting the image", async () => {
     const fixture = await createFixture();
     const dataRoot = path.join(fixture.workspace, ".napier");
-    await saveSandboxInstallation(
-      dataRoot,
-      "napier-sandbox:0.1.0",
-      identity(),
-    );
+    await saveSandboxInstallation(dataRoot, "napier-sandbox:0.1.0", identity());
     const output = new CaptureWritable();
     const fallback = new UnsupportedSandboxAdapter("platform-fallback");
     const dependencies = {
@@ -314,7 +311,9 @@ describe("Napier Sandbox setup CLI", () => {
         dependencies,
       ),
     ).toBe(1);
-    await expect(access(path.join(dataRoot, "sandbox.json"))).resolves.toBeUndefined();
+    await expect(
+      access(path.join(dataRoot, "sandbox.json")),
+    ).resolves.toBeUndefined();
 
     const result = new CaptureWritable();
     expect(

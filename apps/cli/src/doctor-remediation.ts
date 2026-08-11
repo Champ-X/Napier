@@ -174,6 +174,12 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
       "Select a process Sandbox with runtime identity and PTY support; the configured provider cannot run Shell Sessions yet.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
+  verification_provider_unavailable: {
+    id: "repair_verification_provider",
+    instruction:
+      "Rerun Sandbox setup with the locked official image. Coding verification remains unavailable until the active provider binds and executes TypeScript, Vitest, and Prettier from the same immutable image.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
   service_provider_unavailable: {
     id: "repair_local_service_provider",
     instruction:

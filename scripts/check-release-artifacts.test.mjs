@@ -57,6 +57,7 @@ describe("release artifacts audit", () => {
       "oci-resource-limits-stage10",
       "oci-crash-recovery-stage11",
       "sandbox-security-casebook-stage12",
+      "sandbox-product-acceptance-stage13",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -365,6 +366,28 @@ describe("release artifacts audit", () => {
       expect.arrayContaining([
         expect.stringContaining(
           "Sandbox security Casebook: Sandbox security Casebook artifact shape is invalid",
+        ),
+      ]),
+    );
+  });
+
+  it("fails when retained Sandbox product acceptance exposes stale output", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/sandbox-product-acceptance-stage13.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.restart.staleOutputExposed = true;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "Sandbox product acceptance: Sandbox product acceptance artifact shape is invalid",
         ),
       ]),
     );
@@ -1079,16 +1102,19 @@ async function createFixture() {
   await createManagementOpenApiFixture(root);
   await createManagementOpenApiCompatibilityFixture(root);
   await mkdir(path.join(root, "docker/napier-sandbox"), { recursive: true });
-  await cp(
-    path.resolve("docker/napier-sandbox/Dockerfile"),
-    path.join(root, "docker/napier-sandbox/Dockerfile"),
-  );
+  for (const fileName of ["Dockerfile", "package.json", "package-lock.json"]) {
+    await cp(
+      path.resolve("docker/napier-sandbox", fileName),
+      path.join(root, "docker/napier-sandbox", fileName),
+    );
+  }
   for (const fileName of [
     "sandbox-image-sbom-0.1.0.cdx.json",
     "sandbox-image-provenance-0.1.0.json",
     "oci-resource-limits-stage10.json",
     "oci-crash-recovery-stage11.json",
     "sandbox-security-casebook-stage12.json",
+    "sandbox-product-acceptance-stage13.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),
@@ -1109,6 +1135,13 @@ async function createFixture() {
     "scripts/check-sandbox-security-casebook.mjs",
     "scripts/sandbox-security-casebook-artifact.mjs",
     "scripts/sandbox-security-casebook-live.mjs",
+    "packages/runtime/src/sandbox-setup-service.ts",
+    "packages/runtime/src/verification-runtime.ts",
+    "packages/runtime/src/verification.ts",
+    "packages/runtime/src/workspace-processes.ts",
+    "scripts/check-sandbox-product-acceptance.mjs",
+    "scripts/sandbox-product-acceptance-artifact.mjs",
+    "scripts/sandbox-product-acceptance-live.mjs",
   ]) {
     await mkdir(path.join(root, path.dirname(relative)), { recursive: true });
     await cp(path.resolve(relative), path.join(root, relative));

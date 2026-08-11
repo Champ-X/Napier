@@ -9,11 +9,12 @@ const execFile = promisify(execFileWithCallback);
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 const DEFAULT_IMAGE = "napier-sandbox:0.1.0";
-const DEFAULT_SBOM_PATH =
-  "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json";
+const DEFAULT_SBOM_PATH = "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json";
 const DEFAULT_RECEIPT_PATH =
   "docs/artifacts/sandbox-image-provenance-0.1.0.json";
 const DOCKERFILE_PATH = "docker/napier-sandbox/Dockerfile";
+const PACKAGE_JSON_PATH = "docker/napier-sandbox/package.json";
+const PACKAGE_LOCK_PATH = "docker/napier-sandbox/package-lock.json";
 const COLLECTION_LIMITS = {
   network: "none",
   readOnlyRoot: true,
@@ -43,6 +44,8 @@ process.stdout.write(JSON.stringify({
   git: command("/usr/bin/git", ["--version"]).replace(/^git version /, ""),
   typescript: version("typescript"),
   typescriptLanguageServer: version("typescript-language-server"),
+  vitest: version("vitest"),
+  prettier: version("prettier"),
 }));
 `;
 
@@ -65,11 +68,13 @@ export async function collectSandboxImageEvidence(
   const imageId = IMAGE_ID.test(String(inspect?.Id)) ? inspect.Id : "";
   const [debianText, npmText, toolchainText] = imageId
     ? await Promise.all([
-        docker(containerArgs(imageId, [
-          "/usr/bin/dpkg-query",
-          "-W",
-          "-f=${binary:Package}\\t${Version}\\t${Architecture}\\n",
-        ])),
+        docker(
+          containerArgs(imageId, [
+            "/usr/bin/dpkg-query",
+            "-W",
+            "-f=${binary:Package}\\t${Version}\\t${Architecture}\\n",
+          ]),
+        ),
         docker(
           containerArgs(imageId, [
             "/usr/local/bin/node",
@@ -167,9 +172,7 @@ export function createSandboxImageSbom({
         },
       ],
     },
-  ].sort((left, right) =>
-    compareText(left["bom-ref"], right["bom-ref"]),
-  );
+  ].sort((left, right) => compareText(left["bom-ref"], right["bom-ref"]));
   return {
     bomFormat: "CycloneDX",
     specVersion: "1.5",
@@ -359,17 +362,30 @@ function containerArgs(imageId, command) {
 }
 
 async function sourceEvidence(repoRoot) {
-  const dockerfilePath = path.join(repoRoot, DOCKERFILE_PATH);
-  const dockerfile = await readFile(dockerfilePath);
+  const [dockerfile, packageJson, packageLock] = await Promise.all([
+    readFile(path.join(repoRoot, DOCKERFILE_PATH)),
+    readFile(path.join(repoRoot, PACKAGE_JSON_PATH)),
+    readFile(path.join(repoRoot, PACKAGE_LOCK_PATH)),
+  ]);
   const dockerfileSha256 = sha256(dockerfile);
+  const packageJsonSha256 = sha256(packageJson);
+  const packageLockSha256 = sha256(packageLock);
   return {
     dockerfilePath: DOCKERFILE_PATH,
     dockerfileSha256,
+    packageJsonPath: PACKAGE_JSON_PATH,
+    packageJsonSha256,
+    packageLockPath: PACKAGE_LOCK_PATH,
+    packageLockSha256,
     contextSha256: sha256(
       Buffer.from(
         stableJson({
           dockerfile: DOCKERFILE_PATH,
           dockerfileSha256,
+          packageJson: PACKAGE_JSON_PATH,
+          packageJsonSha256,
+          packageLock: PACKAGE_LOCK_PATH,
+          packageLockSha256,
         }),
         "utf8",
       ),
@@ -380,7 +396,9 @@ async function sourceEvidence(repoRoot) {
 function imageEvidence(reference, inspect, errors) {
   const labels = isRecord(inspect?.Config?.Labels) ? inspect.Config.Labels : {};
   const repoDigests = Array.isArray(inspect?.RepoDigests)
-    ? [...inspect.RepoDigests].filter((value) => typeof value === "string").sort()
+    ? [...inspect.RepoDigests]
+        .filter((value) => typeof value === "string")
+        .sort()
     : [];
   const value = {
     reference,
@@ -472,6 +490,8 @@ function parseToolchain(text, errors) {
     "git",
     "typescript",
     "typescriptLanguageServer",
+    "vitest",
+    "prettier",
   ];
   if (
     !isRecord(value) ||
@@ -520,8 +540,7 @@ function isLocalContainerEndpoint(endpoint) {
   }
   const lower = endpoint.toLowerCase();
   return (
-    lower.startsWith("npipe:////./pipe/") ||
-    /^fd:\/\/(?:[0-9]+)?$/u.test(lower)
+    lower.startsWith("npipe:////./pipe/") || /^fd:\/\/(?:[0-9]+)?$/u.test(lower)
   );
 }
 
@@ -536,6 +555,8 @@ function validToolchain(value) {
       "git",
       "typescript",
       "typescriptLanguageServer",
+      "vitest",
+      "prettier",
     ].every(
       (name) =>
         typeof value[name] === "string" &&
@@ -602,9 +623,7 @@ function validateReceipt(receipt, errors) {
     return;
   }
   const { contentSha256, ...withoutHash } = receipt;
-  if (
-    contentSha256 !== sha256(Buffer.from(stableJson(withoutHash), "utf8"))
-  ) {
+  if (contentSha256 !== sha256(Buffer.from(stableJson(withoutHash), "utf8"))) {
     errors.push("Sandbox image provenance content hash is invalid");
   }
 }
@@ -620,8 +639,7 @@ function validateSbomReceiptBinding(sbom, receipt, errors) {
     properties["napier.image.reference"] !== receipt.image?.reference ||
     properties["napier.image.os"] !== receipt.image?.os ||
     properties["napier.image.arch"] !== receipt.image?.arch ||
-    properties["napier.source.context-sha256"] !==
-      receipt.source?.contextSha256
+    properties["napier.source.context-sha256"] !== receipt.source?.contextSha256
   ) {
     errors.push("SBOM metadata does not match the provenance receipt");
   }
@@ -651,8 +669,12 @@ function validSource(value) {
     isRecord(value) &&
     value.dockerfilePath === DOCKERFILE_PATH &&
     isSha256(value.dockerfileSha256) &&
+    value.packageJsonPath === PACKAGE_JSON_PATH &&
+    isSha256(value.packageJsonSha256) &&
+    value.packageLockPath === PACKAGE_LOCK_PATH &&
+    isSha256(value.packageLockSha256) &&
     isSha256(value.contextSha256) &&
-    Object.keys(value).length === 3
+    Object.keys(value).length === 7
   );
 }
 
@@ -687,9 +709,12 @@ function validSbomReceipt(value) {
     value.specVersion === "1.5" &&
     isSha256(value.sha256) &&
     isSha256(value.componentSetSha256) &&
-    ["componentCount", "debianComponentCount", "npmComponentCount", "runtimeComponentCount"].every(
-      (name) => Number.isSafeInteger(value[name]) && value[name] >= 0,
-    ) &&
+    [
+      "componentCount",
+      "debianComponentCount",
+      "npmComponentCount",
+      "runtimeComponentCount",
+    ].every((name) => Number.isSafeInteger(value[name]) && value[name] >= 0) &&
     value.componentCount ===
       value.debianComponentCount +
         value.npmComponentCount +
@@ -768,7 +793,10 @@ async function runCli() {
       fail(result.errors);
       return;
     }
-    await writeJson(resolveRepoPath(options.repoRoot, options.sbomPath), result.sbom);
+    await writeJson(
+      resolveRepoPath(options.repoRoot, options.sbomPath),
+      result.sbom,
+    );
     await writeJson(
       resolveRepoPath(options.repoRoot, options.receiptPath),
       result.receipt,

@@ -127,9 +127,7 @@ describe("Sandbox setup HTTP", () => {
       access(path.join(dataRoot, "sandbox.json")),
     ).resolves.toBeUndefined();
 
-    const uninstallResponse = await app.request(
-      "/api/setup/sandbox/uninstall",
-    );
+    const uninstallResponse = await app.request("/api/setup/sandbox/uninstall");
     expect(uninstallResponse.status).toBe(200);
     const uninstallPreview =
       (await uninstallResponse.json()) as SandboxUninstallPreview;
@@ -141,33 +139,25 @@ describe("Sandbox setup HTTP", () => {
         fallbackSandbox: "unsupported",
       }),
     );
-    const staleUninstall = await app.request(
-      "/api/setup/sandbox/uninstall",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ expectedPreviewSha256: "0".repeat(64) }),
-      },
-    );
+    const staleUninstall = await app.request("/api/setup/sandbox/uninstall", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ expectedPreviewSha256: "0".repeat(64) }),
+    });
     expect(staleUninstall.status).toBe(409);
     await expect(
       access(path.join(dataRoot, "sandbox.json")),
     ).resolves.toBeUndefined();
 
-    const uninstallApply = await app.request(
-      "/api/setup/sandbox/uninstall",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          expectedPreviewSha256: uninstallPreview.contentSha256,
-        }),
-      },
-    );
+    const uninstallApply = await app.request("/api/setup/sandbox/uninstall", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        expectedPreviewSha256: uninstallPreview.contentSha256,
+      }),
+    });
     expect(uninstallApply.status).toBe(200);
-    expect(
-      (await uninstallApply.json()) as SandboxUninstallResult,
-    ).toEqual(
+    expect((await uninstallApply.json()) as SandboxUninstallResult).toEqual(
       expect.objectContaining({
         action: "uninstalled",
         imageRetained: true,
@@ -251,6 +241,7 @@ function dependencies() {
       checks: {
         node: "sandbox_process_ready",
         resources: "sandbox_resources_ready",
+        verification: "verification_ready",
         shell: "shell_ready",
         python: "python_ready",
         git: "git_ready",
@@ -260,8 +251,7 @@ function dependencies() {
       },
     }),
     activate: async () => new ReadySandboxAdapter(),
-    fallback: () =>
-      new UnsupportedSandboxAdapter("sandbox-http-before"),
+    fallback: () => new UnsupportedSandboxAdapter("sandbox-http-before"),
   };
 }
 

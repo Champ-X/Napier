@@ -8,6 +8,7 @@ export type LocalCapabilityId =
   | "dap"
   | "python"
   | "shell"
+  | "verification"
   | "service";
 
 /**

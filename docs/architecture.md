@@ -725,6 +725,14 @@ explicit live mode replays collection. Publication fields remain false for
 registry, signing, and attestation, so this evidence cannot be mistaken for a
 multi-platform signed release.
 
+The source binding includes the Dockerfile, the exact-version toolchain
+manifest, and its npm lockfile; any of the three changing makes Setup
+`buildable` and invalidates the old SBOM/provenance projection. The build copies
+both npm files into `/opt/napier` and uses `npm ci --ignore-scripts --omit=dev`.
+The image runtime probe hashes its own Node, package manifests, TypeScript,
+Vitest, Prettier, LSP, DAP, Python, Git, and Shell identities before those
+capabilities are admitted.
+
 Runtime resource enforcement is a separate observed boundary. The OCI launch
 arguments and command receipts share one immutable policy hash. Exact-preview
 Setup and Doctor then run `doctor-sandbox-resource-probe.ts` through the
@@ -789,13 +797,38 @@ Stage 12 receipt offline; only `--live` or `--write` launches containers.
 This is a local `linux/arm64` security result and deliberately retains
 `s1Complete=false`.
 
+`verify_workspace` has a distinct provider runtime contract. For OCI, the
+adapter returns the in-image Node executable plus exact TypeScript, Vitest, and
+Prettier paths, versions, asset hashes, manifest hashes, and one image-bound
+runtime identity. Host executable or toolchain overrides are rejected. The
+runner uses no host runtime mount and re-resolves the provider identity after
+execution. Composite TypeScript projects receive a fixed
+`--tsBuildInfoFile /tmp/napier-verification.tsbuildinfo`, keeping incremental
+state in bounded private tmpfs instead of weakening the read-only Workspace.
+Setup and Doctor execute all three `--version` paths; a missing or drifting
+verifier returns `verification_provider_unavailable` and build/test claims fail
+closed.
+
+Stage 13 drives this as one default-product lifecycle using the built CLI and
+configured Runtime over a temporary data root: exact-preview Setup, 14-check
+offline Doctor, image-bound typecheck and selected Vitest, egress-denied local
+service health and cancellation, Runtime shutdown/reopen with interrupted
+unknown Process evidence and no stale output, and exact-preview uninstall with
+the shared image retained. The receipt retains hashes, counts, statuses, and
+version evidence only; raw CLI/Doctor/Process output, paths, endpoints, resource
+names, and credentials are excluded. Offline verification is release-gated;
+the explicit live command must restore container, network, and scratch sets
+exactly and remove its private data root.
+
 The shared catalog is published as the narrow
-`@napier/contracts/agent-capabilities` subpath; the 7,025-line Contracts root
-barrel remains unchanged. CLI option parsing and first-use dispatch occupy leaf
-modules, reducing `cli-options.ts` from 555 to 518 lines and maximum complexity
-from 31 to 22 while keeping `cli.ts` at 682 lines. Web capability status and
-preset controls are leaf components, reducing `App.tsx` to 1,082 lines and
-maximum complexity 60, and `ContextPanel.tsx` to 3,537 lines.
+`@napier/contracts/agent-capabilities` subpath. The Contracts root remains at
+its hard 6,738-line budget; image-bound verifier version and runtime identity
+extend the existing write-linked evidence shape in place. CLI option parsing
+and first-use dispatch occupy leaf modules, reducing `cli-options.ts` from 555
+to 518 lines and maximum complexity from 31 to 22 while keeping `cli.ts` at 682
+lines. Web capability status and preset controls are leaf components, reducing
+`App.tsx` to 1,082 lines and maximum complexity 60, and `ContextPanel.tsx` to
+3,537 lines.
 
 Presets are convenience, not escalation. None sets `unrestricted`; the Browser
 and Research presets remain `observe` and report Browser read available but

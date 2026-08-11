@@ -78,9 +78,7 @@ describe("Sandbox setup Web API", () => {
         expectedPreviewSha256: preview.contentSha256,
       }),
     ).resolves.toEqual(result);
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      "/api/setup/sandbox/uninstall",
-    );
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/setup/sandbox/uninstall");
     expect(fetchMock.mock.calls[1]).toEqual([
       "/api/setup/sandbox/uninstall",
       expect.objectContaining({
@@ -130,6 +128,7 @@ async function sandboxResult(
     checks: {
       node: "sandbox_process_ready",
       resources: "sandbox_resources_ready",
+      verification: "verification_ready",
       shell: "shell_ready",
       python: "python_ready",
       git: "git_ready",

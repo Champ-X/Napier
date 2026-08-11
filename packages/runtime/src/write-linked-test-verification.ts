@@ -142,6 +142,12 @@ export class WriteLinkedTestVerificationRunner {
         status,
         observedSnapshotSha256,
         verifierSha256: execution.verifierSha256,
+        ...(execution.verifierVersion
+          ? { verifierVersion: execution.verifierVersion }
+          : {}),
+        ...(execution.runtimeIdentitySha256
+          ? { runtimeIdentitySha256: execution.runtimeIdentitySha256 }
+          : {}),
         durationMs: Math.max(0, Date.now() - startedAt),
         exitCode: execution.exitCode,
         stdoutSha256: execution.stdoutSha256,
@@ -249,6 +255,8 @@ function selectionDetails(
   | "status"
   | "observedSnapshotSha256"
   | "verifierSha256"
+  | "verifierVersion"
+  | "runtimeIdentitySha256"
   | "durationMs"
   | "exitCode"
   | "stdoutSha256"

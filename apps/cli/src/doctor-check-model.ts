@@ -14,6 +14,7 @@ export interface DoctorCheck {
     | "dap"
     | "python"
     | "shell"
+    | "verification"
     | "service";
   status: DoctorCheckStatus;
   required: boolean;

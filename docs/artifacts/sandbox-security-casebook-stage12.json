@@ -1,17 +1,17 @@
 {
   "kind": "napier.sandbox-security-casebook-stage12",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T01:33:54.017Z",
+  "generatedAt": "2026-08-11T02:50:50.569Z",
   "image": {
-    "id": "sha256:3a2c2bb5314ad03c007b71b88c5822163d510841eeef93c0fc54ef98cfd4d25a",
+    "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
     "platform": "linux/arm64",
-    "provenanceSha256": "c628ca038f0a14ceea9344bd15f1087615539154e9261d0daacb2f962f2c7ccd"
+    "provenanceSha256": "cea0625e085acdd78a0941229a29bfdc5c0cb3dc226cf9d0a79d6e4753778e7c"
   },
   "implementation": {
     "resourcePolicySha256": "e95d7afc88833609b7b3ef268725c5df36148241c36430bf0f7988a967a16448",
     "commandExecutionSha256": "16c76802c9595115f863c304a8c78c3bd3e105e10120815ada318af2a401f037",
     "processLifecycleSha256": "a6b5bfb9dc924da0c92292e0d593f79abf9af6a0a57be4a64b1870e200742c2e",
-    "ociAdapterSha256": "20a539dce9356ce33f0da1d2f708ae45c23abadf62ecb59efc7d6f9c0dc3b79d",
+    "ociAdapterSha256": "43e4cd2564cf11c5ed344885a569c1151f32543f964f768f082086c0df9e5a77",
     "containerPolicySha256": "f8668fd7486703c36a9e8157102a71fae1403d9eba836a846f103a04ae1e46d4",
     "checkScriptSha256": "8bb9bc6d22e9850ff05d1edca7cee2a29815715cf75824b3c69cb1cf8e80bd7b",
     "artifactVerifierSha256": "7057be184fd731216f3bf4f5c85df316a94735bacf73fbe40944956debdcc0ac",
@@ -23,42 +23,42 @@
       "status": "passed",
       "reason": "read_only_workspace_mount",
       "evidenceSha256": "839fddb0a9f798271e4d97426259df567c61cf0c69fcd19f87dec9b04a50cf30",
-      "durationMs": 193
+      "durationMs": 212
     },
     {
       "id": "outside_read_denied",
       "status": "passed",
       "reason": "outside_path_not_mounted",
       "evidenceSha256": "7acff5264981de1b9a6b8ebc9cb244bb114ab51c034b3667fa8807d9eab1799e",
-      "durationMs": 179
+      "durationMs": 199
     },
     {
       "id": "secret_inheritance_denied",
       "status": "passed",
       "reason": "fixed_secret_free_environment",
       "evidenceSha256": "045ebc62c392e6138415d00c128edbeb395df3a8ba238dfd1f83278685acd5b6",
-      "durationMs": 185
+      "durationMs": 194
     },
     {
       "id": "private_network_denied",
       "status": "passed",
       "reason": "network_namespace_denied",
       "evidenceSha256": "52638f7aa11e30eee97bb82fb91e19b43ce05ec671bf171841de9e7c2b6b04ca",
-      "durationMs": 178
+      "durationMs": 186
     },
     {
       "id": "temporary_storage_exhausted",
       "status": "passed",
       "reason": "tmpfs_size_limit",
       "evidenceSha256": "2457cf7688cb1114703f044725357b720a9cec019cd570841bb2a23cabaf0180",
-      "durationMs": 193
+      "durationMs": 222
     },
     {
       "id": "process_limit_enforced",
       "status": "passed",
       "reason": "pids_cgroup_limit",
       "evidenceSha256": "d4b15faa70d29332e25305d12a912c6e5d75bc3083e8502bf59da34ad0269acf",
-      "durationMs": 280,
+      "durationMs": 313,
       "observedCount": 248,
       "rejectedCount": 152
     },
@@ -67,35 +67,35 @@
       "status": "passed",
       "reason": "memory_cgroup_kill",
       "evidenceSha256": "d5ce127372eac78437775c4b92a48cd9faa9996d47fa748d36f567b6b74b5ede",
-      "durationMs": 308
+      "durationMs": 472
     },
     {
       "id": "wall_time_enforced",
       "status": "passed",
       "reason": "wall_time_limit",
       "evidenceSha256": "be21ee202c61700b59be782197476e3d3fc4770319d683eab032d0a62cdd8b79",
-      "durationMs": 1134
+      "durationMs": 1149
     },
     {
       "id": "output_limit_enforced",
       "status": "passed",
       "reason": "output_character_limit",
       "evidenceSha256": "3d2045d484de619ed33906007d5a217a202e2072eba48bd594647e4da70f0355",
-      "durationMs": 215
+      "durationMs": 233
     },
     {
       "id": "cancellation_enforced",
       "status": "passed",
       "reason": "abort_terminates_process",
       "evidenceSha256": "3ae0c811738cbde00c5d411b40823897175f963352f6431b5a6f9220c83f3303",
-      "durationMs": 407
+      "durationMs": 391
     },
     {
       "id": "identity_drift_rejected",
       "status": "passed",
       "reason": "configured_identity_mismatch",
-      "evidenceSha256": "e6abb2e1839391e71e0e5289fd3305410e8dfae3539c1f12a7fe3df03637c93e",
-      "durationMs": 123
+      "evidenceSha256": "5098946d384f01eca9953985f3adfa7d3454a8d1e93731aefe272499b1033885",
+      "durationMs": 120
     }
   ],
   "resourceClosure": {
@@ -125,5 +125,5 @@
       "complete install-build-test-service-cancel-recovery acceptance"
     ]
   },
-  "contentSha256": "364bd745a3cfd6baf546fd1907dff4313c7ce3b58df12dec83f87a7163cb9f04"
+  "contentSha256": "a9bfeca36ad5f5d22a2fb2e497400445399286624dc02cb8cd5e6f7000a4bccd"
 }

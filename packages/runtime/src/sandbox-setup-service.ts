@@ -17,6 +17,7 @@ import {
   probeSandboxResourceRuntime,
   probeSandboxProcessRuntime,
   probeShellRuntime,
+  probeVerificationRuntime,
 } from "./doctor-runtime-probes.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -173,8 +174,7 @@ export class SandboxSetupService {
   async uninstallPreview(): Promise<SandboxUninstallPreview> {
     const binding = await this.inspectBinding();
     const fallback = (
-      this.dependencies.fallback ??
-      (() => createSandboxFallbackAdapter())
+      this.dependencies.fallback ?? (() => createSandboxFallbackAdapter())
     )();
     return createSandboxUninstallPreview(
       binding,
@@ -191,8 +191,7 @@ export class SandboxSetupService {
     try {
       const binding = await this.inspectBinding();
       const fallback = (
-        this.dependencies.fallback ??
-        (() => createSandboxFallbackAdapter())
+        this.dependencies.fallback ?? (() => createSandboxFallbackAdapter())
       )();
       const preview = createSandboxUninstallPreview(
         binding,
@@ -208,9 +207,10 @@ export class SandboxSetupService {
       if (!binding.bindingSha256) {
         throw new Error("Sandbox installation cannot be safely removed");
       }
-      await (
-        this.dependencies.removeInstallation ?? removeSandboxInstallation
-      )(this.dataRoot, binding.bindingSha256);
+      await (this.dependencies.removeInstallation ?? removeSandboxInstallation)(
+        this.dataRoot,
+        binding.bindingSha256,
+      );
       this.sandbox.replace(fallback);
       return createSandboxUninstallResult(binding, fallback.id);
     } finally {
@@ -291,13 +291,10 @@ export function createSandboxUninstallPreview(
     component: "sandbox" as const,
     status: binding.status,
     active: Boolean(
-      installation &&
-      activeIdentitySha256 === installation.identitySha256,
+      installation && activeIdentitySha256 === installation.identitySha256,
     ),
     imageRetained: true as const,
-    ...(binding.bindingSha256
-      ? { bindingSha256: binding.bindingSha256 }
-      : {}),
+    ...(binding.bindingSha256 ? { bindingSha256: binding.bindingSha256 } : {}),
     ...(installation
       ? {
           imageReference: installation.imageReference,
@@ -329,6 +326,11 @@ async function verifySandboxRuntime(input: {
       sandbox,
     ),
     resources: await probeSandboxResourceRuntime(
+      input.workspaceRoot,
+      input.signal,
+      sandbox,
+    ),
+    verification: await probeVerificationRuntime(
       input.workspaceRoot,
       input.signal,
       sandbox,

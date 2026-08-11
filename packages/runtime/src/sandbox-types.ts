@@ -81,6 +81,25 @@ export interface SandboxNodeDebuggerRuntimeBinding {
   runtimeIdentitySha256: string;
 }
 
+export interface SandboxVerificationRuntimeBinding {
+  runtime: "verification";
+  nodeExecutable: string;
+  nodeExecutableSha256: string;
+  toolchainRoot: string;
+  packageJsonSha256: string;
+  packageLockSha256: string;
+  typecheckPath: string;
+  typecheckVersion: string;
+  typecheckSha256: string;
+  testPath: string;
+  testVersion: string;
+  testSha256: string;
+  formatPath: string;
+  formatVersion: string;
+  formatSha256: string;
+  runtimeIdentitySha256: string;
+}
+
 export interface OsSandboxAdapter {
   readonly id: string;
   readonly readinessVersion?: number;
@@ -91,6 +110,9 @@ export interface OsSandboxAdapter {
   resolveLspRuntime?(): Promise<SandboxLspRuntimeBinding> | undefined;
   resolveNodeDebuggerRuntime?():
     | Promise<SandboxNodeDebuggerRuntimeBinding>
+    | undefined;
+  resolveVerificationRuntime?():
+    | Promise<SandboxVerificationRuntimeBinding>
     | undefined;
   launch(request: SandboxLaunchRequest): Promise<SandboxedProcess>;
 }

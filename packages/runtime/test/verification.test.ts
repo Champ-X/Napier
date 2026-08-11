@@ -18,6 +18,7 @@ import type {
   SandboxedProcess,
   SandboxLaunchRequest,
 } from "../src/sandbox.js";
+import type { SandboxVerificationRuntimeBinding } from "../src/sandbox-types.js";
 import { UnsupportedSandboxAdapter } from "../src/sandbox.js";
 import {
   createVerificationTool,
@@ -83,6 +84,8 @@ async function createWorkspace(): Promise<{
 
 function createFakeSandbox(
   options: {
+    id?: string;
+    verification?: () => Promise<SandboxVerificationRuntimeBinding>;
     stdout?: string;
     stderr?: string;
     exitCode?: number;
@@ -92,7 +95,10 @@ function createFakeSandbox(
   const launchRequests: SandboxLaunchRequest[] = [];
   const terminate = vi.fn<() => Promise<void>>();
   const sandbox: OsSandboxAdapter = {
-    id: "fake-verification-sandbox",
+    id: options.id ?? "fake-verification-sandbox",
+    ...(options.verification
+      ? { resolveVerificationRuntime: options.verification }
+      : {}),
     async launch(request) {
       launchRequests.push(structuredClone(request));
       const stdin = new PassThrough();
@@ -142,6 +148,27 @@ function createFakeSandbox(
     },
   };
   return { sandbox, launchRequests, terminate };
+}
+
+function providerVerificationBinding(): SandboxVerificationRuntimeBinding {
+  return {
+    runtime: "verification",
+    nodeExecutable: "/usr/local/bin/node",
+    nodeExecutableSha256: "1".repeat(64),
+    toolchainRoot: "/opt/napier",
+    packageJsonSha256: "2".repeat(64),
+    packageLockSha256: "3".repeat(64),
+    typecheckPath: "/opt/napier/node_modules/typescript/bin/tsc",
+    typecheckVersion: "5.9.3",
+    typecheckSha256: "4".repeat(64),
+    testPath: "/opt/napier/node_modules/vitest/vitest.mjs",
+    testVersion: "4.1.9",
+    testSha256: "5".repeat(64),
+    formatPath: "/opt/napier/node_modules/prettier/bin/prettier.cjs",
+    formatVersion: "3.8.4",
+    formatSha256: "6".repeat(64),
+    runtimeIdentitySha256: "7".repeat(64),
+  };
 }
 
 describe("sandboxed workspace verification", () => {
@@ -208,6 +235,8 @@ describe("sandboxed workspace verification", () => {
       "--noEmit",
       "--pretty",
       "false",
+      "--tsBuildInfoFile",
+      "/tmp/napier-verification.tsbuildinfo",
     ]);
     expect(request.env).toEqual({
       CI: "1",
@@ -265,6 +294,100 @@ describe("sandboxed workspace verification", () => {
     expect(request.runtimeReadPaths).toEqual([
       await realpath(path.join(toolchainRoot, "node_modules")),
     ]);
+  });
+
+  it("uses the image-bound Node and verifier without host runtime mounts", async () => {
+    const { workspaceRoot } = await createWorkspace();
+    const binding = providerVerificationBinding();
+    const fake = createFakeSandbox({
+      id: "oci-container",
+      stdout: "typecheck passed\n",
+      verification: async () => binding,
+    });
+    const runner = new VerificationRunner({
+      workspaceRoot,
+      sandbox: fake.sandbox,
+    });
+
+    const result = await runner.run({
+      kind: "typecheck",
+      cwd: "packages/example",
+    });
+
+    expect(result.details).toEqual(
+      expect.objectContaining({
+        status: "passed",
+        sandbox: "oci-container",
+        verifierVersion: "5.9.3",
+        verifierSha256: binding.typecheckSha256,
+        runtimeIdentitySha256: binding.runtimeIdentitySha256,
+        toolchainExternal: false,
+      }),
+    );
+    expect(fake.launchRequests[0]).toEqual(
+      expect.objectContaining({
+        command: binding.nodeExecutable,
+        args: [
+          binding.typecheckPath,
+          "-p",
+          await realpath(
+            path.join(workspaceRoot, "packages/example/tsconfig.json"),
+          ),
+          "--noEmit",
+          "--pretty",
+          "false",
+          "--tsBuildInfoFile",
+          "/tmp/napier-verification.tsbuildinfo",
+        ],
+        approvedCapabilities: ["process.spawn", "workspace.read"],
+      }),
+    );
+    expect(fake.launchRequests[0]).not.toHaveProperty("runtimeReadPaths");
+  });
+
+  it("rejects host overrides and provider identity drift", async () => {
+    const { root, workspaceRoot } = await createWorkspace();
+    const binding = providerVerificationBinding();
+    const verification = vi
+      .fn()
+      .mockResolvedValueOnce(binding)
+      .mockResolvedValueOnce({
+        ...binding,
+        runtimeIdentitySha256: "8".repeat(64),
+      });
+    const fake = createFakeSandbox({
+      id: "oci-container",
+      stdout: "passed\n",
+      verification,
+    });
+
+    for (const override of [
+      { toolchainRoot: root },
+      { nodeExecutable: process.execPath },
+    ]) {
+      await expect(
+        new VerificationRunner({
+          workspaceRoot,
+          sandbox: fake.sandbox,
+          ...override,
+        }).run({
+          kind: "test",
+          target: "packages/example/test/example.test.ts",
+        }),
+      ).rejects.toThrow("does not accept host runtime overrides");
+    }
+
+    verification.mockReset();
+    verification.mockResolvedValueOnce(binding).mockResolvedValueOnce({
+      ...binding,
+      runtimeIdentitySha256: "8".repeat(64),
+    });
+    await expect(
+      new VerificationRunner({
+        workspaceRoot,
+        sandbox: fake.sandbox,
+      }).run({ kind: "format", cwd: "packages/example" }),
+    ).rejects.toThrow("provider runtime identity changed");
   });
 
   it("fails when an external verifier changes during candidate execution", async () => {

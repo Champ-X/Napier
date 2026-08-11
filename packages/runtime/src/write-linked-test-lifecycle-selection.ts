@@ -37,6 +37,8 @@ export interface WriteLinkedLifecycleSelection {
     | "status"
     | "observedSnapshotSha256"
     | "verifierSha256"
+    | "verifierVersion"
+    | "runtimeIdentitySha256"
     | "durationMs"
     | "exitCode"
     | "stdoutSha256"

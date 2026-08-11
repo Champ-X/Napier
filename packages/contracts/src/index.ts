@@ -3135,7 +3135,6 @@ export interface WorkspacePatchDiagnosticsDetails {
   durationMs: number;
   resultSha256: string;
 }
-
 export type WriteLinkedTestVerificationStatus =
   | "passed"
   | "failed"
@@ -3172,6 +3171,8 @@ export interface WriteLinkedTestVerificationDetails {
   selectionSnapshotSha256: string;
   observedSnapshotSha256?: string;
   verifierSha256?: string;
+  verifierVersion?: string;
+  runtimeIdentitySha256?: string;
   durationMs: number;
   exitCode?: number | null;
   stdoutSha256?: string;
@@ -3181,7 +3182,6 @@ export interface WriteLinkedTestVerificationDetails {
   errorSha256?: string;
   resultSha256: string;
 }
-
 export type * from "./workspace-process.js";
 
 export type WorkspaceFileMutationOperation =

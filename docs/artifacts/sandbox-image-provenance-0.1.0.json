@@ -10,20 +10,24 @@
   },
   "source": {
     "dockerfilePath": "docker/napier-sandbox/Dockerfile",
-    "dockerfileSha256": "96258fbcd7f269a9f3e060e47d43e1f3f622793518662daf310107748959ab38",
-    "contextSha256": "8c56a059862d2e422b6ff3e056c1652d87d1c3672d91a4f980fbd2ce7e72983e"
+    "dockerfileSha256": "8f6af9646f2239818267b25b0b948d44c62eb85a63844dc45c1dfebb77e1bcef",
+    "packageJsonPath": "docker/napier-sandbox/package.json",
+    "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
+    "packageLockPath": "docker/napier-sandbox/package-lock.json",
+    "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
+    "contextSha256": "d36e200e04523a53d528b1cb9a21f53af8afc8cda7c1a126146910a6811a6007"
   },
   "image": {
     "reference": "napier-sandbox:0.1.0",
-    "id": "sha256:3a2c2bb5314ad03c007b71b88c5822163d510841eeef93c0fc54ef98cfd4d25a",
+    "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
     "repoDigests": [
-      "napier-sandbox@sha256:3a2c2bb5314ad03c007b71b88c5822163d510841eeef93c0fc54ef98cfd4d25a"
+      "napier-sandbox@sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a"
     ],
     "os": "linux",
     "arch": "arm64",
-    "sizeBytes": 131000749,
+    "sizeBytes": 146517333,
     "labels": {
-      "io.napier.sandbox.context-sha256": "8c56a059862d2e422b6ff3e056c1652d87d1c3672d91a4f980fbd2ce7e72983e",
+      "io.napier.sandbox.context-sha256": "d36e200e04523a53d528b1cb9a21f53af8afc8cda7c1a126146910a6811a6007",
       "org.opencontainers.image.description": "Pinned Node, Shell, Python, Git, LSP, and DAP toolchain for Napier",
       "org.opencontainers.image.source": "https://github.com/Champ-X/Napier",
       "org.opencontainers.image.title": "Napier Sandbox",
@@ -41,7 +45,9 @@
     "python": "3.11.2",
     "git": "2.39.5",
     "typescript": "5.9.3",
-    "typescriptLanguageServer": "5.3.0"
+    "typescriptLanguageServer": "5.3.0",
+    "vitest": "4.1.9",
+    "prettier": "3.8.4"
   },
   "collection": {
     "network": "none",
@@ -56,13 +62,13 @@
     "path": "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
     "format": "CycloneDX",
     "specVersion": "1.5",
-    "sha256": "f521a6a66afa29e17bd348185fb75f0ef19d3da9731f29b79c56728a00033ce5",
-    "componentCount": 132,
+    "sha256": "e15a9f17f0414e90b7a687dc150ebc32ce1b96b53f7155883d19dd8f9c08f361",
+    "componentCount": 201,
     "debianComponentCount": 129,
-    "npmComponentCount": 2,
+    "npmComponentCount": 71,
     "runtimeComponentCount": 1,
-    "componentSetSha256": "eda52e2ed8b73e67cb303b41398082f1101f11212defeaf55ed0c549d003a953"
+    "componentSetSha256": "f74186f694cedea9f5f05e570618c05974697780e1455dc3f631f1c5e2e4c855"
   },
   "errors": [],
-  "contentSha256": "b6d22c241c504690673d38099ab9ede778053d66f60304ece4989ebc405fc504"
+  "contentSha256": "b4362ac52792f7dabbd8ec46ee9a4c06b4387b0f8dcc551fe7d1261fe33dc738"
 }

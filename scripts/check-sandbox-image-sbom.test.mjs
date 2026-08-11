@@ -152,20 +152,38 @@ async function fixtureRoot() {
   const root = await mkdtemp(path.join(tmpdir(), "napier-sbom-audit-"));
   roots.push(root);
   await mkdir(path.join(root, "docker/napier-sandbox"), { recursive: true });
-  await writeFile(
-    path.join(root, "docker/napier-sandbox/Dockerfile"),
-    "FROM node:24.16.0-bookworm-slim@sha256:fixture\n",
-  );
+  await Promise.all([
+    writeFile(
+      path.join(root, "docker/napier-sandbox/Dockerfile"),
+      "FROM node:24.16.0-bookworm-slim@sha256:fixture\n",
+    ),
+    writeFile(
+      path.join(root, "docker/napier-sandbox/package.json"),
+      `${JSON.stringify({ name: "napier-sandbox-toolchain" })}\n`,
+    ),
+    writeFile(
+      path.join(root, "docker/napier-sandbox/package-lock.json"),
+      `${JSON.stringify({ lockfileVersion: 3, packages: {} })}\n`,
+    ),
+  ]);
   return root;
 }
 
 function dockerFixture(overrides = {}) {
   const dockerfile = "FROM node:24.16.0-bookworm-slim@sha256:fixture\n";
+  const packageJson = `${JSON.stringify({ name: "napier-sandbox-toolchain" })}\n`;
+  const packageLock = `${JSON.stringify({ lockfileVersion: 3, packages: {} })}\n`;
   const dockerfileSha256 = sha256(dockerfile);
+  const packageJsonSha256 = sha256(packageJson);
+  const packageLockSha256 = sha256(packageLock);
   const contextSha256 = sha256(
     JSON.stringify({
       dockerfile: "docker/napier-sandbox/Dockerfile",
       dockerfileSha256,
+      packageJson: "docker/napier-sandbox/package.json",
+      packageJsonSha256,
+      packageLock: "docker/napier-sandbox/package-lock.json",
+      packageLockSha256,
     }),
   );
   const inspect = JSON.stringify([
@@ -218,6 +236,8 @@ function dockerFixture(overrides = {}) {
         git: "2.39.5",
         typescript: "5.9.3",
         typescriptLanguageServer: "5.3.0",
+        vitest: "4.1.9",
+        prettier: "3.8.4",
       });
     }
     return overrides.npm ?? npm;

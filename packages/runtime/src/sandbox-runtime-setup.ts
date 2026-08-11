@@ -211,7 +211,12 @@ export function runSandboxBuild(
 
 async function officialSandboxTarget(): Promise<SandboxRuntimeTarget> {
   const source = await officialSandboxSource();
-  const dockerfileSha256 = await sha256File(source.dockerfilePath);
+  const [dockerfileSha256, packageJsonSha256, packageLockSha256] =
+    await Promise.all([
+      sha256File(source.dockerfilePath),
+      sha256File(path.join(source.contextPath, "package.json")),
+      sha256File(path.join(source.contextPath, "package-lock.json")),
+    ]);
   return {
     imageReference: OFFICIAL_SANDBOX_IMAGE,
     dockerfileSha256,
@@ -219,6 +224,10 @@ async function officialSandboxTarget(): Promise<SandboxRuntimeTarget> {
       canonicalJson({
         dockerfile: "docker/napier-sandbox/Dockerfile",
         dockerfileSha256,
+        packageJson: "docker/napier-sandbox/package.json",
+        packageJsonSha256,
+        packageLock: "docker/napier-sandbox/package-lock.json",
+        packageLockSha256,
       }),
     ),
     platform: process.platform,

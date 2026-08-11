@@ -1,15 +1,14 @@
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
-
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
-
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { runSandboxedProcess } from "./sandboxed-process.js";
+import { verificationArgs } from "./verification-arguments.js";
 import {
-  assertVerificationToolchainStable,
-  resolveVerificationToolchain,
-} from "./verification-toolchain.js";
+  assertVerificationRuntimeStable,
+  resolveVerificationRuntime,
+} from "./verification-runtime.js";
 import type {
   SelectedTestExecutionResult,
   VerificationDetails,
@@ -35,11 +34,11 @@ const DEFAULT_TIMEOUT_MS = 60_000;
 const MIN_TIMEOUT_MS = 1_000;
 const MAX_TIMEOUT_MS = 120_000;
 const MAX_OUTPUT_CHARS = 32_000;
-const VERIFICATION_CLIS = {
-  typecheck: "node_modules/typescript/bin/tsc",
-  test: "node_modules/vitest/vitest.mjs",
-  format: "node_modules/prettier/bin/prettier.cjs",
-} as const satisfies Record<VerificationKind, string>;
+const VERIFICATION_KINDS = new Set<VerificationKind>([
+  "typecheck",
+  "test",
+  "format",
+]);
 
 const verifyWorkspaceSchema = Type.Object(
   {
@@ -91,16 +90,19 @@ export class VerificationRunner {
     if (!(await stat(cwd)).isDirectory()) {
       throw new Error("verification cwd must be a directory");
     }
-    const toolchain = await resolveVerificationToolchain({
-      workspaceRoot,
-      ...(this.options.toolchainRoot
-        ? { toolchainRoot: this.options.toolchainRoot }
-        : {}),
-      verifierRelativePath: VERIFICATION_CLIS[input.kind],
-    });
     const nodeExecutable = await realpath(
       path.resolve(this.options.nodeExecutable ?? process.execPath),
     );
+    const runtime = await resolveVerificationRuntime({
+      workspaceRoot,
+      sandbox: this.options.sandbox,
+      kind: input.kind,
+      nodeExecutable,
+      nodeExecutableExplicit: this.options.nodeExecutable !== undefined,
+      ...(this.options.toolchainRoot
+        ? { toolchainRoot: this.options.toolchainRoot }
+        : {}),
+    });
     const target = await resolveVerificationTarget(workspaceRoot, cwd, input);
     const cwdPath = path.relative(workspaceRoot, cwd) || ".";
     const targetPath = target
@@ -123,10 +125,16 @@ export class VerificationRunner {
             targetSnapshotTruncated: targetSnapshot.truncated,
           }
         : {}),
-      verifierPathSha256: toolchain.verifierPathSha256,
-      verifierSha256: toolchain.verifierSha256,
-      toolchainExternal: toolchain.external,
-      toolchainSha256: toolchain.contentSha256,
+      verifierPathSha256: runtime.verifierPathSha256,
+      verifierSha256: runtime.verifierSha256,
+      toolchainExternal: runtime.toolchainExternal,
+      toolchainSha256: runtime.toolchainSha256,
+      ...(runtime.verifierVersion
+        ? { verifierVersion: runtime.verifierVersion }
+        : {}),
+      ...(runtime.runtimeIdentitySha256
+        ? { runtimeIdentitySha256: runtime.runtimeIdentitySha256 }
+        : {}),
       workspaceSnapshotSha256: workspaceSnapshot.sha256,
       workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
       workspaceSnapshotBytes: workspaceSnapshot.bytes,
@@ -135,8 +143,8 @@ export class VerificationRunner {
     const execution = await runSandboxedProcess({
       sandbox: this.options.sandbox,
       launch: {
-        command: nodeExecutable,
-        args: verificationArgs(input.kind, toolchain.verifierPath, target),
+        command: runtime.nodeExecutable,
+        args: verificationArgs(input.kind, runtime.verifierPath, target),
         cwd,
         env: {
           CI: "1",
@@ -145,8 +153,8 @@ export class VerificationRunner {
         },
         workspaceRoot,
         approvedCapabilities: ["process.spawn", "workspace.read"],
-        ...(toolchain.runtimeReadPaths.length > 0
-          ? { runtimeReadPaths: toolchain.runtimeReadPaths }
+        ...(runtime.runtimeReadPaths.length > 0
+          ? { runtimeReadPaths: runtime.runtimeReadPaths }
           : {}),
       },
       timeoutMs: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
@@ -160,7 +168,7 @@ export class VerificationRunner {
           ? "passed"
           : "failed"
         : execution.status;
-    await assertVerificationToolchainStable(toolchain);
+    await assertVerificationRuntimeStable(runtime, this.options.sandbox);
     const detailsBase = {
       kind: input.kind,
       status,
@@ -182,9 +190,15 @@ export class VerificationRunner {
           }
         : {}),
       verifierPathSha256: scopeReceipt.verifierPathSha256,
-      verifierSha256: toolchain.verifierSha256,
-      toolchainExternal: toolchain.external,
-      toolchainSha256: toolchain.contentSha256,
+      verifierSha256: runtime.verifierSha256,
+      toolchainExternal: runtime.toolchainExternal,
+      toolchainSha256: runtime.toolchainSha256,
+      ...(runtime.verifierVersion
+        ? { verifierVersion: runtime.verifierVersion }
+        : {}),
+      ...(runtime.runtimeIdentitySha256
+        ? { runtimeIdentitySha256: runtime.runtimeIdentitySha256 }
+        : {}),
       workspaceSnapshotSha256: workspaceSnapshot.sha256,
       workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
       workspaceSnapshotBytes: workspaceSnapshot.bytes,
@@ -232,12 +246,18 @@ export class VerificationRunner {
       throw new Error("Selected test verification request is invalid");
     }
     const workspaceRoot = await realpath(this.workspaceRoot);
-    const toolchain = await resolveVerificationToolchain({
+    const nodeExecutable = await realpath(
+      path.resolve(this.options.nodeExecutable ?? process.execPath),
+    );
+    const runtime = await resolveVerificationRuntime({
       workspaceRoot,
+      sandbox: this.options.sandbox,
+      kind: "test",
+      nodeExecutable,
+      nodeExecutableExplicit: this.options.nodeExecutable !== undefined,
       ...(this.options.toolchainRoot
         ? { toolchainRoot: this.options.toolchainRoot }
         : {}),
-      verifierRelativePath: VERIFICATION_CLIS.test,
     });
     const resolvedTargets = [];
     for (const target of targets) {
@@ -251,15 +271,12 @@ export class VerificationRunner {
       }
       resolvedTargets.push(resolved);
     }
-    const nodeExecutable = await realpath(
-      path.resolve(this.options.nodeExecutable ?? process.execPath),
-    );
     const execution = await runSandboxedProcess({
       sandbox: this.options.sandbox,
       launch: {
-        command: nodeExecutable,
+        command: runtime.nodeExecutable,
         args: [
-          toolchain.verifierPath,
+          runtime.verifierPath,
           "run",
           "--pool=threads",
           "--maxWorkers=2",
@@ -273,8 +290,8 @@ export class VerificationRunner {
         },
         workspaceRoot,
         approvedCapabilities: ["process.spawn", "workspace.read"],
-        ...(toolchain.runtimeReadPaths.length > 0
-          ? { runtimeReadPaths: toolchain.runtimeReadPaths }
+        ...(runtime.runtimeReadPaths.length > 0
+          ? { runtimeReadPaths: runtime.runtimeReadPaths }
           : {}),
       },
       timeoutMs,
@@ -288,12 +305,18 @@ export class VerificationRunner {
           ? "passed"
           : "failed"
         : execution.status;
-    await assertVerificationToolchainStable(toolchain);
+    await assertVerificationRuntimeStable(runtime, this.options.sandbox);
     return {
       status,
       sandbox: this.options.sandbox.id,
-      verifierSha256: toolchain.verifierSha256,
-      toolchainSha256: toolchain.contentSha256,
+      verifierSha256: runtime.verifierSha256,
+      ...(runtime.verifierVersion
+        ? { verifierVersion: runtime.verifierVersion }
+        : {}),
+      toolchainSha256: runtime.toolchainSha256,
+      ...(runtime.runtimeIdentitySha256
+        ? { runtimeIdentitySha256: runtime.runtimeIdentitySha256 }
+        : {}),
       durationMs: execution.durationMs,
       exitCode: execution.exitCode,
       signal: execution.signal,
@@ -335,7 +358,7 @@ export function createVerificationTool(
 function validateVerificationRequest(input: VerificationRequest): void {
   if (
     typeof input.kind !== "string" ||
-    !Object.hasOwn(VERIFICATION_CLIS, input.kind)
+    !VERIFICATION_KINDS.has(input.kind as VerificationKind)
   ) {
     throw new Error(`Unsupported verification kind: ${String(input.kind)}`);
   }
@@ -405,27 +428,6 @@ async function resolveVerificationTarget(
   return resolveExistingPath(workspaceRoot, relative, "verification target");
 }
 
-function verificationArgs(
-  kind: VerificationKind,
-  cli: string,
-  target: string | undefined,
-): string[] {
-  if (kind === "typecheck") {
-    if (!target) throw new Error("typecheck requires a tsconfig target");
-    return [cli, "-p", target, "--noEmit", "--pretty", "false"];
-  }
-  if (kind === "test") {
-    return [
-      cli,
-      "run",
-      "--pool=threads",
-      "--maxWorkers=2",
-      ...(target ? [target] : []),
-    ];
-  }
-  return [cli, "--check", target ?? "."];
-}
-
 function formatVerificationResult(result: VerificationResult): string {
   const { details } = result;
   const sections = [
@@ -447,7 +449,16 @@ function formatVerificationResult(result: VerificationResult): string {
         ]
       : []),
     `Verifier SHA-256: ${details.verifierSha256}`,
-    `Toolchain: ${details.toolchainExternal ? "external-read-only" : "workspace-local"}`,
+    `Toolchain: ${
+      details.runtimeIdentitySha256
+        ? "image-bound"
+        : details.toolchainExternal
+          ? "external-read-only"
+          : "workspace-local"
+    }`,
+    ...(details.verifierVersion
+      ? [`Verifier version: ${details.verifierVersion}`]
+      : []),
     `Toolchain SHA-256: ${details.toolchainSha256}`,
     `Workspace snapshot SHA-256: ${details.workspaceSnapshotSha256}`,
     `Workspace snapshot: ${details.workspaceSnapshotFileCount} files / ${details.workspaceSnapshotBytes} bytes${

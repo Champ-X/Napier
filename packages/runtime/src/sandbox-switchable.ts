@@ -6,6 +6,7 @@ import type {
   SandboxLaunchRequest,
   SandboxLspRuntimeBinding,
   SandboxNodeDebuggerRuntimeBinding,
+  SandboxVerificationRuntimeBinding,
 } from "./sandbox-types.js";
 
 export class SwitchableSandboxAdapter implements OsSandboxAdapter {
@@ -48,6 +49,12 @@ export class SwitchableSandboxAdapter implements OsSandboxAdapter {
     | Promise<SandboxNodeDebuggerRuntimeBinding>
     | undefined {
     return this.active.resolveNodeDebuggerRuntime?.();
+  }
+
+  resolveVerificationRuntime():
+    | Promise<SandboxVerificationRuntimeBinding>
+    | undefined {
+    return this.active.resolveVerificationRuntime?.();
   }
 
   launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {

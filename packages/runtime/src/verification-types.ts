@@ -31,8 +31,10 @@ export interface VerificationDetails {
   targetSnapshotTruncated?: boolean;
   verifierPathSha256: string;
   verifierSha256: string;
+  verifierVersion?: string;
   toolchainExternal: boolean;
   toolchainSha256: string;
+  runtimeIdentitySha256?: string;
   workspaceSnapshotSha256: string;
   workspaceSnapshotFileCount: number;
   workspaceSnapshotBytes: number;
@@ -59,7 +61,9 @@ export interface SelectedTestExecutionResult {
   status: VerificationStatus;
   sandbox: string;
   verifierSha256: string;
+  verifierVersion?: string;
   toolchainSha256: string;
+  runtimeIdentitySha256?: string;
   durationMs: number;
   exitCode: number | null;
   signal: NodeJS.Signals | null;

@@ -314,6 +314,7 @@ function staticIdentityClient(
       shell: null,
       git: null,
       lsp: null,
+      verification: null,
       debugger: debuggerIdentity,
       python: null,
     });

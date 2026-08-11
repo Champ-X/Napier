@@ -6747,11 +6747,11 @@ npm run --silent napier -- doctor --workspace . --offline --jsonl
 ```
 
 The Web workbench exposes the same hash-bound setup as a process-plane docket
-when Coding or Safe Automation is blocked. Applying it verifies the same eight
-production paths (the seven toolchain/service paths plus dynamic resource
-enforcement), persists the same identity receipt, hot-switches the current
-Server Runtime for new work, and refreshes Composer readiness without a page or
-Server restart.
+when Coding or Safe Automation is blocked. Applying it verifies nine production
+paths: Node, Shell, Python, Git, LSP, DAP, TypeScript/Vitest/Prettier
+verification, local service, and dynamic resource enforcement. It persists the
+same identity receipt, hot-switches the current Server Runtime for new work,
+and refreshes Composer readiness without a page or Server restart.
 
 Sandbox uninstall is also exact-preview bound. It removes only Napier's private
 `.napier/sandbox.json` binding, hot-switches a running Web Server to the same
@@ -6762,15 +6762,16 @@ binding can be removed by its raw byte hash; symlinks, directories, empty, or
 oversized bindings are reported but never removed automatically.
 
 The exact-preview apply builds `docker/napier-sandbox/Dockerfile` against its
-digest-pinned multi-architecture Node base, verifies Node, Shell, Python, Git,
-TypeScript LSP, Node DAP, a loopback local service, and the live process
-resource boundary through production paths, then atomically writes only
-hashed image/client/daemon/user identities to `.napier/sandbox.json` with mode
-`0600`. Subsequent Web and CLI runtimes automatically use the immutable image
-ID; users do not edit an internal Agent Profile or export an image variable.
-The source checkout currently builds this image locally as
-`napier-sandbox:0.1.0`; registry publication and signing remain release work
-and are not implied by local setup.
+digest-pinned multi-architecture Node base and the checked
+`docker/napier-sandbox/package-lock.json`. It uses `npm ci` to install exact
+TypeScript, TypeScript Language Server, Vitest, and Prettier versions. Setup
+verifies every production path above, then atomically writes only hashed
+image/client/daemon/user identities to `.napier/sandbox.json` with mode `0600`.
+Subsequent Web and CLI runtimes automatically use the immutable image ID; users
+do not edit an internal Agent Profile or export an image variable. The source
+checkout currently builds this image locally as `napier-sandbox:0.1.0`;
+registry publication and signing remain release work and are not implied by
+local setup.
 
 The repository retains a local single-platform CycloneDX 1.5 inventory at
 `docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json` plus a hash-bound provenance
@@ -6850,6 +6851,25 @@ canaries only in memory or temporary private files and retains none of their
 values, paths, command output, Docker output, resource names, endpoints, or
 daemon configuration. The resulting local arm64 receipt is release-gated but
 does not claim multi-platform coverage or S1 completion.
+
+Stage 13 closes the supported single-host default-product loop with an isolated
+data root. It drives the built CLI through exact-preview Setup and offline
+Doctor, then reopens the configured Runtime and runs image-bound TypeScript
+typecheck plus Vitest through `verify_workspace`. It starts and health-checks an
+egress-denied local service, cancels it and verifies endpoint closure, records a
+running Process as interrupted with no stale output after Runtime reopen, and
+finally exact-uninstalls the binding while retaining the shared image:
+
+```bash
+npm run check:sandbox-product-acceptance
+npm run check:sandbox-product-acceptance:live
+```
+
+The ordinary check is offline. The live path uses production CLI/Runtime APIs,
+restores the exact container/network/scratch baseline, and deletes its private
+data root. Its current evidence covers macOS with a local `linux/arm64` Docker
+runtime only; Windows/Linux host coverage, non-POSIX user mapping, registry
+publication, and signing remain open.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only

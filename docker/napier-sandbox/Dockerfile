@@ -7,9 +7,11 @@ RUN apt-get update \
     python3=3.11.2-1+b1 \
   && rm -rf /var/lib/apt/lists/*
 
-RUN npm install --prefix /opt/napier \
-    typescript@5.9.3 \
-    typescript-language-server@5.3.0 \
+COPY package.json package-lock.json /opt/napier/
+
+RUN npm ci --prefix /opt/napier \
+    --ignore-scripts \
+    --omit=dev \
   && npm cache clean --force \
   && chmod -R a+rX /opt/napier
 

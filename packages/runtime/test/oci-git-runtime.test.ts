@@ -172,6 +172,7 @@ function identityClient(options: { gitUnavailable?: boolean } = {}) {
             version: "git version 2.51.0",
           },
       lsp: null,
+      verification: null,
       debugger: null,
       python: {
         executable: "/usr/local/bin/python3",

@@ -95,8 +95,8 @@ describe("Napier Doctor CLI", () => {
         schemaVersion: 2,
         status: "ready",
         online: true,
-        checkCount: 13,
-        passedCount: 13,
+        checkCount: 14,
+        passedCount: 14,
         warningCount: 0,
         failedCount: 0,
         skippedCount: 0,
@@ -366,7 +366,7 @@ describe("Napier Doctor CLI", () => {
       checks: DoctorCheck[];
       remediations: Array<{ id: string; priority: string; checkIds: string[] }>;
     };
-    expect(report.checkCount).toBe(13);
+    expect(report.checkCount).toBe(14);
     expect(report.checks.map((check) => check.id)).toEqual(
       expect.arrayContaining([
         "skills",
@@ -374,6 +374,7 @@ describe("Napier Doctor CLI", () => {
         "dap",
         "python",
         "shell",
+        "verification",
         "service",
       ]),
     );
@@ -665,6 +666,8 @@ function doctorDependencies(
       dap: async () => overrides.dap ?? passed("dap", "dap_ready"),
       python: async () => overrides.python ?? passed("python", "python_ready"),
       shell: async () => overrides.shell ?? passed("shell", "shell_ready"),
+      verification: async () =>
+        overrides.verification ?? passed("verification", "verification_ready"),
       service: async () =>
         overrides.service ?? passed("service", "service_ready"),
     },
@@ -680,6 +683,7 @@ function passed(id: DoctorCheck["id"], code: string): DoctorCheck {
     "dap",
     "python",
     "shell",
+    "verification",
     "service",
   ]);
   return {

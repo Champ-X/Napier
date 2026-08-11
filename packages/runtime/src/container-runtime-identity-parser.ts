@@ -31,11 +31,27 @@ export interface ContainerNodeDebuggerIdentity {
   nodeVersion: string;
 }
 
+export interface ContainerVerificationIdentity {
+  toolchainRoot: string;
+  packageJsonSha256: string;
+  packageLockSha256: string;
+  typecheck: ContainerVerifierIdentity;
+  test: ContainerVerifierIdentity;
+  format: ContainerVerifierIdentity;
+}
+
+export interface ContainerVerifierIdentity {
+  path: string;
+  version: string;
+  sha256: string;
+}
+
 export interface ContainerRuntimeIdentityOutput {
   node: ContainerExecutableIdentity;
   shell: ContainerExecutableIdentity | null;
   git: ContainerGitIdentity | null;
   lsp: ContainerLspIdentity | null;
+  verification: ContainerVerificationIdentity | null;
   debugger: ContainerNodeDebuggerIdentity | null;
   python: ContainerPythonIdentity | null;
 }
@@ -59,6 +75,10 @@ export function parseContainerRuntimeIdentity(
       record["shell"] === null ? null : executableIdentity(record["shell"]),
     git: record["git"] === null ? null : gitExecutableIdentity(record["git"]),
     lsp: record["lsp"] === null ? null : lspIdentity(record["lsp"]),
+    verification:
+      record["verification"] === null
+        ? null
+        : verificationIdentity(record["verification"]),
     debugger:
       record["debugger"] === null
         ? null
@@ -67,6 +87,39 @@ export function parseContainerRuntimeIdentity(
       record["python"] === null
         ? null
         : pythonExecutableIdentity(record["python"]),
+  };
+}
+
+function verificationIdentity(value: unknown): ContainerVerificationIdentity {
+  if (!record(value)) {
+    throw new Error("OCI container verification identity is invalid");
+  }
+  const result = {
+    toolchainRoot: absolutePath(value["toolchainRoot"]),
+    packageJsonSha256: fileSha256(value["packageJsonSha256"]),
+    packageLockSha256: fileSha256(value["packageLockSha256"]),
+    typecheck: verifierIdentity(value["typecheck"]),
+    test: verifierIdentity(value["test"]),
+    format: verifierIdentity(value["format"]),
+  };
+  if (
+    !isInside(result.typecheck.path, result.toolchainRoot) ||
+    !isInside(result.test.path, result.toolchainRoot) ||
+    !isInside(result.format.path, result.toolchainRoot)
+  ) {
+    throw new Error("OCI container verification identity is invalid");
+  }
+  return result;
+}
+
+function verifierIdentity(value: unknown): ContainerVerifierIdentity {
+  if (!record(value)) {
+    throw new Error("OCI container verifier identity is invalid");
+  }
+  return {
+    path: absolutePath(value["path"]),
+    version: visibleVersion(value["version"]),
+    sha256: fileSha256(value["sha256"]),
   };
 }
 

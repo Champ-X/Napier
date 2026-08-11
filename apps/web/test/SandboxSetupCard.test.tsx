@@ -107,7 +107,9 @@ describe("SandboxSetupCard", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
     findElementByText<HTMLButtonElement>(container, "Remove binding")!.click();
-    await waitFor(() => container.textContent?.includes("Enable coding runtime"));
+    await waitFor(() =>
+      container.textContent?.includes("Enable coding runtime"),
+    );
     expect(fetchMock.mock.calls[2]).toEqual([
       "/api/setup/sandbox/uninstall",
       expect.objectContaining({
@@ -162,6 +164,7 @@ async function sandboxResult(
     checks: {
       node: "sandbox_process_ready",
       resources: "sandbox_resources_ready",
+      verification: "verification_ready",
       shell: "shell_ready",
       python: "python_ready",
       git: "git_ready",

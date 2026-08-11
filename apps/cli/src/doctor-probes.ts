@@ -15,6 +15,7 @@ import {
   probePythonRuntime,
   probeShellRuntime,
   probeSkillsRuntime,
+  probeVerificationRuntime,
 } from "@napier/runtime/doctor-probes";
 
 import { defaultSandboxProbe, sandboxFailure } from "./doctor-sandbox-probe.js";
@@ -49,6 +50,10 @@ export interface DoctorProbeDependencies {
   dap?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
   python?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
   shell?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
+  verification?: (
+    workspaceRoot: string,
+    signal: AbortSignal,
+  ) => Promise<DoctorCheck>;
   service?: (
     workspaceRoot: string,
     signal: AbortSignal,
@@ -130,6 +135,15 @@ export async function runDoctorProbes(input: {
         ? dependencies.shell(input.workspaceRoot, input.signal)
         : localCapabilityCheck("shell", () =>
             probeShellRuntime(
+              input.workspaceRoot,
+              input.signal,
+              input.sandbox ?? createPlatformSandboxAdapter(),
+            ),
+          ),
+      dependencies.verification
+        ? dependencies.verification(input.workspaceRoot, input.signal)
+        : localCapabilityCheck("verification", () =>
+            probeVerificationRuntime(
               input.workspaceRoot,
               input.signal,
               input.sandbox ?? createPlatformSandboxAdapter(),

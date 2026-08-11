@@ -8,6 +8,7 @@ import { verifyRuntimeEnvironmentReceipt } from "./check-runtime-environment.mjs
 import { verifySandboxImageArtifacts } from "./check-sandbox-image-sbom.mjs";
 import { verifyOciCrashRecoveryArtifact } from "./check-oci-crash-recovery.mjs";
 import { verifySandboxSecurityCasebook } from "./check-sandbox-security-casebook.mjs";
+import { verifySandboxProductAcceptance } from "./check-sandbox-product-acceptance.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -63,6 +64,8 @@ const defaultOciCrashRecoveryEvidencePath =
   "docs/artifacts/oci-crash-recovery-stage11.json";
 const defaultSandboxSecurityCasebookPath =
   "docs/artifacts/sandbox-security-casebook-stage12.json";
+const defaultSandboxProductAcceptancePath =
+  "docs/artifacts/sandbox-product-acceptance-stage13.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -142,11 +145,11 @@ export async function auditReleaseArtifacts(options = {}) {
     options.ociResourceLimitsEvidencePath ??
     defaultOciResourceLimitsEvidencePath;
   const ociCrashRecoveryEvidencePath =
-    options.ociCrashRecoveryEvidencePath ??
-    defaultOciCrashRecoveryEvidencePath;
+    options.ociCrashRecoveryEvidencePath ?? defaultOciCrashRecoveryEvidencePath;
   const sandboxSecurityCasebookPath =
-    options.sandboxSecurityCasebookPath ??
-    defaultSandboxSecurityCasebookPath;
+    options.sandboxSecurityCasebookPath ?? defaultSandboxSecurityCasebookPath;
+  const sandboxProductAcceptancePath =
+    options.sandboxProductAcceptancePath ?? defaultSandboxProductAcceptancePath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -471,7 +474,9 @@ export async function auditReleaseArtifacts(options = {}) {
       researchBenchmarkSeriesPath,
     );
   if (!researchBenchmarkMigrationValid) {
-    errors.push("research benchmark normalization migration receipt is invalid");
+    errors.push(
+      "research benchmark normalization migration receipt is invalid",
+    );
   }
   const openWebResearchBenchmarkArtifacts =
     await verifyOpenWebResearchFreshnessReleaseArtifacts({
@@ -549,19 +554,17 @@ export async function auditReleaseArtifacts(options = {}) {
     ociResourceLimitsEvidencePath,
     errors,
   );
-  const ociResourceLimitsValid =
-    validOciResourceLimitsEvidence(
-      ociResourceLimits,
-      sandboxImageProvenance,
-    );
+  const ociResourceLimitsValid = validOciResourceLimitsEvidence(
+    ociResourceLimits,
+    sandboxImageProvenance,
+  );
   if (!ociResourceLimitsValid) {
     errors.push("OCI resource limits evidence is invalid");
   }
-  const ociCrashRecoveryVerification =
-    await verifyOciCrashRecoveryArtifact({
-      repoRoot,
-      artifactPath: ociCrashRecoveryEvidencePath,
-    });
+  const ociCrashRecoveryVerification = await verifyOciCrashRecoveryArtifact({
+    repoRoot,
+    artifactPath: ociCrashRecoveryEvidencePath,
+  });
   if (!ociCrashRecoveryVerification.valid) {
     errors.push(
       ...ociCrashRecoveryVerification.errors.map(
@@ -577,6 +580,18 @@ export async function auditReleaseArtifacts(options = {}) {
     errors.push(
       ...sandboxSecurityVerification.errors.map(
         (error) => `Sandbox security Casebook: ${error}`,
+      ),
+    );
+  }
+  const sandboxProductAcceptanceVerification =
+    await verifySandboxProductAcceptance({
+      repoRoot,
+      artifactPath: sandboxProductAcceptancePath,
+    });
+  if (!sandboxProductAcceptanceVerification.valid) {
+    errors.push(
+      ...sandboxProductAcceptanceVerification.errors.map(
+        (error) => `Sandbox product acceptance: ${error}`,
       ),
     );
   }
@@ -642,6 +657,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: sandboxSecurityVerification.path,
       sha256: sandboxSecurityVerification.sha256,
       valid: sandboxSecurityVerification.valid,
+    },
+    {
+      kind: "sandbox-product-acceptance-stage13",
+      path: sandboxProductAcceptanceVerification.path,
+      sha256: sandboxProductAcceptanceVerification.sha256,
+      valid: sandboxProductAcceptanceVerification.valid,
     },
     {
       kind: "product-performance-baseline",
@@ -1702,7 +1723,7 @@ function validResearchBenchmarkMigrationReceipt(value, releaseSeriesPath) {
         isRecord(entry.verification) &&
         entry.verification.valid === true &&
         Array.isArray(entry.verification.diagnostics) &&
-        entry.verification.diagnostics.length === 0
+        entry.verification.diagnostics.length === 0,
     )
   );
 }

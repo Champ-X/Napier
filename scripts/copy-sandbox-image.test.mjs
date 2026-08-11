@@ -19,18 +19,26 @@ describe("Sandbox image build asset", () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-sandbox-asset-"));
     roots.push(root);
     await mkdir(path.join(root, "docker/napier-sandbox"), { recursive: true });
-    await writeFile(
-      path.join(root, "docker/napier-sandbox/Dockerfile"),
-      "FROM scratch\n",
+    const files = {
+      Dockerfile: "FROM scratch\n",
+      "package.json": '{"name":"sandbox"}\n',
+      "package-lock.json": '{"lockfileVersion":3}\n',
+    };
+    await Promise.all(
+      Object.entries(files).map(([fileName, content]) =>
+        writeFile(path.join(root, "docker/napier-sandbox", fileName), content),
+      ),
     );
 
     await copySandboxImageAsset(root);
 
-    await expect(
-      readFile(
-        path.join(root, "packages/runtime/dist/sandbox-image/Dockerfile"),
-        "utf8",
-      ),
-    ).resolves.toBe("FROM scratch\n");
+    for (const [fileName, content] of Object.entries(files)) {
+      await expect(
+        readFile(
+          path.join(root, "packages/runtime/dist/sandbox-image", fileName),
+          "utf8",
+        ),
+      ).resolves.toBe(content);
+    }
   });
 });

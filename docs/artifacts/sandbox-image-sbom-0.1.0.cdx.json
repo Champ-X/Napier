@@ -7,7 +7,7 @@
       "type": "container",
       "name": "napier-sandbox",
       "version": "0.1.0",
-      "bom-ref": "pkg:oci/napier-sandbox@sha256%3A3a2c2bb5314ad03c007b71b88c5822163d510841eeef93c0fc54ef98cfd4d25a",
+      "bom-ref": "pkg:oci/napier-sandbox@sha256%3Aef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
       "properties": [
         {
           "name": "napier.image.reference",
@@ -23,7 +23,7 @@
         },
         {
           "name": "napier.source.context-sha256",
-          "value": "8c56a059862d2e422b6ff3e056c1652d87d1c3672d91a4f980fbd2ce7e72983e"
+          "value": "d36e200e04523a53d528b1cb9a21f53af8afc8cda7c1a126146910a6811a6007"
         }
       ]
     },
@@ -2251,6 +2251,1722 @@
     },
     {
       "type": "library",
+      "name": "@jridgewell/sourcemap-codec",
+      "version": "1.5.5",
+      "bom-ref": "pkg:npm/%40jridgewell%2Fsourcemap-codec@1.5.5",
+      "purl": "pkg:npm/%40jridgewell%2Fsourcemap-codec@1.5.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "71843ddf5d20aeac6e7966e5f96b885086a251a0dc8fb58eab97d58449633558117ce52163d7f2db34ef7e8a96b2779b87c4a5ef45527056c80af2672ca0743a"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@oxc-project/types",
+      "version": "0.143.0",
+      "bom-ref": "pkg:npm/%40oxc-project%2Ftypes@0.143.0",
+      "purl": "pkg:npm/%40oxc-project%2Ftypes@0.143.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "bba25974b0532e8b6b342f5577abcfb2c20d773702ce578a007e8424a22641bec6b58bd7e6478dd9dc64a0ae38b2d09ce2d7df13a41046d6535d54b3b0b52558"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-android-arm64",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-android-arm64@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-android-arm64@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ceb26d1c371a649d45a7bc5fe21365fbbb1e1fd0a7fcde53c0b6248605d112d07001dfe36aa5b7baa787c690ee8092d52025a0e1e5b8e24390106275afa8c21b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-darwin-arm64",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-darwin-arm64@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-darwin-arm64@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "89e22289b542a74b57ed32eed9c69fa0d3eff30272622d357a45e96dff2ada3ec5e2b1808615dbfde421ee07bd0d1058efc1b099142dbe3643bb1ec40db03c90"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-darwin-x64",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-darwin-x64@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-darwin-x64@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "661f6d0a89f5f5e0d72688a1c74aea2a131494c62acf08f768fb12b87988e1159987ad9d5942fe0c93780b9610c9ae5371004953f15ef3ead8d238574d0213a8"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-freebsd-x64",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-freebsd-x64@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-freebsd-x64@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "9c66c959ec00d70ad75d9890863013e6b8626c67e7b3964d90356ac6c3bacc9ddfdd8be9a0334d9863126db84bb972a335271a04954e01ba33b405957aca5032"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-linux-arm-gnueabihf",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-linux-arm-gnueabihf@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-linux-arm-gnueabihf@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "40d9e226be4a9a5d240c407df238833898d736ba312088b421721b758cd8dba5edd6955b78feb6f8a9e82192f08ab3b2997ff48c393fda023f6cd52fec0ece23"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-linux-arm64-gnu",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-linux-arm64-gnu@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-linux-arm64-gnu@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4e4a8401c9a6bc7dc8feae35d78341e1156deb6e350daa38f29178e6e2dc146af001a227d2221381300a3ff74b8db3744786ee26319bf75f941d2a059a98085b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-linux-arm64-musl",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-linux-arm64-musl@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-linux-arm64-musl@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "347aa39f1a6c9dd7f830fca6c6d7850161c77e44cbf078d6875281ef3db7a1f67a40ed9eb8e36ec435e36adebd74a65100b9c6ca983c93c4ac2bcbd92685efd5"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-linux-ppc64-gnu",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-linux-ppc64-gnu@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-linux-ppc64-gnu@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ead6eb6f07f3e4607d0d0e09c28ea1cbdbfebd1df5c5996fcd9ea7e57bade87871e4fbeb03dabf1ec2bc28c698429d3ade2a99197c0dbd9b5834b0fb10cff1d3"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-linux-s390x-gnu",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-linux-s390x-gnu@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-linux-s390x-gnu@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a32b97c579a86478d70bdd7b2003c5000bf8c1601ad1c33d69f93c9f1d7ef7f8cd34e5f5b8f7fcc8303aa7b1b4472a4e7f0fd7d0f42de487e8aae635ba6fb34a"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-linux-x64-gnu",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-linux-x64-gnu@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-linux-x64-gnu@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4f2b4cc05d8a546a8fdad81dd08d4e6343c0bfbf1d651018705e6cb03ce3337e125170840f7b97bd2779fa51e80b46d30fa784745cfb2dd40d08ed72d28564f7"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-linux-x64-musl",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-linux-x64-musl@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-linux-x64-musl@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fc4f66deab2dac91553e850b576e665506e548d131636fa406c61ee2ccb44e7d3238e809f3065b66ddca9d16c5fd7794d869754932944270cd4ea848139303e0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-openharmony-arm64",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-openharmony-arm64@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-openharmony-arm64@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2abd0e72ca1023cd7a8ba1ce977bc51e97752b4799ca1eface07e3e1cd674f2693b1de6bd8c8f597033847dd32fea6827e64e7f5e1f2d122b08bdf1e8ad471ba"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-win32-arm64-msvc",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-win32-arm64-msvc@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-win32-arm64-msvc@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "84eb4cc13aa7304fbf809707fcf099d309f4ccf5238963a0907a716d22697c628c7b31e5b71d52eff9354a2b7355aed6c3672aac30da15b64485c2593bca3e27"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/binding-win32-x64-msvc",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/%40rolldown%2Fbinding-win32-x64-msvc@1.2.3",
+      "purl": "pkg:npm/%40rolldown%2Fbinding-win32-x64-msvc@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7a472a30c908d8f9616277f342707f7047585155495625afa14c8badbce00e88b74a77dcd66541c1d9dcdf4eae7c0e5e8f2f0948f8d3d91956d674128d6ede7e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@rolldown/pluginutils",
+      "version": "1.0.1",
+      "bom-ref": "pkg:npm/%40rolldown%2Fpluginutils@1.0.1",
+      "purl": "pkg:npm/%40rolldown%2Fpluginutils@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "da3f5b1ade4987c863faf3ed8333ed97bda3d324711c0cae9a8a3a4cd7c08ec2c1d3852da52bcf6cf703701331cfb9fef42601d1cd46c501716118368e29aa1b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@standard-schema/spec",
+      "version": "1.1.0",
+      "bom-ref": "pkg:npm/%40standard-schema%2Fspec@1.1.0",
+      "purl": "pkg:npm/%40standard-schema%2Fspec@1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "976685cb98c02e19e21b91e0aab0fa8d72e2feb516acabea37fa89c7aca826c80a85b95577e8aaa94e110976af9bf8cf8adc83a394c2bca327a632a73ab8b2d3"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/chai",
+      "version": "5.2.3",
+      "bom-ref": "pkg:npm/%40types%2Fchai@5.2.3",
+      "purl": "pkg:npm/%40types%2Fchai@5.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "330e79f28780f5f15bbfae7fcb8987b570ecf5b3e714c6402ff8f174f154a4e1c72175fdd667201076d2e4b6a1afea7064547c03b19095e456788e9c1850b650"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/deep-eql",
+      "version": "4.0.2",
+      "bom-ref": "pkg:npm/%40types%2Fdeep-eql@4.0.2",
+      "purl": "pkg:npm/%40types%2Fdeep-eql@4.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "73d87d75554c8a030f7386f04ef0b9771aada8967040f78fb168cf96948e9e88dba2bea91aa764e78d657c0ec0a8542be6907505176ad23b98f5d6fcd41c3217"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/estree",
+      "version": "1.0.9",
+      "bom-ref": "pkg:npm/%40types%2Festree@1.0.9",
+      "purl": "pkg:npm/%40types%2Festree@1.0.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1a174f832d5e978fc898fd395f4e54c38730dbf33ddc10949a712f599352b650b310a304e05924f98a680393a21cd426a12ec269f6fc5dadcfc9af26d50af37a"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@vitest/expect",
+      "version": "4.1.9",
+      "bom-ref": "pkg:npm/%40vitest%2Fexpect@4.1.9",
+      "purl": "pkg:npm/%40vitest%2Fexpect@4.1.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "be5feb62c50a701af74a7427d7aebe5d1e5941c80cc770d084559d7e58bf716a4b9cb5266f166fcab259a2d2c552bca26fe2ed02b60c49327945b439ed9aab94"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@vitest/mocker",
+      "version": "4.1.9",
+      "bom-ref": "pkg:npm/%40vitest%2Fmocker@4.1.9",
+      "purl": "pkg:npm/%40vitest%2Fmocker@4.1.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "115917cc18eb3c633e70af3f00d5a006b91409f25f6f7f3f11f4d23bc87ba56bca9323e4a56c6f47b0640f633222d305eb60bdef3004a2a769522c7047f7be47"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@vitest/pretty-format",
+      "version": "4.1.9",
+      "bom-ref": "pkg:npm/%40vitest%2Fpretty-format@4.1.9",
+      "purl": "pkg:npm/%40vitest%2Fpretty-format@4.1.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b348ae7e7b37888162b5d826f9847b835c21080686b57cf8e7d552f7f3eac8a0c4105818221b07390997808803b980adec37909a2653d107b6380da9e193eee4"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@vitest/runner",
+      "version": "4.1.9",
+      "bom-ref": "pkg:npm/%40vitest%2Frunner@4.1.9",
+      "purl": "pkg:npm/%40vitest%2Frunner@4.1.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2972cc0ed73ba1eef4fb79897c6acf5163deb2cc07fb7b13c40300325f031bb23c214413e175bbd7c758e480f7bcf51c9a5bb6ec270a7d8e0fde1dc8dbd48b26"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@vitest/snapshot",
+      "version": "4.1.9",
+      "bom-ref": "pkg:npm/%40vitest%2Fsnapshot@4.1.9",
+      "purl": "pkg:npm/%40vitest%2Fsnapshot@4.1.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "25ced1286341a3c676f166089b43627a3e317523c1c917fa994e7c5691d091de99874e6b96703eb708db2b91f2788187c6bcec737989812e37b8cd0264acda20"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@vitest/spy",
+      "version": "4.1.9",
+      "bom-ref": "pkg:npm/%40vitest%2Fspy@4.1.9",
+      "purl": "pkg:npm/%40vitest%2Fspy@4.1.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7c7a6c4ba9888be3e2116faf71154e3245f5a1268f2a77b754e7254852023dc18e99f2a05cf5398806a1fb070d723db13eb08299fabdf480c67fe1288e186f84"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@vitest/utils",
+      "version": "4.1.9",
+      "bom-ref": "pkg:npm/%40vitest%2Futils@4.1.9",
+      "purl": "pkg:npm/%40vitest%2Futils@4.1.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "039d68f3298ee4fa6a95636704ff591cf5c3229b8cb532e51928cdee56b8512f8b273a143328708c0e505e59b7f497b18301ca5b85e3b3c67677774b09739eb8"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "assertion-error",
+      "version": "2.0.1",
+      "bom-ref": "pkg:npm/assertion-error@2.0.1",
+      "purl": "pkg:npm/assertion-error@2.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2338bc45071f7ea09e3558058a02a58b5b2c92521ba479c261ce809275c662807a82b26ac9e6f2ee3bf5d895108264c09c80e76dc935bb192c4f87733773d604"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "chai",
+      "version": "6.2.2",
+      "bom-ref": "pkg:npm/chai@6.2.2",
+      "purl": "pkg:npm/chai@6.2.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3543d196e39f3a24ca04abd63ed483e0f845bd60aa3a2d01192b4d5ace7b5fd8eced7193a6b4a6168cf9174b56851e163e335e47d8d7a9d0bbfd4a522539e546"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "convert-source-map",
+      "version": "2.0.0",
+      "bom-ref": "pkg:npm/convert-source-map@2.0.0",
+      "purl": "pkg:npm/convert-source-map@2.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2afa78e7d1eb576144275080b22d4abbe318de46ac1f5f53172913cf6c5698c7aae9b936354dd75ef7c9f90eb59b4c64b56c2dfb51d261fdc966c4e6b3769126"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "detect-libc",
+      "version": "2.1.2",
+      "bom-ref": "pkg:npm/detect-libc@2.1.2",
+      "purl": "pkg:npm/detect-libc@2.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "06d8f604e38ef37a375b21f9f5ef0c817b3111055c6ab9143a9118aee6c1d2eaf09cdd74c90dfae2bb22072535d67665a966199b4e62fe87fb8a8e26ce2841b5"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "es-module-lexer",
+      "version": "2.3.1",
+      "bom-ref": "pkg:npm/es-module-lexer@2.3.1",
+      "purl": "pkg:npm/es-module-lexer@2.3.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b2173575b53dd1897fc6ad50ac2ed046d7dcc14459b9545f3e165b0e895d275727d60cc3bc16815a5bf4785a258f9fb4ce79cf273e535cbc6c37bed7ff5d8a4c"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "estree-walker",
+      "version": "3.0.3",
+      "bom-ref": "pkg:npm/estree-walker@3.0.3",
+      "purl": "pkg:npm/estree-walker@3.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ed150a7d781230c933b7a66e5e6a9aa4ebab2c63cf7e08fa97db9167b9511a896f934cb6ca871cdf92dd731282e4f419767d8332a8a8010d8da1672b4ca9a6ea"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "expect-type",
+      "version": "1.4.0",
+      "bom-ref": "pkg:npm/expect-type@1.4.0",
+      "purl": "pkg:npm/expect-type@1.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "29f61b9a9466d156cb8c4bd56bdc86c028bd188df8c6f8bb03f1d761640eeb90920f6bb731ccd4252bb05ca148c651ac801422cd5f6ae49f4d1e3e151b49fea4"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fdir",
+      "version": "6.5.0",
+      "bom-ref": "pkg:npm/fdir@6.5.0",
+      "purl": "pkg:npm/fdir@6.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b486d8b596ee70eb340511aa3c992c84951874bf920c7edd54cf208f2f84469dd60148cb105244fb4da46a7c87b708d63a7c2b298062c0098cd29e242c90275e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fsevents",
+      "version": "2.3.3",
+      "bom-ref": "pkg:npm/fsevents@2.3.3",
+      "purl": "pkg:npm/fsevents@2.3.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e71a037d7f9f2fb7da0139da82658fa5b16dc21fd1efb5a630caaa1c64bae42defbc1d181eb805f81d58999df8e35b4c8f99fade4d36d765cda09c339617df43"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-android-arm64",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-android-arm64@1.33.0",
+      "purl": "pkg:npm/lightningcss-android-arm64@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "804a514da94a768b29e016fca96b5cda23a013949e2079694b5ba9f5b16adb003262197551d4ce6d88877bdf3310cf5242f4a8a906752100f424da60dcc979a6"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-darwin-arm64",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-darwin-arm64@1.33.0",
+      "purl": "pkg:npm/lightningcss-darwin-arm64@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "49c89acfc79e9cd4ca9fd6f7b7bfb1af48a94e9f58c4a418e27a704379ab46e2f404054704bc99c687e168a04056dce6b5167fcd3ca8d3fb68e01d6e586fc38e"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-darwin-x64",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-darwin-x64@1.33.0",
+      "purl": "pkg:npm/lightningcss-darwin-x64@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "67950f031ceb8e558d3721b2ea2eb9709cf3be02790f74fac0cbecfa05a963d77ba9184036bc6a029e8b871220661584c35f117c94c6711c63b8b201afe9bc5d"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-freebsd-x64",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-freebsd-x64@1.33.0",
+      "purl": "pkg:npm/lightningcss-freebsd-x64@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "41033f4e2fe141a8c9c0263e4625ae099f6c76d23f5d093b9c32b9bc2f2491dc22c5ecce94382f0f1efe453f908cae857054f8329b2ea019c7228fcedd2b5146"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-linux-arm-gnueabihf",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-linux-arm-gnueabihf@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-arm-gnueabihf@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "37b15505eea24b6e0c94ce91ff84414f11a14217991aceed890f54df652d17be4dccfe50ef158f46a2c108ac65450464deb6358c220f2f3c7b5b33a1b942112d"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-linux-arm64-gnu",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-linux-arm64-gnu@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-arm64-gnu@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8f6bff8ad9b2e0794dc6573abe829762006a362d0d8362d2860e33ec6b9fa4482cd393fedacb815728bd23a607ab9ba8545c7d1138a7dde08484b5725c64272a"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-linux-arm64-musl",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-linux-arm64-musl@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-arm64-musl@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ca23b944e32e6108176c2eb4ca3654e4261215918a5cbd071404d7b7d987267d7ecd6e79a02b4c23d35f7158582cc1432fb815ee804fa27fc498c3068363afb5"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-linux-x64-gnu",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-linux-x64-gnu@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-x64-gnu@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6abf89bbb2e670dd09a381692f88691726f0346f7fdc0fc1af9296da7da3c8e0e0dcc1195da0d800375e9a8352f810cd7cc80abf29492e3e12e6dc9101cb6e02"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-linux-x64-musl",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-linux-x64-musl@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-x64-musl@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4588986e4a24c34b6b7caaaacdf179e658229f010fac3dce2437d3b89cc5b3530aea21670de9dacf57ea2cbb57e084c6dce92d2505ce7936b0d5ac2b0409593f"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-win32-arm64-msvc",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-win32-arm64-msvc@1.33.0",
+      "purl": "pkg:npm/lightningcss-win32-arm64-msvc@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d4af8c3df2d2155a69873a5d6df92195693ac01ad339b0734b64fa75bd743cd399811f46a15b005b3c0dcae8546186d3a76de3fb846b9dc7ee8d9e2e0335efc0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss-win32-x64-msvc",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss-win32-x64-msvc@1.33.0",
+      "purl": "pkg:npm/lightningcss-win32-x64-msvc@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3a5108083c7f5e5d05a92a786ebcbccc59c2bc6a628371a5e200aabaf6301eea892840b5fa7f4d8039e216fa871a632fd5992a0c9ac3a8a292ca44c35fe7a1b8"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightningcss",
+      "version": "1.33.0",
+      "bom-ref": "pkg:npm/lightningcss@1.33.0",
+      "purl": "pkg:npm/lightningcss@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5a4503ae88ee26cd3192019fdae756c5adf21814713edc54901efd8ba68264b46073b3ccf1f65ef53a2c7cf0dcbc4a5065bb850129c762644b04b51b98b38820"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "magic-string",
+      "version": "0.30.21",
+      "bom-ref": "pkg:npm/magic-string@0.30.21",
+      "purl": "pkg:npm/magic-string@0.30.21",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "bddd85e1853211728670b1e8abe4c4c828f1b9e49e1e7171cb28cda7cd328345d5e2f5219c37abfe5bef96a33f6ab0796d740de4adbfde88a7c82472c7c4f609"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "nanoid",
+      "version": "3.3.18",
+      "bom-ref": "pkg:npm/nanoid@3.3.18",
+      "purl": "pkg:npm/nanoid@3.3.18",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0d38383096c631691f8ba55915d36ddbf71a31b432e0ebbe3a9fe1250bc611672755fa00d5003ec7344a033c3d8c3ebe19538e798aff98872e0d276e83a17afb"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "obug",
+      "version": "2.1.4",
+      "bom-ref": "pkg:npm/obug@2.1.4",
+      "purl": "pkg:npm/obug@2.1.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e1af8eb18bfd524b4e24a13e9750383ae7c381d445f4f89f5a3fad2671d4468fcff963b1a46e06cd414bf6a09a96659ab9aa3aa20886f90be70a8bf03e8c8058"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pathe",
+      "version": "2.0.3",
+      "bom-ref": "pkg:npm/pathe@2.0.3",
+      "purl": "pkg:npm/pathe@2.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5948c6700a8fd6041a72841ef8e049b0503b2dde03c97b9422367971cef970b1ef27b76d36c4ee8298712000f0b294be02b68051e3c22ab495b4f2c58ff17cf3"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "picocolors",
+      "version": "1.1.1",
+      "bom-ref": "pkg:npm/picocolors@1.1.1",
+      "purl": "pkg:npm/picocolors@1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c5c787dac9e1b5be4cf658aa0ec984c39ea57b7efa993664117fe311bfd1c4d1727a036e97b78db250973fd1438ff2dcbb45fc284c8c71e3f69eda5a1eb0c454"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "picomatch",
+      "version": "4.0.5",
+      "bom-ref": "pkg:npm/picomatch@4.0.5",
+      "purl": "pkg:npm/picomatch@4.0.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "46fc3072bb8d8c8d67713e7145a91ec92f4b7fc95c22dbf7e0a0fe6a27fe547f6476e0327d8062a46875db6ef8c6d7a720f675d7dfd1f4175305af200304a1d0"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postcss",
+      "version": "8.5.26",
+      "bom-ref": "pkg:npm/postcss@8.5.26",
+      "purl": "pkg:npm/postcss@8.5.26",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "bbcd8def82c5cc6f1c6be743f29b8f9e99535e8187e1f4cfa551ae21bb77e86deabcd964bdf0f49440194b16a5cb7297f134bf2f503582c0849af2a605c55b91"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "prettier",
+      "version": "3.8.4",
+      "bom-ref": "pkg:npm/prettier@3.8.4",
+      "purl": "pkg:npm/prettier@3.8.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "376332952762e3cfb937fe92e63fa669e1db512233cd9e6e39c5f91e6e10a55f0391bd471637c0293297eb234f2500fd021713de27c7341ebab564d32438b5d5"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "rolldown",
+      "version": "1.2.3",
+      "bom-ref": "pkg:npm/rolldown@1.2.3",
+      "purl": "pkg:npm/rolldown@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ae7f70a66c6994b7fb34b3720a4f45c9687714ce370db63c8cecc27443f31fbb9f9614dfb516c2129aa2e8bcb6a2c82853c3b039bb666af31b58b696cb82d7ec"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "siginfo",
+      "version": "2.0.0",
+      "bom-ref": "pkg:npm/siginfo@2.0.0",
+      "purl": "pkg:npm/siginfo@2.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c9bc7458ed7ff1b4812c459766f11dee0316dd29f7245956dd3bd7d674446c32d135035a78d37c58ad26781c0f74068e23b4ed4514499ff12cd7386bac21eeee"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "source-map-js",
+      "version": "1.2.1",
+      "bom-ref": "pkg:npm/source-map-js@1.2.1",
+      "purl": "pkg:npm/source-map-js@1.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "51758c2a12cec1529bef6f0852d40f5f17d853ebac7726ed52b2bff2e184f0240cbeb84ea70bf30c1c23d108522fb31073bbc8b084811bc550f3e203431a5f40"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "stackback",
+      "version": "0.0.2",
+      "bom-ref": "pkg:npm/stackback@0.0.2",
+      "purl": "pkg:npm/stackback@0.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d573091397d0a358c61fa63fede6e7c0f3811242049d3e10177d9de51d7e557757bde334201309b7ccdf6b15f53f7421570ad87bee7bebe8e400db524b69816f"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "std-env",
+      "version": "4.2.0",
+      "bom-ref": "pkg:npm/std-env@4.2.0",
+      "purl": "pkg:npm/std-env@4.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a0250a4aea4a4c75f9dc4ca30edb9943ae298cb27ac980ada66130d20a18c6d8c6f4aa5b45ef0a02c976b4150653d0f231c27447027c1aa2401733177175b547"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tinybench",
+      "version": "2.9.0",
+      "bom-ref": "pkg:npm/tinybench@2.9.0",
+      "purl": "pkg:npm/tinybench@2.9.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d3e0d4bea58c55a94b9a16ba96be240fc88030ad47cd5d3f68a9c2b566fdbfdeb8d539cffcc15becf7366f1a314234d7004aebc9756050e7efd98a8d965a867a"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tinyexec",
+      "version": "1.3.0",
+      "bom-ref": "pkg:npm/tinyexec@1.3.0",
+      "purl": "pkg:npm/tinyexec@1.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "40a025f66f2059618757c8d970f7b29ba8fe5d42e2ead39fd664fcdd6609e0b936cad5bfbb001692b3f4b85b1da1831db9e549d2ab36eb067edb7c5e07889b35"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tinyglobby",
+      "version": "0.2.17",
+      "bom-ref": "pkg:npm/tinyglobby@0.2.17",
+      "purl": "pkg:npm/tinyglobby@0.2.17",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c1747f758a5ca8a99f5a911d66388a24ec023459dd0f40cc9eb5bf7188d51adb449017d581c2c51e836b963e3b9a339589cf72c8dbbae5a96c805e0d4324dada"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tinyrainbow",
+      "version": "3.1.1",
+      "bom-ref": "pkg:npm/tinyrainbow@3.1.1",
+      "purl": "pkg:npm/tinyrainbow@3.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c9abbcc89753b7df3d326d0177fdb7e909f31223dfdb12cb4ea51945424ea3fdc2074efc2d2c337a2df8dc382d25599f24a244dd3308358d6ee36490b0fea65f"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "typescript-language-server",
       "version": "5.3.0",
       "bom-ref": "pkg:npm/typescript-language-server@5.3.0",
@@ -2292,6 +4008,84 @@
         {
           "alg": "SHA-512",
           "content": "8e5d6f6733c38a72ebf5e52ddc9feded5e8580d130f508ef04f772b33f4a7d00c3e357d0ac2d98e2f290762694a454f86d795bd511e12e9a7cc2d9ba3394e04b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "vite",
+      "version": "8.2.1",
+      "bom-ref": "pkg:npm/vite@8.2.1",
+      "purl": "pkg:npm/vite@8.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "114fde4bb047dd744e1e1d989c179f8cce8304a03a65e31911841b8fb34b5a0e701d896107c07f31ac9de57b205aaf8d15871c0ce4de991a5d113591e8a6bf97"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "vitest",
+      "version": "4.1.9",
+      "bom-ref": "pkg:npm/vitest@4.1.9",
+      "purl": "pkg:npm/vitest@4.1.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "9c4dff2c4c9cd33f3bb8760b65e6ea09439a26bda176db8fa7b050e01a2c5459df96dc6002f306d3c372ad21a53e93945af476edce5f95299815336befc2fd19"
+        }
+      ],
+      "properties": [
+        {
+          "name": "napier.package.ecosystem",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "why-is-node-running",
+      "version": "2.3.0",
+      "bom-ref": "pkg:npm/why-is-node-running@2.3.0",
+      "purl": "pkg:npm/why-is-node-running@2.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "854ae669605d543731bd8aa7ca1d3dcee9cacd13968db65388dcbc741123912ede8440d089b5c9ed7be59ad6f0b9372552223237e0b25d00f8566928f1f366f3"
         }
       ],
       "properties": [

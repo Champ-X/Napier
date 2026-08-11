@@ -2,7 +2,6 @@ import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-
 import {
   assertContainerImageIdentityStable,
   removeContainerLaunchResources,
@@ -22,6 +21,7 @@ import {
 } from "./sandbox-container-service.js";
 import { resolveContainerLspRuntime } from "./sandbox-container-lsp-runtime.js";
 import { resolveContainerNodeDebuggerRuntime } from "./sandbox-container-node-debugger-runtime.js";
+import { resolveContainerVerificationRuntime } from "./sandbox-container-verification-runtime.js";
 import {
   containerScratchBaseDir,
   containerClientEnvironment,
@@ -46,6 +46,7 @@ import type {
   SandboxCommandRuntimeBinding,
   SandboxLspRuntimeBinding,
   SandboxNodeDebuggerRuntimeBinding,
+  SandboxVerificationRuntimeBinding,
   SandboxLaunchRequest,
 } from "./sandbox-types.js";
 import { launchTerminalSandboxWrapper } from "./sandbox-terminal.js";
@@ -75,6 +76,9 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   private lspRuntimeBinding: Promise<SandboxLspRuntimeBinding> | undefined;
   private nodeDebuggerRuntimeBinding:
     | Promise<SandboxNodeDebuggerRuntimeBinding>
+    | undefined;
+  private verificationRuntimeBinding:
+    | Promise<SandboxVerificationRuntimeBinding>
     | undefined;
 
   constructor(
@@ -145,6 +149,18 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       return await this.nodeDebuggerRuntimeBinding;
     } catch (error) {
       this.nodeDebuggerRuntimeBinding = undefined;
+      throw error;
+    }
+  }
+
+  async resolveVerificationRuntime(): Promise<SandboxVerificationRuntimeBinding> {
+    const executable = await resolveContainerLaunchExecutable(this.executable);
+    await this.resolveImage(executable);
+    this.verificationRuntimeBinding ??= this.resolveVerification();
+    try {
+      return await this.verificationRuntimeBinding;
+    } catch (error) {
+      this.verificationRuntimeBinding = undefined;
       throw error;
     }
   }
@@ -314,6 +330,16 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     );
   }
 
+  private async resolveVerification(): Promise<SandboxVerificationRuntimeBinding> {
+    const executable = await resolveContainerLaunchExecutable(this.executable);
+    return resolveContainerVerificationRuntime(
+      await this.resolveImage(executable),
+      this.containerClient,
+      this.userIds,
+      this.daemonEndpoint,
+    );
+  }
+
   private async resolveImage(
     executable: string,
   ): Promise<ContainerImageIdentity> {
@@ -339,6 +365,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       this.runtimeBindings.clear();
       this.lspRuntimeBinding = undefined;
       this.nodeDebuggerRuntimeBinding = undefined;
+      this.verificationRuntimeBinding = undefined;
       throw error;
     }
   }

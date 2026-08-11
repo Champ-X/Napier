@@ -37,16 +37,15 @@ export async function executeSandboxRuntimeSetup(
       options.dataRoot ?? path.join(workspaceRoot, ".napier"),
     );
     const fallback = createSandboxFallbackAdapter({ env: io.env });
-    const current =
-      options.uninstall
-        ? (await createConfiguredSandboxAdapter({
-            dataRoot,
-            env: io.env,
-          }).catch(() => fallback)) ?? fallback
-        : (await createConfiguredSandboxAdapter({
-            dataRoot,
-            env: io.env,
-          })) ?? fallback;
+    const current = options.uninstall
+      ? ((await createConfiguredSandboxAdapter({
+          dataRoot,
+          env: io.env,
+        }).catch(() => fallback)) ?? fallback)
+      : ((await createConfiguredSandboxAdapter({
+          dataRoot,
+          env: io.env,
+        })) ?? fallback);
     const setup = new SandboxSetupService(
       workspaceRoot,
       dataRoot,
@@ -156,7 +155,9 @@ async function writeSandboxRuntimeSetupOutput(
         `Fallback: ${output.fallbackSandbox}`,
         ...(output.imageId
           ? [`Image ID retained: ${output.imageId}`]
-          : ["Persisted invalid binding removed; no image identity was trusted."]),
+          : [
+              "Persisted invalid binding removed; no image identity was trusted.",
+            ]),
         "Status: removed",
       ].join("\n"),
     );
@@ -168,7 +169,7 @@ async function writeSandboxRuntimeSetupOutput(
       `Sandbox runtime: ${output.action}`,
       `Image: ${output.imageReference}`,
       `Image ID: ${output.imageId}`,
-      "Verified: Node, Shell, Python, Git, LSP, DAP, local service, and runtime resource boundaries",
+      "Verified: Node, Shell, Python, Git, LSP, DAP, TypeScript/Vitest/Prettier verification, local service, and runtime resource boundaries",
       "Status: ready",
     ].join("\n"),
   );

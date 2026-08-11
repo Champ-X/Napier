@@ -74,6 +74,8 @@ async function fixtureRoot() {
   roots.push(root);
   for (const relative of [
     "docker/napier-sandbox/Dockerfile",
+    "docker/napier-sandbox/package.json",
+    "docker/napier-sandbox/package-lock.json",
     "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
     "docs/artifacts/sandbox-image-provenance-0.1.0.json",
     "docs/artifacts/sandbox-security-casebook-stage12.json",

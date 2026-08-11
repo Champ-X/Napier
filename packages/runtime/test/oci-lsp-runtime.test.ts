@@ -218,6 +218,7 @@ function identityClient(
             typescriptVersion: "5.9.3",
             typescriptServerSha256: TYPESCRIPT_SHA256,
           },
+      verification: null,
       debugger: null,
       python: null,
     });

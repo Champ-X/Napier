@@ -1,0 +1,118 @@
+{
+  "kind": "napier.sandbox-product-acceptance-stage13",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-11T03:37:49.296Z",
+  "image": {
+    "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
+    "platform": "linux/arm64",
+    "provenanceSha256": "cea0625e085acdd78a0941229a29bfdc5c0cb3dc226cf9d0a79d6e4753778e7c"
+  },
+  "implementation": {
+    "setupServiceSha256": "b8c6b1b3419fdd3b2c2a9974d6d4d8638d8195b5abf9ebcb54834db73612d901",
+    "verificationRuntimeSha256": "cf63e5262ff2c482a112e7a9b7d2cc0ba6ca9b50719f060a702c1ee7e28830eb",
+    "verificationRunnerSha256": "8a2e0f0a37b478a832b3c7b6b1442a57a302e3ee508d302b43c1efa48ecc92a0",
+    "processManagerSha256": "aa2e33e129b642daf15bed104ea156eeb4cb829304e159ec17550e6cbfc7325e",
+    "checkScriptSha256": "1f7561038960db438ecf08d10463eca7edda9298bb934df346f23c5e3fbb933f",
+    "artifactVerifierSha256": "e080b476425b4c0f3592b7f71e32ad4013342e9eec0b7f7f1726d3ca2a72e431",
+    "liveHarnessSha256": "1ae1246a641e2b610e85329e87faaf0d27e654485d34f12880f24bc0ed1e672e"
+  },
+  "setup": {
+    "previewStatus": "ready",
+    "previewActive": false,
+    "previewSha256": "702d746084bea41821d32160fbd9867347298fe502fa0d4b400db3b0243995c2",
+    "applyAction": "reused",
+    "status": "ready",
+    "checkCount": 9,
+    "checkCodes": [
+      "sandbox_process_ready",
+      "sandbox_resources_ready",
+      "verification_ready",
+      "shell_ready",
+      "python_ready",
+      "git_ready",
+      "lsp_ready",
+      "dap_ready",
+      "service_ready"
+    ],
+    "installationSha256": "3ddefc419b48e00a231e914998cce7ca360dd4068ceca287136a7a55f2bb40c9",
+    "resultSha256": "ef1db183834c14ef290c34fc3aec6f742d066b220340724e05176857ffa83a94"
+  },
+  "doctor": {
+    "status": "degraded",
+    "checkCount": 14,
+    "passedCount": 11,
+    "warningCount": 0,
+    "skippedCount": 3,
+    "sandboxCode": "sandbox_ready",
+    "verificationCode": "verification_ready",
+    "reportSha256": "782721c525b27ce6781b3e7655c83610600b46641d2a1439d3dd377e18b83f15"
+  },
+  "verification": {
+    "sandbox": "oci-container",
+    "typecheck": {
+      "status": "passed",
+      "verifierVersion": "5.9.3",
+      "verifierSha256": "39c8059ac5a45bf7332a67d8e074d21c98df1df9eaad232d8175b74f527e6479",
+      "runtimeIdentitySha256": "42abf7dbb2f34f2468c57c13a54c8ddb8faed53aab3174ed639a304fdb766105",
+      "resultSha256": "4b7e28cdb50ddc37c8056be1d497be6a46309eb1bd2e70e81568d6aa3c09f14f"
+    },
+    "test": {
+      "status": "passed",
+      "verifierVersion": "4.1.9",
+      "verifierSha256": "e72480c6b780df9df05557be9f2ee3aac4952202c409196bbbaf5a914d66da4d",
+      "runtimeIdentitySha256": "42abf7dbb2f34f2468c57c13a54c8ddb8faed53aab3174ed639a304fdb766105",
+      "resultSha256": "39a9f975d250ff00ba4a2e7a1ee7597403ede74c42f601cd23f8c0b9fb9c24fe"
+    }
+  },
+  "service": {
+    "ready": true,
+    "healthChecked": true,
+    "cancelled": true,
+    "endpointClosed": true,
+    "identitySha256": "e1ef8c15ba1ad3a9a1dfb54a9f0e4c60d393258ff283aa17c5f78ec13e10ea41",
+    "endpointSha256": "9ed65110be6f4b1c7c656b6546f28a81a200b410deaddb949f5e7770a3ae3035"
+  },
+  "restart": {
+    "preRestartStatus": "running",
+    "reopenedStatus": "interrupted",
+    "unknownOutcome": true,
+    "staleOutputExposed": false,
+    "processSha256": "57455b0f4aff54a75124909250f23ee5888f6069d4409f9d3e2a6cd5a82f8102"
+  },
+  "uninstall": {
+    "previewStatus": "installed",
+    "active": true,
+    "previewSha256": "c7ee2e47e7bc78f31e183dcb3b21632b69278afb27e0174350180664eb5a458e",
+    "status": "removed",
+    "imageRetained": true,
+    "bindingRemoved": true,
+    "resultSha256": "9e087bb5ec1eec7f22fc355fadf3d527e25cc6ab05f899370ad2a9852a0c533a"
+  },
+  "resourceClosure": {
+    "exactBaselineRestored": true,
+    "containerDeltaCount": 0,
+    "networkDeltaCount": 0,
+    "scratchDeltaCount": 0
+  },
+  "retention": {
+    "credentialValues": false,
+    "rawCliOutput": false,
+    "rawDoctorReport": false,
+    "rawProcessOutput": false,
+    "rawDockerOutput": false,
+    "resourceNames": false,
+    "workspacePaths": false,
+    "dataRootPaths": false,
+    "endpointUrls": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "multi-architecture registry publication and signature",
+      "non-POSIX host user mapping",
+      "cross-platform isolated provider casebook"
+    ]
+  },
+  "contentSha256": "b7c8e2464ccfd832ad75c021069547da2257e332bc89b5ac8c37fea4ef8642e1"
+}

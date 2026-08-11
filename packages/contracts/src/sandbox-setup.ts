@@ -7,6 +7,7 @@ export type SandboxSetupStatus =
 export interface SandboxSetupChecks {
   node: string;
   resources: string;
+  verification: string;
   shell: string;
   python: string;
   git: string;

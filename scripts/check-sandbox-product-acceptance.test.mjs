@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { verifyOciCrashRecoveryArtifact } from "./check-oci-crash-recovery.mjs";
+import { verifySandboxProductAcceptance } from "./check-sandbox-product-acceptance.mjs";
 
 const roots = [];
 
@@ -14,25 +14,25 @@ afterEach(async () => {
   );
 });
 
-describe("OCI crash recovery artifact", () => {
-  it("accepts the hash-bound current implementation and provenance", async () => {
-    await expect(verifyOciCrashRecoveryArtifact()).resolves.toEqual(
+describe("Sandbox product acceptance artifact", () => {
+  it("accepts the current hash-bound default-product receipt", async () => {
+    await expect(verifySandboxProductAcceptance()).resolves.toEqual(
       expect.objectContaining({
         valid: true,
         errors: [],
-        path: "docs/artifacts/oci-crash-recovery-stage11.json",
+        path: "docs/artifacts/sandbox-product-acceptance-stage13.json",
         sha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
   });
 
-  it("rejects tampered endpoints, implementation bindings, and scope claims", async () => {
+  it("rejects verifier failure, stale output, and S1 completion overclaim", async () => {
     for (const mutate of [
       (value) => {
-        value.cycles[1].endpointSha256 = value.cycles[0].endpointSha256;
+        value.verification.typecheck.status = "failed";
       },
       (value) => {
-        value.implementation.guardianWorkerSha256 = "0".repeat(64);
+        value.restart.staleOutputExposed = true;
       },
       (value) => {
         value.scope.s1Complete = true;
@@ -41,20 +41,20 @@ describe("OCI crash recovery artifact", () => {
       const root = await fixtureRoot();
       const artifactPath = path.join(
         root,
-        "docs/artifacts/oci-crash-recovery-stage11.json",
+        "docs/artifacts/sandbox-product-acceptance-stage13.json",
       );
       const value = JSON.parse(await readFile(artifactPath, "utf8"));
       mutate(value);
       await writeFile(artifactPath, `${JSON.stringify(value, null, 2)}\n`);
 
       await expect(
-        verifyOciCrashRecoveryArtifact({ repoRoot: root }),
+        verifySandboxProductAcceptance({ repoRoot: root }),
       ).resolves.toEqual(
         expect.objectContaining({
           valid: false,
           errors: expect.arrayContaining([
             expect.stringMatching(
-              /OCI crash recovery artifact (?:shape|content hash) is invalid/u,
+              /Sandbox product acceptance artifact (?:shape|content hash) is invalid/u,
             ),
           ]),
         }),
@@ -64,28 +64,28 @@ describe("OCI crash recovery artifact", () => {
 
   it("rejects artifact paths outside the repository", async () => {
     await expect(
-      verifyOciCrashRecoveryArtifact({ artifactPath: "../outside.json" }),
+      verifySandboxProductAcceptance({ artifactPath: "../outside.json" }),
     ).rejects.toThrow("artifact path must remain inside the repository");
   });
 });
 
 async function fixtureRoot() {
-  const root = await mkdtemp(path.join(tmpdir(), "napier-crash-artifact-"));
+  const root = await mkdtemp(path.join(tmpdir(), "napier-product-artifact-"));
   roots.push(root);
   for (const relative of [
     "docker/napier-sandbox/Dockerfile",
     "docker/napier-sandbox/package.json",
     "docker/napier-sandbox/package-lock.json",
-    "docs/artifacts/oci-crash-recovery-stage11.json",
     "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
     "docs/artifacts/sandbox-image-provenance-0.1.0.json",
-    "packages/runtime/src/process-guardian.ts",
-    "packages/runtime/src/process-guardian-worker-source.ts",
-    "packages/runtime/src/sandbox-oci.ts",
-    "scripts/check-oci-crash-recovery.mjs",
-    "scripts/oci-crash-recovery-artifact.mjs",
-    "scripts/oci-crash-recovery-fixture.mjs",
-    "scripts/oci-crash-recovery-live.mjs",
+    "docs/artifacts/sandbox-product-acceptance-stage13.json",
+    "packages/runtime/src/sandbox-setup-service.ts",
+    "packages/runtime/src/verification-runtime.ts",
+    "packages/runtime/src/verification.ts",
+    "packages/runtime/src/workspace-processes.ts",
+    "scripts/check-sandbox-product-acceptance.mjs",
+    "scripts/sandbox-product-acceptance-artifact.mjs",
+    "scripts/sandbox-product-acceptance-live.mjs",
   ]) {
     const target = path.join(root, relative);
     await mkdir(path.dirname(target), { recursive: true });
