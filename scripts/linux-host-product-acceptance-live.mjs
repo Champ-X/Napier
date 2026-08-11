@@ -20,6 +20,9 @@ const STAGE19_SOURCE_FILES = [
   "scripts/linux-host-product-acceptance-artifact.mjs",
   "scripts/linux-host-product-acceptance-guest.mjs",
   "scripts/linux-host-product-acceptance-live.mjs",
+  "scripts/sandbox-first-use-coding-acceptance.mjs",
+  "scripts/sandbox-first-use-coding-support.mjs",
+  "scripts/sandbox-first-use-coding-support.test.mjs",
 ];
 
 export async function runLinuxHostProductAcceptance(input) {

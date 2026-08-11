@@ -52,6 +52,18 @@ Current result:
   recomputation;
 - `verified`: every new production module remains below the 500-line hard
   budget and the repository architecture audit remains cycle-free;
+- `verified`: schema-2 Stage 13 now starts from a fresh Workspace, data root,
+  HOME, temporary root, and empty Docker auth config with model, package, and
+  registry credentials removed. Exact Setup passes nine production probes;
+  built `run --model napier/demo --preset coding` records workspace and process
+  authority in `run.started` while the Agent remains revision 1 with an
+  identical Profile/revision set, unchanged persisted read-only projection,
+  and zero credential references; Doctor reports 11 passed, 0 warnings, and 3
+  offline skips; exact uninstall reaches `not_installed` with zero resource
+  delta;
+- `verified`: the Ubuntu 24.04 arm64 clean-host Stage 19 gate repeats that
+  fresh-install Coding flow after clean `npm ci` and full build, with the same
+  Profile/revision/credential invariants and exact cleanup;
 - `pending`: no self-hosted runner with label `napier-windows-docker` is
   currently registered, so no real Windows receipt has been uploaded or
   accepted. `windowsHostProductAcceptance` must remain false in all retained

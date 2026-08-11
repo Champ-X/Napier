@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
+import { validSandboxFirstUseCodingAcceptance } from "./sandbox-product-acceptance-artifact.mjs";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const VERSION = /^[0-9]+(?:\.[0-9]+){1,3}(?:[-.][A-Za-z0-9]+)*$/u;
@@ -25,6 +26,8 @@ export async function linuxHostProductAcceptanceImplementation(repoRoot) {
     productCheck: "scripts/check-sandbox-product-acceptance.mjs",
     productArtifact: "scripts/sandbox-product-acceptance-artifact.mjs",
     productLive: "scripts/sandbox-product-acceptance-live.mjs",
+    firstUseHarness: "scripts/sandbox-first-use-coding-acceptance.mjs",
+    firstUseSupport: "scripts/sandbox-first-use-coding-support.mjs",
     guestHarness: "scripts/linux-host-product-acceptance-guest.mjs",
     liveHarness: "scripts/linux-host-product-acceptance-live.mjs",
     checkScript: "scripts/check-linux-host-product-acceptance.mjs",
@@ -183,6 +186,7 @@ function validProduct(value) {
     validSetup(value.setup) &&
     validDoctor(value.doctor) &&
     validVerification(value.verification) &&
+    validSandboxFirstUseCodingAcceptance(value.firstUse) &&
     isRecord(value.service) &&
     value.service.ready === true &&
     value.service.healthChecked === true &&

@@ -13,6 +13,7 @@ import {
   createLocalAgentRuntime,
   sha256,
 } from "../packages/runtime/dist/index.js";
+import { runSandboxFirstUseCodingAcceptance } from "./sandbox-first-use-coding-acceptance.mjs";
 
 const execFile = promisify(execFileWithCallback);
 const CONTAINER_NAME = /^napier-[a-f0-9]{32}$/u;
@@ -272,6 +273,9 @@ export async function runSandboxProductAcceptance(input) {
       "Sandbox acceptance uninstall apply failed",
     );
 
+    const firstUse = await runSandboxFirstUseCodingAcceptance({
+      repoRoot: input.repoRoot,
+    });
     const finalSnapshot = await snapshotResources();
     const resourceClosure = resourceDelta(baseline, finalSnapshot);
     requireValue(
@@ -329,6 +333,7 @@ export async function runSandboxProductAcceptance(input) {
         bindingRemoved,
         resultSha256: uninstall.value.contentSha256,
       },
+      firstUse,
       resourceClosure: {
         exactBaselineRestored: true,
         ...resourceClosure,

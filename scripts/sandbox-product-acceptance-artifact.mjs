@@ -17,9 +17,16 @@ export async function sandboxProductAcceptanceImplementation(repoRoot) {
     verificationRuntime: "packages/runtime/src/verification-runtime.ts",
     verificationRunner: "packages/runtime/src/verification.ts",
     processManager: "packages/runtime/src/workspace-processes.ts",
+    cliRun: "apps/cli/src/cli.ts",
+    cliReadiness: "apps/cli/src/cli-run-readiness.ts",
+    capabilityPresets: "packages/contracts/src/agent-capabilities.ts",
+    agentRuntime: "packages/runtime/src/agent-runtime.ts",
+    agentCapabilityRuntime: "packages/runtime/src/agent-capability-runtime.ts",
     checkScript: "scripts/check-sandbox-product-acceptance.mjs",
     artifactVerifier: "scripts/sandbox-product-acceptance-artifact.mjs",
     liveHarness: "scripts/sandbox-product-acceptance-live.mjs",
+    firstUseHarness: "scripts/sandbox-first-use-coding-acceptance.mjs",
+    firstUseSupport: "scripts/sandbox-first-use-coding-support.mjs",
   };
   return Object.fromEntries(
     await Promise.all(
@@ -40,7 +47,7 @@ export function validateSandboxProductAcceptanceArtifact(
   if (
     !isRecord(value) ||
     value.kind !== "napier.sandbox-product-acceptance-stage13" ||
-    value.schemaVersion !== 1 ||
+    value.schemaVersion !== 2 ||
     !isIsoDate(value.generatedAt) ||
     !isRecord(value.image) ||
     value.image.id !== provenance.image?.id ||
@@ -54,6 +61,7 @@ export function validateSandboxProductAcceptanceArtifact(
     !validService(value.service) ||
     !validRestart(value.restart) ||
     !validUninstall(value.uninstall) ||
+    !validFirstUse(value.firstUse) ||
     !validResourceClosure(value.resourceClosure) ||
     !validRetention(value.retention) ||
     !isRecord(value.scope) ||
@@ -168,6 +176,196 @@ function validUninstall(value) {
   );
 }
 
+export function validSandboxFirstUseCodingAcceptance(value) {
+  return (
+    isRecord(value) &&
+    exactKeys(value, [
+      "freshWorkspace",
+      "freshDataRoot",
+      "workspaceFixtureSha256",
+      "setup",
+      "profile",
+      "run",
+      "doctor",
+      "uninstall",
+      "resourceClosure",
+      "taskRootRemoved",
+    ]) &&
+    value.freshWorkspace === true &&
+    value.freshDataRoot === true &&
+    SHA256.test(value.workspaceFixtureSha256) &&
+    validFirstUseSetup(value.setup) &&
+    validFirstUseProfile(value.profile) &&
+    validFirstUseRun(value.run) &&
+    validFirstUseDoctor(value.doctor) &&
+    validFirstUseUninstall(value.uninstall) &&
+    validFirstUseResourceClosure(value.resourceClosure) &&
+    value.taskRootRemoved === true
+  );
+}
+
+function validFirstUse(value) {
+  return validSandboxFirstUseCodingAcceptance(value);
+}
+
+function validFirstUseSetup(value) {
+  return (
+    isRecord(value) &&
+    exactKeys(value, [
+      "previewStatus",
+      "previewActive",
+      "previewSha256",
+      "applyAction",
+      "status",
+      "checkCount",
+      "checkCodes",
+      "installationSha256",
+      "resultSha256",
+    ]) &&
+    validSetup(value)
+  );
+}
+
+function validFirstUseProfile(value) {
+  return (
+    isRecord(value) &&
+    exactKeys(value, [
+      "agentRevision",
+      "profileSha256Before",
+      "profileSha256After",
+      "revisionSetSha256Before",
+      "revisionSetSha256After",
+      "revisionCountBefore",
+      "revisionCountAfter",
+      "credentialCountBefore",
+      "credentialCountAfter",
+      "persistedToolPolicy",
+      "persistedProcessExecution",
+      "projectionSha256",
+    ]) &&
+    value.agentRevision === 1 &&
+    value.profileSha256Before === value.profileSha256After &&
+    value.revisionSetSha256Before === value.revisionSetSha256After &&
+    value.revisionCountBefore === 1 &&
+    value.revisionCountAfter === 1 &&
+    value.credentialCountBefore === 0 &&
+    value.credentialCountAfter === 0 &&
+    value.persistedToolPolicy === "observe" &&
+    value.persistedProcessExecution === false &&
+    SHA256.test(value.profileSha256Before) &&
+    SHA256.test(value.revisionSetSha256Before) &&
+    SHA256.test(value.projectionSha256)
+  );
+}
+
+function validFirstUseRun(value) {
+  return (
+    isRecord(value) &&
+    exactKeys(value, [
+      "status",
+      "source",
+      "model",
+      "capabilityPreset",
+      "agentRevision",
+      "toolPolicy",
+      "workspaceWrite",
+      "processExecution",
+      "configurationSha256",
+      "promptSha256",
+      "frameCount",
+      "stdoutBytes",
+      "stdoutSha256",
+      "threadIdSha256",
+      "runIdSha256",
+    ]) &&
+    value.status === "completed" &&
+    value.source === "user" &&
+    value.model === "napier/demo" &&
+    value.capabilityPreset === "coding" &&
+    value.agentRevision === 1 &&
+    value.toolPolicy === "workspace" &&
+    value.workspaceWrite === true &&
+    value.processExecution === true &&
+    Number.isSafeInteger(value.frameCount) &&
+    value.frameCount >= 3 &&
+    Number.isSafeInteger(value.stdoutBytes) &&
+    value.stdoutBytes > 0 &&
+    value.stdoutBytes <= 4 * 1024 * 1024 &&
+    [
+      "configurationSha256",
+      "promptSha256",
+      "stdoutSha256",
+      "threadIdSha256",
+      "runIdSha256",
+    ].every((field) => SHA256.test(value[field]))
+  );
+}
+
+function validFirstUseDoctor(value) {
+  const codes = {
+    skillsCode: "skills_empty",
+    sandboxCode: "sandbox_ready",
+    shellCode: "shell_ready",
+    pythonCode: "python_ready",
+    lspCode: "lsp_ready",
+    dapCode: "dap_ready",
+    verificationCode: "verification_ready",
+    serviceCode: "service_ready",
+  };
+  return (
+    isRecord(value) &&
+    exactKeys(value, [
+      "status",
+      "checkCount",
+      "passedCount",
+      "warningCount",
+      "failedCount",
+      "skippedCount",
+      ...Object.keys(codes),
+      "reportSha256",
+    ]) &&
+    value.status === "degraded" &&
+    value.checkCount === 14 &&
+    value.passedCount === 11 &&
+    value.warningCount === 0 &&
+    value.failedCount === 0 &&
+    value.skippedCount === 3 &&
+    Object.entries(codes).every(([field, code]) => value[field] === code) &&
+    SHA256.test(value.reportSha256)
+  );
+}
+
+function validFirstUseUninstall(value) {
+  return (
+    isRecord(value) &&
+    exactKeys(value, [
+      "previewStatus",
+      "active",
+      "previewSha256",
+      "status",
+      "imageRetained",
+      "bindingRemoved",
+      "finalStatus",
+      "resultSha256",
+    ]) &&
+    validUninstall(value) &&
+    value.finalStatus === "not_installed"
+  );
+}
+
+function validFirstUseResourceClosure(value) {
+  return (
+    isRecord(value) &&
+    exactKeys(value, [
+      "exactBaselineRestored",
+      "containerDeltaCount",
+      "networkDeltaCount",
+      "scratchDeltaCount",
+    ]) &&
+    validResourceClosure(value)
+  );
+}
+
 function validResourceClosure(value) {
   return (
     isRecord(value) &&
@@ -199,6 +397,10 @@ function validRetention(value) {
 
 function isRecord(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function exactKeys(value, fields) {
+  return Object.keys(value).sort().join("\n") === [...fields].sort().join("\n");
 }
 
 function isIsoDate(value) {

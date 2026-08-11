@@ -828,15 +828,28 @@ verifier returns `verification_provider_unavailable` and build/test claims fail
 closed.
 
 Stage 13 drives this as one default-product lifecycle using the built CLI and
-configured Runtime over a temporary data root: exact-preview Setup, 14-check
-offline Doctor, image-bound typecheck and selected Vitest, egress-denied local
-service health and cancellation, Runtime shutdown/reopen with interrupted
-unknown Process evidence and no stale output, and exact-preview uninstall with
-the shared image retained. The receipt retains hashes, counts, statuses, and
-version evidence only; raw CLI/Doctor/Process output, paths, endpoints, resource
-names, and credentials are excluded. Offline verification is release-gated;
-the explicit live command must restore container, network, and scratch sets
-exactly and remove its private data root.
+configured Runtime over temporary state: exact-preview Setup, 14-check offline
+Doctor, image-bound typecheck and selected Vitest, egress-denied local service
+health and cancellation, Runtime shutdown/reopen with interrupted unknown
+Process evidence and no stale output, and exact-preview uninstall with the
+shared image retained.
+
+Schema 2 adds an independent first-use arm with a fresh Workspace, data root,
+HOME, temporary root, empty Docker auth config, and no inherited model,
+package, or registry credentials. Setup must create only the Sandbox binding
+before Agent initialization. The built CLI then runs `napier/demo` with the
+temporary Coding preset. Runtime must persist one completed user Run whose
+`run.started.capabilityPreset`, configuration hash, workspace-write authority,
+and process authority agree, while the seeded Agent remains revision 1 with an
+identical Profile/revision set, identical capability projection, and zero
+credential references. Offline Doctor replays every production process path;
+exact uninstall must end at `not_installed` and restore the resource baseline.
+
+The receipt retains hashes, counts, statuses, and version evidence only; raw
+CLI/Doctor/Process output, paths, endpoints, resource names, prompts, and
+credentials are excluded. Offline verification is release-gated; the explicit
+live command must restore container, network, and scratch sets exactly and
+remove every private task root.
 
 Stage 14 is a separate local multi-architecture acceptance boundary. Buildx
 must advertise both `linux/amd64` and `linux/arm64`; the live harness builds
@@ -944,7 +957,9 @@ build, then calls the Stage 13 production lifecycle rather than a parallel test
 implementation. The lifecycle exact-applies Setup, requires all nine probes,
 runs Doctor with zero warnings, verifies TypeScript and Vitest in OCI, serves
 and cancels loopback HTTP, reconciles an interrupted process after Runtime
-restart, uninstalls the binding, and restores container/network/scratch state.
+restart, repeats the isolated first-use temporary Coding arm without mutating
+the Agent Profile or credential store, uninstalls the binding, and restores
+container/network/scratch state.
 
 The same acceptance proves the precompiled Linux PTY package can allocate a
 real pseudoterminal without a host compiler. Linux Skill discovery retains its

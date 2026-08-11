@@ -37,6 +37,12 @@ describe("Sandbox product acceptance artifact", () => {
       (value) => {
         value.scope.s1Complete = true;
       },
+      (value) => {
+        value.firstUse.profile.revisionCountAfter = 2;
+      },
+      (value) => {
+        value.firstUse.workspacePath = "/private/workspace";
+      },
     ]) {
       const root = await fixtureRoot();
       const artifactPath = path.join(
@@ -79,6 +85,11 @@ async function fixtureRoot() {
     "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
     "docs/artifacts/sandbox-image-provenance-0.1.0.json",
     "docs/artifacts/sandbox-product-acceptance-stage13.json",
+    "apps/cli/src/cli.ts",
+    "apps/cli/src/cli-run-readiness.ts",
+    "packages/contracts/src/agent-capabilities.ts",
+    "packages/runtime/src/agent-capability-runtime.ts",
+    "packages/runtime/src/agent-runtime.ts",
     "packages/runtime/src/sandbox-setup-service.ts",
     "packages/runtime/src/sandbox-container-runtime.ts",
     "packages/runtime/src/sandbox-container-path-mapping.ts",
@@ -90,6 +101,8 @@ async function fixtureRoot() {
     "packages/runtime/src/verification.ts",
     "packages/runtime/src/workspace-processes.ts",
     "scripts/check-sandbox-product-acceptance.mjs",
+    "scripts/sandbox-first-use-coding-acceptance.mjs",
+    "scripts/sandbox-first-use-coding-support.mjs",
     "scripts/sandbox-product-acceptance-artifact.mjs",
     "scripts/sandbox-product-acceptance-live.mjs",
   ]) {

@@ -6888,13 +6888,24 @@ values, paths, command output, Docker output, resource names, endpoints, or
 daemon configuration. The resulting local arm64 receipt is release-gated but
 does not claim multi-platform coverage or S1 completion.
 
-Stage 13 closes the supported single-host default-product loop with an isolated
-data root. It drives the built CLI through exact-preview Setup and offline
-Doctor, then reopens the configured Runtime and runs image-bound TypeScript
-typecheck plus Vitest through `verify_workspace`. It starts and health-checks an
+Stage 13 closes the supported single-host default-product loop with isolated
+state. It drives the built CLI through exact-preview Setup and offline Doctor,
+then reopens the configured Runtime and runs image-bound TypeScript typecheck
+plus Vitest through `verify_workspace`. It starts and health-checks an
 egress-denied local service, cancels it and verifies endpoint closure, records a
 running Process as interrupted with no stale output after Runtime reopen, and
-finally exact-uninstalls the binding while retaining the shared image:
+finally exact-uninstalls the binding while retaining the shared image.
+
+The schema-2 receipt also creates a fresh Workspace, data root, HOME, temporary
+root, and empty Docker auth config with all model/package/registry credentials
+removed. Before any Agent state exists, it exact-applies Sandbox Setup, starts
+the built CLI with `run --model napier/demo --preset coding`, and requires the
+durable `run.started` event and configuration fingerprint to record Coding,
+workspace writes, and process execution. The default Agent remains revision 1;
+its Profile, immutable revision set, capability projection, and zero credential
+references remain unchanged. A second offline Doctor requires all production
+process paths ready, then exact-uninstall reaches `not_installed` and restores
+container/network/scratch state:
 
 ```bash
 npm run check:sandbox-product-acceptance
@@ -6902,10 +6913,11 @@ npm run check:sandbox-product-acceptance:live
 ```
 
 The ordinary check is offline. The live path uses production CLI/Runtime APIs,
-restores the exact container/network/scratch baseline, and deletes its private
-data root. Its current evidence covers macOS with a local `linux/arm64` Docker
-runtime only; Windows/Linux host coverage, non-POSIX user mapping, registry
-publication, and signing remain open.
+restores the exact container/network/scratch baseline, and deletes every
+private task root. The retained local evidence covers macOS with a local
+`linux/arm64` Docker runtime. Stage 19 repeats the complete lifecycle,
+including fresh-install temporary Coding, on Ubuntu arm64. Windows execution,
+registry publication, and signing remain open.
 
 Stage 14 separately verifies the image's local dual-architecture build and
 execution boundary. The live path requires BuildKit support for `linux/amd64`
@@ -7030,7 +7042,10 @@ without a compiler. It drives the formal Sandbox Setup/Doctor path through all
 nine production probes, typecheck and test, starts and health-checks a local
 service, cancels and closes it, reconciles an interrupted process after Runtime
 restart, uninstalls the binding, and restores the container/network/scratch
-baseline. It also covers Linux `/proc/self/fd` Skill loading: the child path
+baseline. It separately repeats the credential-isolated fresh-install Coding
+flow and proves that a Run receives workspace/process capabilities without
+creating an Agent revision or credential reference. It also covers Linux
+`/proc/self/fd` Skill loading: the child path
 preserves `/.` so `O_NOFOLLOW` applies to the held directory's child rather than
 rejecting the procfs descriptor link.
 
@@ -7070,7 +7085,8 @@ image locally, writes and live-verifies temporary host-specific SBOM/provenance
 evidence, and then calls the same Stage 13 production lifecycle used elsewhere:
 Setup exact-apply, all nine readiness probes, zero-warning offline Doctor,
 OCI typecheck/Vitest, loopback service health/cancellation, restart
-reconciliation, uninstall, and exact resource closure.
+reconciliation, fresh-install temporary Coding with Profile/revision/credential
+invariance, uninstall, and exact resource closure.
 
 The lifecycle does not inherit the runner's GitHub, npm, model, or Docker
 credentials. It replaces the child environment with a fixed system-variable

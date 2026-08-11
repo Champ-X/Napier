@@ -1298,7 +1298,14 @@ async function createFixture() {
     "packages/runtime/src/verification-runtime.ts",
     "packages/runtime/src/verification.ts",
     "packages/runtime/src/workspace-processes.ts",
+    "apps/cli/src/cli.ts",
+    "apps/cli/src/cli-run-readiness.ts",
+    "packages/contracts/src/agent-capabilities.ts",
+    "packages/runtime/src/agent-capability-runtime.ts",
+    "packages/runtime/src/agent-runtime.ts",
     "scripts/check-sandbox-product-acceptance.mjs",
+    "scripts/sandbox-first-use-coding-acceptance.mjs",
+    "scripts/sandbox-first-use-coding-support.mjs",
     "scripts/sandbox-product-acceptance-artifact.mjs",
     "scripts/sandbox-product-acceptance-live.mjs",
     "packages/runtime/src/doctor-lsp-runtime-probe.ts",
@@ -1481,6 +1488,7 @@ async function createWorkflowBenchmarkFixture(root) {
 }
 
 async function createPackageLockFixture(root) {
+  await mkdir(path.join(root, "apps/cli"), { recursive: true });
   await mkdir(path.join(root, "apps/web"), { recursive: true });
   await mkdir(path.join(root, "packages/contracts"), { recursive: true });
   await mkdir(path.join(root, "packages/runtime"), { recursive: true });
@@ -1497,6 +1505,15 @@ async function createPackageLockFixture(root) {
     version: "0.1.0",
     private: true,
     dependencies: { "@napier/contracts": "*", react: "19.2.8" },
+  };
+  const cliPackage = {
+    name: "@napier/cli",
+    version: "0.1.0",
+    private: true,
+    dependencies: {
+      "@napier/contracts": "*",
+      "@napier/runtime": "*",
+    },
   };
   const contractsPackage = {
     name: "@napier/contracts",
@@ -1527,6 +1544,11 @@ async function createPackageLockFixture(root) {
         version: webPackage.version,
         dependencies: webPackage.dependencies,
       },
+      "apps/cli": {
+        name: cliPackage.name,
+        version: cliPackage.version,
+        dependencies: cliPackage.dependencies,
+      },
       "packages/contracts": {
         name: contractsPackage.name,
         version: contractsPackage.version,
@@ -1538,6 +1560,10 @@ async function createPackageLockFixture(root) {
       },
       "node_modules/@napier/contracts": {
         resolved: "packages/contracts",
+        link: true,
+      },
+      "node_modules/@napier/cli": {
+        resolved: "apps/cli",
         link: true,
       },
       "node_modules/@napier/web": {
@@ -1556,6 +1582,7 @@ async function createPackageLockFixture(root) {
     },
   };
   await writeJson(path.join(root, "package.json"), rootPackage);
+  await writeJson(path.join(root, "apps/cli/package.json"), cliPackage);
   await writeJson(path.join(root, "apps/web/package.json"), webPackage);
   await writeJson(
     path.join(root, "packages/contracts/package.json"),

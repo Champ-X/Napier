@@ -93,6 +93,8 @@ async function fixtureRoot() {
     "scripts/linux-host-product-acceptance-live.mjs",
     "scripts/prepare-node-pty.mjs",
     "scripts/prepare-node-pty.test.mjs",
+    "scripts/sandbox-first-use-coding-acceptance.mjs",
+    "scripts/sandbox-first-use-coding-support.mjs",
     "scripts/sandbox-product-acceptance-artifact.mjs",
     "scripts/sandbox-product-acceptance-live.mjs",
   ]) {
