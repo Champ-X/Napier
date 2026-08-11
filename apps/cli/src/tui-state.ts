@@ -34,6 +34,7 @@ export interface TuiStateSnapshot {
   nextTitle?: string;
   model?: ModelRef;
   capabilities?: AgentCapabilityStatus;
+  sandboxWarning?: string;
   lastRun?: RunRecord;
   active: boolean;
   activeLabel?: string;
@@ -51,6 +52,7 @@ export class TuiSessionState {
   private nextTitle: string | undefined;
   private model: ModelRef | undefined;
   private capabilities: AgentCapabilityStatus | undefined;
+  private sandboxWarning: string | undefined;
   private lastRun: RunRecord | undefined;
   private active = false;
   private activeLabel: string | undefined;
@@ -71,11 +73,13 @@ export class TuiSessionState {
     title?: string;
     model?: ModelRef;
     capabilities?: AgentCapabilityStatus;
+    sandboxWarning?: string;
   }) {
     this.threadId = input.threadId;
     this.nextTitle = input.title;
     this.model = input.model;
     this.capabilities = input.capabilities;
+    this.sandboxWarning = input.sandboxWarning;
   }
 
   snapshot(): TuiStateSnapshot {
@@ -85,6 +89,9 @@ export class TuiSessionState {
       ...(this.model ? { model: structuredClone(this.model) } : {}),
       ...(this.capabilities
         ? { capabilities: structuredClone(this.capabilities) }
+        : {}),
+      ...(this.sandboxWarning
+        ? { sandboxWarning: this.sandboxWarning }
         : {}),
       ...(this.lastRun ? { lastRun: structuredClone(this.lastRun) } : {}),
       active: this.active,
@@ -257,11 +264,17 @@ export class TuiSessionState {
       this.model,
       this.lastRun,
       this.capabilities,
+      this.sandboxWarning,
     );
   }
 
   setCapabilities(capabilities: AgentCapabilityStatus): void {
     this.capabilities = structuredClone(capabilities);
+  }
+
+  setSandboxWarning(warning: string | undefined): void {
+    this.sandboxWarning = warning;
+    if (warning) this.notice = bounded(warning, MAX_NOTICE_CHARS);
   }
 
   showHelp(): void {

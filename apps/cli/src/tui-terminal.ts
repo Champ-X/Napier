@@ -193,8 +193,18 @@ function statusLine(state: TuiStateSnapshot, columns: number): string {
     : state.active
       ? "active"
       : "ready";
+  const isolation = state.sandboxWarning ? "HOST DIRECT · NO ISOLATION" : "";
   return `${STYLE_DIM}${truncateTerminalText(
-    `${activity} · model ${model} · preset ${capability} · browser interact ${browserInteraction} · last run ${run}`,
+    [
+      activity,
+      isolation,
+      `model ${model}`,
+      `preset ${capability}`,
+      `browser interact ${browserInteraction}`,
+      `last run ${run}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
     columns,
   )}${STYLE_RESET}`;
 }

@@ -1,3 +1,5 @@
+import type { Writable } from "node:stream";
+
 import type { AgentProfile, RunRecord } from "@napier/contracts";
 import {
   agentCapabilityPresetUpdate,
@@ -13,6 +15,25 @@ import {
 import type { CliRunOptions } from "./cli-run-options.js";
 import { CliPublicError } from "./cli-public-error.js";
 import { cliErrorFrame } from "./cli-public-error.js";
+import { writeLine } from "./cli-output.js";
+
+export const HOST_DIRECT_SANDBOX_WARNING =
+  "WARNING: Host-direct process execution is enabled with NO OS isolation; workspace, network, and resource boundaries are not enforced.";
+
+export function cliSandboxWarning(
+  sandbox: Pick<LocalAgentRuntimeServices["sandbox"], "id">,
+): string | undefined {
+  return sandbox.id === "host-direct"
+    ? HOST_DIRECT_SANDBOX_WARNING
+    : undefined;
+}
+
+export async function writeCliSandboxWarning(
+  stream: Writable,
+  warning: string | undefined,
+): Promise<void> {
+  if (warning) await writeLine(stream, warning);
+}
 
 export interface CliRunReadinessDependencies {
   processSandbox?: (

@@ -82,6 +82,43 @@ Current result:
   administrator authorization to make the package public and a successful
   `release` workflow run.
 
+## Completed Slice: Persistent Host-Direct CLI Warning
+
+User scenario: an operator who deliberately enables unisolated host execution
+cannot start a formal CLI, Chat, or TUI task without seeing that the Workspace,
+network, and resource policies are not enforced.
+
+Acceptance and threat boundary:
+
+- retain `NAPIER_HOST_DIRECT_SANDBOX=1|true|yes` as the only opt-in; unknown,
+  false, empty, or absent values remain disabled;
+- warn one-shot and resume invocations on stderr immediately after Runtime
+  creation and before credential bootstrap, Thread creation, or Run mutation;
+- preserve JSONL stdout as an ordered `StreamFrame` stream with no synthetic
+  warning event or protocol change;
+- show the warning when Chat starts, in `/status`, and before every prompt or
+  resume; keep `HOST DIRECT · NO ISOLATION` in the TUI status and render the
+  full warning before credential bootstrap;
+- do not change Agent capability, policy, Sandbox selection, Ledger, or Profile
+  state. Command and Process results continue to repeat the same warning;
+- keep production files at or below the 500-line architecture limit and add no
+  architecture exemption.
+
+Observed result:
+
+- focused CLI/TUI coverage passes 38 cases. Host-direct one-shot emits one
+  stderr warning while every stdout line remains parseable JSON; Chat exposes
+  startup, status, and pre-Run warnings; TUI keeps the persistent status;
+- real built-CLI Dogfood completed one JSONL one-shot Run with 17 frames, one
+  stderr warning, and no warning text on stdout. A real PTY Chat completed with
+  three warnings, and a real PTY TUI rendered the persistent no-isolation
+  status;
+- the Dogfood used temporary Workspace/state roots and retained no prompt,
+  raw terminal output, absolute path, or credential. Cleanup removed the
+  temporary root;
+- Architecture passes 1,244 source files, 650 test files, and zero cycles;
+  `tui-cli.ts` remains exactly at the 500-line hard limit.
+
 ## Baseline
 
 Audit date: 2026-08-05

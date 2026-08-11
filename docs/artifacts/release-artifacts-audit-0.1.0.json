@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "85e892355bf888be0617acea10afd99bb28ab6906a6f072fa089ae8a0929e771",
+  "artifactSetSha256": "1e8e5509b43319e810eb3dd30bf9beef44d7e3b9a15237b294e6d8404f8e5b54",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -53,7 +53,7 @@
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "0d29f1177b76e94d64929aac8baeddda3e23344ebe8d6c4e84dc510825f80c5f",
+      "sha256": "f387587d0b275cd8d0ae81e0b1408ccd6196769454c2d5a383da944105eeabf1",
       "valid": true
     },
     {

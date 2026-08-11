@@ -6869,6 +6869,16 @@ drift, or runtime resource drift fail closed. Doctor reports the exact restart,
 rebuild, or resource-repair path instead of silently falling back to
 host-direct execution.
 
+Host-direct remains an explicit emergency escape path, never an automatic
+fallback. When `NAPIER_HOST_DIRECT_SANDBOX=1|true|yes` selects it, Web warns
+before send, one-shot CLI writes a fixed warning to stderr before credential,
+Thread, or Run mutation, Chat repeats that warning at startup, in `/status`,
+and before every prompt or resume, and TUI keeps `HOST DIRECT · NO ISOLATION`
+in its persistent status. JSONL stdout remains a pure `StreamFrame` stream.
+Every command and Process result separately repeats that workspace, network,
+and resource policies are not enforced. Removing the opt-in restores normal
+isolated-provider discovery without migrating Agent state.
+
 Stage 12 adds a real-daemon security Casebook over the same production
 `CommandRunner` and immutable image. It proves the read-only Workspace mount,
 absence of an outside host file and ambient secret, denied loopback/private

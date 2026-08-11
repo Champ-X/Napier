@@ -12,6 +12,28 @@ import { TuiSessionState } from "../src/tui-state.js";
 import { TuiTerminal } from "../src/tui-terminal.js";
 
 describe("TUI terminal projection", () => {
+  it("keeps the host-direct isolation warning in the persistent status", async () => {
+    const output = new TerminalCapture(100, 12);
+    const terminal = new TuiTerminal(output);
+    const state = new TuiSessionState({
+      sandboxWarning:
+        "WARNING: Host-direct process execution is enabled with NO OS isolation.",
+    });
+
+    await terminal.enter();
+    await terminal.render(state.snapshot(), {
+      text: "",
+      cursor: 0,
+      byteLength: 0,
+      pasting: false,
+    });
+    await terminal.restore();
+
+    expect(output.text()).toContain("HOST DIRECT · NO ISOLATION");
+    state.showStatus();
+    expect(state.snapshot().notice).toContain("Host-direct process execution");
+  });
+
   it("uses fixed terminal controls and renders dynamic text as visible data", async () => {
     const output = new TerminalCapture(72, 18);
     const terminal = new TuiTerminal(output);

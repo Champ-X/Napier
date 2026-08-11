@@ -100,6 +100,7 @@ export function interactiveStatusLine(
   model: ModelRef | undefined,
   run: RunRecord | undefined,
   capabilities?: AgentCapabilityStatus,
+  sandboxWarning?: string,
 ): string {
   return [
     `Thread: ${threadId ?? "new"}`,
@@ -110,6 +111,7 @@ export function interactiveStatusLine(
           `Capabilities: ${capabilities.label} / ${capabilities.policyLabel} / browser ${capabilities.browserRead ? "read" : "off"} / interact ${browserInteractionLabel(capabilities)}`,
         ]
       : []),
+    ...(sandboxWarning ? [sandboxWarning] : []),
   ].join(" | ");
 }
 

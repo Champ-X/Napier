@@ -9,6 +9,7 @@ import {
   createLocalAgentRuntime,
   UnsupportedSandboxAdapter,
   type LocalAgentRuntimeOptions,
+  type OsSandboxAdapter,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -129,6 +130,7 @@ describe("temporary capability preset CLI", () => {
 
     expect(code, stderr.text()).toBe(0);
     expect(stdout.text()).toContain('"type":"done"');
+    expect(stderr.text()).not.toContain("Host-direct");
     const reopened = await createLocalAgentRuntime({
       workspaceRoot,
       dataRoot,
@@ -160,6 +162,76 @@ describe("temporary capability preset CLI", () => {
     } finally {
       await reopened.shutdown();
     }
+  });
+
+  it("warns before a host-direct one-shot Run without polluting JSONL", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-cli-host-direct-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "run",
+        "--workspace",
+        workspaceRoot,
+        "--model",
+        "napier/demo",
+        "--prompt",
+        "Report the active boundary.",
+        "--preset",
+        "browser",
+        "--jsonl",
+      ],
+      { cwd: root, env: {}, stdout, stderr },
+      sandboxDependencies(hostDirectSandbox()),
+    );
+
+    expect(code).toBe(0);
+    expect(stderr.text()).toContain("Host-direct process execution");
+    expect(stderr.text()).toContain("NO OS isolation");
+    expect(stdout.text()).not.toContain("Host-direct");
+    expect(
+      stdout
+        .text()
+        .trim()
+        .split("\n")
+        .every((line) => JSON.parse(line)),
+    ).toBe(true);
+  });
+
+  it("keeps host-direct visible in Chat startup, status, and every prompt", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-chat-host-direct-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const stdin = ttyInput();
+    const stdout = new CaptureWritable();
+    const stderr = new CaptureWritable();
+    const running = runCli(
+      [
+        "chat",
+        "--workspace",
+        workspaceRoot,
+        "--model",
+        "napier/demo",
+        "--preset",
+        "browser",
+      ],
+      { cwd: root, env: {}, stdin, stdout, stderr },
+      sandboxDependencies(hostDirectSandbox()),
+    );
+    await vi.waitFor(() => expect(stderr.text()).toContain("chat ready"));
+    stdin.end("/status\nReport the active boundary.\n/exit\n");
+
+    expect(await running).toBe(0);
+    expect(stderr.text().match(/Host-direct process execution/gu)?.length).toBe(
+      3,
+    );
+    expect(stderr.text()).toContain("NO OS isolation");
+    expect(stdout.text()).not.toContain("Host-direct");
   });
 
   it("blocks process presets before one-shot model, credential, Thread, or Run mutation", async () => {
@@ -446,6 +518,23 @@ function dependencies(
       });
       if (provider) services.models.registerProvider(provider.provider);
       return services;
+    },
+  };
+}
+
+function sandboxDependencies(sandbox: OsSandboxAdapter): RunCliDependencies {
+  return {
+    async createRuntime(options: LocalAgentRuntimeOptions) {
+      return createLocalAgentRuntime({ ...options, sandbox });
+    },
+  };
+}
+
+function hostDirectSandbox(): OsSandboxAdapter {
+  return {
+    id: "host-direct",
+    async launch() {
+      throw new Error("Host-direct fixture should not launch a process");
     },
   };
 }

@@ -15,6 +15,10 @@ import {
   oneShotBrowserConfirmationAvailable,
 } from "./one-shot-browser-confirmation.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
+import {
+  cliSandboxWarning,
+  writeCliSandboxWarning,
+} from "./cli-run-readiness.js";
 import { writeJsonLine, writeLine } from "./cli-output.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import { canonicalWorkspace } from "./workspace-path.js";
@@ -66,6 +70,8 @@ export async function executeCliInvocation(
         ? { browserInteractionConfirmation: { available: true } }
         : {}),
     });
+    const sandboxWarning = cliSandboxWarning(services.sandbox);
+    await writeCliSandboxWarning(io.stderr, sandboxWarning);
     const invocation = await prepare(services, controller.signal);
     threadId = invocation.threadId;
     const thread = services.store.getThread(threadId);

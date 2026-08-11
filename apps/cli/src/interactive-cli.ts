@@ -16,6 +16,8 @@ import {
   activeCliAgent,
   assertCliResumeReadiness,
   assertCliRunReadiness,
+  cliSandboxWarning,
+  writeCliSandboxWarning,
 } from "./cli-run-readiness.js";
 import {
   contextualCliRunModel,
@@ -103,6 +105,7 @@ export async function executeInteractive(
   let automaticModel = options.model === undefined;
   let lastRun: RunRecord | undefined;
   let capabilities;
+  let sandboxWarning: string | undefined;
   const renderer = new InteractiveEventRenderer(io.stdout, io.stderr);
   try {
     parentSignal?.throwIfAborted();
@@ -117,6 +120,8 @@ export async function executeInteractive(
       env: io.env,
       browserInteractionConfirmation: { available: true },
     });
+    sandboxWarning = cliSandboxWarning(services.sandbox);
+    await writeCliSandboxWarning(io.stderr, sandboxWarning);
     parentSignal?.throwIfAborted();
     const initialAgent = activeCliAgent(services, options.agentId, threadId);
     await configureCliModelCredential(services, options, io.env);
@@ -230,7 +235,13 @@ export async function executeInteractive(
           } else if (command.kind === "status") {
             await writeLine(
               io.stderr,
-              interactiveStatusLine(threadId, model, lastRun, capabilities),
+              interactiveStatusLine(
+                threadId,
+                model,
+                lastRun,
+                capabilities,
+                sandboxWarning,
+              ),
             );
           } else if (command.kind === "model_show") {
             await writeLine(
@@ -290,6 +301,7 @@ export async function executeInteractive(
               `Thread: new${nextTitle ? ` (${nextTitle})` : ""}`,
             );
           } else if (command.kind === "resume") {
+            await writeCliSandboxWarning(io.stderr, sandboxWarning);
             const execution = await invoke(
               options.timeoutMs,
               sessionController.signal,
@@ -334,6 +346,7 @@ export async function executeInteractive(
         }
       } else {
         const text = rawLine.startsWith("//") ? rawLine.slice(1) : rawLine;
+        await writeCliSandboxWarning(io.stderr, sandboxWarning);
         const execution = await invoke(
           options.timeoutMs,
           sessionController.signal,

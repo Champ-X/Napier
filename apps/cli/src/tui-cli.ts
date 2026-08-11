@@ -14,6 +14,7 @@ import {
   activeCliAgent,
   assertCliResumeReadiness,
   assertCliRunReadiness,
+  cliSandboxWarning,
   cliRunReadinessNotice,
 } from "./cli-run-readiness.js";
 import { recommendedCliRunModel } from "./cli-default-run-model.js";
@@ -31,7 +32,6 @@ import { canonicalWorkspace } from "./workspace-path.js";
 import { interactiveCapabilityStatus } from "./interactive-capability-status.js";
 
 const INTERRUPT_DEBOUNCE_MS = 100;
-
 type RawTtyInput = Readable & {
   isTTY?: boolean;
   isRaw?: boolean;
@@ -411,6 +411,8 @@ export async function executeTui(
       env: io.env,
       browserInteractionConfirmation: { available: true },
     });
+    state.setSandboxWarning(cliSandboxWarning(services.sandbox));
+    await render();
     confirmations = new TerminalBrowserInteractionConfirmationController(
       services.browserInteractionConfirmations,
     );
