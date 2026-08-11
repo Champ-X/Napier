@@ -9,6 +9,10 @@ import { probeContainerRuntimeAvailability } from "@napier/runtime/sandbox-conta
 
 import type { DoctorCheck } from "./doctor-report.js";
 
+interface DoctorSandboxProbeDependencies {
+  containerRuntimeAvailable?: (signal: AbortSignal) => Promise<boolean>;
+}
+
 /**
  * Launches a bounded, network-denied probe through the active OS sandbox. When
  * the sandbox cannot run, reports whether a container runtime is available so
@@ -19,6 +23,7 @@ export async function defaultSandboxProbe(
   workspaceRoot: string,
   signal: AbortSignal,
   configuredSandbox = createPlatformSandboxAdapter(),
+  dependencies: DoctorSandboxProbeDependencies = {},
 ): Promise<DoctorCheck> {
   const startedAt = Date.now();
   const sandbox = configuredSandbox;
@@ -27,10 +32,20 @@ export async function defaultSandboxProbe(
     result = await probeSandboxProcessRuntime(workspaceRoot, signal, sandbox);
   } catch (error) {
     if (signal.aborted) throw error;
-    return sandboxUnavailableCheck(Date.now() - startedAt, signal, sandbox.id);
+    return sandboxUnavailableCheck(
+      Date.now() - startedAt,
+      signal,
+      sandbox.id,
+      dependencies,
+    );
   }
   if (result.status !== "ready") {
-    return sandboxUnavailableCheck(Date.now() - startedAt, signal, sandbox.id);
+    return sandboxUnavailableCheck(
+      Date.now() - startedAt,
+      signal,
+      sandbox.id,
+      dependencies,
+    );
   }
   const isolation = sandboxIsolationStrength(sandbox.id);
   const git = await probeGitRuntime(workspaceRoot, signal, sandbox);
@@ -152,6 +167,7 @@ async function sandboxUnavailableCheck(
   durationMs: number,
   signal: AbortSignal,
   adapterId = createPlatformSandboxAdapter().id,
+  dependencies: DoctorSandboxProbeDependencies = {},
 ): Promise<DoctorCheck> {
   signal.throwIfAborted();
   const isolation = sandboxIsolationStrength(adapterId);
@@ -191,7 +207,11 @@ async function sandboxUnavailableCheck(
     process.env["NAPIER_CONTAINER_SANDBOX_IMAGE"]?.trim(),
   );
   const containerReady = !imageConfigured
-    ? await probeContainerRuntimeAvailability({ signal })
+    ? await (
+        dependencies.containerRuntimeAvailable ??
+        ((probeSignal) =>
+          probeContainerRuntimeAvailability({ signal: probeSignal }))
+      )(signal)
     : false;
   signal.throwIfAborted();
   if (containerReady) {
@@ -201,7 +221,7 @@ async function sandboxUnavailableCheck(
       required: false,
       code: "sandbox_container_available",
       message:
-        "OS process sandbox is unavailable, but a container runtime was found. Set NAPIER_CONTAINER_SANDBOX_IMAGE to enable a container sandbox for coding/process tasks.",
+        "OS process sandbox is unavailable, but a local container runtime is ready. Run napier setup --workspace 'WORKSPACE_PATH' --component sandbox, inspect the preview, and exact-apply Napier's locked toolchain before coding or process tasks.",
       durationMs,
       evidence: { isolationLevel: isolation.level, containerRuntime: true },
     };

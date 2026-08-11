@@ -418,7 +418,12 @@ describe("Napier Doctor CLI", () => {
     expect(code).toBe(0);
     const report = JSON.parse(stdout.text()) as {
       status: string;
-      remediations: Array<{ id: string; priority: string; checkIds: string[] }>;
+      remediations: Array<{
+        id: string;
+        priority: string;
+        checkIds: string[];
+        instruction: string;
+      }>;
     };
     expect(report.status).toBe("degraded");
     expect(report.remediations).toEqual(
@@ -427,8 +432,14 @@ describe("Napier Doctor CLI", () => {
           id: "prefer_isolated_sandbox",
           priority: "optional",
           checkIds: ["sandbox"],
+          instruction: expect.stringContaining(
+            "napier setup --workspace 'WORKSPACE_PATH' --component sandbox",
+          ),
         }),
       ]),
+    );
+    expect(report.remediations[0]?.instruction).not.toContain(
+      "NAPIER_CONTAINER_SANDBOX_IMAGE",
     );
   });
 

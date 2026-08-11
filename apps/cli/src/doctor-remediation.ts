@@ -93,7 +93,7 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   sandbox_host_direct: {
     id: "prefer_isolated_sandbox",
     instruction:
-      "Direct host execution runs with no OS isolation. Prefer a container image (NAPIER_CONTAINER_SANDBOX_IMAGE) or a native OS sandbox; keep NAPIER_HOST_DIRECT_SANDBOX enabled only on trusted machines you control.",
+      "Direct host execution runs with no OS isolation. Disable NAPIER_HOST_DIRECT_SANDBOX, then run napier setup --workspace 'WORKSPACE_PATH' --component sandbox and exact-apply its locked preview; keep host-direct enabled only on trusted machines you control.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
   sandbox_git_unavailable: {
