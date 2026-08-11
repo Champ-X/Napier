@@ -3,74 +3,50 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
-import { verifySandboxImageArtifacts } from "./check-sandbox-image-sbom.mjs";
+import { sandboxImageSourceEvidence } from "./check-sandbox-image-sbom.mjs";
 import {
-  sandboxSecurityImplementation,
-  validateSandboxSecurityArtifact,
-} from "./sandbox-security-casebook-artifact.mjs";
-import { runSandboxSecurityCasebook } from "./sandbox-security-casebook-live.mjs";
+  sandboxMultiArchitectureImplementation,
+  validateSandboxMultiArchitectureArtifact,
+} from "./sandbox-multi-architecture-artifact.mjs";
+import { runSandboxMultiArchitectureAcceptance } from "./sandbox-multi-architecture-live.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 const DEFAULT_ARTIFACT_PATH =
-  "docs/artifacts/sandbox-security-casebook-stage12.json";
-const PROVENANCE_PATH = "docs/artifacts/sandbox-image-provenance-0.1.0.json";
+  "docs/artifacts/sandbox-multi-architecture-stage14.json";
 
-export async function collectSandboxSecurityCasebook(options = {}) {
+export async function collectSandboxMultiArchitecture(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
-  const provenance = await readJson(
-    path.join(repoRoot, PROVENANCE_PATH),
-    "Sandbox image provenance",
-  );
-  const imageVerification = await verifySandboxImageArtifacts({
+  const source = await sandboxImageSourceEvidence(repoRoot);
+  const live = await runSandboxMultiArchitectureAcceptance({
     repoRoot,
-    verifyReceiptPath: PROVENANCE_PATH,
-  });
-  if (!imageVerification.valid) {
-    throw new Error("Sandbox image provenance is not valid");
-  }
-  const image = provenance.image;
-  if (
-    !isRecord(image) ||
-    typeof image.id !== "string" ||
-    !/^sha256:[a-f0-9]{64}$/u.test(image.id) ||
-    image.os !== "linux" ||
-    !["amd64", "arm64"].includes(image.arch)
-  ) {
-    throw new Error("Sandbox image provenance identity is invalid");
-  }
-  const live = await runSandboxSecurityCasebook({
-    repoRoot,
-    imageId: image.id,
+    source,
     dependencies: options.dependencies,
   });
-  const implementation = await sandboxSecurityImplementation(repoRoot);
+  const implementation = await sandboxMultiArchitectureImplementation(repoRoot);
   const withoutHash = {
-    kind: "napier.sandbox-security-casebook-stage12",
+    kind: "napier.sandbox-multi-architecture-stage14",
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
-    image: {
-      id: image.id,
-      platform: `${image.os}/${image.arch}`,
-      provenanceSha256: imageVerification.receiptSha256,
-    },
+    source,
     implementation,
-    cases: live.cases,
-    resourceClosure: live.resourceClosure,
+    ...live,
     retention: {
-      canaryValues: false,
       credentialValues: false,
-      rawCommandOutput: false,
+      rawBuildOutput: false,
       rawDockerOutput: false,
-      rawDaemonEndpoint: false,
       resourceNames: false,
+      temporaryTags: false,
       workspacePaths: false,
-      outsidePaths: false,
-      endpointUrls: false,
+      daemonEndpoints: false,
     },
     scope: {
       sliceComplete: true,
       s1Complete: false,
+      localBuildAndExecution: true,
+      registryPublication: false,
+      signature: false,
+      crossHostAcceptance: false,
       remaining: [
         "multi-architecture registry publication",
         "image signature and external attestation",
@@ -85,38 +61,22 @@ export async function collectSandboxSecurityCasebook(options = {}) {
   };
 }
 
-export async function verifySandboxSecurityCasebook(options = {}) {
+export async function verifySandboxMultiArchitecture(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
   const artifactPath = resolveRepoPath(
     repoRoot,
     options.artifactPath ?? DEFAULT_ARTIFACT_PATH,
   );
-  const [value, provenance] = await Promise.all([
-    readJson(artifactPath, "Sandbox security Casebook artifact"),
-    readJson(path.join(repoRoot, PROVENANCE_PATH), "Sandbox image provenance"),
+  const [value, source, implementation] = await Promise.all([
+    readJson(artifactPath, "Sandbox multi-architecture artifact"),
+    sandboxImageSourceEvidence(repoRoot),
+    sandboxMultiArchitectureImplementation(repoRoot),
   ]);
-  const imageVerification = await verifySandboxImageArtifacts({
-    repoRoot,
-    verifyReceiptPath: PROVENANCE_PATH,
-  });
-  const implementation = await sandboxSecurityImplementation(repoRoot);
-  const errors = validateSandboxSecurityArtifact(
+  const errors = validateSandboxMultiArchitectureArtifact(
     value,
-    provenance,
+    source,
     implementation,
   );
-  if (!imageVerification.valid) {
-    errors.push(
-      ...imageVerification.errors.map(
-        (error) => `Sandbox image provenance: ${error}`,
-      ),
-    );
-  }
-  if (value.image?.provenanceSha256 !== imageVerification.receiptSha256) {
-    errors.push(
-      "Sandbox security Casebook provenance SHA-256 does not match the receipt",
-    );
-  }
   return {
     valid: errors.length === 0,
     errors,
@@ -130,10 +90,10 @@ async function runCli() {
   const live = args.includes("--live") || args.includes("--write");
   const write = args.includes("--write");
   if (args.some((arg) => !["--live", "--write"].includes(arg))) {
-    throw new Error("Unknown Sandbox security Casebook option");
+    throw new Error("Unknown Sandbox multi-architecture option");
   }
   if (live) {
-    const artifact = await collectSandboxSecurityCasebook();
+    const artifact = await collectSandboxMultiArchitecture();
     if (write) {
       await writeJson(
         path.join(defaultRepoRoot, DEFAULT_ARTIFACT_PATH),
@@ -141,18 +101,18 @@ async function runCli() {
       );
     }
     console.log(
-      `Sandbox security Casebook ${write ? "written" : "verified live"}: ${artifact.cases.length} cases image ${artifact.image.id.slice(0, 20)}`,
+      `Sandbox multi-architecture ${write ? "written" : "verified live"}: ${artifact.platforms.length} platforms`,
     );
     return;
   }
-  const result = await verifySandboxSecurityCasebook();
+  const result = await verifySandboxMultiArchitecture();
   if (!result.valid) {
     for (const error of result.errors) console.error(error);
     process.exitCode = 1;
     return;
   }
   console.log(
-    `Sandbox security Casebook verified: ${result.path} ${result.sha256.slice(0, 16)}`,
+    `Sandbox multi-architecture verified: ${result.path} ${result.sha256.slice(0, 16)}`,
   );
 }
 
@@ -193,10 +153,6 @@ function resolveRepoPath(repoRoot, candidate) {
 
 function toRepoPath(repoRoot, absolutePath) {
   return path.relative(repoRoot, absolutePath).split(path.sep).join("/");
-}
-
-function isRecord(value) {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 if (path.resolve(process.argv[1] ?? "") === scriptPath) {

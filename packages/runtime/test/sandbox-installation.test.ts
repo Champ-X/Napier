@@ -121,7 +121,7 @@ describe("Sandbox installation", () => {
     const workspaceRoot = path.join(root, "workspace");
     const dataRoot = path.join(root, "data");
     await Promise.all([mkdir(workspaceRoot), mkdir(dataRoot)]);
-    await writeFile(path.join(dataRoot, "sandbox.json"), "{\"broken\":true}\n");
+    await writeFile(path.join(dataRoot, "sandbox.json"), '{"broken":true}\n');
 
     const runtime = await createLocalAgentRuntime({
       workspaceRoot,
@@ -193,6 +193,7 @@ describe("Sandbox installation", () => {
 function identity(): ContainerImageIdentity {
   return {
     imageId: `sha256:${"a".repeat(64)}`,
+    imagePlatform: "linux/arm64",
     clientExecutable: process.execPath,
     clientExecutableSha256: "b".repeat(64),
     daemon: {

@@ -120,7 +120,7 @@ describe("OCI local service policy", () => {
     const calls: string[][] = [];
     const client = vi.fn<ContainerClient>(async (_executable, args) => {
       calls.push(args);
-      if (args[0] === "image") return `${IMAGE_ID}\n`;
+      if (args[0] === "image") return `${IMAGE_ID}\tlinux\tarm64\n`;
       if (args[0] === "network") return `${"e".repeat(64)}\n`;
       throw new Error("unexpected container call");
     });
@@ -202,7 +202,7 @@ describe("OCI local service policy", () => {
     const calls: string[][] = [];
     const client = vi.fn<ContainerClient>(async (_executable, args) => {
       calls.push([...args]);
-      if (args[0] === "image") return `${IMAGE_ID}\n`;
+      if (args[0] === "image") return `${IMAGE_ID}\tlinux\tarm64\n`;
       if (args[0] === "network" && args[1] === "create") {
         return `${"e".repeat(64)}\n`;
       }

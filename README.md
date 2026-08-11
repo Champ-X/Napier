@@ -6796,10 +6796,12 @@ signature.
 
 The OCI adapter accepts only a local Docker daemon. A mutable image reference
 is used for setup inspection only; production launches use the resolved
-immutable image ID and revalidate the client, daemon, and numeric host UID/GID
-identity before reuse. Containers run as that UID:GID with a read-only root
-filesystem, two 64 MiB private tmpfs mounts, a 256-process ceiling, a 1 GiB
-memory ceiling with zero additional swap, a two-CPU quota,
+immutable image ID, bind its observed `linux/amd64` or `linux/arm64` platform,
+pass that platform explicitly to every Docker run, and revalidate the client,
+daemon, platform, and numeric host UID/GID identity before reuse. Containers
+run as that UID:GID with a read-only root filesystem, two 64 MiB private tmpfs
+mounts, a 256-process ceiling, a 1 GiB memory ceiling with zero additional
+swap, a two-CPU quota,
 capability-derived workspace mounts, and `--network none` unless networking is
 approved. Setup and Doctor run a production Node process that reads its own
 cgroup, mount, privilege, and network state; OCI readiness is withheld unless
@@ -6870,6 +6872,25 @@ restores the exact container/network/scratch baseline, and deletes its private
 data root. Its current evidence covers macOS with a local `linux/arm64` Docker
 runtime only; Windows/Linux host coverage, non-POSIX user mapping, registry
 publication, and signing remain open.
+
+Stage 14 separately verifies the image's local dual-architecture build and
+execution boundary. The live path requires BuildKit support for `linux/amd64`
+and `linux/arm64`, builds each platform with an explicit target and temporary
+local-only tag, then runs all nine production Setup probes plus real
+TypeScript typecheck and Vitest through the ordinary OCI Runtime:
+
+```bash
+npm run check:sandbox-multi-architecture
+npm run check:sandbox-multi-architecture:live
+```
+
+The receipt requires distinct immutable image IDs, equal toolchain versions
+and manifest hashes, explicit platform-bound launches, and exact removal of
+temporary tags, containers, networks, and scratch. It retains no build output,
+resource names, paths, daemon endpoints, or credentials. This proves local
+macOS/arm64 BuildKit can build and execute both Linux architectures; it is not
+registry publication, an image signature, per-platform SBOM coverage, or
+Windows/Linux host acceptance.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only

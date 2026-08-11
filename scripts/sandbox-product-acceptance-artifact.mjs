@@ -8,6 +8,10 @@ const SHA256 = /^[a-f0-9]{64}$/u;
 export async function sandboxProductAcceptanceImplementation(repoRoot) {
   const files = {
     setupService: "packages/runtime/src/sandbox-setup-service.ts",
+    containerIdentity: "packages/runtime/src/sandbox-container-runtime.ts",
+    ociAdapter: "packages/runtime/src/sandbox-oci.ts",
+    ociLaunchArguments: "packages/runtime/src/sandbox-oci-launch-arguments.ts",
+    lspProbe: "packages/runtime/src/doctor-lsp-runtime-probe.ts",
     verificationRuntime: "packages/runtime/src/verification-runtime.ts",
     verificationRunner: "packages/runtime/src/verification.ts",
     processManager: "packages/runtime/src/workspace-processes.ts",

@@ -9,15 +9,12 @@ import {
   resolveContainerImageIdentity,
   type ContainerClient,
   type ContainerImageIdentity,
-  type ContainerUserIdentity,
   type ContainerUserIds,
-  validateOciContainerName,
 } from "./sandbox-container-runtime.js";
 import {
   createHostProjection,
   createContainerServiceNetwork,
   resolveContainerLocalService,
-  validateContainerServiceNetworkName,
 } from "./sandbox-container-service.js";
 import { resolveContainerLspRuntime } from "./sandbox-container-lsp-runtime.js";
 import { resolveContainerNodeDebuggerRuntime } from "./sandbox-container-node-debugger-runtime.js";
@@ -29,15 +26,15 @@ import {
   serializeContainerEnvironment,
   validateContainerImage,
 } from "./sandbox-container.js";
-import { OCI_PROCESS_RESOURCE_ARGUMENTS } from "./sandbox-container-policy.js";
+import {
+  buildOciContainerArgs,
+  containerEnvironmentFile,
+} from "./sandbox-oci-launch-arguments.js";
 import {
   createParentGuardedTerminalLaunch,
   type ParentGuardedOciCleanup,
 } from "./process-guardian.js";
-import {
-  scopedWorkspaceWritePaths,
-  validateLaunchRequest,
-} from "./sandbox-launch-policy.js";
+import { validateLaunchRequest } from "./sandbox-launch-policy.js";
 import { launchSandboxProcess } from "./sandbox-process-lifecycle.js";
 import type {
   OsSandboxAdapter,
@@ -50,6 +47,8 @@ import type {
   SandboxLaunchRequest,
 } from "./sandbox-types.js";
 import { launchTerminalSandboxWrapper } from "./sandbox-terminal.js";
+
+export { buildOciContainerArgs } from "./sandbox-oci-launch-arguments.js";
 
 export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   readonly id = "oci-container";
@@ -216,6 +215,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
         containerName,
         identity.user,
         networkName,
+        identity.imagePlatform,
       );
       const target = {
         command: identity.clientExecutable,
@@ -384,117 +384,10 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   }
 }
 
-export function buildOciContainerArgs(
-  request: SandboxLaunchRequest,
-  sandboxHome: string,
-  image: string,
-  containerName: string,
-  user: ContainerUserIdentity,
-  serviceNetworkName?: string,
-): string[] {
-  validateLaunchRequest(request);
-  if (!path.isAbsolute(sandboxHome)) {
-    throw new Error("Container sandbox home must be absolute");
-  }
-  validateContainerImage(image);
-  validateOciContainerName(containerName);
-  validateContainerUserIdentity(user);
-  if (request.localService) {
-    if (!serviceNetworkName) {
-      throw new Error("OCI local service network identity is required");
-    }
-    validateContainerServiceNetworkName(serviceNetworkName);
-  } else if (serviceNetworkName !== undefined) {
-    throw new Error("OCI local service network identity is unexpected");
-  }
-  serializeContainerEnvironment(request.env);
-  const capabilities = new Set(request.approvedCapabilities);
-  const writePaths = scopedWorkspaceWritePaths(request);
-  const workspaceMounted =
-    capabilities.has("workspace.read") || capabilities.has("workspace.write");
-  const args = [
-    "run",
-    "--init",
-    "--name",
-    containerName,
-    "--user",
-    `${String(user.userId)}:${String(user.groupId)}`,
-    ...(request.terminal
-      ? ["--interactive", "--tty"]
-      : request.stdinMode === "open"
-        ? ["--interactive"]
-        : []),
-    ...OCI_PROCESS_RESOURCE_ARGUMENTS,
-    "--network",
-    request.localService
-      ? serviceNetworkName!
-      : capabilities.has("network.connect")
-        ? "bridge"
-        : "none",
-    "--tmpfs",
-    `/home/napier:rw,nosuid,nodev,size=64m,mode=0700,uid=${String(user.userId)},gid=${String(user.groupId)}`,
-    "--workdir",
-    workspaceMounted ? request.cwd : "/tmp",
-    "--env",
-    "HOME=/home/napier",
-    "--env",
-    "TMPDIR=/tmp",
-    "--env-file",
-    containerEnvironmentFile(sandboxHome),
-  ];
-  if (workspaceMounted) {
-    args.push(
-      "--mount",
-      bindMount(
-        request.workspaceRoot,
-        request.workspaceRoot,
-        !capabilities.has("workspace.write") || writePaths.length > 0,
-      ),
-    );
-    for (const writePath of writePaths) {
-      args.push("--mount", bindMount(writePath, writePath, false));
-    }
-  }
-  for (const runtimePath of request.runtimeReadPaths ?? []) {
-    args.push("--mount", bindMount(runtimePath, runtimePath, true));
-  }
-  args.push(image, request.command, ...request.args);
-  return args;
-}
-
-function bindMount(source: string, target: string, readonly: boolean): string {
-  return [
-    "type=bind",
-    `source=${path.resolve(source)}`,
-    `target=${path.resolve(target)}`,
-    readonly ? "readonly" : "",
-  ]
-    .filter(Boolean)
-    .join(",");
-}
-
-function containerEnvironmentFile(sandboxHome: string): string {
-  return path.join(sandboxHome, "environment.list");
-}
-
 function createContainerName(): string {
   return `napier-${randomBytes(16).toString("hex")}`;
 }
 
 function createContainerServiceNetworkName(): string {
   return `napier-network-${randomBytes(16).toString("hex")}`;
-}
-
-function validateContainerUserIdentity(user: ContainerUserIdentity): void {
-  if (
-    !Number.isSafeInteger(user.userId) ||
-    user.userId < 0 ||
-    user.userId > 2_147_483_647 ||
-    !Number.isSafeInteger(user.groupId) ||
-    user.groupId < 0 ||
-    user.groupId > 2_147_483_647 ||
-    !/^[a-f0-9]{64}$/u.test(user.identitySha256)
-  ) {
-    throw new Error("OCI container user identity is invalid");
-  }
 }

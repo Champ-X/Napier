@@ -11,7 +11,9 @@ export async function ociCrashRecoveryImplementation(repoRoot) {
   const files = {
     guardianContract: "packages/runtime/src/process-guardian.ts",
     guardianWorker: "packages/runtime/src/process-guardian-worker-source.ts",
+    containerIdentity: "packages/runtime/src/sandbox-container-runtime.ts",
     ociAdapter: "packages/runtime/src/sandbox-oci.ts",
+    ociLaunchArguments: "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     checkScript: "scripts/check-oci-crash-recovery.mjs",
     artifactVerifier: "scripts/oci-crash-recovery-artifact.mjs",
     liveHarness: "scripts/oci-crash-recovery-live.mjs",

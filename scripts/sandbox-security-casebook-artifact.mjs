@@ -23,7 +23,9 @@ export async function sandboxSecurityImplementation(repoRoot) {
   const files = {
     commandExecution: "packages/runtime/src/command-execution.ts",
     processLifecycle: "packages/runtime/src/sandboxed-process.ts",
+    containerIdentity: "packages/runtime/src/sandbox-container-runtime.ts",
     ociAdapter: "packages/runtime/src/sandbox-oci.ts",
+    ociLaunchArguments: "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     containerPolicy: "packages/runtime/src/sandbox-container-policy.ts",
     checkScript: "scripts/check-sandbox-security-casebook.mjs",
     artifactVerifier: "scripts/sandbox-security-casebook-artifact.mjs",

@@ -15,7 +15,7 @@ import {
   type OsSandboxAdapter,
 } from "./sandbox.js";
 
-const LSP_PROBE_TIMEOUT_MS = 5_000;
+const LSP_PROBE_TIMEOUT_MS = 10_000;
 const LSP_PROBE_SOURCE = "export const napierDoctorReady: string = 'ready';\n";
 
 interface LspRuntimeCapabilityProbe {

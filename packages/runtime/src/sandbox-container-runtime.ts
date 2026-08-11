@@ -28,6 +28,7 @@ const MAX_CONTAINER_IDENTITY_OUTPUT_BYTES = 4_096;
 
 export interface ContainerImageIdentity {
   imageId: string;
+  imagePlatform: "linux/amd64" | "linux/arm64";
   clientExecutable: string;
   clientExecutableSha256: string;
   daemon: ContainerDaemonIdentity;
@@ -75,21 +76,32 @@ export async function resolveContainerImageIdentity(
     client,
     injectedDaemonEndpoint,
   );
-  const imageId = (
+  const imageOutput = (
     await client(clientExecutable, [
       "image",
       "inspect",
       "--format",
-      "{{.Id}}",
+      "{{.Id}}\t{{.Os}}\t{{.Architecture}}",
       image,
     ])
   ).trim();
-  if (!IMAGE_ID.test(imageId)) {
+  const [imageId, imageOs, imageArch, ...extraImageFields] =
+    imageOutput.split("\t");
+  if (
+    !IMAGE_ID.test(imageId ?? "") ||
+    imageOs !== "linux" ||
+    !["amd64", "arm64"].includes(imageArch ?? "") ||
+    extraImageFields.length > 0
+  ) {
     throw new Error("OCI container image did not resolve to an immutable ID");
   }
+  const imagePlatform = `${imageOs}/${imageArch}` as
+    | "linux/amd64"
+    | "linux/arm64";
   const user = resolveContainerUserIdentity(injectedUserIds);
   return {
-    imageId,
+    imageId: imageId!,
+    imagePlatform,
     clientExecutable,
     clientExecutableSha256,
     daemon,
@@ -98,6 +110,7 @@ export async function resolveContainerImageIdentity(
       canonicalJson({
         kind: "napier.oci-image-identity",
         imageId,
+        imagePlatform,
         clientExecutablePathSha256: sha256(clientExecutable),
         clientExecutableSha256,
         daemonEndpointSha256: daemon.endpointSha256,
@@ -274,6 +287,8 @@ export async function probeContainerRuntimeIdentity(
   const output = await client(identity.clientExecutable, [
     "run",
     "--rm",
+    "--platform",
+    identity.imagePlatform,
     "--network",
     "none",
     "--cap-drop",
@@ -290,7 +305,7 @@ export async function probeContainerRuntimeIdentity(
     "--memory-swap",
     "256m",
     "--cpus",
-    "0.25",
+    "2",
     "--entrypoint",
     "node",
     identity.imageId,

@@ -725,6 +725,17 @@ explicit live mode replays collection. Publication fields remain false for
 registry, signing, and attestation, so this evidence cannot be mistaken for a
 multi-platform signed release.
 
+Image identity also binds the inspected Linux architecture. The OCI adapter
+accepts only `linux/amd64` and `linux/arm64`, includes that platform in the
+immutable runtime identity, and passes `--platform` to identity probes and
+every production launch. This prevents Docker's implicit host-platform choice
+and keeps cross-architecture warnings out of strict Doctor stderr checks. The
+identity probe uses the same two-CPU ceiling as ordinary production processes;
+the stricter 0.25-CPU probe previously produced a false timeout under amd64
+emulation. The TypeScript LSP protocol probe remains bounded but allows ten
+seconds because measured cold amd64 emulation required about six seconds for
+the initialize/document-symbol/shutdown sequence.
+
 The source binding includes the Dockerfile, the exact-version toolchain
 manifest, and its npm lockfile; any of the three changing makes Setup
 `buildable` and invalidates the old SBOM/provenance projection. The build copies
@@ -819,6 +830,20 @@ version evidence only; raw CLI/Doctor/Process output, paths, endpoints, resource
 names, and credentials are excluded. Offline verification is release-gated;
 the explicit live command must restore container, network, and scratch sets
 exactly and remove its private data root.
+
+Stage 14 is a separate local multi-architecture acceptance boundary. Buildx
+must advertise both `linux/amd64` and `linux/arm64`; the live harness builds
+each explicit platform to a random local-only tag with external provenance
+output disabled, resolves the resulting immutable image/platform identity, and
+then runs all nine production probes plus real typecheck and Vitest through
+the normal OCI adapter. It requires distinct image IDs, equal toolchain
+versions and manifest hashes, platform-bound launch evidence, and exact
+container/network/scratch/tag cleanup. The hash-only receipt retains no raw
+build or Docker output, tags, paths, daemon endpoints, resource names, or
+credentials. It deliberately records registry publication, signing,
+attestation, and cross-host acceptance as false; the existing CycloneDX receipt
+also remains scoped to the current arm64 image rather than claiming
+per-platform SBOM coverage.
 
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath. The Contracts root remains at

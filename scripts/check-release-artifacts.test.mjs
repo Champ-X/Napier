@@ -58,6 +58,7 @@ describe("release artifacts audit", () => {
       "oci-crash-recovery-stage11",
       "sandbox-security-casebook-stage12",
       "sandbox-product-acceptance-stage13",
+      "sandbox-multi-architecture-stage14",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -388,6 +389,28 @@ describe("release artifacts audit", () => {
       expect.arrayContaining([
         expect.stringContaining(
           "Sandbox product acceptance: Sandbox product acceptance artifact shape is invalid",
+        ),
+      ]),
+    );
+  });
+
+  it("fails when retained Sandbox multi-architecture parity is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/sandbox-multi-architecture-stage14.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.parity.toolchainVersionsEqual = false;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "Sandbox multi-architecture: Sandbox multi-architecture artifact shape is invalid",
         ),
       ]),
     );
@@ -1115,6 +1138,7 @@ async function createFixture() {
     "oci-crash-recovery-stage11.json",
     "sandbox-security-casebook-stage12.json",
     "sandbox-product-acceptance-stage13.json",
+    "sandbox-multi-architecture-stage14.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),
@@ -1124,24 +1148,37 @@ async function createFixture() {
   for (const relative of [
     "packages/runtime/src/process-guardian.ts",
     "packages/runtime/src/process-guardian-worker-source.ts",
+    "packages/runtime/src/sandbox-container-runtime.ts",
     "packages/runtime/src/sandbox-oci.ts",
+    "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     "scripts/check-oci-crash-recovery.mjs",
     "scripts/oci-crash-recovery-artifact.mjs",
     "scripts/oci-crash-recovery-fixture.mjs",
     "scripts/oci-crash-recovery-live.mjs",
     "packages/runtime/src/command-execution.ts",
     "packages/runtime/src/sandboxed-process.ts",
+    "packages/runtime/src/sandbox-container-runtime.ts",
     "packages/runtime/src/sandbox-container-policy.ts",
     "scripts/check-sandbox-security-casebook.mjs",
     "scripts/sandbox-security-casebook-artifact.mjs",
     "scripts/sandbox-security-casebook-live.mjs",
     "packages/runtime/src/sandbox-setup-service.ts",
+    "packages/runtime/src/sandbox-container-runtime.ts",
+    "packages/runtime/src/sandbox-oci.ts",
+    "packages/runtime/src/sandbox-oci-launch-arguments.ts",
+    "packages/runtime/src/doctor-lsp-runtime-probe.ts",
     "packages/runtime/src/verification-runtime.ts",
     "packages/runtime/src/verification.ts",
     "packages/runtime/src/workspace-processes.ts",
     "scripts/check-sandbox-product-acceptance.mjs",
     "scripts/sandbox-product-acceptance-artifact.mjs",
     "scripts/sandbox-product-acceptance-live.mjs",
+    "packages/runtime/src/doctor-lsp-runtime-probe.ts",
+    "packages/runtime/src/sandbox-container-runtime.ts",
+    "packages/runtime/src/sandbox-oci-launch-arguments.ts",
+    "scripts/check-sandbox-multi-architecture.mjs",
+    "scripts/sandbox-multi-architecture-artifact.mjs",
+    "scripts/sandbox-multi-architecture-live.mjs",
   ]) {
     await mkdir(path.join(root, path.dirname(relative)), { recursive: true });
     await cp(path.resolve(relative), path.join(root, relative));

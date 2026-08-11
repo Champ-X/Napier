@@ -55,7 +55,7 @@ export async function collectSandboxImageEvidence(
 ) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
   const imageReference = options.image ?? DEFAULT_IMAGE;
-  const source = await sourceEvidence(repoRoot);
+  const source = await sandboxImageSourceEvidence(repoRoot);
   const docker = dependencies.docker ?? runDocker;
   const errors = [];
   const environment = options.env ?? process.env;
@@ -275,7 +275,7 @@ export async function verifySandboxImageArtifacts(options = {}) {
   const [sbomText, receiptText, source] = await Promise.all([
     readText(sbomPath, "Sandbox image SBOM", errors),
     readText(receiptPath, "Sandbox image provenance receipt", errors),
-    sourceEvidence(repoRoot).catch((error) => {
+    sandboxImageSourceEvidence(repoRoot).catch((error) => {
       errors.push(error instanceof Error ? error.message : String(error));
       return undefined;
     }),
@@ -361,7 +361,7 @@ function containerArgs(imageId, command) {
   ];
 }
 
-async function sourceEvidence(repoRoot) {
+export async function sandboxImageSourceEvidence(repoRoot) {
   const [dockerfile, packageJson, packageLock] = await Promise.all([
     readFile(path.join(repoRoot, DOCKERFILE_PATH)),
     readFile(path.join(repoRoot, PACKAGE_JSON_PATH)),

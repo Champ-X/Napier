@@ -195,7 +195,7 @@ function identityClient(
   options: { missing?: boolean; outsideRoot?: boolean } = {},
 ) {
   return vi.fn<ContainerClient>(async (_executable, args) => {
-    if (args[0] === "image") return `${IMAGE_ID}\n`;
+    if (args[0] === "image") return `${IMAGE_ID}\tlinux\tarm64\n`;
     if (args[0] === "container") return "";
     return JSON.stringify({
       node: {

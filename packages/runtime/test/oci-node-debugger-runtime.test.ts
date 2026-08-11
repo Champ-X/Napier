@@ -264,7 +264,7 @@ async function createManager(
 
 function realIdentityClient(): ContainerClient {
   return vi.fn<ContainerClient>(async (_executable, args) => {
-    if (args[0] === "image") return `${IMAGE_ID}\n`;
+    if (args[0] === "image") return `${IMAGE_ID}\tlinux\tarm64\n`;
     if (args[0] === "container") return "";
     const source = args.at(-1);
     if (args[0] !== "run" || typeof source !== "string") {
@@ -277,7 +277,8 @@ function realIdentityClient(): ContainerClient {
       args[args.indexOf("--pids-limit") + 1] !== "32" ||
       args[args.indexOf("--memory") + 1] !== "256m" ||
       args[args.indexOf("--memory-swap") + 1] !== "256m" ||
-      args[args.indexOf("--cpus") + 1] !== "0.25" ||
+      args[args.indexOf("--cpus") + 1] !== "2" ||
+      args[args.indexOf("--platform") + 1] !== "linux/arm64" ||
       !args.includes("--read-only") ||
       !args.includes("no-new-privileges")
     ) {
@@ -304,7 +305,7 @@ function staticIdentityClient(
   debuggerIdentity: { nodeVersion: string } | null,
 ): ContainerClient {
   return vi.fn<ContainerClient>(async (_executable, args) => {
-    if (args[0] === "image") return `${IMAGE_ID}\n`;
+    if (args[0] === "image") return `${IMAGE_ID}\tlinux\tarm64\n`;
     if (args[0] === "container") return "";
     return JSON.stringify({
       node: {

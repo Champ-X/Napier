@@ -9,6 +9,7 @@ import { verifySandboxImageArtifacts } from "./check-sandbox-image-sbom.mjs";
 import { verifyOciCrashRecoveryArtifact } from "./check-oci-crash-recovery.mjs";
 import { verifySandboxSecurityCasebook } from "./check-sandbox-security-casebook.mjs";
 import { verifySandboxProductAcceptance } from "./check-sandbox-product-acceptance.mjs";
+import { verifySandboxMultiArchitecture } from "./check-sandbox-multi-architecture.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -66,6 +67,8 @@ const defaultSandboxSecurityCasebookPath =
   "docs/artifacts/sandbox-security-casebook-stage12.json";
 const defaultSandboxProductAcceptancePath =
   "docs/artifacts/sandbox-product-acceptance-stage13.json";
+const defaultSandboxMultiArchitecturePath =
+  "docs/artifacts/sandbox-multi-architecture-stage14.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -150,6 +153,8 @@ export async function auditReleaseArtifacts(options = {}) {
     options.sandboxSecurityCasebookPath ?? defaultSandboxSecurityCasebookPath;
   const sandboxProductAcceptancePath =
     options.sandboxProductAcceptancePath ?? defaultSandboxProductAcceptancePath;
+  const sandboxMultiArchitecturePath =
+    options.sandboxMultiArchitecturePath ?? defaultSandboxMultiArchitecturePath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -595,6 +600,18 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const sandboxMultiArchitectureVerification =
+    await verifySandboxMultiArchitecture({
+      repoRoot,
+      artifactPath: sandboxMultiArchitecturePath,
+    });
+  if (!sandboxMultiArchitectureVerification.valid) {
+    errors.push(
+      ...sandboxMultiArchitectureVerification.errors.map(
+        (error) => `Sandbox multi-architecture: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -663,6 +680,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: sandboxProductAcceptanceVerification.path,
       sha256: sandboxProductAcceptanceVerification.sha256,
       valid: sandboxProductAcceptanceVerification.valid,
+    },
+    {
+      kind: "sandbox-multi-architecture-stage14",
+      path: sandboxMultiArchitectureVerification.path,
+      sha256: sandboxMultiArchitectureVerification.sha256,
+      valid: sandboxMultiArchitectureVerification.valid,
     },
     {
       kind: "product-performance-baseline",

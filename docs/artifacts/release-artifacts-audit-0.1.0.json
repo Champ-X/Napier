@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "6f41f8b50715c0f1a5c9eece814f93d095c392967d165d570cc9eb01ed5112af",
+  "artifactSetSha256": "256d7d970996de4d2197f05e8cf45979765c3c9b742cc3ed6c6eef10ed2aa5e6",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "b3013bf86b50e2de555e1a82fbfce2317523ced94fe609840d81f1450360f78d",
+      "sha256": "7d1cf189743da68b77e5e5e0f265f7f5a7235153df307304cf9616c2ac6dc932",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "28cbf513a1e7e571df8ab3eb01abf3fcd466998ab1c6d3edc616bcf10728daeb",
+      "sha256": "590dcb036e001aac7e1d0e906c14a64ff46e1950872cd75c63264d52bc16f82c",
       "valid": true
     },
     {
@@ -41,19 +41,25 @@
     {
       "kind": "oci-crash-recovery-stage11",
       "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-      "sha256": "936fca31a85257d13cbfbe9e3b864bb9c3be5cff6fab0be56dffa3cfaff78ebb",
+      "sha256": "7ec26b624a3825e650a30f797e7895cf0d4db6b593d3a78c11765e1af1406f58",
       "valid": true
     },
     {
       "kind": "sandbox-security-casebook-stage12",
       "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
-      "sha256": "2957732a32c35249294e69724978ce0fbcb4d83d991782073e8498be71eaa7b4",
+      "sha256": "5b26f80ad78c3cdee96eb4f651e25af1e89528e2f35111716f8c64a149e1c5f4",
       "valid": true
     },
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "88cc259ce9a9fa1646e1618d13cf2e87bc49097755f967a8589c3a05c69189e3",
+      "sha256": "d3a72a11e7184247901026261efa633b2157174715609a2f94e076245c052943",
+      "valid": true
+    },
+    {
+      "kind": "sandbox-multi-architecture-stage14",
+      "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
+      "sha256": "154d57c446d1ff1f15a883f9fdcf38b861decab0d159198521359b1ec648032b",
       "valid": true
     },
     {

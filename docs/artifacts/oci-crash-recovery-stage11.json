@@ -1,7 +1,7 @@
 {
   "kind": "napier.oci-crash-recovery-stage11",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T02:50:43.825Z",
+  "generatedAt": "2026-08-11T04:44:19.034Z",
   "image": {
     "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
     "platform": "linux/arm64",
@@ -11,9 +11,11 @@
     "resourcePolicySha256": "e95d7afc88833609b7b3ef268725c5df36148241c36430bf0f7988a967a16448",
     "guardianContractSha256": "2f5cbc3c300cb34e69f54bb56ee884afdb47b790458a3923b6839c8cc7049ec0",
     "guardianWorkerSha256": "fe9bd34fb2a0bc6e060e9394b635baaa91a35eccf38f35aa2fa9e97149a3e604",
-    "ociAdapterSha256": "43e4cd2564cf11c5ed344885a569c1151f32543f964f768f082086c0df9e5a77",
-    "checkScriptSha256": "e02deb863907e396cb58335e4dabc850bd06f26c507ec4f345241fd72f673c82",
-    "artifactVerifierSha256": "d29b227f032d0eff3233d47823e88735144b113eb000e3196e4056ee4445bb26",
+    "containerIdentitySha256": "3d25c3ca48ee3bbf50a3bb5e7c89f778d9a33d0b00356d511e99a5b021580ea4",
+    "ociAdapterSha256": "a388aa23cec7d27a662dc468c9046492a01086fc9be95d3ddbee14db29094aad",
+    "ociLaunchArgumentsSha256": "b60ab62209a686f4f51a9a2fff125b41038b06c8ffb7fb57e29c31d99694076c",
+    "checkScriptSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946",
+    "artifactVerifierSha256": "780a97a3e32836ce34fbb842b3188db4c5881b047ca1fec5bfe0731c121172ec",
     "liveHarnessSha256": "8b76cbbbd3e8ebfc6d5c004455c02ce686086ea08db328a5026a81492050ec4e",
     "childFixtureSha256": "273ef8a416aa72b61bfb63a438e739f308a41f2b899704017be1217155f986a4"
   },
@@ -22,8 +24,8 @@
       "index": 1,
       "runtimeSignal": "SIGKILL",
       "serviceReady": true,
-      "serviceIdentitySha256": "63701f4857521ba385b959a952252ce9612ee9e9ab843fb7f72b65c360fdc85a",
-      "endpointSha256": "303ce19ad65222b4e908fb4aefbd0969c9f2dd6cbc47f3facea18155e1beac12",
+      "serviceIdentitySha256": "f8fb95c7d7b40603de67ffd0c8056a84d6f38fdd3e9f8c821656a65974209a77",
+      "endpointSha256": "87688bc44dbcb77ffaa7d3238fc0b0d334a2b85300c075aa196f72a9ace59f37",
       "containerDeltaCount": 1,
       "networkDeltaCount": 1,
       "scratchDeltaCount": 1,
@@ -32,14 +34,14 @@
       "scratchCleanupVerified": true,
       "endpointClosedVerified": true,
       "exactBaselineRestored": true,
-      "cleanupDurationMs": 302
+      "cleanupDurationMs": 427
     },
     {
       "index": 2,
       "runtimeSignal": "SIGKILL",
       "serviceReady": true,
-      "serviceIdentitySha256": "533a2c7979b1077e992c337550b972c9e1c4da1ba2fa495646e8a6c21987797c",
-      "endpointSha256": "602a87d20c56d3ac6fb998f2e29866e8f66f78a2d6f4572d4bcfbceb42dd4a55",
+      "serviceIdentitySha256": "1dc1fa2525a2cb5e3798e3308ac9900841c698bf37f8bd4c1a6ae2edae13b257",
+      "endpointSha256": "d238cda4d0df673da545969e9803953b76ad076b251f1ab2e8ecd17d2cba1c6c",
       "containerDeltaCount": 1,
       "networkDeltaCount": 1,
       "scratchDeltaCount": 1,
@@ -48,7 +50,7 @@
       "scratchCleanupVerified": true,
       "endpointClosedVerified": true,
       "exactBaselineRestored": true,
-      "cleanupDurationMs": 440
+      "cleanupDurationMs": 418
     }
   ],
   "recovery": {
@@ -76,12 +78,12 @@
     "sliceComplete": true,
     "s1Complete": false,
     "remaining": [
-      "multi-architecture registry publication and signature",
-      "non-POSIX host user mapping",
-      "cross-platform isolated provider casebook",
-      "complete install-build-test-service-cancel-recovery acceptance",
+      "multi-architecture registry publication",
+      "image signature and external attestation",
+      "non-POSIX host user and path mapping",
+      "Windows and Linux host product acceptance",
       "full file-network-secret-resource failure injection"
     ]
   },
-  "contentSha256": "6944c72bf296d1c130af733213c420cb848b0b428d83775e863dd7859b78c815"
+  "contentSha256": "22fdcd002d5fe722a2e848784db538fe236c6aa6d2ce2cf3ec9495529ee76132"
 }

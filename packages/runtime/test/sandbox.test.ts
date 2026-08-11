@@ -461,8 +461,10 @@ describe("OS sandbox adapters", () => {
       OCI_USER_IDENTITY,
     );
     const restrictedCommand = restricted.join("\0");
-    expect(restricted.slice(0, 4)).toEqual([
+    expect(restricted.slice(0, 6)).toEqual([
       "run",
+      "--platform",
+      "linux/arm64",
       "--init",
       "--name",
       OCI_CONTAINER_NAME,

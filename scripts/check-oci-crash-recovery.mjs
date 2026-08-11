@@ -12,10 +12,8 @@ import { collectOciCrashRecoveryCycles } from "./oci-crash-recovery-live.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
-const DEFAULT_ARTIFACT_PATH =
-  "docs/artifacts/oci-crash-recovery-stage11.json";
-const PROVENANCE_PATH =
-  "docs/artifacts/sandbox-image-provenance-0.1.0.json";
+const DEFAULT_ARTIFACT_PATH = "docs/artifacts/oci-crash-recovery-stage11.json";
+const PROVENANCE_PATH = "docs/artifacts/sandbox-image-provenance-0.1.0.json";
 
 export async function collectOciCrashRecoveryEvidence(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -82,10 +80,10 @@ export async function collectOciCrashRecoveryEvidence(options = {}) {
       sliceComplete: true,
       s1Complete: false,
       remaining: [
-        "multi-architecture registry publication and signature",
-        "non-POSIX host user mapping",
-        "cross-platform isolated provider casebook",
-        "complete install-build-test-service-cancel-recovery acceptance",
+        "multi-architecture registry publication",
+        "image signature and external attestation",
+        "non-POSIX host user and path mapping",
+        "Windows and Linux host product acceptance",
         "full file-network-secret-resource failure injection",
       ],
     },

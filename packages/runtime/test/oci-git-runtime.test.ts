@@ -153,7 +153,7 @@ describe("OCI image-bound Git runtime", () => {
 
 function identityClient(options: { gitUnavailable?: boolean } = {}) {
   return vi.fn<ContainerClient>(async (_executable, args) => {
-    if (args[0] === "image") return `${IMAGE_ID}\n`;
+    if (args[0] === "image") return `${IMAGE_ID}\tlinux\tarm64\n`;
     if (args[0] === "container") return "";
     return JSON.stringify({
       node: {

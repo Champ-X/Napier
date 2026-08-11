@@ -70,9 +70,10 @@ export async function collectSandboxProductAcceptance(options = {}) {
       sliceComplete: true,
       s1Complete: false,
       remaining: [
-        "multi-architecture registry publication and signature",
-        "non-POSIX host user mapping",
-        "cross-platform isolated provider casebook",
+        "multi-architecture registry publication",
+        "image signature and external attestation",
+        "non-POSIX host user and path mapping",
+        "Windows and Linux host product acceptance",
       ],
     },
   };

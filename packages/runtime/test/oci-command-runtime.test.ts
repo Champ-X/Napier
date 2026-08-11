@@ -119,6 +119,36 @@ describe("OCI image-bound command runtime", () => {
     ).toThrow("host user identity is unavailable");
   });
 
+  it("binds a supported image platform into the immutable runtime identity", async () => {
+    const arm64 = await resolveContainerImageIdentity(
+      REQUESTED_IMAGE,
+      process.execPath,
+      identityClient({ imageArch: "arm64" }),
+      USER_IDS,
+      DAEMON_ENDPOINT,
+    );
+    const amd64 = await resolveContainerImageIdentity(
+      REQUESTED_IMAGE,
+      process.execPath,
+      identityClient({ imageArch: "amd64" }),
+      USER_IDS,
+      DAEMON_ENDPOINT,
+    );
+
+    expect(arm64.imagePlatform).toBe("linux/arm64");
+    expect(amd64.imagePlatform).toBe("linux/amd64");
+    expect(arm64.identitySha256).not.toBe(amd64.identitySha256);
+    await expect(
+      resolveContainerImageIdentity(
+        REQUESTED_IMAGE,
+        process.execPath,
+        identityClient({ imageArch: "ppc64le" }),
+        USER_IDS,
+        DAEMON_ENDPOINT,
+      ),
+    ).rejects.toThrow("immutable ID");
+  });
+
   it("rejects daemon or host user drift before reusing an image identity", async () => {
     const identity = await resolveContainerImageIdentity(
       REQUESTED_IMAGE,
@@ -198,6 +228,9 @@ describe("OCI image-bound command runtime", () => {
     expect(dockerArgs).toContain(IMAGE_ID);
     expect(dockerArgs).not.toContain(REQUESTED_IMAGE);
     expect(dockerArgs).not.toContain("--rm");
+    expect(dockerArgs).toEqual(
+      expect.arrayContaining(["--platform", "linux/arm64"]),
+    );
     expect(dockerArgs).toEqual(expect.arrayContaining(["--user", "501:20"]));
     expect(dockerArgs.join("\0")).toContain(
       "--tmpfs\0/home/napier:rw,nosuid,nodev,size=64m,mode=0700,uid=501,gid=20",
@@ -219,7 +252,7 @@ describe("OCI image-bound command runtime", () => {
       "image",
       "inspect",
       "--format",
-      "{{.Id}}",
+      "{{.Id}}\t{{.Os}}\t{{.Architecture}}",
       REQUESTED_IMAGE,
     ]);
     expect(client.mock.calls[1]?.[1]).toEqual(
@@ -741,12 +774,15 @@ describe("OCI image-bound command runtime", () => {
 function identityClient(
   options: {
     cleanupFailure?: boolean;
+    imageArch?: string;
     pythonUnavailable?: boolean;
     pythonVersion?: string;
   } = {},
 ) {
   return vi.fn<ContainerClient>(async (_executable, args) => {
-    if (args[0] === "image") return `${IMAGE_ID}\n`;
+    if (args[0] === "image") {
+      return `${IMAGE_ID}\tlinux\t${options.imageArch ?? "arm64"}\n`;
+    }
     if (args[0] === "container") {
       if (options.cleanupFailure && args[1] === "rm") {
         throw new Error("controlled cleanup failure");
