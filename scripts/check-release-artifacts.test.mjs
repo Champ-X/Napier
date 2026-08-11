@@ -54,6 +54,7 @@ describe("release artifacts audit", () => {
       "runtime-environment-audit",
       "sandbox-image-sbom",
       "sandbox-image-provenance",
+      "oci-resource-limits-stage10",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -305,6 +306,22 @@ describe("release artifacts audit", () => {
     expect(result.errors).toContain(
       "runtime-environment receipt: receipt does not match the current runtime environment audit",
     );
+  });
+
+  it("fails when retained OCI resource evidence expands swap authority", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/oci-resource-limits-stage10.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.observedProductionProcess.memorySwapMaxBytes = 1_073_741_824;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("OCI resource limits evidence is invalid");
   });
 
   it("fails when the product performance baseline is tampered", async () => {
@@ -1023,6 +1040,7 @@ async function createFixture() {
   for (const fileName of [
     "sandbox-image-sbom-0.1.0.cdx.json",
     "sandbox-image-provenance-0.1.0.json",
+    "oci-resource-limits-stage10.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),

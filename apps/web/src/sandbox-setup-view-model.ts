@@ -14,14 +14,14 @@ const STATUS_COPY: Record<SandboxSetupStatus, SandboxSetupCopy> = {
   ready: {
     title: "Image found",
     detail:
-      "The pinned image is present. Apply the exact preview to verify every production capability and activate it.",
+      "The pinned image is present. Apply the exact preview to verify every production capability and runtime resource boundary before activation.",
     action: "Verify & activate",
     actionable: true,
   },
   buildable: {
     title: "Build required",
     detail:
-      "A local Docker daemon is ready. Napier can build the pinned Node, Shell, Python, Git, LSP, and DAP image.",
+      "A local Docker daemon is ready. Napier can build the pinned toolchain, then prove its process, memory, CPU, storage, filesystem, privilege, and network limits.",
     action: "Build & activate",
     actionable: true,
   },

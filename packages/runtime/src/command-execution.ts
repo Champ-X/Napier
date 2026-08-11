@@ -1,6 +1,5 @@
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
-
 import {
   assertCommandRuntimeBindingStable,
   resolveCommandRuntimeBinding,
@@ -11,12 +10,12 @@ import {
   type CommandRuntimeReadPathIdentity,
 } from "./command-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { OCI_PROCESS_RESOURCE_POLICY_SHA256 } from "./sandbox-container-policy.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import {
   runSandboxedProcess,
   type SandboxedProcessResult,
 } from "./sandboxed-process.js";
-
 export const DEFAULT_COMMAND_TIMEOUT_MS = 30_000;
 export const MIN_COMMAND_TIMEOUT_MS = 1_000;
 export const MAX_COMMAND_TIMEOUT_MS = 120_000;
@@ -222,6 +221,9 @@ export async function prepareCommandExecution(
     memoryLimit: "sandbox_backend_default",
     runtimeAssetCount: runtimeAssets.length,
     runtimeReadPathCount: runtimeReadPaths.length,
+    ...(options.sandbox.id === "oci-container" && {
+      sandboxResourcePolicySha256: OCI_PROCESS_RESOURCE_POLICY_SHA256,
+    }),
   };
   const receipt = {
     runtime: input.runtime,

@@ -39,6 +39,7 @@ import {
 import { loadOpenWebResearchBenchmarkCase } from "../apps/cli/dist/open-web-research-benchmark-case.js";
 import { loadOpenWebResearchFreshnessCampaignArtifacts } from "../apps/cli/dist/open-web-research-freshness-artifacts.js";
 import { verifyOpenWebResearchFreshnessCampaign } from "../apps/cli/dist/open-web-research-freshness-campaign.js";
+import { OCI_PROCESS_RESOURCE_POLICY_SHA256 } from "../packages/runtime/dist/sandbox-container-policy.js";
 import {
   openWebResearchSecuritySeriesArtifactReferences,
   verifyOpenWebResearchSecuritySeries,
@@ -54,6 +55,8 @@ const defaultSandboxImageSbomPath =
   "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json";
 const defaultSandboxImageProvenancePath =
   "docs/artifacts/sandbox-image-provenance-0.1.0.json";
+const defaultOciResourceLimitsEvidencePath =
+  "docs/artifacts/oci-resource-limits-stage10.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -129,6 +132,9 @@ export async function auditReleaseArtifacts(options = {}) {
     options.sandboxImageSbomPath ?? defaultSandboxImageSbomPath;
   const sandboxImageProvenancePath =
     options.sandboxImageProvenancePath ?? defaultSandboxImageProvenancePath;
+  const ociResourceLimitsEvidencePath =
+    options.ociResourceLimitsEvidencePath ??
+    defaultOciResourceLimitsEvidencePath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -509,12 +515,35 @@ export async function auditReleaseArtifacts(options = {}) {
     sbomPath: sandboxImageSbomPath,
     verifyReceiptPath: sandboxImageProvenancePath,
   });
+  const sandboxImageProvenance = await readJsonArtifact(
+    repoRoot,
+    sandboxImageProvenancePath,
+    errors,
+  );
   if (!sandboxImageVerification.valid) {
     errors.push(
       ...sandboxImageVerification.errors.map(
         (error) => `Sandbox image SBOM: ${error}`,
       ),
     );
+  }
+  const ociResourceLimitsEvidence = await readArtifactEvidence(
+    repoRoot,
+    ociResourceLimitsEvidencePath,
+    errors,
+  );
+  const ociResourceLimits = await readJsonArtifact(
+    repoRoot,
+    ociResourceLimitsEvidencePath,
+    errors,
+  );
+  const ociResourceLimitsValid =
+    validOciResourceLimitsEvidence(
+      ociResourceLimits,
+      sandboxImageProvenance,
+    );
+  if (!ociResourceLimitsValid) {
+    errors.push("OCI resource limits evidence is invalid");
   }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
@@ -560,6 +589,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: sandboxImageVerification.receiptPath,
       sha256: sandboxImageVerification.receiptSha256,
       valid: sandboxImageVerification.valid,
+    },
+    {
+      kind: "oci-resource-limits-stage10",
+      path: ociResourceLimitsEvidence.path,
+      sha256: ociResourceLimitsEvidence.sha256,
+      valid: ociResourceLimitsEvidence.readable && ociResourceLimitsValid,
     },
     {
       kind: "product-performance-baseline",
@@ -1531,6 +1566,56 @@ function readCliValue(args, index, name) {
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function validOciResourceLimitsEvidence(value, provenance) {
+  if (!isRecord(value) || !isRecord(provenance)) return false;
+  const { contentSha256, ...content } = value;
+  const observed = value.observedProductionProcess;
+  const failureInjection = value.failureInjection;
+  const provenanceImage = provenance.image;
+  return (
+    value.kind === "napier.oci-resource-limits-stage10" &&
+    value.schemaVersion === 1 &&
+    isSha256(contentSha256) &&
+    sha256(Buffer.from(stableJson(content), "utf8")) === contentSha256 &&
+    isRecord(observed) &&
+    isRecord(provenanceImage) &&
+    typeof provenanceImage.id === "string" &&
+    observed.imageIdSha256 === provenanceImage.id.replace(/^sha256:/u, "") &&
+    observed.platform ===
+      `${String(provenanceImage.os)}/${String(provenanceImage.arch)}` &&
+    observed.cgroupVersion === 2 &&
+    observed.pidsMax === 256 &&
+    observed.memoryMaxBytes === 1_073_741_824 &&
+    observed.memorySwapMaxBytes === 0 &&
+    observed.cpuQuotaMicros === 200_000 &&
+    observed.cpuPeriodMicros === 100_000 &&
+    observed.rootReadOnly === true &&
+    observed.workspaceReadOnly === true &&
+    observed.temporaryFileSystemBytes === 67_108_864 &&
+    observed.homeFileSystemBytes === 67_108_864 &&
+    observed.temporaryFileSystemRestricted === true &&
+    observed.homeFileSystemRestricted === true &&
+    observed.capabilitiesDropped === true &&
+    observed.noNewPrivileges === true &&
+    observed.networkInterfaceCount === 1 &&
+    observed.resourcePolicySha256 === OCI_PROCESS_RESOURCE_POLICY_SHA256 &&
+    isRecord(failureInjection) &&
+    failureInjection.removedMemorySwapLimit === true &&
+    failureInjection.observedMemorySwapMaxBytes === 1_073_741_824 &&
+    failureInjection.verifierRejectedDrift === true &&
+    isRecord(value.retention) &&
+    value.retention.credentialValues === false &&
+    value.retention.rawDockerOutput === false &&
+    value.retention.rawDoctorReport === false &&
+    value.retention.rawDaemonEndpoint === false &&
+    value.retention.numericHostUserIds === false &&
+    value.retention.workspacePaths === false &&
+    isRecord(value.scope) &&
+    value.scope.sliceComplete === true &&
+    value.scope.s1Complete === false
+  );
 }
 
 function validResearchBenchmarkMigrationReceipt(value, releaseSeriesPath) {

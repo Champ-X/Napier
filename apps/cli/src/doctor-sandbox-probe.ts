@@ -1,6 +1,7 @@
 import { createPlatformSandboxAdapter } from "@napier/runtime";
 import {
   probeGitRuntime,
+  probeSandboxResourceRuntime,
   probeSandboxProcessRuntime,
   sandboxIsolationStrength,
 } from "@napier/runtime/doctor-probes";
@@ -65,6 +66,50 @@ export async function defaultSandboxProbe(
         resourceLimited: isolation.resourceLimited,
         productionCall: true,
         gitProductionCall: true,
+      },
+    };
+  }
+  if (sandbox.id === "oci-container") {
+    const resources = await probeSandboxResourceRuntime(
+      workspaceRoot,
+      signal,
+      sandbox,
+    );
+    if (resources.status !== "ready") {
+      return {
+        id: "sandbox",
+        status: "warning",
+        required: false,
+        code: resources.code,
+        message: resources.message,
+        durationMs: Date.now() - startedAt,
+        evidence: {
+          adapter: sandbox.id,
+          isolationLevel: isolation.level,
+          networkDeniedByDefault: isolation.networkDeniedByDefault,
+          resourceLimited: false,
+          productionCall: true,
+          gitProductionCall: true,
+          resourceProductionCall: false,
+        },
+      };
+    }
+    return {
+      id: "sandbox",
+      status: "passed",
+      required: false,
+      code: "sandbox_ready",
+      message: `The OCI process sandbox dynamically proved its network, filesystem, privilege, process, memory, CPU, and temporary-storage boundaries (${isolation.summary})`,
+      durationMs: Date.now() - startedAt,
+      evidence: {
+        adapter: sandbox.id,
+        isolationLevel: isolation.level,
+        networkDeniedByDefault: isolation.networkDeniedByDefault,
+        resourceLimited: true,
+        productionCall: true,
+        gitProductionCall: true,
+        resourceProductionCall: true,
+        ...resources.evidence,
       },
     };
   }

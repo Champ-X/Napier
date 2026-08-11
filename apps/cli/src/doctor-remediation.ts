@@ -102,6 +102,12 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
       "Install Git in the active host sandbox or trusted OCI image, then rerun the production Sandbox checks.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
   },
+  sandbox_resources_unavailable: {
+    id: "repair_sandbox_resources",
+    instruction:
+      "Rerun Sandbox setup against the same local Docker daemon. Napier will not mark the OCI provider ready until the production process proves its pinned process, memory, CPU, temporary-storage, filesystem, privilege, and network limits.",
+    verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH' --offline",
+  },
   skills_missing: {
     id: "repair_skill_loader",
     instruction:

@@ -129,6 +129,7 @@ async function sandboxResult(
     installationSha256: "e".repeat(64),
     checks: {
       node: "sandbox_process_ready",
+      resources: "sandbox_resources_ready",
       shell: "shell_ready",
       python: "python_ready",
       git: "git_ready",

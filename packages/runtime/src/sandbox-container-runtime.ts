@@ -287,6 +287,8 @@ export async function probeContainerRuntimeIdentity(
     "32",
     "--memory",
     "256m",
+    "--memory-swap",
+    "256m",
     "--cpus",
     "0.25",
     "--entrypoint",

@@ -470,6 +470,8 @@ describe("OS sandbox adapters", () => {
     expect(restrictedCommand).toContain("--network\0none");
     expect(restrictedCommand).toContain(["--user", "501:20"].join("\0"));
     expect(restrictedCommand).toContain("--read-only");
+    expect(restrictedCommand).toContain(["--memory", "1g"].join("\0"));
+    expect(restrictedCommand).toContain(["--memory-swap", "1g"].join("\0"));
     expect(restrictedCommand).toContain(
       "--tmpfs\0/tmp:rw,nosuid,nodev,size=64m,mode=1777",
     );

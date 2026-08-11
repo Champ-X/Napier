@@ -168,7 +168,7 @@ async function writeSandboxRuntimeSetupOutput(
       `Sandbox runtime: ${output.action}`,
       `Image: ${output.imageReference}`,
       `Image ID: ${output.imageId}`,
-      "Toolchain: Node, Shell, Python, Git, LSP, DAP, local service",
+      "Verified: Node, Shell, Python, Git, LSP, DAP, local service, and runtime resource boundaries",
       "Status: ready",
     ].join("\n"),
   );

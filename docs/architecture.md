@@ -725,6 +725,22 @@ explicit live mode replays collection. Publication fields remain false for
 registry, signing, and attestation, so this evidence cannot be mistaken for a
 multi-platform signed release.
 
+Runtime resource enforcement is a separate observed boundary. The OCI launch
+arguments and command receipts share one immutable policy hash. Exact-preview
+Setup and Doctor then run `doctor-sandbox-resource-probe.ts` through the
+production command path and accept readiness only when the process observes
+cgroup limits of 256 PIDs, 1 GiB memory, zero additional swap, and two CPUs;
+read-only root and Workspace mounts; two restricted 64 MiB tmpfs mounts; empty
+Linux capability sets; `NoNewPrivs=1`; and only the loopback interface for a
+network-denied command. The probe sends its fixed source over stdin and
+returns only bounded numeric/boolean evidence plus hashes. Stage 10 retains
+that sanitized live-daemon result and a failure injection showing that
+omitting the swap limit exposes another 1 GiB and is rejected. Any missing
+cgroup or mount evidence, unsupported provider, extra interface, expanded
+storage, privilege, or quota drift returns
+`sandbox_resources_unavailable`; Setup does not persist the binding and Doctor
+offers an exact Sandbox repair path.
+
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath; the 7,025-line Contracts root
 barrel remains unchanged. CLI option parsing and first-use dispatch occupy leaf
@@ -5586,19 +5602,24 @@ Local command execution supports macOS sandbox-exec, Linux Bubblewrap, and an
 opt-in OCI provider. OCI production launches bind the immutable image, local
 daemon, numeric execution user, and the selected in-image executable identity;
 an unavailable or changed identity fails closed. Wall time, output, and
-process-group termination are enforced; hard per-command CPU/memory quotas are
-provided by OCI and remain unavailable in the local OS adapters. Foreground
-`run_command` remains pipe-only; PTY is available through the managed Process
-Session below. Writes, package installation, and inherited environment
-variables are not part of either surface. The public generic command/process
-runtime remains Node-only. Restricted Python uses a separate typed private
-protocol that binds a recognized system interpreter and a bounded no-site
-bootstrap dependency set proven to cover the worker's loaded module files,
-without granting models an arbitrary Python argv surface. Git remains outside
-that generic runtime enum and is available only through the fixed operation
-graph below; OCI resolves its executable, version, and byte hash from the image
-before those operations can launch. TypeScript LSP likewise uses its own narrow
-provider binding rather than expanding the public command runtime enum.
+process-group termination are enforced. OCI additionally pins 256 processes,
+1 GiB memory with zero additional swap, two CPUs, a read-only root, and two
+64 MiB private tmpfs mounts. Setup and Doctor execute a production Node probe
+through the same adapter, inspect the process cgroup, mount table, capability
+sets, no-new-privileges bit, and network interfaces, and reject any observed
+drift from the shared policy hash. Local OS adapters still have no CPU or
+memory ceilings. Foreground `run_command` remains pipe-only; PTY is available
+through the managed Process Session below. Writes, package installation, and
+inherited environment variables are not part of either surface. The public
+generic command/process runtime remains Node-only. Restricted Python uses a
+separate typed private protocol that binds a recognized system interpreter and
+a bounded no-site bootstrap dependency set proven to cover the worker's loaded
+module files, without granting models an arbitrary Python argv surface. Git
+remains outside that generic runtime enum and is available only through the
+fixed operation graph below; OCI resolves its executable, version, and byte
+hash from the image before those operations can launch. TypeScript LSP
+likewise uses its own narrow provider binding rather than expanding the public
+command runtime enum.
 
 The macOS adapter runs one cached, one-second, deny-default `sandbox-exec`
 profile probe before launching the first task process. This distinguishes an

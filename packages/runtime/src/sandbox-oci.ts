@@ -29,6 +29,7 @@ import {
   serializeContainerEnvironment,
   validateContainerImage,
 } from "./sandbox-container.js";
+import { OCI_PROCESS_RESOURCE_ARGUMENTS } from "./sandbox-container-policy.js";
 import {
   createParentGuardedTerminalLaunch,
   type ParentGuardedOciCleanup,
@@ -390,25 +391,13 @@ export function buildOciContainerArgs(
       : request.stdinMode === "open"
         ? ["--interactive"]
         : []),
-    "--cap-drop",
-    "ALL",
-    "--security-opt",
-    "no-new-privileges",
-    "--pids-limit",
-    "256",
-    "--memory",
-    "1g",
-    "--cpus",
-    "2",
+    ...OCI_PROCESS_RESOURCE_ARGUMENTS,
     "--network",
     request.localService
       ? serviceNetworkName!
       : capabilities.has("network.connect")
         ? "bridge"
         : "none",
-    "--read-only",
-    "--tmpfs",
-    "/tmp:rw,nosuid,nodev,size=64m,mode=1777",
     "--tmpfs",
     `/home/napier:rw,nosuid,nodev,size=64m,mode=0700,uid=${String(user.userId)},gid=${String(user.groupId)}`,
     "--workdir",

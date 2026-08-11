@@ -250,6 +250,7 @@ function dependencies() {
     verify: async () => ({
       checks: {
         node: "sandbox_process_ready",
+        resources: "sandbox_resources_ready",
         shell: "shell_ready",
         python: "python_ready",
         git: "git_ready",

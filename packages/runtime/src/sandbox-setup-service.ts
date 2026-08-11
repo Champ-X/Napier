@@ -14,6 +14,7 @@ import {
   probeLocalServiceRuntime,
   probeLspRuntime,
   probePythonRuntime,
+  probeSandboxResourceRuntime,
   probeSandboxProcessRuntime,
   probeShellRuntime,
 } from "./doctor-runtime-probes.js";
@@ -323,6 +324,11 @@ async function verifySandboxRuntime(input: {
   const sandbox = new OciContainerSandboxAdapter(input.identity.imageId);
   const probes = {
     node: await probeSandboxProcessRuntime(
+      input.workspaceRoot,
+      input.signal,
+      sandbox,
+    ),
+    resources: await probeSandboxResourceRuntime(
       input.workspaceRoot,
       input.signal,
       sandbox,

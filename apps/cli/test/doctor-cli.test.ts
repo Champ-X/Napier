@@ -475,6 +475,52 @@ describe("Napier Doctor CLI", () => {
     );
   });
 
+  it("does not report OCI ready when dynamic resource proof fails", async () => {
+    const fixture = await createFixture();
+    const stdout = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--model",
+        "napier/demo",
+        "--offline",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      doctorDependencies({
+        model: passed("model", "demo_model_ready"),
+        sandbox: warning("sandbox", "sandbox_resources_unavailable"),
+      }),
+    );
+
+    expect(code).toBe(0);
+    const report = JSON.parse(stdout.text()) as {
+      status: string;
+      remediations: Array<{
+        id: string;
+        priority: string;
+        checkIds: string[];
+        codes: string[];
+        instruction: string;
+      }>;
+    };
+    expect(report.status).toBe("degraded");
+    expect(report.remediations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "repair_sandbox_resources",
+          priority: "optional",
+          checkIds: ["sandbox"],
+          codes: ["sandbox_resources_unavailable"],
+          instruction: expect.stringContaining("Rerun Sandbox setup"),
+        }),
+      ]),
+    );
+  });
+
   it("guides container sandbox enablement when a container runtime is available", async () => {
     const fixture = await createFixture();
     const stdout = new CaptureWritable();

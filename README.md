@@ -6747,8 +6747,9 @@ npm run --silent napier -- doctor --workspace . --offline --jsonl
 ```
 
 The Web workbench exposes the same hash-bound setup as a process-plane docket
-when Coding or Safe Automation is blocked. Applying it verifies the same seven
-production paths, persists the same identity receipt, hot-switches the current
+when Coding or Safe Automation is blocked. Applying it verifies the same eight
+production paths (the seven toolchain/service paths plus dynamic resource
+enforcement), persists the same identity receipt, hot-switches the current
 Server Runtime for new work, and refreshes Composer readiness without a page or
 Server restart.
 
@@ -6762,13 +6763,14 @@ oversized bindings are reported but never removed automatically.
 
 The exact-preview apply builds `docker/napier-sandbox/Dockerfile` against its
 digest-pinned multi-architecture Node base, verifies Node, Shell, Python, Git,
-TypeScript LSP, Node DAP, and a loopback local service through production
-paths, then atomically writes only hashed image/client/daemon/user identities
-to `.napier/sandbox.json` with mode `0600`. Subsequent Web and CLI runtimes
-automatically use the immutable image ID; users do not edit an internal Agent
-Profile or export an image variable. The source checkout currently builds this
-image locally as `napier-sandbox:0.1.0`; registry publication and signing remain
-release work and are not implied by local setup.
+TypeScript LSP, Node DAP, a loopback local service, and the live process
+resource boundary through production paths, then atomically writes only
+hashed image/client/daemon/user identities to `.napier/sandbox.json` with mode
+`0600`. Subsequent Web and CLI runtimes automatically use the immutable image
+ID; users do not edit an internal Agent Profile or export an image variable.
+The source checkout currently builds this image locally as
+`napier-sandbox:0.1.0`; registry publication and signing remain release work
+and are not implied by local setup.
 
 The repository retains a local single-platform CycloneDX 1.5 inventory at
 `docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json` plus a hash-bound provenance
@@ -6795,18 +6797,24 @@ The OCI adapter accepts only a local Docker daemon. A mutable image reference
 is used for setup inspection only; production launches use the resolved
 immutable image ID and revalidate the client, daemon, and numeric host UID/GID
 identity before reuse. Containers run as that UID:GID with a read-only root
-filesystem, bounded private tmpfs storage, capability-derived workspace
-mounts, and `--network none` unless networking is approved. Scoped Process
+filesystem, two 64 MiB private tmpfs mounts, a 256-process ceiling, a 1 GiB
+memory ceiling with zero additional swap, a two-CPU quota,
+capability-derived workspace mounts, and `--network none` unless networking is
+approved. Setup and Doctor run a production Node process that reads its own
+cgroup, mount, privilege, and network state; OCI readiness is withheld unless
+the live values match the pinned policy. The hash-only Stage 10 evidence is
+stored at `docs/artifacts/oci-resource-limits-stage10.json`. Scoped Process
 writes keep the workspace root read-only and add only preview-bound writable
-mounts. Local services remain on a Docker `--internal` network; Napier projects
-an ephemeral `127.0.0.1` listener through bounded `docker exec` streams rather
-than enabling container egress or Docker port publishing. OCI PTY sessions use
-the production guardian and unpredictable resource names so normal exit,
-cancel, and parent death remove the exact container/network without relying on
-Docker auto-remove. Missing prerequisites, remote daemon contexts, daemon or
-identity drift, and unsupported host user mapping fail closed. Doctor reports
-`sandbox_configured_unavailable` with the exact restart/rebuild recovery path
-instead of silently falling back to host-direct execution.
+mounts. Local services remain on a Docker `--internal` network; Napier
+projects an ephemeral `127.0.0.1` listener through bounded `docker exec`
+streams rather than enabling container egress or Docker port publishing. OCI
+PTY sessions use the production guardian and unpredictable resource names so
+normal exit, cancel, and parent death remove the exact container/network
+without relying on Docker auto-remove. Missing prerequisites, remote daemon
+contexts, daemon or identity drift, unsupported host user mapping, or runtime
+resource drift fail closed. Doctor reports the exact restart, rebuild, or
+resource-repair path instead of silently falling back to host-direct
+execution.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only

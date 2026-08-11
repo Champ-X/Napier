@@ -53,6 +53,7 @@ export interface SandboxIsolationStrength {
 export { probeGitRuntime } from "./doctor-git-runtime-probe.js";
 export { probeLspRuntime } from "./doctor-lsp-runtime-probe.js";
 export { probeLocalServiceRuntime } from "./doctor-local-service-runtime-probe.js";
+export { probeSandboxResourceRuntime } from "./doctor-sandbox-resource-probe.js";
 
 /**
  * Describes the isolation an OS sandbox adapter actually enforces, so Doctor can

@@ -276,6 +276,7 @@ function realIdentityClient(): ContainerClient {
         `${String(process.getuid!())}:${String(process.getgid!())}` ||
       args[args.indexOf("--pids-limit") + 1] !== "32" ||
       args[args.indexOf("--memory") + 1] !== "256m" ||
+      args[args.indexOf("--memory-swap") + 1] !== "256m" ||
       args[args.indexOf("--cpus") + 1] !== "0.25" ||
       !args.includes("--read-only") ||
       !args.includes("no-new-privileges")
@@ -343,7 +344,7 @@ function fakeContainerClientSource(workspaceRoot: string): string {
     "if (args[args.indexOf('--network') + 1] !== 'none') process.exit(67);",
     `if (args[args.indexOf('--user') + 1] !== ${JSON.stringify(user)}) process.exit(68);`,
     "if (args[args.indexOf('--cap-drop') + 1] !== 'ALL' || !args.includes('--read-only') || !args.includes('no-new-privileges')) process.exit(68);",
-    "if (args[args.indexOf('--pids-limit') + 1] !== '256' || args[args.indexOf('--memory') + 1] !== '1g' || args[args.indexOf('--cpus') + 1] !== '2') process.exit(68);",
+    "if (args[args.indexOf('--pids-limit') + 1] !== '256' || args[args.indexOf('--memory') + 1] !== '1g' || args[args.indexOf('--memory-swap') + 1] !== '1g' || args[args.indexOf('--cpus') + 1] !== '2') process.exit(68);",
     "const mounts = args.flatMap((value, index) => value === '--mount' ? [args[index + 1]] : []);",
     `if (mounts.length !== 1 || mounts[0] !== ${JSON.stringify(readonlyMount)}) process.exit(69);`,
     'const envFile = args[args.indexOf("--env-file") + 1];',
