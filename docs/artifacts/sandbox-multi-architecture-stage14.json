@@ -1,7 +1,7 @@
 {
   "kind": "napier.sandbox-multi-architecture-stage14",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T06:10:33.654Z",
+  "generatedAt": "2026-08-11T06:44:54.678Z",
   "source": {
     "dockerfilePath": "docker/napier-sandbox/Dockerfile",
     "dockerfileSha256": "8f6af9646f2239818267b25b0b948d44c62eb85a63844dc45c1dfebb77e1bcef",
@@ -45,7 +45,7 @@
       "buildStatus": "passed",
       "buildOutputSha256": "bbe6894042fd8ee9d7ad7928146359b37e2e2d09ca12e00024c5b1999cde4ca6",
       "buildOutputBytes": 72,
-      "durationMs": 79764,
+      "durationMs": 83596,
       "checkCodes": [
         "sandbox_process_ready",
         "sandbox_resources_ready",
@@ -70,17 +70,17 @@
         "prettier": "3.8.4",
         "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
         "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
-        "runtimeIdentitySha256": "b072d57b2e3a107f4a9a87c00df73a68ae066e4e5b614f48d641590ceb4782b8"
+        "runtimeIdentitySha256": "1b2755435dfca5089faf95848b52b11b0a2e58b85a5a5dbd80b6d1baade3dd86"
       },
       "verification": {
         "typecheckStatus": "passed",
         "testStatus": "passed",
         "typecheckVersion": "5.9.3",
         "testVersion": "4.1.9",
-        "typecheckResultSha256": "83dedd73d3bde301b38db4642b4b3837f939924faed61a9d91f8c429c7f39ee6",
-        "testResultSha256": "756d81cf4759d08072dc054f4c4dbdf4c953fc7356cc798321e2d278882ab657"
+        "typecheckResultSha256": "c38ac6965c9efb49c43c0b8c20c155f746eea4e74de9d2ec9814216538aa2c41",
+        "testResultSha256": "437337370c50f2511961da3db1cc74498ab60b2e85e1627f750d188a6acb7e3f"
       },
-      "evidenceSha256": "f3a38618881b598fc2db9992a636f2a4d48d018bd1902ad86a8dd75b2d40b01e"
+      "evidenceSha256": "6f204ee9601076096f93681367d7b729c1123a416f245129b32bc643d76d7d92"
     },
     {
       "platform": "linux/arm64",
@@ -89,7 +89,7 @@
       "buildStatus": "passed",
       "buildOutputSha256": "8890db1daaf9cbe02debfb2d84df0f72a090022c32912a38cfbc9eecf21c27d2",
       "buildOutputBytes": 72,
-      "durationMs": 9782,
+      "durationMs": 10002,
       "checkCodes": [
         "sandbox_process_ready",
         "sandbox_resources_ready",
@@ -114,17 +114,17 @@
         "prettier": "3.8.4",
         "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
         "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
-        "runtimeIdentitySha256": "8e7d5d7060aa513855f3f6125be6d4a03f535c43357563627efe776c703f9fee"
+        "runtimeIdentitySha256": "aed79b025b83e3d70dd52e8426e92d6297a0980a2f38f6ca4fbbbb1b0c31087d"
       },
       "verification": {
         "typecheckStatus": "passed",
         "testStatus": "passed",
         "typecheckVersion": "5.9.3",
         "testVersion": "4.1.9",
-        "typecheckResultSha256": "02bfe909e60044ccce6a1004463a92d3257c2dd431d3f90f055dc65c707f33a0",
-        "testResultSha256": "253cb078f460ed0b16616a04fa7e0c62c29d79041ff164464c63d3b193fd8e07"
+        "typecheckResultSha256": "04a8978a0d8c61a8cd7a37b6cd6d985925a3045ca838a9abf575787820e83407",
+        "testResultSha256": "188300881e6153fc4a0f13359db3f2b42b744cea4c265adb427435979dabbce9"
       },
-      "evidenceSha256": "14fb0768197f39db72f67fa396ea4bfeb868d8662318071dd4372a9d81317191"
+      "evidenceSha256": "7f8a7cca5b4fb45d4ad10d40d772ac0e6f977c8b49174828bd61ee5b7ee9ab2e"
     }
   ],
   "parity": {
@@ -133,7 +133,7 @@
     "manifestHashesEqual": true,
     "allProductionChecksReady": true,
     "explicitPlatformLaunch": true,
-    "evidenceSha256": "c6da47ae1c74358273fdce709795e36a0550eed098c699f89e8cf00772b5fa40"
+    "evidenceSha256": "4ce4ec703aad26d336b49c2e2ee89bb08d99c3e5a83c405f7e88eca5470fea86"
   },
   "resourceClosure": {
     "exactBaselineRestored": true,
@@ -166,5 +166,5 @@
       "Windows and Linux host product acceptance"
     ]
   },
-  "contentSha256": "a51ed6f2fbca1692c873454d24887e7f2032dcb825dca845c13e5fbb452d0e6a"
+  "contentSha256": "493664ca17c708ba1e26c721fd6f01b4d6557b007082afefd7a1eae19f6072a5"
 }

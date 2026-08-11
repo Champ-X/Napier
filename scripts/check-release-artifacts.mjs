@@ -12,6 +12,7 @@ import { verifySandboxProductAcceptance } from "./check-sandbox-product-acceptan
 import { verifySandboxMultiArchitecture } from "./check-sandbox-multi-architecture.mjs";
 import { verifySandboxPortableProcess } from "./check-sandbox-portable-process.mjs";
 import { verifySandboxPortableLsp } from "./check-sandbox-portable-lsp.mjs";
+import { verifySandboxPortableDap } from "./check-sandbox-portable-dap.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -75,6 +76,8 @@ const defaultSandboxPortableProcessPath =
   "docs/artifacts/sandbox-portable-process-stage15.json";
 const defaultSandboxPortableLspPath =
   "docs/artifacts/sandbox-portable-lsp-stage16.json";
+const defaultSandboxPortableDapPath =
+  "docs/artifacts/sandbox-portable-dap-stage17.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -165,6 +168,8 @@ export async function auditReleaseArtifacts(options = {}) {
     options.sandboxPortableProcessPath ?? defaultSandboxPortableProcessPath;
   const sandboxPortableLspPath =
     options.sandboxPortableLspPath ?? defaultSandboxPortableLspPath;
+  const sandboxPortableDapPath =
+    options.sandboxPortableDapPath ?? defaultSandboxPortableDapPath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -646,6 +651,17 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const sandboxPortableDapVerification = await verifySandboxPortableDap({
+    repoRoot,
+    artifactPath: sandboxPortableDapPath,
+  });
+  if (!sandboxPortableDapVerification.valid) {
+    errors.push(
+      ...sandboxPortableDapVerification.errors.map(
+        (error) => `Sandbox portable DAP: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -732,6 +748,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: sandboxPortableLspVerification.path,
       sha256: sandboxPortableLspVerification.sha256,
       valid: sandboxPortableLspVerification.valid,
+    },
+    {
+      kind: "sandbox-portable-dap-stage17",
+      path: sandboxPortableDapVerification.path,
+      sha256: sandboxPortableDapVerification.sha256,
+      valid: sandboxPortableDapVerification.valid,
     },
     {
       kind: "product-performance-baseline",

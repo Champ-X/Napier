@@ -79,6 +79,7 @@ export interface SandboxNodeDebuggerRuntimeBinding {
   nodeExecutable: string;
   nodeExecutableSha256: string;
   nodeVersion: string;
+  protocolWorkspaceRoot?: string;
   runtimeIdentitySha256: string;
 }
 

@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "ac3e5d3b27c1b4dfe711e6e5e9287c2b924bd0c743f5beded9245a6862e37aed",
+      "stdoutSha256": "f3b3d4300635fbb35582cda101de3ee9db830449be64c239c171561882b3acda",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "9f363527c21aa7d6d54bd6ad5c7769ee4632a48b85ad3a4e74f16a94f47694c0",
-      "receiptSha256": "66a9e9ffadfab2b045c353ac9e2466dce102d694ee43bf5b8f5f25f539b2881e"
+      "evidenceSha256": "03644e1323bc8f879ab588ee1833db43dc8406ca6dee4b7b307734926d0a07c8",
+      "receiptSha256": "49b8ddf63f3309a250e5a4d09ccef44fe71a6278d69d37f9b1b608651bf34eb2"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "6c10179d6274152f8431ef3f749c32c048d6d90bf28e21fe8f882fd4b3b609e1",
+      "stdoutSha256": "e6a976df952f4b4bc7b57114e264bac334308e094b9ac485da5aadff757ee447",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "6d38a971902e2dee230083ffaca042969c79bc506545216a0b0887d11624fe54",
-      "receiptSha256": "8730c5fb1b79f33fa1f1864488eee975e5223cedce81df0afbbcf3f88bce5910"
+      "evidenceSha256": "d54c07984febc70d65617aad9e7d2d599a783d47cc2a260dc41d621cfeb131f4",
+      "receiptSha256": "e756b10e10f8119586127b113be360cebd673d84d1d2a5ca16003563fd83af2a"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -709,6 +709,7 @@
         "docs/artifacts/sandbox-image-provenance-0.1.0.json",
         "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
         "docs/artifacts/sandbox-multi-architecture-stage14.json",
+        "docs/artifacts/sandbox-portable-dap-stage17.json",
         "docs/artifacts/sandbox-portable-lsp-stage16.json",
         "docs/artifacts/sandbox-portable-process-stage15.json",
         "docs/artifacts/sandbox-product-acceptance-stage13.json",
@@ -826,9 +827,11 @@
         "packages/runtime/src/models.ts",
         "packages/runtime/src/node-debugger-model.ts",
         "packages/runtime/src/node-debugger-process.ts",
+        "packages/runtime/src/node-debugger-protocol-path-binding.ts",
         "packages/runtime/src/node-debugger-runtime-launch.ts",
         "packages/runtime/src/node-debugger-runtime-probe-source.ts",
         "packages/runtime/src/node-debugger-runtime.ts",
+        "packages/runtime/src/node-debugger-source-map-worker.ts",
         "packages/runtime/src/node-debugger-tool-result.ts",
         "packages/runtime/src/node-debugger-tool.ts",
         "packages/runtime/src/node-debugger.ts",
@@ -970,6 +973,7 @@
         "packages/runtime/test/model-adapters.test.ts",
         "packages/runtime/test/model-context-envelope.test.ts",
         "packages/runtime/test/model-prompt-evidence-bindings.test.ts",
+        "packages/runtime/test/node-debugger-protocol-path-binding.test.ts",
         "packages/runtime/test/oci-command-runtime.test.ts",
         "packages/runtime/test/oci-git-runtime.test.ts",
         "packages/runtime/test/oci-local-service.test.ts",
@@ -1050,6 +1054,8 @@
         "scripts/check-sandbox-image-sbom.test.mjs",
         "scripts/check-sandbox-multi-architecture.mjs",
         "scripts/check-sandbox-multi-architecture.test.mjs",
+        "scripts/check-sandbox-portable-dap.mjs",
+        "scripts/check-sandbox-portable-dap.test.mjs",
         "scripts/check-sandbox-portable-lsp.mjs",
         "scripts/check-sandbox-portable-lsp.test.mjs",
         "scripts/check-sandbox-portable-process.mjs",
@@ -1082,6 +1088,8 @@
         "scripts/run-web-ui-e2e.mjs",
         "scripts/sandbox-multi-architecture-artifact.mjs",
         "scripts/sandbox-multi-architecture-live.mjs",
+        "scripts/sandbox-portable-dap-artifact.mjs",
+        "scripts/sandbox-portable-dap-live.mjs",
         "scripts/sandbox-portable-lsp-artifact.mjs",
         "scripts/sandbox-portable-lsp-live.mjs",
         "scripts/sandbox-portable-process-artifact.mjs",
@@ -1108,8 +1116,8 @@
       ],
       "files": {
         "README.md": {
-          "sha256": "41d5d1d5ce74574184aec36f5ca06146e366fc86286936cedfe8e335a77ee3dc",
-          "lines": 6953
+          "sha256": "cf0ba9ee8b3621f44742d61f700665571b0c9efcd0c58fbee72f75c5838542d4",
+          "lines": 6978
         },
         "apps/cli/src/cli-doctor-options.ts": {
           "sha256": "673d949b09e902f5042b2571ce2d97a8448b41804695a807add3b0005d7f8490",
@@ -1872,12 +1880,12 @@
           "lines": 11
         },
         "docs/architecture-budget.json": {
-          "sha256": "d721ee118ef1a6bd72c80ca1e45050bad919c9efaeae2efda180f8ccddf2beb9",
+          "sha256": "5fae6dd78f47518cf6b63d4fcf32cb65d31582ec49e85fb70c87ab616ba04cc4",
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "2ee3553fb39663349c5f4a79910542273e1c3f5440661f917c96347350b7d49e",
-          "lines": 9233
+          "sha256": "eab4aac0da1f5c1f69687c42f550e436f2dc867e54df3c8e79fa160708851c02",
+          "lines": 9254
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -1932,7 +1940,7 @@
           "lines": 5880
         },
         "docs/artifacts/oci-crash-recovery-stage11.json": {
-          "sha256": "b2190e00be2307fdb944efb5075d08e212e43a7ee37037fb4b88bfc3c0a72104",
+          "sha256": "09987ee5789a62f63260f5a5c28e2c0f0b283fa58db8cf3e4a36623722f9f1a1",
           "lines": 91
         },
         "docs/artifacts/oci-git-runtime-stage6.json": {
@@ -1972,7 +1980,7 @@
           "lines": 62
         },
         "docs/artifacts/package-lock-audit-0.1.0.json": {
-          "sha256": "c4164fbc554b639aadffea51b0ec7b422e2ac00bf1bb9354dd508df6fbbe09da",
+          "sha256": "0b1408a1ff285c236d150a61dd72038aca1f7f36850bc75248713fac0a47b4d6",
           "lines": 20
         },
         "docs/artifacts/prompt-regression-matrix-0.1.0.json": {
@@ -1980,11 +1988,11 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "3529f934d58630b57b0553556d18ce67e7d7f8b8a175aef4c0673f68e4309bfd",
-          "lines": 925
+          "sha256": "82c30eb7d068feaec372d5fd614b7106ef70cbe531463654866cc42f953c15d0",
+          "lines": 931
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
-          "sha256": "53fa668a48c0ee99e45f1619bb896bc5535ca809a5973e09ca7a047ddaa283e3",
+          "sha256": "59b0dde6ef3896849197e2c00037e2f3f03bdc8a013925a51879c296b2abb802",
           "lines": 24
         },
         "docs/artifacts/sandbox-image-provenance-0.1.0.json": {
@@ -1996,23 +2004,27 @@
           "lines": 4099
         },
         "docs/artifacts/sandbox-multi-architecture-stage14.json": {
-          "sha256": "27b4c51b51db9be6bd145099f6fff08397afd640f5b26e98381f2b5b09a0b1cd",
+          "sha256": "7a6bdc7c96a3d87f0c44480bfc2fc2a2bc7f846753184b2608db523d40bb6c55",
           "lines": 170
         },
+        "docs/artifacts/sandbox-portable-dap-stage17.json": {
+          "sha256": "9a4cbbf5d1a3fa9dcbcbb7fef5941720a17368683effb691a5f46b72a6d66b0f",
+          "lines": 81
+        },
         "docs/artifacts/sandbox-portable-lsp-stage16.json": {
-          "sha256": "62463a78779322725fa70b0ef9fe9fde237a4fa02c80d37a1cf7be5188b7ba4a",
+          "sha256": "3b4163093e286bc07521053797309c543d229db85f2be0118d08b23ab8046509",
           "lines": 95
         },
         "docs/artifacts/sandbox-portable-process-stage15.json": {
-          "sha256": "67798a7e57c7db31c6af92fe80007cb615d51edc57b178eb25a3c194547cdc2a",
+          "sha256": "3af7eed8a07af490d43a520d59af0a923335c2fcffb2e5dd2f5890d0460e6f3d",
           "lines": 107
         },
         "docs/artifacts/sandbox-product-acceptance-stage13.json": {
-          "sha256": "941d64d6cf30a36453f2b3096c99f8582ba946611cf5586b7656eb0a18f4478e",
+          "sha256": "2134d4b6995f34fca935d5c56a665c7c85754f99d7ccc37d7c8bc14caa448c60",
           "lines": 125
         },
         "docs/artifacts/sandbox-security-casebook-stage12.json": {
-          "sha256": "3b28a4da46e58cac1360bfd1691b73c9fc2b5519c7ebf092c907aafa78fd2d5e",
+          "sha256": "b6a15f6d410d0bcb42344089d65e50ccbfc85f1680856f65badd8c2a3e8c803e",
           "lines": 133
         },
         "docs/artifacts/sdk-capability-parity-stage7/README.md": {
@@ -2020,11 +2032,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "9f363527c21aa7d6d54bd6ad5c7769ee4632a48b85ad3a4e74f16a94f47694c0",
+          "sha256": "03644e1323bc8f879ab588ee1833db43dc8406ca6dee4b7b307734926d0a07c8",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "6d38a971902e2dee230083ffaca042969c79bc506545216a0b0887d11624fe54",
+          "sha256": "d54c07984febc70d65617aad9e7d2d599a783d47cc2a260dc41d621cfeb131f4",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -2072,8 +2084,8 @@
           "lines": 175
         },
         "package.json": {
-          "sha256": "00a0b21095024af7b5939421b9ee28c93586716f485c4caaa557987b3255e16d",
-          "lines": 118
+          "sha256": "f524f7aa002e5b250728a3c8ff01e3f1b01eb2e9e513dad8dbd094e00566b414",
+          "lines": 121
         },
         "packages/contracts/package.json": {
           "sha256": "30e57303e4c41397940da5f51613af40baf7244f3d8d917b30ffe98e00c5cd1a",
@@ -2451,6 +2463,10 @@
           "sha256": "17fc567041de0f019130d96639535216f684a73722f55526eddfce2e7230c17a",
           "lines": 48
         },
+        "packages/runtime/src/node-debugger-protocol-path-binding.ts": {
+          "sha256": "fc1165bc8cb84b34f8d4236450f94317b36f564e0a5882e0aae8bb36d0f7ca24",
+          "lines": 82
+        },
         "packages/runtime/src/node-debugger-runtime-launch.ts": {
           "sha256": "7e0bfd3139f931e263a9f8d71030accab8f9a1c5c48ea02b28a5b721ba3acead",
           "lines": 39
@@ -2460,8 +2476,12 @@
           "lines": 57
         },
         "packages/runtime/src/node-debugger-runtime.ts": {
-          "sha256": "29bdd66a3e95a37d4052146759cc13ed39b3a30078dafc54deab3fded8b0e75c",
-          "lines": 205
+          "sha256": "8587b0060fafaf9c32416ec079c39853e20ccaba393c7f1404e48a828bb77072",
+          "lines": 212
+        },
+        "packages/runtime/src/node-debugger-source-map-worker.ts": {
+          "sha256": "0b56ebb69fcccf102f9bbdef2d8c9b9bccabb695476037c86ccd09144d3e6b19",
+          "lines": 407
         },
         "packages/runtime/src/node-debugger-tool-result.ts": {
           "sha256": "20187357ab0598c62546c7c90caddf8194cc5988c32b63ae5c03e7342fb5a37b",
@@ -2472,8 +2492,8 @@
           "lines": 344
         },
         "packages/runtime/src/node-debugger.ts": {
-          "sha256": "2b05cf8fb6a1e86ec259ba01465ff39adc182b10da621fc836bb0869b4d86f59",
-          "lines": 987
+          "sha256": "4da8743eb26aba0b98cf4125d469ae7950742e964c02e2987827aaeaad1d75cc",
+          "lines": 985
         },
         "packages/runtime/src/opentelemetry-payload-projection.ts": {
           "sha256": "68287bcf6c69f4366b1137c3196d3eb9afebb169bc2d97f64da4fb4a1c23a391",
@@ -2552,8 +2572,8 @@
           "lines": 48
         },
         "packages/runtime/src/sandbox-container-node-debugger-runtime.ts": {
-          "sha256": "d694058f9bae5448fe9111ce91038a36fde74e94548b80ecaa9656685fc43f0b",
-          "lines": 41
+          "sha256": "f2aefdbf650e2228d525b5e39ae47e262f8f8b463a568915b655c99ed15742b6",
+          "lines": 48
         },
         "packages/runtime/src/sandbox-container-path-mapping.ts": {
           "sha256": "1f56ece466497569a30b3eb90c4276fa6bfee439da71f75ea75213c5e38934d5",
@@ -2624,8 +2644,8 @@
           "lines": 63
         },
         "packages/runtime/src/sandbox-types.ts": {
-          "sha256": "42cf5c103156322f2fabe2ec2def95b24e56c0445fd18680767a7f86bf3bb964",
-          "lines": 125
+          "sha256": "25d245175a09bc35305f8899eeeeec04b520a7862efe8ee386503fd267d7c8ff",
+          "lines": 126
         },
         "packages/runtime/src/sandbox.ts": {
           "sha256": "91e158bd35a14803d5de0b2ddbca4c24b774ef02d9192d10a77c071003c35a36",
@@ -3027,6 +3047,10 @@
           "sha256": "e528135ad22aa4b4803af522e0d918d5caf6c616e976f79a50a8ea06f87db1f4",
           "lines": 159
         },
+        "packages/runtime/test/node-debugger-protocol-path-binding.test.ts": {
+          "sha256": "034644935f35196f86ec86729aac44e297f62262093a2acefcc91e11d8710b8c",
+          "lines": 64
+        },
         "packages/runtime/test/oci-command-runtime.test.ts": {
           "sha256": "6e82f21c331d045773fb48f5e0ae48cfc0a35dd5df3b6c61d6d0d2bdade2b8b7",
           "lines": 921
@@ -3044,8 +3068,8 @@
           "lines": 282
         },
         "packages/runtime/test/oci-node-debugger-runtime.test.ts": {
-          "sha256": "f75a18820e88c52730071f42cae2e46ed299f1cc9462dd7b4f3d498f207945d2",
-          "lines": 362
+          "sha256": "061a2b8fec657342e676c5593dbd2e158474519faa469fda504b4097e05bf916",
+          "lines": 386
         },
         "packages/runtime/test/oci-portable-path-mapping.test.ts": {
           "sha256": "5c5ac1e3f5e170c48e849745005e33edcd23512f565bc7068e625c34f81ba96c",
@@ -3324,12 +3348,12 @@
           "lines": 73
         },
         "scripts/check-release-artifacts.mjs": {
-          "sha256": "693be6c6f87eec6b835de7c6bf5674ec7225d8d5835dffc14d0c851ed8fcaeca",
-          "lines": 1833
+          "sha256": "9e2011455ed5e64248bfe481c471acd160178ea6c7f05a517336e0b3439bdb64",
+          "lines": 1855
         },
         "scripts/check-release-artifacts.test.mjs": {
-          "sha256": "a12a5cbe30397655493e970be7d84907e0535cc19aba02d93ca00ba11f267b0d",
-          "lines": 1611
+          "sha256": "aeb3db19de7462e95c8b1700f14a5a9cebc121819d79c6c2458bcf48a3d5dd23",
+          "lines": 1644
         },
         "scripts/check-sandbox-image-sbom.mjs": {
           "sha256": "bc34ec2c287144f8cab3e8b503d6116f30bafbc8c3b8e6a5f2f975d104b4dd13",
@@ -3346,6 +3370,14 @@
         "scripts/check-sandbox-multi-architecture.test.mjs": {
           "sha256": "75f45196577a56b925708d2da03eb4f262a6da2d2a405e95094e6702c697e496",
           "lines": 150
+        },
+        "scripts/check-sandbox-portable-dap.mjs": {
+          "sha256": "6dd8d682244a82fede81893c68f6c94652b89f23a8d5d2ccc2e7d3c619a9beb5",
+          "lines": 204
+        },
+        "scripts/check-sandbox-portable-dap.test.mjs": {
+          "sha256": "60f99a9d21e02689c5fd6e6c9259b097c89cb628b0bcb124a3da4743791d95ac",
+          "lines": 99
         },
         "scripts/check-sandbox-portable-lsp.mjs": {
           "sha256": "52d3d5898b57d7c3df7fa31ba1f2547feda646d728dbfa84ad201690ec45eec4",
@@ -3475,6 +3507,14 @@
           "sha256": "5247ed5c672a274c88262998c031c115d9f262003643484d2510bc4864230d58",
           "lines": 480
         },
+        "scripts/sandbox-portable-dap-artifact.mjs": {
+          "sha256": "b780b88e656a52bb65c8c4af00dbd97f176662acc08b7e18b3a841a1ec90f976",
+          "lines": 158
+        },
+        "scripts/sandbox-portable-dap-live.mjs": {
+          "sha256": "a23c64c8629504dde4b3bff50d93b4a2e6ee696271d1ffcb77815d854bb41f69",
+          "lines": 392
+        },
         "scripts/sandbox-portable-lsp-artifact.mjs": {
           "sha256": "e7d4c0e822b5115d84d4e0ba08154845543ab08f1937d69a7995c0827702a93a",
           "lines": 162
@@ -3512,7 +3552,7 @@
           "lines": 459
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "390007bb22038217b2c05a71d6dd0e739e1b6b4380c90ec84dbac46805886867",
+          "sha256": "343d538a8a1bdb7b35938e8753211ca03fabf24d37d7d41967797707889cbc3e",
           "lines": 287
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -3589,7 +3629,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "63eac3b4ae98c80a2fe1dffb0e53dda8c5290e8ff3656341b85cbb23da1b40f6"
+      "manifestSha256": "de8e1b53a743cc71811da38073576c67a77a2fad41960e85319339fcde562c34"
     },
     "executionClosure": {
       "algorithm": {
@@ -4066,6 +4106,7 @@
             "packages/runtime/dist/models.js",
             "packages/runtime/dist/node-debugger-model.js",
             "packages/runtime/dist/node-debugger-process.js",
+            "packages/runtime/dist/node-debugger-protocol-path-binding.js",
             "packages/runtime/dist/node-debugger-runtime-launch.js",
             "packages/runtime/dist/node-debugger-runtime-probe-source.js",
             "packages/runtime/dist/node-debugger-runtime.js",
@@ -4867,6 +4908,7 @@
             "packages/runtime/src/models.ts",
             "packages/runtime/src/node-debugger-model.ts",
             "packages/runtime/src/node-debugger-process.ts",
+            "packages/runtime/src/node-debugger-protocol-path-binding.ts",
             "packages/runtime/src/node-debugger-runtime-launch.ts",
             "packages/runtime/src/node-debugger-runtime-probe-source.ts",
             "packages/runtime/src/node-debugger-runtime.ts",
@@ -5257,16 +5299,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 799,
-            "sourceCounterparts": 794,
+            "executionFiles": 800,
+            "sourceCounterparts": 795,
             "packageManifests": 2,
-            "allFiles": 1595
+            "allFiles": 1597
           },
           "executionAreaCounts": {
             "apps/cli/dist": 58,
             "apps/server/dist": 101,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 609,
+            "packages/runtime/dist": 610,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -7804,6 +7846,10 @@
               "sha256": "51c9aae23ee95a03e80f8b6490b9ec9e98d2be8504cd87ce25aa67963ccc8fed",
               "lines": 25
             },
+            "packages/runtime/dist/node-debugger-protocol-path-binding.js": {
+              "sha256": "993a719347254ba30edd81f8dc3131612ff7a64b8525d3cf8d2f9dfc7218cdb6",
+              "lines": 55
+            },
             "packages/runtime/dist/node-debugger-runtime-launch.js": {
               "sha256": "6dc7bc1f897a558190453af26d3c838d1a26ec17b7ce22cb73f5a156d7a81588",
               "lines": 25
@@ -7813,16 +7859,16 @@
               "lines": 53
             },
             "packages/runtime/dist/node-debugger-runtime.js": {
-              "sha256": "dae30850ba400ef82ea17fed90f6ec06f4efb058c5ea1355368fee9a126c59c7",
-              "lines": 140
+              "sha256": "44ef989206fb13f9b812fe528ae4066691dbb5d165e16d1f6c3133187be92eb6",
+              "lines": 146
             },
             "packages/runtime/dist/node-debugger-source-binding.js": {
               "sha256": "4f6f7f2c4bcee6afc206b302493dbe2235e9127706fe96488dafc234fcc55129",
               "lines": 76
             },
             "packages/runtime/dist/node-debugger-source-map-worker.js": {
-              "sha256": "772299a134d33207ff69f636fe48299f4764e7a2f7b77776f4544da1ab628782",
-              "lines": 401
+              "sha256": "1ba8150ead6a0b15b2e51409921bfd71010b2498d6c760001ec3bd32642a6e21",
+              "lines": 407
             },
             "packages/runtime/dist/node-debugger-tool-result.js": {
               "sha256": "653ebb518d39afda212f32d22433e2f92802b2e9405ae37ac7796ddbbc9cc4f0",
@@ -7837,8 +7883,8 @@
               "lines": 908
             },
             "packages/runtime/dist/node-debugger.js": {
-              "sha256": "11dd099ae42c07f66f1509ffa03b9525d783e1e51eca49287961dee1c797c8e1",
-              "lines": 572
+              "sha256": "cc768eb87c9dc2766425b93c93c396a4d8da497406d9c503eb6a5c8d9e563df3",
+              "lines": 564
             },
             "packages/runtime/dist/opentelemetry-payload-projection.js": {
               "sha256": "bf979f53e5a4c8edd3103a09a108472c835acdd129553fd62be7c9c3ca8db4b4",
@@ -8077,8 +8123,8 @@
               "lines": 29
             },
             "packages/runtime/dist/sandbox-container-node-debugger-runtime.js": {
-              "sha256": "ba11421e5214ba73714743b0e379155841670725d6d8b6b5cc4ba74bd7eb95b8",
-              "lines": 22
+              "sha256": "c66967d609e29ea608719329b7ca165692169ec1d44928853ae81c6f2279844d",
+              "lines": 29
             },
             "packages/runtime/dist/sandbox-container-path-mapping.js": {
               "sha256": "f9844ffda3149726d2cedb42b80bb0b2149113271d37a6c15df05714a7bbdc1e",
@@ -10244,6 +10290,10 @@
               "sha256": "17fc567041de0f019130d96639535216f684a73722f55526eddfce2e7230c17a",
               "lines": 48
             },
+            "packages/runtime/src/node-debugger-protocol-path-binding.ts": {
+              "sha256": "fc1165bc8cb84b34f8d4236450f94317b36f564e0a5882e0aae8bb36d0f7ca24",
+              "lines": 82
+            },
             "packages/runtime/src/node-debugger-runtime-launch.ts": {
               "sha256": "7e0bfd3139f931e263a9f8d71030accab8f9a1c5c48ea02b28a5b721ba3acead",
               "lines": 39
@@ -10253,16 +10303,16 @@
               "lines": 57
             },
             "packages/runtime/src/node-debugger-runtime.ts": {
-              "sha256": "29bdd66a3e95a37d4052146759cc13ed39b3a30078dafc54deab3fded8b0e75c",
-              "lines": 205
+              "sha256": "8587b0060fafaf9c32416ec079c39853e20ccaba393c7f1404e48a828bb77072",
+              "lines": 212
             },
             "packages/runtime/src/node-debugger-source-binding.ts": {
               "sha256": "e42c749af012062a7c792fce9aeffd581e83d6ee65cf31cfe1af75c154391836",
               "lines": 110
             },
             "packages/runtime/src/node-debugger-source-map-worker.ts": {
-              "sha256": "3463eaee8340e273839af705542f41e1e403ab2f5da1dadfca450f35221a5d13",
-              "lines": 401
+              "sha256": "0b56ebb69fcccf102f9bbdef2d8c9b9bccabb695476037c86ccd09144d3e6b19",
+              "lines": 407
             },
             "packages/runtime/src/node-debugger-tool-result.ts": {
               "sha256": "20187357ab0598c62546c7c90caddf8194cc5988c32b63ae5c03e7342fb5a37b",
@@ -10277,8 +10327,8 @@
               "lines": 922
             },
             "packages/runtime/src/node-debugger.ts": {
-              "sha256": "2b05cf8fb6a1e86ec259ba01465ff39adc182b10da621fc836bb0869b4d86f59",
-              "lines": 987
+              "sha256": "4da8743eb26aba0b98cf4125d469ae7950742e964c02e2987827aaeaad1d75cc",
+              "lines": 985
             },
             "packages/runtime/src/opentelemetry-payload-projection.ts": {
               "sha256": "68287bcf6c69f4366b1137c3196d3eb9afebb169bc2d97f64da4fb4a1c23a391",
@@ -10517,8 +10567,8 @@
               "lines": 48
             },
             "packages/runtime/src/sandbox-container-node-debugger-runtime.ts": {
-              "sha256": "d694058f9bae5448fe9111ce91038a36fde74e94548b80ecaa9656685fc43f0b",
-              "lines": 41
+              "sha256": "f2aefdbf650e2228d525b5e39ae47e262f8f8b463a568915b655c99ed15742b6",
+              "lines": 48
             },
             "packages/runtime/src/sandbox-container-path-mapping.ts": {
               "sha256": "1f56ece466497569a30b3eb90c4276fa6bfee439da71f75ea75213c5e38934d5",
@@ -11653,7 +11703,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "eef510aef6fdc6dd8e18057e47e0eac4cd889a66fa3c90ae3d548426a81f3a3e"
+          "manifestSha256": "90aac0fb692ce68122e6ca86175d90177bbefba2396830a83a7dd7bebd590c2c"
         },
         "productionServerTrace": {
           "roots": [
@@ -12058,6 +12108,7 @@
             "packages/runtime/dist/models.js",
             "packages/runtime/dist/node-debugger-model.js",
             "packages/runtime/dist/node-debugger-process.js",
+            "packages/runtime/dist/node-debugger-protocol-path-binding.js",
             "packages/runtime/dist/node-debugger-runtime-launch.js",
             "packages/runtime/dist/node-debugger-runtime-probe-source.js",
             "packages/runtime/dist/node-debugger-runtime.js",
@@ -12799,6 +12850,7 @@
             "packages/runtime/src/models.ts",
             "packages/runtime/src/node-debugger-model.ts",
             "packages/runtime/src/node-debugger-process.ts",
+            "packages/runtime/src/node-debugger-protocol-path-binding.ts",
             "packages/runtime/src/node-debugger-runtime-launch.ts",
             "packages/runtime/src/node-debugger-runtime-probe-source.ts",
             "packages/runtime/src/node-debugger-runtime.ts",
@@ -13189,16 +13241,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 739,
-            "sourceCounterparts": 735,
+            "executionFiles": 740,
+            "sourceCounterparts": 736,
             "packageManifests": 3,
-            "allFiles": 1477
+            "allFiles": 1479
           },
           "executionAreaCounts": {
             "apps/server/dist": 102,
             "other": 1,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 607,
+            "packages/runtime/dist": 608,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
@@ -15275,6 +15327,10 @@
               "sha256": "51c9aae23ee95a03e80f8b6490b9ec9e98d2be8504cd87ce25aa67963ccc8fed",
               "lines": 25
             },
+            "packages/runtime/dist/node-debugger-protocol-path-binding.js": {
+              "sha256": "993a719347254ba30edd81f8dc3131612ff7a64b8525d3cf8d2f9dfc7218cdb6",
+              "lines": 55
+            },
             "packages/runtime/dist/node-debugger-runtime-launch.js": {
               "sha256": "6dc7bc1f897a558190453af26d3c838d1a26ec17b7ce22cb73f5a156d7a81588",
               "lines": 25
@@ -15284,16 +15340,16 @@
               "lines": 53
             },
             "packages/runtime/dist/node-debugger-runtime.js": {
-              "sha256": "dae30850ba400ef82ea17fed90f6ec06f4efb058c5ea1355368fee9a126c59c7",
-              "lines": 140
+              "sha256": "44ef989206fb13f9b812fe528ae4066691dbb5d165e16d1f6c3133187be92eb6",
+              "lines": 146
             },
             "packages/runtime/dist/node-debugger-source-binding.js": {
               "sha256": "4f6f7f2c4bcee6afc206b302493dbe2235e9127706fe96488dafc234fcc55129",
               "lines": 76
             },
             "packages/runtime/dist/node-debugger-source-map-worker.js": {
-              "sha256": "772299a134d33207ff69f636fe48299f4764e7a2f7b77776f4544da1ab628782",
-              "lines": 401
+              "sha256": "1ba8150ead6a0b15b2e51409921bfd71010b2498d6c760001ec3bd32642a6e21",
+              "lines": 407
             },
             "packages/runtime/dist/node-debugger-tool-result.js": {
               "sha256": "653ebb518d39afda212f32d22433e2f92802b2e9405ae37ac7796ddbbc9cc4f0",
@@ -15308,8 +15364,8 @@
               "lines": 908
             },
             "packages/runtime/dist/node-debugger.js": {
-              "sha256": "11dd099ae42c07f66f1509ffa03b9525d783e1e51eca49287961dee1c797c8e1",
-              "lines": 572
+              "sha256": "cc768eb87c9dc2766425b93c93c396a4d8da497406d9c503eb6a5c8d9e563df3",
+              "lines": 564
             },
             "packages/runtime/dist/opentelemetry-payload-projection.js": {
               "sha256": "bf979f53e5a4c8edd3103a09a108472c835acdd129553fd62be7c9c3ca8db4b4",
@@ -15548,8 +15604,8 @@
               "lines": 29
             },
             "packages/runtime/dist/sandbox-container-node-debugger-runtime.js": {
-              "sha256": "ba11421e5214ba73714743b0e379155841670725d6d8b6b5cc4ba74bd7eb95b8",
-              "lines": 22
+              "sha256": "c66967d609e29ea608719329b7ca165692169ec1d44928853ae81c6f2279844d",
+              "lines": 29
             },
             "packages/runtime/dist/sandbox-container-path-mapping.js": {
               "sha256": "f9844ffda3149726d2cedb42b80bb0b2149113271d37a6c15df05714a7bbdc1e",
@@ -17707,6 +17763,10 @@
               "sha256": "17fc567041de0f019130d96639535216f684a73722f55526eddfce2e7230c17a",
               "lines": 48
             },
+            "packages/runtime/src/node-debugger-protocol-path-binding.ts": {
+              "sha256": "fc1165bc8cb84b34f8d4236450f94317b36f564e0a5882e0aae8bb36d0f7ca24",
+              "lines": 82
+            },
             "packages/runtime/src/node-debugger-runtime-launch.ts": {
               "sha256": "7e0bfd3139f931e263a9f8d71030accab8f9a1c5c48ea02b28a5b721ba3acead",
               "lines": 39
@@ -17716,16 +17776,16 @@
               "lines": 57
             },
             "packages/runtime/src/node-debugger-runtime.ts": {
-              "sha256": "29bdd66a3e95a37d4052146759cc13ed39b3a30078dafc54deab3fded8b0e75c",
-              "lines": 205
+              "sha256": "8587b0060fafaf9c32416ec079c39853e20ccaba393c7f1404e48a828bb77072",
+              "lines": 212
             },
             "packages/runtime/src/node-debugger-source-binding.ts": {
               "sha256": "e42c749af012062a7c792fce9aeffd581e83d6ee65cf31cfe1af75c154391836",
               "lines": 110
             },
             "packages/runtime/src/node-debugger-source-map-worker.ts": {
-              "sha256": "3463eaee8340e273839af705542f41e1e403ab2f5da1dadfca450f35221a5d13",
-              "lines": 401
+              "sha256": "0b56ebb69fcccf102f9bbdef2d8c9b9bccabb695476037c86ccd09144d3e6b19",
+              "lines": 407
             },
             "packages/runtime/src/node-debugger-tool-result.ts": {
               "sha256": "20187357ab0598c62546c7c90caddf8194cc5988c32b63ae5c03e7342fb5a37b",
@@ -17740,8 +17800,8 @@
               "lines": 922
             },
             "packages/runtime/src/node-debugger.ts": {
-              "sha256": "2b05cf8fb6a1e86ec259ba01465ff39adc182b10da621fc836bb0869b4d86f59",
-              "lines": 987
+              "sha256": "4da8743eb26aba0b98cf4125d469ae7950742e964c02e2987827aaeaad1d75cc",
+              "lines": 985
             },
             "packages/runtime/src/opentelemetry-payload-projection.ts": {
               "sha256": "68287bcf6c69f4366b1137c3196d3eb9afebb169bc2d97f64da4fb4a1c23a391",
@@ -17980,8 +18040,8 @@
               "lines": 48
             },
             "packages/runtime/src/sandbox-container-node-debugger-runtime.ts": {
-              "sha256": "d694058f9bae5448fe9111ce91038a36fde74e94548b80ecaa9656685fc43f0b",
-              "lines": 41
+              "sha256": "f2aefdbf650e2228d525b5e39ae47e262f8f8b463a568915b655c99ed15742b6",
+              "lines": 48
             },
             "packages/runtime/src/sandbox-container-path-mapping.ts": {
               "sha256": "1f56ece466497569a30b3eb90c4276fa6bfee439da71f75ea75213c5e38934d5",
@@ -19112,7 +19172,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "e765d8b948995fd97798bdcd62797cb19baaeec9da103f0e28f7b774c24279e2"
+          "manifestSha256": "29dabd16a72ff65935e3c68776c6b163cbf6f4f2dd639c64e29e36f5334266b2"
         }
       },
       "excludedCategories": [
@@ -19141,9 +19201,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "415b7c6a93c54add4f7663564320a696ef90cbbd2f5a08ef64c63d2432361aa0"
+      "manifestSha256": "9c9d70e1336bc92e99d71fcaeedefd74902e37d90e8cbe8c272f0a41c9be8d5d"
     },
-    "manifestSha256": "0e2c09e2292c28ea4be5885d22f59f141175cb78e4374d42d52b7d00e3421e42"
+    "manifestSha256": "ec897f0c5fae9ef9fbb380fede74e64e21d71bc4a1245229fd1c6d9a3c5b6407"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -19331,11 +19391,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "9f363527c21aa7d6d54bd6ad5c7769ee4632a48b85ad3a4e74f16a94f47694c0"
+      "sha256": "03644e1323bc8f879ab588ee1833db43dc8406ca6dee4b7b307734926d0a07c8"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "6d38a971902e2dee230083ffaca042969c79bc506545216a0b0887d11624fe54"
+      "sha256": "d54c07984febc70d65617aad9e7d2d599a783d47cc2a260dc41d621cfeb131f4"
     }
   }
 }

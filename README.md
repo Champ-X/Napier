@@ -6912,7 +6912,8 @@ macOS user. A controlled Windows-path projection covers drive-letter cwd,
 verification targets, Git private paths, runtime mounts, explicit image
 platform, and outside-drive rejection through the production argv builder.
 This does not claim execution on a Windows host or completion of LSP/DAP
-protocol URI translation; those remain part of cross-host acceptance.
+protocol URI translation; Stages 16 and 17 close those protocol paths on the
+local daemon, while real cross-host acceptance remains open.
 
 Stage 16 closes the portable read-only LSP protocol boundary. The image-bound
 LSP runtime declares `/workspace` as its protocol root; initialize,
@@ -6931,8 +6932,32 @@ against the same TypeScript file and requires identical clean diagnostics,
 bounded symbols, and definition locations. Protocol-root escapes, file
 authorities, query data, and non-file schemes fail closed. The receipt stores
 only statuses and projection hashes, not diagnostics, symbol names, locations,
-paths, host IDs, or Docker output. Portable DAP and execution on actual Windows
-or Linux hosts remain open.
+paths, host IDs, or Docker output. Stage 17 closes portable DAP; execution on
+actual Windows or Linux hosts remains open.
+
+Stage 17 closes the portable Node debugger protocol boundary. The image-bound
+debugger runtime binds `/workspace` into its runtime identity when using the
+fixed portable user. Launch `workspaceRoot`, program, source, and optional
+source-map targets are mapped to container-visible absolute paths, while
+breakpoint, stack-frame, and retained evidence paths remain canonical
+Workspace-relative values. The debugger worker rejects any mismatch between
+an absolute protocol target and its declared relative path:
+
+```bash
+npm run check:sandbox-portable-dap
+npm run check:sandbox-portable-dap:live
+```
+
+The live acceptance launches the same JavaScript target through ordinary
+host-UID and fixed portable-UID OCI arms, pauses both at a real breakpoint,
+evaluates the same expression, continues to clean termination, and requires
+equal frame, evaluation, and completion projections. It restores the exact
+container/network/scratch baseline and removes its private data root. The
+receipt retains hashes and statuses only—not source, frames, evaluated values,
+output, paths, host IDs, or resource names. This is local macOS plus
+`linux/arm64` daemon evidence, not Windows/Linux host execution,
+multi-architecture registry publication, image signing, or external
+attestation.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only

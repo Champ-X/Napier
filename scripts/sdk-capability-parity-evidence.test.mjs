@@ -29,31 +29,31 @@ describe("SDK capability parity evidence verifier", () => {
     const { fourStateParity, productionServerTrace } =
       evidence.identity.executionClosure.groups;
     expect(fourStateParity.counts).toEqual({
-      executionFiles: 799,
-      sourceCounterparts: 794,
+      executionFiles: 800,
+      sourceCounterparts: 795,
       packageManifests: 2,
-      allFiles: 1595,
+      allFiles: 1597,
     });
     expect(fourStateParity.executionAreaCounts).toEqual({
       "apps/cli/dist": 58,
       "apps/server/dist": 101,
       "packages/contracts/dist": 23,
-      "packages/runtime/dist": 609,
+      "packages/runtime/dist": 610,
       "packages/runtime/test/fixtures": 3,
       "packages/sdk/dist": 3,
       scripts: 2,
     });
     expect(productionServerTrace.counts).toEqual({
-      executionFiles: 739,
-      sourceCounterparts: 735,
+      executionFiles: 740,
+      sourceCounterparts: 736,
       packageManifests: 3,
-      allFiles: 1477,
+      allFiles: 1479,
     });
     expect(productionServerTrace.executionAreaCounts).toEqual({
       "apps/server/dist": 102,
       other: 1,
       "packages/contracts/dist": 23,
-      "packages/runtime/dist": 607,
+      "packages/runtime/dist": 608,
       "packages/sdk/dist": 3,
       scripts: 3,
     });

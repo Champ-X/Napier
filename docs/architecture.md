@@ -866,7 +866,8 @@ is exercised with controlled Windows drive-letter inputs and requires fixed
 container targets plus outside-drive rejection. The receipt explicitly marks
 `windowsHostExecuted=false` and `windowsProtocolPathsComplete=false`: protocol
 paths above the process layer still require separate completion before Windows
-host product acceptance. Stage 16 closes the read-only LSP portion; DAP remains.
+host product acceptance. Stages 16 and 17 close the read-only LSP and Node
+debugger portions on the local daemon.
 
 Stage 16 adds the LSP-specific half of that protocol translation. The OCI LSP
 runtime identity optionally binds `protocolWorkspaceRoot=/workspace`.
@@ -885,8 +886,28 @@ definition-location projections must be identical; only status/count/hash
 evidence is retained. Protocol escape, authority, query, and scheme cases are
 rejected in focused tests. The receipt deliberately keeps
 `windowsHostExecuted=false` and `portableDapComplete=false`; Node debugger
-launch/source paths and real Windows/Linux host acceptance remain separate
-work.
+launch/source paths are completed by Stage 17, while real Windows/Linux host
+acceptance remains separate work.
+
+Stage 17 adds the DAP-specific protocol translation. Portable OCI debugger
+identity binds `protocolWorkspaceRoot=/workspace`. The manager maps launch
+workspace, program, source, and optional source-map targets to absolute
+container-visible paths without replacing canonical host source bindings.
+Relative source paths therefore remain the authority for breakpoints, stack
+frames, snapshots, and evidence. The debugger worker resolves every absolute
+target, requires it to remain under the real protocol root, and requires its
+relative projection to equal the separately declared source/program/source-map
+path before reading or launching anything.
+
+The Stage 17 live acceptance compares ordinary host-UID and fixed portable-UID
+OCI arms for a real breakpoint launch, frame projection, expression evaluation,
+continue, and clean termination. All three projections must match, and the
+container/network/scratch baseline plus private temporary root must be restored
+exactly. The receipt retains only hashes and statuses; source, frames,
+evaluation values, output, paths, numeric host IDs, and resource names are
+excluded. It records `windowsHostExecuted=false`: actual Windows/Linux host
+product acceptance, registry publication, signing, and external attestation
+remain release work.
 
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath. The Contracts root remains at

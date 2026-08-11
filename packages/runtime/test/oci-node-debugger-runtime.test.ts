@@ -172,6 +172,30 @@ describe("OCI image-bound Node debugger runtime", () => {
     },
     20_000,
   );
+
+  it("declares the fixed protocol root for portable non-POSIX identity", async () => {
+    const nodeSha256 = await sha256File(await realpath(process.execPath));
+    const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+      executable: process.execPath,
+      containerClient: staticIdentityClient(nodeSha256, {
+        nodeVersion: process.versions.node,
+      }),
+      userIds: {
+        userId: 65_532,
+        groupId: 65_532,
+        mapping: "portable-non-posix",
+      },
+      daemonEndpoint: "unix:///controlled/docker.sock",
+    });
+
+    await expect(sandbox.resolveNodeDebuggerRuntime()).resolves.toEqual(
+      expect.objectContaining({
+        runtime: "node-debugger",
+        protocolWorkspaceRoot: "/workspace",
+        runtimeIdentitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+  });
 });
 
 async function createOciFixture(): Promise<

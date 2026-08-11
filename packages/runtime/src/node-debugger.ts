@@ -41,6 +41,10 @@ import {
   validateSessionTimeout,
 } from "./node-debugger-model.js";
 import {
+  createNodeDebuggerProtocolSourceBinding,
+  nodeDebuggerLaunchArguments,
+} from "./node-debugger-protocol-path-binding.js";
+import {
   assertNodeDebuggerSourceBindingCurrent,
   loadNodeDebuggerSourceBinding,
 } from "./node-debugger-source-binding.js";
@@ -150,6 +154,10 @@ export class NodeDebuggerManager {
       sessionTimeoutMs,
       ...(request.signal ? { signal: request.signal } : {}),
     });
+    const protocol = createNodeDebuggerProtocolSourceBinding(
+      { source, program, ...(sourceMap ? { sourceMap } : {}) },
+      runtime.protocolWorkspaceRoot,
+    );
     const registration: RegisteredNodeDebugger = {
       threadId: request.threadId,
       runId: request.runId,
@@ -201,21 +209,11 @@ export class NodeDebuggerManager {
       const launched = await this.sendRequest(
         registration,
         "launch",
-        {
-          program: program.target,
-          workspaceRoot: source.workspaceRoot,
-          sourcePath: source.path,
-          sourceSha256: source.fileSha256,
-          programPath: program.path,
-          programSha256: program.fileSha256,
-          ...(sourceMap
-            ? {
-                sourceMapPath: sourceMap.path,
-                sourceMapSha256: sourceMap.fileSha256,
-              }
-            : {}),
+        nodeDebuggerLaunchArguments({
+          binding: { source, program, ...(sourceMap ? { sourceMap } : {}) },
+          protocol,
           args: request.args ?? [],
-        },
+        }),
         actionTimeoutMs,
         evidence,
         request.signal,

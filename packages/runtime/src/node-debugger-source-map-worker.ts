@@ -17,11 +17,13 @@ function validateLaunch(argumentsValue) {
     !exactRecord(argumentsValue, [
       "program",
       "workspaceRoot",
+      "sourceTarget",
       "sourcePath",
       "sourceSha256",
       "programPath",
       "programSha256",
       "sourceMapPath",
+      "sourceMapTarget",
       "sourceMapSha256",
       "args",
     ]) ||
@@ -29,6 +31,8 @@ function validateLaunch(argumentsValue) {
     !path.isAbsolute(argumentsValue.program) ||
     !visibleString(argumentsValue.workspaceRoot, 2_000) ||
     !path.isAbsolute(argumentsValue.workspaceRoot) ||
+    !visibleString(argumentsValue.sourceTarget, 2_000) ||
+    !path.isAbsolute(argumentsValue.sourceTarget) ||
     !visibleString(argumentsValue.sourcePath, 500) ||
     path.isAbsolute(argumentsValue.sourcePath) ||
     !/^[a-f0-9]{64}$/.test(argumentsValue.sourceSha256) ||
@@ -36,10 +40,14 @@ function validateLaunch(argumentsValue) {
     path.isAbsolute(argumentsValue.programPath) ||
     !/^[a-f0-9]{64}$/.test(argumentsValue.programSha256) ||
     ((argumentsValue.sourceMapPath === undefined) !==
-      (argumentsValue.sourceMapSha256 === undefined)) ||
+      (argumentsValue.sourceMapTarget === undefined) ||
+      (argumentsValue.sourceMapPath === undefined) !==
+        (argumentsValue.sourceMapSha256 === undefined)) ||
     (argumentsValue.sourceMapPath !== undefined &&
       (!visibleString(argumentsValue.sourceMapPath, 500) ||
         path.isAbsolute(argumentsValue.sourceMapPath) ||
+        !visibleString(argumentsValue.sourceMapTarget, 2_000) ||
+        !path.isAbsolute(argumentsValue.sourceMapTarget) ||
         !/^[a-f0-9]{64}$/.test(argumentsValue.sourceMapSha256))) ||
     !Array.isArray(argumentsValue.args) ||
     argumentsValue.args.length > 16 ||
@@ -49,15 +57,14 @@ function validateLaunch(argumentsValue) {
   }
   const root = fs.realpathSync(argumentsValue.workspaceRoot);
   const program = fs.realpathSync(argumentsValue.program);
-  const sourceTarget = fs.realpathSync(
-    path.resolve(root, argumentsValue.sourcePath),
-  );
+  const sourceTarget = fs.realpathSync(argumentsValue.sourceTarget);
   if (
     root !== path.resolve(argumentsValue.workspaceRoot) ||
     program !== path.resolve(argumentsValue.program) ||
     !inside(program, root) ||
     path.relative(root, program) !== argumentsValue.programPath ||
     !inside(sourceTarget, root) ||
+    sourceTarget !== path.resolve(argumentsValue.sourceTarget) ||
     path.relative(root, sourceTarget) !== argumentsValue.sourcePath ||
     !PROGRAM_EXTENSIONS.has(path.extname(program).toLowerCase())
   ) {
@@ -84,11 +91,10 @@ function validateLaunch(argumentsValue) {
   let sourceMapText;
   let sourceMapBinding;
   if (sourceMapMode === "external") {
-    sourceMapTarget = fs.realpathSync(
-      path.resolve(root, argumentsValue.sourceMapPath),
-    );
+    sourceMapTarget = fs.realpathSync(argumentsValue.sourceMapTarget);
     if (
       !inside(sourceMapTarget, root) ||
+      sourceMapTarget !== path.resolve(argumentsValue.sourceMapTarget) ||
       path.relative(root, sourceMapTarget) !== argumentsValue.sourceMapPath ||
       path.extname(sourceMapTarget).toLowerCase() !== ".map" ||
       sourceMapTarget === sourceTarget ||

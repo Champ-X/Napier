@@ -1,0 +1,81 @@
+{
+  "kind": "napier.sandbox-portable-dap-stage17",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-11T06:45:23.729Z",
+  "image": {
+    "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
+    "platform": "linux/arm64",
+    "provenanceSha256": "cea0625e085acdd78a0941229a29bfdc5c0cb3dc226cf9d0a79d6e4753778e7c"
+  },
+  "implementation": {
+    "sandboxTypesSha256": "25d245175a09bc35305f8899eeeeec04b520a7862efe8ee386503fd267d7c8ff",
+    "containerDebuggerRuntimeSha256": "f2aefdbf650e2228d525b5e39ae47e262f8f8b463a568915b655c99ed15742b6",
+    "debuggerRuntimeSha256": "8587b0060fafaf9c32416ec079c39853e20ccaba393c7f1404e48a828bb77072",
+    "protocolPathBindingSha256": "fc1165bc8cb84b34f8d4236450f94317b36f564e0a5882e0aae8bb36d0f7ca24",
+    "debuggerManagerSha256": "4da8743eb26aba0b98cf4125d469ae7950742e964c02e2987827aaeaad1d75cc",
+    "workerSha256": "be75f7adcfff3a2a19d12fad78ef17322b9bedcea70e9f04026aea6a8dbac431",
+    "sourceMapWorkerSha256": "0b56ebb69fcccf102f9bbdef2d8c9b9bccabb695476037c86ccd09144d3e6b19",
+    "checkScriptSha256": "6dd8d682244a82fede81893c68f6c94652b89f23a8d5d2ccc2e7d3c619a9beb5",
+    "artifactVerifierSha256": "b780b88e656a52bb65c8c4af00dbd97f176662acc08b7e18b3a841a1ec90f976",
+    "liveHarnessSha256": "a23c64c8629504dde4b3bff50d93b4a2e6ee696271d1ffcb77815d854bb41f69"
+  },
+  "protocolBinding": {
+    "protocolWorkspaceRoot": "/workspace",
+    "workspaceRootMapped": true,
+    "sourceTargetMapped": true,
+    "programTargetMapped": true,
+    "relativeEvidencePaths": true,
+    "escapeRejected": true,
+    "bindingSha256": "98b8d87c5ba679465599df054a592650984f1cca0843a68dae091ceb82262bb8"
+  },
+  "productionParity": {
+    "hostPlatform": "darwin",
+    "sandbox": "oci-container",
+    "sameTarget": true,
+    "launchState": "paused",
+    "pauseReason": "breakpoint",
+    "breakpointExpected": true,
+    "evaluationExpected": true,
+    "completionExpected": true,
+    "frameProjectionEqual": true,
+    "evaluationProjectionEqual": true,
+    "completionProjectionEqual": true,
+    "allEqual": true,
+    "frameProjectionSha256": "b6dff0b2388cf02863c102bb7ac440f94d9f8cb528b6889cb4cb4e6bd3846252",
+    "evaluationProjectionSha256": "2ff2be401e4b07e2e537dd20c44e8a44876b3ed98c3b7ba9755e5565ef823024",
+    "completionProjectionSha256": "60595e3a619f73e475af799c7d194d0570275068364e2eb5345c1e65c38718fe",
+    "hostResultSetSha256": "1ee40f79388ea339a35831d13b5b129fd22a0a1c9f6698b4582de2b9caa3d78f",
+    "portableResultSetSha256": "dddfdc61ed6c36d8efad62d5dee79cbc2650f5e6bc2d704f1205cdc48d29e24b",
+    "evidenceSha256": "f1428cb10c7778d671a41409d1eef8455cdceb19be9bae9f18be9d4e94f4232c"
+  },
+  "resourceClosure": {
+    "exactBaselineRestored": true,
+    "containerDeltaCount": 0,
+    "networkDeltaCount": 0,
+    "scratchDeltaCount": 0,
+    "temporaryRootRemoved": true
+  },
+  "retention": {
+    "credentialValues": false,
+    "rawSource": false,
+    "rawFrames": false,
+    "rawEvaluation": false,
+    "rawOutput": false,
+    "rawDockerOutput": false,
+    "workspacePaths": false,
+    "numericHostUserIds": false,
+    "resourceNames": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "portableDapPlane": true,
+    "windowsHostExecuted": false,
+    "remaining": [
+      "Windows and Linux host product acceptance",
+      "multi-architecture registry publication",
+      "image signature and external attestation"
+    ]
+  },
+  "contentSha256": "50d14c56b14146f9b2416d4fc71c27773d048327681317112536577046dadcce"
+}

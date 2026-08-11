@@ -27,6 +27,9 @@ export async function resolveContainerNodeDebuggerRuntime(
     nodeExecutable: observed.node.executable,
     nodeExecutableSha256: observed.node.executableSha256,
     nodeVersion: observed.debugger.nodeVersion,
+    ...(identity.user.mapping === "portable-non-posix"
+      ? { protocolWorkspaceRoot: "/workspace" }
+      : {}),
     runtimeIdentitySha256: sha256(
       canonicalJson({
         kind: "napier.oci-node-debugger-runtime-identity",
@@ -34,6 +37,10 @@ export async function resolveContainerNodeDebuggerRuntime(
         nodeExecutable: observed.node.executable,
         nodeExecutableSha256: observed.node.executableSha256,
         nodeVersion: observed.debugger.nodeVersion,
+        userMapping: identity.user.mapping,
+        ...(identity.user.mapping === "portable-non-posix"
+          ? { protocolWorkspaceRoot: "/workspace" }
+          : {}),
         inspectorWorkerProbe: true,
       }),
     ),

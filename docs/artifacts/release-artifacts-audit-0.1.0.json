@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "ebf6d4b252399dd7bae20704a0ef5095e51ac00e4b383696cdd01fa2257501cc",
+  "artifactSetSha256": "f1cd43802dc19f8524e8397f8e4f759b4a0f357707d8f7c7340cd29dd76b6358",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "c4164fbc554b639aadffea51b0ec7b422e2ac00bf1bb9354dd508df6fbbe09da",
+      "sha256": "0b1408a1ff285c236d150a61dd72038aca1f7f36850bc75248713fac0a47b4d6",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "53fa668a48c0ee99e45f1619bb896bc5535ca809a5973e09ca7a047ddaa283e3",
+      "sha256": "59b0dde6ef3896849197e2c00037e2f3f03bdc8a013925a51879c296b2abb802",
       "valid": true
     },
     {
@@ -41,37 +41,43 @@
     {
       "kind": "oci-crash-recovery-stage11",
       "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-      "sha256": "b2190e00be2307fdb944efb5075d08e212e43a7ee37037fb4b88bfc3c0a72104",
+      "sha256": "09987ee5789a62f63260f5a5c28e2c0f0b283fa58db8cf3e4a36623722f9f1a1",
       "valid": true
     },
     {
       "kind": "sandbox-security-casebook-stage12",
       "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
-      "sha256": "3b28a4da46e58cac1360bfd1691b73c9fc2b5519c7ebf092c907aafa78fd2d5e",
+      "sha256": "b6a15f6d410d0bcb42344089d65e50ccbfc85f1680856f65badd8c2a3e8c803e",
       "valid": true
     },
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "941d64d6cf30a36453f2b3096c99f8582ba946611cf5586b7656eb0a18f4478e",
+      "sha256": "2134d4b6995f34fca935d5c56a665c7c85754f99d7ccc37d7c8bc14caa448c60",
       "valid": true
     },
     {
       "kind": "sandbox-multi-architecture-stage14",
       "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
-      "sha256": "27b4c51b51db9be6bd145099f6fff08397afd640f5b26e98381f2b5b09a0b1cd",
+      "sha256": "7a6bdc7c96a3d87f0c44480bfc2fc2a2bc7f846753184b2608db523d40bb6c55",
       "valid": true
     },
     {
       "kind": "sandbox-portable-process-stage15",
       "path": "docs/artifacts/sandbox-portable-process-stage15.json",
-      "sha256": "67798a7e57c7db31c6af92fe80007cb615d51edc57b178eb25a3c194547cdc2a",
+      "sha256": "3af7eed8a07af490d43a520d59af0a923335c2fcffb2e5dd2f5890d0460e6f3d",
       "valid": true
     },
     {
       "kind": "sandbox-portable-lsp-stage16",
       "path": "docs/artifacts/sandbox-portable-lsp-stage16.json",
-      "sha256": "62463a78779322725fa70b0ef9fe9fde237a4fa02c80d37a1cf7be5188b7ba4a",
+      "sha256": "3b4163093e286bc07521053797309c543d229db85f2be0118d08b23ab8046509",
+      "valid": true
+    },
+    {
+      "kind": "sandbox-portable-dap-stage17",
+      "path": "docs/artifacts/sandbox-portable-dap-stage17.json",
+      "sha256": "9a4cbbf5d1a3fa9dcbcbb7fef5941720a17368683effb691a5f46b72a6d66b0f",
       "valid": true
     },
     {

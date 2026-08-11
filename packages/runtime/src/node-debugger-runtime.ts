@@ -29,6 +29,7 @@ export interface NodeDebuggerRuntimeIdentity {
   nodeExecutable: string;
   nodeExecutableSha256: string;
   nodeVersion: string;
+  protocolWorkspaceRoot?: string;
   runtimeIdentitySha256: string;
 }
 
@@ -128,6 +129,7 @@ export async function assertNodeDebuggerRuntimeStable(
     current.nodeExecutable !== expected.nodeExecutable ||
     current.nodeExecutableSha256 !== expected.nodeExecutableSha256 ||
     current.nodeVersion !== expected.nodeVersion ||
+    current.protocolWorkspaceRoot !== expected.protocolWorkspaceRoot ||
     current.runtimeIdentitySha256 !== expected.runtimeIdentitySha256
   ) {
     throw new Error(`${label} runtime identity changed`);
@@ -153,6 +155,9 @@ function providerIdentity(
     nodeExecutable: binding.nodeExecutable,
     nodeExecutableSha256: binding.nodeExecutableSha256,
     nodeVersion: binding.nodeVersion,
+    ...(binding.protocolWorkspaceRoot
+      ? { protocolWorkspaceRoot: binding.protocolWorkspaceRoot }
+      : {}),
     runtimeIdentitySha256: binding.runtimeIdentitySha256,
   };
 }
@@ -166,6 +171,8 @@ function validateProviderBinding(
     /[\u0000-\u001f\u007f]/u.test(binding.nodeExecutable) ||
     !SHA256.test(binding.nodeExecutableSha256) ||
     !SHA256.test(binding.runtimeIdentitySha256) ||
+    (binding.protocolWorkspaceRoot !== undefined &&
+      binding.protocolWorkspaceRoot !== "/workspace") ||
     !validNodeVersion(binding.nodeVersion)
   ) {
     throw new Error("Node debugger provider runtime identity is invalid");

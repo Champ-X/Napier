@@ -1,7 +1,7 @@
 {
   "kind": "napier.sandbox-portable-process-stage15",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T06:10:38.559Z",
+  "generatedAt": "2026-08-11T06:44:59.976Z",
   "image": {
     "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
     "platform": "linux/arm64",
@@ -61,8 +61,8 @@
       "testVersion": "4.1.9",
       "typecheckRuntimeIdentitySha256": "f2d10af46af9460508bdc053294ede5d54fbc5f96e5bb49977c7ec6cf79886bf",
       "testRuntimeIdentitySha256": "f2d10af46af9460508bdc053294ede5d54fbc5f96e5bb49977c7ec6cf79886bf",
-      "typecheckResultSha256": "3b4b9546841ded6b907e56f5bf1aa0cdc3510388a97510a8bdf385b22516bdf9",
-      "testResultSha256": "1238d636e1b7cb0344414a01ab6fb65394a08ff203905c866d8dc44a6775372c"
+      "typecheckResultSha256": "3cbfc41bba9d6cb563e983c7accdfba06ff36817356bb3a3f03e60ad0b694276",
+      "testResultSha256": "49f5f9d10d6930251b88d102ac11b6236c752c3a8eb4f8ce1b4cf5b4aa9b777e"
     },
     "scopedWrite": {
       "status": "passed",
@@ -103,5 +103,5 @@
       "image signature and external attestation"
     ]
   },
-  "contentSha256": "76e18bf26b1fbc5f1204bec58ec0549885148ef9571f69b834f21939956a68fc"
+  "contentSha256": "96a2508cf2564925265ee62e993b63f24754708b9285c4d7e0b210f827f54390"
 }
