@@ -6832,6 +6832,25 @@ drift, or runtime resource drift fail closed. Doctor reports the exact restart,
 rebuild, or resource-repair path instead of silently falling back to
 host-direct execution.
 
+Stage 12 adds a real-daemon security Casebook over the same production
+`CommandRunner` and immutable image. It proves the read-only Workspace mount,
+absence of an outside host file and ambient secret, denied loopback/private
+network access, bounded tmpfs exhaustion, PID rejection, memory cgroup kill,
+wall-time timeout, output capping, caller cancellation, and configured runtime
+identity-drift rejection. Every case must restore the pre-existing
+container/network/scratch sets exactly:
+
+```bash
+npm run check:sandbox-security-casebook
+npm run check:sandbox-security-casebook:live
+```
+
+The ordinary check is offline. The explicit live check creates randomized
+canaries only in memory or temporary private files and retains none of their
+values, paths, command output, Docker output, resource names, endpoints, or
+daemon configuration. The resulting local arm64 receipt is release-gated but
+does not claim multi-platform coverage or S1 completion.
+
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only
 when the mapped container user can run the same isolated standard-library

@@ -7,6 +7,7 @@ import { verifyPackageLockReceipt } from "./check-package-lock.mjs";
 import { verifyRuntimeEnvironmentReceipt } from "./check-runtime-environment.mjs";
 import { verifySandboxImageArtifacts } from "./check-sandbox-image-sbom.mjs";
 import { verifyOciCrashRecoveryArtifact } from "./check-oci-crash-recovery.mjs";
+import { verifySandboxSecurityCasebook } from "./check-sandbox-security-casebook.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -60,6 +61,8 @@ const defaultOciResourceLimitsEvidencePath =
   "docs/artifacts/oci-resource-limits-stage10.json";
 const defaultOciCrashRecoveryEvidencePath =
   "docs/artifacts/oci-crash-recovery-stage11.json";
+const defaultSandboxSecurityCasebookPath =
+  "docs/artifacts/sandbox-security-casebook-stage12.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -141,6 +144,9 @@ export async function auditReleaseArtifacts(options = {}) {
   const ociCrashRecoveryEvidencePath =
     options.ociCrashRecoveryEvidencePath ??
     defaultOciCrashRecoveryEvidencePath;
+  const sandboxSecurityCasebookPath =
+    options.sandboxSecurityCasebookPath ??
+    defaultSandboxSecurityCasebookPath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -563,6 +569,17 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const sandboxSecurityVerification = await verifySandboxSecurityCasebook({
+    repoRoot,
+    artifactPath: sandboxSecurityCasebookPath,
+  });
+  if (!sandboxSecurityVerification.valid) {
+    errors.push(
+      ...sandboxSecurityVerification.errors.map(
+        (error) => `Sandbox security Casebook: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -619,6 +636,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: ociCrashRecoveryVerification.path,
       sha256: ociCrashRecoveryVerification.sha256,
       valid: ociCrashRecoveryVerification.valid,
+    },
+    {
+      kind: "sandbox-security-casebook-stage12",
+      path: sandboxSecurityVerification.path,
+      sha256: sandboxSecurityVerification.sha256,
+      valid: sandboxSecurityVerification.valid,
     },
     {
       kind: "product-performance-baseline",

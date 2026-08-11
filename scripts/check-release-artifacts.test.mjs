@@ -56,6 +56,7 @@ describe("release artifacts audit", () => {
       "sandbox-image-provenance",
       "oci-resource-limits-stage10",
       "oci-crash-recovery-stage11",
+      "sandbox-security-casebook-stage12",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -342,6 +343,28 @@ describe("release artifacts audit", () => {
       expect.arrayContaining([
         expect.stringContaining(
           "OCI crash recovery: OCI crash recovery artifact shape is invalid",
+        ),
+      ]),
+    );
+  });
+
+  it("fails when retained Sandbox security Casebook overclaims completion", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/sandbox-security-casebook-stage12.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.scope.s1Complete = true;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "Sandbox security Casebook: Sandbox security Casebook artifact shape is invalid",
         ),
       ]),
     );
@@ -1065,6 +1088,7 @@ async function createFixture() {
     "sandbox-image-provenance-0.1.0.json",
     "oci-resource-limits-stage10.json",
     "oci-crash-recovery-stage11.json",
+    "sandbox-security-casebook-stage12.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),
@@ -1079,6 +1103,12 @@ async function createFixture() {
     "scripts/oci-crash-recovery-artifact.mjs",
     "scripts/oci-crash-recovery-fixture.mjs",
     "scripts/oci-crash-recovery-live.mjs",
+    "packages/runtime/src/command-execution.ts",
+    "packages/runtime/src/sandboxed-process.ts",
+    "packages/runtime/src/sandbox-container-policy.ts",
+    "scripts/check-sandbox-security-casebook.mjs",
+    "scripts/sandbox-security-casebook-artifact.mjs",
+    "scripts/sandbox-security-casebook-live.mjs",
   ]) {
     await mkdir(path.join(root, path.dirname(relative)), { recursive: true });
     await cp(path.resolve(relative), path.join(root, relative));

@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "3ff51d9463ee5c0e468d643653d7e11634406a95c60c7388bf273692fb44eb0a",
+  "artifactSetSha256": "3f9892e9f8f6f5f15c315b1ba72096ca7b65f45a091ab7cbb25a2fa86b411a0a",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "87521832e579985774d796d98d2aeb1883c6bb3dd0575a6a2009a567b0aa634e",
+      "sha256": "c07570fe5e4db949f8d7cd88dd9d2027c015a41f9e77f3bdcbc7a0824014792a",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "a6b6018468e903ed1b727ccf63cac9ed8c7eff8a39b2029aea4080b11ee4caa4",
+      "sha256": "d69e3d4e02eea32cec673bfe144d8a6225dd2eb33fb05c560deea674e31675e6",
       "valid": true
     },
     {
@@ -42,6 +42,12 @@
       "kind": "oci-crash-recovery-stage11",
       "path": "docs/artifacts/oci-crash-recovery-stage11.json",
       "sha256": "c0c98d1e5f093672bc5bf03b8cd3ec49ab80faf6e744b86bd4bbf11c18e62b4f",
+      "valid": true
+    },
+    {
+      "kind": "sandbox-security-casebook-stage12",
+      "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
+      "sha256": "088267e99552254c745fa5e146801deba90a7933f025610a6ad9b5506414f6d3",
       "valid": true
     },
     {

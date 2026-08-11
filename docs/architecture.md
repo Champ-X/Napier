@@ -767,6 +767,28 @@ scratch paths, child output, Docker output, environment values, and daemon
 endpoint remain unretained. The ordinary command is an offline release-gate
 verification and never performs a crash cycle.
 
+`check-sandbox-security-casebook.mjs --live` reuses the production
+`CommandRunner`, not a benchmark-only launcher. Eleven independently settled
+cases exercise the immutable OCI provider: Workspace write denial; outside-host
+file absence; ambient-secret absence; loopback/private-network denial; 64 MiB
+tmpfs exhaustion; cgroup PID rejection; 1 GiB memory enforcement; wall-time
+termination; per-stream output capping; caller cancellation; and persisted
+identity mismatch rejection. The PID case requires both successful child
+creation and `EAGAIN` rejections below the 256-process cgroup ceiling. The
+memory case allocates beyond the bound and requires an OOM-style exit 137.
+Timeout, output, and cancellation remain distinct outcomes rather than generic
+success.
+
+Each case uses randomized live-only canaries. The receipt stores only stable
+reason codes, durations, bounded PID counts, result/resource/output hashes,
+image/provenance identity, implementation hashes, and exact zero resource
+deltas after the complete run. Canary and credential values, command output,
+Docker output, daemon endpoint, resource names, Workspace/outside paths, and
+network endpoints are prohibited. The ordinary Casebook command verifies this
+Stage 12 receipt offline; only `--live` or `--write` launches containers.
+This is a local `linux/arm64` security result and deliberately retains
+`s1Complete=false`.
+
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath; the 7,025-line Contracts root
 barrel remains unchanged. CLI option parsing and first-use dispatch occupy leaf
