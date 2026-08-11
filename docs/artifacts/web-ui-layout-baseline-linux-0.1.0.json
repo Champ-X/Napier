@@ -1,7 +1,8 @@
 {
   "kind": "napier.web-ui-layout-baseline",
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "platform": "linux",
+  "arch": "arm64",
   "viewports": [
     {
       "width": 1600,

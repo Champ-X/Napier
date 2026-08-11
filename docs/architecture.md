@@ -985,10 +985,11 @@ It then uses the formal Browser Setup preview/exact-apply path before
 `npm run check` and requires `chromiumSandbox=true`. Web E2E therefore receives
 the same pinned, sandboxed, product-verified Chromium runtime as a new user
 instead of relying on runner preinstallation or `--no-sandbox`.
-Responsive geometry remains an exact release gate, but its schema-2 receipt is
+Responsive geometry remains an exact release gate, but its schema-3 receipt is
 host-scoped because the product intentionally uses native system font stacks:
-Darwin and Linux each retain a separate exact baseline, cross-host replay is
-rejected, and an OS without a retained baseline fails closed.
+Darwin arm64, Linux arm64, and Linux x64 each retain a separate exact baseline,
+cross-host replay is rejected, and an OS/architecture pair without a retained
+baseline fails closed.
 
 Publication is split into two states because personal-account GHCR packages are
 private on first creation and making one public is an irreversible package

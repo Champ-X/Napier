@@ -3,25 +3,33 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const DEFAULT_WEB_UI_LAYOUT_BASELINES = Object.freeze({
-  darwin: "docs/artifacts/web-ui-layout-baseline-0.1.0.json",
-  linux: "docs/artifacts/web-ui-layout-baseline-linux-0.1.0.json",
+  "darwin/arm64": "docs/artifacts/web-ui-layout-baseline-0.1.0.json",
+  "linux/arm64": "docs/artifacts/web-ui-layout-baseline-linux-0.1.0.json",
+  "linux/x64": "docs/artifacts/web-ui-layout-baseline-linux-x64-0.1.0.json",
 });
 
-export function defaultWebUiLayoutBaselinePath(platform = process.platform) {
-  const baselinePath = DEFAULT_WEB_UI_LAYOUT_BASELINES[platform];
+export function defaultWebUiLayoutBaselinePath(
+  platform = process.platform,
+  arch = process.arch,
+) {
+  const host = `${platform}/${arch}`;
+  const baselinePath = DEFAULT_WEB_UI_LAYOUT_BASELINES[host];
   if (!baselinePath) {
-    throw new Error(
-      `Unsupported Web UI layout baseline platform: ${platform}`,
-    );
+    throw new Error(`Unsupported Web UI layout baseline host: ${host}`);
   }
   return path.resolve(baselinePath);
 }
 
-export function webUiLayoutBaseline(receipt, platform = process.platform) {
+export function webUiLayoutBaseline(
+  receipt,
+  platform = process.platform,
+  arch = process.arch,
+) {
   return {
     kind: "napier.web-ui-layout-baseline",
-    schemaVersion: 2,
+    schemaVersion: 3,
     platform,
+    arch,
     viewports: receipt.viewports.map((viewport) => ({
       width: viewport.width,
       height: viewport.height,
@@ -38,9 +46,10 @@ export async function verifyWebUiLayoutBaseline(
   receipt,
   baselinePath,
   platform = process.platform,
+  arch = process.arch,
 ) {
   const expected = JSON.parse(await readFile(baselinePath, "utf8"));
-  const observed = webUiLayoutBaseline(receipt, platform);
+  const observed = webUiLayoutBaseline(receipt, platform, arch);
   assert.deepEqual(
     observed,
     expected,
@@ -53,8 +62,9 @@ export async function writeWebUiLayoutBaseline(
   receipt,
   baselinePath,
   platform = process.platform,
+  arch = process.arch,
 ) {
-  const baseline = webUiLayoutBaseline(receipt, platform);
+  const baseline = webUiLayoutBaseline(receipt, platform, arch);
   await writeFile(baselinePath, `${JSON.stringify(baseline, null, 2)}\n`, {
     encoding: "utf8",
     mode: 0o600,

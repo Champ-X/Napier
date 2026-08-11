@@ -17,18 +17,35 @@ describe("Web UI layout baseline", () => {
     const baselinePath = path.join(root, "baseline.json");
     try {
       const receipt = fixture();
-      await writeWebUiLayoutBaseline(receipt, baselinePath, "linux");
+      await writeWebUiLayoutBaseline(
+        receipt,
+        baselinePath,
+        "linux",
+        "arm64",
+      );
       const baseline = JSON.parse(await readFile(baselinePath, "utf8"));
-      expect(baseline).toEqual(webUiLayoutBaseline(receipt, "linux"));
+      expect(baseline).toEqual(
+        webUiLayoutBaseline(receipt, "linux", "arm64"),
+      );
       await expect(
-        verifyWebUiLayoutBaseline(receipt, baselinePath, "linux"),
+        verifyWebUiLayoutBaseline(
+          receipt,
+          baselinePath,
+          "linux",
+          "arm64",
+        ),
       ).resolves.toEqual({ path: baselinePath, matched: true });
       await expect(
-        verifyWebUiLayoutBaseline(receipt, baselinePath, "darwin"),
+        verifyWebUiLayoutBaseline(receipt, baselinePath, "linux", "x64"),
       ).rejects.toThrow("Web UI layout baseline drifted");
       receipt.viewports[0].layoutSnapshot.workbench.width += 1;
       await expect(
-        verifyWebUiLayoutBaseline(receipt, baselinePath, "linux"),
+        verifyWebUiLayoutBaseline(
+          receipt,
+          baselinePath,
+          "linux",
+          "arm64",
+        ),
       ).rejects.toThrow("Web UI layout baseline drifted");
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -36,14 +53,17 @@ describe("Web UI layout baseline", () => {
   });
 
   it("resolves only accepted host baseline paths", () => {
-    expect(defaultWebUiLayoutBaselinePath("darwin")).toMatch(
+    expect(defaultWebUiLayoutBaselinePath("darwin", "arm64")).toMatch(
       /web-ui-layout-baseline-0\.1\.0\.json$/u,
     );
-    expect(defaultWebUiLayoutBaselinePath("linux")).toMatch(
+    expect(defaultWebUiLayoutBaselinePath("linux", "arm64")).toMatch(
       /web-ui-layout-baseline-linux-0\.1\.0\.json$/u,
     );
-    expect(() => defaultWebUiLayoutBaselinePath("win32")).toThrow(
-      "Unsupported Web UI layout baseline platform: win32",
+    expect(defaultWebUiLayoutBaselinePath("linux", "x64")).toMatch(
+      /web-ui-layout-baseline-linux-x64-0\.1\.0\.json$/u,
+    );
+    expect(() => defaultWebUiLayoutBaselinePath("win32", "x64")).toThrow(
+      "Unsupported Web UI layout baseline host: win32/x64",
     );
   });
 });

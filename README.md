@@ -7094,9 +7094,10 @@ Napier's own Browser Setup preview/exact-apply flow before running
 `npm run check`. The product receipt must retain `chromiumSandbox=true`; the
 workflow never falls back to `--no-sandbox`.
 The responsive Web E2E contract remains exact across that release path. Since
-the UI deliberately uses native system fonts, schema-2 layout receipts are
-separate for Darwin and Linux; a receipt from one OS cannot be replayed on the
-other, and unaccepted platforms fail instead of weakening geometry checks.
+the UI deliberately uses native system fonts, schema-3 layout receipts bind
+both OS and architecture: Darwin arm64, Linux arm64, and Linux x64 each retain
+separate geometry. A receipt cannot be replayed across hosts, and unaccepted
+platform/architecture pairs fail instead of weakening geometry checks.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only
