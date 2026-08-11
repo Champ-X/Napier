@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "daeeea51f50c03e3622f2184e971141541fcd2b2e14f432d6634f264904a0b79",
+      "stdoutSha256": "6ccfb06aa6f6ff8631f25d179b976e925cc90d330441c2b4c00759cec83d6232",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "3784c84ec5d6aa9917742388a53589d481ffdbf243a2089e0219c449e69f3914",
-      "receiptSha256": "2f9e5d5a7c923e874f811406675097ea036f84ea774e580427b4137b1795d39e"
+      "evidenceSha256": "74eb9db7216c23238889e635c2d3d2fb9c270db2686cc6ba9b5f45a50150b780",
+      "receiptSha256": "927a981cc4047e29a411bee0f22b76fe49c0c6a15e616ea36f3c51c2d4c2cd23"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "da24d643a1f9682ece7430efbb93fe34427f5aa9509ec9505373e92f19dfc1b5",
+      "stdoutSha256": "2137d7906d984895526d19c504b83dddaf182cc6f70fc9d4b6a4bb61f7718a6f",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "d921abbb15661236905194aa56a77186613da465d071cf36aa407429d623c208",
-      "receiptSha256": "b6e376e80dcf284b1270e23b5728611ae08263171c7ec55cd06754138d3c68dc"
+      "evidenceSha256": "f1c3a2fe5bdad7e2b286fe74291ac85d4d28d6ed42499eaee8a80ae72a9782a8",
+      "receiptSha256": "061d99c8cb53f3c19477c7b6cb52da168e8b814644c1f25aa45df6a172673e3e"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -1172,11 +1172,11 @@
           "lines": 483
         },
         "README.md": {
-          "sha256": "7224f0a0a718bf3afd86ca63600f6692ace60123b14af4695b6cb77f52bd5702",
-          "lines": 7125
+          "sha256": "c39fcc5ff86681baf4dcb3309ff1389a3f5c0a26ca9a53641d16ecba181538f7",
+          "lines": 7130
         },
         "apps/cli/package.json": {
-          "sha256": "2e3b6e8c38ed66550f96159bc9ba037bdc55e41ebcf3a6d13c0c35c498b7f8c4",
+          "sha256": "10827e621b79325d37d27b5c4fbec4fbfa2dd5af2eb641aaf034d4926e3e38c4",
           "lines": 35
         },
         "apps/cli/src/browser-confirmed-form-benchmark-cli.ts": {
@@ -1984,8 +1984,8 @@
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "001e76fd610f32f4268669cb25806079c4cccf1e97e1f8fc1d9487386896fd24",
-          "lines": 9376
+          "sha256": "d22c70948ccd99355705947430bed081eb5f0b9e651c9950abafbe31effc60eb",
+          "lines": 9381
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -2140,11 +2140,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "3784c84ec5d6aa9917742388a53589d481ffdbf243a2089e0219c449e69f3914",
+          "sha256": "74eb9db7216c23238889e635c2d3d2fb9c270db2686cc6ba9b5f45a50150b780",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "d921abbb15661236905194aa56a77186613da465d071cf36aa407429d623c208",
+          "sha256": "f1c3a2fe5bdad7e2b286fe74291ac85d4d28d6ed42499eaee8a80ae72a9782a8",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -2292,7 +2292,7 @@
           "lines": 106
         },
         "packages/runtime/package.json": {
-          "sha256": "fa4507cceb2983e1e8c882982f605ff433f95c8f4d6fb10e395d5b045f1e748e",
+          "sha256": "1cfe456f6f282e3c01de8d5906478725131a11abc82cc871b59728a04125f939",
           "lines": 120
         },
         "packages/runtime/src/agent-capability-override.ts": {
@@ -3889,7 +3889,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "2b4e0825cc56571fa708a80df3519da369f7867279f6a2bec85aa4e850c014d1"
+      "manifestSha256": "c038582c070d5b493504b6602386767cae36fe05502b964c137f708093a422ff"
     },
     "executionClosure": {
       "algorithm": {
@@ -9515,7 +9515,7 @@
               "lines": 67
             },
             "packages/runtime/package.json": {
-              "sha256": "fa4507cceb2983e1e8c882982f605ff433f95c8f4d6fb10e395d5b045f1e748e",
+              "sha256": "1cfe456f6f282e3c01de8d5906478725131a11abc82cc871b59728a04125f939",
               "lines": 120
             },
             "packages/runtime/src/agent-capability-bindings.ts": {
@@ -12023,7 +12023,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "c966b6d185190cf8956f3db15796ed0e9f24b41ee311ae8f702cbf086fcf7629"
+          "manifestSha256": "b417966f90b395dc0b949fdf974f41725ed1e865fe45d3e1b50dcf4d4caab34b"
         },
         "productionServerTrace": {
           "roots": [
@@ -17052,7 +17052,7 @@
               "lines": 67
             },
             "packages/runtime/package.json": {
-              "sha256": "fa4507cceb2983e1e8c882982f605ff433f95c8f4d6fb10e395d5b045f1e748e",
+              "sha256": "1cfe456f6f282e3c01de8d5906478725131a11abc82cc871b59728a04125f939",
               "lines": 120
             },
             "packages/runtime/src/agent-capability-bindings.ts": {
@@ -19552,7 +19552,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "1aa80b0b82db70e1e39bf2b20c7dbadd2d945b5959ac86fe21196150178c116c"
+          "manifestSha256": "d338ec74c2cb2d469db7f41a78bff1cf3980851402d51841c0a6520ff6e3ac32"
         }
       },
       "excludedCategories": [
@@ -19581,9 +19581,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "e12b58e02ffd2bd830a2a5aca4a295935baff1507183f74ca56c74fd6d5c07c7"
+      "manifestSha256": "9ddf394224fd5588a0495e2e03ccc604ee729587da004f94eb386b94966fd01f"
     },
-    "manifestSha256": "e6a221d51a4c740d02ff3d8dc21cc5dab285e2ba8911e25cf66034035d6f556a"
+    "manifestSha256": "9471a7a3bb859e67184307a6aaa14115372d542d99d5a9fc85d99d81979044f6"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -19771,11 +19771,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "3784c84ec5d6aa9917742388a53589d481ffdbf243a2089e0219c449e69f3914"
+      "sha256": "74eb9db7216c23238889e635c2d3d2fb9c270db2686cc6ba9b5f45a50150b780"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "d921abbb15661236905194aa56a77186613da465d071cf36aa407429d623c208"
+      "sha256": "f1c3a2fe5bdad7e2b286fe74291ac85d4d28d6ed42499eaee8a80ae72a9782a8"
     }
   }
 }

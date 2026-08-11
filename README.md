@@ -7098,6 +7098,11 @@ the UI deliberately uses native system fonts, schema-3 layout receipts bind
 both OS and architecture: Darwin arm64, Linux arm64, and Linux x64 each retain
 separate geometry. A receipt cannot be replayed across hosts, and unaccepted
 platform/architecture pairs fail instead of weakening geometry checks.
+CLI and Runtime workspace suites retain every test and existing per-test
+deadline but run with at most two Vitest workers, matching both the hosted
+release runner and the image-bound verification path. This prevents CPU
+oversubscription from turning timing, compensation, and LSP assertions into
+false failures without retrying or skipping them.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only

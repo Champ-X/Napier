@@ -990,6 +990,11 @@ host-scoped because the product intentionally uses native system font stacks:
 Darwin arm64, Linux arm64, and Linux x64 each retain a separate exact baseline,
 cross-host replay is rejected, and an OS/architecture pair without a retained
 baseline fails closed.
+The release runner exposes two CPUs, so CLI and Runtime package tests use a
+two-worker Vitest ceiling, the same concurrency already used by production
+verification. All cases and original per-test deadlines remain intact; the
+ceiling removes oversubscription-induced deadline and compensation races rather
+than adding retries or suppressing failures.
 
 Publication is split into two states because personal-account GHCR packages are
 private on first creation and making one public is an irreversible package
