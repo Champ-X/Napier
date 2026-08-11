@@ -43,6 +43,7 @@ interface LspCodeActionMaterializationOptions {
   sourcePath: string;
   sourcePathSha256: string;
   sourceFileSha256: string;
+  toHostUri?: (uri: string) => string | undefined;
   signal?: AbortSignal;
 }
 
@@ -134,7 +135,10 @@ async function materializeCodeAction(
           options.workspaceRoot,
           candidate,
           "LSP code action",
-          { allowLineBreakInsertion: true },
+          {
+            allowLineBreakInsertion: true,
+            ...(options.toHostUri ? { toHostUri: options.toHostUri } : {}),
+          },
         );
       } catch (error) {
         throw new Error(

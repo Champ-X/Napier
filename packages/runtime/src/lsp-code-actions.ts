@@ -88,6 +88,7 @@ export class LspCodeActionsRunner {
           sourcePath: prepared.relativePath,
           sourcePathSha256: sha256(prepared.relativePath),
           sourceFileSha256: prepared.fileSha256,
+          toHostUri: prepared.toHostUri,
           ...(request.signal ? { signal: request.signal } : {}),
         },
         parsed.actions,

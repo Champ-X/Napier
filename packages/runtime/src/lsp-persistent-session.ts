@@ -1,5 +1,4 @@
 import { realpath } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
 
 import {
   createMessageConnection,
@@ -8,6 +7,14 @@ import {
   type MessageConnection,
 } from "vscode-jsonrpc/node.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  assertPersistentLspRequest,
+  persistentLspWorkspaceSnapshot,
+} from "./lsp-persistent-session-binding.js";
+import {
+  protocolTargetUri,
+  protocolWorkspaceRootUri,
+} from "./lsp-protocol-path-binding.js";
 import {
   initializeLspConnection,
   type LspProtocolExecutor,
@@ -21,10 +28,6 @@ import {
 } from "./lsp-protocol-session.js";
 import type { OsSandboxAdapter, SandboxedProcess } from "./sandbox.js";
 import { LSP_FIXED_ENVIRONMENT } from "./lsp-source-session.js";
-import {
-  createWorkspacePathSnapshot,
-  type WorkspacePathSnapshot,
-} from "./workspace-snapshot.js";
 
 export const MAX_ACTIVE_LSP_SESSIONS = 4;
 export const MAX_LSP_SESSION_OPERATIONS = 32;
@@ -101,7 +104,7 @@ export class RunLspSessionManager {
     prepareOperation: PrepareLspProtocolOperation<T>,
     signal?: AbortSignal,
   ): Promise<LspProtocolSessionResult<T>> {
-    assertPersistentRequest(request, await realpath(this.workspaceRoot));
+    assertPersistentLspRequest(request, await realpath(this.workspaceRoot));
     if (signal?.aborted) throw new Error(request.abortedMessage);
     const before = await workspaceSnapshot(request.workspaceRoot);
     let managed = this.sessions.get(key);
@@ -291,7 +294,11 @@ class PersistentLspProtocolSession {
           }),
     });
     const session = new PersistentLspProtocolSession(child);
-    registerLspClientHandlers(session.connection, request.workspaceRoot);
+    registerLspClientHandlers(
+      session.connection,
+      request.workspaceRoot,
+      protocolWorkspaceRootUri(request),
+    );
     session.connection.listen();
     return session;
   }
@@ -327,7 +334,7 @@ class PersistentLspProtocolSession {
         );
         this.initialized = true;
       }
-      const targetUri = pathToFileURL(request.target).href;
+      const targetUri = protocolTargetUri(request);
       const collect = prepareOperation(this.connection, targetUri);
       const previousVersion = this.documentVersions.get(targetUri);
       const version = await raceFailure(
@@ -418,45 +425,10 @@ class PersistentLspProtocolSession {
   }
 }
 
-function assertPersistentRequest(
-  request: LspProtocolSessionRequest,
-  workspaceRoot: string,
-): void {
-  if (request.workspaceRoot !== workspaceRoot) {
-    throw new Error(
-      `${request.label} persistent Session workspace binding is invalid`,
-    );
-  }
-  if (!request.nodeExecutable || !request.languageServerPath) {
-    throw new Error(
-      `${request.label} persistent Session executable binding is invalid`,
-    );
-  }
-  if (!request.languageServerRoot || !request.typescriptRoot) {
-    throw new Error(
-      `${request.label} persistent Session runtime scope is invalid`,
-    );
-  }
-  if (!request.runtimeIdentitySha256) {
-    throw new Error(
-      `${request.label} persistent Session runtime identity is invalid`,
-    );
-  }
-  if (
-    request.runtimeLocation !== undefined &&
-    request.runtimeLocation !== "host" &&
-    request.runtimeLocation !== "provider"
-  ) {
-    throw new Error(
-      `${request.label} persistent Session runtime location is invalid`,
-    );
-  }
-}
-
 function workspaceSnapshot(
   workspaceRoot: string,
-): Promise<WorkspacePathSnapshot> {
-  return createWorkspacePathSnapshot(workspaceRoot, workspaceRoot, {
+): ReturnType<typeof persistentLspWorkspaceSnapshot> {
+  return persistentLspWorkspaceSnapshot(workspaceRoot, {
     maxFiles: MAX_LSP_SESSION_WORKSPACE_FILES,
     maxBytes: MAX_LSP_SESSION_WORKSPACE_BYTES,
   });

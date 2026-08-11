@@ -1,5 +1,3 @@
-import { pathToFileURL } from "node:url";
-
 import type { LspRenameDetails } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -123,10 +121,11 @@ export class LspRenameRunner {
       const location = await workspaceLspLocation(
         prepared.workspaceRoot,
         {
-          uri: pathToFileURL(prepared.target).href,
+          uri: prepared.protocolTargetUri,
           range: prepare.range,
         },
         "LSP rename prepare",
+        { toHostUri: prepared.toHostUri },
       );
       if (!location) {
         throw new Error("LSP rename prepare target is unavailable");
@@ -141,6 +140,7 @@ export class LspRenameRunner {
           prepared.workspaceRoot,
           candidate,
           "LSP rename",
+          { toHostUri: prepared.toHostUri },
         );
         if (!location) {
           throw new Error(

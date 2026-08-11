@@ -60,6 +60,7 @@ describe("release artifacts audit", () => {
       "sandbox-product-acceptance-stage13",
       "sandbox-multi-architecture-stage14",
       "sandbox-portable-process-stage15",
+      "sandbox-portable-lsp-stage16",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -434,6 +435,28 @@ describe("release artifacts audit", () => {
       expect.arrayContaining([
         expect.stringContaining(
           "Sandbox portable process: Sandbox portable process artifact shape is invalid",
+        ),
+      ]),
+    );
+  });
+
+  it("fails when retained Sandbox portable LSP parity is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/sandbox-portable-lsp-stage16.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.productionParity.definition.equal = false;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "Sandbox portable LSP: Sandbox portable LSP artifact shape is invalid",
         ),
       ]),
     );
@@ -1163,6 +1186,7 @@ async function createFixture() {
     "sandbox-product-acceptance-stage13.json",
     "sandbox-multi-architecture-stage14.json",
     "sandbox-portable-process-stage15.json",
+    "sandbox-portable-lsp-stage16.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),
@@ -1218,6 +1242,18 @@ async function createFixture() {
     "scripts/check-sandbox-portable-process.mjs",
     "scripts/sandbox-portable-process-artifact.mjs",
     "scripts/sandbox-portable-process-live.mjs",
+    "packages/runtime/src/sandbox-types.ts",
+    "packages/runtime/src/sandbox-container-lsp-runtime.ts",
+    "packages/runtime/src/lsp-runtime-assets.ts",
+    "packages/runtime/src/lsp-protocol-path-binding.ts",
+    "packages/runtime/src/lsp-protocol-session.ts",
+    "packages/runtime/src/lsp-source-session.ts",
+    "packages/runtime/src/lsp-persistent-session.ts",
+    "packages/runtime/src/lsp-persistent-session-binding.ts",
+    "packages/runtime/src/lsp-locations.ts",
+    "scripts/check-sandbox-portable-lsp.mjs",
+    "scripts/sandbox-portable-lsp-artifact.mjs",
+    "scripts/sandbox-portable-lsp-live.mjs",
   ]) {
     await mkdir(path.join(root, path.dirname(relative)), { recursive: true });
     await cp(path.resolve(relative), path.join(root, relative));

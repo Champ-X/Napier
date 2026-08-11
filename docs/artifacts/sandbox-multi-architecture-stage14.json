@@ -1,7 +1,7 @@
 {
   "kind": "napier.sandbox-multi-architecture-stage14",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T05:36:53.429Z",
+  "generatedAt": "2026-08-11T06:10:33.654Z",
   "source": {
     "dockerfilePath": "docker/napier-sandbox/Dockerfile",
     "dockerfileSha256": "8f6af9646f2239818267b25b0b948d44c62eb85a63844dc45c1dfebb77e1bcef",
@@ -17,7 +17,7 @@
     "launchPolicySha256": "7dcde3a01b32f46f95c8cade2d673231b007da6225c7b058b6f6fed592abe0fa",
     "ociAdapterSha256": "74c37f02870cb9a8ec4e849df200589b2921e91011c9ffe34805e17ed28fa4b0",
     "ociLaunchArgumentsSha256": "8e5eec25188b6f9d323e71d7d300ac6fd57996a0d29b19351886815be96f5c88",
-    "lspProbeSha256": "964fd1f0d5fd2d15011c9f5711c835179c08b5c279be060afb9bb4e7432b894f",
+    "lspProbeSha256": "e2c4e6654d1607d4618bdd8017d1cdaee6b46656980803960ae60fef4af85a23",
     "checkScriptSha256": "e65d26760740fba26a5c94ef9549a3f5307a73d6f3289a1c03194437290da9bc",
     "artifactVerifierSha256": "24851beebd112d98b0c06f59298b83174aedb445179838628d80a7b54ccba814",
     "liveHarnessSha256": "5247ed5c672a274c88262998c031c115d9f262003643484d2510bc4864230d58"
@@ -45,7 +45,7 @@
       "buildStatus": "passed",
       "buildOutputSha256": "bbe6894042fd8ee9d7ad7928146359b37e2e2d09ca12e00024c5b1999cde4ca6",
       "buildOutputBytes": 72,
-      "durationMs": 80647,
+      "durationMs": 79764,
       "checkCodes": [
         "sandbox_process_ready",
         "sandbox_resources_ready",
@@ -70,17 +70,17 @@
         "prettier": "3.8.4",
         "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
         "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
-        "runtimeIdentitySha256": "27778ee7e4c5182782cad5ff72e58c01af3da4388598e7601121236b4145c697"
+        "runtimeIdentitySha256": "b072d57b2e3a107f4a9a87c00df73a68ae066e4e5b614f48d641590ceb4782b8"
       },
       "verification": {
         "typecheckStatus": "passed",
         "testStatus": "passed",
         "typecheckVersion": "5.9.3",
         "testVersion": "4.1.9",
-        "typecheckResultSha256": "1d2023745f075348e8d79d67f22fc27be2510c8a25bd5803a4bd6ccfb455733a",
-        "testResultSha256": "da637a933be29660c0beaf87f59d0df0353e5543bcbab64b742e519395f11a09"
+        "typecheckResultSha256": "83dedd73d3bde301b38db4642b4b3837f939924faed61a9d91f8c429c7f39ee6",
+        "testResultSha256": "756d81cf4759d08072dc054f4c4dbdf4c953fc7356cc798321e2d278882ab657"
       },
-      "evidenceSha256": "6334ae25a089ded8197b721f5c21809699426ef98fd8d87f202f7ff06a419916"
+      "evidenceSha256": "f3a38618881b598fc2db9992a636f2a4d48d018bd1902ad86a8dd75b2d40b01e"
     },
     {
       "platform": "linux/arm64",
@@ -89,7 +89,7 @@
       "buildStatus": "passed",
       "buildOutputSha256": "8890db1daaf9cbe02debfb2d84df0f72a090022c32912a38cfbc9eecf21c27d2",
       "buildOutputBytes": 72,
-      "durationMs": 9170,
+      "durationMs": 9782,
       "checkCodes": [
         "sandbox_process_ready",
         "sandbox_resources_ready",
@@ -114,17 +114,17 @@
         "prettier": "3.8.4",
         "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
         "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
-        "runtimeIdentitySha256": "148ec465d90b893eacf3125d453b9a341a7e266322c43f05c2d9171e40031a03"
+        "runtimeIdentitySha256": "8e7d5d7060aa513855f3f6125be6d4a03f535c43357563627efe776c703f9fee"
       },
       "verification": {
         "typecheckStatus": "passed",
         "testStatus": "passed",
         "typecheckVersion": "5.9.3",
         "testVersion": "4.1.9",
-        "typecheckResultSha256": "a2824ea1b3ee61b854eaf5232008ba026875f0ae2ae537616feb47be8b3da39f",
-        "testResultSha256": "97f663292ece7d461d964dddc7fd9e60fdef3d23974e72fb8d8f95170f82528b"
+        "typecheckResultSha256": "02bfe909e60044ccce6a1004463a92d3257c2dd431d3f90f055dc65c707f33a0",
+        "testResultSha256": "253cb078f460ed0b16616a04fa7e0c62c29d79041ff164464c63d3b193fd8e07"
       },
-      "evidenceSha256": "b3856a5049033641e9c61404af1bba849d00a432a5b970161a1f833a870a3098"
+      "evidenceSha256": "14fb0768197f39db72f67fa396ea4bfeb868d8662318071dd4372a9d81317191"
     }
   ],
   "parity": {
@@ -133,7 +133,7 @@
     "manifestHashesEqual": true,
     "allProductionChecksReady": true,
     "explicitPlatformLaunch": true,
-    "evidenceSha256": "c01e88fbd9d29b05c0110d8b27496b047d7fd3bab5fddac1ed1394eeef2400b9"
+    "evidenceSha256": "c6da47ae1c74358273fdce709795e36a0550eed098c699f89e8cf00772b5fa40"
   },
   "resourceClosure": {
     "exactBaselineRestored": true,
@@ -166,5 +166,5 @@
       "Windows and Linux host product acceptance"
     ]
   },
-  "contentSha256": "496325f43b04f9027438f2c6c7f8d4f5b181235d8c77a51d8073abd25b5d57f0"
+  "contentSha256": "a51ed6f2fbca1692c873454d24887e7f2032dcb825dca845c13e5fbb452d0e6a"
 }

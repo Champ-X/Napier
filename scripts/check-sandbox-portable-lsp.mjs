@@ -5,18 +5,18 @@ import { fileURLToPath } from "node:url";
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
 import { verifySandboxImageArtifacts } from "./check-sandbox-image-sbom.mjs";
 import {
-  sandboxPortableProcessImplementation,
-  validateSandboxPortableProcessArtifact,
-} from "./sandbox-portable-process-artifact.mjs";
-import { runSandboxPortableProcessAcceptance } from "./sandbox-portable-process-live.mjs";
+  sandboxPortableLspImplementation,
+  validateSandboxPortableLspArtifact,
+} from "./sandbox-portable-lsp-artifact.mjs";
+import { runSandboxPortableLspAcceptance } from "./sandbox-portable-lsp-live.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 const DEFAULT_ARTIFACT_PATH =
-  "docs/artifacts/sandbox-portable-process-stage15.json";
+  "docs/artifacts/sandbox-portable-lsp-stage16.json";
 const PROVENANCE_PATH = "docs/artifacts/sandbox-image-provenance-0.1.0.json";
 
-export async function collectSandboxPortableProcess(options = {}) {
+export async function collectSandboxPortableLsp(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
   const provenance = await readJson(
     path.join(repoRoot, PROVENANCE_PATH),
@@ -39,14 +39,14 @@ export async function collectSandboxPortableProcess(options = {}) {
   ) {
     throw new Error("Sandbox image provenance identity is invalid");
   }
-  const live = await runSandboxPortableProcessAcceptance({
+  const live = await runSandboxPortableLspAcceptance({
     repoRoot,
     imageId: image.id,
     dependencies: options.dependencies,
   });
-  const implementation = await sandboxPortableProcessImplementation(repoRoot);
+  const implementation = await sandboxPortableLspImplementation(repoRoot);
   const withoutHash = {
-    kind: "napier.sandbox-portable-process-stage15",
+    kind: "napier.sandbox-portable-lsp-stage16",
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
     image: {
@@ -58,21 +58,20 @@ export async function collectSandboxPortableProcess(options = {}) {
     ...live,
     retention: {
       credentialValues: false,
-      rawCommandOutput: false,
+      rawDiagnostics: false,
+      rawSymbols: false,
+      rawLocations: false,
       rawDockerOutput: false,
-      rawGitOutput: false,
       workspacePaths: false,
-      temporaryPaths: false,
       numericHostUserIds: false,
       resourceNames: false,
     },
     scope: {
       sliceComplete: true,
       s1Complete: false,
-      portableProcessPlane: true,
+      portableLspReadPlane: true,
       windowsHostExecuted: false,
-      windowsLspReadPathsComplete: true,
-      windowsProtocolPathsComplete: false,
+      portableDapComplete: false,
       remaining: [
         "portable DAP protocol path translation",
         "Windows and Linux host product acceptance",
@@ -87,22 +86,22 @@ export async function collectSandboxPortableProcess(options = {}) {
   };
 }
 
-export async function verifySandboxPortableProcess(options = {}) {
+export async function verifySandboxPortableLsp(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
   const artifactPath = resolveRepoPath(
     repoRoot,
     options.artifactPath ?? DEFAULT_ARTIFACT_PATH,
   );
   const [value, provenance, implementation] = await Promise.all([
-    readJson(artifactPath, "Sandbox portable process artifact"),
+    readJson(artifactPath, "Sandbox portable LSP artifact"),
     readJson(path.join(repoRoot, PROVENANCE_PATH), "Sandbox image provenance"),
-    sandboxPortableProcessImplementation(repoRoot),
+    sandboxPortableLspImplementation(repoRoot),
   ]);
   const imageVerification = await verifySandboxImageArtifacts({
     repoRoot,
     verifyReceiptPath: PROVENANCE_PATH,
   });
-  const errors = validateSandboxPortableProcessArtifact(
+  const errors = validateSandboxPortableLspArtifact(
     value,
     provenance,
     implementation,
@@ -116,7 +115,7 @@ export async function verifySandboxPortableProcess(options = {}) {
   }
   if (value.image?.provenanceSha256 !== imageVerification.receiptSha256) {
     errors.push(
-      "Sandbox portable process provenance SHA-256 does not match the receipt",
+      "Sandbox portable LSP provenance SHA-256 does not match the receipt",
     );
   }
   return {
@@ -132,10 +131,10 @@ async function runCli() {
   const live = args.includes("--live") || args.includes("--write");
   const write = args.includes("--write");
   if (args.some((arg) => !["--live", "--write"].includes(arg))) {
-    throw new Error("Unknown Sandbox portable process option");
+    throw new Error("Unknown Sandbox portable LSP option");
   }
   if (live) {
-    const artifact = await collectSandboxPortableProcess();
+    const artifact = await collectSandboxPortableLsp();
     if (write) {
       await writeJson(
         path.join(defaultRepoRoot, DEFAULT_ARTIFACT_PATH),
@@ -143,18 +142,18 @@ async function runCli() {
       );
     }
     console.log(
-      `Sandbox portable process ${write ? "written" : "verified live"}: ${artifact.portableIdentity.mapping}`,
+      `Sandbox portable LSP ${write ? "written" : "verified live"}: ${artifact.productionParity.allEqual ? "parity" : "failed"}`,
     );
     return;
   }
-  const result = await verifySandboxPortableProcess();
+  const result = await verifySandboxPortableLsp();
   if (!result.valid) {
     for (const error of result.errors) console.error(error);
     process.exitCode = 1;
     return;
   }
   console.log(
-    `Sandbox portable process verified: ${result.path} ${result.sha256.slice(0, 16)}`,
+    `Sandbox portable LSP verified: ${result.path} ${result.sha256.slice(0, 16)}`,
   );
 }
 

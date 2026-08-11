@@ -22,6 +22,7 @@ export interface LspRuntimeResolutionOptions {
 export interface LspRuntimeAssets {
   nodeExecutable: string;
   nodeExecutableSha256: string;
+  protocolWorkspaceRoot?: string;
   languageServerPath: string;
   languageServerRoot: string;
   languageServerVersion: string;
@@ -162,6 +163,9 @@ function providerAssets(binding: SandboxLspRuntimeBinding): LspRuntimeAssets {
   return {
     nodeExecutable: binding.nodeExecutable,
     nodeExecutableSha256: binding.nodeExecutableSha256,
+    ...(binding.protocolWorkspaceRoot
+      ? { protocolWorkspaceRoot: binding.protocolWorkspaceRoot }
+      : {}),
     languageServerPath: binding.languageServerPath,
     languageServerRoot: binding.languageServerRoot,
     languageServerVersion: binding.languageServerVersion,
@@ -196,6 +200,8 @@ function validateLspProviderBinding(binding: SandboxLspRuntimeBinding): void {
         /[\u0000-\u001f\u007f]/u.test(candidate),
     ) ||
     hashes.some((candidate) => !/^[a-f0-9]{64}$/u.test(candidate)) ||
+    (binding.protocolWorkspaceRoot !== undefined &&
+      binding.protocolWorkspaceRoot !== "/workspace") ||
     !version(binding.languageServerVersion) ||
     !version(binding.typescriptVersion) ||
     !posixPathInside(binding.languageServerPath, binding.languageServerRoot) ||

@@ -18,6 +18,7 @@ import {
   type PrepareLspProtocolOperation,
   runLspProtocolSession,
 } from "./lsp-protocol-session.js";
+import { createLspProtocolPathBinding } from "./lsp-protocol-path-binding.js";
 import { resolveLspRuntimeReadPaths } from "./lsp-runtime-read-paths.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
@@ -68,6 +69,8 @@ export interface PreparedLspSource {
   fileBytes: number;
   timeoutMs: number;
   assets: LspRuntimeAssets;
+  protocolTargetUri: string;
+  toHostUri(uri: string): string | undefined;
 }
 
 export class LspDiagnosticsTargetDriftError extends Error {
@@ -199,6 +202,14 @@ async function prepareLspSource(
   } catch {
     throw new Error(`${label} target must be valid UTF-8`);
   }
+  const assets = await resolveLspRuntimeAssets(options);
+  const pathBinding = createLspProtocolPathBinding({
+    workspaceRoot,
+    target,
+    ...(assets.protocolWorkspaceRoot
+      ? { protocolWorkspaceRoot: assets.protocolWorkspaceRoot }
+      : {}),
+  });
   return {
     workspaceRoot,
     target,
@@ -208,7 +219,9 @@ async function prepareLspSource(
     fileSha256: sha256(buffer),
     fileBytes: buffer.byteLength,
     timeoutMs,
-    assets: await resolveLspRuntimeAssets(options),
+    assets,
+    protocolTargetUri: pathBinding.targetUri,
+    toHostUri: pathBinding.toHostUri,
   };
 }
 
@@ -240,6 +253,9 @@ function createProtocolRequest(
     runtimeLocation: prepared.assets.runtimeIdentitySha256
       ? "provider"
       : "host",
+    ...(prepared.assets.protocolWorkspaceRoot
+      ? { protocolWorkspaceRoot: prepared.assets.protocolWorkspaceRoot }
+      : {}),
   };
 }
 

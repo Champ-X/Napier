@@ -1,0 +1,95 @@
+{
+  "kind": "napier.sandbox-portable-lsp-stage16",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-11T06:10:55.651Z",
+  "image": {
+    "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
+    "platform": "linux/arm64",
+    "provenanceSha256": "cea0625e085acdd78a0941229a29bfdc5c0cb3dc226cf9d0a79d6e4753778e7c"
+  },
+  "implementation": {
+    "sandboxTypesSha256": "42cf5c103156322f2fabe2ec2def95b24e56c0445fd18680767a7f86bf3bb964",
+    "containerLspRuntimeSha256": "316f5c5286852e296fb928c30abeddd6b81d8f5faad8b1322e9385301f09cc06",
+    "runtimeAssetsSha256": "4bbc728e950d912335969c5a92c92b5c19b1e7c4dd6086c18631b28c4349af43",
+    "protocolPathBindingSha256": "2b698624eff657f47d1e5b002fb27c6f6cf1d61cf1fe9c80747a724cf651195b",
+    "protocolSessionSha256": "7405bbd5d20f7f8bcf87171f8495eca7321aca4855ac0325893bfb0c43a5f25d",
+    "sourceSessionSha256": "1ae095ee7aca98a216e959aa34bf8494fad0e42367c0d21ced43a9e348711a0c",
+    "persistentSessionSha256": "2bc3724966ec8a76978f5fbc31ce1a30372e2af1952c6b889911037d8621f750",
+    "persistentBindingSha256": "f1e296fd0ff73d466005842c22a5e17b84bfced52eaa2ba0d3b602ed262c168d",
+    "locationsSha256": "2afd498635157e2726541737ba3f2782763560be3c9fa49422760e15ca83ced0",
+    "checkScriptSha256": "52d3d5898b57d7c3df7fa31ba1f2547feda646d728dbfa84ad201690ec45eec4",
+    "artifactVerifierSha256": "e7d4c0e822b5115d84d4e0ba08154845543ab08f1937d69a7995c0827702a93a",
+    "liveHarnessSha256": "ce89d05a7f88ca94c618b557c1ee2e8679fe39d673662c2a2a020326111ded5d"
+  },
+  "protocolBinding": {
+    "protocolWorkspaceRoot": "/workspace",
+    "workspaceRootMapped": true,
+    "targetUriMapped": true,
+    "hostUriRestored": true,
+    "escapeRejected": true,
+    "authorityRejected": true,
+    "queryRejected": true,
+    "bindingSha256": "2f08fd6ebb40f95bbe8f0763500336b209a10f19bd38970101de930a141e012a"
+  },
+  "productionParity": {
+    "hostPlatform": "darwin",
+    "sandbox": "oci-container",
+    "sameTarget": true,
+    "diagnostics": {
+      "hostStatus": "clean",
+      "portableStatus": "clean",
+      "equal": true,
+      "hostResultSha256": "a6606069f2063718cfc8642749aaeaa7d7dfd3fd8cf1db9b9045cde074e1b015",
+      "portableResultSha256": "45051034c8f6b38d798f79c9b2c7d3af86be550da5f631503d4ce52d1745d06d",
+      "projectionSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "symbols": {
+      "hostStatus": "found",
+      "portableStatus": "found",
+      "equal": true,
+      "hostResultSha256": "76a55d2e64c5501d337166dc187ffe8e27ba8541619acb2c6eb498195526b3d1",
+      "portableResultSha256": "b10219857ad0393aa274bd97faa19a48319883bf6d3e1368289994051ee16e12",
+      "projectionSha256": "ff8bde65f43f72ad69b0165d3c0cf5364b59fd08586fbf8c4cafc363865c2f98"
+    },
+    "definition": {
+      "hostStatus": "found",
+      "portableStatus": "found",
+      "equal": true,
+      "hostResultSha256": "bf0a9357dabf3f5a29f2b52c0a54baa492b800a7c5d1abd27b4918a525490e27",
+      "portableResultSha256": "1357a19896f0e6d7e54b46b6af4264ae0a0caa9c2c091aae8dfcaa13d94c7c53",
+      "projectionSha256": "1b55452dd4c7d8ab244f134aae5e0a331851cc50bb6a1c0f0f6ed75a0fc82427"
+    },
+    "allEqual": true,
+    "evidenceSha256": "1cb37312cce483ef309a7ec6b780e3aeafe074e7fca5a53bb5e91e9fe64476b3"
+  },
+  "resourceClosure": {
+    "exactBaselineRestored": true,
+    "containerDeltaCount": 0,
+    "networkDeltaCount": 0,
+    "scratchDeltaCount": 0
+  },
+  "retention": {
+    "credentialValues": false,
+    "rawDiagnostics": false,
+    "rawSymbols": false,
+    "rawLocations": false,
+    "rawDockerOutput": false,
+    "workspacePaths": false,
+    "numericHostUserIds": false,
+    "resourceNames": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "portableLspReadPlane": true,
+    "windowsHostExecuted": false,
+    "portableDapComplete": false,
+    "remaining": [
+      "portable DAP protocol path translation",
+      "Windows and Linux host product acceptance",
+      "multi-architecture registry publication",
+      "image signature and external attestation"
+    ]
+  },
+  "contentSha256": "2b79f65f0c1f7e26b26b267079e4835a2c41ac97372ada9be88aa9146caf6f5a"
+}

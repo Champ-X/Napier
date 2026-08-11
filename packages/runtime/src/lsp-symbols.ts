@@ -1,5 +1,3 @@
-import { pathToFileURL } from "node:url";
-
 import type { LspSymbolsDetails } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -75,7 +73,7 @@ export class LspSymbolsRunner {
     const { prepared, execution, durationMs } = bound;
     const parsed = parseLspDocumentSymbols(execution.value, {
       source: prepared.source,
-      targetUri: pathToFileURL(prepared.target).href,
+      targetUri: prepared.protocolTargetUri,
       maxSymbols,
     });
     const symbolReceipts = parsed.symbols.map(lspDocumentSymbolReceipt);

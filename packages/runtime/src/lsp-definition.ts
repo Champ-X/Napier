@@ -89,6 +89,7 @@ export class LspDefinitionRunner {
         prepared.workspaceRoot,
         candidate,
         "LSP definition",
+        { toHostUri: prepared.toHostUri },
       );
       if (!location) {
         omittedDefinitionCount += 1;

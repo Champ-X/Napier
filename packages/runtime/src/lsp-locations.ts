@@ -27,6 +27,7 @@ export interface LspLocationCandidate {
 
 export interface LspWorkspaceLocationOptions {
   allowLineBreakInsertion?: boolean;
+  toHostUri?: (uri: string) => string | undefined;
 }
 
 export interface LspWorkspaceLocation {
@@ -142,7 +143,11 @@ export async function workspaceLspLocation(
 ): Promise<LspWorkspaceLocation | undefined> {
   let lexical: string;
   try {
-    const url = new URL(candidate.uri);
+    const hostUri = options.toHostUri
+      ? options.toHostUri(candidate.uri)
+      : candidate.uri;
+    if (!hostUri) return undefined;
+    const url = new URL(hostUri);
     if (url.protocol !== "file:") return undefined;
     lexical = path.resolve(fileURLToPath(url));
   } catch {

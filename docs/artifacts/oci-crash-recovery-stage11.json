@@ -1,7 +1,7 @@
 {
   "kind": "napier.oci-crash-recovery-stage11",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T05:34:55.817Z",
+  "generatedAt": "2026-08-11T06:08:37.276Z",
   "image": {
     "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
     "platform": "linux/arm64",
@@ -26,8 +26,8 @@
       "index": 1,
       "runtimeSignal": "SIGKILL",
       "serviceReady": true,
-      "serviceIdentitySha256": "f5852db14cdb571471ef0671967e286f4c88933f547296d0133ec02381230766",
-      "endpointSha256": "1251bf3e7acc4b46871a1a571c71dfedd6ae6262afcb40d691374e93f3d05f30",
+      "serviceIdentitySha256": "cfea26e723922830b2f03c485ba3c7c369235e57f232516ac340081b19effdf6",
+      "endpointSha256": "06c3859971d064b585706f89f31484c59e3aa331f5b0234a1ae76241b8159a5a",
       "containerDeltaCount": 1,
       "networkDeltaCount": 1,
       "scratchDeltaCount": 1,
@@ -36,14 +36,14 @@
       "scratchCleanupVerified": true,
       "endpointClosedVerified": true,
       "exactBaselineRestored": true,
-      "cleanupDurationMs": 418
+      "cleanupDurationMs": 429
     },
     {
       "index": 2,
       "runtimeSignal": "SIGKILL",
       "serviceReady": true,
-      "serviceIdentitySha256": "48487b9fb933185c7948c33c4286f9c3f400e651f5bc36b028fa7755e770aef4",
-      "endpointSha256": "9a0586c9b13b1d84a714f9898e7baa14ccf6881d435b9361d19c9febdc8973f5",
+      "serviceIdentitySha256": "b6a30a25befd7c4fe9b994310ec03bdb49a7fe483905160d077e8dcd967fc9a7",
+      "endpointSha256": "c2acac01e4f7c4ced7ff02ef254f3e829df1d359846e2eeacde34fbf2fdf50e0",
       "containerDeltaCount": 1,
       "networkDeltaCount": 1,
       "scratchDeltaCount": 1,
@@ -52,7 +52,7 @@
       "scratchCleanupVerified": true,
       "endpointClosedVerified": true,
       "exactBaselineRestored": true,
-      "cleanupDurationMs": 423
+      "cleanupDurationMs": 434
     }
   ],
   "recovery": {
@@ -87,5 +87,5 @@
       "full file-network-secret-resource failure injection"
     ]
   },
-  "contentSha256": "29af4f6dca86b9d043c4c85488a2cee30a8b58b264c40fe6157af7a2ec28b6c5"
+  "contentSha256": "791ddc198a209273e73c29a81a260c2aa48c81bff3a9542de6e97f13d69be709"
 }

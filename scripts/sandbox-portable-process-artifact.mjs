@@ -185,9 +185,10 @@ function validScope(value) {
     value.s1Complete === false &&
     value.portableProcessPlane === true &&
     value.windowsHostExecuted === false &&
+    value.windowsLspReadPathsComplete === true &&
     value.windowsProtocolPathsComplete === false &&
     Array.isArray(value.remaining) &&
-    value.remaining.includes("Windows LSP and DAP protocol path translation") &&
+    value.remaining.includes("portable DAP protocol path translation") &&
     value.remaining.includes("Windows and Linux host product acceptance") &&
     value.remaining.includes("multi-architecture registry publication") &&
     value.remaining.includes("image signature and external attestation")

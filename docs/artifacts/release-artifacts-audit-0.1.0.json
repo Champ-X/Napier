@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "535ba491de0bc2179ba175afee2a22b867162380344c8e59f02eefa0d939c735",
+  "artifactSetSha256": "ebf6d4b252399dd7bae20704a0ef5095e51ac00e4b383696cdd01fa2257501cc",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "1d8e3ba101c0a008ca43d3b621c9b5e025f4543a2bddec601e01da4d9653f921",
+      "sha256": "c4164fbc554b639aadffea51b0ec7b422e2ac00bf1bb9354dd508df6fbbe09da",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "7207f7078a68c4770b577bc16f6688f487b3065c9ce232dbdd265c767eb2fce7",
+      "sha256": "53fa668a48c0ee99e45f1619bb896bc5535ca809a5973e09ca7a047ddaa283e3",
       "valid": true
     },
     {
@@ -41,31 +41,37 @@
     {
       "kind": "oci-crash-recovery-stage11",
       "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-      "sha256": "b1a6b609435b740351871156cbffbcd34007e626765cc15c2475ca392519f5df",
+      "sha256": "b2190e00be2307fdb944efb5075d08e212e43a7ee37037fb4b88bfc3c0a72104",
       "valid": true
     },
     {
       "kind": "sandbox-security-casebook-stage12",
       "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
-      "sha256": "90750735e5c0cf3eacb87863e3b9bfe26777d6a5e97768a0fb34224091f0835e",
+      "sha256": "3b28a4da46e58cac1360bfd1691b73c9fc2b5519c7ebf092c907aafa78fd2d5e",
       "valid": true
     },
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "ffdd77b59bc21ff0a8dc8fe211fc443afcb4c387465b449aa044afc11d57f5cc",
+      "sha256": "941d64d6cf30a36453f2b3096c99f8582ba946611cf5586b7656eb0a18f4478e",
       "valid": true
     },
     {
       "kind": "sandbox-multi-architecture-stage14",
       "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
-      "sha256": "36bbd0dfefaf378fe3bb8ce35df1a3c585515e46c998ce240217a9d4a90d0fe8",
+      "sha256": "27b4c51b51db9be6bd145099f6fff08397afd640f5b26e98381f2b5b09a0b1cd",
       "valid": true
     },
     {
       "kind": "sandbox-portable-process-stage15",
       "path": "docs/artifacts/sandbox-portable-process-stage15.json",
-      "sha256": "8a10b3798e6d07599e06ebdf3e75deb78cb564991b0733a81511b870bb541931",
+      "sha256": "67798a7e57c7db31c6af92fe80007cb615d51edc57b178eb25a3c194547cdc2a",
+      "valid": true
+    },
+    {
+      "kind": "sandbox-portable-lsp-stage16",
+      "path": "docs/artifacts/sandbox-portable-lsp-stage16.json",
+      "sha256": "62463a78779322725fa70b0ef9fe9fde237a4fa02c80d37a1cf7be5188b7ba4a",
       "valid": true
     },
     {

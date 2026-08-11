@@ -56,6 +56,11 @@ describe("OCI image-bound LSP runtime", () => {
         userIds: { userId: process.getuid!(), groupId: process.getgid!() },
         daemonEndpoint: "unix:///controlled/docker.sock",
       });
+      await expect(sandbox.resolveLspRuntime()).resolves.toEqual(
+        expect.objectContaining({
+          runtime: "lsp",
+        }),
+      );
       const manager = new RunLspSessionManager(sandbox, workspaceRoot);
       const owner = { threadId: "thread_oci_lsp", runId: "run_oci_lsp01" };
       const runner = new LspDiagnosticsRunner({
@@ -168,6 +173,28 @@ describe("OCI image-bound LSP runtime", () => {
         runtimeReadPaths: [assets.languageServerRoot],
       }).run({ path: "target.ts" }),
     ).rejects.toThrow("does not accept host asset overrides");
+  });
+
+  it("declares the fixed protocol root for portable non-POSIX identity", async () => {
+    const assets = hostLspAssets();
+    const sandbox = new OciContainerSandboxAdapter(REQUESTED_IMAGE, {
+      executable: process.execPath,
+      containerClient: identityClient(assets),
+      userIds: {
+        userId: 65_532,
+        groupId: 65_532,
+        mapping: "portable-non-posix",
+      },
+      daemonEndpoint: "unix:///controlled/docker.sock",
+    });
+
+    await expect(sandbox.resolveLspRuntime()).resolves.toEqual(
+      expect.objectContaining({
+        runtime: "lsp",
+        protocolWorkspaceRoot: "/workspace",
+        runtimeIdentitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
   });
 });
 

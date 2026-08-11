@@ -63,6 +63,9 @@ export async function probeLspRuntime(
         source: LSP_PROBE_SOURCE,
         timeoutMs: LSP_PROBE_TIMEOUT_MS,
         typescriptServerPath: assets.typescriptServerPath,
+        ...(assets.protocolWorkspaceRoot
+          ? { protocolWorkspaceRoot: assets.protocolWorkspaceRoot }
+          : {}),
       },
       (connection, targetUri) => async () =>
         connection.sendRequest("textDocument/documentSymbol", {

@@ -864,9 +864,29 @@ write content plus host ownership, unchanged host Git config, and exact
 container/network/scratch/temp-root cleanup. The same production path builder
 is exercised with controlled Windows drive-letter inputs and requires fixed
 container targets plus outside-drive rejection. The receipt explicitly marks
-`windowsHostExecuted=false` and `windowsProtocolPathsComplete=false`: LSP/DAP
-URIs still carry host paths above the process layer and require separate
-bidirectional translation before Windows host product acceptance.
+`windowsHostExecuted=false` and `windowsProtocolPathsComplete=false`: protocol
+paths above the process layer still require separate completion before Windows
+host product acceptance. Stage 16 closes the read-only LSP portion; DAP remains.
+
+Stage 16 adds the LSP-specific half of that protocol translation. The OCI LSP
+runtime identity optionally binds `protocolWorkspaceRoot=/workspace`.
+`PreparedLspSource` preserves canonical host paths for snapshots and receipts
+while carrying a container-visible target URI and a fail-closed reverse mapper.
+One-shot and Run-persistent sessions use the fixed root for initialize,
+workspaceFolders, didOpen, diagnostics, symbols, definitions, references,
+rename, and Code Action requests. Returned file URIs are accepted only when
+they have no authority/query/fragment, remain under `/workspace`, and map back
+inside the canonical host Workspace before materialization. Host-bound LSP
+runtimes keep their original URI behavior.
+
+The Stage 16 live acceptance compares ordinary host-UID and fixed portable-UID
+OCI arms on the same source. Clean diagnostics, symbol projections, and
+definition-location projections must be identical; only status/count/hash
+evidence is retained. Protocol escape, authority, query, and scheme cases are
+rejected in focused tests. The receipt deliberately keeps
+`windowsHostExecuted=false` and `portableDapComplete=false`; Node debugger
+launch/source paths and real Windows/Linux host acceptance remain separate
+work.
 
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath. The Contracts root remains at

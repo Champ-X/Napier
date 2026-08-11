@@ -6914,6 +6914,26 @@ platform, and outside-drive rejection through the production argv builder.
 This does not claim execution on a Windows host or completion of LSP/DAP
 protocol URI translation; those remain part of cross-host acceptance.
 
+Stage 16 closes the portable read-only LSP protocol boundary. The image-bound
+LSP runtime declares `/workspace` as its protocol root; initialize,
+workspaceFolders, didOpen, diagnostics, symbols, and definition requests use
+container-visible file URIs. Returned location/edit URIs must remain under that
+root and are translated back to the canonical host Workspace before any file
+read, preview, or receipt:
+
+```bash
+npm run check:sandbox-portable-lsp
+npm run check:sandbox-portable-lsp:live
+```
+
+The live acceptance runs ordinary host-UID and fixed portable-UID OCI arms
+against the same TypeScript file and requires identical clean diagnostics,
+bounded symbols, and definition locations. Protocol-root escapes, file
+authorities, query data, and non-file schemes fail closed. The receipt stores
+only statuses and projection hashes, not diagnostics, symbol names, locations,
+paths, host IDs, or Docker output. Portable DAP and execution on actual Windows
+or Linux hosts remain open.
+
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only
 when the mapped container user can run the same isolated standard-library

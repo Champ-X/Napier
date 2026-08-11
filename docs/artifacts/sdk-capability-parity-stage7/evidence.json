@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "f78087a521503fed568c7bdc5430c3050e5fdbdba01e3eb1907ab690a79df119",
+      "stdoutSha256": "ac3e5d3b27c1b4dfe711e6e5e9287c2b924bd0c743f5beded9245a6862e37aed",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "b0e858bbe1cdf1a45ec7bed769c6a8d7015de9000721c733ebb40f4984c92460",
-      "receiptSha256": "9aaa71bea2ae368c67b874e177e777c0d6baa6d2b020171fae413d12e756db17"
+      "evidenceSha256": "9f363527c21aa7d6d54bd6ad5c7769ee4632a48b85ad3a4e74f16a94f47694c0",
+      "receiptSha256": "66a9e9ffadfab2b045c353ac9e2466dce102d694ee43bf5b8f5f25f539b2881e"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "a26b3a376a446282e4b5aae1d3645593f6484a805da326bb59293927f2b8c702",
+      "stdoutSha256": "6c10179d6274152f8431ef3f749c32c048d6d90bf28e21fe8f882fd4b3b609e1",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "a77ab4dfea6c02d844e2def607d7ef2f09e929ad9360626124c35dc5db794e75",
-      "receiptSha256": "bd909e2db04cc3bd3a529eed298ea3c5b9d5a0c3095591c014516aa95868a338"
+      "evidenceSha256": "6d38a971902e2dee230083ffaca042969c79bc506545216a0b0887d11624fe54",
+      "receiptSha256": "8730c5fb1b79f33fa1f1864488eee975e5223cedce81df0afbbcf3f88bce5910"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -709,6 +709,7 @@
         "docs/artifacts/sandbox-image-provenance-0.1.0.json",
         "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
         "docs/artifacts/sandbox-multi-architecture-stage14.json",
+        "docs/artifacts/sandbox-portable-lsp-stage16.json",
         "docs/artifacts/sandbox-portable-process-stage15.json",
         "docs/artifacts/sandbox-product-acceptance-stage13.json",
         "docs/artifacts/sandbox-security-casebook-stage12.json",
@@ -797,12 +798,16 @@
         "packages/runtime/src/internal-research-recovery-authorization.ts",
         "packages/runtime/src/javascript-kernel-tool.ts",
         "packages/runtime/src/local-agent-runtime.ts",
+        "packages/runtime/src/lsp-code-action-edits.ts",
         "packages/runtime/src/lsp-code-actions.ts",
         "packages/runtime/src/lsp-definition-tool.ts",
         "packages/runtime/src/lsp-definition.ts",
         "packages/runtime/src/lsp-diagnostics-tool.ts",
         "packages/runtime/src/lsp-diagnostics.ts",
+        "packages/runtime/src/lsp-locations.ts",
+        "packages/runtime/src/lsp-persistent-session-binding.ts",
         "packages/runtime/src/lsp-persistent-session.ts",
+        "packages/runtime/src/lsp-protocol-path-binding.ts",
         "packages/runtime/src/lsp-protocol-session.ts",
         "packages/runtime/src/lsp-references-tool.ts",
         "packages/runtime/src/lsp-references.ts",
@@ -958,6 +963,7 @@
         "packages/runtime/test/launch-skills-quality.test.ts",
         "packages/runtime/test/local-agent-runtime.test.ts",
         "packages/runtime/test/lsp-diagnostics.test.ts",
+        "packages/runtime/test/lsp-protocol-path-binding.test.ts",
         "packages/runtime/test/lsp-rename-apply-diagnostics.test.ts",
         "packages/runtime/test/mcp-stdio.test.ts",
         "packages/runtime/test/model-adapter-capture.test.ts",
@@ -1044,6 +1050,8 @@
         "scripts/check-sandbox-image-sbom.test.mjs",
         "scripts/check-sandbox-multi-architecture.mjs",
         "scripts/check-sandbox-multi-architecture.test.mjs",
+        "scripts/check-sandbox-portable-lsp.mjs",
+        "scripts/check-sandbox-portable-lsp.test.mjs",
         "scripts/check-sandbox-portable-process.mjs",
         "scripts/check-sandbox-portable-process.test.mjs",
         "scripts/check-sandbox-product-acceptance.mjs",
@@ -1074,6 +1082,8 @@
         "scripts/run-web-ui-e2e.mjs",
         "scripts/sandbox-multi-architecture-artifact.mjs",
         "scripts/sandbox-multi-architecture-live.mjs",
+        "scripts/sandbox-portable-lsp-artifact.mjs",
+        "scripts/sandbox-portable-lsp-live.mjs",
         "scripts/sandbox-portable-process-artifact.mjs",
         "scripts/sandbox-portable-process-live.mjs",
         "scripts/sandbox-product-acceptance-artifact.mjs",
@@ -1098,8 +1108,8 @@
       ],
       "files": {
         "README.md": {
-          "sha256": "24079d2a778534cb7ceb934f643814884eba7389cc047fe47afa1ca417187d2e",
-          "lines": 6933
+          "sha256": "41d5d1d5ce74574184aec36f5ca06146e366fc86286936cedfe8e335a77ee3dc",
+          "lines": 6953
         },
         "apps/cli/src/cli-doctor-options.ts": {
           "sha256": "673d949b09e902f5042b2571ce2d97a8448b41804695a807add3b0005d7f8490",
@@ -1866,8 +1876,8 @@
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "74f2b389d116819a1060fbc2d241b2f70eecb43fb7685c1066e5233c347c4053",
-          "lines": 9213
+          "sha256": "2ee3553fb39663349c5f4a79910542273e1c3f5440661f917c96347350b7d49e",
+          "lines": 9233
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -1922,7 +1932,7 @@
           "lines": 5880
         },
         "docs/artifacts/oci-crash-recovery-stage11.json": {
-          "sha256": "b1a6b609435b740351871156cbffbcd34007e626765cc15c2475ca392519f5df",
+          "sha256": "b2190e00be2307fdb944efb5075d08e212e43a7ee37037fb4b88bfc3c0a72104",
           "lines": 91
         },
         "docs/artifacts/oci-git-runtime-stage6.json": {
@@ -1962,7 +1972,7 @@
           "lines": 62
         },
         "docs/artifacts/package-lock-audit-0.1.0.json": {
-          "sha256": "1d8e3ba101c0a008ca43d3b621c9b5e025f4543a2bddec601e01da4d9653f921",
+          "sha256": "c4164fbc554b639aadffea51b0ec7b422e2ac00bf1bb9354dd508df6fbbe09da",
           "lines": 20
         },
         "docs/artifacts/prompt-regression-matrix-0.1.0.json": {
@@ -1970,11 +1980,11 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "1df60987d45df97547620495d191b547daf746bb0ecc609789fe8c3a84fc29dd",
-          "lines": 919
+          "sha256": "3529f934d58630b57b0553556d18ce67e7d7f8b8a175aef4c0673f68e4309bfd",
+          "lines": 925
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
-          "sha256": "7207f7078a68c4770b577bc16f6688f487b3065c9ce232dbdd265c767eb2fce7",
+          "sha256": "53fa668a48c0ee99e45f1619bb896bc5535ca809a5973e09ca7a047ddaa283e3",
           "lines": 24
         },
         "docs/artifacts/sandbox-image-provenance-0.1.0.json": {
@@ -1986,19 +1996,23 @@
           "lines": 4099
         },
         "docs/artifacts/sandbox-multi-architecture-stage14.json": {
-          "sha256": "36bbd0dfefaf378fe3bb8ce35df1a3c585515e46c998ce240217a9d4a90d0fe8",
+          "sha256": "27b4c51b51db9be6bd145099f6fff08397afd640f5b26e98381f2b5b09a0b1cd",
           "lines": 170
         },
+        "docs/artifacts/sandbox-portable-lsp-stage16.json": {
+          "sha256": "62463a78779322725fa70b0ef9fe9fde237a4fa02c80d37a1cf7be5188b7ba4a",
+          "lines": 95
+        },
         "docs/artifacts/sandbox-portable-process-stage15.json": {
-          "sha256": "8a10b3798e6d07599e06ebdf3e75deb78cb564991b0733a81511b870bb541931",
-          "lines": 106
+          "sha256": "67798a7e57c7db31c6af92fe80007cb615d51edc57b178eb25a3c194547cdc2a",
+          "lines": 107
         },
         "docs/artifacts/sandbox-product-acceptance-stage13.json": {
-          "sha256": "ffdd77b59bc21ff0a8dc8fe211fc443afcb4c387465b449aa044afc11d57f5cc",
+          "sha256": "941d64d6cf30a36453f2b3096c99f8582ba946611cf5586b7656eb0a18f4478e",
           "lines": 125
         },
         "docs/artifacts/sandbox-security-casebook-stage12.json": {
-          "sha256": "90750735e5c0cf3eacb87863e3b9bfe26777d6a5e97768a0fb34224091f0835e",
+          "sha256": "3b28a4da46e58cac1360bfd1691b73c9fc2b5519c7ebf092c907aafa78fd2d5e",
           "lines": 133
         },
         "docs/artifacts/sdk-capability-parity-stage7/README.md": {
@@ -2006,11 +2020,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "b0e858bbe1cdf1a45ec7bed769c6a8d7015de9000721c733ebb40f4984c92460",
+          "sha256": "9f363527c21aa7d6d54bd6ad5c7769ee4632a48b85ad3a4e74f16a94f47694c0",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "a77ab4dfea6c02d844e2def607d7ef2f09e929ad9360626124c35dc5db794e75",
+          "sha256": "6d38a971902e2dee230083ffaca042969c79bc506545216a0b0887d11624fe54",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -2058,8 +2072,8 @@
           "lines": 175
         },
         "package.json": {
-          "sha256": "5b7b74ddd9033f5738fe1058fc8d189e8c364c8a01edc99279499e4e55b880c1",
-          "lines": 115
+          "sha256": "00a0b21095024af7b5939421b9ee28c93586716f485c4caaa557987b3255e16d",
+          "lines": 118
         },
         "packages/contracts/package.json": {
           "sha256": "30e57303e4c41397940da5f51613af40baf7244f3d8d917b30ffe98e00c5cd1a",
@@ -2254,8 +2268,8 @@
           "lines": 81
         },
         "packages/runtime/src/doctor-lsp-runtime-probe.ts": {
-          "sha256": "964fd1f0d5fd2d15011c9f5711c835179c08b5c279be060afb9bb4e7432b894f",
-          "lines": 121
+          "sha256": "e2c4e6654d1607d4618bdd8017d1cdaee6b46656980803960ae60fef4af85a23",
+          "lines": 124
         },
         "packages/runtime/src/doctor-runtime-probes.ts": {
           "sha256": "d0e7c05848bbbd37e7497d5078bc708f5373475cfd4dfe36472646219a024ab7",
@@ -2325,17 +2339,21 @@
           "sha256": "473f3e2bedbf81492f46a20ec5cb8795a4d4b6715cf755de116ffe977ff205b8",
           "lines": 284
         },
+        "packages/runtime/src/lsp-code-action-edits.ts": {
+          "sha256": "cdf3f4b6c11a56c3ab15cdb5858af463da00dc0811d7b39bca09cdc536e15f90",
+          "lines": 299
+        },
         "packages/runtime/src/lsp-code-actions.ts": {
-          "sha256": "7f924d2b4418be491929363078c74d799cb780906de1cbfc6deee37a6ec023bf",
-          "lines": 206
+          "sha256": "874be8dd5c57db49b7244faa545fb17be4daaabbd569483b063e00d958de666d",
+          "lines": 207
         },
         "packages/runtime/src/lsp-definition-tool.ts": {
           "sha256": "7ad084be0adfb8ed9a07f2cc99f3b8a2ade0557d21615e46ad2ca296043340c5",
           "lines": 158
         },
         "packages/runtime/src/lsp-definition.ts": {
-          "sha256": "3ebb1e180908a753a60bbe4bc92bbcf276c832a7265b163c1ad0251b18ae1a21",
-          "lines": 159
+          "sha256": "4d8eb9e1eff49a151ca334947f62325d99fa4167166c1464946af0b744f114cc",
+          "lines": 160
         },
         "packages/runtime/src/lsp-diagnostics-tool.ts": {
           "sha256": "f0a833d7daaa25449c240d452d758cc622644d665de942ea14cd4ebd24b80d58",
@@ -2345,41 +2363,53 @@
           "sha256": "1ffd777f9ce7c56d465c1ba28bbb1e9291ab3b74a6edf44e322c8ddab023f761",
           "lines": 146
         },
+        "packages/runtime/src/lsp-locations.ts": {
+          "sha256": "2afd498635157e2726541737ba3f2782763560be3c9fa49422760e15ca83ced0",
+          "lines": 373
+        },
+        "packages/runtime/src/lsp-persistent-session-binding.ts": {
+          "sha256": "f1e296fd0ff73d466005842c22a5e17b84bfced52eaa2ba0d3b602ed262c168d",
+          "lines": 47
+        },
         "packages/runtime/src/lsp-persistent-session.ts": {
-          "sha256": "a7732247204719b34879701ca0f9ff567ed459fe2b0d38d0a4ae441dc48705de",
-          "lines": 500
+          "sha256": "2bc3724966ec8a76978f5fbc31ce1a30372e2af1952c6b889911037d8621f750",
+          "lines": 472
+        },
+        "packages/runtime/src/lsp-protocol-path-binding.ts": {
+          "sha256": "2b698624eff657f47d1e5b002fb27c6f6cf1d61cf1fe9c80747a724cf651195b",
+          "lines": 96
         },
         "packages/runtime/src/lsp-protocol-session.ts": {
-          "sha256": "7c6d8f0a4414191309491b9d0af4ce11d2d959701087d9d8572caec07b759344",
-          "lines": 483
+          "sha256": "7405bbd5d20f7f8bcf87171f8495eca7321aca4855ac0325893bfb0c43a5f25d",
+          "lines": 489
         },
         "packages/runtime/src/lsp-references-tool.ts": {
           "sha256": "fa467244bbcd1c3262d206842e32d12992fcbe860ca9650c91fe7664b79fbe0f",
           "lines": 169
         },
         "packages/runtime/src/lsp-references.ts": {
-          "sha256": "8e5f05667595557c5179318e4fb55f457e4e91515a21c39f56a910b65687334d",
-          "lines": 169
+          "sha256": "02f987a4088e830701cdb28fdb94bf9dedd303dc5d231905eb992f8170ebada6",
+          "lines": 170
         },
         "packages/runtime/src/lsp-rename.ts": {
-          "sha256": "694578e73e54010e652df0ff5f417b8e84dc0a6407f030bc0a83b03f54b96a9a",
+          "sha256": "cff7b14e9863785cab36f34b8c2b030686372811b6b33a0fac7a2a452d466d8c",
           "lines": 248
         },
         "packages/runtime/src/lsp-runtime-assets.ts": {
-          "sha256": "7ae13a58a27794eb48eccc2505a4f67d49163e53206d881adcb90434c3d80c7c",
-          "lines": 313
+          "sha256": "4bbc728e950d912335969c5a92c92b5c19b1e7c4dd6086c18631b28c4349af43",
+          "lines": 319
         },
         "packages/runtime/src/lsp-source-session.ts": {
-          "sha256": "f835d1181648e9a8033d0e3ee46eb125d23eb41db53209533649a6615335ea68",
-          "lines": 305
+          "sha256": "1ae095ee7aca98a216e959aa34bf8494fad0e42367c0d21ced43a9e348711a0c",
+          "lines": 321
         },
         "packages/runtime/src/lsp-symbols-tool.ts": {
           "sha256": "bb119ca523d81dc297ddd402991b461d7d10fcc643c15727d3f2985af6e23e5a",
           "lines": 193
         },
         "packages/runtime/src/lsp-symbols.ts": {
-          "sha256": "eebcb3172d39957e1df38a4a76fe427a97ea9cbeed39311dc9acb3510ab83bf4",
-          "lines": 154
+          "sha256": "5ebd79119156f669f89dd3fc4b1d22336005de7818f8bf5aedb05608dd5d36de",
+          "lines": 152
         },
         "packages/runtime/src/macos-sandbox-profile.ts": {
           "sha256": "56962f4dfb04d3d695747f12927d430cf68fc935f517a4136e22c7eb95d942ff",
@@ -2518,8 +2548,8 @@
           "lines": 232
         },
         "packages/runtime/src/sandbox-container-lsp-runtime.ts": {
-          "sha256": "64d8dd572542419196cc6faf40911285dc18f2960cceb1ba892dc2448d1806dd",
-          "lines": 41
+          "sha256": "316f5c5286852e296fb928c30abeddd6b81d8f5faad8b1322e9385301f09cc06",
+          "lines": 48
         },
         "packages/runtime/src/sandbox-container-node-debugger-runtime.ts": {
           "sha256": "d694058f9bae5448fe9111ce91038a36fde74e94548b80ecaa9656685fc43f0b",
@@ -2594,8 +2624,8 @@
           "lines": 63
         },
         "packages/runtime/src/sandbox-types.ts": {
-          "sha256": "907327ef71b23d563d7b1749613098ebb91eeed9f9a6978ad2c9e6c6fffb2a36",
-          "lines": 124
+          "sha256": "42cf5c103156322f2fabe2ec2def95b24e56c0445fd18680767a7f86bf3bb964",
+          "lines": 125
         },
         "packages/runtime/src/sandbox.ts": {
           "sha256": "91e158bd35a14803d5de0b2ddbca4c24b774ef02d9192d10a77c071003c35a36",
@@ -2969,6 +2999,10 @@
           "sha256": "c9b558bb4346e2e5e2dd764c8ebd7136bd399726f62134ee3b8fa8e1d300eb94",
           "lines": 601
         },
+        "packages/runtime/test/lsp-protocol-path-binding.test.ts": {
+          "sha256": "8d4b5d180cd25d001c2a80f2af8f8cbc08b8e14968fc610030b554e1668bbb56",
+          "lines": 60
+        },
         "packages/runtime/test/lsp-rename-apply-diagnostics.test.ts": {
           "sha256": "ae168b411f35f4d185020e036a02331d89c025964345de4def683e1e544391cc",
           "lines": 89
@@ -3006,8 +3040,8 @@
           "lines": 334
         },
         "packages/runtime/test/oci-lsp-runtime.test.ts": {
-          "sha256": "418a3244d61526fd7d99ffb83b8dfd6cbe347d3d8ead9f855ff0c009282d8a82",
-          "lines": 255
+          "sha256": "c22584790cdf5e47b5f469880acebac4882aa013a1a0f75faebd5b7447c448b2",
+          "lines": 282
         },
         "packages/runtime/test/oci-node-debugger-runtime.test.ts": {
           "sha256": "f75a18820e88c52730071f42cae2e46ed299f1cc9462dd7b4f3d498f207945d2",
@@ -3290,12 +3324,12 @@
           "lines": 73
         },
         "scripts/check-release-artifacts.mjs": {
-          "sha256": "2913c6586d62a0c4af01360369dc10a2c01902f4e749d7319cab5754fbc4793d",
-          "lines": 1811
+          "sha256": "693be6c6f87eec6b835de7c6bf5674ec7225d8d5835dffc14d0c851ed8fcaeca",
+          "lines": 1833
         },
         "scripts/check-release-artifacts.test.mjs": {
-          "sha256": "4a08e43c561ccb5c849e3fda575849dc102e29cc2af1b28039591840451ce861",
-          "lines": 1575
+          "sha256": "a12a5cbe30397655493e970be7d84907e0535cc19aba02d93ca00ba11f267b0d",
+          "lines": 1611
         },
         "scripts/check-sandbox-image-sbom.mjs": {
           "sha256": "bc34ec2c287144f8cab3e8b503d6116f30bafbc8c3b8e6a5f2f975d104b4dd13",
@@ -3313,9 +3347,17 @@
           "sha256": "75f45196577a56b925708d2da03eb4f262a6da2d2a405e95094e6702c697e496",
           "lines": 150
         },
-        "scripts/check-sandbox-portable-process.mjs": {
-          "sha256": "639c1cd3193fc5826ffbb7fcd4cc124a975abf10dd1be33137a4b3b6e4d5b168",
+        "scripts/check-sandbox-portable-lsp.mjs": {
+          "sha256": "52d3d5898b57d7c3df7fa31ba1f2547feda646d728dbfa84ad201690ec45eec4",
           "lines": 205
+        },
+        "scripts/check-sandbox-portable-lsp.test.mjs": {
+          "sha256": "b081ec160fc7f3cae7120b91629688ce0100c88c1aeeadba7bf5f41eb696e730",
+          "lines": 101
+        },
+        "scripts/check-sandbox-portable-process.mjs": {
+          "sha256": "733858d0eb96f0e06835aa02ef0e35c8186d5affe3e4fbb22b253a3621934a4a",
+          "lines": 206
         },
         "scripts/check-sandbox-portable-process.test.mjs": {
           "sha256": "85018d85cdaae2c7f3eaba791cc11c77fda76ac375011df1a4ae7c7692e9bff7",
@@ -3433,9 +3475,17 @@
           "sha256": "5247ed5c672a274c88262998c031c115d9f262003643484d2510bc4864230d58",
           "lines": 480
         },
+        "scripts/sandbox-portable-lsp-artifact.mjs": {
+          "sha256": "e7d4c0e822b5115d84d4e0ba08154845543ab08f1937d69a7995c0827702a93a",
+          "lines": 162
+        },
+        "scripts/sandbox-portable-lsp-live.mjs": {
+          "sha256": "ce89d05a7f88ca94c618b557c1ee2e8679fe39d673662c2a2a020326111ded5d",
+          "lines": 257
+        },
         "scripts/sandbox-portable-process-artifact.mjs": {
-          "sha256": "fae3b559008b0563fd021c8f610e9b0d0af21015cf396ea85da8c4d0e7294854",
-          "lines": 207
+          "sha256": "fc84cac3035279047f174e3a50c4b90986729e9cad39bc674b32085780a554ed",
+          "lines": 208
         },
         "scripts/sandbox-portable-process-live.mjs": {
           "sha256": "679800be8125b666ed0865bb8bcd118eb288c59f89b69f7d23e8639f7885d909",
@@ -3462,7 +3512,7 @@
           "lines": 459
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "5911aaf3a0e6ed5d40385859c6ba7f27b5d5570a4603e5f3a48738f76c1692b5",
+          "sha256": "390007bb22038217b2c05a71d6dd0e739e1b6b4380c90ec84dbac46805886867",
           "lines": 287
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -3539,7 +3589,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "438e42da5840b66b0dfd35d0ab0fb761c4b11051389d0de7a74fe94086bd7934"
+      "manifestSha256": "63eac3b4ae98c80a2fe1dffb0e53dda8c5290e8ff3656341b85cbb23da1b40f6"
     },
     "executionClosure": {
       "algorithm": {
@@ -3970,7 +4020,9 @@
             "packages/runtime/dist/lsp-diagnostics.js",
             "packages/runtime/dist/lsp-locations.js",
             "packages/runtime/dist/lsp-patch-diagnostics.js",
+            "packages/runtime/dist/lsp-persistent-session-binding.js",
             "packages/runtime/dist/lsp-persistent-session.js",
+            "packages/runtime/dist/lsp-protocol-path-binding.js",
             "packages/runtime/dist/lsp-protocol-session.js",
             "packages/runtime/dist/lsp-references-tool.js",
             "packages/runtime/dist/lsp-references.js",
@@ -4769,7 +4821,9 @@
             "packages/runtime/src/lsp-diagnostics.ts",
             "packages/runtime/src/lsp-locations.ts",
             "packages/runtime/src/lsp-patch-diagnostics.ts",
+            "packages/runtime/src/lsp-persistent-session-binding.ts",
             "packages/runtime/src/lsp-persistent-session.ts",
+            "packages/runtime/src/lsp-protocol-path-binding.ts",
             "packages/runtime/src/lsp-protocol-session.ts",
             "packages/runtime/src/lsp-references-tool.ts",
             "packages/runtime/src/lsp-references.ts",
@@ -5203,16 +5257,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 797,
-            "sourceCounterparts": 792,
+            "executionFiles": 799,
+            "sourceCounterparts": 794,
             "packageManifests": 2,
-            "allFiles": 1591
+            "allFiles": 1595
           },
           "executionAreaCounts": {
             "apps/cli/dist": 58,
             "apps/server/dist": 101,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 607,
+            "packages/runtime/dist": 609,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -7087,8 +7141,8 @@
               "lines": 69
             },
             "packages/runtime/dist/doctor-lsp-runtime-probe.js": {
-              "sha256": "9a49491668491dc4ebf71a558a4b581c3a54896f784696ee0b271c8d8d7bbd4e",
-              "lines": 88
+              "sha256": "365f5a3d2bd4369096f0b161733ea5b52206a26cc03bceb86d7c9891e2413d3c",
+              "lines": 91
             },
             "packages/runtime/dist/doctor-runtime-probes.js": {
               "sha256": "950a9ba757e93208b4c1f0e63273555056b7f1367666d201d42ee0eb51be624d",
@@ -7519,8 +7573,8 @@
               "lines": 114
             },
             "packages/runtime/dist/lsp-code-action-edits.js": {
-              "sha256": "d4ae896bd6982521df269e0c4f79c2e9523f8c5a62c2a4988961def5b6aeca1c",
-              "lines": 184
+              "sha256": "e6f434ed67ee03188fd797af8a032fcb459ac1c0d4dfb4947a2639ac1d6c5ce6",
+              "lines": 187
             },
             "packages/runtime/dist/lsp-code-action-mutation-manager.js": {
               "sha256": "4cbfd7927ffa8ca7fa1e8d972b689b814e0e461d6f1110cb4d8042b2184ec2b7",
@@ -7539,15 +7593,15 @@
               "lines": 156
             },
             "packages/runtime/dist/lsp-code-actions.js": {
-              "sha256": "405bec1f163cba930051c06543633cbabe96934331c7ba937c680c931b042475",
-              "lines": 132
+              "sha256": "b2e566de72e82c7dff6bd23b5ec8c2163fd1522f526cf2bd515fc7ad86985ba1",
+              "lines": 133
             },
             "packages/runtime/dist/lsp-definition-tool.js": {
               "sha256": "2ed94184aaddf896751c0b5a21271d602cc468e0895363471a4f1570b46bc99d",
               "lines": 118
             },
             "packages/runtime/dist/lsp-definition.js": {
-              "sha256": "f8d2d4dafe219bcac036a4a93d3bd186995d1e16b2e201ac2efbf45d1d5267f2",
+              "sha256": "7711a68e333ac9fadb351f04316b037b8e8112016f58592ca24aa3d582636a4a",
               "lines": 101
             },
             "packages/runtime/dist/lsp-diagnostics-tool.js": {
@@ -7559,27 +7613,35 @@
               "lines": 87
             },
             "packages/runtime/dist/lsp-locations.js": {
-              "sha256": "0279ea39865db4b64d59be5c8b92ea8563ae86a2ea1e543f083cca379b731474",
-              "lines": 242
+              "sha256": "5376d014f866b13d5de18d81fe262dd2ac89d813c1f03d8cf9dc5206ad4074b5",
+              "lines": 247
             },
             "packages/runtime/dist/lsp-patch-diagnostics.js": {
               "sha256": "7a4b3aa9eab56f0346664b726ba0a08fc27df7b134e4ba436f530f991a839bbd",
               "lines": 259
             },
+            "packages/runtime/dist/lsp-persistent-session-binding.js": {
+              "sha256": "a8e6c6a908c81364136998f44e50636883947147a6a74445d53705822172b07a",
+              "lines": 23
+            },
             "packages/runtime/dist/lsp-persistent-session.js": {
-              "sha256": "9dab46f2863a596c99ed5bad741f71e2ea1ade77347a6a53eb4291edafa8b193",
-              "lines": 372
+              "sha256": "b3ebc416dd7fa1d13ec77cea7976464bec00cbff1d7da7910ef9c6e6f40c740d",
+              "lines": 353
+            },
+            "packages/runtime/dist/lsp-protocol-path-binding.js": {
+              "sha256": "8e826f5f3dc5e677537bfddfd47037d0acda7246ae0c90d1e53bb8c1d82447f2",
+              "lines": 62
             },
             "packages/runtime/dist/lsp-protocol-session.js": {
-              "sha256": "c2d93767fea0fc0e5a4d9c331573c1f7075ab337cf76dbc479daeb49c6ebc43a",
-              "lines": 336
+              "sha256": "7ce28dc374ad6a15129dc60daa399e49d7f8599cba293bbfb9f06ba003473176",
+              "lines": 339
             },
             "packages/runtime/dist/lsp-references-tool.js": {
               "sha256": "49fd9f17672c4bf685f2ee08b1c7416599337b96910565fa1636b07281224c7a",
               "lines": 126
             },
             "packages/runtime/dist/lsp-references.js": {
-              "sha256": "f7934fcec71e4124514800c3f1f2de9618f4e127bad7877b3286eab8f72814b2",
+              "sha256": "6f7d8a30a1effdeed3a2e2a1f85d9fb861491237e08db12ae6b6fa40feea6eeb",
               "lines": 108
             },
             "packages/runtime/dist/lsp-rename-apply-diagnostics.js": {
@@ -7615,20 +7677,20 @@
               "lines": 241
             },
             "packages/runtime/dist/lsp-rename.js": {
-              "sha256": "a93b325ef202b466252f5868a5692099d264b28993046efe71750a809bba20c1",
-              "lines": 152
+              "sha256": "b7298050d94d8b8bff77ad7029b0dadb30193d708ced39fc3065263b57f59a6f",
+              "lines": 151
             },
             "packages/runtime/dist/lsp-runtime-assets.js": {
-              "sha256": "c005b034ecda1641fa219f72287a2887c5344a0000c895def232d7717a93bd49",
-              "lines": 217
+              "sha256": "3dd2efa6a12220ec0d6ebcdeb67e06051c556b45dcfd3945d80766035ede1e89",
+              "lines": 222
             },
             "packages/runtime/dist/lsp-runtime-read-paths.js": {
               "sha256": "7cb7c8ae7c2424311b97300543ed6b1d8d3ee2ac29d2356d94516eddc3a5c927",
               "lines": 12
             },
             "packages/runtime/dist/lsp-source-session.js": {
-              "sha256": "5233cc682c41b588a13e9123962a4b35629641d4d99be05e606e6526808006de",
-              "lines": 185
+              "sha256": "f9ceac65125d32b75f0adbaa46b908f459416f57a9dc0319abe83722fdda9797",
+              "lines": 199
             },
             "packages/runtime/dist/lsp-symbol-model.js": {
               "sha256": "c9b4b630351afba4ece0326cbb4fa59fc20224365bff5393bfccd5514f6a56b2",
@@ -7643,8 +7705,8 @@
               "lines": 125
             },
             "packages/runtime/dist/lsp-symbols.js": {
-              "sha256": "c93fd228b9d41ae27498c89bd0e67991c58d786e1147f838cb28f8280f4a9d2b",
-              "lines": 105
+              "sha256": "fdaf2bec8c2b7d9b9e161facb5f0ec2826ec42c7b086440623789fc076603eca",
+              "lines": 104
             },
             "packages/runtime/dist/lsp-workspace-edit-mutation.js": {
               "sha256": "01379a92d400495624fbb922c9a43957df6f97a91672eda16201c1d1af5f4e8f",
@@ -8011,8 +8073,8 @@
               "lines": 60
             },
             "packages/runtime/dist/sandbox-container-lsp-runtime.js": {
-              "sha256": "47bab3a34b32bfeafc93f6a60530eaec896547d18d331cba6d6957075448ac73",
-              "lines": 22
+              "sha256": "2155a4df763101ed40e86896423a88f3acf0ad821cf03883296fdecbce694b61",
+              "lines": 29
             },
             "packages/runtime/dist/sandbox-container-node-debugger-runtime.js": {
               "sha256": "ba11421e5214ba73714743b0e379155841670725d6d8b6b5cc4ba74bd7eb95b8",
@@ -9519,8 +9581,8 @@
               "lines": 81
             },
             "packages/runtime/src/doctor-lsp-runtime-probe.ts": {
-              "sha256": "964fd1f0d5fd2d15011c9f5711c835179c08b5c279be060afb9bb4e7432b894f",
-              "lines": 121
+              "sha256": "e2c4e6654d1607d4618bdd8017d1cdaee6b46656980803960ae60fef4af85a23",
+              "lines": 124
             },
             "packages/runtime/src/doctor-runtime-probes.ts": {
               "sha256": "d0e7c05848bbbd37e7497d5078bc708f5373475cfd4dfe36472646219a024ab7",
@@ -9951,8 +10013,8 @@
               "lines": 188
             },
             "packages/runtime/src/lsp-code-action-edits.ts": {
-              "sha256": "fbb77577428a5cd96ace7c1431dbd57b3e7dacdf69bb8e8c1e1df926312a86e8",
-              "lines": 295
+              "sha256": "cdf3f4b6c11a56c3ab15cdb5858af463da00dc0811d7b39bca09cdc536e15f90",
+              "lines": 299
             },
             "packages/runtime/src/lsp-code-action-mutation-manager.ts": {
               "sha256": "056806773e6c858aeba8d5dbc3cae139a4a41a3830692e03df255bc35cd15211",
@@ -9971,16 +10033,16 @@
               "lines": 228
             },
             "packages/runtime/src/lsp-code-actions.ts": {
-              "sha256": "7f924d2b4418be491929363078c74d799cb780906de1cbfc6deee37a6ec023bf",
-              "lines": 206
+              "sha256": "874be8dd5c57db49b7244faa545fb17be4daaabbd569483b063e00d958de666d",
+              "lines": 207
             },
             "packages/runtime/src/lsp-definition-tool.ts": {
               "sha256": "7ad084be0adfb8ed9a07f2cc99f3b8a2ade0557d21615e46ad2ca296043340c5",
               "lines": 158
             },
             "packages/runtime/src/lsp-definition.ts": {
-              "sha256": "3ebb1e180908a753a60bbe4bc92bbcf276c832a7265b163c1ad0251b18ae1a21",
-              "lines": 159
+              "sha256": "4d8eb9e1eff49a151ca334947f62325d99fa4167166c1464946af0b744f114cc",
+              "lines": 160
             },
             "packages/runtime/src/lsp-diagnostics-tool.ts": {
               "sha256": "f0a833d7daaa25449c240d452d758cc622644d665de942ea14cd4ebd24b80d58",
@@ -9991,28 +10053,36 @@
               "lines": 146
             },
             "packages/runtime/src/lsp-locations.ts": {
-              "sha256": "fcc426e14670c0a2d7671f0c612975edbbcda46438d3b30b33f330cefca784c3",
-              "lines": 368
+              "sha256": "2afd498635157e2726541737ba3f2782763560be3c9fa49422760e15ca83ced0",
+              "lines": 373
             },
             "packages/runtime/src/lsp-patch-diagnostics.ts": {
               "sha256": "0c8161355c9d7e63923044589c043896ad872166c5e5f25d9f9bed9ef444fb8d",
               "lines": 347
             },
+            "packages/runtime/src/lsp-persistent-session-binding.ts": {
+              "sha256": "f1e296fd0ff73d466005842c22a5e17b84bfced52eaa2ba0d3b602ed262c168d",
+              "lines": 47
+            },
             "packages/runtime/src/lsp-persistent-session.ts": {
-              "sha256": "a7732247204719b34879701ca0f9ff567ed459fe2b0d38d0a4ae441dc48705de",
-              "lines": 500
+              "sha256": "2bc3724966ec8a76978f5fbc31ce1a30372e2af1952c6b889911037d8621f750",
+              "lines": 472
+            },
+            "packages/runtime/src/lsp-protocol-path-binding.ts": {
+              "sha256": "2b698624eff657f47d1e5b002fb27c6f6cf1d61cf1fe9c80747a724cf651195b",
+              "lines": 96
             },
             "packages/runtime/src/lsp-protocol-session.ts": {
-              "sha256": "7c6d8f0a4414191309491b9d0af4ce11d2d959701087d9d8572caec07b759344",
-              "lines": 483
+              "sha256": "7405bbd5d20f7f8bcf87171f8495eca7321aca4855ac0325893bfb0c43a5f25d",
+              "lines": 489
             },
             "packages/runtime/src/lsp-references-tool.ts": {
               "sha256": "fa467244bbcd1c3262d206842e32d12992fcbe860ca9650c91fe7664b79fbe0f",
               "lines": 169
             },
             "packages/runtime/src/lsp-references.ts": {
-              "sha256": "8e5f05667595557c5179318e4fb55f457e4e91515a21c39f56a910b65687334d",
-              "lines": 169
+              "sha256": "02f987a4088e830701cdb28fdb94bf9dedd303dc5d231905eb992f8170ebada6",
+              "lines": 170
             },
             "packages/runtime/src/lsp-rename-apply-diagnostics.ts": {
               "sha256": "f5dc87aaea0712dcef7a7c8e2f6332f36cd88a4f4623880e8cc0d0b7df5677f4",
@@ -10047,20 +10117,20 @@
               "lines": 394
             },
             "packages/runtime/src/lsp-rename.ts": {
-              "sha256": "694578e73e54010e652df0ff5f417b8e84dc0a6407f030bc0a83b03f54b96a9a",
+              "sha256": "cff7b14e9863785cab36f34b8c2b030686372811b6b33a0fac7a2a452d466d8c",
               "lines": 248
             },
             "packages/runtime/src/lsp-runtime-assets.ts": {
-              "sha256": "7ae13a58a27794eb48eccc2505a4f67d49163e53206d881adcb90434c3d80c7c",
-              "lines": 313
+              "sha256": "4bbc728e950d912335969c5a92c92b5c19b1e7c4dd6086c18631b28c4349af43",
+              "lines": 319
             },
             "packages/runtime/src/lsp-runtime-read-paths.ts": {
               "sha256": "656dbc6653189a5082a9f13fefe341dabcc72bf390529430e99127cd1e50f2c3",
               "lines": 23
             },
             "packages/runtime/src/lsp-source-session.ts": {
-              "sha256": "f835d1181648e9a8033d0e3ee46eb125d23eb41db53209533649a6615335ea68",
-              "lines": 305
+              "sha256": "1ae095ee7aca98a216e959aa34bf8494fad0e42367c0d21ced43a9e348711a0c",
+              "lines": 321
             },
             "packages/runtime/src/lsp-symbol-model.ts": {
               "sha256": "c1eadf1452cd98b6f1b9dde4328c92b6fe85f5b2b2ed0235a91139313dc39fbb",
@@ -10075,8 +10145,8 @@
               "lines": 193
             },
             "packages/runtime/src/lsp-symbols.ts": {
-              "sha256": "eebcb3172d39957e1df38a4a76fe427a97ea9cbeed39311dc9acb3510ab83bf4",
-              "lines": 154
+              "sha256": "5ebd79119156f669f89dd3fc4b1d22336005de7818f8bf5aedb05608dd5d36de",
+              "lines": 152
             },
             "packages/runtime/src/lsp-workspace-edit-mutation.ts": {
               "sha256": "fa7447f30ba958b4b87adc115b54489905880a7723125f49137df88352ad3d92",
@@ -10443,8 +10513,8 @@
               "lines": 94
             },
             "packages/runtime/src/sandbox-container-lsp-runtime.ts": {
-              "sha256": "64d8dd572542419196cc6faf40911285dc18f2960cceb1ba892dc2448d1806dd",
-              "lines": 41
+              "sha256": "316f5c5286852e296fb928c30abeddd6b81d8f5faad8b1322e9385301f09cc06",
+              "lines": 48
             },
             "packages/runtime/src/sandbox-container-node-debugger-runtime.ts": {
               "sha256": "d694058f9bae5448fe9111ce91038a36fde74e94548b80ecaa9656685fc43f0b",
@@ -11583,7 +11653,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "c5fa178a9f70e6ec7dc6a0243be75a1bc6daedee196a2e37dfafbb0d3167e71b"
+          "manifestSha256": "eef510aef6fdc6dd8e18057e47e0eac4cd889a66fa3c90ae3d548426a81f3a3e"
         },
         "productionServerTrace": {
           "roots": [
@@ -11942,7 +12012,9 @@
             "packages/runtime/dist/lsp-diagnostics.js",
             "packages/runtime/dist/lsp-locations.js",
             "packages/runtime/dist/lsp-patch-diagnostics.js",
+            "packages/runtime/dist/lsp-persistent-session-binding.js",
             "packages/runtime/dist/lsp-persistent-session.js",
+            "packages/runtime/dist/lsp-protocol-path-binding.js",
             "packages/runtime/dist/lsp-protocol-session.js",
             "packages/runtime/dist/lsp-references-tool.js",
             "packages/runtime/dist/lsp-references.js",
@@ -12681,7 +12753,9 @@
             "packages/runtime/src/lsp-diagnostics.ts",
             "packages/runtime/src/lsp-locations.ts",
             "packages/runtime/src/lsp-patch-diagnostics.ts",
+            "packages/runtime/src/lsp-persistent-session-binding.ts",
             "packages/runtime/src/lsp-persistent-session.ts",
+            "packages/runtime/src/lsp-protocol-path-binding.ts",
             "packages/runtime/src/lsp-protocol-session.ts",
             "packages/runtime/src/lsp-references-tool.ts",
             "packages/runtime/src/lsp-references.ts",
@@ -13115,16 +13189,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 737,
-            "sourceCounterparts": 733,
+            "executionFiles": 739,
+            "sourceCounterparts": 735,
             "packageManifests": 3,
-            "allFiles": 1473
+            "allFiles": 1477
           },
           "executionAreaCounts": {
             "apps/server/dist": 102,
             "other": 1,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 605,
+            "packages/runtime/dist": 607,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
@@ -14538,8 +14612,8 @@
               "lines": 69
             },
             "packages/runtime/dist/doctor-lsp-runtime-probe.js": {
-              "sha256": "9a49491668491dc4ebf71a558a4b581c3a54896f784696ee0b271c8d8d7bbd4e",
-              "lines": 88
+              "sha256": "365f5a3d2bd4369096f0b161733ea5b52206a26cc03bceb86d7c9891e2413d3c",
+              "lines": 91
             },
             "packages/runtime/dist/doctor-runtime-probes.js": {
               "sha256": "950a9ba757e93208b4c1f0e63273555056b7f1367666d201d42ee0eb51be624d",
@@ -14970,8 +15044,8 @@
               "lines": 114
             },
             "packages/runtime/dist/lsp-code-action-edits.js": {
-              "sha256": "d4ae896bd6982521df269e0c4f79c2e9523f8c5a62c2a4988961def5b6aeca1c",
-              "lines": 184
+              "sha256": "e6f434ed67ee03188fd797af8a032fcb459ac1c0d4dfb4947a2639ac1d6c5ce6",
+              "lines": 187
             },
             "packages/runtime/dist/lsp-code-action-mutation-manager.js": {
               "sha256": "4cbfd7927ffa8ca7fa1e8d972b689b814e0e461d6f1110cb4d8042b2184ec2b7",
@@ -14990,15 +15064,15 @@
               "lines": 156
             },
             "packages/runtime/dist/lsp-code-actions.js": {
-              "sha256": "405bec1f163cba930051c06543633cbabe96934331c7ba937c680c931b042475",
-              "lines": 132
+              "sha256": "b2e566de72e82c7dff6bd23b5ec8c2163fd1522f526cf2bd515fc7ad86985ba1",
+              "lines": 133
             },
             "packages/runtime/dist/lsp-definition-tool.js": {
               "sha256": "2ed94184aaddf896751c0b5a21271d602cc468e0895363471a4f1570b46bc99d",
               "lines": 118
             },
             "packages/runtime/dist/lsp-definition.js": {
-              "sha256": "f8d2d4dafe219bcac036a4a93d3bd186995d1e16b2e201ac2efbf45d1d5267f2",
+              "sha256": "7711a68e333ac9fadb351f04316b037b8e8112016f58592ca24aa3d582636a4a",
               "lines": 101
             },
             "packages/runtime/dist/lsp-diagnostics-tool.js": {
@@ -15010,27 +15084,35 @@
               "lines": 87
             },
             "packages/runtime/dist/lsp-locations.js": {
-              "sha256": "0279ea39865db4b64d59be5c8b92ea8563ae86a2ea1e543f083cca379b731474",
-              "lines": 242
+              "sha256": "5376d014f866b13d5de18d81fe262dd2ac89d813c1f03d8cf9dc5206ad4074b5",
+              "lines": 247
             },
             "packages/runtime/dist/lsp-patch-diagnostics.js": {
               "sha256": "7a4b3aa9eab56f0346664b726ba0a08fc27df7b134e4ba436f530f991a839bbd",
               "lines": 259
             },
+            "packages/runtime/dist/lsp-persistent-session-binding.js": {
+              "sha256": "a8e6c6a908c81364136998f44e50636883947147a6a74445d53705822172b07a",
+              "lines": 23
+            },
             "packages/runtime/dist/lsp-persistent-session.js": {
-              "sha256": "9dab46f2863a596c99ed5bad741f71e2ea1ade77347a6a53eb4291edafa8b193",
-              "lines": 372
+              "sha256": "b3ebc416dd7fa1d13ec77cea7976464bec00cbff1d7da7910ef9c6e6f40c740d",
+              "lines": 353
+            },
+            "packages/runtime/dist/lsp-protocol-path-binding.js": {
+              "sha256": "8e826f5f3dc5e677537bfddfd47037d0acda7246ae0c90d1e53bb8c1d82447f2",
+              "lines": 62
             },
             "packages/runtime/dist/lsp-protocol-session.js": {
-              "sha256": "c2d93767fea0fc0e5a4d9c331573c1f7075ab337cf76dbc479daeb49c6ebc43a",
-              "lines": 336
+              "sha256": "7ce28dc374ad6a15129dc60daa399e49d7f8599cba293bbfb9f06ba003473176",
+              "lines": 339
             },
             "packages/runtime/dist/lsp-references-tool.js": {
               "sha256": "49fd9f17672c4bf685f2ee08b1c7416599337b96910565fa1636b07281224c7a",
               "lines": 126
             },
             "packages/runtime/dist/lsp-references.js": {
-              "sha256": "f7934fcec71e4124514800c3f1f2de9618f4e127bad7877b3286eab8f72814b2",
+              "sha256": "6f7d8a30a1effdeed3a2e2a1f85d9fb861491237e08db12ae6b6fa40feea6eeb",
               "lines": 108
             },
             "packages/runtime/dist/lsp-rename-apply-diagnostics.js": {
@@ -15066,20 +15148,20 @@
               "lines": 241
             },
             "packages/runtime/dist/lsp-rename.js": {
-              "sha256": "a93b325ef202b466252f5868a5692099d264b28993046efe71750a809bba20c1",
-              "lines": 152
+              "sha256": "b7298050d94d8b8bff77ad7029b0dadb30193d708ced39fc3065263b57f59a6f",
+              "lines": 151
             },
             "packages/runtime/dist/lsp-runtime-assets.js": {
-              "sha256": "c005b034ecda1641fa219f72287a2887c5344a0000c895def232d7717a93bd49",
-              "lines": 217
+              "sha256": "3dd2efa6a12220ec0d6ebcdeb67e06051c556b45dcfd3945d80766035ede1e89",
+              "lines": 222
             },
             "packages/runtime/dist/lsp-runtime-read-paths.js": {
               "sha256": "7cb7c8ae7c2424311b97300543ed6b1d8d3ee2ac29d2356d94516eddc3a5c927",
               "lines": 12
             },
             "packages/runtime/dist/lsp-source-session.js": {
-              "sha256": "5233cc682c41b588a13e9123962a4b35629641d4d99be05e606e6526808006de",
-              "lines": 185
+              "sha256": "f9ceac65125d32b75f0adbaa46b908f459416f57a9dc0319abe83722fdda9797",
+              "lines": 199
             },
             "packages/runtime/dist/lsp-symbol-model.js": {
               "sha256": "c9b4b630351afba4ece0326cbb4fa59fc20224365bff5393bfccd5514f6a56b2",
@@ -15094,8 +15176,8 @@
               "lines": 125
             },
             "packages/runtime/dist/lsp-symbols.js": {
-              "sha256": "c93fd228b9d41ae27498c89bd0e67991c58d786e1147f838cb28f8280f4a9d2b",
-              "lines": 105
+              "sha256": "fdaf2bec8c2b7d9b9e161facb5f0ec2826ec42c7b086440623789fc076603eca",
+              "lines": 104
             },
             "packages/runtime/dist/lsp-workspace-edit-mutation.js": {
               "sha256": "01379a92d400495624fbb922c9a43957df6f97a91672eda16201c1d1af5f4e8f",
@@ -15462,8 +15544,8 @@
               "lines": 60
             },
             "packages/runtime/dist/sandbox-container-lsp-runtime.js": {
-              "sha256": "47bab3a34b32bfeafc93f6a60530eaec896547d18d331cba6d6957075448ac73",
-              "lines": 22
+              "sha256": "2155a4df763101ed40e86896423a88f3acf0ad821cf03883296fdecbce694b61",
+              "lines": 29
             },
             "packages/runtime/dist/sandbox-container-node-debugger-runtime.js": {
               "sha256": "ba11421e5214ba73714743b0e379155841670725d6d8b6b5cc4ba74bd7eb95b8",
@@ -16962,8 +17044,8 @@
               "lines": 81
             },
             "packages/runtime/src/doctor-lsp-runtime-probe.ts": {
-              "sha256": "964fd1f0d5fd2d15011c9f5711c835179c08b5c279be060afb9bb4e7432b894f",
-              "lines": 121
+              "sha256": "e2c4e6654d1607d4618bdd8017d1cdaee6b46656980803960ae60fef4af85a23",
+              "lines": 124
             },
             "packages/runtime/src/doctor-runtime-probes.ts": {
               "sha256": "d0e7c05848bbbd37e7497d5078bc708f5373475cfd4dfe36472646219a024ab7",
@@ -17394,8 +17476,8 @@
               "lines": 188
             },
             "packages/runtime/src/lsp-code-action-edits.ts": {
-              "sha256": "fbb77577428a5cd96ace7c1431dbd57b3e7dacdf69bb8e8c1e1df926312a86e8",
-              "lines": 295
+              "sha256": "cdf3f4b6c11a56c3ab15cdb5858af463da00dc0811d7b39bca09cdc536e15f90",
+              "lines": 299
             },
             "packages/runtime/src/lsp-code-action-mutation-manager.ts": {
               "sha256": "056806773e6c858aeba8d5dbc3cae139a4a41a3830692e03df255bc35cd15211",
@@ -17414,16 +17496,16 @@
               "lines": 228
             },
             "packages/runtime/src/lsp-code-actions.ts": {
-              "sha256": "7f924d2b4418be491929363078c74d799cb780906de1cbfc6deee37a6ec023bf",
-              "lines": 206
+              "sha256": "874be8dd5c57db49b7244faa545fb17be4daaabbd569483b063e00d958de666d",
+              "lines": 207
             },
             "packages/runtime/src/lsp-definition-tool.ts": {
               "sha256": "7ad084be0adfb8ed9a07f2cc99f3b8a2ade0557d21615e46ad2ca296043340c5",
               "lines": 158
             },
             "packages/runtime/src/lsp-definition.ts": {
-              "sha256": "3ebb1e180908a753a60bbe4bc92bbcf276c832a7265b163c1ad0251b18ae1a21",
-              "lines": 159
+              "sha256": "4d8eb9e1eff49a151ca334947f62325d99fa4167166c1464946af0b744f114cc",
+              "lines": 160
             },
             "packages/runtime/src/lsp-diagnostics-tool.ts": {
               "sha256": "f0a833d7daaa25449c240d452d758cc622644d665de942ea14cd4ebd24b80d58",
@@ -17434,28 +17516,36 @@
               "lines": 146
             },
             "packages/runtime/src/lsp-locations.ts": {
-              "sha256": "fcc426e14670c0a2d7671f0c612975edbbcda46438d3b30b33f330cefca784c3",
-              "lines": 368
+              "sha256": "2afd498635157e2726541737ba3f2782763560be3c9fa49422760e15ca83ced0",
+              "lines": 373
             },
             "packages/runtime/src/lsp-patch-diagnostics.ts": {
               "sha256": "0c8161355c9d7e63923044589c043896ad872166c5e5f25d9f9bed9ef444fb8d",
               "lines": 347
             },
+            "packages/runtime/src/lsp-persistent-session-binding.ts": {
+              "sha256": "f1e296fd0ff73d466005842c22a5e17b84bfced52eaa2ba0d3b602ed262c168d",
+              "lines": 47
+            },
             "packages/runtime/src/lsp-persistent-session.ts": {
-              "sha256": "a7732247204719b34879701ca0f9ff567ed459fe2b0d38d0a4ae441dc48705de",
-              "lines": 500
+              "sha256": "2bc3724966ec8a76978f5fbc31ce1a30372e2af1952c6b889911037d8621f750",
+              "lines": 472
+            },
+            "packages/runtime/src/lsp-protocol-path-binding.ts": {
+              "sha256": "2b698624eff657f47d1e5b002fb27c6f6cf1d61cf1fe9c80747a724cf651195b",
+              "lines": 96
             },
             "packages/runtime/src/lsp-protocol-session.ts": {
-              "sha256": "7c6d8f0a4414191309491b9d0af4ce11d2d959701087d9d8572caec07b759344",
-              "lines": 483
+              "sha256": "7405bbd5d20f7f8bcf87171f8495eca7321aca4855ac0325893bfb0c43a5f25d",
+              "lines": 489
             },
             "packages/runtime/src/lsp-references-tool.ts": {
               "sha256": "fa467244bbcd1c3262d206842e32d12992fcbe860ca9650c91fe7664b79fbe0f",
               "lines": 169
             },
             "packages/runtime/src/lsp-references.ts": {
-              "sha256": "8e5f05667595557c5179318e4fb55f457e4e91515a21c39f56a910b65687334d",
-              "lines": 169
+              "sha256": "02f987a4088e830701cdb28fdb94bf9dedd303dc5d231905eb992f8170ebada6",
+              "lines": 170
             },
             "packages/runtime/src/lsp-rename-apply-diagnostics.ts": {
               "sha256": "f5dc87aaea0712dcef7a7c8e2f6332f36cd88a4f4623880e8cc0d0b7df5677f4",
@@ -17490,20 +17580,20 @@
               "lines": 394
             },
             "packages/runtime/src/lsp-rename.ts": {
-              "sha256": "694578e73e54010e652df0ff5f417b8e84dc0a6407f030bc0a83b03f54b96a9a",
+              "sha256": "cff7b14e9863785cab36f34b8c2b030686372811b6b33a0fac7a2a452d466d8c",
               "lines": 248
             },
             "packages/runtime/src/lsp-runtime-assets.ts": {
-              "sha256": "7ae13a58a27794eb48eccc2505a4f67d49163e53206d881adcb90434c3d80c7c",
-              "lines": 313
+              "sha256": "4bbc728e950d912335969c5a92c92b5c19b1e7c4dd6086c18631b28c4349af43",
+              "lines": 319
             },
             "packages/runtime/src/lsp-runtime-read-paths.ts": {
               "sha256": "656dbc6653189a5082a9f13fefe341dabcc72bf390529430e99127cd1e50f2c3",
               "lines": 23
             },
             "packages/runtime/src/lsp-source-session.ts": {
-              "sha256": "f835d1181648e9a8033d0e3ee46eb125d23eb41db53209533649a6615335ea68",
-              "lines": 305
+              "sha256": "1ae095ee7aca98a216e959aa34bf8494fad0e42367c0d21ced43a9e348711a0c",
+              "lines": 321
             },
             "packages/runtime/src/lsp-symbol-model.ts": {
               "sha256": "c1eadf1452cd98b6f1b9dde4328c92b6fe85f5b2b2ed0235a91139313dc39fbb",
@@ -17518,8 +17608,8 @@
               "lines": 193
             },
             "packages/runtime/src/lsp-symbols.ts": {
-              "sha256": "eebcb3172d39957e1df38a4a76fe427a97ea9cbeed39311dc9acb3510ab83bf4",
-              "lines": 154
+              "sha256": "5ebd79119156f669f89dd3fc4b1d22336005de7818f8bf5aedb05608dd5d36de",
+              "lines": 152
             },
             "packages/runtime/src/lsp-workspace-edit-mutation.ts": {
               "sha256": "fa7447f30ba958b4b87adc115b54489905880a7723125f49137df88352ad3d92",
@@ -17886,8 +17976,8 @@
               "lines": 94
             },
             "packages/runtime/src/sandbox-container-lsp-runtime.ts": {
-              "sha256": "64d8dd572542419196cc6faf40911285dc18f2960cceb1ba892dc2448d1806dd",
-              "lines": 41
+              "sha256": "316f5c5286852e296fb928c30abeddd6b81d8f5faad8b1322e9385301f09cc06",
+              "lines": 48
             },
             "packages/runtime/src/sandbox-container-node-debugger-runtime.ts": {
               "sha256": "d694058f9bae5448fe9111ce91038a36fde74e94548b80ecaa9656685fc43f0b",
@@ -19022,7 +19112,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "5266e670599594fb125e63d6c6690f5d24d21bdcf41198625e0bad96fc817d23"
+          "manifestSha256": "e765d8b948995fd97798bdcd62797cb19baaeec9da103f0e28f7b774c24279e2"
         }
       },
       "excludedCategories": [
@@ -19051,9 +19141,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "6c5aae794625db019b667f0712e7719cd5dc2d47b245fd0315a4f6113ae376ea"
+      "manifestSha256": "415b7c6a93c54add4f7663564320a696ef90cbbd2f5a08ef64c63d2432361aa0"
     },
-    "manifestSha256": "4f7c222f4165dc9f081bbc374994ed7ad2c274b3fd9a2e83396c531d88a15745"
+    "manifestSha256": "0e2c09e2292c28ea4be5885d22f59f141175cb78e4374d42d52b7d00e3421e42"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -19241,11 +19331,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "b0e858bbe1cdf1a45ec7bed769c6a8d7015de9000721c733ebb40f4984c92460"
+      "sha256": "9f363527c21aa7d6d54bd6ad5c7769ee4632a48b85ad3a4e74f16a94f47694c0"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "a77ab4dfea6c02d844e2def607d7ef2f09e929ad9360626124c35dc5db794e75"
+      "sha256": "6d38a971902e2dee230083ffaca042969c79bc506545216a0b0887d11624fe54"
     }
   }
 }

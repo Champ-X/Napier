@@ -27,6 +27,9 @@ export async function resolveContainerLspRuntime(
     runtime: "lsp",
     nodeExecutable: observed.node.executable,
     nodeExecutableSha256: observed.node.executableSha256,
+    ...(identity.user.mapping === "portable-non-posix"
+      ? { protocolWorkspaceRoot: "/workspace" }
+      : {}),
     ...assets,
     runtimeIdentitySha256: sha256(
       canonicalJson({
@@ -34,6 +37,10 @@ export async function resolveContainerLspRuntime(
         imageIdentitySha256: identity.identitySha256,
         nodeExecutable: observed.node.executable,
         nodeExecutableSha256: observed.node.executableSha256,
+        userMapping: identity.user.mapping,
+        ...(identity.user.mapping === "portable-non-posix"
+          ? { protocolWorkspaceRoot: "/workspace" }
+          : {}),
         ...assets,
       }),
     ),

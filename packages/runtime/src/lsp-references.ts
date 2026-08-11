@@ -98,6 +98,7 @@ export class LspReferencesRunner {
         prepared.workspaceRoot,
         candidate,
         "LSP references",
+        { toHostUri: prepared.toHostUri },
       );
       if (!location) {
         omittedReferenceCount += 1;

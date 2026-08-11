@@ -62,6 +62,7 @@ export interface SandboxLspRuntimeBinding {
   runtime: "lsp";
   nodeExecutable: string;
   nodeExecutableSha256: string;
+  protocolWorkspaceRoot?: string;
   languageServerPath: string;
   languageServerRoot: string;
   languageServerVersion: string;

@@ -12,6 +12,7 @@ import {
   type MessageConnection,
 } from "vscode-jsonrpc/node.js";
 
+import { createLspProtocolPathBinding } from "./lsp-protocol-path-binding.js";
 import type { SandboxedProcess } from "./sandbox.js";
 
 export const MAX_LSP_DIAGNOSTICS = 64;
@@ -52,6 +53,7 @@ export interface LspProtocolSessionRequest {
   typescriptRoot?: string;
   runtimeIdentitySha256?: string;
   runtimeLocation?: "host" | "provider";
+  protocolWorkspaceRoot?: string;
 }
 
 export interface LspProtocolSessionResult<T> {
@@ -155,11 +157,13 @@ export async function runLspProtocolSession<T>(
   connection.onClose(() => {
     if (!shuttingDown) fail(`${request.label} server closed unexpectedly`);
   });
-  registerLspClientHandlers(connection, request.workspaceRoot);
-  const collect = prepareOperation(
+  const pathBinding = createLspProtocolPathBinding(request);
+  registerLspClientHandlers(
     connection,
-    pathToFileURL(request.target).href,
+    request.workspaceRoot,
+    pathBinding.workspaceRootUri,
   );
+  const collect = prepareOperation(connection, pathBinding.targetUri);
   connection.listen();
   const abort = (): void => fail(request.abortedMessage);
   signal?.addEventListener("abort", abort, { once: true });
@@ -248,15 +252,13 @@ export function prepareLspDiagnosticsOperation(
 
 export async function initializeLspConnection(
   connection: MessageConnection,
-  request: Pick<
-    LspProtocolSessionRequest,
-    "workspaceRoot" | "typescriptServerPath"
-  >,
+  request: LspProtocolSessionRequest,
 ): Promise<void> {
+  const pathBinding = createLspProtocolPathBinding(request);
   const initialized = await connection.sendRequest<unknown>("initialize", {
     processId: null,
     clientInfo: { name: "napier", version: "0.1.0" },
-    rootUri: pathToFileURL(request.workspaceRoot).href,
+    rootUri: pathBinding.workspaceRootUri,
     capabilities: {
       workspace: { configuration: false, workspaceFolders: true },
       textDocument: {
@@ -293,7 +295,7 @@ export async function initializeLspConnection(
     },
     workspaceFolders: [
       {
-        uri: pathToFileURL(request.workspaceRoot).href,
+        uri: pathBinding.workspaceRootUri,
         name: path.basename(request.workspaceRoot),
       },
     ],
@@ -313,10 +315,13 @@ export function lspConnectionSupportsCodeActionResolve(
 
 export async function syncLspDocument(
   connection: MessageConnection,
-  request: Pick<LspProtocolSessionRequest, "target" | "language" | "source">,
+  request: Pick<
+    LspProtocolSessionRequest,
+    "workspaceRoot" | "target" | "language" | "source" | "protocolWorkspaceRoot"
+  >,
   previousVersion: number | undefined,
 ): Promise<number> {
-  const uri = pathToFileURL(request.target).href;
+  const uri = createLspProtocolPathBinding(request).targetUri;
   const version = (previousVersion ?? 0) + 1;
   if (previousVersion === undefined) {
     await connection.sendNotification("textDocument/didOpen", {
@@ -346,6 +351,7 @@ export async function syncLspDocument(
 export function registerLspClientHandlers(
   connection: MessageConnection,
   workspaceRoot: string,
+  workspaceRootUri = pathToFileURL(workspaceRoot).href,
 ): void {
   connection.onRequest("workspace/configuration", (params: unknown) => {
     const items =
@@ -357,7 +363,7 @@ export function registerLspClientHandlers(
   });
   connection.onRequest("workspace/workspaceFolders", () => [
     {
-      uri: pathToFileURL(workspaceRoot).href,
+      uri: workspaceRootUri,
       name: path.basename(workspaceRoot),
     },
   ]);
