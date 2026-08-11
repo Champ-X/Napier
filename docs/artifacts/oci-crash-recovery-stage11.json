@@ -1,7 +1,7 @@
 {
   "kind": "napier.oci-crash-recovery-stage11",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T04:44:19.034Z",
+  "generatedAt": "2026-08-11T05:34:55.817Z",
   "image": {
     "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
     "platform": "linux/arm64",
@@ -11,11 +11,13 @@
     "resourcePolicySha256": "e95d7afc88833609b7b3ef268725c5df36148241c36430bf0f7988a967a16448",
     "guardianContractSha256": "2f5cbc3c300cb34e69f54bb56ee884afdb47b790458a3923b6839c8cc7049ec0",
     "guardianWorkerSha256": "fe9bd34fb2a0bc6e060e9394b635baaa91a35eccf38f35aa2fa9e97149a3e604",
-    "containerIdentitySha256": "3d25c3ca48ee3bbf50a3bb5e7c89f778d9a33d0b00356d511e99a5b021580ea4",
-    "ociAdapterSha256": "a388aa23cec7d27a662dc468c9046492a01086fc9be95d3ddbee14db29094aad",
-    "ociLaunchArgumentsSha256": "b60ab62209a686f4f51a9a2fff125b41038b06c8ffb7fb57e29c31d99694076c",
+    "containerIdentitySha256": "212658e6fde768bd4bd0e648ab787a5cc4fe1f5707925930523d10be22bc0330",
+    "pathMappingSha256": "1f56ece466497569a30b3eb90c4276fa6bfee439da71f75ea75213c5e38934d5",
+    "launchPolicySha256": "7dcde3a01b32f46f95c8cade2d673231b007da6225c7b058b6f6fed592abe0fa",
+    "ociAdapterSha256": "74c37f02870cb9a8ec4e849df200589b2921e91011c9ffe34805e17ed28fa4b0",
+    "ociLaunchArgumentsSha256": "8e5eec25188b6f9d323e71d7d300ac6fd57996a0d29b19351886815be96f5c88",
     "checkScriptSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946",
-    "artifactVerifierSha256": "780a97a3e32836ce34fbb842b3188db4c5881b047ca1fec5bfe0731c121172ec",
+    "artifactVerifierSha256": "bc938cf31a56c4e8103514f209acc11041dd3e53e46db9251fcd62cd4fde16be",
     "liveHarnessSha256": "8b76cbbbd3e8ebfc6d5c004455c02ce686086ea08db328a5026a81492050ec4e",
     "childFixtureSha256": "273ef8a416aa72b61bfb63a438e739f308a41f2b899704017be1217155f986a4"
   },
@@ -24,24 +26,8 @@
       "index": 1,
       "runtimeSignal": "SIGKILL",
       "serviceReady": true,
-      "serviceIdentitySha256": "f8fb95c7d7b40603de67ffd0c8056a84d6f38fdd3e9f8c821656a65974209a77",
-      "endpointSha256": "87688bc44dbcb77ffaa7d3238fc0b0d334a2b85300c075aa196f72a9ace59f37",
-      "containerDeltaCount": 1,
-      "networkDeltaCount": 1,
-      "scratchDeltaCount": 1,
-      "containerCleanupVerified": true,
-      "networkCleanupVerified": true,
-      "scratchCleanupVerified": true,
-      "endpointClosedVerified": true,
-      "exactBaselineRestored": true,
-      "cleanupDurationMs": 427
-    },
-    {
-      "index": 2,
-      "runtimeSignal": "SIGKILL",
-      "serviceReady": true,
-      "serviceIdentitySha256": "1dc1fa2525a2cb5e3798e3308ac9900841c698bf37f8bd4c1a6ae2edae13b257",
-      "endpointSha256": "d238cda4d0df673da545969e9803953b76ad076b251f1ab2e8ecd17d2cba1c6c",
+      "serviceIdentitySha256": "f5852db14cdb571471ef0671967e286f4c88933f547296d0133ec02381230766",
+      "endpointSha256": "1251bf3e7acc4b46871a1a571c71dfedd6ae6262afcb40d691374e93f3d05f30",
       "containerDeltaCount": 1,
       "networkDeltaCount": 1,
       "scratchDeltaCount": 1,
@@ -51,6 +37,22 @@
       "endpointClosedVerified": true,
       "exactBaselineRestored": true,
       "cleanupDurationMs": 418
+    },
+    {
+      "index": 2,
+      "runtimeSignal": "SIGKILL",
+      "serviceReady": true,
+      "serviceIdentitySha256": "48487b9fb933185c7948c33c4286f9c3f400e651f5bc36b028fa7755e770aef4",
+      "endpointSha256": "9a0586c9b13b1d84a714f9898e7baa14ccf6881d435b9361d19c9febdc8973f5",
+      "containerDeltaCount": 1,
+      "networkDeltaCount": 1,
+      "scratchDeltaCount": 1,
+      "containerCleanupVerified": true,
+      "networkCleanupVerified": true,
+      "scratchCleanupVerified": true,
+      "endpointClosedVerified": true,
+      "exactBaselineRestored": true,
+      "cleanupDurationMs": 423
     }
   ],
   "recovery": {
@@ -85,5 +87,5 @@
       "full file-network-secret-resource failure injection"
     ]
   },
-  "contentSha256": "22fdcd002d5fe722a2e848784db538fe236c6aa6d2ce2cf3ec9495529ee76132"
+  "contentSha256": "29af4f6dca86b9d043c4c85488a2cee30a8b58b264c40fe6157af7a2ec28b6c5"
 }

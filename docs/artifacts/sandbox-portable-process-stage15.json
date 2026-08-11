@@ -1,0 +1,106 @@
+{
+  "kind": "napier.sandbox-portable-process-stage15",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-11T05:36:57.798Z",
+  "image": {
+    "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
+    "platform": "linux/arm64",
+    "provenanceSha256": "cea0625e085acdd78a0941229a29bfdc5c0cb3dc226cf9d0a79d6e4753778e7c"
+  },
+  "implementation": {
+    "containerIdentitySha256": "212658e6fde768bd4bd0e648ab787a5cc4fe1f5707925930523d10be22bc0330",
+    "pathMappingSha256": "1f56ece466497569a30b3eb90c4276fa6bfee439da71f75ea75213c5e38934d5",
+    "launchPolicySha256": "7dcde3a01b32f46f95c8cade2d673231b007da6225c7b058b6f6fed592abe0fa",
+    "launchArgumentsSha256": "8e5eec25188b6f9d323e71d7d300ac6fd57996a0d29b19351886815be96f5c88",
+    "ociAdapterSha256": "74c37f02870cb9a8ec4e849df200589b2921e91011c9ffe34805e17ed28fa4b0",
+    "gitProcessSha256": "79f65622d4205c86f64a36c2b93d0b00e6cfd3901e48141586b0a2fe9903db68",
+    "verificationSha256": "8a2e0f0a37b478a832b3c7b6b1442a57a302e3ee508d302b43c1efa48ecc92a0",
+    "checkScriptSha256": "639c1cd3193fc5826ffbb7fcd4cc124a975abf10dd1be33137a4b3b6e4d5b168",
+    "artifactVerifierSha256": "fae3b559008b0563fd021c8f610e9b0d0af21015cf396ea85da8c4d0e7294854",
+    "liveHarnessSha256": "679800be8125b666ed0865bb8bcd118eb288c59f89b69f7d23e8639f7885d909"
+  },
+  "portableIdentity": {
+    "mapping": "portable-non-posix",
+    "nonRoot": true,
+    "hostIdsRetained": false,
+    "userIdentitySha256": "3948adb881e7eacea184cc9ca7d05fa730ee9debe218918f043602c70728044e",
+    "runtimeIdentitySha256": "81c72941fc697681460f24e96e52781372e53b9c7f72e0c23dd3bfa323a109cd"
+  },
+  "controlledWindowsProjection": {
+    "workspaceMapped": true,
+    "nestedCwdMapped": true,
+    "verifierTargetMapped": true,
+    "gitPrivatePathMapped": true,
+    "runtimePathMapped": true,
+    "imageRuntimePathsPreserved": true,
+    "outsideDriveRejected": true,
+    "explicitPlatformLaunch": true,
+    "windowsHostExecuted": false,
+    "projectionSha256": "e9ed92eefb808a7cf5b2dec46dcebea48640510b76bde0393ff9181045ca5b63"
+  },
+  "productionDogfood": {
+    "hostPlatform": "darwin",
+    "sandbox": "oci-container",
+    "command": {
+      "status": "succeeded",
+      "containerCwdMapped": true,
+      "inputRead": true,
+      "resultSha256": "175467cbfdb1a9388a357b92107041aae54473f9780ff29954bb98fb707d8b4c"
+    },
+    "git": {
+      "status": "succeeded",
+      "processLocalSafeDirectory": true,
+      "wildcardSafeDirectory": false,
+      "hostGlobalConfigChanged": false,
+      "resultSha256": "285667eb9497c874e4cc6fd72342c824b289b5b011be9cd3cc093737285e137e"
+    },
+    "verification": {
+      "typecheckStatus": "passed",
+      "testStatus": "passed",
+      "typecheckVersion": "5.9.3",
+      "testVersion": "4.1.9",
+      "typecheckRuntimeIdentitySha256": "f2d10af46af9460508bdc053294ede5d54fbc5f96e5bb49977c7ec6cf79886bf",
+      "testRuntimeIdentitySha256": "f2d10af46af9460508bdc053294ede5d54fbc5f96e5bb49977c7ec6cf79886bf",
+      "typecheckResultSha256": "8e4683bbbbc6d9709fe4f7dc2a8cd5c2811a3767faa7cae5a4b4b4b9ae0aaabb",
+      "testResultSha256": "e3fb488b65abd6a92e51f6f9c436befcef41ce8b648907492aeb0a24499605bd"
+    },
+    "scopedWrite": {
+      "status": "passed",
+      "containerUserNonRoot": true,
+      "hostOwnershipPreserved": true,
+      "contentVerified": true,
+      "resultSha256": "a0c4707596e27c6c0b69bb21b080db01d32fa824f8b7b10834195e021f150a3f"
+    }
+  },
+  "resourceClosure": {
+    "exactBaselineRestored": true,
+    "containerDeltaCount": 0,
+    "networkDeltaCount": 0,
+    "scratchDeltaCount": 0,
+    "temporaryRootRemoved": true
+  },
+  "retention": {
+    "credentialValues": false,
+    "rawCommandOutput": false,
+    "rawDockerOutput": false,
+    "rawGitOutput": false,
+    "workspacePaths": false,
+    "temporaryPaths": false,
+    "numericHostUserIds": false,
+    "resourceNames": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "portableProcessPlane": true,
+    "windowsHostExecuted": false,
+    "windowsProtocolPathsComplete": false,
+    "remaining": [
+      "Windows LSP and DAP protocol path translation",
+      "Windows and Linux host product acceptance",
+      "multi-architecture registry publication",
+      "image signature and external attestation"
+    ]
+  },
+  "contentSha256": "3e2c2ed6864e1ec0b0ffc47671d58ef5bb7070ef4033209678137b931786b86b"
+}

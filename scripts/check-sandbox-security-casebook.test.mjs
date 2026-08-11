@@ -82,6 +82,8 @@ async function fixtureRoot() {
     "packages/runtime/src/command-execution.ts",
     "packages/runtime/src/sandboxed-process.ts",
     "packages/runtime/src/sandbox-container-runtime.ts",
+    "packages/runtime/src/sandbox-container-path-mapping.ts",
+    "packages/runtime/src/sandbox-launch-policy.ts",
     "packages/runtime/src/sandbox-container-policy.ts",
     "packages/runtime/src/sandbox-oci.ts",
     "packages/runtime/src/sandbox-oci-launch-arguments.ts",

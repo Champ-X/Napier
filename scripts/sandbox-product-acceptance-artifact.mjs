@@ -9,6 +9,8 @@ export async function sandboxProductAcceptanceImplementation(repoRoot) {
   const files = {
     setupService: "packages/runtime/src/sandbox-setup-service.ts",
     containerIdentity: "packages/runtime/src/sandbox-container-runtime.ts",
+    pathMapping: "packages/runtime/src/sandbox-container-path-mapping.ts",
+    launchPolicy: "packages/runtime/src/sandbox-launch-policy.ts",
     ociAdapter: "packages/runtime/src/sandbox-oci.ts",
     ociLaunchArguments: "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     lspProbe: "packages/runtime/src/doctor-lsp-runtime-probe.ts",

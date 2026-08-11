@@ -5,6 +5,10 @@ import {
   type ContainerUserIdentity,
   validateOciContainerName,
 } from "./sandbox-container-runtime.js";
+import {
+  createOciContainerPathMapping,
+  type OciContainerPathMapping,
+} from "./sandbox-container-path-mapping.js";
 import { validateContainerServiceNetworkName } from "./sandbox-container-service.js";
 import { OCI_PROCESS_RESOURCE_ARGUMENTS } from "./sandbox-container-policy.js";
 import {
@@ -25,9 +29,15 @@ export function buildOciContainerArgs(
   user: ContainerUserIdentity,
   serviceNetworkName?: string,
   imagePlatform: ContainerImageIdentity["imagePlatform"] = "linux/arm64",
+  pathMapping: OciContainerPathMapping = createOciContainerPathMapping(
+    request,
+    user,
+  ),
+  hostPlatform: NodeJS.Platform = process.platform,
 ): string[] {
-  validateLaunchRequest(request);
-  if (!path.isAbsolute(sandboxHome)) {
+  const hostPath = hostPlatform === "win32" ? path.win32 : path.posix;
+  validateLaunchRequest(request, hostPlatform);
+  if (!hostPath.isAbsolute(sandboxHome)) {
     throw new Error("Container sandbox home must be absolute");
   }
   validateContainerImage(image);
@@ -39,7 +49,7 @@ export function buildOciContainerArgs(
   validateServiceNetwork(request, serviceNetworkName);
   serializeContainerEnvironment(request.env);
   const capabilities = new Set(request.approvedCapabilities);
-  const writePaths = scopedWorkspaceWritePaths(request);
+  const writePaths = scopedWorkspaceWritePaths(request, hostPlatform);
   const workspaceMounted =
     capabilities.has("workspace.read") || capabilities.has("workspace.write");
   const args = [
@@ -66,36 +76,61 @@ export function buildOciContainerArgs(
     "--tmpfs",
     `/home/napier:rw,nosuid,nodev,size=64m,mode=0700,uid=${String(user.userId)},gid=${String(user.groupId)}`,
     "--workdir",
-    workspaceMounted ? request.cwd : "/tmp",
+    workspaceMounted ? pathMapping.cwd : "/tmp",
     "--env",
     "HOME=/home/napier",
     "--env",
     "TMPDIR=/tmp",
     "--env-file",
-    containerEnvironmentFile(sandboxHome),
+    containerEnvironmentFile(sandboxHome, hostPlatform),
   ];
   if (workspaceMounted) {
     args.push(
       "--mount",
       bindMount(
         request.workspaceRoot,
-        request.workspaceRoot,
+        pathMapping.workspaceTarget,
         !capabilities.has("workspace.write") || writePaths.length > 0,
+        hostPlatform,
       ),
     );
-    for (const writePath of writePaths) {
-      args.push("--mount", bindMount(writePath, writePath, false));
+    for (const [index, writePath] of writePaths.entries()) {
+      args.push(
+        "--mount",
+        bindMount(
+          writePath,
+          pathMapping.writeTargets[index]!,
+          false,
+          hostPlatform,
+        ),
+      );
     }
   }
-  for (const runtimePath of request.runtimeReadPaths ?? []) {
-    args.push("--mount", bindMount(runtimePath, runtimePath, true));
+  for (const [index, runtimePath] of (
+    request.runtimeReadPaths ?? []
+  ).entries()) {
+    args.push(
+      "--mount",
+      bindMount(
+        runtimePath,
+        pathMapping.runtimeTargets[index]!,
+        true,
+        hostPlatform,
+      ),
+    );
   }
-  args.push(image, request.command, ...request.args);
+  args.push(image, pathMapping.command, ...pathMapping.args);
   return args;
 }
 
-export function containerEnvironmentFile(sandboxHome: string): string {
-  return path.join(sandboxHome, "environment.list");
+export function containerEnvironmentFile(
+  sandboxHome: string,
+  platform: NodeJS.Platform = process.platform,
+): string {
+  return (platform === "win32" ? path.win32 : path.posix).join(
+    sandboxHome,
+    "environment.list",
+  );
 }
 
 function validateServiceNetwork(
@@ -112,11 +147,17 @@ function validateServiceNetwork(
   }
 }
 
-function bindMount(source: string, target: string, readonly: boolean): string {
+function bindMount(
+  source: string,
+  target: string,
+  readonly: boolean,
+  platform: NodeJS.Platform,
+): string {
+  const hostPath = platform === "win32" ? path.win32 : path.posix;
   return [
     "type=bind",
-    `source=${path.resolve(source)}`,
-    `target=${path.resolve(target)}`,
+    `source=${hostPath.resolve(source)}`,
+    `target=${path.posix.resolve(target)}`,
     readonly ? "readonly" : "",
   ]
     .filter(Boolean)
@@ -131,6 +172,7 @@ function validateContainerUserIdentity(user: ContainerUserIdentity): void {
     !Number.isSafeInteger(user.groupId) ||
     user.groupId < 0 ||
     user.groupId > 2_147_483_647 ||
+    !["host-posix", "portable-non-posix", "injected"].includes(user.mapping) ||
     !/^[a-f0-9]{64}$/u.test(user.identitySha256)
   ) {
     throw new Error("OCI container user identity is invalid");

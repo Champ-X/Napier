@@ -23,6 +23,11 @@ const IMAGE_ID = /^sha256:[a-f0-9]{64}$/u;
 const OCI_CONTAINER_NAME = /^napier-[a-f0-9]{32}$/u;
 const OCI_NETWORK_NAME = /^napier-network-[a-f0-9]{32}$/u;
 const MAX_POSIX_ID = 2_147_483_647;
+export const PORTABLE_CONTAINER_USER_IDS = {
+  userId: 65_532,
+  groupId: 65_532,
+  mapping: "portable-non-posix",
+} as const satisfies ContainerUserIds;
 const CONTAINER_CLIENT_TIMEOUT_MS = 10_000;
 const MAX_CONTAINER_IDENTITY_OUTPUT_BYTES = 4_096;
 
@@ -44,12 +49,19 @@ export interface ContainerDaemonIdentity {
 export interface ContainerUserIdentity {
   userId: number;
   groupId: number;
+  mapping: ContainerUserMapping;
   identitySha256: string;
 }
+
+export type ContainerUserMapping =
+  | "host-posix"
+  | "portable-non-posix"
+  | "injected";
 
 export interface ContainerUserIds {
   userId: number;
   groupId: number;
+  mapping?: ContainerUserMapping;
 }
 
 export type ContainerClient = (
@@ -154,13 +166,20 @@ export async function resolveContainerDaemonIdentity(
 
 export function resolveContainerUserIdentity(
   injected?: ContainerUserIds,
+  platform: NodeJS.Platform = process.platform,
 ): ContainerUserIdentity {
-  const observed =
-    injected ??
-    (typeof process.getuid === "function" &&
-    typeof process.getgid === "function"
-      ? { userId: process.getuid(), groupId: process.getgid() }
-      : undefined);
+  const observed = injected
+    ? { ...injected, mapping: injected.mapping ?? "injected" }
+    : platform === "win32"
+      ? PORTABLE_CONTAINER_USER_IDS
+      : typeof process.getuid === "function" &&
+          typeof process.getgid === "function"
+        ? {
+            userId: process.getuid(),
+            groupId: process.getgid(),
+            mapping: "host-posix" as const,
+          }
+        : undefined;
   if (
     !observed ||
     !Number.isSafeInteger(observed.userId) ||
@@ -168,18 +187,21 @@ export function resolveContainerUserIdentity(
     observed.userId > MAX_POSIX_ID ||
     !Number.isSafeInteger(observed.groupId) ||
     observed.groupId < 0 ||
-    observed.groupId > MAX_POSIX_ID
+    observed.groupId > MAX_POSIX_ID ||
+    !["host-posix", "portable-non-posix", "injected"].includes(observed.mapping)
   ) {
     throw new Error("OCI container host user identity is unavailable");
   }
   return {
     userId: observed.userId,
     groupId: observed.groupId,
+    mapping: observed.mapping,
     identitySha256: sha256(
       canonicalJson({
         kind: "napier.oci-user-identity",
         userId: observed.userId,
         groupId: observed.groupId,
+        mapping: observed.mapping,
       }),
     ),
   };

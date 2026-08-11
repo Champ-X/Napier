@@ -82,6 +82,8 @@ async function fixtureRoot() {
     "packages/runtime/src/process-guardian.ts",
     "packages/runtime/src/process-guardian-worker-source.ts",
     "packages/runtime/src/sandbox-container-runtime.ts",
+    "packages/runtime/src/sandbox-container-path-mapping.ts",
+    "packages/runtime/src/sandbox-launch-policy.ts",
     "packages/runtime/src/sandbox-oci.ts",
     "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     "scripts/check-oci-crash-recovery.mjs",

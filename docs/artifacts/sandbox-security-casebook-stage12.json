@@ -1,7 +1,7 @@
 {
   "kind": "napier.sandbox-security-casebook-stage12",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T04:44:24.693Z",
+  "generatedAt": "2026-08-11T05:35:01.327Z",
   "image": {
     "id": "sha256:ef8efa7d1ef1067a824c7c6b334b50ff84f46b6a11f3c629f8cc5f29dca52f6a",
     "platform": "linux/arm64",
@@ -11,12 +11,14 @@
     "resourcePolicySha256": "e95d7afc88833609b7b3ef268725c5df36148241c36430bf0f7988a967a16448",
     "commandExecutionSha256": "16c76802c9595115f863c304a8c78c3bd3e105e10120815ada318af2a401f037",
     "processLifecycleSha256": "a6b5bfb9dc924da0c92292e0d593f79abf9af6a0a57be4a64b1870e200742c2e",
-    "containerIdentitySha256": "3d25c3ca48ee3bbf50a3bb5e7c89f778d9a33d0b00356d511e99a5b021580ea4",
-    "ociAdapterSha256": "a388aa23cec7d27a662dc468c9046492a01086fc9be95d3ddbee14db29094aad",
-    "ociLaunchArgumentsSha256": "b60ab62209a686f4f51a9a2fff125b41038b06c8ffb7fb57e29c31d99694076c",
+    "containerIdentitySha256": "212658e6fde768bd4bd0e648ab787a5cc4fe1f5707925930523d10be22bc0330",
+    "pathMappingSha256": "1f56ece466497569a30b3eb90c4276fa6bfee439da71f75ea75213c5e38934d5",
+    "launchPolicySha256": "7dcde3a01b32f46f95c8cade2d673231b007da6225c7b058b6f6fed592abe0fa",
+    "ociAdapterSha256": "74c37f02870cb9a8ec4e849df200589b2921e91011c9ffe34805e17ed28fa4b0",
+    "ociLaunchArgumentsSha256": "8e5eec25188b6f9d323e71d7d300ac6fd57996a0d29b19351886815be96f5c88",
     "containerPolicySha256": "f8668fd7486703c36a9e8157102a71fae1403d9eba836a846f103a04ae1e46d4",
     "checkScriptSha256": "c355fb89806073b5ce0e3c09be26e0c0451a1b387d68e452432b82734edbf603",
-    "artifactVerifierSha256": "80d207d37df9e83fc695484a34417c015790c901ff454fd0c9f3922922894677",
+    "artifactVerifierSha256": "ea16ae2a0b537c55e7274adc62581cebc89ffaa512f656c6f9a596cef14e60a6",
     "liveHarnessSha256": "dde72550db47db77138654ede4d780568803472453585d271459071904502b52"
   },
   "cases": [
@@ -25,42 +27,42 @@
       "status": "passed",
       "reason": "read_only_workspace_mount",
       "evidenceSha256": "839fddb0a9f798271e4d97426259df567c61cf0c69fcd19f87dec9b04a50cf30",
-      "durationMs": 183
+      "durationMs": 190
     },
     {
       "id": "outside_read_denied",
       "status": "passed",
       "reason": "outside_path_not_mounted",
       "evidenceSha256": "7acff5264981de1b9a6b8ebc9cb244bb114ab51c034b3667fa8807d9eab1799e",
-      "durationMs": 185
+      "durationMs": 187
     },
     {
       "id": "secret_inheritance_denied",
       "status": "passed",
       "reason": "fixed_secret_free_environment",
       "evidenceSha256": "045ebc62c392e6138415d00c128edbeb395df3a8ba238dfd1f83278685acd5b6",
-      "durationMs": 199
+      "durationMs": 197
     },
     {
       "id": "private_network_denied",
       "status": "passed",
       "reason": "network_namespace_denied",
       "evidenceSha256": "52638f7aa11e30eee97bb82fb91e19b43ce05ec671bf171841de9e7c2b6b04ca",
-      "durationMs": 191
+      "durationMs": 190
     },
     {
       "id": "temporary_storage_exhausted",
       "status": "passed",
       "reason": "tmpfs_size_limit",
       "evidenceSha256": "2457cf7688cb1114703f044725357b720a9cec019cd570841bb2a23cabaf0180",
-      "durationMs": 224
+      "durationMs": 202
     },
     {
       "id": "process_limit_enforced",
       "status": "passed",
       "reason": "pids_cgroup_limit",
       "evidenceSha256": "d4b15faa70d29332e25305d12a912c6e5d75bc3083e8502bf59da34ad0269acf",
-      "durationMs": 404,
+      "durationMs": 329,
       "observedCount": 248,
       "rejectedCount": 152
     },
@@ -69,35 +71,35 @@
       "status": "passed",
       "reason": "memory_cgroup_kill",
       "evidenceSha256": "d5ce127372eac78437775c4b92a48cd9faa9996d47fa748d36f567b6b74b5ede",
-      "durationMs": 619
+      "durationMs": 511
     },
     {
       "id": "wall_time_enforced",
       "status": "passed",
       "reason": "wall_time_limit",
       "evidenceSha256": "be21ee202c61700b59be782197476e3d3fc4770319d683eab032d0a62cdd8b79",
-      "durationMs": 1158
+      "durationMs": 1121
     },
     {
       "id": "output_limit_enforced",
       "status": "passed",
       "reason": "output_character_limit",
       "evidenceSha256": "3d2045d484de619ed33906007d5a217a202e2072eba48bd594647e4da70f0355",
-      "durationMs": 237
+      "durationMs": 198
     },
     {
       "id": "cancellation_enforced",
       "status": "passed",
       "reason": "abort_terminates_process",
       "evidenceSha256": "3ae0c811738cbde00c5d411b40823897175f963352f6431b5a6f9220c83f3303",
-      "durationMs": 391
+      "durationMs": 386
     },
     {
       "id": "identity_drift_rejected",
       "status": "passed",
       "reason": "configured_identity_mismatch",
-      "evidenceSha256": "314f66d0c24807e9f35586cbc1ab37395d913f75fdbe5b28de6b7bd79a2c988b",
-      "durationMs": 125
+      "evidenceSha256": "09d6b686cdbda2b7040df28f6f0b499d25efc11da1301eed36c054112f4983ed",
+      "durationMs": 128
     }
   ],
   "resourceClosure": {
@@ -127,5 +129,5 @@
       "Windows and Linux host product acceptance"
     ]
   },
-  "contentSha256": "d2048305d99dbcaba9dc3106e15a61d4318a68af5dad54d289e7a305c7cc3886"
+  "contentSha256": "d6c72c38f09281f7ad5d44cb7f4ae0ae1f30d734f9eb4af9634d42e21df8c87b"
 }

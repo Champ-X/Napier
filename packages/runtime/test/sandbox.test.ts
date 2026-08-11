@@ -35,6 +35,7 @@ const OCI_CONTAINER_NAME = `napier-${"d".repeat(32)}`;
 const OCI_USER_IDENTITY = {
   userId: 501,
   groupId: 20,
+  mapping: "injected" as const,
   identitySha256: "e".repeat(64),
 };
 

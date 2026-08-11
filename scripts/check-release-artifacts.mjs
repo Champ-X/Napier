@@ -10,6 +10,7 @@ import { verifyOciCrashRecoveryArtifact } from "./check-oci-crash-recovery.mjs";
 import { verifySandboxSecurityCasebook } from "./check-sandbox-security-casebook.mjs";
 import { verifySandboxProductAcceptance } from "./check-sandbox-product-acceptance.mjs";
 import { verifySandboxMultiArchitecture } from "./check-sandbox-multi-architecture.mjs";
+import { verifySandboxPortableProcess } from "./check-sandbox-portable-process.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -69,6 +70,8 @@ const defaultSandboxProductAcceptancePath =
   "docs/artifacts/sandbox-product-acceptance-stage13.json";
 const defaultSandboxMultiArchitecturePath =
   "docs/artifacts/sandbox-multi-architecture-stage14.json";
+const defaultSandboxPortableProcessPath =
+  "docs/artifacts/sandbox-portable-process-stage15.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -155,6 +158,8 @@ export async function auditReleaseArtifacts(options = {}) {
     options.sandboxProductAcceptancePath ?? defaultSandboxProductAcceptancePath;
   const sandboxMultiArchitecturePath =
     options.sandboxMultiArchitecturePath ?? defaultSandboxMultiArchitecturePath;
+  const sandboxPortableProcessPath =
+    options.sandboxPortableProcessPath ?? defaultSandboxPortableProcessPath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -612,6 +617,19 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const sandboxPortableProcessVerification = await verifySandboxPortableProcess(
+    {
+      repoRoot,
+      artifactPath: sandboxPortableProcessPath,
+    },
+  );
+  if (!sandboxPortableProcessVerification.valid) {
+    errors.push(
+      ...sandboxPortableProcessVerification.errors.map(
+        (error) => `Sandbox portable process: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -686,6 +704,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: sandboxMultiArchitectureVerification.path,
       sha256: sandboxMultiArchitectureVerification.sha256,
       valid: sandboxMultiArchitectureVerification.valid,
+    },
+    {
+      kind: "sandbox-portable-process-stage15",
+      path: sandboxPortableProcessVerification.path,
+      sha256: sandboxPortableProcessVerification.sha256,
+      valid: sandboxPortableProcessVerification.valid,
     },
     {
       kind: "product-performance-baseline",

@@ -6892,6 +6892,28 @@ macOS/arm64 BuildKit can build and execute both Linux architectures; it is not
 registry publication, an image signature, per-platform SBOM coverage, or
 Windows/Linux host acceptance.
 
+Stage 15 closes the portable command-process boundary needed by non-POSIX
+hosts. When the host has no numeric POSIX identity, the OCI Runtime uses a
+fixed non-root `65532:65532` identity, records the `portable-non-posix` mapping
+in its runtime hash, and maps host Workspace paths to `/workspace`. Host
+runtime mounts receive fixed `/opt/napier-host-runtime/N` targets; image-bound
+Node and toolchain paths remain unchanged. Git uses a process-local
+`safe.directory=/workspace` setting only—never a global config write or `*`.
+
+```bash
+npm run check:sandbox-portable-process
+npm run check:sandbox-portable-process:live
+```
+
+The live acceptance uses that same fixed identity on the real local daemon and
+requires nested Node execution, Git inspection, image-bound typecheck/Vitest,
+and a scoped write whose resulting host file remains owned by the current
+macOS user. A controlled Windows-path projection covers drive-letter cwd,
+verification targets, Git private paths, runtime mounts, explicit image
+platform, and outside-drive rejection through the production argv builder.
+This does not claim execution on a Windows host or completion of LSP/DAP
+protocol URI translation; those remain part of cross-host acceptance.
+
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only
 when the mapped container user can run the same isolated standard-library

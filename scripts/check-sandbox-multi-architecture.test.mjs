@@ -133,6 +133,8 @@ async function fixtureRoot() {
     "docs/artifacts/sandbox-multi-architecture-stage14.json",
     "packages/runtime/src/doctor-lsp-runtime-probe.ts",
     "packages/runtime/src/sandbox-container-runtime.ts",
+    "packages/runtime/src/sandbox-container-path-mapping.ts",
+    "packages/runtime/src/sandbox-launch-policy.ts",
     "packages/runtime/src/sandbox-oci.ts",
     "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     "scripts/check-sandbox-image-sbom.mjs",

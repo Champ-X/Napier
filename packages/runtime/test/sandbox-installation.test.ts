@@ -203,6 +203,7 @@ function identity(): ContainerImageIdentity {
     user: {
       userId: 501,
       groupId: 20,
+      mapping: "injected",
       identitySha256: "d".repeat(64),
     },
     identitySha256: "e".repeat(64),

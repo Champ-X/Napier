@@ -18,6 +18,7 @@ import {
 } from "./sandbox-container-service.js";
 import { resolveContainerLspRuntime } from "./sandbox-container-lsp-runtime.js";
 import { resolveContainerNodeDebuggerRuntime } from "./sandbox-container-node-debugger-runtime.js";
+import { createOciContainerPathMapping } from "./sandbox-container-path-mapping.js";
 import { resolveContainerVerificationRuntime } from "./sandbox-container-verification-runtime.js";
 import {
   containerScratchBaseDir,
@@ -190,7 +191,10 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
     let child: SandboxedProcess | undefined;
     let closeLocalServiceProjection: (() => Promise<void>) | undefined;
     try {
-      const serializedEnvironment = serializeContainerEnvironment(request.env);
+      const pathMapping = createOciContainerPathMapping(request, identity.user);
+      const serializedEnvironment = serializeContainerEnvironment(
+        pathMapping.environment,
+      );
       await writeFile(
         containerEnvironmentFile(sandboxHome),
         serializedEnvironment,
@@ -216,6 +220,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
         identity.user,
         networkName,
         identity.imagePlatform,
+        pathMapping,
       );
       const target = {
         command: identity.clientExecutable,

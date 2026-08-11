@@ -59,6 +59,7 @@ describe("release artifacts audit", () => {
       "sandbox-security-casebook-stage12",
       "sandbox-product-acceptance-stage13",
       "sandbox-multi-architecture-stage14",
+      "sandbox-portable-process-stage15",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -411,6 +412,28 @@ describe("release artifacts audit", () => {
       expect.arrayContaining([
         expect.stringContaining(
           "Sandbox multi-architecture: Sandbox multi-architecture artifact shape is invalid",
+        ),
+      ]),
+    );
+  });
+
+  it("fails when retained Sandbox portable process identity is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/sandbox-portable-process-stage15.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.portableIdentity.nonRoot = false;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "Sandbox portable process: Sandbox portable process artifact shape is invalid",
         ),
       ]),
     );
@@ -1139,6 +1162,7 @@ async function createFixture() {
     "sandbox-security-casebook-stage12.json",
     "sandbox-product-acceptance-stage13.json",
     "sandbox-multi-architecture-stage14.json",
+    "sandbox-portable-process-stage15.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),
@@ -1149,6 +1173,8 @@ async function createFixture() {
     "packages/runtime/src/process-guardian.ts",
     "packages/runtime/src/process-guardian-worker-source.ts",
     "packages/runtime/src/sandbox-container-runtime.ts",
+    "packages/runtime/src/sandbox-container-path-mapping.ts",
+    "packages/runtime/src/sandbox-launch-policy.ts",
     "packages/runtime/src/sandbox-oci.ts",
     "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     "scripts/check-oci-crash-recovery.mjs",
@@ -1158,12 +1184,16 @@ async function createFixture() {
     "packages/runtime/src/command-execution.ts",
     "packages/runtime/src/sandboxed-process.ts",
     "packages/runtime/src/sandbox-container-runtime.ts",
+    "packages/runtime/src/sandbox-container-path-mapping.ts",
+    "packages/runtime/src/sandbox-launch-policy.ts",
     "packages/runtime/src/sandbox-container-policy.ts",
     "scripts/check-sandbox-security-casebook.mjs",
     "scripts/sandbox-security-casebook-artifact.mjs",
     "scripts/sandbox-security-casebook-live.mjs",
     "packages/runtime/src/sandbox-setup-service.ts",
     "packages/runtime/src/sandbox-container-runtime.ts",
+    "packages/runtime/src/sandbox-container-path-mapping.ts",
+    "packages/runtime/src/sandbox-launch-policy.ts",
     "packages/runtime/src/sandbox-oci.ts",
     "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     "packages/runtime/src/doctor-lsp-runtime-probe.ts",
@@ -1175,10 +1205,19 @@ async function createFixture() {
     "scripts/sandbox-product-acceptance-live.mjs",
     "packages/runtime/src/doctor-lsp-runtime-probe.ts",
     "packages/runtime/src/sandbox-container-runtime.ts",
+    "packages/runtime/src/sandbox-container-path-mapping.ts",
+    "packages/runtime/src/sandbox-launch-policy.ts",
     "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     "scripts/check-sandbox-multi-architecture.mjs",
     "scripts/sandbox-multi-architecture-artifact.mjs",
     "scripts/sandbox-multi-architecture-live.mjs",
+    "packages/runtime/src/sandbox-container-path-mapping.ts",
+    "packages/runtime/src/sandbox-launch-policy.ts",
+    "packages/runtime/src/git-inspect-process.ts",
+    "packages/runtime/src/verification.ts",
+    "scripts/check-sandbox-portable-process.mjs",
+    "scripts/sandbox-portable-process-artifact.mjs",
+    "scripts/sandbox-portable-process-live.mjs",
   ]) {
     await mkdir(path.join(root, path.dirname(relative)), { recursive: true });
     await cp(path.resolve(relative), path.join(root, relative));

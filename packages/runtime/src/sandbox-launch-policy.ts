@@ -9,20 +9,24 @@ import { validateTerminalDimensions } from "./sandbox-terminal.js";
 
 const MAX_SANDBOX_PATHS = 8;
 
-export function validateLaunchRequest(request: SandboxLaunchRequest): void {
+export function validateLaunchRequest(
+  request: SandboxLaunchRequest,
+  platform: NodeJS.Platform = process.platform,
+): void {
+  const hostPath = platformPath(platform);
   if (request.signal?.aborted) {
     throw new Error("Sandbox launch was aborted");
   }
-  if (!path.isAbsolute(request.command)) {
+  if (!hostPath.isAbsolute(request.command)) {
     throw new Error("Sandboxed commands must use an absolute executable path");
   }
-  if (!path.isAbsolute(request.cwd)) {
+  if (!hostPath.isAbsolute(request.cwd)) {
     throw new Error("Sandboxed process cwd must be absolute");
   }
-  if (!path.isAbsolute(request.workspaceRoot)) {
+  if (!hostPath.isAbsolute(request.workspaceRoot)) {
     throw new Error("Sandbox workspace root must be absolute");
   }
-  if (!isPathInside(request.cwd, request.workspaceRoot)) {
+  if (!isPathInside(request.cwd, request.workspaceRoot, hostPath)) {
     throw new Error("Sandboxed process cwd must stay inside the workspace");
   }
   if (!request.approvedCapabilities.includes("process.spawn")) {
@@ -34,7 +38,7 @@ export function validateLaunchRequest(request: SandboxLaunchRequest): void {
   ) {
     throw new Error("workspace.write requires workspace.read");
   }
-  scopedWorkspaceWritePaths(request);
+  scopedWorkspaceWritePaths(request, platform);
   validateSandboxLocalService(request);
   if (
     request.stdinMode === "open" &&
@@ -49,8 +53,8 @@ export function validateLaunchRequest(request: SandboxLaunchRequest): void {
     (request.runtimeReadPaths.length > MAX_SANDBOX_PATHS ||
       request.runtimeReadPaths.some(
         (runtimePath) =>
-          !path.isAbsolute(runtimePath) ||
-          path.resolve(runtimePath) === path.parse(runtimePath).root ||
+          !hostPath.isAbsolute(runtimePath) ||
+          hostPath.resolve(runtimePath) === hostPath.parse(runtimePath).root ||
           /[\u0000-\u001f\u007f]/u.test(runtimePath),
       ))
   ) {
@@ -71,7 +75,9 @@ export function validateNonContainerLaunchRequest(
 
 export function scopedWorkspaceWritePaths(
   request: SandboxLaunchRequest,
+  platform: NodeJS.Platform = process.platform,
 ): string[] {
+  const hostPath = platformPath(platform);
   const paths = request.workspaceWritePaths ?? [];
   if (
     paths.length > 0 &&
@@ -83,24 +89,25 @@ export function scopedWorkspaceWritePaths(
     paths.length > MAX_SANDBOX_PATHS ||
     paths.some(
       (writePath) =>
-        !path.isAbsolute(writePath) ||
-        path.resolve(writePath) === path.resolve(request.workspaceRoot) ||
-        !isPathInside(writePath, request.workspaceRoot) ||
+        !hostPath.isAbsolute(writePath) ||
+        hostPath.resolve(writePath) ===
+          hostPath.resolve(request.workspaceRoot) ||
+        !isPathInside(writePath, request.workspaceRoot, hostPath) ||
         /[\u0000-\u001f\u007f]/u.test(writePath),
     ) ||
-    new Set(paths.map((writePath) => path.resolve(writePath))).size !==
+    new Set(paths.map((writePath) => hostPath.resolve(writePath))).size !==
       paths.length
   ) {
     throw new Error(
       `Sandbox workspace write paths must contain at most ${MAX_SANDBOX_PATHS} distinct absolute non-root workspace paths`,
     );
   }
-  const resolved = paths.map((writePath) => path.resolve(writePath)).sort();
+  const resolved = paths.map((writePath) => hostPath.resolve(writePath)).sort();
   if (
     resolved.some((candidate, index) =>
       resolved.some(
         (other, otherIndex) =>
-          index !== otherIndex && isPathInside(candidate, other),
+          index !== otherIndex && isPathInside(candidate, other, hostPath),
       ),
     )
   ) {
@@ -109,12 +116,27 @@ export function scopedWorkspaceWritePaths(
   return resolved;
 }
 
-function isPathInside(candidate: string, root: string): boolean {
-  const relative = path.relative(path.resolve(root), path.resolve(candidate));
+function isPathInside(
+  candidate: string,
+  root: string,
+  hostPath: typeof path.posix | typeof path.win32 = platformPath(
+    process.platform,
+  ),
+): boolean {
+  const relative = hostPath.relative(
+    hostPath.resolve(root),
+    hostPath.resolve(candidate),
+  );
   return (
     relative === "" ||
-    (!relative.startsWith(`..${path.sep}`) &&
+    (!relative.startsWith(`..${hostPath.sep}`) &&
       relative !== ".." &&
-      !path.isAbsolute(relative))
+      !hostPath.isAbsolute(relative))
   );
+}
+
+function platformPath(
+  platform: NodeJS.Platform,
+): typeof path.posix | typeof path.win32 {
+  return platform === "win32" ? path.win32 : path.posix;
 }

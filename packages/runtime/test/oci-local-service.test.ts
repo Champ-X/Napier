@@ -53,6 +53,7 @@ describe("OCI local service policy", () => {
       CONTAINER_NAME,
       {
         ...USER_IDS,
+        mapping: "injected",
         identitySha256: "d".repeat(64),
       },
       NETWORK_NAME,

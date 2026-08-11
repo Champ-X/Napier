@@ -845,6 +845,29 @@ attestation, and cross-host acceptance as false; the existing CycloneDX receipt
 also remains scoped to the current arm64 image rather than claiming
 per-platform SBOM coverage.
 
+Stage 15 adds a provider-owned host/container path boundary for the portable
+process plane. POSIX hosts preserve numeric host UID/GID and same-path mounts.
+When no host IDs exist, the runtime selects fixed non-root `65532:65532`,
+hashes `mapping=portable-non-posix` into image identity, maps Workspace cwd,
+targets, writes, and Git private environment paths under `/workspace`, and
+maps host runtime roots under `/opt/napier-host-runtime/N`. Container-native
+executables such as `/usr/local/bin/node` and `/opt/napier/...` remain
+unchanged. Windows drive/UNC paths outside the Workspace or an explicit runtime
+mount fail closed. Git receives only process-local `GIT_CONFIG_*` entries for
+`safe.directory=/workspace`; Napier never writes global Git config or trusts
+all repositories.
+
+The Stage 15 live acceptance injects that fixed identity into the ordinary OCI
+adapter on the local macOS daemon. It proves nested command cwd/read behavior,
+Git status on a host-owned repository, image-bound typecheck and Vitest, scoped
+write content plus host ownership, unchanged host Git config, and exact
+container/network/scratch/temp-root cleanup. The same production path builder
+is exercised with controlled Windows drive-letter inputs and requires fixed
+container targets plus outside-drive rejection. The receipt explicitly marks
+`windowsHostExecuted=false` and `windowsProtocolPathsComplete=false`: LSP/DAP
+URIs still carry host paths above the process layer and require separate
+bidirectional translation before Windows host product acceptance.
+
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath. The Contracts root remains at
 its hard 6,738-line budget; image-bound verifier version and runtime identity

@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { verifySandboxProductAcceptance } from "./check-sandbox-product-acceptance.mjs";
+import { verifySandboxPortableProcess } from "./check-sandbox-portable-process.mjs";
 
 const roots = [];
 
@@ -14,47 +14,47 @@ afterEach(async () => {
   );
 });
 
-describe("Sandbox product acceptance artifact", () => {
-  it("accepts the current hash-bound default-product receipt", async () => {
-    await expect(verifySandboxProductAcceptance()).resolves.toEqual(
+describe("Sandbox portable process artifact", () => {
+  it("accepts the current portable process receipt", async () => {
+    await expect(verifySandboxPortableProcess()).resolves.toEqual(
       expect.objectContaining({
         valid: true,
         errors: [],
-        path: "docs/artifacts/sandbox-product-acceptance-stage13.json",
+        path: "docs/artifacts/sandbox-portable-process-stage15.json",
         sha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
   });
 
-  it("rejects verifier failure, stale output, and S1 completion overclaim", async () => {
+  it("rejects root identity, Windows-host overclaim, and wildcard Git trust", async () => {
     for (const mutate of [
       (value) => {
-        value.verification.typecheck.status = "failed";
+        value.portableIdentity.nonRoot = false;
       },
       (value) => {
-        value.restart.staleOutputExposed = true;
+        value.scope.windowsHostExecuted = true;
       },
       (value) => {
-        value.scope.s1Complete = true;
+        value.productionDogfood.git.wildcardSafeDirectory = true;
       },
     ]) {
       const root = await fixtureRoot();
       const artifactPath = path.join(
         root,
-        "docs/artifacts/sandbox-product-acceptance-stage13.json",
+        "docs/artifacts/sandbox-portable-process-stage15.json",
       );
       const value = JSON.parse(await readFile(artifactPath, "utf8"));
       mutate(value);
       await writeFile(artifactPath, `${JSON.stringify(value, null, 2)}\n`);
 
       await expect(
-        verifySandboxProductAcceptance({ repoRoot: root }),
+        verifySandboxPortableProcess({ repoRoot: root }),
       ).resolves.toEqual(
         expect.objectContaining({
           valid: false,
           errors: expect.arrayContaining([
             expect.stringMatching(
-              /Sandbox product acceptance artifact (?:shape|content hash) is invalid/u,
+              /Sandbox portable process artifact (?:shape|content hash) is invalid/u,
             ),
           ]),
         }),
@@ -64,13 +64,13 @@ describe("Sandbox product acceptance artifact", () => {
 
   it("rejects artifact paths outside the repository", async () => {
     await expect(
-      verifySandboxProductAcceptance({ artifactPath: "../outside.json" }),
+      verifySandboxPortableProcess({ artifactPath: "../outside.json" }),
     ).rejects.toThrow("artifact path must remain inside the repository");
   });
 });
 
 async function fixtureRoot() {
-  const root = await mkdtemp(path.join(tmpdir(), "napier-product-artifact-"));
+  const root = await mkdtemp(path.join(tmpdir(), "napier-portable-artifact-"));
   roots.push(root);
   for (const relative of [
     "docker/napier-sandbox/Dockerfile",
@@ -78,20 +78,18 @@ async function fixtureRoot() {
     "docker/napier-sandbox/package-lock.json",
     "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
     "docs/artifacts/sandbox-image-provenance-0.1.0.json",
-    "docs/artifacts/sandbox-product-acceptance-stage13.json",
-    "packages/runtime/src/sandbox-setup-service.ts",
+    "docs/artifacts/sandbox-portable-process-stage15.json",
     "packages/runtime/src/sandbox-container-runtime.ts",
     "packages/runtime/src/sandbox-container-path-mapping.ts",
     "packages/runtime/src/sandbox-launch-policy.ts",
-    "packages/runtime/src/sandbox-oci.ts",
     "packages/runtime/src/sandbox-oci-launch-arguments.ts",
-    "packages/runtime/src/doctor-lsp-runtime-probe.ts",
-    "packages/runtime/src/verification-runtime.ts",
+    "packages/runtime/src/sandbox-oci.ts",
+    "packages/runtime/src/git-inspect-process.ts",
     "packages/runtime/src/verification.ts",
-    "packages/runtime/src/workspace-processes.ts",
-    "scripts/check-sandbox-product-acceptance.mjs",
-    "scripts/sandbox-product-acceptance-artifact.mjs",
-    "scripts/sandbox-product-acceptance-live.mjs",
+    "scripts/check-sandbox-image-sbom.mjs",
+    "scripts/check-sandbox-portable-process.mjs",
+    "scripts/sandbox-portable-process-artifact.mjs",
+    "scripts/sandbox-portable-process-live.mjs",
   ]) {
     const target = path.join(root, relative);
     await mkdir(path.dirname(target), { recursive: true });

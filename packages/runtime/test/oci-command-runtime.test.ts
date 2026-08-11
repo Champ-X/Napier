@@ -105,9 +105,21 @@ describe("OCI image-bound command runtime", () => {
 
     expect(identity).toEqual({
       ...USER_IDS,
+      mapping: "injected",
       identitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
     });
     expect(resolveContainerUserIdentity(USER_IDS)).toEqual(identity);
+    expect(resolveContainerUserIdentity(undefined, "win32")).toEqual({
+      userId: 65_532,
+      groupId: 65_532,
+      mapping: "portable-non-posix",
+      identitySha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+    });
+    expect(resolveContainerUserIdentity(undefined, "linux")).toEqual(
+      expect.objectContaining({
+        mapping: "host-posix",
+      }),
+    );
     expect(() =>
       resolveContainerUserIdentity({ userId: -1, groupId: 20 }),
     ).toThrow("host user identity is unavailable");

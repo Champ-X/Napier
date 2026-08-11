@@ -24,6 +24,8 @@ export async function sandboxSecurityImplementation(repoRoot) {
     commandExecution: "packages/runtime/src/command-execution.ts",
     processLifecycle: "packages/runtime/src/sandboxed-process.ts",
     containerIdentity: "packages/runtime/src/sandbox-container-runtime.ts",
+    pathMapping: "packages/runtime/src/sandbox-container-path-mapping.ts",
+    launchPolicy: "packages/runtime/src/sandbox-launch-policy.ts",
     ociAdapter: "packages/runtime/src/sandbox-oci.ts",
     ociLaunchArguments: "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     containerPolicy: "packages/runtime/src/sandbox-container-policy.ts",
