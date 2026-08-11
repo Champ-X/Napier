@@ -122,12 +122,18 @@ jobs:
           status="$(jq -er 'select(.kind == "napier.browser-runtime-setup-preview") | .status' <<<"${preview}")"
           revision="$(jq -er 'select(.kind == "napier.browser-runtime-setup-preview") | .browserRevision' <<<"${preview}")"
           [[ "${revision}" =~ ^[0-9]+$ ]]
-          browser_path="${HOME}/.cache/ms-playwright/chromium-${revision}/chrome-linux/chrome"
           if [[ "${status}" == "installable" ]]; then
             node -e 'import("./packages/runtime/dist/browser-runtime-setup.js").then(({installPinnedBrowserRuntime})=>installPinnedBrowserRuntime({env:process.env,signal:new AbortController().signal}))'
           elif [[ "${status}" != "installed" && "${status}" != "ready" ]]; then
             exit 2
           fi
+          browser_root="$(realpath "${HOME}/.cache/ms-playwright/chromium-${revision}")"
+          browser_path="$(node --input-type=module -e 'import { chromium } from "playwright-core"; process.stdout.write(chromium.executablePath())')"
+          browser_path="$(realpath "${browser_path}")"
+          case "${browser_path}" in
+            "${browser_root}"/*) ;;
+            *) exit 3 ;;
+          esac
           test -x "${browser_path}"
           echo "path=${browser_path}" >> "${GITHUB_OUTPUT}"
 

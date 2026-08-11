@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "ce4830e722cfda3c2b880d49914224d1f6e076771f4c4556206db3a6349f2afe",
+      "stdoutSha256": "9ba06b26704430ef08b0069e3053f656ce9ea9a568c71090bf50e20b156cd5df",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "a0af16eb6b8a450781f093813e78d79f95c1ef8160afc32d663bb6d9f6c3dba6",
-      "receiptSha256": "16f18794fd7e415d2c1c56bd03e25b0f8f5cd2c609ce29a17ec289a05d6195a1"
+      "evidenceSha256": "bbd496880e2075933b3fc587c8c138cc6e0f8396091f23684c72f9f763432556",
+      "receiptSha256": "fe1081b43ab8f4179732faff420377107677200743663531b9eb7c8343efe213"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "62e334375bd66f518b46bf6f95185b53540860562e81b6b3d93be59fbd1dcd0f",
+      "stdoutSha256": "5a0ca0ef2ad9f60f17730a767926352b504f4a3ebd08b3e84e601afbacdb6077",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "870ed9545b897a4b06aa3ca9cb22dcce8cdb991a7a0c54ad117c7faff0764213",
-      "receiptSha256": "94c8c8677c5dd9f2ba47c9e0ed83f4a46ae53eb0453d3aaf17c3804840ec7dc2"
+      "evidenceSha256": "3b8917e34bc490816b936be889a54369f36ff5712a56f99c350fcf602c2308e1",
+      "receiptSha256": "ca5c430c31a00320aa0379b9ef26a7a452c17f2c2fbdc4606856bee3aff8dd9d"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -1167,8 +1167,8 @@
       ],
       "files": {
         ".github/workflows/publish-sandbox.yml": {
-          "sha256": "77d26f285f9feb7ff867a4c543f22198dff7b373b554b9cc3514e318d6233d43",
-          "lines": 477
+          "sha256": "ffede8c7f999f0ecd55b03c4804e59e99382c5e92bdf863f10565c4fb3a73d6d",
+          "lines": 483
         },
         "README.md": {
           "sha256": "ed89d3d2642b3c2138e6cb6ba289319a4710bfda7eca0c5d92e5f1691d9f553e",
@@ -2139,11 +2139,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "a0af16eb6b8a450781f093813e78d79f95c1ef8160afc32d663bb6d9f6c3dba6",
+          "sha256": "bbd496880e2075933b3fc587c8c138cc6e0f8396091f23684c72f9f763432556",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "870ed9545b897a4b06aa3ca9cb22dcce8cdb991a7a0c54ad117c7faff0764213",
+          "sha256": "3b8917e34bc490816b936be889a54369f36ff5712a56f99c350fcf602c2308e1",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3535,12 +3535,12 @@
           "lines": 343
         },
         "scripts/check-sandbox-external-release-workflow.mjs": {
-          "sha256": "1a6b6b2a737de97d21ed855703f3d26c44e9057d4b23cafbd21740a449f7ba76",
-          "lines": 278
+          "sha256": "a0f1a14ce50ae9bc1f8921460a995aca28927d1fd32778bef4d55380d5a9cdd1",
+          "lines": 281
         },
         "scripts/check-sandbox-external-release-workflow.test.mjs": {
-          "sha256": "8bfb3140a30fd345b95a357af3503a9ed29ca22d13adc9ef0358bb59ceca6df3",
-          "lines": 98
+          "sha256": "65cd1369ec7e2ca84389c1a8b6c6ec46f274ea834b346af43b287e3f5adf0c51",
+          "lines": 103
         },
         "scripts/check-sandbox-image-sbom.mjs": {
           "sha256": "bc34ec2c287144f8cab3e8b503d6116f30bafbc8c3b8e6a5f2f975d104b4dd13",
@@ -3884,7 +3884,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "14e2909d65c6c0e46eb68ea98292dca46bc1f9bd5bfa61f6fcc67a62ac9ddbb3"
+      "manifestSha256": "802614390047fe986d3b52aa74f9601e3e5f5b839f2d753f1964f6e71a0c1e8a"
     },
     "executionClosure": {
       "algorithm": {
@@ -19578,7 +19578,7 @@
       ],
       "manifestSha256": "e12b58e02ffd2bd830a2a5aca4a295935baff1507183f74ca56c74fd6d5c07c7"
     },
-    "manifestSha256": "24dc571d2749df5320369a358b8eff7157dc62bd1b26133983142c74f5f16de1"
+    "manifestSha256": "3f38e92af88ab7bd0b86b45ed538047fd02c16ea42731afeb157875502d0dd1c"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -19766,11 +19766,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "a0af16eb6b8a450781f093813e78d79f95c1ef8160afc32d663bb6d9f6c3dba6"
+      "sha256": "bbd496880e2075933b3fc587c8c138cc6e0f8396091f23684c72f9f763432556"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "870ed9545b897a4b06aa3ca9cb22dcce8cdb991a7a0c54ad117c7faff0764213"
+      "sha256": "3b8917e34bc490816b936be889a54369f36ff5712a56f99c350fcf602c2308e1"
     }
   }
 }

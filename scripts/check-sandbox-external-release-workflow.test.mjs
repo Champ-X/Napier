@@ -40,6 +40,11 @@ describe("Sandbox external release workflow", () => {
           "expected_sha256=90956cd1bb92472d498370819c8f5fae4bbc7f851b989240ec416b173a44f7cb",
           "expected_sha256=unverified",
         ),
+      (source) =>
+        source.replace(
+          "process.stdout.write(chromium.executablePath())",
+          'process.stdout.write("/tmp/unbound-browser")',
+        ),
     ]) {
       const root = await fixtureRoot(mutate);
       const result = await auditSandboxExternalReleaseWorkflow({
