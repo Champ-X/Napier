@@ -34,9 +34,7 @@ export function ComposerCapabilityControl({
   agent: AgentProfile | undefined;
   disabled: boolean;
   selectedPreset: AgentCapabilityPresetId | undefined;
-  onSelectedPresetChange: (
-    preset: AgentCapabilityPresetId | undefined,
-  ) => void;
+  onSelectedPresetChange: (preset: AgentCapabilityPresetId | undefined) => void;
   onReview: () => void;
   onReadinessChange: (readiness: ComposerRunReadiness) => void;
 }) {
@@ -54,19 +52,20 @@ export function ComposerCapabilityControl({
     : undefined;
   const runReadiness = useMemo(
     () =>
-      composerRunReadiness(
-        agent,
-        projection,
-        loading,
-        error,
-        selectedPreset,
-      ),
+      composerRunReadiness(agent, projection, loading, error, selectedPreset),
     [agent, error, loading, projection, selectedPreset],
   );
   const sandboxBlocked = Boolean(
     activeMode &&
-      activeDependency &&
-      composerModeNeedsSandboxSetup(activeMode.id, activeDependency),
+    activeDependency &&
+    composerModeNeedsSandboxSetup(activeMode.id, activeDependency),
+  );
+  const invalidSandboxBinding = Boolean(
+    projection?.readiness.some(
+      (record) =>
+        record.id === "sandbox:configured-sandbox-invalid" &&
+        record.status === "unavailable",
+    ),
   );
 
   useEffect(() => {
@@ -120,7 +119,9 @@ export function ComposerCapabilityControl({
       {sandboxBlocked || sandboxOpen ? (
         <div className="composer-sandbox-setup">
           <Suspense fallback={<div className="sandbox-setup-card" />}>
-            <LazySandboxSetupCard />
+            <LazySandboxSetupCard
+              reviewInvalidBinding={invalidSandboxBinding}
+            />
           </Suspense>
         </div>
       ) : null}

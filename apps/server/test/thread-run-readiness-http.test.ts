@@ -1,5 +1,5 @@
 import { PassThrough } from "node:stream";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -93,6 +93,80 @@ describe("Thread Run readiness HTTP", () => {
     expect(recovered.status).toBe(200);
     await recovered.text();
     expect(services.store.listRuns(thread.id)).toHaveLength(2);
+  });
+
+  it("requires exact invalid-binding removal before ordinary Setup and Run recovery", async () => {
+    const fixture = await createFixture();
+    await mkdir(fixture.dataRoot);
+    await writeFile(
+      path.join(fixture.dataRoot, "sandbox.json"),
+      '{"broken":true}\n',
+    );
+    const services = await createServices({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      env: {},
+      sandboxSetup: setupDependencies(),
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const thread = await services.store.createThread({
+      title: "Invalid Sandbox recovery",
+      agentId: services.store.listAgents()[0]!.id,
+    });
+
+    const blocked = await prompt(app, thread.id, "coding");
+    expect(blocked.status).toBe(409);
+    expect(await blocked.json()).toEqual({
+      error: expect.stringContaining("--component sandbox --uninstall"),
+    });
+    expect(services.store.listRuns(thread.id)).toHaveLength(0);
+
+    const setupPreview = await (await app.request("/api/setup/sandbox")).json();
+    const unsafeReplace = await app.request("/api/setup/sandbox", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        expectedPreviewSha256: setupPreview.contentSha256,
+      }),
+    });
+    expect(unsafeReplace.status).toBe(409);
+    expect(await unsafeReplace.json()).toEqual({
+      error: expect.stringContaining("must be exact-uninstalled before setup"),
+    });
+
+    const uninstallPreview = await (
+      await app.request("/api/setup/sandbox/uninstall")
+    ).json();
+    expect(uninstallPreview).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        active: false,
+        bindingSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    const removed = await app.request("/api/setup/sandbox/uninstall", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        expectedPreviewSha256: uninstallPreview.contentSha256,
+      }),
+    });
+    expect(removed.status).toBe(200);
+
+    const applied = await app.request("/api/setup/sandbox", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        expectedPreviewSha256: setupPreview.contentSha256,
+      }),
+    });
+    expect(applied.status).toBe(200);
+
+    const recovered = await prompt(app, thread.id, "coding");
+    expect(recovered.status).toBe(200);
+    await recovered.text();
+    expect(services.store.listRuns(thread.id)).toHaveLength(1);
   });
 });
 

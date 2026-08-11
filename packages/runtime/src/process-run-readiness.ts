@@ -10,6 +10,8 @@ import type { OsSandboxAdapter } from "./sandbox.js";
 
 export const PROCESS_RUN_READINESS_MESSAGE =
   "Sandbox is unavailable for this process-capable task. Run napier setup --workspace 'WORKSPACE_PATH' --component sandbox, inspect and exact-apply its preview, then retry.";
+export const PROCESS_RUN_READINESS_INVALID_BINDING_MESSAGE =
+  "The persisted Sandbox binding is invalid. Run napier setup --workspace 'WORKSPACE_PATH' --component sandbox --uninstall, inspect and exact-apply that preview to remove only the invalid binding, then run ordinary Sandbox Setup and retry.";
 
 const SHARED_GATES = new WeakMap<
   OsSandboxAdapter,
@@ -20,9 +22,17 @@ export class ProcessRunReadinessError extends Error {
   readonly code = "sandbox_unavailable";
 
   constructor(readonly readiness: CapabilityReadinessRecord) {
-    super(PROCESS_RUN_READINESS_MESSAGE);
+    super(processRunReadinessMessage(readiness));
     this.name = "ProcessRunReadinessError";
   }
+}
+
+export function processRunReadinessMessage(
+  readiness: Pick<CapabilityReadinessRecord, "id"> | undefined,
+): string {
+  return readiness?.id === "sandbox:configured-sandbox-invalid"
+    ? PROCESS_RUN_READINESS_INVALID_BINDING_MESSAGE
+    : PROCESS_RUN_READINESS_MESSAGE;
 }
 
 export class ProcessRunReadinessGate {

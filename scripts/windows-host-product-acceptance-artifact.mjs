@@ -31,6 +31,10 @@ export async function windowsHostProductAcceptanceImplementation(repoRoot) {
     productLive: "scripts/sandbox-product-acceptance-live.mjs",
     firstUseHarness: "scripts/sandbox-first-use-coding-acceptance.mjs",
     firstUseSupport: "scripts/sandbox-first-use-coding-support.mjs",
+    invalidBindingRepairHarness:
+      "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
+    invalidBindingRepairVerifier:
+      "scripts/sandbox-invalid-binding-repair-artifact.mjs",
     hostLive: "scripts/windows-host-product-acceptance-live.mjs",
     hostSupport: "scripts/windows-host-product-acceptance-support.mjs",
     hostCheck: "scripts/check-windows-host-product-acceptance.mjs",

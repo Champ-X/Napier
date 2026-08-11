@@ -23,6 +23,8 @@ const STAGE19_SOURCE_FILES = [
   "scripts/sandbox-first-use-coding-acceptance.mjs",
   "scripts/sandbox-first-use-coding-support.mjs",
   "scripts/sandbox-first-use-coding-support.test.mjs",
+  "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
+  "scripts/sandbox-invalid-binding-repair-artifact.mjs",
 ];
 
 export async function runLinuxHostProductAcceptance(input) {

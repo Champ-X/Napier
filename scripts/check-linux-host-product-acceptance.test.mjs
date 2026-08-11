@@ -95,6 +95,8 @@ async function fixtureRoot() {
     "scripts/prepare-node-pty.test.mjs",
     "scripts/sandbox-first-use-coding-acceptance.mjs",
     "scripts/sandbox-first-use-coding-support.mjs",
+    "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
+    "scripts/sandbox-invalid-binding-repair-artifact.mjs",
     "scripts/sandbox-product-acceptance-artifact.mjs",
     "scripts/sandbox-product-acceptance-live.mjs",
   ]) {

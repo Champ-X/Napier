@@ -10,7 +10,10 @@ import {
   createLocalAgentRuntime,
   UnsupportedSandboxAdapter,
 } from "../src/index.js";
-import { ProcessRunReadinessError } from "../src/process-run-readiness.js";
+import {
+  processRunReadinessMessage,
+  ProcessRunReadinessError,
+} from "../src/process-run-readiness.js";
 
 const roots: string[] = [];
 
@@ -97,5 +100,16 @@ describe("Process Run readiness", () => {
     } finally {
       await services.shutdown();
     }
+  });
+
+  it("projects exact uninstall recovery only for an invalid persisted binding", () => {
+    expect(
+      processRunReadinessMessage({
+        id: "sandbox:configured-sandbox-invalid",
+      }),
+    ).toContain("--component sandbox --uninstall");
+    expect(
+      processRunReadinessMessage({ id: "sandbox:unsupported" }),
+    ).not.toContain("--uninstall");
   });
 });

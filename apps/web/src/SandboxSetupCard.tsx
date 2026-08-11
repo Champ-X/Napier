@@ -3,7 +3,7 @@ import type {
   SandboxUninstallPreview,
 } from "@napier/contracts/sandbox-setup";
 import { Box, Check, RefreshCw, ShieldAlert } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { formatApiErrorMessage } from "./api-error";
 import {
@@ -20,17 +20,18 @@ import { SANDBOX_READY_EVENT } from "./use-agent-capability-projection";
 
 export function SandboxSetupCard({
   onActivated,
+  reviewInvalidBinding = false,
 }: {
   onActivated?: () => void | Promise<void>;
+  reviewInvalidBinding?: boolean;
 }) {
   const [preview, setPreview] = useState<SandboxSetupPreview>();
   const [busy, setBusy] = useState<
     "loading" | "applying" | "uninstalling" | undefined
-  >(
-    "loading",
-  );
+  >("loading");
   const [removal, setRemoval] = useState<SandboxUninstallPreview>();
   const [error, setError] = useState<string>();
+  const invalidReviewStarted = useRef(false);
 
   const loadPreview = useCallback(async () => {
     setBusy("loading");
@@ -83,6 +84,16 @@ export function SandboxSetupCard({
       setBusy(undefined);
     }
   }, []);
+
+  useEffect(() => {
+    if (!reviewInvalidBinding) {
+      invalidReviewStarted.current = false;
+      return;
+    }
+    if (invalidReviewStarted.current) return;
+    invalidReviewStarted.current = true;
+    void reviewRemoval();
+  }, [reviewInvalidBinding, reviewRemoval]);
 
   const uninstall = useCallback(async () => {
     if (!removal || removal.status === "not_installed") return;
@@ -179,8 +190,7 @@ export function SandboxSetupCard({
             </span>
             {removal ? (
               <div className="sandbox-setup-actions">
-                {removal.status !== "not_installed" &&
-                removal.bindingSha256 ? (
+                {removal.status !== "not_installed" && removal.bindingSha256 ? (
                   <>
                     <button
                       type="button"

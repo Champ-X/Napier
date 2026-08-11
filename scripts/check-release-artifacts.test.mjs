@@ -1300,12 +1300,20 @@ async function createFixture() {
     "packages/runtime/src/workspace-processes.ts",
     "apps/cli/src/cli.ts",
     "apps/cli/src/cli-run-readiness.ts",
+    "apps/cli/src/cli-public-error.ts",
+    "apps/server/src/thread-run-readiness.ts",
+    "apps/web/src/composer-mode-view-model.ts",
+    "apps/web/src/ComposerCapabilityControl.tsx",
+    "apps/web/src/SandboxSetupCard.tsx",
     "packages/contracts/src/agent-capabilities.ts",
     "packages/runtime/src/agent-capability-runtime.ts",
     "packages/runtime/src/agent-runtime.ts",
+    "packages/runtime/src/process-run-readiness.ts",
     "scripts/check-sandbox-product-acceptance.mjs",
     "scripts/sandbox-first-use-coding-acceptance.mjs",
     "scripts/sandbox-first-use-coding-support.mjs",
+    "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
+    "scripts/sandbox-invalid-binding-repair-artifact.mjs",
     "scripts/sandbox-product-acceptance-artifact.mjs",
     "scripts/sandbox-product-acceptance-live.mjs",
     "packages/runtime/src/doctor-lsp-runtime-probe.ts",
@@ -1489,6 +1497,7 @@ async function createWorkflowBenchmarkFixture(root) {
 
 async function createPackageLockFixture(root) {
   await mkdir(path.join(root, "apps/cli"), { recursive: true });
+  await mkdir(path.join(root, "apps/server"), { recursive: true });
   await mkdir(path.join(root, "apps/web"), { recursive: true });
   await mkdir(path.join(root, "packages/contracts"), { recursive: true });
   await mkdir(path.join(root, "packages/runtime"), { recursive: true });
@@ -1505,6 +1514,15 @@ async function createPackageLockFixture(root) {
     version: "0.1.0",
     private: true,
     dependencies: { "@napier/contracts": "*", react: "19.2.8" },
+  };
+  const serverPackage = {
+    name: "@napier/server",
+    version: "0.1.0",
+    private: true,
+    dependencies: {
+      "@napier/contracts": "*",
+      "@napier/runtime": "*",
+    },
   };
   const cliPackage = {
     name: "@napier/cli",
@@ -1549,6 +1567,11 @@ async function createPackageLockFixture(root) {
         version: cliPackage.version,
         dependencies: cliPackage.dependencies,
       },
+      "apps/server": {
+        name: serverPackage.name,
+        version: serverPackage.version,
+        dependencies: serverPackage.dependencies,
+      },
       "packages/contracts": {
         name: contractsPackage.name,
         version: contractsPackage.version,
@@ -1574,6 +1597,10 @@ async function createPackageLockFixture(root) {
         resolved: "packages/runtime",
         link: true,
       },
+      "node_modules/@napier/server": {
+        resolved: "apps/server",
+        link: true,
+      },
       "node_modules/react": {
         version: "19.2.8",
         resolved: "https://registry.npmjs.org/react/-/react-19.2.8.tgz",
@@ -1583,6 +1610,7 @@ async function createPackageLockFixture(root) {
   };
   await writeJson(path.join(root, "package.json"), rootPackage);
   await writeJson(path.join(root, "apps/cli/package.json"), cliPackage);
+  await writeJson(path.join(root, "apps/server/package.json"), serverPackage);
   await writeJson(path.join(root, "apps/web/package.json"), webPackage);
   await writeJson(
     path.join(root, "packages/contracts/package.json"),

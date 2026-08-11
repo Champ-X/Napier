@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
+import { validSandboxInvalidBindingRepairAcceptance } from "./sandbox-invalid-binding-repair-artifact.mjs";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 
@@ -19,14 +20,24 @@ export async function sandboxProductAcceptanceImplementation(repoRoot) {
     processManager: "packages/runtime/src/workspace-processes.ts",
     cliRun: "apps/cli/src/cli.ts",
     cliReadiness: "apps/cli/src/cli-run-readiness.ts",
+    cliPublicError: "apps/cli/src/cli-public-error.ts",
     capabilityPresets: "packages/contracts/src/agent-capabilities.ts",
     agentRuntime: "packages/runtime/src/agent-runtime.ts",
     agentCapabilityRuntime: "packages/runtime/src/agent-capability-runtime.ts",
+    processRunReadiness: "packages/runtime/src/process-run-readiness.ts",
+    serverRunReadiness: "apps/server/src/thread-run-readiness.ts",
+    webComposerMode: "apps/web/src/composer-mode-view-model.ts",
+    webComposerControl: "apps/web/src/ComposerCapabilityControl.tsx",
+    webSandboxSetupCard: "apps/web/src/SandboxSetupCard.tsx",
     checkScript: "scripts/check-sandbox-product-acceptance.mjs",
     artifactVerifier: "scripts/sandbox-product-acceptance-artifact.mjs",
     liveHarness: "scripts/sandbox-product-acceptance-live.mjs",
     firstUseHarness: "scripts/sandbox-first-use-coding-acceptance.mjs",
     firstUseSupport: "scripts/sandbox-first-use-coding-support.mjs",
+    invalidBindingRepairHarness:
+      "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
+    invalidBindingRepairVerifier:
+      "scripts/sandbox-invalid-binding-repair-artifact.mjs",
   };
   return Object.fromEntries(
     await Promise.all(
@@ -47,7 +58,7 @@ export function validateSandboxProductAcceptanceArtifact(
   if (
     !isRecord(value) ||
     value.kind !== "napier.sandbox-product-acceptance-stage13" ||
-    value.schemaVersion !== 2 ||
+    value.schemaVersion !== 3 ||
     !isIsoDate(value.generatedAt) ||
     !isRecord(value.image) ||
     value.image.id !== provenance.image?.id ||
@@ -62,6 +73,7 @@ export function validateSandboxProductAcceptanceArtifact(
     !validRestart(value.restart) ||
     !validUninstall(value.uninstall) ||
     !validFirstUse(value.firstUse) ||
+    !validSandboxInvalidBindingRepairAcceptance(value.invalidBindingRepair) ||
     !validResourceClosure(value.resourceClosure) ||
     !validRetention(value.retention) ||
     !isRecord(value.scope) ||

@@ -429,6 +429,7 @@ function summarizeProductAcceptance(value) {
     service: value.service,
     restart: value.restart,
     firstUse: value.firstUse,
+    invalidBindingRepair: value.invalidBindingRepair,
     uninstall: value.uninstall,
     resourceClosure: value.resourceClosure,
     contentSha256: value.contentSha256,

@@ -77,10 +77,12 @@ export function composerModeDependency(
     item.id.startsWith("sandbox:"),
   );
   if (sandbox && sandbox.status === "unavailable") {
+    const invalid = sandbox.id === "sandbox:configured-sandbox-invalid";
     return {
       level: "blocked",
-      message:
-        "Sandbox is unavailable, so workspace writes and process execution will fail closed. Fix the sandbox in Doctor before running this mode.",
+      message: invalid
+        ? "The saved Sandbox binding is invalid. Remove that exact binding in the Sandbox card, then verify and activate the pinned runtime before running this mode."
+        : "Sandbox is unavailable, so workspace writes and process execution will fail closed. Fix the sandbox in Doctor before running this mode.",
     };
   }
   return { level: "ready", message: "" };
@@ -93,7 +95,9 @@ export function composerModeNeedsSandboxSetup(
   return SANDBOX_PRESETS.has(modeId) && dependency.level === "blocked";
 }
 
-export function composerModePolicyLabel(modeId: AgentCapabilityPresetId): string {
+export function composerModePolicyLabel(
+  modeId: AgentCapabilityPresetId,
+): string {
   const preset = agentCapabilityPreset(modeId);
   return preset.toolPolicy === "observe"
     ? "Read only"

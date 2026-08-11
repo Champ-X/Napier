@@ -122,6 +122,31 @@ describe("SandboxSetupCard", () => {
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("docker rmi");
     expect(readinessEvents).toBe(1);
   });
+
+  it("automatically reviews an invalid binding before offering ordinary setup", async () => {
+    const { container } = installDom();
+    const ready = await sandboxPreview("ready");
+    const removal = await sandboxUninstallPreview("invalid");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(stableResponse(ready))
+      .mockResolvedValueOnce(stableResponse(removal));
+    vi.stubGlobal("fetch", fetchMock);
+    const root = createRoot(container);
+    roots.push(root);
+
+    root.render(<SandboxSetupCard reviewInvalidBinding />);
+    await waitFor(() => container.textContent?.includes("Remove binding"));
+
+    expect(container.textContent).toContain("Remove Napier binding?");
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      "/api/setup/sandbox",
+      "/api/setup/sandbox/uninstall",
+    ]);
+    expect(
+      findElementByText<HTMLButtonElement>(container, "Verify & activate"),
+    ).toBeNull();
+  });
 });
 
 async function sandboxPreview(
@@ -179,13 +204,15 @@ async function sandboxResult(
   };
 }
 
-async function sandboxUninstallPreview(): Promise<SandboxUninstallPreview> {
+async function sandboxUninstallPreview(
+  status: SandboxUninstallPreview["status"] = "installed",
+): Promise<SandboxUninstallPreview> {
   const content = {
     kind: "napier.sandbox-runtime-uninstall-preview" as const,
     schemaVersion: 1 as const,
     component: "sandbox" as const,
-    status: "installed" as const,
-    active: true,
+    status,
+    active: status === "installed",
     imageRetained: true as const,
     bindingSha256: "f".repeat(64),
     imageReference: "napier-sandbox:0.1.0",

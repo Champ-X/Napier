@@ -1,4 +1,5 @@
 import { validSandboxFirstUseCodingAcceptance } from "./sandbox-product-acceptance-artifact.mjs";
+import { validSandboxInvalidBindingRepairAcceptance } from "./sandbox-invalid-binding-repair-artifact.mjs";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 
@@ -14,6 +15,7 @@ export function validWindowsProductAcceptance(value) {
       "service",
       "restart",
       "firstUse",
+      "invalidBindingRepair",
       "uninstall",
       "resourceClosure",
       "contentSha256",
@@ -26,6 +28,7 @@ export function validWindowsProductAcceptance(value) {
     validService(value.service) &&
     validRestart(value.restart) &&
     validSandboxFirstUseCodingAcceptance(value.firstUse) &&
+    validSandboxInvalidBindingRepairAcceptance(value.invalidBindingRepair) &&
     validUninstall(value.uninstall) &&
     validResourceClosure(value.resourceClosure) &&
     SHA256.test(value.contentSha256)

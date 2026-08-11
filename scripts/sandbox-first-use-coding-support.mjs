@@ -211,6 +211,8 @@ async function runCapturedCli(args, cwd, env) {
   return { code, stdout: stdout.text, stderr: stderr.text };
 }
 
+export { runCapturedCli as runFirstUseCapturedCli };
+
 class CaptureWritable extends Writable {
   text = "";
 

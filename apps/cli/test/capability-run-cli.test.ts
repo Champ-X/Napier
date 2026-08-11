@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough, Writable } from "node:stream";
@@ -212,6 +212,59 @@ describe("temporary capability preset CLI", () => {
     try {
       expect(reopened.store.listThreads()).toHaveLength(1);
       expect(reopened.store.listCredentialReferences()).toEqual([]);
+      expect(
+        reopened.store
+          .listThreads()
+          .flatMap((thread) => reopened.store.listRuns(thread.id)),
+      ).toHaveLength(1);
+    } finally {
+      await reopened.shutdown();
+    }
+  });
+
+  it("directs an invalid persisted binding through exact uninstall before setup", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-cli-invalid-gate-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "state");
+    await Promise.all([mkdir(workspaceRoot), mkdir(dataRoot)]);
+    await writeFile(path.join(dataRoot, "sandbox.json"), '{"broken":true}\n');
+    const stdout = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "run",
+        "--workspace",
+        workspaceRoot,
+        "--data-root",
+        dataRoot,
+        "--model",
+        "napier/demo",
+        "--prompt",
+        "Do not create a Run.",
+        "--preset",
+        "coding",
+        "--jsonl",
+      ],
+      {
+        cwd: root,
+        env: {},
+        stdout,
+        stderr: new CaptureWritable(),
+      },
+    );
+
+    expect(code).toBe(1);
+    expect(stdout.text()).toContain("--component sandbox --uninstall");
+    expect(stdout.text()).toContain("remove only that binding");
+    const reopened = await createLocalAgentRuntime({
+      workspaceRoot,
+      dataRoot,
+      env: {},
+    });
+    try {
+      expect(reopened.sandbox.id).toBe("configured-sandbox-invalid");
+      expect(reopened.store.listThreads()).toHaveLength(1);
       expect(
         reopened.store
           .listThreads()

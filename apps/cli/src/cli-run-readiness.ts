@@ -40,7 +40,9 @@ export async function assertCliRunReadiness(
   );
   if (result.status === "ready") return;
   throw new CliPublicError(
-    "sandbox_unavailable",
+    services.sandbox.id === "configured-sandbox-invalid"
+      ? "sandbox_binding_invalid"
+      : "sandbox_unavailable",
     `Sandbox is unavailable for this task mode (${result.code})`,
   );
 }
@@ -92,7 +94,9 @@ export function cliRunReadinessNotice(
 ): string | undefined {
   if (
     !(error instanceof CliPublicError) ||
-    error.publicCode !== "sandbox_unavailable"
+    !["sandbox_unavailable", "sandbox_binding_invalid"].includes(
+      error.publicCode,
+    )
   ) {
     return undefined;
   }
@@ -145,7 +149,9 @@ async function assertCliFrozenRunReadiness(
   );
   if (result.status !== "ready") {
     throw new CliPublicError(
-      "sandbox_unavailable",
+      services.sandbox.id === "configured-sandbox-invalid"
+        ? "sandbox_binding_invalid"
+        : "sandbox_unavailable",
       `Sandbox is unavailable for interrupted Run recovery (${result.code})`,
     );
   }

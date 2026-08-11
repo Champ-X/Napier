@@ -845,6 +845,17 @@ identical Profile/revision set, identical capability projection, and zero
 credential references. Offline Doctor replays every production process path;
 exact uninstall must end at `not_installed` and restore the resource baseline.
 
+Schema 3 adds an independent invalid-binding migration arm. A revision-2
+legacy Agent is established before a bounded malformed binding is written.
+Runtime starts with `configured-sandbox-invalid`; process-capable Run admission
+must fail before Run mutation and return the exact-uninstall recovery path.
+Ordinary Setup rejects replacement even when its image preview is valid.
+Only the raw-byte hash-bound uninstall preview can remove the invalid regular
+file. Reinstallation then runs all nine probes, Doctor returns zero warnings,
+and a temporary Coding Run executes without changing the legacy Agent Profile,
+revision history, or credential references. Final uninstall and resource
+snapshot comparison close the migration.
+
 The receipt retains hashes, counts, statuses, and version evidence only; raw
 CLI/Doctor/Process output, paths, endpoints, resource names, prompts, and
 credentials are excluded. Offline verification is release-gated; the explicit
@@ -958,8 +969,9 @@ implementation. The lifecycle exact-applies Setup, requires all nine probes,
 runs Doctor with zero warnings, verifies TypeScript and Vitest in OCI, serves
 and cancels loopback HTTP, reconciles an interrupted process after Runtime
 restart, repeats the isolated first-use temporary Coding arm without mutating
-the Agent Profile or credential store, uninstalls the binding, and restores
-container/network/scratch state.
+the Agent Profile or credential store, repeats invalid-binding repair from a
+legacy Agent, uninstalls the binding, and restores container/network/scratch
+state.
 
 The same acceptance proves the precompiled Linux PTY package can allocate a
 real pseudoterminal without a host compiler. Linux Skill discovery retains its

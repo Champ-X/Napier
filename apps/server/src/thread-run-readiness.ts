@@ -1,6 +1,6 @@
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { LocalAgentRuntimeServices } from "@napier/runtime";
-import { PROCESS_RUN_READINESS_MESSAGE } from "@napier/runtime/process-run-readiness";
+import { processRunReadinessMessage } from "@napier/runtime/process-run-readiness";
 
 type ThreadRunReadinessStore = Pick<
   LocalAgentRuntimeServices["store"],
@@ -33,10 +33,13 @@ export async function inspectThreadPromptReadiness(input: {
       input.capabilityPreset,
     );
   if (!projection) return { ready: true };
+  const sandbox = projection.readiness.find((record) =>
+    record.id.startsWith("sandbox:"),
+  );
   return {
     ready: false,
     code: "sandbox_unavailable",
-    message: PROCESS_RUN_READINESS_MESSAGE,
+    message: processRunReadinessMessage(sandbox),
     projectionSha256: projection.projectionSha256,
   };
 }

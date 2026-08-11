@@ -6907,6 +6907,16 @@ references remain unchanged. A second offline Doctor requires all production
 process paths ready, then exact-uninstall reaches `not_installed` and restores
 container/network/scratch state:
 
+Schema 3 adds the old-data repair arm. It creates a revision-2 legacy Agent,
+injects a bounded invalid `sandbox.json`, and requires Doctor, CLI, HTTP, and
+Web readiness to direct the user to exact-preview `--uninstall`. Ordinary
+Setup cannot overwrite the invalid bytes without that CAS authority. The
+repair removes only the binding, re-applies the pinned image through all nine
+production probes, completes a temporary Coding Run, and preserves the Agent
+Profile, immutable revision set, and credential-reference count. Both the
+repaired binding and every temporary container/network/scratch resource are
+removed at the end.
+
 ```bash
 npm run check:sandbox-product-acceptance
 npm run check:sandbox-product-acceptance:live
@@ -7044,7 +7054,9 @@ service, cancels and closes it, reconciles an interrupted process after Runtime
 restart, uninstalls the binding, and restores the container/network/scratch
 baseline. It separately repeats the credential-isolated fresh-install Coding
 flow and proves that a Run receives workspace/process capabilities without
-creating an Agent revision or credential reference. It also covers Linux
+creating an Agent revision or credential reference. It also repeats the
+invalid-binding old-data repair and verifies exact removal, reinstallation,
+Profile invariance, Coding recovery, and resource closure. It also covers Linux
 `/proc/self/fd` Skill loading: the child path
 preserves `/.` so `O_NOFOLLOW` applies to the held directory's child rather than
 rejecting the procfs descriptor link.
@@ -7086,7 +7098,8 @@ evidence, and then calls the same Stage 13 production lifecycle used elsewhere:
 Setup exact-apply, all nine readiness probes, zero-warning offline Doctor,
 OCI typecheck/Vitest, loopback service health/cancellation, restart
 reconciliation, fresh-install temporary Coding with Profile/revision/credential
-invariance, uninstall, and exact resource closure.
+invariance, invalid-binding old-data repair, uninstall, and exact resource
+closure.
 
 The lifecycle does not inherit the runner's GitHub, npm, model, or Docker
 credentials. It replaces the child environment with a fixed system-variable

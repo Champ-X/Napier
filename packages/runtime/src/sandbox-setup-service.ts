@@ -99,6 +99,12 @@ export class SandboxSetupService {
     if (this.applying) throw new Error("Sandbox setup is already running");
     this.applying = true;
     try {
+      const binding = await this.inspectBinding();
+      if (binding.status === "invalid") {
+        throw new Error(
+          "Invalid Sandbox binding must be exact-uninstalled before setup",
+        );
+      }
       const inspection = await this.inspect();
       const preview = createSandboxSetupPreview(
         inspection,

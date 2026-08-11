@@ -18,17 +18,12 @@ describe("Sandbox uninstall service", () => {
     const switchable = new SwitchableSandboxAdapter(active);
     const installation = record();
     const removeInstallation = vi.fn(async () => undefined);
-    const setup = new SandboxSetupService(
-      "/workspace",
-      "/state",
-      switchable,
-      {
-        inspect: vi.fn(),
-        loadInstallation: async () => installation,
-        removeInstallation,
-        fallback: () => fallback,
-      },
-    );
+    const setup = new SandboxSetupService("/workspace", "/state", switchable, {
+      inspect: vi.fn(),
+      loadInstallation: async () => installation,
+      removeInstallation,
+      fallback: () => fallback,
+    });
 
     const preview = await setup.uninstallPreview();
     expect(preview).toEqual(
@@ -65,17 +60,12 @@ describe("Sandbox uninstall service", () => {
     const active = new TestSandbox("oci-container", "e".repeat(64));
     const switchable = new SwitchableSandboxAdapter(active);
     const removeInstallation = vi.fn(async () => undefined);
-    const setup = new SandboxSetupService(
-      "/workspace",
-      "/state",
-      switchable,
-      {
-        inspect: vi.fn(),
-        loadInstallation: async () => undefined,
-        removeInstallation,
-        fallback: () => new TestSandbox("unsupported"),
-      },
-    );
+    const setup = new SandboxSetupService("/workspace", "/state", switchable, {
+      inspect: vi.fn(),
+      loadInstallation: async () => undefined,
+      removeInstallation,
+      fallback: () => new TestSandbox("unsupported"),
+    });
     const preview = await setup.uninstallPreview();
     expect(preview.status).toBe("not_installed");
 
@@ -92,25 +82,45 @@ describe("Sandbox uninstall service", () => {
   it("keeps the active adapter when persisted removal fails", async () => {
     const active = new TestSandbox("oci-container", "e".repeat(64));
     const switchable = new SwitchableSandboxAdapter(active);
-    const setup = new SandboxSetupService(
-      "/workspace",
-      "/state",
-      switchable,
-      {
-        inspect: vi.fn(),
-        loadInstallation: async () => record(),
-        removeInstallation: async () => {
-          throw new Error("synthetic removal failure");
-        },
-        fallback: () => new TestSandbox("macos-sandbox-exec"),
+    const setup = new SandboxSetupService("/workspace", "/state", switchable, {
+      inspect: vi.fn(),
+      loadInstallation: async () => record(),
+      removeInstallation: async () => {
+        throw new Error("synthetic removal failure");
       },
-    );
+      fallback: () => new TestSandbox("macos-sandbox-exec"),
+    });
     const preview = await setup.uninstallPreview();
 
     await expect(
       setup.uninstall({ expectedPreviewSha256: preview.contentSha256 }),
     ).rejects.toThrow("synthetic removal failure");
     expect(switchable.current()).toBe(active);
+  });
+
+  it("requires exact uninstall before setup can replace an invalid binding", async () => {
+    const fallback = new TestSandbox("configured-sandbox-invalid");
+    const switchable = new SwitchableSandboxAdapter(fallback);
+    const verify = vi.fn();
+    const setup = new SandboxSetupService("/workspace", "/state", switchable, {
+      inspect: vi.fn(),
+      inspectInstallation: async () => ({
+        status: "invalid",
+        bindingSha256: "a".repeat(64),
+      }),
+      verify,
+    });
+
+    await expect(
+      setup.apply(
+        { expectedPreviewSha256: "b".repeat(64) },
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow(
+      "Invalid Sandbox binding must be exact-uninstalled before setup",
+    );
+    expect(verify).not.toHaveBeenCalled();
+    expect(switchable.current()).toBe(fallback);
   });
 });
 

@@ -14,6 +14,7 @@ import {
   sha256,
 } from "../packages/runtime/dist/index.js";
 import { runSandboxFirstUseCodingAcceptance } from "./sandbox-first-use-coding-acceptance.mjs";
+import { runSandboxInvalidBindingRepairAcceptance } from "./sandbox-invalid-binding-repair-acceptance.mjs";
 
 const execFile = promisify(execFileWithCallback);
 const CONTAINER_NAME = /^napier-[a-f0-9]{32}$/u;
@@ -276,6 +277,11 @@ export async function runSandboxProductAcceptance(input) {
     const firstUse = await runSandboxFirstUseCodingAcceptance({
       repoRoot: input.repoRoot,
     });
+    const invalidBindingRepair = await runSandboxInvalidBindingRepairAcceptance(
+      {
+        repoRoot: input.repoRoot,
+      },
+    );
     const finalSnapshot = await snapshotResources();
     const resourceClosure = resourceDelta(baseline, finalSnapshot);
     requireValue(
@@ -334,6 +340,7 @@ export async function runSandboxProductAcceptance(input) {
         resultSha256: uninstall.value.contentSha256,
       },
       firstUse,
+      invalidBindingRepair,
       resourceClosure: {
         exactBaselineRestored: true,
         ...resourceClosure,

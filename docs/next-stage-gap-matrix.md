@@ -64,6 +64,12 @@ Current result:
 - `verified`: the Ubuntu 24.04 arm64 clean-host Stage 19 gate repeats that
   fresh-install Coding flow after clean `npm ci` and full build, with the same
   Profile/revision/credential invariants and exact cleanup;
+- `verified`: Stage 13 schema 3 and Stage 19 now cover old-data repair. A
+  revision-2 legacy Agent with an invalid persisted Sandbox binding receives
+  exact-uninstall guidance from Doctor and Run admission; ordinary Setup cannot
+  overwrite the invalid bytes; raw-byte CAS removal, nine-probe reinstallation,
+  zero-warning Doctor, and temporary Coding all succeed while Profile,
+  revision history, and credential count remain unchanged;
 - `pending`: no self-hosted runner with label `napier-windows-docker` is
   currently registered, so no real Windows receipt has been uploaded or
   accepted. `windowsHostProductAcceptance` must remain false in all retained

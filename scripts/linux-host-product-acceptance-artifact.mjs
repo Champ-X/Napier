@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
 import { validSandboxFirstUseCodingAcceptance } from "./sandbox-product-acceptance-artifact.mjs";
+import { validSandboxInvalidBindingRepairAcceptance } from "./sandbox-invalid-binding-repair-artifact.mjs";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const VERSION = /^[0-9]+(?:\.[0-9]+){1,3}(?:[-.][A-Za-z0-9]+)*$/u;
@@ -28,6 +29,10 @@ export async function linuxHostProductAcceptanceImplementation(repoRoot) {
     productLive: "scripts/sandbox-product-acceptance-live.mjs",
     firstUseHarness: "scripts/sandbox-first-use-coding-acceptance.mjs",
     firstUseSupport: "scripts/sandbox-first-use-coding-support.mjs",
+    invalidBindingRepairHarness:
+      "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
+    invalidBindingRepairVerifier:
+      "scripts/sandbox-invalid-binding-repair-artifact.mjs",
     guestHarness: "scripts/linux-host-product-acceptance-guest.mjs",
     liveHarness: "scripts/linux-host-product-acceptance-live.mjs",
     checkScript: "scripts/check-linux-host-product-acceptance.mjs",
@@ -187,6 +192,7 @@ function validProduct(value) {
     validDoctor(value.doctor) &&
     validVerification(value.verification) &&
     validSandboxFirstUseCodingAcceptance(value.firstUse) &&
+    validSandboxInvalidBindingRepairAcceptance(value.invalidBindingRepair) &&
     isRecord(value.service) &&
     value.service.ready === true &&
     value.service.healthChecked === true &&

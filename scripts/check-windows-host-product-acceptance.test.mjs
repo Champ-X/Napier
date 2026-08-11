@@ -204,6 +204,7 @@ async function validReceipt() {
       service: stage13.service,
       restart: stage13.restart,
       firstUse: stage13.firstUse,
+      invalidBindingRepair: stage13.invalidBindingRepair,
       uninstall: stage13.uninstall,
       resourceClosure: stage13.resourceClosure,
       contentSha256: HASH,
