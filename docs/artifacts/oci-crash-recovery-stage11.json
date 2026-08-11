@@ -1,0 +1,87 @@
+{
+  "kind": "napier.oci-crash-recovery-stage11",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-11T01:20:18.266Z",
+  "image": {
+    "id": "sha256:3a2c2bb5314ad03c007b71b88c5822163d510841eeef93c0fc54ef98cfd4d25a",
+    "platform": "linux/arm64",
+    "provenanceSha256": "c628ca038f0a14ceea9344bd15f1087615539154e9261d0daacb2f962f2c7ccd"
+  },
+  "implementation": {
+    "resourcePolicySha256": "e95d7afc88833609b7b3ef268725c5df36148241c36430bf0f7988a967a16448",
+    "guardianContractSha256": "2f5cbc3c300cb34e69f54bb56ee884afdb47b790458a3923b6839c8cc7049ec0",
+    "guardianWorkerSha256": "fe9bd34fb2a0bc6e060e9394b635baaa91a35eccf38f35aa2fa9e97149a3e604",
+    "ociAdapterSha256": "20a539dce9356ce33f0da1d2f708ae45c23abadf62ecb59efc7d6f9c0dc3b79d",
+    "checkScriptSha256": "e02deb863907e396cb58335e4dabc850bd06f26c507ec4f345241fd72f673c82",
+    "artifactVerifierSha256": "d29b227f032d0eff3233d47823e88735144b113eb000e3196e4056ee4445bb26",
+    "liveHarnessSha256": "8b76cbbbd3e8ebfc6d5c004455c02ce686086ea08db328a5026a81492050ec4e",
+    "childFixtureSha256": "273ef8a416aa72b61bfb63a438e739f308a41f2b899704017be1217155f986a4"
+  },
+  "cycles": [
+    {
+      "index": 1,
+      "runtimeSignal": "SIGKILL",
+      "serviceReady": true,
+      "serviceIdentitySha256": "8eb98c0a95973b36b10b4bf71afd1059e8256253df8d59cb2d015941f7a02c24",
+      "endpointSha256": "89b88a831889d935d06e6bf7a7d58ed0b3a32d534a9b18bdd041519401749721",
+      "containerDeltaCount": 1,
+      "networkDeltaCount": 1,
+      "scratchDeltaCount": 1,
+      "containerCleanupVerified": true,
+      "networkCleanupVerified": true,
+      "scratchCleanupVerified": true,
+      "endpointClosedVerified": true,
+      "exactBaselineRestored": true,
+      "cleanupDurationMs": 416
+    },
+    {
+      "index": 2,
+      "runtimeSignal": "SIGKILL",
+      "serviceReady": true,
+      "serviceIdentitySha256": "ff77a2de8374a1686415321b70b72739aed3659c41bb7dd2ac05ee01c5bc6984",
+      "endpointSha256": "0098d50388190bcedc15858eda3e97cba2524f169ed8dfdac957552d8002ccc9",
+      "containerDeltaCount": 1,
+      "networkDeltaCount": 1,
+      "scratchDeltaCount": 1,
+      "containerCleanupVerified": true,
+      "networkCleanupVerified": true,
+      "scratchCleanupVerified": true,
+      "endpointClosedVerified": true,
+      "exactBaselineRestored": true,
+      "cleanupDurationMs": 415
+    }
+  ],
+  "recovery": {
+    "cycleCount": 2,
+    "freshRuntimeSecondCycle": true,
+    "differentEndpointIdentity": true,
+    "exactBaselineRestoredAfterEachCycle": true
+  },
+  "failureRecovery": {
+    "cleanupFailureExitCode": 75,
+    "driftedScratchRetained": true,
+    "matchingScratchRemovedWhenDockerCleanupFails": true
+  },
+  "retention": {
+    "credentialValues": false,
+    "rawDockerOutput": false,
+    "rawChildOutput": false,
+    "rawDaemonEndpoint": false,
+    "resourceNames": false,
+    "endpointUrls": false,
+    "workspacePaths": false,
+    "scratchPaths": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "remaining": [
+      "multi-architecture registry publication and signature",
+      "non-POSIX host user mapping",
+      "cross-platform isolated provider casebook",
+      "complete install-build-test-service-cancel-recovery acceptance",
+      "full file-network-secret-resource failure injection"
+    ]
+  },
+  "contentSha256": "e3d9c75b0d7fc0e9ceee6b9b560f84a52a0d4aa694a115270580a3748ac7c2b7"
+}

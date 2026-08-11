@@ -55,6 +55,7 @@ describe("release artifacts audit", () => {
       "sandbox-image-sbom",
       "sandbox-image-provenance",
       "oci-resource-limits-stage10",
+      "oci-crash-recovery-stage11",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -322,6 +323,28 @@ describe("release artifacts audit", () => {
 
     expect(result.ok).toBe(false);
     expect(result.errors).toContain("OCI resource limits evidence is invalid");
+  });
+
+  it("fails when retained OCI crash recovery evidence claims endpoint reuse", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/oci-crash-recovery-stage11.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.cycles[1].endpointSha256 = evidence.cycles[0].endpointSha256;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "OCI crash recovery: OCI crash recovery artifact shape is invalid",
+        ),
+      ]),
+    );
   });
 
   it("fails when the product performance baseline is tampered", async () => {
@@ -1041,11 +1064,24 @@ async function createFixture() {
     "sandbox-image-sbom-0.1.0.cdx.json",
     "sandbox-image-provenance-0.1.0.json",
     "oci-resource-limits-stage10.json",
+    "oci-crash-recovery-stage11.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),
       path.join(root, "docs/artifacts", fileName),
     );
+  }
+  for (const relative of [
+    "packages/runtime/src/process-guardian.ts",
+    "packages/runtime/src/process-guardian-worker-source.ts",
+    "packages/runtime/src/sandbox-oci.ts",
+    "scripts/check-oci-crash-recovery.mjs",
+    "scripts/oci-crash-recovery-artifact.mjs",
+    "scripts/oci-crash-recovery-fixture.mjs",
+    "scripts/oci-crash-recovery-live.mjs",
+  ]) {
+    await mkdir(path.join(root, path.dirname(relative)), { recursive: true });
+    await cp(path.resolve(relative), path.join(root, relative));
   }
   await createWorkflowBenchmarkFixture(root);
   await mkdir(path.join(root, "benchmark-results"), { recursive: true });
@@ -1154,6 +1190,7 @@ async function createWorkflowBenchmarkFixture(root) {
 async function createPackageLockFixture(root) {
   await mkdir(path.join(root, "apps/web"), { recursive: true });
   await mkdir(path.join(root, "packages/contracts"), { recursive: true });
+  await mkdir(path.join(root, "packages/runtime"), { recursive: true });
   const rootPackage = {
     name: "napier-test",
     version: "0.1.0",
@@ -1172,6 +1209,12 @@ async function createPackageLockFixture(root) {
     name: "@napier/contracts",
     version: "0.1.0",
     private: true,
+  };
+  const runtimePackage = {
+    name: "@napier/runtime",
+    version: "0.1.0",
+    private: true,
+    dependencies: { "@napier/contracts": "*" },
   };
   const lockfile = {
     name: rootPackage.name,
@@ -1195,12 +1238,21 @@ async function createPackageLockFixture(root) {
         name: contractsPackage.name,
         version: contractsPackage.version,
       },
+      "packages/runtime": {
+        name: runtimePackage.name,
+        version: runtimePackage.version,
+        dependencies: runtimePackage.dependencies,
+      },
       "node_modules/@napier/contracts": {
         resolved: "packages/contracts",
         link: true,
       },
       "node_modules/@napier/web": {
         resolved: "apps/web",
+        link: true,
+      },
+      "node_modules/@napier/runtime": {
+        resolved: "packages/runtime",
         link: true,
       },
       "node_modules/react": {
@@ -1215,6 +1267,10 @@ async function createPackageLockFixture(root) {
   await writeJson(
     path.join(root, "packages/contracts/package.json"),
     contractsPackage,
+  );
+  await writeJson(
+    path.join(root, "packages/runtime/package.json"),
+    runtimePackage,
   );
   await writeJson(path.join(root, "package-lock.json"), lockfile);
 }

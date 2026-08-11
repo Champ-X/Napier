@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "879e8e99b8f4a99d9a85f2927745de96d3df4f783f8dd9257bd8873a45a9f9f2",
+  "artifactSetSha256": "3ff51d9463ee5c0e468d643653d7e11634406a95c60c7388bf273692fb44eb0a",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "d86e05d135dfa1189da5996a2acb86be3a47c36e55b12561d1baf74d2b4f91a4",
+      "sha256": "87521832e579985774d796d98d2aeb1883c6bb3dd0575a6a2009a567b0aa634e",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "58c25df0c4984dbd77180af89c1002a38ad50515586e439587a4f2b754dfcf82",
+      "sha256": "a6b6018468e903ed1b727ccf63cac9ed8c7eff8a39b2029aea4080b11ee4caa4",
       "valid": true
     },
     {
@@ -36,6 +36,12 @@
       "kind": "oci-resource-limits-stage10",
       "path": "docs/artifacts/oci-resource-limits-stage10.json",
       "sha256": "211ca197acc7230c908f273115904c3671e0c6cde7bdd8ed71e9f8c9d0a34c90",
+      "valid": true
+    },
+    {
+      "kind": "oci-crash-recovery-stage11",
+      "path": "docs/artifacts/oci-crash-recovery-stage11.json",
+      "sha256": "c0c98d1e5f093672bc5bf03b8cd3ec49ab80faf6e744b86bd4bbf11c18e62b4f",
       "valid": true
     },
     {

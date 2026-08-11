@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { verifyPackageLockReceipt } from "./check-package-lock.mjs";
 import { verifyRuntimeEnvironmentReceipt } from "./check-runtime-environment.mjs";
 import { verifySandboxImageArtifacts } from "./check-sandbox-image-sbom.mjs";
+import { verifyOciCrashRecoveryArtifact } from "./check-oci-crash-recovery.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -57,6 +58,8 @@ const defaultSandboxImageProvenancePath =
   "docs/artifacts/sandbox-image-provenance-0.1.0.json";
 const defaultOciResourceLimitsEvidencePath =
   "docs/artifacts/oci-resource-limits-stage10.json";
+const defaultOciCrashRecoveryEvidencePath =
+  "docs/artifacts/oci-crash-recovery-stage11.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -135,6 +138,9 @@ export async function auditReleaseArtifacts(options = {}) {
   const ociResourceLimitsEvidencePath =
     options.ociResourceLimitsEvidencePath ??
     defaultOciResourceLimitsEvidencePath;
+  const ociCrashRecoveryEvidencePath =
+    options.ociCrashRecoveryEvidencePath ??
+    defaultOciCrashRecoveryEvidencePath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -545,6 +551,18 @@ export async function auditReleaseArtifacts(options = {}) {
   if (!ociResourceLimitsValid) {
     errors.push("OCI resource limits evidence is invalid");
   }
+  const ociCrashRecoveryVerification =
+    await verifyOciCrashRecoveryArtifact({
+      repoRoot,
+      artifactPath: ociCrashRecoveryEvidencePath,
+    });
+  if (!ociCrashRecoveryVerification.valid) {
+    errors.push(
+      ...ociCrashRecoveryVerification.errors.map(
+        (error) => `OCI crash recovery: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -595,6 +613,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: ociResourceLimitsEvidence.path,
       sha256: ociResourceLimitsEvidence.sha256,
       valid: ociResourceLimitsEvidence.readable && ociResourceLimitsValid,
+    },
+    {
+      kind: "oci-crash-recovery-stage11",
+      path: ociCrashRecoveryVerification.path,
+      sha256: ociCrashRecoveryVerification.sha256,
+      valid: ociCrashRecoveryVerification.valid,
     },
     {
       kind: "product-performance-baseline",

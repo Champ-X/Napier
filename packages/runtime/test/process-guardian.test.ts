@@ -1,5 +1,11 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -299,6 +305,7 @@ describe("process guardian", () => {
         { mode: 0o755 },
       );
       const executableSha256 = await sha256File(executable);
+      const scratch = await createGuardianScratch(cwd);
       const parent = spawn(
         process.execPath,
         [
@@ -311,6 +318,7 @@ describe("process guardian", () => {
             cleanupLog,
             containerName,
             networkName,
+            ...scratch,
           }),
         ],
         {
@@ -332,6 +340,7 @@ describe("process guardian", () => {
       await expect(waitForFile(cleanupLog)).resolves.toBe(
         `container:${containerName}\nnetwork:${networkName}\n`,
       );
+      await expect(access(scratch.scratchHome)).rejects.toThrow();
       livePids.delete(guardianPid);
       livePids.delete(targetPid);
     },
@@ -344,6 +353,7 @@ describe("process guardian", () => {
       const cwd = await temporaryRoot();
       const executable = path.join(cwd, "failing-container-client");
       const containerName = `napier-${"f".repeat(32)}`;
+      const scratch = await createGuardianScratch(cwd);
       await writeFile(
         executable,
         [
@@ -369,6 +379,7 @@ describe("process guardian", () => {
           command: executable,
           commandSha256: await sha256File(executable),
           containerName,
+          ...scratch,
           env: { PATH: "/usr/bin:/bin" },
         },
       });
@@ -380,6 +391,59 @@ describe("process guardian", () => {
         code: 75,
         signal: null,
       });
+      await expect(access(scratch.scratchHome)).rejects.toThrow();
+      livePids.delete(guarded.guardianPid);
+      livePids.delete(guarded.targetPid);
+    },
+    15_000,
+  );
+
+  posixIt(
+    "fails closed without deleting a drifted guardian environment file",
+    async () => {
+      const cwd = await temporaryRoot();
+      const executable = path.join(cwd, "successful-container-client");
+      const containerName = `napier-${"a".repeat(32)}`;
+      const scratch = await createGuardianScratch(cwd);
+      await writeFile(
+        executable,
+        [
+          "#!/bin/sh",
+          'if [ "$1" = "container" ] && [ "$2" = "rm" ]; then exit 0; fi',
+          "trap 'exit 0' HUP INT TERM",
+          "while :; do sleep 1; done",
+          "",
+        ].join("\n"),
+        { mode: 0o755 },
+      );
+      const guarded = await launchParentGuardedProcess({
+        command: executable,
+        args: ["run"],
+        cwd,
+        env: { PATH: "/usr/bin:/bin" },
+        cleanup: {
+          kind: "oci-container",
+          command: executable,
+          commandSha256: await sha256File(executable),
+          containerName,
+          ...scratch,
+          env: { PATH: "/usr/bin:/bin" },
+        },
+      });
+      livePids.add(guarded.guardianPid);
+      livePids.add(guarded.targetPid);
+      await writeFile(
+        path.join(scratch.scratchHome, "environment.list"),
+        "PRIVATE_VALUE=drifted\n",
+        { mode: 0o600 },
+      );
+
+      await guarded.terminate();
+      await expect(guarded.exit).resolves.toEqual({
+        code: 75,
+        signal: null,
+      });
+      await expect(access(scratch.scratchHome)).resolves.toBeUndefined();
       livePids.delete(guarded.guardianPid);
       livePids.delete(guarded.targetPid);
     },
@@ -583,6 +647,8 @@ function cleanupParentHarnessSource(input: {
   cleanupLog: string;
   containerName: string;
   networkName: string;
+  scratchHome: string;
+  environmentSha256: string;
 }): string {
   return `
     import { spawn } from "node:child_process";
@@ -610,6 +676,8 @@ function cleanupParentHarnessSource(input: {
           commandSha256: ${JSON.stringify(input.executableSha256)},
           containerName: ${JSON.stringify(input.containerName)},
           networkName: ${JSON.stringify(input.networkName)},
+          scratchHome: ${JSON.stringify(input.scratchHome)},
+          environmentSha256: ${JSON.stringify(input.environmentSha256)},
           env: {
             PATH: "/usr/bin:/bin",
             CLEANUP_LOG: ${JSON.stringify(input.cleanupLog)},
@@ -633,4 +701,21 @@ function cleanupParentHarnessSource(input: {
       setInterval(() => {}, 1000);
     });
   `;
+}
+
+async function createGuardianScratch(root: string): Promise<{
+  scratchHome: string;
+  environmentSha256: string;
+}> {
+  const scratchHome = await mkdtemp(
+    path.join(root, "napier-process-sandbox-"),
+  );
+  const environment = "PRIVATE_VALUE=guardian-secret\n";
+  await writeFile(path.join(scratchHome, "environment.list"), environment, {
+    mode: 0o600,
+  });
+  return {
+    scratchHome,
+    environmentSha256: sha256(environment),
+  };
 }

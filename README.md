@@ -6810,11 +6810,27 @@ projects an ephemeral `127.0.0.1` listener through bounded `docker exec`
 streams rather than enabling container egress or Docker port publishing. OCI
 PTY sessions use the production guardian and unpredictable resource names so
 normal exit, cancel, and parent death remove the exact container/network
-without relying on Docker auto-remove. Missing prerequisites, remote daemon
-contexts, daemon or identity drift, unsupported host user mapping, or runtime
-resource drift fail closed. Doctor reports the exact restart, rebuild, or
-resource-repair path instead of silently falling back to host-direct
-execution.
+without relying on Docker auto-remove. The guardian also binds the private
+`environment.list` bytes and random scratch directory identity, then removes
+only that exact 0600 file and empty 0700 directory. Drift keeps the scratch for
+manual inspection and returns cleanup failure instead of deleting an unknown
+path. Stage 11 replays two fresh Runtime cycles against the real local daemon:
+each starts and health-checks an egress-denied loopback service, SIGKILLs the
+Runtime, and requires container, network, endpoint, and scratch sets to return
+to their exact baselines before the next Runtime starts:
+
+```bash
+npm run check:oci-crash-recovery
+npm run check:oci-crash-recovery:live
+```
+
+The ordinary check is offline and verifies the retained hash-bound receipt;
+the explicit live check performs the two destructive child-Runtime crash
+cycles without killing the caller. Missing prerequisites, remote daemon
+contexts, daemon or identity drift, unsupported host user mapping, scratch
+drift, or runtime resource drift fail closed. Doctor reports the exact restart,
+rebuild, or resource-repair path instead of silently falling back to
+host-direct execution.
 
 Image-bound runtime identity covers Node, Shell, an optional Python interpreter,
 the fixed Git operation graph, and TypeScript LSP. Python 3.9+ is admitted only

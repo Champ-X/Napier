@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -168,16 +168,22 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       commandSha256: identity.clientExecutableSha256,
       containerName,
       ...(networkName ? { networkName } : {}),
+      scratchHome: sandboxHome,
+      environmentSha256: "",
       env: clientEnvironment,
     };
     let child: SandboxedProcess | undefined;
     let closeLocalServiceProjection: (() => Promise<void>) | undefined;
     try {
+      const serializedEnvironment = serializeContainerEnvironment(request.env);
       await writeFile(
         containerEnvironmentFile(sandboxHome),
-        serializeContainerEnvironment(request.env),
+        serializedEnvironment,
         { encoding: "utf8", flag: "wx", mode: 0o600 },
       );
+      cleanup.environmentSha256 = createHash("sha256")
+        .update(serializedEnvironment)
+        .digest("hex");
       if (networkName) {
         await createContainerServiceNetwork(
           identity,

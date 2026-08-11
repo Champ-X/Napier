@@ -741,6 +741,32 @@ storage, privilege, or quota drift returns
 `sandbox_resources_unavailable`; Setup does not persist the binding and Doctor
 offers an exact Sandbox repair path.
 
+OCI parent-death recovery also binds private launch scratch to the guardian
+cleanup contract. The parent writes one 0600 `environment.list`, passes its
+SHA-256 plus the random 0700 `napier-process-sandbox-*` directory, and never
+places environment values on Docker argv. On normal exit, cancellation, or
+parent death, the guardian first rehashes the Docker client, removes the exact
+container and optional internal network, then validates that the scratch is a
+non-symlink directory containing only the no-follow-opened, size-bounded,
+mode-0600 file with the expected hash. It atomically renames that directory to
+an unpredictable tombstone before unlink/rmdir. Missing resources are
+idempotent; Docker cleanup failure still attempts scratch removal but returns
+exit 75; scratch byte, mode, shape, or symlink drift is retained and also
+returns 75.
+
+`check-oci-crash-recovery.mjs --live` is the real-daemon acceptance path. It
+captures pre-existing Napier container/network/scratch name sets without
+assuming an otherwise empty daemon, starts an egress-denied loopback HTTP
+service through the production Runtime, verifies health, and SIGKILLs only its
+child Runtime. The guardian must close the endpoint and restore all three sets
+exactly. A second independently spawned Runtime repeats the cycle with a
+different endpoint identity, proving that crash cleanup permits fresh startup.
+Only hashes, booleans, counts, durations, image/provenance identity, and
+implementation hashes enter the Stage 11 receipt; resource names, URLs,
+scratch paths, child output, Docker output, environment values, and daemon
+endpoint remain unretained. The ordinary command is an offline release-gate
+verification and never performs a crash cycle.
+
 The shared catalog is published as the narrow
 `@napier/contracts/agent-capabilities` subpath; the 7,025-line Contracts root
 barrel remains unchanged. CLI option parsing and first-use dispatch occupy leaf
