@@ -245,7 +245,10 @@ import {
   type VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
-import type { RestoreRecommendedCapabilitiesRequestV1 } from "@napier/contracts/agent-capability-contract";
+import type {
+  RestoreRecommendedCapabilitiesRequestV1,
+  UpgradeRecommendedCapabilitiesRequestV1,
+} from "@napier/contracts/agent-capability-contract";
 import { loadThreadDetail } from "./thread-detail.js";
 import {
   createThreadRecord,
@@ -269,9 +272,8 @@ import {
   updatedAgentCapabilityBinding,
 } from "./agent-capability-store-state.js";
 import {
-  CapabilityRestoreConflictError,
-  CapabilityRestorePersistenceError,
-  restoreRecommendedCapabilitiesState,
+  commitRecommendedCapabilitiesState,
+  type CapabilityCommitOperation,
   type CapabilityRestoreCommit,
 } from "./agent-capability-store-mutations.js";
 import { createId, nowIso, preserveRunLeaseOnStartup } from "./ids.js";
@@ -1232,29 +1234,22 @@ export class LocalStore {
 
   async restoreRecommendedAgentCapabilities(
     agentId: string,
-    request: RestoreRecommendedCapabilitiesRequestV1,
+    request:
+      | RestoreRecommendedCapabilitiesRequestV1
+      | UpgradeRecommendedCapabilitiesRequestV1,
+    operation: CapabilityCommitOperation = "restore",
   ): Promise<CapabilityRestoreCommit> {
     this.assertInitialized();
-    return this.stateQueue.run(async () => {
-      const result = restoreRecommendedCapabilitiesState(
-        this.state,
+    return this.stateQueue.run(() =>
+      commitRecommendedCapabilitiesState({
+        state: this.state,
         agentId,
         request,
-      );
-      try {
-        await this.persistState();
-      } catch (error) {
-        if (error instanceof ConcurrentStoreUpdateError) {
-          throw new CapabilityRestoreConflictError();
-        }
-        throw new CapabilityRestorePersistenceError({ cause: error });
-      }
-      return structuredClone({
-        previousRevision: result.previous.revision,
-        agent: result.updated,
-        binding: result.binding,
-      });
-    });
+        operation,
+        persist: () => this.persistState(),
+        isConflict: (error) => error instanceof ConcurrentStoreUpdateError,
+      }),
+    );
   }
 
   listCredentialReferences(): CredentialReference[] {

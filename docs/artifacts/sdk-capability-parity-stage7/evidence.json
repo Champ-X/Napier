@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "8d373f201f36c1c522dd89276be16297fe55c68928d57d75eeec7db3da0c2382",
+      "stdoutSha256": "2d722982a2580311161639d15873411ac9e9aaec4eb8888ba6842b96ff340ea3",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "054e38fd55e9afeee2c39341f15ada41a8bb4c1cb7f85eb6bfb03f85ca43d79b",
-      "receiptSha256": "c40cef5584dbc79b22d51a28c5fb64e6544cb709b23727cf3e0c0c57793450c5"
+      "evidenceSha256": "37d0f979a0b55ea87fd950398e1c45f4dc5eb76c3f91c05cad640258141ba27b",
+      "receiptSha256": "109b3d2aa0334264cbe59dae77ee3885eadc2958714760704ae3e9677b6cfe15"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "2c82d4e39ef0bf2e8b8dc9b6f5e47d05556a6be95de5834b831a8305ce423104",
+      "stdoutSha256": "db9c567e461194b272005c116f02dbdcc2f315220ad4112f45ade02993624635",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "7a740dc7d40f635b0bad991f8e3aa84f70b69e5db8739bb682cf3c60d2744036",
-      "receiptSha256": "2380cfa75696dd2632289fb116e1e6abfb0a20734f76b8f97baf0ed2c09ebcf2"
+      "evidenceSha256": "68e2cbcde54345cc6eddaabb10c83a0ee1cebee07caa26cda5fa0e0124a9a4ec",
+      "receiptSha256": "699c89d9d4811295745e485e101de39e1e96dc116c5a7a418ca71b1d6488b63a"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -491,6 +491,7 @@
         "apps/cli/package.json",
         "apps/cli/src/browser-confirmed-form-benchmark-cli.ts",
         "apps/cli/src/capability-cli.ts",
+        "apps/cli/src/cli-capability-options.ts",
         "apps/cli/src/cli-doctor-options.ts",
         "apps/cli/src/cli-first-use.ts",
         "apps/cli/src/cli-help.ts",
@@ -554,6 +555,7 @@
         "apps/server/test/thread-execution-http-validation.test.ts",
         "apps/server/test/thread-run-readiness-http.test.ts",
         "apps/server/test/thread-source-continuity-http.test.ts",
+        "apps/web/src/AgentCapabilityContractCard.tsx",
         "apps/web/src/AgentCapabilityStatusBadge.tsx",
         "apps/web/src/App.tsx",
         "apps/web/src/BrowserInspectorPanel.tsx",
@@ -641,6 +643,7 @@
         "apps/web/src/workspace-process-event-view.ts",
         "apps/web/src/workspace-process-view-model.ts",
         "apps/web/src/write-linked-test-event-view.ts",
+        "apps/web/test/AgentCapabilityContractCard.test.tsx",
         "apps/web/test/ComposerCapabilityControl.test.tsx",
         "apps/web/test/ConversationArtifactCard.test.tsx",
         "apps/web/test/ConversationRecoveryCard.test.tsx",
@@ -722,6 +725,7 @@
         "docs/artifacts/oci-user-identity-stage4.json",
         "docs/artifacts/package-lock-audit-0.1.0.json",
         "docs/artifacts/product-performance-baseline-0.1.0.json",
+        "docs/artifacts/profile-upgrade-stage21.json",
         "docs/artifacts/prompt-regression-matrix-0.1.0.json",
         "docs/artifacts/release-artifacts-audit-0.1.0.json",
         "docs/artifacts/runtime-environment-audit-0.1.0.json",
@@ -780,9 +784,12 @@
         "packages/contracts/test/skill-load.test.ts",
         "packages/contracts/test/skill-resource.test.ts",
         "packages/runtime/package.json",
+        "packages/runtime/src/agent-capability-bindings.ts",
         "packages/runtime/src/agent-capability-override.ts",
         "packages/runtime/src/agent-capability-runtime.ts",
         "packages/runtime/src/agent-capability-service.ts",
+        "packages/runtime/src/agent-capability-store-mutations.ts",
+        "packages/runtime/src/agent-capability-upgrade.ts",
         "packages/runtime/src/agent-message-experiment-source.ts",
         "packages/runtime/src/agent-message-experiments.ts",
         "packages/runtime/src/agent-message-tool-result-replay.ts",
@@ -1095,6 +1102,8 @@
         "scripts/check-oci-resource-limits.mjs",
         "scripts/check-oci-runtime-identity-stage2.test.mjs",
         "scripts/check-oci-user-identity-stage4.test.mjs",
+        "scripts/check-profile-upgrade.mjs",
+        "scripts/check-profile-upgrade.test.mjs",
         "scripts/check-release-artifacts.mjs",
         "scripts/check-release-artifacts.test.mjs",
         "scripts/check-runtime-environment.mjs",
@@ -1142,6 +1151,8 @@
         "scripts/product-performance-report.mjs",
         "scripts/product-performance.mjs",
         "scripts/product-performance.test.mjs",
+        "scripts/profile-upgrade-acceptance.mjs",
+        "scripts/profile-upgrade-artifact.mjs",
         "scripts/prompt-regression-matrix.mjs",
         "scripts/prompt-regression-matrix.test.mjs",
         "scripts/refresh-skill-load-fast-core-evidence.mjs",
@@ -1216,8 +1227,8 @@
           "lines": 279
         },
         "README.md": {
-          "sha256": "1ff4f5a6baa64f24cb56085a5c8270563a6e670193fa62249d4f6ebd2b900cc1",
-          "lines": 7284
+          "sha256": "ad9645c3d748e4d4bd92132c520d26d07e9aca5914a647a449b2cb6c044eb584",
+          "lines": 7308
         },
         "apps/cli/package.json": {
           "sha256": "10827e621b79325d37d27b5c4fbec4fbfa2dd5af2eb641aaf034d4926e3e38c4",
@@ -1228,8 +1239,12 @@
           "lines": 147
         },
         "apps/cli/src/capability-cli.ts": {
-          "sha256": "305e90d882f180de262c390e68e38dcb63331cbcbd18e9a076ee3b24bb2a7fc0",
-          "lines": 234
+          "sha256": "c6a8766c2348c81db76d572988154e67d7545b8d378745789aa5f159a2b634d5",
+          "lines": 312
+        },
+        "apps/cli/src/cli-capability-options.ts": {
+          "sha256": "c75d9fe9ffd7941ddf4bc706a08d573119d3aaec90e67bb175c87670cf741ea0",
+          "lines": 138
         },
         "apps/cli/src/cli-doctor-options.ts": {
           "sha256": "673d949b09e902f5042b2571ce2d97a8448b41804695a807add3b0005d7f8490",
@@ -1240,8 +1255,8 @@
           "lines": 65
         },
         "apps/cli/src/cli-help.ts": {
-          "sha256": "0c01a77c7d0077dc5cb48d43f94ca6c25e3ae4847c975b5704f405339f0bd815",
-          "lines": 167
+          "sha256": "5d9952329a14882d9119b0eb42da58f728baa3ed58805beb0103e41a49bbe4ed",
+          "lines": 168
         },
         "apps/cli/src/cli-invocation.ts": {
           "sha256": "45afb534de990a52bf8c960fbd3fdf9b5a98613ff8280b5ecfb276a51240ab4c",
@@ -1332,8 +1347,8 @@
           "lines": 640
         },
         "apps/cli/test/capability-cli.test.ts": {
-          "sha256": "2d1c9af38f933b6c443a6819fe4de3ecdec3426417eb67c03b1b7edd0af00c06",
-          "lines": 579
+          "sha256": "000550365126a64bd185654957f778c0581a15b834290da46c7be745449d1e59",
+          "lines": 730
         },
         "apps/cli/test/capability-run-cli.test.ts": {
           "sha256": "28545e86a1a5be8b4929a478243e0eb0c12e0fd1ad2669e2e05d29ecee9de2fc",
@@ -1400,8 +1415,8 @@
           "lines": 751
         },
         "apps/server/src/agent-capability-http.ts": {
-          "sha256": "92cadbfbea92dab40b253ae54ef1ee19d32d1cfedaf40d328f1c3099e8dd4678",
-          "lines": 163
+          "sha256": "1379303b70c516baeb0cc8f25d4683d9862a396e1bcb2489ecc25d0cc08941ce",
+          "lines": 234
         },
         "apps/server/src/app.ts": {
           "sha256": "fd98bca00a6c4161351d5bd65e0bfffce13bf2cbdf8e7595ad2201b188eed3c1",
@@ -1444,8 +1459,8 @@
           "lines": 45
         },
         "apps/server/test/agent-capability-http.test.ts": {
-          "sha256": "86a1d0be5afc054f40a18614c3f752fb9bd4ef673e159c64324f929d2a7853e3",
-          "lines": 300
+          "sha256": "37bce249e1d2237dfe3e370157f7a7cbe6a55500f7ac6691f7179b85e8567f3f",
+          "lines": 375
         },
         "apps/server/test/bootstrap-http.test.ts": {
           "sha256": "e58978cbe88e6f139b3fe03216561dcc7daec9b65e8a407d3bd10cb0f6df542a",
@@ -1482,6 +1497,10 @@
         "apps/server/test/thread-source-continuity-http.test.ts": {
           "sha256": "cfa0390461cbad0b525e556af16142ee6e056336fa227ec594238a516631e223",
           "lines": 76
+        },
+        "apps/web/src/AgentCapabilityContractCard.tsx": {
+          "sha256": "f04313a4ef786e3ac59f815e09f66f405ca5ec4b9bed697a66400e8a2447e6ea",
+          "lines": 235
         },
         "apps/web/src/App.tsx": {
           "sha256": "99e7f621f0d4fe831d2100caacecf9f8f4914e943020eb5c80ebfc88d0fbc6d8",
@@ -1620,8 +1639,8 @@
           "lines": 55
         },
         "apps/web/src/agent-capability-api.ts": {
-          "sha256": "958b41c14967577952b970837e950345fc9f053c0547844da43a869452d1a07c",
-          "lines": 38
+          "sha256": "1c9850d9b06d2a70060b1b2f8e3adccb72ecdd3d10cd99652d1c638451c30e0b",
+          "lines": 50
         },
         "apps/web/src/agent-capability-composer-summary.ts": {
           "sha256": "05422b6b9220d1b08119d8173a5970260b678a8c162fccc2e34850946860ae73",
@@ -1652,8 +1671,8 @@
           "lines": 276
         },
         "apps/web/src/context-copy.ts": {
-          "sha256": "80678abad65858c305ef20635acf20f2ef8503b010b9120fa298474774185326",
-          "lines": 487
+          "sha256": "9edb49f245e6e0c971efea3db92c03e0e0f6a7c3d3983e0a37c975757e8659a1",
+          "lines": 492
         },
         "apps/web/src/context-event-view.ts": {
           "sha256": "c9a244d03b8902360a62e52df73bb2a3a508a916d260c7f3ede63290d7914f75",
@@ -1827,6 +1846,10 @@
           "sha256": "034a0024a8a778a011ccdbb030020685a74cfad15af35dee2ce8eb53d47184d6",
           "lines": 345
         },
+        "apps/web/test/AgentCapabilityContractCard.test.tsx": {
+          "sha256": "04ea7c048970f315fa26cc855bf9a18619a50eb8b77653fd3767287239ae0f50",
+          "lines": 347
+        },
         "apps/web/test/ComposerCapabilityControl.test.tsx": {
           "sha256": "fae123d14b756f160a983e854798ea0bdf2ee9d3bc4ebe0e2ceea4d4b546c771",
           "lines": 228
@@ -1848,8 +1871,8 @@
           "lines": 367
         },
         "apps/web/test/agent-capability-api.test.ts": {
-          "sha256": "0494903a661ab25ccefd4b48317b6ddfe6d261c5bc1a9548439bcdd5e6028e5b",
-          "lines": 185
+          "sha256": "6b4683fca133d084ffdf49e91e8fd0b9e349ca363acc92937149e2a8c5b670a9",
+          "lines": 217
         },
         "apps/web/test/agent-capability-composer.test.ts": {
           "sha256": "f6a5951f14193948ac7eee06ad37214b5cf2606696ca828f9b359e08cc5c0307",
@@ -2040,12 +2063,12 @@
           "lines": 11
         },
         "docs/architecture-budget.json": {
-          "sha256": "5fae6dd78f47518cf6b63d4fcf32cb65d31582ec49e85fb70c87ab616ba04cc4",
+          "sha256": "99deed6ae81b1ba0be3707a156ad42b81113e16254553f25a039f5625c9fa27f",
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "27c1ddd4db75a5113f37a16ea41a199380c9f7b2382854cf340438f2b5c017e4",
-          "lines": 9505
+          "sha256": "266764f08d2f36b29f0d617941b8a4ee5e773dda12f4adf296a09b913f71a48e",
+          "lines": 9532
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -2096,12 +2119,12 @@
           "lines": 553
         },
         "docs/artifacts/management-openapi-0.1.0.json": {
-          "sha256": "8b1e4aae1fd2f9e0c9e3daf824a0e269f4654ffc18183c24970caf6e5ce24570",
-          "lines": 15577
+          "sha256": "56823231355ea0ec404ac6c5cc59aadde7663214fe2d101fc8eca0e9ca522822",
+          "lines": 15627
         },
         "docs/artifacts/management-openapi-compatibility-0.1.0.json": {
-          "sha256": "ea47cf300b4d411c233d5fd1e9f6a2b78baf806ee5e004bad0b608e9ef643745",
-          "lines": 5880
+          "sha256": "0c9617fb70c2342d974c52c134c08445d59be504257a9fac60239d16548dca08",
+          "lines": 5982
         },
         "docs/artifacts/oci-crash-recovery-stage11.json": {
           "sha256": "e1adc8d221ac47504308ff60b8b366efd10b50838a14f052dbf84cdf0773a664",
@@ -2144,23 +2167,27 @@
           "lines": 62
         },
         "docs/artifacts/package-lock-audit-0.1.0.json": {
-          "sha256": "4b63dfc99ec3ac23d9f1378ab085427c871ed0d4a1dd2a82bf3e9f53797edfa1",
+          "sha256": "6c9118411ab59abc602297aa2ffc43bd56b2874ebdf5cb514f031c2a1498cacf",
           "lines": 20
         },
         "docs/artifacts/product-performance-baseline-0.1.0.json": {
           "sha256": "6c702f14f70c61fbe585598e09f447352e0d0b5a3161e6a0e49d723c4466fd05",
           "lines": 235
         },
+        "docs/artifacts/profile-upgrade-stage21.json": {
+          "sha256": "faf451bc034c8520cb7b8e0a18490b1ef04ae3dec42658e8e86a12e6801e5e6d",
+          "lines": 99
+        },
         "docs/artifacts/prompt-regression-matrix-0.1.0.json": {
           "sha256": "b39c3ce992d9c6d00cd71da5b8ee1c382bb3dc19b95cfb9de7b645b7f5aa0fa2",
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "2a665e922e2dddc0d3688b46026cd8db2745670455548ac490905782845bf8bf",
-          "lines": 949
+          "sha256": "8fba1d5f6f0acf96fc1f201a5abb6bfa8629efae8fed5a0420639a5e4b0f010e",
+          "lines": 955
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
-          "sha256": "5ad820c0a56d946b3c55074f193db6ce41bd0e9eb6ebe43c2bc649a8ae0f0093",
+          "sha256": "83d3f03712602ae9fe26f4c609c67ee735d880654d16aa7ea2563617d5964944",
           "lines": 36
         },
         "docs/artifacts/sandbox-acquisition-stage20.json": {
@@ -2208,11 +2235,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "054e38fd55e9afeee2c39341f15ada41a8bb4c1cb7f85eb6bfb03f85ca43d79b",
+          "sha256": "37d0f979a0b55ea87fd950398e1c45f4dc5eb76c3f91c05cad640258141ba27b",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "7a740dc7d40f635b0bad991f8e3aa84f70b69e5db8739bb682cf3c60d2744036",
+          "sha256": "68e2cbcde54345cc6eddaabb10c83a0ee1cebee07caa26cda5fa0e0124a9a4ec",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -2240,11 +2267,11 @@
           "lines": 104
         },
         "docs/artifacts/web-dist-0.1.0.sha256": {
-          "sha256": "18f9bfc3d91642ccaf6aeea064ecfc5073eec3527ba282d5741795d502debd19",
+          "sha256": "61b688116b83ac1fa30d1141a3fbfe4dc4e2067ac33615ef8932122b1167fafb",
           "lines": 139
         },
         "docs/artifacts/web-dist-audit-0.1.0.json": {
-          "sha256": "ec8848a7338a123e90ef7aacaf7c66179a031588690fcd1ec51a759ea663d0a5",
+          "sha256": "4ab72774b8e5288083a3bdc542b593442720a45c38de484bbac84fd3f887b29a",
           "lines": 18
         },
         "docs/artifacts/web-ui-layout-baseline-0.1.0.json": {
@@ -2260,8 +2287,8 @@
           "lines": 204
         },
         "docs/next-stage-gap-matrix.md": {
-          "sha256": "79b0cc53f29f1e6a1efee513fe83ef4fddb2043727b394104e0ba8db0d4d08d6",
-          "lines": 12480
+          "sha256": "a0e57e057a47c487e4b469b9e8f73bf048d10522ebaab375a7974e0cc5696dc8",
+          "lines": 12536
         },
         "docs/product-performance-budget.json": {
           "sha256": "6c238cf77336d87462dda69341bd08bccf18f38543422af4f65c6a4600728966",
@@ -2272,8 +2299,8 @@
           "lines": 4325
         },
         "package.json": {
-          "sha256": "b56c623b4752a9649f6b10e1fd087d26878255b6e2945aae88647db082e3b231",
-          "lines": 134
+          "sha256": "373f1d7a972178f44ac42b3117a80062ed07c3e698d203ead66230b28f40f9fe",
+          "lines": 136
         },
         "packages/contracts/package.json": {
           "sha256": "30e57303e4c41397940da5f51613af40baf7244f3d8d917b30ffe98e00c5cd1a",
@@ -2284,8 +2311,8 @@
           "lines": 303
         },
         "packages/contracts/src/agent-capability-contract.ts": {
-          "sha256": "e9d2ab4e6e7eabfeb95976963a0815ab802d8946da4ebbe37ea7cd8b6a28160c",
-          "lines": 341
+          "sha256": "d8f9fb117404534d0d076ae0931fe928e4dfe26de759c587abf35cf2bb1b5231",
+          "lines": 443
         },
         "packages/contracts/src/agent-tool-names.ts": {
           "sha256": "c251fcd9538827e6530d4227224964248d0f5223583b34d427c2aee6facc41e7",
@@ -2340,8 +2367,8 @@
           "lines": 280
         },
         "packages/contracts/test/agent-capability-contract.test.ts": {
-          "sha256": "ba58f5457a3e6142df2f4899005f40638f4bb2cb033d3f80999bc6e5e6421506",
-          "lines": 352
+          "sha256": "93cd29c10554469f705362811dc22975abee808e00352c77342b46ad5b25276a",
+          "lines": 397
         },
         "packages/contracts/test/research-source-evidence.test.ts": {
           "sha256": "59d9c9b1236a95605ee95aeb5b4dca1cdf791673015248a7655f700a6db0c044",
@@ -2367,6 +2394,10 @@
           "sha256": "1cfe456f6f282e3c01de8d5906478725131a11abc82cc871b59728a04125f939",
           "lines": 120
         },
+        "packages/runtime/src/agent-capability-bindings.ts": {
+          "sha256": "1b9b74d87f3f6917605e2138af51d2558eb83651d8ed0817724e2df273652003",
+          "lines": 446
+        },
         "packages/runtime/src/agent-capability-override.ts": {
           "sha256": "1d7137b13e23af60f66144f990b64aae6dcd119ad9ac8c4a5222f5fccda6224c",
           "lines": 196
@@ -2376,8 +2407,16 @@
           "lines": 475
         },
         "packages/runtime/src/agent-capability-service.ts": {
-          "sha256": "c2abf9199b6ff63a8c37ca7d694a288cc3454bb3d76745bbfd33fddc1da2f95f",
-          "lines": 456
+          "sha256": "fd93df031de52946ff5ed247816151a9fa177551e5ff5c7d4ab44fe131596d05",
+          "lines": 485
+        },
+        "packages/runtime/src/agent-capability-store-mutations.ts": {
+          "sha256": "fc105127426cd79f11bd6d8eb2e08103f5e76ec89d2b313fb70a17db482b816d",
+          "lines": 289
+        },
+        "packages/runtime/src/agent-capability-upgrade.ts": {
+          "sha256": "21014380e73bf74f98913d84c9b38aff6dee58ed7bdbb545482c8558e4e9c34b",
+          "lines": 112
         },
         "packages/runtime/src/agent-message-experiment-source.ts": {
           "sha256": "e54a2138ef5baf8846b9463cce5612bcdf17baa93698a1ef79570da6a215c3e7",
@@ -2456,7 +2495,7 @@
           "lines": 370
         },
         "packages/runtime/src/default-agent-capability-contract.ts": {
-          "sha256": "caae5fb90e2ee18a33daec10d65aaf9b5906baf74946f76d90f7d696bee2ba01",
+          "sha256": "b810b75b28697eaf652a6644a69cfee2f376811c00f623a61b519d99c29de661",
           "lines": 439
         },
         "packages/runtime/src/doctor-git-runtime-probe.ts": {
@@ -2948,8 +2987,8 @@
           "lines": 262
         },
         "packages/runtime/src/store.ts": {
-          "sha256": "4d09cc9a06fbbbd6c98ad9654b11b0c69d0f2d3c0c29082d406508bf75beb70c",
-          "lines": 14387
+          "sha256": "302ceb9120d3d70109684489e73bfe951c0953ddae9ec2ca253d3cfb6e1690c8",
+          "lines": 14382
         },
         "packages/runtime/src/subagents.ts": {
           "sha256": "203b0bb36c6ec58c71d87106b4a3ddb4540a008c099a29a3fd348c8ca49d3484",
@@ -3164,8 +3203,8 @@
           "lines": 191
         },
         "packages/runtime/test/agent-capability-contract-v2.test.ts": {
-          "sha256": "3de10a0074495962607cfbfb83cf81b67111d548fdfff59264b5f15306d6a9c4",
-          "lines": 264
+          "sha256": "e49cc038be0b8069f520487475613700560598338b6053010e940c96acabd885",
+          "lines": 423
         },
         "packages/runtime/test/agent-capability-contract.test.ts": {
           "sha256": "bf58c81ada0b61a667ce15bdbe14832a8b122c40e6f34e8d46ee957660ffda7b",
@@ -3627,13 +3666,21 @@
           "sha256": "9682272d1cfddb3f4178905a93b27523c9b9df24525880bee37db031c99c4a5a",
           "lines": 73
         },
+        "scripts/check-profile-upgrade.mjs": {
+          "sha256": "c42d4ff9fe6f48e5b58633229816dfbc12cc305ff8c94a5a417daa2efd10d240",
+          "lines": 120
+        },
+        "scripts/check-profile-upgrade.test.mjs": {
+          "sha256": "e58067839d8e88d4f46fa3f774e078740efe40145b0e24413e75b99de8423b05",
+          "lines": 134
+        },
         "scripts/check-release-artifacts.mjs": {
-          "sha256": "c35f164ef5be8ac8e168bd96ef8ec19bf54235fb6734efa018195679fd0be75b",
-          "lines": 1923
+          "sha256": "e78b2a27d294b31ce48beb15452ef1d04726f2acf0cd4090d1b9f01323f2c749",
+          "lines": 1945
         },
         "scripts/check-release-artifacts.test.mjs": {
-          "sha256": "642206bc2dbd2e072097bcb35f459b74854e68c52ea795919ddc505bf64d3722",
-          "lines": 1811
+          "sha256": "81d501b5237481ac941cdbb729de2880264eca813db8928862d6527a22393b33",
+          "lines": 1841
         },
         "scripts/check-runtime-environment.mjs": {
           "sha256": "f9f123024ea489666a92986025e422d6031dc3a80407ce58e979857d1d83fafc",
@@ -3814,6 +3861,14 @@
         "scripts/product-performance.test.mjs": {
           "sha256": "79d8e0b16e319f8b1ba19d88963377aca8632689b4ebc0cc9ad7ff789bba1f28",
           "lines": 379
+        },
+        "scripts/profile-upgrade-acceptance.mjs": {
+          "sha256": "3d352415839f3f29cbb5a71fa706e32b9a99b9a29aaf581b18e59861894c4c83",
+          "lines": 416
+        },
+        "scripts/profile-upgrade-artifact.mjs": {
+          "sha256": "7d0dc1d46bb16d39a4c7342a55aa0ccb573a935bd6c06421da20a0ee95f7f2e9",
+          "lines": 210
         },
         "scripts/prompt-regression-matrix.mjs": {
           "sha256": "432ff2728f366715e123bc8b01912fa5a96fe659c8bb45481d99abf17ba30349",
@@ -3996,7 +4051,7 @@
           "lines": 465
         },
         "scripts/sdk-capability-parity-evidence.test.mjs": {
-          "sha256": "f3c0d0d25bbc4caae9527453c71fe05399735a5f01c6904a8423254e789232c0",
+          "sha256": "00a2f52e5b0a3e8328cbd2c4585c1ff1a3c52642298db1f8c17e586667947acc",
           "lines": 298
         },
         "scripts/sdk-capability-parity-identity.mjs": {
@@ -4089,7 +4144,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "0d84569ff9570e5b6ce3102643e737a5fccb030506093c76caba2f25438907eb"
+      "manifestSha256": "49d5a0205cdd25d979f3329ba36fb4193f4c824f177265cc82764e6905f3c901"
     },
     "executionClosure": {
       "algorithm": {
@@ -4305,6 +4360,7 @@
             "packages/runtime/dist/agent-capability-service.js",
             "packages/runtime/dist/agent-capability-store-mutations.js",
             "packages/runtime/dist/agent-capability-store-state.js",
+            "packages/runtime/dist/agent-capability-upgrade.js",
             "packages/runtime/dist/agent-data-tool-ledger.js",
             "packages/runtime/dist/agent-kernels.js",
             "packages/runtime/dist/agent-message-experiment-comparison-protocol.js",
@@ -5117,6 +5173,7 @@
             "packages/runtime/src/agent-capability-service.ts",
             "packages/runtime/src/agent-capability-store-mutations.ts",
             "packages/runtime/src/agent-capability-store-state.ts",
+            "packages/runtime/src/agent-capability-upgrade.ts",
             "packages/runtime/src/agent-data-tool-ledger.ts",
             "packages/runtime/src/agent-kernels.ts",
             "packages/runtime/src/agent-message-experiment-comparison-protocol.ts",
@@ -5779,16 +5836,16 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 810,
-            "sourceCounterparts": 805,
+            "executionFiles": 811,
+            "sourceCounterparts": 806,
             "packageManifests": 2,
-            "allFiles": 1617
+            "allFiles": 1619
           },
           "executionAreaCounts": {
             "apps/cli/dist": 58,
             "apps/server/dist": 102,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 619,
+            "packages/runtime/dist": 620,
             "packages/runtime/test/fixtures": 3,
             "packages/sdk/dist": 3,
             "scripts": 2
@@ -5803,12 +5860,12 @@
               "lines": 157
             },
             "apps/cli/dist/capability-cli.js": {
-              "sha256": "3fc1d489094b5a01ac93a972c98c0e1d5c63143fb93d0eca295b45ce110e932b",
-              "lines": 165
+              "sha256": "e9cb82dcdc0d7eb6a256e8cd3145128977c453797f486293167e2d1ec1eaa1d2",
+              "lines": 185
             },
             "apps/cli/dist/cli-capability-options.js": {
-              "sha256": "c317de72ef8e92521d9e8e58ac82cf927c829df901febb5d25d54bbdcb84a475",
-              "lines": 87
+              "sha256": "3f2b136d47f0f9c2e01ec836b1646bc8bce85988676b26db221a639cd0e0084f",
+              "lines": 94
             },
             "apps/cli/dist/cli-chat-options.js": {
               "sha256": "f320a125cfd14751bb96ed9c1d85dbfa17aada21921a18353b9a44f90b0becbf",
@@ -5835,8 +5892,8 @@
               "lines": 38
             },
             "apps/cli/dist/cli-help.js": {
-              "sha256": "d916f6c5416b8fdd166a5969914a18f0dc0b5df9fe710faec92aa157a687f9d4",
-              "lines": 159
+              "sha256": "0946161acca3fa37ff4ff13a54c87da5f9702c04f5536c41b4d267978621d8a1",
+              "lines": 160
             },
             "apps/cli/dist/cli-invocation.js": {
               "sha256": "2674afed8efc50542618939a86291f3d4691a626ae1749080c2466f5ff828148",
@@ -6035,12 +6092,12 @@
               "lines": 263
             },
             "apps/cli/src/capability-cli.ts": {
-              "sha256": "305e90d882f180de262c390e68e38dcb63331cbcbd18e9a076ee3b24bb2a7fc0",
-              "lines": 234
+              "sha256": "c6a8766c2348c81db76d572988154e67d7545b8d378745789aa5f159a2b634d5",
+              "lines": 312
             },
             "apps/cli/src/cli-capability-options.ts": {
-              "sha256": "2acfc20046ade495af8f661d54d5bdb2fe9853628d05333440084eb5fb121334",
-              "lines": 125
+              "sha256": "c75d9fe9ffd7941ddf4bc706a08d573119d3aaec90e67bb175c87670cf741ea0",
+              "lines": 138
             },
             "apps/cli/src/cli-chat-options.ts": {
               "sha256": "2e465da6aa085c166bec9f6b6d6af566fbfbead767629745898d46bf8118847a",
@@ -6067,8 +6124,8 @@
               "lines": 65
             },
             "apps/cli/src/cli-help.ts": {
-              "sha256": "0c01a77c7d0077dc5cb48d43f94ca6c25e3ae4847c975b5704f405339f0bd815",
-              "lines": 167
+              "sha256": "5d9952329a14882d9119b0eb42da58f728baa3ed58805beb0103e41a49bbe4ed",
+              "lines": 168
             },
             "apps/cli/src/cli-invocation.ts": {
               "sha256": "45afb534de990a52bf8c960fbd3fdf9b5a98613ff8280b5ecfb276a51240ab4c",
@@ -6259,8 +6316,8 @@
               "lines": 12
             },
             "apps/server/dist/agent-capability-http.js": {
-              "sha256": "38aa2bd134245b21bb736c5005dd0949b1d69a3b52a918ab276b58307a11b7ca",
-              "lines": 98
+              "sha256": "94e7848fac4659a838b7816a5695ef177bd8cfc3d4ee1d2b4990ceed1b20e6f2",
+              "lines": 141
             },
             "apps/server/dist/agent-message-experiment-http.js": {
               "sha256": "373002640008888bb1d1cecdafb354236e2616e2d0f51da969572ed60a4b5c4c",
@@ -6667,8 +6724,8 @@
               "lines": 8
             },
             "apps/server/src/agent-capability-http.ts": {
-              "sha256": "92cadbfbea92dab40b253ae54ef1ee19d32d1cfedaf40d328f1c3099e8dd4678",
-              "lines": 163
+              "sha256": "1379303b70c516baeb0cc8f25d4683d9862a396e1bcb2489ecc25d0cc08941ce",
+              "lines": 234
             },
             "apps/server/src/agent-message-experiment-http.ts": {
               "sha256": "f869edc57adfb7417a3fcc8cf5b55c973c4d61f00a5a6335511f3447234378aa",
@@ -7079,8 +7136,8 @@
               "lines": 184
             },
             "packages/contracts/dist/agent-capability-contract.js": {
-              "sha256": "d139ef0cd9c05709e70057887880fbe210b9b90880d127f2acf0ab3e061abea5",
-              "lines": 178
+              "sha256": "84f22085014cc3a7d8720461a18643c22e9f9d0fa2411fdbf1c8ca7adcf972e2",
+              "lines": 233
             },
             "packages/contracts/dist/agent-tool-names.js": {
               "sha256": "4a53076776caccbdf47234aeedbfe0affc61fe275fb728aa8be19131cfb7edc0",
@@ -7175,8 +7232,8 @@
               "lines": 303
             },
             "packages/contracts/src/agent-capability-contract.ts": {
-              "sha256": "e9d2ab4e6e7eabfeb95976963a0815ab802d8946da4ebbe37ea7cd8b6a28160c",
-              "lines": 341
+              "sha256": "d8f9fb117404534d0d076ae0931fe928e4dfe26de759c587abf35cf2bb1b5231",
+              "lines": 443
             },
             "packages/contracts/src/agent-tool-names.ts": {
               "sha256": "c251fcd9538827e6530d4227224964248d0f5223583b34d427c2aee6facc41e7",
@@ -7263,8 +7320,8 @@
               "lines": 226
             },
             "packages/runtime/dist/agent-capability-bindings.js": {
-              "sha256": "e189e3f2357b28130777f3953dd4dbdff2306abe2bd2ee4b046efd6b941dc044",
-              "lines": 306
+              "sha256": "bbb29f557bc3bb651ccd0225362a40cd605f6ca070f8ba7e9b847e38f391a6b2",
+              "lines": 310
             },
             "packages/runtime/dist/agent-capability-override.js": {
               "sha256": "5a9c6218540cda6a93a67ad1cd0260da1ba58d7cf8d3ca9d79413383d2a3031b",
@@ -7275,16 +7332,20 @@
               "lines": 314
             },
             "packages/runtime/dist/agent-capability-service.js": {
-              "sha256": "2269e7ee0c53936e672e503822fb111c0712647a13ecd30d0ac8c42920586340",
-              "lines": 322
+              "sha256": "bbbddede5cff1148db445f22cf64e2894ae8e8f1bef18b96439019d532e14975",
+              "lines": 341
             },
             "packages/runtime/dist/agent-capability-store-mutations.js": {
-              "sha256": "d71f8d5e9baf899d92e018b5214d0a82728fe800b33a7ca10f27235e1bc64828",
-              "lines": 74
+              "sha256": "0b793f6fe8ea94d23b69bc7dd124b285e22014c736b2e0b9749e14e9ce5edd89",
+              "lines": 161
             },
             "packages/runtime/dist/agent-capability-store-state.js": {
               "sha256": "66edb34c0a51f1bdc6c7d0a0d3814a15cabd9ae5862c3e739edc0a388e9e2ace",
               "lines": 10
+            },
+            "packages/runtime/dist/agent-capability-upgrade.js": {
+              "sha256": "e508b79db67beef21f3a7ab2e6e32116bd201b026b0164eb804f0698a3670279",
+              "lines": 70
             },
             "packages/runtime/dist/agent-data-tool-ledger.js": {
               "sha256": "790292324ec17eb2b80f010f45eab7b6060ff132047f003834a37467e7eef1fd",
@@ -7655,7 +7716,7 @@
               "lines": 28
             },
             "packages/runtime/dist/default-agent-capability-contract.js": {
-              "sha256": "cd6e56d8725dbfefc2d8d24fffffc780af5189f92d350b6e9852da2a69ae4867",
+              "sha256": "299288be25f805469398d81e7de0ec99b6c95111328cbdc4c1b27286057b90d6",
               "lines": 298
             },
             "packages/runtime/dist/delegation-ledger.js": {
@@ -8851,8 +8912,8 @@
               "lines": 54
             },
             "packages/runtime/dist/store.js": {
-              "sha256": "215a6258b03dbdbefeadb337c8ace513c23ea9a8569ebca2b0ee3619ded41114",
-              "lines": 9270
+              "sha256": "57815b4e1aec53d7a5201a5a4f210452cdc2c3f11d8ca80867a4ea110eabe078",
+              "lines": 9261
             },
             "packages/runtime/dist/structured-data-parser.js": {
               "sha256": "b5f66e8061c3f4a4ef45df7e46c14b528a13368d44a9b3471c69edf1aca6e293",
@@ -9743,8 +9804,8 @@
               "lines": 120
             },
             "packages/runtime/src/agent-capability-bindings.ts": {
-              "sha256": "2144c7dcf18851dfb1b6420a9d41990ae49cd0efaba28d4674dc9d4a4fa504e8",
-              "lines": 440
+              "sha256": "1b9b74d87f3f6917605e2138af51d2558eb83651d8ed0817724e2df273652003",
+              "lines": 446
             },
             "packages/runtime/src/agent-capability-override.ts": {
               "sha256": "1d7137b13e23af60f66144f990b64aae6dcd119ad9ac8c4a5222f5fccda6224c",
@@ -9755,16 +9816,20 @@
               "lines": 475
             },
             "packages/runtime/src/agent-capability-service.ts": {
-              "sha256": "c2abf9199b6ff63a8c37ca7d694a288cc3454bb3d76745bbfd33fddc1da2f95f",
-              "lines": 456
+              "sha256": "fd93df031de52946ff5ed247816151a9fa177551e5ff5c7d4ab44fe131596d05",
+              "lines": 485
             },
             "packages/runtime/src/agent-capability-store-mutations.ts": {
-              "sha256": "689c17f83e485ac2164d59b3cf99258fcac0d568ed31d19783b3ab6f187016c1",
-              "lines": 138
+              "sha256": "fc105127426cd79f11bd6d8eb2e08103f5e76ec89d2b313fb70a17db482b816d",
+              "lines": 289
             },
             "packages/runtime/src/agent-capability-store-state.ts": {
               "sha256": "5b6f385c22320cd3683f0d382708d82af88b5c6a83f0e4c9e9af92fd518bda9c",
               "lines": 55
+            },
+            "packages/runtime/src/agent-capability-upgrade.ts": {
+              "sha256": "21014380e73bf74f98913d84c9b38aff6dee58ed7bdbb545482c8558e4e9c34b",
+              "lines": 112
             },
             "packages/runtime/src/agent-data-tool-ledger.ts": {
               "sha256": "ce09205a2225cd92e8ef273c879b1b65e06be251d822e37b8885986d15ad9b58",
@@ -10135,7 +10200,7 @@
               "lines": 41
             },
             "packages/runtime/src/default-agent-capability-contract.ts": {
-              "sha256": "caae5fb90e2ee18a33daec10d65aaf9b5906baf74946f76d90f7d696bee2ba01",
+              "sha256": "b810b75b28697eaf652a6644a69cfee2f376811c00f623a61b519d99c29de661",
               "lines": 439
             },
             "packages/runtime/src/delegation-ledger.ts": {
@@ -11331,8 +11396,8 @@
               "lines": 87
             },
             "packages/runtime/src/store.ts": {
-              "sha256": "4d09cc9a06fbbbd6c98ad9654b11b0c69d0f2d3c0c29082d406508bf75beb70c",
-              "lines": 14387
+              "sha256": "302ceb9120d3d70109684489e73bfe951c0953ddae9ec2ca253d3cfb6e1690c8",
+              "lines": 14382
             },
             "packages/runtime/src/structured-data-parser.ts": {
               "sha256": "861a62ea493df9d4190ee7725b24e8d9f6d9724d2823f4ffb7a2e70b79f5bff6",
@@ -12263,7 +12328,7 @@
               "lines": 32
             }
           },
-          "manifestSha256": "4f95b26d19d6fbb04e0afca4a9047180e7e61bd3a7cf10886abf73874bf0507d"
+          "manifestSha256": "d5ad605ec451ef6eef819765376a370b755505cd54c27d67294d582af3eb536c"
         },
         "productionServerTrace": {
           "roots": [
@@ -12408,6 +12473,7 @@
             "packages/runtime/dist/agent-capability-service.js",
             "packages/runtime/dist/agent-capability-store-mutations.js",
             "packages/runtime/dist/agent-capability-store-state.js",
+            "packages/runtime/dist/agent-capability-upgrade.js",
             "packages/runtime/dist/agent-data-tool-ledger.js",
             "packages/runtime/dist/agent-kernels.js",
             "packages/runtime/dist/agent-message-experiment-comparison-protocol.js",
@@ -13160,6 +13226,7 @@
             "packages/runtime/src/agent-capability-service.ts",
             "packages/runtime/src/agent-capability-store-mutations.ts",
             "packages/runtime/src/agent-capability-store-state.ts",
+            "packages/runtime/src/agent-capability-upgrade.ts",
             "packages/runtime/src/agent-data-tool-ledger.ts",
             "packages/runtime/src/agent-kernels.ts",
             "packages/runtime/src/agent-message-experiment-comparison-protocol.ts",
@@ -13821,23 +13888,23 @@
             "vscode-jsonrpc/node.js"
           ],
           "counts": {
-            "executionFiles": 750,
-            "sourceCounterparts": 746,
+            "executionFiles": 751,
+            "sourceCounterparts": 747,
             "packageManifests": 3,
-            "allFiles": 1499
+            "allFiles": 1501
           },
           "executionAreaCounts": {
             "apps/server/dist": 103,
             "other": 1,
             "packages/contracts/dist": 23,
-            "packages/runtime/dist": 617,
+            "packages/runtime/dist": 618,
             "packages/sdk/dist": 3,
             "scripts": 3
           },
           "files": {
             "apps/server/dist/agent-capability-http.js": {
-              "sha256": "38aa2bd134245b21bb736c5005dd0949b1d69a3b52a918ab276b58307a11b7ca",
-              "lines": 98
+              "sha256": "94e7848fac4659a838b7816a5695ef177bd8cfc3d4ee1d2b4990ceed1b20e6f2",
+              "lines": 141
             },
             "apps/server/dist/agent-message-experiment-http.js": {
               "sha256": "373002640008888bb1d1cecdafb354236e2616e2d0f51da969572ed60a4b5c4c",
@@ -14248,8 +14315,8 @@
               "lines": 8
             },
             "apps/server/src/agent-capability-http.ts": {
-              "sha256": "92cadbfbea92dab40b253ae54ef1ee19d32d1cfedaf40d328f1c3099e8dd4678",
-              "lines": 163
+              "sha256": "1379303b70c516baeb0cc8f25d4683d9862a396e1bcb2489ecc25d0cc08941ce",
+              "lines": 234
             },
             "apps/server/src/agent-message-experiment-http.ts": {
               "sha256": "f869edc57adfb7417a3fcc8cf5b55c973c4d61f00a5a6335511f3447234378aa",
@@ -14664,8 +14731,8 @@
               "lines": 184
             },
             "packages/contracts/dist/agent-capability-contract.js": {
-              "sha256": "d139ef0cd9c05709e70057887880fbe210b9b90880d127f2acf0ab3e061abea5",
-              "lines": 178
+              "sha256": "84f22085014cc3a7d8720461a18643c22e9f9d0fa2411fdbf1c8ca7adcf972e2",
+              "lines": 233
             },
             "packages/contracts/dist/agent-tool-names.js": {
               "sha256": "4a53076776caccbdf47234aeedbfe0affc61fe275fb728aa8be19131cfb7edc0",
@@ -14760,8 +14827,8 @@
               "lines": 303
             },
             "packages/contracts/src/agent-capability-contract.ts": {
-              "sha256": "e9d2ab4e6e7eabfeb95976963a0815ab802d8946da4ebbe37ea7cd8b6a28160c",
-              "lines": 341
+              "sha256": "d8f9fb117404534d0d076ae0931fe928e4dfe26de759c587abf35cf2bb1b5231",
+              "lines": 443
             },
             "packages/contracts/src/agent-tool-names.ts": {
               "sha256": "c251fcd9538827e6530d4227224964248d0f5223583b34d427c2aee6facc41e7",
@@ -14848,8 +14915,8 @@
               "lines": 226
             },
             "packages/runtime/dist/agent-capability-bindings.js": {
-              "sha256": "e189e3f2357b28130777f3953dd4dbdff2306abe2bd2ee4b046efd6b941dc044",
-              "lines": 306
+              "sha256": "bbb29f557bc3bb651ccd0225362a40cd605f6ca070f8ba7e9b847e38f391a6b2",
+              "lines": 310
             },
             "packages/runtime/dist/agent-capability-override.js": {
               "sha256": "5a9c6218540cda6a93a67ad1cd0260da1ba58d7cf8d3ca9d79413383d2a3031b",
@@ -14860,16 +14927,20 @@
               "lines": 314
             },
             "packages/runtime/dist/agent-capability-service.js": {
-              "sha256": "2269e7ee0c53936e672e503822fb111c0712647a13ecd30d0ac8c42920586340",
-              "lines": 322
+              "sha256": "bbbddede5cff1148db445f22cf64e2894ae8e8f1bef18b96439019d532e14975",
+              "lines": 341
             },
             "packages/runtime/dist/agent-capability-store-mutations.js": {
-              "sha256": "d71f8d5e9baf899d92e018b5214d0a82728fe800b33a7ca10f27235e1bc64828",
-              "lines": 74
+              "sha256": "0b793f6fe8ea94d23b69bc7dd124b285e22014c736b2e0b9749e14e9ce5edd89",
+              "lines": 161
             },
             "packages/runtime/dist/agent-capability-store-state.js": {
               "sha256": "66edb34c0a51f1bdc6c7d0a0d3814a15cabd9ae5862c3e739edc0a388e9e2ace",
               "lines": 10
+            },
+            "packages/runtime/dist/agent-capability-upgrade.js": {
+              "sha256": "e508b79db67beef21f3a7ab2e6e32116bd201b026b0164eb804f0698a3670279",
+              "lines": 70
             },
             "packages/runtime/dist/agent-data-tool-ledger.js": {
               "sha256": "790292324ec17eb2b80f010f45eab7b6060ff132047f003834a37467e7eef1fd",
@@ -15236,7 +15307,7 @@
               "lines": 28
             },
             "packages/runtime/dist/default-agent-capability-contract.js": {
-              "sha256": "cd6e56d8725dbfefc2d8d24fffffc780af5189f92d350b6e9852da2a69ae4867",
+              "sha256": "299288be25f805469398d81e7de0ec99b6c95111328cbdc4c1b27286057b90d6",
               "lines": 298
             },
             "packages/runtime/dist/delegation-ledger.js": {
@@ -16432,8 +16503,8 @@
               "lines": 54
             },
             "packages/runtime/dist/store.js": {
-              "sha256": "215a6258b03dbdbefeadb337c8ace513c23ea9a8569ebca2b0ee3619ded41114",
-              "lines": 9270
+              "sha256": "57815b4e1aec53d7a5201a5a4f210452cdc2c3f11d8ca80867a4ea110eabe078",
+              "lines": 9261
             },
             "packages/runtime/dist/structured-data-parser.js": {
               "sha256": "b5f66e8061c3f4a4ef45df7e46c14b528a13368d44a9b3471c69edf1aca6e293",
@@ -17320,8 +17391,8 @@
               "lines": 120
             },
             "packages/runtime/src/agent-capability-bindings.ts": {
-              "sha256": "2144c7dcf18851dfb1b6420a9d41990ae49cd0efaba28d4674dc9d4a4fa504e8",
-              "lines": 440
+              "sha256": "1b9b74d87f3f6917605e2138af51d2558eb83651d8ed0817724e2df273652003",
+              "lines": 446
             },
             "packages/runtime/src/agent-capability-override.ts": {
               "sha256": "1d7137b13e23af60f66144f990b64aae6dcd119ad9ac8c4a5222f5fccda6224c",
@@ -17332,16 +17403,20 @@
               "lines": 475
             },
             "packages/runtime/src/agent-capability-service.ts": {
-              "sha256": "c2abf9199b6ff63a8c37ca7d694a288cc3454bb3d76745bbfd33fddc1da2f95f",
-              "lines": 456
+              "sha256": "fd93df031de52946ff5ed247816151a9fa177551e5ff5c7d4ab44fe131596d05",
+              "lines": 485
             },
             "packages/runtime/src/agent-capability-store-mutations.ts": {
-              "sha256": "689c17f83e485ac2164d59b3cf99258fcac0d568ed31d19783b3ab6f187016c1",
-              "lines": 138
+              "sha256": "fc105127426cd79f11bd6d8eb2e08103f5e76ec89d2b313fb70a17db482b816d",
+              "lines": 289
             },
             "packages/runtime/src/agent-capability-store-state.ts": {
               "sha256": "5b6f385c22320cd3683f0d382708d82af88b5c6a83f0e4c9e9af92fd518bda9c",
               "lines": 55
+            },
+            "packages/runtime/src/agent-capability-upgrade.ts": {
+              "sha256": "21014380e73bf74f98913d84c9b38aff6dee58ed7bdbb545482c8558e4e9c34b",
+              "lines": 112
             },
             "packages/runtime/src/agent-data-tool-ledger.ts": {
               "sha256": "ce09205a2225cd92e8ef273c879b1b65e06be251d822e37b8885986d15ad9b58",
@@ -17708,7 +17783,7 @@
               "lines": 41
             },
             "packages/runtime/src/default-agent-capability-contract.ts": {
-              "sha256": "caae5fb90e2ee18a33daec10d65aaf9b5906baf74946f76d90f7d696bee2ba01",
+              "sha256": "b810b75b28697eaf652a6644a69cfee2f376811c00f623a61b519d99c29de661",
               "lines": 439
             },
             "packages/runtime/src/delegation-ledger.ts": {
@@ -18904,8 +18979,8 @@
               "lines": 87
             },
             "packages/runtime/src/store.ts": {
-              "sha256": "4d09cc9a06fbbbd6c98ad9654b11b0c69d0f2d3c0c29082d406508bf75beb70c",
-              "lines": 14387
+              "sha256": "302ceb9120d3d70109684489e73bfe951c0953ddae9ec2ca253d3cfb6e1690c8",
+              "lines": 14382
             },
             "packages/runtime/src/structured-data-parser.ts": {
               "sha256": "861a62ea493df9d4190ee7725b24e8d9f6d9724d2823f4ffb7a2e70b79f5bff6",
@@ -19832,7 +19907,7 @@
               "lines": 45
             }
           },
-          "manifestSha256": "f3cdf9f76c827e3efce8ada5ea9dfcffce8d188044b8af08ef985cac5d1ca26b"
+          "manifestSha256": "8181e796782e7f195c0b378b70f6d48f8c4c38227393f5b3d8655058a01e1d19"
         }
       },
       "excludedCategories": [
@@ -19861,9 +19936,9 @@
           "reason": "evidence.json cannot contain its own content hash; the external Stage 8 repair commit binds that blob."
         }
       ],
-      "manifestSha256": "da80be857cfc984cb08ed42636c5ee77cbc96028e038342a980abc7f9bd47b5d"
+      "manifestSha256": "32431a8203f28c5e559f5c6c1947cb08f2925a8e11fc066ab646b8401b1df44d"
     },
-    "manifestSha256": "705a2f4004354ae134d957220e81fe1931c16b094e85c457af932ebddc543793"
+    "manifestSha256": "d4e3b9b4ece37d91835933532d4d0b351fe8590d8860aeb74f8bf41d6096f2e6"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -20051,11 +20126,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "054e38fd55e9afeee2c39341f15ada41a8bb4c1cb7f85eb6bfb03f85ca43d79b"
+      "sha256": "37d0f979a0b55ea87fd950398e1c45f4dc5eb76c3f91c05cad640258141ba27b"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "7a740dc7d40f635b0bad991f8e3aa84f70b69e5db8739bb682cf3c60d2744036"
+      "sha256": "68e2cbcde54345cc6eddaabb10c83a0ee1cebee07caa26cda5fa0e0124a9a4ec"
     }
   }
 }

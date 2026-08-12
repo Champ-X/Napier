@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Check, RefreshCw, ShieldCheck } from "lucide-react";
 
-import { restoreRecommendedAgentCapabilities } from "./agent-capability-api";
+import {
+  restoreRecommendedAgentCapabilities,
+  upgradeRecommendedAgentCapabilities,
+} from "./agent-capability-api";
 import { contextCopy as copy } from "./context-copy";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
 import { useAgentCapabilityProjection } from "./use-agent-capability-projection";
@@ -27,16 +30,22 @@ export function AgentCapabilityContractCard({
     setConfirmed(false);
   }, [agentId, agentRevision]);
 
-  const restore = async (): Promise<void> => {
+  const commit = async (): Promise<void> => {
     if (!projection || !confirmed || busy) return;
     setBusy(true);
     setError(undefined);
     try {
-      const result = await restoreRecommendedAgentCapabilities(agentId, {
-        schemaVersion: 1,
-        expectedRevision: projection.agentRevision,
-        diffSha256: projection.restorePreview.diffSha256,
-      });
+      const result = projection.upgradePreview
+        ? await upgradeRecommendedAgentCapabilities(agentId, {
+            schemaVersion: 1,
+            expectedRevision: projection.agentRevision,
+            diffSha256: projection.upgradePreview.diffSha256,
+          })
+        : await restoreRecommendedAgentCapabilities(agentId, {
+            schemaVersion: 1,
+            expectedRevision: projection.agentRevision,
+            diffSha256: projection.restorePreview.diffSha256,
+          });
       setProjection(result.projection);
       setConfirmed(false);
       await onRestored();
@@ -47,7 +56,10 @@ export function AgentCapabilityContractCard({
           const authoritative = await refresh();
           setError(
             authoritative
-              ? `${copy.capabilityConflictRefreshed} REV ${String(authoritative.agentRevision)} · ${authoritative.restorePreview.diffSha256}`
+              ? `${copy.capabilityConflictRefreshed} REV ${String(authoritative.agentRevision)} · ${
+                  authoritative.upgradePreview?.diffSha256 ??
+                  authoritative.restorePreview.diffSha256
+                }`
               : copy.capabilityConflictRefreshFailed,
           );
         } catch {
@@ -79,7 +91,10 @@ export function AgentCapabilityContractCard({
   const readinessProblems = projection.readiness.filter(
     (item) => !["ready", "catalog_only"].includes(item.status),
   );
-  const operations = projection.restorePreview.operations;
+  const commitPreview =
+    projection.upgradePreview ?? projection.restorePreview;
+  const operations = commitPreview.operations;
+  const safeUpgrade = projection.upgradePreview !== undefined;
   return (
     <section
       id="agent-capability-contract-review"
@@ -131,7 +146,10 @@ export function AgentCapabilityContractCard({
       ) : null}
       <details>
         <summary>
-          {copy.capabilityRestoreDiff} · {operations.length}{" "}
+          {safeUpgrade
+            ? copy.capabilityUpgradeDiff
+            : copy.capabilityRestoreDiff}{" "}
+          · {operations.length}{" "}
           {copy.capabilityChanges}
         </summary>
         {operations.length > 0 ? (
@@ -154,7 +172,7 @@ export function AgentCapabilityContractCard({
         )}
         <p className="agent-capability-contract-hash">
           {copy.capabilityDiffHash}{" "}
-          <code>{projection.restorePreview.diffSha256}</code>
+          <code>{commitPreview.diffSha256}</code>
         </p>
       </details>
       <details>
@@ -184,16 +202,24 @@ export function AgentCapabilityContractCard({
           disabled={disabled || busy}
           onChange={(event) => setConfirmed(event.target.checked)}
         />
-        {copy.capabilityRestoreConfirm}
+        {safeUpgrade
+          ? copy.capabilityUpgradeConfirm
+          : copy.capabilityRestoreConfirm}
       </label>
       <button
         type="button"
         className="agent-capability-restore"
         disabled={disabled || busy || !confirmed}
-        onClick={() => void restore()}
+        onClick={() => void commit()}
       >
         <RefreshCw size={12} aria-hidden="true" />
-        {busy ? copy.capabilityRestoring : copy.capabilityRestore}
+        {busy
+          ? safeUpgrade
+            ? copy.capabilityUpgrading
+            : copy.capabilityRestoring
+          : safeUpgrade
+            ? copy.capabilityUpgrade
+            : copy.capabilityRestore}
       </button>
       {error ? (
         <p className="agent-capability-contract-error" role="alert">

@@ -13,6 +13,8 @@ import type {
   EffectiveAgentCapabilityProjectionV1,
   RestoreRecommendedCapabilitiesRequestV1,
   RestoreRecommendedCapabilitiesResultV1,
+  UpgradeRecommendedCapabilitiesRequestV1,
+  UpgradeRecommendedCapabilitiesResultV1,
 } from "@napier/contracts/agent-capability-contract";
 
 import type { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
@@ -20,6 +22,7 @@ import {
   bindingMatchesProfile,
   type CapabilityBindingLookup,
 } from "./agent-capability-bindings.js";
+import { createCapabilityUpgradeModel } from "./agent-capability-upgrade.js";
 import {
   capabilitySha256,
   compareCanonicalText,
@@ -138,6 +141,9 @@ export class AgentCapabilityService {
       ).record(),
     ].sort((left, right) => compareCanonicalText(left.id, right.id));
     const driftState = capabilityDriftState(bindingLookup, persistedProfile);
+    const upgradePreview = binding
+      ? createCapabilityUpgradeModel(persistedProfile, binding)?.preview
+      : undefined;
     const projection = {
       kind: "napier.effective-agent-capabilities" as const,
       schemaVersion: 1 as const,
@@ -161,6 +167,7 @@ export class AgentCapabilityService {
       configuredSubagents: sortedUnique(profile.enabledSubagents ?? []),
       ...(presetId ? { capabilityPreset: presetId } : {}),
       readiness,
+      ...(upgradePreview ? { upgradePreview } : {}),
       restorePreview,
     };
     return {
@@ -176,6 +183,25 @@ export class AgentCapabilityService {
     const commit = await this.store.restoreRecommendedAgentCapabilities(
       agentId,
       request,
+    );
+    return {
+      schemaVersion: 1,
+      previousRevision: commit.previousRevision,
+      projection: await this.projectSnapshot(commit.agent, {
+        status: "valid",
+        binding: commit.binding,
+      }),
+    };
+  }
+
+  async upgrade(
+    agentId: string,
+    request: UpgradeRecommendedCapabilitiesRequestV1,
+  ): Promise<UpgradeRecommendedCapabilitiesResultV1> {
+    const commit = await this.store.restoreRecommendedAgentCapabilities(
+      agentId,
+      request,
+      "upgrade",
     );
     return {
       schemaVersion: 1,
@@ -448,6 +474,9 @@ function projectionHashPayload(
       ? { capabilityPreset: projection.capabilityPreset }
       : {}),
     readiness: projection.readiness,
+    ...(projection.upgradePreview
+      ? { upgradePreview: projection.upgradePreview }
+      : {}),
   };
 }
 

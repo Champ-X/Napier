@@ -9503,3 +9503,30 @@ deferred until the local P0-P9 product loop is stable.
 
 - Postgres, distributed workers, cross-host leases, multi-user RBAC, and
   collaboration begin only after the local acceptance gates hold.
+### Capability contract upgrades preserve explicit ownership
+
+The effective capability projection may expose two independent commit
+previews. `restorePreview` is the complete current recommendation and remains
+an explicit reset of the four managed fields. `upgradePreview` exists only
+when the current Agent revision has a valid, profile-matching binding to an
+older retained recommendation.
+
+```text
+historical recommendation + current binding + current profile
+  -> validate binding/profile identity
+  -> remove fields named by explicitOverrideFields from Napier authority
+  -> project the current recommendation onto the remaining fields
+  -> hash source/target versions, recommendation hashes, current/target state,
+     preserved override fields, and bounded operations
+  -> exact revision + diff hash apply
+  -> one SQLite commit containing the new migrated Agent revision and
+     contract_upgrade binding
+```
+
+Safe upgrade cannot infer ownership for `custom_unmanaged`, broken, or
+`unknown_legacy` profiles. Those states receive no upgrade preview and must use
+the separately reviewed full restore if the operator wants the recommendation.
+Concurrent profile changes reject the stale preview. Persistence failure rolls
+back in-memory state and reports that no upgrade committed. CLI and Web use the
+same Runtime transaction; temporary task presets remain Run-scoped and never
+create Agent revisions.

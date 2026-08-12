@@ -17,6 +17,7 @@ export type CapabilityBindingSource =
   | "seeded"
   | "legacy_detected"
   | "explicit_restore"
+  | "contract_upgrade"
   | "updated"
   | "rollback";
 
@@ -77,6 +78,22 @@ export interface CapabilityRestorePreviewV1 {
   diffSha256: string;
 }
 
+export interface CapabilityUpgradePreviewV1 {
+  schemaVersion: 1;
+  contractId: "napier.default-agent.capabilities";
+  sourceContractVersion: number;
+  targetContractVersion: number;
+  sourceRecommendationSha256: string;
+  targetRecommendationSha256: string;
+  agentId: string;
+  agentRevision: number;
+  explicitOverrideFields: CapabilityManagedField[];
+  currentManagedStateSha256: string;
+  targetManagedStateSha256: string;
+  operations: CapabilityDiffOperation[];
+  diffSha256: string;
+}
+
 export interface CapabilityReadinessRecord {
   id: string;
   status:
@@ -112,6 +129,7 @@ export interface EffectiveAgentCapabilityProjectionV1 {
   configuredSubagents: string[];
   capabilityPreset?: AgentCapabilityPresetId;
   readiness: CapabilityReadinessRecord[];
+  upgradePreview?: CapabilityUpgradePreviewV1;
   restorePreview: CapabilityRestorePreviewV1;
   projectionSha256: string;
 }
@@ -123,6 +141,18 @@ export interface RestoreRecommendedCapabilitiesRequestV1 {
 }
 
 export interface RestoreRecommendedCapabilitiesResultV1 {
+  schemaVersion: 1;
+  previousRevision: number;
+  projection: EffectiveAgentCapabilityProjectionV1;
+}
+
+export interface UpgradeRecommendedCapabilitiesRequestV1 {
+  schemaVersion: 1;
+  expectedRevision: number;
+  diffSha256: string;
+}
+
+export interface UpgradeRecommendedCapabilitiesResultV1 {
   schemaVersion: 1;
   previousRevision: number;
   projection: EffectiveAgentCapabilityProjectionV1;
@@ -167,58 +197,130 @@ const TOOL_POLICY_MODES = ["observe", "workspace", "unrestricted"] as const;
 export function isEffectiveAgentCapabilityProjectionV1(
   value: unknown,
 ): value is EffectiveAgentCapabilityProjectionV1 {
-  if (
-    !exactRecord(
+  return (
+    exactRecord(
       value,
-      [
-        "kind",
-        "schemaVersion",
-        "agentId",
-        "agentRevision",
-        "contractId",
-        "contractVersion",
-        "recommendationSha256",
-        "driftState",
-        "ownership",
-        "explicitOverrideFields",
-        "toolPolicy",
-        "configuredTools",
-        "runtimeExposedTools",
-        "configuredSkills",
-        "configuredSubagents",
-        "readiness",
-        "restorePreview",
-        "projectionSha256",
-      ],
-      ["legacySignatureSha256", "capabilityPreset"],
-    ) ||
-    value.kind !== "napier.effective-agent-capabilities" ||
-    value.schemaVersion !== 1 ||
-    !nonEmptyString(value.agentId) ||
-    !positiveSafeInteger(value.agentRevision) ||
-    value.contractId !== "napier.default-agent.capabilities" ||
-    !positiveSafeInteger(value.contractVersion) ||
-    !sha256(value.recommendationSha256) ||
-    !member(value.driftState, CAPABILITY_DRIFT_STATES) ||
-    !member(value.ownership, CAPABILITY_OWNERSHIPS) ||
-    !memberArray(value.explicitOverrideFields, CAPABILITY_MANAGED_FIELDS) ||
-    (value.legacySignatureSha256 !== undefined &&
-      !sha256(value.legacySignatureSha256)) ||
-    !member(value.toolPolicy, TOOL_POLICY_MODES) ||
-    !stringArray(value.configuredTools) ||
-    !stringArray(value.runtimeExposedTools) ||
-    !stringArray(value.configuredSkills) ||
-    !stringArray(value.configuredSubagents) ||
-    !optionalCapabilityPreset(value.capabilityPreset) ||
-    !denseArray(value.readiness) ||
-    !value.readiness.every(capabilityReadinessRecord) ||
+      PROJECTION_REQUIRED_KEYS,
+      PROJECTION_OPTIONAL_KEYS,
+    ) &&
+    projectionIdentity(value) &&
+    projectionCapabilities(value) &&
+    projectionEvidence(value)
+  );
+}
+
+const PROJECTION_REQUIRED_KEYS = [
+  "kind",
+  "schemaVersion",
+  "agentId",
+  "agentRevision",
+  "contractId",
+  "contractVersion",
+  "recommendationSha256",
+  "driftState",
+  "ownership",
+  "explicitOverrideFields",
+  "toolPolicy",
+  "configuredTools",
+  "runtimeExposedTools",
+  "configuredSkills",
+  "configuredSubagents",
+  "readiness",
+  "restorePreview",
+  "projectionSha256",
+] as const;
+const PROJECTION_OPTIONAL_KEYS = [
+  "legacySignatureSha256",
+  "capabilityPreset",
+  "upgradePreview",
+] as const;
+
+function projectionIdentity(value: Record<string, unknown>): boolean {
+  return (
+    value.kind === "napier.effective-agent-capabilities" &&
+    value.schemaVersion === 1 &&
+    nonEmptyString(value.agentId) &&
+    positiveSafeInteger(value.agentRevision) &&
+    value.contractId === "napier.default-agent.capabilities" &&
+    positiveSafeInteger(value.contractVersion) &&
+    sha256(value.recommendationSha256) &&
+    member(value.driftState, CAPABILITY_DRIFT_STATES) &&
+    member(value.ownership, CAPABILITY_OWNERSHIPS) &&
+    memberArray(value.explicitOverrideFields, CAPABILITY_MANAGED_FIELDS) &&
+    (value.legacySignatureSha256 === undefined ||
+      sha256(value.legacySignatureSha256))
+  );
+}
+
+function projectionCapabilities(value: Record<string, unknown>): boolean {
+  return (
+    member(value.toolPolicy, TOOL_POLICY_MODES) &&
+    stringArray(value.configuredTools) &&
+    stringArray(value.runtimeExposedTools) &&
+    stringArray(value.configuredSkills) &&
+    stringArray(value.configuredSubagents) &&
+    optionalCapabilityPreset(value.capabilityPreset) &&
+    denseArray(value.readiness) &&
+    value.readiness.every(capabilityReadinessRecord)
+  );
+}
+
+function projectionEvidence(value: Record<string, unknown>): boolean {
+  if (
     !capabilityRestorePreview(value.restorePreview) ||
     value.restorePreview.contractVersion !== value.contractVersion ||
     !sha256(value.projectionSha256)
   ) {
     return false;
   }
-  return true;
+  const upgrade = value.upgradePreview;
+  return (
+    upgrade === undefined ||
+    (capabilityUpgradePreview(upgrade) &&
+      upgrade.agentId === value.agentId &&
+      upgrade.agentRevision === value.agentRevision &&
+      upgrade.targetContractVersion === value.contractVersion &&
+      upgrade.targetRecommendationSha256 === value.recommendationSha256 &&
+      JSON.stringify(upgrade.explicitOverrideFields) ===
+        JSON.stringify(value.explicitOverrideFields))
+  );
+}
+
+function capabilityUpgradePreview(
+  value: unknown,
+): value is CapabilityUpgradePreviewV1 {
+  return (
+    exactRecord(value, [
+      "schemaVersion",
+      "contractId",
+      "sourceContractVersion",
+      "targetContractVersion",
+      "sourceRecommendationSha256",
+      "targetRecommendationSha256",
+      "agentId",
+      "agentRevision",
+      "explicitOverrideFields",
+      "currentManagedStateSha256",
+      "targetManagedStateSha256",
+      "operations",
+      "diffSha256",
+    ]) &&
+    value.schemaVersion === 1 &&
+    value.contractId === "napier.default-agent.capabilities" &&
+    positiveSafeInteger(value.sourceContractVersion) &&
+    positiveSafeInteger(value.targetContractVersion) &&
+    value.sourceContractVersion < value.targetContractVersion &&
+    sha256(value.sourceRecommendationSha256) &&
+    sha256(value.targetRecommendationSha256) &&
+    nonEmptyString(value.agentId) &&
+    positiveSafeInteger(value.agentRevision) &&
+    memberArray(value.explicitOverrideFields, CAPABILITY_MANAGED_FIELDS) &&
+    sha256(value.currentManagedStateSha256) &&
+    sha256(value.targetManagedStateSha256) &&
+    denseArray(value.operations) &&
+    value.operations.every(capabilityDiffOperation) &&
+    sha256(value.diffSha256)
+  );
 }
 
 function optionalCapabilityPreset(value: unknown): boolean {

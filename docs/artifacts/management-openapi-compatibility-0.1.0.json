@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "1323a7b346e63f3fb426f0fbf526132c4c48547e08cc61562da62bb4a8f089bd",
-    "routeCount": 270,
-    "routeSetSha256": "794788f62d33bf0122fa23f990ea47a5d69eb33e7f9ff321fe4727dd4b52654a"
+    "sha256": "56823231355ea0ec404ac6c5cc59aadde7663214fe2d101fc8eca0e9ca522822",
+    "routeCount": 275,
+    "routeSetSha256": "9693efe03582d16d8f859eafc25fd3e0aa44757648676256cf6883b0ab22c896"
   },
-  "operationCount": 270,
-  "operationSetSha256": "ab74a43f13c40d01efbaf8ad1a774236c69fedc62d57465dcc6fee9bfb1eba78",
+  "operationCount": 275,
+  "operationSetSha256": "1b806f715c51a6260a7cded3d66948ae1e055ba72f25ed62a7385e2e7724b0c7",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}",
@@ -1039,6 +1039,46 @@
       ]
     },
     {
+      "key": "GET /api/setup/sandbox",
+      "method": "get",
+      "path": "/api/setup/sandbox",
+      "operationId": "get-setup-sandbox",
+      "tags": [
+        "setup"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/setup/sandbox/uninstall",
+      "method": "get",
+      "path": "/api/setup/sandbox/uninstall",
+      "operationId": "get-setup-sandbox-uninstall",
+      "tags": [
+        "setup"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
       "key": "GET /api/skills/packages/installations",
       "method": "get",
       "path": "/api/skills/packages/installations",
@@ -1877,6 +1917,28 @@
         "422",
         "500",
         "503"
+      ]
+    },
+    {
+      "key": "POST /api/agents/{agentId}/capabilities/upgrade",
+      "method": "post",
+      "path": "/api/agents/{agentId}/capabilities/upgrade",
+      "operationId": "post-agents-by-agentId-capabilities-upgrade",
+      "tags": [
+        "agents"
+      ],
+      "pathParameters": [
+        "agentId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
       ]
     },
     {
@@ -4193,6 +4255,46 @@
       "method": "post",
       "path": "/api/setup/providers",
       "operationId": "post-setup-providers",
+      "tags": [
+        "setup"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/setup/sandbox",
+      "method": "post",
+      "path": "/api/setup/sandbox",
+      "operationId": "post-setup-sandbox",
+      "tags": [
+        "setup"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/setup/sandbox/uninstall",
+      "method": "post",
+      "path": "/api/setup/sandbox/uninstall",
+      "operationId": "post-setup-sandbox-uninstall",
       "tags": [
         "setup"
       ],

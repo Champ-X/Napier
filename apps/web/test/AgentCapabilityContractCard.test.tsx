@@ -117,6 +117,89 @@ describe("AgentCapabilityContractCard", () => {
     refreshedButton?.click();
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
+
+  it("prefers safe upgrade and preserves explicit override fields", async () => {
+    const { container, window } = installDom();
+    const stale = projection({
+      driftState: "stale",
+      ownership: "explicit_overrides",
+      explicitOverrideFields: ["enabledSkills"],
+      upgradePreview: {
+        schemaVersion: 1,
+        contractId: "napier.default-agent.capabilities",
+        sourceContractVersion: 1,
+        targetContractVersion: 2,
+        sourceRecommendationSha256: "a".repeat(64),
+        targetRecommendationSha256: "a".repeat(64),
+        agentId: "agent_napier",
+        agentRevision: 2,
+        explicitOverrideFields: ["enabledSkills"],
+        currentManagedStateSha256: "b".repeat(64),
+        targetManagedStateSha256: "c".repeat(64),
+        operations: [
+          {
+            field: "enabledTools",
+            operation: "add",
+            value: "skill_load",
+            effect: "read",
+            risk: "low",
+          },
+        ],
+        diffSha256: "f".repeat(64),
+      },
+    });
+    const upgraded = {
+      schemaVersion: 1,
+      previousRevision: 2,
+      projection: {
+        ...stale,
+        agentRevision: 3,
+        driftState: "current" as const,
+        upgradePreview: undefined,
+      },
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(bodyResponse(stale))
+      .mockResolvedValueOnce(bodyResponse(upgraded));
+    vi.stubGlobal("fetch", fetchMock);
+    await renderCard(container);
+    await waitFor(() => !container.textContent?.includes("Loading"));
+
+    expect(container.textContent).toContain("Safe contract upgrade diff");
+    expect(container.textContent).toContain(
+      "Upgrade while preserving overrides",
+    );
+    expect(container.textContent).toContain("enabledSkills");
+    const checkbox = findElementByLocalName<HTMLInputElement>(
+      container,
+      "input",
+    )!;
+    await act(async () => {
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new window.Event("change", { bubbles: true }));
+    });
+    const button = findElementByLocalName<HTMLButtonElement>(
+      container,
+      "button",
+    )!;
+    await waitFor(() => !button.disabled);
+    await act(async () => {
+      button.click();
+      await flush();
+    });
+    expect(fetchMock.mock.calls[1]).toEqual([
+      "/api/agents/agent_napier/capabilities/upgrade",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          schemaVersion: 1,
+          expectedRevision: 2,
+          diffSha256: "f".repeat(64),
+        }),
+      }),
+    ]);
+  });
 });
 
 async function renderCard(container: HTMLElement): Promise<void> {
@@ -201,6 +284,9 @@ function projection(
         detail: "ready",
       },
     ],
+    ...(options.upgradePreview
+      ? { upgradePreview: structuredClone(options.upgradePreview) }
+      : {}),
     restorePreview: {
       schemaVersion: 1,
       contractId: "napier.default-agent.capabilities",

@@ -75,18 +75,23 @@ export const contextCopy = {
   capabilityContractLoading: "Loading effective capability contract...",
   capabilityContractUnavailable: "Capability contract is unavailable.",
   capabilityContractBody:
-    "This projection comes from the stored Agent revision and the Runtime's actual tool exposure. Restore is explicit and bound to the exact revision and diff hash shown below.",
+    "This projection comes from the stored Agent revision and the Runtime's actual tool exposure. Safe upgrade preserves explicit override fields; full restore is reserved for unmanaged or broken profiles. Every change is bound to the exact revision and diff hash shown below.",
   capabilityConfigured: "Configured tools",
   capabilityExposed: "Runtime exposed",
   capabilityReadinessIssues: "Readiness notes",
   capabilityExplicitOverrides: "Explicit override fields",
+  capabilityUpgradeDiff: "Safe contract upgrade diff",
   capabilityRestoreDiff: "Recommended restore diff",
   capabilityChanges: "changes",
   capabilityNoChanges: "The managed fields already match the recommendation.",
   capabilityDiffHash: "Exact diff SHA-256",
   capabilityReadiness: "Effective readiness",
+  capabilityUpgradeConfirm:
+    "I reviewed this exact upgrade; preserve my explicit override fields and create a new Agent revision.",
   capabilityRestoreConfirm:
-    "I reviewed this exact diff and want a new Agent revision.",
+    "I reviewed this exact full restore and want a new Agent revision.",
+  capabilityUpgrade: "Upgrade while preserving overrides",
+  capabilityUpgrading: "Upgrading exact contract...",
   capabilityRestore: "Restore recommended capabilities",
   capabilityRestoring: "Restoring exact recommendation...",
   capabilityConflictRefreshed:

@@ -3,12 +3,14 @@ import { createHash } from "node:crypto";
 import type {
   EffectiveAgentCapabilityProjectionV1,
   RestoreRecommendedCapabilitiesResultV1,
+  UpgradeRecommendedCapabilitiesResultV1,
 } from "@napier/contracts/agent-capability-contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   getAgentCapabilities,
   restoreRecommendedAgentCapabilities,
+  upgradeRecommendedAgentCapabilities,
 } from "../src/agent-capability-api";
 
 afterEach(() => {
@@ -53,6 +55,36 @@ describe("Agent capability Web API", () => {
         }),
       }),
     ]);
+  });
+
+  it("submits only the exact safe-upgrade CAS inputs", async () => {
+    const projection = fixtureProjection();
+    const upgraded: UpgradeRecommendedCapabilitiesResultV1 = {
+      schemaVersion: 1,
+      previousRevision: projection.agentRevision,
+      projection: { ...projection, agentRevision: 3 },
+    };
+    const fetchMock = vi.fn().mockResolvedValueOnce(bodyResponse(upgraded));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      upgradeRecommendedAgentCapabilities("agent_napier", {
+        schemaVersion: 1,
+        expectedRevision: projection.agentRevision,
+        diffSha256: "f".repeat(64),
+      }),
+    ).resolves.toEqual(upgraded);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/agents/agent_napier/capabilities/upgrade",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          schemaVersion: 1,
+          expectedRevision: 2,
+          diffSha256: "f".repeat(64),
+        }),
+      }),
+    );
   });
 
   it("requests and verifies a hash-bound temporary preset projection", async () => {

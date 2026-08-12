@@ -233,6 +233,62 @@ Observed result:
 - `blocked externally`: the Windows workflow still has zero registered
   `napier-windows-docker` runners and therefore no executed host receipt.
 
+## Completed Slice: Ownership-Preserving Profile Contract Upgrade
+
+User scenario: an existing user whose Agent follows an older default contract
+can adopt new default tools without losing a field they explicitly customized;
+an unmanaged Profile is never silently classified or modified.
+
+Acceptance and threat boundary:
+
+- retain temporary Web/CLI task modes as Run-scoped input. Selecting Coding,
+  Research, Data, Browser, or Safe Automation must not create an Agent
+  revision;
+- expose `upgradePreview` only for a valid binding that matches the current
+  Profile and points to an older retained recommendation;
+- preserve every field in `explicitOverrideFields` exactly. Project the current
+  recommendation only onto fields still owned by Napier;
+- bind source/target contract versions and recommendation hashes, current and
+  target managed-state hashes, preserved override fields, bounded operations,
+  Agent identity, and revision into one exact diff hash;
+- commit one new migrated Agent revision and one `contract_upgrade` binding in
+  the existing SQLite transaction. Stale revision/hash input conflicts;
+  persistence failure reports no committed upgrade;
+- give `custom_unmanaged`, broken, and `unknown_legacy` Profiles no upgrade
+  authority. The existing complete restore remains a distinct, explicitly
+  reviewed reset of all four managed fields;
+- expose the same safe-upgrade semantics in built CLI, HTTP, and production Web
+  Context UI without retaining Profile bodies, System Prompts, paths, raw
+  terminal/browser output, or credentials.
+
+Observed result:
+
+- focused Contracts, Runtime, CLI, Server, and Web coverage passes 151 cases
+  across strict projection shape, historical binding identity, explicit
+  override preservation, exact CAS, stale conflict, unmanaged refusal, HTTP
+  protocol, CLI rendering, Web selection, and persistence;
+- built CLI Dogfood seeded a revision-2 contract-v2 Profile with an explicit
+  `enabledSkills` override. Preview contained one low-risk `skill_load`
+  addition and no Skill operation. Exact apply created revision 3 with
+  `source=contract_upgrade`, preserved `enabledSkills`, added `skill_load`,
+  and rejected reuse of the stale preview;
+- production Web Dogfood opened the actual Context card, displayed
+  **Safe contract upgrade diff**, the preserved `enabledSkills` ownership, and
+  the single `skill_load` addition. One checked confirmation and
+  **Upgrade while preserving overrides** produced the same revision-3 result
+  with zero console errors and zero horizontal overflow at 1,440×900;
+- a built-CLI unmanaged arm projected `custom_unmanaged`, exposed no
+  `upgradePreview`, rejected safe upgrade, and retained identical Profile hash
+  and revision count;
+- Stage 21 retains those three arms as a strict hash-only receipt and the
+  release audit requires it as the 157th artifact;
+- architecture audits 1,249 source files and 653 test files with zero cycles.
+  All new production leaves remain below 500 lines; `store.ts` decreases from
+  14,387 to 14,382 lines and its ratchet is lowered;
+- `blocked externally`: S1 still requires a public signed GHCR release and a
+  real Windows x64 Docker Desktop host receipt. The registered Windows runner
+  count remains zero.
+
 ## Baseline
 
 Audit date: 2026-08-05

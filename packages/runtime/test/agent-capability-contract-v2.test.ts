@@ -128,7 +128,7 @@ describe("default Agent Capability Contract v3", () => {
     }
   });
 
-  it("projects a bound V2 profile as stale and restores it to V3", async () => {
+  it("projects a bound V2 profile as stale and upgrades it to V3", async () => {
     const fixture = await createRuntimeFixture();
     const initial = await fixture.create();
     const seeded = initial.store.listAgents()[0]!;
@@ -208,14 +208,26 @@ describe("default Agent Capability Contract v3", () => {
               }),
             ],
           }),
+          upgradePreview: expect.objectContaining({
+            sourceContractVersion: 2,
+            targetContractVersion: 3,
+            explicitOverrideFields: [],
+            operations: [
+              expect.objectContaining({
+                field: "enabledTools",
+                operation: "add",
+                value: "skill_load",
+              }),
+            ],
+          }),
         }),
       );
-      const restored = await services.agentCapabilities.restore(seeded.id, {
+      const upgraded = await services.agentCapabilities.upgrade(seeded.id, {
         schemaVersion: 1,
         expectedRevision: stale.agentRevision,
-        diffSha256: stale.restorePreview.diffSha256,
+        diffSha256: stale.upgradePreview!.diffSha256,
       });
-      expect(restored.projection).toEqual(
+      expect(upgraded.projection).toEqual(
         expect.objectContaining({
           driftState: "current",
           ownership: "recommended",
@@ -224,6 +236,153 @@ describe("default Agent Capability Contract v3", () => {
           configuredTools: expect.arrayContaining(["skill_load"]),
         }),
       );
+    } finally {
+      await services.shutdown();
+    }
+  });
+
+  it("upgrades only unowned V2 fields and preserves explicit Skill overrides", async () => {
+    const fixture = await createRuntimeFixture();
+    const initial = await fixture.create();
+    const seeded = initial.store.listAgents()[0]!;
+    await initial.shutdown();
+    await removeLedger(fixture.dataRoot);
+
+    const statePath = path.join(fixture.dataRoot, "workspace.json");
+    const state = JSON.parse(await readFile(statePath, "utf8")) as {
+      agents: AgentProfile[];
+      agentRevisions: AgentProfileRevision[];
+      agentCapabilityBindings: Array<{
+        agentId: string;
+        contractVersion: number;
+        recommendationSha256: string;
+        source: string;
+        ownership: string;
+        explicitOverrideFields: string[];
+      }>;
+    };
+    const agentIndex = state.agents.findIndex(
+      (candidate) => candidate.id === seeded.id,
+    );
+    const v2Profile: AgentProfile = {
+      ...state.agents[agentIndex]!,
+      enabledTools: [
+        ...DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2.enabledTools,
+      ],
+      enabledSkills: ["research-brief"],
+    };
+    state.agents[agentIndex] = v2Profile;
+    const revisionIndex = state.agentRevisions.findIndex(
+      (candidate) =>
+        candidate.agentId === seeded.id &&
+        candidate.revision === seeded.revision,
+    );
+    state.agentRevisions[revisionIndex] = createAgentProfileRevision(
+      v2Profile,
+      {
+        source: "created",
+        createdAt: v2Profile.createdAt,
+      },
+    );
+    const binding = state.agentCapabilityBindings.find(
+      (candidate) => candidate.agentId === seeded.id,
+    )!;
+    binding.contractVersion = 2;
+    binding.recommendationSha256 =
+      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256;
+    binding.source = "updated";
+    binding.ownership = "explicit_overrides";
+    binding.explicitOverrideFields = ["enabledSkills"];
+    await writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+
+    const services = await fixture.create();
+    try {
+      const stale = await services.agentCapabilities.project(seeded.id);
+      expect(stale).toEqual(
+        expect.objectContaining({
+          driftState: "stale",
+          ownership: "explicit_overrides",
+          explicitOverrideFields: ["enabledSkills"],
+          configuredSkills: ["research-brief"],
+          upgradePreview: expect.objectContaining({
+            explicitOverrideFields: ["enabledSkills"],
+            operations: [
+              expect.objectContaining({
+                field: "enabledTools",
+                operation: "add",
+                value: "skill_load",
+              }),
+            ],
+          }),
+        }),
+      );
+      expect(stale.upgradePreview?.operations).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: "enabledSkills" }),
+        ]),
+      );
+      const upgraded = await services.agentCapabilities.upgrade(seeded.id, {
+        schemaVersion: 1,
+        expectedRevision: stale.agentRevision,
+        diffSha256: stale.upgradePreview!.diffSha256,
+      });
+      expect(upgraded.projection).toEqual(
+        expect.objectContaining({
+          driftState: "current",
+          ownership: "explicit_overrides",
+          explicitOverrideFields: ["enabledSkills"],
+          configuredSkills: ["research-brief"],
+          configuredTools: expect.arrayContaining(["skill_load"]),
+        }),
+      );
+      expect(
+        services.store.getAgentCapabilityBinding(
+          seeded.id,
+          upgraded.projection.agentRevision,
+        ),
+      ).toEqual(
+        expect.objectContaining({
+          status: "valid",
+          binding: expect.objectContaining({
+            source: "contract_upgrade",
+            ownership: "explicit_overrides",
+            explicitOverrideFields: ["enabledSkills"],
+          }),
+        }),
+      );
+    } finally {
+      await services.shutdown();
+    }
+  });
+
+  it("refuses to infer a safe upgrade for an unmanaged custom Profile", async () => {
+    const services = await createRuntime();
+    try {
+      const seeded = services.store.listAgents()[0]!;
+      const state = (
+        services.store as unknown as {
+          state: { agentCapabilityBindings: unknown[] };
+        }
+      ).state;
+      state.agentCapabilityBindings = [];
+      const projection = await services.agentCapabilities.project(seeded.id);
+      expect(projection).toEqual(
+        expect.objectContaining({
+          driftState: "custom_unmanaged",
+          ownership: "unmanaged",
+        }),
+      );
+      expect(projection).not.toHaveProperty("upgradePreview");
+      await expect(
+        services.agentCapabilities.upgrade(seeded.id, {
+          schemaVersion: 1,
+          expectedRevision: seeded.revision,
+          diffSha256: projection.restorePreview.diffSha256,
+        }),
+      ).rejects.toThrow(
+        "Capability profile is unmanaged; use explicit restore after review",
+      );
+      expect(services.store.getAgent(seeded.id)).toEqual(seeded);
     } finally {
       await services.shutdown();
     }

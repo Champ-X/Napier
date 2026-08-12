@@ -16,6 +16,7 @@ import { verifySandboxPortableDap } from "./check-sandbox-portable-dap.mjs";
 import { verifySandboxOciSupplyChain } from "./check-sandbox-oci-supply-chain.mjs";
 import { verifyLinuxHostProductAcceptance } from "./check-linux-host-product-acceptance.mjs";
 import { verifySandboxAcquisition } from "./check-sandbox-acquisition.mjs";
+import { verifyProfileUpgrade } from "./check-profile-upgrade.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -87,6 +88,8 @@ const defaultLinuxHostProductAcceptancePath =
   "docs/artifacts/linux-host-product-acceptance-stage19.json";
 const defaultSandboxAcquisitionPath =
   "docs/artifacts/sandbox-acquisition-stage20.json";
+const defaultProfileUpgradePath =
+  "docs/artifacts/profile-upgrade-stage21.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -186,6 +189,8 @@ export async function auditReleaseArtifacts(options = {}) {
     defaultLinuxHostProductAcceptancePath;
   const sandboxAcquisitionPath =
     options.sandboxAcquisitionPath ?? defaultSandboxAcquisitionPath;
+  const profileUpgradePath =
+    options.profileUpgradePath ?? defaultProfileUpgradePath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -712,6 +717,17 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const profileUpgradeVerification = await verifyProfileUpgrade({
+    repoRoot,
+    artifactPath: profileUpgradePath,
+  });
+  if (!profileUpgradeVerification.valid) {
+    errors.push(
+      ...profileUpgradeVerification.errors.map(
+        (error) => `Profile upgrade: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -822,6 +838,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: sandboxAcquisitionVerification.path,
       sha256: sandboxAcquisitionVerification.sha256,
       valid: sandboxAcquisitionVerification.valid,
+    },
+    {
+      kind: "profile-upgrade-stage21",
+      path: profileUpgradeVerification.path,
+      sha256: profileUpgradeVerification.sha256,
+      valid: profileUpgradeVerification.valid,
     },
     {
       kind: "product-performance-baseline",

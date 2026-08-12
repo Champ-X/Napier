@@ -23,6 +23,7 @@ import {
   verifyReleaseArtifactsReceipt,
 } from "./check-release-artifacts.mjs";
 import { linuxHostProductAcceptanceImplementation } from "./linux-host-product-acceptance-artifact.mjs";
+import { profileUpgradeImplementation } from "./profile-upgrade-artifact.mjs";
 import { createLongThreadPerformanceMeasurement } from "./product-performance-long-thread.mjs";
 import { createProductPerformanceReport } from "./product-performance.mjs";
 
@@ -67,6 +68,7 @@ describe("release artifacts audit", () => {
       "sandbox-oci-supply-chain-stage18",
       "linux-host-product-acceptance-stage19",
       "sandbox-acquisition-stage20",
+      "profile-upgrade-stage21",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -1263,6 +1265,7 @@ async function createFixture() {
     "sandbox-oci-supply-chain-stage18.json",
     "linux-host-product-acceptance-stage19.json",
     "sandbox-acquisition-stage20.json",
+    "profile-upgrade-stage21.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),
@@ -1378,6 +1381,20 @@ async function createFixture() {
     "scripts/sandbox-acquisition-acceptance.mjs",
     "scripts/sandbox-acquisition-artifact.mjs",
     "scripts/sandbox-acquisition-support.mjs",
+    "packages/contracts/src/agent-capability-contract.ts",
+    "packages/runtime/src/agent-capability-upgrade.ts",
+    "packages/runtime/src/agent-capability-bindings.ts",
+    "packages/runtime/src/agent-capability-service.ts",
+    "packages/runtime/src/agent-capability-store-mutations.ts",
+    "packages/runtime/src/store.ts",
+    "apps/cli/src/capability-cli.ts",
+    "apps/cli/src/cli-capability-options.ts",
+    "apps/server/src/agent-capability-http.ts",
+    "apps/web/src/agent-capability-api.ts",
+    "apps/web/src/AgentCapabilityContractCard.tsx",
+    "scripts/profile-upgrade-acceptance.mjs",
+    "scripts/profile-upgrade-artifact.mjs",
+    "scripts/check-profile-upgrade.mjs",
     "packages/runtime/src/sandbox-official-release-model.ts",
     "packages/runtime/src/sandbox-official-release.ts",
     "packages/runtime/src/sandbox-runtime-acquisition.ts",
@@ -1457,6 +1474,7 @@ async function createFixture() {
     { recursive: true },
   );
   await rebindLinuxHostProductAcceptanceFixture(root);
+  await rebindProfileUpgradeFixture(root);
   await execFile(process.execPath, [
     packageLockScriptPath,
     "--repo-root",
@@ -1493,6 +1511,18 @@ async function rebindLinuxHostProductAcceptanceFixture(root) {
   value.guest.evidenceSha256 = sha256(
     Buffer.from(canonicalJson(guest), "utf8"),
   );
+  const { contentSha256: _contentSha256, ...content } = value;
+  value.contentSha256 = sha256(Buffer.from(canonicalJson(content), "utf8"));
+  await writeJson(artifactPath, value);
+}
+
+async function rebindProfileUpgradeFixture(root) {
+  const artifactPath = path.join(
+    root,
+    "docs/artifacts/profile-upgrade-stage21.json",
+  );
+  const value = JSON.parse(await readFile(artifactPath, "utf8"));
+  value.implementation = await profileUpgradeImplementation(root);
   const { contentSha256: _contentSha256, ...content } = value;
   value.contentSha256 = sha256(Buffer.from(canonicalJson(content), "utf8"));
   await writeJson(artifactPath, value);

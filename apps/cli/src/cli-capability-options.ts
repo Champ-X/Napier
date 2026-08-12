@@ -9,6 +9,7 @@ import type { CliWorkspaceOptions } from "./cli-execution-options.js";
 export interface CliCapabilityOptions extends CliWorkspaceOptions {
   agentId?: string;
   presetId?: AgentCapabilityPresetId;
+  upgradeRecommended: boolean;
   restoreRecommended: boolean;
   expectedRevision?: number;
   diffSha256?: string;
@@ -25,6 +26,7 @@ export const CAPABILITY_VALUE_OPTIONS = new Set([
 ]);
 export const CAPABILITY_FLAG_OPTIONS = new Set([
   "--apply",
+  "--upgrade-recommended",
   "--restore-recommended",
 ]);
 
@@ -49,34 +51,44 @@ export function parseCapabilityOptions(
   jsonl: boolean,
 ): { kind: "capabilities"; options: CliCapabilityOptions } {
   const preset = optionalCapabilityPreset(values);
+  const upgradeRecommended = flags.has("--upgrade-recommended");
   const restoreRecommended = flags.has("--restore-recommended");
-  if (preset && restoreRecommended) {
+  const operationCount =
+    Number(Boolean(preset)) +
+    Number(upgradeRecommended) +
+    Number(restoreRecommended);
+  if (operationCount > 1) {
     throw new Error(
-      "--preset and --restore-recommended are mutually exclusive",
+      "--preset, --upgrade-recommended, and --restore-recommended are mutually exclusive",
     );
   }
-  if (flags.has("--apply") && !preset && !restoreRecommended) {
-    throw new Error("--apply requires --preset or --restore-recommended");
+  if (flags.has("--apply") && operationCount === 0) {
+    throw new Error(
+      "--apply requires --preset, --upgrade-recommended, or --restore-recommended",
+    );
   }
   if (
+    !upgradeRecommended &&
     !restoreRecommended &&
     (values.has("--expected-revision") || values.has("--diff-sha256"))
   ) {
     throw new Error(
-      "--expected-revision and --diff-sha256 require --restore-recommended",
+      "--expected-revision and --diff-sha256 require --upgrade-recommended or --restore-recommended",
     );
   }
   if (
-    restoreRecommended &&
+    (upgradeRecommended || restoreRecommended) &&
     !flags.has("--apply") &&
     (values.has("--expected-revision") || values.has("--diff-sha256"))
   ) {
-    throw new Error("Restore preview does not accept apply preconditions");
+    throw new Error(
+      "Capability preview does not accept apply preconditions",
+    );
   }
-  if (restoreRecommended && flags.has("--apply")) {
+  if ((upgradeRecommended || restoreRecommended) && flags.has("--apply")) {
     if (!values.has("--expected-revision") || !values.has("--diff-sha256")) {
       throw new Error(
-        "Restore apply requires --expected-revision and --diff-sha256",
+        "Capability apply requires --expected-revision and --diff-sha256",
       );
     }
   }
@@ -86,6 +98,7 @@ export function parseCapabilityOptions(
       workspace: requiredValue(values, "--workspace"),
       jsonl,
       apply: flags.has("--apply"),
+      upgradeRecommended,
       restoreRecommended,
       ...(values.has("--data-root")
         ? { dataRoot: requiredValue(values, "--data-root") }

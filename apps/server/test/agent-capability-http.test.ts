@@ -149,6 +149,81 @@ describe("Agent capability HTTP", () => {
     );
   });
 
+  it("applies a safe upgrade through its distinct exact-CAS endpoint", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-capability-http-"));
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "state"),
+      env: {},
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const agent = services.store.listAgents()[0]!;
+    const projection = await services.agentCapabilities.project(agent.id);
+    const upgradePreview = {
+      schemaVersion: 1 as const,
+      contractId: "napier.default-agent.capabilities" as const,
+      sourceContractVersion: 2,
+      targetContractVersion: 3,
+      sourceRecommendationSha256: "a".repeat(64),
+      targetRecommendationSha256: projection.recommendationSha256,
+      agentId: agent.id,
+      agentRevision: agent.revision,
+      explicitOverrideFields: [],
+      currentManagedStateSha256: "b".repeat(64),
+      targetManagedStateSha256: "c".repeat(64),
+      operations: [],
+      diffSha256: "d".repeat(64),
+    };
+    const upgradedProjection = {
+      ...projection,
+      agentRevision: agent.revision + 1,
+      projectionSha256: "e".repeat(64),
+    };
+    const upgrade = vi
+      .spyOn(services.agentCapabilities, "upgrade")
+      .mockResolvedValueOnce({
+        schemaVersion: 1,
+        previousRevision: agent.revision,
+        projection: upgradedProjection,
+      });
+
+    const response = await app.request(
+      `/api/agents/${agent.id}/capabilities/upgrade`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          schemaVersion: 1,
+          expectedRevision: upgradePreview.agentRevision,
+          diffSha256: upgradePreview.diffSha256,
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(upgrade).toHaveBeenCalledWith(agent.id, {
+      schemaVersion: 1,
+      expectedRevision: agent.revision,
+      diffSha256: "d".repeat(64),
+    });
+    const body = await response.json();
+    expect(response.headers.get("x-napier-content-sha256")).toBe(
+      sha256Json(body),
+    );
+    expect(body).toEqual(
+      expect.objectContaining({
+        previousRevision: agent.revision,
+        projection: expect.objectContaining({
+          agentRevision: agent.revision + 1,
+        }),
+      }),
+    );
+  });
+
   it("projects a temporary preset without changing persistent capability state", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-capability-http-"));
     roots.push(root);

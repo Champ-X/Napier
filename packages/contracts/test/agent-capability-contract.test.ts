@@ -32,6 +32,29 @@ const validProjection: EffectiveAgentCapabilityProjectionV1 = {
       detail: "Tool is available",
     },
   ],
+  upgradePreview: {
+    schemaVersion: 1,
+    contractId: "napier.default-agent.capabilities",
+    sourceContractVersion: 1,
+    targetContractVersion: 2,
+    sourceRecommendationSha256: digest,
+    targetRecommendationSha256: digest,
+    agentId: "agent_napier",
+    agentRevision: 2,
+    explicitOverrideFields: ["enabledSkills"],
+    currentManagedStateSha256: digest,
+    targetManagedStateSha256: digest,
+    operations: [
+      {
+        field: "enabledTools",
+        operation: "add",
+        value: "skill_load",
+        effect: "read",
+        risk: "low",
+      },
+    ],
+    diffSha256: digest,
+  },
   restorePreview: {
     schemaVersion: 1,
     contractId: "napier.default-agent.capabilities",
@@ -62,6 +85,7 @@ describe("effective Agent capability projection validator", () => {
       isEffectiveAgentCapabilityProjectionV1({
         ...validProjection,
         contractVersion: 1,
+        upgradePreview: undefined,
         restorePreview: {
           ...validProjection.restorePreview,
           contractVersion: 1,
@@ -86,6 +110,12 @@ describe("effective Agent capability projection validator", () => {
         capabilityPreset: "unrestricted_everything",
       }),
     ).toBe(false);
+    expect(
+      isEffectiveAgentCapabilityProjectionV1({
+        ...validProjection,
+        upgradePreview: undefined,
+      }),
+    ).toBe(true);
   });
 
   it.each(invalidProjections)("rejects %s", (_name, value) => {
@@ -160,6 +190,21 @@ const invalidProjections: ReadonlyArray<readonly [string, unknown]> = [
     "mismatched restore contract version",
     ["restorePreview", "contractVersion"],
     1,
+  ),
+  invalidAt(
+    "mismatched upgrade Agent revision",
+    ["upgradePreview", "agentRevision"],
+    3,
+  ),
+  invalidAt(
+    "mismatched upgrade overrides",
+    ["upgradePreview", "explicitOverrideFields"],
+    [],
+  ),
+  invalidAt(
+    "non-advancing upgrade version",
+    ["upgradePreview", "sourceContractVersion"],
+    2,
   ),
   invalidAt(
     "uppercase recommendation digest",

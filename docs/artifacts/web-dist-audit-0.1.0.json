@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 139,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BcrRnyF4.js",
+    "path": "apps/web/dist/assets/index-D2l0bDK6.js",
     "sizeBytes": 153559,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "18f9bfc3d91642ccaf6aeea064ecfc5073eec3527ba282d5741795d502debd19"
+    "sha256": "61b688116b83ac1fa30d1141a3fbfe4dc4e2067ac33615ef8932122b1167fafb"
   },
-  "distContentSha256": "18f9bfc3d91642ccaf6aeea064ecfc5073eec3527ba282d5741795d502debd19",
+  "distContentSha256": "61b688116b83ac1fa30d1141a3fbfe4dc4e2067ac33615ef8932122b1167fafb",
   "errors": []
 }

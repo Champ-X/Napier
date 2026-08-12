@@ -1,4 +1,7 @@
-import type { RestoreRecommendedCapabilitiesRequestV1 } from "@napier/contracts/agent-capability-contract";
+import type {
+  RestoreRecommendedCapabilitiesRequestV1,
+  UpgradeRecommendedCapabilitiesRequestV1,
+} from "@napier/contracts/agent-capability-contract";
 import {
   AGENT_CAPABILITY_PRESET_IDS,
   type AgentCapabilityPresetId,
@@ -8,6 +11,9 @@ import {
   CapabilityRestoreConflictError,
   CapabilityRestorePersistenceError,
   CapabilityRestoreValidationError,
+  CapabilityUpgradeConflictError,
+  CapabilityUpgradePersistenceError,
+  CapabilityUpgradeValidationError,
 } from "@napier/runtime/agent-capability-store-mutations";
 import { Hono, type Context } from "hono";
 
@@ -81,16 +87,56 @@ export function registerAgentCapabilityHttp(
       return capabilityErrorResponse(context, error);
     }
   });
+
+  app.post("/api/agents/:agentId/capabilities/upgrade", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_CAPABILITY_RESTORE_REQUEST_BYTES,
+        "Capability upgrade request",
+      );
+    } catch (error) {
+      return jsonError(
+        context,
+        errorMessage(error),
+        error instanceof RequestBodyTooLargeError ? 413 : 400,
+      );
+    }
+    const request = parseUpgradeRequest(input);
+    if (!request) {
+      return jsonError(context, "Capability upgrade request is invalid", 400);
+    }
+    try {
+      const result = await services.agentCapabilities.upgrade(
+        context.req.param("agentId"),
+        request,
+      );
+      setProjectionHeaders(context, result.projection.projectionSha256, result);
+      return context.json(result);
+    } catch (error) {
+      return capabilityErrorResponse(context, error);
+    }
+  });
 }
 
 function capabilityErrorResponse(context: Context, error: unknown): Response {
-  if (error instanceof CapabilityRestoreConflictError) {
+  if (
+    error instanceof CapabilityRestoreConflictError ||
+    error instanceof CapabilityUpgradeConflictError
+  ) {
     return jsonError(context, error.message, 409);
   }
-  if (error instanceof CapabilityRestoreValidationError) {
+  if (
+    error instanceof CapabilityRestoreValidationError ||
+    error instanceof CapabilityUpgradeValidationError
+  ) {
     return jsonError(context, error.message, 422);
   }
-  if (error instanceof CapabilityRestorePersistenceError) {
+  if (
+    error instanceof CapabilityRestorePersistenceError ||
+    error instanceof CapabilityUpgradePersistenceError
+  ) {
     return jsonError(context, error.message, 503);
   }
   const message = errorMessage(error);
@@ -104,9 +150,35 @@ function capabilityErrorResponse(context: Context, error: unknown): Response {
   );
 }
 
+function parseUpgradeRequest(
+  input: unknown,
+): UpgradeRecommendedCapabilitiesRequestV1 | undefined {
+  const request = parseCapabilityCommitRequest(input);
+  return request
+    ? {
+        schemaVersion: 1,
+        expectedRevision: request.expectedRevision,
+        diffSha256: request.diffSha256,
+      }
+    : undefined;
+}
+
 function parseRestoreRequest(
   input: unknown,
 ): RestoreRecommendedCapabilitiesRequestV1 | undefined {
+  const request = parseCapabilityCommitRequest(input);
+  return request
+    ? {
+        schemaVersion: 1,
+        expectedRevision: request.expectedRevision,
+        diffSha256: request.diffSha256,
+      }
+    : undefined;
+}
+
+function parseCapabilityCommitRequest(
+  input: unknown,
+): { expectedRevision: number; diffSha256: string } | undefined {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return undefined;
   }
@@ -125,7 +197,6 @@ function parseRestoreRequest(
     return undefined;
   }
   return {
-    schemaVersion: 1,
     expectedRevision: Number(record.expectedRevision),
     diffSha256: record.diffSha256,
   };

@@ -32,7 +32,11 @@ export interface CapabilityCliResultV1 extends CapabilityCliResultBase {
 
 export interface CapabilityCliRestoreResultV2 extends CapabilityCliResultBase {
   schemaVersion: 2;
-  action: "restore_preview" | "restored";
+  action:
+    | "upgrade_preview"
+    | "upgraded"
+    | "restore_preview"
+    | "restored";
   projection: EffectiveAgentCapabilityProjectionV1;
 }
 
@@ -79,28 +83,12 @@ export async function executeCapabilities(
             agentCapabilityPresetUpdate(preset.id),
           )
         : projected;
-    let projection: EffectiveAgentCapabilityProjectionV1 | undefined;
-    let action: CapabilityCliResult["action"] = preset
-      ? options.apply
-        ? "applied"
-        : "preview"
-      : "status";
-    if (options.restoreRecommended) {
-      if (options.apply) {
-        const restored = await services.agentCapabilities.restore(current.id, {
-          schemaVersion: 1,
-          expectedRevision: options.expectedRevision!,
-          diffSha256: options.diffSha256!,
-        });
-        projection = restored.projection;
-        action = "restored";
-      } else {
-        projection = await services.agentCapabilities.project(current.id);
-        action = "restore_preview";
-      }
-    } else if (!preset) {
-      projection = await services.agentCapabilities.project(current.id);
-    }
+    const { projection, action } = await resolveCapabilityOperation(
+      options,
+      current.id,
+      Boolean(preset),
+      services.agentCapabilities,
+    );
     const legacyProfile = projection
       ? {
           toolPolicy: projection.toolPolicy,
@@ -118,7 +106,8 @@ export async function executeCapabilities(
       status: agentCapabilityStatus(legacyProfile),
       ...(preset ? { preset } : {}),
     };
-    const result: CapabilityCliResult = options.restoreRecommended
+    const result: CapabilityCliResult =
+      options.upgradeRecommended || options.restoreRecommended
       ? {
           ...base,
           schemaVersion: 2,
@@ -148,6 +137,69 @@ export async function executeCapabilities(
   }
 }
 
+async function resolveCapabilityOperation(
+  options: CliCapabilityOptions,
+  agentId: string,
+  hasPreset: boolean,
+  service: {
+    project(agentId: string): Promise<EffectiveAgentCapabilityProjectionV1>;
+    upgrade(
+      agentId: string,
+      request: {
+        schemaVersion: 1;
+        expectedRevision: number;
+        diffSha256: string;
+      },
+    ): Promise<{ projection: EffectiveAgentCapabilityProjectionV1 }>;
+    restore(
+      agentId: string,
+      request: {
+        schemaVersion: 1;
+        expectedRevision: number;
+        diffSha256: string;
+      },
+    ): Promise<{ projection: EffectiveAgentCapabilityProjectionV1 }>;
+  },
+): Promise<{
+  projection?: EffectiveAgentCapabilityProjectionV1;
+  action: CapabilityCliResult["action"];
+}> {
+  if (options.upgradeRecommended) {
+    const current = await service.project(agentId);
+    if (!current.upgradePreview) {
+      throw new Error(
+        "No safe capability upgrade is available; use explicit restore after review",
+      );
+    }
+    if (!options.apply) {
+      return { projection: current, action: "upgrade_preview" };
+    }
+    const upgraded = await service.upgrade(agentId, commitRequest(options));
+    return { projection: upgraded.projection, action: "upgraded" };
+  }
+  if (options.restoreRecommended) {
+    if (!options.apply) {
+      return {
+        projection: await service.project(agentId),
+        action: "restore_preview",
+      };
+    }
+    const restored = await service.restore(agentId, commitRequest(options));
+    return { projection: restored.projection, action: "restored" };
+  }
+  return hasPreset
+    ? { action: options.apply ? "applied" : "preview" }
+    : { projection: await service.project(agentId), action: "status" };
+}
+
+function commitRequest(options: CliCapabilityOptions) {
+  return {
+    schemaVersion: 1 as const,
+    expectedRevision: options.expectedRevision!,
+    diffSha256: options.diffSha256!,
+  };
+}
+
 function formatCapabilities(
   result: CapabilityCliResult,
   options: CliCapabilityOptions,
@@ -168,6 +220,25 @@ function formatCapabilities(
           `Restore diff: ${restore!.diffSha256} (${String(restore!.operations.length)} operations)`,
         ]
       : []),
+    ...(result.action === "upgrade_preview" && result.projection.upgradePreview
+      ? [
+          `Upgrade operations (${String(result.projection.upgradePreview.operations.length)}):`,
+          ...(result.projection.upgradePreview.operations.length === 0
+            ? ["  none"]
+            : result.projection.upgradePreview.operations.map(
+                (operation) =>
+                  `  ${operation.risk.toUpperCase()} ${operation.effect} · ${operation.field} ${operation.operation} ${JSON.stringify(operation.value)}`,
+              )),
+          `Preserved overrides: ${result.projection.upgradePreview.explicitOverrideFields.join(", ") || "none"}`,
+          `Apply: ${capabilityApplyCommand(
+            options,
+            result.agentId,
+            result.projection.upgradePreview.agentRevision,
+            result.projection.upgradePreview.diffSha256,
+            "--upgrade-recommended",
+          )}`,
+        ]
+      : []),
     ...(result.action === "restore_preview"
       ? [
           `Restore operations (${String(restore!.operations.length)}):`,
@@ -177,7 +248,13 @@ function formatCapabilities(
                 (operation) =>
                   `  ${operation.risk.toUpperCase()} ${operation.effect} · ${operation.field} ${operation.operation} ${JSON.stringify(operation.value)}`,
               )),
-          `Apply: ${restoreApplyCommand(options, result.agentId, restore!.agentRevision, restore!.diffSha256)}`,
+          `Apply: ${capabilityApplyCommand(
+            options,
+            result.agentId,
+            restore!.agentRevision,
+            restore!.diffSha256,
+            "--restore-recommended",
+          )}`,
         ]
       : []),
     ...(result.action === "status"
@@ -191,11 +268,12 @@ function formatCapabilities(
   ].join("\n");
 }
 
-function restoreApplyCommand(
+function capabilityApplyCommand(
   options: CliCapabilityOptions,
   agentId: string,
   revision: number,
   diffSha256: string,
+  operation: "--upgrade-recommended" | "--restore-recommended",
 ): string {
   return [
     "napier capabilities",
@@ -206,7 +284,7 @@ function restoreApplyCommand(
       : []),
     "--agent",
     shellArgument(agentId),
-    "--restore-recommended",
+    operation,
     "--expected-revision",
     String(revision),
     "--diff-sha256",

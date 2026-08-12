@@ -615,13 +615,37 @@ contract without mutation:
 ```bash
 npm run --silent napier -- capabilities \
   --workspace . \
+  --upgrade-recommended
+```
+
+When the Profile has a trusted older contract binding, safe upgrade shows only
+the fields that Napier still owns. Explicitly overridden fields are listed and
+left byte-for-byte unchanged. Apply is bound to the current Agent revision and
+the exact upgrade diff:
+
+```bash
+npm run --silent napier -- capabilities \
+  --workspace . \
+  --upgrade-recommended \
+  --expected-revision <revision> \
+  --diff-sha256 <upgrade-diff> \
+  --apply
+```
+
+Custom unmanaged, broken, or unknown-legacy Profiles never receive inferred
+upgrade authority. Review the complete four-field reset separately:
+
+```bash
+npm run --silent napier -- capabilities \
+  --workspace . \
   --restore-recommended
 ```
 
 Human output lists every add/remove/replace operation with its effect and
 `LOW`/`MEDIUM`/`HIGH` risk, then prints one shell-safe apply command bound to
-the Agent ID, current revision, and exact diff SHA-256. Restore changes only
-the four managed capability fields: policy, tools, Skills, and Subagents.
+the Agent ID, current revision, and exact diff SHA-256. Safe upgrade preserves
+explicit override fields. Full restore changes all four managed capability
+fields: policy, tools, Skills, and Subagents.
 Agent name, description, system Prompt, model, thinking level, budgets, and
 advisor settings remain unchanged. Concurrent Profile changes make the command
 fail closed; rerun the preview instead of reusing a stale command. JSONL keeps

@@ -20,6 +20,7 @@ const BINDING_SOURCES = new Set([
   "seeded",
   "legacy_detected",
   "explicit_restore",
+  "contract_upgrade",
   "updated",
   "rollback",
 ]);
@@ -385,6 +386,11 @@ function sourceSupportsOwnership(
 ): boolean {
   if (source === "seeded" || source === "explicit_restore") {
     return ownership === "recommended";
+  }
+  if (source === "contract_upgrade") {
+    return (
+      ownership === "recommended" || ownership === "explicit_overrides"
+    );
   }
   if (source === "legacy_detected") return ownership === "unknown_legacy";
   return true;

@@ -167,6 +167,56 @@
         "x-napier-source-route": "POST /api/agents/:agentId/capabilities/restore"
       }
     },
+    "/api/agents/{agentId}/capabilities/upgrade": {
+      "post": {
+        "operationId": "post-agents-by-agentId-capabilities-upgrade",
+        "tags": [
+          "agents"
+        ],
+        "summary": "POST /api/agents/{agentId}/capabilities/upgrade",
+        "parameters": [
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/agents/:agentId/capabilities/upgrade"
+      }
+    },
     "/api/agents/{agentId}/revisions": {
       "get": {
         "operationId": "get-agents-by-agentId-revisions",
@@ -15571,7 +15621,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "7e404e735009481d7de0bee2ee81dc33fb51dba7a1c268c186303686e03df794",
-  "x-napier-route-count": 274,
-  "x-napier-route-set-sha256": "d331742ca50be45eab482e08cbdf3e6d049e529eb1e6596bad92bee77b408174"
+  "x-napier-source-sha256": "09f5fc9b5bd51e4da57c6635288b9e5da1c7fb788ad3e6ba74be497cc4a0cd57",
+  "x-napier-route-count": 275,
+  "x-napier-route-set-sha256": "9693efe03582d16d8f859eafc25fd3e0aa44757648676256cf6883b0ab22c896"
 }

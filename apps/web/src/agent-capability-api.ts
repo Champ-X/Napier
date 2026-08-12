@@ -2,6 +2,8 @@ import type {
   EffectiveAgentCapabilityProjectionV1,
   RestoreRecommendedCapabilitiesRequestV1,
   RestoreRecommendedCapabilitiesResultV1,
+  UpgradeRecommendedCapabilitiesRequestV1,
+  UpgradeRecommendedCapabilitiesResultV1,
 } from "@napier/contracts/agent-capability-contract";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
@@ -33,6 +35,16 @@ export function restoreRecommendedAgentCapabilities(
 ): Promise<RestoreRecommendedCapabilitiesResultV1> {
   return requestJson(
     `/api/agents/${encodeURIComponent(agentId)}/capabilities/restore`,
+    { method: "POST", body: JSON.stringify(request) },
+  );
+}
+
+export function upgradeRecommendedAgentCapabilities(
+  agentId: string,
+  request: UpgradeRecommendedCapabilitiesRequestV1,
+): Promise<UpgradeRecommendedCapabilitiesResultV1> {
+  return requestJson(
+    `/api/agents/${encodeURIComponent(agentId)}/capabilities/upgrade`,
     { method: "POST", body: JSON.stringify(request) },
   );
 }

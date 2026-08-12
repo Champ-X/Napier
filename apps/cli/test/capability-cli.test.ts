@@ -99,6 +99,7 @@ describe("Agent capability presets", () => {
       options: {
         workspace: ".",
         presetId: "browser",
+        upgradeRecommended: false,
         restoreRecommended: false,
         apply: false,
         jsonl: true,
@@ -106,7 +107,7 @@ describe("Agent capability presets", () => {
     });
     expect(() =>
       parseCliArgs(["capabilities", "--workspace", ".", "--apply"]),
-    ).toThrow("--apply requires --preset or --restore-recommended");
+    ).toThrow("--apply requires --preset, --upgrade-recommended");
     expect(() =>
       parseCliArgs([
         "capabilities",
@@ -115,7 +116,7 @@ describe("Agent capability presets", () => {
         "--restore-recommended",
         "--apply",
       ]),
-    ).toThrow("Restore apply requires");
+    ).toThrow("Capability apply requires");
     expect(() =>
       parseCliArgs([
         "capabilities",
@@ -124,7 +125,24 @@ describe("Agent capability presets", () => {
         "--expected-revision",
         "1",
       ]),
-    ).toThrow("require --restore-recommended");
+    ).toThrow("require --upgrade-recommended or --restore-recommended");
+    expect(
+      parseCliArgs([
+        "capabilities",
+        "--workspace",
+        ".",
+        "--upgrade-recommended",
+      ]),
+    ).toEqual(
+      expect.objectContaining({
+        kind: "capabilities",
+        options: expect.objectContaining({
+          upgradeRecommended: true,
+          restoreRecommended: false,
+          apply: false,
+        }),
+      }),
+    );
     expect(() =>
       parseCliArgs([
         "capabilities",
@@ -189,6 +207,76 @@ describe("Agent capability presets", () => {
         enabledTools: result.projection.configuredTools,
         enabledSkills: result.projection.configuredSkills,
         enabledSubagents: result.projection.configuredSubagents,
+      }),
+    );
+  });
+
+  it("previews and applies only the exact safe contract upgrade", async () => {
+    const fixture = await createFixture();
+    const previewOut = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "capabilities",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--upgrade-recommended",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, previewOut, new CaptureWritable()),
+        upgradeDependencies(),
+      ),
+    ).toBe(0);
+    const preview = JSON.parse(previewOut.text());
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        action: "upgrade_preview",
+        projection: expect.objectContaining({
+          driftState: "stale",
+          ownership: "explicit_overrides",
+          upgradePreview: expect.objectContaining({
+            sourceContractVersion: 2,
+            targetContractVersion: 3,
+            explicitOverrideFields: ["enabledSkills"],
+          }),
+        }),
+      }),
+    );
+
+    const applyOut = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "capabilities",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--upgrade-recommended",
+          "--expected-revision",
+          "1",
+          "--diff-sha256",
+          preview.projection.upgradePreview.diffSha256,
+          "--apply",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, applyOut, new CaptureWritable()),
+        upgradeDependencies(),
+      ),
+    ).toBe(0);
+    expect(JSON.parse(applyOut.text())).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        action: "upgraded",
+        agentRevision: 2,
+        projection: expect.objectContaining({
+          driftState: "current",
+          ownership: "explicit_overrides",
+          explicitOverrideFields: ["enabledSkills"],
+        }),
       }),
     );
   });
@@ -537,6 +625,69 @@ function postCommitCapabilityMutationDependencies(): RunCliDependencies {
             agentCapabilityPresetUpdate("browser"),
           );
           return committed;
+        },
+      );
+      return services;
+    },
+  };
+}
+
+function upgradeDependencies(): RunCliDependencies {
+  return {
+    async createRuntime(options: LocalAgentRuntimeOptions) {
+      const services = await createLocalAgentRuntime({
+        ...options,
+        sandbox: new UnsupportedSandboxAdapter("capability-cli"),
+      });
+      const current = await services.agentCapabilities.project("agent_napier");
+      const upgradePreview = {
+        schemaVersion: 1 as const,
+        contractId: "napier.default-agent.capabilities" as const,
+        sourceContractVersion: 2,
+        targetContractVersion: 3,
+        sourceRecommendationSha256: "a".repeat(64),
+        targetRecommendationSha256: current.recommendationSha256,
+        agentId: "agent_napier",
+        agentRevision: 1,
+        explicitOverrideFields: ["enabledSkills" as const],
+        currentManagedStateSha256: "b".repeat(64),
+        targetManagedStateSha256: "c".repeat(64),
+        operations: [
+          {
+            field: "enabledTools" as const,
+            operation: "add" as const,
+            value: "skill_load",
+            effect: "read" as const,
+            risk: "low" as const,
+          },
+        ],
+        diffSha256: "d".repeat(64),
+      };
+      const stale = {
+        ...current,
+        driftState: "stale" as const,
+        ownership: "explicit_overrides" as const,
+        explicitOverrideFields: ["enabledSkills" as const],
+        upgradePreview,
+      };
+      vi.spyOn(services.agentCapabilities, "project").mockResolvedValue(stale);
+      vi.spyOn(services.agentCapabilities, "upgrade").mockImplementation(
+        async (_agentId, request) => {
+          expect(request).toEqual({
+            schemaVersion: 1,
+            expectedRevision: 1,
+            diffSha256: "d".repeat(64),
+          });
+          return {
+            schemaVersion: 1,
+            previousRevision: 1,
+            projection: {
+              ...stale,
+              agentRevision: 2,
+              driftState: "current",
+              upgradePreview: undefined,
+            },
+          };
         },
       );
       return services;
