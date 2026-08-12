@@ -4,6 +4,60 @@ This matrix is re-audited from the current repository before each vertical
 slice. It is not a feature wishlist or a substitute for task-success
 benchmarks.
 
+## Completed Slice: Preview-Bound Windows Acceptance Dispatch
+
+User scenario: a release reviewer gets a fail-closed capacity preflight before
+Windows acceptance dispatch, avoids known duplicate active work, and never
+loses track of whether a dispatch request may have succeeded.
+
+Acceptance and threat boundary:
+
+- accept only an explicit 40-character SHA that equals both local `HEAD` and
+  current GitHub `main`;
+- query only `github.com/Champ-X/Napier` with fixed API version, fixed workflow,
+  prompts disabled, and no credential in argv;
+- require the exact runner labels `self-hosted`, `Windows`, `X64`, and
+  `napier-windows-docker`; expose only matching/online/idle counts and a
+  sanitized runner-state hash;
+- query requested, waiting, pending, queued, and in-progress Windows acceptance
+  runs separately. Missing, offline, busy, or already-active capacity returns
+  a hash-bound blocked preview and exit 2 without dispatch;
+- repeat all state checks on exact-preview apply. Dispatch only when at least
+  one matching runner is observed online and idle and no active run exists.
+  Treat this as admission rather than reservation because runner state can
+  change after the read;
+- use the exact run URL returned by `gh workflow run`, then query that run ID
+  and bind repository/head repository, workflow, manual event, `main`, source
+  SHA, attempt, and status;
+- represent a post-request command failure, missing run URL, lookup failure, or
+  identity mismatch as `indeterminate` with exit 3. Never imply the dispatch did
+  not occur; require Actions inspection before retry;
+- retain no raw API response, runner name, actor, log, URL, workspace path, or
+  token. A dispatched result explicitly keeps acceptance and S1 false.
+
+Observed result:
+
+- focused tests cover missing/offline/busy/active capacity, no-dispatch
+  invariants, ready preview, exact dispatch/run binding, stale preview,
+  wrong-main input, duplicate runner identity, missing URL, invalid run
+  identity, command/lookup uncertainty, blocked CLI exit 2, and secret-free
+  output;
+- real GitHub Dogfood against current main returns
+  `status=blocked`, `windows_runner_missing`, matching/online/idle counts 0,
+  exit 2, and creates no workflow run;
+- existing historical Windows runs remain cancelled queue artifacts and are
+  not treated as acceptance evidence; completion workflow run count remains
+  zero;
+- the complete repository gate passes 3,336 regular tests with 46 opt-in live
+  tests skipped by default: Root 367, CLI 259, Server 217, Web 682, Contracts
+  124, Runtime 1,608, and SDK 79. Architecture audits 1,249 source files and 653
+  test files with zero cycles. Product performance passes at 552.6 ms to first
+  CLI event, 700.3 ms to first token, 1,027.4 ms to completion, 0.3 ms read p95,
+  4.2 ms for a 1,000-event projection, and 727.723 bytes per SQLite event;
+- `blocked externally`: no matching Windows x64 Docker Desktop runner exists,
+  and GHCR anonymous access remains 401. This slice prevents misleading queue
+  growth but does not manufacture either authority.
+
 ## Completed Slice: Transactional External Release Intake
 
 User scenario: after an administrator completes the public signed release

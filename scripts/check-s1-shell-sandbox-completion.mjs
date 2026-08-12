@@ -43,6 +43,14 @@ export async function s1ShellSandboxCompletionImplementation(repoRoot) {
     promotionModel: "scripts/sandbox-external-release-promotion.mjs",
     promotionCheck: "scripts/check-sandbox-external-release-promotion.mjs",
     retainedReleaseCheck: "scripts/check-sandbox-retained-external-release.mjs",
+    windowsDispatchModel:
+      "scripts/windows-host-product-acceptance-dispatch.mjs",
+    windowsDispatchState:
+      "scripts/windows-host-product-acceptance-dispatch-state.mjs",
+    windowsDispatchIo:
+      "scripts/windows-host-product-acceptance-dispatch-io.mjs",
+    windowsDispatchCheck:
+      "scripts/check-windows-host-product-acceptance-dispatch.mjs",
     windowsChecker: "scripts/check-windows-host-product-acceptance.mjs",
     windowsModel: "scripts/windows-host-product-acceptance-artifact.mjs",
   };

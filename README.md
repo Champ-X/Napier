@@ -7195,6 +7195,38 @@ currently registered, so `windowsHostProductAcceptance` remains pending until
 a successful uploaded receipt passes the verifier. The repository deliberately
 does not retain a synthetic or pending receipt.
 
+Before dispatching, use the preview-bound capacity gate:
+
+```bash
+npm run dispatch:windows-host-product-acceptance -- \
+  --source-sha <exact-current-main-sha>
+
+npm run dispatch:windows-host-product-acceptance -- \
+  --source-sha <exact-current-main-sha> \
+  --expected-preview <preview-content-sha256> \
+  --apply
+```
+
+Preview requires local `HEAD` and GitHub `main` to equal the supplied SHA,
+queries only the fixed `github.com/Champ-X/Napier` runner and workflow
+endpoints, and hashes a sanitized runner-capacity projection. It returns
+`blocked` with exit 2 when the four-label runner is missing, offline, busy, or
+an earlier Windows acceptance run is requested, waiting, pending, queued, or
+in progress; no workflow is dispatched in those observed states.
+
+Apply repeats the same checks and rejects a stale preview. It dispatches only
+when the immediate preflight observes at least one matching runner online and
+idle and no active acceptance run. Runner state may change after that read, so
+this is a fail-closed admission check rather than a reservation protocol. The
+returned result binds the exact new workflow run ID and source SHA when GitHub
+returns and verifies that identity. A timeout, missing URL, or
+identity mismatch after the dispatch request returns an `indeterminate` result
+with exit 3 and a fixed recovery code rather than claiming that no dispatch
+occurred. The operator must inspect the Actions run list before retrying.
+Runner names, raw API responses, actors, logs, URLs, workspace paths, and token
+values are not retained. A `dispatched` result is scheduling evidence only; it
+does not satisfy Windows acceptance or S1.
+
 The repository also carries a manual external publication gate at
 `.github/workflows/publish-sandbox.yml`:
 

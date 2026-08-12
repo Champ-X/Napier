@@ -9561,6 +9561,38 @@ readiness + external publication + Windows host
   -> S2 may begin
 ```
 
+Windows scheduling has a separate preview-bound capacity boundary:
+
+```text
+explicit current-main SHA
+  -> require local HEAD == GitHub main == input SHA
+  -> read fixed repository runner inventory
+  -> project only matching/online/idle counts + state hash
+  -> read requested/waiting/pending/queued/in-progress acceptance runs
+  -> blocked: missing/offline/busy/active, no dispatch
+  -> ready: exact preview SHA
+  -> repeat all checks
+  -> gh workflow run returns exact run URL
+  -> query that run ID and bind workflow/repository/branch/source
+  -> dispatched result, still windowsHostProductAcceptance=false
+```
+
+`windows-host-product-acceptance-dispatch.mjs` owns this control-plane
+transaction. Runner names and identities are reduced to a hash-bound state;
+only the required label set and counts are public. GitHub API and workflow
+commands are fixed to `github.com/Champ-X/Napier`, use a minimal environment,
+disable prompts, and never place a token in argv. The gate refuses dispatch
+when its immediate preflight observes no online idle capacity or an active
+acceptance run. It does not reserve the runner; capacity may change after the
+read and the workflow's exact labels remain the authoritative queue boundary.
+
+The dispatch request itself is not safely reversible. If GitHub accepts it but
+the CLI cannot obtain or verify the exact run identity, the result is
+`indeterminate` with a fixed recovery code and `dispatchOutcomeKnown=false`;
+the operator must inspect Actions before retrying. A verified dispatch remains
+only scheduling evidence. The separate Windows workflow must complete and its
+semantic receipt and run authority must still pass before S1 completion.
+
 The external publication is promoted before Windows acceptance rather than
 remaining only in a transient Actions artifact:
 
