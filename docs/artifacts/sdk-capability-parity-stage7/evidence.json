@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "fbec218d2dd62f30317223b5242f083ca67661bce0faa0fc3e81e8d64f3681d6",
+      "stdoutSha256": "8d373f201f36c1c522dd89276be16297fe55c68928d57d75eeec7db3da0c2382",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "5b3945a29e360f8ecf046b0fb29e1ae40627d6fb54e91209bd602bd0eb2fe576",
-      "receiptSha256": "78948eac2cde263ea73af28dc3ba2c455e65a7be18502df17cd106fe5eda4153"
+      "evidenceSha256": "054e38fd55e9afeee2c39341f15ada41a8bb4c1cb7f85eb6bfb03f85ca43d79b",
+      "receiptSha256": "c40cef5584dbc79b22d51a28c5fb64e6544cb709b23727cf3e0c0c57793450c5"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "87f1f9afcf727194dd880468967235dd554cb7ccc49fb4cc2cf3cb21ff3b85f6",
+      "stdoutSha256": "2c82d4e39ef0bf2e8b8dc9b6f5e47d05556a6be95de5834b831a8305ce423104",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "43d9278ba5525d0a98ba5d25b55298eb1fd89ee008490b0b5442b983a46668f5",
-      "receiptSha256": "162389021593b3148efbb7a3ac1b8f68276e1fbe9de91748b568bfd7e70efa1a"
+      "evidenceSha256": "7a740dc7d40f635b0bad991f8e3aa84f70b69e5db8739bb682cf3c60d2744036",
+      "receiptSha256": "2380cfa75696dd2632289fb116e1e6abfb0a20734f76b8f97baf0ed2c09ebcf2"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -532,6 +532,7 @@
         "apps/cli/test/tui-cli.test.ts",
         "apps/cli/test/tui-pty.test.ts",
         "apps/cli/test/tui-terminal.test.ts",
+        "apps/cli/test/workflow-benchmark-long-horizon.test.ts",
         "apps/server/src/agent-capability-http.ts",
         "apps/server/src/app.ts",
         "apps/server/src/bootstrap-http.ts",
@@ -1394,6 +1395,10 @@
           "sha256": "230978485082e61e25bb71988fcf65941f8640ed8ef84f01b8a4cdddeba128d5",
           "lines": 243
         },
+        "apps/cli/test/workflow-benchmark-long-horizon.test.ts": {
+          "sha256": "757fde540c62cacce4b3e4f0838f7e73363504231ce9ea70f0059015a006b015",
+          "lines": 751
+        },
         "apps/server/src/agent-capability-http.ts": {
           "sha256": "92cadbfbea92dab40b253ae54ef1ee19d32d1cfedaf40d328f1c3099e8dd4678",
           "lines": 163
@@ -2147,7 +2152,7 @@
           "lines": 235
         },
         "docs/artifacts/prompt-regression-matrix-0.1.0.json": {
-          "sha256": "950088298d1f40de22f8f95895846960a43ba8da32910d3a26cc31d8055c2ae3",
+          "sha256": "b39c3ce992d9c6d00cd71da5b8ee1c382bb3dc19b95cfb9de7b645b7f5aa0fa2",
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
@@ -2203,11 +2208,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "5b3945a29e360f8ecf046b0fb29e1ae40627d6fb54e91209bd602bd0eb2fe576",
+          "sha256": "054e38fd55e9afeee2c39341f15ada41a8bb4c1cb7f85eb6bfb03f85ca43d79b",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "43d9278ba5525d0a98ba5d25b55298eb1fd89ee008490b0b5442b983a46668f5",
+          "sha256": "7a740dc7d40f635b0bad991f8e3aa84f70b69e5db8739bb682cf3c60d2744036",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -4084,7 +4089,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "56c46a7e297cf0c5101401dc7adf30cd55e8a5970605345120b0782205bb5077"
+      "manifestSha256": "0d84569ff9570e5b6ce3102643e737a5fccb030506093c76caba2f25438907eb"
     },
     "executionClosure": {
       "algorithm": {
@@ -19858,7 +19863,7 @@
       ],
       "manifestSha256": "da80be857cfc984cb08ed42636c5ee77cbc96028e038342a980abc7f9bd47b5d"
     },
-    "manifestSha256": "c72394c2b3e36d6e2e238f6bafa4464d4454d81252aca8cc817edd2828b62404"
+    "manifestSha256": "705a2f4004354ae134d957220e81fe1931c16b094e85c457af932ebddc543793"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -20046,11 +20051,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "5b3945a29e360f8ecf046b0fb29e1ae40627d6fb54e91209bd602bd0eb2fe576"
+      "sha256": "054e38fd55e9afeee2c39341f15ada41a8bb4c1cb7f85eb6bfb03f85ca43d79b"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "43d9278ba5525d0a98ba5d25b55298eb1fd89ee008490b0b5442b983a46668f5"
+      "sha256": "7a740dc7d40f635b0bad991f8e3aa84f70b69e5db8739bb682cf3c60d2744036"
     }
   }
 }

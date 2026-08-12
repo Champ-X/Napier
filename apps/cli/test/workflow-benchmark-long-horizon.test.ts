@@ -650,9 +650,21 @@ function longHorizonProvider(responseCount: number) {
 }
 
 function blockedLongHorizonProvider() {
-  const provider = fauxProvider({ provider: "faux-long-horizon" });
+  const provider = fauxProvider({
+    provider: "faux-long-horizon",
+    tokenSize: { min: 10_000, max: 10_000 },
+  });
+  let batch: Array<() => void> = [];
+  const respond = () =>
+    new Promise<ReturnType<typeof fauxAssistantMessage>>((resolve) => {
+      batch.push(() => resolve(fauxAssistantMessage("not typed JSON")));
+      if (batch.length !== 3) return;
+      const ready = batch;
+      batch = [];
+      for (const release of ready) release();
+    });
   provider.setResponses(
-    Array.from({ length: 6 }, () => fauxAssistantMessage("not typed JSON")),
+    Array.from({ length: 6 }, () => respond),
   );
   return provider;
 }
