@@ -1472,6 +1472,8 @@ async function createFixture() {
     "scripts/check-s1-upstream-run-authority.mjs",
     "scripts/s1-completion-source-authority.mjs",
     "scripts/s1-promoted-release-verification.mjs",
+    "scripts/sandbox-external-release-intake.mjs",
+    "scripts/check-sandbox-external-release-intake.mjs",
     "scripts/sandbox-external-release-promotion.mjs",
     "scripts/check-sandbox-external-release-promotion.mjs",
     "scripts/check-sandbox-retained-external-release.mjs",

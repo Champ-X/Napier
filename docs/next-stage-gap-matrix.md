@@ -4,6 +4,63 @@ This matrix is re-audited from the current repository before each vertical
 slice. It is not a feature wishlist or a substitute for task-success
 benchmarks.
 
+## Completed Slice: Transactional External Release Intake
+
+User scenario: after an administrator completes the public signed release
+workflow, a reviewer can promote that exact Actions artifact into the Runtime
+package with one preview-bound command instead of manually downloading raw API
+responses, assembling authority JSON, and preserving a temporary evidence tree.
+
+Acceptance and threat boundary:
+
+- accept only an explicit 40-character release source SHA and positive workflow
+  run ID for `Champ-X/Napier`;
+- query the fixed run and artifact REST endpoints through authenticated `gh`
+  read operations with prompts disabled and no credential in argv;
+- reuse the strict upstream authority model: exact repository/head repository,
+  manual event, completed-success run, `main`, workflow path, source SHA, run
+  attempt, and one unexpired nonempty exact-name artifact must agree;
+- construct the sanitized authority from in-memory raw responses. Persist
+  neither raw response, actor, URL, logs, nor token;
+- download only that artifact into a private temporary root; require the exact
+  nine-file evidence set as bounded regular non-symlink files;
+- feed the evidence into the existing strict publication verifier and
+  promotion transaction. Bind the expected promotion-result hash into intake
+  preview so apply cannot substitute another valid-looking result;
+- remove the complete temporary root after preview, success, stale preview,
+  command failure, malformed authority, unexpected file, evidence tampering,
+  or promotion rollback;
+- keep the retained receipt/authority/Runtime package CAS and three-way parity
+  contract unchanged. Intake never claims S1 completion.
+
+Observed result:
+
+- focused intake, promotion, authority, aggregate, and release-audit tests cover
+  81 cases across create, unchanged, stale preview, bootstrap/no-artifact
+  rejection, malformed authority, unexpected files, evidence tampering, result
+  binding, promotion failure, cleanup failure with three-target rollback, and
+  hash-only CLI errors;
+- real GitHub Dogfood against successful bootstrap run `31603935014` correctly
+  rejects it before download because the run intentionally has no signed
+  release artifact; stdout remains empty, stderr contains only a fixed
+  diagnostic hash, and no temporary intake root remains;
+- current built Setup reports `ready` and `local_verified`; online Doctor passes
+  13 checks with only the optional model warning. Shell, Python, Git/LSP/DAP,
+  verifier CLIs, service projection, Sandbox boundaries, Search, Fetch, and
+  sandboxed Browser all execute through production paths;
+- production Web at 1,440×900 shows `SANDBOX READY` for temporary Coding,
+  preserves the persisted revision-16 read-only Agent, has zero horizontal
+  overflow, and creates no profile revision merely by changing task mode;
+- the complete repository gate passes 3,327 regular tests with 46 opt-in live
+  tests skipped by default: Root 358, CLI 259, Server 217, Web 682, Contracts
+  124, Runtime 1,608, and SDK 79. Architecture audits 1,249 source files and 653
+  test files with zero cycles. Product performance passes at 548.7 ms to first
+  CLI event, 693.3 ms to first token, 1,015.5 ms to completion, 0.3 ms read p95,
+  4.3 ms for a 1,000-event projection, and 729.088 bytes per SQLite event;
+- `blocked externally`: GHCR remains private and anonymous token acquisition
+  returns 401; no `napier-windows-docker` runner exists. Intake closes the
+  operator bridge but does not manufacture either external authority.
+
 ## Implemented Control Plane: Real Windows Docker Host Acceptance
 
 User scenario: a release reviewer can dispatch one exact current `main` commit

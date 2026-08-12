@@ -7296,28 +7296,34 @@ is produced only after `status=complete`, an empty blocker set, and
 `s1Complete=true`.
 
 The signed release must be promoted into the product before S1 can complete.
-After downloading the release evidence and creating its sanitized run-authority
-JSON, use the exact-preview transaction:
+The normal operator path accepts only the explicit successful GitHub Actions
+run ID, queries the run and artifact list through authenticated `gh` read
+operations, constructs the existing sanitized authority in memory, downloads
+only the exact source-addressed release artifact into a private temporary
+directory, and feeds it into the same exact-preview promotion transaction:
 
 ```bash
-npm run promote:sandbox-external-release -- \
+npm run intake:sandbox-external-release -- \
   --source-sha <release-source-sha> \
-  --expected-run-id <release-run-id> \
-  --evidence-dir <downloaded-release-evidence-directory> \
-  --authority-path <sanitized-external-publication-authority.json>
+  --expected-run-id <release-run-id>
 
-npm run promote:sandbox-external-release -- \
+npm run intake:sandbox-external-release -- \
   --source-sha <release-source-sha> \
   --expected-run-id <release-run-id> \
-  --evidence-dir <downloaded-release-evidence-directory> \
-  --authority-path <sanitized-external-publication-authority.json> \
   --expected-preview <preview-content-sha256> \
   --apply
 ```
 
-Preview verifies the complete release evidence, GitHub run authority, and
-current Docker context without mutation. Apply CAS-checks the retained receipt,
-retained authority, and Runtime package bytes, then atomically writes
+The intake rejects bootstrap/failed/queued/forked/expired/wrong-SHA runs,
+duplicate or oversized artifacts, unexpected files, symlinks, and evidence
+tampering. Raw API responses, the downloaded artifact, download URLs, actor
+identity, logs, token values, and temporary paths are never retained and the
+private temporary directory is removed on success or failure. Preview verifies
+the complete release evidence, GitHub run authority, current Docker context,
+and expected promotion-result hash without repository mutation. Apply
+re-downloads and re-verifies the immutable artifact, requires the same intake
+preview, CAS-checks the retained receipt, retained authority, and Runtime
+package bytes, then atomically writes
 `docs/artifacts/sandbox-external-publication-0.1.0.json` and its sanitized
 authority and copies the exact receipt into the Runtime package. Copy or
 verification failure restores all prior bytes. Then rebuild the release set,

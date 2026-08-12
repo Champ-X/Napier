@@ -9565,16 +9565,32 @@ The external publication is promoted before Windows acceptance rather than
 remaining only in a transient Actions artifact:
 
 ```text
-download complete external release evidence + sanitized run authority
+explicit successful release run ID + release source SHA
+  -> read-only gh run/artifact API queries
+  -> construct strict sanitized authority in memory
+  -> download only the exact source-addressed artifact to private temp
+  -> reject unexpected files, symlinks, oversize, or evidence drift
   -> strict preview: evidence + authority + current Docker context
+  -> bind the expected promotion-result hash
   -> bind retained receipt/authority/package before hashes
-  -> exact preview SHA apply
+  -> remove all raw API/download/temp material
+  -> exact intake preview SHA apply with a fresh verified download
   -> atomically write retained receipt + retained authority
   -> copy exact receipt into Runtime package
   -> verify three-way byte parity
   -> rollback all three targets on any failure
   -> commit the reviewed promotion
 ```
+
+`sandbox-external-release-intake.mjs` owns the read-only GitHub Actions intake.
+It invokes `gh` with fixed argv, a minimal inherited environment, disabled
+prompts, explicit repository/run/artifact identity, and no token in argv. Raw
+API objects remain in memory only; only the pre-existing sanitized authority is
+written under a mode-0600 temporary root. The downloaded artifact must contain
+the exact bounded evidence file set as regular non-symlink files. Preview and
+apply each remove the entire temporary root in `finally`, and apply cannot
+accept a preview unless the independently derived promotion-result hash still
+matches.
 
 `sandbox-external-release-promotion.mjs` owns this transaction. The repository
 retains the semantic receipt and sanitized authority under fixed artifact

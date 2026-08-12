@@ -237,6 +237,7 @@ export async function applySandboxExternalReleasePromotion(options) {
         )}`,
       );
     }
+    await options.finalize?.(result);
     return result;
   } catch (error) {
     await restoreFile(retainedPath, retainedBackup);
@@ -331,21 +332,7 @@ export function validateSandboxExternalReleasePromotionPreview(value) {
 
 export function validateSandboxExternalReleasePromotionResult(value, preview) {
   const errors = [];
-  const { contentSha256: _previewContentSha256, ...previewContent } = preview;
-  const expectedContent = {
-    ...previewContent,
-    kind: EXTERNAL_RELEASE_PROMOTION_RESULT_KIND,
-    action: preview.action,
-    packagedSha256: preview.packagedAfterSha256,
-    scope: {
-      promotionOnly: true,
-      retainedReceiptValidated: true,
-      packageParityRequired: true,
-      packageParityVerified: true,
-      s1Complete: false,
-    },
-    previewSha256: preview.contentSha256,
-  };
+  const expectedContent = sandboxExternalReleasePromotionResultContent(preview);
   if (
     !record(value) ||
     !exactKeys(value, [...Object.keys(expectedContent), "contentSha256"]) ||
@@ -364,6 +351,30 @@ export function validateSandboxExternalReleasePromotionResult(value, preview) {
     errors.push("Sandbox external release promotion result hash is invalid");
   }
   return errors;
+}
+
+export function expectedSandboxExternalReleasePromotionResultSha256(preview) {
+  return sha256(
+    canonicalJson(sandboxExternalReleasePromotionResultContent(preview)),
+  );
+}
+
+function sandboxExternalReleasePromotionResultContent(preview) {
+  const { contentSha256: _previewContentSha256, ...previewContent } = preview;
+  return {
+    ...previewContent,
+    kind: EXTERNAL_RELEASE_PROMOTION_RESULT_KIND,
+    action: preview.action,
+    packagedSha256: preview.packagedAfterSha256,
+    scope: {
+      promotionOnly: true,
+      retainedReceiptValidated: true,
+      packageParityRequired: true,
+      packageParityVerified: true,
+      s1Complete: false,
+    },
+    previewSha256: preview.contentSha256,
+  };
 }
 
 async function existingFile(filePath) {

@@ -38,6 +38,8 @@ export async function s1ShellSandboxCompletionImplementation(repoRoot) {
     runAuthorityCheck: "scripts/check-s1-upstream-run-authority.mjs",
     sourceAuthority: "scripts/s1-completion-source-authority.mjs",
     promotedRelease: "scripts/s1-promoted-release-verification.mjs",
+    intakeModel: "scripts/sandbox-external-release-intake.mjs",
+    intakeCheck: "scripts/check-sandbox-external-release-intake.mjs",
     promotionModel: "scripts/sandbox-external-release-promotion.mjs",
     promotionCheck: "scripts/check-sandbox-external-release-promotion.mjs",
     retainedReleaseCheck: "scripts/check-sandbox-retained-external-release.mjs",
