@@ -17,6 +17,7 @@ import { verifySandboxOciSupplyChain } from "./check-sandbox-oci-supply-chain.mj
 import { verifyLinuxHostProductAcceptance } from "./check-linux-host-product-acceptance.mjs";
 import { verifySandboxAcquisition } from "./check-sandbox-acquisition.mjs";
 import { verifyProfileUpgrade } from "./check-profile-upgrade.mjs";
+import { verifyS1ShellSandboxReadiness } from "./check-s1-shell-sandbox-completion.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -88,8 +89,9 @@ const defaultLinuxHostProductAcceptancePath =
   "docs/artifacts/linux-host-product-acceptance-stage19.json";
 const defaultSandboxAcquisitionPath =
   "docs/artifacts/sandbox-acquisition-stage20.json";
-const defaultProfileUpgradePath =
-  "docs/artifacts/profile-upgrade-stage21.json";
+const defaultProfileUpgradePath = "docs/artifacts/profile-upgrade-stage21.json";
+const defaultS1ShellSandboxReadinessPath =
+  "docs/artifacts/s1-shell-sandbox-readiness-stage22.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -191,6 +193,8 @@ export async function auditReleaseArtifacts(options = {}) {
     options.sandboxAcquisitionPath ?? defaultSandboxAcquisitionPath;
   const profileUpgradePath =
     options.profileUpgradePath ?? defaultProfileUpgradePath;
+  const s1ShellSandboxReadinessPath =
+    options.s1ShellSandboxReadinessPath ?? defaultS1ShellSandboxReadinessPath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -728,6 +732,18 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const s1ShellSandboxReadinessVerification =
+    await verifyS1ShellSandboxReadiness({
+      repoRoot,
+      artifactPath: s1ShellSandboxReadinessPath,
+    });
+  if (!s1ShellSandboxReadinessVerification.valid) {
+    errors.push(
+      ...s1ShellSandboxReadinessVerification.errors.map(
+        (error) => `S1 Shell/Sandbox readiness: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -844,6 +860,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: profileUpgradeVerification.path,
       sha256: profileUpgradeVerification.sha256,
       valid: profileUpgradeVerification.valid,
+    },
+    {
+      kind: "s1-shell-sandbox-readiness-stage22",
+      path: s1ShellSandboxReadinessVerification.path,
+      sha256: s1ShellSandboxReadinessVerification.sha256,
+      valid: s1ShellSandboxReadinessVerification.valid,
     },
     {
       kind: "product-performance-baseline",

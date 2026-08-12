@@ -1,0 +1,117 @@
+name: S1 Shell Sandbox Completion
+
+run-name: S1 Shell Sandbox completion @ ${{ inputs.source_sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact 40-character main-branch commit to complete
+        required: true
+        type: string
+      external_publication_run_id:
+        description: Successful exact-SHA public release workflow run ID
+        required: true
+        type: string
+      windows_host_run_id:
+        description: Successful exact-SHA Windows host workflow run ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: s1-shell-sandbox-completion
+  cancel-in-progress: false
+
+jobs:
+  complete:
+    if: github.repository == 'Champ-X/Napier' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out the exact source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify the dispatch source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          EXTERNAL_PUBLICATION_RUN_ID: ${{ inputs.external_publication_run_id }}
+          WINDOWS_HOST_RUN_ID: ${{ inputs.windows_host_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "${SOURCE_SHA}" =~ ^[a-f0-9]{40}$ ]]
+          [[ "${EXTERNAL_PUBLICATION_RUN_ID}" =~ ^[1-9][0-9]*$ ]]
+          [[ "${WINDOWS_HOST_RUN_ID}" =~ ^[1-9][0-9]*$ ]]
+          test "${GITHUB_SHA}" = "${SOURCE_SHA}"
+          test "$(git rev-parse HEAD)" = "${SOURCE_SHA}"
+          test "$(git rev-parse origin/main)" = "${SOURCE_SHA}"
+          git diff --exit-code
+          git diff --cached --exit-code
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.16.0
+          cache: npm
+
+      - name: Install the locked workspace
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify local S1 readiness
+        run: npm run check:s1-shell-sandbox-completion
+
+      - name: Download the exact external publication evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: sandbox-external-publication-${{ inputs.source_sha }}
+          path: upstream/external-publication
+          repository: Champ-X/Napier
+          run-id: ${{ inputs.external_publication_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Download the exact Windows host receipt
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: napier-windows-host-product-acceptance-${{ inputs.source_sha }}
+          path: upstream/windows-host
+          repository: Champ-X/Napier
+          run-id: ${{ inputs.windows_host_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Aggregate and verify S1 completion
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p completion-output
+          node scripts/check-s1-shell-sandbox-completion.mjs \
+            --source-sha "${SOURCE_SHA}" \
+            --external-publication-run-id "${{ inputs.external_publication_run_id }}" \
+            --windows-host-run-id "${{ inputs.windows_host_run_id }}" \
+            --external-publication-dir upstream/external-publication \
+            --windows-receipt upstream/windows-host/napier-windows-host-product-acceptance.json \
+            --completion-path completion-output/s1-shell-sandbox-completion.json
+          jq -e \
+            'select(.status == "complete" and .scope.s1Complete == true and (.blockers | length) == 0)' \
+            completion-output/s1-shell-sandbox-completion.json \
+            >/dev/null
+
+      - name: Upload the completed S1 receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: napier-s1-shell-sandbox-completion-${{ inputs.source_sha }}
+          path: completion-output/s1-shell-sandbox-completion.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Remove downloaded and generated evidence
+        if: always()
+        run: |
+          rm -rf upstream completion-output

@@ -486,6 +486,7 @@
       "relativeTo": "d81f77b64998fd786aa7a514f53494adb255e1e5",
       "changedPaths": [
         ".github/workflows/publish-sandbox.yml",
+        ".github/workflows/s1-shell-sandbox-completion.yml",
         ".github/workflows/windows-host-product-acceptance.yml",
         "README.md",
         "apps/cli/package.json",
@@ -729,6 +730,7 @@
         "docs/artifacts/prompt-regression-matrix-0.1.0.json",
         "docs/artifacts/release-artifacts-audit-0.1.0.json",
         "docs/artifacts/runtime-environment-audit-0.1.0.json",
+        "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
         "docs/artifacts/sandbox-acquisition-stage20.json",
         "docs/artifacts/sandbox-image-provenance-0.1.0.json",
         "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
@@ -1108,6 +1110,10 @@
         "scripts/check-release-artifacts.test.mjs",
         "scripts/check-runtime-environment.mjs",
         "scripts/check-runtime-environment.test.mjs",
+        "scripts/check-s1-shell-sandbox-completion-workflow.mjs",
+        "scripts/check-s1-shell-sandbox-completion-workflow.test.mjs",
+        "scripts/check-s1-shell-sandbox-completion.mjs",
+        "scripts/check-s1-shell-sandbox-completion.test.mjs",
         "scripts/check-sandbox-acquisition.mjs",
         "scripts/check-sandbox-acquisition.test.mjs",
         "scripts/check-sandbox-external-release-workflow.mjs",
@@ -1168,6 +1174,8 @@
         "scripts/run-standard-skill-directory-dogfood.mjs",
         "scripts/run-standard-skill-directory-dogfood.test.mjs",
         "scripts/run-web-ui-e2e.mjs",
+        "scripts/s1-shell-sandbox-completion-artifact.mjs",
+        "scripts/s1-shell-sandbox-local-evidence.mjs",
         "scripts/sandbox-acquisition-acceptance.mjs",
         "scripts/sandbox-acquisition-artifact.mjs",
         "scripts/sandbox-acquisition-support.mjs",
@@ -1222,13 +1230,17 @@
           "sha256": "ffede8c7f999f0ecd55b03c4804e59e99382c5e92bdf863f10565c4fb3a73d6d",
           "lines": 483
         },
+        ".github/workflows/s1-shell-sandbox-completion.yml": {
+          "sha256": "108e71343b3bd62ed412070dd3d03814cb057d6882a025ab2f6671d1822b4de9",
+          "lines": 117
+        },
         ".github/workflows/windows-host-product-acceptance.yml": {
           "sha256": "e300332bf0d4ee8f638121d50ec4b7767c152af64b73452abb21d7e4d8ed9e6a",
           "lines": 279
         },
         "README.md": {
-          "sha256": "ad9645c3d748e4d4bd92132c520d26d07e9aca5914a647a449b2cb6c044eb584",
-          "lines": 7308
+          "sha256": "128754a16fcbb9eda721f5711d38479fdb63735c02a2ba91cd6f891cb3992722",
+          "lines": 7342
         },
         "apps/cli/package.json": {
           "sha256": "10827e621b79325d37d27b5c4fbec4fbfa2dd5af2eb641aaf034d4926e3e38c4",
@@ -2067,8 +2079,8 @@
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "266764f08d2f36b29f0d617941b8a4ee5e773dda12f4adf296a09b913f71a48e",
-          "lines": 9532
+          "sha256": "9dfbb11d210d9befb87a3a11df15e047a30baafdc2b721fe25ecde369500ebe8",
+          "lines": 9580
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -2167,7 +2179,7 @@
           "lines": 62
         },
         "docs/artifacts/package-lock-audit-0.1.0.json": {
-          "sha256": "6c9118411ab59abc602297aa2ffc43bd56b2874ebdf5cb514f031c2a1498cacf",
+          "sha256": "90e79a49aa9aa8c5880d8486e2f57582d3caf35311c0cbec6bd3121fbf79e9ee",
           "lines": 20
         },
         "docs/artifacts/product-performance-baseline-0.1.0.json": {
@@ -2183,12 +2195,16 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "8fba1d5f6f0acf96fc1f201a5abb6bfa8629efae8fed5a0420639a5e4b0f010e",
-          "lines": 955
+          "sha256": "7b7ed6664ebc9f4ecfebe6e467aae088b9bd88afe4816a092d774477d05e0d94",
+          "lines": 961
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
-          "sha256": "83d3f03712602ae9fe26f4c609c67ee735d880654d16aa7ea2563617d5964944",
+          "sha256": "55270aa1f570a6bcfc050b4d8d35e8f01c3248e911d031616349f1eac5f08453",
           "lines": 36
+        },
+        "docs/artifacts/s1-shell-sandbox-readiness-stage22.json": {
+          "sha256": "952d88c25a67f0ba629f784b159cbc2481aac92ce2fff9434956c577a595a37c",
+          "lines": 208
         },
         "docs/artifacts/sandbox-acquisition-stage20.json": {
           "sha256": "b63977e1ac7f64d4fa1d1cb1ddbadb06697741411bbaab29441840128d0e7bf1",
@@ -2287,8 +2303,8 @@
           "lines": 204
         },
         "docs/next-stage-gap-matrix.md": {
-          "sha256": "a0e57e057a47c487e4b469b9e8f73bf048d10522ebaab375a7974e0cc5696dc8",
-          "lines": 12536
+          "sha256": "041d9be9948a000af08b48931b2753005732f059b2b0e1fdcdc282077ad04183",
+          "lines": 12600
         },
         "docs/product-performance-budget.json": {
           "sha256": "6c238cf77336d87462dda69341bd08bccf18f38543422af4f65c6a4600728966",
@@ -2299,8 +2315,8 @@
           "lines": 4325
         },
         "package.json": {
-          "sha256": "373f1d7a972178f44ac42b3117a80062ed07c3e698d203ead66230b28f40f9fe",
-          "lines": 136
+          "sha256": "96155301ff249fef020b862c1eae5f1144795f2c44d16a74bfe6412087c6af90",
+          "lines": 139
         },
         "packages/contracts/package.json": {
           "sha256": "30e57303e4c41397940da5f51613af40baf7244f3d8d917b30ffe98e00c5cd1a",
@@ -3675,12 +3691,12 @@
           "lines": 134
         },
         "scripts/check-release-artifacts.mjs": {
-          "sha256": "e78b2a27d294b31ce48beb15452ef1d04726f2acf0cd4090d1b9f01323f2c749",
-          "lines": 1945
+          "sha256": "872eb7191d60d5c740c480342f8ba2c3e897c00a5822099db10b72fcb9ea3fcc",
+          "lines": 1967
         },
         "scripts/check-release-artifacts.test.mjs": {
-          "sha256": "81d501b5237481ac941cdbb729de2880264eca813db8928862d6527a22393b33",
-          "lines": 1841
+          "sha256": "9c1b07cb14ab77ed26ae03d964f3fd6cd7a398bd551599e27833d72bc0a9a7fb",
+          "lines": 1884
         },
         "scripts/check-runtime-environment.mjs": {
           "sha256": "f9f123024ea489666a92986025e422d6031dc3a80407ce58e979857d1d83fafc",
@@ -3689,6 +3705,22 @@
         "scripts/check-runtime-environment.test.mjs": {
           "sha256": "dbaec307757ef85b0d331e7e04a3fbc0df821c2253005ae2d0d4d90152e5fea6",
           "lines": 343
+        },
+        "scripts/check-s1-shell-sandbox-completion-workflow.mjs": {
+          "sha256": "412d6806e559589b4c9b712ceae38b2f6efe3647531f99a7597b4a5d81c7b69f",
+          "lines": 258
+        },
+        "scripts/check-s1-shell-sandbox-completion-workflow.test.mjs": {
+          "sha256": "feb6967a95685670d779471d911fa61244e4789cb9a100d28e2e5344ac0b5453",
+          "lines": 100
+        },
+        "scripts/check-s1-shell-sandbox-completion.mjs": {
+          "sha256": "d1356aa5843d83fb5c8982204f43d37d0e72075a484c5b54da862670da10d41e",
+          "lines": 395
+        },
+        "scripts/check-s1-shell-sandbox-completion.test.mjs": {
+          "sha256": "366de97ecd32bea0ec44b8c4741a3884c7e840a2e5ba66beb26392c5fe53ec09",
+          "lines": 558
         },
         "scripts/check-sandbox-acquisition.mjs": {
           "sha256": "51c3333b5a08075030a5530a6c8468a14156da58fdbf98be74dbd4e7ef3e308f",
@@ -3930,6 +3962,14 @@
           "sha256": "b6d6f9916703c19b74b4829f7267cccd55c7a68afc9665804e85cde5030cc72e",
           "lines": 511
         },
+        "scripts/s1-shell-sandbox-completion-artifact.mjs": {
+          "sha256": "b06fee6a7b6115ee39facfcede92958f33d8d9a50b686c6e2eb34c013ec0c91b",
+          "lines": 471
+        },
+        "scripts/s1-shell-sandbox-local-evidence.mjs": {
+          "sha256": "eb1a8d2bcfc139edf8912e6957e0342903cf82613845263e15f047ea8747e37b",
+          "lines": 176
+        },
         "scripts/sandbox-acquisition-acceptance.mjs": {
           "sha256": "f0ad38659d290443454fd87ccbf59e8534156ee1c982e45cc567c0ee7e345888",
           "lines": 430
@@ -4144,7 +4184,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "49d5a0205cdd25d979f3329ba36fb4193f4c824f177265cc82764e6905f3c901"
+      "manifestSha256": "bfdd6d6b083790d12bfb9dddd15a134ee784bdd92c61f8315a7adeae1333f815"
     },
     "executionClosure": {
       "algorithm": {
@@ -19938,7 +19978,7 @@
       ],
       "manifestSha256": "32431a8203f28c5e559f5c6c1947cb08f2925a8e11fc066ab646b8401b1df44d"
     },
-    "manifestSha256": "d4e3b9b4ece37d91835933532d4d0b351fe8590d8860aeb74f8bf41d6096f2e6"
+    "manifestSha256": "6b4b00f17370f5ae6882b33f8ec0eb97ac43a2d63394f4a69e3e825f8243fd5c"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,

@@ -7260,6 +7260,40 @@ claims. It does not turn the private bootstrap image into an accepted public
 release; a successful `release` workflow receipt still has to be reviewed and
 retained at the exact external-publication path above.
 
+The five local S1 requirement groups now converge through the strict Stage 22
+gate:
+
+```bash
+npm run check:s1-shell-sandbox-completion
+npm run check:s1-shell-sandbox-completion-workflow
+```
+
+The checked-in
+`docs/artifacts/s1-shell-sandbox-readiness-stage22.json` replays the existing
+image/SBOM, multi-architecture, Setup/Doctor, daemon lifecycle, crash recovery,
+portable Process/LSP/DAP, security/resource, Linux host, acquisition, and
+Profile-upgrade verifiers. It binds both each artifact hash and its verifier
+hash. It is deliberately a `blocked` readiness receipt:
+`localRequirementsReady=true`, both external authorities are false, and
+`s1Complete=false`.
+
+The manual completion workflow is
+`.github/workflows/s1-shell-sandbox-completion.yml`. It accepts an exact current
+`main` source SHA plus explicit external-publication and Windows workflow run
+IDs, downloads the exact source-addressed artifact names with read-only
+permissions, and runs the existing semantic verifiers. The completed receipt
+binds both upstream workflow run IDs/attempts, receipt/self hashes, source SHA,
+image digest/context, and Windows host/product identities. It uploads a result
+only after `status=complete`, an empty blocker set, and `s1Complete=true`.
+
+Workflow success, queue state, an artifact name, a synthetic pending receipt,
+or either upstream receipt alone is never completion evidence. A missing
+receipt produces an explicit blocker; a supplied malformed, stale, wrong-run,
+or wrong-source receipt fails instead of degrading to blocked. With no upstream
+receipts, the completion CLI writes only a sanitized blocked artifact and exits 2. S1 therefore remains incomplete—and S2 must not begin—until a real public
+signed external release and a real Windows x64 Docker host receipt for the same
+source SHA both pass.
+
 The retained runtime-environment receipt is deliberately portable across the
 supported host matrix rather than tied to the machine that wrote it. Schema 2
 binds the exact Node version, required SQLite/OpenSSL/libuv/V8 component

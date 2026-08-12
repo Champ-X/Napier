@@ -1,0 +1,208 @@
+{
+  "kind": "napier.s1-shell-sandbox-readiness-stage22",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-12T09:43:48.048Z",
+  "implementation": {
+    "modelSha256": "b06fee6a7b6115ee39facfcede92958f33d8d9a50b686c6e2eb34c013ec0c91b",
+    "checkerSha256": "d1356aa5843d83fb5c8982204f43d37d0e72075a484c5b54da862670da10d41e",
+    "localEvidenceSha256": "eb1a8d2bcfc139edf8912e6957e0342903cf82613845263e15f047ea8747e37b",
+    "workflowSha256": "108e71343b3bd62ed412070dd3d03814cb057d6882a025ab2f6671d1822b4de9",
+    "workflowCheckerSha256": "412d6806e559589b4c9b712ceae38b2f6efe3647531f99a7597b4a5d81c7b69f",
+    "externalEvidenceSha256": "78d17e9f748a2b2eecba8bc0a31d71f3f88a9a265b39ebbe976cb0f9c49fbe8b",
+    "externalModelSha256": "a81131adb678080e8ace5d86b69ea0f67d2d71aeff38bdb84f37fd8dd891da8f",
+    "windowsCheckerSha256": "78c5900806d27bb2622c31ba55669e755f385d1ee8bc139bbad76fa4021d3d44",
+    "windowsModelSha256": "580bf72b7d35dc3e3dfbb927310dab2004efd75211fedea7b03a09f1f88332a0"
+  },
+  "requirements": [
+    {
+      "id": "official_toolchain_supply_chain",
+      "status": "verified",
+      "evidence": [
+        {
+          "kind": "sandbox-image-sbom",
+          "path": "docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json",
+          "sha256": "9f72a127622af642911b0b33720dc9de9b5447569a1b339ce0d2fc48de7ec76f",
+          "verifierSha256": "22eec18355acf5e557c2edcb11697573c55443e3385adacecd990f47874d0a88"
+        },
+        {
+          "kind": "sandbox-image-provenance",
+          "path": "docs/artifacts/sandbox-image-provenance-0.1.0.json",
+          "sha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb",
+          "verifierSha256": "22eec18355acf5e557c2edcb11697573c55443e3385adacecd990f47874d0a88"
+        },
+        {
+          "kind": "sandbox-multi-architecture-stage14",
+          "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
+          "sha256": "e5ac7411f8c0fe6e6195662e1d6a21cff879b4fcbeb6ef246e2ca6362acf6e78",
+          "verifierSha256": "e65d26760740fba26a5c94ef9549a3f5307a73d6f3289a1c03194437290da9bc"
+        },
+        {
+          "kind": "sandbox-oci-supply-chain-stage18",
+          "path": "docs/artifacts/sandbox-oci-supply-chain-stage18.json",
+          "sha256": "d174228c2c1e2e52da43bef7a0b5050ef79cd999765c266270b63377b4e4ccbf",
+          "verifierSha256": "7b11e003c4666979f6567408c02d97a65a269806deae82d0bb3450a042b29408"
+        }
+      ],
+      "evidenceSetSha256": "b8270afae40a7a29d607178bed07627e99474b653c8e5f7749ae83fa993b2b3d"
+    },
+    {
+      "id": "setup_doctor_lifecycle",
+      "status": "verified",
+      "evidence": [
+        {
+          "kind": "sandbox-product-acceptance-stage13",
+          "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
+          "sha256": "357f913b35978a1304b94ed0bf7ee4d2a36df3546c5067a9e4a8b91a92dc4831",
+          "verifierSha256": "1c3f1012d439e5854599ba5cd27f1d537e298330087d367302971555660055ad"
+        },
+        {
+          "kind": "sandbox-acquisition-stage20",
+          "path": "docs/artifacts/sandbox-acquisition-stage20.json",
+          "sha256": "b63977e1ac7f64d4fa1d1cb1ddbadb06697741411bbaab29441840128d0e7bf1",
+          "verifierSha256": "51c3333b5a08075030a5530a6c8468a14156da58fdbf98be74dbd4e7ef3e308f"
+        },
+        {
+          "kind": "linux-host-product-acceptance-stage19",
+          "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
+          "sha256": "b581f969b7275e5ab368deb7e1063592200c2b7a488db8a7456cd0cfc41283eb",
+          "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
+        }
+      ],
+      "evidenceSetSha256": "177f662dd91331e437dbb83188d6484a2c506ebeab477fbbb7776401ee2907e2"
+    },
+    {
+      "id": "daemon_execution_recovery",
+      "status": "verified",
+      "evidence": [
+        {
+          "kind": "sandbox-product-acceptance-stage13",
+          "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
+          "sha256": "357f913b35978a1304b94ed0bf7ee4d2a36df3546c5067a9e4a8b91a92dc4831",
+          "verifierSha256": "1c3f1012d439e5854599ba5cd27f1d537e298330087d367302971555660055ad"
+        },
+        {
+          "kind": "oci-crash-recovery-stage11",
+          "path": "docs/artifacts/oci-crash-recovery-stage11.json",
+          "sha256": "e1adc8d221ac47504308ff60b8b366efd10b50838a14f052dbf84cdf0773a664",
+          "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
+        },
+        {
+          "kind": "sandbox-portable-process-stage15",
+          "path": "docs/artifacts/sandbox-portable-process-stage15.json",
+          "sha256": "93300ac749c702e38f836c2734f2f9dbcfb99191968f7f8e6f85b888d6a3dd7f",
+          "verifierSha256": "733858d0eb96f0e06835aa02ef0e35c8186d5affe3e4fbb22b253a3621934a4a"
+        },
+        {
+          "kind": "sandbox-portable-lsp-stage16",
+          "path": "docs/artifacts/sandbox-portable-lsp-stage16.json",
+          "sha256": "2499d25a235ca84f065cfcb9ec8a6dc14be4411813ba900fbf82c4c7fafe6582",
+          "verifierSha256": "52d3d5898b57d7c3df7fa31ba1f2547feda646d728dbfa84ad201690ec45eec4"
+        },
+        {
+          "kind": "sandbox-portable-dap-stage17",
+          "path": "docs/artifacts/sandbox-portable-dap-stage17.json",
+          "sha256": "40bc0330248d0dbd698ccdab7d45493a417f59643d3de2ea8b0d795b09b54ea0",
+          "verifierSha256": "6dd8d682244a82fede81893c68f6c94652b89f23a8d5d2ccc2e7d3c619a9beb5"
+        },
+        {
+          "kind": "linux-host-product-acceptance-stage19",
+          "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
+          "sha256": "b581f969b7275e5ab368deb7e1063592200c2b7a488db8a7456cd0cfc41283eb",
+          "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
+        }
+      ],
+      "evidenceSetSha256": "3440763d9d9fb1d7d6026879f435c79ab7b48ebcaddc02febc3963842c1ad287"
+    },
+    {
+      "id": "isolation_and_fail_closed_limits",
+      "status": "verified",
+      "evidence": [
+        {
+          "kind": "sandbox-image-provenance",
+          "path": "docs/artifacts/sandbox-image-provenance-0.1.0.json",
+          "sha256": "644470d4c5d573eacbe0ec3d95c0584090dc4e24e9d7c6af89f1ae95419fa6fb",
+          "verifierSha256": "22eec18355acf5e557c2edcb11697573c55443e3385adacecd990f47874d0a88"
+        },
+        {
+          "kind": "oci-resource-limits-stage10",
+          "path": "docs/artifacts/oci-resource-limits-stage10.json",
+          "sha256": "6e93e44d4289ad091f044b64d754c30032aace1441c08bb7fb4c75fcee0cc247",
+          "verifierSha256": "b2338716c6d3268ae35117f8cb14b992fc044ca5823df24bdb36190c6bd09842"
+        },
+        {
+          "kind": "sandbox-security-casebook-stage12",
+          "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
+          "sha256": "ec455e3fc70ef881999d800fd5c3072316cdba1703a028abced4d5774411ae4e",
+          "verifierSha256": "c355fb89806073b5ce0e3c09be26e0c0451a1b387d68e452432b82734edbf603"
+        },
+        {
+          "kind": "sandbox-product-acceptance-stage13",
+          "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
+          "sha256": "357f913b35978a1304b94ed0bf7ee4d2a36df3546c5067a9e4a8b91a92dc4831",
+          "verifierSha256": "1c3f1012d439e5854599ba5cd27f1d537e298330087d367302971555660055ad"
+        },
+        {
+          "kind": "oci-crash-recovery-stage11",
+          "path": "docs/artifacts/oci-crash-recovery-stage11.json",
+          "sha256": "e1adc8d221ac47504308ff60b8b366efd10b50838a14f052dbf84cdf0773a664",
+          "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
+        }
+      ],
+      "evidenceSetSha256": "9f2935fef400c22ade8f1cda8aa6df63fcc190686e99301c2d847ac667d5a743"
+    },
+    {
+      "id": "run_scoped_mode_and_profile_upgrade",
+      "status": "verified",
+      "evidence": [
+        {
+          "kind": "profile-upgrade-stage21",
+          "path": "docs/artifacts/profile-upgrade-stage21.json",
+          "sha256": "faf451bc034c8520cb7b8e0a18490b1ef04ae3dec42658e8e86a12e6801e5e6d",
+          "verifierSha256": "c42d4ff9fe6f48e5b58633229816dfbc12cc305ff8c94a5a417daa2efd10d240"
+        }
+      ],
+      "evidenceSetSha256": "820f6fe74d370b8e2cd0afb6306eb78b38d18125913281101a3e6fd401fe83dc"
+    }
+  ],
+  "requirementSetSha256": "7a9b7dc9be88b56700637b13619a5ea1cd876c69115b5dd184372b74e29e4c04",
+  "externalRequirements": [
+    {
+      "id": "public_signed_external_release",
+      "workflow": ".github/workflows/publish-sandbox.yml",
+      "artifactName": "sandbox-external-publication-${sourceSha}",
+      "verifier": "verifySandboxExternalPublicationEvidence",
+      "status": "missing"
+    },
+    {
+      "id": "windows_host_product_acceptance",
+      "workflow": ".github/workflows/windows-host-product-acceptance.yml",
+      "artifactName": "napier-windows-host-product-acceptance-${sourceSha}",
+      "verifier": "verifyWindowsHostProductAcceptance",
+      "status": "missing"
+    }
+  ],
+  "status": "blocked",
+  "blockers": [
+    "public_signed_external_release",
+    "windows_host_product_acceptance"
+  ],
+  "retention": {
+    "credentialValues": false,
+    "rawCommandOutput": false,
+    "rawDockerOutput": false,
+    "rawWorkflowLog": false,
+    "workspacePaths": false,
+    "receiptBodies": false
+  },
+  "scope": {
+    "localRequirementsReady": true,
+    "externalPublicationAccepted": false,
+    "windowsHostProductAcceptance": false,
+    "s1Complete": false,
+    "remaining": [
+      "public_signed_external_release",
+      "windows_host_product_acceptance"
+    ]
+  },
+  "contentSha256": "037840c50cc4fc9f0cda8b2540189c890205f0f0446d01201570ec96e8253ab7"
+}

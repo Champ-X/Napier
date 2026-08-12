@@ -289,6 +289,70 @@ Observed result:
   real Windows x64 Docker Desktop host receipt. The registered Windows runner
   count remains zero.
 
+## Completed Slice: Strict S1 Aggregate Completion Gate
+
+User scenario: a release reviewer receives one unambiguous S1 decision instead
+of manually combining historical Stage receipts or treating a queued/successful
+workflow as product evidence.
+
+Acceptance and threat boundary:
+
+- group the five S1 requirements into exact local evidence sets for official
+  toolchain/supply chain, Setup/Doctor lifecycle, daemon execution/recovery,
+  isolation/resource fail-closed behavior, and Run-scoped mode/Profile
+  ownership;
+- replay every referenced local verifier and bind both artifact and verifier
+  bytes. A stale implementation, stale receipt, missing group, reordered or
+  substituted evidence, unknown retained field, or recomputed-hash overclaim
+  fails closed;
+- retain a checked-in Stage 22 readiness receipt only as `status=blocked`.
+  It must name both missing external authorities and must keep
+  `s1Complete=false`;
+- create a completion receipt only from the exact source SHA plus a strict
+  external-publication evidence directory and strict Windows host receipt.
+  Both upstream workflow run IDs, attempts, receipt hashes, self-hashes, source
+  SHA, and selected product identities are bound;
+- distinguish absence from invalid evidence. An absent receipt is an explicit
+  blocker; a supplied receipt that fails semantic verification, comes from the
+  wrong run, or names a different source SHA is an error, not a blocker that
+  can be waived;
+- keep the aggregator manual-only with `actions:read` and `contents:read`.
+  Download exact-SHA artifacts from explicitly supplied run IDs, require
+  `status=complete`, empty blockers, and `s1Complete=true` before upload;
+- never accept workflow conclusion, queue state, artifact name alone, a
+  synthetic pending receipt, or one upstream receipt as proof of completion.
+
+Observed result:
+
+- the current checked-in readiness receipt verifies all five local requirement
+  groups and remains blocked by exactly
+  `public_signed_external_release` and
+  `windows_host_product_acceptance`;
+- focused aggregate/workflow coverage passes 14 cases, including a complete
+  integration arm that runs both existing strict upstream verifiers, run-ID
+  mismatch, source mixing, workflow-success/queued substitution, blocker
+  suppression, unknown retained body, and blocked replay;
+- the release artifact fixture passes 41 cases and rejects a Stage 22 receipt
+  that clears blockers or sets `s1Complete=true` even after recomputing its
+  outer hash;
+- architecture remains at 1,249 source files and 653 test files with zero
+  cycles. The model, local-evidence collector, checker, and workflow auditor
+  remain separate production leaves below the 500-line budget;
+- the release audit now covers 158 artifacts. Stage 22 receipt SHA-256 is
+  `952d88c25a67f0ba629f784b159cbc2481aac92ce2fff9434956c577a595a37c`,
+  requirement-set SHA-256 is
+  `7a9b7dc9be88b56700637b13619a5ea1cd876c69115b5dd184372b74e29e4c04`,
+  release-set SHA-256 is
+  `23e8143e8bae27db470f95312abe16101e540f7bbddc3e159a8eab37ba341da6`,
+  and release-receipt SHA-256 is
+  `7b7ed6664ebc9f4ecfebe6e467aae088b9bd88afe4816a092d774477d05e0d94`;
+- real blocked CLI Dogfood used the current source SHA with no upstream
+  receipts, wrote a temporary sanitized completion artifact, returned exit
+  code 2, retained both blockers, and kept `nextStage=null`;
+- `blocked externally`: this slice adds no public GHCR release and no Windows
+  runner. S1 remains incomplete and S2 remains out of scope until both real
+  exact-SHA upstream artifacts pass the completion workflow.
+
 ## Baseline
 
 Audit date: 2026-08-05

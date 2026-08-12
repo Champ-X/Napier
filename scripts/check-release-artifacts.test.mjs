@@ -24,6 +24,7 @@ import {
 } from "./check-release-artifacts.mjs";
 import { linuxHostProductAcceptanceImplementation } from "./linux-host-product-acceptance-artifact.mjs";
 import { profileUpgradeImplementation } from "./profile-upgrade-artifact.mjs";
+import { collectS1ShellSandboxReadiness } from "./check-s1-shell-sandbox-completion.mjs";
 import { createLongThreadPerformanceMeasurement } from "./product-performance-long-thread.mjs";
 import { createProductPerformanceReport } from "./product-performance.mjs";
 
@@ -69,6 +70,7 @@ describe("release artifacts audit", () => {
       "linux-host-product-acceptance-stage19",
       "sandbox-acquisition-stage20",
       "profile-upgrade-stage21",
+      "s1-shell-sandbox-readiness-stage22",
       "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
@@ -532,6 +534,32 @@ describe("release artifacts audit", () => {
         expect.stringContaining(
           "Linux host product acceptance: Linux host product acceptance artifact shape is invalid",
         ),
+      ]),
+    );
+  });
+
+  it("fails when retained S1 readiness suppresses an external blocker", async () => {
+    const { root } = await createFixture();
+    const readinessPath = path.join(
+      root,
+      "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
+    );
+    const readiness = JSON.parse(await readFile(readinessPath, "utf8"));
+    readiness.blockers = [];
+    readiness.scope.s1Complete = true;
+    readiness.scope.remaining = [];
+    const { contentSha256: _contentSha256, ...content } = readiness;
+    readiness.contentSha256 = sha256(
+      Buffer.from(canonicalJson(content), "utf8"),
+    );
+    await writeJson(readinessPath, readiness);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        "S1 Shell/Sandbox readiness: S1 Shell/Sandbox readiness artifact shape is invalid",
       ]),
     );
   });
@@ -1281,6 +1309,8 @@ async function createFixture() {
     "packages/runtime/src/sandbox-oci.ts",
     "packages/runtime/src/sandbox-oci-launch-arguments.ts",
     "scripts/check-oci-crash-recovery.mjs",
+    "scripts/check-oci-resource-limits.mjs",
+    "scripts/check-sandbox-image-sbom.mjs",
     "scripts/oci-crash-recovery-artifact.mjs",
     "scripts/oci-crash-recovery-fixture.mjs",
     "scripts/oci-crash-recovery-live.mjs",
@@ -1395,6 +1425,15 @@ async function createFixture() {
     "scripts/profile-upgrade-acceptance.mjs",
     "scripts/profile-upgrade-artifact.mjs",
     "scripts/check-profile-upgrade.mjs",
+    "scripts/s1-shell-sandbox-completion-artifact.mjs",
+    "scripts/s1-shell-sandbox-local-evidence.mjs",
+    "scripts/check-s1-shell-sandbox-completion.mjs",
+    "scripts/check-s1-shell-sandbox-completion-workflow.mjs",
+    "scripts/sandbox-external-publication-evidence.mjs",
+    "scripts/sandbox-external-publication-model.mjs",
+    "scripts/check-windows-host-product-acceptance.mjs",
+    "scripts/windows-host-product-acceptance-artifact.mjs",
+    ".github/workflows/s1-shell-sandbox-completion.yml",
     "packages/runtime/src/sandbox-official-release-model.ts",
     "packages/runtime/src/sandbox-official-release.ts",
     "packages/runtime/src/sandbox-runtime-acquisition.ts",
@@ -1475,6 +1514,10 @@ async function createFixture() {
   );
   await rebindLinuxHostProductAcceptanceFixture(root);
   await rebindProfileUpgradeFixture(root);
+  await writeJson(
+    path.join(root, "docs/artifacts/s1-shell-sandbox-readiness-stage22.json"),
+    await collectS1ShellSandboxReadiness({ repoRoot: root }),
+  );
   await execFile(process.execPath, [
     packageLockScriptPath,
     "--repo-root",

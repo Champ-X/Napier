@@ -9503,6 +9503,7 @@ deferred until the local P0-P9 product loop is stable.
 
 - Postgres, distributed workers, cross-host leases, multi-user RBAC, and
   collaboration begin only after the local acceptance gates hold.
+
 ### Capability contract upgrades preserve explicit ownership
 
 The effective capability projection may expose two independent commit
@@ -9530,3 +9531,50 @@ Concurrent profile changes reject the stale preview. Persistence failure rolls
 back in-memory state and reports that no upgrade committed. CLI and Web use the
 same Runtime transaction; temporary task presets remain Run-scoped and never
 create Agent revisions.
+
+### S1 completion requires two independent external authorities
+
+Stage 22 separates local readiness from S1 completion:
+
+```text
+14 strict local artifact verifiers
+  -> five ordered requirement groups
+  -> blocked readiness receipt
+
+external publication evidence directory
+  -> anonymous dual-platform execution
+  -> BuildKit SBOM/provenance
+  -> Cosign/Fulcio/Rekor signature
+  -> registry SLSA attestation
+  -> source SHA + workflow run identity
+
+Windows host receipt
+  -> exact Windows x64 self-hosted identity
+  -> local Docker Desktop Linux daemon
+  -> ConPTY + Stage 13 product lifecycle
+  -> resource/checkout restoration
+  -> source SHA + workflow run identity
+
+readiness + external publication + Windows host
+  -> exact-SHA manual aggregator
+  -> complete receipt
+  -> S2 may begin
+```
+
+`s1-shell-sandbox-completion-artifact.mjs` owns the closed schemas and state
+transition. `s1-shell-sandbox-local-evidence.mjs` replays the local verifiers
+and binds artifact/verifier hashes. `check-s1-shell-sandbox-completion.mjs`
+verifies readiness and invokes the existing strict external and Windows
+verifiers. The separate workflow auditor requires manual dispatch, read-only
+Actions/content permissions, full-SHA-pinned Actions, exact current-main
+checkout, explicit upstream run IDs, exact source-addressed artifact names,
+semantic completion assertions, and `always()` cleanup.
+
+The checked-in readiness artifact is not source-SHA completion evidence and
+cannot become complete. It always names both external blockers and keeps
+`s1Complete=false`. The ephemeral completion receipt carries the exact source
+SHA and becomes complete only when both independently verified upstream
+receipts are present. Absence is represented as a blocker. Invalid, stale,
+wrong-run, or cross-source evidence is a hard error. Workflow conclusion,
+queue state, artifact discovery, or one accepted upstream receipt never
+substitutes for the missing authority.
