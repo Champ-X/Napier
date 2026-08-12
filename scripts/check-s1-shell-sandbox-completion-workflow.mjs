@@ -57,6 +57,7 @@ function validateTrigger(workflow, errors) {
   }
   for (const name of [
     "source_sha",
+    "release_source_sha",
     "external_publication_run_id",
     "windows_host_run_id",
   ]) {
@@ -68,7 +69,7 @@ function validateTrigger(workflow, errors) {
   if (
     !record(inputs) ||
     Object.keys(inputs).join("\n") !==
-      "source_sha\nexternal_publication_run_id\nwindows_host_run_id"
+      "source_sha\nrelease_source_sha\nexternal_publication_run_id\nwindows_host_run_id"
   ) {
     errors.push("s1_completion_workflow_input_set_invalid");
   }
@@ -123,6 +124,7 @@ function validateJob(jobs, errors) {
   if (
     authority?.env?.GITHUB_TOKEN !== "${{ github.token }}" ||
     authority?.env?.SOURCE_SHA !== "${{ inputs.source_sha }}" ||
+    authority?.env?.RELEASE_SOURCE_SHA !== "${{ inputs.release_source_sha }}" ||
     authority?.env?.EXTERNAL_PUBLICATION_RUN_ID !==
       "${{ inputs.external_publication_run_id }}" ||
     authority?.env?.WINDOWS_HOST_RUN_ID !== "${{ inputs.windows_host_run_id }}"
@@ -131,7 +133,7 @@ function validateJob(jobs, errors) {
   }
   validateDownload(
     external,
-    "sandbox-external-publication-${{ inputs.source_sha }}",
+    "sandbox-external-publication-${{ inputs.release_source_sha }}",
     "${{ inputs.external_publication_run_id }}",
     "upstream/external-publication",
     errors,
@@ -203,11 +205,13 @@ function validateActions(jobs, errors) {
 function validateCommandClosure(source, errors) {
   const required = [
     '[[ "${SOURCE_SHA}" =~ ^[a-f0-9]{40}$ ]]',
+    '[[ "${RELEASE_SOURCE_SHA}" =~ ^[a-f0-9]{40}$ ]]',
     '[[ "${EXTERNAL_PUBLICATION_RUN_ID}" =~ ^[1-9][0-9]*$ ]]',
     '[[ "${WINDOWS_HOST_RUN_ID}" =~ ^[1-9][0-9]*$ ]]',
     'test "${GITHUB_SHA}" = "${SOURCE_SHA}"',
     'test "$(git rev-parse HEAD)" = "${SOURCE_SHA}"',
     'test "$(git rev-parse origin/main)" = "${SOURCE_SHA}"',
+    'git merge-base --is-ancestor "${RELEASE_SOURCE_SHA}" "${SOURCE_SHA}"',
     "npm ci --no-audit --no-fund",
     "npm run check:s1-shell-sandbox-completion",
     "Verify exact upstream workflow run authorities",
@@ -219,6 +223,8 @@ function validateCommandClosure(source, errors) {
     "--config -",
     "scripts/check-s1-upstream-run-authority.mjs",
     '--authority "${authority}"',
+    'authority_source_sha="$3"',
+    '--source-sha "${authority_source_sha}"',
     '--source-sha "${SOURCE_SHA}"',
     '--expected-run-id "${run_id}"',
     '--run-path "${run_path}"',
@@ -231,12 +237,15 @@ function validateCommandClosure(source, errors) {
     'rm -f "${run_path}" "${artifacts_path}"',
     "external_publication",
     "windows_host_product_acceptance",
-    "sandbox-external-publication-${{ inputs.source_sha }}",
+    "sandbox-external-publication-${{ inputs.release_source_sha }}",
     "napier-windows-host-product-acceptance-${{ inputs.source_sha }}",
     "run-id: ${{ inputs.external_publication_run_id }}",
     "run-id: ${{ inputs.windows_host_run_id }}",
     "scripts/check-s1-shell-sandbox-completion.mjs",
+    "Build the promoted Runtime package",
+    "npm run build:core",
     '--source-sha "${SOURCE_SHA}"',
+    '--release-source-sha "${RELEASE_SOURCE_SHA}"',
     '--external-publication-run-id "${{ inputs.external_publication_run_id }}"',
     '--windows-host-run-id "${{ inputs.windows_host_run_id }}"',
     "--external-publication-authority upstream/authority/external_publication.json",

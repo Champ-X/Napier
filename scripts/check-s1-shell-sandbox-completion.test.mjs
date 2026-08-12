@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
+import { vi } from "vitest";
 
 import {
   collectS1ShellSandboxCompletion,
@@ -199,6 +200,7 @@ describe("S1 Shell/Sandbox aggregate gate", () => {
     });
     const options = {
       sourceSha: SOURCE_SHA,
+      releaseSourceSha: SOURCE_SHA,
       workflowRunId: "999",
       workflowRunAttempt: "1",
       externalPublicationRunId: "456",
@@ -207,6 +209,7 @@ describe("S1 Shell/Sandbox aggregate gate", () => {
       windowsHostAuthorityPath,
       externalPublicationDir: external.root,
       windowsReceiptPath,
+      verifyPromotedRelease: vi.fn(async () => undefined),
     };
     const artifact = await collectS1ShellSandboxCompletion(options);
     expect(artifact).toEqual(
@@ -222,6 +225,11 @@ describe("S1 Shell/Sandbox aggregate gate", () => {
           nextStage: "S2",
         },
       }),
+    );
+    expect(options.verifyPromotedRelease).toHaveBeenCalledWith(
+      process.cwd(),
+      SOURCE_SHA,
+      artifact.externalPublication,
     );
 
     const root = await mkdtemp(path.join(tmpdir(), "napier-s1-complete-"));
@@ -310,6 +318,7 @@ function completionArtifact(overrides = {}) {
     workflowRunId: "123",
     workflowRunAttempt: "1",
     sourceSha: SOURCE_SHA,
+    releaseSourceSha: SOURCE_SHA,
     readiness,
     requirements: localRequirements,
     externalPublication: overrides.externalPublication ?? null,

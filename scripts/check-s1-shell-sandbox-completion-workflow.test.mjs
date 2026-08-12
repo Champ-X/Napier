@@ -56,8 +56,24 @@ describe("S1 Shell/Sandbox completion workflow", () => {
       "external artifact name substitution",
       (source) =>
         source.replace(
-          "sandbox-external-publication-${{ inputs.source_sha }}",
+          "sandbox-external-publication-${{ inputs.release_source_sha }}",
           "sandbox-external-publication-latest",
+        ),
+    ],
+    [
+      "release source ancestry removal",
+      (source) =>
+        source.replace(
+          '          git merge-base --is-ancestor "${RELEASE_SOURCE_SHA}" "${SOURCE_SHA}"\n',
+          "",
+        ),
+    ],
+    [
+      "promoted package build removal",
+      (source) =>
+        source.replace(
+          "      - name: Build the promoted Runtime package\n        run: npm run build:core\n\n",
+          "",
         ),
     ],
     [

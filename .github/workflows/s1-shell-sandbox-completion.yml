@@ -9,6 +9,10 @@ on:
         description: Exact 40-character main-branch commit to complete
         required: true
         type: string
+      release_source_sha:
+        description: Exact ancestor commit used by the signed public release
+        required: true
+        type: string
       external_publication_run_id:
         description: Successful exact-SHA public release workflow run ID
         required: true
@@ -42,16 +46,19 @@ jobs:
       - name: Verify the dispatch source
         env:
           SOURCE_SHA: ${{ inputs.source_sha }}
+          RELEASE_SOURCE_SHA: ${{ inputs.release_source_sha }}
           EXTERNAL_PUBLICATION_RUN_ID: ${{ inputs.external_publication_run_id }}
           WINDOWS_HOST_RUN_ID: ${{ inputs.windows_host_run_id }}
         run: |
           set -euo pipefail
           [[ "${SOURCE_SHA}" =~ ^[a-f0-9]{40}$ ]]
+          [[ "${RELEASE_SOURCE_SHA}" =~ ^[a-f0-9]{40}$ ]]
           [[ "${EXTERNAL_PUBLICATION_RUN_ID}" =~ ^[1-9][0-9]*$ ]]
           [[ "${WINDOWS_HOST_RUN_ID}" =~ ^[1-9][0-9]*$ ]]
           test "${GITHUB_SHA}" = "${SOURCE_SHA}"
           test "$(git rev-parse HEAD)" = "${SOURCE_SHA}"
           test "$(git rev-parse origin/main)" = "${SOURCE_SHA}"
+          git merge-base --is-ancestor "${RELEASE_SOURCE_SHA}" "${SOURCE_SHA}"
           git diff --exit-code
           git diff --cached --exit-code
 
@@ -71,6 +78,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ inputs.source_sha }}
+          RELEASE_SOURCE_SHA: ${{ inputs.release_source_sha }}
           EXTERNAL_PUBLICATION_RUN_ID: ${{ inputs.external_publication_run_id }}
           WINDOWS_HOST_RUN_ID: ${{ inputs.windows_host_run_id }}
         run: |
@@ -100,6 +108,7 @@ jobs:
           fetch_authority() {
             authority="$1"
             run_id="$2"
+            authority_source_sha="$3"
             run_path="upstream/authority/${authority}-run.json"
             artifacts_path="upstream/authority/${authority}-artifacts.json"
             output_path="upstream/authority/${authority}.json"
@@ -111,7 +120,7 @@ jobs:
               "${artifacts_path}"
             node scripts/check-s1-upstream-run-authority.mjs \
               --authority "${authority}" \
-              --source-sha "${SOURCE_SHA}" \
+              --source-sha "${authority_source_sha}" \
               --expected-run-id "${run_id}" \
               --run-path "${run_path}" \
               --artifacts-path "${artifacts_path}" \
@@ -120,15 +129,17 @@ jobs:
           }
           fetch_authority \
             external_publication \
-            "${EXTERNAL_PUBLICATION_RUN_ID}"
+            "${EXTERNAL_PUBLICATION_RUN_ID}" \
+            "${RELEASE_SOURCE_SHA}"
           fetch_authority \
             windows_host_product_acceptance \
-            "${WINDOWS_HOST_RUN_ID}"
+            "${WINDOWS_HOST_RUN_ID}" \
+            "${SOURCE_SHA}"
 
       - name: Download the exact external publication evidence
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: sandbox-external-publication-${{ inputs.source_sha }}
+          name: sandbox-external-publication-${{ inputs.release_source_sha }}
           path: upstream/external-publication
           repository: Champ-X/Napier
           run-id: ${{ inputs.external_publication_run_id }}
@@ -143,14 +154,19 @@ jobs:
           run-id: ${{ inputs.windows_host_run_id }}
           github-token: ${{ github.token }}
 
+      - name: Build the promoted Runtime package
+        run: npm run build:core
+
       - name: Aggregate and verify S1 completion
         env:
           SOURCE_SHA: ${{ inputs.source_sha }}
+          RELEASE_SOURCE_SHA: ${{ inputs.release_source_sha }}
         run: |
           set -euo pipefail
           mkdir -p completion-output
           node scripts/check-s1-shell-sandbox-completion.mjs \
             --source-sha "${SOURCE_SHA}" \
+            --release-source-sha "${RELEASE_SOURCE_SHA}" \
             --external-publication-run-id "${{ inputs.external_publication_run_id }}" \
             --windows-host-run-id "${{ inputs.windows_host_run_id }}" \
             --external-publication-authority upstream/authority/external_publication.json \

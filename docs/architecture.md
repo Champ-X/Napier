@@ -9561,6 +9561,30 @@ readiness + external publication + Windows host
   -> S2 may begin
 ```
 
+The external publication is promoted before Windows acceptance rather than
+remaining only in a transient Actions artifact:
+
+```text
+download complete external release evidence + sanitized run authority
+  -> strict preview: evidence + authority + current Docker context
+  -> bind retained receipt/authority/package before hashes
+  -> exact preview SHA apply
+  -> atomically write retained receipt + retained authority
+  -> copy exact receipt into Runtime package
+  -> verify three-way byte parity
+  -> rollback all three targets on any failure
+  -> commit the reviewed promotion
+```
+
+`sandbox-external-release-promotion.mjs` owns this transaction. The repository
+retains the semantic receipt and sanitized authority under fixed artifact
+paths; `copy-sandbox-image.mjs` supplies the same receipt to the Runtime
+package. `check-sandbox-retained-external-release.mjs` is optional while no
+promotion exists, but once any closure member appears it requires both retained
+files, the package bytes, current Docker context, strict Runtime receipt
+validation, and receipt/authority identity equality. The release artifact audit
+adds both retained files only after that closure passes.
+
 `s1-shell-sandbox-completion-artifact.mjs` owns the closed schemas and state
 transition. `s1-shell-sandbox-local-evidence.mjs` replays the local verifiers
 and binds artifact/verifier hashes. `check-s1-shell-sandbox-completion.mjs`
@@ -9583,9 +9607,13 @@ The checked-in readiness artifact is not source-SHA completion evidence and
 cannot become complete. It always names both external blockers and keeps
 `s1Complete=false`. The ephemeral completion receipt carries the exact source
 SHA and becomes complete only when both independently verified upstream
-receipts are present. Completion schema 2 binds each authority file hash and
-self-hash before cross-checking its workflow, attempt, and source SHA against
-the semantic receipt. Absence is represented as a blocker. Partial input or
+receipts are present. Completion schema 3 separates the current completion
+source from the promoted release source. The release source must be a Git
+ancestor of the exact current-main completion source; Windows acceptance stays
+bound to the current source. The current checkout must retain the exact release
+receipt and authority and the built Runtime package must contain identical
+receipt bytes. Each authority file hash and self-hash is cross-checked with its
+semantic receipt. Absence is represented as a blocker. Partial input or
 invalid, stale, wrong-run, forked, expired-artifact, or cross-source evidence is
 a hard error. Workflow conclusion and artifact discovery are necessary source
 facts but never sufficient completion evidence; one accepted authority or

@@ -11,9 +11,11 @@ import {
 } from "./s1-shell-sandbox-completion-artifact.mjs";
 import { collectS1LocalRequirements } from "./s1-shell-sandbox-local-evidence.mjs";
 import {
-  S1_RUN_AUTHORITY_CONFIG,
-  validateS1UpstreamRunAuthority,
-} from "./s1-upstream-run-authority.mjs";
+  loadVerifiedS1RunAuthority,
+  requireReceiptAuthorityMatch,
+  requireReleaseSourceAncestor,
+} from "./s1-completion-source-authority.mjs";
+import { verifyPromotedExternalRelease } from "./s1-promoted-release-verification.mjs";
 import { sha256 } from "./sandbox-external-publication-model.mjs";
 import { verifySandboxExternalPublicationEvidence } from "./sandbox-external-publication-evidence.mjs";
 
@@ -34,6 +36,11 @@ export async function s1ShellSandboxCompletionImplementation(repoRoot) {
     externalModel: "scripts/sandbox-external-publication-model.mjs",
     runAuthority: "scripts/s1-upstream-run-authority.mjs",
     runAuthorityCheck: "scripts/check-s1-upstream-run-authority.mjs",
+    sourceAuthority: "scripts/s1-completion-source-authority.mjs",
+    promotedRelease: "scripts/s1-promoted-release-verification.mjs",
+    promotionModel: "scripts/sandbox-external-release-promotion.mjs",
+    promotionCheck: "scripts/check-sandbox-external-release-promotion.mjs",
+    retainedReleaseCheck: "scripts/check-sandbox-retained-external-release.mjs",
     windowsChecker: "scripts/check-windows-host-product-acceptance.mjs",
     windowsModel: "scripts/windows-host-product-acceptance-artifact.mjs",
   };
@@ -99,9 +106,14 @@ export async function verifyS1ShellSandboxReadiness(options = {}) {
 export async function collectS1ShellSandboxCompletion(options) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
   const sourceSha = String(options.sourceSha ?? "");
+  const releaseSourceSha = String(options.releaseSourceSha ?? sourceSha);
   if (!SOURCE_SHA.test(sourceSha)) {
     throw new Error("S1 completion source SHA is invalid");
   }
+  if (!SOURCE_SHA.test(releaseSourceSha)) {
+    throw new Error("S1 release source SHA is invalid");
+  }
+  await requireReleaseSourceAncestor(repoRoot, releaseSourceSha, sourceSha);
   requireCompleteUpstreamInputs("external publication", [
     options.externalPublicationRunId,
     options.externalPublicationAuthorityPath,
@@ -125,7 +137,7 @@ export async function collectS1ShellSandboxCompletion(options) {
     options.externalPublicationDir
       ? verifiedExternalPublication(
           path.resolve(options.externalPublicationDir),
-          sourceSha,
+          releaseSourceSha,
           options.externalPublicationRunId,
           options.externalPublicationAuthorityPath,
         )
@@ -140,10 +152,18 @@ export async function collectS1ShellSandboxCompletion(options) {
         )
       : null,
   ]);
+  if (externalPublication) {
+    await (options.verifyPromotedRelease ?? verifyPromotedExternalRelease)(
+      repoRoot,
+      releaseSourceSha,
+      externalPublication,
+    );
+  }
   return createS1ShellSandboxCompletionArtifact({
     workflowRunId: options.workflowRunId,
     workflowRunAttempt: options.workflowRunAttempt,
     sourceSha,
+    releaseSourceSha,
     readiness: {
       path: readiness.path,
       sha256: readiness.sha256,
@@ -167,6 +187,7 @@ export async function verifyS1ShellSandboxCompletion(options) {
     workflowRunId: expected.workflowRunId,
     workflowRunAttempt: expected.workflowRunAttempt,
     sourceSha: expected.sourceSha,
+    releaseSourceSha: expected.releaseSourceSha,
     readiness: expected.readiness,
     requirements: expected.requirements,
     externalPublication: expected.externalPublication,
@@ -187,7 +208,7 @@ async function verifiedExternalPublication(
   expectedRunId,
   authorityPath,
 ) {
-  const runAuthority = await verifiedRunAuthority({
+  const runAuthority = await loadVerifiedS1RunAuthority({
     artifactPath: authorityPath,
     authority: "external_publication",
     sourceSha,
@@ -230,7 +251,7 @@ async function verifiedWindowsHost(
   expectedRunId,
   authorityPath,
 ) {
-  const runAuthority = await verifiedRunAuthority({
+  const runAuthority = await loadVerifiedS1RunAuthority({
     artifactPath: authorityPath,
     authority: "windows_host_product_acceptance",
     sourceSha,
@@ -266,45 +287,6 @@ async function verifiedWindowsHost(
     hostIdentitySha256: receipt.host.identitySha256,
     productContentSha256: receipt.product.contentSha256,
   };
-}
-
-async function verifiedRunAuthority(options) {
-  if (
-    typeof options.artifactPath !== "string" ||
-    !path.isAbsolute(options.artifactPath)
-  ) {
-    throw new Error("S1 upstream run authority path must be absolute");
-  }
-  const bytes = await readFile(options.artifactPath);
-  let authority;
-  try {
-    authority = JSON.parse(bytes.toString("utf8"));
-  } catch {
-    throw new Error("S1 upstream run authority is not valid JSON");
-  }
-  const errors = validateS1UpstreamRunAuthority(authority, {
-    authority: options.authority,
-    sourceSha: options.sourceSha,
-    workflowRunId: options.expectedRunId,
-  });
-  if (errors.length > 0) {
-    throw new Error(
-      `S1 upstream run authority verification failed: ${errors.join("; ")}`,
-    );
-  }
-  return { value: authority, fileSha256: sha256(bytes) };
-}
-
-function requireReceiptAuthorityMatch(receipt, authority) {
-  const config = S1_RUN_AUTHORITY_CONFIG[authority.authority];
-  if (
-    receipt.workflow !== config.workflow ||
-    receipt.workflowRunId !== authority.workflowRunId ||
-    receipt.workflowRunAttempt !== authority.workflowRunAttempt ||
-    receipt.sourceSha !== authority.sourceSha
-  ) {
-    throw new Error("S1 upstream receipt does not match run authority");
-  }
 }
 
 function requireCompleteUpstreamInputs(label, values) {
@@ -370,6 +352,7 @@ function parseOptions(args) {
         "--repo-root",
         "--readiness-path",
         "--source-sha",
+        "--release-source-sha",
         "--external-publication-run-id",
         "--windows-host-run-id",
         "--external-publication-authority",
@@ -385,6 +368,7 @@ function parseOptions(args) {
     if (name === "--repo-root") options.repoRoot = path.resolve(value);
     if (name === "--readiness-path") options.readinessPath = value;
     if (name === "--source-sha") options.sourceSha = value;
+    if (name === "--release-source-sha") options.releaseSourceSha = value;
     if (name === "--external-publication-run-id") {
       options.externalPublicationRunId = value;
     }
@@ -414,6 +398,7 @@ async function runCli() {
   if (writeReadiness) {
     if (
       options.sourceSha ||
+      options.releaseSourceSha ||
       options.externalPublicationRunId ||
       options.windowsHostRunId ||
       options.externalPublicationAuthorityPath ||

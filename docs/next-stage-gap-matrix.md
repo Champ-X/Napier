@@ -319,9 +319,21 @@ Acceptance and threat boundary:
   embedded run/repository identity;
 - delete raw run/artifact API responses through an `EXIT` trap. Retain only
   bounded sanitized authorities with no token, actor, URL, logs, or raw body;
-- bind authority file/self hashes into completion schema 2 and cross-check
+- bind authority file/self hashes into completion schema 3 and cross-check
   workflow, run ID/attempt, and source SHA against each semantic receipt.
   Successful workflow authority is necessary but never sufficient;
+- promote the reviewed external receipt into the product with an exact-preview
+  transaction. Bind retained receipt, retained authority, and Runtime package
+  before/after hashes; atomically write fixed repository paths and restore all
+  prior bytes if package copy or verification fails;
+- verify promoted closure as an optional release artifact state: all three
+  closure members absent means packaged-source fallback remains active; any
+  partial closure fails. A complete closure must pass the strict Runtime receipt
+  model, Actions authority, current Docker context, and byte-parity checks;
+- use completion schema 3 with two explicit source identities. The signed
+  release source must be a Git ancestor of the exact current-main completion
+  source, while Windows acceptance remains bound to the current source. The
+  completion checkout must already retain and package the exact release bytes;
 - distinguish absence from invalid evidence. An absent receipt is an explicit
   blocker; a supplied receipt that fails semantic verification, comes from the
   wrong run/attempt, is forked/expired, or names a different source SHA is an
@@ -339,26 +351,28 @@ Observed result:
   groups and remains blocked by exactly
   `public_signed_external_release` and
   `windows_host_product_acceptance`;
-- focused authority/aggregate/workflow coverage passes 40 cases, including a
-  complete integration arm that runs both existing strict upstream verifiers,
+- focused promotion/authority/aggregate/workflow/package coverage passes 53
+  cases, including a complete integration arm that runs both existing strict
+  upstream verifiers, promotion create/replace/unchanged and rollback,
+  retained/package byte parity, ancestor/non-ancestor sources,
   failed/queued/wrong-workflow/forked/expired authority, run-ID/attempt
   mismatch, source mixing, token-in-argv rejection, raw-response cleanup,
   blocker suppression, unknown retained body, partial inputs, and blocked
   replay;
-- the release artifact fixture passes 41 cases and rejects a Stage 22 receipt
+- the release artifact fixture passes 43 cases and rejects a Stage 22 receipt
   that clears blockers or sets `s1Complete=true` even after recomputing its
   outer hash;
 - architecture remains at 1,249 source files and 653 test files with zero
   cycles. The model, local-evidence collector, checker, and workflow auditor
   remain separate production leaves below the 500-line budget;
 - the release audit now covers 158 artifacts. Stage 22 receipt SHA-256 is
-  `0d28dea40920121295d259495bf1cc09345afe513f16d4fd5c337013afb8dee3`,
+  `599738570fd1f7491c500e18e2a38f2ad682e90b1547f13c61ac587dceb5cb57`,
   requirement-set SHA-256 is
   `7a9b7dc9be88b56700637b13619a5ea1cd876c69115b5dd184372b74e29e4c04`,
   release-set SHA-256 is
-  `fecc6f20686512a60ffb62aeaea9a048c0e99657547f0a1e680c5ae7fddfb2da`,
+  `5959ec4a675aa90f0bc3ab24d9e5a538f4c85443f3ecee9f1cdffee93a8d8068`,
   and release-receipt SHA-256 is
-  `7c2a6720bb3ce32f7a893cc7a469781b33e5aa185a0b0e4ea9da187de37e1989`;
+  `0f37c89a7bc7eb9b0f8474c1cb3b718feeced0e6d711df002a27dc3c3e0f9b49`;
 - real blocked CLI Dogfood used the current source SHA with no upstream
   receipts, wrote a temporary sanitized completion artifact, returned exit
   code 2, retained both blockers, and kept `nextStage=null`;
@@ -367,11 +381,16 @@ Observed result:
   because it intentionally had no release evidence artifact; the Windows run
   failed because its conclusion was not success. Both arms removed all raw API
   files and retained only error hashes;
-- the complete repository gate passes 3,309 regular tests: Root 340, CLI 259,
+- isolated promotion CLI Dogfood created a full signed-release fixture, emitted
+  one no-mutation preview, exact-applied it into retained receipt/authority and
+  Runtime package bytes, independently replayed the retained closure as two
+  release artifacts, kept `s1Complete=false`, and removed the isolated root with
+  no temporary residue;
+- the complete repository gate passes 3,322 regular tests: Root 353, CLI 259,
   Server 217, Web 682, Contracts 124, Runtime 1,608, and SDK 79. Product
-  performance passes at 573.3 ms to first CLI event, 720.7 ms to first token,
-  1,041.7 ms to completion, 0.3 ms read p95, 4.6 ms for a 1,000-event
-  projection, and 727.723 bytes per SQLite event. Production Web E2E passes all
+  performance passes at 861.3 ms to first CLI event, 1,006.6 ms to first token,
+  1,393.8 ms to completion, 0.3 ms read p95, 5.2 ms for a 1,000-event
+  projection, and 724.992 bytes per SQLite event. Production Web E2E passes all
   four viewports with zero console errors and no horizontal overflow;
 - `blocked externally`: this slice adds no public GHCR release and no Windows
   runner. S1 remains incomplete and S2 remains out of scope until both real

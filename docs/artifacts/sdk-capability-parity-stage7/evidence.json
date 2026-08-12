@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "2d722982a2580311161639d15873411ac9e9aaec4eb8888ba6842b96ff340ea3",
+      "stdoutSha256": "0cd78305b5534653e8fd81de9209df5b0702fc0e6df9bde5ac37274d4d7182bb",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "37d0f979a0b55ea87fd950398e1c45f4dc5eb76c3f91c05cad640258141ba27b",
-      "receiptSha256": "109b3d2aa0334264cbe59dae77ee3885eadc2958714760704ae3e9677b6cfe15"
+      "evidenceSha256": "f3d1cd7bc4266f292f931d3d6858b1ebe6df9e2299184918a49195a1ecf08bad",
+      "receiptSha256": "02d8872c7cca33b938f47e2c7b285dbd05a8d28a8a759f37a74ace6022e3e24d"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "db9c567e461194b272005c116f02dbdcc2f315220ad4112f45ade02993624635",
+      "stdoutSha256": "64d53b7bb21ccb4df573c4473be3406a2da134bb92dffa55a45f4e2c8d4ad83f",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "68e2cbcde54345cc6eddaabb10c83a0ee1cebee07caa26cda5fa0e0124a9a4ec",
-      "receiptSha256": "699c89d9d4811295745e485e101de39e1e96dc116c5a7a418ca71b1d6488b63a"
+      "evidenceSha256": "91e4133c7a2a84a5ab023146665e195d8ba31df734957f3733b3ae6e43fddfa3",
+      "receiptSha256": "fbbfe3eea1b46fe7fbb10790113f62657eb510152ee3ec70c358092a708c6e1c"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -1118,6 +1118,8 @@
         "scripts/check-s1-upstream-run-authority.test.mjs",
         "scripts/check-sandbox-acquisition.mjs",
         "scripts/check-sandbox-acquisition.test.mjs",
+        "scripts/check-sandbox-external-release-promotion.mjs",
+        "scripts/check-sandbox-external-release-promotion.test.mjs",
         "scripts/check-sandbox-external-release-workflow.mjs",
         "scripts/check-sandbox-external-release-workflow.test.mjs",
         "scripts/check-sandbox-image-sbom.mjs",
@@ -1134,6 +1136,7 @@
         "scripts/check-sandbox-portable-process.test.mjs",
         "scripts/check-sandbox-product-acceptance.mjs",
         "scripts/check-sandbox-product-acceptance.test.mjs",
+        "scripts/check-sandbox-retained-external-release.mjs",
         "scripts/check-sandbox-security-casebook.mjs",
         "scripts/check-sandbox-security-casebook.test.mjs",
         "scripts/check-shell-sandbox-stage1-dogfood.test.mjs",
@@ -1176,6 +1179,10 @@
         "scripts/run-standard-skill-directory-dogfood.mjs",
         "scripts/run-standard-skill-directory-dogfood.test.mjs",
         "scripts/run-web-ui-e2e.mjs",
+        "scripts/s1-completion-source-authority.mjs",
+        "scripts/s1-completion-source-authority.test.mjs",
+        "scripts/s1-promoted-release-verification.mjs",
+        "scripts/s1-promoted-release-verification.test.mjs",
         "scripts/s1-shell-sandbox-completion-artifact.mjs",
         "scripts/s1-shell-sandbox-local-evidence.mjs",
         "scripts/s1-upstream-run-authority.mjs",
@@ -1185,6 +1192,8 @@
         "scripts/sandbox-external-publication-evidence.mjs",
         "scripts/sandbox-external-publication-evidence.test.mjs",
         "scripts/sandbox-external-publication-model.mjs",
+        "scripts/sandbox-external-release-promotion.mjs",
+        "scripts/sandbox-external-release-test-fixture.mjs",
         "scripts/sandbox-first-use-coding-acceptance.mjs",
         "scripts/sandbox-first-use-coding-support.mjs",
         "scripts/sandbox-first-use-coding-support.test.mjs",
@@ -1234,16 +1243,16 @@
           "lines": 483
         },
         ".github/workflows/s1-shell-sandbox-completion.yml": {
-          "sha256": "4281fe4d3e10ea4723614687c621bcd1fd1bdb8a03afe422d003187e0e47d054",
-          "lines": 183
+          "sha256": "a2da3ab75876457deebe9feccd6076363e4dcead07264c448a703ffb46b8edee",
+          "lines": 199
         },
         ".github/workflows/windows-host-product-acceptance.yml": {
           "sha256": "e300332bf0d4ee8f638121d50ec4b7767c152af64b73452abb21d7e4d8ed9e6a",
           "lines": 279
         },
         "README.md": {
-          "sha256": "7213216742af9d7f2198034b401ae2e125bd5c8d1d62e5ad8aa70fe82ae5476b",
-          "lines": 7354
+          "sha256": "751967c5c47b1f262efc435469f87a11c0152f2a4ca7115d3ee6eb9e1878f5e7",
+          "lines": 7400
         },
         "apps/cli/package.json": {
           "sha256": "10827e621b79325d37d27b5c4fbec4fbfa2dd5af2eb641aaf034d4926e3e38c4",
@@ -2082,8 +2091,8 @@
           "lines": 259
         },
         "docs/architecture.md": {
-          "sha256": "28fc60aa6415d8a3e46a923fba35b133272c988d4f05e018c06685f0cca7bcf6",
-          "lines": 9592
+          "sha256": "759e4f9be3cb98bdce55ca1ab491f35bcea5ae666c8dbea94f8d9c9c5d0bc18d",
+          "lines": 9620
         },
         "docs/artifacts/benchmarks/napier-research-benchmark-ledger-research_aurora_contradiction_v1-0d6ca0dd6550d2ec.json": {
           "sha256": "a6fe4aba541ba85b43ecf83cc0fa99beca881c97a43ae67782537814796ad15e",
@@ -2182,7 +2191,7 @@
           "lines": 62
         },
         "docs/artifacts/package-lock-audit-0.1.0.json": {
-          "sha256": "90e79a49aa9aa8c5880d8486e2f57582d3caf35311c0cbec6bd3121fbf79e9ee",
+          "sha256": "8ff38c9c0fbd4c0f789e579dac84018ec51b7ab67435e62ea3a91b64b7af8487",
           "lines": 20
         },
         "docs/artifacts/product-performance-baseline-0.1.0.json": {
@@ -2198,16 +2207,16 @@
           "lines": 116
         },
         "docs/artifacts/release-artifacts-audit-0.1.0.json": {
-          "sha256": "7c2a6720bb3ce32f7a893cc7a469781b33e5aa185a0b0e4ea9da187de37e1989",
+          "sha256": "0f37c89a7bc7eb9b0f8474c1cb3b718feeced0e6d711df002a27dc3c3e0f9b49",
           "lines": 961
         },
         "docs/artifacts/runtime-environment-audit-0.1.0.json": {
-          "sha256": "55270aa1f570a6bcfc050b4d8d35e8f01c3248e911d031616349f1eac5f08453",
+          "sha256": "c44a3c46d9529ba68caa5612421a189f1b81d3cc3a8c81f82eed13905fa38fc9",
           "lines": 36
         },
         "docs/artifacts/s1-shell-sandbox-readiness-stage22.json": {
-          "sha256": "0d28dea40920121295d259495bf1cc09345afe513f16d4fd5c337013afb8dee3",
-          "lines": 210
+          "sha256": "599738570fd1f7491c500e18e2a38f2ad682e90b1547f13c61ac587dceb5cb57",
+          "lines": 215
         },
         "docs/artifacts/sandbox-acquisition-stage20.json": {
           "sha256": "b63977e1ac7f64d4fa1d1cb1ddbadb06697741411bbaab29441840128d0e7bf1",
@@ -2254,11 +2263,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "37d0f979a0b55ea87fd950398e1c45f4dc5eb76c3f91c05cad640258141ba27b",
+          "sha256": "f3d1cd7bc4266f292f931d3d6858b1ebe6df9e2299184918a49195a1ecf08bad",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "68e2cbcde54345cc6eddaabb10c83a0ee1cebee07caa26cda5fa0e0124a9a4ec",
+          "sha256": "91e4133c7a2a84a5ab023146665e195d8ba31df734957f3733b3ae6e43fddfa3",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -2306,8 +2315,8 @@
           "lines": 204
         },
         "docs/next-stage-gap-matrix.md": {
-          "sha256": "6db1b98df17eebe19d2eba9dd4b8e3602e88eafa38da8890366699cdd271098b",
-          "lines": 12624
+          "sha256": "107a2fcb7ba2c00cad49beee1cab1a9d86139f1847e0b572a09fea451e4a11f7",
+          "lines": 12643
         },
         "docs/product-performance-budget.json": {
           "sha256": "6c238cf77336d87462dda69341bd08bccf18f38543422af4f65c6a4600728966",
@@ -2318,8 +2327,8 @@
           "lines": 4325
         },
         "package.json": {
-          "sha256": "96155301ff249fef020b862c1eae5f1144795f2c44d16a74bfe6412087c6af90",
-          "lines": 139
+          "sha256": "a1d6c771998b46561bc739e39061d9c88b6a2a74541da80bdad38e342a7292a6",
+          "lines": 141
         },
         "packages/contracts/package.json": {
           "sha256": "30e57303e4c41397940da5f51613af40baf7244f3d8d917b30ffe98e00c5cd1a",
@@ -3694,12 +3703,12 @@
           "lines": 134
         },
         "scripts/check-release-artifacts.mjs": {
-          "sha256": "872eb7191d60d5c740c480342f8ba2c3e897c00a5822099db10b72fcb9ea3fcc",
-          "lines": 1967
+          "sha256": "ac36824b0319f9dd72ca243c8ec8e710f830427b244c1cebde6aa6919defe289",
+          "lines": 1974
         },
         "scripts/check-release-artifacts.test.mjs": {
-          "sha256": "4175efd9dd87cf3988000b8322fe3dbbaea48aa2cbe6d877aef2f81ddb0d9b1d",
-          "lines": 1886
+          "sha256": "66029fb383890910d8873cf841f65eb9ca7cbb405c87016b48dd161dbb2da18f",
+          "lines": 1932
         },
         "scripts/check-runtime-environment.mjs": {
           "sha256": "f9f123024ea489666a92986025e422d6031dc3a80407ce58e979857d1d83fafc",
@@ -3710,20 +3719,20 @@
           "lines": 343
         },
         "scripts/check-s1-shell-sandbox-completion-workflow.mjs": {
-          "sha256": "58c609e761a10b24bbc27e3c0430c36ae0bf4d3d301c7a0258b85439dd5a4d70",
-          "lines": 300
+          "sha256": "04a442105200f60b3e8d487a138a9e7b0bdf709e70f6c7ddcd471e359f8bc1f5",
+          "lines": 309
         },
         "scripts/check-s1-shell-sandbox-completion-workflow.test.mjs": {
-          "sha256": "57022781d3bb9db0cb5fd73c82b0a67606e2d7a18a7767b26d30d173558ecd5d",
-          "lines": 160
+          "sha256": "8bfded644c1d1c1bc52ec1f711d68fd3d2dc9f4a01757d49b1cf4326cda2ba20",
+          "lines": 176
         },
         "scripts/check-s1-shell-sandbox-completion.mjs": {
-          "sha256": "751202e1e59d91911a4721cdbfc355e6d2ac973d5a401328b6938897cad94d10",
-          "lines": 491
+          "sha256": "a101c2e3044a873fa710cd63a7a501c76e86a893ea3074fce6de5094acabfb1f",
+          "lines": 476
         },
         "scripts/check-s1-shell-sandbox-completion.test.mjs": {
-          "sha256": "fc19a6470585fda0472f14356a71c7c01540fe5ccfa1442a8ab087354ee0a407",
-          "lines": 642
+          "sha256": "35ff80c591e3fae8e6d9147f23b2ef2577bbb1ff733e4ed2fd08d53d2e40d5a1",
+          "lines": 651
         },
         "scripts/check-s1-upstream-run-authority.mjs": {
           "sha256": "07660c793ce3c8c13c0abf1b339f3c087ec6521b20be704f8a261d3000c51c9d",
@@ -3740,6 +3749,14 @@
         "scripts/check-sandbox-acquisition.test.mjs": {
           "sha256": "212e8e6d3061ecc0cd4a93610319e8c734884f477d24996065885c78ffb62bdd",
           "lines": 113
+        },
+        "scripts/check-sandbox-external-release-promotion.mjs": {
+          "sha256": "ca481d62be143ab0b5a9e712a8125404b25610de0b5d086ac1553f93456e12f9",
+          "lines": 91
+        },
+        "scripts/check-sandbox-external-release-promotion.test.mjs": {
+          "sha256": "58305b174a1fe737629a7340a3496333e0d3b816cf661061592df1e760ce6dc3",
+          "lines": 305
         },
         "scripts/check-sandbox-external-release-workflow.mjs": {
           "sha256": "a0f1a14ce50ae9bc1f8921460a995aca28927d1fd32778bef4d55380d5a9cdd1",
@@ -3805,6 +3822,10 @@
           "sha256": "5bb7ff689269b3126f299ec853cbe553f05926b06f61586d229fb0c0a95f2862",
           "lines": 145
         },
+        "scripts/check-sandbox-retained-external-release.mjs": {
+          "sha256": "cd56984f63278808490d3b9a996b3d8d1a0a853239658206ec2908c0a0d94181",
+          "lines": 165
+        },
         "scripts/check-sandbox-security-casebook.mjs": {
           "sha256": "c355fb89806073b5ce0e3c09be26e0c0451a1b387d68e452432b82734edbf603",
           "lines": 204
@@ -3838,8 +3859,8 @@
           "lines": 58
         },
         "scripts/copy-sandbox-image.test.mjs": {
-          "sha256": "bf81d876d175e521cf9b41aada471cd877ada31053e3934e2609b98fbbc2bf65",
-          "lines": 97
+          "sha256": "74fe34b026f2df7cbd04045d06afc247e0c5523c412d24cd5cd5ba8d8afbd4e1",
+          "lines": 172
         },
         "scripts/generate-management-openapi.mjs": {
           "sha256": "57e10d667d43ef3ecb6f3e7c2ce184ae874f615dbe849596632e8383df6e9d85",
@@ -3973,9 +3994,25 @@
           "sha256": "b6d6f9916703c19b74b4829f7267cccd55c7a68afc9665804e85cde5030cc72e",
           "lines": 511
         },
+        "scripts/s1-completion-source-authority.mjs": {
+          "sha256": "638ab7e5d2e2f2c5a6c1ab60a31bf00db0884a1c9c2275cbdf07633e26a4c638",
+          "lines": 84
+        },
+        "scripts/s1-completion-source-authority.test.mjs": {
+          "sha256": "87399f5d2b89a661179f8a28395efba9d358e1eb4b430e42efd8cfcab8c88ce9",
+          "lines": 89
+        },
+        "scripts/s1-promoted-release-verification.mjs": {
+          "sha256": "c2aa5cea939e8bae4f9a36b960b1e02f3d2d1d0eede7c640be9640134ebb9b77",
+          "lines": 49
+        },
+        "scripts/s1-promoted-release-verification.test.mjs": {
+          "sha256": "d4e159ce3fed69b04f5ed80ee448c3b662ed9b500d839b959e9284faccab7dc2",
+          "lines": 62
+        },
         "scripts/s1-shell-sandbox-completion-artifact.mjs": {
-          "sha256": "7d7c425ef91f2b3465d79167a1b24fd02e8b42fcb8d521843b0c9a91cba87276",
-          "lines": 479
+          "sha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
+          "lines": 486
         },
         "scripts/s1-shell-sandbox-local-evidence.mjs": {
           "sha256": "eb1a8d2bcfc139edf8912e6957e0342903cf82613845263e15f047ea8747e37b",
@@ -4008,6 +4045,14 @@
         "scripts/sandbox-external-publication-model.mjs": {
           "sha256": "a81131adb678080e8ace5d86b69ea0f67d2d71aeff38bdb84f37fd8dd891da8f",
           "lines": 183
+        },
+        "scripts/sandbox-external-release-promotion.mjs": {
+          "sha256": "9e0cceb01fb8be8233f8bcd822d471c3ea1d81cc0b1ce9faa51b3344066010bd",
+          "lines": 472
+        },
+        "scripts/sandbox-external-release-test-fixture.mjs": {
+          "sha256": "2279c26b2942986a61df8856a89037db87a760b09c9735a3ce83482224db7990",
+          "lines": 184
         },
         "scripts/sandbox-first-use-coding-acceptance.mjs": {
           "sha256": "cd797269ccaf4b4a097a2bdc62ec284323778071846c70459d15a7edc079cc34",
@@ -4199,7 +4244,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "6b9cb04d04d91cc1e0171b5cbe9685c89c5b13be46a25141d3e97ce06a434883"
+      "manifestSha256": "cc9dcfc829c9172ece3a8067f9b94fa0096c7b709034194701e896520ad5700f"
     },
     "executionClosure": {
       "algorithm": {
@@ -19993,7 +20038,7 @@
       ],
       "manifestSha256": "32431a8203f28c5e559f5c6c1947cb08f2925a8e11fc066ab646b8401b1df44d"
     },
-    "manifestSha256": "4d1d92576129e1666f65caa4452915a29f106117841bea1b7ae44b0b398364dd"
+    "manifestSha256": "e3df17a77d43c0c9be0fd260eb9bd08ee3a5c4856af92ce0e87c36d1b97ebe02"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -20181,11 +20226,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "37d0f979a0b55ea87fd950398e1c45f4dc5eb76c3f91c05cad640258141ba27b"
+      "sha256": "f3d1cd7bc4266f292f931d3d6858b1ebe6df9e2299184918a49195a1ecf08bad"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "68e2cbcde54345cc6eddaabb10c83a0ee1cebee07caa26cda5fa0e0124a9a4ec"
+      "sha256": "91e4133c7a2a84a5ab023146665e195d8ba31df734957f3733b3ae6e43fddfa3"
     }
   }
 }

@@ -25,6 +25,11 @@ import {
 import { linuxHostProductAcceptanceImplementation } from "./linux-host-product-acceptance-artifact.mjs";
 import { profileUpgradeImplementation } from "./profile-upgrade-artifact.mjs";
 import { collectS1ShellSandboxReadiness } from "./check-s1-shell-sandbox-completion.mjs";
+import {
+  applySandboxExternalReleasePromotion,
+  previewSandboxExternalReleasePromotion,
+} from "./sandbox-external-release-promotion.mjs";
+import { writeSandboxExternalReleaseTestFixture } from "./sandbox-external-release-test-fixture.mjs";
 import { createLongThreadPerformanceMeasurement } from "./product-performance-long-thread.mjs";
 import { createProductPerformanceReport } from "./product-performance.mjs";
 
@@ -562,6 +567,42 @@ describe("release artifacts audit", () => {
         "S1 Shell/Sandbox readiness: S1 Shell/Sandbox readiness artifact shape is invalid",
       ]),
     );
+  });
+
+  it("fails when a retained external Sandbox release closure is partial", async () => {
+    const { root } = await createFixture();
+    await writeFile(
+      path.join(root, "docs/artifacts/sandbox-external-publication-0.1.0.json"),
+      '{"kind":"partial"}\n',
+    );
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain(
+      "Retained Sandbox release closure is incomplete",
+    );
+  });
+
+  it("includes a promoted external Sandbox release and authority in the release set", async () => {
+    const { root } = await createFixture();
+    const fixture = await writeSandboxExternalReleaseTestFixture(root);
+    const { preview } = await previewSandboxExternalReleasePromotion(fixture);
+    await applySandboxExternalReleasePromotion({
+      ...fixture,
+      expectedPreviewSha256: preview.contentSha256,
+    });
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.artifacts.slice(16, 19).map(({ kind }) => kind)).toEqual([
+      "s1-shell-sandbox-readiness-stage22",
+      "sandbox-external-publication-retained",
+      "sandbox-external-publication-authority-retained",
+    ]);
+    expect(result.artifacts).toHaveLength(160);
   });
 
   it("fails when the product performance baseline is tampered", async () => {
@@ -1429,6 +1470,11 @@ async function createFixture() {
     "scripts/s1-shell-sandbox-local-evidence.mjs",
     "scripts/s1-upstream-run-authority.mjs",
     "scripts/check-s1-upstream-run-authority.mjs",
+    "scripts/s1-completion-source-authority.mjs",
+    "scripts/s1-promoted-release-verification.mjs",
+    "scripts/sandbox-external-release-promotion.mjs",
+    "scripts/check-sandbox-external-release-promotion.mjs",
+    "scripts/check-sandbox-retained-external-release.mjs",
     "scripts/check-s1-shell-sandbox-completion.mjs",
     "scripts/check-s1-shell-sandbox-completion-workflow.mjs",
     "scripts/sandbox-external-publication-evidence.mjs",

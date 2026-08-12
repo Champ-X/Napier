@@ -18,6 +18,7 @@ import { verifyLinuxHostProductAcceptance } from "./check-linux-host-product-acc
 import { verifySandboxAcquisition } from "./check-sandbox-acquisition.mjs";
 import { verifyProfileUpgrade } from "./check-profile-upgrade.mjs";
 import { verifyS1ShellSandboxReadiness } from "./check-s1-shell-sandbox-completion.mjs";
+import { verifySandboxRetainedExternalRelease } from "./check-sandbox-retained-external-release.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -744,6 +745,11 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const retainedSandboxReleaseVerification =
+    await verifySandboxRetainedExternalRelease({ repoRoot });
+  if (!retainedSandboxReleaseVerification.valid) {
+    errors.push(...retainedSandboxReleaseVerification.errors);
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -867,6 +873,7 @@ export async function auditReleaseArtifacts(options = {}) {
       sha256: s1ShellSandboxReadinessVerification.sha256,
       valid: s1ShellSandboxReadinessVerification.valid,
     },
+    ...retainedSandboxReleaseVerification.artifacts,
     {
       kind: "product-performance-baseline",
       path: productPerformanceBaselinePath,

@@ -169,13 +169,14 @@ export function createS1ShellSandboxCompletionArtifact(input) {
   const complete = blockers.length === 0;
   const content = {
     kind: S1_COMPLETION_KIND,
-    schemaVersion: 2,
+    schemaVersion: 3,
     generatedAt: input.generatedAt ?? new Date().toISOString(),
     repository: "Champ-X/Napier",
     workflow: S1_COMPLETION_WORKFLOW,
     workflowRunId: input.workflowRunId ?? null,
     workflowRunAttempt: input.workflowRunAttempt ?? null,
     sourceSha: input.sourceSha,
+    releaseSourceSha: input.releaseSourceSha,
     readiness: input.readiness,
     requirements: input.requirements,
     requirementSetSha256: sha256(canonicalJson(input.requirements)),
@@ -208,6 +209,7 @@ export function validateS1ShellSandboxCompletionArtifact(value, expected = {}) {
       "workflowRunId",
       "workflowRunAttempt",
       "sourceSha",
+      "releaseSourceSha",
       "readiness",
       "requirements",
       "requirementSetSha256",
@@ -220,7 +222,7 @@ export function validateS1ShellSandboxCompletionArtifact(value, expected = {}) {
       "contentSha256",
     ]) ||
     value.kind !== S1_COMPLETION_KIND ||
-    value.schemaVersion !== 2 ||
+    value.schemaVersion !== 3 ||
     !isoDate(value.generatedAt) ||
     value.repository !== "Champ-X/Napier" ||
     value.workflow !== S1_COMPLETION_WORKFLOW ||
@@ -230,11 +232,15 @@ export function validateS1ShellSandboxCompletionArtifact(value, expected = {}) {
       value.status,
     ) ||
     !SOURCE_SHA.test(value.sourceSha ?? "") ||
+    !SOURCE_SHA.test(value.releaseSourceSha ?? "") ||
     !validReadinessReference(value.readiness) ||
     !validRequirements(value.requirements) ||
     value.requirementSetSha256 !== sha256(canonicalJson(value.requirements)) ||
     value.readiness.requirementSetSha256 !== value.requirementSetSha256 ||
-    !validExternalPublication(value.externalPublication, value.sourceSha) ||
+    !validExternalPublication(
+      value.externalPublication,
+      value.releaseSourceSha,
+    ) ||
     !validWindowsHost(value.windowsHost, value.sourceSha) ||
     !validCompletionState(value) ||
     canonicalJson(value.retention) !== canonicalJson(completionRetention()) ||
@@ -247,6 +253,7 @@ export function validateS1ShellSandboxCompletionArtifact(value, expected = {}) {
     "workflowRunId",
     "workflowRunAttempt",
     "sourceSha",
+    "releaseSourceSha",
     "readiness",
     "requirements",
     "externalPublication",

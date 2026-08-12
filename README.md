@@ -7288,12 +7288,58 @@ the exact repository, workflow path, manual event, completed-success status,
 whose embedded run/repository identity matches. An `EXIT` trap deletes the raw
 API responses; only bounded hash/status/count authority projections remain.
 
-The completed schema-2 receipt binds both sanitized authority file/self hashes,
+The completed schema-3 receipt binds both sanitized authority file/self hashes,
 upstream workflow run IDs/attempts, receipt/self hashes, source SHA, image
 digest/context, and Windows host/product identities. The uploaded completion
 bundle contains the completion receipt plus both sanitized run authorities and
 is produced only after `status=complete`, an empty blocker set, and
 `s1Complete=true`.
+
+The signed release must be promoted into the product before S1 can complete.
+After downloading the release evidence and creating its sanitized run-authority
+JSON, use the exact-preview transaction:
+
+```bash
+npm run promote:sandbox-external-release -- \
+  --source-sha <release-source-sha> \
+  --expected-run-id <release-run-id> \
+  --evidence-dir <downloaded-release-evidence-directory> \
+  --authority-path <sanitized-external-publication-authority.json>
+
+npm run promote:sandbox-external-release -- \
+  --source-sha <release-source-sha> \
+  --expected-run-id <release-run-id> \
+  --evidence-dir <downloaded-release-evidence-directory> \
+  --authority-path <sanitized-external-publication-authority.json> \
+  --expected-preview <preview-content-sha256> \
+  --apply
+```
+
+Preview verifies the complete release evidence, GitHub run authority, and
+current Docker context without mutation. Apply CAS-checks the retained receipt,
+retained authority, and Runtime package bytes, then atomically writes
+`docs/artifacts/sandbox-external-publication-0.1.0.json` and its sanitized
+authority and copies the exact receipt into the Runtime package. Copy or
+verification failure restores all prior bytes. Then rebuild the release set,
+refresh the repository's exact repair snapshot, run the complete gate, and
+commit the retained receipt, retained authority, release audit, and refreshed
+snapshot before Windows acceptance:
+
+```bash
+npm run write:release-artifacts
+node scripts/capture-sdk-capability-parity.mjs \
+  --output-dir docs/artifacts/sdk-capability-parity-stage7 \
+  --verify-current
+npm run check
+```
+
+Completion therefore accepts separate SHAs: `source_sha` is the exact current
+`main` commit accepted by Windows and the completion gate;
+`release_source_sha` is the promoted signed-release commit and must be its Git
+ancestor. The current checkout must contain that exact retained receipt and a
+byte-identical built Runtime package. This avoids requiring a signed release to
+refer to a future commit while still preventing an unrelated old release from
+satisfying S1.
 
 Workflow success, queue state, an artifact name, a synthetic pending receipt,
 or either upstream receipt alone is never completion evidence. A successful

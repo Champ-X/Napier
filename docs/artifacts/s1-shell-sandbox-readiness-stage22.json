@@ -1,17 +1,22 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-12T11:25:22.470Z",
+  "generatedAt": "2026-08-12T13:32:03.937Z",
   "implementation": {
-    "modelSha256": "7d7c425ef91f2b3465d79167a1b24fd02e8b42fcb8d521843b0c9a91cba87276",
-    "checkerSha256": "751202e1e59d91911a4721cdbfc355e6d2ac973d5a401328b6938897cad94d10",
+    "modelSha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
+    "checkerSha256": "a101c2e3044a873fa710cd63a7a501c76e86a893ea3074fce6de5094acabfb1f",
     "localEvidenceSha256": "eb1a8d2bcfc139edf8912e6957e0342903cf82613845263e15f047ea8747e37b",
-    "workflowSha256": "4281fe4d3e10ea4723614687c621bcd1fd1bdb8a03afe422d003187e0e47d054",
-    "workflowCheckerSha256": "58c609e761a10b24bbc27e3c0430c36ae0bf4d3d301c7a0258b85439dd5a4d70",
+    "workflowSha256": "a2da3ab75876457deebe9feccd6076363e4dcead07264c448a703ffb46b8edee",
+    "workflowCheckerSha256": "04a442105200f60b3e8d487a138a9e7b0bdf709e70f6c7ddcd471e359f8bc1f5",
     "externalEvidenceSha256": "78d17e9f748a2b2eecba8bc0a31d71f3f88a9a265b39ebbe976cb0f9c49fbe8b",
     "externalModelSha256": "a81131adb678080e8ace5d86b69ea0f67d2d71aeff38bdb84f37fd8dd891da8f",
     "runAuthoritySha256": "7830ced742cf05802072b6271539cf9cfd53d066d934a95bdbd14eaf1ffc6111",
     "runAuthorityCheckSha256": "07660c793ce3c8c13c0abf1b339f3c087ec6521b20be704f8a261d3000c51c9d",
+    "sourceAuthoritySha256": "638ab7e5d2e2f2c5a6c1ab60a31bf00db0884a1c9c2275cbdf07633e26a4c638",
+    "promotedReleaseSha256": "c2aa5cea939e8bae4f9a36b960b1e02f3d2d1d0eede7c640be9640134ebb9b77",
+    "promotionModelSha256": "9e0cceb01fb8be8233f8bcd822d471c3ea1d81cc0b1ce9faa51b3344066010bd",
+    "promotionCheckSha256": "ca481d62be143ab0b5a9e712a8125404b25610de0b5d086ac1553f93456e12f9",
+    "retainedReleaseCheckSha256": "cd56984f63278808490d3b9a996b3d8d1a0a853239658206ec2908c0a0d94181",
     "windowsCheckerSha256": "78c5900806d27bb2622c31ba55669e755f385d1ee8bc139bbad76fa4021d3d44",
     "windowsModelSha256": "580bf72b7d35dc3e3dfbb927310dab2004efd75211fedea7b03a09f1f88332a0"
   },
@@ -206,5 +211,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "6e49912b4f5f0865164a18528f89fc34d7cc4a0c819ef89aa589035a03c56944"
+  "contentSha256": "f1ce54e8196cf0d4317539f6e27991a179b12ba273fed13e7a90625cb64522e5"
 }
