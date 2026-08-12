@@ -9565,16 +9565,28 @@ readiness + external publication + Windows host
 transition. `s1-shell-sandbox-local-evidence.mjs` replays the local verifiers
 and binds artifact/verifier hashes. `check-s1-shell-sandbox-completion.mjs`
 verifies readiness and invokes the existing strict external and Windows
-verifiers. The separate workflow auditor requires manual dispatch, read-only
+verifiers. `s1-upstream-run-authority.mjs` independently projects the read-only
+GitHub Actions run/artifact responses into a strict necessary-authority record:
+repository/head-repository IDs, workflow path, manual event, completed-success
+state, branch, source SHA, run ID/attempt, and one unexpired nonempty named
+artifact must all agree. Raw API responses are deleted through an `EXIT` trap;
+the retained authority omits download URLs, actor identity, logs, and token
+values.
+
+The separate workflow auditor requires manual dispatch, read-only
 Actions/content permissions, full-SHA-pinned Actions, exact current-main
-checkout, explicit upstream run IDs, exact source-addressed artifact names,
-semantic completion assertions, and `always()` cleanup.
+checkout, explicit upstream run IDs, the fixed GitHub REST API and version,
+stdin-only token transport, exact source-addressed artifact names, semantic
+completion assertions, retained sanitized authorities, and `always()` cleanup.
 
 The checked-in readiness artifact is not source-SHA completion evidence and
 cannot become complete. It always names both external blockers and keeps
 `s1Complete=false`. The ephemeral completion receipt carries the exact source
 SHA and becomes complete only when both independently verified upstream
-receipts are present. Absence is represented as a blocker. Invalid, stale,
-wrong-run, or cross-source evidence is a hard error. Workflow conclusion,
-queue state, artifact discovery, or one accepted upstream receipt never
-substitutes for the missing authority.
+receipts are present. Completion schema 2 binds each authority file hash and
+self-hash before cross-checking its workflow, attempt, and source SHA against
+the semantic receipt. Absence is represented as a blocker. Partial input or
+invalid, stale, wrong-run, forked, expired-artifact, or cross-source evidence is
+a hard error. Workflow conclusion and artifact discovery are necessary source
+facts but never sufficient completion evidence; one accepted authority or
+receipt never substitutes for the other.

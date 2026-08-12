@@ -1,15 +1,17 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-12T09:43:48.048Z",
+  "generatedAt": "2026-08-12T11:25:22.470Z",
   "implementation": {
-    "modelSha256": "b06fee6a7b6115ee39facfcede92958f33d8d9a50b686c6e2eb34c013ec0c91b",
-    "checkerSha256": "d1356aa5843d83fb5c8982204f43d37d0e72075a484c5b54da862670da10d41e",
+    "modelSha256": "7d7c425ef91f2b3465d79167a1b24fd02e8b42fcb8d521843b0c9a91cba87276",
+    "checkerSha256": "751202e1e59d91911a4721cdbfc355e6d2ac973d5a401328b6938897cad94d10",
     "localEvidenceSha256": "eb1a8d2bcfc139edf8912e6957e0342903cf82613845263e15f047ea8747e37b",
-    "workflowSha256": "108e71343b3bd62ed412070dd3d03814cb057d6882a025ab2f6671d1822b4de9",
-    "workflowCheckerSha256": "412d6806e559589b4c9b712ceae38b2f6efe3647531f99a7597b4a5d81c7b69f",
+    "workflowSha256": "4281fe4d3e10ea4723614687c621bcd1fd1bdb8a03afe422d003187e0e47d054",
+    "workflowCheckerSha256": "58c609e761a10b24bbc27e3c0430c36ae0bf4d3d301c7a0258b85439dd5a4d70",
     "externalEvidenceSha256": "78d17e9f748a2b2eecba8bc0a31d71f3f88a9a265b39ebbe976cb0f9c49fbe8b",
     "externalModelSha256": "a81131adb678080e8ace5d86b69ea0f67d2d71aeff38bdb84f37fd8dd891da8f",
+    "runAuthoritySha256": "7830ced742cf05802072b6271539cf9cfd53d066d934a95bdbd14eaf1ffc6111",
+    "runAuthorityCheckSha256": "07660c793ce3c8c13c0abf1b339f3c087ec6521b20be704f8a261d3000c51c9d",
     "windowsCheckerSha256": "78c5900806d27bb2622c31ba55669e755f385d1ee8bc139bbad76fa4021d3d44",
     "windowsModelSha256": "580bf72b7d35dc3e3dfbb927310dab2004efd75211fedea7b03a09f1f88332a0"
   },
@@ -204,5 +206,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "037840c50cc4fc9f0cda8b2540189c890205f0f0446d01201570ec96e8253ab7"
+  "contentSha256": "6e49912b4f5f0865164a18528f89fc34d7cc4a0c819ef89aa589035a03c56944"
 }

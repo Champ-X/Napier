@@ -7281,18 +7281,30 @@ The manual completion workflow is
 `.github/workflows/s1-shell-sandbox-completion.yml`. It accepts an exact current
 `main` source SHA plus explicit external-publication and Windows workflow run
 IDs, downloads the exact source-addressed artifact names with read-only
-permissions, and runs the existing semantic verifiers. The completed receipt
-binds both upstream workflow run IDs/attempts, receipt/self hashes, source SHA,
-image digest/context, and Windows host/product identities. It uploads a result
-only after `status=complete`, an empty blocker set, and `s1Complete=true`.
+permissions, and runs the existing semantic verifiers. Before either download,
+it queries GitHub's read-only Actions API for each explicit run ID and requires
+the exact repository, workflow path, manual event, completed-success status,
+`main` branch, source SHA, run attempt, and one unexpired nonempty artifact
+whose embedded run/repository identity matches. An `EXIT` trap deletes the raw
+API responses; only bounded hash/status/count authority projections remain.
+
+The completed schema-2 receipt binds both sanitized authority file/self hashes,
+upstream workflow run IDs/attempts, receipt/self hashes, source SHA, image
+digest/context, and Windows host/product identities. The uploaded completion
+bundle contains the completion receipt plus both sanitized run authorities and
+is produced only after `status=complete`, an empty blocker set, and
+`s1Complete=true`.
 
 Workflow success, queue state, an artifact name, a synthetic pending receipt,
-or either upstream receipt alone is never completion evidence. A missing
-receipt produces an explicit blocker; a supplied malformed, stale, wrong-run,
-or wrong-source receipt fails instead of degrading to blocked. With no upstream
-receipts, the completion CLI writes only a sanitized blocked artifact and exits 2. S1 therefore remains incomplete—and S2 must not begin—until a real public
-signed external release and a real Windows x64 Docker host receipt for the same
-source SHA both pass.
+or either upstream receipt alone is never completion evidence. A successful
+run authority is necessary but not sufficient: its independently verified
+semantic receipt must also match the same workflow, run attempt, and source
+SHA. A missing receipt produces an explicit blocker; a supplied malformed,
+stale, wrong-run, or wrong-source authority/receipt fails instead of degrading
+to blocked. With no upstream receipts, the completion CLI writes only a
+sanitized blocked artifact and exits 2. S1 therefore remains incomplete—and S2
+must not begin—until a real public signed external release and a real Windows
+x64 Docker host receipt for the same source SHA both pass.
 
 The retained runtime-environment receipt is deliberately portable across the
 supported host matrix rather than tied to the machine that wrote it. Schema 2

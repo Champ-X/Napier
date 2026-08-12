@@ -169,7 +169,7 @@ export function createS1ShellSandboxCompletionArtifact(input) {
   const complete = blockers.length === 0;
   const content = {
     kind: S1_COMPLETION_KIND,
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: input.generatedAt ?? new Date().toISOString(),
     repository: "Champ-X/Napier",
     workflow: S1_COMPLETION_WORKFLOW,
@@ -220,7 +220,7 @@ export function validateS1ShellSandboxCompletionArtifact(value, expected = {}) {
       "contentSha256",
     ]) ||
     value.kind !== S1_COMPLETION_KIND ||
-    value.schemaVersion !== 1 ||
+    value.schemaVersion !== 2 ||
     !isoDate(value.generatedAt) ||
     value.repository !== "Champ-X/Napier" ||
     value.workflow !== S1_COMPLETION_WORKFLOW ||
@@ -319,6 +319,8 @@ function validExternalPublication(value, sourceSha) {
         "workflowRunId",
         "workflowRunAttempt",
         "sourceSha",
+        "runAuthorityFileSha256",
+        "runAuthoritySha256",
         "receiptSha256",
         "contentSha256",
         "digest",
@@ -328,6 +330,8 @@ function validExternalPublication(value, sourceSha) {
       positiveIntegerText(value.workflowRunId) &&
       positiveIntegerText(value.workflowRunAttempt) &&
       value.sourceSha === sourceSha &&
+      SHA256.test(value.runAuthorityFileSha256 ?? "") &&
+      SHA256.test(value.runAuthoritySha256 ?? "") &&
       SHA256.test(value.receiptSha256 ?? "") &&
       SHA256.test(value.contentSha256 ?? "") &&
       DIGEST.test(value.digest ?? "") &&
@@ -344,6 +348,8 @@ function validWindowsHost(value, sourceSha) {
         "workflowRunId",
         "workflowRunAttempt",
         "sourceSha",
+        "runAuthorityFileSha256",
+        "runAuthoritySha256",
         "receiptSha256",
         "contentSha256",
         "hostIdentitySha256",
@@ -354,6 +360,8 @@ function validWindowsHost(value, sourceSha) {
       positiveIntegerText(value.workflowRunAttempt) &&
       value.sourceSha === sourceSha &&
       [
+        value.runAuthorityFileSha256,
+        value.runAuthoritySha256,
         value.receiptSha256,
         value.contentSha256,
         value.hostIdentitySha256,

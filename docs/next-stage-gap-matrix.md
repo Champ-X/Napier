@@ -312,10 +312,21 @@ Acceptance and threat boundary:
   external-publication evidence directory and strict Windows host receipt.
   Both upstream workflow run IDs, attempts, receipt hashes, self-hashes, source
   SHA, and selected product identities are bound;
+- before downloading either artifact, query the read-only GitHub Actions REST
+  API by explicit run ID. Require the exact repository and head repository,
+  workflow path, manual event, completed-success status, `main`, source SHA,
+  run attempt, and one unexpired nonempty exact-name artifact with matching
+  embedded run/repository identity;
+- delete raw run/artifact API responses through an `EXIT` trap. Retain only
+  bounded sanitized authorities with no token, actor, URL, logs, or raw body;
+- bind authority file/self hashes into completion schema 2 and cross-check
+  workflow, run ID/attempt, and source SHA against each semantic receipt.
+  Successful workflow authority is necessary but never sufficient;
 - distinguish absence from invalid evidence. An absent receipt is an explicit
   blocker; a supplied receipt that fails semantic verification, comes from the
-  wrong run, or names a different source SHA is an error, not a blocker that
-  can be waived;
+  wrong run/attempt, is forked/expired, or names a different source SHA is an
+  error, not a blocker that can be waived. Partial authority/receipt inputs
+  also fail rather than degrading to blocked;
 - keep the aggregator manual-only with `actions:read` and `contents:read`.
   Download exact-SHA artifacts from explicitly supplied run IDs, require
   `status=complete`, empty blockers, and `s1Complete=true` before upload;
@@ -328,10 +339,12 @@ Observed result:
   groups and remains blocked by exactly
   `public_signed_external_release` and
   `windows_host_product_acceptance`;
-- focused aggregate/workflow coverage passes 14 cases, including a complete
-  integration arm that runs both existing strict upstream verifiers, run-ID
-  mismatch, source mixing, workflow-success/queued substitution, blocker
-  suppression, unknown retained body, and blocked replay;
+- focused authority/aggregate/workflow coverage passes 40 cases, including a
+  complete integration arm that runs both existing strict upstream verifiers,
+  failed/queued/wrong-workflow/forked/expired authority, run-ID/attempt
+  mismatch, source mixing, token-in-argv rejection, raw-response cleanup,
+  blocker suppression, unknown retained body, partial inputs, and blocked
+  replay;
 - the release artifact fixture passes 41 cases and rejects a Stage 22 receipt
   that clears blockers or sets `s1Complete=true` even after recomputing its
   outer hash;
@@ -339,16 +352,27 @@ Observed result:
   cycles. The model, local-evidence collector, checker, and workflow auditor
   remain separate production leaves below the 500-line budget;
 - the release audit now covers 158 artifacts. Stage 22 receipt SHA-256 is
-  `952d88c25a67f0ba629f784b159cbc2481aac92ce2fff9434956c577a595a37c`,
+  `0d28dea40920121295d259495bf1cc09345afe513f16d4fd5c337013afb8dee3`,
   requirement-set SHA-256 is
   `7a9b7dc9be88b56700637b13619a5ea1cd876c69115b5dd184372b74e29e4c04`,
   release-set SHA-256 is
-  `23e8143e8bae27db470f95312abe16101e540f7bbddc3e159a8eab37ba341da6`,
+  `fecc6f20686512a60ffb62aeaea9a048c0e99657547f0a1e680c5ae7fddfb2da`,
   and release-receipt SHA-256 is
-  `7b7ed6664ebc9f4ecfebe6e467aae088b9bd88afe4816a092d774477d05e0d94`;
+  `7c2a6720bb3ce32f7a893cc7a469781b33e5aa185a0b0e4ea9da187de37e1989`;
 - real blocked CLI Dogfood used the current source SHA with no upstream
   receipts, wrote a temporary sanitized completion artifact, returned exit
   code 2, retained both blockers, and kept `nextStage=null`;
+- live run-authority Dogfood queried successful bootstrap run `31587633411`
+  and cancelled Windows run `31578335644`. The bootstrap run failed authority
+  because it intentionally had no release evidence artifact; the Windows run
+  failed because its conclusion was not success. Both arms removed all raw API
+  files and retained only error hashes;
+- the complete repository gate passes 3,309 regular tests: Root 340, CLI 259,
+  Server 217, Web 682, Contracts 124, Runtime 1,608, and SDK 79. Product
+  performance passes at 573.3 ms to first CLI event, 720.7 ms to first token,
+  1,041.7 ms to completion, 0.3 ms read p95, 4.6 ms for a 1,000-event
+  projection, and 727.723 bytes per SQLite event. Production Web E2E passes all
+  four viewports with zero console errors and no horizontal overflow;
 - `blocked externally`: this slice adds no public GHCR release and no Windows
   runner. S1 remains incomplete and S2 remains out of scope until both real
   exact-SHA upstream artifacts pass the completion workflow.

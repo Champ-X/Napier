@@ -1427,6 +1427,8 @@ async function createFixture() {
     "scripts/check-profile-upgrade.mjs",
     "scripts/s1-shell-sandbox-completion-artifact.mjs",
     "scripts/s1-shell-sandbox-local-evidence.mjs",
+    "scripts/s1-upstream-run-authority.mjs",
+    "scripts/check-s1-upstream-run-authority.mjs",
     "scripts/check-s1-shell-sandbox-completion.mjs",
     "scripts/check-s1-shell-sandbox-completion-workflow.mjs",
     "scripts/sandbox-external-publication-evidence.mjs",

@@ -117,6 +117,18 @@ function validateJob(jobs, errors) {
     "Download the exact external publication evidence",
   );
   const windows = byName.get("Download the exact Windows host receipt");
+  const authority = byName.get(
+    "Verify exact upstream workflow run authorities",
+  );
+  if (
+    authority?.env?.GITHUB_TOKEN !== "${{ github.token }}" ||
+    authority?.env?.SOURCE_SHA !== "${{ inputs.source_sha }}" ||
+    authority?.env?.EXTERNAL_PUBLICATION_RUN_ID !==
+      "${{ inputs.external_publication_run_id }}" ||
+    authority?.env?.WINDOWS_HOST_RUN_ID !== "${{ inputs.windows_host_run_id }}"
+  ) {
+    errors.push("s1_completion_workflow_authority_env_invalid");
+  }
   validateDownload(
     external,
     "sandbox-external-publication-${{ inputs.source_sha }}",
@@ -137,8 +149,7 @@ function validateJob(jobs, errors) {
   if (
     upload?.with?.name !==
       "napier-s1-shell-sandbox-completion-${{ inputs.source_sha }}" ||
-    upload?.with?.path !==
-      "completion-output/s1-shell-sandbox-completion.json" ||
+    upload?.with?.path !== "completion-output/" ||
     upload?.with?.["if-no-files-found"] !== "error" ||
     upload?.with?.["retention-days"] !== 90
   ) {
@@ -199,6 +210,27 @@ function validateCommandClosure(source, errors) {
     'test "$(git rev-parse origin/main)" = "${SOURCE_SHA}"',
     "npm ci --no-audit --no-fund",
     "npm run check:s1-shell-sandbox-completion",
+    "Verify exact upstream workflow run authorities",
+    "https://api.github.com/repos/Champ-X/Napier/actions/runs/${run_id}",
+    "https://api.github.com/repos/Champ-X/Napier/actions/runs/${run_id}/artifacts?per_page=100",
+    "printf 'header = \"Accept: application/vnd.github+json\"\\n'",
+    'printf \'header = "Authorization: Bearer %s"\\n\' "${GITHUB_TOKEN}"',
+    "printf 'header = \"X-GitHub-Api-Version: 2022-11-28\"\\n'",
+    "--config -",
+    "scripts/check-s1-upstream-run-authority.mjs",
+    '--authority "${authority}"',
+    '--source-sha "${SOURCE_SHA}"',
+    '--expected-run-id "${run_id}"',
+    '--run-path "${run_path}"',
+    '--artifacts-path "${artifacts_path}"',
+    '--output-path "${output_path}"',
+    "cleanup_raw_authority() {",
+    "rm -f upstream/authority/*-run.json",
+    "rm -f upstream/authority/*-artifacts.json",
+    "trap cleanup_raw_authority EXIT",
+    'rm -f "${run_path}" "${artifacts_path}"',
+    "external_publication",
+    "windows_host_product_acceptance",
     "sandbox-external-publication-${{ inputs.source_sha }}",
     "napier-windows-host-product-acceptance-${{ inputs.source_sha }}",
     "run-id: ${{ inputs.external_publication_run_id }}",
@@ -207,9 +239,13 @@ function validateCommandClosure(source, errors) {
     '--source-sha "${SOURCE_SHA}"',
     '--external-publication-run-id "${{ inputs.external_publication_run_id }}"',
     '--windows-host-run-id "${{ inputs.windows_host_run_id }}"',
+    "--external-publication-authority upstream/authority/external_publication.json",
+    "--windows-host-authority upstream/authority/windows_host_product_acceptance.json",
     "--external-publication-dir upstream/external-publication",
     "--windows-receipt upstream/windows-host/napier-windows-host-product-acceptance.json",
     "--completion-path completion-output/s1-shell-sandbox-completion.json",
+    "completion-output/external-publication-run-authority.json",
+    "completion-output/windows-host-run-authority.json",
     '.status == "complete"',
     ".scope.s1Complete == true",
     "(.blockers | length) == 0",
@@ -231,6 +267,12 @@ function validateCommandClosure(source, errors) {
     "continue-on-error",
     "workflow_run",
     "conclusion == 'success'",
+    "api.github.com/graphql",
+    "actions/runs?workflow",
+    "secrets.",
+    "echo ${GITHUB_TOKEN}",
+    '--header "Authorization:',
+    '-H "Authorization:',
   ];
   for (const fragment of forbidden) {
     if (source.includes(fragment)) {

@@ -26,6 +26,7 @@ import {
   createWindowsHostProductAcceptanceReceipt,
   windowsHostProductAcceptanceImplementation,
 } from "./windows-host-product-acceptance-artifact.mjs";
+import { createS1UpstreamRunAuthority } from "./s1-upstream-run-authority.mjs";
 
 const SOURCE_SHA = "a".repeat(40);
 const HASH = "b".repeat(64);
@@ -184,12 +185,26 @@ describe("S1 Shell/Sandbox aggregate gate", () => {
   it("completes only after both strict upstream verifiers accept exact-run receipts", async () => {
     const external = await externalEvidenceFixture();
     const windowsReceiptPath = await writeWindowsReceipt();
+    const externalPublicationAuthorityPath = await writeRunAuthority({
+      authority: "external_publication",
+      workflow: ".github/workflows/publish-sandbox.yml",
+      runId: "456",
+      artifactName: `sandbox-external-publication-${SOURCE_SHA}`,
+    });
+    const windowsHostAuthorityPath = await writeRunAuthority({
+      authority: "windows_host_product_acceptance",
+      workflow: ".github/workflows/windows-host-product-acceptance.yml",
+      runId: "789",
+      artifactName: `napier-windows-host-product-acceptance-${SOURCE_SHA}`,
+    });
     const options = {
       sourceSha: SOURCE_SHA,
       workflowRunId: "999",
       workflowRunAttempt: "1",
       externalPublicationRunId: "456",
       windowsHostRunId: "789",
+      externalPublicationAuthorityPath,
+      windowsHostAuthorityPath,
       externalPublicationDir: external.root,
       windowsReceiptPath,
     };
@@ -227,7 +242,28 @@ describe("S1 Shell/Sandbox aggregate gate", () => {
         ...options,
         externalPublicationRunId: "457",
       }),
-    ).rejects.toThrow("workflow run does not match");
+    ).rejects.toThrow("workflowRunId does not match");
+    const windowsAuthority = JSON.parse(
+      await readFile(windowsHostAuthorityPath, "utf8"),
+    );
+    windowsAuthority.workflowRunAttempt = "2";
+    rehash(windowsAuthority);
+    await writeFile(
+      windowsHostAuthorityPath,
+      `${JSON.stringify(windowsAuthority, null, 2)}\n`,
+    );
+    await expect(collectS1ShellSandboxCompletion(options)).rejects.toThrow(
+      "receipt does not match run authority",
+    );
+  });
+
+  it("rejects partial upstream authority inputs instead of degrading to blocked", async () => {
+    await expect(
+      collectS1ShellSandboxCompletion({
+        sourceSha: SOURCE_SHA,
+        externalPublicationRunId: "456",
+      }),
+    ).rejects.toThrow("authority inputs must be supplied together");
   });
 
   it("rejects a tampered blocked completion during replay", async () => {
@@ -309,6 +345,8 @@ function externalReceipt() {
     workflowRunId: "456",
     workflowRunAttempt: "1",
     sourceSha: SOURCE_SHA,
+    runAuthorityFileSha256: HASH,
+    runAuthoritySha256: HASH,
     receiptSha256: HASH,
     contentSha256: HASH,
     digest: `sha256:${HASH}`,
@@ -322,6 +360,8 @@ function windowsReceipt() {
     workflowRunId: "789",
     workflowRunAttempt: "1",
     sourceSha: SOURCE_SHA,
+    runAuthorityFileSha256: HASH,
+    runAuthoritySha256: HASH,
     receiptSha256: HASH,
     contentSha256: HASH,
     hostIdentitySha256: HASH,
@@ -506,6 +546,50 @@ async function writeWindowsReceipt() {
   });
   await writeFile(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
   return receiptPath;
+}
+
+async function writeRunAuthority({ authority, workflow, runId, artifactName }) {
+  const root = await mkdtemp(path.join(tmpdir(), "napier-s1-authority-"));
+  roots.push(root);
+  const artifactPath = path.join(root, `${authority}.json`);
+  const value = createS1UpstreamRunAuthority({
+    authority,
+    sourceSha: SOURCE_SHA,
+    expectedRunId: runId,
+    run: {
+      id: Number(runId),
+      run_attempt: 1,
+      event: "workflow_dispatch",
+      status: "completed",
+      conclusion: "success",
+      head_branch: "main",
+      head_sha: SOURCE_SHA,
+      path: workflow,
+      updated_at: "2026-08-12T00:00:00.000Z",
+      repository: { id: 42, full_name: "Champ-X/Napier" },
+      head_repository: { id: 42, full_name: "Champ-X/Napier" },
+    },
+    artifacts: {
+      total_count: 1,
+      artifacts: [
+        {
+          id: Number(runId) + 1000,
+          name: artifactName,
+          expired: false,
+          size_in_bytes: 1024,
+          workflow_run: {
+            id: Number(runId),
+            head_branch: "main",
+            head_sha: SOURCE_SHA,
+            repository_id: 42,
+            head_repository_id: 42,
+          },
+        },
+      ],
+    },
+  });
+  await writeFile(artifactPath, `${JSON.stringify(value, null, 2)}\n`);
+  return artifactPath;
 }
 
 function descriptor(os, architecture, digit) {

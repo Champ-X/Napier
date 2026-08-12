@@ -10,6 +10,10 @@ import {
   validateS1ShellSandboxReadinessArtifact,
 } from "./s1-shell-sandbox-completion-artifact.mjs";
 import { collectS1LocalRequirements } from "./s1-shell-sandbox-local-evidence.mjs";
+import {
+  S1_RUN_AUTHORITY_CONFIG,
+  validateS1UpstreamRunAuthority,
+} from "./s1-upstream-run-authority.mjs";
 import { sha256 } from "./sandbox-external-publication-model.mjs";
 import { verifySandboxExternalPublicationEvidence } from "./sandbox-external-publication-evidence.mjs";
 
@@ -28,6 +32,8 @@ export async function s1ShellSandboxCompletionImplementation(repoRoot) {
     workflowChecker: "scripts/check-s1-shell-sandbox-completion-workflow.mjs",
     externalEvidence: "scripts/sandbox-external-publication-evidence.mjs",
     externalModel: "scripts/sandbox-external-publication-model.mjs",
+    runAuthority: "scripts/s1-upstream-run-authority.mjs",
+    runAuthorityCheck: "scripts/check-s1-upstream-run-authority.mjs",
     windowsChecker: "scripts/check-windows-host-product-acceptance.mjs",
     windowsModel: "scripts/windows-host-product-acceptance-artifact.mjs",
   };
@@ -96,6 +102,16 @@ export async function collectS1ShellSandboxCompletion(options) {
   if (!SOURCE_SHA.test(sourceSha)) {
     throw new Error("S1 completion source SHA is invalid");
   }
+  requireCompleteUpstreamInputs("external publication", [
+    options.externalPublicationRunId,
+    options.externalPublicationAuthorityPath,
+    options.externalPublicationDir,
+  ]);
+  requireCompleteUpstreamInputs("Windows host", [
+    options.windowsHostRunId,
+    options.windowsHostAuthorityPath,
+    options.windowsReceiptPath,
+  ]);
   const readiness = await verifyS1ShellSandboxReadiness({
     repoRoot,
     artifactPath: options.readinessPath,
@@ -111,6 +127,7 @@ export async function collectS1ShellSandboxCompletion(options) {
           path.resolve(options.externalPublicationDir),
           sourceSha,
           options.externalPublicationRunId,
+          options.externalPublicationAuthorityPath,
         )
       : null,
     options.windowsReceiptPath
@@ -119,6 +136,7 @@ export async function collectS1ShellSandboxCompletion(options) {
           path.resolve(options.windowsReceiptPath),
           sourceSha,
           options.windowsHostRunId,
+          options.windowsHostAuthorityPath,
         )
       : null,
   ]);
@@ -167,7 +185,14 @@ async function verifiedExternalPublication(
   evidenceDir,
   sourceSha,
   expectedRunId,
+  authorityPath,
 ) {
+  const runAuthority = await verifiedRunAuthority({
+    artifactPath: authorityPath,
+    authority: "external_publication",
+    sourceSha,
+    expectedRunId,
+  });
   const result = await verifySandboxExternalPublicationEvidence(evidenceDir);
   if (!result.valid) {
     throw new Error(
@@ -183,11 +208,14 @@ async function verifiedExternalPublication(
   if (expectedRunId && receipt.workflowRunId !== expectedRunId) {
     throw new Error("External publication receipt workflow run does not match");
   }
+  requireReceiptAuthorityMatch(receipt, runAuthority.value);
   return {
     workflow: receipt.workflow,
     workflowRunId: receipt.workflowRunId,
     workflowRunAttempt: receipt.workflowRunAttempt,
     sourceSha: receipt.sourceSha,
+    runAuthorityFileSha256: runAuthority.fileSha256,
+    runAuthoritySha256: runAuthority.value.contentSha256,
     receiptSha256: result.sha256,
     contentSha256: receipt.contentSha256,
     digest: receipt.digest,
@@ -200,7 +228,14 @@ async function verifiedWindowsHost(
   artifactPath,
   sourceSha,
   expectedRunId,
+  authorityPath,
 ) {
+  const runAuthority = await verifiedRunAuthority({
+    artifactPath: authorityPath,
+    authority: "windows_host_product_acceptance",
+    sourceSha,
+    expectedRunId,
+  });
   const result = await verifyWindowsHostProductAcceptance({
     repoRoot,
     artifactPath,
@@ -218,16 +253,65 @@ async function verifiedWindowsHost(
   if (expectedRunId && receipt.workflowRunId !== expectedRunId) {
     throw new Error("Windows host receipt workflow run does not match");
   }
+  requireReceiptAuthorityMatch(receipt, runAuthority.value);
   return {
     workflow: receipt.workflow,
     workflowRunId: receipt.workflowRunId,
     workflowRunAttempt: receipt.workflowRunAttempt,
     sourceSha: receipt.sourceSha,
+    runAuthorityFileSha256: runAuthority.fileSha256,
+    runAuthoritySha256: runAuthority.value.contentSha256,
     receiptSha256: result.sha256,
     contentSha256: receipt.contentSha256,
     hostIdentitySha256: receipt.host.identitySha256,
     productContentSha256: receipt.product.contentSha256,
   };
+}
+
+async function verifiedRunAuthority(options) {
+  if (
+    typeof options.artifactPath !== "string" ||
+    !path.isAbsolute(options.artifactPath)
+  ) {
+    throw new Error("S1 upstream run authority path must be absolute");
+  }
+  const bytes = await readFile(options.artifactPath);
+  let authority;
+  try {
+    authority = JSON.parse(bytes.toString("utf8"));
+  } catch {
+    throw new Error("S1 upstream run authority is not valid JSON");
+  }
+  const errors = validateS1UpstreamRunAuthority(authority, {
+    authority: options.authority,
+    sourceSha: options.sourceSha,
+    workflowRunId: options.expectedRunId,
+  });
+  if (errors.length > 0) {
+    throw new Error(
+      `S1 upstream run authority verification failed: ${errors.join("; ")}`,
+    );
+  }
+  return { value: authority, fileSha256: sha256(bytes) };
+}
+
+function requireReceiptAuthorityMatch(receipt, authority) {
+  const config = S1_RUN_AUTHORITY_CONFIG[authority.authority];
+  if (
+    receipt.workflow !== config.workflow ||
+    receipt.workflowRunId !== authority.workflowRunId ||
+    receipt.workflowRunAttempt !== authority.workflowRunAttempt ||
+    receipt.sourceSha !== authority.sourceSha
+  ) {
+    throw new Error("S1 upstream receipt does not match run authority");
+  }
+}
+
+function requireCompleteUpstreamInputs(label, values) {
+  const present = values.filter((value) => value !== undefined).length;
+  if (present !== 0 && present !== values.length) {
+    throw new Error(`${label} authority inputs must be supplied together`);
+  }
 }
 
 function resolveRepoPath(repoRoot, relative) {
@@ -288,6 +372,8 @@ function parseOptions(args) {
         "--source-sha",
         "--external-publication-run-id",
         "--windows-host-run-id",
+        "--external-publication-authority",
+        "--windows-host-authority",
         "--external-publication-dir",
         "--windows-receipt",
         "--completion-path",
@@ -303,6 +389,12 @@ function parseOptions(args) {
       options.externalPublicationRunId = value;
     }
     if (name === "--windows-host-run-id") options.windowsHostRunId = value;
+    if (name === "--external-publication-authority") {
+      options.externalPublicationAuthorityPath = path.resolve(value);
+    }
+    if (name === "--windows-host-authority") {
+      options.windowsHostAuthorityPath = path.resolve(value);
+    }
     if (name === "--external-publication-dir") {
       options.externalPublicationDir = path.resolve(value);
     }
@@ -322,6 +414,10 @@ async function runCli() {
   if (writeReadiness) {
     if (
       options.sourceSha ||
+      options.externalPublicationRunId ||
+      options.windowsHostRunId ||
+      options.externalPublicationAuthorityPath ||
+      options.windowsHostAuthorityPath ||
       options.externalPublicationDir ||
       options.windowsReceiptPath ||
       options.completionPath
