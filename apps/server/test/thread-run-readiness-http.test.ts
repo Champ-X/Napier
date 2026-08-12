@@ -210,6 +210,7 @@ function setupDependencies() {
         arch: process.arch,
       },
     }),
+    verifyToolchain: async () => undefined,
     verify: async () => ({
       checks: {
         node: "sandbox_process_ready",

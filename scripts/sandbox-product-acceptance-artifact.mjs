@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
+import { validSandboxImageRepairAcceptance } from "./sandbox-image-repair-artifact.mjs";
 import { validSandboxInvalidBindingRepairAcceptance } from "./sandbox-invalid-binding-repair-artifact.mjs";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
@@ -9,6 +10,10 @@ const SHA256 = /^[a-f0-9]{64}$/u;
 export async function sandboxProductAcceptanceImplementation(repoRoot) {
   const files = {
     setupService: "packages/runtime/src/sandbox-setup-service.ts",
+    runtimeSetup: "packages/runtime/src/sandbox-runtime-setup.ts",
+    setupContract: "packages/contracts/src/sandbox-setup.ts",
+    cliSetup: "apps/cli/src/sandbox-runtime-setup-cli.ts",
+    webSetupViewModel: "apps/web/src/sandbox-setup-view-model.ts",
     containerIdentity: "packages/runtime/src/sandbox-container-runtime.ts",
     pathMapping: "packages/runtime/src/sandbox-container-path-mapping.ts",
     launchPolicy: "packages/runtime/src/sandbox-launch-policy.ts",
@@ -38,6 +43,8 @@ export async function sandboxProductAcceptanceImplementation(repoRoot) {
       "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
     invalidBindingRepairVerifier:
       "scripts/sandbox-invalid-binding-repair-artifact.mjs",
+    imageRepairHarness: "scripts/sandbox-image-repair-acceptance.mjs",
+    imageRepairVerifier: "scripts/sandbox-image-repair-artifact.mjs",
   };
   return Object.fromEntries(
     await Promise.all(
@@ -58,7 +65,7 @@ export function validateSandboxProductAcceptanceArtifact(
   if (
     !isRecord(value) ||
     value.kind !== "napier.sandbox-product-acceptance-stage13" ||
-    value.schemaVersion !== 3 ||
+    value.schemaVersion !== 4 ||
     !isIsoDate(value.generatedAt) ||
     !isRecord(value.image) ||
     value.image.id !== provenance.image?.id ||
@@ -74,6 +81,7 @@ export function validateSandboxProductAcceptanceArtifact(
     !validUninstall(value.uninstall) ||
     !validFirstUse(value.firstUse) ||
     !validSandboxInvalidBindingRepairAcceptance(value.invalidBindingRepair) ||
+    !validSandboxImageRepairAcceptance(value.imageRepair) ||
     !validResourceClosure(value.resourceClosure) ||
     !validRetention(value.retention) ||
     !isRecord(value.scope) ||

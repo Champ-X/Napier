@@ -33,14 +33,21 @@ import { OciContainerSandboxAdapter } from "./sandbox-oci.js";
 import {
   buildOfficialSandboxRuntime,
   inspectOfficialSandboxRuntime,
+  SandboxToolchainDriftError,
   type SandboxRuntimeInspection,
   type SandboxRuntimeSetupDependencies,
+  verifyOfficialSandboxRuntimeToolchain,
 } from "./sandbox-runtime-setup.js";
 import { SwitchableSandboxAdapter } from "./sandbox-switchable.js";
 import type { ContainerImageIdentity } from "./sandbox-container-runtime.js";
 import type { OsSandboxAdapter } from "./sandbox-types.js";
 
 export interface SandboxSetupServiceDependencies extends SandboxRuntimeSetupDependencies {
+  buildRuntime?: typeof buildOfficialSandboxRuntime;
+  verifyToolchain?: (
+    identity: ContainerImageIdentity,
+    signal: AbortSignal,
+  ) => Promise<void>;
   verify?: (input: {
     workspaceRoot: string;
     dataRoot: string;
@@ -123,14 +130,17 @@ export class SandboxSetupService {
       ) {
         throw new Error("Official Sandbox runtime is unavailable on this host");
       }
-      const ready =
+      let action: SandboxSetupResult["action"] =
+        inspection.status === "ready" ? "reused" : "built";
+      let ready =
         inspection.status === "ready" && inspection.identity
           ? {
               ...inspection,
               status: "ready" as const,
               identity: inspection.identity,
             }
-          : await buildOfficialSandboxRuntime(
+          : await (this.dependencies.buildRuntime ??
+              buildOfficialSandboxRuntime)(
               { signal },
               {
                 inspect: this.inspect,
@@ -139,9 +149,35 @@ export class SandboxSetupService {
                   : {}),
               },
             );
-      const verification = await (
-        this.dependencies.verify ?? verifySandboxRuntime
-      )({
+      const verifyToolchain =
+        this.dependencies.verifyToolchain ??
+        verifyOfficialSandboxRuntimeToolchain;
+      try {
+        await verifyToolchain(ready.identity, signal);
+      } catch (error) {
+        signal.throwIfAborted();
+        if (
+          inspection.status !== "ready" ||
+          !inspection.identity ||
+          !(error instanceof SandboxToolchainDriftError)
+        ) {
+          throw error;
+        }
+        ready = await (this.dependencies.buildRuntime ??
+          buildOfficialSandboxRuntime)(
+          { signal, force: true },
+          {
+            inspect: this.inspect,
+            ...(this.dependencies.runBuild
+              ? { runBuild: this.dependencies.runBuild }
+              : {}),
+          },
+        );
+        await verifyToolchain(ready.identity, signal);
+        action = "repaired";
+      }
+      const verify = this.dependencies.verify ?? verifySandboxRuntime;
+      const verification = await verify({
         workspaceRoot: this.workspaceRoot,
         dataRoot: this.dataRoot,
         imageReference: ready.target.imageReference,
@@ -168,7 +204,7 @@ export class SandboxSetupService {
       this.sandbox.replace(next);
       return createSandboxSetupResult(
         ready,
-        inspection.status === "ready" ? "reused" : "built",
+        action,
         verification.checks,
         persisted,
       );

@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
+import { validSandboxImageRepairAcceptance } from "./sandbox-image-repair-artifact.mjs";
 import { validSandboxFirstUseCodingAcceptance } from "./sandbox-product-acceptance-artifact.mjs";
 import { validSandboxInvalidBindingRepairAcceptance } from "./sandbox-invalid-binding-repair-artifact.mjs";
 
@@ -33,6 +34,8 @@ export async function linuxHostProductAcceptanceImplementation(repoRoot) {
       "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
     invalidBindingRepairVerifier:
       "scripts/sandbox-invalid-binding-repair-artifact.mjs",
+    imageRepairHarness: "scripts/sandbox-image-repair-acceptance.mjs",
+    imageRepairVerifier: "scripts/sandbox-image-repair-artifact.mjs",
     guestHarness: "scripts/linux-host-product-acceptance-guest.mjs",
     liveHarness: "scripts/linux-host-product-acceptance-live.mjs",
     checkScript: "scripts/check-linux-host-product-acceptance.mjs",
@@ -193,6 +196,7 @@ function validProduct(value) {
     validVerification(value.verification) &&
     validSandboxFirstUseCodingAcceptance(value.firstUse) &&
     validSandboxInvalidBindingRepairAcceptance(value.invalidBindingRepair) &&
+    validSandboxImageRepairAcceptance(value.imageRepair) &&
     isRecord(value.service) &&
     value.service.ready === true &&
     value.service.healthChecked === true &&

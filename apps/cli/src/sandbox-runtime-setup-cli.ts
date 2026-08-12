@@ -117,7 +117,7 @@ async function writeSandboxRuntimeSetupOutput(
             ? ["This host platform is not supported by the OCI Sandbox setup."]
             : [
                 output.status === "ready"
-                  ? "Apply the exact preview to verify and persist this image."
+                  ? "Apply the exact preview to verify and persist this image; if its pinned toolchain has drifted, Setup rebuilds it once from the packaged source and verifies again."
                   : "Apply the exact preview to build, verify, and persist this image.",
                 `Apply: napier setup --workspace 'WORKSPACE_PATH' --component sandbox --expected-preview ${output.contentSha256} --apply`,
               ]),
@@ -166,7 +166,11 @@ async function writeSandboxRuntimeSetupOutput(
   await writeLine(
     io.stdout,
     [
-      `Sandbox runtime: ${output.action}`,
+      `Sandbox runtime: ${
+        output.action === "repaired"
+          ? "repaired from pinned source"
+          : output.action
+      }`,
       `Image: ${output.imageReference}`,
       `Image ID: ${output.imageId}`,
       "Verified: Node, Shell, Python, Git, LSP, DAP, TypeScript/Vitest/Prettier verification, local service, and runtime resource boundaries",

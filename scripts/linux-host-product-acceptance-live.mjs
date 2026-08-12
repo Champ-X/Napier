@@ -10,6 +10,8 @@ const COMMAND_TIMEOUT_MS = 20 * 60 * 1_000;
 const MAX_OUTPUT_BYTES = 256 * 1024;
 const STAGE19_ARTIFACT =
   "docs/artifacts/linux-host-product-acceptance-stage19.json";
+const RELEASE_ARTIFACT =
+  "docs/artifacts/release-artifacts-audit-0.1.0.json";
 const STAGE19_SOURCE_FILES = [
   "packages/runtime/src/project-skill-snapshot-acquisition.ts",
   "packages/runtime/src/project-skill-snapshot-anchor.ts",
@@ -25,6 +27,8 @@ const STAGE19_SOURCE_FILES = [
   "scripts/sandbox-first-use-coding-support.test.mjs",
   "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
   "scripts/sandbox-invalid-binding-repair-artifact.mjs",
+  "scripts/sandbox-image-repair-acceptance.mjs",
+  "scripts/sandbox-image-repair-artifact.mjs",
 ];
 
 export async function runLinuxHostProductAcceptance(input) {
@@ -119,9 +123,7 @@ async function sourceSnapshotPaths(repoRoot) {
       ...STAGE19_SOURCE_FILES,
     ]),
   ]
-    .filter(
-      (candidate) => candidate !== "goal.md" && candidate !== STAGE19_ARTIFACT,
-    )
+    .filter(includeLinuxHostSourceSnapshotPath)
     .sort();
   if (
     paths.length === 0 ||
@@ -142,6 +144,10 @@ async function sourceSnapshotPaths(repoRoot) {
     }
   }
   return paths;
+}
+
+export function includeLinuxHostSourceSnapshotPath(candidate) {
+  return !["goal.md", STAGE19_ARTIFACT, RELEASE_ARTIFACT].includes(candidate);
 }
 
 async function writeSourceArchive(repoRoot, paths, archivePath) {

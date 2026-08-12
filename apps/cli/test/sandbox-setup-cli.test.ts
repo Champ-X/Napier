@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ContainerImageIdentity } from "@napier/runtime/sandbox-container-runtime";
 import type { SandboxRuntimeInspection } from "@napier/runtime/sandbox-runtime-setup";
+import { SandboxToolchainDriftError } from "@napier/runtime/sandbox-runtime-setup";
 import { UnsupportedSandboxAdapter } from "@napier/runtime";
 import { saveSandboxInstallation } from "@napier/runtime/sandbox-installation";
 
@@ -198,6 +199,7 @@ describe("Napier Sandbox setup CLI", () => {
         createRuntime: vi.fn(),
         sandboxSetup: {
           inspect: async () => inspection("ready", identity()),
+          verifyToolchain: async () => undefined,
           verify,
           activate: async () =>
             new UnsupportedSandboxAdapter("sandbox-setup-activated"),
@@ -220,6 +222,60 @@ describe("Napier Sandbox setup CLI", () => {
     ).resolves.toBeUndefined();
   });
 
+  it("reports one verification-driven image repair in human output", async () => {
+    const fixture = await createFixture();
+    const preview = await previewFor(fixture);
+    const stdout = new CaptureWritable();
+    const original = identity();
+    const repaired = {
+      ...identity(),
+      imageId: `sha256:${"f".repeat(64)}`,
+      identitySha256: "9".repeat(64),
+    };
+    const verifyToolchain = vi
+      .fn()
+      .mockRejectedValueOnce(new SandboxToolchainDriftError())
+      .mockResolvedValueOnce(undefined);
+    const verify = vi.fn(async () => ({ checks: readyChecks() }));
+
+    const code = await runCli(
+      [
+        "setup",
+        "--workspace",
+        fixture.workspace,
+        "--component",
+        "sandbox",
+        "--expected-preview",
+        preview,
+        "--apply",
+      ],
+      cliIo(fixture.root, {}, stdout),
+      {
+        createRuntime: vi.fn(),
+        sandboxSetup: {
+          inspect: async () => inspection("ready", original),
+          buildRuntime: async () => ({
+            ...inspection("ready", repaired),
+            status: "ready",
+            identity: repaired,
+          }),
+          verifyToolchain,
+          verify,
+          activate: async () =>
+            new UnsupportedSandboxAdapter("sandbox-setup-repaired"),
+        },
+      },
+    );
+
+    expect(code).toBe(0);
+    expect(stdout.text()).toContain(
+      "Sandbox runtime: repaired from pinned source",
+    );
+    expect(stdout.text()).toContain(`Image ID: ${repaired.imageId}`);
+    expect(verifyToolchain).toHaveBeenCalledTimes(2);
+    expect(verify).toHaveBeenCalledTimes(1);
+  });
+
   it("leaves no installation when production verification fails", async () => {
     const fixture = await createFixture();
     const preview = await previewFor(fixture);
@@ -240,6 +296,12 @@ describe("Napier Sandbox setup CLI", () => {
         createRuntime: vi.fn(),
         sandboxSetup: {
           inspect: async () => inspection("ready", identity()),
+          buildRuntime: async () => ({
+            ...inspection("ready", identity()),
+            status: "ready",
+            identity: identity(),
+          }),
+          verifyToolchain: async () => undefined,
           verify: async () => {
             throw new Error(`shell probe failed ${SECRET}`);
           },
@@ -399,6 +461,20 @@ function identity(): ContainerImageIdentity {
       identitySha256: "d".repeat(64),
     },
     identitySha256: "e".repeat(64),
+  };
+}
+
+function readyChecks() {
+  return {
+    node: "sandbox_process_ready",
+    resources: "sandbox_resources_ready",
+    verification: "verification_ready",
+    shell: "shell_ready",
+    python: "python_ready",
+    git: "git_ready",
+    lsp: "lsp_ready",
+    dap: "dap_ready",
+    service: "service_ready",
   };
 }
 

@@ -252,7 +252,9 @@ export function SandboxSetupCard({
                   disabled={!copy.actionable || busy === "applying"}
                   onClick={() => void apply()}
                 >
-                  {busy === "applying" ? "Verifying toolchain…" : copy.action}
+                  {busy === "applying"
+                    ? "Verifying · repairing drift if needed…"
+                    : copy.action}
                 </button>
               </div>
             )}

@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { verifyLinuxHostProductAcceptance } from "./check-linux-host-product-acceptance.mjs";
+import { includeLinuxHostSourceSnapshotPath } from "./linux-host-product-acceptance-live.mjs";
 
 const roots = [];
 
@@ -15,6 +16,21 @@ afterEach(async () => {
 });
 
 describe("Linux host product acceptance artifact", () => {
+  it("excludes mutable and downstream receipts from the clean source archive", () => {
+    expect(
+      [
+        "goal.md",
+        "docs/artifacts/linux-host-product-acceptance-stage19.json",
+        "docs/artifacts/release-artifacts-audit-0.1.0.json",
+      ].map(includeLinuxHostSourceSnapshotPath),
+    ).toEqual([false, false, false]);
+    expect(
+      includeLinuxHostSourceSnapshotPath(
+        "scripts/linux-host-product-acceptance-live.mjs",
+      ),
+    ).toBe(true);
+  });
+
   it("accepts the current fresh Linux product receipt", async () => {
     await expect(verifyLinuxHostProductAcceptance()).resolves.toEqual(
       expect.objectContaining({
@@ -36,6 +52,9 @@ describe("Linux host product acceptance artifact", () => {
       },
       (value) => {
         value.guest.product.doctor.warningCount = 1;
+      },
+      (value) => {
+        value.guest.product.imageRepair.repair.action = "reused";
       },
       (value) => {
         value.scope.windowsHostProductAcceptance = true;
@@ -97,6 +116,8 @@ async function fixtureRoot() {
     "scripts/sandbox-first-use-coding-support.mjs",
     "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
     "scripts/sandbox-invalid-binding-repair-artifact.mjs",
+    "scripts/sandbox-image-repair-acceptance.mjs",
+    "scripts/sandbox-image-repair-artifact.mjs",
     "scripts/sandbox-product-acceptance-artifact.mjs",
     "scripts/sandbox-product-acceptance-live.mjs",
   ]) {

@@ -75,7 +75,7 @@ export interface SandboxSetupResult {
   kind: "napier.sandbox-runtime-setup-result";
   schemaVersion: 1;
   component: "sandbox";
-  action: "built" | "reused";
+  action: "built" | "repaired" | "reused";
   status: "ready";
   imageReference: string;
   imageId: string;

@@ -14,6 +14,7 @@ import {
   sha256,
 } from "../packages/runtime/dist/index.js";
 import { runSandboxFirstUseCodingAcceptance } from "./sandbox-first-use-coding-acceptance.mjs";
+import { runSandboxImageRepairAcceptance } from "./sandbox-image-repair-acceptance.mjs";
 import { runSandboxInvalidBindingRepairAcceptance } from "./sandbox-invalid-binding-repair-acceptance.mjs";
 
 const execFile = promisify(execFileWithCallback);
@@ -282,6 +283,9 @@ export async function runSandboxProductAcceptance(input) {
         repoRoot: input.repoRoot,
       },
     );
+    const imageRepair = await runSandboxImageRepairAcceptance({
+      repoRoot: input.repoRoot,
+    });
     const finalSnapshot = await snapshotResources();
     const resourceClosure = resourceDelta(baseline, finalSnapshot);
     requireValue(
@@ -341,6 +345,7 @@ export async function runSandboxProductAcceptance(input) {
       },
       firstUse,
       invalidBindingRepair,
+      imageRepair,
       resourceClosure: {
         exactBaselineRestored: true,
         ...resourceClosure,

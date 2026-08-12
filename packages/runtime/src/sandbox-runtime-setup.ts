@@ -11,9 +11,11 @@ import {
   resolveContainerLaunchExecutable,
 } from "./sandbox-container.js";
 import {
+  probeContainerRuntimeIdentity,
   resolveContainerDaemonIdentity,
   resolveContainerImageIdentity,
   runContainerClient,
+  type ContainerClient,
   type ContainerImageIdentity,
 } from "./sandbox-container-runtime.js";
 
@@ -54,6 +56,44 @@ export interface SandboxRuntimeSetupDependencies {
   runBuild?: (request: SandboxBuildRequest) => Promise<SandboxBuildResult>;
 }
 
+export class SandboxToolchainDriftError extends Error {
+  constructor() {
+    super("Official Sandbox image toolchain identity is invalid");
+    this.name = "SandboxToolchainDriftError";
+  }
+}
+
+export async function verifyOfficialSandboxRuntimeToolchain(
+  identity: ContainerImageIdentity,
+  signal: AbortSignal,
+): Promise<void> {
+  signal.throwIfAborted();
+  const [observed, source] = await Promise.all([
+    probeContainerRuntimeIdentity(identity, abortableContainerClient(signal)),
+    officialSandboxSource(),
+  ]);
+  signal.throwIfAborted();
+  const [packageJsonSha256, packageLockSha256] = await Promise.all([
+    sha256File(path.join(source.contextPath, "package.json")),
+    sha256File(path.join(source.contextPath, "package-lock.json")),
+  ]);
+  if (
+    !observed.shell ||
+    observed.debugger?.nodeVersion !== "24.16.0" ||
+    observed.python?.version !== "3.13.5" ||
+    observed.git?.version !== "git version 2.47.3" ||
+    observed.lsp?.languageServerVersion !== "5.3.0" ||
+    observed.lsp?.typescriptVersion !== "5.9.3" ||
+    observed.verification?.packageJsonSha256 !== packageJsonSha256 ||
+    observed.verification.packageLockSha256 !== packageLockSha256 ||
+    observed.verification.typecheck.version !== "5.9.3" ||
+    observed.verification.test.version !== "4.1.9" ||
+    observed.verification.format.version !== "3.8.4"
+  ) {
+    throw new SandboxToolchainDriftError();
+  }
+}
+
 export async function inspectOfficialSandboxRuntime(): Promise<SandboxRuntimeInspection> {
   const target = await officialSandboxTarget();
   if (!["darwin", "linux", "win32"].includes(process.platform)) {
@@ -90,7 +130,7 @@ export async function inspectOfficialSandboxRuntime(): Promise<SandboxRuntimeIns
 }
 
 export async function buildOfficialSandboxRuntime(
-  input: { signal: AbortSignal },
+  input: { signal: AbortSignal; force?: boolean },
   dependencies: SandboxRuntimeSetupDependencies = {},
 ): Promise<
   SandboxRuntimeInspection & {
@@ -100,13 +140,16 @@ export async function buildOfficialSandboxRuntime(
 > {
   const inspect = dependencies.inspect ?? inspectOfficialSandboxRuntime;
   const before = await inspect();
-  if (before.status === "ready" && before.identity) {
+  if (!input.force && before.status === "ready" && before.identity) {
     return before as SandboxRuntimeInspection & {
       status: "ready";
       identity: ContainerImageIdentity;
     };
   }
-  if (before.status !== "buildable") {
+  if (
+    before.status !== "buildable" &&
+    !(input.force && before.status === "ready" && before.identity)
+  ) {
     throw new Error("Official Sandbox image cannot be built on this host");
   }
   input.signal.throwIfAborted();
@@ -207,6 +250,42 @@ export function runSandboxBuild(
     request.signal.addEventListener("abort", abort, { once: true });
     if (request.signal.aborted) abort();
   });
+}
+
+function abortableContainerClient(signal: AbortSignal): ContainerClient {
+  return (executable, args) => {
+    signal.throwIfAborted();
+    return new Promise((resolve, reject) => {
+      const child = execFile(
+        executable,
+        [...args],
+        {
+          env: containerClientEnvironment(),
+          timeout: 10_000,
+          killSignal: "SIGKILL",
+          maxBuffer: 4_096,
+          windowsHide: true,
+        },
+        (error, stdout) => {
+          signal.removeEventListener("abort", abort);
+          if (signal.aborted) {
+            reject(signal.reason);
+            return;
+          }
+          if (error) {
+            reject(new Error("OCI container identity probe failed"));
+            return;
+          }
+          resolve(stdout);
+        },
+      );
+      const abort = (): void => {
+        child.kill("SIGKILL");
+      };
+      signal.addEventListener("abort", abort, { once: true });
+      if (signal.aborted) abort();
+    });
+  };
 }
 
 async function officialSandboxTarget(): Promise<SandboxRuntimeTarget> {

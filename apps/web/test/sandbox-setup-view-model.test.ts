@@ -19,6 +19,7 @@ describe("Sandbox setup view model", () => {
       expect.objectContaining({
         title: "Image found",
         action: "Verify & activate",
+        detail: expect.stringContaining("rebuilds it once"),
         actionable: true,
       }),
     );

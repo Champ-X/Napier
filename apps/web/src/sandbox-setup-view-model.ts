@@ -14,7 +14,7 @@ const STATUS_COPY: Record<SandboxSetupStatus, SandboxSetupCopy> = {
   ready: {
     title: "Image found",
     detail:
-      "The pinned image is present. Apply the exact preview to verify every production capability and runtime resource boundary before activation.",
+      "The pinned image is present. Apply the exact preview to verify every production capability and runtime resource boundary before activation. If the toolchain has drifted, Setup rebuilds it once from the packaged source and verifies again.",
     action: "Verify & activate",
     actionable: true,
   },

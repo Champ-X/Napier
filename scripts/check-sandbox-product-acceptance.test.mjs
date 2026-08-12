@@ -49,6 +49,12 @@ describe("Sandbox product acceptance artifact", () => {
       (value) => {
         value.invalidBindingRepair.privatePath = "/private/state";
       },
+      (value) => {
+        value.imageRepair.repair.action = "reused";
+      },
+      (value) => {
+        value.imageRepair.resourceClosure.imageDeltaCount = 1;
+      },
     ]) {
       const root = await fixtureRoot();
       const artifactPath = path.join(
@@ -94,15 +100,19 @@ async function fixtureRoot() {
     "apps/cli/src/cli.ts",
     "apps/cli/src/cli-run-readiness.ts",
     "apps/cli/src/cli-public-error.ts",
+    "apps/cli/src/sandbox-runtime-setup-cli.ts",
     "apps/server/src/thread-run-readiness.ts",
     "apps/web/src/composer-mode-view-model.ts",
     "apps/web/src/ComposerCapabilityControl.tsx",
     "apps/web/src/SandboxSetupCard.tsx",
+    "apps/web/src/sandbox-setup-view-model.ts",
+    "packages/contracts/src/sandbox-setup.ts",
     "packages/contracts/src/agent-capabilities.ts",
     "packages/runtime/src/agent-capability-runtime.ts",
     "packages/runtime/src/agent-runtime.ts",
     "packages/runtime/src/process-run-readiness.ts",
     "packages/runtime/src/sandbox-setup-service.ts",
+    "packages/runtime/src/sandbox-runtime-setup.ts",
     "packages/runtime/src/sandbox-container-runtime.ts",
     "packages/runtime/src/sandbox-container-path-mapping.ts",
     "packages/runtime/src/sandbox-launch-policy.ts",
@@ -117,6 +127,8 @@ async function fixtureRoot() {
     "scripts/sandbox-first-use-coding-support.mjs",
     "scripts/sandbox-invalid-binding-repair-acceptance.mjs",
     "scripts/sandbox-invalid-binding-repair-artifact.mjs",
+    "scripts/sandbox-image-repair-acceptance.mjs",
+    "scripts/sandbox-image-repair-artifact.mjs",
     "scripts/sandbox-product-acceptance-artifact.mjs",
     "scripts/sandbox-product-acceptance-live.mjs",
   ]) {

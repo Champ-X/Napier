@@ -6906,6 +6906,19 @@ egress-denied local service, cancels it and verifies endpoint closure, records a
 running Process as interrupted with no stale output after Runtime reopen, and
 finally exact-uninstalls the binding while retaining the shared image.
 
+Setup also repairs a locally drifted or mislabeled official tag. An exact apply
+first verifies the image-bound Node, Shell, Python, Git, LSP, DAP, and
+TypeScript/Vitest/Prettier identities without mounting the Workspace. Only an
+identity failure triggers one bounded rebuild from the pinned packaged Docker
+context. Napier then re-resolves the immutable image/daemon/user identity and
+reruns the identity check before all nine production probes. Workspace,
+resource, or local-service failures never trigger a rebuild. Cancellation
+skips repair, and any second identity or production-probe failure leaves the
+existing provider active with no installation binding written.
+Stage 13 schema 4 retains the real repair, exact uninstall, original-tag
+restoration, and zero image/container/network/scratch delta as a strict
+hash-only receipt bound to the repair implementation and verifier sources.
+
 The schema-2 receipt also creates a fresh Workspace, data root, HOME, temporary
 root, and empty Docker auth config with all model/package/registry credentials
 removed. Before any Agent state exists, it exact-applies Sandbox Setup, starts

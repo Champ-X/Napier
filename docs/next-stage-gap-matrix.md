@@ -64,7 +64,7 @@ Current result:
 - `verified`: the Ubuntu 24.04 arm64 clean-host Stage 19 gate repeats that
   fresh-install Coding flow after clean `npm ci` and full build, with the same
   Profile/revision/credential invariants and exact cleanup;
-- `verified`: Stage 13 schema 3 and Stage 19 now cover old-data repair. A
+- `verified`: Stage 13 schema 4 and Stage 19 now cover old-data repair. A
   revision-2 legacy Agent with an invalid persisted Sandbox binding receives
   exact-uninstall guidance from Doctor and Run admission; ordinary Setup cannot
   overwrite the invalid bytes; raw-byte CAS removal, nine-probe reinstallation,
@@ -118,6 +118,52 @@ Observed result:
   temporary root;
 - Architecture passes 1,244 source files, 650 test files, and zero cycles;
   `tui-cli.ts` remains exactly at the 500-line hard limit.
+
+## Completed Slice: Verification-Driven Sandbox Image Repair
+
+User scenario: Setup can recover a locally drifted or mislabeled
+`napier-sandbox:0.1.0` tag without asking the user to discover and delete the
+bad image manually.
+
+Acceptance and threat boundary:
+
+- retain exact-preview apply and verify the fixed image-bound Node, Shell,
+  Python, Git, LSP, DAP, and TypeScript/Vitest/Prettier identities before any
+  Workspace mount or binding write;
+- only when an initially `ready` local image fails that Workspace-independent
+  identity check, perform one bounded rebuild from the pinned packaged
+  Dockerfile/package lock, then resolve a fresh immutable image, daemon, and
+  user identity;
+- rerun the identity check and all nine production probes against the rebuilt
+  image before returning `action=repaired`; never loop or silently accept the
+  original image;
+- never rebuild for Workspace mount, runtime resource, local service, or other
+  production-probe failures; those conditions fail closed directly;
+- if cancellation is observed, skip repair immediately. If rebuild or the
+  second verification fails, keep the active provider and persistent binding
+  unchanged;
+- expose the possible repair in Web progress copy and human CLI output without
+  changing the preview hash or JSON request contract.
+
+Observed result:
+
+- focused Runtime/CLI/HTTP/Web coverage passes 23 cases, including one repair,
+  cancellation before repair, second-identity failure, identity-probe
+  execution failure without repair, non-repairable production-probe failure,
+  stale preview, activation failure, uninstall, and exact Web apply;
+- real Docker Dogfood retagged an image with the correct context label but a
+  missing Napier toolchain. Preview reported `ready`; image-bound identity
+  verification rejected it, Setup rebuilt from the pinned source once,
+  returned `action=repaired`, and passed all nine production checks;
+- exact uninstall then removed only the new binding. The original official
+  image tag, complete image set, Napier container set, Napier network set, and
+  temporary-root baseline were all restored;
+- Stage 13 schema 4 retains this same real-daemon chain as a strict hash-only
+  `imageRepair` receipt and binds the Runtime builder, Setup service, Contract,
+  CLI/Web projections, harness, and verifier source hashes. Mutation and
+  release-fixture coverage passes 48 cases;
+- the retained Dogfood summary contains no image ID, raw Docker/CLI output,
+  Workspace path, prompt, or credential.
 
 ## Baseline
 
