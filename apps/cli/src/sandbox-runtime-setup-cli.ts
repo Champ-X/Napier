@@ -106,7 +106,11 @@ async function writeSandboxRuntimeSetupOutput(
       [
         "Sandbox runtime setup",
         `Status: ${output.status}`,
+        `Acquisition: ${output.acquisition}`,
         `Image: ${output.imageReference}`,
+        ...(output.releaseDigest
+          ? [`Release digest: ${output.releaseDigest}`]
+          : []),
         `Dockerfile SHA-256: ${output.dockerfileSha256}`,
         `Preview SHA-256: ${output.contentSha256}`,
         ...(output.status === "runtime_unavailable"
@@ -118,7 +122,9 @@ async function writeSandboxRuntimeSetupOutput(
             : [
                 output.status === "ready"
                   ? "Apply the exact preview to verify and persist this image; if its pinned toolchain has drifted, Setup rebuilds it once from the packaged source and verifies again."
-                  : "Apply the exact preview to build, verify, and persist this image.",
+                  : output.status === "pullable"
+                    ? "Apply the exact preview to anonymously pull the reviewed immutable release and verify it. If the public registry is unavailable, Setup builds the same pinned source locally."
+                    : "Apply the exact preview to build, verify, and persist this image.",
                 `Apply: napier setup --workspace 'WORKSPACE_PATH' --component sandbox --expected-preview ${output.contentSha256} --apply`,
               ]),
       ].join("\n"),
@@ -169,9 +175,15 @@ async function writeSandboxRuntimeSetupOutput(
       `Sandbox runtime: ${
         output.action === "repaired"
           ? "repaired from pinned source"
+          : output.action === "pulled"
+            ? "pulled immutable release"
           : output.action
       }`,
+      `Acquisition: ${output.acquisition}`,
       `Image: ${output.imageReference}`,
+      ...(output.releaseDigest
+        ? [`Release digest: ${output.releaseDigest}`]
+        : []),
       `Image ID: ${output.imageId}`,
       "Verified: Node, Shell, Python, Git, LSP, DAP, TypeScript/Vitest/Prettier verification, local service, and runtime resource boundaries",
       "Status: ready",

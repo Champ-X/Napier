@@ -1,6 +1,5 @@
 import { randomBytes } from "node:crypto";
 import {
-  chmod,
   lstat,
   mkdir,
   open,
@@ -11,6 +10,8 @@ import {
   rm,
 } from "node:fs/promises";
 import path from "node:path";
+
+import type { SandboxSetupAcquisition } from "@napier/contracts/sandbox-setup";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -27,16 +28,27 @@ const SHA256 = /^[a-f0-9]{64}$/u;
 
 export interface SandboxInstallation {
   kind: "napier.sandbox-installation";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   provider: "oci-container";
+  acquisition?: SandboxSetupAcquisition;
   imageReference: string;
   imageId: string;
+  releaseDigest?: string;
+  releaseSourceSha?: string;
+  releaseReceiptSha256?: string;
   clientExecutableSha256: string;
   daemonEndpointSha256: string;
   userIdentitySha256: string;
   identitySha256: string;
   verifiedAt: string;
   contentSha256: string;
+}
+
+export interface SandboxInstallationProvenance {
+  acquisition: SandboxSetupAcquisition;
+  releaseDigest?: string;
+  releaseSourceSha?: string;
+  releaseReceiptSha256?: string;
 }
 
 export interface SandboxInstallationBinding {
@@ -113,9 +125,15 @@ export async function saveSandboxInstallation(
   imageReference: string,
   identity: ContainerImageIdentity,
   now = new Date(),
+  provenance?: SandboxInstallationProvenance,
 ): Promise<SandboxInstallation> {
   await mkdir(path.resolve(dataRoot), { recursive: true });
-  const installation = createSandboxInstallation(imageReference, identity, now);
+  const installation = createSandboxInstallation(
+    imageReference,
+    identity,
+    now,
+    provenance,
+  );
   await writeConfiguration(
     configurationPath(dataRoot),
     `${canonicalJson(installation)}\n`,
@@ -156,11 +174,26 @@ export function createSandboxInstallation(
   imageReference: string,
   identity: ContainerImageIdentity,
   now = new Date(),
+  provenance?: SandboxInstallationProvenance,
 ): SandboxInstallation {
   const withoutHash = {
     kind: "napier.sandbox-installation" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: provenance ? (2 as const) : (1 as const),
     provider: "oci-container" as const,
+    ...(provenance
+      ? {
+          acquisition: provenance.acquisition,
+          ...(provenance.releaseDigest
+            ? { releaseDigest: provenance.releaseDigest }
+            : {}),
+          ...(provenance.releaseSourceSha
+            ? { releaseSourceSha: provenance.releaseSourceSha }
+            : {}),
+          ...(provenance.releaseReceiptSha256
+            ? { releaseReceiptSha256: provenance.releaseReceiptSha256 }
+            : {}),
+        }
+      : {}),
     imageReference,
     imageId: identity.imageId,
     clientExecutableSha256: identity.clientExecutableSha256,
@@ -238,7 +271,7 @@ export function validateSandboxInstallation(
     throw new Error("Sandbox installation is invalid");
   }
   const installation = value as Record<string, unknown>;
-  const keys = [
+  const baseKeys = [
     "clientExecutableSha256",
     "contentSha256",
     "daemonEndpointSha256",
@@ -250,13 +283,31 @@ export function validateSandboxInstallation(
     "schemaVersion",
     "userIdentitySha256",
     "verifiedAt",
-  ].sort();
+  ];
+  const schemaVersion = installation["schemaVersion"];
+  const keys = (
+    schemaVersion === 2
+      ? [
+          ...baseKeys,
+          "acquisition",
+          ...(installation["releaseDigest"] === undefined
+            ? []
+            : ["releaseDigest"]),
+          ...(installation["releaseSourceSha"] === undefined
+            ? []
+            : ["releaseSourceSha"]),
+          ...(installation["releaseReceiptSha256"] === undefined
+            ? []
+            : ["releaseReceiptSha256"]),
+        ]
+      : baseKeys
+  ).sort();
   if (canonicalJson(Object.keys(installation).sort()) !== canonicalJson(keys)) {
     throw new Error("Sandbox installation shape is invalid");
   }
   if (
     installation["kind"] !== "napier.sandbox-installation" ||
-    installation["schemaVersion"] !== 1 ||
+    ![1, 2].includes(Number(schemaVersion)) ||
     installation["provider"] !== "oci-container" ||
     !imageReference(installation["imageReference"]) ||
     !/^sha256:[a-f0-9]{64}$/u.test(String(installation["imageId"])) ||
@@ -266,11 +317,46 @@ export function validateSandboxInstallation(
   ) {
     throw new Error("Sandbox installation content is invalid");
   }
+  if (
+    schemaVersion === 2 &&
+    !validInstallationProvenance(installation)
+  ) {
+    throw new Error("Sandbox installation provenance is invalid");
+  }
   const { contentSha256, ...withoutHash } = installation;
   if (contentSha256 !== sha256(canonicalJson(withoutHash))) {
     throw new Error("Sandbox installation hash mismatch");
   }
   return installation as unknown as SandboxInstallation;
+}
+
+function validInstallationProvenance(
+  installation: Record<string, unknown>,
+): boolean {
+  const acquisition = installation["acquisition"];
+  if (
+    !["local_verified", "external_release", "packaged_source"].includes(
+      String(acquisition),
+    )
+  ) {
+    return false;
+  }
+  const releaseFields = [
+    installation["releaseDigest"],
+    installation["releaseSourceSha"],
+    installation["releaseReceiptSha256"],
+  ];
+  if (acquisition === "external_release") {
+    return (
+      /^sha256:[a-f0-9]{64}$/u.test(String(releaseFields[0])) &&
+      /^[a-f0-9]{40}$/u.test(String(releaseFields[1])) &&
+      SHA256.test(String(releaseFields[2])) &&
+      String(installation["imageReference"]).endsWith(
+        `@${String(releaseFields[0])}`,
+      )
+    );
+  }
+  return releaseFields.every((field) => field === undefined);
 }
 
 function hashFields(value: Record<string, unknown>): boolean {
@@ -311,7 +397,6 @@ async function writeConfiguration(
     await handle.close();
     handle = undefined;
     await rename(temporary, target);
-    await chmod(target, 0o600);
   } finally {
     await handle?.close().catch(() => undefined);
     await rm(temporary, { force: true }).catch(() => undefined);

@@ -1114,6 +1114,41 @@ identity, source commit, image digest, certificate, signature or attestation
 metadata, and log timing. No repository credential, workspace file, private
 key, or prompt/log content is sent as signing material.
 
+Sandbox Setup consumes that external authority only through a reviewed
+`napier.sandbox-external-publication` receipt retained in the repository or
+copied into the Runtime package. `sandbox-official-release-model.ts` validates
+the exact receipt shape, self-hash, dual-platform anonymous execution,
+BuildKit predicates, Sigstore/Rekor evidence, external SLSA attestation,
+source SHA, and Docker context. Without that receipt, ordinary Setup never
+discovers or trusts a registry tag.
+
+When the receipt exists and no matching local image is available, preview
+becomes `pullable` and binds the immutable digest, source SHA, and receipt hash.
+`sandbox-official-release.ts` creates an empty private Docker config and uses
+the same credential-isolated client for pull, daemon/context resolution, label
+inspection, immutable identity resolution, and rejection cleanup. Only a
+transport-level anonymous pull failure may continue to
+`sandbox-runtime-acquisition.ts`'s packaged-source fallback. Receipt, label,
+platform, toolchain, production-probe, activation, and persistence failures
+fail closed and discard an unaccepted release reference.
+
+`sandbox-installation.ts` schema 2 records `external_release`,
+`packaged_source`, or `local_verified`; external bindings additionally retain
+only digest, source SHA, and receipt hash. Schema 1 remains accepted for
+upgrade compatibility. `sandbox-setup-verification.ts` owns the unchanged nine
+production probes and activation check, while `SandboxSetupService` commits
+the binding and hot-switch only after the complete transaction succeeds.
+
+Stage 20 proves this transaction with two real Docker arms. A loopback
+anonymous registry arm pulls by immutable digest and completes all nine probes;
+the current private GHCR bootstrap arm proves anonymous rejection, partial
+reference cleanup, packaged-source fallback, and absence of false release
+provenance. Stage 19 schema 2 repeats both arms after clean Ubuntu install/build
+and validates the nested Stage 20 implementation map. Both receipts require
+zero image/reference/container/network/volume/scratch delta and exact original
+tag restoration. This is transport and fallback acceptance, not a substitute
+for the still-blocked public signed release or Windows-host acceptance.
+
 Local static verification rejects automatic triggers, mutable Action tags,
 missing release-only conditions, missing anonymous pull, disabled transparency
 checks, overclaimed Windows execution, or `s1Complete=true`. This proves that

@@ -157,6 +157,16 @@ export function SandboxSetupCard({
               <code>{preview.imageReference}</code>
             </div>
             <div>
+              <span>SOURCE</span>
+              <strong>{sandboxAcquisitionLabel(preview.acquisition)}</strong>
+            </div>
+            {preview.releaseDigest ? (
+              <div>
+                <span>RELEASE</span>
+                <code>{preview.releaseDigest.slice(0, 19)}</code>
+              </div>
+            ) : null}
+            <div>
               <span>TOOLCHAIN</span>
               <strong>NODE · PY · GIT · LSP · DAP</strong>
             </div>
@@ -281,6 +291,14 @@ export function SandboxSetupCard({
       ) : null}
     </section>
   );
+}
+
+function sandboxAcquisitionLabel(
+  acquisition: SandboxSetupPreview["acquisition"],
+): string {
+  if (acquisition === "external_release") return "SIGNED RELEASE";
+  if (acquisition === "packaged_source") return "PINNED SOURCE";
+  return "LOCAL VERIFIED";
 }
 
 export default SandboxSetupCard;

@@ -6795,17 +6795,29 @@ Stale previews and changed binding bytes fail closed. A bounded invalid regular
 binding can be removed by its raw byte hash; symlinks, directories, empty, or
 oversized bindings are reported but never removed automatically.
 
-The exact-preview apply builds `docker/napier-sandbox/Dockerfile` against its
-digest-pinned multi-architecture Node base and the checked
+When `docs/artifacts/sandbox-external-publication-0.1.0.json` or its packaged
+Runtime copy exists, Setup first validates that exact reviewed release receipt:
+public anonymous execution, dual-platform index, BuildKit SBOM/provenance,
+keyless signature/Rekor evidence, external SLSA attestation, source SHA, and
+Docker context must all be accepted by the strict receipt contract. Preview
+then reports `pullable` and binds the immutable registry digest, source commit,
+and receipt hash. Exact apply creates an empty private Docker config, pulls
+only by digest for the host architecture, rechecks source/context labels and
+the complete image-bound toolchain, and runs all nine production probes before
+writing a binding. Ambient Docker registry credentials are never used.
+
+If the reviewed public release is temporarily unavailable, Setup removes any
+partial digest reference and builds `docker/napier-sandbox/Dockerfile` against
+its digest-pinned multi-architecture Node base and checked
 `docker/napier-sandbox/package-lock.json`. It uses `npm ci` to install exact
-TypeScript, TypeScript Language Server, Vitest, and Prettier versions. Setup
-verifies every production path above, then atomically writes only hashed
-image/client/daemon/user identities to `.napier/sandbox.json` with mode `0600`.
+TypeScript, TypeScript Language Server, Vitest, and Prettier versions. Invalid
+receipt, label, platform, toolchain, or production-probe evidence does not
+fallback: it fails closed and discards an unaccepted pulled reference. New
+schema-2 `.napier/sandbox.json` bindings record `external_release`,
+`packaged_source`, or `local_verified`; external bindings also retain only the
+digest, source SHA, and receipt hash. Legacy schema-1 bindings remain readable.
 Subsequent Web and CLI runtimes automatically use the immutable image ID; users
-do not edit an internal Agent Profile or export an image variable. The source
-checkout currently builds this image locally as `napier-sandbox:0.1.0`;
-registry publication and signing remain release work and are not implied by
-local setup.
+do not edit an internal Agent Profile or export an image variable.
 
 The repository retains a local single-platform CycloneDX 1.5 inventory at
 `docs/artifacts/sandbox-image-sbom-0.1.0.cdx.json` plus a hash-bound provenance
@@ -7203,6 +7215,26 @@ reviewed and retained, external publication, release signing identity,
 transparency logging, and external attestation remain incomplete. The workflow
 also leaves `windowsHostProductAcceptance=false`; the separate Windows
 acceptance workflow must produce its own successfully verified host receipt.
+
+Stage 20 proves the acquisition transaction independently from that blocked
+administrator step. A loopback anonymous registry arm pulls an immutable
+digest, validates source/context/toolchain, passes all nine production probes,
+persists schema-2 external-release provenance, and exact-uninstalls. A second
+arm attempts the current private GHCR bootstrap digest with an empty Docker
+config, observes anonymous unavailability, builds the same pinned source,
+passes all nine probes, and persists no false release provenance. Both arms
+restore image IDs/references, containers, networks, volumes, scratch, task
+root, and the original official tag exactly:
+
+```bash
+npm run check:sandbox-acquisition
+```
+
+The retained `docs/artifacts/sandbox-acquisition-stage20.json` contains only
+hashes, counts, statuses, immutable candidate identifiers, and false retention
+claims. It does not turn the private bootstrap image into an accepted public
+release; a successful `release` workflow receipt still has to be reviewed and
+retained at the exact external-publication path above.
 
 The retained runtime-environment receipt is deliberately portable across the
 supported host matrix rather than tied to the machine that wrote it. Schema 2

@@ -15,6 +15,7 @@ import { verifySandboxPortableLsp } from "./check-sandbox-portable-lsp.mjs";
 import { verifySandboxPortableDap } from "./check-sandbox-portable-dap.mjs";
 import { verifySandboxOciSupplyChain } from "./check-sandbox-oci-supply-chain.mjs";
 import { verifyLinuxHostProductAcceptance } from "./check-linux-host-product-acceptance.mjs";
+import { verifySandboxAcquisition } from "./check-sandbox-acquisition.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
@@ -84,6 +85,8 @@ const defaultSandboxOciSupplyChainPath =
   "docs/artifacts/sandbox-oci-supply-chain-stage18.json";
 const defaultLinuxHostProductAcceptancePath =
   "docs/artifacts/linux-host-product-acceptance-stage19.json";
+const defaultSandboxAcquisitionPath =
+  "docs/artifacts/sandbox-acquisition-stage20.json";
 const defaultProductPerformanceBudgetPath =
   "docs/product-performance-budget.json";
 const defaultProductPerformanceBaselinePath =
@@ -181,6 +184,8 @@ export async function auditReleaseArtifacts(options = {}) {
   const linuxHostProductAcceptancePath =
     options.linuxHostProductAcceptancePath ??
     defaultLinuxHostProductAcceptancePath;
+  const sandboxAcquisitionPath =
+    options.sandboxAcquisitionPath ?? defaultSandboxAcquisitionPath;
   const productPerformanceBudgetPath =
     options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
   const productPerformanceBaselinePath =
@@ -696,6 +701,17 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const sandboxAcquisitionVerification = await verifySandboxAcquisition({
+    repoRoot,
+    artifactPath: sandboxAcquisitionPath,
+  });
+  if (!sandboxAcquisitionVerification.valid) {
+    errors.push(
+      ...sandboxAcquisitionVerification.errors.map(
+        (error) => `Sandbox acquisition: ${error}`,
+      ),
+    );
+  }
   const codingExecutorComparisonEvidence = await readArtifactEvidence(
     repoRoot,
     codingExecutorComparisonPath,
@@ -800,6 +816,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: linuxHostProductAcceptanceVerification.path,
       sha256: linuxHostProductAcceptanceVerification.sha256,
       valid: linuxHostProductAcceptanceVerification.valid,
+    },
+    {
+      kind: "sandbox-acquisition-stage20",
+      path: sandboxAcquisitionVerification.path,
+      sha256: sandboxAcquisitionVerification.sha256,
+      valid: sandboxAcquisitionVerification.valid,
     },
     {
       kind: "product-performance-baseline",

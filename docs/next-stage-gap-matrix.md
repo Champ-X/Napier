@@ -165,6 +165,74 @@ Observed result:
 - the retained Dogfood summary contains no image ID, raw Docker/CLI output,
   Workspace path, prompt, or credential.
 
+## Completed Slice: Anonymous Official Sandbox Acquisition
+
+User scenario: once a reviewed public `napier-sandbox` release receipt is
+retained, Setup installs the official image by immutable digest without using
+ambient Docker credentials; if that public transport is temporarily
+unavailable, a new user still receives the same verified toolchain from the
+packaged pinned source.
+
+Acceptance and threat boundary:
+
+- trust only the strict external-publication receipt from the repository or
+  installed Runtime package. Require accepted anonymous dual-platform
+  execution, BuildKit SBOM/provenance, keyless signature/Rekor evidence,
+  external SLSA attestation, source SHA, context hash, and receipt self-hash;
+- preview `pullable` with immutable digest/source/receipt hashes but perform no
+  pull, build, binding write, Agent mutation, or credential access;
+- exact apply creates an empty private Docker config and pulls by digest for
+  the host platform. Pull, daemon/context inspection, source/context label
+  validation, immutable image resolution, and cleanup all use that same
+  credential-isolated Docker client;
+- after a successful pull, require the fixed Node/Shell/Python/Git/LSP/DAP/
+  TypeScript/Vitest/Prettier identity plus all nine production probes before
+  returning `action=pulled`;
+- only a transport-level anonymous pull failure may fall back to the packaged
+  source. Receipt, label, platform, identity, toolchain, resource, Workspace,
+  service, activation, or persistence failures fail closed and discard any
+  unaccepted release reference;
+- persist schema-2 acquisition provenance. External bindings retain only
+  digest, source SHA, and receipt hash; source fallback records no false release
+  fields. Existing exact schema-1 bindings remain readable;
+- expose `pullable`, `pulled`, acquisition source, and short immutable digest
+  in CLI/Web without putting registry credentials, Docker output, endpoints,
+  image IDs, resource names, or Workspace paths into the retained receipt.
+
+Observed result:
+
+- focused Runtime/CLI/HTTP/Web/package coverage passes 46 cases for receipt
+  trust/tampering, empty Docker config, successful anonymous pull, partial-pull
+  cleanup, transport fallback, cancellation, toolchain failure cleanup,
+  schema-1 compatibility, schema-2 provenance, UI/CLI projection, and stale
+  packaged-receipt removal;
+- real local Docker Dogfood started a pinned `registry:2.8.3` loopback
+  transport backed by private tmpfs, pushed one relabelled official image,
+  removed all local tag/digest references, then exact-applied Setup. The
+  production path anonymously pulled by immutable digest, returned
+  `action=pulled`, persisted schema-2 `external_release`, passed all nine
+  checks, and exact-uninstalled;
+- the second real arm attempted private GHCR bootstrap digest
+  `sha256:df6b275b52a031272b20361d7d0674823533d5bcf1cb1be64ee3553935e61207`
+  with an empty Docker config. Anonymous pull remained unavailable; Setup
+  removed any partial reference, returned `action=built`, persisted
+  `packaged_source` with no release provenance, passed all nine checks, and
+  exact-uninstalled;
+- Stage 20 retains both arms as a strict 4.4 KiB hash-only receipt. The Ubuntu
+  24.04 arm64 Stage 19 schema-2 guest repeats Stage 13 plus both acquisition
+  arms after clean `npm ci` and full build;
+- local and Ubuntu runs restore image IDs, image references, all containers,
+  all networks, all volumes, Napier scratch, private task roots, and the
+  original `napier-sandbox:0.1.0` tag with zero delta;
+- `verified`: this proves transport/fallback correctness and clean-host
+  portability. It does not claim the private bootstrap package is public,
+  signed release evidence is retained, or Windows host acceptance exists;
+- `blocked externally`: GHCR anonymous token acquisition remains
+  `401 UNAUTHORIZED` until an administrator makes the package public and the
+  exact-SHA `release` workflow succeeds;
+- `blocked externally`: the Windows workflow still has zero registered
+  `napier-windows-docker` runners and therefore no executed host receipt.
+
 ## Baseline
 
 Audit date: 2026-08-05

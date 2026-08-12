@@ -204,6 +204,7 @@ function setupDependencies() {
       identity,
       target: {
         imageReference: "napier-sandbox:0.1.0",
+        acquisition: "packaged_source",
         dockerfileSha256: "1".repeat(64),
         contextSha256: "2".repeat(64),
         platform: process.platform,

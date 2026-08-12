@@ -23,6 +23,7 @@ import {
   saveSandboxInstallation,
 } from "../src/sandbox-installation.js";
 import type { ContainerImageIdentity } from "../src/sandbox-container-runtime.js";
+import { canonicalJson, sha256 } from "../src/ed25519.js";
 
 const roots: string[] = [];
 
@@ -56,6 +57,75 @@ describe("Sandbox installation", () => {
     } finally {
       await runtime.shutdown();
     }
+  });
+
+  it("persists and reloads external release provenance without breaking schema 1", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-sandbox-install-"));
+    roots.push(root);
+    const digest = `sha256:${"f".repeat(64)}`;
+    const installation = await saveSandboxInstallation(
+      root,
+      `ghcr.io/champ-x/napier-sandbox@${digest}`,
+      identity(),
+      new Date("2026-08-12T00:00:00.000Z"),
+      {
+        acquisition: "external_release",
+        releaseDigest: digest,
+        releaseSourceSha: "a".repeat(40),
+        releaseReceiptSha256: "b".repeat(64),
+      },
+    );
+
+    expect(installation).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        acquisition: "external_release",
+        releaseDigest: digest,
+      }),
+    );
+    await expect(loadSandboxInstallation(root)).resolves.toEqual(installation);
+
+    const legacy = await saveSandboxInstallation(
+      path.join(root, "legacy"),
+      "napier-sandbox:0.1.0",
+      identity(),
+    );
+    expect(legacy.schemaVersion).toBe(1);
+    await expect(
+      loadSandboxInstallation(path.join(root, "legacy")),
+    ).resolves.toEqual(legacy);
+  });
+
+  it("rejects release provenance that does not match its digest-qualified reference", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-sandbox-install-"));
+    roots.push(root);
+    const digest = `sha256:${"f".repeat(64)}`;
+    const installation = await saveSandboxInstallation(
+      root,
+      `ghcr.io/champ-x/napier-sandbox@${digest}`,
+      identity(),
+      new Date("2026-08-12T00:00:00.000Z"),
+      {
+        acquisition: "external_release",
+        releaseDigest: digest,
+        releaseSourceSha: "a".repeat(40),
+        releaseReceiptSha256: "b".repeat(64),
+      },
+    );
+    const drifted = {
+      ...installation,
+      imageReference: `ghcr.io/champ-x/napier-sandbox@sha256:${"e".repeat(64)}`,
+    };
+    const { contentSha256: _contentSha256, ...content } = drifted;
+    drifted.contentSha256 = sha256(canonicalJson(content));
+    await writeFile(
+      path.join(root, "sandbox.json"),
+      `${JSON.stringify(drifted)}\n`,
+    );
+
+    await expect(loadSandboxInstallation(root)).rejects.toThrow(
+      "provenance is invalid",
+    );
   });
 
   it("rejects content drift instead of silently falling back", async () => {

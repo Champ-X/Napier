@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -24,6 +24,33 @@ export async function copySandboxImageAsset(root = repoRoot) {
     }
     await copyFile(source, path.join(destinationDirectory, fileName));
   }
+  const releaseSource = path.join(
+    root,
+    "docs/artifacts/sandbox-external-publication-0.1.0.json",
+  );
+  const releaseDestination = path.join(
+    destinationDirectory,
+    "external-publication.json",
+  );
+  await rm(releaseDestination, { force: true });
+  try {
+    const content = await readFile(releaseSource);
+    if (content.byteLength <= 0 || content.byteLength > 128 * 1024) {
+      throw new Error("Sandbox external publication receipt asset is invalid");
+    }
+    await copyFile(releaseSource, releaseDestination);
+  } catch (error) {
+    if (!missing(error)) throw error;
+  }
+}
+
+function missing(error) {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT",
+  );
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {

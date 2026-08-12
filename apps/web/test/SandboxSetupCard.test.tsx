@@ -71,6 +71,53 @@ describe("SandboxSetupCard", () => {
     expect(activationEvents).toBe(1);
   });
 
+  it("renders a signed release docket and applies the immutable pull preview", async () => {
+    const { container } = installDom();
+    const preview = await sandboxPreview("pullable");
+    const result = await sandboxResult(preview, "pulled");
+    const ready = {
+      ...preview,
+      status: "ready" as const,
+      active: true,
+      imageId: `sha256:${"a".repeat(64)}`,
+    };
+    ready.contentSha256 = await sha256Text(
+      canonicalJson(
+        Object.fromEntries(
+          Object.entries(ready).filter(([key]) => key !== "contentSha256"),
+        ),
+      ),
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(stableResponse(preview))
+      .mockResolvedValueOnce(stableResponse(result))
+      .mockResolvedValueOnce(stableResponse(ready));
+    vi.stubGlobal("fetch", fetchMock);
+    const root = createRoot(container);
+    roots.push(root);
+
+    root.render(<SandboxSetupCard />);
+    await waitFor(() => container.textContent?.includes("Install & activate"));
+    expect(container.textContent).toContain("SIGNED RELEASE");
+    expect(container.textContent).toContain(preview.releaseDigest!.slice(0, 19));
+
+    findElementByText<HTMLButtonElement>(
+      container,
+      "Install & activate",
+    )!.click();
+    await waitFor(() => container.textContent?.includes("Sandbox active"));
+    expect(fetchMock.mock.calls[1]).toEqual([
+      "/api/setup/sandbox",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          expectedPreviewSha256: preview.contentSha256,
+        }),
+      }),
+    ]);
+  });
+
   it("requires an exact removal review and retains the shared image", async () => {
     const { container, window } = installDom();
     const ready = await sandboxPreview("ready");
@@ -157,8 +204,23 @@ async function sandboxPreview(
     schemaVersion: 1 as const,
     component: "sandbox" as const,
     status,
+    acquisition:
+      status === "pullable"
+        ? ("external_release" as const)
+        : ("packaged_source" as const),
     active: status === "ready",
-    imageReference: "napier-sandbox:0.1.0",
+    imageReference:
+      status === "pullable"
+        ? `ghcr.io/champ-x/napier-sandbox@sha256:${"f".repeat(64)}`
+        : "napier-sandbox:0.1.0",
+    ...(status === "pullable"
+      ? {
+          releaseReference: `ghcr.io/champ-x/napier-sandbox@sha256:${"f".repeat(64)}`,
+          releaseDigest: `sha256:${"f".repeat(64)}`,
+          releaseSourceSha: "e".repeat(40),
+          releaseReceiptSha256: "d".repeat(64),
+        }
+      : {}),
     ...(status === "ready" ? { imageId: `sha256:${"a".repeat(64)}` } : {}),
     dockerfileSha256: "b".repeat(64),
     contextSha256: "c".repeat(64),
@@ -173,12 +235,14 @@ async function sandboxPreview(
 
 async function sandboxResult(
   preview: SandboxSetupPreview,
+  action: SandboxSetupResult["action"] = "built",
 ): Promise<SandboxSetupResult> {
   const content = {
     kind: "napier.sandbox-runtime-setup-result" as const,
     schemaVersion: 1 as const,
     component: "sandbox" as const,
-    action: "built" as const,
+    action,
+    acquisition: preview.acquisition,
     status: "ready" as const,
     imageReference: preview.imageReference,
     imageId: `sha256:${"a".repeat(64)}`,

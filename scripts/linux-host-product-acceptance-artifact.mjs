@@ -2,6 +2,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
+import {
+  sandboxAcquisitionImplementation,
+  validateSandboxAcquisitionArtifact,
+} from "./sandbox-acquisition-artifact.mjs";
 import { validSandboxImageRepairAcceptance } from "./sandbox-image-repair-artifact.mjs";
 import { validSandboxFirstUseCodingAcceptance } from "./sandbox-product-acceptance-artifact.mjs";
 import { validSandboxInvalidBindingRepairAcceptance } from "./sandbox-invalid-binding-repair-artifact.mjs";
@@ -41,7 +45,7 @@ export async function linuxHostProductAcceptanceImplementation(repoRoot) {
     checkScript: "scripts/check-linux-host-product-acceptance.mjs",
     artifactVerifier: "scripts/linux-host-product-acceptance-artifact.mjs",
   };
-  return Object.fromEntries(
+  const hashes = Object.fromEntries(
     await Promise.all(
       Object.entries(files).map(async ([name, relative]) => [
         `${name}Sha256`,
@@ -49,6 +53,11 @@ export async function linuxHostProductAcceptanceImplementation(repoRoot) {
       ]),
     ),
   );
+  return {
+    ...hashes,
+    acquisitionImplementation:
+      await sandboxAcquisitionImplementation(repoRoot),
+  };
 }
 
 export function validateLinuxHostProductAcceptanceArtifact(
@@ -59,7 +68,7 @@ export function validateLinuxHostProductAcceptanceArtifact(
   if (
     !isRecord(value) ||
     value.kind !== "napier.linux-host-product-acceptance-stage19" ||
-    value.schemaVersion !== 1 ||
+    value.schemaVersion !== 2 ||
     !isIsoDate(value.generatedAt) ||
     canonicalJson(value.implementation) !== canonicalJson(implementation) ||
     value.backend !== "colima" ||
@@ -96,6 +105,10 @@ function validGuest(value, implementation) {
     !validPty(value.pty) ||
     !validCommand(value.build) ||
     !validProduct(value.product) ||
+    validateSandboxAcquisitionArtifact(
+      value.acquisition,
+      implementation.acquisitionImplementation,
+    ).length !== 0 ||
     !Number.isSafeInteger(value.durationMs) ||
     value.durationMs < 0 ||
     value.durationMs > 20 * 60 * 1_000 ||
@@ -315,7 +328,8 @@ function validResourceClosure(value) {
     isRecord(value) &&
     value.hostArchiveRemoved === true &&
     value.guestTemporaryRootRemoved === true &&
-    value.productResourceBaselineRestored === true
+    value.productResourceBaselineRestored === true &&
+    value.acquisitionResourceBaselineRestored === true
   );
 }
 

@@ -1,0 +1,113 @@
+{
+  "kind": "napier.sandbox-acquisition-stage20",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-12T05:26:23.232Z",
+  "implementation": {
+    "contractSha256": "9c65afb14c33350e51ebec23c0931a72a7d3c398830876d262b1a5bdfa65cea9",
+    "releaseModelSha256": "2f9d51a46c498412065de4a418d639de9014769a1aea406b8a08aca7bb4d648f",
+    "releaseRuntimeSha256": "b62fb9d7d3aa842c4950b448a0f2f7be803e9a64cc64fe57e03fc9a32cfe7884",
+    "acquisitionRuntimeSha256": "d3bb54c58c8cc86c6955e30646b0c9556234c7ab851240f3d56ee049cf0836ac",
+    "runtimeSetupSha256": "1471a8f354a951201a0297a713038afc83c3e937c093ed7628263d6825d0a5b9",
+    "setupServiceSha256": "e1930a65585815a639ad3ba5681545acf2c119794da35e77589bd9d32b068598",
+    "setupVerificationSha256": "b107e8b5b438f404e26eaa810979f285caf9fac4de4ffef15bc7a6150d509f76",
+    "installationSha256": "470e72e222aee5bebe4d0103676c01f9c2008632873b2f96098eff0eca34a542",
+    "cliSetupSha256": "cf97974111c0d85b57b0f7a52fe563e5daf5e753d52d38ce699517d6c5abfed0",
+    "webSetupCardSha256": "b69b4984843373f5e7a190e755c87558b8dd23f25eebdee0702f9b56f14f5640",
+    "webSetupViewModelSha256": "054ff71165464ddb0baa2f78b6df1233dffc912407437f29a5a6dcd978e16d34",
+    "copyAssetSha256": "239125880da1bfed1aaf6b30943f0c66e7bd7a83096474269d0858374f9e11e3",
+    "harnessSha256": "f0ad38659d290443454fd87ccbf59e8534156ee1c982e45cc567c0ee7e345888",
+    "supportSha256": "939b7b1d619799de5d27f12748a6d2daf10c0e958e4b0f24001151e5bce239a1",
+    "verifierSha256": "f438dc79c8c0390b278fdaf8eee480879f5a249deaf8b4b74e6fbc6e88b63073",
+    "checkSha256": "51c3333b5a08075030a5530a6c8468a14156da58fdbf98be74dbd4e7ef3e308f"
+  },
+  "localAnonymous": {
+    "transport": "loopback_registry",
+    "anonymousPull": true,
+    "action": "pulled",
+    "acquisition": "external_release",
+    "immutableDigest": true,
+    "sourceLabelVerified": true,
+    "contextLabelVerified": true,
+    "checkCount": 9,
+    "checkCodes": [
+      "sandbox_process_ready",
+      "sandbox_resources_ready",
+      "verification_ready",
+      "shell_ready",
+      "python_ready",
+      "git_ready",
+      "lsp_ready",
+      "dap_ready",
+      "service_ready"
+    ],
+    "bindingSchemaVersion": 2,
+    "installationSha256": "e29341c218ad57934f5773e243d26b126348f8bb3e5a5252d73e2616c3d038a0",
+    "resultSha256": "f0f380e5bd7360e5cf9e434b671fe8985ee7c51a591e4dc2329adc04d8e4ba0b",
+    "uninstallStatus": "removed",
+    "bindingRemoved": true
+  },
+  "privateFallback": {
+    "transport": "private_ghcr",
+    "anonymousPullUnavailable": true,
+    "action": "built",
+    "acquisition": "packaged_source",
+    "releaseProvenanceRetained": false,
+    "checkCount": 9,
+    "checkCodes": [
+      "sandbox_process_ready",
+      "sandbox_resources_ready",
+      "verification_ready",
+      "shell_ready",
+      "python_ready",
+      "git_ready",
+      "lsp_ready",
+      "dap_ready",
+      "service_ready"
+    ],
+    "bindingSchemaVersion": 2,
+    "installationSha256": "11a2e1779d8439cbc60af8abece26204450e4644438946613c67923c5a6c0942",
+    "resultSha256": "d20d1c2ae7cb54be113dde1cfb50fbeb48c5607ebee4373fc838c3cc9eef654b",
+    "uninstallStatus": "removed",
+    "bindingRemoved": true,
+    "candidateDigest": "sha256:df6b275b52a031272b20361d7d0674823533d5bcf1cb1be64ee3553935e61207",
+    "candidateSourceSha": "d9274ed5fad7dff68951ddd97105b9af6e7ade7e",
+    "candidateContextSha256": "6c76e506c368c10ff530806bddde67dcd07d269102c62965cb3ff4b4cbd3cbca",
+    "candidateSha256": "ad2b99e7ebf8ffe049a68541795ec4de073dd2cc87eedfe733799ec69ae81eb6"
+  },
+  "resourceClosure": {
+    "exactBaselineRestored": true,
+    "containerDeltaCount": 0,
+    "networkDeltaCount": 0,
+    "scratchDeltaCount": 0,
+    "imageDeltaCount": 0,
+    "imageReferenceDeltaCount": 0,
+    "allContainerDeltaCount": 0,
+    "allNetworkDeltaCount": 0,
+    "allVolumeDeltaCount": 0,
+    "originalTagRestored": true
+  },
+  "taskRootRemoved": true,
+  "retention": {
+    "credentialValues": false,
+    "rawCliOutput": false,
+    "rawDockerOutput": false,
+    "imageIds": false,
+    "imageReferences": false,
+    "resourceNames": false,
+    "workspacePaths": false,
+    "registryEndpoints": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "localAnonymousTransportAccepted": true,
+    "privateRegistryFallbackAccepted": true,
+    "publicExternalReleaseAccepted": false,
+    "windowsHostProductAcceptance": false,
+    "remaining": [
+      "public signed external release",
+      "Windows host product acceptance"
+    ]
+  },
+  "contentSha256": "a6c1c8387b58e7857e0c231e7b47aac3151723742d3cb374d3a94719dcbfe3fc"
+}

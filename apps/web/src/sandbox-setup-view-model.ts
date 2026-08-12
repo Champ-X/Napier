@@ -18,6 +18,13 @@ const STATUS_COPY: Record<SandboxSetupStatus, SandboxSetupCopy> = {
     action: "Verify & activate",
     actionable: true,
   },
+  pullable: {
+    title: "Official release available",
+    detail:
+      "Apply the exact preview to anonymously pull the reviewed immutable release, verify its source and toolchain, then run every production capability check. If the public registry is unavailable, Setup builds the same pinned source locally.",
+    action: "Install & activate",
+    actionable: true,
+  },
   buildable: {
     title: "Build required",
     detail:

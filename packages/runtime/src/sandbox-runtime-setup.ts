@@ -6,6 +6,12 @@ import path from "node:path";
 import { sha256File } from "./command-execution.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
+  loadOfficialSandboxRelease,
+  pullOfficialSandboxRelease,
+  type OfficialSandboxRelease,
+  type SandboxReleasePullDependencies,
+} from "./sandbox-official-release.js";
+import {
   containerClientEnvironment,
   probeContainerRuntimeAvailability,
   resolveContainerLaunchExecutable,
@@ -25,6 +31,8 @@ const BUILD_TIMEOUT_MS = 15 * 60 * 1_000;
 
 export interface SandboxRuntimeTarget {
   imageReference: string;
+  acquisition: "local_verified" | "external_release" | "packaged_source";
+  release?: OfficialSandboxRelease;
   dockerfileSha256: string;
   contextSha256: string;
   platform: NodeJS.Platform;
@@ -33,7 +41,12 @@ export interface SandboxRuntimeTarget {
 
 export interface SandboxRuntimeInspection {
   target: SandboxRuntimeTarget;
-  status: "ready" | "buildable" | "runtime_unavailable" | "unsupported";
+  status:
+    | "ready"
+    | "pullable"
+    | "buildable"
+    | "runtime_unavailable"
+    | "unsupported";
   identity?: ContainerImageIdentity;
 }
 
@@ -54,6 +67,9 @@ export interface SandboxBuildResult {
 export interface SandboxRuntimeSetupDependencies {
   inspect?: () => Promise<SandboxRuntimeInspection>;
   runBuild?: (request: SandboxBuildRequest) => Promise<SandboxBuildResult>;
+  loadRelease?: typeof loadOfficialSandboxRelease;
+  pullRelease?: typeof pullOfficialSandboxRelease;
+  releasePull?: SandboxReleasePullDependencies;
 }
 
 export class SandboxToolchainDriftError extends Error {
@@ -94,39 +110,91 @@ export async function verifyOfficialSandboxRuntimeToolchain(
   }
 }
 
-export async function inspectOfficialSandboxRuntime(): Promise<SandboxRuntimeInspection> {
-  const target = await officialSandboxTarget();
+export async function inspectOfficialSandboxRuntime(
+  dependencies: Pick<SandboxRuntimeSetupDependencies, "loadRelease"> = {},
+): Promise<SandboxRuntimeInspection> {
+  const sourceTarget = await officialSandboxTarget();
   if (!["darwin", "linux", "win32"].includes(process.platform)) {
-    return { target, status: "unsupported" };
+    return { target: sourceTarget, status: "unsupported" };
   }
   if (!(await probeContainerRuntimeAvailability())) {
-    return { target, status: "runtime_unavailable" };
+    return { target: sourceTarget, status: "runtime_unavailable" };
   }
-  try {
-    const executable = await resolveContainerLaunchExecutable(undefined);
-    const sourceSha256 = (
-      await runContainerClient(executable, [
-        "image",
-        "inspect",
-        "--format",
-        '{{ index .Config.Labels "io.napier.sandbox.context-sha256" }}',
-        target.imageReference,
-      ])
-    ).trim();
-    if (sourceSha256 !== target.contextSha256) {
-      return { target, status: "buildable" };
-    }
+  const executable = await resolveContainerLaunchExecutable(undefined);
+  const localIdentity = await matchingImageIdentity(
+    sourceTarget,
+    executable,
+  );
+  if (localIdentity) {
     return {
-      target,
+      target: { ...sourceTarget, acquisition: "local_verified" },
       status: "ready",
-      identity: await resolveContainerImageIdentity(
-        target.imageReference,
-        executable,
-      ),
+      identity: localIdentity,
     };
-  } catch {
-    return { target, status: "buildable" };
   }
+  const release = await (
+    dependencies.loadRelease ?? loadOfficialSandboxRelease
+  )(sourceTarget.contextSha256);
+  if (release) {
+    const releaseTarget = {
+      ...sourceTarget,
+      imageReference: release.reference,
+      acquisition: "external_release" as const,
+      release,
+    };
+    const releaseIdentity = await matchingImageIdentity(
+      releaseTarget,
+      executable,
+    );
+    return releaseIdentity
+      ? { target: releaseTarget, status: "ready", identity: releaseIdentity }
+      : { target: releaseTarget, status: "pullable" };
+  }
+  return { target: sourceTarget, status: "buildable" };
+}
+
+export async function pullOfficialSandboxRuntime(
+  input: { signal: AbortSignal },
+  dependencies: SandboxRuntimeSetupDependencies = {},
+): Promise<
+  | (SandboxRuntimeInspection & {
+      status: "ready";
+      identity: ContainerImageIdentity;
+    })
+  | undefined
+> {
+  const inspect = dependencies.inspect ?? inspectOfficialSandboxRuntime;
+  const before = await inspect();
+  if (before.status === "ready" && before.identity) {
+    return before as SandboxRuntimeInspection & {
+      status: "ready";
+      identity: ContainerImageIdentity;
+    };
+  }
+  if (before.status !== "pullable" || !before.target.release) {
+    throw new Error("Official Sandbox release cannot be pulled on this host");
+  }
+  const pulled = await (dependencies.pullRelease ?? pullOfficialSandboxRelease)(
+    before.target.release,
+    input.signal,
+    dependencies.releasePull,
+  );
+  if (pulled.status === "unavailable") return undefined;
+  input.signal.throwIfAborted();
+  const after = await inspect();
+  if (
+    after.status !== "ready" ||
+    !after.identity ||
+    after.identity.imageId !== pulled.identity.imageId ||
+    canonicalRelease(after.target.release) !==
+      canonicalRelease(before.target.release)
+  ) {
+    throw new Error("Official Sandbox release verification failed");
+  }
+  return after as SandboxRuntimeInspection & {
+    status: "ready";
+    identity: ContainerImageIdentity;
+  };
 }
 
 export async function buildOfficialSandboxRuntime(
@@ -148,6 +216,7 @@ export async function buildOfficialSandboxRuntime(
   }
   if (
     before.status !== "buildable" &&
+    before.status !== "pullable" &&
     !(input.force && before.status === "ready" && before.identity)
   ) {
     throw new Error("Official Sandbox image cannot be built on this host");
@@ -156,6 +225,7 @@ export async function buildOfficialSandboxRuntime(
   const executable = await resolveContainerLaunchExecutable(undefined);
   await resolveContainerDaemonIdentity(executable);
   const source = await officialSandboxSource();
+  const buildTarget = await officialSandboxTarget();
   const result = await (dependencies.runBuild ?? runSandboxBuild)({
     command: executable,
     args: [
@@ -163,9 +233,9 @@ export async function buildOfficialSandboxRuntime(
       "--file",
       source.dockerfilePath,
       "--tag",
-      before.target.imageReference,
+      buildTarget.imageReference,
       "--label",
-      `io.napier.sandbox.context-sha256=${before.target.contextSha256}`,
+      `io.napier.sandbox.context-sha256=${buildTarget.contextSha256}`,
       source.contextPath,
     ],
     cwd: source.contextPath,
@@ -178,16 +248,20 @@ export async function buildOfficialSandboxRuntime(
     );
   }
   input.signal.throwIfAborted();
-  const after = await inspect();
-  if (after.status !== "ready" || !after.identity) {
+  const identity = await matchingImageIdentity(buildTarget, executable);
+  if (!identity) {
     throw new Error(
       `Official Sandbox image verification failed (diagnostic ${result.outputSha256.slice(0, 16)})`,
     );
   }
-  if (canonicalJson(after.target) !== canonicalJson(before.target)) {
+  if (!sameSandboxSource(buildTarget, before.target)) {
     throw new Error("Official Sandbox build target changed during setup");
   }
-  return after as SandboxRuntimeInspection & {
+  return {
+    target: buildTarget,
+    status: "ready",
+    identity,
+  } as SandboxRuntimeInspection & {
     status: "ready";
     identity: ContainerImageIdentity;
   };
@@ -298,6 +372,7 @@ async function officialSandboxTarget(): Promise<SandboxRuntimeTarget> {
     ]);
   return {
     imageReference: OFFICIAL_SANDBOX_IMAGE,
+    acquisition: "packaged_source",
     dockerfileSha256,
     contextSha256: sha256(
       canonicalJson({
@@ -312,6 +387,52 @@ async function officialSandboxTarget(): Promise<SandboxRuntimeTarget> {
     platform: process.platform,
     arch: process.arch,
   };
+}
+
+async function matchingImageIdentity(
+  target: SandboxRuntimeTarget,
+  executable: string,
+): Promise<ContainerImageIdentity | undefined> {
+  try {
+    const labels = (
+      await runContainerClient(executable, [
+        "image",
+        "inspect",
+        "--format",
+        '{{ index .Config.Labels "io.napier.sandbox.context-sha256" }}\t{{ index .Config.Labels "org.opencontainers.image.revision" }}',
+        target.imageReference,
+      ])
+    )
+      .trim()
+      .split("\t");
+    if (
+      labels[0] !== target.contextSha256 ||
+      (target.release && labels[1] !== target.release.sourceSha)
+    ) {
+      return undefined;
+    }
+    return resolveContainerImageIdentity(target.imageReference, executable);
+  } catch {
+    return undefined;
+  }
+}
+
+function sameSandboxSource(
+  left: SandboxRuntimeTarget,
+  right: SandboxRuntimeTarget,
+): boolean {
+  return (
+    left.dockerfileSha256 === right.dockerfileSha256 &&
+    left.contextSha256 === right.contextSha256 &&
+    left.platform === right.platform &&
+    left.arch === right.arch
+  );
+}
+
+function canonicalRelease(
+  release: OfficialSandboxRelease | undefined,
+): string {
+  return release ? canonicalJson(release) : "";
 }
 
 async function officialSandboxSource(): Promise<{

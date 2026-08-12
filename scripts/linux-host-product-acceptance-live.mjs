@@ -13,6 +13,11 @@ const STAGE19_ARTIFACT =
 const RELEASE_ARTIFACT =
   "docs/artifacts/release-artifacts-audit-0.1.0.json";
 const STAGE19_SOURCE_FILES = [
+  "docs/artifacts/sandbox-acquisition-stage20.json",
+  "packages/runtime/src/sandbox-official-release-model.ts",
+  "packages/runtime/src/sandbox-official-release.ts",
+  "packages/runtime/src/sandbox-runtime-acquisition.ts",
+  "packages/runtime/src/sandbox-setup-verification.ts",
   "packages/runtime/src/project-skill-snapshot-acquisition.ts",
   "packages/runtime/src/project-skill-snapshot-anchor.ts",
   "packages/runtime/src/project-skill-snapshot-memory.ts",
@@ -29,6 +34,11 @@ const STAGE19_SOURCE_FILES = [
   "scripts/sandbox-invalid-binding-repair-artifact.mjs",
   "scripts/sandbox-image-repair-acceptance.mjs",
   "scripts/sandbox-image-repair-artifact.mjs",
+  "scripts/check-sandbox-acquisition.mjs",
+  "scripts/check-sandbox-acquisition.test.mjs",
+  "scripts/sandbox-acquisition-acceptance.mjs",
+  "scripts/sandbox-acquisition-artifact.mjs",
+  "scripts/sandbox-acquisition-support.mjs",
 ];
 
 export async function runLinuxHostProductAcceptance(input) {
@@ -107,6 +117,8 @@ export async function runLinuxHostProductAcceptance(input) {
       guestTemporaryRootRemoved: true,
       productResourceBaselineRestored:
         result.guest.product.resourceClosure.exactBaselineRestored === true,
+      acquisitionResourceBaselineRestored:
+        result.guest.acquisition.resourceClosure.exactBaselineRestored === true,
     },
   };
 }

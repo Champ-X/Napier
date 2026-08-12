@@ -7,7 +7,7 @@ import {
 } from "../src/sandbox-setup-view-model";
 
 describe("Sandbox setup view model", () => {
-  it("offers exact-preview activation only for ready or buildable states", () => {
+  it("offers exact-preview activation for verified, released, or buildable states", () => {
     expect(sandboxSetupCopy(preview("buildable"))).toEqual(
       expect.objectContaining({
         title: "Build required",
@@ -20,6 +20,14 @@ describe("Sandbox setup view model", () => {
         title: "Image found",
         action: "Verify & activate",
         detail: expect.stringContaining("rebuilds it once"),
+        actionable: true,
+      }),
+    );
+    expect(sandboxSetupCopy(preview("pullable"))).toEqual(
+      expect.objectContaining({
+        title: "Official release available",
+        action: "Install & activate",
+        detail: expect.stringContaining("anonymously pull"),
         actionable: true,
       }),
     );
@@ -46,6 +54,8 @@ function preview(status: SandboxSetupPreview["status"]): SandboxSetupPreview {
     schemaVersion: 1,
     component: "sandbox",
     status,
+    acquisition:
+      status === "pullable" ? "external_release" : "packaged_source",
     active: false,
     imageReference: "napier-sandbox:0.1.0",
     ...(status === "ready" ? { imageId: `sha256:${"a".repeat(64)}` } : {}),

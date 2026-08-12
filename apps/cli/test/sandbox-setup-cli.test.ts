@@ -276,6 +276,69 @@ describe("Napier Sandbox setup CLI", () => {
     expect(verify).toHaveBeenCalledTimes(1);
   });
 
+  it("reports an anonymously pulled immutable release in human output", async () => {
+    const fixture = await createFixture();
+    const release = externalRelease();
+    const inspect = vi.fn(async () => inspection("pullable", undefined, release));
+    const previewOutput = new CaptureWritable();
+    await runCli(
+      [
+        "setup",
+        "--workspace",
+        fixture.workspace,
+        "--component",
+        "sandbox",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, {}, previewOutput),
+      {
+        createRuntime: vi.fn(),
+        sandboxSetup: { inspect },
+      },
+    );
+    const preview = JSON.parse(previewOutput.text()) as {
+      contentSha256: string;
+    };
+    const stdout = new CaptureWritable();
+    const pulled = identity();
+
+    const code = await runCli(
+      [
+        "setup",
+        "--workspace",
+        fixture.workspace,
+        "--component",
+        "sandbox",
+        "--expected-preview",
+        preview.contentSha256,
+        "--apply",
+      ],
+      cliIo(fixture.root, {}, stdout),
+      {
+        createRuntime: vi.fn(),
+        sandboxSetup: {
+          inspect,
+          pullRuntime: async () => ({
+            ...inspection("ready", pulled, release),
+            status: "ready",
+            identity: pulled,
+          }),
+          verifyToolchain: async () => undefined,
+          verify: async () => ({ checks: readyChecks() }),
+          activate: async () =>
+            new UnsupportedSandboxAdapter("sandbox-setup-pulled"),
+        },
+      },
+    );
+
+    expect(code).toBe(0);
+    expect(stdout.text()).toContain(
+      "Sandbox runtime: pulled immutable release",
+    );
+    expect(stdout.text()).toContain("Acquisition: external_release");
+    expect(stdout.text()).toContain(`Release digest: ${release.digest}`);
+  });
+
   it("leaves no installation when production verification fails", async () => {
     const fixture = await createFixture();
     const preview = await previewFor(fixture);
@@ -435,17 +498,36 @@ async function previewFor(fixture: {
 function inspection(
   status: SandboxRuntimeInspection["status"],
   imageIdentity?: ContainerImageIdentity,
+  release?: NonNullable<SandboxRuntimeInspection["target"]["release"]>,
 ): SandboxRuntimeInspection {
   return {
     status,
     target: {
-      imageReference: "napier-sandbox:0.1.0",
+      imageReference: release?.reference ?? "napier-sandbox:0.1.0",
+      acquisition: release ? "external_release" : "packaged_source",
+      ...(release ? { release } : {}),
       dockerfileSha256: "1".repeat(64),
       contextSha256: "2".repeat(64),
       platform: process.platform,
       arch: process.arch,
     },
     ...(imageIdentity ? { identity: imageIdentity } : {}),
+  };
+}
+
+function externalRelease(): NonNullable<
+  SandboxRuntimeInspection["target"]["release"]
+> {
+  const digest = `sha256:${"f".repeat(64)}`;
+  return {
+    image: "ghcr.io/champ-x/napier-sandbox",
+    version: "0.1.0",
+    digest,
+    reference: `ghcr.io/champ-x/napier-sandbox@${digest}`,
+    sourceSha: "e".repeat(40),
+    contextSha256: "2".repeat(64),
+    receiptSha256: "d".repeat(64),
+    platforms: ["linux/amd64", "linux/arm64"],
   };
 }
 

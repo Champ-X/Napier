@@ -21,7 +21,7 @@ export async function collectLinuxHostProductAcceptance(options = {}) {
     await linuxHostProductAcceptanceImplementation(repoRoot);
   const withoutHash = {
     kind: "napier.linux-host-product-acceptance-stage19",
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     implementation,
     ...live,

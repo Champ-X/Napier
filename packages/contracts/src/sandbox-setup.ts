@@ -1,8 +1,14 @@
 export type SandboxSetupStatus =
   | "ready"
+  | "pullable"
   | "buildable"
   | "runtime_unavailable"
   | "unsupported";
+
+export type SandboxSetupAcquisition =
+  | "local_verified"
+  | "external_release"
+  | "packaged_source";
 
 export interface SandboxSetupChecks {
   node: string;
@@ -21,9 +27,14 @@ export interface SandboxSetupPreview {
   schemaVersion: 1;
   component: "sandbox";
   status: SandboxSetupStatus;
+  acquisition: SandboxSetupAcquisition;
   active: boolean;
   imageReference: string;
   imageId?: string;
+  releaseReference?: string;
+  releaseDigest?: string;
+  releaseSourceSha?: string;
+  releaseReceiptSha256?: string;
   dockerfileSha256: string;
   contextSha256: string;
   platform: NodeJS.Platform;
@@ -75,10 +86,15 @@ export interface SandboxSetupResult {
   kind: "napier.sandbox-runtime-setup-result";
   schemaVersion: 1;
   component: "sandbox";
-  action: "built" | "repaired" | "reused";
+  action: "built" | "pulled" | "repaired" | "reused";
+  acquisition: SandboxSetupAcquisition;
   status: "ready";
   imageReference: string;
   imageId: string;
+  releaseReference?: string;
+  releaseDigest?: string;
+  releaseSourceSha?: string;
+  releaseReceiptSha256?: string;
   dockerfileSha256: string;
   contextSha256: string;
   identitySha256: string;

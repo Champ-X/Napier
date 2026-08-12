@@ -20,6 +20,7 @@ export async function runLinuxHostGuestAcceptance(repoRoot = process.cwd()) {
   const { collectSandboxProductAcceptance } =
     await import("./check-sandbox-product-acceptance.mjs");
   const product = await collectSandboxProductAcceptance({ repoRoot });
+  const acquisition = await collectGuestSandboxAcquisition(repoRoot);
   const host = await inspectLinuxHost();
   const content = {
     host,
@@ -28,12 +29,53 @@ export async function runLinuxHostGuestAcceptance(repoRoot = process.cwd()) {
     pty,
     build,
     product: summarizeProductAcceptance(product),
+    acquisition,
     durationMs: Math.max(0, Date.now() - startedAt),
   };
   return {
     ...content,
     evidenceSha256: sha256(canonicalJson(content)),
   };
+}
+
+async function collectGuestSandboxAcquisition(repoRoot) {
+  const receipt = JSON.parse(
+    await readFile(
+      path.join(
+        repoRoot,
+        "docs/artifacts/sandbox-acquisition-stage20.json",
+      ),
+      "utf8",
+    ),
+  );
+  const candidate = receipt?.privateFallback;
+  if (
+    !/^sha256:[a-f0-9]{64}$/u.test(candidate?.candidateDigest ?? "") ||
+    !/^[a-f0-9]{40}$/u.test(candidate?.candidateSourceSha ?? "") ||
+    !/^[a-f0-9]{64}$/u.test(candidate?.candidateContextSha256 ?? "")
+  ) {
+    throw new Error("Linux host Sandbox acquisition candidate is invalid");
+  }
+  const [{ collectSandboxAcquisition }, { inspectOfficialSandboxRuntime }] =
+    await Promise.all([
+      import("./check-sandbox-acquisition.mjs"),
+      import("../packages/runtime/dist/sandbox-runtime-setup.js"),
+    ]);
+  const inspection = await inspectOfficialSandboxRuntime({
+    loadRelease: async () => undefined,
+  });
+  if (
+    inspection.target.contextSha256 !== candidate.candidateContextSha256
+  ) {
+    throw new Error("Linux host Sandbox acquisition context is stale");
+  }
+  return collectSandboxAcquisition({
+    repoRoot,
+    contextSha256: inspection.target.contextSha256,
+    privateReference:
+      `ghcr.io/champ-x/napier-sandbox@${candidate.candidateDigest}`,
+    privateSourceSha: candidate.candidateSourceSha,
+  });
 }
 
 async function inspectCleanSource(repoRoot) {

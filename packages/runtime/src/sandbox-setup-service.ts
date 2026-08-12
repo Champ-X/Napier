@@ -8,17 +8,6 @@ import type {
   SandboxUninstallResult,
 } from "@napier/contracts/sandbox-setup";
 
-import {
-  probeDapRuntime,
-  probeGitRuntime,
-  probeLocalServiceRuntime,
-  probeLspRuntime,
-  probePythonRuntime,
-  probeSandboxResourceRuntime,
-  probeSandboxProcessRuntime,
-  probeShellRuntime,
-  probeVerificationRuntime,
-} from "./doctor-runtime-probes.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   createSandboxFallbackAdapter,
@@ -29,21 +18,30 @@ import {
   type SandboxInstallationBinding,
   type SandboxInstallation,
 } from "./sandbox-installation.js";
-import { OciContainerSandboxAdapter } from "./sandbox-oci.js";
 import {
-  buildOfficialSandboxRuntime,
   inspectOfficialSandboxRuntime,
   SandboxToolchainDriftError,
   type SandboxRuntimeInspection,
-  type SandboxRuntimeSetupDependencies,
   verifyOfficialSandboxRuntimeToolchain,
 } from "./sandbox-runtime-setup.js";
+import {
+  acquireOfficialSandboxRuntime,
+  buildOfficialSandboxRuntimeFromSource,
+  sandboxRuntimeInstallationProvenance,
+  type SandboxRuntimeAcquisitionDependencies,
+} from "./sandbox-runtime-acquisition.js";
+import { discardOfficialSandboxRelease } from "./sandbox-official-release.js";
 import { SwitchableSandboxAdapter } from "./sandbox-switchable.js";
 import type { ContainerImageIdentity } from "./sandbox-container-runtime.js";
 import type { OsSandboxAdapter } from "./sandbox-types.js";
+import {
+  activateInstalledSandbox,
+  verifySandboxRuntime,
+} from "./sandbox-setup-verification.js";
 
-export interface SandboxSetupServiceDependencies extends SandboxRuntimeSetupDependencies {
-  buildRuntime?: typeof buildOfficialSandboxRuntime;
+export interface SandboxSetupServiceDependencies
+  extends SandboxRuntimeAcquisitionDependencies {
+  discardRelease?: typeof discardOfficialSandboxRelease;
   verifyToolchain?: (
     identity: ContainerImageIdentity,
     signal: AbortSignal,
@@ -85,7 +83,14 @@ export class SandboxSetupService {
     private readonly sandbox: SwitchableSandboxAdapter,
     private readonly dependencies: SandboxSetupServiceDependencies = {},
   ) {
-    this.inspect = dependencies.inspect ?? inspectOfficialSandboxRuntime;
+    this.inspect =
+      dependencies.inspect ??
+      (() =>
+        inspectOfficialSandboxRuntime({
+          ...(dependencies.loadRelease
+            ? { loadRelease: dependencies.loadRelease }
+            : {}),
+        }));
   }
 
   async preview(): Promise<SandboxSetupPreview> {
@@ -130,84 +135,88 @@ export class SandboxSetupService {
       ) {
         throw new Error("Official Sandbox runtime is unavailable on this host");
       }
-      let action: SandboxSetupResult["action"] =
-        inspection.status === "ready" ? "reused" : "built";
-      let ready =
-        inspection.status === "ready" && inspection.identity
-          ? {
-              ...inspection,
-              status: "ready" as const,
-              identity: inspection.identity,
-            }
-          : await (this.dependencies.buildRuntime ??
-              buildOfficialSandboxRuntime)(
-              { signal },
-              {
-                inspect: this.inspect,
-                ...(this.dependencies.runBuild
-                  ? { runBuild: this.dependencies.runBuild }
-                  : {}),
-              },
-            );
-      const verifyToolchain =
-        this.dependencies.verifyToolchain ??
-        verifyOfficialSandboxRuntimeToolchain;
+      let { ready, action } = await acquireOfficialSandboxRuntime(
+        inspection,
+        signal,
+        {
+          ...this.dependencies,
+          inspect: this.inspect,
+        },
+      );
+      const pulledRelease =
+        action === "pulled" ? ready.target.release : undefined;
+      let persisted = false;
       try {
-        await verifyToolchain(ready.identity, signal);
-      } catch (error) {
-        signal.throwIfAborted();
-        if (
-          inspection.status !== "ready" ||
-          !inspection.identity ||
-          !(error instanceof SandboxToolchainDriftError)
-        ) {
-          throw error;
+        const verifyToolchain =
+          this.dependencies.verifyToolchain ??
+          verifyOfficialSandboxRuntimeToolchain;
+        try {
+          await verifyToolchain(ready.identity, signal);
+        } catch (error) {
+          signal.throwIfAborted();
+          if (
+            inspection.status !== "ready" ||
+            !inspection.identity ||
+            !(error instanceof SandboxToolchainDriftError)
+          ) {
+            throw error;
+          }
+          ready = await buildOfficialSandboxRuntimeFromSource(
+            signal,
+            {
+              ...this.dependencies,
+              inspect: this.inspect,
+            },
+            true,
+          );
+          await verifyToolchain(ready.identity, signal);
+          action = "repaired";
         }
-        ready = await (this.dependencies.buildRuntime ??
-          buildOfficialSandboxRuntime)(
-          { signal, force: true },
-          {
-            inspect: this.inspect,
-            ...(this.dependencies.runBuild
-              ? { runBuild: this.dependencies.runBuild }
-              : {}),
-          },
+        const verify = this.dependencies.verify ?? verifySandboxRuntime;
+        const verification = await verify({
+          workspaceRoot: this.workspaceRoot,
+          dataRoot: this.dataRoot,
+          imageReference: ready.target.imageReference,
+          identity: ready.identity,
+          signal,
+        });
+        const installation = createSandboxInstallation(
+          ready.target.imageReference,
+          ready.identity,
+          new Date(),
+          sandboxRuntimeInstallationProvenance(ready.target),
         );
-        await verifyToolchain(ready.identity, signal);
-        action = "repaired";
+        const next = await (
+          this.dependencies.activate ?? activateInstalledSandbox
+        )({
+          installation,
+          workspaceRoot: this.workspaceRoot,
+          signal,
+        });
+        const saved = await saveSandboxInstallation(
+          this.dataRoot,
+          ready.target.imageReference,
+          ready.identity,
+          new Date(installation.verifiedAt),
+          sandboxRuntimeInstallationProvenance(ready.target),
+        );
+        persisted = true;
+        this.sandbox.replace(next);
+        return createSandboxSetupResult(
+          ready,
+          action,
+          verification.checks,
+          saved,
+        );
+      } catch (error) {
+        if (pulledRelease && !persisted) {
+          await (
+            this.dependencies.discardRelease ??
+            discardOfficialSandboxRelease
+          )(pulledRelease, AbortSignal.timeout(30_000));
+        }
+        throw error;
       }
-      const verify = this.dependencies.verify ?? verifySandboxRuntime;
-      const verification = await verify({
-        workspaceRoot: this.workspaceRoot,
-        dataRoot: this.dataRoot,
-        imageReference: ready.target.imageReference,
-        identity: ready.identity,
-        signal,
-      });
-      const installation = createSandboxInstallation(
-        ready.target.imageReference,
-        ready.identity,
-      );
-      const next = await (
-        this.dependencies.activate ?? activateInstalledSandbox
-      )({
-        installation,
-        workspaceRoot: this.workspaceRoot,
-        signal,
-      });
-      const persisted = await saveSandboxInstallation(
-        this.dataRoot,
-        ready.target.imageReference,
-        ready.identity,
-        new Date(installation.verifiedAt),
-      );
-      this.sandbox.replace(next);
-      return createSandboxSetupResult(
-        ready,
-        action,
-        verification.checks,
-        persisted,
-      );
     } finally {
       this.applying = false;
     }
@@ -278,23 +287,7 @@ export class SandboxSetupService {
     }
     return inspectSandboxInstallationBinding(this.dataRoot);
   }
-}
 
-async function activateInstalledSandbox(input: {
-  installation: SandboxInstallation;
-  workspaceRoot: string;
-  signal: AbortSignal;
-}): Promise<OsSandboxAdapter> {
-  const next = installedSandboxAdapter(input.installation);
-  const probe = await probeShellRuntime(
-    input.workspaceRoot,
-    input.signal,
-    next,
-  );
-  if (probe.status !== "ready") {
-    throw new Error("Persisted Sandbox activation verification failed");
-  }
-  return next;
 }
 
 export function createSandboxSetupPreview(
@@ -306,10 +299,19 @@ export function createSandboxSetupPreview(
     schemaVersion: 1 as const,
     component: "sandbox" as const,
     status: inspection.status,
+    acquisition: inspection.target.acquisition,
     active:
       active && inspection.status === "ready" && Boolean(inspection.identity),
     imageReference: inspection.target.imageReference,
     ...(inspection.identity ? { imageId: inspection.identity.imageId } : {}),
+    ...(inspection.target.release
+      ? {
+          releaseReference: inspection.target.release.reference,
+          releaseDigest: inspection.target.release.digest,
+          releaseSourceSha: inspection.target.release.sourceSha,
+          releaseReceiptSha256: inspection.target.release.receiptSha256,
+        }
+      : {}),
     dockerfileSha256: inspection.target.dockerfileSha256,
     contextSha256: inspection.target.contextSha256,
     platform: inspection.target.platform,
@@ -353,70 +355,6 @@ export function createSandboxUninstallPreview(
   };
 }
 
-async function verifySandboxRuntime(input: {
-  workspaceRoot: string;
-  dataRoot: string;
-  imageReference: string;
-  identity: ContainerImageIdentity;
-  signal: AbortSignal;
-}) {
-  const sandbox = new OciContainerSandboxAdapter(input.identity.imageId);
-  const probes = {
-    node: await probeSandboxProcessRuntime(
-      input.workspaceRoot,
-      input.signal,
-      sandbox,
-    ),
-    resources: await probeSandboxResourceRuntime(
-      input.workspaceRoot,
-      input.signal,
-      sandbox,
-    ),
-    verification: await probeVerificationRuntime(
-      input.workspaceRoot,
-      input.signal,
-      sandbox,
-    ),
-    shell: await probeShellRuntime(input.workspaceRoot, input.signal, sandbox),
-    python: await probePythonRuntime(
-      input.workspaceRoot,
-      input.signal,
-      sandbox,
-    ),
-    git: await probeGitRuntime(input.workspaceRoot, input.signal, sandbox),
-    lsp: await probeLspRuntime(input.workspaceRoot, input.signal, sandbox),
-    dap: await probeDapRuntime(input.workspaceRoot, input.signal, sandbox),
-    service: await probeLocalServiceRuntime(
-      input.workspaceRoot,
-      input.signal,
-      sandbox,
-    ),
-  };
-  for (const [name, probe] of Object.entries(probes)) {
-    if (probe.status !== "ready") {
-      throw new Error(`Official Sandbox ${name} verification failed`);
-    }
-  }
-  return {
-    checks: Object.fromEntries(
-      Object.entries(probes).map(([name, probe]) => [name, probe.code]),
-    ) as unknown as SandboxSetupChecks,
-  };
-}
-
-function installedSandboxAdapter(
-  installation: SandboxInstallation,
-): OciContainerSandboxAdapter {
-  return new OciContainerSandboxAdapter(installation.imageId, {
-    expectedIdentity: {
-      clientExecutableSha256: installation.clientExecutableSha256,
-      daemonEndpointSha256: installation.daemonEndpointSha256,
-      userIdentitySha256: installation.userIdentitySha256,
-      identitySha256: installation.identitySha256,
-    },
-  });
-}
-
 function createSandboxSetupResult(
   inspection: SandboxRuntimeInspection & {
     status: "ready";
@@ -431,9 +369,18 @@ function createSandboxSetupResult(
     schemaVersion: 1 as const,
     component: "sandbox" as const,
     action,
+    acquisition: inspection.target.acquisition,
     status: "ready" as const,
     imageReference: inspection.target.imageReference,
     imageId: inspection.identity.imageId,
+    ...(inspection.target.release
+      ? {
+          releaseReference: inspection.target.release.reference,
+          releaseDigest: inspection.target.release.digest,
+          releaseSourceSha: inspection.target.release.sourceSha,
+          releaseReceiptSha256: inspection.target.release.receiptSha256,
+        }
+      : {}),
     dockerfileSha256: inspection.target.dockerfileSha256,
     contextSha256: inspection.target.contextSha256,
     identitySha256: inspection.identity.identitySha256,
