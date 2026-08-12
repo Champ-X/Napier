@@ -4,6 +4,58 @@ This matrix is re-audited from the current repository before each vertical
 slice. It is not a feature wishlist or a substitute for task-success
 benchmarks.
 
+## Completed Slice: Preview-Bound External Release Dispatch
+
+User scenario: after an administrator independently makes the GHCR package
+public, a release reviewer can prove the exact bootstrap image is anonymously
+visible and source-bound before dispatching release mode, without the tool
+changing visibility or treating scheduling as acceptance.
+
+Acceptance and threat boundary:
+
+- accept an exact current-main SHA and one explicit successful bootstrap run ID
+  for the same repository, workflow, branch, source, and bootstrap title;
+- never mutate GHCR package visibility. Acquire only an anonymous pull token and
+  verify the exact `bootstrap-<sha>` index plus both linux/amd64 and linux/arm64
+  manifests/configs, content digests, context hash, source revision, and version;
+- bound all Registry responses, reject redirects, and retain neither token nor
+  raw Registry/API body;
+- query requested, waiting, pending, queued, and in-progress publication runs,
+  plus same-source successful release runs. Block active or duplicate release
+  work before dispatch;
+- repeat every check on exact-preview apply. Treat visibility/workflow state as
+  admission rather than reservation;
+- dispatch `mode=release`, bind the exact returned run URL and run identity, and
+  return `indeterminate` with exit 3 on post-request uncertainty;
+- keep `externalReleaseAccepted=false` and `s1Complete=false`; completed signed
+  evidence still requires intake, promotion, Windows acceptance, and aggregate
+  completion verification.
+
+Observed result:
+
+- focused visibility/dispatch/Windows tests cover anonymous ready, token/tag
+  blockers, digest/platform/config/label drift, active and already-successful
+  runs, stale preview, wrong current/bootstrap identity, exact release dispatch,
+  indeterminate outcomes, and credential-free projections;
+- `verified local usability`: the complete default gate reaches the formal S1
+  verifier, which accepts the local Shell/Sandbox readiness chain and reports
+  only `public_signed_external_release` and
+  `windows_host_product_acceptance` as external blockers. Build, four-viewport
+  production Web E2E, architecture, performance, and the 158-artifact release
+  audit pass; the repository test matrix passes 3,353 tests with 46 opt-in live
+  tests skipped by default;
+- real GitHub/GHCR Dogfood against current bootstrap run `31621730074` returns
+  `ghcr_anonymous_token_unavailable`, exit 2, zero stderr, an unchanged release
+  run set, and unchanged HTTP 401 visibility. It creates no release run and
+  changes no package setting;
+- production Web still shows temporary Coding `SANDBOX READY` at 1,440x900 with
+  zero horizontal overflow; persistent Agent revision remains 16;
+- `blocked externally`: an administrator has not made the GHCR package public,
+  so a signed anonymous-pull release receipt cannot exist; no Windows x64
+  Docker runner exists, so a Windows product-acceptance receipt cannot exist.
+  These external certification tasks remain explicit follow-up work and do not
+  block proceeding to S2 from the verified local/default S1 path.
+
 ## Completed Slice: Preview-Bound Windows Acceptance Dispatch
 
 User scenario: a release reviewer gets a fail-closed capacity preflight before

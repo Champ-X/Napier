@@ -9614,6 +9614,37 @@ explicit successful release run ID + release source SHA
   -> commit the reviewed promotion
 ```
 
+Release scheduling has a separate read-only visibility admission boundary:
+
+```text
+explicit current-main SHA + explicit successful bootstrap run ID
+  -> local HEAD == GitHub main == source SHA
+  -> bootstrap run repository/workflow/title/source/success identity
+  -> anonymous GHCR token request
+  -> bootstrap-<sha> OCI index digest + amd64/arm64 descriptor closure
+  -> each manifest/config digest + context/revision/version labels
+  -> requested/waiting/pending/queued/in-progress publication run check
+  -> same-source successful release check
+  -> blocked preview or exact-preview release dispatch
+  -> verify exact run URL/repository/workflow/title/source
+  -> dispatched result, still externalReleaseAccepted=false
+```
+
+`sandbox-external-release-visibility.mjs` owns the anonymous Registry boundary.
+It bounds every response, rejects redirects and digest/descriptor/platform
+drift, keeps the bearer token in memory only, and returns a self-hashed evidence
+projection with no token or raw body. HTTP 401/403 token failure and
+401/403/404 bootstrap-tag failure are explicit blockers; malformed public
+content is a hard error.
+
+`sandbox-external-release-dispatch.mjs` binds that evidence to the exact current
+source, explicit successful bootstrap run, active publication set, and
+same-source successful release set. It never changes package visibility.
+Because neither visibility nor workflow state is reserved, apply repeats all
+checks and post-request uncertainty is `indeterminate`, never a claim that no
+dispatch occurred. Scheduling evidence remains insufficient for external
+release acceptance.
+
 `sandbox-external-release-intake.mjs` owns the read-only GitHub Actions intake.
 It invokes `gh` with fixed argv, a minimal inherited environment, disabled
 prompts, explicit repository/run/artifact identity, and no token in argv. Raw

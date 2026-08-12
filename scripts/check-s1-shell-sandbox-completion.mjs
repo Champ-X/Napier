@@ -43,6 +43,12 @@ export async function s1ShellSandboxCompletionImplementation(repoRoot) {
     promotionModel: "scripts/sandbox-external-release-promotion.mjs",
     promotionCheck: "scripts/check-sandbox-external-release-promotion.mjs",
     retainedReleaseCheck: "scripts/check-sandbox-retained-external-release.mjs",
+    releaseDispatchModel: "scripts/sandbox-external-release-dispatch-model.mjs",
+    releaseDispatchState: "scripts/sandbox-external-release-dispatch-state.mjs",
+    releaseDispatchVisibility:
+      "scripts/sandbox-external-release-visibility.mjs",
+    releaseDispatchCheck: "scripts/check-sandbox-external-release-dispatch.mjs",
+    githubDispatchIo: "scripts/github-actions-dispatch-io.mjs",
     windowsDispatchModel:
       "scripts/windows-host-product-acceptance-dispatch.mjs",
     windowsDispatchState:

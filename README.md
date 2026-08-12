@@ -7242,7 +7242,39 @@ public is an irreversible administrator action, bootstrap stops there and
 makes no signing, attestation, anonymous-pull, or S1-completion claim.
 
 After an administrator makes `napier-sandbox` public in GHCR package settings,
-rerun the same source SHA in `release` mode. That mode builds and pushes
+verify and dispatch the same source SHA through the preview-bound operator
+gate:
+
+```bash
+npm run dispatch:sandbox-external-release -- \
+  --source-sha <exact-current-main-sha> \
+  --bootstrap-run-id <successful-current-sha-bootstrap-run-id>
+
+npm run dispatch:sandbox-external-release -- \
+  --source-sha <exact-current-main-sha> \
+  --bootstrap-run-id <successful-current-sha-bootstrap-run-id> \
+  --expected-preview <preview-content-sha256> \
+  --apply
+```
+
+This command never changes package visibility. Preview requires local `HEAD`
+and GitHub `main` to equal the supplied SHA, validates the explicit successful
+bootstrap run identity, verifies anonymous GHCR token acquisition, and reads
+the exact `bootstrap-<sha>` OCI index, both platform manifests/configs, and
+source/context/version labels. It also blocks while another publication run is
+requested, waiting, pending, queued, or in progress, and after a release run
+for that source has already succeeded. Registry tokens and raw Registry/API
+responses never enter output, argv, files, or receipts.
+
+Apply repeats every check and rejects stale previews. The admission check is
+not a reservation: package visibility and workflow state can change after the
+read. A post-request command failure, missing run URL, lookup failure, or
+identity mismatch returns an `indeterminate` result with exit 3 and requires
+Actions inspection before retry. A verified dispatch still keeps
+`externalReleaseAccepted=false`; only the completed workflow's signed evidence,
+sanitized authority, promotion, and S1 completion verifier can accept it.
+
+The dispatched `release` mode builds and pushes
 `linux/amd64` plus `linux/arm64`, requires remote BuildKit provenance and SBOM
 manifests, anonymously pulls and executes both platforms by immutable digest,
 creates and verifies a keyless Sigstore signature with Rekor transparency

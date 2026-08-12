@@ -117,6 +117,7 @@
     "write:package-lock-receipt": "node scripts/check-package-lock.mjs --receipt-path docs/artifacts/package-lock-audit-0.1.0.json",
     "write:profile-upgrade": "node scripts/check-profile-upgrade.mjs --write",
     "write:s1-shell-sandbox-readiness": "node scripts/check-s1-shell-sandbox-completion.mjs --write-readiness",
+    "dispatch:sandbox-external-release": "node scripts/check-sandbox-external-release-dispatch.mjs",
     "dispatch:windows-host-product-acceptance": "node scripts/check-windows-host-product-acceptance-dispatch.mjs",
     "intake:sandbox-external-release": "node scripts/check-sandbox-external-release-intake.mjs",
     "promote:sandbox-external-release": "node scripts/check-sandbox-external-release-promotion.mjs",
