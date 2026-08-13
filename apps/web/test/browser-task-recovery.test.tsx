@@ -165,10 +165,10 @@ describe("Browser task recovery", () => {
               {
                 type: "error",
                 backend: "browser_use_local",
-                code: "server_restarted",
-                message: "Browser task stopped when the server restarted",
+                code: "cancelled",
+                message: "Browser Use local task was stopped",
                 diagnosticSha256: "b".repeat(64),
-                recovery: "Retry the same task to start a fresh session",
+                recovery: "Rerun the same command to start a fresh local task",
               },
             ],
           });
@@ -188,11 +188,13 @@ describe("Browser task recovery", () => {
 
     expect(container.textContent).toContain("Retry same task");
     expect(container.textContent).toContain(
-      "Browser task stopped when the server restarted",
+      "Browser Use local task was stopped",
     );
     expect(container.textContent).toContain(
-      "Retry the same task to start a fresh session",
+      "Rerun the same command to start a fresh local task",
     );
+    expect(container.textContent).toContain("agent stopped");
+    expect(container.textContent).not.toContain("agent running");
   });
 
   it("uses the selected configured model and active credential reference by default", async () => {
