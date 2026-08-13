@@ -149,7 +149,7 @@ const defaultOpenWebSecurityBenchmarkSeriesPath =
 const defaultOpenWebSecurityBenchmarkCaseRoot =
   "benchmarks/security/open-web-prompt-injection-v1";
 const defaultOpenWebExecutorComparisonCampaignPath =
-  "benchmark-results/napier-open-web-executor-comparison-campaign-seeds-20260805-20260808-01ad0296171ff913.json";
+  "benchmark-results/napier-open-web-executor-comparison-campaign-seeds-20260805-20260813-d108a2049df3c910.json";
 const defaultOpenWebExecutorComparisonAttemptPaths = [
   "benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260806-eeb63387bc7f02ef.json",
   "benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260807-62596440116b4a2a.json",
