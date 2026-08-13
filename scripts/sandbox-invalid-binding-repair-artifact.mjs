@@ -52,14 +52,19 @@ function validDoctor(value) {
       "repairedPassedCount",
       "repairedWarningCount",
       "repairedSkippedCount",
+      "repairedBrowserUseLocalCode",
       "repairedReportSha256",
     ]) &&
     value.invalidCode === "sandbox_configured_invalid" &&
     value.remediationId === "repair_invalid_sandbox" &&
     value.exactUninstallGuidance === true &&
     value.repairedPassedCount === 11 &&
-    value.repairedWarningCount === 0 &&
+    value.repairedWarningCount === 1 &&
     value.repairedSkippedCount === 3 &&
+    [
+      "browser_use_local_missing",
+      "browser_use_local_unsupported",
+    ].includes(value.repairedBrowserUseLocalCode) &&
     SHA256.test(value.invalidReportSha256) &&
     SHA256.test(value.repairedReportSha256)
   );

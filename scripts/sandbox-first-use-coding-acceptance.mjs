@@ -415,13 +415,18 @@ function verifyDoctor(doctor) {
   requireFirstUseValue(
     doctor.code === 0 &&
       value.status === "degraded" &&
-      value.checkCount === 14 &&
+      value.checkCount === 15 &&
       value.passedCount === 11 &&
-      value.warningCount === 0 &&
+      value.warningCount === 1 &&
       value.failedCount === 0 &&
       value.skippedCount === 3 &&
       check("skills")?.status === "passed" &&
       check("skills")?.code === "skills_empty" &&
+      check("browser_use_local")?.status === "warning" &&
+      [
+        "browser_use_local_missing",
+        "browser_use_local_unsupported",
+      ].includes(check("browser_use_local")?.code) &&
       Object.entries(PROCESS_CHECKS).every(
         ([id, code]) =>
           check(id)?.status === "passed" && check(id)?.code === code,
@@ -439,6 +444,7 @@ function verifyDoctor(doctor) {
     failedCount: value.failedCount,
     skippedCount: value.skippedCount,
     skillsCode: check("skills").code,
+    browserUseLocalCode: check("browser_use_local").code,
     sandboxCode: check("sandbox").code,
     shellCode: check("shell").code,
     pythonCode: check("python").code,

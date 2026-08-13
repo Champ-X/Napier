@@ -37,7 +37,7 @@ export interface SandboxSetupPreview {
   releaseReceiptSha256?: string;
   dockerfileSha256: string;
   contextSha256: string;
-  platform: NodeJS.Platform;
+  platform: string;
   arch: string;
   contentSha256: string;
 }

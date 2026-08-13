@@ -46,7 +46,7 @@ export async function collectSandboxProductAcceptance(options = {}) {
   const implementation = await sandboxProductAcceptanceImplementation(repoRoot);
   const withoutHash = {
     kind: "napier.sandbox-product-acceptance-stage13",
-    schemaVersion: 4,
+    schemaVersion: 5,
     generatedAt: new Date().toISOString(),
     image: {
       id: image.id,

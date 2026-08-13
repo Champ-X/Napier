@@ -76,15 +76,22 @@ export async function executeSandboxRuntimeSetup(
     await writeSandboxRuntimeSetupOutput(result, options.jsonl, io);
     return 0;
   } catch (error) {
-    const diagnosticSha256 = sha256(
-      error instanceof Error ? error.message : String(error),
-    );
+    const message = error instanceof Error ? error.message : String(error);
+    const diagnosticSha256 = sha256(message);
+    const recovery = sandboxSetupRecovery(message);
     await writeLine(
       io.stderr,
-      `Napier Sandbox setup failed (${diagnosticSha256.slice(0, 16)})`,
+      `Napier Sandbox setup failed (${diagnosticSha256.slice(0, 16)})${recovery ? `. ${recovery}` : ""}`,
     );
     return 1;
   }
+}
+
+function sandboxSetupRecovery(message: string): string | undefined {
+  if (message === "Official Sandbox node verification failed") {
+    return "Container launch verification failed. Ensure the workspace path is shared with the local Docker daemon, then rerun the preview and exact apply";
+  }
+  return undefined;
 }
 
 async function writeSandboxRuntimeSetupOutput(

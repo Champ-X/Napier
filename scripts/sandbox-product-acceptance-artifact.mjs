@@ -73,7 +73,7 @@ export function validateSandboxProductAcceptanceArtifact(
   if (
     !isRecord(value) ||
     value.kind !== "napier.sandbox-product-acceptance-stage13" ||
-    value.schemaVersion !== 4 ||
+    value.schemaVersion !== 5 ||
     !isIsoDate(value.generatedAt) ||
     !isRecord(value.image) ||
     value.image.id !== provenance.image?.id ||
@@ -138,10 +138,11 @@ function validDoctor(value) {
   return (
     isRecord(value) &&
     value.status === "degraded" &&
-    value.checkCount === 14 &&
+    value.checkCount === 15 &&
     value.passedCount === 11 &&
-    value.warningCount === 0 &&
+    value.warningCount === 1 &&
     value.skippedCount === 3 &&
+    validBrowserUseLocalCode(value.browserUseLocalCode) &&
     value.sandboxCode === "sandbox_ready" &&
     value.verificationCode === "verification_ready" &&
     SHA256.test(value.reportSha256)
@@ -349,15 +350,17 @@ function validFirstUseDoctor(value) {
       "warningCount",
       "failedCount",
       "skippedCount",
+      "browserUseLocalCode",
       ...Object.keys(codes),
       "reportSha256",
     ]) &&
     value.status === "degraded" &&
-    value.checkCount === 14 &&
+    value.checkCount === 15 &&
     value.passedCount === 11 &&
-    value.warningCount === 0 &&
+    value.warningCount === 1 &&
     value.failedCount === 0 &&
     value.skippedCount === 3 &&
+    validBrowserUseLocalCode(value.browserUseLocalCode) &&
     Object.entries(codes).every(([field, code]) => value[field] === code) &&
     SHA256.test(value.reportSha256)
   );
@@ -421,6 +424,13 @@ function validRetention(value) {
     Object.keys(value).sort().join("\n") === fields.sort().join("\n") &&
     fields.every((field) => value[field] === false)
   );
+}
+
+function validBrowserUseLocalCode(value) {
+  return [
+    "browser_use_local_missing",
+    "browser_use_local_unsupported",
+  ].includes(value);
 }
 
 function isRecord(value) {

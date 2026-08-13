@@ -164,6 +164,43 @@ describe("Napier Sandbox setup CLI", () => {
     expect(stderr.text()).not.toContain(SECRET);
   });
 
+  it("gives a safe recovery action when the container cannot launch", async () => {
+    const fixture = await createFixture();
+    const preview = await previewFor(fixture);
+    const stderr = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "setup",
+        "--workspace",
+        fixture.workspace,
+        "--component",
+        "sandbox",
+        "--expected-preview",
+        preview,
+        "--apply",
+      ],
+      cliIo(fixture.root, { PRIVATE_SETUP_KEY: SECRET }, undefined, stderr),
+      {
+        createRuntime: vi.fn(),
+        sandboxSetup: {
+          inspect: async () => inspection("ready", identity()),
+          verifyToolchain: async () => undefined,
+          verify: async () => {
+            throw new Error("Official Sandbox node verification failed");
+          },
+        },
+      },
+    );
+
+    expect(code).toBe(1);
+    expect(stderr.text()).toContain(
+      "Ensure the workspace path is shared with the local Docker daemon",
+    );
+    expect(stderr.text()).not.toContain(fixture.workspace);
+    expect(stderr.text()).not.toContain(SECRET);
+  });
+
   it("persists only after all production checks succeed", async () => {
     const fixture = await createFixture();
     const preview = await previewFor(fixture);

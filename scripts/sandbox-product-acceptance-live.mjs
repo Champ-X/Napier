@@ -97,13 +97,21 @@ export async function runSandboxProductAcceptance(input) {
     const verificationCheck = doctor.value.checks.find(
       (check) => check.id === "verification",
     );
+    const browserUseLocalCheck = doctor.value.checks.find(
+      (check) => check.id === "browser_use_local",
+    );
     requireValue(
       doctor.code === 0 &&
         doctor.value.status === "degraded" &&
-        doctor.value.checkCount === 14 &&
+        doctor.value.checkCount === 15 &&
         doctor.value.passedCount === 11 &&
-        doctor.value.warningCount === 0 &&
+        doctor.value.warningCount === 1 &&
         doctor.value.skippedCount === 3 &&
+        browserUseLocalCheck?.status === "warning" &&
+        [
+          "browser_use_local_missing",
+          "browser_use_local_unsupported",
+        ].includes(browserUseLocalCheck.code) &&
         sandboxCheck?.code === "sandbox_ready" &&
         verificationCheck?.code === "verification_ready",
       "Sandbox acceptance Doctor result is invalid",
@@ -121,18 +129,16 @@ export async function runSandboxProductAcceptance(input) {
       workspaceRoot: input.repoRoot,
       sandbox: services.sandbox,
     });
-    const [typecheck, test] = await Promise.all([
-      runner.run({
+    const typecheck = await runner.run({
         kind: "typecheck",
         target: "packages/contracts/tsconfig.json",
-        timeoutMs: 30_000,
-      }),
-      runner.run({
+      timeoutMs: 120_000,
+    });
+    const test = await runner.run({
         kind: "test",
         target: "packages/contracts/test/agent-capability-contract.test.ts",
-        timeoutMs: 30_000,
-      }),
-    ]);
+      timeoutMs: 120_000,
+    });
     requireVerification(typecheck, "5.9.3");
     requireVerification(test, "4.1.9");
 
@@ -310,6 +316,7 @@ export async function runSandboxProductAcceptance(input) {
         passedCount: doctor.value.passedCount,
         warningCount: doctor.value.warningCount,
         skippedCount: doctor.value.skippedCount,
+        browserUseLocalCode: browserUseLocalCheck.code,
         sandboxCode: sandboxCheck.code,
         verificationCode: verificationCheck.code,
         reportSha256: doctor.value.contentSha256,

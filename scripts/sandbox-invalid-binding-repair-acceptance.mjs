@@ -284,11 +284,19 @@ export async function runSandboxInvalidBindingRepairAcceptance(input) {
         input.repoRoot,
         environment,
       );
+      const repairedBrowserUseLocal = doctorRepaired.value.checks.find(
+        (check) => check.id === "browser_use_local",
+      );
       requireFirstUseValue(
         doctorRepaired.code === 0 &&
           doctorRepaired.value.passedCount === 11 &&
-          doctorRepaired.value.warningCount === 0 &&
-          doctorRepaired.value.skippedCount === 3,
+          doctorRepaired.value.warningCount === 1 &&
+          doctorRepaired.value.skippedCount === 3 &&
+          repairedBrowserUseLocal?.status === "warning" &&
+          [
+            "browser_use_local_missing",
+            "browser_use_local_unsupported",
+          ].includes(repairedBrowserUseLocal.code),
         "Invalid-binding repaired Doctor failed",
       );
 
@@ -397,6 +405,7 @@ export async function runSandboxInvalidBindingRepairAcceptance(input) {
           repairedPassedCount: doctorRepaired.value.passedCount,
           repairedWarningCount: doctorRepaired.value.warningCount,
           repairedSkippedCount: doctorRepaired.value.skippedCount,
+          repairedBrowserUseLocalCode: repairedBrowserUseLocal.code,
           repairedReportSha256: doctorRepaired.value.contentSha256,
         },
         blockedRun: {
