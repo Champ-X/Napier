@@ -33,6 +33,7 @@ import {
   writeWebUiLayoutBaseline,
 } from "./web-ui-layout-baseline.mjs";
 import { verifyBrowserInspector } from "./web-ui-e2e-browser-task.mjs";
+import { verifyCasebookQualificationTrials } from "./web-ui-e2e-casebook.mjs";
 
 const options = parseArguments(process.argv.slice(2));
 const temporaryRoot = await createWebUiE2eRoot();
@@ -189,6 +190,13 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
     const opened = viewport.layout === "drawer";
     const keyboard = await verifyKeyboardNavigation(page);
     const browserInspector = await verifyBrowserInspector(page);
+    const casebookTrials =
+      viewport.width === 1_600
+        ? await verifyCasebookQualificationTrials(
+            page,
+            expectedNarrative.casebook,
+          )
+        : undefined;
     const screenshot = await screenshotReceipt(page);
     const closed =
       viewport.layout === "drawer"
@@ -217,6 +225,7 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
       layoutSnapshot,
       keyboard,
       browserInspector,
+      ...(casebookTrials ? { casebookTrials } : {}),
       narrative: { ...narrative, refreshPreserved },
       console: { errorCount: consoleErrors.length },
       screenshot,

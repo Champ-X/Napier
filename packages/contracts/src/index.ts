@@ -3990,6 +3990,7 @@ export interface EvaluationCalibrationReport {
 export interface EvaluationCasebookCase {
   id: string;
   casebookId: string;
+  templateCaseId?: string;
   sourceThreadId: string;
   sourceEvaluationId: string;
   sourceAdjudicationId: string;
@@ -4002,15 +4003,11 @@ export interface EvaluationCasebookCase {
   contentSha256: string;
 }
 
-export type EvaluationCasebookRevisionSource =
-  | "created"
-  | "metadata_updated"
-  | "case_curated"
-  | "case_refreshed"
-  | "case_removed";
+export type EvaluationCasebookRevisionSource = "created" | "metadata_updated" | "case_curated" | "case_refreshed" | "case_removed";
 
 export interface EvaluationCasebookRevision {
   revision: number;
+  templateId?: string;
   name: string;
   description: string;
   caseIds: string[];
@@ -4023,6 +4020,7 @@ export interface EvaluationCasebookRevision {
 
 export interface EvaluationCasebook {
   id: string;
+  templateId?: string;
   currentRevision: number;
   cases: EvaluationCasebookCase[];
   revisions: EvaluationCasebookRevision[];
@@ -4034,6 +4032,7 @@ export interface CreateEvaluationCasebookRequest {
   threadId: string;
   name: string;
   description?: string;
+  templateId?: string;
 }
 
 export interface UpdateEvaluationCasebookRequest {
@@ -4045,6 +4044,7 @@ export interface UpdateEvaluationCasebookRequest {
 export interface CurateEvaluationCaseRequest {
   threadId: string;
   evaluationId: string;
+  templateCaseId?: string;
 }
 
 export interface RemoveEvaluationCaseRequest {

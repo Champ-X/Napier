@@ -6049,12 +6049,7 @@ export class LocalStore {
             }),
           }
         : undefined;
-      const updated = curateEvaluationCase(
-        current,
-        evaluation,
-        adjudication,
-        consensusEvidence,
-      );
+      const updated = curateEvaluationCase(current, evaluation, adjudication, consensusEvidence, request.templateCaseId);
       if (updated.currentRevision !== current.currentRevision) {
         this.state.evaluationCasebooks[index] = updated;
         await this.persistState();

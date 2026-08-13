@@ -1,12 +1,8 @@
 import type { Context, Hono } from "hono";
 
 import type { EvaluationCasebook, JsonValue } from "@napier/contracts";
-import {
-  createId,
-  type EvaluationCasebookQualificationService,
-  type LocalStore,
-  type ModelRegistry,
-} from "@napier/runtime";
+import { createId, type EvaluationCasebookQualificationService, type LocalStore, type ModelRegistry } from "@napier/runtime";
+import { evaluationCasebookTemplates } from "@napier/runtime/evaluation-casebook-templates";
 
 import {
   setEvaluationCasebookProjectionHeaders,
@@ -20,6 +16,7 @@ import {
   parseUpdateEvaluationCasebookRequest,
 } from "./evaluation-casebook-http-validation.js";
 import { assertAvailableModel } from "./model-http-availability.js";
+import { setBodyContentSha256Header } from "./http-response-evidence.js";
 
 export type EvaluationCasebookAdminStore = Pick<
   LocalStore,
@@ -41,11 +38,7 @@ export interface EvaluationCasebookAdminHttpAdapter {
   readRequest(request: Request, label: string): Promise<unknown>;
   requestBodyTooLarge(error: unknown): boolean;
   errorMessage(error: unknown): string;
-  jsonError(
-    context: Context,
-    message: string,
-    status: 400 | 409 | 413,
-  ): Response;
+  jsonError(context: Context, message: string, status: 400 | 409 | 413): Response;
 }
 
 export function registerEvaluationCasebookAdminHttp(
@@ -53,6 +46,14 @@ export function registerEvaluationCasebookAdminHttp(
   services: EvaluationCasebookAdminHttpServices,
   adapter: EvaluationCasebookAdminHttpAdapter,
 ): void {
+  app.get("/api/evaluation-casebook-templates", (context) => {
+    const templates = evaluationCasebookTemplates();
+    context.header("Cache-Control", "no-store");
+    setBodyContentSha256Header(context, templates);
+    context.header("X-Napier-Casebook-Template-Count", String(templates.length));
+    return context.json(templates);
+  });
+
   app.post("/api/evaluation-casebooks", async (context) => {
     const body = await readBody(
       context,
@@ -63,12 +64,7 @@ export function registerEvaluationCasebookAdminHttp(
     );
     if (body instanceof Response) return body;
     const casebook = await services.store.createEvaluationCasebook(body);
-    await appendCasebookEvent(
-      services.store,
-      body.threadId,
-      "evaluation.casebook.created",
-      casebook,
-    );
+    await appendCasebookEvent(services.store, body.threadId, "evaluation.casebook.created", casebook);
     setEvaluationCasebookProjectionHeaders(context, casebook);
     return context.json(casebook, 201);
   });
@@ -82,20 +78,10 @@ export function registerEvaluationCasebookAdminHttp(
       adapter,
     );
     if (body instanceof Response) return body;
-    const before = services.store.getEvaluationCasebook(
-      context.req.param("casebookId"),
-    );
-    const casebook = await services.store.updateEvaluationCasebook(
-      before.id,
-      body,
-    );
+    const before = services.store.getEvaluationCasebook(context.req.param("casebookId"));
+    const casebook = await services.store.updateEvaluationCasebook(before.id, body);
     if (casebook.currentRevision !== before.currentRevision) {
-      await appendCasebookEvent(
-        services.store,
-        body.threadId,
-        "evaluation.casebook.updated",
-        casebook,
-      );
+      await appendCasebookEvent(services.store, body.threadId, "evaluation.casebook.updated", casebook);
     }
     setEvaluationCasebookProjectionHeaders(context, casebook);
     return context.json(casebook);
@@ -110,89 +96,61 @@ export function registerEvaluationCasebookAdminHttp(
       adapter,
     );
     if (body instanceof Response) return body;
-    const before = services.store.getEvaluationCasebook(
-      context.req.param("casebookId"),
-    );
-    const casebook = await services.store.curateEvaluationCasebookCase(
-      before.id,
-      body,
-    );
+    const before = services.store.getEvaluationCasebook(context.req.param("casebookId"));
+    const casebook = await services.store.curateEvaluationCasebookCase(before.id, body);
     const changed = casebook.currentRevision !== before.currentRevision;
     const revision = casebook.revisions.at(-1);
     if (changed && revision) {
       await appendCasebookEvent(
         services.store,
         body.threadId,
-        revision.source === "case_refreshed"
-          ? "evaluation.casebook.case.refreshed"
-          : "evaluation.casebook.case.curated",
+        revision.source === "case_refreshed" ? "evaluation.casebook.case.refreshed" : "evaluation.casebook.case.curated",
         casebook,
       );
     }
     setEvaluationCasebookProjectionHeaders(context, casebook);
-    return context.json(
-      casebook,
-      changed && revision?.source === "case_curated" ? 201 : 200,
-    );
+    return context.json(casebook, changed && revision?.source === "case_curated" ? 201 : 200);
   });
 
-  app.post(
-    "/api/evaluation-casebooks/:casebookId/cases/:caseId/remove",
-    async (context) => {
-      const body = await readBody(
-        context,
-        "Evaluation casebook removal request",
-        parseRemoveEvaluationCaseRequest,
-        "Casebook removal is invalid",
-        adapter,
-      );
-      if (body instanceof Response) return body;
-      const casebook = await services.store.removeEvaluationCasebookCase(
-        context.req.param("casebookId"),
-        context.req.param("caseId"),
-        body,
-      );
-      await appendCasebookEvent(
-        services.store,
-        body.threadId,
-        "evaluation.casebook.case.removed",
-        casebook,
-      );
-      setEvaluationCasebookProjectionHeaders(context, casebook);
-      return context.json(casebook);
-    },
-  );
+  app.post("/api/evaluation-casebooks/:casebookId/cases/:caseId/remove", async (context) => {
+    const body = await readBody(
+      context,
+      "Evaluation casebook removal request",
+      parseRemoveEvaluationCaseRequest,
+      "Casebook removal is invalid",
+      adapter,
+    );
+    if (body instanceof Response) return body;
+    const casebook = await services.store.removeEvaluationCasebookCase(context.req.param("casebookId"), context.req.param("caseId"), body);
+    await appendCasebookEvent(services.store, body.threadId, "evaluation.casebook.case.removed", casebook);
+    setEvaluationCasebookProjectionHeaders(context, casebook);
+    return context.json(casebook);
+  });
 
-  app.post(
-    "/api/evaluation-casebooks/:casebookId/qualifications",
-    async (context) => {
-      const body = await readBody(
-        context,
-        "Evaluation casebook qualification request",
-        parseExecuteEvaluationCasebookRequest,
-        "Casebook qualification request is invalid",
-        adapter,
-      );
-      if (body instanceof Response) return body;
-      try {
-        await assertAvailableModel(services, body.model);
-        const execution = await services.qualifications.execute(
-          context.req.param("casebookId"),
-          body,
-        );
-        setEvaluationCasebookQualificationExecutionHeaders(context, execution);
-        return context.json(execution, 201);
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message.includes("changed during qualification")
-        ) {
-          return adapter.jsonError(context, error.message, 409);
-        }
-        throw error;
+  app.post("/api/evaluation-casebooks/:casebookId/qualifications", async (context) => {
+    const body = await readBody(
+      context,
+      "Evaluation casebook qualification request",
+      parseExecuteEvaluationCasebookRequest,
+      "Casebook qualification request is invalid",
+      adapter,
+    );
+    if (body instanceof Response) return body;
+    try {
+      await assertAvailableModel(services, body.model);
+      const execution = await services.qualifications.execute(context.req.param("casebookId"), body);
+      setEvaluationCasebookQualificationExecutionHeaders(context, execution);
+      return context.json(execution, 201);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.message.includes("changed during qualification") || error.message.includes("template coverage is incomplete"))
+      ) {
+        return adapter.jsonError(context, error.message, 409);
       }
-    },
-  );
+      throw error;
+    }
+  });
 }
 
 async function readBody<T>(
@@ -206,11 +164,7 @@ async function readBody<T>(
   try {
     input = await adapter.readRequest(context.req.raw, label);
   } catch (error) {
-    return adapter.jsonError(
-      context,
-      adapter.errorMessage(error),
-      adapter.requestBodyTooLarge(error) ? 413 : 400,
-    );
+    return adapter.jsonError(context, adapter.errorMessage(error), adapter.requestBodyTooLarge(error) ? 413 : 400);
   }
   return parse(input) ?? adapter.jsonError(context, invalidMessage, 400);
 }
@@ -231,9 +185,7 @@ async function appendCasebookEvent(
   });
 }
 
-function evaluationCasebookEventPayload(
-  casebook: EvaluationCasebook,
-): Record<string, JsonValue> {
+function evaluationCasebookEventPayload(casebook: EvaluationCasebook): Record<string, JsonValue> {
   const revision = casebook.revisions.at(-1)!;
   return {
     casebookId: casebook.id,
@@ -243,8 +195,6 @@ function evaluationCasebookEventPayload(
     caseCount: revision.caseIds.length,
     contentSha256: revision.contentSha256,
     ...(revision.caseId ? { caseId: revision.caseId } : {}),
-    ...(revision.sourceEvaluationId
-      ? { sourceEvaluationId: revision.sourceEvaluationId }
-      : {}),
+    ...(revision.sourceEvaluationId ? { sourceEvaluationId: revision.sourceEvaluationId } : {}),
   };
 }

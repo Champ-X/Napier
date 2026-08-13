@@ -82,6 +82,7 @@ describe("release artifacts audit", () => {
       "management-openapi",
       "management-openapi-compatibility",
       "coding-executor-comparison",
+      "controlled-harness-evidence",
       "workflow-benchmark-series",
       "workflow-benchmark-result-1",
       "workflow-benchmark-ledger-1",
@@ -668,6 +669,24 @@ describe("release artifacts audit", () => {
     expect(result.ok).toBe(false);
     expect(result.errors).toContain(
       "coding executor comparison: summary_mismatch",
+    );
+  });
+
+  it("fails when the Controlled Harness evidence is tampered", async () => {
+    const { root } = await createFixture();
+    const evidencePath = path.join(
+      root,
+      "docs/artifacts/controlled-harness-evidence-0.1.0.json",
+    );
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    evidence.comparisonGates[0].napierPassed = 99;
+    await writeJson(evidencePath, evidence);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain(
+      "controlled harness evidence: artifact_invalid",
     );
   });
 
@@ -1335,6 +1354,7 @@ async function createFixture() {
     "linux-host-product-acceptance-stage19.json",
     "sandbox-acquisition-stage20.json",
     "profile-upgrade-stage21.json",
+    "controlled-harness-evidence-0.1.0.json",
   ]) {
     await cp(
       path.resolve("docs/artifacts", fileName),

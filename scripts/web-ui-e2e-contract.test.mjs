@@ -167,6 +167,28 @@ function validReceipt() {
           "The selected browser task credential is missing. Set BROWSER_USE_API_KEY in the server environment.",
         credentialRecoveryCode: "credential_missing",
       },
+      ...(viewport.width === 1_600
+        ? {
+            casebookTrials: {
+              onboardingAvailable: true,
+              onboardingComposerLoaded: true,
+              templateCoverageCount: "0/10",
+              templateCoverageOptions: 10,
+              qualificationBlocked: true,
+              productTrialRunOptions: 3,
+              productTrialRecorded:
+                "0.1.0 · incomplete1/10 Cases · 100% success · UX 5/5",
+              controlledHarnessGate: "ready",
+              controlledHarnessEvidence:
+                "Coding vs OMP13/12 passed · 13/13 decisivenapier not worse · minimum 3 decisive Trials · 67% decisive coverageBrowser autonomy vs Browser Use3/3 passed · 3/3 decisivenapier not worse · minimum 3 decisive Trials · 67% decisive coverageQuantified advantageevidence vs OMP · proven · Napier 1.000 vs OMP 0.778 verifiable final evidence rate · n=9/9",
+              requestCount: 3,
+              maximumConcurrentRequests: 1,
+              summary:
+                "Latest batch · 3/3 completed · 2 passed · 67% mean agreement",
+              historyCount: "3",
+            },
+          }
+        : {}),
       narrative: {
         ...WEB_UI_NARRATIVE_EXPECTATION,
         metrics: "1s / 15m 0s · 1,680 / 250,000 tokens · $0.0420 / $10.00",

@@ -1,0 +1,160 @@
+{
+  "type": "napier.browser-autonomy-comparison",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-13T08:35:00.064Z",
+  "seed": 20260813,
+  "trialCount": 3,
+  "timeoutMs": 180000,
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "case": {
+    "caseId": "open_web_20260813_browser",
+    "taskFamily": "dynamic_browser_evidence",
+    "promptSha256": "7ebf59536f7dabc38b301432fa41ca5a5b2622edfc5654f2452f0a5174860ff1",
+    "oracleSha256": "cf4100d1b5e193e98186ac0685b70cad045f54a81096f8547c9ea1840c78ef6a",
+    "caseSha256": "3a79fe05657df5126edd3645848a6f202ac42b86dc37b03931c796c95094d5af"
+  },
+  "fairness": {
+    "sameModel": true,
+    "samePrompt": true,
+    "freshProfilePerTrial": true,
+    "isolatedStatePerExecutor": true,
+    "sameReadOnlyPolicy": true,
+    "alternatingOrder": true
+  },
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nodeVersion": "24.16.0",
+    "napierVersion": "0.1.0",
+    "browserUseVersion": "0.13.7",
+    "browserProduct": "system_chrome",
+    "browserVersion": "151.0.7922.139"
+  },
+  "trials": [
+    {
+      "trial": 1,
+      "order": [
+        "napier",
+        "browser_use_local"
+      ],
+      "napier": {
+        "executor": "napier",
+        "status": "passed",
+        "outcomePassed": true,
+        "durationMs": 18001,
+        "stepCount": 2,
+        "toolFailureCount": 0,
+        "secretLeakDetected": false,
+        "freshProfile": true,
+        "finalOutputSha256": "6b4e02b1149a1f46c4b4179b964fe7fea192f97007094639b9f06684f545eab4",
+        "diagnosticSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "costUsd": 0.0012433231999999998,
+        "totalTokens": 7345
+      },
+      "browserUse": {
+        "executor": "browser_use_local",
+        "status": "passed",
+        "outcomePassed": true,
+        "durationMs": 32247,
+        "stepCount": 2,
+        "toolFailureCount": 1,
+        "secretLeakDetected": false,
+        "freshProfile": true,
+        "finalOutputSha256": "145b7928d614729729f2a1893cff5a25365c924a04a249af761787ea544886ad",
+        "diagnosticSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "costUsd": 0.0004601576,
+        "totalTokens": 10279
+      }
+    },
+    {
+      "trial": 2,
+      "order": [
+        "browser_use_local",
+        "napier"
+      ],
+      "napier": {
+        "executor": "napier",
+        "status": "passed",
+        "outcomePassed": true,
+        "durationMs": 9018,
+        "stepCount": 2,
+        "toolFailureCount": 0,
+        "secretLeakDetected": false,
+        "freshProfile": true,
+        "finalOutputSha256": "cf77fa0d2c3d64884ea2b9906e35f83f1edcfecebeec95b168888ae957fb7f8e",
+        "diagnosticSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "costUsd": 0.0010129224,
+        "totalTokens": 6464
+      },
+      "browserUse": {
+        "executor": "browser_use_local",
+        "status": "passed",
+        "outcomePassed": true,
+        "durationMs": 20620,
+        "stepCount": 1,
+        "toolFailureCount": 0,
+        "secretLeakDetected": false,
+        "freshProfile": true,
+        "finalOutputSha256": "145b7928d614729729f2a1893cff5a25365c924a04a249af761787ea544886ad",
+        "diagnosticSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "costUsd": 0.000347956,
+        "totalTokens": 9936
+      }
+    },
+    {
+      "trial": 3,
+      "order": [
+        "napier",
+        "browser_use_local"
+      ],
+      "napier": {
+        "executor": "napier",
+        "status": "passed",
+        "outcomePassed": true,
+        "durationMs": 19470,
+        "stepCount": 2,
+        "toolFailureCount": 0,
+        "secretLeakDetected": false,
+        "freshProfile": true,
+        "finalOutputSha256": "6b4e02b1149a1f46c4b4179b964fe7fea192f97007094639b9f06684f545eab4",
+        "diagnosticSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "costUsd": 0.0015334144,
+        "totalTokens": 9075
+      },
+      "browserUse": {
+        "executor": "browser_use_local",
+        "status": "passed",
+        "outcomePassed": true,
+        "durationMs": 33029,
+        "stepCount": 3,
+        "toolFailureCount": 2,
+        "secretLeakDetected": false,
+        "freshProfile": true,
+        "finalOutputSha256": "145b7928d614729729f2a1893cff5a25365c924a04a249af761787ea544886ad",
+        "diagnosticSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "costUsd": 0.0003609144,
+        "totalTokens": 10057
+      }
+    }
+  ],
+  "summary": {
+    "pairCount": 3,
+    "decisivePairCount": 3,
+    "infrastructureFailureCount": 0,
+    "napierPassed": 3,
+    "browserUsePassed": 3,
+    "bothPassed": 3,
+    "napierOnlyPassed": 0,
+    "browserUseOnlyPassed": 0,
+    "neitherPassed": 0,
+    "verdict": "napier_not_worse"
+  },
+  "notes": [
+    "This is a narrow dynamic-page baseline, not a general superiority claim.",
+    "Raw prompts, URLs, page text, model output, screenshots, reasoning, and credentials are not retained."
+  ],
+  "contentSha256": "6fecdfcc3e41d459f337b770618588fafb3ddb22efa7ffe83f9135f79d33536a"
+}

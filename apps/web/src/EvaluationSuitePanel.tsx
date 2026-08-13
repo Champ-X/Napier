@@ -1,16 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Check,
-  ClipboardCheck,
-  Download,
-  KeyRound,
-  Pencil,
-  Play,
-  Save,
-  ShieldCheck,
-  Users,
-  X,
-} from "lucide-react";
+import { Check, ClipboardCheck, Download, KeyRound, Pencil, Play, Save, ShieldCheck, Users, X } from "lucide-react";
 
 import type {
   EvaluationAdjudication,
@@ -66,6 +55,7 @@ export default function EvaluationSuitePanel({
   selectedModelKey,
   models,
   onRefresh,
+  onUseTaskPrompt,
 }: {
   threadId: string;
   runs: RunRecord[];
@@ -78,6 +68,7 @@ export default function EvaluationSuitePanel({
   selectedModelKey: string;
   models: ModelSummary[];
   onRefresh: () => Promise<void>;
+  onUseTaskPrompt(prompt: string): void;
 }) {
   const [editingSuiteId, setEditingSuiteId] = useState<string>();
   const [name, setName] = useState("");
@@ -331,6 +322,7 @@ export default function EvaluationSuitePanel({
 
       <EvaluationCasebookPanel
         threadId={threadId}
+        runs={runs}
         evaluations={evaluations}
         adjudications={adjudications}
         models={models}
@@ -338,6 +330,7 @@ export default function EvaluationSuitePanel({
         trustAnchors={trustAnchors}
         selectedTrustAnchorId={selectedTrustAnchorId}
         onRefresh={onRefresh}
+        onUseTaskPrompt={onUseTaskPrompt}
       />
 
       <div className="suite-compose">

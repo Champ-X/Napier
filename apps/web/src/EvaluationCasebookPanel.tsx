@@ -1,18 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  BookOpen,
-  Check,
-  Download,
-  KeyRound,
-  Pencil,
-  Play,
-  Plus,
-  RefreshCw,
-  Save,
-  ShieldCheck,
-  Trash2,
-  X,
-} from "lucide-react";
+import { BookOpen, Check, Download, KeyRound, Pencil, Plus, RefreshCw, Save, ShieldCheck, Trash2, X } from "lucide-react";
 
 import type {
   EvaluationAdjudication,
@@ -25,6 +12,7 @@ import type {
   EvaluationQualificationBaseline,
   ModelSummary,
   ReceiptTrustAnchor,
+  RunRecord,
   RunEvaluationRecord,
   TrustedReceiptEnvelope,
 } from "@napier/contracts";
@@ -42,20 +30,24 @@ import {
   removeEvaluationCase,
   updateEvaluationCasebook,
 } from "./evaluation-casebook-api";
-import {
-  getSignedCasebookQualificationReceipt,
-  listEvaluationQualificationBaselines,
-  promoteEvaluationQualificationBaseline,
-} from "./receipt-trust-api";
-import {
-  evaluationCasebookArtifactFilename,
-  evaluationCasebookQualificationReceiptFilename,
-} from "./evaluation-artifact-view-model";
+import { getSignedCasebookQualificationReceipt, listEvaluationQualificationBaselines, promoteEvaluationQualificationBaseline } from "./receipt-trust-api";
+import { evaluationCasebookArtifactFilename, evaluationCasebookQualificationReceiptFilename } from "./evaluation-artifact-view-model";
 import { formatApiErrorMessage } from "./api-error";
 import { configuredModelProviderGroups } from "./model-selection-view-model";
+import { CasebookQualificationTrialControl } from "./CasebookQualificationTrialControl";
+import { EvaluationCasebookTemplateCoverage, EvaluationCasebookTemplateCreateButton } from "./EvaluationCasebookTemplateControl";
+import { useEvaluationCasebookTemplates } from "./use-evaluation-casebook-templates";
+import { EvaluationReleaseGateControls } from "./EvaluationReleaseGateControls";
+import {
+  evaluationCasebookCurationState,
+  evaluationCasebookQualificationDisabled,
+  evaluationCasebookTemplateCoverageComplete,
+  findEvaluationCasebookCurationCase,
+} from "./evaluation-casebook-template-view-model";
 
 export default function EvaluationCasebookPanel({
   threadId,
+  runs,
   evaluations,
   adjudications,
   models,
@@ -63,8 +55,10 @@ export default function EvaluationCasebookPanel({
   trustAnchors,
   selectedTrustAnchorId,
   onRefresh,
+  onUseTaskPrompt,
 }: {
   threadId: string;
+  runs: RunRecord[];
   evaluations: RunEvaluationRecord[];
   adjudications: EvaluationAdjudication[];
   models: ModelSummary[];
@@ -72,103 +66,54 @@ export default function EvaluationCasebookPanel({
   trustAnchors: ReceiptTrustAnchor[];
   selectedTrustAnchorId: string;
   onRefresh: () => Promise<void>;
+  onUseTaskPrompt(prompt: string): void;
 }) {
   const [casebooks, setCasebooks] = useState<EvaluationCasebook[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const [calibration, setCalibration] =
-    useState<EvaluationCasebookCalibrationReport>();
-  const [qualifications, setQualifications] = useState<
-    EvaluationCasebookQualificationExecution[]
-  >([]);
-  const [qualificationBaselines, setQualificationBaselines] = useState<
-    EvaluationQualificationBaseline[]
-  >([]);
+  const [calibration, setCalibration] = useState<EvaluationCasebookCalibrationReport>();
+  const [qualifications, setQualifications] = useState<EvaluationCasebookQualificationExecution[]>([]);
+  const [qualificationBaselines, setQualificationBaselines] = useState<EvaluationQualificationBaseline[]>([]);
   const [qualifierModelKey, setQualifierModelKey] = useState(selectedModelKey);
   const [minimumAgreementRate, setMinimumAgreementRate] = useState(80);
-  const [allowQualificationInconclusive, setAllowQualificationInconclusive] =
-    useState(false);
+  const [allowQualificationInconclusive, setAllowQualificationInconclusive] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [curationEvaluationId, setCurationEvaluationId] = useState("");
+  const [templateCaseId, setTemplateCaseId] = useState("");
   const [pendingRemoveId, setPendingRemoveId] = useState<string>();
   const [busyId, setBusyId] = useState<string>();
   const [error, setError] = useState<string>();
+  const templates = useEvaluationCasebookTemplates(setError);
 
-  const adjudicationByEvaluation = useMemo(
-    () =>
-      new Map(
-        adjudications.map((adjudication) => [
-          adjudication.evaluationId,
-          adjudication,
-        ]),
-      ),
-    [adjudications],
-  );
+  const adjudicationByEvaluation = useMemo(() => new Map(adjudications.map((adjudication) => [adjudication.evaluationId, adjudication])), [adjudications]);
   const reviewedEvaluations = useMemo(
-    () =>
-      evaluations
-        .filter((evaluation) => adjudicationByEvaluation.has(evaluation.id))
-        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    () => evaluations.filter((evaluation) => adjudicationByEvaluation.has(evaluation.id)).sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
     [adjudicationByEvaluation, evaluations],
   );
-  const selected =
-    casebooks.find((casebook) => casebook.id === selectedId) ?? casebooks[0];
+  const selected = casebooks.find((casebook) => casebook.id === selectedId) ?? casebooks[0];
   const revision = selected?.revisions.at(-1);
   const currentCases =
     selected && revision
       ? revision.caseIds.flatMap((caseId) => {
-          const item = selected.cases.find(
-            (candidate) => candidate.id === caseId,
-          );
+          const item = selected.cases.find((candidate) => candidate.id === caseId);
           return item ? [item] : [];
         })
       : [];
-  const selectedEvaluation = reviewedEvaluations.find(
-    (evaluation) => evaluation.id === curationEvaluationId,
-  );
-  const selectedTruth = selectedEvaluation
-    ? adjudicationByEvaluation.get(selectedEvaluation.id)?.revisions.at(-1)
-    : undefined;
-  const existingCase =
-    revision && selectedEvaluation
-      ? currentCases.find(
-          (item) =>
-            item.sourceThreadId === selectedEvaluation.threadId &&
-            item.sourceEvaluationId === selectedEvaluation.id,
-        )
-      : undefined;
-  const curationState = !existingCase
-    ? "new"
-    : existingCase.adjudicationRevision.contentSha256 ===
-        selectedTruth?.contentSha256
-      ? "current"
-      : "refresh";
-  const qualificationModelGroups = useMemo(
-    () => configuredModelProviderGroups(models),
-    [models],
-  );
-  const qualificationModelOptions = useMemo(
-    () => qualificationModelGroups.flatMap((group) => group.options),
-    [qualificationModelGroups],
-  );
-  const qualificationHistory = useMemo(
-    () =>
-      qualifications
-        .slice()
-        .sort((left, right) => right.finishedAt.localeCompare(left.finishedAt)),
-    [qualifications],
-  );
-  const currentQualification = qualificationHistory.find(
-    (execution) => execution.casebookRevision === selected?.currentRevision,
-  );
+  const selectedTemplate = templates.find((template) => template.id === selected?.templateId);
+  const releaseTemplate = templates.find((template) => template.id === "release-product-v1");
+  const templateCoverageComplete = evaluationCasebookTemplateCoverageComplete(selectedTemplate, currentCases);
+  const selectedEvaluation = reviewedEvaluations.find((evaluation) => evaluation.id === curationEvaluationId);
+  const selectedTruth = selectedEvaluation ? adjudicationByEvaluation.get(selectedEvaluation.id)?.revisions.at(-1) : undefined;
+  const existingCase = findEvaluationCasebookCurationCase(currentCases, Boolean(selected?.templateId), templateCaseId, selectedEvaluation);
+  const curationState = evaluationCasebookCurationState(existingCase, selectedEvaluation, selectedTruth?.contentSha256);
+  const qualificationModelGroups = useMemo(() => configuredModelProviderGroups(models), [models]);
+  const qualificationModelOptions = useMemo(() => qualificationModelGroups.flatMap((group) => group.options), [qualificationModelGroups]);
+  const qualificationHistory = useMemo(() => qualifications.slice().sort((left, right) => right.finishedAt.localeCompare(left.finishedAt)), [qualifications]);
+  const currentQualification = qualificationHistory.find((execution) => execution.casebookRevision === selected?.currentRevision);
   const currentBaseline = qualificationBaselines.at(-1);
-  const baselineAnchor = currentBaseline
-    ? trustAnchors.find(
-        (anchor) => anchor.keyId === currentBaseline.envelope.signature.keyId,
-      )
-    : undefined;
+  const baselineAnchor = currentBaseline ? trustAnchors.find((anchor) => anchor.keyId === currentBaseline.envelope.signature.keyId) : undefined;
   const baselineState = !currentBaseline
     ? "missing"
     : baselineAnchor?.status === "revoked"
@@ -179,8 +124,7 @@ export default function EvaluationCasebookPanel({
   const baselineUpToDate =
     baselineState === "current" &&
     currentBaseline?.qualificationExecutionId === currentQualification?.id &&
-    currentBaseline?.envelope.signature.keyId ===
-      trustAnchors.find((anchor) => anchor.id === selectedTrustAnchorId)?.keyId;
+    currentBaseline?.envelope.signature.keyId === trustAnchors.find((anchor) => anchor.id === selectedTrustAnchorId)?.keyId;
 
   useEffect(() => {
     let cancelled = false;
@@ -189,11 +133,7 @@ export default function EvaluationCasebookPanel({
       .then((items) => {
         if (cancelled) return;
         setCasebooks(items);
-        setSelectedId((current) =>
-          items.some((item) => item.id === current)
-            ? current
-            : (items[0]?.id ?? ""),
-        );
+        setSelectedId((current) => (items.some((item) => item.id === current) ? current : (items[0]?.id ?? "")));
         setCreating(items.length === 0);
       })
       .catch((loadError: unknown) => {
@@ -250,9 +190,7 @@ export default function EvaluationCasebookPanel({
   }, [selected?.id]);
 
   useEffect(() => {
-    if (
-      qualificationModelOptions.some((option) => option.key === selectedModelKey)
-    ) {
+    if (qualificationModelOptions.some((option) => option.key === selectedModelKey)) {
       setQualifierModelKey(selectedModelKey);
       return;
     }
@@ -260,15 +198,23 @@ export default function EvaluationCasebookPanel({
   }, [qualificationModelOptions, selectedModelKey]);
 
   useEffect(() => {
-    if (
-      reviewedEvaluations.some(
-        (evaluation) => evaluation.id === curationEvaluationId,
-      )
-    ) {
+    if (reviewedEvaluations.some((evaluation) => evaluation.id === curationEvaluationId)) {
       return;
     }
     setCurationEvaluationId(reviewedEvaluations[0]?.id ?? "");
   }, [curationEvaluationId, reviewedEvaluations]);
+
+  useEffect(() => {
+    if (!selectedTemplate) {
+      setTemplateCaseId("");
+      return;
+    }
+    if (selectedTemplate.cases.some((item) => item.id === templateCaseId)) {
+      return;
+    }
+    const covered = new Set(currentCases.map((item) => item.templateCaseId));
+    setTemplateCaseId(selectedTemplate.cases.find((item) => !covered.has(item.id))?.id ?? selectedTemplate.cases[0]?.id ?? "");
+  }, [currentCases, selectedTemplate, templateCaseId]);
 
   function beginCreate(): void {
     setCreating(true);
@@ -323,6 +269,27 @@ export default function EvaluationCasebookPanel({
     }
   }
 
+  async function createReleaseTemplate(): Promise<void> {
+    if (!releaseTemplate || busyId) return;
+    setBusyId("create-template");
+    setError(undefined);
+    try {
+      const casebook = await createEvaluationCasebook({
+        threadId,
+        name: releaseTemplate.name,
+        description: releaseTemplate.description,
+        templateId: releaseTemplate.id,
+      });
+      commitCasebook(casebook);
+      setCreating(false);
+      await onRefresh();
+    } catch (createError) {
+      setError(toErrorMessage(createError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
   async function curate(): Promise<void> {
     if (!selected || !selectedEvaluation || curationState === "current") {
       return;
@@ -333,6 +300,7 @@ export default function EvaluationCasebookPanel({
       const casebook = await curateEvaluationCase(selected.id, {
         threadId,
         evaluationId: selectedEvaluation.id,
+        ...(selected.templateId ? { templateCaseId } : {}),
       });
       commitCasebook(casebook);
       setCalibration(await getEvaluationCasebookCalibration(casebook.id));
@@ -376,32 +344,16 @@ export default function EvaluationCasebookPanel({
     }
   }
 
-  async function qualify(): Promise<void> {
-    if (!selected || currentCases.length === 0 || busyId) return;
-    setBusyId(`qualify:${selected.id}`);
-    setError(undefined);
-    try {
-      const execution = await executeEvaluationCasebookQualification(
-        selected.id,
-        {
-          threadId,
-          model: parseModelKey(qualifierModelKey),
-          gate: {
-            minimumAgreementRate: minimumAgreementRate / 100,
-            allowInconclusive: allowQualificationInconclusive,
-          },
-        },
-      );
-      setQualifications((current) => [
-        ...current.filter((item) => item.id !== execution.id),
-        execution,
-      ]);
-      await onRefresh();
-    } catch (qualificationError) {
-      setError(toErrorMessage(qualificationError));
-    } finally {
-      setBusyId(undefined);
-    }
+  async function runQualificationTrial(): Promise<EvaluationCasebookQualificationExecution> {
+    if (!selected) throw new Error("Select an Evaluation Casebook first");
+    return executeEvaluationCasebookQualification(selected.id, {
+      threadId,
+      model: parseModelKey(qualifierModelKey),
+      gate: {
+        minimumAgreementRate: minimumAgreementRate / 100,
+        allowInconclusive: allowQualificationInconclusive,
+      },
+    });
   }
 
   async function exportQualificationReceipt(): Promise<void> {
@@ -409,9 +361,7 @@ export default function EvaluationCasebookPanel({
     setBusyId(`qualification-receipt:${selected.id}`);
     setError(undefined);
     try {
-      downloadQualificationReceipt(
-        await getEvaluationCasebookQualificationReceipt(selected.id),
-      );
+      downloadQualificationReceipt(await getEvaluationCasebookQualificationReceipt(selected.id));
     } catch (receiptError) {
       setError(toErrorMessage(receiptError));
     } finally {
@@ -428,15 +378,8 @@ export default function EvaluationCasebookPanel({
     setBusyId(`signed-qualification-receipt:${selected.id}`);
     setError(undefined);
     try {
-      const envelope = await getSignedCasebookQualificationReceipt(
-        selected.id,
-        threadId,
-        selectedTrustAnchorId,
-      );
-      downloadTrustedReceipt(
-        envelope,
-        `napier-signed-casebook-qualification-${selected.id}-r${selected.currentRevision}-${envelope.contentSha256.slice(0, 12)}.json`,
-      );
+      const envelope = await getSignedCasebookQualificationReceipt(selected.id, threadId, selectedTrustAnchorId);
+      downloadTrustedReceipt(envelope, `napier-signed-casebook-qualification-${selected.id}-r${selected.currentRevision}-${envelope.contentSha256.slice(0, 12)}.json`);
     } catch (receiptError) {
       setError(toErrorMessage(receiptError));
     } finally {
@@ -453,14 +396,8 @@ export default function EvaluationCasebookPanel({
     setBusyId(`promote-baseline:${selected.id}`);
     setError(undefined);
     try {
-      const result = await promoteEvaluationQualificationBaseline(
-        selected.id,
-        threadId,
-        selectedTrustAnchorId,
-      );
-      setQualificationBaselines((current) =>
-        result.created ? [...current, result.baseline] : current,
-      );
+      const result = await promoteEvaluationQualificationBaseline(selected.id, threadId, selectedTrustAnchorId);
+      setQualificationBaselines((current) => (result.created ? [...current, result.baseline] : current));
       await onRefresh();
     } catch (baselineError) {
       setError(toErrorMessage(baselineError));
@@ -470,11 +407,7 @@ export default function EvaluationCasebookPanel({
   }
 
   function commitCasebook(casebook: EvaluationCasebook): void {
-    setCasebooks((current) =>
-      [casebook, ...current.filter((item) => item.id !== casebook.id)].sort(
-        (left, right) => right.updatedAt.localeCompare(left.updatedAt),
-      ),
-    );
+    setCasebooks((current) => [casebook, ...current.filter((item) => item.id !== casebook.id)].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)));
     setSelectedId(casebook.id);
   }
 
@@ -500,9 +433,7 @@ export default function EvaluationCasebookPanel({
               setPendingRemoveId(undefined);
             }}
           >
-            {casebooks.length === 0 ? (
-              <option value="">{copy.lab.casebook.empty}</option>
-            ) : null}
+            {casebooks.length === 0 ? <option value="">{copy.lab.casebook.empty}</option> : null}
             {casebooks.map((casebook) => {
               const latest = casebook.revisions.at(-1)!;
               return (
@@ -517,19 +448,21 @@ export default function EvaluationCasebookPanel({
           <Plus size={11} aria-hidden="true" />
           {copy.lab.casebook.create}
         </button>
+        {!casebooks.some((casebook) => casebook.templateId === releaseTemplate?.id) ? (
+          <EvaluationCasebookTemplateCreateButton
+            template={releaseTemplate}
+            disabled={Boolean(busyId)}
+            creating={busyId === "create-template"}
+            onCreate={() => void createReleaseTemplate()}
+          />
+        ) : null}
       </div>
 
       {creating || editing ? (
         <div className="casebook-metadata-form">
           <label>
             <span>{copy.lab.casebook.name}</span>
-            <input
-              type="text"
-              maxLength={100}
-              value={name}
-              placeholder={copy.lab.casebook.namePlaceholder}
-              onChange={(event) => setName(event.target.value)}
-            />
+            <input type="text" maxLength={100} value={name} placeholder={copy.lab.casebook.namePlaceholder} onChange={(event) => setName(event.target.value)} />
           </label>
           <label>
             <span>{copy.lab.casebook.description}</span>
@@ -542,32 +475,13 @@ export default function EvaluationCasebookPanel({
             />
           </label>
           <footer>
-            <button
-              type="button"
-              disabled={Boolean(busyId)}
-              onClick={cancelForm}
-            >
+            <button type="button" disabled={Boolean(busyId)} onClick={cancelForm}>
               <X size={11} aria-hidden="true" />
               {copy.lab.casebook.cancel}
             </button>
-            <button
-              className="casebook-primary"
-              type="button"
-              disabled={!name.trim() || Boolean(busyId)}
-              onClick={() => void submitMetadata()}
-            >
-              {editing ? (
-                <Save size={11} aria-hidden="true" />
-              ) : (
-                <Check size={11} aria-hidden="true" />
-              )}
-              {busyId
-                ? editing
-                  ? copy.lab.casebook.saving
-                  : copy.lab.casebook.creating
-                : editing
-                  ? copy.lab.casebook.save
-                  : copy.lab.casebook.create}
+            <button className="casebook-primary" type="button" disabled={!name.trim() || Boolean(busyId)} onClick={() => void submitMetadata()}>
+              {editing ? <Save size={11} aria-hidden="true" /> : <Check size={11} aria-hidden="true" />}
+              {busyId ? (editing ? copy.lab.casebook.saving : copy.lab.casebook.creating) : editing ? copy.lab.casebook.save : copy.lab.casebook.create}
             </button>
           </footer>
         </div>
@@ -582,11 +496,7 @@ export default function EvaluationCasebookPanel({
               </span>
               <h5>{revision.name}</h5>
             </div>
-            <button
-              type="button"
-              disabled={Boolean(busyId)}
-              onClick={beginEdit}
-            >
+            <button type="button" disabled={Boolean(busyId)} onClick={beginEdit}>
               <Pencil size={10} aria-hidden="true" />
               {copy.lab.casebook.edit}
             </button>
@@ -599,11 +509,7 @@ export default function EvaluationCasebookPanel({
             </div>
             <div>
               <dt>{copy.lab.casebook.agreement}</dt>
-              <dd>
-                {calibration?.sampleCount
-                  ? `${Math.round(calibration.agreementRate * 100)}%`
-                  : "–"}
-              </dd>
+              <dd>{calibration?.sampleCount ? `${Math.round(calibration.agreementRate * 100)}%` : "–"}</dd>
             </div>
             <div>
               <dt>{copy.lab.casebook.cohorts}</dt>
@@ -611,14 +517,21 @@ export default function EvaluationCasebookPanel({
             </div>
           </dl>
 
-          <section
-            className="casebook-curation"
-            aria-labelledby="casebook-curation-title"
-          >
+          <EvaluationCasebookTemplateCoverage
+            casebook={selected}
+            cases={currentCases}
+            template={selectedTemplate}
+            selectedCaseId={templateCaseId}
+            disabled={Boolean(busyId)}
+            onSelect={setTemplateCaseId}
+            onUseTaskPrompt={onUseTaskPrompt}
+          />
+
+          <EvaluationReleaseGateControls threadId={threadId} casebook={selected} template={selectedTemplate} selectedCaseId={templateCaseId} runs={runs} />
+
+          <section className="casebook-curation" aria-labelledby="casebook-curation-title">
             <header>
-              <span id="casebook-curation-title">
-                {copy.lab.casebook.curate}
-              </span>
+              <span id="casebook-curation-title">{copy.lab.casebook.curate}</span>
               <code>{reviewedEvaluations.length}</code>
             </header>
             {reviewedEvaluations.length === 0 ? (
@@ -629,38 +542,19 @@ export default function EvaluationCasebookPanel({
                   aria-label={copy.lab.casebook.curate}
                   value={curationEvaluationId}
                   disabled={Boolean(busyId)}
-                  onChange={(event) =>
-                    setCurationEvaluationId(event.target.value)
-                  }
+                  onChange={(event) => setCurationEvaluationId(event.target.value)}
                 >
                   {reviewedEvaluations.map((evaluation) => {
-                    const truth = adjudicationByEvaluation
-                      .get(evaluation.id)
-                      ?.revisions.at(-1);
+                    const truth = adjudicationByEvaluation.get(evaluation.id)?.revisions.at(-1);
                     return (
                       <option key={evaluation.id} value={evaluation.id}>
-                        {shortId(evaluation.id)} ·{" "}
-                        {copy.lab.verdicts[evaluation.verdict]} →{" "}
-                        {truth ? copy.lab.verdicts[truth.expectedVerdict] : "–"}
+                        {shortId(evaluation.id)} · {copy.lab.verdicts[evaluation.verdict]} → {truth ? copy.lab.verdicts[truth.expectedVerdict] : "–"}
                       </option>
                     );
                   })}
                 </select>
-                <button
-                  className="casebook-primary"
-                  type="button"
-                  disabled={
-                    !selectedEvaluation ||
-                    curationState === "current" ||
-                    Boolean(busyId)
-                  }
-                  onClick={() => void curate()}
-                >
-                  {curationState === "refresh" ? (
-                    <RefreshCw size={11} aria-hidden="true" />
-                  ) : (
-                    <Plus size={11} aria-hidden="true" />
-                  )}
+                <button className="casebook-primary" type="button" disabled={!selectedEvaluation || curationState === "current" || Boolean(busyId)} onClick={() => void curate()}>
+                  {curationState === "refresh" ? <RefreshCw size={11} aria-hidden="true" /> : <Plus size={11} aria-hidden="true" />}
                   {busyId?.startsWith("curate:")
                     ? copy.lab.casebook.curating
                     : curationState === "current"
@@ -684,76 +578,46 @@ export default function EvaluationCasebookPanel({
                     </small>
                   </span>
                   <code>
-                    {copy.lab.casebook.truthRevision}{" "}
-                    {item.adjudicationRevision.revision}
-                    {item.adjudicationRevision.source === "reviewer_consensus"
-                      ? ` · ${copy.lab.calibration.consensus.provenance}`
-                      : ""}
+                    {copy.lab.casebook.truthRevision} {item.adjudicationRevision.revision}
+                    {item.adjudicationRevision.source === "reviewer_consensus" ? ` · ${copy.lab.calibration.consensus.provenance}` : ""}
                   </code>
                 </header>
                 <div className="casebook-verdicts">
                   <span>
                     {copy.lab.casebook.modelVerdict}
-                    <strong>
-                      {copy.lab.verdicts[item.evaluation.verdict]}
-                    </strong>
+                    <strong>{copy.lab.verdicts[item.evaluation.verdict]}</strong>
                   </span>
                   <span>
                     {copy.lab.casebook.expectedVerdict}
-                    <strong>
-                      {
-                        copy.lab.verdicts[
-                          item.adjudicationRevision.expectedVerdict
-                        ]
-                      }
-                    </strong>
+                    <strong>{copy.lab.verdicts[item.adjudicationRevision.expectedVerdict]}</strong>
                   </span>
                 </div>
                 <div className="casebook-hashes">
                   <code title={item.contentSha256}>
-                    {copy.lab.casebook.caseHash}{" "}
-                    {item.contentSha256.slice(0, 12)}
+                    {copy.lab.casebook.caseHash} {item.contentSha256.slice(0, 12)}
                   </code>
                   <code title={item.adjudicationRevision.evaluationSha256}>
-                    {copy.lab.casebook.evaluationHash}{" "}
-                    {item.adjudicationRevision.evaluationSha256.slice(0, 12)}
+                    {copy.lab.casebook.evaluationHash} {item.adjudicationRevision.evaluationSha256.slice(0, 12)}
                   </code>
                   {item.consensusResolution ? (
                     <code title={item.consensusResolution.contentSha256}>
-                      {copy.lab.casebook.consensusEvidence}{" "}
-                      {item.consensusResolution.report.reviewerCount} ·{" "}
-                      {item.consensusResolution.contentSha256.slice(0, 12)}
+                      {copy.lab.casebook.consensusEvidence} {item.consensusResolution.report.reviewerCount} · {item.consensusResolution.contentSha256.slice(0, 12)}
                     </code>
                   ) : null}
                 </div>
                 {pendingRemoveId === item.id ? (
                   <footer className="casebook-remove-confirm">
-                    <button
-                      type="button"
-                      disabled={Boolean(busyId)}
-                      onClick={() => setPendingRemoveId(undefined)}
-                    >
+                    <button type="button" disabled={Boolean(busyId)} onClick={() => setPendingRemoveId(undefined)}>
                       <X size={10} aria-hidden="true" />
                       {copy.lab.casebook.cancel}
                     </button>
-                    <button
-                      type="button"
-                      disabled={Boolean(busyId)}
-                      onClick={() => void remove(item)}
-                    >
+                    <button type="button" disabled={Boolean(busyId)} onClick={() => void remove(item)}>
                       <Trash2 size={10} aria-hidden="true" />
-                      {busyId === `remove:${item.id}`
-                        ? copy.lab.casebook.removing
-                        : copy.lab.casebook.confirmRemove}
+                      {busyId === `remove:${item.id}` ? copy.lab.casebook.removing : copy.lab.casebook.confirmRemove}
                     </button>
                   </footer>
                 ) : (
-                  <button
-                    className="casebook-remove"
-                    type="button"
-                    disabled={Boolean(busyId)}
-                    onClick={() => setPendingRemoveId(item.id)}
-                  >
+                  <button className="casebook-remove" type="button" disabled={Boolean(busyId)} onClick={() => setPendingRemoveId(item.id)}>
                     <Trash2 size={10} aria-hidden="true" />
                     {copy.lab.casebook.remove}
                   </button>
@@ -762,26 +626,14 @@ export default function EvaluationCasebookPanel({
             ))}
           </ol>
 
-          <section
-            className="casebook-qualification"
-            aria-labelledby={`casebook-qualification-${selected.id}`}
-          >
+          <section className="casebook-qualification" aria-labelledby={`casebook-qualification-${selected.id}`}>
             <header>
               <div>
                 <span>{copy.lab.casebook.qualification.eyebrow}</span>
-                <h6 id={`casebook-qualification-${selected.id}`}>
-                  {copy.lab.casebook.qualification.title}
-                </h6>
+                <h6 id={`casebook-qualification-${selected.id}`}>{copy.lab.casebook.qualification.title}</h6>
               </div>
-              <strong
-                className={`casebook-qualification-status casebook-qualification-status-${currentQualification?.status ?? "idle"}`}
-                role="status"
-              >
-                {currentQualification
-                  ? copy.lab.casebook.qualification.statuses[
-                      currentQualification.status
-                    ]
-                  : copy.lab.casebook.qualification.neverRun}
+              <strong className={`casebook-qualification-status casebook-qualification-status-${currentQualification?.status ?? "idle"}`} role="status">
+                {currentQualification ? copy.lab.casebook.qualification.statuses[currentQualification.status] : copy.lab.casebook.qualification.neverRun}
               </strong>
             </header>
             <p>{copy.lab.casebook.qualification.body}</p>
@@ -789,11 +641,7 @@ export default function EvaluationCasebookPanel({
             <div className="casebook-qualification-compose">
               <label>
                 <span>{copy.lab.casebook.qualification.evaluator}</span>
-                <select
-                  value={qualifierModelKey}
-                  disabled={Boolean(busyId)}
-                  onChange={(event) => setQualifierModelKey(event.target.value)}
-                >
+                <select value={qualifierModelKey} disabled={Boolean(busyId)} onChange={(event) => setQualifierModelKey(event.target.value)}>
                   {qualificationModelGroups.map((group) => (
                     <optgroup key={group.provider} label={group.label}>
                       {group.options.map((option) => (
@@ -815,9 +663,7 @@ export default function EvaluationCasebookPanel({
                   step={5}
                   value={minimumAgreementRate}
                   disabled={Boolean(busyId)}
-                  onChange={(event) =>
-                    setMinimumAgreementRate(event.currentTarget.valueAsNumber)
-                  }
+                  onChange={(event) => setMinimumAgreementRate(event.currentTarget.valueAsNumber)}
                 />
               </label>
               <label className="casebook-qualification-toggle">
@@ -825,27 +671,22 @@ export default function EvaluationCasebookPanel({
                   type="checkbox"
                   checked={allowQualificationInconclusive}
                   disabled={Boolean(busyId)}
-                  onChange={(event) =>
-                    setAllowQualificationInconclusive(event.target.checked)
-                  }
+                  onChange={(event) => setAllowQualificationInconclusive(event.target.checked)}
                 />
                 <span>{copy.lab.casebook.qualification.allowInconclusive}</span>
               </label>
-              <button
-                className="casebook-qualification-run"
-                type="button"
-                disabled={
-                  currentCases.length === 0 ||
-                  !qualifierModelKey ||
-                  Boolean(busyId)
-                }
-                onClick={() => void qualify()}
-              >
-                <Play size={11} aria-hidden="true" />
-                {busyId === `qualify:${selected.id}`
-                  ? copy.lab.casebook.qualification.running
-                  : copy.lab.casebook.qualification.run}
-              </button>
+              <CasebookQualificationTrialControl
+                key={selected.id}
+                disabled={evaluationCasebookQualificationDisabled(currentCases, templateCoverageComplete, qualifierModelKey, busyId)}
+                runTrial={runQualificationTrial}
+                onExecution={(execution) => setQualifications((current) => [...current.filter((item) => item.id !== execution.id), execution])}
+                onBusyChange={(busy) => {
+                  setBusyId(busy ? `qualify:${selected.id}` : undefined);
+                  if (busy) setError(undefined);
+                }}
+                onSettled={onRefresh}
+                onError={(trialError) => setError(toErrorMessage(trialError))}
+              />
             </div>
 
             {currentQualification ? (
@@ -853,16 +694,12 @@ export default function EvaluationCasebookPanel({
                 <dl className="casebook-qualification-summary">
                   <div>
                     <dt>{copy.lab.casebook.qualification.agreement}</dt>
-                    <dd>
-                      {Math.round(currentQualification.agreementRate * 100)}%
-                    </dd>
+                    <dd>{Math.round(currentQualification.agreementRate * 100)}%</dd>
                   </div>
                   <div>
                     <dt>{copy.lab.casebook.qualification.verified}</dt>
                     <dd>
-                      {currentQualification.sampleCount -
-                        currentQualification.unverifiedCount}
-                      /{currentQualification.sampleCount}
+                      {currentQualification.sampleCount - currentQualification.unverifiedCount}/{currentQualification.sampleCount}
                     </dd>
                   </div>
                   <div>
@@ -871,76 +708,47 @@ export default function EvaluationCasebookPanel({
                   </div>
                   <div>
                     <dt>{copy.lab.casebook.qualification.executionHash}</dt>
-                    <dd title={currentQualification.contentSha256}>
-                      {currentQualification.contentSha256.slice(0, 10)}
-                    </dd>
+                    <dd title={currentQualification.contentSha256}>{currentQualification.contentSha256.slice(0, 10)}</dd>
                   </div>
                 </dl>
                 <ol className="casebook-qualification-cases">
                   {currentQualification.results.map((result) => (
-                    <li
-                      key={result.caseId}
-                      className={`casebook-qualification-case-${result.status}`}
-                    >
+                    <li key={result.caseId} className={`casebook-qualification-case-${result.status}`}>
                       <header>
                         <span>
                           <strong>{shortId(result.sourceEvaluationId)}</strong>
                           <small>{shortId(result.sourceThreadId)}</small>
                         </span>
-                        <strong>
-                          {
-                            copy.lab.casebook.qualification.caseStatuses[
-                              result.status
-                            ]
-                          }
-                        </strong>
+                        <strong>{copy.lab.casebook.qualification.caseStatuses[result.status]}</strong>
                       </header>
                       <div>
                         <span>
                           {copy.lab.casebook.qualification.expected}
-                          <strong>
-                            {copy.lab.verdicts[result.expectedVerdict]}
-                          </strong>
+                          <strong>{copy.lab.verdicts[result.expectedVerdict]}</strong>
                         </span>
                         <span aria-hidden="true">→</span>
                         <span>
                           {copy.lab.casebook.qualification.actual}
-                          <strong>
-                            {copy.lab.verdicts[result.actualVerdict]}
-                          </strong>
+                          <strong>{copy.lab.verdicts[result.actualVerdict]}</strong>
                         </span>
                       </div>
                       <details>
                         <summary>
-                          <span>
-                            {
-                              copy.lab.casebook.qualification.evidenceStates[
-                                result.evidenceState
-                              ]
-                            }
-                          </span>
-                          <code title={result.caseSha256}>
-                            {result.caseSha256.slice(0, 10)}
-                          </code>
+                          <span>{copy.lab.casebook.qualification.evidenceStates[result.evidenceState]}</span>
+                          <code title={result.caseSha256}>{result.caseSha256.slice(0, 10)}</code>
                         </summary>
                         <p>{result.reason}</p>
                         <code title={result.expectedLeftSnapshotSha256}>
-                          {copy.lab.casebook.qualification.expectedLeft}{" "}
-                          {result.expectedLeftSnapshotSha256.slice(0, 10)}
+                          {copy.lab.casebook.qualification.expectedLeft} {result.expectedLeftSnapshotSha256.slice(0, 10)}
                         </code>
                         <code title={result.observedLeftSnapshotSha256}>
-                          {copy.lab.casebook.qualification.observedLeft}{" "}
-                          {result.observedLeftSnapshotSha256?.slice(0, 10) ??
-                            copy.lab.casebook.qualification.unavailable}
+                          {copy.lab.casebook.qualification.observedLeft} {result.observedLeftSnapshotSha256?.slice(0, 10) ?? copy.lab.casebook.qualification.unavailable}
                         </code>
                         <code title={result.expectedRightSnapshotSha256}>
-                          {copy.lab.casebook.qualification.expectedRight}{" "}
-                          {result.expectedRightSnapshotSha256.slice(0, 10)}
+                          {copy.lab.casebook.qualification.expectedRight} {result.expectedRightSnapshotSha256.slice(0, 10)}
                         </code>
                         <code title={result.observedRightSnapshotSha256}>
-                          {copy.lab.casebook.qualification.observedRight}{" "}
-                          {result.observedRightSnapshotSha256?.slice(0, 10) ??
-                            copy.lab.casebook.qualification.unavailable}
+                          {copy.lab.casebook.qualification.observedRight} {result.observedRightSnapshotSha256?.slice(0, 10) ?? copy.lab.casebook.qualification.unavailable}
                         </code>
                       </details>
                     </li>
@@ -948,11 +756,7 @@ export default function EvaluationCasebookPanel({
                 </ol>
               </>
             ) : (
-              <p className="casebook-qualification-empty">
-                {currentCases.length
-                  ? copy.lab.casebook.qualification.empty
-                  : copy.lab.casebook.qualification.noCases}
-              </p>
+              <p className="casebook-qualification-empty">{currentCases.length ? copy.lab.casebook.qualification.empty : copy.lab.casebook.qualification.noCases}</p>
             )}
 
             {qualificationHistory.length ? (
@@ -965,40 +769,21 @@ export default function EvaluationCasebookPanel({
                   {qualificationHistory.slice(0, 8).map((execution) => (
                     <li key={execution.id}>
                       <span>
-                        r{execution.casebookRevision} ·{" "}
-                        {execution.evaluatorModel.provider}/
-                        {execution.evaluatorModel.id}
+                        r{execution.casebookRevision} · {execution.evaluatorModel.provider}/{execution.evaluatorModel.id}
                       </span>
-                      <strong
-                        className={`casebook-qualification-status casebook-qualification-status-${execution.status}`}
-                      >
-                        {
-                          copy.lab.casebook.qualification.statuses[
-                            execution.status
-                          ]
-                        }
+                      <strong className={`casebook-qualification-status casebook-qualification-status-${execution.status}`}>
+                        {copy.lab.casebook.qualification.statuses[execution.status]}
                       </strong>
-                      <code title={execution.contentSha256}>
-                        {execution.contentSha256.slice(0, 10)}
-                      </code>
-                      <small>
-                        {execution.casebookRevision === selected.currentRevision
-                          ? copy.lab.casebook.qualification.current
-                          : copy.lab.casebook.qualification.stale}
-                      </small>
-                      <time dateTime={execution.finishedAt}>
-                        {formatDateTime(execution.finishedAt)}
-                      </time>
+                      <code title={execution.contentSha256}>{execution.contentSha256.slice(0, 10)}</code>
+                      <small>{execution.casebookRevision === selected.currentRevision ? copy.lab.casebook.qualification.current : copy.lab.casebook.qualification.stale}</small>
+                      <time dateTime={execution.finishedAt}>{formatDateTime(execution.finishedAt)}</time>
                     </li>
                   ))}
                 </ol>
               </details>
             ) : null}
 
-            <section
-              className={`qualification-baseline baseline-${baselineState}`}
-              aria-label={copy.lab.casebook.qualification.baseline}
-            >
+            <section className={`qualification-baseline baseline-${baselineState}`} aria-label={copy.lab.casebook.qualification.baseline}>
               <header>
                 <span>{copy.lab.casebook.qualification.baseline}</span>
                 <strong>
@@ -1014,18 +799,12 @@ export default function EvaluationCasebookPanel({
               {currentBaseline ? (
                 <div>
                   <span>
-                    <small>
-                      {copy.lab.casebook.qualification.baselineHash}
-                    </small>
-                    <code title={currentBaseline.contentSha256}>
-                      {currentBaseline.contentSha256.slice(0, 12)}
-                    </code>
+                    <small>{copy.lab.casebook.qualification.baselineHash}</small>
+                    <code title={currentBaseline.contentSha256}>{currentBaseline.contentSha256.slice(0, 12)}</code>
                   </span>
                   <span>
                     <small>{copy.lab.casebook.qualification.signer}</small>
-                    <code title={currentBaseline.envelope.signature.keyId}>
-                      {currentBaseline.envelope.signature.keyId.slice(0, 12)}
-                    </code>
+                    <code title={currentBaseline.envelope.signature.keyId}>{currentBaseline.envelope.signature.keyId.slice(0, 12)}</code>
                   </span>
                   <span>
                     <small>{copy.lab.casebook.currentRevision}</small>
@@ -1039,51 +818,28 @@ export default function EvaluationCasebookPanel({
               <code title={revision.contentSha256}>
                 r{revision.revision} · {revision.contentSha256.slice(0, 10)}
               </code>
-              <button
-                type="button"
-                disabled={Boolean(busyId)}
-                onClick={() => void exportQualificationReceipt()}
-              >
+              <button type="button" disabled={Boolean(busyId)} onClick={() => void exportQualificationReceipt()}>
                 <Download size={11} aria-hidden="true" />
-                {busyId === `qualification-receipt:${selected.id}`
-                  ? copy.lab.casebook.qualification.exportingReceipt
-                  : copy.lab.casebook.qualification.receipt}
+                {busyId === `qualification-receipt:${selected.id}` ? copy.lab.casebook.qualification.exportingReceipt : copy.lab.casebook.qualification.receipt}
               </button>
               <button
                 type="button"
-                title={
-                  selectedTrustAnchorId
-                    ? copy.lab.casebook.qualification.signedReceipt
-                    : copy.lab.casebook.qualification.noSigner
-                }
+                title={selectedTrustAnchorId ? copy.lab.casebook.qualification.signedReceipt : copy.lab.casebook.qualification.noSigner}
                 disabled={Boolean(busyId) || !selectedTrustAnchorId}
                 onClick={() => void exportSignedQualificationReceipt()}
               >
                 <KeyRound size={11} aria-hidden="true" />
-                {busyId === `signed-qualification-receipt:${selected.id}`
-                  ? copy.lab.casebook.qualification.exportingSignedReceipt
-                  : copy.lab.casebook.qualification.signedReceipt}
+                {busyId === `signed-qualification-receipt:${selected.id}` ? copy.lab.casebook.qualification.exportingSignedReceipt : copy.lab.casebook.qualification.signedReceipt}
               </button>
               <button
                 className="qualification-baseline-promote"
                 type="button"
-                title={
-                  selectedTrustAnchorId
-                    ? copy.lab.casebook.qualification.promoteBaseline
-                    : copy.lab.casebook.qualification.noSigner
-                }
-                disabled={
-                  Boolean(busyId) ||
-                  !selectedTrustAnchorId ||
-                  currentQualification?.status !== "passed" ||
-                  baselineUpToDate
-                }
+                title={selectedTrustAnchorId ? copy.lab.casebook.qualification.promoteBaseline : copy.lab.casebook.qualification.noSigner}
+                disabled={Boolean(busyId) || !selectedTrustAnchorId || currentQualification?.status !== "passed" || baselineUpToDate}
                 onClick={() => void promoteBaseline()}
               >
                 <ShieldCheck size={11} aria-hidden="true" />
-                {busyId === `promote-baseline:${selected.id}`
-                  ? copy.lab.casebook.qualification.promotingBaseline
-                  : copy.lab.casebook.qualification.promoteBaseline}
+                {busyId === `promote-baseline:${selected.id}` ? copy.lab.casebook.qualification.promotingBaseline : copy.lab.casebook.qualification.promoteBaseline}
               </button>
             </footer>
           </section>
@@ -1091,9 +847,7 @@ export default function EvaluationCasebookPanel({
           {calibration?.groups.length ? (
             <div className="casebook-cohorts">
               {calibration.groups.map((group) => (
-                <div
-                  key={`${group.evaluatorModel.provider}/${group.evaluatorModel.id}/${group.rubricSha256}`}
-                >
+                <div key={`${group.evaluatorModel.provider}/${group.evaluatorModel.id}/${group.rubricSha256}`}>
                   <span>
                     <strong>
                       {group.evaluatorModel.provider}/{group.evaluatorModel.id}
@@ -1123,15 +877,10 @@ export default function EvaluationCasebookPanel({
                 .map((item) => (
                   <li key={item.revision}>
                     <span>
-                      r{item.revision} ·{" "}
-                      {copy.lab.casebook.revisionSources[item.source]}
+                      r{item.revision} · {copy.lab.casebook.revisionSources[item.source]}
                     </span>
-                    <code title={item.contentSha256}>
-                      {item.contentSha256.slice(0, 10)}
-                    </code>
-                    <time dateTime={item.createdAt}>
-                      {formatDateTime(item.createdAt)}
-                    </time>
+                    <code title={item.contentSha256}>{item.contentSha256.slice(0, 10)}</code>
+                    <time dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time>
                   </li>
                 ))}
             </ol>
@@ -1140,21 +889,14 @@ export default function EvaluationCasebookPanel({
           <footer className="casebook-volume-footer">
             {calibration ? (
               <code title={calibration.contentSha256}>
-                {copy.lab.casebook.reportHash}{" "}
-                {calibration.contentSha256.slice(0, 12)}
+                {copy.lab.casebook.reportHash} {calibration.contentSha256.slice(0, 12)}
               </code>
             ) : (
               <span />
             )}
-            <button
-              type="button"
-              disabled={Boolean(busyId)}
-              onClick={() => void exportArtifact()}
-            >
+            <button type="button" disabled={Boolean(busyId)} onClick={() => void exportArtifact()}>
               <Download size={11} aria-hidden="true" />
-              {busyId === `export:${selected.id}`
-                ? copy.lab.casebook.exporting
-                : copy.lab.casebook.export}
+              {busyId === `export:${selected.id}` ? copy.lab.casebook.exporting : copy.lab.casebook.export}
             </button>
           </footer>
         </article>
@@ -1188,9 +930,7 @@ function downloadArtifact(artifact: EvaluationCasebookArtifact): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function downloadQualificationReceipt(
-  receipt: EvaluationCasebookQualificationReceipt,
-): void {
+function downloadQualificationReceipt(receipt: EvaluationCasebookQualificationReceipt): void {
   const url = URL.createObjectURL(
     new Blob([`${JSON.stringify(receipt, null, 2)}\n`], {
       type: "application/json",
@@ -1205,10 +945,7 @@ function downloadQualificationReceipt(
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function downloadTrustedReceipt(
-  envelope: TrustedReceiptEnvelope,
-  filename: string,
-): void {
+function downloadTrustedReceipt(envelope: TrustedReceiptEnvelope, filename: string): void {
   const url = URL.createObjectURL(
     new Blob([`${JSON.stringify(envelope, null, 2)}\n`], {
       type: "application/json",

@@ -23,6 +23,7 @@ import {
 import { validateEvaluationConsensusResolutionEvidence } from "./evaluation-consensus.js";
 import { hashRunEvaluation } from "./evaluation-suites.js";
 import { createId, nowIso } from "./ids.js";
+import { getEvaluationCasebookTemplate } from "./evaluation-casebook-templates.js";
 
 export const MAX_EVALUATION_CASEBOOK_CASES = 100;
 export const MAX_EVALUATION_CASEBOOK_SNAPSHOTS = 200;
@@ -37,14 +38,13 @@ const REVISION_SOURCES = new Set<EvaluationCasebookRevision["source"]>([
   "case_removed",
 ]);
 
-export function createEvaluationCasebook(input: {
-  name: string;
-  description?: string;
-}): EvaluationCasebook {
+export function createEvaluationCasebook(input: { name: string; description?: string; templateId?: string }): EvaluationCasebook {
   const timestamp = nowIso();
   const id = createId("casebook");
+  if (input.templateId) getEvaluationCasebookTemplate(input.templateId);
   const revision = createRevision(id, {
     revision: 1,
+    ...(input.templateId ? { templateId: input.templateId } : {}),
     name: normalizeName(input.name),
     description: normalizeDescription(input.description),
     caseIds: [],
@@ -53,6 +53,7 @@ export function createEvaluationCasebook(input: {
   });
   return validateEvaluationCasebook({
     id,
+    ...(input.templateId ? { templateId: input.templateId } : {}),
     currentRevision: 1,
     cases: [],
     revisions: [revision],
@@ -61,22 +62,16 @@ export function createEvaluationCasebook(input: {
   });
 }
 
-export function updateEvaluationCasebook(
-  current: EvaluationCasebook,
-  input: { name?: string; description?: string },
-): EvaluationCasebook {
+export function updateEvaluationCasebook(current: EvaluationCasebook, input: { name?: string; description?: string }): EvaluationCasebook {
   const validated = validateEvaluationCasebook(current);
   const latest = currentCasebookRevision(validated);
-  const name =
-    input.name === undefined ? latest.name : normalizeName(input.name);
-  const description =
-    input.description === undefined
-      ? latest.description
-      : normalizeDescription(input.description);
+  const name = input.name === undefined ? latest.name : normalizeName(input.name);
+  const description = input.description === undefined ? latest.description : normalizeDescription(input.description);
   if (name === latest.name && description === latest.description) {
     return validated;
   }
   return appendRevision(validated, {
+    ...(latest.templateId ? { templateId: latest.templateId } : {}),
     name,
     description,
     caseIds: latest.caseIds,
@@ -92,64 +87,53 @@ export function curateEvaluationCase(
     reviewerBallots: EvaluationReviewerBallot[];
     resolution: EvaluationConsensusResolution;
   },
+  templateCaseId?: string,
 ): EvaluationCasebook {
   const validated = validateEvaluationCasebook(current);
   const reviewed = validateEvaluationAdjudication(adjudication, evaluation);
   const latest = currentCasebookRevision(validated);
   const currentCases = currentEvaluationCasebookCases(validated);
-  const existing = currentCases.find(
-    (candidate) =>
-      candidate.sourceThreadId === evaluation.threadId &&
-      candidate.sourceEvaluationId === evaluation.id,
+  const normalizedTemplateCaseId = normalizeTemplateCaseId(validated, templateCaseId);
+  const existing = currentCases.find((candidate) =>
+    normalizedTemplateCaseId
+      ? candidate.templateCaseId === normalizedTemplateCaseId
+      : candidate.sourceThreadId === evaluation.threadId && candidate.sourceEvaluationId === evaluation.id,
   );
   const adjudicationRevision = reviewed.revisions.at(-1)!;
   if (
-    existing?.adjudicationRevision.evaluationSha256 ===
-      hashRunEvaluation(evaluation) &&
-    existing?.adjudicationRevision.contentSha256 ===
-      adjudicationRevision.contentSha256 &&
+    existing?.adjudicationRevision.evaluationSha256 === hashRunEvaluation(evaluation) &&
+    existing?.adjudicationRevision.contentSha256 === adjudicationRevision.contentSha256 &&
     existing.contentSha256 === hashEvaluationCasebookCase(existing)
   ) {
     return validated;
   }
   if (!existing && currentCases.length >= MAX_EVALUATION_CASEBOOK_CASES) {
-    throw new Error(
-      `Evaluation Casebook accepts at most ${MAX_EVALUATION_CASEBOOK_CASES} cases`,
-    );
+    throw new Error(`Evaluation Casebook accepts at most ${MAX_EVALUATION_CASEBOOK_CASES} cases`);
   }
   const reusable = validated.cases.find(
     (candidate) =>
+      candidate.templateCaseId === normalizedTemplateCaseId &&
       candidate.sourceThreadId === evaluation.threadId &&
       candidate.sourceEvaluationId === evaluation.id &&
-      candidate.adjudicationRevision.evaluationSha256 ===
-        hashRunEvaluation(evaluation) &&
-      candidate.adjudicationRevision.contentSha256 ===
-        adjudicationRevision.contentSha256,
+      candidate.adjudicationRevision.evaluationSha256 === hashRunEvaluation(evaluation) &&
+      candidate.adjudicationRevision.contentSha256 === adjudicationRevision.contentSha256,
   );
-  if (
-    !reusable &&
-    validated.cases.length >= MAX_EVALUATION_CASEBOOK_SNAPSHOTS
-  ) {
-    throw new Error(
-      `Evaluation Casebook accepts at most ${MAX_EVALUATION_CASEBOOK_SNAPSHOTS} case snapshots`,
-    );
+  if (!reusable && validated.cases.length >= MAX_EVALUATION_CASEBOOK_SNAPSHOTS) {
+    throw new Error(`Evaluation Casebook accepts at most ${MAX_EVALUATION_CASEBOOK_SNAPSHOTS} case snapshots`);
   }
-  const item =
-    reusable ??
-    createCase(validated.id, evaluation, reviewed, consensusEvidence);
+  const item = reusable ?? createCase(validated.id, evaluation, reviewed, normalizedTemplateCaseId, consensusEvidence);
   const caseIds = currentCases
-    .filter(
-      (candidate) =>
-        !(
-          candidate.sourceThreadId === evaluation.threadId &&
-          candidate.sourceEvaluationId === evaluation.id
-        ),
+    .filter((candidate) =>
+      normalizedTemplateCaseId
+        ? candidate.templateCaseId !== normalizedTemplateCaseId
+        : !(candidate.sourceThreadId === evaluation.threadId && candidate.sourceEvaluationId === evaluation.id),
     )
     .map((candidate) => candidate.id);
   caseIds.push(item.id);
   return appendRevision(
     validated,
     {
+      ...(latest.templateId ? { templateId: latest.templateId } : {}),
       name: latest.name,
       description: latest.description,
       caseIds: sortCaseIds(caseIds),
@@ -161,17 +145,13 @@ export function curateEvaluationCase(
   );
 }
 
-export function removeEvaluationCase(
-  current: EvaluationCasebook,
-  caseId: string,
-): EvaluationCasebook {
+export function removeEvaluationCase(current: EvaluationCasebook, caseId: string): EvaluationCasebook {
   const validated = validateEvaluationCasebook(current);
   const latest = currentCasebookRevision(validated);
-  const item = currentEvaluationCasebookCases(validated).find(
-    (candidate) => candidate.id === caseId,
-  );
+  const item = currentEvaluationCasebookCases(validated).find((candidate) => candidate.id === caseId);
   if (!item) throw new Error(`Evaluation Casebook case not found: ${caseId}`);
   return appendRevision(validated, {
+    ...(latest.templateId ? { templateId: latest.templateId } : {}),
     name: latest.name,
     description: latest.description,
     caseIds: latest.caseIds.filter((candidate) => candidate !== caseId),
@@ -181,9 +161,7 @@ export function removeEvaluationCase(
   });
 }
 
-export function currentCasebookRevision(
-  casebook: EvaluationCasebook,
-): EvaluationCasebookRevision {
+export function currentCasebookRevision(casebook: EvaluationCasebook): EvaluationCasebookRevision {
   const revision = casebook.revisions.at(-1);
   if (!revision || revision.revision !== casebook.currentRevision) {
     throw new Error("Evaluation Casebook current revision is invalid");
@@ -191,9 +169,7 @@ export function currentCasebookRevision(
   return structuredClone(revision);
 }
 
-export function currentEvaluationCasebookCases(
-  casebook: EvaluationCasebook,
-): EvaluationCasebookCase[] {
+export function currentEvaluationCasebookCases(casebook: EvaluationCasebook): EvaluationCasebookCase[] {
   const revision = currentCasebookRevision(casebook);
   const casesById = new Map(casebook.cases.map((item) => [item.id, item]));
   return revision.caseIds.map((caseId) => {
@@ -205,23 +181,16 @@ export function currentEvaluationCasebookCases(
   });
 }
 
-export function hashEvaluationCasebookCase(
-  input: EvaluationCasebookCase,
-): string {
+export function hashEvaluationCasebookCase(input: EvaluationCasebookCase): string {
   const { contentSha256: _contentSha256, ...content } = input;
   return sha256(canonicalJson(content));
 }
 
-export function hashEvaluationCasebookRevision(
-  casebookId: string,
-  input: Omit<EvaluationCasebookRevision, "contentSha256">,
-): string {
+export function hashEvaluationCasebookRevision(casebookId: string, input: Omit<EvaluationCasebookRevision, "contentSha256">): string {
   return sha256(canonicalJson({ casebookId, ...input }));
 }
 
-export function validateEvaluationCasebook(
-  input: EvaluationCasebook,
-): EvaluationCasebook {
+export function validateEvaluationCasebook(input: EvaluationCasebook): EvaluationCasebook {
   if (
     !/^casebook_[a-z0-9]{8,80}$/.test(input.id) ||
     !Array.isArray(input.cases) ||
@@ -235,6 +204,7 @@ export function validateEvaluationCasebook(
   ) {
     throw new Error("Evaluation Casebook is invalid");
   }
+  const template = input.templateId ? getEvaluationCasebookTemplate(input.templateId) : undefined;
   const caseIds = new Set<string>();
   for (const item of input.cases) {
     validateCase(input.id, item);
@@ -250,6 +220,9 @@ export function validateEvaluationCasebook(
   let previous: EvaluationCasebookRevision | undefined;
   for (const [index, revision] of input.revisions.entries()) {
     validateRevision(input.id, revision, index + 1, input.cases);
+    if (revision.templateId !== input.templateId) {
+      throw new Error("Evaluation Casebook template revision is invalid");
+    }
     for (const caseId of revision.caseIds) referencedCaseIds.add(caseId);
     if (
       index === 0 &&
@@ -265,28 +238,21 @@ export function validateEvaluationCasebook(
     }
     previous = revision;
   }
+  validateEvaluationCasebookTemplateRevisions(input, template);
   if (input.cases.some((item) => !referencedCaseIds.has(item.id))) {
     throw new Error("Evaluation Casebook has unreferenced case evidence");
   }
-  if (
-    input.createdAt !== input.revisions[0]!.createdAt ||
-    input.updatedAt !== input.revisions.at(-1)!.createdAt
-  ) {
+  if (input.createdAt !== input.revisions[0]!.createdAt || input.updatedAt !== input.revisions.at(-1)!.createdAt) {
     throw new Error("Evaluation Casebook timestamps are invalid");
   }
   return structuredClone(input);
 }
 
-export function migrateLegacyEvaluationCasebook(
-  input: EvaluationCasebook,
-): EvaluationCasebook {
+export function migrateLegacyEvaluationCasebook(input: EvaluationCasebook): EvaluationCasebook {
   if (Array.isArray(input.cases)) {
     return validateEvaluationCasebook(input);
   }
-  const legacy = input as unknown as Omit<
-    EvaluationCasebook,
-    "cases" | "revisions"
-  > & {
+  const legacy = input as unknown as Omit<EvaluationCasebook, "cases" | "revisions"> & {
     cases?: unknown;
     revisions: Array<
       Omit<EvaluationCasebookRevision, "caseIds"> & {
@@ -295,26 +261,16 @@ export function migrateLegacyEvaluationCasebook(
       }
     >;
   };
-  if (
-    !Array.isArray(legacy.revisions) ||
-    legacy.revisions.some((revision) => !Array.isArray(revision.cases))
-  ) {
+  if (!Array.isArray(legacy.revisions) || legacy.revisions.some((revision) => !Array.isArray(revision.cases))) {
     throw new Error("Evaluation Casebook is invalid");
   }
   const casesById = new Map<string, EvaluationCasebookCase>();
   const revisions = legacy.revisions.map((inputRevision) => {
-    const {
-      cases,
-      caseIds: _caseIds,
-      contentSha256: _contentSha256,
-      ...revision
-    } = inputRevision;
+    const { cases, caseIds: _caseIds, contentSha256: _contentSha256, ...revision } = inputRevision;
     for (const item of cases!) {
       const existing = casesById.get(item.id);
       if (existing && JSON.stringify(existing) !== JSON.stringify(item)) {
-        throw new Error(
-          `Legacy Evaluation Casebook case conflicts: ${item.id}`,
-        );
+        throw new Error(`Legacy Evaluation Casebook case conflicts: ${item.id}`);
       }
       casesById.set(item.id, structuredClone(item));
     }
@@ -329,6 +285,7 @@ export function migrateLegacyEvaluationCasebook(
   });
   return validateEvaluationCasebook({
     id: legacy.id,
+    ...(legacy.templateId ? { templateId: legacy.templateId } : {}),
     currentRevision: legacy.currentRevision,
     cases: sortCases([...casesById.values()]),
     revisions,
@@ -378,18 +335,12 @@ export function createEvaluationCasebookCalibrationReport(
   };
 }
 
-export function createEvaluationCasebookArtifact(
-  input: EvaluationCasebook,
-  generatedAt = new Date(),
-): EvaluationCasebookArtifact {
+export function createEvaluationCasebookArtifact(input: EvaluationCasebook, generatedAt = new Date()): EvaluationCasebookArtifact {
   if (!Number.isFinite(generatedAt.getTime())) {
     throw new Error("Evaluation Casebook artifact time is invalid");
   }
   const casebook = validateEvaluationCasebook(input);
-  const calibration = createEvaluationCasebookCalibrationReport(
-    casebook,
-    generatedAt,
-  );
+  const calibration = createEvaluationCasebookCalibrationReport(casebook, generatedAt);
   const content = {
     kind: "napier.evaluation-casebook" as const,
     schemaVersion: 1 as const,
@@ -408,16 +359,12 @@ export function createEvaluationCasebookArtifact(
   };
   const bytes = Buffer.byteLength(JSON.stringify(artifact));
   if (bytes > MAX_EVALUATION_CASEBOOK_ARTIFACT_BYTES) {
-    throw new Error(
-      `Evaluation Casebook artifact exceeds ${MAX_EVALUATION_CASEBOOK_ARTIFACT_BYTES} bytes`,
-    );
+    throw new Error(`Evaluation Casebook artifact exceeds ${MAX_EVALUATION_CASEBOOK_ARTIFACT_BYTES} bytes`);
   }
   return artifact;
 }
 
-export function validateEvaluationCasebookArtifact(
-  input: EvaluationCasebookArtifact,
-): EvaluationCasebookArtifact {
+export function validateEvaluationCasebookArtifact(input: EvaluationCasebookArtifact): EvaluationCasebookArtifact {
   const serialized = JSON.stringify(input);
   if (
     Buffer.byteLength(serialized) > MAX_EVALUATION_CASEBOOK_ARTIFACT_BYTES ||
@@ -431,13 +378,8 @@ export function validateEvaluationCasebookArtifact(
     throw new Error("Evaluation Casebook artifact is invalid");
   }
   const casebook = validateEvaluationCasebook(input.casebook);
-  const expectedCalibration = createEvaluationCasebookCalibrationReport(
-    casebook,
-    new Date(input.calibration.generatedAt),
-  );
-  if (
-    JSON.stringify(expectedCalibration) !== JSON.stringify(input.calibration)
-  ) {
+  const expectedCalibration = createEvaluationCasebookCalibrationReport(casebook, new Date(input.calibration.generatedAt));
+  if (JSON.stringify(expectedCalibration) !== JSON.stringify(input.calibration)) {
     throw new Error("Evaluation Casebook calibration evidence is invalid");
   }
   const content = {
@@ -457,6 +399,7 @@ function createCase(
   casebookId: string,
   evaluation: RunEvaluationRecord,
   adjudication: EvaluationAdjudication,
+  templateCaseId: string | undefined,
   consensusEvidence?: {
     reviewerBallots: EvaluationReviewerBallot[];
     resolution: EvaluationConsensusResolution;
@@ -464,23 +407,13 @@ function createCase(
 ): EvaluationCasebookCase {
   const timestamp = nowIso();
   const adjudicationRevision = adjudication.revisions.at(-1)!;
-  if (
-    adjudicationRevision.source === "reviewer_consensus" &&
-    !consensusEvidence
-  ) {
-    throw new Error(
-      "Consensus-derived Casebook truth requires reviewer evidence",
-    );
+  if (adjudicationRevision.source === "reviewer_consensus" && !consensusEvidence) {
+    throw new Error("Consensus-derived Casebook truth requires reviewer evidence");
   }
-  if (
-    adjudicationRevision.source !== "reviewer_consensus" &&
-    consensusEvidence
-  ) {
+  if (adjudicationRevision.source !== "reviewer_consensus" && consensusEvidence) {
     throw new Error("Manual Casebook truth cannot include consensus evidence");
   }
-  const reviewerBallots = consensusEvidence?.reviewerBallots
-    .slice()
-    .sort((left, right) => left.reviewerId.localeCompare(right.reviewerId));
+  const reviewerBallots = consensusEvidence?.reviewerBallots.slice().sort((left, right) => left.reviewerId.localeCompare(right.reviewerId));
   if (consensusEvidence) {
     validateEvaluationConsensusResolutionEvidence(
       consensusEvidence.resolution,
@@ -493,6 +426,7 @@ function createCase(
   const content = {
     id: createId("evalcase"),
     casebookId,
+    ...(templateCaseId ? { templateCaseId } : {}),
     sourceThreadId: evaluation.threadId,
     sourceEvaluationId: evaluation.id,
     sourceAdjudicationId: adjudication.id,
@@ -513,10 +447,40 @@ function createCase(
   };
 }
 
-function createRevision(
-  casebookId: string,
-  input: Omit<EvaluationCasebookRevision, "contentSha256">,
-): EvaluationCasebookRevision {
+function normalizeTemplateCaseId(casebook: EvaluationCasebook, templateCaseId: string | undefined): string | undefined {
+  if (!casebook.templateId) {
+    if (templateCaseId !== undefined) {
+      throw new Error("Custom Evaluation Casebook cannot assign a template case");
+    }
+    return undefined;
+  }
+  const normalized = templateCaseId?.trim();
+  const template = getEvaluationCasebookTemplate(casebook.templateId);
+  if (!normalized || !template.cases.some((item) => item.id === normalized)) {
+    throw new Error(`Evaluation Casebook template case is invalid: ${templateCaseId ?? "missing"}`);
+  }
+  return normalized;
+}
+
+function validateEvaluationCasebookTemplateRevisions(
+  casebook: EvaluationCasebook,
+  template: ReturnType<typeof getEvaluationCasebookTemplate> | undefined,
+): void {
+  for (const revision of casebook.revisions) {
+    const active = revision.caseIds.map((caseId) => casebook.cases.find((item) => item.id === caseId)!);
+    const templateCaseIds = active.flatMap((item) => (item.templateCaseId ? [item.templateCaseId] : []));
+    if (
+      (template && active.some((item) => !item.templateCaseId)) ||
+      (!template && templateCaseIds.length > 0) ||
+      new Set(templateCaseIds).size !== templateCaseIds.length ||
+      templateCaseIds.some((caseId) => !template?.cases.some((item) => item.id === caseId))
+    ) {
+      throw new Error("Evaluation Casebook template coverage is invalid");
+    }
+  }
+}
+
+function createRevision(casebookId: string, input: Omit<EvaluationCasebookRevision, "contentSha256">): EvaluationCasebookRevision {
   return {
     ...structuredClone(input),
     contentSha256: hashEvaluationCasebookRevision(casebookId, input),
@@ -525,16 +489,11 @@ function createRevision(
 
 function appendRevision(
   current: EvaluationCasebook,
-  input: Omit<
-    EvaluationCasebookRevision,
-    "revision" | "createdAt" | "contentSha256"
-  >,
+  input: Omit<EvaluationCasebookRevision, "revision" | "createdAt" | "contentSha256">,
   cases = current.cases,
 ): EvaluationCasebook {
   if (current.revisions.length >= MAX_EVALUATION_CASEBOOK_REVISIONS) {
-    throw new Error(
-      `Evaluation Casebook accepts at most ${MAX_EVALUATION_CASEBOOK_REVISIONS} revisions`,
-    );
+    throw new Error(`Evaluation Casebook accepts at most ${MAX_EVALUATION_CASEBOOK_REVISIONS} revisions`);
   }
   const timestamp = nowIso();
   const revision = createRevision(current.id, {
@@ -588,17 +547,11 @@ function validateRevision(
       throw new Error("Evaluation Casebook case timestamp is invalid");
     }
   }
-  if (
-    JSON.stringify(revision.caseIds) !==
-    JSON.stringify(sortCaseIds(revision.caseIds))
-  ) {
+  if (JSON.stringify(revision.caseIds) !== JSON.stringify(sortCaseIds(revision.caseIds))) {
     throw new Error("Evaluation Casebook case IDs are not canonical");
   }
   const { contentSha256: _contentSha256, ...content } = revision;
-  if (
-    hashEvaluationCasebookRevision(casebookId, content) !==
-    revision.contentSha256
-  ) {
+  if (hashEvaluationCasebookRevision(casebookId, content) !== revision.contentSha256) {
     throw new Error("Evaluation Casebook revision hash mismatch");
   }
 }
@@ -607,25 +560,20 @@ function validateCase(casebookId: string, item: EvaluationCasebookCase): void {
   if (
     !/^evalcase_[a-z0-9]{8,80}$/.test(item.id) ||
     item.casebookId !== casebookId ||
+    (item.templateCaseId !== undefined && !/^[a-z0-9][a-z0-9-]{0,79}$/.test(item.templateCaseId)) ||
     item.sourceThreadId !== item.evaluation.threadId ||
     item.sourceEvaluationId !== item.evaluation.id ||
     !/^adjudication_[a-z0-9]{8,80}$/.test(item.sourceAdjudicationId) ||
     !Number.isFinite(Date.parse(item.createdAt)) ||
     item.rubricSha256 !== hashEvaluationRubric(item.evaluation.rubric) ||
-    item.adjudicationRevision.evaluationSha256 !==
-      hashRunEvaluation(item.evaluation)
+    item.adjudicationRevision.evaluationSha256 !== hashRunEvaluation(item.evaluation)
   ) {
     throw new Error("Evaluation Casebook case is invalid");
   }
-  const { contentSha256: adjudicationSha256, ...adjudicationContent } =
-    item.adjudicationRevision;
+  const { contentSha256: adjudicationSha256, ...adjudicationContent } = item.adjudicationRevision;
   if (
-    hashEvaluationAdjudicationRevision(
-      item.sourceAdjudicationId,
-      item.sourceThreadId,
-      item.sourceEvaluationId,
-      adjudicationContent,
-    ) !== adjudicationSha256
+    hashEvaluationAdjudicationRevision(item.sourceAdjudicationId, item.sourceThreadId, item.sourceEvaluationId, adjudicationContent) !==
+    adjudicationSha256
   ) {
     throw new Error("Evaluation Casebook adjudication hash mismatch");
   }
@@ -634,13 +582,7 @@ function validateCase(casebookId: string, item: EvaluationCasebookCase): void {
       !Array.isArray(item.reviewerBallots) ||
       !item.consensusResolution ||
       JSON.stringify(item.reviewerBallots) !==
-        JSON.stringify(
-          item.reviewerBallots
-            .slice()
-            .sort((left, right) =>
-              left.reviewerId.localeCompare(right.reviewerId),
-            ),
-        )
+        JSON.stringify(item.reviewerBallots.slice().sort((left, right) => left.reviewerId.localeCompare(right.reviewerId)))
     ) {
       throw new Error("Evaluation Casebook consensus evidence is invalid");
     }
@@ -664,10 +606,7 @@ function validateRevisionTransition(
   current: EvaluationCasebookRevision,
   cases: EvaluationCasebookCase[],
 ): void {
-  if (
-    Date.parse(current.createdAt) < Date.parse(previous.createdAt) ||
-    current.source === "created"
-  ) {
+  if (Date.parse(current.createdAt) < Date.parse(previous.createdAt) || current.source === "created") {
     throw new Error("Evaluation Casebook revision transition is invalid");
   }
   const casesById = new Map(cases.map((item) => [item.id, item]));
@@ -678,8 +617,7 @@ function validateRevisionTransition(
       current.caseId !== undefined ||
       current.sourceEvaluationId !== undefined ||
       JSON.stringify(current.caseIds) !== JSON.stringify(previous.caseIds) ||
-      (current.name === previous.name &&
-        current.description === previous.description)
+      (current.name === previous.name && current.description === previous.description)
     ) {
       throw new Error("Evaluation Casebook metadata revision is invalid");
     }
@@ -705,10 +643,10 @@ function validateRevisionTransition(
     const added = casesById.get(current.caseId);
     const previousItem = previous.caseIds
       .map((caseId) => casesById.get(caseId)!)
-      .find(
-        (item) =>
-          item.sourceThreadId === added?.sourceThreadId &&
-          item.sourceEvaluationId === current.sourceEvaluationId,
+      .find((item) =>
+        added?.templateCaseId
+          ? item.templateCaseId === added.templateCaseId
+          : item.sourceThreadId === added?.sourceThreadId && item.sourceEvaluationId === current.sourceEvaluationId,
       );
     if (
       !added ||
@@ -716,9 +654,7 @@ function validateRevisionTransition(
       current.caseIds.length !== previous.caseIds.length ||
       !currentIds.has(added.id) ||
       currentIds.has(previousItem.id) ||
-      [...previousIds]
-        .filter((id) => id !== previousItem.id)
-        .some((id) => !currentIds.has(id))
+      [...previousIds].filter((id) => id !== previousItem.id).some((id) => !currentIds.has(id))
     ) {
       throw new Error("Evaluation Casebook refreshed revision is invalid");
     }
@@ -767,9 +703,7 @@ function normalizeDescription(value: string | undefined): string {
   return normalized;
 }
 
-function withoutGeneratedAt(
-  report: EvaluationCasebookCalibrationReport,
-): Omit<EvaluationCasebookCalibrationReport, "generatedAt"> {
+function withoutGeneratedAt(report: EvaluationCasebookCalibrationReport): Omit<EvaluationCasebookCalibrationReport, "generatedAt"> {
   const { generatedAt: _generatedAt, ...content } = report;
   return content;
 }

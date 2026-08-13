@@ -22,6 +22,7 @@ import { verifySandboxRetainedExternalRelease } from "./check-sandbox-retained-e
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
 import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
+import { parseControlledHarnessEvidence } from "../packages/runtime/dist/controlled-harness-evidence.js";
 import { loadOpenWebComparisonAttemptReceipt } from "./open-web-comparison-attempt-artifacts.mjs";
 import { loadOpenWebComparisonCampaignArtifacts } from "./open-web-comparison-campaign-artifacts.mjs";
 import { verifyOpenWebComparisonCampaign } from "./open-web-comparison-campaign.mjs";
@@ -105,6 +106,8 @@ const defaultManagementOpenApiCompatibilityPath =
   "docs/artifacts/management-openapi-compatibility-0.1.0.json";
 const defaultCodingExecutorComparisonPath =
   "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260806.json";
+const defaultControlledHarnessEvidencePath =
+  "docs/artifacts/controlled-harness-evidence-0.1.0.json";
 const defaultWorkflowBenchmarkSeriesPath =
   "docs/artifacts/benchmarks/napier-workflow-benchmark-series-workflow_document_map_reduce_v1-b8bead9bcd08f431.json";
 const defaultDataBenchmarkSeriesPath =
@@ -212,6 +215,9 @@ export async function auditReleaseArtifacts(options = {}) {
     defaultManagementOpenApiCompatibilityPath;
   const codingExecutorComparisonPath =
     options.codingExecutorComparisonPath ?? defaultCodingExecutorComparisonPath;
+  const controlledHarnessEvidencePath =
+    options.controlledHarnessEvidencePath ??
+    defaultControlledHarnessEvidencePath;
   const workflowBenchmarkSeriesPath =
     options.workflowBenchmarkSeriesPath ?? defaultWorkflowBenchmarkSeriesPath;
   const dataBenchmarkSeriesPath =
@@ -769,6 +775,17 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  const controlledHarnessEvidenceArtifact = await readArtifactEvidence(
+    repoRoot,
+    controlledHarnessEvidencePath,
+    errors,
+  );
+  const controlledHarnessEvidence = parseControlledHarnessEvidence(
+    await readJsonArtifact(repoRoot, controlledHarnessEvidencePath, errors),
+  );
+  if (!controlledHarnessEvidence) {
+    errors.push("controlled harness evidence: artifact_invalid");
+  }
 
   const artifacts = [
     {
@@ -911,6 +928,14 @@ export async function auditReleaseArtifacts(options = {}) {
       valid:
         codingExecutorComparisonEvidence.readable &&
         codingExecutorComparisonVerification.valid,
+    },
+    {
+      kind: "controlled-harness-evidence",
+      path: controlledHarnessEvidenceArtifact.path,
+      sha256: controlledHarnessEvidenceArtifact.sha256,
+      valid:
+        controlledHarnessEvidenceArtifact.readable &&
+        Boolean(controlledHarnessEvidence),
     },
     ...workflowBenchmarkArtifacts,
     ...dataBenchmarkArtifacts,
@@ -1183,6 +1208,11 @@ function parseCliOptions(args) {
     }
     if (arg === "--security-benchmark-series-path") {
       options.securityBenchmarkSeriesPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--controlled-harness-evidence-path") {
+      options.controlledHarnessEvidencePath = readCliValue(args, index, arg);
       index += 1;
       continue;
     }

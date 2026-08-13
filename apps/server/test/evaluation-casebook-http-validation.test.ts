@@ -15,11 +15,13 @@ describe("Evaluation Casebook HTTP validation", () => {
         threadId: "thread_a",
         name: "Regression cases",
         description: "",
+        templateId: "release-product-v1",
       }),
     ).toEqual({
       threadId: "thread_a",
       name: "Regression cases",
       description: "",
+      templateId: "release-product-v1",
     });
     expect(
       parseUpdateEvaluationCasebookRequest({
@@ -31,10 +33,12 @@ describe("Evaluation Casebook HTTP validation", () => {
       parseCurateEvaluationCaseRequest({
         threadId: "thread_a",
         evaluationId: "evaluation_a",
+        templateCaseId: "coding-verification",
       }),
     ).toEqual({
       threadId: "thread_a",
       evaluationId: "evaluation_a",
+      templateCaseId: "coding-verification",
     });
     expect(parseRemoveEvaluationCaseRequest({ threadId: "thread_a" })).toEqual({
       threadId: "thread_a",
@@ -72,6 +76,13 @@ describe("Evaluation Casebook HTTP validation", () => {
       parseCreateEvaluationCasebookRequest({
         threadId: "thread_a",
         name: "x".repeat(101),
+      }),
+    ).toBeUndefined();
+    expect(
+      parseCreateEvaluationCasebookRequest({
+        threadId: "thread_a",
+        name: "Valid",
+        templateId: "unknown-template",
       }),
     ).toBeUndefined();
     expect(

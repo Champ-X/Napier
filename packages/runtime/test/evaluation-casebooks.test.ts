@@ -15,11 +15,13 @@ import {
   validateEvaluationCasebook,
   validateEvaluationCasebookArtifact,
 } from "../src/index.js";
+import {
+  assertEvaluationCasebookTemplateCoverage,
+  missingEvaluationCasebookTemplateCases,
+  RELEASE_PRODUCT_CASEBOOK_TEMPLATE_ID,
+} from "../src/evaluation-casebook-templates.js";
 
-function evaluation(
-  id: string,
-  verdict: RunEvaluationRecord["verdict"] = "right_better",
-): RunEvaluationRecord {
+function evaluation(id: string, verdict: RunEvaluationRecord["verdict"] = "right_better"): RunEvaluationRecord {
   return {
     id,
     threadId: `thread_${id}`,
@@ -54,6 +56,43 @@ function evaluation(
 }
 
 describe("evaluation Casebooks", () => {
+  it("binds reviewed evidence to the fixed Release Product Casebook coverage", () => {
+    const first = evaluation("evaluation_release_settings");
+    const second = evaluation("evaluation_release_settings_replacement");
+    const firstTruth = reviewRunEvaluation(undefined, first, {
+      expectedVerdict: "right_better",
+      note: "First settings flow reviewed.",
+    });
+    const secondTruth = reviewRunEvaluation(undefined, second, {
+      expectedVerdict: "right_better",
+      note: "Replacement settings flow reviewed.",
+    });
+    const created = createEvaluationCasebook({
+      name: "Release Product Casebook",
+      templateId: RELEASE_PRODUCT_CASEBOOK_TEMPLATE_ID,
+    });
+    const curated = curateEvaluationCase(created, first, firstTruth, undefined, "settings");
+    expect(curated.templateId).toBe(RELEASE_PRODUCT_CASEBOOK_TEMPLATE_ID);
+    expect(currentEvaluationCasebookCases(curated)).toEqual([
+      expect.objectContaining({
+        templateCaseId: "settings",
+        sourceEvaluationId: first.id,
+      }),
+    ]);
+    expect(missingEvaluationCasebookTemplateCases(curated)).toHaveLength(9);
+    expect(() => assertEvaluationCasebookTemplateCoverage(curated)).toThrow("template coverage is incomplete");
+
+    const replaced = curateEvaluationCase(curated, second, secondTruth, undefined, "settings");
+    expect(currentEvaluationCasebookCases(replaced)).toEqual([
+      expect.objectContaining({
+        templateCaseId: "settings",
+        sourceEvaluationId: second.id,
+      }),
+    ]);
+    expect(currentCasebookRevision(replaced).source).toBe("case_refreshed");
+    expect(() => curateEvaluationCase(created, first, firstTruth)).toThrow("template case is invalid");
+  });
+
   it("maintains append-only metadata, curation, refresh, and removal revisions", () => {
     const record = evaluation("evaluation_casebook_one");
     const firstTruth = reviewRunEvaluation(undefined, record, {
@@ -135,10 +174,7 @@ describe("evaluation Casebooks", () => {
     ]);
     expect(refreshedRevision.caseIds[0]).not.toBe(curatedRevision.caseIds[0]);
     expect(validateEvaluationCasebook(refreshed)).toEqual(refreshed);
-    const legacy = structuredClone(refreshed) as unknown as Record<
-      string,
-      unknown
-    > & {
+    const legacy = structuredClone(refreshed) as unknown as Record<string, unknown> & {
       revisions: Array<Record<string, unknown>>;
     };
     const registry = refreshed.cases;
@@ -147,19 +183,12 @@ describe("evaluation Casebooks", () => {
       const { caseIds, ...content } = revision;
       return {
         ...content,
-        cases: caseIds.map(
-          (caseId) => registry.find((item) => item.id === caseId)!,
-        ),
+        cases: caseIds.map((caseId) => registry.find((item) => item.id === caseId)!),
       };
     });
-    expect(
-      migrateLegacyEvaluationCasebook(legacy as unknown as typeof refreshed),
-    ).toEqual(refreshed);
+    expect(migrateLegacyEvaluationCasebook(legacy as unknown as typeof refreshed)).toEqual(refreshed);
 
-    const removed = removeEvaluationCase(
-      refreshed,
-      refreshedRevision.caseIds[0]!,
-    );
+    const removed = removeEvaluationCase(refreshed, refreshedRevision.caseIds[0]!);
     expect(currentCasebookRevision(removed)).toEqual(
       expect.objectContaining({
         revision: 5,
@@ -185,15 +214,8 @@ describe("evaluation Casebooks", () => {
       expectedVerdict: "right_better",
       note: "Reviewed against the release evidence.",
     });
-    const casebook = curateEvaluationCase(
-      createEvaluationCasebook({ name: "Evaluator gold set" }),
-      record,
-      truth,
-    );
-    const report = createEvaluationCasebookCalibrationReport(
-      casebook,
-      new Date("2026-07-25T01:00:00.000Z"),
-    );
+    const casebook = curateEvaluationCase(createEvaluationCasebook({ name: "Evaluator gold set" }), record, truth);
+    const report = createEvaluationCasebookCalibrationReport(casebook, new Date("2026-07-25T01:00:00.000Z"));
     expect(report).toEqual(
       expect.objectContaining({
         casebookId: casebook.id,
@@ -205,22 +227,14 @@ describe("evaluation Casebooks", () => {
       }),
     );
 
-    const first = createEvaluationCasebookArtifact(
-      casebook,
-      new Date("2026-07-25T02:00:00.000Z"),
-    );
-    const second = createEvaluationCasebookArtifact(
-      casebook,
-      new Date("2026-07-25T03:00:00.000Z"),
-    );
+    const first = createEvaluationCasebookArtifact(casebook, new Date("2026-07-25T02:00:00.000Z"));
+    const second = createEvaluationCasebookArtifact(casebook, new Date("2026-07-25T03:00:00.000Z"));
     expect(first.generatedAt).not.toBe(second.generatedAt);
     expect(first.contentSha256).toBe(second.contentSha256);
     expect(validateEvaluationCasebookArtifact(first)).toEqual(first);
 
     const tampered = structuredClone(first);
     tampered.casebook.cases[0]!.adjudicationRevision.note = "Tampered truth.";
-    expect(() => validateEvaluationCasebookArtifact(tampered)).toThrow(
-      "adjudication hash mismatch",
-    );
+    expect(() => validateEvaluationCasebookArtifact(tampered)).toThrow("adjudication hash mismatch");
   });
 });

@@ -6397,7 +6397,7 @@ button:disabled {
 
 .casebook-toolbar {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   gap: 6px;
   align-items: end;
 }
@@ -6558,6 +6558,373 @@ button:disabled {
   margin-top: 3px;
   font-family: var(--serif);
   font-size: 14px;
+  color: var(--ochre);
+}
+
+.casebook-template-coverage {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: rgb(255 255 255 / 58%);
+  border: 1px solid rgb(164 131 62 / 38%);
+}
+
+.casebook-template-coverage > header {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.casebook-template-coverage > header span,
+.casebook-template-coverage label > span {
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ochre);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.casebook-template-coverage h6,
+.casebook-template-coverage p {
+  margin: 3px 0 0;
+}
+
+.casebook-template-coverage h6 {
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.casebook-template-coverage > header > strong {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ochre);
+}
+
+.casebook-template-coverage > p,
+.casebook-template-coverage small {
+  font-family: var(--serif);
+  font-size: 7px;
+  line-height: 1.4;
+  color: var(--ink-faint);
+}
+
+.casebook-template-coverage label {
+  display: grid;
+  gap: 3px;
+}
+
+.casebook-template-coverage select {
+  width: 100%;
+  padding: 6px 7px;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink);
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+}
+
+.casebook-template-coverage ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.casebook-template-coverage > ol > li {
+  display: flex;
+  gap: 5px;
+  align-items: flex-start;
+  padding: 5px;
+  color: var(--ink-faint);
+  background: #f6f1e7;
+  border-left: 2px solid var(--rule);
+}
+
+.casebook-template-coverage > ol > li.is-covered {
+  color: var(--forest);
+  border-left-color: var(--forest);
+}
+
+.casebook-template-coverage details,
+.casebook-template-coverage summary {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.casebook-template-coverage summary {
+  cursor: pointer;
+}
+
+.casebook-template-coverage li strong {
+  font-family: var(--mono);
+  font-size: 6px;
+}
+
+.casebook-template-coverage details > p {
+  margin: 5px 0 0;
+  font-family: var(--serif);
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.casebook-template-coverage details ul {
+  padding-left: 12px;
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 5px;
+}
+
+.release-product-trial {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: rgb(233 240 231 / 68%);
+  border: 1px solid rgb(51 87 64 / 35%);
+}
+
+.release-product-trial > header,
+.release-product-trial > footer {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.release-product-trial > header span,
+.release-product-trial label > span {
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--forest);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.release-product-trial h6,
+.release-product-trial > p {
+  margin: 3px 0 0;
+}
+
+.release-product-trial h6 {
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.release-product-trial > header > strong {
+  font-family: var(--mono);
+  font-size: 8px;
+}
+
+.release-product-trial .is-ready {
+  color: var(--forest);
+}
+
+.release-product-trial .is-blocked,
+.release-product-trial [role="alert"] {
+  color: var(--rust);
+}
+
+.release-product-trial > p,
+.release-product-trial > footer small,
+.release-product-trial [role="status"] {
+  font-family: var(--serif);
+  font-size: 7px;
+  line-height: 1.4;
+  color: var(--ink-faint);
+}
+
+.release-product-trial-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.release-product-trial-grid label {
+  display: grid;
+  gap: 3px;
+}
+
+.release-product-trial-grid input,
+.release-product-trial-grid select {
+  width: 100%;
+  padding: 5px 6px;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink);
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+}
+
+.release-product-trial > button {
+  justify-self: start;
+}
+
+.release-product-version {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  font-family: var(--mono);
+  font-size: 6px;
+  border-left: 2px solid var(--ochre);
+  background: rgb(255 255 255 / 55%);
+}
+
+.release-product-version-passed {
+  border-left-color: var(--forest);
+}
+
+.release-product-version-failed {
+  border-left-color: var(--rust);
+}
+
+.release-product-trial > footer {
+  justify-content: flex-start;
+  color: var(--ochre);
+}
+
+.controlled-harness-evidence {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: rgb(232 237 244 / 72%);
+  border: 1px solid rgb(55 75 104 / 32%);
+}
+
+.controlled-harness-evidence > header,
+.controlled-harness-evidence > footer,
+.controlled-harness-meta,
+.controlled-harness-advantage {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.controlled-harness-evidence > header span,
+.controlled-harness-evidence h6,
+.controlled-harness-evidence > p,
+.controlled-harness-evidence small,
+.controlled-harness-evidence [role="status"],
+.controlled-harness-evidence [role="alert"] {
+  margin: 0;
+}
+
+.controlled-harness-evidence > header span,
+.controlled-harness-evidence code,
+.controlled-harness-evidence article,
+.controlled-harness-evidence > header > strong,
+.controlled-harness-import,
+.controlled-harness-blockers {
+  font-family: var(--mono);
+  font-size: 6px;
+}
+
+.controlled-harness-evidence h6 {
+  margin-top: 3px;
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.controlled-harness-evidence > p,
+.controlled-harness-evidence > footer small,
+.controlled-harness-evidence [role="status"],
+.controlled-harness-evidence [role="alert"] {
+  font-family: var(--serif);
+  font-size: 7px;
+  line-height: 1.4;
+  color: var(--ink-faint);
+}
+
+.controlled-harness-evidence .is-ready {
+  color: var(--forest);
+}
+
+.controlled-harness-evidence .is-blocked,
+.controlled-harness-evidence [role="alert"] {
+  color: var(--rust);
+}
+
+.controlled-harness-import {
+  position: relative;
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  justify-self: start;
+  padding: 5px 7px;
+  color: var(--paper-bright);
+  cursor: pointer;
+  background: var(--ink);
+}
+
+.controlled-harness-import input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.controlled-harness-meta {
+  align-items: center;
+  padding: 5px 0;
+  border-block: 1px solid var(--rule-soft);
+}
+
+.controlled-harness-meta span {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controlled-harness-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.controlled-harness-grid article {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px;
+  color: var(--ink);
+  background: rgb(255 255 255 / 58%);
+  border-left: 2px solid currentcolor;
+}
+
+.controlled-harness-grid article span,
+.controlled-harness-grid article small,
+.controlled-harness-advantage span {
+  color: var(--ink-faint);
+}
+
+.controlled-harness-advantage {
+  padding: 6px;
+  font-family: var(--mono);
+  font-size: 6px;
+  background: rgb(255 255 255 / 58%);
+}
+
+.controlled-harness-blockers {
+  padding-left: 14px;
+  margin: 0;
+  color: var(--rust);
+}
+
+.controlled-harness-evidence > footer {
+  justify-content: flex-start;
   color: var(--ochre);
 }
 
@@ -6872,6 +7239,22 @@ button:disabled {
   color: var(--paper-bright);
   background: var(--ledger);
   border-color: var(--ledger);
+}
+
+.casebook-qualification-trials small,
+.casebook-qualification-trial-summary {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-faint);
+}
+
+.casebook-qualification-trial-summary {
+  padding: 5px 6px;
+  color: var(--ledger);
+  background: var(--ledger-soft);
+  border-left: 2px solid var(--ledger);
 }
 
 .casebook-qualification-summary {

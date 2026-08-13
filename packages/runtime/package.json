@@ -8,6 +8,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./evaluation-casebook-templates": {
+      "types": "./dist/evaluation-casebook-templates.d.ts",
+      "import": "./dist/evaluation-casebook-templates.js"
+    },
+    "./release-product-gate": {
+      "types": "./dist/release-product-gate.d.ts",
+      "import": "./dist/release-product-gate.js"
+    },
+    "./controlled-harness-evidence": {
+      "types": "./dist/controlled-harness-evidence.d.ts",
+      "import": "./dist/controlled-harness-evidence.js"
+    },
     "./web-search": {
       "types": "./dist/web-search.d.ts",
       "import": "./dist/web-search.js"

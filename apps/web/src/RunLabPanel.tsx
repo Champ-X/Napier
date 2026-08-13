@@ -1,12 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import {
-  Activity,
-  BookOpen,
-  Download,
-  Scale,
-  ShieldCheck,
-  Upload,
-} from "lucide-react";
+import { Activity, BookOpen, Download, Scale, ShieldCheck, Upload } from "lucide-react";
 
 import type {
   ModelSummary,
@@ -67,6 +60,7 @@ export default function RunLabPanel({
   onImportFixture,
   onOpenThread,
   onRefresh,
+  onUseTaskPrompt,
 }: {
   detail: WebThreadDetail | undefined;
   runs: RunRecord[];
@@ -91,6 +85,7 @@ export default function RunLabPanel({
   onImportFixture: (file: File) => void;
   onOpenThread: (threadId: string) => void | Promise<void>;
   onRefresh: () => Promise<void>;
+  onUseTaskPrompt(prompt: string): void;
 }) {
   const canCompare =
     runs.length >= 2 &&
@@ -674,7 +669,7 @@ export default function RunLabPanel({
         </section>
       ) : null}
 
-      {detail && runs.length >= 2 ? (
+      {detail ? (
         <Suspense
           fallback={
             <div className="context-loading" role="status">
@@ -694,6 +689,7 @@ export default function RunLabPanel({
             selectedModelKey={selectedModelKey}
             models={models}
             onRefresh={onRefresh}
+            onUseTaskPrompt={onUseTaskPrompt}
           />
         </Suspense>
       ) : null}

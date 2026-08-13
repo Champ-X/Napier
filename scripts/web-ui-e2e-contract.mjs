@@ -278,6 +278,42 @@ export function assertViewportReceipt(viewport) {
     viewport.browserInspector.credentialRecoveryCode,
     "credential_missing",
   );
+  if (viewport.width === 1_600) {
+    assert.equal(viewport.casebookTrials.onboardingAvailable, true);
+    assert.equal(viewport.casebookTrials.onboardingComposerLoaded, true);
+    assert.equal(viewport.casebookTrials.templateCoverageCount, "0/10");
+    assert.equal(viewport.casebookTrials.templateCoverageOptions, 10);
+    assert.equal(viewport.casebookTrials.qualificationBlocked, true);
+    assert.equal(viewport.casebookTrials.productTrialRunOptions >= 2, true);
+    assert.match(
+      viewport.casebookTrials.productTrialRecorded,
+      /1\/10 Cases · 100% success/u,
+    );
+    assert.equal(viewport.casebookTrials.controlledHarnessGate, "ready");
+    assert.match(
+      viewport.casebookTrials.controlledHarnessEvidence,
+      /Coding vs OMP13\/12 passed · 13\/13 decisive/iu,
+    );
+    assert.match(
+      viewport.casebookTrials.controlledHarnessEvidence,
+      /Browser autonomy vs Browser Use3\/3 passed · 3\/3 decisive\s*napier not worse/iu,
+    );
+    assert.match(
+      viewport.casebookTrials.controlledHarnessEvidence,
+      /quantified advantageevidence vs OMP · proven · Napier 1\.000 vs OMP 0\.778 verifiable final evidence rate · n=9\/9/iu,
+    );
+    assert.doesNotMatch(
+      viewport.casebookTrials.controlledHarnessEvidence,
+      /sample not proven|not worse not proven|quantified advantage not proven/iu,
+    );
+    assert.equal(viewport.casebookTrials.requestCount, 3);
+    assert.equal(viewport.casebookTrials.maximumConcurrentRequests, 1);
+    assert.match(
+      viewport.casebookTrials.summary,
+      /3\/3 completed · 2 passed · 67% mean agreement/iu,
+    );
+    assert.equal(viewport.casebookTrials.historyCount, "3");
+  }
   assert.deepEqual(
     {
       title: viewport.narrative.title,

@@ -1,0 +1,1129 @@
+{
+  "type": "napier.open-web-executor-comparison",
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-13T04:39:54.332Z",
+  "seed": 20260813,
+  "trialCount": 1,
+  "timeoutMs": 180000,
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "suite": {
+    "type": "napier.open-web-comparison-suite",
+    "schemaVersion": 1,
+    "seed": 20260813,
+    "cases": [
+      {
+        "id": "open_web_20260813_search",
+        "complexity": "low",
+        "taskFamily": "search_primary_source",
+        "title": "Official release fact discovery",
+        "promptSha256": "7308dbce8cc8b3c43541dda45c18e19ba010514566add25f85c835574666440f",
+        "oracleSha256": "2e28cea39286d7a59ab43e409eb648332fd355afbea6efdac50f493a19517446",
+        "caseSha256": "f67c344ef1d522d6aa4978aad6ca5bf910992785b8da9d92b4f438a0a05d0456"
+      },
+      {
+        "id": "open_web_20260813_url_pdf",
+        "complexity": "medium",
+        "taskFamily": "url_pdf_research",
+        "title": "HTML and PDF source reading",
+        "promptSha256": "9af7aea5209d02e59ac88bc17ff30c83f2b79f79a04ba85c56fdf6831a55c825",
+        "oracleSha256": "9353e4f373278c8ca701b2e123b1eb4651c03df86648920e083032e3b61e1eff",
+        "caseSha256": "ae2d2296184c2d502621eba61b26b90fb6ca2812503ee2f2463d1ad2a75d8912"
+      },
+      {
+        "id": "open_web_20260813_browser",
+        "complexity": "high",
+        "taskFamily": "dynamic_browser_evidence",
+        "title": "JavaScript-rendered Browser evidence",
+        "promptSha256": "7ebf59536f7dabc38b301432fa41ca5a5b2622edfc5654f2452f0a5174860ff1",
+        "oracleSha256": "cf4100d1b5e193e98186ac0685b70cad045f54a81096f8547c9ea1840c78ef6a",
+        "caseSha256": "3a79fe05657df5126edd3645848a6f202ac42b86dc37b03931c796c95094d5af"
+      }
+    ],
+    "contentSha256": "0ac9f8d204c5afcea06b8c56b57986977884f1edb3463fb7179f2e2dc28c23ad"
+  },
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nodeVersion": "24.16.0",
+    "napierVersion": "0.1.0",
+    "ompVersion": "17.2.1",
+    "ompExecutableSha256": "4165c69cab5d49e84a37b474ab5c13d536c1c386245575cf8d16efb32d022a92",
+    "ompRuntimeExecutableSha256": "4165c69cab5d49e84a37b474ab5c13d536c1c386245575cf8d16efb32d022a92",
+    "ompRuntimeVersion": "17.2.1",
+    "browserRuntimeExecutableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+    "browserRuntimeSetSha256": "2520d1c7175c98a0b439abebaaf6b8e3d87bea9c478a49b4fd42bc7e6856b614",
+    "browserRuntimeFileCount": 17,
+    "browserRuntimeBytes": 201473747,
+    "outerSandbox": "macos-sandbox-exec-guarded"
+  },
+  "cases": [
+    {
+      "caseId": "open_web_20260813_search",
+      "complexity": "low",
+      "taskFamily": "search_primary_source",
+      "promptSha256": "7308dbce8cc8b3c43541dda45c18e19ba010514566add25f85c835574666440f",
+      "oracleSha256": "2e28cea39286d7a59ab43e409eb648332fd355afbea6efdac50f493a19517446",
+      "caseSha256": "f67c344ef1d522d6aa4978aad6ca5bf910992785b8da9d92b4f438a0a05d0456",
+      "tracks": [
+        {
+          "track": "default",
+          "trials": [
+            {
+              "trial": 1,
+              "order": [
+                "napier",
+                "omp"
+              ],
+              "napier": {
+                "executor": "napier",
+                "status": "passed",
+                "outcomePassed": true,
+                "failureClass": "none",
+                "durationMs": 12949,
+                "firstOutputMs": 629,
+                "usage": {
+                  "inputTokens": 19741,
+                  "outputTokens": 1003,
+                  "cacheReadTokens": 40320,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.003157476
+                },
+                "toolCounts": {
+                  "search": 1,
+                  "fetch": 1,
+                  "browser": 0
+                },
+                "toolFailed": 0,
+                "manualInterventionCount": 0,
+                "diagnostics": [],
+                "evidence": {
+                  "finalOutputSha256": "9cbdad6b310509f40b9c64205be251a4726296738cae203618ac3c91940a0c39",
+                  "finalOutputBytes": 205,
+                  "factCount": 1,
+                  "factSetSha256": "628cba871b53ab023edbaf9a419fab7c04c0c13737bfa59ef7d73a1581180a60",
+                  "answerSetSha256": "fa755c33009807178af17359e3e6901709107a4bd3ad1e88f3f94bc4019d1189",
+                  "sourceUrlSetSha256": "9fdee3a7a952c757959a6444b509cb43a1c8a499459385f8df932a5072b9f9a2",
+                  "quoteSetSha256": "ae50fcb14da91be138d54dab448dd942aa919be53a4ab2c5c48253a51b7ac383"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 576445,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 625
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "environment_locator",
+                  "persistenceScanBytes": 1008785,
+                  "persistenceScanFileCount": 12
+                }
+              },
+              "omp": {
+                "executor": "omp",
+                "status": "failed",
+                "outcomePassed": false,
+                "failureClass": "outcome_oracle",
+                "durationMs": 40753,
+                "firstOutputMs": 5536,
+                "usage": {
+                  "inputTokens": 22043,
+                  "outputTokens": 2932,
+                  "cacheReadTokens": 182656,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.004418416800000001
+                },
+                "toolCounts": {
+                  "search": 1,
+                  "fetch": 4,
+                  "browser": 0
+                },
+                "toolFailed": 1,
+                "manualInterventionCount": 0,
+                "diagnostics": [
+                  "answer_mismatch"
+                ],
+                "evidence": {
+                  "finalOutputSha256": "0c199887de8553f5b82285727415c895aa65fcad007a918ce4b2fb071dfc574d",
+                  "finalOutputBytes": 159,
+                  "factCount": 1,
+                  "factSetSha256": "8c604bf67d858fe63a1535e2da236cb3c97dabeb0dc559bff273756bc3c815a6",
+                  "answerSetSha256": "61ac782fb9c0bd8eb799b9582beb333e493e997f337caefe6d08b87b5049af42",
+                  "sourceUrlSetSha256": "9fdee3a7a952c757959a6444b509cb43a1c8a499459385f8df932a5072b9f9a2",
+                  "quoteSetSha256": "3d86a911d8377ece2fc9d266b3c3842f7d05a0786d56f034ad1379faf74b627c"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 600640,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 2707
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "loopback_proxy_dummy_child_key",
+                  "persistenceScanBytes": 2461707,
+                  "persistenceScanFileCount": 60
+                },
+                "modelProxy": {
+                  "requestCount": 10,
+                  "requestBytes": 749426,
+                  "responseBytes": 859045,
+                  "rejectedCount": 1,
+                  "modelMatch": true,
+                  "upstreamOriginSha256": "a34e2a4708ed1c61008a151688838dcf1c44d4e7f08054633e72ba7c0b16cfc1"
+                },
+                "browserIsolation": {
+                  "status": "ready",
+                  "diagnostic": "fresh_profile_loopback_cdp",
+                  "profilePersistent": false,
+                  "userStateImported": false,
+                  "loopbackOnly": true,
+                  "processClosed": true,
+                  "launchDurationMs": 2591,
+                  "browserExecutableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+                  "browserRuntimeSetSha256": "2520d1c7175c98a0b439abebaaf6b8e3d87bea9c478a49b4fd42bc7e6856b614",
+                  "sandboxProfileSha256": "844524cb307e23f09052acdf1a75793fbe7d5a2cbd059ba3fc4bc57f70bf53fd",
+                  "cdpEndpointSha256": "927f8d682a44367ca7943035755c61371519a209a9f0cb9a9a2aba9c018337da",
+                  "network": {
+                    "requestCount": 0,
+                    "connectCount": 0,
+                    "rejectedCount": 0,
+                    "transferredBytes": 0,
+                    "destinationCount": 0,
+                    "destinationsSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                  }
+                },
+                "publicNetwork": {
+                  "requestCount": 5,
+                  "connectCount": 4,
+                  "rejectedCount": 1,
+                  "transferredBytes": 4394356,
+                  "destinationCount": 3,
+                  "destinationsSha256": "56c862b4761cdb959738feef76d36fa1f6397db07d1f7846d4cb61d010c1cac2"
+                },
+                "sandbox": {
+                  "id": "macos-sandbox-exec-guarded",
+                  "profileSha256": "0539e34b8b853d4d9cae3f6f4f7d1dc500c489bded11032125d21f2e98eb4dfa"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "track": "controlled",
+          "trials": [
+            {
+              "trial": 1,
+              "order": [
+                "omp",
+                "napier"
+              ],
+              "napier": {
+                "executor": "napier",
+                "status": "passed",
+                "outcomePassed": true,
+                "failureClass": "none",
+                "durationMs": 9386,
+                "firstOutputMs": 585,
+                "usage": {
+                  "inputTokens": 15608,
+                  "outputTokens": 530,
+                  "cacheReadTokens": 13440,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.0023711520000000005
+                },
+                "toolCounts": {
+                  "search": 1,
+                  "fetch": 1,
+                  "browser": 0
+                },
+                "toolFailed": 0,
+                "manualInterventionCount": 0,
+                "diagnostics": [],
+                "evidence": {
+                  "finalOutputSha256": "4706f3743f409b745bde9ccc5ca257e374dc800b7bebf99dbcc41cd810d9824e",
+                  "finalOutputBytes": 203,
+                  "factCount": 1,
+                  "factSetSha256": "e3f6fe2109ff1531cb574aff2e7b8bfd19a0394b7345f335a7e3fcbb04fbc9ff",
+                  "answerSetSha256": "fa755c33009807178af17359e3e6901709107a4bd3ad1e88f3f94bc4019d1189",
+                  "sourceUrlSetSha256": "9fdee3a7a952c757959a6444b509cb43a1c8a499459385f8df932a5072b9f9a2",
+                  "quoteSetSha256": "9a6dfdf6d27bc1973913717dc393a70e4b3370824b53cb5a127950ff5ae71f96"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 398600,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 420
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "environment_locator",
+                  "persistenceScanBytes": 678517,
+                  "persistenceScanFileCount": 10
+                }
+              },
+              "omp": {
+                "executor": "omp",
+                "status": "passed",
+                "outcomePassed": true,
+                "failureClass": "none",
+                "durationMs": 75030,
+                "firstOutputMs": 1275,
+                "usage": {
+                  "inputTokens": 28188,
+                  "outputTokens": 6276,
+                  "cacheReadTokens": 193152,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.006244425600000001
+                },
+                "toolCounts": {
+                  "search": 1,
+                  "fetch": 13,
+                  "browser": 0
+                },
+                "toolFailed": 1,
+                "manualInterventionCount": 0,
+                "diagnostics": [],
+                "evidence": {
+                  "finalOutputSha256": "72352d42fcfe4063f545f11507182def48e436afef9ee30cf24a2ab568454ae0",
+                  "finalOutputBytes": 204,
+                  "factCount": 1,
+                  "factSetSha256": "2d5460c629e96edb68c5e79e2aaf8687d1a51bd75e24f647951d814f43b45fca",
+                  "answerSetSha256": "fa755c33009807178af17359e3e6901709107a4bd3ad1e88f3f94bc4019d1189",
+                  "sourceUrlSetSha256": "9fdee3a7a952c757959a6444b509cb43a1c8a499459385f8df932a5072b9f9a2",
+                  "quoteSetSha256": "d71047c3fbc36eb63166e65cb16eb27a7d8a510d4e4afa143570d61364fc8bd9"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 1301748,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 5854
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "loopback_proxy_dummy_child_key",
+                  "persistenceScanBytes": 2469790,
+                  "persistenceScanFileCount": 61
+                },
+                "modelProxy": {
+                  "requestCount": 14,
+                  "requestBytes": 755013,
+                  "responseBytes": 1883239,
+                  "rejectedCount": 1,
+                  "modelMatch": true,
+                  "upstreamOriginSha256": "a34e2a4708ed1c61008a151688838dcf1c44d4e7f08054633e72ba7c0b16cfc1"
+                },
+                "browserIsolation": {
+                  "status": "ready",
+                  "diagnostic": "fresh_profile_loopback_cdp",
+                  "profilePersistent": false,
+                  "userStateImported": false,
+                  "loopbackOnly": true,
+                  "processClosed": true,
+                  "launchDurationMs": 355,
+                  "browserExecutableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+                  "browserRuntimeSetSha256": "2520d1c7175c98a0b439abebaaf6b8e3d87bea9c478a49b4fd42bc7e6856b614",
+                  "sandboxProfileSha256": "89a7e08aa587322a3984ca1af2f015919923a0c438bbf8ba10f7feed87e62c26",
+                  "cdpEndpointSha256": "6e12e32ed73dd8357449165d43d61384831a473f34c0239f13d6f35b1524f10e",
+                  "network": {
+                    "requestCount": 0,
+                    "connectCount": 0,
+                    "rejectedCount": 0,
+                    "transferredBytes": 0,
+                    "destinationCount": 0,
+                    "destinationsSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                  }
+                },
+                "publicNetwork": {
+                  "requestCount": 5,
+                  "connectCount": 4,
+                  "rejectedCount": 1,
+                  "transferredBytes": 15534267,
+                  "destinationCount": 3,
+                  "destinationsSha256": "56c862b4761cdb959738feef76d36fa1f6397db07d1f7846d4cb61d010c1cac2"
+                },
+                "sandbox": {
+                  "id": "macos-sandbox-exec-guarded",
+                  "profileSha256": "8ace32e1849f9e6e391f7bd579ac3998dd8aefa1171aaed22a736524520bf1d8"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "caseId": "open_web_20260813_url_pdf",
+      "complexity": "medium",
+      "taskFamily": "url_pdf_research",
+      "promptSha256": "9af7aea5209d02e59ac88bc17ff30c83f2b79f79a04ba85c56fdf6831a55c825",
+      "oracleSha256": "9353e4f373278c8ca701b2e123b1eb4651c03df86648920e083032e3b61e1eff",
+      "caseSha256": "ae2d2296184c2d502621eba61b26b90fb6ca2812503ee2f2463d1ad2a75d8912",
+      "tracks": [
+        {
+          "track": "default",
+          "trials": [
+            {
+              "trial": 1,
+              "order": [
+                "omp",
+                "napier"
+              ],
+              "napier": {
+                "executor": "napier",
+                "status": "failed",
+                "outcomePassed": false,
+                "failureClass": "outcome_oracle",
+                "durationMs": 17304,
+                "firstOutputMs": 562,
+                "usage": {
+                  "inputTokens": 20581,
+                  "outputTokens": 1747,
+                  "cacheReadTokens": 29440,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.0034529320000000006
+                },
+                "toolCounts": {
+                  "search": 0,
+                  "fetch": 2,
+                  "browser": 0
+                },
+                "toolFailed": 0,
+                "manualInterventionCount": 0,
+                "diagnostics": [
+                  "answer_mismatch"
+                ],
+                "evidence": {
+                  "finalOutputSha256": "280d5e844c62f55fbef81bf697961f45373637bba561cbc55d3aaa248363717d",
+                  "finalOutputBytes": 295,
+                  "factCount": 2,
+                  "factSetSha256": "6608a9a37cb5f67d1162ee4165afe91fce4284a65729b88ccdd6787233794e98",
+                  "answerSetSha256": "e1007160b9b8f6f0f89cfdd2d4cd636bb6fa1fceb346debe5f08afdbeaf570d1",
+                  "sourceUrlSetSha256": "10f9fe41de6280bab657e7a1d9e5ded2a04e907f858392e34a1fc6f3671bfc95",
+                  "quoteSetSha256": "6c02114a0ed7c50cb3ed82fd8986172e09c53ade8270d43abf3bb430ce521e54"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 1179523,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 1359
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "environment_locator",
+                  "persistenceScanBytes": 1707569,
+                  "persistenceScanFileCount": 14
+                }
+              },
+              "omp": {
+                "executor": "omp",
+                "status": "failed",
+                "outcomePassed": false,
+                "failureClass": "outcome_oracle",
+                "durationMs": 86499,
+                "firstOutputMs": 1385,
+                "usage": {
+                  "inputTokens": 32639,
+                  "outputTokens": 8582,
+                  "cacheReadTokens": 282880,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.007764484000000001
+                },
+                "toolCounts": {
+                  "search": 0,
+                  "fetch": 8,
+                  "browser": 0
+                },
+                "toolFailed": 0,
+                "manualInterventionCount": 0,
+                "diagnostics": [
+                  "final_output_not_json",
+                  "fact_count_mismatch",
+                  "fact_id_mismatch",
+                  "answer_mismatch",
+                  "source_url_mismatch",
+                  "quote_mismatch"
+                ],
+                "evidence": {
+                  "finalOutputSha256": "61c4c681a40d0f8e85beb4b1a6b7caa62925e1f5ca1b9ab24e00cad65c1c5a2b",
+                  "finalOutputBytes": 804,
+                  "factCount": 0,
+                  "factSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                  "answerSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                  "sourceUrlSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                  "quoteSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 1468784,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 8237
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "loopback_proxy_dummy_child_key",
+                  "persistenceScanBytes": 2474143,
+                  "persistenceScanFileCount": 61
+                },
+                "modelProxy": {
+                  "requestCount": 13,
+                  "requestBytes": 1133621,
+                  "responseBytes": 2682658,
+                  "rejectedCount": 1,
+                  "modelMatch": true,
+                  "upstreamOriginSha256": "a34e2a4708ed1c61008a151688838dcf1c44d4e7f08054633e72ba7c0b16cfc1"
+                },
+                "browserIsolation": {
+                  "status": "ready",
+                  "diagnostic": "fresh_profile_loopback_cdp",
+                  "profilePersistent": false,
+                  "userStateImported": false,
+                  "loopbackOnly": true,
+                  "processClosed": true,
+                  "launchDurationMs": 360,
+                  "browserExecutableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+                  "browserRuntimeSetSha256": "2520d1c7175c98a0b439abebaaf6b8e3d87bea9c478a49b4fd42bc7e6856b614",
+                  "sandboxProfileSha256": "1f71054fd9eecfbf51628d5f619bb91cba58926a390c1805ef171d16cfc85d1e",
+                  "cdpEndpointSha256": "7016dc29d580c0b3da08332c76c32c0fd4b51ac7a25a42aee0fc6dd7340fd795",
+                  "network": {
+                    "requestCount": 0,
+                    "connectCount": 0,
+                    "rejectedCount": 0,
+                    "transferredBytes": 0,
+                    "destinationCount": 0,
+                    "destinationsSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                  }
+                },
+                "publicNetwork": {
+                  "requestCount": 5,
+                  "connectCount": 4,
+                  "rejectedCount": 1,
+                  "transferredBytes": 7493711,
+                  "destinationCount": 2,
+                  "destinationsSha256": "78eb088cf2496db50074be8f26afb2a0ba4059fe975410a17d1813bd8aadc9ab"
+                },
+                "sandbox": {
+                  "id": "macos-sandbox-exec-guarded",
+                  "profileSha256": "8333890172b6d69a6c689cb4ade460ccd467e413949d7c9720d3ac04d5c8418c"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "track": "controlled",
+          "trials": [
+            {
+              "trial": 1,
+              "order": [
+                "napier",
+                "omp"
+              ],
+              "napier": {
+                "executor": "napier",
+                "status": "failed",
+                "outcomePassed": false,
+                "failureClass": "outcome_oracle",
+                "durationMs": 9827,
+                "firstOutputMs": 561,
+                "usage": {
+                  "inputTokens": 13859,
+                  "outputTokens": 817,
+                  "cacheReadTokens": 7424,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.0021898072000000003
+                },
+                "toolCounts": {
+                  "search": 0,
+                  "fetch": 2,
+                  "browser": 0
+                },
+                "toolFailed": 0,
+                "manualInterventionCount": 0,
+                "diagnostics": [
+                  "quote_mismatch"
+                ],
+                "evidence": {
+                  "finalOutputSha256": "53615c110b251cca60ff9e8ada81f38e74e9f2cb738a475d81f37794692a73f9",
+                  "finalOutputBytes": 295,
+                  "factCount": 2,
+                  "factSetSha256": "23e5265108ad405c43e4ea398ad32a74454e495eba363645c1f582aed23f74a3",
+                  "answerSetSha256": "bf1f572e893717284b97d34ed06550e482b3e599dbdb9efa68f5f8d745f72c4a",
+                  "sourceUrlSetSha256": "10f9fe41de6280bab657e7a1d9e5ded2a04e907f858392e34a1fc6f3671bfc95",
+                  "quoteSetSha256": "c9e07b5f1ee898cdb5dab22261c64f223f2957c19177de4644edef77563299ac"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 606641,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 705
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "environment_locator",
+                  "persistenceScanBytes": 914117,
+                  "persistenceScanFileCount": 11
+                }
+              },
+              "omp": {
+                "executor": "omp",
+                "status": "failed",
+                "outcomePassed": false,
+                "failureClass": "outcome_oracle",
+                "durationMs": 181275,
+                "firstOutputMs": 1314,
+                "usage": {
+                  "inputTokens": 47923,
+                  "outputTokens": 16747,
+                  "cacheReadTokens": 396672,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.0125090616
+                },
+                "toolCounts": {
+                  "search": 0,
+                  "fetch": 20,
+                  "browser": 0
+                },
+                "toolFailed": 1,
+                "manualInterventionCount": 0,
+                "diagnostics": [
+                  "final_output_not_json",
+                  "fact_count_mismatch",
+                  "fact_id_mismatch",
+                  "answer_mismatch",
+                  "source_url_mismatch",
+                  "quote_mismatch"
+                ],
+                "evidence": {
+                  "finalOutputSha256": "7c1e10c1b3c9f2aa2f0e2b68ffb4d8a37e329ee0d9ed209a61be9d9d9285e0bd",
+                  "finalOutputBytes": 80,
+                  "factCount": 0,
+                  "factSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                  "answerSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                  "sourceUrlSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                  "quoteSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 3241088,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 16520
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "loopback_proxy_dummy_child_key",
+                  "persistenceScanBytes": 2506608,
+                  "persistenceScanFileCount": 64
+                },
+                "modelProxy": {
+                  "requestCount": 19,
+                  "requestBytes": 1673742,
+                  "responseBytes": 5364520,
+                  "rejectedCount": 1,
+                  "modelMatch": true,
+                  "upstreamOriginSha256": "a34e2a4708ed1c61008a151688838dcf1c44d4e7f08054633e72ba7c0b16cfc1"
+                },
+                "browserIsolation": {
+                  "status": "ready",
+                  "diagnostic": "fresh_profile_loopback_cdp",
+                  "profilePersistent": false,
+                  "userStateImported": false,
+                  "loopbackOnly": true,
+                  "processClosed": true,
+                  "launchDurationMs": 351,
+                  "browserExecutableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+                  "browserRuntimeSetSha256": "2520d1c7175c98a0b439abebaaf6b8e3d87bea9c478a49b4fd42bc7e6856b614",
+                  "sandboxProfileSha256": "7a0b995a5defcd64345af546558bf150374a87795f931a68a1254f21d94c2d99",
+                  "cdpEndpointSha256": "53b5bd7e7eee8a736a1fcd6736d9e9fa7e20f92f6b7532688af62af41802aea8",
+                  "network": {
+                    "requestCount": 0,
+                    "connectCount": 0,
+                    "rejectedCount": 0,
+                    "transferredBytes": 0,
+                    "destinationCount": 0,
+                    "destinationsSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                  }
+                },
+                "publicNetwork": {
+                  "requestCount": 7,
+                  "connectCount": 6,
+                  "rejectedCount": 1,
+                  "transferredBytes": 10212420,
+                  "destinationCount": 4,
+                  "destinationsSha256": "877aadcea680738f9f5190561bac8548cb00b77cfa2ed9e0fa5e4ad29922ad52"
+                },
+                "sandbox": {
+                  "id": "macos-sandbox-exec-guarded",
+                  "profileSha256": "96f00e8592f5a7d0ffacfd68358e028c021280b7d06c5951c1c2d1e4a482a74f"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "caseId": "open_web_20260813_browser",
+      "complexity": "high",
+      "taskFamily": "dynamic_browser_evidence",
+      "promptSha256": "7ebf59536f7dabc38b301432fa41ca5a5b2622edfc5654f2452f0a5174860ff1",
+      "oracleSha256": "cf4100d1b5e193e98186ac0685b70cad045f54a81096f8547c9ea1840c78ef6a",
+      "caseSha256": "3a79fe05657df5126edd3645848a6f202ac42b86dc37b03931c796c95094d5af",
+      "tracks": [
+        {
+          "track": "default",
+          "trials": [
+            {
+              "trial": 1,
+              "order": [
+                "napier",
+                "omp"
+              ],
+              "napier": {
+                "executor": "napier",
+                "status": "passed",
+                "outcomePassed": true,
+                "failureClass": "none",
+                "durationMs": 20994,
+                "firstOutputMs": 578,
+                "usage": {
+                  "inputTokens": 10151,
+                  "outputTokens": 615,
+                  "cacheReadTokens": 34304,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.0016893912
+                },
+                "toolCounts": {
+                  "search": 0,
+                  "fetch": 0,
+                  "browser": 2
+                },
+                "toolFailed": 0,
+                "manualInterventionCount": 0,
+                "diagnostics": [],
+                "evidence": {
+                  "finalOutputSha256": "6b4e02b1149a1f46c4b4179b964fe7fea192f97007094639b9f06684f545eab4",
+                  "finalOutputBytes": 326,
+                  "factCount": 1,
+                  "factSetSha256": "3eb73a0586d1617fc89f41327303c1b9abc528f176d24b9e9f6d859897fbbd12",
+                  "answerSetSha256": "d953fc3b3a840b7fad5016c3810a1fcdbfdcb236a287a92b5de3dc2a1fe98d21",
+                  "sourceUrlSetSha256": "387d57ceeadc701712f8b494af08ad3d48ca577aecfeceb187edc7e547a55605",
+                  "quoteSetSha256": "d953fc3b3a840b7fad5016c3810a1fcdbfdcb236a287a92b5de3dc2a1fe98d21"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 453027,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 486
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "environment_locator",
+                  "persistenceScanBytes": 779482,
+                  "persistenceScanFileCount": 10
+                }
+              },
+              "omp": {
+                "executor": "omp",
+                "status": "failed",
+                "outcomePassed": false,
+                "failureClass": "security_leak",
+                "durationMs": 124545,
+                "firstOutputMs": 1319,
+                "usage": {
+                  "inputTokens": 30193,
+                  "outputTokens": 10977,
+                  "cacheReadTokens": 836352,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.009642365600000003
+                },
+                "toolCounts": {
+                  "search": 0,
+                  "fetch": 0,
+                  "browser": 0
+                },
+                "toolFailed": 15,
+                "manualInterventionCount": 0,
+                "diagnostics": [
+                  "tool_browser_missing",
+                  "credential_leak_detected"
+                ],
+                "evidence": {
+                  "finalOutputSha256": "6b4e02b1149a1f46c4b4179b964fe7fea192f97007094639b9f06684f545eab4",
+                  "finalOutputBytes": 326,
+                  "factCount": 1,
+                  "factSetSha256": "3eb73a0586d1617fc89f41327303c1b9abc528f176d24b9e9f6d859897fbbd12",
+                  "answerSetSha256": "d953fc3b3a840b7fad5016c3810a1fcdbfdcb236a287a92b5de3dc2a1fe98d21",
+                  "sourceUrlSetSha256": "387d57ceeadc701712f8b494af08ad3d48ca577aecfeceb187edc7e547a55605",
+                  "quoteSetSha256": "d953fc3b3a840b7fad5016c3810a1fcdbfdcb236a287a92b5de3dc2a1fe98d21"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 1989537,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 9999
+                },
+                "security": {
+                  "secretLeakDetected": true,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "loopback_proxy_dummy_child_key",
+                  "persistenceScanBytes": 2705685,
+                  "persistenceScanFileCount": 77
+                },
+                "modelProxy": {
+                  "requestCount": 31,
+                  "requestBytes": 3245036,
+                  "responseBytes": 3209243,
+                  "rejectedCount": 1,
+                  "modelMatch": true,
+                  "upstreamOriginSha256": "a34e2a4708ed1c61008a151688838dcf1c44d4e7f08054633e72ba7c0b16cfc1"
+                },
+                "browserIsolation": {
+                  "status": "ready",
+                  "diagnostic": "fresh_profile_loopback_cdp",
+                  "profilePersistent": false,
+                  "userStateImported": false,
+                  "loopbackOnly": true,
+                  "processClosed": true,
+                  "launchDurationMs": 355,
+                  "browserExecutableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+                  "browserRuntimeSetSha256": "2520d1c7175c98a0b439abebaaf6b8e3d87bea9c478a49b4fd42bc7e6856b614",
+                  "sandboxProfileSha256": "838407573f4c22e83be505b8d0b3327d82e7bccbc2acd355804957f9510296f3",
+                  "cdpEndpointSha256": "2e16600c6f7ec7feb9b60e5b670dd2fba08872e14a114ec22403617e90fae054",
+                  "network": {
+                    "requestCount": 3,
+                    "connectCount": 3,
+                    "rejectedCount": 0,
+                    "transferredBytes": 130564,
+                    "destinationCount": 3,
+                    "destinationsSha256": "0f982ae17f76f2660e495071e8b7ca633c9c6f3f4782a5788bf9483490d4d84a"
+                  }
+                },
+                "publicNetwork": {
+                  "requestCount": 1,
+                  "connectCount": 0,
+                  "rejectedCount": 1,
+                  "transferredBytes": 0,
+                  "destinationCount": 0,
+                  "destinationsSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                },
+                "sandbox": {
+                  "id": "macos-sandbox-exec-guarded",
+                  "profileSha256": "f4e4e556be7e2c199487480c2efd75d841222b607b625f1d8601a14e34de0b9f"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "track": "controlled",
+          "trials": [
+            {
+              "trial": 1,
+              "order": [
+                "omp",
+                "napier"
+              ],
+              "napier": {
+                "executor": "napier",
+                "status": "passed",
+                "outcomePassed": true,
+                "failureClass": "none",
+                "durationMs": 19417,
+                "firstOutputMs": 546,
+                "usage": {
+                  "inputTokens": 7206,
+                  "outputTokens": 865,
+                  "cacheReadTokens": 22656,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.0013144768000000002
+                },
+                "toolCounts": {
+                  "search": 0,
+                  "fetch": 0,
+                  "browser": 3
+                },
+                "toolFailed": 0,
+                "manualInterventionCount": 0,
+                "diagnostics": [],
+                "evidence": {
+                  "finalOutputSha256": "cf77fa0d2c3d64884ea2b9906e35f83f1edcfecebeec95b168888ae957fb7f8e",
+                  "finalOutputBytes": 344,
+                  "factCount": 1,
+                  "factSetSha256": "964ff9e7c96761ed0d655a63207ace0d3a33d3aa5a7d5c768755210c5aa9a97f",
+                  "answerSetSha256": "d953fc3b3a840b7fad5016c3810a1fcdbfdcb236a287a92b5de3dc2a1fe98d21",
+                  "sourceUrlSetSha256": "387d57ceeadc701712f8b494af08ad3d48ca577aecfeceb187edc7e547a55605",
+                  "quoteSetSha256": "69b51efa2a5233135b1dc3a0c17c8d23dfc1bcf11c1bfec21e119bf657b77f44"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 565115,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 737
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "environment_locator",
+                  "persistenceScanBytes": 895326,
+                  "persistenceScanFileCount": 9
+                }
+              },
+              "omp": {
+                "executor": "omp",
+                "status": "passed",
+                "outcomePassed": true,
+                "failureClass": "none",
+                "durationMs": 164722,
+                "firstOutputMs": 1328,
+                "usage": {
+                  "inputTokens": 31807,
+                  "outputTokens": 14987,
+                  "cacheReadTokens": 466816,
+                  "cacheWriteTokens": 0,
+                  "costUsd": 0.0099564248
+                },
+                "toolCounts": {
+                  "search": 0,
+                  "fetch": 0,
+                  "browser": 4
+                },
+                "toolFailed": 12,
+                "manualInterventionCount": 0,
+                "diagnostics": [],
+                "evidence": {
+                  "finalOutputSha256": "6b4e02b1149a1f46c4b4179b964fe7fea192f97007094639b9f06684f545eab4",
+                  "finalOutputBytes": 326,
+                  "factCount": 1,
+                  "factSetSha256": "3eb73a0586d1617fc89f41327303c1b9abc528f176d24b9e9f6d859897fbbd12",
+                  "answerSetSha256": "d953fc3b3a840b7fad5016c3810a1fcdbfdcb236a287a92b5de3dc2a1fe98d21",
+                  "sourceUrlSetSha256": "387d57ceeadc701712f8b494af08ad3d48ca577aecfeceb187edc7e547a55605",
+                  "quoteSetSha256": "d953fc3b3a840b7fad5016c3810a1fcdbfdcb236a287a92b5de3dc2a1fe98d21"
+                },
+                "process": {
+                  "exitCode": 0,
+                  "timedOut": false,
+                  "outputLimitExceeded": false,
+                  "parseFailed": false,
+                  "stdoutBytes": 3048751,
+                  "stderrBytes": 0,
+                  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "frameCount": 13693
+                },
+                "security": {
+                  "secretLeakDetected": false,
+                  "ambientCredentialCount": 0,
+                  "credentialBoundary": "loopback_proxy_dummy_child_key",
+                  "persistenceScanBytes": 2680764,
+                  "persistenceScanFileCount": 75
+                },
+                "modelProxy": {
+                  "requestCount": 27,
+                  "requestBytes": 2056923,
+                  "responseBytes": 4427837,
+                  "rejectedCount": 1,
+                  "modelMatch": true,
+                  "upstreamOriginSha256": "a34e2a4708ed1c61008a151688838dcf1c44d4e7f08054633e72ba7c0b16cfc1"
+                },
+                "browserIsolation": {
+                  "status": "ready",
+                  "diagnostic": "fresh_profile_loopback_cdp",
+                  "profilePersistent": false,
+                  "userStateImported": false,
+                  "loopbackOnly": true,
+                  "processClosed": true,
+                  "launchDurationMs": 358,
+                  "browserExecutableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+                  "browserRuntimeSetSha256": "2520d1c7175c98a0b439abebaaf6b8e3d87bea9c478a49b4fd42bc7e6856b614",
+                  "sandboxProfileSha256": "11999035a6007132502160c6cc99f9e90d8c440fcf6cb74cd75b1161f0cdb1cb",
+                  "cdpEndpointSha256": "090bf891a451a6dfcc252dcfa0679d4f14adc6257515e23980c89606b0d48b00",
+                  "network": {
+                    "requestCount": 3,
+                    "connectCount": 3,
+                    "rejectedCount": 0,
+                    "transferredBytes": 130589,
+                    "destinationCount": 3,
+                    "destinationsSha256": "0f982ae17f76f2660e495071e8b7ca633c9c6f3f4782a5788bf9483490d4d84a"
+                  }
+                },
+                "publicNetwork": {
+                  "requestCount": 1,
+                  "connectCount": 0,
+                  "rejectedCount": 1,
+                  "transferredBytes": 0,
+                  "destinationCount": 1,
+                  "destinationsSha256": "23c00c6ff1d80ea1e595b6301ce3b1d22ec22be4d516196b571963b3722c801c"
+                },
+                "sandbox": {
+                  "id": "macos-sandbox-exec-guarded",
+                  "profileSha256": "32a0c9f99c0ff2e74c5dab928b983c624c78eee49e7d0bf086eb919c48a75cba"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "byTrack": {
+      "default": {
+        "pairCount": 3,
+        "decisivePairCount": 3,
+        "excludedPairCount": 0,
+        "napier": {
+          "passed": 2,
+          "failed": 1,
+          "inconclusive": 0,
+          "infrastructureFailure": 0,
+          "meanDurationMs": 17082.333,
+          "meanCostUsd": 0.002766599733,
+          "totalToolFailed": 0,
+          "totalManualInterventions": 0
+        },
+        "omp": {
+          "passed": 0,
+          "failed": 3,
+          "inconclusive": 0,
+          "infrastructureFailure": 0,
+          "meanDurationMs": 83932.333,
+          "meanCostUsd": 0.0072750888,
+          "totalToolFailed": 16,
+          "totalManualInterventions": 0
+        },
+        "paired": {
+          "bothPassed": 0,
+          "napierOnlyPassed": 2,
+          "ompOnlyPassed": 0,
+          "neitherPassed": 1
+        }
+      },
+      "controlled": {
+        "pairCount": 3,
+        "decisivePairCount": 3,
+        "excludedPairCount": 0,
+        "napier": {
+          "passed": 2,
+          "failed": 1,
+          "inconclusive": 0,
+          "infrastructureFailure": 0,
+          "meanDurationMs": 12876.667,
+          "meanCostUsd": 0.001958478667,
+          "totalToolFailed": 0,
+          "totalManualInterventions": 0
+        },
+        "omp": {
+          "passed": 2,
+          "failed": 1,
+          "inconclusive": 0,
+          "infrastructureFailure": 0,
+          "meanDurationMs": 140342.333,
+          "meanCostUsd": 0.009569970667,
+          "totalToolFailed": 14,
+          "totalManualInterventions": 0
+        },
+        "paired": {
+          "bothPassed": 2,
+          "napierOnlyPassed": 0,
+          "ompOnlyPassed": 0,
+          "neitherPassed": 1
+        }
+      }
+    },
+    "overall": {
+      "pairCount": 6,
+      "decisivePairCount": 6,
+      "excludedPairCount": 0,
+      "napier": {
+        "passed": 4,
+        "failed": 2,
+        "inconclusive": 0,
+        "infrastructureFailure": 0,
+        "meanDurationMs": 14979.5,
+        "meanCostUsd": 0.0023625392,
+        "totalToolFailed": 0,
+        "totalManualInterventions": 0
+      },
+      "omp": {
+        "passed": 2,
+        "failed": 4,
+        "inconclusive": 0,
+        "infrastructureFailure": 0,
+        "meanDurationMs": 112137.333,
+        "meanCostUsd": 0.008422529733,
+        "totalToolFailed": 30,
+        "totalManualInterventions": 0
+      },
+      "paired": {
+        "bothPassed": 2,
+        "napierOnlyPassed": 2,
+        "ompOnlyPassed": 0,
+        "neitherPassed": 2
+      }
+    }
+  },
+  "notes": [
+    "Default track preserves each product's isolated built-in capabilities.",
+    "Controlled track disables OMP Skills, Rules, and Extensions and limits both products to Search, URL/PDF read, and Browser tools.",
+    "Every trial uses a fresh workspace, Napier data root, HOME, and OMP profile.",
+    "OMP receives only a dummy child credential; a bounded loopback proxy injects the parent-only DeepSeek key.",
+    "OMP Browser attaches only to a benchmark-owned copied HeadlessChrome runtime with a fresh nonpersistent profile, loopback CDP, dedicated DNS-pinned proxy, and separate outer sandbox.",
+    "Raw prompts, answers, quotes, URLs, reasoning, tool arguments, transcripts, and credentials are not retained."
+  ],
+  "contentSha256": "9cb8869672961dc538233c852a3ed8ac4e6efa340a560882219e504d7cda8df2"
+}

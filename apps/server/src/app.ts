@@ -257,16 +257,8 @@ import {
   sha256Json,
   sha256Text,
 } from "./http-response-evidence.js";
-import {
-  readLimitedJson,
-  readOptionalLimitedJson,
-  RequestBodyTooLargeError,
-} from "./http-request-body.js";
-import {
-  normalizeBoundedText,
-  requestRecord,
-  validThreadId,
-} from "./http-request-validation.js";
+import { readLimitedJson, readOptionalLimitedJson, RequestBodyTooLargeError } from "./http-request-body.js";
+import { normalizeBoundedText, requestRecord, validThreadId } from "./http-request-validation.js";
 import { registerInboundChannelAdminHttp } from "./inbound-channel-admin-http.js";
 import { registerInboundChannelDeadLetterHttp } from "./inbound-channel-dead-letter-http.js";
 import { registerInboundChannelDeliveryHttp } from "./inbound-channel-delivery-http.js";
@@ -274,6 +266,7 @@ import { registerInboundChannelIngressHttp } from "./inbound-channel-ingress-htt
 import { registerCredentialHttp } from "./credential-http.js";
 import { registerBootstrapHttp } from "./bootstrap-http.js";
 import { registerEvaluationCasebookAdminHttp } from "./evaluation-casebook-admin-http.js";
+import { registerReleaseEvidenceHttp } from "./controlled-harness-evidence-http.js";
 import { registerEvaluationCatalogHttp } from "./evaluation-catalog-http.js";
 import { setEvaluationCasebookProjectionHeaders } from "./evaluation-admin-http-response.js";
 import { registerEvaluationReviewHttp } from "./evaluation-review-http.js";
@@ -4643,6 +4636,13 @@ export function createApp(services: NapierServices): Hono {
       jsonError,
     },
   );
+
+  registerReleaseEvidenceHttp(app, services.store, {
+    readRequest: (request, label) => readLimitedJson(request, MAX_EVALUATION_REQUEST_BYTES, label),
+    requestBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+    errorMessage,
+    jsonError,
+  });
 
   registerEvaluationSuiteAdminHttp(
     app,

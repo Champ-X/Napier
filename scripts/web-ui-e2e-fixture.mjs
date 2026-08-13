@@ -7,6 +7,7 @@ import {
   sha256,
 } from "../packages/runtime/dist/index.js";
 import { BrowserTaskJournal } from "../apps/server/dist/browser-task-journal.js";
+import { seedWebUiCasebook } from "./web-ui-e2e-casebook.mjs";
 
 export async function seedWebUiNarrativeFixture(root) {
   const dataRoot = path.join(root, "state");
@@ -29,6 +30,7 @@ export async function seedWebUiNarrativeFixture(root) {
       title: "Ship verified research brief",
       agentId: agent.id,
     });
+    const casebook = await seedWebUiCasebook(store, thread, agent);
     const run = await store.createRun({
       threadId: thread.id,
       agentId: agent.id,
@@ -312,6 +314,7 @@ export async function seedWebUiNarrativeFixture(root) {
       nextStep: "Approve final delivery",
       artifactPath: "artifacts/research-brief.md",
       browserTask,
+      casebook,
       recovery: {
         threadId: recoveryThread.id,
         title: recoveryThread.title,
