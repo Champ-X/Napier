@@ -14,16 +14,73 @@ import type { EventSink } from "./event-sink.js";
 import { sha256 } from "./ed25519.js";
 import {
   COMPILED_PROMPT_PACKAGE_EVENT,
-  createCompiledPromptPackageReceipt,
+  createCompiledPromptPackageReceiptV3,
 } from "./compiled-prompt-package.js";
+import {
+  createModelContextEnvelopeReceipt,
+  MODEL_CONTEXT_ENVELOPE_EVENT,
+} from "./model-context-envelope.js";
 import {
   applyModelAdapterOptions,
   modelAdapterReceipt,
 } from "./model-adapters.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
+import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { LocalStore } from "./store.js";
 
-export async function captureModelInvocation(
+export async function captureCompiledModelInvocation(input: {
+  store: LocalStore;
+  capsules: ModelInvocationCapsuleStore;
+  run: RunRecord;
+  model: Model<Api>;
+  context: Context;
+  options: SimpleStreamOptions | undefined;
+  turnIndex: number;
+  purpose: ModelInvocationPurpose;
+  compiledPrompt: CompiledPromptArtifact;
+  onEvent?: EventSink;
+}): Promise<{
+  context: Context;
+  envelope: ModelContextEnvelopeReceipt;
+}> {
+  const context = {
+    ...input.context,
+    systemPrompt: input.compiledPrompt.systemPrompt,
+  };
+  const envelope = createModelContextEnvelopeReceipt({
+    turnIndex: input.turnIndex,
+    systemPrompt: context.systemPrompt,
+    messages: context.messages,
+    tools: context.tools ?? [],
+  });
+  await append(
+    input.store,
+    {
+      threadId: input.run.threadId,
+      runId: input.run.id,
+      type: MODEL_CONTEXT_ENVELOPE_EVENT,
+      category: "model",
+      visibility: "debug",
+      payload: JSON.parse(JSON.stringify(envelope)),
+    },
+    input.onEvent,
+  );
+  await captureModelInvocation(
+    input.store,
+    input.capsules,
+    input.run,
+    input.model,
+    context,
+    input.options,
+    envelope,
+    input.purpose,
+    input.compiledPrompt,
+    input.onEvent,
+  );
+  return { context, envelope };
+}
+
+async function captureModelInvocation(
   store: LocalStore,
   capsules: ModelInvocationCapsuleStore,
   run: RunRecord,
@@ -32,6 +89,7 @@ export async function captureModelInvocation(
   options: SimpleStreamOptions | undefined,
   envelope: ModelContextEnvelopeReceipt,
   purpose: ModelInvocationPurpose,
+  compiledPrompt: CompiledPromptArtifact,
   onEvent?: EventSink,
 ): Promise<void> {
   try {
@@ -49,8 +107,8 @@ export async function captureModelInvocation(
       },
       onEvent,
     );
-    const promptPackage = createCompiledPromptPackageReceipt({
-      systemPrompt: context.systemPrompt ?? "",
+    const promptPackage = createCompiledPromptPackageReceiptV3({
+      compiled: compiledPrompt,
       envelope,
       adapter,
       purpose,

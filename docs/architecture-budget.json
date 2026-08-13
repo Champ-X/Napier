@@ -45,7 +45,7 @@
     "apps/web/test/stream-api.test.ts": 2372,
     "apps/web/test/tool-event-view.test.ts": 1690,
     "packages/contracts/src/index.ts": 6738,
-    "packages/runtime/src/agent-runtime.ts": 3402,
+    "packages/runtime/src/agent-runtime.ts": 3353,
     "packages/runtime/src/agents.ts": 803,
     "packages/runtime/src/automatic-recovery.ts": 807,
     "packages/runtime/src/blueprint-outcome-review.ts": 512,

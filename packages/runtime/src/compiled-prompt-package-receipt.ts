@@ -1,5 +1,9 @@
 import type { ModelInvocationPurpose } from "@napier/contracts";
 
+import {
+  validateCompiledPromptPackageReceiptV3,
+  type CompiledPromptPackageReceiptV3,
+} from "./compiled-prompt-package-v3.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { ModelAdapterReceipt } from "./model-adapters.js";
 import {
@@ -39,7 +43,7 @@ export type PromptInvariantCoreBinding =
       status: "not_applicable";
     };
 
-export interface CompiledPromptPackageReceipt {
+export interface CompiledPromptPackageReceiptV2 {
   kind: "napier.compiled-prompt-package";
   schemaVersion: 1 | 2;
   packageVersion:
@@ -68,6 +72,10 @@ export interface CompiledPromptPackageReceipt {
   };
   contentSha256: string;
 }
+
+export type CompiledPromptPackageReceipt =
+  | CompiledPromptPackageReceiptV2
+  | CompiledPromptPackageReceiptV3;
 
 export const PROMPT_LAYER_IDS: readonly PromptLayerId[] = [
   "invariant_core",
@@ -109,6 +117,9 @@ export function validateCompiledPromptPackageReceipt(
   input: unknown,
 ): CompiledPromptPackageReceipt {
   const value = record(input);
+  if (value["schemaVersion"] === 3) {
+    return validateCompiledPromptPackageReceiptV3(input);
+  }
   const generation = receiptGeneration(value);
   assertReceiptShape(value, generation);
   const layers = validateLayers(value["layers"] as unknown[]);
@@ -133,7 +144,7 @@ export function validateCompiledPromptPackageReceipt(
     modelAdapter,
     ...(purpose ? { purpose } : {}),
     ...(invariantCore ? { invariantCore } : {}),
-  } as unknown as CompiledPromptPackageReceipt;
+  } as unknown as CompiledPromptPackageReceiptV2;
   const { contentSha256, ...content } = receipt;
   if (sha256(canonicalJson(content)) !== contentSha256) {
     throw new Error("Compiled Prompt package receipt hash mismatch");
@@ -210,7 +221,7 @@ function assertReceiptShape(
 function assertLayerTotals(
   value: Record<string, unknown>,
   layers: CompiledPromptLayerReceipt[],
-  modelAdapter: CompiledPromptPackageReceipt["modelAdapter"],
+  modelAdapter: CompiledPromptPackageReceiptV2["modelAdapter"],
 ): void {
   const promptBytes = layers
     .filter((layer) => layer.source === "system_prompt")
@@ -337,7 +348,7 @@ function validLayerSource(layer: Record<string, unknown>): boolean {
 
 function validateEffectiveCapabilities(
   input: unknown,
-): CompiledPromptPackageReceipt["effectiveCapabilities"] {
+): CompiledPromptPackageReceiptV2["effectiveCapabilities"] {
   const value = record(input);
   const valid = [
     exactKeys(value, [
@@ -354,13 +365,13 @@ function validateEffectiveCapabilities(
   }
   return structuredClone(
     value,
-  ) as unknown as CompiledPromptPackageReceipt["effectiveCapabilities"];
+  ) as unknown as CompiledPromptPackageReceiptV2["effectiveCapabilities"];
 }
 
 function validateAdapterBinding(
   input: unknown,
   generation: ReceiptGeneration,
-): CompiledPromptPackageReceipt["modelAdapter"] {
+): CompiledPromptPackageReceiptV2["modelAdapter"] {
   const value = record(input);
   const allowedAdapterIds =
     generation === "modern"

@@ -1,7 +1,8 @@
 import type { RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
-import { createCompiledPromptPackageReceipt } from "../src/compiled-prompt-package.js";
+import { compileAuxiliaryPrompt } from "../src/agent-prompt-layers.js";
+import { createCompiledPromptPackageReceiptV3 } from "../src/compiled-prompt-package.js";
 import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import { assertModelPromptEvidenceBindings } from "../src/model-prompt-evidence-bindings.js";
 import { modelAdapterReceipt } from "../src/model-adapters.js";
@@ -76,21 +77,27 @@ describe("Model Prompt evidence bindings", () => {
 });
 
 function evidence(turnIndex = 0, sequenceOffset = 0) {
-  const systemPrompt = [
+  const rawSystemPrompt = [
     "Invariant",
     "<workspace_tool_protocol>",
     "Use bounded tools.",
     "</workspace_tool_protocol>",
   ].join("\n");
+  const adapter = modelAdapterReceipt(model());
+  const compiled = compileAuxiliaryPrompt({
+    purpose: "context_compaction",
+    sourceId: "task.context_compaction",
+    systemPrompt: rawSystemPrompt,
+    adapter,
+  });
   const envelope = createModelContextEnvelopeReceipt({
     turnIndex,
-    systemPrompt,
+    systemPrompt: compiled.systemPrompt,
     messages: [{ role: "user", content: "Private request" }],
     tools: [{ name: "read_file", parameters: { type: "object" } }],
   });
-  const adapter = modelAdapterReceipt(model());
-  const promptPackage = createCompiledPromptPackageReceipt({
-    systemPrompt,
+  const promptPackage = createCompiledPromptPackageReceiptV3({
+    compiled,
     envelope,
     adapter,
     purpose: "context_compaction",

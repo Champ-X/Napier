@@ -9,9 +9,14 @@ import type {
 } from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createCompiledPromptPackageReceipt } from "../src/compiled-prompt-package.js";
+import {
+  compileAuxiliaryPrompt,
+  createAgentPromptCompilerLayers,
+} from "../src/agent-prompt-layers.js";
+import { createCompiledPromptPackageReceiptV3 } from "../src/compiled-prompt-package.js";
 import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import { modelAdapterReceipt } from "../src/model-adapters.js";
+import { compilePrompt } from "../src/prompt-compiler.js";
 import {
   createOpenTelemetryTraceArtifact,
   hashOpenTelemetryTraceArtifact,
@@ -19,7 +24,6 @@ import {
   verifyOpenTelemetryTraceArtifact,
 } from "../src/opentelemetry.js";
 import {
-  compilePromptInvariantCore,
   PROMPT_INVARIANT_CORE_CONTENT_SHA256,
   PROMPT_INVARIANT_CORE_VERSION,
 } from "../src/prompt-invariant-core.js";
@@ -50,22 +54,35 @@ describe("OpenTelemetry Prompt evidence", () => {
       agentId: agent.id,
       model: { provider: "anthropic", id: "claude-test" },
     });
-    const systemPrompt = compilePromptInvariantCore(
-      [
-        "OTLP_SECRET_INVARIANT",
-        "<workspace_tool_protocol>OTLP_SECRET_TOOL_RULE</workspace_tool_protocol>",
-        [
+    const adapter = modelAdapterReceipt(model("anthropic-messages"));
+    const compiled = compilePrompt({
+      purpose: "agent_turn",
+      adapter,
+      layers: createAgentPromptCompilerLayers({
+        resolvedSystemPrompt: "OTLP_SECRET_INVARIANT",
+        effectiveCapabilities:
+          "<effective_capabilities>OTLP_SECRET_CAPABILITIES</effective_capabilities>",
+        workspaceToolGuidance:
+          "<workspace_tool_protocol>OTLP_SECRET_TOOL_RULE</workspace_tool_protocol>",
+        planToolGuidance: "",
+        sourceContinuityGuidance: "",
+        skillCatalog: [
           "The following skills provide specialized instructions for specific tasks.",
           "<available_skills>",
           "<skill><name>OTLP_SECRET_SKILL</name></skill>",
           "</available_skills>",
         ].join("\n"),
-        "<memory_context>OTLP_SECRET_WORKSPACE</memory_context>",
-      ].join("\n"),
-    );
+        importedLedgerBoundary: "",
+        checkpoint: "",
+        memory: "<memory_context>OTLP_SECRET_WORKSPACE</memory_context>",
+        delegation: "",
+        milestones: "",
+        toolLoopGuard: "",
+      }),
+    });
     const envelope = createModelContextEnvelopeReceipt({
       turnIndex: 7,
-      systemPrompt,
+      systemPrompt: compiled.systemPrompt,
       messages: [{ role: "user", content: "OTLP_SECRET_USER_MESSAGE" }],
       tools: [
         {
@@ -75,9 +92,8 @@ describe("OpenTelemetry Prompt evidence", () => {
         },
       ],
     });
-    const adapter = modelAdapterReceipt(model("anthropic-messages"));
-    const promptPackage = createCompiledPromptPackageReceipt({
-      systemPrompt,
+    const promptPackage = createCompiledPromptPackageReceiptV3({
+      compiled,
       envelope,
       adapter,
       purpose: "agent_turn",
@@ -202,6 +218,7 @@ describe("OpenTelemetry Prompt evidence", () => {
     for (const secret of [
       "OTLP_SECRET_INVARIANT",
       "OTLP_SECRET_TOOL_RULE",
+      "OTLP_SECRET_CAPABILITIES",
       "OTLP_SECRET_SKILL",
       "OTLP_SECRET_WORKSPACE",
       "OTLP_SECRET_USER_MESSAGE",
@@ -225,15 +242,21 @@ describe("OpenTelemetry Prompt evidence", () => {
       model: { provider: "openai", id: "gpt-test" },
     });
     const systemPrompt = "Prompt evidence binding";
+    const adapter = modelAdapterReceipt(model("openai-responses"));
+    const compiled = compileAuxiliaryPrompt({
+      purpose: "context_compaction",
+      sourceId: "task.context_compaction",
+      systemPrompt,
+      adapter,
+    });
     const envelope = createModelContextEnvelopeReceipt({
       turnIndex: 0,
-      systemPrompt,
+      systemPrompt: compiled.systemPrompt,
       messages: [],
       tools: [],
     });
-    const adapter = modelAdapterReceipt(model("openai-responses"));
-    const promptPackage = createCompiledPromptPackageReceipt({
-      systemPrompt,
+    const promptPackage = createCompiledPromptPackageReceiptV3({
+      compiled,
       envelope,
       adapter,
       purpose: "context_compaction",

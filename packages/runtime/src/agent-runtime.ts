@@ -40,11 +40,9 @@ import {
   parseContextCompactionResponse,
   planContextProjection,
 } from "./compaction.js";
-import {
-  createDelegationLedgerProjection,
-  formatDelegationLedgerProjection,
-} from "./delegation-ledger.js";
+import { createDelegationLedgerProjection } from "./delegation-ledger.js";
 import type { EventSink } from "./event-sink.js";
+import { formatEffectiveCapabilitiesPrompt } from "./effective-capabilities-prompt.js";
 import {
   agentToolGenericDetailsLedgerProjection,
   agentToolCallArgumentsLedgerProjection as toolCallArgumentsLedgerProjection,
@@ -53,6 +51,8 @@ import {
 } from "./agent-tool-ledger.js";
 import { AgentCapabilityRuntime } from "./agent-capability-runtime.js";
 import type { AgentNetworkCapabilities } from "./agent-capability-runtime.js";
+import { compileAuxiliaryPrompt } from "./agent-prompt-layers.js";
+import { createAgentPromptBuilder } from "./agent-prompt-builder.js";
 import { resolveOperatorDecisionCapabilityContinuation } from "./agent-capability-override.js";
 import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
 import {
@@ -97,10 +97,7 @@ import {
   validateAgentMessageToolResultReplay,
 } from "./agent-message-tool-result-replay.js";
 import { createAgentMilestoneTool } from "./agent-milestone-tool.js";
-import {
-  createAgentMilestoneContextProjection,
-  formatAgentMilestoneContextProjection,
-} from "./agent-milestones.js";
+import { createAgentMilestoneContextProjection } from "./agent-milestones.js";
 import {
   applyGoalEvaluation,
   beginGoalContinuation,
@@ -120,12 +117,9 @@ import {
   memoryReplacementTargetIds,
   parseMemoryProposalResponse,
 } from "./memory.js";
-import {
-  createModelContextEnvelopeReceipt,
-  MODEL_CONTEXT_ENVELOPE_EVENT,
-} from "./model-context-envelope.js";
+import { modelAdapterReceipt } from "./model-adapters.js";
 import { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
-import { captureModelInvocation } from "./model-invocation-capture.js";
+import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
 import { McpExtensionManager } from "./mcp.js";
 import {
   CombinedModelAdvisorBlockedError,
@@ -169,7 +163,7 @@ import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
 } from "./sandbox.js";
-import { appendSkillCatalog, formatSkillCatalog } from "./skills.js";
+import { formatSkillCatalog } from "./skills.js";
 import { SKILL_CONTINUATION_SNAPSHOT } from "./skill-load-replay.js";
 import {
   assertRunConfigurationSkillContext,
@@ -184,7 +178,6 @@ import {
   createToolCallSha256,
   createToolLoopGuardContextReceipt,
   detectToolCallLoop,
-  formatToolLoopGuardContext,
   latestActiveToolLoopGuard,
   projectToolLoopGuardTriggers,
   TOOL_LOOP_GUARD_CONTEXT_EVENT,
@@ -519,16 +512,16 @@ export class AgentRuntime {
           options.onEvent,
         );
       }
-      const runSystemPrompt = await this.capabilities.prepareSourceContinuity({
-        owner: { threadId: thread.id, runId: run.id },
-        invocationSource,
-        automaticRecovery: options.recovery?.mode === "automatic",
-        sourceContinuityRequired: options.sourceContinuityRunId !== undefined,
-        sourceContinuityRunId: options.sourceContinuityRunId,
-        enabledTools: effectiveAgentSnapshot.enabledTools,
-        systemPrompt: promptVariables.renderedSystemPrompt,
-        onEvent: options.onEvent,
-      });
+      const sourceContinuityGuidance =
+        await this.capabilities.prepareSourceContinuityGuidance({
+          owner: { threadId: thread.id, runId: run.id },
+          invocationSource,
+          automaticRecovery: options.recovery?.mode === "automatic",
+          sourceContinuityRequired: options.sourceContinuityRunId !== undefined,
+          sourceContinuityRunId: options.sourceContinuityRunId,
+          enabledTools: effectiveAgentSnapshot.enabledTools,
+          onEvent: options.onEvent,
+        });
       abortController.signal.throwIfAborted();
       const model = await this.modelRegistry.resolveConfigured(modelRef);
       const subagents =
@@ -568,7 +561,8 @@ export class AgentRuntime {
                   invocationSource === "recovery"),
               projectSkillSnapshot,
               catalogSkills,
-              runSystemPrompt,
+              promptVariables.renderedSystemPrompt,
+              sourceContinuityGuidance,
               promptVariables.snapshot.skillCatalogInjected,
               advisorCorrection,
               advisorReviewPrompt,
@@ -1217,6 +1211,7 @@ export class AgentRuntime {
     projectSkillSnapshot: SkillSnapshot | undefined,
     catalogSkills: readonly Skill[],
     resolvedSystemPrompt: string,
+    sourceContinuityGuidance: string,
     skillCatalogInjected: boolean,
     advisorCorrection: boolean,
     advisorReviewPrompt: string,
@@ -1269,9 +1264,9 @@ export class AgentRuntime {
     if (!restrictedReadOnlyExecution) {
       await this.store.recordMemoryUsage(memoryContext.factIds, run.id);
     }
-    const skillPrompt = skillCatalogInjected
-      ? resolvedSystemPrompt
-      : appendSkillCatalog(resolvedSystemPrompt, catalogSkills);
+    const skillCatalogOverlay = skillCatalogInjected
+      ? ""
+      : formatSkillCatalog(catalogSkills);
     const threadRecord = this.store.getThread(run.threadId);
     const toolLoopGuardPolicy = effectiveToolLoopGuardPolicy(profile);
     let activeToolLoopGuard = latestActiveToolLoopGuard(
@@ -1373,14 +1368,21 @@ export class AgentRuntime {
       ...(toolResultReplay ? { replay: toolResultReplay } : {}),
       ...(onEvent ? { onEvent } : {}),
     });
-    const baseSystemPromptSections = [
-      skillPrompt,
-      formatWorkspaceToolGuidance(tools),
-      formatPlanToolGuidance(tools),
-      importedLedgerBoundary,
-      history.checkpoint ? formatContextCheckpoint(history.checkpoint) : "",
-      memoryContext.text,
-    ];
+    const workspaceToolGuidance = formatWorkspaceToolGuidance(tools);
+    const planToolGuidance = formatPlanToolGuidance(tools);
+    const effectiveCapabilitiesPrompt = formatEffectiveCapabilitiesPrompt({
+      requestedTools: profile.enabledTools,
+      activeTools: tools.map((tool) => tool.name),
+      toolPolicy: profile.toolPolicy,
+      sandboxId: this.verificationSandbox.id,
+      restrictedReadOnlyExecution,
+      advisorCorrection,
+      browserInteractionConfirmationAvailable:
+        this.browserInteractionConfirmations.available,
+    });
+    const checkpointContext = history.checkpoint
+      ? formatContextCheckpoint(history.checkpoint)
+      : "";
     const milestoneRedactThroughEventSeq = localImportedThroughSeq(
       threadRecord.importProvenance,
     );
@@ -1398,73 +1400,51 @@ export class AgentRuntime {
         workflowInvocation ? run.id : undefined,
       ),
     );
-    const buildSystemPrompt = (
-      delegationProjection: typeof delegationLedgerProjection,
-      milestoneProjection: typeof milestoneContextProjection,
-      loopGuard: typeof activeToolLoopGuard,
-    ): string =>
-      [
-        ...baseSystemPromptSections,
-        formatDelegationLedgerProjection(delegationProjection),
-        formatAgentMilestoneContextProjection(milestoneProjection),
-        formatToolLoopGuardContext(loopGuard),
-      ]
-        .filter(Boolean)
-        .join("\n\n");
-    const systemPrompt = buildSystemPrompt(
+    const buildCompiledPrompt = createAgentPromptBuilder({
+      resolvedSystemPrompt,
+      skillCatalog: skillCatalogOverlay,
+      effectiveCapabilities: effectiveCapabilitiesPrompt,
+      workspaceToolGuidance,
+      planToolGuidance,
+      sourceContinuityGuidance,
+      importedLedgerBoundary,
+      checkpoint: checkpointContext,
+      memory: memoryContext.text,
+    });
+    const systemPrompt = buildCompiledPrompt(
+      modelAdapterReceipt(model),
       delegationLedgerProjection,
       milestoneContextProjection,
       activeToolLoopGuard,
-    );
-    const recordModelContextEnvelope = async (
-      nextSystemPrompt: string,
-      nextMessages: readonly unknown[],
-      nextTools: readonly { name: string }[],
-    ): Promise<ModelContextEnvelopeReceipt> => {
-      const receipt = createModelContextEnvelopeReceipt({
-        turnIndex: nextModelContextEnvelopeTurnIndex(),
-        systemPrompt: nextSystemPrompt,
-        messages: nextMessages,
-        tools: nextTools,
-      });
-      await this.record(
-        {
-          threadId: run.threadId,
-          runId: run.id,
-          type: MODEL_CONTEXT_ENVELOPE_EVENT,
-          category: "model",
-          visibility: "debug",
-          payload: toJsonValue(receipt),
-        },
-        onEvent,
-      );
-      return receipt;
-    };
+    ).systemPrompt;
     let currentModelContextEnvelope: ModelContextEnvelopeReceipt | undefined;
     const streamWithModelContextEnvelope: StreamFn = async (
       requestModel,
       requestContext,
       options,
     ) => {
-      currentModelContextEnvelope = await recordModelContextEnvelope(
-        requestContext.systemPrompt ?? "",
-        requestContext.messages,
-        requestContext.tools ?? [],
+      const compiledPrompt = buildCompiledPrompt(
+        modelAdapterReceipt(requestModel, options),
+        delegationLedgerProjection,
+        milestoneContextProjection,
+        activeToolLoopGuard,
       );
-      await captureModelInvocation(
-        this.store,
-        this.modelInvocationCapsules,
+      const prepared = await captureCompiledModelInvocation({
+        store: this.store,
+        capsules: this.modelInvocationCapsules,
         run,
-        requestModel,
-        requestContext,
+        model: requestModel,
+        context: requestContext,
         options,
-        currentModelContextEnvelope,
-        "agent_turn",
-        onEvent,
-      );
+        turnIndex: nextModelContextEnvelopeTurnIndex(),
+        purpose: "agent_turn",
+        compiledPrompt,
+        ...(onEvent ? { onEvent } : {}),
+      });
+      currentModelContextEnvelope = prepared.envelope;
       return this.modelRegistry.models.streamSimple(
         requestModel,
-        requestContext,
+        prepared.context,
         options,
       );
     };
@@ -1800,11 +1780,12 @@ export class AgentRuntime {
           } catch {
             // Retain the last verified loop-guard projection.
           }
-          const nextSystemPrompt = buildSystemPrompt(
+          const nextSystemPrompt = buildCompiledPrompt(
+            modelAdapterReceipt(model),
             nextDelegationLedgerProjection,
             nextMilestoneContextProjection,
             nextActiveToolLoopGuard,
-          );
+          ).systemPrompt;
           activeToolLoopGuard = nextActiveToolLoopGuard;
           if (
             nextDelegationLedgerProjection.contentSha256 !==
@@ -2393,7 +2374,12 @@ export class AgentRuntime {
           priorCheckpoint,
           plan.deltaEvents,
         );
-        const requestContext = {
+        const modelOptions = {
+          signal,
+          maxTokens: 1_200,
+          temperature: 0,
+        } satisfies SimpleStreamOptions;
+        const rawRequestContext = {
           systemPrompt: prompt.system,
           messages: [
             {
@@ -2404,39 +2390,24 @@ export class AgentRuntime {
           ],
           tools: [],
         };
-        const envelope = createModelContextEnvelopeReceipt({
-          turnIndex: nextModelContextEnvelopeTurnIndex(),
-          systemPrompt: requestContext.systemPrompt,
-          messages: requestContext.messages,
-          tools: requestContext.tools,
-        });
-        await this.record(
-          {
-            threadId: run.threadId,
-            runId: run.id,
-            type: MODEL_CONTEXT_ENVELOPE_EVENT,
-            category: "model",
-            visibility: "debug",
-            payload: toJsonValue(envelope),
-          },
-          onEvent,
-        );
-        const modelOptions = {
-          signal,
-          maxTokens: 1_200,
-          temperature: 0,
-        } satisfies SimpleStreamOptions;
-        await captureModelInvocation(
-          this.store,
-          this.modelInvocationCapsules,
+        const prepared = await captureCompiledModelInvocation({
+          store: this.store,
+          capsules: this.modelInvocationCapsules,
           run,
           model,
-          requestContext,
-          modelOptions,
-          envelope,
-          "context_compaction",
-          onEvent,
-        );
+          context: rawRequestContext,
+          options: modelOptions,
+          turnIndex: nextModelContextEnvelopeTurnIndex(),
+          purpose: "context_compaction",
+          compiledPrompt: compileAuxiliaryPrompt({
+            purpose: "context_compaction",
+            sourceId: "task.context_compaction",
+            systemPrompt: prompt.system,
+            adapter: modelAdapterReceipt(model, modelOptions),
+          }),
+          ...(onEvent ? { onEvent } : {}),
+        });
+        const { context: requestContext, envelope } = prepared;
         let response: AssistantMessage;
         try {
           response = await this.modelRegistry.models.completeSimple(
@@ -2765,7 +2736,12 @@ export class AgentRuntime {
   ): Promise<AssistantMessage> {
     const conversation = await this.buildVisibleConversation(threadId);
     const prompt = buildGoalEvaluatorMessages(goal, conversation);
-    const requestContext = {
+    const modelOptions = {
+      signal,
+      maxTokens: 512,
+      temperature: 0,
+    } satisfies SimpleStreamOptions;
+    const rawRequestContext = {
       systemPrompt: prompt.system,
       messages: [
         {
@@ -2776,39 +2752,24 @@ export class AgentRuntime {
       ],
       tools: [],
     };
-    const envelope = createModelContextEnvelopeReceipt({
-      turnIndex: nextModelContextEnvelopeTurnIndex(),
-      systemPrompt: requestContext.systemPrompt,
-      messages: requestContext.messages,
-      tools: requestContext.tools,
-    });
-    await this.record(
-      {
-        threadId,
-        runId,
-        type: MODEL_CONTEXT_ENVELOPE_EVENT,
-        category: "model",
-        visibility: "debug",
-        payload: toJsonValue(envelope),
-      },
-      onEvent,
-    );
-    const modelOptions = {
-      signal,
-      maxTokens: 512,
-      temperature: 0,
-    } satisfies SimpleStreamOptions;
-    await captureModelInvocation(
-      this.store,
-      this.modelInvocationCapsules,
-      this.requireRun(threadId, runId),
+    const prepared = await captureCompiledModelInvocation({
+      store: this.store,
+      capsules: this.modelInvocationCapsules,
+      run: this.requireRun(threadId, runId),
       model,
-      requestContext,
-      modelOptions,
-      envelope,
-      "goal_evaluation",
-      onEvent,
-    );
+      context: rawRequestContext,
+      options: modelOptions,
+      turnIndex: nextModelContextEnvelopeTurnIndex(),
+      purpose: "goal_evaluation",
+      compiledPrompt: compileAuxiliaryPrompt({
+        purpose: "goal_evaluation",
+        sourceId: "task.goal_evaluation",
+        systemPrompt: prompt.system,
+        adapter: modelAdapterReceipt(model, modelOptions),
+      }),
+      ...(onEvent ? { onEvent } : {}),
+    });
+    const { context: requestContext, envelope } = prepared;
     try {
       const response = await this.modelRegistry.models.completeSimple(
         model,
@@ -2937,7 +2898,12 @@ export class AgentRuntime {
     let extractionUsage: Usage | undefined;
     let extractionUsageAccounting: UsageAccounting | undefined;
     try {
-      const requestContext = {
+      const modelOptions = {
+        signal,
+        maxTokens: 700,
+        temperature: 0,
+      } satisfies SimpleStreamOptions;
+      const rawRequestContext = {
         systemPrompt: prompt.system,
         messages: [
           {
@@ -2948,39 +2914,24 @@ export class AgentRuntime {
         ],
         tools: [],
       };
-      const envelope = createModelContextEnvelopeReceipt({
-        turnIndex: nextModelContextEnvelopeTurnIndex(),
-        systemPrompt: requestContext.systemPrompt,
-        messages: requestContext.messages,
-        tools: requestContext.tools,
-      });
-      await this.record(
-        {
-          threadId,
-          runId,
-          type: MODEL_CONTEXT_ENVELOPE_EVENT,
-          category: "model",
-          visibility: "debug",
-          payload: toJsonValue(envelope),
-        },
-        onEvent,
-      );
-      const modelOptions = {
-        signal,
-        maxTokens: 700,
-        temperature: 0,
-      } satisfies SimpleStreamOptions;
-      await captureModelInvocation(
-        this.store,
-        this.modelInvocationCapsules,
-        this.requireRun(threadId, runId),
+      const prepared = await captureCompiledModelInvocation({
+        store: this.store,
+        capsules: this.modelInvocationCapsules,
+        run: this.requireRun(threadId, runId),
         model,
-        requestContext,
-        modelOptions,
-        envelope,
-        "memory_extraction",
-        onEvent,
-      );
+        context: rawRequestContext,
+        options: modelOptions,
+        turnIndex: nextModelContextEnvelopeTurnIndex(),
+        purpose: "memory_extraction",
+        compiledPrompt: compileAuxiliaryPrompt({
+          purpose: "memory_extraction",
+          sourceId: "task.memory_extraction",
+          systemPrompt: prompt.system,
+          adapter: modelAdapterReceipt(model, modelOptions),
+        }),
+        ...(onEvent ? { onEvent } : {}),
+      });
+      const { context: requestContext, envelope } = prepared;
       let response: AssistantMessage;
       try {
         response = await this.modelRegistry.models.completeSimple(

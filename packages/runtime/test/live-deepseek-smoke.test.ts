@@ -75,6 +75,20 @@ describeLive("live DeepSeek smoke", () => {
       events.some((event) => event.type === "context.model_envelope"),
     ).toBe(true);
     expect(events.some((event) => event.type === "model.response")).toBe(true);
+    const promptPackages = events.filter(
+      (event) =>
+        event.runId === run.id && event.type === "context.prompt_package",
+    );
+    expect(promptPackages.length).toBeGreaterThanOrEqual(1);
+    expect(
+      promptPackages.every(
+        (event) =>
+          event.payload["schemaVersion"] === 3 &&
+          event.payload["classification"] === "independent_layers_v1" &&
+          event.payload["modelAdapter"]?.["adapterId"] ===
+            "napier.openai-family.v2",
+      ),
+    ).toBe(true);
     expect(events.some((event) => event.type === "message.assistant")).toBe(
       true,
     );

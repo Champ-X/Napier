@@ -31,7 +31,6 @@ import { createWebFetchTool } from "./web-fetch-tool.js";
 import { RunWebFetchSaveManager } from "./web-fetch-save.js";
 import { createWebFetchSaveTool } from "./web-fetch-save-tool.js";
 import { prepareNetworkSourceContinuity } from "./research-source-recovery-context.js";
-import { appendSourceContinuityGuidance } from "./source-continuity-guidance.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
@@ -275,14 +274,13 @@ export class AgentCapabilityRuntime {
     ]).then(([research, webFetch]) => ({ research, webFetch }));
   }
 
-  prepareSourceContinuity(input: {
+  prepareSourceContinuityGuidance(input: {
     owner: AgentCapabilityOwner;
     invocationSource: string;
     automaticRecovery: boolean;
     sourceContinuityRequired: boolean;
     sourceContinuityRunId: string | undefined;
     enabledTools: readonly string[];
-    systemPrompt: string;
     onEvent: EventSink | undefined;
   }): Promise<string> {
     return prepareNetworkSourceContinuity({
@@ -307,9 +305,7 @@ export class AgentCapabilityRuntime {
         }
         return recorded;
       },
-    }).then((guidance) =>
-      appendSourceContinuityGuidance(input.systemPrompt, guidance),
-    );
+    });
   }
 
   captureBrowserLiveView(

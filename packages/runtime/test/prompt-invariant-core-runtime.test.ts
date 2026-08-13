@@ -6,6 +6,8 @@ import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
+import { sha256 } from "../src/ed25519.js";
+import { PROMPT_COMPILER_VERSION } from "../src/prompt-compiler.js";
 import {
   PROMPT_INVARIANT_CORE,
   PROMPT_INVARIANT_CORE_CONTENT_SHA256,
@@ -69,9 +71,8 @@ describe("Prompt Invariant Core Runtime binding", () => {
       );
       expect(systemPrompt.match(/<napier_invariant_core/gu)).toHaveLength(1);
       expect(systemPrompt).toContain(PROMPT_INVARIANT_CORE);
-      expect(systemPrompt).toContain(
-        `<agent_profile_instructions>\n${agent.systemPrompt}\n</agent_profile_instructions>`,
-      );
+      expect(systemPrompt).toContain(agent.systemPrompt);
+      expect(systemPrompt).not.toContain("<agent_profile_instructions>");
       expect(systemPrompt.indexOf(PROMPT_INVARIANT_CORE)).toBeLessThan(
         systemPrompt.indexOf(agent.systemPrompt),
       );
@@ -98,8 +99,10 @@ describe("Prompt Invariant Core Runtime binding", () => {
       );
       expect(promptPackage?.payload).toEqual(
         expect.objectContaining({
-          schemaVersion: 2,
-          packageVersion: "napier.prompt-context.v2",
+          schemaVersion: 3,
+          packageVersion: "napier.prompt-context.v3",
+          compilerVersion: PROMPT_COMPILER_VERSION,
+          classification: "independent_layers_v1",
           purpose: "agent_turn",
           invariantCore: {
             status: "bound",
@@ -116,6 +119,16 @@ describe("Prompt Invariant Core Runtime binding", () => {
               bytes: expect.any(Number),
               estimatedTokens: expect.any(Number),
               contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            }),
+            expect.objectContaining({
+              id: "task_skill_overlay",
+              sources: expect.arrayContaining([
+                expect.objectContaining({
+                  sourceId: "task.agent_profile",
+                  inputContentSha256: sha256(agent.systemPrompt),
+                  included: true,
+                }),
+              ]),
             }),
           ]),
         }),
