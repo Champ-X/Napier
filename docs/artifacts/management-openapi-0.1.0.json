@@ -341,6 +341,310 @@
         "x-napier-source-route": "GET /api/bootstrap"
       }
     },
+    "/api/browser-tasks": {
+      "post": {
+        "operationId": "post-browser-tasks",
+        "tags": [
+          "browser-tasks"
+        ],
+        "summary": "POST /api/browser-tasks",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/browser-tasks"
+      }
+    },
+    "/api/browser-tasks/{taskId}/${action}": {
+      "post": {
+        "operationId": "post-browser-tasks-by-taskId--by-action",
+        "tags": [
+          "browser-tasks"
+        ],
+        "summary": "POST /api/browser-tasks/{taskId}/${action}",
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/browser-tasks/:taskId/${action}"
+      }
+    },
+    "/api/browser-tasks/{taskId}/screenshots/{step}": {
+      "get": {
+        "operationId": "get-browser-tasks-by-taskId-screenshots-by-step",
+        "tags": [
+          "browser-tasks"
+        ],
+        "summary": "GET /api/browser-tasks/{taskId}/screenshots/{step}",
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "step",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/browser-tasks/:taskId/screenshots/:step"
+      }
+    },
+    "/api/browser-tasks/{taskId}/stop": {
+      "post": {
+        "operationId": "post-browser-tasks-by-taskId-stop",
+        "tags": [
+          "browser-tasks"
+        ],
+        "summary": "POST /api/browser-tasks/{taskId}/stop",
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/browser-tasks/:taskId/stop"
+      }
+    },
+    "/api/browser-tasks/{taskId}/stream": {
+      "get": {
+        "operationId": "get-browser-tasks-by-taskId-stream",
+        "tags": [
+          "browser-tasks"
+        ],
+        "summary": "GET /api/browser-tasks/{taskId}/stream",
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/browser-tasks/:taskId/stream"
+      }
+    },
+    "/api/browser-tasks/active": {
+      "get": {
+        "operationId": "get-browser-tasks-active",
+        "tags": [
+          "browser-tasks"
+        ],
+        "summary": "GET /api/browser-tasks/active",
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/browser-tasks/active"
+      }
+    },
+    "/api/browser-tasks/latest": {
+      "get": {
+        "operationId": "get-browser-tasks-latest",
+        "tags": [
+          "browser-tasks"
+        ],
+        "summary": "GET /api/browser-tasks/latest",
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/browser-tasks/latest"
+      }
+    },
     "/api/channels": {
       "get": {
         "operationId": "get-channels",
@@ -1393,6 +1697,38 @@
           }
         },
         "x-napier-source-route": "POST /api/credentials/macos-keychain"
+      }
+    },
+    "/api/evaluation-casebook-templates": {
+      "get": {
+        "operationId": "get-evaluation-casebook-templates",
+        "tags": [
+          "evaluation-casebook-templates"
+        ],
+        "summary": "GET /api/evaluation-casebook-templates",
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/evaluation-casebook-templates"
       }
     },
     "/api/evaluation-casebooks": {
@@ -7849,6 +8185,98 @@
         "x-napier-source-route": "GET /api/threads/:threadId/context-checkpoint-calibration"
       }
     },
+    "/api/threads/{threadId}/controlled-harness-evidence": {
+      "post": {
+        "operationId": "post-threads-by-threadId-controlled-harness-evidence",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/controlled-harness-evidence",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/controlled-harness-evidence"
+      }
+    },
+    "/api/threads/{threadId}/controlled-harness-gate": {
+      "get": {
+        "operationId": "get-threads-by-threadId-controlled-harness-gate",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/controlled-harness-gate",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/controlled-harness-gate"
+      }
+    },
     "/api/threads/{threadId}/evaluation-adjudications": {
       "get": {
         "operationId": "get-threads-by-threadId-evaluation-adjudications",
@@ -10977,6 +11405,98 @@
           }
         },
         "x-napier-source-route": "GET /api/threads/:threadId/recovery"
+      }
+    },
+    "/api/threads/{threadId}/release-product-gate": {
+      "get": {
+        "operationId": "get-threads-by-threadId-release-product-gate",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/release-product-gate",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/release-product-gate"
+      }
+    },
+    "/api/threads/{threadId}/release-product-trials": {
+      "post": {
+        "operationId": "post-threads-by-threadId-release-product-trials",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/release-product-trials",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/release-product-trials"
       }
     },
     "/api/threads/{threadId}/restore": {
@@ -15588,6 +16108,8 @@
     "apps/server/src/browser-interaction-confirmation-http.ts",
     "apps/server/src/browser-live-view-http.ts",
     "apps/server/src/browser-session-control-http.ts",
+    "apps/server/src/browser-task-http.ts",
+    "apps/server/src/controlled-harness-evidence-http.ts",
     "apps/server/src/credential-http.ts",
     "apps/server/src/evaluation-casebook-admin-http.ts",
     "apps/server/src/evaluation-catalog-http.ts",
@@ -15609,6 +16131,7 @@
     "apps/server/src/plan-lifecycle-http.ts",
     "apps/server/src/plan-progress-http.ts",
     "apps/server/src/provider-setup-http.ts",
+    "apps/server/src/release-product-trial-http.ts",
     "apps/server/src/run-evaluation-http.ts",
     "apps/server/src/sandbox-setup-http.ts",
     "apps/server/src/schedule-http.ts",
@@ -15621,7 +16144,7 @@
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/workspace-process-http.ts"
   ],
-  "x-napier-source-sha256": "09f5fc9b5bd51e4da57c6635288b9e5da1c7fb788ad3e6ba74be497cc4a0cd57",
-  "x-napier-route-count": 275,
-  "x-napier-route-set-sha256": "9693efe03582d16d8f859eafc25fd3e0aa44757648676256cf6883b0ab22c896"
+  "x-napier-source-sha256": "eb4bcd7f1a72c3702a00438e38ddd1d6c57e031a225580c5a9bb58bf81ac3597",
+  "x-napier-route-count": 287,
+  "x-napier-route-set-sha256": "28c11c7b6b457d707ea88ddf7b983c0a8e5dd3627110006a055c7c6173f188f1"
 }
