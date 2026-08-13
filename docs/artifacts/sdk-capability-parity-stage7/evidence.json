@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "6790c9f6ce26664c52b73615b456923e68fe9cb8f35d8268968d429ccb2ab04a",
+      "stdoutSha256": "8fa649c8e28bc40d4f665371e8585d29ec3127352d4a59ee37eeb387101148eb",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "d25478fb183d4661f372e4ea75ca1947293f5f79e4d0158750b25d0772dde18a",
-      "receiptSha256": "d4954cad169b7e514dd6c15e7b76934471b41d75c78a22ff010051678a492a7d"
+      "evidenceSha256": "c4d5b646705925cb38473e84da61426b505d1b986e0422400b3e554b7dbccb83",
+      "receiptSha256": "7e6b2afbdb4a1c55f9c2ed0f3b81f041a3845c6bfebed67d16032da3fd7e1a9a"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "503cf25fd6c9ce69c3b05c821ac00341c31877214145250c61b47c51bf63f38f",
+      "stdoutSha256": "8cbf39425c0ce5f8cdd20da42c8dc07af997d0ae92869e91a0b30ce684a8ee9c",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "18872015e187aa3fd4bd51e922539b95a40225c8f2e5582ab0c5f429805588cd",
-      "receiptSha256": "0f5b81a24447260c8ca4a00c723977d3ded264a0e675bf72ef37516a1536e871"
+      "evidenceSha256": "15cd845df7d2aaca50b717a06ae47f7c8f0e86ebc7eefa56429755fbd955b6a2",
+      "receiptSha256": "cf1d513ac422ad6527d458396bf57f881e49c00bbbdbfcfe3f25bcc246ded878"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -2972,7 +2972,7 @@
           "lines": 107
         },
         "docs/artifacts/sandbox-product-acceptance-stage13.json": {
-          "sha256": "dacb9cb2ba2b29274df50b156afce05fa7cc684d5d732dd4d10688e04200b4b0",
+          "sha256": "8f89ee909a2b17057d6d700ab977dabb38cb2ca3e0a8b22cedc6747ced083230",
           "lines": 365
         },
         "docs/artifacts/sandbox-security-casebook-stage12.json": {
@@ -2984,11 +2984,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "d25478fb183d4661f372e4ea75ca1947293f5f79e4d0158750b25d0772dde18a",
+          "sha256": "c4d5b646705925cb38473e84da61426b505d1b986e0422400b3e554b7dbccb83",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "18872015e187aa3fd4bd51e922539b95a40225c8f2e5582ab0c5f429805588cd",
+          "sha256": "15cd845df7d2aaca50b717a06ae47f7c8f0e86ebc7eefa56429755fbd955b6a2",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -5229,7 +5229,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "8e4ebde48d74074762a5dc7c32eb5b3ec2dfc6eb44bcb97b32cf571134beb150"
+      "manifestSha256": "cde7af11b027b238bbb732d3fb71db5f5550c9fa1461d172f0242bb7ba1e26dc"
     },
     "executionClosure": {
       "algorithm": {
@@ -21673,7 +21673,7 @@
       ],
       "manifestSha256": "b04cb97eb157098260203bc09698833a44140fbd31f8971c3c86f25f888e05c3"
     },
-    "manifestSha256": "48050107326d54a7b34d31cbecd225c7f3e5a817d8dfd63886426ea4a97cb4fd"
+    "manifestSha256": "9ecce4f05639f835efb0caf8c9a6751e4c93a8072f88b101b7e0df49a0c326cd"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21861,11 +21861,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "d25478fb183d4661f372e4ea75ca1947293f5f79e4d0158750b25d0772dde18a"
+      "sha256": "c4d5b646705925cb38473e84da61426b505d1b986e0422400b3e554b7dbccb83"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "18872015e187aa3fd4bd51e922539b95a40225c8f2e5582ab0c5f429805588cd"
+      "sha256": "15cd845df7d2aaca50b717a06ae47f7c8f0e86ebc7eefa56429755fbd955b6a2"
     }
   }
 }
