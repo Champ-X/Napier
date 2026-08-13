@@ -104,6 +104,24 @@ describe("Browser Use local backend boundary", () => {
     expect(BROWSER_USE_LOCAL_BRIDGE).not.toContain(
       "[value for value in active_agent.history.errors() if value]",
     );
+    expect(BROWSER_USE_LOCAL_BRIDGE).toContain(
+      "public_step_error(current_error)",
+    );
+    expect(BROWSER_USE_LOCAL_BRIDGE).toContain(
+      "code = 'model_action_invalid'",
+    );
+    expect(BROWSER_USE_LOCAL_BRIDGE).toContain("code = 'page_changed'");
+    expect(BROWSER_USE_LOCAL_BRIDGE).toContain(
+      "code = 'browser_action_failed'",
+    );
+    expect(BROWSER_USE_LOCAL_BRIDGE).toContain(
+      "the agent can re-observe and retry",
+    );
+    const stepProjection = BROWSER_USE_LOCAL_BRIDGE.slice(
+      BROWSER_USE_LOCAL_BRIDGE.indexOf("def public_step_error"),
+      BROWSER_USE_LOCAL_BRIDGE.indexOf("async def main"),
+    );
+    expect(stepProjection).not.toContain("stopped before producing a result");
   });
 
   it("pauses only the agent, resumes it, and stops the isolated process group", () => {

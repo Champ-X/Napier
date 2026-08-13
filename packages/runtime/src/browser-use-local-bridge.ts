@@ -115,6 +115,29 @@ def public_error(error):
 		message = 'Browser Use local stopped before producing a result'
 	return code, message, hashlib.sha256(text.encode('utf-8', errors='replace')).hexdigest()
 
+def public_step_error(error):
+	text = str(error)
+	lower = text.lower()
+	if any(value in lower for value in ('401', 'unauthorized', 'api key', 'authentication')):
+		code = 'credential_rejected'
+		message = 'The Browser Use model credential was rejected'
+	elif any(value in lower for value in ('captcha', 'cloudflare', 'recaptcha', 'challenge')):
+		code = 'captcha_handoff_required'
+		message = 'The task reached a challenge that requires operator takeover'
+	elif any(value in lower for value in ('network', 'dns', 'connection', 'timeout', 'timed out')):
+		code = 'network_unavailable'
+		message = 'This browser step could not reach the target or model provider'
+	elif any(value in lower for value in ('expected a structured browser action', 'could not parse response', 'tool_use_failed', 'validation error')):
+		code = 'model_action_invalid'
+		message = 'The model returned an invalid browser action; the agent can re-observe and retry'
+	elif any(value in lower for value in ('element not found', 'no element found', 'element is not available', 'page changed')):
+		code = 'page_changed'
+		message = 'The page changed before this action completed; the agent can re-observe and retry'
+	else:
+		code = 'browser_action_failed'
+		message = 'This browser action failed; the agent can re-observe and retry'
+	return code, message, hashlib.sha256(text.encode('utf-8', errors='replace')).hexdigest()
+
 async def main():
 	request = json.loads(sys.stdin.readline())
 	artifact_dir = Path(request['artifactDirectory']).resolve()
@@ -182,7 +205,7 @@ async def main():
 		errors = active_agent.history.errors()
 		current_error = errors[-1] if errors else None
 		if current_error:
-			error_code, error_message, error_diagnostic = public_error(current_error)
+			error_code, error_message, error_diagnostic = public_step_error(current_error)
 		emit({
 			'type': 'step',
 			'backend': 'browser_use_local',
