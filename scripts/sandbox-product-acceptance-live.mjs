@@ -130,13 +130,13 @@ export async function runSandboxProductAcceptance(input) {
       sandbox: services.sandbox,
     });
     const typecheck = await runner.run({
-        kind: "typecheck",
-        target: "packages/contracts/tsconfig.json",
+      kind: "typecheck",
+      target: "packages/contracts/tsconfig.json",
       timeoutMs: 120_000,
     });
     const test = await runner.run({
-        kind: "test",
-        target: "packages/contracts/test/agent-capability-contract.test.ts",
+      kind: "test",
+      target: "packages/contracts/test/agent-capability-contract.test.ts",
       timeoutMs: 120_000,
     });
     requireVerification(typecheck, "5.9.3");

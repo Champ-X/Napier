@@ -227,12 +227,13 @@ export async function createConfiguredSandboxAdapter(input: {
   });
 }
 
-export function createSandboxFallbackAdapter(input: {
-  env?: Readonly<Record<string, string | undefined>>;
-} = {}): OsSandboxAdapter {
+export function createSandboxFallbackAdapter(
+  input: {
+    env?: Readonly<Record<string, string | undefined>>;
+  } = {},
+): OsSandboxAdapter {
   const environment = input.env ?? process.env;
-  const explicitImage =
-    environment["NAPIER_CONTAINER_SANDBOX_IMAGE"]?.trim();
+  const explicitImage = environment["NAPIER_CONTAINER_SANDBOX_IMAGE"]?.trim();
   return explicitImage
     ? new OciContainerSandboxAdapter(explicitImage)
     : createPlatformSandboxAdapter(process.platform, { containerImage: "" });
@@ -317,10 +318,7 @@ export function validateSandboxInstallation(
   ) {
     throw new Error("Sandbox installation content is invalid");
   }
-  if (
-    schemaVersion === 2 &&
-    !validInstallationProvenance(installation)
-  ) {
+  if (schemaVersion === 2 && !validInstallationProvenance(installation)) {
     throw new Error("Sandbox installation provenance is invalid");
   }
   const { contentSha256, ...withoutHash } = installation;

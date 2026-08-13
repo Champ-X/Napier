@@ -11,13 +11,10 @@ export async function sandboxProductAcceptanceImplementation(repoRoot) {
   const files = {
     setupService: "packages/runtime/src/sandbox-setup-service.ts",
     runtimeSetup: "packages/runtime/src/sandbox-runtime-setup.ts",
-    acquisitionRuntime:
-      "packages/runtime/src/sandbox-runtime-acquisition.ts",
+    acquisitionRuntime: "packages/runtime/src/sandbox-runtime-acquisition.ts",
     releaseRuntime: "packages/runtime/src/sandbox-official-release.ts",
-    releaseModel:
-      "packages/runtime/src/sandbox-official-release-model.ts",
-    setupVerification:
-      "packages/runtime/src/sandbox-setup-verification.ts",
+    releaseModel: "packages/runtime/src/sandbox-official-release-model.ts",
+    setupVerification: "packages/runtime/src/sandbox-setup-verification.ts",
     installation: "packages/runtime/src/sandbox-installation.ts",
     setupContract: "packages/contracts/src/sandbox-setup.ts",
     cliSetup: "apps/cli/src/sandbox-runtime-setup-cli.ts",

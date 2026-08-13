@@ -1,7 +1,6 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
 
-export const OFFICIAL_SANDBOX_RELEASE_IMAGE =
-  "ghcr.io/champ-x/napier-sandbox";
+export const OFFICIAL_SANDBOX_RELEASE_IMAGE = "ghcr.io/champ-x/napier-sandbox";
 export const OFFICIAL_SANDBOX_RELEASE_PLATFORMS = [
   "linux/amd64",
   "linux/arm64",
@@ -114,10 +113,7 @@ function validReleaseEvidence(value: Record<string, unknown>): boolean {
       "attestationDescriptorCount",
     ]) &&
     buildkitEvidence(value.buildkitAttestations) &&
-    hashCountEvidence(value.anonymousPlatforms, [
-      "sha256",
-      "platformCount",
-    ]) &&
+    hashCountEvidence(value.anonymousPlatforms, ["sha256", "platformCount"]) &&
     cosignEvidence(value.cosign) &&
     attestationEvidence(value.externalAttestation)
   );
@@ -239,9 +235,7 @@ function record(value: unknown): value is Record<string, unknown> {
 }
 
 function exactKeys(value: Record<string, unknown>, keys: string[]): boolean {
-  return (
-    Object.keys(value).sort().join("\n") === [...keys].sort().join("\n")
-  );
+  return Object.keys(value).sort().join("\n") === [...keys].sort().join("\n");
 }
 
 function isoDate(value: unknown): boolean {

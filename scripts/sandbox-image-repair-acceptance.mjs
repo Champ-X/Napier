@@ -1,12 +1,6 @@
 import { execFile as execFileWithCallback } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import {
-  access,
-  mkdir,
-  mkdtemp,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -66,11 +60,19 @@ export async function runSandboxImageRepairAcceptance(input) {
         temporary,
         environment,
       );
-      const originalImageId = await imageId(executable, environment, OFFICIAL_IMAGE);
+      const originalImageId = await imageId(
+        executable,
+        environment,
+        OFFICIAL_IMAGE,
+      );
       const backupTag = `napier-sandbox:repair-backup-${randomBytes(8).toString("hex")}`;
       let receipt;
       try {
-        await docker(executable, ["image", "tag", OFFICIAL_IMAGE, backupTag], environment);
+        await docker(
+          executable,
+          ["image", "tag", OFFICIAL_IMAGE, backupTag],
+          environment,
+        );
         await writeFile(
           path.join(fakeContext, "Dockerfile"),
           [
@@ -94,7 +96,11 @@ export async function runSandboxImageRepairAcceptance(input) {
           15 * 60_000,
           1024 * 1024,
         );
-        const fakeImageId = await imageId(executable, environment, OFFICIAL_IMAGE);
+        const fakeImageId = await imageId(
+          executable,
+          environment,
+          OFFICIAL_IMAGE,
+        );
         requireFirstUseValue(
           fakeImageId !== originalImageId,
           "Image repair fixture did not replace the official tag",

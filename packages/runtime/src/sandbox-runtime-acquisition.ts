@@ -14,8 +14,7 @@ export type ReadySandboxRuntime = SandboxRuntimeInspection & {
   identity: ContainerImageIdentity;
 };
 
-export interface SandboxRuntimeAcquisitionDependencies
-  extends SandboxRuntimeSetupDependencies {
+export interface SandboxRuntimeAcquisitionDependencies extends SandboxRuntimeSetupDependencies {
   buildRuntime?: typeof buildOfficialSandboxRuntime;
   pullRuntime?: typeof pullOfficialSandboxRuntime;
 }
@@ -52,10 +51,7 @@ export async function acquireOfficialSandboxRuntime(
     if (pulled) return { ready: pulled, action: "pulled" };
   }
   return {
-    ready: await buildOfficialSandboxRuntimeFromSource(
-      signal,
-      dependencies,
-    ),
+    ready: await buildOfficialSandboxRuntimeFromSource(signal, dependencies),
     action: "built",
   };
 }
@@ -69,9 +65,7 @@ export function buildOfficialSandboxRuntimeFromSource(
     { signal, ...(force ? { force: true } : {}) },
     {
       ...(dependencies.inspect ? { inspect: dependencies.inspect } : {}),
-      ...(dependencies.runBuild
-        ? { runBuild: dependencies.runBuild }
-        : {}),
+      ...(dependencies.runBuild ? { runBuild: dependencies.runBuild } : {}),
     },
   );
 }

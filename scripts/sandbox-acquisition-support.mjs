@@ -4,10 +4,7 @@ import { Writable } from "node:stream";
 import { promisify } from "node:util";
 
 import { runCli } from "../apps/cli/dist/cli.js";
-import {
-  canonicalJson,
-  sha256,
-} from "../packages/runtime/dist/index.js";
+import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
 import {
   firstUseResourceDelta,
   pathExists,

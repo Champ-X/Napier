@@ -1,6 +1,13 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { lstat, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -70,11 +77,7 @@ export async function loadOfficialSandboxRelease(
       }
       const filePath = await realpath(candidate);
       const info = await lstat(filePath);
-      if (
-        !info.isFile() ||
-        info.size <= 0 ||
-        info.size > MAX_RECEIPT_BYTES
-      ) {
+      if (!info.isFile() || info.size <= 0 || info.size > MAX_RECEIPT_BYTES) {
         throw new Error("Official Sandbox release receipt is invalid");
       }
       bytes = await readFile(filePath);
@@ -118,11 +121,11 @@ export async function pullOfficialSandboxRelease(
   );
   let pulled = false;
   try {
-    await writeFile(
-      path.join(configRoot, "config.json"),
-      '{"auths":{}}\n',
-      { encoding: "utf8", mode: 0o600, flag: "wx" },
-    );
+    await writeFile(path.join(configRoot, "config.json"), '{"auths":{}}\n', {
+      encoding: "utf8",
+      mode: 0o600,
+      flag: "wx",
+    });
     const environment: NodeJS.ProcessEnv = {
       ...containerClientEnvironment(),
       DOCKER_CONFIG: configRoot,
@@ -219,11 +222,11 @@ export async function discardOfficialSandboxRelease(
     path.join(tmpdir(), "napier-sandbox-release-discard-"),
   );
   try {
-    await writeFile(
-      path.join(configRoot, "config.json"),
-      '{"auths":{}}\n',
-      { encoding: "utf8", mode: 0o600, flag: "wx" },
-    );
+    await writeFile(path.join(configRoot, "config.json"), '{"auths":{}}\n', {
+      encoding: "utf8",
+      mode: 0o600,
+      flag: "wx",
+    });
     const environment: NodeJS.ProcessEnv = {
       ...containerClientEnvironment(),
       DOCKER_CONFIG: configRoot,
@@ -346,7 +349,9 @@ export function runSandboxReleasePull(
             error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER")
         ) {
           reject(
-            new Error("Official Sandbox release pull exceeded its output limit"),
+            new Error(
+              "Official Sandbox release pull exceeded its output limit",
+            ),
           );
           return;
         }
@@ -367,7 +372,11 @@ export function runSandboxReleasePull(
 
 function releaseReceiptCandidates(): string[] {
   return [
-    path.resolve(import.meta.dirname, "../../../docs/artifacts", RELEASE_RECEIPT),
+    path.resolve(
+      import.meta.dirname,
+      "../../../docs/artifacts",
+      RELEASE_RECEIPT,
+    ),
     path.resolve(import.meta.dirname, "sandbox-image", PACKAGED_RECEIPT),
   ];
 }
@@ -375,7 +384,9 @@ function releaseReceiptCandidates(): string[] {
 function hostImagePlatform(): "linux/amd64" | "linux/arm64" {
   if (process.arch === "x64") return "linux/amd64";
   if (process.arch === "arm64") return "linux/arm64";
-  throw new Error("Official Sandbox release does not support this architecture");
+  throw new Error(
+    "Official Sandbox release does not support this architecture",
+  );
 }
 
 function numericExitCode(error: { code?: string | number | null }): number {
@@ -385,8 +396,8 @@ function numericExitCode(error: { code?: string | number | null }): number {
 function missing(error: unknown): boolean {
   return Boolean(
     error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "ENOENT",
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "ENOENT",
   );
 }

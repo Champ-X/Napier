@@ -23,9 +23,7 @@ export const HOST_DIRECT_SANDBOX_WARNING =
 export function cliSandboxWarning(
   sandbox: Pick<LocalAgentRuntimeServices["sandbox"], "id">,
 ): string | undefined {
-  return sandbox.id === "host-direct"
-    ? HOST_DIRECT_SANDBOX_WARNING
-    : undefined;
+  return sandbox.id === "host-direct" ? HOST_DIRECT_SANDBOX_WARNING : undefined;
 }
 
 export async function writeCliSandboxWarning(

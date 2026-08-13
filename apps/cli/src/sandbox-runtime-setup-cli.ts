@@ -184,7 +184,7 @@ async function writeSandboxRuntimeSetupOutput(
           ? "repaired from pinned source"
           : output.action === "pulled"
             ? "pulled immutable release"
-          : output.action
+            : output.action
       }`,
       `Acquisition: ${output.acquisition}`,
       `Image: ${output.imageReference}`,

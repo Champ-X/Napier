@@ -39,8 +39,7 @@ import {
   verifySandboxRuntime,
 } from "./sandbox-setup-verification.js";
 
-export interface SandboxSetupServiceDependencies
-  extends SandboxRuntimeAcquisitionDependencies {
+export interface SandboxSetupServiceDependencies extends SandboxRuntimeAcquisitionDependencies {
   discardRelease?: typeof discardOfficialSandboxRelease;
   verifyToolchain?: (
     identity: ContainerImageIdentity,
@@ -211,8 +210,7 @@ export class SandboxSetupService {
       } catch (error) {
         if (pulledRelease && !persisted) {
           await (
-            this.dependencies.discardRelease ??
-            discardOfficialSandboxRelease
+            this.dependencies.discardRelease ?? discardOfficialSandboxRelease
           )(pulledRelease, AbortSignal.timeout(30_000));
         }
         throw error;
@@ -287,7 +285,6 @@ export class SandboxSetupService {
     }
     return inspectSandboxInstallationBinding(this.dataRoot);
   }
-
 }
 
 export function createSandboxSetupPreview(

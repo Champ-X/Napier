@@ -11,8 +11,7 @@ import { runSandboxAcquisitionAcceptance } from "./sandbox-acquisition-acceptanc
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
-const DEFAULT_ARTIFACT =
-  "docs/artifacts/sandbox-acquisition-stage20.json";
+const DEFAULT_ARTIFACT = "docs/artifacts/sandbox-acquisition-stage20.json";
 
 export async function collectSandboxAcquisition(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -96,10 +95,7 @@ async function runCli() {
   if (args.live || args.write) {
     const artifact = await collectSandboxAcquisition(args);
     if (args.write) {
-      await writeJson(
-        path.join(defaultRepoRoot, DEFAULT_ARTIFACT),
-        artifact,
-      );
+      await writeJson(path.join(defaultRepoRoot, DEFAULT_ARTIFACT), artifact);
     }
     console.log(
       `Sandbox acquisition ${args.write ? "written" : "verified live"}: ${artifact.contentSha256.slice(0, 16)}`,

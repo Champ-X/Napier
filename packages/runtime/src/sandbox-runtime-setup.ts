@@ -121,10 +121,7 @@ export async function inspectOfficialSandboxRuntime(
     return { target: sourceTarget, status: "runtime_unavailable" };
   }
   const executable = await resolveContainerLaunchExecutable(undefined);
-  const localIdentity = await matchingImageIdentity(
-    sourceTarget,
-    executable,
-  );
+  const localIdentity = await matchingImageIdentity(sourceTarget, executable);
   if (localIdentity) {
     return {
       target: { ...sourceTarget, acquisition: "local_verified" },
@@ -429,9 +426,7 @@ function sameSandboxSource(
   );
 }
 
-function canonicalRelease(
-  release: OfficialSandboxRelease | undefined,
-): string {
+function canonicalRelease(release: OfficialSandboxRelease | undefined): string {
   return release ? canonicalJson(release) : "";
 }
 

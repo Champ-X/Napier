@@ -21,14 +21,12 @@ const CHECK_CODES = [
 export async function sandboxAcquisitionImplementation(repoRoot) {
   const files = {
     contract: "packages/contracts/src/sandbox-setup.ts",
-    releaseModel:
-      "packages/runtime/src/sandbox-official-release-model.ts",
+    releaseModel: "packages/runtime/src/sandbox-official-release-model.ts",
     releaseRuntime: "packages/runtime/src/sandbox-official-release.ts",
     acquisitionRuntime: "packages/runtime/src/sandbox-runtime-acquisition.ts",
     runtimeSetup: "packages/runtime/src/sandbox-runtime-setup.ts",
     setupService: "packages/runtime/src/sandbox-setup-service.ts",
-    setupVerification:
-      "packages/runtime/src/sandbox-setup-verification.ts",
+    setupVerification: "packages/runtime/src/sandbox-setup-verification.ts",
     installation: "packages/runtime/src/sandbox-installation.ts",
     cliSetup: "apps/cli/src/sandbox-runtime-setup-cli.ts",
     webSetupCard: "apps/web/src/SandboxSetupCard.tsx",
@@ -149,8 +147,7 @@ function validPrivateFallback(value) {
     value.candidateSha256 ===
       sha256(
         canonicalJson({
-          reference:
-            `ghcr.io/champ-x/napier-sandbox@${value.candidateDigest}`,
+          reference: `ghcr.io/champ-x/napier-sandbox@${value.candidateDigest}`,
           sourceSha: value.candidateSourceSha,
           contextSha256: value.candidateContextSha256,
         }),

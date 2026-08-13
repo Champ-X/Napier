@@ -47,9 +47,9 @@ export async function copySandboxImageAsset(root = repoRoot) {
 function missing(error) {
   return Boolean(
     error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "ENOENT",
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "ENOENT",
   );
 }
 

@@ -3,10 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 
-import {
-  canonicalJson,
-  sha256,
-} from "../packages/runtime/dist/index.js";
+import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
 import { resolveContainerLaunchExecutable } from "../packages/runtime/dist/sandbox-container.js";
 import { loadSandboxInstallation } from "../packages/runtime/dist/sandbox-installation.js";
 import { inspectOfficialSandboxRuntime } from "../packages/runtime/dist/sandbox-runtime-setup.js";
@@ -102,11 +99,7 @@ export async function runSandboxAcquisitionAcceptance(input) {
             ownedContainers.push(value);
           },
         });
-        await restoreAcquisitionImage(
-          executable,
-          environment,
-          localBackupTag,
-        );
+        await restoreAcquisitionImage(executable, environment, localBackupTag);
         localBackupTag = undefined;
         await removeAcquisitionResources(
           executable,
@@ -168,8 +161,7 @@ export async function runSandboxAcquisitionAcceptance(input) {
             executable,
             environment,
             OFFICIAL_IMAGE,
-          )) ===
-            originalImageId,
+          )) === originalImageId,
         "Sandbox acquisition did not restore the Docker baseline",
       );
       return {
@@ -207,7 +199,9 @@ async function runLocalAnonymousArm(input) {
     canonicalJson({
       kind: "napier.local-anonymous-sandbox-release",
       contextSha256: (
-        await inspectOfficialSandboxRuntime({ loadRelease: async () => undefined })
+        await inspectOfficialSandboxRuntime({
+          loadRelease: async () => undefined,
+        })
       ).target.contextSha256,
     }),
   ).slice(0, 40);
@@ -323,11 +317,7 @@ async function runLocalAnonymousArm(input) {
   const apply = await runAcquisitionSetupCli({
     ...input,
     release,
-    args: [
-      "--expected-preview",
-      preview.value.contentSha256,
-      "--apply",
-    ],
+    args: ["--expected-preview", preview.value.contentSha256, "--apply"],
   });
   const installation = await loadSandboxInstallation(input.dataRoot);
   const checkCodes = Object.values(apply.value.checks ?? {});
@@ -387,11 +377,7 @@ async function runPrivateFallbackArm(input) {
   );
   const apply = await runAcquisitionSetupCli({
     ...input,
-    args: [
-      "--expected-preview",
-      preview.value.contentSha256,
-      "--apply",
-    ],
+    args: ["--expected-preview", preview.value.contentSha256, "--apply"],
   });
   const installation = await loadSandboxInstallation(input.dataRoot);
   const checkCodes = Object.values(apply.value.checks ?? {});

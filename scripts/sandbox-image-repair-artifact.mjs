@@ -32,11 +32,7 @@ export function validSandboxImageRepairAcceptance(value) {
 function validPreview(value) {
   return (
     record(value) &&
-    exactKeys(value, [
-      "status",
-      "staticLabelAccepted",
-      "previewSha256",
-    ]) &&
+    exactKeys(value, ["status", "staticLabelAccepted", "previewSha256"]) &&
     value.status === "ready" &&
     value.staticLabelAccepted === true &&
     SHA256.test(value.previewSha256)

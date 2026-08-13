@@ -1,24 +1,24 @@
 {
   "kind": "napier.sandbox-acquisition-stage20",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-13T09:54:10.029Z",
+  "generatedAt": "2026-08-13T11:13:52.237Z",
   "implementation": {
     "contractSha256": "4cf4b250ddb61db85d2d80a5dd599397fc7133947bde1bf0a603159abaebce10",
-    "releaseModelSha256": "2f9d51a46c498412065de4a418d639de9014769a1aea406b8a08aca7bb4d648f",
-    "releaseRuntimeSha256": "b62fb9d7d3aa842c4950b448a0f2f7be803e9a64cc64fe57e03fc9a32cfe7884",
-    "acquisitionRuntimeSha256": "d3bb54c58c8cc86c6955e30646b0c9556234c7ab851240f3d56ee049cf0836ac",
-    "runtimeSetupSha256": "1471a8f354a951201a0297a713038afc83c3e937c093ed7628263d6825d0a5b9",
-    "setupServiceSha256": "e1930a65585815a639ad3ba5681545acf2c119794da35e77589bd9d32b068598",
+    "releaseModelSha256": "70311542f797838f6014580533bb96c8e37f977596f7ca5b0c0ca4d8846a77f1",
+    "releaseRuntimeSha256": "f34fd0b4e82a098271b390f17447d2ad92655e3f0074c244f3d6509ec79da997",
+    "acquisitionRuntimeSha256": "2d866cf44056fee617dcf99fdd1f9cd09262b06b125cd8e9acc8cac781cb47ac",
+    "runtimeSetupSha256": "96873d828242128d0186e6d482abcbf1055e86c05fa817a71204e6c6640ae3a2",
+    "setupServiceSha256": "7c5be55ca635d378e90be5df59ea4584979c32c29bbdb8f2d11c5d9f50209d2e",
     "setupVerificationSha256": "b107e8b5b438f404e26eaa810979f285caf9fac4de4ffef15bc7a6150d509f76",
-    "installationSha256": "470e72e222aee5bebe4d0103676c01f9c2008632873b2f96098eff0eca34a542",
-    "cliSetupSha256": "86bfbcfea324ec8aa3ada07ccbd445229dda31bb294951ef9e5f587ec7f533e4",
+    "installationSha256": "ea369e0c5d61e358ec9f0db90f92333e58215c4e549bf0281bf459087034085d",
+    "cliSetupSha256": "6003fde01bf80fa25692996e9536a23e3a48425e894786964d9123dd52e86755",
     "webSetupCardSha256": "b69b4984843373f5e7a190e755c87558b8dd23f25eebdee0702f9b56f14f5640",
     "webSetupViewModelSha256": "054ff71165464ddb0baa2f78b6df1233dffc912407437f29a5a6dcd978e16d34",
-    "copyAssetSha256": "239125880da1bfed1aaf6b30943f0c66e7bd7a83096474269d0858374f9e11e3",
-    "harnessSha256": "f0ad38659d290443454fd87ccbf59e8534156ee1c982e45cc567c0ee7e345888",
-    "supportSha256": "939b7b1d619799de5d27f12748a6d2daf10c0e958e4b0f24001151e5bce239a1",
-    "verifierSha256": "f438dc79c8c0390b278fdaf8eee480879f5a249deaf8b4b74e6fbc6e88b63073",
-    "checkSha256": "51c3333b5a08075030a5530a6c8468a14156da58fdbf98be74dbd4e7ef3e308f"
+    "copyAssetSha256": "da53ca0dbb60230242bce709a2557c9031dbdf57dcb1cc6477205866a7fe4ab4",
+    "harnessSha256": "c8d5dd03eae90a52a0bbf1e3142e60e85bea23f0e47a96c2acc8973f0570ed4f",
+    "supportSha256": "ee3dfac38f3ac96049854de4a718abfb93331ff342a898c876771c736f8b22be",
+    "verifierSha256": "bfd8eb3d46b726be46cdce8f2583e8edae303c94ff03cd3d5a408362a18dbebe",
+    "checkSha256": "f4c5da21639fa64ed673df066c39d903e0539eb955639fdbbbc350741e274881"
   },
   "localAnonymous": {
     "transport": "loopback_registry",
@@ -41,8 +41,8 @@
       "service_ready"
     ],
     "bindingSchemaVersion": 2,
-    "installationSha256": "28550941b94b46a291bc77b5cdee217afc3ff79363032a3a37985a8b60153958",
-    "resultSha256": "f3d502ef903ee8f7cdca1af98bd86264cfdf39c478e1bb5067968e4c5d918b70",
+    "installationSha256": "f538f02bdf30d4982ff1fd9d550ad39cc3ba20956a671f8183572371450a347d",
+    "resultSha256": "8f81fafdc46e91d0eb25cedf71c95787a15d2b4095d9533783cd84f4890ce4a4",
     "uninstallStatus": "removed",
     "bindingRemoved": true
   },
@@ -65,8 +65,8 @@
       "service_ready"
     ],
     "bindingSchemaVersion": 2,
-    "installationSha256": "360d0d7e2559f49fbc673c4af56727e7838779beca4e8abd9c76bbff96ee021e",
-    "resultSha256": "14e7fe1e9a8cc35cfaff2aa573277c47976ebf214def2f7d3ad18fee64cb5d40",
+    "installationSha256": "35ba8c87236502d81e1096a2b18ed80aed81a28766119a69c1eda36b3ba4b314",
+    "resultSha256": "3c72ee123289077af6a7d095f75b8c1c0d50259ae8c374c049b1701bedfd9974",
     "uninstallStatus": "removed",
     "bindingRemoved": true,
     "candidateDigest": "sha256:df6b275b52a031272b20361d7d0674823533d5bcf1cb1be64ee3553935e61207",
@@ -109,5 +109,5 @@
       "Windows host product acceptance"
     ]
   },
-  "contentSha256": "1c7bf25a0e9672f39f7fc339993ca5fb683318c88a7cd86580047ca5bab733b1"
+  "contentSha256": "fdc7d52a5d90916882894abc82fb2f524e8354e7dc560ae7cc8f1be8962692cf"
 }
