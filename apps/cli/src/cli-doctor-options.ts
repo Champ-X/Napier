@@ -11,6 +11,10 @@ export interface CliDoctorOptions {
   dataRoot?: string;
   model?: ModelRef;
   credentialEnv?: string;
+  browserBackend?:
+    | "native_playwright"
+    | "browser_use_local"
+    | "browser_use_cloud";
   timeoutMs: number;
   online: boolean;
   jsonl: boolean;
@@ -22,6 +26,7 @@ export const DOCTOR_VALUE_OPTIONS = new Set([
   "--model",
   "--credential-env",
   "--timeout-ms",
+  "--browser-backend",
 ]);
 export const DOCTOR_FLAG_OPTIONS = new Set(["--offline"]);
 
@@ -31,7 +36,11 @@ export function parseDoctorOptions(
   jsonl: boolean,
 ): { kind: "doctor"; options: CliDoctorOptions } {
   const model = optionalModelRef(values);
-  const credentialEnv = parseCredentialEnvironment(values, model);
+  const browserBackend = parseBrowserBackend(values.get("--browser-backend"));
+  const credentialEnv =
+    browserBackend === "browser_use_cloud" && !model
+      ? parseCloudCredentialEnvironment(values.get("--credential-env"))
+      : parseCredentialEnvironment(values, model);
   return {
     kind: "doctor",
     options: {
@@ -44,8 +53,37 @@ export function parseDoctorOptions(
         : {}),
       ...(model ? { model } : {}),
       ...(credentialEnv ? { credentialEnv } : {}),
+      ...(browserBackend ? { browserBackend } : {}),
     },
   };
+}
+
+function parseCloudCredentialEnvironment(
+  value: string | undefined,
+): string | undefined {
+  const credentialEnv = value?.trim();
+  if (credentialEnv === undefined) return undefined;
+  if (!/^[A-Z_][A-Z0-9_]{1,127}$/u.test(credentialEnv)) {
+    throw new Error("--credential-env is invalid");
+  }
+  return credentialEnv;
+}
+
+function parseBrowserBackend(
+  value: string | undefined,
+): "native_playwright" | "browser_use_local" | "browser_use_cloud" | undefined {
+  const backend = value?.trim().toLowerCase();
+  if (backend === undefined) return undefined;
+  if (
+    backend !== "native_playwright" &&
+    backend !== "browser_use_local" &&
+    backend !== "browser_use_cloud"
+  ) {
+    throw new Error(
+      "--browser-backend must be native_playwright, browser_use_local, or browser_use_cloud",
+    );
+  }
+  return backend;
 }
 
 function doctorTimeout(value: string | undefined): number {

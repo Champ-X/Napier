@@ -1,17 +1,31 @@
 import { Eye, MousePointerClick } from "lucide-react";
 
-import type { RunEvent } from "@napier/contracts";
+import type {
+  CredentialReference,
+  ModelSummary,
+  RunEvent,
+} from "@napier/contracts";
+import type { SelectedModelAvailability } from "./model-selection-view-model";
 import { browserLiveViewExpected } from "./browser-live-view-state";
+import { BrowserUseLocalTaskPanel } from "./BrowserUseLocalTaskPanel";
+
+export interface BrowserInspectorPanelProps {
+  activeTab: string;
+  events: readonly RunEvent[];
+  activeRunId: string | undefined;
+  taskContext: {
+    models: readonly ModelSummary[];
+    credentials: readonly CredentialReference[];
+    selectedModel: SelectedModelAvailability;
+  };
+}
 
 export function BrowserInspectorPanel({
   activeTab,
   events,
   activeRunId,
-}: {
-  activeTab: string;
-  events: readonly RunEvent[];
-  activeRunId: string | undefined;
-}) {
+  taskContext,
+}: BrowserInspectorPanelProps) {
   if (activeTab !== "browser") return null;
   const live =
     activeRunId !== undefined && browserLiveViewExpected(events, activeRunId);
@@ -39,10 +53,15 @@ export function BrowserInspectorPanel({
           </p>
         </div>
         <button type="button" disabled={!live} onClick={focusBrowserLive}>
-          <MousePointerClick size={13} aria-hidden="true" />
+          <MousePointerClick size={14} aria-hidden="true" />
           Open in task
         </button>
       </div>
+      <BrowserUseLocalTaskPanel
+        models={taskContext.models}
+        credentials={taskContext.credentials}
+        selectedModel={taskContext.selectedModel}
+      />
     </section>
   );
 }

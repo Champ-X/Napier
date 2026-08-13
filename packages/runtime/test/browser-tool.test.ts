@@ -14,6 +14,7 @@ import {
   type BrowserSessionDetails,
   RunBrowserSessionManager,
 } from "../src/browser-session.js";
+import { createBrowserConfirmationPageState } from "../src/browser-confirmed-action.js";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { assessToolCall } from "../src/policy.js";
 import { DEFAULT_AGENT_ENABLED_TOOLS } from "../src/read-only-tool-names.js";
@@ -311,6 +312,61 @@ describe("browser Agent tool", () => {
     expect(JSON.stringify(result.details)).not.toContain(
       Buffer.from("png").toString("base64"),
     );
+  });
+
+  it("tells the model when exact one-use Browser approval was consumed", async () => {
+    const pageState = createBrowserConfirmationPageState({
+      sessionOperation: 1,
+      sessionIdSha256: "a".repeat(64),
+      activeTabId: "tab_1",
+      tabCount: 1,
+      tabSetSha256: sha256(canonicalJson(["tab_1"])),
+      currentUrlSha256: "e".repeat(64),
+      currentOriginSha256: "f".repeat(64),
+      targetStateSha256: sha256("target"),
+      targetEffect: "interaction",
+      targetSensitivity: "ordinary",
+      targetSensitivitySha256: sha256(canonicalJson([])),
+    });
+    const executeConfirmedAction = vi.fn(async () => ({
+      output: "Browser CLICK complete.",
+      details: details("click"),
+    }));
+    const consume = vi.fn(() => pageState);
+    const tool = createBrowserTool(
+      { executeConfirmedAction } as unknown as RunBrowserSessionManager,
+      { threadId: "thread_confirm", runId: "run_confirm" },
+      { actionConfirmations: { consume } },
+    );
+
+    const result = await tool.execute("call_confirm", {
+      action: "click",
+      target: { ref: "e1" },
+      allowCrossOrigin: false,
+    });
+
+    expect(consume).toHaveBeenCalledOnce();
+    expect(executeConfirmedAction).toHaveBeenCalledWith(
+      { threadId: "thread_confirm", runId: "run_confirm" },
+      {
+        action: "click",
+        target: { ref: "e1" },
+        allowCrossOrigin: false,
+      },
+      pageState,
+      undefined,
+    );
+    expect(result.content).toEqual([
+      {
+        type: "text",
+        text: [
+          "Confirmation consumed: Napier received and consumed the exact one-use user approval for this Browser action before execution.",
+          "Approved effect: interaction.",
+          `Confirmed page state SHA-256: ${pageState.contentSha256}.`,
+          "Browser CLICK complete.",
+        ].join("\n"),
+      },
+    ]);
   });
 
   it("registers confirmed Browser file outputs through the standard Plan path", async () => {

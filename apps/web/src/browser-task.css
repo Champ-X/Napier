@@ -1,0 +1,338 @@
+.browser-inspector-card button:focus-visible,
+.browser-task-actions button:focus-visible,
+.browser-task-form input:focus-visible,
+.browser-task-form select:focus-visible,
+.browser-task-form textarea:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 4px var(--ledger);
+}
+
+.browser-inspector-card button:hover:not(:disabled),
+.browser-task-actions button:hover:not(:disabled) {
+  background: var(--paper-deep);
+}
+
+.browser-inspector-card button:active:not(:disabled),
+.browser-task-actions button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.browser-inspector-card button:disabled,
+.browser-task-actions button:disabled,
+.browser-task-form :disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.browser-task-card {
+  display: grid;
+  container-name: browser-task;
+  container-type: inline-size;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--paper) 78%, var(--paper-deep));
+  border: 1px solid var(--rule);
+}
+
+.browser-task-heading {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.browser-task-heading > div {
+  min-width: 0;
+}
+
+.browser-task-heading strong,
+.browser-task-heading p {
+  display: block;
+  margin: 0;
+}
+
+.browser-task-heading p {
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.browser-task-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.browser-task-form label {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.browser-task-form label > span {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.browser-task-credential {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  padding: 8px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+}
+
+.browser-task-credential > strong,
+.browser-task-credential > p {
+  margin: 0;
+}
+
+.browser-task-credential > strong,
+.browser-task-credential summary {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.browser-task-credential > p {
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.browser-task-credential details {
+  display: grid;
+  gap: 6px;
+}
+
+.browser-task-credential summary {
+  min-height: 24px;
+  cursor: pointer;
+}
+
+.browser-task-form input,
+.browser-task-form select,
+.browser-task-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+}
+
+.browser-task-form textarea {
+  resize: vertical;
+}
+
+.browser-task-wide {
+  grid-column: 1 / -1;
+}
+
+.browser-task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.browser-task-actions button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.browser-task-actions button.danger {
+  color: var(--vermilion);
+  border-color: var(--vermilion);
+}
+
+.browser-task-actions span {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-soft);
+}
+
+.browser-task-cloud-disclosure,
+.browser-task-local-disclosure {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--ochre-soft) 55%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--ochre) 48%, var(--rule));
+}
+
+.browser-task-cloud-disclosure strong,
+.browser-task-cloud-disclosure p,
+.browser-task-local-disclosure strong,
+.browser-task-local-disclosure p {
+  margin: 0;
+}
+
+.browser-task-cloud-disclosure strong,
+.browser-task-local-disclosure strong {
+  color: var(--ink);
+}
+
+.browser-task-form .browser-task-cloud-consent {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.browser-task-form .browser-task-cloud-consent input {
+  flex: 0 0 auto;
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+}
+
+.browser-task-form .browser-task-cloud-consent span {
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.browser-task-cloud-runtime,
+.browser-task-local-runtime {
+  padding: 8px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border-left: 2px solid var(--ochre);
+}
+
+.browser-task-error {
+  margin: 0;
+  padding: 8px;
+  font-size: 10px;
+  color: var(--vermilion);
+  background: var(--vermilion-soft);
+  border: 1px solid color-mix(in srgb, var(--vermilion) 35%, transparent);
+}
+
+.browser-task-screenshot {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.browser-task-screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+}
+
+.browser-task-screenshot figcaption {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-soft);
+}
+
+.browser-task-steps {
+  display: grid;
+  max-height: 256px;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.browser-task-steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 8px;
+  padding: 8px;
+  font-size: 10px;
+  background: var(--paper);
+  border-left: 2px solid var(--ochre);
+}
+
+.browser-task-steps small,
+.browser-task-steps em {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+
+.browser-task-steps small {
+  color: var(--ink-faint);
+}
+
+.browser-task-steps em {
+  color: var(--vermilion);
+}
+
+.browser-task-terminal {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  font-size: 10px;
+  background: var(--paper);
+  border-left: 3px solid var(--ledger);
+}
+
+.browser-task-terminal.is-error,
+.browser-task-terminal.status-failed,
+.browser-task-terminal.status-handoff_required {
+  border-left-color: var(--vermilion);
+}
+
+.browser-task-terminal p,
+.browser-task-terminal small,
+.browser-task-terminal em {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.browser-task-terminal small {
+  font-family: var(--mono);
+  color: var(--ink-soft);
+}
+
+.browser-task-terminal em {
+  color: var(--vermilion);
+}
+
+@container browser-task (max-width: 375px) {
+  .browser-task-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .browser-task-wide {
+    grid-column: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  .browser-task-card,
+  .browser-task-form input,
+  .browser-task-form select,
+  .browser-task-form textarea,
+  .browser-task-actions button {
+    border: 1px solid ButtonText;
+  }
+}

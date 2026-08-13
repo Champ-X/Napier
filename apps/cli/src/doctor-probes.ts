@@ -1,9 +1,4 @@
-import {
-  ModelRegistry,
-  resolveBrowserRuntime,
-  RunBrowserSessionManager,
-  sha256,
-} from "@napier/runtime";
+import { sha256 } from "@napier/runtime";
 import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
@@ -27,7 +22,16 @@ import {
 } from "@napier/runtime/web-search";
 
 import type { CliDoctorOptions } from "./cli-doctor-options.js";
-import type { DoctorCheck } from "./doctor-report.js";
+import type {
+  DoctorCheck,
+  DoctorCredentialReferenceStatus,
+} from "./doctor-check-model.js";
+import {
+  defaultBrowserProbe,
+  defaultBrowserUseCloudProbe,
+  defaultBrowserUseLocalProbe,
+} from "./doctor-browser-probes.js";
+import { defaultModelProbe } from "./doctor-model-probe.js";
 
 export interface DoctorProbeDependencies {
   runtime?: () => Promise<DoctorCheck>;
@@ -44,6 +48,14 @@ export interface DoctorProbeDependencies {
   browser?: (
     workspaceRoot: string,
     signal: AbortSignal,
+  ) => Promise<DoctorCheck>;
+  browserUseLocal?: (
+    dataRoot: string,
+    selected: boolean,
+  ) => Promise<DoctorCheck>;
+  browserUseCloud?: (
+    env: Readonly<Record<string, string | undefined>>,
+    credentialEnv: string,
   ) => Promise<DoctorCheck>;
   skills?: (workspaceRoot: string) => Promise<DoctorCheck>;
   lsp?: (workspaceRoot: string, signal: AbortSignal) => Promise<DoctorCheck>;
@@ -63,15 +75,25 @@ export interface DoctorProbeDependencies {
 export async function runDoctorProbes(input: {
   options: CliDoctorOptions;
   workspaceRoot: string;
+  dataRoot: string;
   env: Readonly<Record<string, string | undefined>>;
   signal: AbortSignal;
   dependencies?: DoctorProbeDependencies;
+  credentialReferences?: ReadonlyMap<string, DoctorCredentialReferenceStatus>;
   sandbox?: OsSandboxAdapter;
 }): Promise<DoctorCheck[]> {
   const dependencies = input.dependencies ?? {};
   const runtime = dependencies.runtime ?? defaultRuntimeProbe;
   const model =
-    dependencies.model ?? ((options, env) => defaultModelProbe(options, env));
+    dependencies.model ??
+    ((options, env) =>
+      defaultModelProbe(
+        options,
+        env,
+        options.model
+          ? input.credentialReferences?.get(options.model.provider)
+          : undefined,
+      ));
   const checks = [
     await safeProbe("runtime", true, runtime, (_error, durationMs) => ({
       id: "runtime",
@@ -158,8 +180,30 @@ export async function runDoctorProbes(input: {
               input.sandbox ?? createPlatformSandboxAdapter(),
             ),
           ),
+      dependencies.browserUseLocal
+        ? dependencies.browserUseLocal(
+            input.dataRoot,
+            input.options.browserBackend === "browser_use_local",
+          )
+        : defaultBrowserUseLocalProbe(
+            input.dataRoot,
+            input.options.browserBackend === "browser_use_local",
+          ),
     ])),
   );
+  if (input.options.browserBackend === "browser_use_cloud") {
+    const credentialEnv =
+      input.options.credentialEnv?.trim() || "BROWSER_USE_API_KEY";
+    checks.push(
+      dependencies.browserUseCloud
+        ? await dependencies.browserUseCloud(input.env, credentialEnv)
+        : defaultBrowserUseCloudProbe(
+            input.env,
+            credentialEnv,
+            input.credentialReferences?.get("browser-use"),
+          ),
+    );
+  }
   input.signal.throwIfAborted();
   const sandbox =
     dependencies.sandbox ??
@@ -239,74 +283,6 @@ async function defaultRuntimeProbe(): Promise<DoctorCheck> {
   };
 }
 
-async function defaultModelProbe(
-  options: CliDoctorOptions,
-  env: Readonly<Record<string, string | undefined>>,
-): Promise<DoctorCheck> {
-  const startedAt = Date.now();
-  if (!options.model) {
-    return {
-      id: "model",
-      status: "warning",
-      required: false,
-      code: "model_not_selected",
-      message:
-        "No model was selected; rerun Doctor with --model and --credential-env",
-      durationMs: Date.now() - startedAt,
-    };
-  }
-  const registry = new ModelRegistry();
-  if (options.model.provider !== "napier" && !registry.resolve(options.model)) {
-    return {
-      id: "model",
-      status: "failed",
-      required: true,
-      code: "model_unknown",
-      message: "The selected model is not present in the installed catalog",
-      durationMs: Date.now() - startedAt,
-      evidence: { model: `${options.model.provider}/${options.model.id}` },
-    };
-  }
-  if (options.model.provider === "napier" && options.model.id === "demo") {
-    return {
-      id: "model",
-      status: "passed",
-      required: false,
-      code: "demo_model_ready",
-      message: "The deterministic demo model is available without credentials",
-      durationMs: Date.now() - startedAt,
-      evidence: { model: "napier/demo" },
-    };
-  }
-  if (!options.credentialEnv) {
-    return {
-      id: "model",
-      status: "warning",
-      required: false,
-      code: "credential_not_checked",
-      message:
-        "Model exists, but no credential environment variable was selected for this check",
-      durationMs: Date.now() - startedAt,
-      evidence: { model: `${options.model.provider}/${options.model.id}` },
-    };
-  }
-  const available = Boolean(env[options.credentialEnv]?.trim());
-  return {
-    id: "model",
-    status: available ? "passed" : "failed",
-    required: true,
-    code: available ? "credential_available" : "credential_missing",
-    message: available
-      ? "The selected model credential environment variable is available"
-      : "The selected model credential environment variable is missing",
-    durationMs: Date.now() - startedAt,
-    evidence: {
-      model: `${options.model.provider}/${options.model.id}`,
-      credentialVariableSha256: sha256(options.credentialEnv),
-    },
-  };
-}
-
 async function defaultSearchProbe(signal: AbortSignal): Promise<DoctorCheck> {
   const startedAt = Date.now();
   const registry = new WebSearchProviderRegistry({ env: {} });
@@ -355,39 +331,6 @@ async function defaultFetchProbe(signal: AbortSignal): Promise<DoctorCheck> {
         format: result.details.sourceFormat ?? "unknown",
         bodyBytes: result.details.sourceBodyBytes ?? 0,
         lineCount: result.details.sourceLineCount ?? 0,
-      },
-    };
-  } finally {
-    await manager.cancelRun(owner);
-  }
-}
-
-async function defaultBrowserProbe(
-  workspaceRoot: string,
-  signal: AbortSignal,
-): Promise<DoctorCheck> {
-  const startedAt = Date.now();
-  await resolveBrowserRuntime();
-  const manager = new RunBrowserSessionManager({ workspaceRoot });
-  const owner = { threadId: "thread_doctor", runId: "run_doctor" };
-  try {
-    const started = await manager.execute(
-      owner,
-      { action: "start", url: "https://example.com/" },
-      signal,
-    );
-    await manager.execute(owner, { action: "close" }, signal);
-    return {
-      id: "browser",
-      status: "passed",
-      required: true,
-      code: "browser_ready",
-      message: "Sandboxed Chrome loaded one public page through the safe proxy",
-      durationMs: Date.now() - startedAt,
-      evidence: {
-        executableSha256: started.details.browserExecutableSha256,
-        destinationCount: started.details.network.destinationCount,
-        chromiumSandbox: true,
       },
     };
   } finally {

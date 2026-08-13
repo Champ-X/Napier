@@ -6,7 +6,7 @@ export const MAX_SETUP_TIMEOUT_MS = 15 * 60 * 1_000;
 export interface CliSetupOptions {
   workspace: string;
   dataRoot?: string;
-  component?: "browser" | "sandbox";
+  component?: "browser" | "browser-use-local" | "sandbox";
   providerId?: string;
   expectedPreviewSha256?: string;
   timeoutMs?: number;
@@ -77,11 +77,17 @@ function setupProvider(value: string | undefined): string | undefined {
 
 function setupComponent(
   value: string | undefined,
-): "browser" | "sandbox" | undefined {
+): "browser" | "browser-use-local" | "sandbox" | undefined {
   const component = value?.trim().toLowerCase();
   if (component === undefined) return undefined;
-  if (component !== "browser" && component !== "sandbox") {
-    throw new Error("--component must be browser or sandbox");
+  if (
+    component !== "browser" &&
+    component !== "browser-use-local" &&
+    component !== "sandbox"
+  ) {
+    throw new Error(
+      "--component must be browser, browser-use-local, or sandbox",
+    );
   }
   return component;
 }
@@ -98,7 +104,7 @@ function setupPreviewHash(value: string | undefined): string | undefined {
 }
 
 function validateSetupSelection(input: {
-  component: "browser" | "sandbox" | undefined;
+  component: "browser" | "browser-use-local" | "sandbox" | undefined;
   providerId: string | undefined;
   expectedPreviewSha256: string | undefined;
   apply: boolean;

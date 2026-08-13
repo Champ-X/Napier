@@ -2,9 +2,8 @@ import {
   CAPABILITY_FLAG_OPTIONS,
   CAPABILITY_VALUE_OPTIONS,
 } from "./cli-capability-options.js";
-import {
-  CHAT_VALUE_OPTIONS,
-} from "./cli-chat-options.js";
+import { CHAT_VALUE_OPTIONS } from "./cli-chat-options.js";
+import { BROWSER_TASK_VALUE_OPTIONS } from "./cli-browser-task-options.js";
 import {
   DOCTOR_FLAG_OPTIONS,
   DOCTOR_VALUE_OPTIONS,
@@ -21,6 +20,7 @@ import {
 
 const COMMANDS = new Set([
   "run",
+  "browser-task",
   "chat",
   "tui",
   "capabilities",
@@ -51,6 +51,7 @@ export function commandValueOptions(
   },
 ): ReadonlySet<string> {
   if (command === "run") return RUN_VALUE_OPTIONS;
+  if (command === "browser-task") return BROWSER_TASK_VALUE_OPTIONS;
   if (command === "capabilities") return CAPABILITY_VALUE_OPTIONS;
   if (command === "doctor") return DOCTOR_VALUE_OPTIONS;
   if (command === "setup") return SETUP_VALUE_OPTIONS;

@@ -184,7 +184,7 @@ export function App() {
             <LazyBrowserInspectorPanel
               activeTab={vm.inspectorTab}
               events={vm.detail?.events ?? []}
-              activeRunId={vm.activeRunId}
+              activeRunId={vm.activeRunId} taskContext={{ models: vm.bootstrap.models, credentials: vm.bootstrap.credentials, selectedModel: activeModel }}
             />
           </Suspense>
           {vm.inspectorTab === "files" && vm.detail ? (

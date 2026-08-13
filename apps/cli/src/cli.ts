@@ -48,6 +48,8 @@ import { executeRpc } from "./rpc-cli.js";
 import { configureCliModelCredential } from "./cli-model-credential.js";
 import type { CliIo, RunCliDependencies } from "./cli-runtime.js";
 import { executeTui } from "./tui-cli.js";
+import { executeBrowserTask } from "./browser-task-cli.js";
+import { errorMessage, parseJson, signedNumber } from "./cli-text.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 
 export { CLI_HELP, CLI_VERSION, parseCliArgs };
@@ -89,6 +91,9 @@ export async function runCli(
   }
   if (action.kind === "run") {
     return executeRun(action.options, io, dependencies, parentSignal);
+  }
+  if (action.kind === "browser-task") {
+    return executeBrowserTask(action.options, io, dependencies, parentSignal);
   }
   if (action.kind === "chat") {
     return executeInteractive(action.options, io, dependencies, parentSignal);
@@ -550,24 +555,4 @@ async function createWorkflowThread(
     title: options.title ?? "CLI Workflow",
     agentId: agent.id,
   });
-}
-
-function signedNumber(value: number, fractionDigits?: number): string {
-  const text =
-    fractionDigits === undefined
-      ? String(value)
-      : value.toFixed(fractionDigits);
-  return value > 0 ? `+${text}` : text;
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function parseJson(text: string, label: string): unknown {
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    throw new Error(`${label} is not valid JSON`);
-  }
 }

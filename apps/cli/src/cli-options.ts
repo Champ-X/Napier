@@ -22,6 +22,10 @@ import type {
   CliWorkspaceOptions,
 } from "./cli-execution-options.js";
 import {
+  parseBrowserTaskOptions,
+  type CliBrowserTaskOptions,
+} from "./cli-browser-task-options.js";
+import {
   optionalModelRef,
   optionalResourceId,
   parseTimeout,
@@ -32,15 +36,13 @@ import {
   parseWorkflowOptions as parseWorkflowOptionsDomain,
   type CliWorkflowOptions,
 } from "./cli-workflow-options.js";
-import {
-  parseRunOptions,
-  type CliRunOptions,
-} from "./cli-run-options.js";
+import { parseRunOptions, type CliRunOptions } from "./cli-run-options.js";
 import { parseFirstUseCliAction } from "./cli-first-use.js";
 import type { CliFirstUseAction } from "./cli-first-use-model.js";
 
 export type { CliWorkflowOptions };
 export type { CliRunOptions };
+export type { CliBrowserTaskOptions };
 export type {
   CliExecutionOptions,
   CliWorkspaceOptions,
@@ -99,6 +101,7 @@ export type CliAction =
   | { kind: "version" }
   | CliFirstUseAction
   | { kind: "run"; options: CliRunOptions }
+  | { kind: "browser-task"; options: CliBrowserTaskOptions }
   | CliChatAction
   | CliTuiAction
   | { kind: "resume"; options: CliResumeOptions }
@@ -202,6 +205,9 @@ export function parseCliArgs(argv: string[]): CliAction {
   const firstUse = parseFirstUseCliAction(command, values, flags, jsonl);
   if (firstUse) return firstUse;
   if (command === "run") return parseRunOptions(values, jsonl);
+  if (command === "browser-task") {
+    return parseBrowserTaskOptions(values, jsonl);
+  }
   if (command === "chat") return parseChatOptions(values, jsonl);
   if (command === "tui") return parseTuiOptions(values, jsonl);
   if (command === "resume") return parseResumeOptions(values, jsonl);

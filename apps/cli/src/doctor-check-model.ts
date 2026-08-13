@@ -1,5 +1,7 @@
 export type DoctorCheckStatus = "passed" | "warning" | "failed" | "skipped";
 
+export type DoctorCredentialReferenceStatus = "available" | "missing" | "error";
+
 export interface DoctorCheck {
   id:
     | "runtime"
@@ -9,6 +11,8 @@ export interface DoctorCheck {
     | "search"
     | "fetch"
     | "browser"
+    | "browser_use_local"
+    | "browser_use_cloud"
     | "skills"
     | "lsp"
     | "dap"

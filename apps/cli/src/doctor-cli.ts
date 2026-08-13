@@ -1,9 +1,14 @@
+import { access } from "node:fs/promises";
 import path from "node:path";
 
 import { writeJsonLine, writeLine } from "./cli-output.js";
 import type { CliDoctorOptions } from "./cli-doctor-options.js";
 import type { CliIo } from "./cli-runtime.js";
-import { createPlatformSandboxAdapter } from "@napier/runtime";
+import {
+  createPlatformSandboxAdapter,
+  CredentialReferenceStore,
+  LocalStore,
+} from "@napier/runtime";
 import { createConfiguredSandboxAdapter } from "@napier/runtime/sandbox-installation";
 import {
   createDoctorReport,
@@ -14,6 +19,7 @@ import {
   runDoctorProbes,
   type DoctorProbeDependencies,
 } from "./doctor-probes.js";
+import type { DoctorCredentialReferenceStatus } from "./doctor-check-model.js";
 import { canonicalWorkspace } from "./workspace-path.js";
 
 export async function executeDoctor(
@@ -28,6 +34,7 @@ export async function executeDoctor(
     : timeoutSignal;
   let workspaceReady = false;
   let loadingSandbox = false;
+  let store: LocalStore | undefined;
   try {
     const workspaceRoot = await canonicalWorkspace(options.workspace, io.cwd);
     workspaceReady = true;
@@ -35,6 +42,13 @@ export async function executeDoctor(
       io.cwd,
       options.dataRoot ?? path.join(workspaceRoot, ".napier"),
     );
+    const credentialInspection = await inspectCredentialReferences(
+      options,
+      workspaceRoot,
+      dataRoot,
+      io.env,
+    );
+    store = credentialInspection.store;
     loadingSandbox = true;
     const sandbox =
       (await createConfiguredSandboxAdapter({
@@ -47,9 +61,11 @@ export async function executeDoctor(
       runDoctorProbes({
         options,
         workspaceRoot,
+        dataRoot,
         env: io.env,
         signal,
         dependencies,
+        credentialReferences: credentialInspection.statuses,
         sandbox,
       }),
       signal,
@@ -92,6 +108,71 @@ export async function executeDoctor(
     });
     await writeDoctorReport(report, options.jsonl, io);
     return report.status === "blocked" ? 1 : 0;
+  } finally {
+    store?.close();
+  }
+}
+
+async function inspectCredentialReferences(
+  options: CliDoctorOptions,
+  workspaceRoot: string,
+  dataRoot: string,
+  env: Readonly<Record<string, string | undefined>>,
+): Promise<{
+  store?: LocalStore;
+  statuses: ReadonlyMap<string, DoctorCredentialReferenceStatus>;
+}> {
+  const providers = new Set<string>();
+  if (
+    options.model &&
+    options.model.provider !== "napier" &&
+    !options.credentialEnv
+  ) {
+    providers.add(options.model.provider);
+  }
+  if (
+    options.browserBackend === "browser_use_cloud" &&
+    !options.credentialEnv
+  ) {
+    providers.add("browser-use");
+  }
+  if (providers.size === 0) return { statuses: new Map() };
+  if (!(await hasPersistedWorkspace(dataRoot))) {
+    return {
+      statuses: new Map(
+        [...providers].map((provider) => [provider, "missing"] as const),
+      ),
+    };
+  }
+  const store = new LocalStore({ workspaceRoot, dataRoot });
+  await store.initialize();
+  const credentials = new CredentialReferenceStore({ store, env });
+  const statuses = new Map<string, DoctorCredentialReferenceStatus>();
+  for (const provider of providers) {
+    try {
+      const credential = await credentials.read(provider);
+      statuses.set(
+        provider,
+        credential?.type === "api_key" && credential.key?.trim()
+          ? "available"
+          : "missing",
+      );
+    } catch {
+      statuses.set(provider, "error");
+    }
+  }
+  return { store, statuses };
+}
+
+async function hasPersistedWorkspace(dataRoot: string): Promise<boolean> {
+  try {
+    await Promise.any([
+      access(path.join(dataRoot, "ledger.sqlite")),
+      access(path.join(dataRoot, "workspace.json")),
+    ]);
+    return true;
+  } catch {
+    return false;
   }
 }
 

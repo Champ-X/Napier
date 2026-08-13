@@ -1,5 +1,6 @@
 import { executeCapabilities } from "./capability-cli.js";
 import { executeBrowserRuntimeSetup } from "./browser-runtime-setup-cli.js";
+import { executeBrowserUseLocalSetup } from "./browser-use-local-setup-cli.js";
 import { parseCapabilityOptions } from "./cli-capability-options.js";
 import { parseDoctorOptions } from "./cli-doctor-options.js";
 import { parseSetupOptions } from "./cli-setup-options.js";
@@ -43,6 +44,14 @@ export async function executeFirstUseCliAction(
     return executeDoctor(action.options, io, dependencies.doctor, signal);
   }
   if (action.kind === "setup") {
+    if (action.options.component === "browser-use-local") {
+      return executeBrowserUseLocalSetup(
+        action.options,
+        io,
+        dependencies.browserUseLocalSetup,
+        signal,
+      );
+    }
     if (action.options.component === "browser") {
       return executeBrowserRuntimeSetup(
         action.options,

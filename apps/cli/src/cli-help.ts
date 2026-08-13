@@ -14,6 +14,7 @@ export const CLI_HELP = `Napier CLI ${CLI_VERSION}
 
 Usage:
   napier run --workspace <path> --prompt <text> [options]
+  napier browser-task --workspace <path> --backend <browser_use_local|browser_use_cloud> --task <text> [options]
   napier chat --workspace <path> [options]
   napier tui --workspace <path> [options]
   napier capabilities --workspace <path> [options]
@@ -29,6 +30,7 @@ Usage:
 
 Commands:
   run                    Start a new Run on a new or existing Thread
+  browser-task           Run an explicit autonomous task with Browser Use local or Cloud
   chat                   Open a multi-turn interactive Agent session
   tui                    Open the full-screen local Agent terminal
   capabilities           Inspect, preview, or apply an Agent capability preset
@@ -53,11 +55,12 @@ Run and resume options:
 Doctor options:
   --model <provider/id>  Optional model catalog and credential readiness check
   --credential-env <var> Check this environment variable without printing its value
+  --browser-backend <id> Check native_playwright (default), browser_use_local, or browser_use_cloud readiness
   --offline              Skip public Search, Fetch, and Browser probes
   --timeout-ms <ms>      Total Doctor time budget (default ${DEFAULT_DOCTOR_TIMEOUT_MS}, max ${MAX_DOCTOR_TIMEOUT_MS})
 
 Setup options:
-  --component <name>     Preview or apply the pinned browser or sandbox runtime
+  --component <name>     browser, browser-use-local, or sandbox runtime
   --provider <id>        Standard Provider selected from setup preview
   --expected-preview     Exact setup preview SHA-256 required for apply
   --timeout-ms <ms>      Component install/verification budget (default ${DEFAULT_SETUP_TIMEOUT_MS}, max ${MAX_SETUP_TIMEOUT_MS})
@@ -94,6 +97,20 @@ Run options:
   --title <text>         Title for a new Thread
   --preset <id>          Temporary capability preset for this Run only
                          Safe Automation Browser actions require TTY approve/reject
+
+Browser task options:
+  --backend <id>         Explicitly select browser_use_local or browser_use_cloud; native remains default elsewhere
+  --task <text>          Autonomous public-web task (1-8000 characters)
+  --start-url <url>      Deterministic first page (required for Cloud); must match the domain allowlist
+  --model <provider/id>  Explicit second model (OpenAI, Anthropic, Google, Browser Use, DeepSeek, or OpenRouter)
+  --credential-env <var> Optional environment override; otherwise use the active stored reference
+  --allowed-domains <d>  Required comma-separated public host allowlist
+                         First slice is read-only: no typing, upload, download, script, or file actions
+  --max-steps <n>        Browser Use step budget (default 25, max 100)
+  --max-cost-usd <usd>   Required Cloud ceiling (0.01-100); Napier stops on polled provider cost
+                         Cloud sends task/URL/domains/page data/screenshots; no workspace files; provider-plan retention
+                         Local opens a visible fresh-profile browser; type pause, takeover, resume, or stop + Enter
+  --timeout-ms <ms>      Wall-time limit; Ctrl+C stops the selected backend and local browser process group
 
 Resume options:
   --thread <thread-id>   Waiting Thread containing an interrupted Run

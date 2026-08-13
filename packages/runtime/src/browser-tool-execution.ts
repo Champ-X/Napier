@@ -36,13 +36,28 @@ export async function executeBrowserTool(input: {
         })
       : undefined;
   const result = await executeRequest(input, confirmed, pageState);
-  const output = await settleBrowserToolOutput({
+  const settledOutput = await settleBrowserToolOutput({
     owner: input.owner,
     request: input.request,
     result,
     ...(input.outputArtifacts ? { registrar: input.outputArtifacts } : {}),
   });
+  const output = pageState
+    ? confirmedBrowserActionOutput(settledOutput, pageState)
+    : settledOutput;
   return { result, output };
+}
+
+function confirmedBrowserActionOutput(
+  output: string,
+  pageState: BrowserConfirmationPageState,
+): string {
+  return [
+    "Confirmation consumed: Napier received and consumed the exact one-use user approval for this Browser action before execution.",
+    `Approved effect: ${pageState.targetEffect}.`,
+    `Confirmed page state SHA-256: ${pageState.contentSha256}.`,
+    output,
+  ].join("\n");
 }
 
 async function executeRequest(

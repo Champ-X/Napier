@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { Writable } from "node:stream";
 
-import { canonicalJson, sha256 } from "@napier/runtime";
+import { canonicalJson, LocalStore, sha256 } from "@napier/runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { parseCliArgs, runCli } from "../src/cli.js";
@@ -95,8 +95,8 @@ describe("Napier Doctor CLI", () => {
         schemaVersion: 2,
         status: "ready",
         online: true,
-        checkCount: 14,
-        passedCount: 14,
+        checkCount: 15,
+        passedCount: 15,
         warningCount: 0,
         failedCount: 0,
         skippedCount: 0,
@@ -109,6 +109,124 @@ describe("Napier Doctor CLI", () => {
     expect(stdout.text()).not.toContain(fixture.workspace);
     expect(stdout.text()).not.toContain("DOCTOR_PRIVATE_KEY");
     expect(stdout.text()).not.toContain("TEST_CREDENTIAL_SENTINEL");
+    await expect(
+      access(path.join(fixture.workspace, ".napier")),
+    ).rejects.toThrow();
+  });
+
+  it("uses active model and Browser Use credential references without exposing secrets", async () => {
+    const fixture = await createFixture();
+    const dataRoot = path.join(fixture.workspace, ".napier");
+    const store = new LocalStore({
+      workspaceRoot: fixture.workspace,
+      dataRoot,
+    });
+    await store.initialize();
+    await store.createCredentialReference({
+      providerId: "deepseek",
+      label: "Doctor model reference",
+      source: {
+        type: "environment",
+        variable: "NAPIER_DOCTOR_MODEL_KEY",
+      },
+    });
+    await store.createCredentialReference({
+      providerId: "browser-use",
+      label: "Doctor Browser Use reference",
+      source: {
+        type: "environment",
+        variable: "NAPIER_DOCTOR_BROWSER_KEY",
+      },
+    });
+    store.close();
+    const stdout = new CaptureWritable();
+    const dependencies = doctorDependencies({});
+    delete dependencies.doctor?.model;
+    delete dependencies.doctor?.browserUseCloud;
+
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "--browser-backend",
+        "browser_use_cloud",
+        "--offline",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable(), {
+        NAPIER_DOCTOR_MODEL_KEY: "private-model-key",
+        NAPIER_DOCTOR_BROWSER_KEY: "private-browser-key",
+      }),
+      dependencies,
+    );
+
+    expect(code).toBe(0);
+    const report = JSON.parse(stdout.text()) as { checks: DoctorCheck[] };
+    expect(report.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "model",
+          status: "passed",
+          code: "credential_reference_available",
+          evidence: expect.objectContaining({
+            credentialSource: "active_reference",
+          }),
+        }),
+        expect.objectContaining({
+          id: "browser_use_cloud",
+          status: "passed",
+          code: "browser_use_cloud_configured",
+          evidence: expect.objectContaining({
+            credentialSource: "active_reference",
+            readinessBilling: false,
+          }),
+        }),
+      ]),
+    );
+    expect(stdout.text()).not.toContain("private-model-key");
+    expect(stdout.text()).not.toContain("private-browser-key");
+    expect(stdout.text()).not.toContain("NAPIER_DOCTOR_MODEL_KEY");
+    expect(stdout.text()).not.toContain("NAPIER_DOCTOR_BROWSER_KEY");
+  });
+
+  it("reports a missing active reference without initializing workspace state", async () => {
+    const fixture = await createFixture();
+    const stdout = new CaptureWritable();
+    const dependencies = doctorDependencies({});
+    delete dependencies.doctor?.model;
+
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "--offline",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      dependencies,
+    );
+
+    expect(code).toBe(1);
+    expect(JSON.parse(stdout.text())).toMatchObject({
+      checks: expect.arrayContaining([
+        expect.objectContaining({
+          id: "model",
+          status: "failed",
+          code: "credential_reference_missing",
+        }),
+      ]),
+      remediations: expect.arrayContaining([
+        expect.objectContaining({
+          id: "configure_model_credential_reference",
+        }),
+      ]),
+    });
     await expect(
       access(path.join(fixture.workspace, ".napier")),
     ).rejects.toThrow();
@@ -162,6 +280,105 @@ describe("Napier Doctor CLI", () => {
       }),
     ]);
     expect(onlineProbe).not.toHaveBeenCalled();
+  });
+
+  it("blocks a selected Browser Use local backend with an exact setup recovery", async () => {
+    const fixture = await createFixture();
+    const stdout = new CaptureWritable();
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--browser-backend",
+        "browser_use_local",
+        "--model",
+        "napier/demo",
+        "--offline",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      doctorDependencies({
+        model: passed("model", "demo_model_ready"),
+        browser_use_local: failed(
+          "browser_use_local",
+          "browser_use_local_missing",
+        ),
+      }),
+    );
+    expect(code).toBe(1);
+    const report = JSON.parse(stdout.text()) as {
+      status: string;
+      checks: DoctorCheck[];
+      remediations: Array<{ id: string; verifyCommand: string }>;
+    };
+    expect(report.status).toBe("blocked");
+    expect(report.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "browser_use_local",
+          required: true,
+          status: "failed",
+        }),
+      ]),
+    );
+    expect(report.remediations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "install_browser_use_local",
+          verifyCommand: expect.stringContaining(
+            "--component browser-use-local",
+          ),
+        }),
+      ]),
+    );
+  });
+
+  it("reports Cloud credential readiness without creating a billable task", async () => {
+    const fixture = await createFixture();
+    const stdout = new CaptureWritable();
+    const code = await runCli(
+      [
+        "doctor",
+        "--workspace",
+        fixture.workspace,
+        "--browser-backend",
+        "browser_use_cloud",
+        "--credential-env",
+        "BROWSER_USE_API_KEY",
+        "--offline",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout, new CaptureWritable()),
+      doctorDependencies({
+        browser_use_cloud: failed(
+          "browser_use_cloud",
+          "browser_use_cloud_credential_missing",
+        ),
+      }),
+    );
+    expect(code).toBe(1);
+    const report = JSON.parse(stdout.text()) as {
+      checks: DoctorCheck[];
+      remediations: Array<{ id: string; verifyCommand: string }>;
+    };
+    expect(report.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "browser_use_cloud",
+          required: true,
+          status: "failed",
+        }),
+      ]),
+    );
+    expect(report.remediations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "configure_browser_use_cloud_credential",
+          verifyCommand: expect.stringContaining("--offline"),
+        }),
+      ]),
+    );
   });
 
   it("returns blocked with fixed recovery codes for credential and network failures", async () => {
@@ -366,7 +583,7 @@ describe("Napier Doctor CLI", () => {
       checks: DoctorCheck[];
       remediations: Array<{ id: string; priority: string; checkIds: string[] }>;
     };
-    expect(report.checkCount).toBe(14);
+    expect(report.checkCount).toBe(15);
     expect(report.checks.map((check) => check.id)).toEqual(
       expect.arrayContaining([
         "skills",
@@ -672,6 +889,12 @@ function doctorDependencies(
       fetch: async () => overrides.fetch ?? passed("fetch", "fetch_ready"),
       browser: async () =>
         overrides.browser ?? passed("browser", "browser_ready"),
+      browserUseLocal: async () =>
+        overrides.browser_use_local ??
+        passed("browser_use_local", "browser_use_local_ready"),
+      browserUseCloud: async () =>
+        overrides.browser_use_cloud ??
+        passed("browser_use_cloud", "browser_use_cloud_configured"),
       skills: async () => overrides.skills ?? passed("skills", "skills_ready"),
       lsp: async () => overrides.lsp ?? passed("lsp", "lsp_ready"),
       dap: async () => overrides.dap ?? passed("dap", "dap_ready"),
@@ -696,6 +919,8 @@ function passed(id: DoctorCheck["id"], code: string): DoctorCheck {
     "shell",
     "verification",
     "service",
+    "browser_use_local",
+    "browser_use_cloud",
   ]);
   return {
     id,

@@ -60,6 +60,10 @@
       "types": "./dist/browser-runtime-setup.d.ts",
       "import": "./dist/browser-runtime-setup.js"
     },
+    "./browser-use-local-setup": {
+      "types": "./dist/browser-use-local-setup.d.ts",
+      "import": "./dist/browser-use-local-setup.js"
+    },
     "./browser-takeover": {
       "types": "./dist/browser-takeover.d.ts",
       "import": "./dist/browser-takeover.js"

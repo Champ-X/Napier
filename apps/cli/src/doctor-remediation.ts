@@ -34,9 +34,9 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
   model_not_selected: {
     id: "select_model",
     instruction:
-      "Select a catalog model and credential environment locator for a conclusive model check.",
+      "Select a catalog model for a conclusive check. Doctor uses its active credential reference by default; --credential-env remains an override.",
     verifyCommand:
-      "napier doctor --workspace 'WORKSPACE_PATH' --model 'PROVIDER/MODEL_ID' --credential-env 'CREDENTIAL_ENV_VAR'",
+      "napier doctor --workspace 'WORKSPACE_PATH' --model 'PROVIDER/MODEL_ID'",
   },
   model_unknown: {
     id: "select_catalog_model",
@@ -51,6 +51,20 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
       "Name the selected model credential environment variable without passing its value in argv.",
     verifyCommand:
       "napier doctor --workspace 'WORKSPACE_PATH' --model 'PROVIDER/MODEL_ID' --credential-env 'CREDENTIAL_ENV_VAR'",
+  },
+  credential_reference_missing: {
+    id: "configure_model_credential_reference",
+    instruction:
+      "Add an active credential in Web Context → Credentials, or rerun Doctor with an environment-variable override.",
+    verifyCommand:
+      "napier doctor --workspace 'WORKSPACE_PATH' --model 'PROVIDER/MODEL_ID'",
+  },
+  credential_reference_unavailable: {
+    id: "repair_model_credential_reference",
+    instruction:
+      "Repair the selected provider's active environment or keychain reference in Web Context → Credentials, then rerun Doctor.",
+    verifyCommand:
+      "napier doctor --workspace 'WORKSPACE_PATH' --model 'PROVIDER/MODEL_ID'",
   },
   credential_missing: {
     id: "configure_model_credential",
@@ -200,6 +214,34 @@ const REMEDIATION_BY_CODE: Readonly<Record<string, RemediationSpec>> = {
     instruction:
       "Run Napier on a host where the browser production sandbox can start; do not disable Chromium sandboxing.",
     verifyCommand: "napier doctor --workspace 'WORKSPACE_PATH'",
+  },
+  browser_use_local_missing: {
+    id: "install_browser_use_local",
+    instruction:
+      "Preview the pinned local Browser Use runtime, then exact-apply that SHA-256. Native Playwright remains available while this optional backend is absent.",
+    verifyCommand:
+      "napier setup --workspace 'WORKSPACE_PATH' --component browser-use-local",
+  },
+  browser_use_local_unsupported: {
+    id: "repair_browser_use_local_host",
+    instruction:
+      "Install uv on a supported macOS, Linux, or Windows host, then rerun the pinned Browser Use local setup preview.",
+    verifyCommand:
+      "napier doctor --workspace 'WORKSPACE_PATH' --browser-backend browser_use_local --offline",
+  },
+  browser_use_cloud_credential_missing: {
+    id: "configure_browser_use_cloud_credential",
+    instruction:
+      "Add an active Browser Use credential in Web Context → Credentials, or pass a working environment-variable override. Doctor never prints or sends the key.",
+    verifyCommand:
+      "napier doctor --workspace 'WORKSPACE_PATH' --browser-backend browser_use_cloud --offline",
+  },
+  browser_use_cloud_credential_unavailable: {
+    id: "repair_browser_use_cloud_credential",
+    instruction:
+      "Repair the active Browser Use credential in Web Context → Credentials, or pass a working environment-variable override.",
+    verifyCommand:
+      "napier doctor --workspace 'WORKSPACE_PATH' --browser-backend browser_use_cloud --offline",
   },
   offline_mode: {
     id: "run_online_checks",

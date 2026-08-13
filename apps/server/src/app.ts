@@ -296,6 +296,7 @@ import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
 import { registerThreadControlHttp } from "./thread-control-http.js";
 import { registerThreadOperationsHttp } from "./thread-operations-http.js";
 import { registerThreadWorkflowHttp } from "./thread-workflow-http.js";
+import { BrowserTasks } from "./browser-task-integration.js";
 import { registerScheduleHttp } from "./schedule-http.js";
 import { registerRunEvaluationHttp } from "./run-evaluation-http.js";
 import {
@@ -319,6 +320,7 @@ import { registerAgentProfileHttp } from "./agent-profile-http.js";
 import { registerWorkspaceProcessHttp } from "./workspace-process-http.js";
 import { inferWorkspaceRoot } from "./workspace-root.js";
 import type { ServerServiceOptions } from "./server-service-options.js";
+import { createReceiptTrustServices } from "./receipt-trust-services.js";
 export { inferWorkspaceRoot } from "./workspace-root.js";
 
 export interface NapierServices extends Pick<
@@ -345,6 +347,7 @@ export interface NapierServices extends Pick<
   automation: AutomationService;
   channels: ChannelService;
   recovery: RecoveryService;
+  browserTasks: BrowserTasks;
   receiptTrustDirectories: ReceiptTrustAnchorDirectoryDiscoveryService;
   receiptTrustDirectorySubscriptions: ReceiptTrustAnchorDirectorySubscriptionService;
   shutdownLocalRuntime(): Promise<void>;
@@ -401,16 +404,9 @@ export async function createServices(
   const automation = new AutomationService(store, runtime);
   const channels = new ChannelService(store, runtime);
   const recovery = new RecoveryService(store, runtime);
-  const receiptTrustDirectories =
-    new ReceiptTrustAnchorDirectoryDiscoveryService(
-      options?.receiptTrustDirectoryDiscovery,
-    );
-  const receiptTrustDirectorySubscriptions =
-    new ReceiptTrustAnchorDirectorySubscriptionService(
-      store,
-      receiptTrustDirectories,
-      options?.receiptTrustDirectorySubscriptions,
-    );
+  const browserTasks = new BrowserTasks(dataRoot, credentials, options?.env);
+  const { receiptTrustDirectories, receiptTrustDirectorySubscriptions } =
+    createReceiptTrustServices(store, options);
   if (options?.startAutomation) {
     automation.start();
     channels.start();
@@ -439,9 +435,10 @@ export async function createServices(
     workspaceProcesses,
     providerSetup,
     sandboxSetup,
+    browserTasks,
     receiptTrustDirectories,
     receiptTrustDirectorySubscriptions,
-    shutdownLocalRuntime: local.shutdown,
+    shutdownLocalRuntime: () => browserTasks.shutdownWith(local.shutdown),
   };
 }
 
@@ -3996,6 +3993,7 @@ export function createApp(services: NapierServices): Hono {
   });
 
   registerBootstrapHttp(app, services);
+  services.browserTasks.register(app);
 
   app.get("/api/usage-price-tables", (context) => {
     const catalog = builtinUsagePriceTableCatalog();

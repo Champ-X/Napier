@@ -7,6 +7,7 @@ import type {
 
 import type { DoctorProbeDependencies } from "./doctor-probes.js";
 import type { BrowserRuntimeSetupDependencies } from "./browser-runtime-setup-model.js";
+import type { BrowserUseLocalSetupDependencies } from "@napier/runtime";
 import type { CliSandboxRuntimeSetupDependencies } from "./sandbox-runtime-setup-model.js";
 import type { CliRunReadinessDependencies } from "./cli-run-readiness.js";
 
@@ -25,6 +26,7 @@ export interface RunCliDependencies {
   ): Promise<LocalAgentRuntimeServices>;
   doctor?: DoctorProbeDependencies;
   browserSetup?: BrowserRuntimeSetupDependencies;
+  browserUseLocalSetup?: BrowserUseLocalSetupDependencies;
   sandboxSetup?: CliSandboxRuntimeSetupDependencies;
   runReadiness?: CliRunReadinessDependencies;
 }
