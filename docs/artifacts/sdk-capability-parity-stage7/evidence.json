@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "68bd91e28c43de232776417078de38e9bb8448cec675f4e66100b99ccf5b7096",
+      "stdoutSha256": "b163a7b03b17965abd5a14ecdb80ae893bc9b61bf5e87606372f7714bf30ae55",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "b701e0bc6fc30e7a1884f4378152c60a59a70b66e4e997702161520ed841c72f",
-      "receiptSha256": "c7bcdc592f98a2dbee08ba8118374c0191890028189b8c98dcb1bbf87c372557"
+      "evidenceSha256": "aa6a526ee77a62706997247bfbe880e26f5578986d2bdd98e8e6d68643ad39f8",
+      "receiptSha256": "c5ce0ba3fd8eacc704418a81a4ed1e69cac2b8cda705c65f8ccd00161ffa5e7e"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "d9229c6933b625c11af9fd49f3f53e6614fb6986ed92f785cef27c9e7e775384",
+      "stdoutSha256": "c32a8355ed14cc86beb4faa23c93b3a2df844528c56fef7b7a28e32d1f7df548",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "7326c1583cefe96a5c5e5d1df9b1f9a9e84aaaa4ff0e022d4f78b54a7c758cb1",
-      "receiptSha256": "d475317a0d4b56741ae6066a61549900d7e5826cb76804e0ad3430aecf71e5b6"
+      "evidenceSha256": "4d8d70ec45feaacef2b5f0381692a025f1588208f6416e59c8728e6e613ae1a3",
+      "receiptSha256": "1ffb2862d108409b59a39d2977c95071bcd94739bcde9c117b0777190fbda42f"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -2984,11 +2984,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "b701e0bc6fc30e7a1884f4378152c60a59a70b66e4e997702161520ed841c72f",
+          "sha256": "aa6a526ee77a62706997247bfbe880e26f5578986d2bdd98e8e6d68643ad39f8",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "7326c1583cefe96a5c5e5d1df9b1f9a9e84aaaa4ff0e022d4f78b54a7c758cb1",
+          "sha256": "4d8d70ec45feaacef2b5f0381692a025f1588208f6416e59c8728e6e613ae1a3",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -3032,7 +3032,7 @@
           "lines": 204
         },
         "docs/artifacts/web-ui-layout-baseline-linux-x64-0.1.0.json": {
-          "sha256": "c6fd66235ea60ec91485785de670f9b57af8bb10ecb9cc49e340400974f1d4cf",
+          "sha256": "7e5d5bde6f249a2b8bf2f01fd9b1a2716106f682b6e56ef47a4e16450f5e1158",
           "lines": 204
         },
         "docs/next-stage-gap-matrix.md": {
@@ -5229,7 +5229,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "903ba2800c9aed67ae41904eea67fb377e43ba87c2105af03bba8701f0908e8f"
+      "manifestSha256": "db667cee4bb2aa73f923b4198a02172941e7cdd38ca4fc6048de5edc67bdace1"
     },
     "executionClosure": {
       "algorithm": {
@@ -21673,7 +21673,7 @@
       ],
       "manifestSha256": "b04cb97eb157098260203bc09698833a44140fbd31f8971c3c86f25f888e05c3"
     },
-    "manifestSha256": "99c3a63f0f43b1a58a64ec0d334d0ea79487b6ea174823560dfb7068a80c2d67"
+    "manifestSha256": "d532ec0aab9b499f3aeb1a1abfb2e50c6f2ef40db1fa8e48675785514ba04758"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21861,11 +21861,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "b701e0bc6fc30e7a1884f4378152c60a59a70b66e4e997702161520ed841c72f"
+      "sha256": "aa6a526ee77a62706997247bfbe880e26f5578986d2bdd98e8e6d68643ad39f8"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "7326c1583cefe96a5c5e5d1df9b1f9a9e84aaaa4ff0e022d4f78b54a7c758cb1"
+      "sha256": "4d8d70ec45feaacef2b5f0381692a025f1588208f6416e59c8728e6e613ae1a3"
     }
   }
 }
