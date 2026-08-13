@@ -57,7 +57,7 @@ describe("Windows host product acceptance receipt", () => {
         value.image.contextSha256 = "d".repeat(64);
       },
       (value) => {
-        value.product.doctor.warningCount = 1;
+        value.product.doctor.warningCount = 2;
       },
       (value) => {
         value.product.rawCommandOutput = "forbidden";

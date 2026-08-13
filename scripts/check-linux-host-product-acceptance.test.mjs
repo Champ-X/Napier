@@ -5,7 +5,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { verifyLinuxHostProductAcceptance } from "./check-linux-host-product-acceptance.mjs";
-import { includeLinuxHostSourceSnapshotPath } from "./linux-host-product-acceptance-live.mjs";
+import {
+  includeLinuxHostSourceSnapshotPath,
+  linuxGuestCommand,
+} from "./linux-host-product-acceptance-live.mjs";
 
 const roots = [];
 
@@ -16,6 +19,21 @@ afterEach(async () => {
 });
 
 describe("Linux host product acceptance artifact", () => {
+  it("bounds guest diagnostics without truncating the final JSON result", () => {
+    const command = linuxGuestCommand({
+      archivePath: "/tmp/source.tar",
+      runName: "napier-linux-host-test",
+      nodeVersion: "v24.16.0",
+    });
+
+    expect(command).toContain(
+      'node scripts/linux-host-product-acceptance-guest.mjs >"$guest_stdout" 2>"$guest_stderr"',
+    );
+    expect(command).toContain('cat "$guest_stdout"');
+    expect(command).toContain('tail -c 65536 "$guest_stderr" >&2');
+    expect(command).toContain("exit 1");
+  });
+
   it("excludes mutable and downstream receipts from the clean source archive", () => {
     expect(
       [

@@ -55,8 +55,7 @@ export async function linuxHostProductAcceptanceImplementation(repoRoot) {
   );
   return {
     ...hashes,
-    acquisitionImplementation:
-      await sandboxAcquisitionImplementation(repoRoot),
+    acquisitionImplementation: await sandboxAcquisitionImplementation(repoRoot),
   };
 }
 
@@ -264,10 +263,14 @@ function validDoctor(value) {
   return (
     isRecord(value) &&
     value.status === "degraded" &&
-    value.checkCount === 14 &&
+    value.checkCount === 15 &&
     value.passedCount === 11 &&
-    value.warningCount === 0 &&
+    value.warningCount === 1 &&
     value.skippedCount === 3 &&
+    [
+      "browser_use_local_missing",
+      "browser_use_local_unsupported",
+    ].includes(value.browserUseLocalCode) &&
     value.sandboxCode === "sandbox_ready" &&
     value.verificationCode === "verification_ready" &&
     SHA256.test(value.reportSha256)

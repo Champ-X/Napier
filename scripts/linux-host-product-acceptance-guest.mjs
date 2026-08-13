@@ -6,21 +6,29 @@ import path from "node:path";
 const SHA256 = /^[a-f0-9]{64}$/u;
 const MAX_COMMAND_OUTPUT_BYTES = 1024 * 1024;
 const COMMAND_TIMEOUT_MS = 5 * 60 * 1_000;
+let activeStage = "startup";
 
 export async function runLinuxHostGuestAcceptance(repoRoot = process.cwd()) {
   const startedAt = Date.now();
+  activeStage = "inspect_source";
   const source = await inspectCleanSource(repoRoot);
+  activeStage = "install_dependencies";
   const install = await runBounded(
     "npm",
     ["ci", "--no-audit", "--no-fund"],
     repoRoot,
   );
+  activeStage = "verify_pty";
   const pty = await verifyPlatformPty(repoRoot);
+  activeStage = "build_product";
   const build = await runBounded("npm", ["run", "build"], repoRoot);
+  activeStage = "accept_product";
   const { collectSandboxProductAcceptance } =
     await import("./check-sandbox-product-acceptance.mjs");
   const product = await collectSandboxProductAcceptance({ repoRoot });
+  activeStage = "accept_acquisition";
   const acquisition = await collectGuestSandboxAcquisition(repoRoot);
+  activeStage = "inspect_host";
   const host = await inspectLinuxHost();
   const content = {
     host,
@@ -41,10 +49,7 @@ export async function runLinuxHostGuestAcceptance(repoRoot = process.cwd()) {
 async function collectGuestSandboxAcquisition(repoRoot) {
   const receipt = JSON.parse(
     await readFile(
-      path.join(
-        repoRoot,
-        "docs/artifacts/sandbox-acquisition-stage20.json",
-      ),
+      path.join(repoRoot, "docs/artifacts/sandbox-acquisition-stage20.json"),
       "utf8",
     ),
   );
@@ -64,16 +69,13 @@ async function collectGuestSandboxAcquisition(repoRoot) {
   const inspection = await inspectOfficialSandboxRuntime({
     loadRelease: async () => undefined,
   });
-  if (
-    inspection.target.contextSha256 !== candidate.candidateContextSha256
-  ) {
+  if (inspection.target.contextSha256 !== candidate.candidateContextSha256) {
     throw new Error("Linux host Sandbox acquisition context is stale");
   }
   return collectSandboxAcquisition({
     repoRoot,
     contextSha256: inspection.target.contextSha256,
-    privateReference:
-      `ghcr.io/champ-x/napier-sandbox@${candidate.candidateDigest}`,
+    privateReference: `ghcr.io/champ-x/napier-sandbox@${candidate.candidateDigest}`,
     privateSourceSha: candidate.candidateSourceSha,
   });
 }
@@ -354,6 +356,7 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
       process.stderr.write(
         `${JSON.stringify({
           status: "failed",
+          stage: activeStage,
           diagnosticSha256: sha256(diagnostic),
         })}\n`,
       );

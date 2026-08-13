@@ -10,8 +10,7 @@ const COMMAND_TIMEOUT_MS = 20 * 60 * 1_000;
 const MAX_OUTPUT_BYTES = 256 * 1024;
 const STAGE19_ARTIFACT =
   "docs/artifacts/linux-host-product-acceptance-stage19.json";
-const RELEASE_ARTIFACT =
-  "docs/artifacts/release-artifacts-audit-0.1.0.json";
+const RELEASE_ARTIFACT = "docs/artifacts/release-artifacts-audit-0.1.0.json";
 const STAGE19_SOURCE_FILES = [
   "docs/artifacts/sandbox-acquisition-stage20.json",
   "packages/runtime/src/sandbox-official-release-model.ts",
@@ -124,11 +123,15 @@ export async function runLinuxHostProductAcceptance(input) {
 }
 
 async function sourceSnapshotPaths(repoRoot) {
-  const output = await runBounded("git", ["ls-files", "--cached", "-z"], {
-    cwd: repoRoot,
-    binary: true,
-    maxOutputBytes: 4 * 1024 * 1024,
-  });
+  const output = await runBounded(
+    "git",
+    ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+    {
+      cwd: repoRoot,
+      binary: true,
+      maxOutputBytes: 4 * 1024 * 1024,
+    },
+  );
   const paths = [
     ...new Set([
       ...output.stdout.split("\0").filter(Boolean),
@@ -197,7 +200,7 @@ async function writeSourceArchive(repoRoot, paths, archivePath) {
   }
 }
 
-function linuxGuestCommand(input) {
+export function linuxGuestCommand(input) {
   const archive = shellQuote(input.archivePath);
   const runName = shellQuote(input.runName);
   const nodeVersion = shellQuote(input.nodeVersion);
@@ -229,7 +232,14 @@ function linuxGuestCommand(input) {
     'tar -xzf "$run_root/${node_file}" --strip-components=1 -C "$run_root/node"',
     'export PATH="$run_root/node/bin:$PATH"',
     'cd "$run_root/source"',
-    "node scripts/linux-host-product-acceptance-guest.mjs",
+    'guest_stdout="$run_root/guest.stdout"',
+    'guest_stderr="$run_root/guest.stderr"',
+    'if node scripts/linux-host-product-acceptance-guest.mjs >"$guest_stdout" 2>"$guest_stderr"; then',
+    '  cat "$guest_stdout"',
+    "else",
+    '  tail -c 65536 "$guest_stderr" >&2',
+    "  exit 1",
+    "fi",
   ].join("\n");
 }
 
@@ -264,7 +274,10 @@ async function runBounded(command, args, options = {}) {
     const diagnostic = sha256(
       Buffer.concat([stdoutBuffer, stderrBuffer]),
     ).slice(0, 16);
-    throw new Error(`Linux host acceptance failed (${diagnostic})`);
+    const stage = linuxFailureStage(stderrBuffer);
+    throw new Error(
+      `Linux host acceptance failed${stage ? ` at ${stage}` : ""} (${diagnostic})`,
+    );
   }
   return {
     exitCode: outcome.code,
@@ -274,6 +287,17 @@ async function runBounded(command, args, options = {}) {
     stderr: stderrBuffer.toString("utf8"),
     durationMs: Math.max(0, Date.now() - startedAt),
   };
+}
+
+function linuxFailureStage(stderr) {
+  try {
+    const value = JSON.parse(stderr.toString("utf8").trim().split("\n").at(-1));
+    return value?.status === "failed" && /^[a-z_]{1,40}$/u.test(value.stage)
+      ? value.stage
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function waitForChild(child, timeoutMs) {
