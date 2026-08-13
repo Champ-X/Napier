@@ -11,6 +11,14 @@ def emit(value):
 	value = {key: item for key, item in value.items() if item is not None}
 	print(json.dumps(value, separators=(',', ':'), ensure_ascii=False), flush=True)
 
+def structured_action_payload(message):
+	if message.tool_calls:
+		arguments = message.tool_calls[0].function.arguments
+		return json.loads(arguments) if isinstance(arguments, str) else arguments
+	if isinstance(message.content, str) and message.content.strip():
+		return json.loads(message.content)
+	raise ValueError('Expected a structured browser action')
+
 def deepseek_model(model, credential):
 	from browser_use.llm import ChatDeepSeek
 	from browser_use.llm.deepseek.serializer import DeepSeekMessageSerializer
@@ -50,10 +58,7 @@ def deepseek_model(model, credential):
 					**common,
 				)
 				message = response.choices[0].message
-				if not message.tool_calls:
-					raise ValueError('Expected a structured browser action')
-				arguments = message.tool_calls[0].function.arguments
-				parsed = json.loads(arguments) if isinstance(arguments, str) else arguments
+				parsed = structured_action_payload(message)
 				usage = response.usage
 				return ChatInvokeCompletion(
 					completion=output_format.model_validate(parsed),

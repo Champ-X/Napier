@@ -81,6 +81,15 @@ describe("Browser Use local backend boundary", () => {
 
     expect(deepseekAdapter).toContain("tools=call_tools");
     expect(deepseekAdapter).not.toContain("tool_choice=");
+    expect(BROWSER_USE_LOCAL_BRIDGE).toContain(
+      "return json.loads(message.content)",
+    );
+    expect(BROWSER_USE_LOCAL_BRIDGE).toContain(
+      "raise ValueError('Expected a structured browser action')",
+    );
+    expect(deepseekAdapter).toContain(
+      "parsed = structured_action_payload(message)",
+    );
     expect(deepseekAdapter).toContain("output_format.model_validate(parsed)");
     expect(deepseekAdapter).toContain("ChatInvokeUsage(");
     expect(BROWSER_USE_LOCAL_BRIDGE).toContain(
