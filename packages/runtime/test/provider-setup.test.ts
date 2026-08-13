@@ -20,8 +20,9 @@ describe("Provider setup", () => {
     const services = await createFixture({ DEEPSEEK_API_KEY: SECRET });
     try {
       const agent = services.store.listAgents()[0]!;
-      const beforeRevisionCount =
-        services.store.listAgentRevisions(agent.id).length;
+      const beforeRevisionCount = services.store.listAgentRevisions(
+        agent.id,
+      ).length;
       const beforeThreads = services.store.listThreads();
 
       const preview = await services.providerSetup.preview();

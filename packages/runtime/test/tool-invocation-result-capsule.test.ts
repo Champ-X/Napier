@@ -72,35 +72,32 @@ describe("Tool invocation result capsule store", () => {
       fixtureObjectLimit,
     );
     const attempts = await Promise.allSettled(
-      Array.from(
-        { length: fixtureObjectLimit + 8 },
-        async (_, index) => {
-          const callId = `call_result_${String(index).padStart(4, "0")}`;
-          const invocation = createToolInvocationCapsule({
-            sourceThreadId: "thread_result12345678",
-            sourceRunId: "run_result_12345678",
-            callId,
-            toolName: "read_file",
-            toolDefinitionSha256: "1".repeat(64),
-            arguments: { path: `fixture-${String(index)}.txt` },
-          });
-          return store.put({
-            sourceThreadId: invocation.sourceThreadId,
-            sourceRunId: invocation.sourceRunId,
-            invocation: createToolInvocationCapsuleReceipt(invocation),
-            result: {
-              content: [
-                {
-                  type: "text",
-                  text: `private result ${String(index)}`,
-                },
-              ],
-              details: { index },
-            },
-            isError: false,
-          });
-        },
-      ),
+      Array.from({ length: fixtureObjectLimit + 8 }, async (_, index) => {
+        const callId = `call_result_${String(index).padStart(4, "0")}`;
+        const invocation = createToolInvocationCapsule({
+          sourceThreadId: "thread_result12345678",
+          sourceRunId: "run_result_12345678",
+          callId,
+          toolName: "read_file",
+          toolDefinitionSha256: "1".repeat(64),
+          arguments: { path: `fixture-${String(index)}.txt` },
+        });
+        return store.put({
+          sourceThreadId: invocation.sourceThreadId,
+          sourceRunId: invocation.sourceRunId,
+          invocation: createToolInvocationCapsuleReceipt(invocation),
+          result: {
+            content: [
+              {
+                type: "text",
+                text: `private result ${String(index)}`,
+              },
+            ],
+            details: { index },
+          },
+          isError: false,
+        });
+      }),
     );
     expect(
       attempts.filter((attempt) => attempt.status === "fulfilled"),

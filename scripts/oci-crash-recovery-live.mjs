@@ -175,9 +175,7 @@ async function snapshotResources(options = {}) {
 async function snapshotScratch() {
   try {
     return (await readdir(scratchBaseDirectory()))
-      .filter(
-        (name) => SCRATCH_NAME.test(name) || SCRATCH_TOMBSTONE.test(name),
-      )
+      .filter((name) => SCRATCH_NAME.test(name) || SCRATCH_TOMBSTONE.test(name))
       .sort();
   } catch {
     return [];
@@ -189,10 +187,7 @@ function assertResourceDelta(baseline, current) {
     containerAdds: additions(baseline.containers, current.containers).length,
     networkAdds: additions(baseline.networks, current.networks).length,
     scratchAdds: additions(baseline.scratch, current.scratch).length,
-    containerRemovals: removals(
-      baseline.containers,
-      current.containers,
-    ).length,
+    containerRemovals: removals(baseline.containers, current.containers).length,
     networkRemovals: removals(baseline.networks, current.networks).length,
     scratchRemovals: removals(baseline.scratch, current.scratch).length,
   };

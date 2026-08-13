@@ -88,9 +88,7 @@ describe("LSP symbols runner", () => {
         depth: 2,
         containerName: "format",
         range: range(8, 10, 8, 53),
-        rangeSha256: sha256(
-          "normalize = (input: string) => input.trim()",
-        ),
+        rangeSha256: sha256("normalize = (input: string) => input.trim()"),
         selectionRangeSha256: sha256("normalize"),
       }),
     );

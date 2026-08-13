@@ -62,7 +62,9 @@ export function ConversationApprovalCard({
         <div>
           <dt>Mode</dt>
           <dd>
-            {approval.decision.multiSelect ? "Multiple choices" : "Single choice"}
+            {approval.decision.multiSelect
+              ? "Multiple choices"
+              : "Single choice"}
           </dd>
         </div>
         <div>

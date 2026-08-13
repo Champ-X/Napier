@@ -30,7 +30,10 @@ const seal = <T extends Record<string, unknown>>(value: T, field: string) => ({
   [field]: H(canonical(value)),
 });
 const reseal = <T extends Record<string, unknown>>(value: T, field: string) =>
-  seal(Object.fromEntries(Object.entries(value).filter(([key]) => key !== field)), field);
+  seal(
+    Object.fromEntries(Object.entries(value).filter(([key]) => key !== field)),
+    field,
+  );
 const name = "research-brief";
 const requestedNameSha256 = H(name);
 
@@ -100,7 +103,12 @@ function unavailableFailure(raw = name) {
 
 function binding(catalogSha256 = H("catalog")) {
   const configuredSkillRequests = [
-    { position: 0, requestedNameSha256, state: "loadable", canonicalName: name },
+    {
+      position: 0,
+      requestedNameSha256,
+      state: "loadable",
+      canonicalName: name,
+    },
   ];
   const loadableSkillNames = [name];
   const unavailableFailureContentSha256s: string[] = [];
@@ -150,10 +158,18 @@ describe("Skill load contracts", () => {
     const value = receipt();
     expect(isSkillLoadReceiptV1(value)).toBe(true);
     expect(value.contentSha256).toBe(
-      H(canonical(Object.fromEntries(Object.entries(value).filter(([key]) => key !== "contentSha256")))),
+      H(
+        canonical(
+          Object.fromEntries(
+            Object.entries(value).filter(([key]) => key !== "contentSha256"),
+          ),
+        ),
+      ),
     );
     expect(isSkillLoadReceiptV1({ ...value, extra: true })).toBe(false);
-    expect(isSkillLoadReceiptV1({ ...value, relativePath: "/private/SKILL.md" })).toBe(false);
+    expect(
+      isSkillLoadReceiptV1({ ...value, relativePath: "/private/SKILL.md" }),
+    ).toBe(false);
   });
 
   it("accepts only exact request and bounded catalog failures", () => {
@@ -171,16 +187,20 @@ describe("Skill load contracts", () => {
         failureCode: "skill_limit_exceeded",
         observedDirectoryCount: 65,
         directoryIdentitySetSha256: H("first-65"),
-        catalogSha256: H(canonical({
-          directDirectoryCount: 65,
-          directoryIdentitySetSha256: H("first-65"),
-        })),
+        catalogSha256: H(
+          canonical({
+            directDirectoryCount: 65,
+            directoryIdentitySetSha256: H("first-65"),
+          }),
+        ),
         diagnosticSha256: H("overflow"),
       },
       "contentSha256",
     );
     expect(isSkillLoadFailureV1(overflow)).toBe(true);
-    expect(isSkillLoadFailureV1({ ...overflow, observedDirectoryCount: 66 })).toBe(false);
+    expect(
+      isSkillLoadFailureV1({ ...overflow, observedDirectoryCount: 66 }),
+    ).toBe(false);
   });
 
   it("binds ordered requests, availability and the immutable manifest", () => {
@@ -199,11 +219,15 @@ describe("Skill load contracts", () => {
       invocationSha256: H("invocation"),
     };
     const directoryIdentitySetSha256 = H("directories");
-    const catalog = binding(H(canonical({
-      directDirectoryCount: 1,
-      directoryIdentitySetSha256,
-      entries: [entry],
-    })));
+    const catalog = binding(
+      H(
+        canonical({
+          directDirectoryCount: 1,
+          directoryIdentitySetSha256,
+          entries: [entry],
+        }),
+      ),
+    );
     expect(isSkillCatalogBindingV1(catalog)).toBe(true);
     expect(isSkillLoadSelectionV1(selection())).toBe(true);
     const manifest = seal(
@@ -229,50 +253,72 @@ describe("Skill load contracts", () => {
       "snapshotManifestSha256",
     );
     expect(isProjectSkillSnapshotManifestV1(manifest)).toBe(true);
-    expect(isProjectSkillSnapshotManifestV1({ ...manifest, aggregateRawBytes: 124 })).toBe(false);
+    expect(
+      isProjectSkillSnapshotManifestV1({ ...manifest, aggregateRawBytes: 124 }),
+    ).toBe(false);
   });
 
   it("rejects adversarially resealed relational catalog and manifest drift", () => {
     const catalog = binding();
     const wrongNames = ["data-analysis"];
-    const wrongAvailability = H(canonical({
-      configuredSkillRequests: catalog.configuredSkillRequests,
-      loadableSkillNames: wrongNames,
-      unavailableFailureContentSha256s: [],
-      catalogSha256: catalog.catalogSha256,
-    }));
-    expect(isSkillCatalogBindingV1(reseal({
-      ...catalog,
-      loadableSkillNames: wrongNames,
-      availabilitySetSha256: wrongAvailability,
-    }, "contentSha256"))).toBe(false);
+    const wrongAvailability = H(
+      canonical({
+        configuredSkillRequests: catalog.configuredSkillRequests,
+        loadableSkillNames: wrongNames,
+        unavailableFailureContentSha256s: [],
+        catalogSha256: catalog.catalogSha256,
+      }),
+    );
+    expect(
+      isSkillCatalogBindingV1(
+        reseal(
+          {
+            ...catalog,
+            loadableSkillNames: wrongNames,
+            availabilitySetSha256: wrongAvailability,
+          },
+          "contentSha256",
+        ),
+      ),
+    ).toBe(false);
 
     const failure = unavailableFailure("data-analysis");
-    const configuredSkillRequests = [{
-      position: 0,
-      requestedNameSha256,
-      canonicalName: name,
-      state: "unavailable",
-      failureContentSha256: failure.contentSha256,
-    }];
-    const unavailableAvailability = H(canonical({
-      configuredSkillRequests,
-      loadableSkillNames: [],
-      unavailableFailureContentSha256s: [failure.contentSha256],
-      catalogSha256: catalog.catalogSha256,
-    }));
-    expect(isSkillCatalogBindingV1(seal({
-      kind: catalog.kind,
-      schemaVersion: catalog.schemaVersion,
-      operation: catalog.operation,
-      agentToolName: catalog.agentToolName,
-      configuredSkillRequests,
-      loadableSkillNames: [],
-      unavailableSkills: [failure],
-      catalogSha256: catalog.catalogSha256,
-      availabilitySetSha256: unavailableAvailability,
-      snapshotManifestSha256: catalog.snapshotManifestSha256,
-    }, "contentSha256"))).toBe(false);
+    const configuredSkillRequests = [
+      {
+        position: 0,
+        requestedNameSha256,
+        canonicalName: name,
+        state: "unavailable",
+        failureContentSha256: failure.contentSha256,
+      },
+    ];
+    const unavailableAvailability = H(
+      canonical({
+        configuredSkillRequests,
+        loadableSkillNames: [],
+        unavailableFailureContentSha256s: [failure.contentSha256],
+        catalogSha256: catalog.catalogSha256,
+      }),
+    );
+    expect(
+      isSkillCatalogBindingV1(
+        seal(
+          {
+            kind: catalog.kind,
+            schemaVersion: catalog.schemaVersion,
+            operation: catalog.operation,
+            agentToolName: catalog.agentToolName,
+            configuredSkillRequests,
+            loadableSkillNames: [],
+            unavailableSkills: [failure],
+            catalogSha256: catalog.catalogSha256,
+            availabilitySetSha256: unavailableAvailability,
+            snapshotManifestSha256: catalog.snapshotManifestSha256,
+          },
+          "contentSha256",
+        ),
+      ),
+    ).toBe(false);
   });
 
   it("projects selected and loaded only from a hash-bound same-Run chain", () => {
@@ -280,13 +326,50 @@ describe("Skill load contracts", () => {
     const selected = selection();
     const loaded = receipt();
     const events = [
-      { runId: "run_12345678", seq: 1, type: "context.skills", payload: catalog },
-      { runId: "run_12345678", seq: 2, type: "tool.started", payload: { callId: "call_1", toolName: "skill_load", details: selected } },
-      { runId: "run_12345678", seq: 3, type: "tool.completed", payload: { callId: "call_1", toolName: "skill_load", details: loaded } },
+      {
+        runId: "run_12345678",
+        seq: 1,
+        type: "context.skills",
+        payload: catalog,
+      },
+      {
+        runId: "run_12345678",
+        seq: 2,
+        type: "tool.started",
+        payload: {
+          callId: "call_1",
+          toolName: "skill_load",
+          details: selected,
+        },
+      },
+      {
+        runId: "run_12345678",
+        seq: 3,
+        type: "tool.completed",
+        payload: { callId: "call_1", toolName: "skill_load", details: loaded },
+      },
     ];
-    expect(projectSkillApplicationV1(events.slice(0, 2), "run_12345678", { canonicalName: name })).toEqual(expect.objectContaining({ state: "selected", selectedSeq: 2 }));
-    expect(projectSkillApplicationV1(events, "run_12345678", { canonicalName: name })).toEqual(expect.objectContaining({ state: "loaded", terminalSeq: 3, receiptContentSha256: loaded.contentSha256 }));
-    expect(projectSkillApplicationV1(events, "run_crossrun", { canonicalName: name })).toBeUndefined();
+    expect(
+      projectSkillApplicationV1(events.slice(0, 2), "run_12345678", {
+        canonicalName: name,
+      }),
+    ).toEqual(expect.objectContaining({ state: "selected", selectedSeq: 2 }));
+    expect(
+      projectSkillApplicationV1(events, "run_12345678", {
+        canonicalName: name,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        state: "loaded",
+        terminalSeq: 3,
+        receiptContentSha256: loaded.contentSha256,
+      }),
+    );
+    expect(
+      projectSkillApplicationV1(events, "run_crossrun", {
+        canonicalName: name,
+      }),
+    ).toBeUndefined();
   });
 
   it("rejects crossed Skill load lifecycles instead of borrowing a later terminal", () => {
@@ -294,11 +377,44 @@ describe("Skill load contracts", () => {
     const selected = selection();
     const loaded = receipt();
     const events = [
-      { runId: "run_12345678", seq: 1, type: "context.skills", payload: catalog },
-      { runId: "run_12345678", seq: 2, type: "tool.started", payload: { callId: "call_1", toolName: "skill_load", details: selected } },
-      { runId: "run_12345678", seq: 3, type: "tool.started", payload: { callId: "call_2", toolName: "skill_load", details: selected } },
-      { runId: "run_12345678", seq: 4, type: "tool.completed", payload: { callId: "call_1", toolName: "skill_load", details: loaded } },
-      { runId: "run_12345678", seq: 5, type: "tool.completed", payload: { callId: "call_2", toolName: "skill_load", details: loaded } },
+      {
+        runId: "run_12345678",
+        seq: 1,
+        type: "context.skills",
+        payload: catalog,
+      },
+      {
+        runId: "run_12345678",
+        seq: 2,
+        type: "tool.started",
+        payload: {
+          callId: "call_1",
+          toolName: "skill_load",
+          details: selected,
+        },
+      },
+      {
+        runId: "run_12345678",
+        seq: 3,
+        type: "tool.started",
+        payload: {
+          callId: "call_2",
+          toolName: "skill_load",
+          details: selected,
+        },
+      },
+      {
+        runId: "run_12345678",
+        seq: 4,
+        type: "tool.completed",
+        payload: { callId: "call_1", toolName: "skill_load", details: loaded },
+      },
+      {
+        runId: "run_12345678",
+        seq: 5,
+        type: "tool.completed",
+        payload: { callId: "call_2", toolName: "skill_load", details: loaded },
+      },
     ];
     expect(
       projectSkillApplicationV1(events, "run_12345678", {

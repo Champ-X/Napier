@@ -133,9 +133,7 @@ function codeSummary(view: WorkspaceReadToolEventTraceView): string[] {
   ];
 }
 
-function symbolSourceSummary(
-  view: WorkspaceReadToolEventTraceView,
-): string[] {
+function symbolSourceSummary(view: WorkspaceReadToolEventTraceView): string[] {
   return [
     ...(view.symbolSourceKind ? [`symbol ${view.symbolSourceKind}`] : []),
     ...(view.symbolSourceStartLine !== undefined &&
@@ -176,9 +174,7 @@ function fileSummary(view: WorkspaceReadToolEventTraceView): string[] {
     ...(view.readTotalLines !== undefined
       ? [`lines ${view.readTotalLines}`]
       : []),
-    ...(view.readSizeBytes !== undefined
-      ? [`size ${view.readSizeBytes}`]
-      : []),
+    ...(view.readSizeBytes !== undefined ? [`size ${view.readSizeBytes}`] : []),
     ...(view.readTruncated ? ["read-truncated"] : []),
     ...(view.readLineAnchorsTruncated ? ["anchors-truncated"] : []),
     ...hash("read-path", view.readPathSha256),
@@ -305,11 +301,7 @@ function readSymbolEvidence(
     ...digestField(record, "sha256", "symbolSourceFileSha256"),
     ...digestField(record, "symbolNameSha256", "symbolSourceNameSha256"),
     ...digestField(record, "lineSha256", "symbolSourceLineSha256"),
-    ...digestField(
-      record,
-      "signatureSha256",
-      "symbolSourceSignatureSha256",
-    ),
+    ...digestField(record, "signatureSha256", "symbolSourceSignatureSha256"),
     ...digestField(record, "rangeSha256", "symbolSourceRangeSha256"),
     ...digestField(
       record,
@@ -362,11 +354,7 @@ function readFileEvidence(
       : {}),
     ...digestField(record, "pathSha256", "readPathSha256"),
     ...digestField(record, "sha256", "readFileSha256"),
-    ...digestField(
-      record,
-      "lineAnchorSetSha256",
-      "readLineAnchorSetSha256",
-    ),
+    ...digestField(record, "lineAnchorSetSha256", "readLineAnchorSetSha256"),
   };
 }
 

@@ -85,7 +85,7 @@ function activitySummary(activity: ConversationNetworkActivity): string {
     ? `${activity.format.toUpperCase()} · ${String(activity.lineCount)} lines`
     : activity.action === "fetch"
       ? "Fetch completed · evidence unavailable"
-    : `${humanize(activity.action ?? "fetch")} completed`;
+      : `${humanize(activity.action ?? "fetch")} completed`;
 }
 
 function activityDetails(
@@ -112,7 +112,12 @@ function activityDetails(
               ]
             : []),
           ...(activity.retrievedAt
-            ? [["Retrieved", formatDateTime(activity.retrievedAt)] as [string, string]]
+            ? [
+                ["Retrieved", formatDateTime(activity.retrievedAt)] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
         ]
       : [
@@ -140,13 +145,28 @@ function activityDetails(
               ]
             : []),
           ...(activity.redirectCount !== undefined
-            ? [["Redirects", String(activity.redirectCount)] as [string, string]]
+            ? [
+                ["Redirects", String(activity.redirectCount)] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
           ...(activity.retrievedAt
-            ? [["Retrieved", formatDateTime(activity.retrievedAt)] as [string, string]]
+            ? [
+                ["Retrieved", formatDateTime(activity.retrievedAt)] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
           ...(activity.fallbackDiagnostic
-            ? [["Recovery", humanize(activity.fallbackDiagnostic)] as [string, string]]
+            ? [
+                ["Recovery", humanize(activity.fallbackDiagnostic)] as [
+                  string,
+                  string,
+                ],
+              ]
             : []),
         ];
   return details;

@@ -241,7 +241,10 @@ function highlightGeneralCode(
   return mergePlainTokens(tokens);
 }
 
-function highlightJson(value: string, commentsAllowed: boolean): MessageCodeToken[] {
+function highlightJson(
+  value: string,
+  commentsAllowed: boolean,
+): MessageCodeToken[] {
   const tokens: MessageCodeToken[] = [];
   let cursor = 0;
   while (cursor < value.length) {

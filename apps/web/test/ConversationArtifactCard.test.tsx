@@ -189,16 +189,10 @@ function button(container: HTMLElement, label: string): HTMLButtonElement {
   return match as HTMLButtonElement;
 }
 
-function findElementsByLocalName(
-  root: Element,
-  localName: string,
-): Element[] {
+function findElementsByLocalName(root: Element, localName: string): Element[] {
   const matches: Element[] = [];
   for (const child of Array.from(root.children)) {
-    if (
-      typeof child.localName === "string" &&
-      child.localName === localName
-    ) {
+    if (typeof child.localName === "string" && child.localName === localName) {
       matches.push(child);
     }
     matches.push(...findElementsByLocalName(child, localName));

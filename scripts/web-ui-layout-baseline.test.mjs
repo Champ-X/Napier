@@ -17,35 +17,18 @@ describe("Web UI layout baseline", () => {
     const baselinePath = path.join(root, "baseline.json");
     try {
       const receipt = fixture();
-      await writeWebUiLayoutBaseline(
-        receipt,
-        baselinePath,
-        "linux",
-        "arm64",
-      );
+      await writeWebUiLayoutBaseline(receipt, baselinePath, "linux", "arm64");
       const baseline = JSON.parse(await readFile(baselinePath, "utf8"));
-      expect(baseline).toEqual(
-        webUiLayoutBaseline(receipt, "linux", "arm64"),
-      );
+      expect(baseline).toEqual(webUiLayoutBaseline(receipt, "linux", "arm64"));
       await expect(
-        verifyWebUiLayoutBaseline(
-          receipt,
-          baselinePath,
-          "linux",
-          "arm64",
-        ),
+        verifyWebUiLayoutBaseline(receipt, baselinePath, "linux", "arm64"),
       ).resolves.toEqual({ path: baselinePath, matched: true });
       await expect(
         verifyWebUiLayoutBaseline(receipt, baselinePath, "linux", "x64"),
       ).rejects.toThrow("Web UI layout baseline drifted");
       receipt.viewports[0].layoutSnapshot.workbench.width += 1;
       await expect(
-        verifyWebUiLayoutBaseline(
-          receipt,
-          baselinePath,
-          "linux",
-          "arm64",
-        ),
+        verifyWebUiLayoutBaseline(receipt, baselinePath, "linux", "arm64"),
       ).rejects.toThrow("Web UI layout baseline drifted");
     } finally {
       await rm(root, { recursive: true, force: true });

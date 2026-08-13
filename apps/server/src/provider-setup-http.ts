@@ -58,10 +58,7 @@ export function registerProviderSetupHttp(
 function parseApplyProviderSetupRequest(
   input: unknown,
 ): ApplyProviderSetupRequest | undefined {
-  const record = requestRecord(input, [
-    "providerId",
-    "expectedPreviewSha256",
-  ]);
+  const record = requestRecord(input, ["providerId", "expectedPreviewSha256"]);
   const providerId = record?.["providerId"];
   const expectedPreviewSha256 = record?.["expectedPreviewSha256"];
   return record &&

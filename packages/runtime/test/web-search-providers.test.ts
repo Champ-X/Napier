@@ -326,7 +326,10 @@ describe("WebSearchProviderRegistry", () => {
 
     await expect(
       registry.search(
-        normalizeWebSearchRequest({ query: "release notes", provider: "firecrawl" }),
+        normalizeWebSearchRequest({
+          query: "release notes",
+          provider: "firecrawl",
+        }),
         AbortSignal.timeout(1_000),
       ),
     ).rejects.not.toThrow(testApiKey);

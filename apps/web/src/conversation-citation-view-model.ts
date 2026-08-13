@@ -29,10 +29,7 @@ export function conversationCitations(
 ): ConversationCitation[] {
   const citations: ConversationCitation[] = [];
   for (const event of events) {
-    if (
-      event.visibility !== "user" ||
-      event.type !== "tool.completed"
-    ) {
+    if (event.visibility !== "user" || event.type !== "tool.completed") {
       continue;
     }
     const payload = record(event.payload);

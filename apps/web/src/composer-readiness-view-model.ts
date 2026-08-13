@@ -81,13 +81,13 @@ export function composerRunReadiness(
   const warned = items.filter((item) => item.state === "warn");
   return {
     canRun: blocked.length === 0,
-    level: blocked.length > 0 ? "blocked" : warned.length > 0 ? "warn" : "ready",
+    level:
+      blocked.length > 0 ? "blocked" : warned.length > 0 ? "warn" : "ready",
     message:
       blocked.length > 0
         ? `Cannot start ${modeLabel(modeId)}: ${blocked.map((item) => `${item.label} ${item.value.toLowerCase()}`).join("; ")}. Review or restore capabilities before sending.`
         : warned.some(
-              (item) =>
-                item.id === "sandbox" && item.value === "Host direct",
+              (item) => item.id === "sandbox" && item.value === "Host direct",
             )
           ? "Host-direct execution is explicitly enabled without OS isolation. Commands run on this machine."
           : "",
@@ -149,8 +149,7 @@ function sandboxReadiness(
   return {
     id: "sandbox",
     label: "Sandbox",
-    value:
-      record.status === "ready" ? "Ready" : "Available · unverified",
+    value: record.status === "ready" ? "Ready" : "Available · unverified",
     state: record.status === "ready" ? "ready" : "warn",
     detail: record.detail,
   };
@@ -179,8 +178,7 @@ function browserReadiness(
   return {
     id: "browser",
     label: "Browser",
-    value:
-      record.status === "ready" ? "Ready" : "Available · unverified",
+    value: record.status === "ready" ? "Ready" : "Available · unverified",
     state: record.status === "ready" ? "ready" : "warn",
     detail: record.detail,
   };

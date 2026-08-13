@@ -21,7 +21,9 @@ describe("host-direct sandbox adapter", () => {
   it("is not selected by default and takes precedence over native adapters when opted in", () => {
     delete process.env["NAPIER_HOST_DIRECT_SANDBOX"];
     delete process.env["NAPIER_CONTAINER_SANDBOX_IMAGE"];
-    expect(createPlatformSandboxAdapter("darwin").id).toBe("macos-sandbox-exec");
+    expect(createPlatformSandboxAdapter("darwin").id).toBe(
+      "macos-sandbox-exec",
+    );
     process.env["NAPIER_HOST_DIRECT_SANDBOX"] = "1";
     try {
       expect(createPlatformSandboxAdapter("darwin").id).toBe("host-direct");
@@ -40,7 +42,9 @@ describe("host-direct sandbox adapter", () => {
   });
 
   it("runs a real command directly on the host", async () => {
-    const workspace = await mkdtemp(path.join(tmpdir(), "napier-host-direct-ws-"));
+    const workspace = await mkdtemp(
+      path.join(tmpdir(), "napier-host-direct-ws-"),
+    );
     try {
       const adapter = new HostDirectSandboxAdapter();
       const child = await adapter.launch({

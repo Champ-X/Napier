@@ -62,9 +62,8 @@ function projectConversationPlan(
     seq: event.seq,
     createdAt: event.createdAt,
     plan,
-    completedStepCount: plan.steps.filter(
-      (step) => step.status === "completed",
-    ).length,
+    completedStepCount: plan.steps.filter((step) => step.status === "completed")
+      .length,
     settledStepCount: plan.steps.filter(
       (step) => step.status === "completed" || step.status === "skipped",
     ).length,

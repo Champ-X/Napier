@@ -263,17 +263,17 @@ describe("Napier CLI interrupted Run resume", () => {
     expect(JSON.stringify(snapshot.detail.events)).not.toContain(
       fixture.sourceSecret,
     );
-    const publicDetails = researchEvents.at(-1)!.payload[
-      "details"
-    ] as Record<string, unknown>;
+    const publicDetails = researchEvents.at(-1)!.payload["details"] as Record<
+      string,
+      unknown
+    >;
     expect(publicDetails).not.toHaveProperty("stateCapsule");
     expect(publicDetails).toEqual(
       expect.objectContaining({
         sourceCount: 1,
         citationCount: 2,
-        continuityCapsuleContentSha256: expect.stringMatching(
-          /^[a-f0-9]{64}$/u,
-        ),
+        continuityCapsuleContentSha256:
+          expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
   });

@@ -51,11 +51,7 @@ describe("Official Sandbox external release", () => {
       mutate(receipt);
       rehash(receipt);
       expect(() =>
-        validateOfficialSandboxRelease(
-          receipt,
-          "a".repeat(64),
-          "e".repeat(64),
-        ),
+        validateOfficialSandboxRelease(receipt, "a".repeat(64), "e".repeat(64)),
       ).toThrow("release receipt");
     }
   });
@@ -75,9 +71,7 @@ describe("Official Sandbox external release", () => {
         release.reference,
       ]);
       expect(request.env.DOCKER_CONFIG).toBe(configRoot);
-      expect(request.env.DOCKER_HOST).toBe(
-        "unix:///private/docker.sock",
-      );
+      expect(request.env.DOCKER_HOST).toBe("unix:///private/docker.sock");
       expect(request.env.DOCKER_CONTEXT).toBeUndefined();
       expect(request.env.DOCKER_CERT_PATH).toBeUndefined();
       expect(request.env.DOCKER_TLS_VERIFY).toBeUndefined();
@@ -152,7 +146,11 @@ describe("Official Sandbox external release", () => {
     const client: ContainerClient = async (_executable, args) => {
       calls.push([...args]);
       if (args[0] === "context") return "unix:///private/docker.sock\n";
-      if (args[0] === "image" && args[1] === "inspect" && args[2] === "--format") {
+      if (
+        args[0] === "image" &&
+        args[1] === "inspect" &&
+        args[2] === "--format"
+      ) {
         return `${"0".repeat(64)}\t${release.sourceSha}\n`;
       }
       if (args[0] === "image" && args[1] === "rm") return "";
@@ -160,19 +158,15 @@ describe("Official Sandbox external release", () => {
     };
 
     await expect(
-      pullOfficialSandboxRelease(
-        release,
-        new AbortController().signal,
-        {
-          resolveExecutable: async () => process.execPath,
-          runPull: async () => ({
-            exitCode: 0,
-            outputBytes: 0,
-            outputSha256: "f".repeat(64),
-          }),
-          client,
-        },
-      ),
+      pullOfficialSandboxRelease(release, new AbortController().signal, {
+        resolveExecutable: async () => process.execPath,
+        runPull: async () => ({
+          exitCode: 0,
+          outputBytes: 0,
+          outputSha256: "f".repeat(64),
+        }),
+        client,
+      }),
     ).rejects.toThrow("release labels are invalid");
     expect(calls).toContainEqual(["image", "rm", release.reference]);
   });
@@ -181,7 +175,11 @@ describe("Official Sandbox external release", () => {
 function releaseClient(release: OfficialSandboxRelease): ContainerClient {
   return vi.fn(async (_executable, args) => {
     if (args[0] === "context") return "unix:///private/docker.sock\n";
-    if (args[0] === "image" && args[1] === "inspect" && args[2] === "--format") {
+    if (
+      args[0] === "image" &&
+      args[1] === "inspect" &&
+      args[2] === "--format"
+    ) {
       if (String(args[3]).includes(".Config.Labels")) {
         return `${release.contextSha256}\t${release.sourceSha}\n`;
       }

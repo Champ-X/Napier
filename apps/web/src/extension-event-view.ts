@@ -218,13 +218,19 @@ function countSummaries(view: ExtensionEventTraceView): string[] {
     ...(view.candidateCount !== undefined
       ? [`candidates ${view.candidateCount}`]
       : []),
-    ...(view.installCount !== undefined ? [`installed ${view.installCount}`] : []),
+    ...(view.installCount !== undefined
+      ? [`installed ${view.installCount}`]
+      : []),
     ...(view.updateCount !== undefined ? [`updated ${view.updateCount}`] : []),
-    ...(view.packageCount !== undefined ? [`packages ${view.packageCount}`] : []),
+    ...(view.packageCount !== undefined
+      ? [`packages ${view.packageCount}`]
+      : []),
     ...(view.dependencyCount !== undefined
       ? [`dependencies ${view.dependencyCount}`]
       : []),
-    ...(view.channelCount !== undefined ? [`channels ${view.channelCount}`] : []),
+    ...(view.channelCount !== undefined
+      ? [`channels ${view.channelCount}`]
+      : []),
     ...(view.packageHistoryCount !== undefined
       ? [`package-history ${view.packageHistoryCount}`]
       : []),
@@ -307,7 +313,9 @@ function shaField(
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {

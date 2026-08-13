@@ -4,10 +4,7 @@ import type {
   StreamFrame,
 } from "@napier/contracts";
 
-import {
-  NapierStreamResponseContractError,
-  sha256Text,
-} from "./api-error";
+import { NapierStreamResponseContractError, sha256Text } from "./api-error";
 
 const RUN_STREAM_ERROR_MESSAGE = "Run failed while streaming.";
 const RUN_STREAM_ERROR_CODE = "run_failed";

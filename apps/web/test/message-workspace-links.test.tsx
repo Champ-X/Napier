@@ -75,9 +75,7 @@ describe("Message workspace links", () => {
       },
     ]);
     expect(container.textContent).toContain(".env");
-    expect(container.textContent).toContain(
-      "[unknown](artifacts/unknown.md)",
-    );
+    expect(container.textContent).toContain("[unknown](artifacts/unknown.md)");
   });
 
   it("links only citation tokens backed by strict ledger evidence", async () => {
@@ -108,9 +106,7 @@ describe("Message workspace links", () => {
     );
     expect(links[0]?.getAttribute("aria-label")).toBe("Citation 1");
     expect(links[0]?.textContent).toBe("[1]");
-    expect(container.textContent).toContain(
-      "[citation:citation_unknown0001]",
-    );
+    expect(container.textContent).toContain("[citation:citation_unknown0001]");
   });
 });
 
@@ -129,16 +125,10 @@ function installDom(): HTMLElement {
   return container;
 }
 
-function findElementsByLocalName(
-  root: Element,
-  localName: string,
-): Element[] {
+function findElementsByLocalName(root: Element, localName: string): Element[] {
   const matches: Element[] = [];
   for (const child of Array.from(root.children)) {
-    if (
-      typeof child.localName === "string" &&
-      child.localName === localName
-    ) {
+    if (typeof child.localName === "string" && child.localName === localName) {
       matches.push(child);
     }
     matches.push(...findElementsByLocalName(child, localName));

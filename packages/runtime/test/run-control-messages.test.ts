@@ -133,10 +133,8 @@ describe("Run control messages", () => {
       threadId: "thread_other",
     };
     expect(
-      projectRunControlMessages(
-        [queued, delivered, crossThreadUser],
-        RUN_ID,
-      )[0]?.status,
+      projectRunControlMessages([queued, delivered, crossThreadUser], RUN_ID)[0]
+        ?.status,
     ).toBe("queued");
   });
 

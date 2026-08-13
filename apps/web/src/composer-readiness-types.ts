@@ -1,8 +1,4 @@
-export type ComposerReadinessState =
-  | "ready"
-  | "warn"
-  | "blocked"
-  | "inactive";
+export type ComposerReadinessState = "ready" | "warn" | "blocked" | "inactive";
 
 export interface ComposerReadinessItem {
   id: "network" | "sandbox" | "browser" | "permission";

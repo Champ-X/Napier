@@ -137,7 +137,8 @@ function activityTone(type: string): ConversationActivityTone {
 }
 
 function payloadString(value: unknown, key: string): string | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") return undefined;
+  if (!value || Array.isArray(value) || typeof value !== "object")
+    return undefined;
   const entry = (value as Record<string, unknown>)[key];
   return typeof entry === "string" ? entry : undefined;
 }

@@ -92,9 +92,10 @@ export async function prepareGitBranchSwitch(input: {
 }
 
 function assertGitBranchSwitchVersion(result: GitInspectProcessResult): void {
-  const match = /^git version ([0-9]+)\.([0-9]+)\.([0-9]+)(?:[^\r\n]*)?\n?$/u.exec(
-    result.stdout,
-  );
+  const match =
+    /^git version ([0-9]+)\.([0-9]+)\.([0-9]+)(?:[^\r\n]*)?\n?$/u.exec(
+      result.stdout,
+    );
   if (
     result.status !== "succeeded" ||
     result.stderr.length > 0 ||

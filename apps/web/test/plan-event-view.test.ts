@@ -139,7 +139,9 @@ describe("Plan event trace view", () => {
 
   it("fails closed for malformed and unknown plan receipts", () => {
     expect(
-      planEventTraceSummary(planEvent("plan.created", ["TOP_SECRET_OBJECTIVE"])),
+      planEventTraceSummary(
+        planEvent("plan.created", ["TOP_SECRET_OBJECTIVE"]),
+      ),
     ).toBe("plan receipt");
     expect(
       planEventTraceSummary(

@@ -56,9 +56,9 @@ describe("Research Source continuity", () => {
       captured.details.stateCapsule!.capsuleSha256,
     );
     await appendResearchCompletion(fixture.store, owner, publicEvidence);
-    expect(JSON.stringify(await fixture.store.listEvents(fixture.threadId))).not.toContain(
-      "SOURCE_PRIVATE_RESTART_TEXT",
-    );
+    expect(
+      JSON.stringify(await fixture.store.listEvents(fixture.threadId)),
+    ).not.toContain("SOURCE_PRIVATE_RESTART_TEXT");
     await fixture.store.finishRun(fixture.parentRunId, "interrupted");
     const child = await fixture.store.createRun({
       threadId: fixture.threadId,
@@ -82,7 +82,8 @@ describe("Research Source continuity", () => {
       { threadId: fixture.threadId, runId: child.id },
       {
         action: "cite",
-        sourceId: publicEvidence.action === "capture" ? publicEvidence.sourceId : "",
+        sourceId:
+          publicEvidence.action === "capture" ? publicEvidence.sourceId : "",
         sourceContentSha256:
           publicEvidence.action === "capture"
             ? publicEvidence.sourceContentSha256

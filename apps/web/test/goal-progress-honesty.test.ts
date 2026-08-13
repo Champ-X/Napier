@@ -11,7 +11,7 @@ describe("Goal progress honesty", () => {
     expect(goalPanel).toContain("goal.continuationCount");
     expect(goalPanel).toContain("goal.noProgressCount");
     expect(goalPanel).not.toContain("goalProgress");
-    expect(goalPanel).not.toContain('width: `${');
+    expect(goalPanel).not.toContain("width: `${");
     expect(styles).not.toContain(".goal-progress");
   });
 });

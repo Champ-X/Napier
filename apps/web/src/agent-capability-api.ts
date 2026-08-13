@@ -20,10 +20,7 @@ export async function getAgentCapabilities(
     await requestJsonWithResponse<EffectiveAgentCapabilityProjectionV1>(path);
   const projectedPreset =
     response.headers.get("x-napier-capability-preset") ?? undefined;
-  if (
-    projectedPreset !== preset ||
-    response.body.capabilityPreset !== preset
-  ) {
+  if (projectedPreset !== preset || response.body.capabilityPreset !== preset) {
     throw new Error("Capability projection preset evidence does not match");
   }
   return response.body;

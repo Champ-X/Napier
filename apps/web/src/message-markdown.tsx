@@ -142,7 +142,9 @@ export function MessageMarkdown({
                   {block.rows.map((row, rowIndex) => (
                     <tr key={`${key}-row-${String(rowIndex)}`}>
                       {row.map((cell, cellIndex) => (
-                        <td key={`${key}-cell-${String(rowIndex)}-${String(cellIndex)}`}>
+                        <td
+                          key={`${key}-cell-${String(rowIndex)}-${String(cellIndex)}`}
+                        >
                           {inlineMarkdown(
                             cell,
                             workspaceTargets,
@@ -205,9 +207,7 @@ interface ParsedBlock {
 }
 
 function parseFence(lines: string[], index: number): ParsedBlock | undefined {
-  const fence = (lines[index] ?? "").match(
-    /^```([A-Za-z0-9_+-]{0,32})\s*$/u,
-  );
+  const fence = (lines[index] ?? "").match(/^```([A-Za-z0-9_+-]{0,32})\s*$/u);
   if (!fence) return undefined;
   const code: string[] = [];
   let nextIndex = index + 1;
@@ -288,7 +288,10 @@ function parseTable(lines: string[], index: number): ParsedBlock | undefined {
     const cells = tableCells(lines[nextIndex] ?? "");
     if (cells.length === 0) break;
     rows.push(
-      Array.from({ length: headers.length }, (_, cellIndex) => cells[cellIndex] ?? ""),
+      Array.from(
+        { length: headers.length },
+        (_, cellIndex) => cells[cellIndex] ?? "",
+      ),
     );
     nextIndex += 1;
   }
@@ -393,7 +396,9 @@ function inlineMarkdown(
         ),
       );
     } else if (token.startsWith("**")) {
-      output.push(<strong key={`${start}-strong`}>{token.slice(2, -2)}</strong>);
+      output.push(
+        <strong key={`${start}-strong`}>{token.slice(2, -2)}</strong>,
+      );
     } else {
       const link = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/u);
       const href = link?.[2];

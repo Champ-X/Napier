@@ -119,7 +119,7 @@ function parseApplySandboxSetupRequest(
 function parseApplySandboxUninstallRequest(
   input: unknown,
 ): ApplySandboxUninstallRequest | undefined {
-  return parseApplySandboxSetupRequest(
-    input,
-  ) as ApplySandboxUninstallRequest | undefined;
+  return parseApplySandboxSetupRequest(input) as
+    | ApplySandboxUninstallRequest
+    | undefined;
 }

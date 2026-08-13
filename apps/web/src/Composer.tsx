@@ -47,8 +47,9 @@ export function Composer({
   activeModel: SelectedModelAvailability;
   canStartRun: boolean;
 }) {
-  const [runReadiness, setRunReadiness] =
-    useState<ComposerRunReadiness>(initialComposerRunReadiness);
+  const [runReadiness, setRunReadiness] = useState<ComposerRunReadiness>(
+    initialComposerRunReadiness,
+  );
   const readinessPending = composerReadinessPending(runReadiness);
   const canSubmit = canStartRun && runReadiness.canRun;
   const submit = useCallback(() => {
@@ -89,15 +90,11 @@ export function Composer({
           Boolean(vm.browserInteractionConfirmation)
         }
         onChange={(event) => vm.setComposer(event.target.value)}
-        onKeyDown={(event) =>
-          handleComposerKeys(event, submit)
-        }
+        onKeyDown={(event) => handleComposerKeys(event, submit)}
       />
       <div className="composer-footer">
         <div className="composer-hints">
-          <Suspense
-            fallback={<span>Capability contract loading...</span>}
-          >
+          <Suspense fallback={<span>Capability contract loading...</span>}>
             <LazyComposerCapabilityControl
               agent={activeAgent}
               disabled={vm.isRunning || !vm.detail}

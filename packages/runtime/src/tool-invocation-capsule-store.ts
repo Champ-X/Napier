@@ -18,10 +18,7 @@ export class ToolInvocationCapsuleStore {
   private readonly capsules: LocalPrivateCapsuleStore<ToolInvocationCapsule>;
   readonly rootPath: string;
 
-  constructor(
-    dataRoot: string,
-    maxObjects = MAX_TOOL_INVOCATION_CAPSULES,
-  ) {
+  constructor(dataRoot: string, maxObjects = MAX_TOOL_INVOCATION_CAPSULES) {
     if (
       !Number.isSafeInteger(maxObjects) ||
       maxObjects < 1 ||

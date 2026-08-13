@@ -1,10 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
-import {
-  parseMarkdownBlocks,
-  projectDiffLines,
-} from "../src/message-markdown";
+import { parseMarkdownBlocks, projectDiffLines } from "../src/message-markdown";
 
 describe("Message Markdown", () => {
   it("parses headings, lists, quotes, paragraphs, and fenced code", () => {

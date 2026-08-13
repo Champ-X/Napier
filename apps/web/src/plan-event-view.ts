@@ -79,7 +79,11 @@ export function planEventTraceView(
     ...safeTokenField(event.payload, "blueprintQualificationStatus"),
     ...integerField(event.payload, "stepCount"),
     ...integerField(event.payload, "artifactCount"),
-    ...arrayCountField(event.payload, "criticalPathStepIds", "criticalPathStepCount"),
+    ...arrayCountField(
+      event.payload,
+      "criticalPathStepIds",
+      "criticalPathStepCount",
+    ),
     ...arrayCountField(event.payload, "readyStepIds", "readyStepCount"),
     ...arrayCountField(event.payload, "blockedStepIds", "blockedStepCount"),
     ...arrayCountField(
@@ -117,11 +121,7 @@ export function planEventTraceView(
     ...shaField(event.payload, "dependencyUpdatesSha256"),
     ...shaAliasField(event.payload, "sha256", "artifactSha256"),
     ...shaAliasField(event.payload, "pathSha256", "artifactPathSha256"),
-    ...shaAliasField(
-      event.payload,
-      "evidenceSha256",
-      "artifactEvidenceSha256",
-    ),
+    ...shaAliasField(event.payload, "evidenceSha256", "artifactEvidenceSha256"),
     ...shaField(event.payload, "blueprintSha256"),
     ...shaField(event.payload, "blueprintSourceArchiveSha256"),
     ...shaField(event.payload, "blueprintQualificationSha256"),
@@ -173,7 +173,9 @@ function countSummaries(view: PlanEventTraceView): string[] {
     ...(view.criticalPathStepCount !== undefined
       ? [`critical ${view.criticalPathStepCount}`]
       : []),
-    ...(view.readyStepCount !== undefined ? [`ready ${view.readyStepCount}`] : []),
+    ...(view.readyStepCount !== undefined
+      ? [`ready ${view.readyStepCount}`]
+      : []),
     ...(view.blockedStepCount !== undefined
       ? [`blocked ${view.blockedStepCount}`]
       : []),
@@ -225,8 +227,14 @@ function hashSummaries(view: PlanEventTraceView): string[] {
     ...hashSummary("artifact-path", view.artifactPathSha256),
     ...hashSummary("artifact-evidence", view.artifactEvidenceSha256),
     ...hashSummary("blueprint", view.blueprintSha256),
-    ...hashSummary("blueprint-source-archive", view.blueprintSourceArchiveSha256),
-    ...hashSummary("blueprint-qualification", view.blueprintQualificationSha256),
+    ...hashSummary(
+      "blueprint-source-archive",
+      view.blueprintSourceArchiveSha256,
+    ),
+    ...hashSummary(
+      "blueprint-qualification",
+      view.blueprintQualificationSha256,
+    ),
     ...hashSummary(
       "blueprint-diagnostics",
       view.blueprintQualificationDiagnosticsSha256,
@@ -296,7 +304,9 @@ function shaAliasField(
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {

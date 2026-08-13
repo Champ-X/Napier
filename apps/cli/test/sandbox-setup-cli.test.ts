@@ -316,7 +316,9 @@ describe("Napier Sandbox setup CLI", () => {
   it("reports an anonymously pulled immutable release in human output", async () => {
     const fixture = await createFixture();
     const release = externalRelease();
-    const inspect = vi.fn(async () => inspection("pullable", undefined, release));
+    const inspect = vi.fn(async () =>
+      inspection("pullable", undefined, release),
+    );
     const previewOutput = new CaptureWritable();
     await runCli(
       [

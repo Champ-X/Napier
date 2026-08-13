@@ -33,15 +33,15 @@ describe("Message code highlighting DOM", () => {
 
     const code = findElementsByLocalName(container, "code")[0];
     expect(code?.textContent).toBe(source);
-    expect(findByClass(container, "message-code-token is-keyword")).not.toHaveLength(
-      0,
-    );
-    expect(findByClass(container, "message-code-token is-string")).not.toHaveLength(
-      0,
-    );
-    expect(findByClass(container, "message-code-token is-comment")).not.toHaveLength(
-      0,
-    );
+    expect(
+      findByClass(container, "message-code-token is-keyword"),
+    ).not.toHaveLength(0);
+    expect(
+      findByClass(container, "message-code-token is-string"),
+    ).not.toHaveLength(0);
+    expect(
+      findByClass(container, "message-code-token is-comment"),
+    ).not.toHaveLength(0);
     expect(findElementsByLocalName(container, "script")).toHaveLength(0);
   });
 });
@@ -70,8 +70,7 @@ function findByClass(root: Element, className: string): Element[] {
 function findElementsByLocalName(root: Element, localName: string): Element[] {
   return descendants(root).filter(
     (element) =>
-      typeof element.localName === "string" &&
-      element.localName === localName,
+      typeof element.localName === "string" && element.localName === localName,
   );
 }
 

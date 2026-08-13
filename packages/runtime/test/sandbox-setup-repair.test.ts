@@ -72,11 +72,10 @@ describe("Sandbox setup repair", () => {
     );
     expect(buildRuntime).toHaveBeenCalledTimes(1);
     expect(
-      verifyToolchain.mock.calls.map(([imageIdentity]) => imageIdentity.imageId),
-    ).toEqual([
-      original.imageId,
-      repaired.imageId,
-    ]);
+      verifyToolchain.mock.calls.map(
+        ([imageIdentity]) => imageIdentity.imageId,
+      ),
+    ).toEqual([original.imageId, repaired.imageId]);
     expect(verify).toHaveBeenCalledTimes(1);
     expect(switchable.current()).toBe(activated);
     expect(await loadSandboxInstallation(fixture.dataRoot)).toEqual(
@@ -235,7 +234,10 @@ function readyInspection(
   };
 }
 
-function identity(imageSeed: string, identitySeed: string): ContainerImageIdentity {
+function identity(
+  imageSeed: string,
+  identitySeed: string,
+): ContainerImageIdentity {
   return {
     imageId: `sha256:${imageSeed.repeat(64)}`,
     imagePlatform: "linux/arm64",

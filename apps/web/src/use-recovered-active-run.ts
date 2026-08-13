@@ -49,11 +49,5 @@ export function useRecoveredActiveRun(
       disposed = true;
       window.clearInterval(timer);
     };
-  }, [
-    setBootstrap,
-    setDetail,
-    state.activeRunId,
-    streamAttached,
-    threadId,
-  ]);
+  }, [setBootstrap, setDetail, state.activeRunId, streamAttached, threadId]);
 }

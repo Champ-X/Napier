@@ -32,7 +32,8 @@ export function messageEventTraceView(
     return undefined;
   }
   const usage = record(event.payload["usage"]) ? event.payload["usage"] : {};
-  const text = typeof event.payload["text"] === "string" ? event.payload["text"] : "";
+  const text =
+    typeof event.payload["text"] === "string" ? event.payload["text"] : "";
   return {
     action: event.type,
     ...safeTokenField(event.payload, "role"),
@@ -73,7 +74,9 @@ export function messageEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.cacheWriteTokens !== undefined
       ? [`cache-write ${view.cacheWriteTokens}`]
       : []),
-    ...(view.costUsd !== undefined ? [`cost ${formatNumber(view.costUsd)}`] : []),
+    ...(view.costUsd !== undefined
+      ? [`cost ${formatNumber(view.costUsd)}`]
+      : []),
     ...(view.textSha256 ? [`text ${view.textSha256.slice(0, 12)}`] : []),
   ].join(" / ");
 }
@@ -122,7 +125,9 @@ function formatNumber(value: number): string {
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {

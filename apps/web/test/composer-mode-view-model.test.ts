@@ -22,9 +22,9 @@ describe("Composer task modes", () => {
       "safe_automation",
     ]);
     expect(modes.find((mode) => mode.active)?.id).toBe("research");
-    expect(modes.filter((mode) => mode.requiresSandbox).map((m) => m.id)).toEqual(
-      ["coding", "safe_automation"],
-    );
+    expect(
+      modes.filter((mode) => mode.requiresSandbox).map((m) => m.id),
+    ).toEqual(["coding", "safe_automation"]);
   });
 
   it("treats a custom profile as no active mode", () => {
@@ -41,12 +41,12 @@ describe("Composer task modes", () => {
   });
 
   it("does not gate read-only modes on the sandbox", () => {
-    expect(composerModeDependency("research", projection("unavailable"))).toEqual(
-      { level: "ready", message: "" },
-    );
-    expect(composerModeDependency("browser", projection("unavailable"))).toEqual(
-      { level: "ready", message: "" },
-    );
+    expect(
+      composerModeDependency("research", projection("unavailable")),
+    ).toEqual({ level: "ready", message: "" });
+    expect(
+      composerModeDependency("browser", projection("unavailable")),
+    ).toEqual({ level: "ready", message: "" });
   });
 
   it("blocks process-capable modes when the sandbox is unavailable", () => {
@@ -55,7 +55,8 @@ describe("Composer task modes", () => {
     expect(coding.message).toContain("Sandbox is unavailable");
     expect(composerModeNeedsSandboxSetup("coding", coding)).toBe(true);
     expect(
-      composerModeDependency("safe_automation", projection("unavailable")).level,
+      composerModeDependency("safe_automation", projection("unavailable"))
+        .level,
     ).toBe("blocked");
   });
 
@@ -70,7 +71,8 @@ describe("Composer task modes", () => {
 
   it("allows process-capable modes when the sandbox is available", () => {
     expect(
-      composerModeDependency("coding", projection("available_unverified")).level,
+      composerModeDependency("coding", projection("available_unverified"))
+        .level,
     ).toBe("ready");
   });
 

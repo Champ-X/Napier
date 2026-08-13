@@ -133,7 +133,11 @@ export function conversationNetworkActivity(
   const payload = record(event.payload);
   const callId = safeString(payload?.["callId"], CALL_ID);
   const toolName = payload?.["toolName"];
-  if (!payload || !callId || (toolName !== "web_search" && toolName !== "web_fetch")) {
+  if (
+    !payload ||
+    !callId ||
+    (toolName !== "web_search" && toolName !== "web_fetch")
+  ) {
     return undefined;
   }
   const status =
@@ -349,17 +353,13 @@ function sourceFormat(
 function sourceRenderMode(
   value: unknown,
 ): "static" | "browser_fallback" | undefined {
-  return value === "static" || value === "browser_fallback"
-    ? value
-    : undefined;
+  return value === "static" || value === "browser_fallback" ? value : undefined;
 }
 
 function browserFallbackStatus(
   value: unknown,
 ): "not_needed" | "used" | "unavailable" | undefined {
-  return value === "not_needed" ||
-    value === "used" ||
-    value === "unavailable"
+  return value === "not_needed" || value === "used" || value === "unavailable"
     ? value
     : undefined;
 }

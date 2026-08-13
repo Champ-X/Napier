@@ -70,9 +70,7 @@ export async function verifyProfileUpgrade(options = {}) {
 async function runCli() {
   const write = process.argv.slice(2).includes("--write");
   if (process.argv.length > (write ? 3 : 2)) {
-    throw new Error(
-      "Usage: node scripts/check-profile-upgrade.mjs [--write]",
-    );
+    throw new Error("Usage: node scripts/check-profile-upgrade.mjs [--write]");
   }
   if (write) {
     const artifact = await collectProfileUpgrade();

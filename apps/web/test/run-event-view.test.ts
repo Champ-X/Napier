@@ -53,9 +53,7 @@ describe("Run event trace view", () => {
       attemptId: "attempt_1234567890",
     });
 
-    expect(runEventTraceSummary(failed)).toBe(
-      "run / failed / status failed",
-    );
+    expect(runEventTraceSummary(failed)).toBe("run / failed / status failed");
     expect(runEventTraceSummary(recoveryFailed)).toBe(
       "run / recovery.failed / status failed / mode safe_read_only / parent-run 1234567890 / attempt-id 1234567890",
     );

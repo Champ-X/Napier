@@ -12,8 +12,7 @@ export async function profileUpgradeImplementation(repoRoot) {
     upgradeModel: "packages/runtime/src/agent-capability-upgrade.ts",
     bindings: "packages/runtime/src/agent-capability-bindings.ts",
     service: "packages/runtime/src/agent-capability-service.ts",
-    storeMutation:
-      "packages/runtime/src/agent-capability-store-mutations.ts",
+    storeMutation: "packages/runtime/src/agent-capability-store-mutations.ts",
     store: "packages/runtime/src/store.ts",
     cli: "apps/cli/src/capability-cli.ts",
     cliOptions: "apps/cli/src/cli-capability-options.ts",
@@ -148,11 +147,7 @@ function validUnmanaged(value) {
 function validCleanup(value) {
   return (
     record(value) &&
-    exactKeys(value, [
-      "serverClosed",
-      "browserClosed",
-      "taskRootRemoved",
-    ]) &&
+    exactKeys(value, ["serverClosed", "browserClosed", "taskRootRemoved"]) &&
     Object.values(value).every((item) => item === true)
   );
 }
@@ -201,8 +196,9 @@ function record(value) {
 }
 
 function exactKeys(value, keys) {
-  return canonicalJson(Object.keys(value).sort()) ===
-    canonicalJson([...keys].sort());
+  return (
+    canonicalJson(Object.keys(value).sort()) === canonicalJson([...keys].sort())
+  );
 }
 
 function isoDate(value) {

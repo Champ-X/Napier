@@ -36,7 +36,10 @@ describe("temporary capability preset Web protocol", () => {
 
   it("rejects missing preset evidence before dispatching a frame", async () => {
     const onFrame = vi.fn();
-    vi.stubGlobal("fetch", vi.fn(async () => response()));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => response()),
+    );
 
     await expect(
       streamPrompt(
@@ -82,8 +85,7 @@ function response(
     ),
   });
   if (preset) headers.set("X-Napier-Capability-Preset", preset);
-  const id =
-    frame.type === "event" ? `id: ${String(frame.event.seq)}\n` : "";
+  const id = frame.type === "event" ? `id: ${String(frame.event.seq)}\n` : "";
   return new Response(
     `${id}event: ${frame.type}\ndata: ${JSON.stringify(frame)}`,
     { headers },

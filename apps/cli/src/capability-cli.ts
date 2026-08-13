@@ -32,11 +32,7 @@ export interface CapabilityCliResultV1 extends CapabilityCliResultBase {
 
 export interface CapabilityCliRestoreResultV2 extends CapabilityCliResultBase {
   schemaVersion: 2;
-  action:
-    | "upgrade_preview"
-    | "upgraded"
-    | "restore_preview"
-    | "restored";
+  action: "upgrade_preview" | "upgraded" | "restore_preview" | "restored";
   projection: EffectiveAgentCapabilityProjectionV1;
 }
 
@@ -108,18 +104,18 @@ export async function executeCapabilities(
     };
     const result: CapabilityCliResult =
       options.upgradeRecommended || options.restoreRecommended
-      ? {
-          ...base,
-          schemaVersion: 2,
-          action: action as CapabilityCliRestoreResultV2["action"],
-          projection: projection!,
-        }
-      : {
-          ...base,
-          schemaVersion: 1,
-          action: action as CapabilityCliResultV1["action"],
-          ...(projection ? { projection } : {}),
-        };
+        ? {
+            ...base,
+            schemaVersion: 2,
+            action: action as CapabilityCliRestoreResultV2["action"],
+            projection: projection!,
+          }
+        : {
+            ...base,
+            schemaVersion: 1,
+            action: action as CapabilityCliResultV1["action"],
+            ...(projection ? { projection } : {}),
+          };
     if (options.jsonl) {
       await writeJsonLine(io.stdout, result);
     } else {

@@ -38,7 +38,11 @@ export function registerAgentCapabilityHttp(
   app.get("/api/agents/:agentId/capabilities", async (context) => {
     const preset = parseCapabilityPreset(context);
     if (preset === null) {
-      return jsonError(context, "Capability projection request is invalid", 400);
+      return jsonError(
+        context,
+        "Capability projection request is invalid",
+        400,
+      );
     }
     try {
       const projection = await services.agentCapabilities.project(
@@ -214,9 +218,7 @@ function parseCapabilityPreset(
   }
   const preset = parameters.get("preset");
   if (preset === null) return undefined;
-  return AGENT_CAPABILITY_PRESET_IDS.includes(
-    preset as AgentCapabilityPresetId,
-  )
+  return AGENT_CAPABILITY_PRESET_IDS.includes(preset as AgentCapabilityPresetId)
     ? (preset as AgentCapabilityPresetId)
     : null;
 }

@@ -663,9 +663,7 @@ function blockedLongHorizonProvider() {
       batch = [];
       for (const release of ready) release();
     });
-  provider.setResponses(
-    Array.from({ length: 6 }, () => respond),
-  );
+  provider.setResponses(Array.from({ length: 6 }, () => respond));
   return provider;
 }
 

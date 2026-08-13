@@ -100,7 +100,9 @@ describe("SandboxSetupCard", () => {
     root.render(<SandboxSetupCard />);
     await waitFor(() => container.textContent?.includes("Install & activate"));
     expect(container.textContent).toContain("SIGNED RELEASE");
-    expect(container.textContent).toContain(preview.releaseDigest!.slice(0, 19));
+    expect(container.textContent).toContain(
+      preview.releaseDigest!.slice(0, 19),
+    );
 
     findElementByText<HTMLButtonElement>(
       container,

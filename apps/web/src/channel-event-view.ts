@@ -147,8 +147,12 @@ export function channelEventTraceSummary(event: RunEvent): string | undefined {
       ? [`deliveries ${view.deliveryCount}`]
       : []),
     ...qualificationSummary(view),
-    ...(view.retriedCount !== undefined ? [`retried ${view.retriedCount}`] : []),
-    ...(view.skippedCount !== undefined ? [`skipped ${view.skippedCount}`] : []),
+    ...(view.retriedCount !== undefined
+      ? [`retried ${view.retriedCount}`]
+      : []),
+    ...(view.skippedCount !== undefined
+      ? [`skipped ${view.skippedCount}`]
+      : []),
     ...(view.revision !== undefined ? [`revision ${view.revision}`] : []),
     ...(view.channelRevision !== undefined
       ? [`channel-revision ${view.channelRevision}`]
@@ -206,7 +210,9 @@ function retryPolicySummary(view: ChannelEventTraceView): string[] {
         : view.previousBaseDelayMs !== undefined
           ? [`previous-retry-base-ms ${view.previousBaseDelayMs}`]
           : []),
-    ...(view.maxAttempts !== undefined ? [`max-attempts ${view.maxAttempts}`] : []),
+    ...(view.maxAttempts !== undefined
+      ? [`max-attempts ${view.maxAttempts}`]
+      : []),
     ...(view.retryBaseMs !== undefined
       ? [`retry-base-ms ${view.retryBaseMs}`]
       : []),
@@ -315,7 +321,9 @@ function shaField(
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function fingerprint(value: unknown): string | undefined {

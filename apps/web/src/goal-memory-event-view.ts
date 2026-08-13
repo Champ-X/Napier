@@ -132,7 +132,7 @@ export function goalEventTraceSummary(event: RunEvent): string | undefined {
         ]
       : view.maxContinuations !== undefined
         ? [`max-continuations ${view.maxContinuations}`]
-      : []),
+        : []),
     ...(view.noProgressCount !== undefined
       ? [`no-progress ${view.noProgressCount}`]
       : []),
@@ -167,7 +167,9 @@ export function memoryEventTraceSummary(event: RunEvent): string | undefined {
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function memoryIdValue(value: unknown): string | undefined {

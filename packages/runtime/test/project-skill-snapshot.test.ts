@@ -120,10 +120,9 @@ describe("immutable project Skill snapshots", () => {
       "data-analysis",
     ]);
 
-    expect(snapshot.manifest.entries.map((entry) => entry.canonicalName)).toEqual([
-      "data-analysis",
-      "research-brief",
-    ]);
+    expect(
+      snapshot.manifest.entries.map((entry) => entry.canonicalName),
+    ).toEqual(["data-analysis", "research-brief"]);
     expect(snapshot.binding.loadableSkillNames).toEqual([
       "data-analysis",
       "research-brief",
@@ -176,8 +175,14 @@ describe("immutable project Skill snapshots", () => {
     expect(unsafe).not.toHaveProperty("canonicalName");
     expect(JSON.stringify(snapshot.binding)).not.toContain("bad_name");
     expect(snapshot.binding.configuredSkillRequests.slice(1, 3)).toEqual([
-      expect.objectContaining({ state: "unavailable", canonicalName: "duplicate" }),
-      expect.objectContaining({ state: "unavailable", canonicalName: "duplicate" }),
+      expect.objectContaining({
+        state: "unavailable",
+        canonicalName: "duplicate",
+      }),
+      expect.objectContaining({
+        state: "unavailable",
+        canonicalName: "duplicate",
+      }),
     ]);
   });
 
@@ -212,7 +217,13 @@ describe("immutable project Skill snapshots", () => {
     const root64 = await workspace();
     await Promise.all(
       Array.from({ length: 64 }, (_, index) =>
-        mkdir(path.join(root64, "skills", `skill-${String(index).padStart(2, "0")}`)),
+        mkdir(
+          path.join(
+            root64,
+            "skills",
+            `skill-${String(index).padStart(2, "0")}`,
+          ),
+        ),
       ),
     );
     const bounded = await buildProjectSkillSnapshot(root64, []);
@@ -221,7 +232,13 @@ describe("immutable project Skill snapshots", () => {
     const root65 = await workspace();
     await Promise.all(
       Array.from({ length: 65 }, (_, index) =>
-        mkdir(path.join(root65, "skills", `skill-${String(index).padStart(2, "0")}`)),
+        mkdir(
+          path.join(
+            root65,
+            "skills",
+            `skill-${String(index).padStart(2, "0")}`,
+          ),
+        ),
       ),
     );
     await expect(buildProjectSkillSnapshot(root65, [])).rejects.toMatchObject({
@@ -242,7 +259,11 @@ describe("immutable project Skill snapshots", () => {
     expect(accepted.content.aggregateRawBytes).toBe(128 * 1024);
 
     const overRoot = await workspace();
-    await putSkill(overRoot, "too-large", `${skillText("too-large")}${"x".repeat(128 * 1024)}`);
+    await putSkill(
+      overRoot,
+      "too-large",
+      `${skillText("too-large")}${"x".repeat(128 * 1024)}`,
+    );
     const oversized = await buildProjectSkillSnapshot(overRoot, ["too-large"]);
     expect(oversized.content.unavailableSkills[0]?.failureCode).toBe(
       "skill_limit_exceeded",
@@ -337,18 +358,38 @@ describe("immutable project Skill snapshots", () => {
 
   it("fails closed across an injected parent rename and swap-back ABA", async () => {
     const root = await workspace();
-    await putSkill(root, "research-brief", skillText("research-brief", { body: "# trusted" }));
-    await putSkill(root, "attacker", skillText("research-brief", { body: "# attacker" }));
+    await putSkill(
+      root,
+      "research-brief",
+      skillText("research-brief", { body: "# trusted" }),
+    );
+    await putSkill(
+      root,
+      "attacker",
+      skillText("research-brief", { body: "# attacker" }),
+    );
     const skills = path.join(root, "skills");
     await expect(
       buildProjectSkillSnapshot(root, ["research-brief"], undefined, {
         async afterSkillDirectoryOpen() {
-          await rename(path.join(skills, "research-brief"), path.join(skills, "held-original"));
-          await rename(path.join(skills, "attacker"), path.join(skills, "research-brief"));
+          await rename(
+            path.join(skills, "research-brief"),
+            path.join(skills, "held-original"),
+          );
+          await rename(
+            path.join(skills, "attacker"),
+            path.join(skills, "research-brief"),
+          );
         },
         async afterSkillFileRead() {
-          await rename(path.join(skills, "research-brief"), path.join(skills, "attacker"));
-          await rename(path.join(skills, "held-original"), path.join(skills, "research-brief"));
+          await rename(
+            path.join(skills, "research-brief"),
+            path.join(skills, "attacker"),
+          );
+          await rename(
+            path.join(skills, "held-original"),
+            path.join(skills, "research-brief"),
+          );
         },
       }),
     ).rejects.toMatchObject({ code: "workspace_untrusted" });
@@ -392,7 +433,13 @@ describe("immutable project Skill snapshots", () => {
     for (const prefix of ["first", "second"]) {
       const root = await workspace();
       for (let index = 0; index < 65; index += 1) {
-        await mkdir(path.join(root, "skills", `${prefix}-${String(index).padStart(2, "0")}`));
+        await mkdir(
+          path.join(
+            root,
+            "skills",
+            `${prefix}-${String(index).padStart(2, "0")}`,
+          ),
+        );
       }
       try {
         await buildProjectSkillSnapshot(root, []);
@@ -441,7 +488,12 @@ describe("immutable project Skill snapshots", () => {
         },
       } as ProjectSkillSnapshotHooks;
       await expect(
-        buildProjectSkillSnapshot(root, ["research-brief"], controller.signal, hooks),
+        buildProjectSkillSnapshot(
+          root,
+          ["research-brief"],
+          controller.signal,
+          hooks,
+        ),
         phase,
       ).rejects.toMatchObject({ name: "AbortError" });
     }

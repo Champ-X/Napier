@@ -261,13 +261,14 @@ describe("Agent capability HTTP", () => {
     expect(services.store.getAgent(agent.id)).toEqual(agent);
     expect(services.store.listAgentRevisions(agent.id)).toEqual(revisions);
 
-    for (const query of ["preset=unknown", "preset=browser&preset=coding", "extra=1"]) {
+    for (const query of [
+      "preset=unknown",
+      "preset=browser&preset=coding",
+      "extra=1",
+    ]) {
       expect(
-        (
-          await app.request(
-            `/api/agents/${agent.id}/capabilities?${query}`,
-          )
-        ).status,
+        (await app.request(`/api/agents/${agent.id}/capabilities?${query}`))
+          .status,
       ).toBe(400);
     }
   });

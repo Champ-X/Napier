@@ -228,15 +228,13 @@ function isSandboxResourceObservation(
   ];
   return (
     integerFields.every(
-      (name) =>
-        Number.isSafeInteger(value[name]) && Number(value[name]) >= 0,
+      (name) => Number.isSafeInteger(value[name]) && Number(value[name]) >= 0,
     ) &&
     booleanFields.every((name) => typeof value[name] === "boolean") &&
     Array.isArray(value["networkInterfaces"]) &&
     value["networkInterfaces"].every(
       (name) =>
-        typeof name === "string" &&
-        /^[a-zA-Z0-9_.-]{1,32}$/u.test(name),
+        typeof name === "string" && /^[a-zA-Z0-9_.-]{1,32}$/u.test(name),
     )
   );
 }

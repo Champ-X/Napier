@@ -155,16 +155,16 @@ export function runControlTraceSummary(event: RunEvent): string | undefined {
       ? [`receipt ${view.contentSha256.slice(0, 12)}`]
       : []),
     ...(view.reason ? [`reason ${view.reason}`] : []),
-    ...(view.queuedEventSeq !== undefined ? [`queued ${view.queuedEventSeq}`] : []),
+    ...(view.queuedEventSeq !== undefined
+      ? [`queued ${view.queuedEventSeq}`]
+      : []),
     ...(view.messageEventSeq !== undefined
       ? [`message ${view.messageEventSeq}`]
       : []),
   ].join(" / ");
 }
 
-function recordPayload(
-  event: RunEvent,
-): Record<string, unknown> | undefined {
+function recordPayload(event: RunEvent): Record<string, unknown> | undefined {
   return event.payload &&
     typeof event.payload === "object" &&
     !Array.isArray(event.payload)
@@ -189,7 +189,9 @@ function runIdValue(value: unknown): string | undefined {
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {

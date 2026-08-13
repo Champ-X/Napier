@@ -90,9 +90,7 @@ export class TuiSessionState {
       ...(this.capabilities
         ? { capabilities: structuredClone(this.capabilities) }
         : {}),
-      ...(this.sandboxWarning
-        ? { sandboxWarning: this.sandboxWarning }
-        : {}),
+      ...(this.sandboxWarning ? { sandboxWarning: this.sandboxWarning } : {}),
       ...(this.lastRun ? { lastRun: structuredClone(this.lastRun) } : {}),
       active: this.active,
       ...(this.activeLabel ? { activeLabel: this.activeLabel } : {}),

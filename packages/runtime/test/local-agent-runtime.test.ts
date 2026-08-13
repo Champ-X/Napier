@@ -124,15 +124,13 @@ describe("local Agent Runtime bootstrap", () => {
       sandbox: new UnsupportedSandboxAdapter("restart-test"),
     });
     try {
-      const recovered = services.store.listRuns(thread.id).find(
-        (run) => run.id === leased.run.id,
-      );
+      const recovered = services.store
+        .listRuns(thread.id)
+        .find((run) => run.id === leased.run.id);
       expect(recovered).toEqual(
         expect.objectContaining({
           status: "interrupted",
-          interruptionReason: expect.stringContaining(
-            "runtime process exited",
-          ),
+          interruptionReason: expect.stringContaining("runtime process exited"),
         }),
       );
       expect(recovered).not.toHaveProperty("lease");
@@ -151,13 +149,13 @@ describe("local Agent Runtime bootstrap", () => {
         services.store.trashThread(thread.id),
       ).resolves.toBeDefined();
       expect(
-        services.store.listVisibleThreads().some(
-          (candidate) => candidate.id === thread.id,
-        ),
+        services.store
+          .listVisibleThreads()
+          .some((candidate) => candidate.id === thread.id),
       ).toBe(false);
-      expect(
-        (await services.store.listEvents(thread.id)).at(-1)?.type,
-      ).toBe("thread.trashed");
+      expect((await services.store.listEvents(thread.id)).at(-1)?.type).toBe(
+        "thread.trashed",
+      );
     } finally {
       await services.shutdown();
     }

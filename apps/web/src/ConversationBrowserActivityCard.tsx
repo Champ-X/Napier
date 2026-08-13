@@ -93,19 +93,14 @@ function activityDetails(
       : []),
     ...(activity.sessionReused !== undefined
       ? [
-          [
-            "Session",
-            activity.sessionReused ? "Reused" : "Opened",
-          ] as [string, string],
+          ["Session", activity.sessionReused ? "Reused" : "Opened"] as [
+            string,
+            string,
+          ],
         ]
       : []),
     ...(activity.pageDiagnosis && activity.pageDiagnosis !== "none"
-      ? [
-          [
-            "Page state",
-            humanize(activity.pageDiagnosis),
-          ] as [string, string],
-        ]
+      ? [["Page state", humanize(activity.pageDiagnosis)] as [string, string]]
       : []),
     ...(activity.networkRequestCount !== undefined
       ? [
@@ -119,67 +114,52 @@ function activityDetails(
       : []),
     ...(activity.destinationCount !== undefined
       ? [
-          [
-            "Destinations",
-            String(activity.destinationCount),
-          ] as [string, string],
+          ["Destinations", String(activity.destinationCount)] as [
+            string,
+            string,
+          ],
         ]
       : []),
     ...(activity.networkTransferredBytes !== undefined
       ? [
-          [
-            "Transferred",
-            formatBytes(activity.networkTransferredBytes),
-          ] as [string, string],
+          ["Transferred", formatBytes(activity.networkTransferredBytes)] as [
+            string,
+            string,
+          ],
         ]
       : []),
     ...(activity.blockedRequestCount !== undefined
-      ? [
-          [
-            "Blocked",
-            String(activity.blockedRequestCount),
-          ] as [string, string],
-        ]
+      ? [["Blocked", String(activity.blockedRequestCount)] as [string, string]]
       : []),
     ...(activity.snapshotChars !== undefined
       ? [
-          [
-            "Snapshot",
-            `${String(activity.snapshotChars)} chars`,
-          ] as [string, string],
+          ["Snapshot", `${String(activity.snapshotChars)} chars`] as [
+            string,
+            string,
+          ],
         ]
       : []),
     ...(activity.findMatchCount !== undefined
-      ? [
-          [
-            "Matches",
-            String(activity.findMatchCount),
-          ] as [string, string],
-        ]
+      ? [["Matches", String(activity.findMatchCount)] as [string, string]]
       : []),
     ...(activity.scrollPositionY !== undefined
       ? [
-          [
-            "Scroll",
-            `${String(activity.scrollPositionY)} px`,
-          ] as [string, string],
+          ["Scroll", `${String(activity.scrollPositionY)} px`] as [
+            string,
+            string,
+          ],
         ]
       : []),
     ...(activity.screenshotBytes !== undefined
       ? [
-          [
-            "Screenshot",
-            formatBytes(activity.screenshotBytes),
-          ] as [string, string],
+          ["Screenshot", formatBytes(activity.screenshotBytes)] as [
+            string,
+            string,
+          ],
         ]
       : []),
     ...(activity.fileBytes !== undefined
-      ? [
-          [
-            "File",
-            formatBytes(activity.fileBytes),
-          ] as [string, string],
-        ]
+      ? [["File", formatBytes(activity.fileBytes)] as [string, string]]
       : []),
   ];
 }

@@ -1,11 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import {
-  access,
-  mkdtemp,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -707,9 +701,7 @@ async function createGuardianScratch(root: string): Promise<{
   scratchHome: string;
   environmentSha256: string;
 }> {
-  const scratchHome = await mkdtemp(
-    path.join(root, "napier-process-sandbox-"),
-  );
+  const scratchHome = await mkdtemp(path.join(root, "napier-process-sandbox-"));
   const environment = "PRIVATE_VALUE=guardian-secret\n";
   await writeFile(path.join(scratchHome, "environment.list"), environment, {
     mode: 0o600,

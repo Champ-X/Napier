@@ -73,12 +73,7 @@ describe("Conversation Subagents", () => {
 
   it("filters hidden, malformed, and unbound Subagent events", () => {
     const events = [
-      event(
-        1,
-        "subagent.queued",
-        { taskId: "task_fixture0001" },
-        "hidden",
-      ),
+      event(1, "subagent.queued", { taskId: "task_fixture0001" }, "hidden"),
       event(2, "subagent.future", { taskId: "task_fixture0001" }),
       event(3, "subagent.started", { taskId: "PRIVATE_TASK" }),
       event(4, "subagent.started", { taskId: "task_missing0001" }),

@@ -8,9 +8,7 @@ import { LocalStore } from "../packages/runtime/dist/index.js";
 const DEFAULT_EVENT_COUNTS = [100, 1_000];
 const MAX_EVENT_COUNT = 10_000;
 
-const eventCounts = parseEventCounts(
-  process.env["NAPIER_BENCH_EVENT_COUNTS"],
-);
+const eventCounts = parseEventCounts(process.env["NAPIER_BENCH_EVENT_COUNTS"]);
 const outputPath = parseOutputPath(process.argv.slice(2));
 const root = await mkdtemp(path.join(tmpdir(), "napier-store-scale-"));
 const store = new LocalStore({

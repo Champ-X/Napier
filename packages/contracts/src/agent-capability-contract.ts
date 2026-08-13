@@ -198,11 +198,7 @@ export function isEffectiveAgentCapabilityProjectionV1(
   value: unknown,
 ): value is EffectiveAgentCapabilityProjectionV1 {
   return (
-    exactRecord(
-      value,
-      PROJECTION_REQUIRED_KEYS,
-      PROJECTION_OPTIONAL_KEYS,
-    ) &&
+    exactRecord(value, PROJECTION_REQUIRED_KEYS, PROJECTION_OPTIONAL_KEYS) &&
     projectionIdentity(value) &&
     projectionCapabilities(value) &&
     projectionEvidence(value)
@@ -324,10 +320,7 @@ function capabilityUpgradePreview(
 }
 
 function optionalCapabilityPreset(value: unknown): boolean {
-  return (
-    value === undefined ||
-    member(value, AGENT_CAPABILITY_PRESET_IDS)
-  );
+  return value === undefined || member(value, AGENT_CAPABILITY_PRESET_IDS);
 }
 
 function capabilityReadinessRecord(value: unknown): boolean {

@@ -113,38 +113,34 @@ describe("Prompt regression matrix", () => {
     ).toBe(true);
   });
 
-  it(
-    "rejects a drifted checked-in receipt through the formal entrypoint",
-    async () => {
-      const root = await mkdtemp(
-        path.join(tmpdir(), "napier-prompt-regression-"),
-      );
-      try {
-        const artifact = JSON.parse(
-          await readFile(
-            new URL(
-              "../docs/artifacts/prompt-regression-matrix-0.1.0.json",
-              import.meta.url,
-            ),
-            "utf8",
+  it("rejects a drifted checked-in receipt through the formal entrypoint", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-prompt-regression-"),
+    );
+    try {
+      const artifact = JSON.parse(
+        await readFile(
+          new URL(
+            "../docs/artifacts/prompt-regression-matrix-0.1.0.json",
+            import.meta.url,
           ),
-        );
-        artifact.contentSha256 = "f".repeat(64);
-        const receiptPath = path.join(root, "drifted.json");
-        await writeFile(receiptPath, JSON.stringify(artifact), "utf8");
-        const result = await run([
-          "scripts/run-prompt-regression-matrix.mjs",
-          "--verify-receipt",
-          receiptPath,
-        ]);
-        expect(result.code).not.toBe(0);
-        expect(result.stderr).toContain("Prompt regression matrix hash mismatch");
-      } finally {
-        await rm(root, { recursive: true, force: true });
-      }
-    },
-    60_000,
-  );
+          "utf8",
+        ),
+      );
+      artifact.contentSha256 = "f".repeat(64);
+      const receiptPath = path.join(root, "drifted.json");
+      await writeFile(receiptPath, JSON.stringify(artifact), "utf8");
+      const result = await run([
+        "scripts/run-prompt-regression-matrix.mjs",
+        "--verify-receipt",
+        receiptPath,
+      ]);
+      expect(result.code).not.toBe(0);
+      expect(result.stderr).toContain("Prompt regression matrix hash mismatch");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 60_000);
 });
 
 function run(args) {

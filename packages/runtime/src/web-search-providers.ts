@@ -178,9 +178,7 @@ class FirecrawlWebSearchProvider implements WebSearchProvider {
       throw new Error(`Firecrawl returned HTTP ${response.status}`);
     }
     const data = record(jsonRecord(response.body)["data"]) ?? {};
-    const entries = news
-      ? recordArray(data["news"])
-      : recordArray(data["web"]);
+    const entries = news ? recordArray(data["news"]) : recordArray(data["web"]);
     return entries.flatMap((entry) => {
       const url = text(entry["url"]);
       const title = text(entry["title"]);

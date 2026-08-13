@@ -116,8 +116,7 @@ describe("receipt trust directory discovery ViewModel", () => {
         minimumSelectionCount: checkpoint.selectionCount,
         expectedCheckpointSha256: "c".repeat(64),
         expectedSelectionSetSha256: checkpoint.selectionSetSha256,
-        expectedSelectionChainTailSha256:
-          checkpoint.selectionChainTailSha256,
+        expectedSelectionChainTailSha256: checkpoint.selectionChainTailSha256,
         requiredSignerKeyIds: ["d".repeat(64)],
       },
       trustDirectory: directory,
@@ -183,8 +182,7 @@ describe("receipt trust directory discovery ViewModel", () => {
         minimumSelectionCount: checkpoint.selectionCount,
         expectedCheckpointSha256: checkpoint.contentSha256,
         expectedSelectionSetSha256: checkpoint.selectionSetSha256,
-        expectedSelectionChainTailSha256:
-          checkpoint.selectionChainTailSha256,
+        expectedSelectionChainTailSha256: checkpoint.selectionChainTailSha256,
         requiredSignerKeyIds: ["d".repeat(64)],
       },
     });
@@ -217,10 +215,7 @@ describe("receipt trust directory discovery ViewModel", () => {
     ];
 
     expect(
-      projectReceiptTrustDirectoryBaselineActivation(
-        [baseline],
-        subscriptions,
-      ),
+      projectReceiptTrustDirectoryBaselineActivation([baseline], subscriptions),
     ).toEqual(
       expect.objectContaining({
         baselineCount: 1,

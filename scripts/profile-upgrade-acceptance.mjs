@@ -1,12 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import {
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -42,9 +36,15 @@ export async function runProfileUpgradeAcceptance(repoRoot) {
   let server;
   let browser;
   try {
-    await seedV2Override(path.join(root, "workspace"), path.join(root, "state"));
+    await seedV2Override(
+      path.join(root, "workspace"),
+      path.join(root, "state"),
+    );
     const cli = await runCliArm(repoRoot, root);
-    await seedV2Override(path.join(root, "workspace"), path.join(root, "state"));
+    await seedV2Override(
+      path.join(root, "workspace"),
+      path.join(root, "state"),
+    );
     server = await startProductionWebServer(root);
     browser = await startWebUiBrowser(root);
     const web = await runWebArm(browser.browser, server.origin, root);
@@ -152,14 +152,19 @@ async function runWebArm(browser, origin, root) {
   await card.getByText("enabledSkills").waitFor();
   await card.locator("details").first().locator("summary").click();
   await card.getByText("skill_load").waitFor();
-  const preview = await fetch(`${origin}/api/agents/agent_napier/capabilities`, {
-    signal: AbortSignal.timeout(10_000),
-  }).then((response) => response.json());
+  const preview = await fetch(
+    `${origin}/api/agents/agent_napier/capabilities`,
+    {
+      signal: AbortSignal.timeout(10_000),
+    },
+  ).then((response) => response.json());
   assertUpgradePreview(preview.upgradePreview);
   await card.locator('input[type="checkbox"]').check();
-  await card.getByRole("button", {
-    name: "Upgrade while preserving overrides",
-  }).click();
+  await card
+    .getByRole("button", {
+      name: "Upgrade while preserving overrides",
+    })
+    .click();
   await card.getByText(/v3 · current · explicit_overrides/u).waitFor();
   const horizontalOverflowPx = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
@@ -247,8 +252,7 @@ async function seedV2Override(workspaceRoot, dataRoot) {
   );
   Object.assign(binding, {
     contractVersion: 2,
-    recommendationSha256:
-      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256,
+    recommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_V2_SHA256,
     source: "updated",
     ownership: "explicit_overrides",
     explicitOverrideFields: ["enabledSkills"],

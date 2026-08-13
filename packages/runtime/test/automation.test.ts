@@ -135,7 +135,8 @@ describe("AutomationService", () => {
     const settled = store.getSchedule(schedule.id);
     expect(settled).toEqual(
       expect.objectContaining({
-        lastError: "Model provider is not configured: faux-schedule-unavailable",
+        lastError:
+          "Model provider is not configured: faux-schedule-unavailable",
         lastScheduledFor: schedule.nextRunAt,
       }),
     );

@@ -4,10 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import {
-  canonicalJson,
-  sha256,
-} from "../packages/runtime/dist/index.js";
+import { canonicalJson, sha256 } from "../packages/runtime/dist/index.js";
 import {
   probeSandboxResourceRuntime,
   validateSandboxResourceObservation,
@@ -18,8 +15,7 @@ import { OCI_PROCESS_RESOURCE_POLICY_SHA256 } from "../packages/runtime/dist/san
 const execFile = promisify(execFileCallback);
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
-const DEFAULT_ARTIFACT_PATH =
-  "docs/artifacts/oci-resource-limits-stage10.json";
+const DEFAULT_ARTIFACT_PATH = "docs/artifacts/oci-resource-limits-stage10.json";
 const DEFAULT_PROVENANCE_PATH =
   "docs/artifacts/sandbox-image-provenance-0.1.0.json";
 const SHA256 = /^[a-f0-9]{64}$/u;
@@ -28,18 +24,11 @@ const IMAGE_ID = /^sha256:[a-f0-9]{64}$/u;
 export async function collectOciResourceLimitsEvidence(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
   const provenance = await readJson(
-    path.join(
-      repoRoot,
-      options.provenancePath ?? DEFAULT_PROVENANCE_PATH,
-    ),
+    path.join(repoRoot, options.provenancePath ?? DEFAULT_PROVENANCE_PATH),
   );
   assertProvenance(provenance);
   const sandbox = new OciContainerSandboxAdapter(provenance.image.id);
-  const probe = await probeSandboxResourceRuntime(
-    repoRoot,
-    undefined,
-    sandbox,
-  );
+  const probe = await probeSandboxResourceRuntime(repoRoot, undefined, sandbox);
   if (
     probe.status !== "ready" ||
     probe.code !== "sandbox_resources_ready" ||

@@ -1,10 +1,5 @@
 import { lazy, Suspense, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Database,
-  Plus,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Database, Plus } from "lucide-react";
 
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { copy } from "./copy";
@@ -48,7 +43,11 @@ export function LedgerNavigation({
         <button
           className="ledger-collapse-button"
           type="button"
-          aria-label={collapsed ? "Expand ledger navigation" : "Collapse ledger navigation"}
+          aria-label={
+            collapsed
+              ? "Expand ledger navigation"
+              : "Collapse ledger navigation"
+          }
           aria-pressed={collapsed}
           onClick={() => setCollapsed((current) => !current)}
         >

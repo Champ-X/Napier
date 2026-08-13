@@ -39,9 +39,7 @@ export class StorePersistenceMonitor {
       serializationDurationMs: roundDuration(
         observation.serializationDurationMs,
       ),
-      ledgerCommitDurationMs: roundDuration(
-        observation.ledgerCommitDurationMs,
-      ),
+      ledgerCommitDurationMs: roundDuration(observation.ledgerCommitDurationMs),
       projectionDurationMs: roundDuration(observation.projectionDurationMs),
       totalDurationMs: roundDuration(observation.totalDurationMs),
     };

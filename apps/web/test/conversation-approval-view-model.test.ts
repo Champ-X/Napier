@@ -36,7 +36,9 @@ describe("Conversation approvals", () => {
         status: approvals[0]!.decision.status,
       },
     };
-    expect(JSON.stringify(safeProjection)).not.toContain("PRIVATE_CUSTOM_ANSWER");
+    expect(JSON.stringify(safeProjection)).not.toContain(
+      "PRIVATE_CUSTOM_ANSWER",
+    );
   });
 
   it("uses the latest authoritative continued or cancelled lifecycle", () => {
@@ -80,11 +82,7 @@ describe("Conversation approvals", () => {
     ).toBeUndefined();
     expect(
       conversationApprovalEventId(
-        event(
-          "operator.decision.requested",
-          "decision_fixture0001",
-          "hidden",
-        ),
+        event("operator.decision.requested", "decision_fixture0001", "hidden"),
       ),
     ).toBeUndefined();
     expect(
@@ -95,9 +93,7 @@ describe("Conversation approvals", () => {
   });
 });
 
-function decision(
-  overrides: Partial<OperatorDecision> = {},
-): OperatorDecision {
+function decision(overrides: Partial<OperatorDecision> = {}): OperatorDecision {
   return {
     kind: "napier.operator-decision",
     schemaVersion: 1,

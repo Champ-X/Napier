@@ -5,9 +5,7 @@ import type {
   UpgradeRecommendedCapabilitiesRequestV1,
 } from "@napier/contracts/agent-capability-contract";
 
-import {
-  lookupCapabilityBinding,
-} from "./agent-capability-bindings.js";
+import { lookupCapabilityBinding } from "./agent-capability-bindings.js";
 import {
   createCapabilityUpgradeModel,
   createContractUpgradeCapabilityBinding,

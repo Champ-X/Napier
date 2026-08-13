@@ -81,9 +81,7 @@ export function parseCapabilityOptions(
     !flags.has("--apply") &&
     (values.has("--expected-revision") || values.has("--diff-sha256"))
   ) {
-    throw new Error(
-      "Capability preview does not accept apply preconditions",
-    );
+    throw new Error("Capability preview does not accept apply preconditions");
   }
   if ((upgradeRecommended || restoreRecommended) && flags.has("--apply")) {
     if (!values.has("--expected-revision") || !values.has("--diff-sha256")) {

@@ -1,8 +1,4 @@
-import type {
-  RunEvent,
-  StreamFrame,
-  ThreadDetail,
-} from "@napier/contracts";
+import type { RunEvent, StreamFrame, ThreadDetail } from "@napier/contracts";
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import { describe, expect, it } from "vitest";
 
@@ -71,11 +67,7 @@ describe("Thread Run stream state", () => {
     const backgroundFrame = frame(event("thread_a", "run_a", 1, "A"));
 
     expect(
-      applyThreadStreamFrameToDetail(
-        selected,
-        "thread_a",
-        backgroundFrame,
-      ),
+      applyThreadStreamFrameToDetail(selected, "thread_a", backgroundFrame),
     ).toBe(selected);
 
     const bootstrap = {

@@ -1,12 +1,13 @@
-import type { AgentProfile, UpdateAgentProfileRequest } from "@napier/contracts";
+import type {
+  AgentProfile,
+  UpdateAgentProfileRequest,
+} from "@napier/contracts";
 import type {
   CapabilityContractBindingV1,
   CapabilityUpgradePreviewV1,
 } from "@napier/contracts/agent-capability-contract";
 
-import {
-  bindingMatchesProfile,
-} from "./agent-capability-bindings.js";
+import { bindingMatchesProfile } from "./agent-capability-bindings.js";
 import {
   capabilityDiffOperations,
   capabilitySha256,
@@ -70,8 +71,7 @@ export function createCapabilityUpgradeModel(
     sourceContractVersion: source.contractVersion,
     targetContractVersion: DEFAULT_AGENT_CAPABILITY_CONTRACT_VERSION,
     sourceRecommendationSha256: source.recommendationSha256,
-    targetRecommendationSha256:
-      DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
+    targetRecommendationSha256: DEFAULT_AGENT_CAPABILITY_RECOMMENDATION_SHA256,
     agentId: profile.id,
     agentRevision: profile.revision,
     explicitOverrideFields: [...binding.explicitOverrideFields],

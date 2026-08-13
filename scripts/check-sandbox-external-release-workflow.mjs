@@ -204,7 +204,7 @@ function validateCommandClosure(source, errors) {
     "Install the pinned Browser",
     "installPinnedBrowserRuntime",
     'browser_root="$(realpath "${HOME}/.cache/ms-playwright/chromium-${revision}")"',
-    'process.stdout.write(chromium.executablePath())',
+    "process.stdout.write(chromium.executablePath())",
     '"${browser_root}"/*',
     "Admit the pinned Browser to the Ubuntu user-namespace sandbox",
     "profile napier-playwright-chromium ${BROWSER_PATH} flags=(unconfined)",

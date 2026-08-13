@@ -61,7 +61,10 @@ export function sha256Text(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-export function controlMessageEventKey(timestamp: number, text: string): string {
+export function controlMessageEventKey(
+  timestamp: number,
+  text: string,
+): string {
   return `${timestamp}:${sha256Text(text)}`;
 }
 

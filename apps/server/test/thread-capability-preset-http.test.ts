@@ -40,28 +40,24 @@ describe("temporary capability preset HTTP", () => {
       agentId: agent.id,
     });
 
-    const response = await app.request(
-      `/api/threads/${thread.id}/messages`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          text: "Use the Browser preset for this Run only.",
-          capabilityPreset: "browser",
-        }),
-      },
-    );
+    const response = await app.request(`/api/threads/${thread.id}/messages`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        text: "Use the Browser preset for this Run only.",
+        capabilityPreset: "browser",
+      }),
+    });
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-napier-capability-preset")).toBe("browser");
     const frames = parseSseFrames(await response.text());
     const started = frames.find(
-      (frame) =>
-        frame.type === "event" && frame.event.type === "run.started",
+      (frame) => frame.type === "event" && frame.event.type === "run.started",
     );
-    expect(started?.type === "event" ? started.event.payload : undefined).toEqual(
-      expect.objectContaining({ capabilityPreset: "browser" }),
-    );
+    expect(
+      started?.type === "event" ? started.event.payload : undefined,
+    ).toEqual(expect.objectContaining({ capabilityPreset: "browser" }));
     const run = services.store.listRuns(thread.id)[0]!;
     const browser = agentCapabilityPresetUpdate("browser");
     expect(run.configuration).toEqual(
@@ -93,17 +89,14 @@ describe("temporary capability preset HTTP", () => {
       agentId: services.store.listAgents()[0]!.id,
     });
 
-    const response = await app.request(
-      `/api/threads/${thread.id}/messages`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          text: "Do not start this Run.",
-          capabilityPreset: "unrestricted_everything",
-        }),
-      },
-    );
+    const response = await app.request(`/api/threads/${thread.id}/messages`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        text: "Do not start this Run.",
+        capabilityPreset: "unrestricted_everything",
+      }),
+    });
 
     expect(response.status).toBe(400);
     expect(services.store.listRuns(thread.id)).toHaveLength(0);

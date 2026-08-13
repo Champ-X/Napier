@@ -54,8 +54,7 @@ function preview(status: SandboxSetupPreview["status"]): SandboxSetupPreview {
     schemaVersion: 1,
     component: "sandbox",
     status,
-    acquisition:
-      status === "pullable" ? "external_release" : "packaged_source",
+    acquisition: status === "pullable" ? "external_release" : "packaged_source",
     active: false,
     imageReference: "napier-sandbox:0.1.0",
     ...(status === "ready" ? { imageId: `sha256:${"a".repeat(64)}` } : {}),

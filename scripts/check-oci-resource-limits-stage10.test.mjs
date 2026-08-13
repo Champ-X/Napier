@@ -21,10 +21,7 @@ describe("OCI resource limits Stage 10 evidence", () => {
     assert.equal(value.observedProductionProcess.platform, "linux/arm64");
     assert.equal(value.observedProductionProcess.cgroupVersion, 2);
     assert.equal(value.observedProductionProcess.pidsMax, 256);
-    assert.equal(
-      value.observedProductionProcess.memoryMaxBytes,
-      1_073_741_824,
-    );
+    assert.equal(value.observedProductionProcess.memoryMaxBytes, 1_073_741_824);
     assert.equal(value.observedProductionProcess.memorySwapMaxBytes, 0);
     assert.equal(value.observedProductionProcess.cpuQuotaMicros, 200_000);
     assert.equal(value.observedProductionProcess.cpuPeriodMicros, 100_000);
@@ -92,9 +89,8 @@ describe("OCI resource limits Stage 10 evidence", () => {
 
     const tampered = structuredClone(value);
     tampered.observedProductionProcess.memorySwapMaxBytes = 1;
-    assert.deepEqual(
-      validateOciResourceLimitsEvidence(tampered, provenance),
-      ["OCI resource limits evidence shape is invalid"],
-    );
+    assert.deepEqual(validateOciResourceLimitsEvidence(tampered, provenance), [
+      "OCI resource limits evidence shape is invalid",
+    ]);
   });
 });

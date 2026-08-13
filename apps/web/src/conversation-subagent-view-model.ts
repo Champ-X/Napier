@@ -67,7 +67,8 @@ function projectSubagent(
     evidenceCount:
       task.outcome?.evidenceCount ??
       items.reduce((total, item) => total + item.evidence.length, 0),
-    unknownCount: task.outcome?.unknownCount ?? task.outcome?.unknowns.length ?? 0,
+    unknownCount:
+      task.outcome?.unknownCount ?? task.outcome?.unknowns.length ?? 0,
     blockerCount: items.filter((item) => item.severity === "blocker").length,
     warningCount: items.filter((item) => item.severity === "warning").length,
   };

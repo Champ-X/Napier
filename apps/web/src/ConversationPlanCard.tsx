@@ -97,7 +97,9 @@ function stepIcon(step: PlanStep) {
     return <CheckCircle2 size={13} aria-hidden="true" />;
   }
   if (step.status === "running") {
-    return <LoaderCircle className="is-spinning" size={13} aria-hidden="true" />;
+    return (
+      <LoaderCircle className="is-spinning" size={13} aria-hidden="true" />
+    );
   }
   if (step.status === "blocked") {
     return <AlertTriangle size={13} aria-hidden="true" />;

@@ -388,9 +388,7 @@ function sourceSupportsOwnership(
     return ownership === "recommended";
   }
   if (source === "contract_upgrade") {
-    return (
-      ownership === "recommended" || ownership === "explicit_overrides"
-    );
+    return ownership === "recommended" || ownership === "explicit_overrides";
   }
   if (source === "legacy_detected") return ownership === "unknown_legacy";
   return true;

@@ -691,7 +691,10 @@ describe("safe automatic recovery", () => {
       type: "message.user",
       category: "message",
       visibility: "user",
-      payload: { role: "user", text: "Continue bounded Research automatically." },
+      payload: {
+        role: "user",
+        text: "Continue bounded Research automatically.",
+      },
     });
     await setup.finishRun(interrupted.id, "interrupted");
 
@@ -719,24 +722,32 @@ describe("safe automatic recovery", () => {
       (event) => event.runId === recovered.id,
     );
 
-    expect(result).toEqual(expect.objectContaining({ completed: 1, failed: 0 }));
-    expect(attempt.status).toBe("completed");
-    expect(recovered).toEqual(expect.objectContaining({
-      source: "recovery",
-      parentRunId: interrupted.id,
-    }));
-    expect(recovered.configuration).toEqual(expect.objectContaining({
-      executionMode: "safe_read_only_recovery",
-      enabledSkills: ["data-analysis", "research-brief"],
-      enabledTools: expect.arrayContaining(["skill_load"]),
-      skillCatalogSha256: snapshot.manifest.catalogSha256,
-    }));
-    expect(events.find((event) => event.type === "run.started")?.payload).toEqual(
-      expect.objectContaining({ capabilityPreset: "research" }),
+    expect(result).toEqual(
+      expect.objectContaining({ completed: 1, failed: 0 }),
     );
-    expect(isSkillCatalogBindingV1(
-      events.find((event) => event.type === "context.skills")?.payload,
-    )).toBe(true);
+    expect(attempt.status).toBe("completed");
+    expect(recovered).toEqual(
+      expect.objectContaining({
+        source: "recovery",
+        parentRunId: interrupted.id,
+      }),
+    );
+    expect(recovered.configuration).toEqual(
+      expect.objectContaining({
+        executionMode: "safe_read_only_recovery",
+        enabledSkills: ["data-analysis", "research-brief"],
+        enabledTools: expect.arrayContaining(["skill_load"]),
+        skillCatalogSha256: snapshot.manifest.catalogSha256,
+      }),
+    );
+    expect(
+      events.find((event) => event.type === "run.started")?.payload,
+    ).toEqual(expect.objectContaining({ capabilityPreset: "research" }));
+    expect(
+      isSkillCatalogBindingV1(
+        events.find((event) => event.type === "context.skills")?.payload,
+      ),
+    ).toBe(true);
     expect(setup.getAgent(agent.id)).toEqual(before);
   });
 

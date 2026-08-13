@@ -127,7 +127,9 @@ export function qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTrans
   signerKeyId?: string,
   trustDirectory?: ReceiptTrustAnchorDirectory,
   trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy,
-): QualifiedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest | undefined {
+):
+  | QualifiedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest
+  | undefined {
   const normalizedSourceUrl = normalizeDirectorySourceUrl(sourceUrl);
   const normalizedCheckpointSha256 = expectedCheckpointSha256
     .trim()
@@ -152,8 +154,7 @@ export function qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTrans
         : {}),
       ...(currentCheckpoint?.selectionSetSha256
         ? {
-            expectedSelectionSetSha256:
-              currentCheckpoint.selectionSetSha256,
+            expectedSelectionSetSha256: currentCheckpoint.selectionSetSha256,
           }
         : {}),
       ...(currentCheckpoint?.selectionChainTailSha256
@@ -180,7 +181,9 @@ export function qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTrans
     | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint
     | undefined,
   signerKeyId?: string,
-): QualifiedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest | undefined {
+):
+  | QualifiedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest
+  | undefined {
   const discovery =
     qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest(
       sourceUrl,
@@ -227,7 +230,8 @@ export function projectReceiptTrustDirectoryBaselineActivation(
     };
   }
   const selectedSources = latestBaseline.envelope.receipt.quorum.sources.filter(
-    (source) => source.anchorSetSha256 === latestBaseline.selectedAnchorSetSha256,
+    (source) =>
+      source.anchorSetSha256 === latestBaseline.selectedAnchorSetSha256,
   );
   const selectedSourceOriginSha256s = sortedUnique(
     selectedSources.map((source) => source.sourceOriginSha256),
@@ -292,10 +296,10 @@ export function buildReceiptTrustDirectoryBaselineImportPolicy(
     maxBaselineAgeMs: QUORUM_BASELINE_ACTIVATION_MAX_AGE_MS,
     maxReceiptAgeMs: QUORUM_BASELINE_ACTIVATION_MAX_AGE_MS,
     maxSourceObservedAgeMs: QUORUM_BASELINE_ACTIVATION_MAX_AGE_MS,
-    minimumAgreementCount: baseline.envelope.receipt.quorum.policy
-      .minimumAgreementCount,
-    minimumAgreementWeight: baseline.envelope.receipt.quorum.policy
-      .minimumAgreementWeight,
+    minimumAgreementCount:
+      baseline.envelope.receipt.quorum.policy.minimumAgreementCount,
+    minimumAgreementWeight:
+      baseline.envelope.receipt.quorum.policy.minimumAgreementWeight,
     minimumDistinctSourceOrigins:
       baseline.envelope.receipt.quorum.policy.minimumDistinctSourceOrigins,
     minimumMetadataPublisherCount:

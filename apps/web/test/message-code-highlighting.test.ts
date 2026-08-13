@@ -10,7 +10,7 @@ describe("Message code highlighting", () => {
     [
       "typescript",
       [
-        "const greeting: string = \"hello\";",
+        'const greeting: string = "hello";',
         "// untrusted <script>",
         "if (greeting) return 42;",
       ].join("\n"),
@@ -23,16 +23,18 @@ describe("Message code highlighting", () => {
     ],
     [
       "bash",
-      ["if test -f package.json; then", "  echo \"ready\"", "fi # done"].join(
+      ["if test -f package.json; then", '  echo "ready"', "fi # done"].join(
         "\n",
       ),
       ["keyword", "string", "comment"],
     ],
     [
       "python",
-      ["def run(value: str):", "    # comment", "    return value or None"].join(
-        "\n",
-      ),
+      [
+        "def run(value: str):",
+        "    # comment",
+        "    return value or None",
+      ].join("\n"),
       ["keyword", "comment", "literal"],
     ],
     [

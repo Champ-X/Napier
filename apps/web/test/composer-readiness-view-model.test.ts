@@ -138,9 +138,7 @@ describe("Composer run readiness", () => {
     });
     const revised = { ...profile("research"), revision: 2 };
 
-    expect(
-      composerRunReadiness(revised, current, false, undefined),
-    ).toEqual(
+    expect(composerRunReadiness(revised, current, false, undefined)).toEqual(
       expect.objectContaining({
         canRun: false,
         message: expect.stringContaining("Refreshing effective readiness"),
@@ -149,9 +147,7 @@ describe("Composer run readiness", () => {
   });
 });
 
-function profile(
-  mode: "coding" | "research" | "browser",
-): AgentProfile {
+function profile(mode: "coding" | "research" | "browser"): AgentProfile {
   const preset = agentCapabilityPresetUpdate(mode);
   return {
     id: "agent_napier",
@@ -227,8 +223,7 @@ function tool(
   name: string,
   status: CapabilityReadinessRecord["status"],
 ): CapabilityReadinessRecord {
-  const ready =
-    status === "ready" || status === "available_unverified";
+  const ready = status === "ready" || status === "available_unverified";
   return {
     id: `tool:${name}`,
     status,

@@ -159,10 +159,7 @@ describe("DataFrame outcome benchmark", () => {
       canonicalJson(withoutHash(tampered) as never),
     );
     expect(
-      verifyWorkflowBenchmarkArtifacts(
-        artifacts.trials[0]!.result,
-        tampered,
-      ),
+      verifyWorkflowBenchmarkArtifacts(artifacts.trials[0]!.result, tampered),
     ).toEqual(
       expect.objectContaining({
         valid: false,
@@ -256,10 +253,12 @@ function dataFrameBenchmarkProvider(responseCount: number, maxRows = 5) {
 function dataFrameNoToolProvider() {
   const provider = fauxProvider({ provider: "faux-data-frame-benchmark" });
   provider.setResponses(
-    Array.from({ length: 3 }, () => (context: { messages: unknown[] }) =>
-      fauxAssistantMessage(
-        JSON.stringify(metricFromPrompt(JSON.stringify(context.messages))),
-      ),
+    Array.from(
+      { length: 3 },
+      () => (context: { messages: unknown[] }) =>
+        fauxAssistantMessage(
+          JSON.stringify(metricFromPrompt(JSON.stringify(context.messages))),
+        ),
     ),
   );
   return provider;

@@ -111,7 +111,9 @@ describe("Package governance event trace view", () => {
 
   it("fails closed for malformed and unknown package governance receipts", () => {
     expect(
-      packageGovernanceEventTraceSummary(packageEvent("skill.content.noop", [])),
+      packageGovernanceEventTraceSummary(
+        packageEvent("skill.content.noop", []),
+      ),
     ).toBe("package governance receipt");
     expect(
       packageGovernanceEventTraceSummary(

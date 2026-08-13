@@ -21,7 +21,8 @@ export function ConversationSubagentCard({
         : item.task.status === "failed" || item.task.status === "timed_out"
           ? AlertTriangle
           : XCircle;
-  const active = item.task.status === "pending" || item.task.status === "running";
+  const active =
+    item.task.status === "pending" || item.task.status === "running";
   return (
     <details
       className={`conversation-subagent status-${item.task.status}`}

@@ -16,8 +16,7 @@ import { canonicalJson } from "../src/ed25519.js";
 const roots: string[] = [];
 const runId = "run_skill_application_12345678";
 const token = "[citation:citation_fixture12345678]";
-const sha = (value: string) =>
-  createHash("sha256").update(value).digest("hex");
+const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 
 afterEach(async () => {
   await Promise.all(
@@ -180,7 +179,15 @@ describe("Research Skill application projection", () => {
     });
     expect(
       projectSkillApplicationV1(
-        [context, started, loaded, capture, cite, assistant, afterAppliedFailure],
+        [
+          context,
+          started,
+          loaded,
+          capture,
+          cite,
+          assistant,
+          afterAppliedFailure,
+        ],
         runId,
         { canonicalName: "research-brief" },
       )?.state,
@@ -188,7 +195,14 @@ describe("Research Skill application projection", () => {
   });
 
   it("rejects malformed ordering and preserves only a fully bound absorbing Applied state", async () => {
-    const { snapshot, started, loaded, failed, selectionDetails, failureDetails } = await fixture();
+    const {
+      snapshot,
+      started,
+      loaded,
+      failed,
+      selectionDetails,
+      failureDetails,
+    } = await fixture();
     const context = event(1, "context.skills", snapshot.binding);
     const capture = researchEvent(
       4,
@@ -203,7 +217,9 @@ describe("Research Skill application projection", () => {
     });
     const target = { canonicalName: "research-brief" } as const;
 
-    expect(projectSkillApplicationV1([context, loaded, started], runId, target)).toBeUndefined();
+    expect(
+      projectSkillApplicationV1([context, loaded, started], runId, target),
+    ).toBeUndefined();
     expect(
       projectSkillApplicationV1(
         [context, started, { ...loaded, seq: 2 }],
@@ -231,11 +247,15 @@ describe("Research Skill application projection", () => {
     };
     expect(
       projectSkillApplicationV1(
-        [context, started, event(3, "tool.failed", {
-          callId: "call_skill",
-          toolName: "skill_load",
-          details: mismatchedFailure,
-        })],
+        [
+          context,
+          started,
+          event(3, "tool.failed", {
+            callId: "call_skill",
+            toolName: "skill_load",
+            details: mismatchedFailure,
+          }),
+        ],
         runId,
         target,
       ),
@@ -243,8 +263,17 @@ describe("Research Skill application projection", () => {
 
     expect(
       projectSkillApplicationV1(
-        [context, started, loaded, capture, cite, assistant,
-          event(7, "message.assistant", { text: "Later uncited terminal answer." })],
+        [
+          context,
+          started,
+          loaded,
+          capture,
+          cite,
+          assistant,
+          event(7, "message.assistant", {
+            text: "Later uncited terminal answer.",
+          }),
+        ],
         runId,
         target,
       )?.state,
@@ -252,10 +281,14 @@ describe("Research Skill application projection", () => {
 
     expect(
       projectSkillApplicationV1(
-        [context, started, loaded,
+        [
+          context,
+          started,
+          loaded,
           researchEvent(4, { ...captureDetails(), stateCapsule: capsule(0) }),
           researchEvent(5, { ...citeDetails(), stateCapsule: capsule(1) }),
-          assistant],
+          assistant,
+        ],
         runId,
         target,
       )?.state,
@@ -273,7 +306,16 @@ describe("Research Skill application projection", () => {
     });
     expect(
       projectSkillApplicationV1(
-        [context, started, loaded, capture, cite, assistant, retryStarted, retryFailed],
+        [
+          context,
+          started,
+          loaded,
+          capture,
+          cite,
+          assistant,
+          retryStarted,
+          retryFailed,
+        ],
         runId,
         target,
       ),
@@ -367,7 +409,10 @@ function citeDetails() {
   };
 }
 
-function sourceDetails(action: "capture_fetch" | "cite", citationCount: number) {
+function sourceDetails(
+  action: "capture_fetch" | "cite",
+  citationCount: number,
+) {
   return {
     kind: "napier.research-source",
     schemaVersion: 1,

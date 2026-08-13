@@ -8,10 +8,7 @@ import {
 } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
 
-import {
-  runCli,
-  type RunCliDependencies,
-} from "../src/cli.js";
+import { runCli, type RunCliDependencies } from "../src/cli.js";
 import {
   CaptureWritable,
   cliIo,
@@ -81,9 +78,7 @@ describe("Napier CLI resume cancellation and concurrency", () => {
     );
     expect(snapshot?.type).toBe("snapshot");
     if (snapshot?.type !== "snapshot" || done?.type !== "done") return;
-    expect(
-      snapshot.detail.runs.find((run) => run.id === done.runId),
-    ).toEqual(
+    expect(snapshot.detail.runs.find((run) => run.id === done.runId)).toEqual(
       expect.objectContaining({
         status: "cancelled",
         parentRunId: fixture.runId,
@@ -133,9 +128,7 @@ describe("Napier CLI resume cancellation and concurrency", () => {
     );
     expect(snapshot?.type).toBe("snapshot");
     if (snapshot?.type !== "snapshot" || done?.type !== "done") return;
-    expect(
-      snapshot.detail.runs.find((run) => run.id === done.runId),
-    ).toEqual(
+    expect(snapshot.detail.runs.find((run) => run.id === done.runId)).toEqual(
       expect.objectContaining({
         status: "cancelled",
         parentRunId: fixture.runId,

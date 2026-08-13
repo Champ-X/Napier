@@ -27,7 +27,9 @@ export function ConversationCitationCard({
               : "Browser source evidence"}
           </strong>
         </div>
-        <time dateTime={citation.createdAt}>{formatTime(citation.createdAt)}</time>
+        <time dateTime={citation.createdAt}>
+          {formatTime(citation.createdAt)}
+        </time>
       </summary>
       <dl>
         <div>
@@ -54,11 +56,15 @@ export function ConversationCitationCard({
         </div>
         <div>
           <dt>Quote</dt>
-          <dd title={citation.quoteSha256}>{citation.quoteSha256.slice(0, 12)}</dd>
+          <dd title={citation.quoteSha256}>
+            {citation.quoteSha256.slice(0, 12)}
+          </dd>
         </div>
         <div>
           <dt>Claim</dt>
-          <dd title={citation.claimSha256}>{citation.claimSha256.slice(0, 12)}</dd>
+          <dd title={citation.claimSha256}>
+            {citation.claimSha256.slice(0, 12)}
+          </dd>
         </div>
       </dl>
       <p>
@@ -70,9 +76,7 @@ export function ConversationCitationCard({
 }
 
 function shortId(value: string): string {
-  return value.length > 20
-    ? `${value.slice(0, 10)}…${value.slice(-6)}`
-    : value;
+  return value.length > 20 ? `${value.slice(0, 10)}…${value.slice(-6)}` : value;
 }
 
 function formatTime(value: string): string {

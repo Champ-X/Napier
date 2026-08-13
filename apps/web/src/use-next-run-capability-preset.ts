@@ -15,9 +15,8 @@ export async function executeLoadedNextRunPrompt(
   input: NextRunPromptInput,
 ): Promise<void> {
   try {
-    const { executeNextRunPrompt } = await import(
-      "./next-run-capability-preset-execution"
-    );
+    const { executeNextRunPrompt } =
+      await import("./next-run-capability-preset-execution");
     await executeNextRunPrompt(input);
   } catch (error) {
     input.restoreInput(input.text);

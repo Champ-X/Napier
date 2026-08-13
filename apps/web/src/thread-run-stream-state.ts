@@ -1,7 +1,4 @@
-import type {
-  RunEvent,
-  StreamFrame,
-} from "@napier/contracts";
+import type { RunEvent, StreamFrame } from "@napier/contracts";
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 
 import type { WebThreadDetail } from "./api";
@@ -158,10 +155,7 @@ export function applyThreadStreamFrameToBootstrap(
     if (frame.detail.thread.id !== sourceThreadId) return current;
     const activeThread =
       current.activeThread?.thread.id === sourceThreadId
-        ? preserveThreadDetailImportReceipt(
-            frame.detail,
-            current.activeThread,
-          )
+        ? preserveThreadDetailImportReceipt(frame.detail, current.activeThread)
         : undefined;
     return {
       ...current,

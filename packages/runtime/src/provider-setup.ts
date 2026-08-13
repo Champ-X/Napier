@@ -54,9 +54,7 @@ export class ProviderSetupService {
       kind: "napier.provider-setup-preview" as const,
       schemaVersion: 1 as const,
       candidates,
-      ...(recommended
-        ? { recommendedProviderId: recommended.providerId }
-        : {}),
+      ...(recommended ? { recommendedProviderId: recommended.providerId } : {}),
       candidateCount: candidates.length,
       readyCount: candidates.filter((candidate) => candidate.status === "ready")
         .length,
@@ -68,7 +66,9 @@ export class ProviderSetupService {
     return { ...content, contentSha256: sha256(canonicalJson(content)) };
   }
 
-  async apply(request: ApplyProviderSetupRequest): Promise<ProviderSetupResult> {
+  async apply(
+    request: ApplyProviderSetupRequest,
+  ): Promise<ProviderSetupResult> {
     const preview = await this.preview();
     if (request.expectedPreviewSha256 !== preview.contentSha256) {
       throw new Error("Provider setup preview changed");
@@ -85,7 +85,9 @@ export class ProviderSetupService {
       throw new Error(`Provider setup candidate is ${candidate.status}`);
     }
 
-    const active = this.store.getActiveCredentialReference(candidate.providerId);
+    const active = this.store.getActiveCredentialReference(
+      candidate.providerId,
+    );
     let action: ProviderSetupResult["action"] = "existing";
     let reference = active;
     if (!reference) {

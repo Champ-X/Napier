@@ -33,7 +33,10 @@ describe("OCI Git runtime Stage 6 evidence", () => {
       false,
     );
     assert.equal(value.controlledProductionPath.workspaceRootReadOnly, true);
-    assert.equal(value.controlledProductionPath.privateGitStateOnlyWritable, true);
+    assert.equal(
+      value.controlledProductionPath.privateGitStateOnlyWritable,
+      true,
+    );
     assert.equal(value.controlledProductionPath.privateIndexCreated, true);
     assert.equal(value.controlledProductionPath.repositoryIndexModified, false);
     assert.equal(

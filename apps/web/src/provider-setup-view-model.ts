@@ -48,7 +48,9 @@ export function providerSetupEnableCandidate(
     (candidate) => candidate.providerId === preview.recommendedProviderId,
   );
   if (recommended?.status === "available") return recommended;
-  return preview.candidates.find((candidate) => candidate.status === "available");
+  return preview.candidates.find(
+    (candidate) => candidate.status === "available",
+  );
 }
 
 export function providerSetupReadyCandidate(

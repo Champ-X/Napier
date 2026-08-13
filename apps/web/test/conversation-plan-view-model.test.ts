@@ -116,11 +116,7 @@ function plan(
             ? { runId: "run_1" }
             : {}),
       },
-      step(
-        "step_ship",
-        "Prepare handoff",
-        terminal ? "completed" : "ready",
-      ),
+      step("step_ship", "Prepare handoff", terminal ? "completed" : "ready"),
     ],
     artifacts: [
       artifact("artifact_report", "verified"),

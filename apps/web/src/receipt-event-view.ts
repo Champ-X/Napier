@@ -205,7 +205,10 @@ function hashSummaries(view: ReceiptEventTraceView): string[] {
     ...hashSummary("active-anchor-set", view.activeAnchorSetSha256),
     ...hashSummary("active-envelope", view.activeEnvelopeSha256),
     ...hashSummary("active-checkpoint", view.activeCheckpointSha256),
-    ...hashSummary("active-selection-chain", view.activeSelectionChainTailSha256),
+    ...hashSummary(
+      "active-selection-chain",
+      view.activeSelectionChainTailSha256,
+    ),
     ...hashSummary("active-proposal", view.activeProposalSha256),
     ...hashSummary("active-preflight", view.activePreflightSha256),
     ...hashSummary("discovery", view.discoverySha256),
@@ -219,7 +222,10 @@ function hashSummaries(view: ReceiptEventTraceView): string[] {
     ...hashSummary("selection-state", view.selectionStateSha256),
     ...hashSummary("previous-selection", view.previousSelectionSha256),
     ...hashSummary("policy-review", view.policyReviewSha256),
-    ...hashSummary("approval-policy-baseline", view.approvalPolicyBaselineSha256),
+    ...hashSummary(
+      "approval-policy-baseline",
+      view.approvalPolicyBaselineSha256,
+    ),
     ...hashSummary("apply-result", view.applyResultSha256),
     ...hashSummary("approval-envelope-set", view.approvalEnvelopeSetSha256),
     ...hashSummary("approval-policy", view.approvalPolicySha256),
@@ -271,7 +277,9 @@ function shaField(
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {

@@ -1,12 +1,6 @@
 import { createServer } from "node:net";
 import { randomBytes } from "node:crypto";
-import {
-  access,
-  mkdtemp,
-  readdir,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { access, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -29,8 +23,7 @@ export async function runSandboxSecurityCasebook(input) {
   const snapshot = dependencies.snapshot ?? snapshotResources;
   const baseline = await snapshot();
   const sandbox =
-    dependencies.sandbox ??
-    new OciContainerSandboxAdapter(input.imageId);
+    dependencies.sandbox ?? new OciContainerSandboxAdapter(input.imageId);
   const runner =
     dependencies.runner ??
     new CommandRunner({ workspaceRoot: input.repoRoot, sandbox });
@@ -75,7 +68,7 @@ async function workspaceWriteCase(workspaceRoot, runner) {
   const source = [
     'const fs=require("node:fs");',
     `try{fs.writeFileSync(${JSON.stringify(name)},"x");process.stdout.write("WRITTEN")}`,
-    'catch(error){process.stdout.write(String(error.code))}',
+    "catch(error){process.stdout.write(String(error.code))}",
   ].join("");
   const result = await runCommand(runner, "node", ["-e", source]);
   const absent = await access(target).then(
@@ -97,14 +90,18 @@ async function outsideReadCase(privateRoot, runner) {
   const source = [
     'const fs=require("node:fs");',
     `try{process.stdout.write(fs.readFileSync(${JSON.stringify(target)},"utf8"))}`,
-    'catch(error){process.stdout.write(String(error.code))}',
+    "catch(error){process.stdout.write(String(error.code))}",
   ].join("");
   const result = await runCommand(runner, "node", ["-e", source]);
   requireCase(
     result.stdout === "ENOENT" && !result.stdout.includes(canary),
     "outside_read_denied",
   );
-  return caseEvidence("outside_read_denied", "outside_path_not_mounted", result);
+  return caseEvidence(
+    "outside_read_denied",
+    "outside_path_not_mounted",
+    result,
+  );
 }
 
 async function secretInheritanceCase(runner) {
@@ -166,7 +163,7 @@ async function temporaryStorageCase(runner) {
     'const descriptor=fs.openSync("/tmp/fill","w");',
     "const chunk=Buffer.alloc(1024*1024);",
     'try{for(let index=0;index<80;index++)fs.writeSync(descriptor,chunk);process.stdout.write("WRITTEN")}',
-    'catch(error){process.stdout.write(String(error.code))}',
+    "catch(error){process.stdout.write(String(error.code))}",
     "finally{fs.closeSync(descriptor)}",
   ].join("");
   const result = await runCommand(runner, "node", ["-e", source], 15_000);
@@ -248,7 +245,11 @@ async function outputLimitCase(runner) {
       result.details.stdoutTruncated,
     "output_limit_enforced",
   );
-  return caseEvidence("output_limit_enforced", "output_character_limit", result);
+  return caseEvidence(
+    "output_limit_enforced",
+    "output_character_limit",
+    result,
+  );
 }
 
 async function cancellationCase(runner) {
@@ -376,9 +377,7 @@ async function snapshotResources() {
     containers: names(containers, CONTAINER_NAME),
     networks: names(networks, NETWORK_NAME),
     scratch: scratch
-      .filter(
-        (name) => SCRATCH_NAME.test(name) || SCRATCH_TOMBSTONE.test(name),
-      )
+      .filter((name) => SCRATCH_NAME.test(name) || SCRATCH_TOMBSTONE.test(name))
       .sort(),
   };
 }

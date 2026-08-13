@@ -64,8 +64,14 @@ const capsule = {
 
 describe("Research Source evidence parser", () => {
   it("normalizes the exact list, Browser capture and Browser cite members", () => {
-    const list = parseResearchSourceEvidenceV1({ ...common, sourceCount: 0, action: "list" });
-    expect(list).toEqual(expect.objectContaining({ action: "list", sourceCount: 0 }));
+    const list = parseResearchSourceEvidenceV1({
+      ...common,
+      sourceCount: 0,
+      action: "list",
+    });
+    expect(list).toEqual(
+      expect.objectContaining({ action: "list", sourceCount: 0 }),
+    );
     expect(parseResearchSourceEvidenceV1(list)).toEqual(list);
     const capture = parseResearchSourceEvidenceV1({
       ...common,
@@ -137,10 +143,8 @@ describe("Research Source evidence parser", () => {
         expect.objectContaining({
           action: "capture_fetch",
           sourceKind: "web_fetch",
-          webSourceRenderMode:
-            variant.webSourceRenderMode ?? "static",
-          browserFallbackStatus:
-            variant.browserFallbackStatus ?? "not_needed",
+          webSourceRenderMode: variant.webSourceRenderMode ?? "static",
+          browserFallbackStatus: variant.browserFallbackStatus ?? "not_needed",
         }),
       );
       expect(parseResearchSourceEvidenceV1(evidence)).toEqual(evidence);
@@ -177,16 +181,18 @@ describe("Research Source evidence parser", () => {
 
   it("normalizes Web Fetch citation and every report registration value", () => {
     const webCitation = parseResearchSourceEvidenceV1({
-        ...common,
-        citationCount: 1,
-        ...source,
-        ...web,
-        webSourceRenderMode: "static",
-        browserFallbackStatus: "not_needed",
-        ...citation,
-        action: "cite",
-      });
-    expect(webCitation).toEqual(expect.objectContaining({ action: "cite", sourceKind: "web_fetch" }));
+      ...common,
+      citationCount: 1,
+      ...source,
+      ...web,
+      webSourceRenderMode: "static",
+      browserFallbackStatus: "not_needed",
+      ...citation,
+      action: "cite",
+    });
+    expect(webCitation).toEqual(
+      expect.objectContaining({ action: "cite", sourceKind: "web_fetch" }),
+    );
     expect(parseResearchSourceEvidenceV1(webCitation)).toEqual(webCitation);
 
     for (const reportArtifactRegistration of [
@@ -197,17 +203,22 @@ describe("Research Source evidence parser", () => {
       "artifact_registration_failed",
     ]) {
       const report = parseResearchSourceEvidenceV1({
-          ...common,
-          citationCount: 1,
+        ...common,
+        citationCount: 1,
+        action: "verify_report",
+        reportPathSha256: H("path"),
+        reportFileSha256: H("report"),
+        reportFileBytes: 100,
+        reportCitationCount: 1,
+        reportCitationSetSha256: H("citation-set"),
+        reportArtifactRegistration,
+      });
+      expect(report).toEqual(
+        expect.objectContaining({
           action: "verify_report",
-          reportPathSha256: H("path"),
-          reportFileSha256: H("report"),
-          reportFileBytes: 100,
-          reportCitationCount: 1,
-          reportCitationSetSha256: H("citation-set"),
           reportArtifactRegistration,
-        });
-      expect(report).toEqual(expect.objectContaining({ action: "verify_report", reportArtifactRegistration }));
+        }),
+      );
       expect(parseResearchSourceEvidenceV1(report)).toEqual(report);
     }
   });
@@ -221,9 +232,21 @@ describe("Research Source evidence parser", () => {
       webSourceRenderMode: "static",
       browserFallbackStatus: "not_needed",
     };
-    expect(parseResearchSourceEvidenceV1({ ...valid, rawUrl: "https://secret.invalid" })).toBeUndefined();
-    expect(parseResearchSourceEvidenceV1({ ...valid, browserSessionOperation: 1 })).toBeUndefined();
-    expect(parseResearchSourceEvidenceV1({ ...valid, browserFallbackStatus: "used" })).toBeUndefined();
+    expect(
+      parseResearchSourceEvidenceV1({
+        ...valid,
+        rawUrl: "https://secret.invalid",
+      }),
+    ).toBeUndefined();
+    expect(
+      parseResearchSourceEvidenceV1({ ...valid, browserSessionOperation: 1 }),
+    ).toBeUndefined();
+    expect(
+      parseResearchSourceEvidenceV1({
+        ...valid,
+        browserFallbackStatus: "used",
+      }),
+    ).toBeUndefined();
     expect(
       parseResearchSourceEvidenceV1({
         ...valid,

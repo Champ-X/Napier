@@ -85,9 +85,9 @@ describe("Schedule event trace view", () => {
   });
 
   it("fails closed for malformed and unknown schedule receipts", () => {
-    expect(scheduleEventTraceSummary(scheduleEvent("schedule.failed", []))).toBe(
-      "schedule receipt",
-    );
+    expect(
+      scheduleEventTraceSummary(scheduleEvent("schedule.failed", [])),
+    ).toBe("schedule receipt");
     expect(
       scheduleEventTraceSummary(
         scheduleEvent("schedule.future", {

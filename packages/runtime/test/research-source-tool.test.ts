@@ -142,19 +142,15 @@ describe("research_source Agent tool", () => {
     );
     expect(agentToolAllowsGenericDetailsFallback("custom_tool")).toBe(true);
     expect(
-      agentToolGenericDetailsLedgerProjection(
-        "research_source",
-        invalid,
-        { rawSource: "PRIVATE_RAW_SOURCE" },
-      ),
+      agentToolGenericDetailsLedgerProjection("research_source", invalid, {
+        rawSource: "PRIVATE_RAW_SOURCE",
+      }),
     ).toEqual({});
     expect(
       JSON.stringify(
-        agentToolGenericDetailsLedgerProjection(
-          "research_source",
-          invalid,
-          { rawSource: "PRIVATE_RAW_SOURCE" },
-        ),
+        agentToolGenericDetailsLedgerProjection("research_source", invalid, {
+          rawSource: "PRIVATE_RAW_SOURCE",
+        }),
       ),
     ).not.toContain("PRIVATE_RAW_SOURCE");
   });

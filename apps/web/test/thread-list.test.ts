@@ -9,9 +9,7 @@ describe("Thread list", () => {
     ]);
 
     expect(source).toContain("Move ledger to trash");
-    expect(source).toContain(
-      "Stop the active run before deleting this ledger",
-    );
+    expect(source).toContain("Stop the active run before deleting this ledger");
     expect(source).toContain("Move this ledger to trash?");
     expect(source).toContain("Moved to trash");
     expect(source).toContain("Undo");

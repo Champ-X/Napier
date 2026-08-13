@@ -171,8 +171,7 @@ function observation(): Record<string, unknown> {
     workspaceReadOnly: true,
     temporaryFileSystemBytes:
       OCI_PROCESS_RESOURCE_POLICY.temporaryFileSystemBytes,
-    homeFileSystemBytes:
-      OCI_PROCESS_RESOURCE_POLICY.temporaryFileSystemBytes,
+    homeFileSystemBytes: OCI_PROCESS_RESOURCE_POLICY.temporaryFileSystemBytes,
     temporaryFileSystemRestricted: true,
     homeFileSystemRestricted: true,
     capabilitiesDropped: true,

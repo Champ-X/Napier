@@ -56,10 +56,7 @@ export function conversationArtifacts(
 export function conversationArtifactEventKey(
   event: RunEvent,
 ): readonly [planId: string, artifactId: string] | undefined {
-  if (
-    event.visibility !== "user" ||
-    !ARTIFACT_STATUS_EVENT.test(event.type)
-  ) {
+  if (event.visibility !== "user" || !ARTIFACT_STATUS_EVENT.test(event.type)) {
     return undefined;
   }
   const planId = payloadString(event.payload, "planId");
@@ -72,8 +69,7 @@ export function conversationArtifactWorkspaceLinks(
 ): ConversationArtifactWorkspaceLink[] {
   return artifacts.flatMap((item) =>
     item.artifact.kind === "file" &&
-    (item.artifact.status === "produced" ||
-      item.artifact.status === "verified")
+    (item.artifact.status === "produced" || item.artifact.status === "verified")
       ? [
           {
             path: item.artifact.path,

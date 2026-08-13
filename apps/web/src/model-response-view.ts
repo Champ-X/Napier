@@ -58,9 +58,7 @@ export function modelResponseTraceView(
   };
 }
 
-export function modelResponseTraceSummary(
-  event: RunEvent,
-): string | undefined {
+export function modelResponseTraceSummary(event: RunEvent): string | undefined {
   if (event.type !== MODEL_RESPONSE_EVENT) return undefined;
   const view = modelResponseTraceView(event);
   if (!view) return MODEL_RESPONSE_RECEIPT_SUMMARY;
@@ -75,9 +73,7 @@ export function modelResponseTraceSummary(
   }
   if (view.errorSha256) parts.push(`error ${view.errorSha256.slice(0, 12)}`);
   if (view.inputTokens !== undefined || view.outputTokens !== undefined) {
-    parts.push(
-      `tokens ${view.inputTokens ?? 0}/${view.outputTokens ?? 0}`,
-    );
+    parts.push(`tokens ${view.inputTokens ?? 0}/${view.outputTokens ?? 0}`);
   }
   return parts.join(" / ");
 }

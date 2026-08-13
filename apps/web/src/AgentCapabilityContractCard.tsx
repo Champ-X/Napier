@@ -91,8 +91,7 @@ export function AgentCapabilityContractCard({
   const readinessProblems = projection.readiness.filter(
     (item) => !["ready", "catalog_only"].includes(item.status),
   );
-  const commitPreview =
-    projection.upgradePreview ?? projection.restorePreview;
+  const commitPreview = projection.upgradePreview ?? projection.restorePreview;
   const operations = commitPreview.operations;
   const safeUpgrade = projection.upgradePreview !== undefined;
   return (
@@ -149,8 +148,7 @@ export function AgentCapabilityContractCard({
           {safeUpgrade
             ? copy.capabilityUpgradeDiff
             : copy.capabilityRestoreDiff}{" "}
-          · {operations.length}{" "}
-          {copy.capabilityChanges}
+          · {operations.length} {copy.capabilityChanges}
         </summary>
         {operations.length > 0 ? (
           <ul className="agent-capability-contract-diff">
@@ -171,8 +169,7 @@ export function AgentCapabilityContractCard({
           <p>{copy.capabilityNoChanges}</p>
         )}
         <p className="agent-capability-contract-hash">
-          {copy.capabilityDiffHash}{" "}
-          <code>{commitPreview.diffSha256}</code>
+          {copy.capabilityDiffHash} <code>{commitPreview.diffSha256}</code>
         </p>
       </details>
       <details>
