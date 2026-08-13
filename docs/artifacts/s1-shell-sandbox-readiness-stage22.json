@@ -1,7 +1,7 @@
 {
   "kind": "napier.s1-shell-sandbox-readiness-stage22",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-12T18:31:24.141Z",
+  "generatedAt": "2026-08-13T15:03:04.082Z",
   "implementation": {
     "modelSha256": "5adf9c20cd914638326e744b7a90ab9d9e956240fa24adb3b34994401d46691d",
     "checkerSha256": "174fb44f4e628224815d34d92e06407f8aa6831d89dd8d7ac8cefd6c65c0d065",
@@ -51,17 +51,17 @@
         {
           "kind": "sandbox-multi-architecture-stage14",
           "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
-          "sha256": "e5ac7411f8c0fe6e6195662e1d6a21cff879b4fcbeb6ef246e2ca6362acf6e78",
+          "sha256": "f530efee76ddc7d0b056f59da9e080bbb8fe39434fd54668f80fa6d70e465f29",
           "verifierSha256": "e65d26760740fba26a5c94ef9549a3f5307a73d6f3289a1c03194437290da9bc"
         },
         {
           "kind": "sandbox-oci-supply-chain-stage18",
           "path": "docs/artifacts/sandbox-oci-supply-chain-stage18.json",
-          "sha256": "d174228c2c1e2e52da43bef7a0b5050ef79cd999765c266270b63377b4e4ccbf",
+          "sha256": "119b68d5ebe5b8b6382f09624917fafb71af0f0b768a873ffb2ee08828f53270",
           "verifierSha256": "7b11e003c4666979f6567408c02d97a65a269806deae82d0bb3450a042b29408"
         }
       ],
-      "evidenceSetSha256": "b8270afae40a7a29d607178bed07627e99474b653c8e5f7749ae83fa993b2b3d"
+      "evidenceSetSha256": "fb4c7f984dc9ba418658332cb124945e1a641f3ac83e8d90501deeca00e46f39"
     },
     {
       "id": "setup_doctor_lifecycle",
@@ -70,23 +70,23 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "357f913b35978a1304b94ed0bf7ee4d2a36df3546c5067a9e4a8b91a92dc4831",
-          "verifierSha256": "1c3f1012d439e5854599ba5cd27f1d537e298330087d367302971555660055ad"
+          "sha256": "8f89ee909a2b17057d6d700ab977dabb38cb2ca3e0a8b22cedc6747ced083230",
+          "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
           "kind": "sandbox-acquisition-stage20",
           "path": "docs/artifacts/sandbox-acquisition-stage20.json",
-          "sha256": "b63977e1ac7f64d4fa1d1cb1ddbadb06697741411bbaab29441840128d0e7bf1",
-          "verifierSha256": "51c3333b5a08075030a5530a6c8468a14156da58fdbf98be74dbd4e7ef3e308f"
+          "sha256": "9261727af000cd74bbdfd93fc8bd1f47cdf1be36efdeb8d5957dd802905c7213",
+          "verifierSha256": "f4c5da21639fa64ed673df066c39d903e0539eb955639fdbbbc350741e274881"
         },
         {
           "kind": "linux-host-product-acceptance-stage19",
           "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-          "sha256": "b581f969b7275e5ab368deb7e1063592200c2b7a488db8a7456cd0cfc41283eb",
+          "sha256": "fae24386a28ebf69ccd0c3dfe9f91e4ecf35807176d6394c860e2462a33bf8d9",
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "177f662dd91331e437dbb83188d6484a2c506ebeab477fbbb7776401ee2907e2"
+      "evidenceSetSha256": "49d4fa092544dc444fbd35e8eb45cbe0df8e8ce8d19e84d23b133cd7f5aac871"
     },
     {
       "id": "daemon_execution_recovery",
@@ -95,13 +95,13 @@
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "357f913b35978a1304b94ed0bf7ee4d2a36df3546c5067a9e4a8b91a92dc4831",
-          "verifierSha256": "1c3f1012d439e5854599ba5cd27f1d537e298330087d367302971555660055ad"
+          "sha256": "8f89ee909a2b17057d6d700ab977dabb38cb2ca3e0a8b22cedc6747ced083230",
+          "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
           "kind": "oci-crash-recovery-stage11",
           "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-          "sha256": "e1adc8d221ac47504308ff60b8b366efd10b50838a14f052dbf84cdf0773a664",
+          "sha256": "e986bd29ca96433f5e3388bf4bcf17fc4eae6c0ce4195d625dd1e3858457d29a",
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         },
         {
@@ -125,11 +125,11 @@
         {
           "kind": "linux-host-product-acceptance-stage19",
           "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-          "sha256": "b581f969b7275e5ab368deb7e1063592200c2b7a488db8a7456cd0cfc41283eb",
+          "sha256": "fae24386a28ebf69ccd0c3dfe9f91e4ecf35807176d6394c860e2462a33bf8d9",
           "verifierSha256": "e1272cfa34b7bc00913198faf222007b9403b3ce799d9cfd918b68920bcab386"
         }
       ],
-      "evidenceSetSha256": "3440763d9d9fb1d7d6026879f435c79ab7b48ebcaddc02febc3963842c1ad287"
+      "evidenceSetSha256": "6c88df8463767dd654b651d245ed65828c10a8fd1947886485bd813b890822f2"
     },
     {
       "id": "isolation_and_fail_closed_limits",
@@ -145,28 +145,28 @@
           "kind": "oci-resource-limits-stage10",
           "path": "docs/artifacts/oci-resource-limits-stage10.json",
           "sha256": "6e93e44d4289ad091f044b64d754c30032aace1441c08bb7fb4c75fcee0cc247",
-          "verifierSha256": "b2338716c6d3268ae35117f8cb14b992fc044ca5823df24bdb36190c6bd09842"
+          "verifierSha256": "b599a2d4371a140d80a40dc2c6f2cf5884685a8254ef64bfd73f1a42ea6b7f4a"
         },
         {
           "kind": "sandbox-security-casebook-stage12",
           "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
-          "sha256": "ec455e3fc70ef881999d800fd5c3072316cdba1703a028abced4d5774411ae4e",
+          "sha256": "56ad40e77e56d94ec0f84c25b02f6e28cd725dc18a52401a25c3cb378fc9edb2",
           "verifierSha256": "c355fb89806073b5ce0e3c09be26e0c0451a1b387d68e452432b82734edbf603"
         },
         {
           "kind": "sandbox-product-acceptance-stage13",
           "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-          "sha256": "357f913b35978a1304b94ed0bf7ee4d2a36df3546c5067a9e4a8b91a92dc4831",
-          "verifierSha256": "1c3f1012d439e5854599ba5cd27f1d537e298330087d367302971555660055ad"
+          "sha256": "8f89ee909a2b17057d6d700ab977dabb38cb2ca3e0a8b22cedc6747ced083230",
+          "verifierSha256": "0ab91832a93c9a7bbddc676d8d516c9fa5923f1666a5742b59a1da3d29bc892e"
         },
         {
           "kind": "oci-crash-recovery-stage11",
           "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-          "sha256": "e1adc8d221ac47504308ff60b8b366efd10b50838a14f052dbf84cdf0773a664",
+          "sha256": "e986bd29ca96433f5e3388bf4bcf17fc4eae6c0ce4195d625dd1e3858457d29a",
           "verifierSha256": "d733b13f7da23d1397d236cdb55ffcca108b7a696e5b89d94f2f94a1fc503946"
         }
       ],
-      "evidenceSetSha256": "9f2935fef400c22ade8f1cda8aa6df63fcc190686e99301c2d847ac667d5a743"
+      "evidenceSetSha256": "bf43078079410fd3d6a5d6513712c7ff83c47006b9b0afc87b8ac79abc4197a3"
     },
     {
       "id": "run_scoped_mode_and_profile_upgrade",
@@ -175,14 +175,14 @@
         {
           "kind": "profile-upgrade-stage21",
           "path": "docs/artifacts/profile-upgrade-stage21.json",
-          "sha256": "faf451bc034c8520cb7b8e0a18490b1ef04ae3dec42658e8e86a12e6801e5e6d",
-          "verifierSha256": "c42d4ff9fe6f48e5b58633229816dfbc12cc305ff8c94a5a417daa2efd10d240"
+          "sha256": "b5789df0f9043141e3fa9264d5b79379f72073f74709c150d53d0b66915c65b5",
+          "verifierSha256": "fa2ee85bfb674ee0bc27af7ec1f98395af42bd266d39a2cd4d4de25b0802d9bb"
         }
       ],
-      "evidenceSetSha256": "820f6fe74d370b8e2cd0afb6306eb78b38d18125913281101a3e6fd401fe83dc"
+      "evidenceSetSha256": "15b404a40b3a0ae990ef6b05b2e13f3068a47c87f495b22ad064a8fab6a43128"
     }
   ],
-  "requirementSetSha256": "7a9b7dc9be88b56700637b13619a5ea1cd876c69115b5dd184372b74e29e4c04",
+  "requirementSetSha256": "6d60a7be355958db46c1a37a396ef9a61a71f3245c335e7dfc68f7af8a3e39bd",
   "externalRequirements": [
     {
       "id": "public_signed_external_release",
@@ -222,5 +222,5 @@
       "windows_host_product_acceptance"
     ]
   },
-  "contentSha256": "94142f52e3d84f7bcfb0eaa668effabc280a9a6b6deaa754e5a5e47bb3f536a5"
+  "contentSha256": "e0ccef5e0b3cc94589a6b3dea74dba5fe448e85ca6c426e87a1b40ad0bcd7dd7"
 }

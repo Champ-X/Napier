@@ -6,18 +6,18 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "3fcb36625ba714bbf16c3b1da5cdbd930f376d2fce3b33e127a10a9f84db48f1",
+  "artifactSetSha256": "cae5994d80b3247528900e3a8adaefb66ca49c751f7fa42c193d64dfc553fb85",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "4357cdbe904ba4ea1e0f824d7ce990c28116d195ca1b2c7facf916b653caeb63",
+      "sha256": "8df13598cc7541523fee3a0982573568fdc7079d04dfd0d72c9811dd22ae2f7e",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "fded3ddc2e13a6630fef930fcc7041d7bd7769b22dba7d74459af81fa2dd5a00",
+      "sha256": "5845e306267598357a27f835d548c63550439f0be9715727b47e667e01f6e9ad",
       "valid": true
     },
     {
@@ -41,25 +41,25 @@
     {
       "kind": "oci-crash-recovery-stage11",
       "path": "docs/artifacts/oci-crash-recovery-stage11.json",
-      "sha256": "e1adc8d221ac47504308ff60b8b366efd10b50838a14f052dbf84cdf0773a664",
+      "sha256": "e986bd29ca96433f5e3388bf4bcf17fc4eae6c0ce4195d625dd1e3858457d29a",
       "valid": true
     },
     {
       "kind": "sandbox-security-casebook-stage12",
       "path": "docs/artifacts/sandbox-security-casebook-stage12.json",
-      "sha256": "ec455e3fc70ef881999d800fd5c3072316cdba1703a028abced4d5774411ae4e",
+      "sha256": "56ad40e77e56d94ec0f84c25b02f6e28cd725dc18a52401a25c3cb378fc9edb2",
       "valid": true
     },
     {
       "kind": "sandbox-product-acceptance-stage13",
       "path": "docs/artifacts/sandbox-product-acceptance-stage13.json",
-      "sha256": "357f913b35978a1304b94ed0bf7ee4d2a36df3546c5067a9e4a8b91a92dc4831",
+      "sha256": "8f89ee909a2b17057d6d700ab977dabb38cb2ca3e0a8b22cedc6747ced083230",
       "valid": true
     },
     {
       "kind": "sandbox-multi-architecture-stage14",
       "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
-      "sha256": "e5ac7411f8c0fe6e6195662e1d6a21cff879b4fcbeb6ef246e2ca6362acf6e78",
+      "sha256": "f530efee76ddc7d0b056f59da9e080bbb8fe39434fd54668f80fa6d70e465f29",
       "valid": true
     },
     {
@@ -83,67 +83,73 @@
     {
       "kind": "sandbox-oci-supply-chain-stage18",
       "path": "docs/artifacts/sandbox-oci-supply-chain-stage18.json",
-      "sha256": "d174228c2c1e2e52da43bef7a0b5050ef79cd999765c266270b63377b4e4ccbf",
+      "sha256": "119b68d5ebe5b8b6382f09624917fafb71af0f0b768a873ffb2ee08828f53270",
       "valid": true
     },
     {
       "kind": "linux-host-product-acceptance-stage19",
       "path": "docs/artifacts/linux-host-product-acceptance-stage19.json",
-      "sha256": "b581f969b7275e5ab368deb7e1063592200c2b7a488db8a7456cd0cfc41283eb",
+      "sha256": "fae24386a28ebf69ccd0c3dfe9f91e4ecf35807176d6394c860e2462a33bf8d9",
       "valid": true
     },
     {
       "kind": "sandbox-acquisition-stage20",
       "path": "docs/artifacts/sandbox-acquisition-stage20.json",
-      "sha256": "b63977e1ac7f64d4fa1d1cb1ddbadb06697741411bbaab29441840128d0e7bf1",
+      "sha256": "9261727af000cd74bbdfd93fc8bd1f47cdf1be36efdeb8d5957dd802905c7213",
       "valid": true
     },
     {
       "kind": "profile-upgrade-stage21",
       "path": "docs/artifacts/profile-upgrade-stage21.json",
-      "sha256": "faf451bc034c8520cb7b8e0a18490b1ef04ae3dec42658e8e86a12e6801e5e6d",
+      "sha256": "b5789df0f9043141e3fa9264d5b79379f72073f74709c150d53d0b66915c65b5",
       "valid": true
     },
     {
       "kind": "s1-shell-sandbox-readiness-stage22",
       "path": "docs/artifacts/s1-shell-sandbox-readiness-stage22.json",
-      "sha256": "fdd17d267ffd5b7b46b71472af3afb09055c839e700587f38b2e236cf94f1bab",
+      "sha256": "5c0ea92433c8c3d20eec49228a0ac0b3e7b7223f38bb861662086ec6553a48e6",
       "valid": true
     },
     {
       "kind": "product-performance-baseline",
       "path": "docs/artifacts/product-performance-baseline-0.1.0.json",
-      "sha256": "6c702f14f70c61fbe585598e09f447352e0d0b5a3161e6a0e49d723c4466fd05",
+      "sha256": "ac00106ed43bf1ab894ec85195893f4592e44a1d0ba02f3ee87b3dc80d83fe41",
       "valid": true
     },
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "4ab72774b8e5288083a3bdc542b593442720a45c38de484bbac84fd3f887b29a",
+      "sha256": "824e31296b104667d03857f25a19ff3b8b5c8898774507694d8d75334adb192f",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "61b688116b83ac1fa30d1141a3fbfe4dc4e2067ac33615ef8932122b1167fafb",
+      "sha256": "eefbdd7e782bda290f61e1a0ee41e0550b0253469cc36c031a9ff1c927d4edba",
       "valid": true
     },
     {
       "kind": "management-openapi",
       "path": "docs/artifacts/management-openapi-0.1.0.json",
-      "sha256": "56823231355ea0ec404ac6c5cc59aadde7663214fe2d101fc8eca0e9ca522822",
+      "sha256": "7c8ea2f8236b7c7cfed83a499f0b662873d71da5ce097bba73e948624cac7be3",
       "valid": true
     },
     {
       "kind": "management-openapi-compatibility",
       "path": "docs/artifacts/management-openapi-compatibility-0.1.0.json",
-      "sha256": "0c9617fb70c2342d974c52c134c08445d59be504257a9fac60239d16548dca08",
+      "sha256": "3b12f5f789b8275145e0527d8f5ba19d586dae3fd807069ac23e6c1b7531c899",
       "valid": true
     },
     {
       "kind": "coding-executor-comparison",
       "path": "docs/artifacts/benchmarks/napier-omp-coding-comparison-seed-20260806.json",
       "sha256": "bc3e888baf2642f6e8343cb96af88f8700bb7936d947a25960f76d3c67bbe24d",
+      "valid": true
+    },
+    {
+      "kind": "controlled-harness-evidence",
+      "path": "docs/artifacts/controlled-harness-evidence-0.1.0.json",
+      "sha256": "9aeecc9c4a3026a1021ba4108e1c3a54ef768d20e92f70fbf2a956fad4b87963",
       "valid": true
     },
     {
@@ -809,7 +815,7 @@
     {
       "kind": "open-web-research-freshness-observation-2-result-2",
       "path": "benchmark-results/napier-open-web-research-benchmark-result-research_open_web_source_triad_v1-b6f353840b7374e9.json",
-      "sha256": "b00a93288f6daba5711b6497a8506591674bf08fa9400fa7a564bd648b295314",
+      "sha256": "7bba1e2047d20c559b05fa2d9224457a464282bc2e65ea06f6a623c6129ca3b2",
       "valid": true
     },
     {
@@ -833,19 +839,19 @@
     {
       "kind": "open-web-executor-comparison-attempt-1",
       "path": "benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260806-eeb63387bc7f02ef.json",
-      "sha256": "b18fd7f4ae17ae3196a0f2d91418754a3ef61c6df6180aeeb08e4edaefa12b22",
+      "sha256": "87009197eadf709b1c0fe81dd7957444e7e87037ec1a38792a5273a693577ac4",
       "valid": true
     },
     {
       "kind": "open-web-executor-comparison-attempt-2",
       "path": "benchmark-results/napier-open-web-executor-comparison-attempt-seed-20260807-62596440116b4a2a.json",
-      "sha256": "ba93830ceae4b130ac3c17f4696763886155040e4f6e77ee74de384dd2fba02f",
+      "sha256": "b3842deb9945fe1bfd2a42001b2e7186893dcc19be8ccd3b9c9a0e6deb7de5a7",
       "valid": true
     },
     {
       "kind": "open-web-executor-comparison-campaign",
-      "path": "benchmark-results/napier-open-web-executor-comparison-campaign-seeds-20260805-20260808-01ad0296171ff913.json",
-      "sha256": "8191a5c72e8e2562d6c9c6c6d2e238f2dbfb01be044bfb672ac3dbaa4aa8e086",
+      "path": "benchmark-results/napier-open-web-executor-comparison-campaign-seeds-20260805-20260813-d108a2049df3c910.json",
+      "sha256": "693ad5ae8649a3ee14320bd54837a687ba617447b34e1d7f4c8688a911b7922e",
       "valid": true
     },
     {
@@ -857,7 +863,13 @@
     {
       "kind": "open-web-executor-comparison-report-2",
       "path": "benchmark-results/napier-open-web-executor-comparison-seed-20260808.json",
-      "sha256": "9ef252a1bea76e4475eb8f625d57394496790a04b4a8cf2bc7ffbf5bd0b3376d",
+      "sha256": "f7306b3311c7fe881dea5436b65dba57ad6c3facaed6e01d77faafaf2b340d90",
+      "valid": true
+    },
+    {
+      "kind": "open-web-executor-comparison-report-3",
+      "path": "benchmark-results/napier-open-web-executor-comparison-seed-20260813.json",
+      "sha256": "5eacb15ef0e933d593ab54ff970564b60ab0a97af2044b6e95739024236970b5",
       "valid": true
     },
     {
@@ -899,61 +911,61 @@
     {
       "kind": "browser-confirmed-form-benchmark-result-1",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-9e24e16af0886977.json",
-      "sha256": "d5f8e7ced7cab7cf6517f22eaa0846c64289f3ea32e6d9eda1b97a8fed138168",
+      "sha256": "6f257ae0b5a8cc3b8993009e026ab848a8087bb2c6edf533aa268c5e2014cef4",
       "valid": true
     },
     {
       "kind": "browser-confirmed-form-benchmark-ledger-1",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-804615bfa1b1be51.json",
-      "sha256": "5af00c5e608afb22e714d52820f074c606da177b796b96e25c9b165cab975044",
+      "sha256": "29149c10114c2a03c31d80334643dd6cb51095e6f59088b7fe995169f84bedf6",
       "valid": true
     },
     {
       "kind": "browser-confirmed-form-benchmark-result-2",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-d10253d3b5555efb.json",
-      "sha256": "be6b96903b14efb6b9f0755958e487fc0b0449919cb4a350a5c610b4a9950b59",
+      "sha256": "e4a762b1cca2e075ed8b767d5a09d76afe27510a1af19b99290d4c4157354107",
       "valid": true
     },
     {
       "kind": "browser-confirmed-form-benchmark-ledger-2",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-85015ed067273714.json",
-      "sha256": "6b9eb062b41e47d2e95ac7164f1f4f36b89580676e24279dd6a3d3d6ce6deccc",
+      "sha256": "bb98d39ba129d400dabb46a80ef675199a8c680076827d63f13c3e66dfaf475c",
       "valid": true
     },
     {
       "kind": "browser-confirmed-form-benchmark-result-3",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-ead20b43b9ee5d9d.json",
-      "sha256": "af7a76bbc97e63cd09a4e8f188d30a33bbe48929fb27e3576e461a6a0d50b9fa",
+      "sha256": "23e54ecd0f2a7b4caeae296a3f1272852c101ab4e948e3669b9d46f7f5e7a424",
       "valid": true
     },
     {
       "kind": "browser-confirmed-form-benchmark-ledger-3",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-5de0464fa052d868.json",
-      "sha256": "93796ca746b468d19735bc66f5fcdfac92d22aff913e430702363e8034ebf31a",
+      "sha256": "7c05b87ffc5c6b5b208eef3c16d99eeb550a8928dca9222e5118646d290ddd40",
       "valid": true
     },
     {
       "kind": "browser-confirmed-form-benchmark-result-4",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-88c39cbe0410cb34.json",
-      "sha256": "e5e9ea302d493e748b8336dbe3827aaf4f999f1c59983a4efbae7e463e2a6b18",
+      "sha256": "f1a2f91645f4b0814e15f57516b6b2cd523349357ce0c01c5a94152bc69752a8",
       "valid": true
     },
     {
       "kind": "browser-confirmed-form-benchmark-ledger-4",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-9741dbb74083982e.json",
-      "sha256": "5898162581f02661bb2a963d3269f90dc76fb77d41e31093e332ad57c7087804",
+      "sha256": "6ae46379ca186c0a7b6cb9245d4f2d87a96e9e58fb6ad95d9cc3c23f665a57b3",
       "valid": true
     },
     {
       "kind": "browser-confirmed-form-benchmark-result-5",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-result-browser_confirmed_form_cli_v1-c200f2181dac0e3c.json",
-      "sha256": "259d365e914579dc586ad9603e22337b8cf63905a71638e84fb1ab7434b4b5c4",
+      "sha256": "f856ff5f01d6920499c7c506c5191cdbcd85d6344cc25c48cbc28657aab84810",
       "valid": true
     },
     {
       "kind": "browser-confirmed-form-benchmark-ledger-5",
       "path": "benchmark-results/browser-confirmed-form-live-20260805-series5-release/napier-browser-confirmed-form-benchmark-ledger-browser_confirmed_form_cli_v1-b6846518cf25a334.json",
-      "sha256": "d71d2f54fe09fcdcabfd0d99f8f157dcef47e3077b7f9878bf9a4c4f6e132a0b",
+      "sha256": "af2430c25394b59c5ed6625c1bc9eb5a1a96bedafa99969cb2355f5d8e5ff918",
       "valid": true
     }
   ],

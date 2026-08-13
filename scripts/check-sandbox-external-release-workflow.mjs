@@ -215,6 +215,8 @@ function validateCommandClosure(source, errors) {
     "--expected-preview",
     "napier.browser-runtime-setup-result",
     ".chromiumSandbox == true",
+    "Build the production Web distribution",
+    "npm run build -w @napier/web",
     "npm run check",
     "platforms: linux/amd64,linux/arm64",
     "provenance: ${{ inputs.mode == 'release' && 'mode=max' || 'false' }}",

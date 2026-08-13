@@ -45,6 +45,11 @@ describe("Sandbox external release workflow", () => {
           "process.stdout.write(chromium.executablePath())",
           'process.stdout.write("/tmp/unbound-browser")',
         ),
+      (source) =>
+        source.replace(
+          "      - name: Build the production Web distribution\n        run: npm run build -w @napier/web\n\n",
+          "",
+        ),
     ]) {
       const root = await fixtureRoot(mutate);
       const result = await auditSandboxExternalReleaseWorkflow({

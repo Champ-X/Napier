@@ -202,6 +202,7 @@ describe("release artifacts audit", () => {
       "open-web-executor-comparison-campaign",
       "open-web-executor-comparison-report-1",
       "open-web-executor-comparison-report-2",
+      "open-web-executor-comparison-report-3",
       "ux-benchmark-series",
       "ux-benchmark-result-1",
       "ux-benchmark-ledger-1",
@@ -603,7 +604,7 @@ describe("release artifacts audit", () => {
       "sandbox-external-publication-retained",
       "sandbox-external-publication-authority-retained",
     ]);
-    expect(result.artifacts).toHaveLength(160);
+    expect(result.artifacts).toHaveLength(162);
   });
 
   it("fails when the product performance baseline is tampered", async () => {

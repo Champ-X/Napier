@@ -32,12 +32,12 @@
       "dimension": "coding",
       "testFile": "apps/cli/test/coding-benchmark.test.ts",
       "testNameSha256": "405b2a675017ac78ee346d5e89e48ec2cbc9c9468df9333983cf188120acf90d",
-      "testFileSha256": "76df24d2ca370eab99fd758fd96edcdff738acc986c90efc3262d68382775ca1",
+      "testFileSha256": "458d1f82e41fe0ddf3f23590ef91cebd24521efe164eb73422f9699368c4e15d",
       "argvSha256": "3865ec053a7ae5ed045cdbceea0992aa20da97451c42f47dde30011f4a27c868",
       "status": "passed",
       "testFileCount": 1,
       "testCount": 1,
-      "contentSha256": "eb13256009bcde30dd86fab9e97b7bf44bb4d92ed0a0512083f7054664a809ed"
+      "contentSha256": "de31423538f39dac03fe9bac2bcf2e693c8aff41d45624adf6a30445b9c8118d"
     },
     {
       "id": "prompt_browser_v1",
@@ -112,5 +112,5 @@
       "contentSha256": "7bc01e2ca4ff9ebd503224107ae7bb38e409bf6a06e05a0b4e530ba06df9ff4e"
     }
   ],
-  "contentSha256": "36b5e338015a9847c8df4a0426f7dd2a58bd71ea79152453f12cfe17eaede2c6"
+  "contentSha256": "519e7b2b59e3edc37a3eaf220c51e7f04c52f29eb72ae084a84db1a5d5bac83a"
 }

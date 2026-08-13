@@ -69,7 +69,7 @@ describe("Linux host product acceptance artifact", () => {
         value.guest.install.exitCode = 1;
       },
       (value) => {
-        value.guest.product.doctor.warningCount = 1;
+        value.guest.product.doctor.warningCount = 2;
       },
       (value) => {
         value.guest.product.imageRepair.repair.action = "reused";

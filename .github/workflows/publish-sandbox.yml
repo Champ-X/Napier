@@ -171,6 +171,9 @@ jobs:
             >/dev/null
           rm release-browser-setup.json
 
+      - name: Build the production Web distribution
+        run: npm run build -w @napier/web
+
       - name: Run the complete release gate
         run: npm run check
 
