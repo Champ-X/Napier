@@ -242,21 +242,21 @@
       "id": "G04",
       "command": "npm exec -- vitest run scripts/agent-capability-projection-equality.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "464abc5f1e5266579f6e170b0dbf25a68166eb027799dceeba115848e1ef1425",
+      "stdoutSha256": "354f5aebe12c1a06f2696258edbd3a3fc9fe78a974e8cf521386a948cc3c93f4",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "four-state-parity.json",
-      "evidenceSha256": "8fa8e4d5de1ef3034265563a2ffcae5d29bf09369f9d6b9b14f1c66ec3a61237",
-      "receiptSha256": "7fbf3d7d865a9317a4034269ad34caa1a32067c5697d0a7df92876ce750fd20f"
+      "evidenceSha256": "a882a73dc1a84460e509326394eec105b5162f481a5f653c5a3a9caddac3535b",
+      "receiptSha256": "5632bc12474b956191cee09817fdbd4147c8564dcd32c3cb4598003b37c9af17"
     },
     {
       "id": "G05",
       "command": "npm exec -- vitest run scripts/sdk-capability-production-server.test.mjs",
       "exitCode": 0,
-      "stdoutSha256": "95c094e4bec95571d5bd20c485ea7c0a99bb32434e8c36518f60c74b051d6ad9",
+      "stdoutSha256": "8d3a168de6d07990db08425c08c9c419e6f54a6d2a45e3903fd6968511fd8f81",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "evidenceFile": "production-server-trace.json",
-      "evidenceSha256": "0da838f081a9baa568c6fd0f66e71c141b406d540f22bd4275e993db03e8a377",
-      "receiptSha256": "1758b765e00df432a407cb74f53a0d42ea24c988312519a36daaef947f728453"
+      "evidenceSha256": "4d439379e4e1bd4c6b8675e772a150cbd7dbd582c000c806d933ace7e12df745",
+      "receiptSha256": "2cb5a9772f2afdc8218643254ee34f171f35dcc2379060dee87f7578d3ea139f"
     },
     {
       "id": "G06-credential-reference-canary",
@@ -537,6 +537,7 @@
         "apps/cli/test/doctor-cli.test.ts",
         "apps/cli/test/doctor-sandbox-probe.test.ts",
         "apps/cli/test/interactive-cli.test.ts",
+        "apps/cli/test/live-coding-benchmark-smoke.test.ts",
         "apps/cli/test/live-deepseek-smoke.test.ts",
         "apps/cli/test/open-web-research-benchmark.test.ts",
         "apps/cli/test/research-benchmark.test.ts",
@@ -1613,6 +1614,10 @@
         "apps/cli/test/interactive-cli.test.ts": {
           "sha256": "322b50e7b22d8d937c3b231c1781c34753b7c7ab8e5f73a69fbf681ab5552319",
           "lines": 994
+        },
+        "apps/cli/test/live-coding-benchmark-smoke.test.ts": {
+          "sha256": "b0caaa04d6e262e3859fd757b89a031c13cd92f430c5590acf243717d3afa4bf",
+          "lines": 131
         },
         "apps/cli/test/live-deepseek-smoke.test.ts": {
           "sha256": "f9b33585eefc40c4a1586ddcc7908cbb7f4d0968e0cf32e802bd9dc1e35b091a",
@@ -2847,11 +2852,11 @@
           "lines": 56
         },
         "docs/artifacts/sdk-capability-parity-stage7/four-state-parity.json": {
-          "sha256": "8fa8e4d5de1ef3034265563a2ffcae5d29bf09369f9d6b9b14f1c66ec3a61237",
+          "sha256": "a882a73dc1a84460e509326394eec105b5162f481a5f653c5a3a9caddac3535b",
           "lines": 274
         },
         "docs/artifacts/sdk-capability-parity-stage7/production-server-trace.json": {
-          "sha256": "0da838f081a9baa568c6fd0f66e71c141b406d540f22bd4275e993db03e8a377",
+          "sha256": "4d439379e4e1bd4c6b8675e772a150cbd7dbd582c000c806d933ace7e12df745",
           "lines": 69
         },
         "docs/artifacts/shell-sandbox-stage1-dogfood.json": {
@@ -5084,7 +5089,7 @@
           "reason": "self_referential_stage7_final_receipt_closure"
         }
       ],
-      "manifestSha256": "878ed807bb08939c7a20546f672ccee1e47a136f614941a625fc79de8d914d74"
+      "manifestSha256": "5675992f1cace5653e9c43aff0fd8f320b02ec5de6c6219731d7d9f1e36e4ae2"
     },
     "executionClosure": {
       "algorithm": {
@@ -21528,7 +21533,7 @@
       ],
       "manifestSha256": "540246193c546dcb985903a649de74cc0d7641e221c7b28fabd6df0c3b4bbdff"
     },
-    "manifestSha256": "3456267813d4ae69cf89a444f9f68351501ab2e59583902a627d7b1e5df12ff4"
+    "manifestSha256": "e270ea1813f2e97d00c64a7118bb3ee357c4cbb70a8f0b5145086355d617a062"
   },
   "publicApiBudgets": {
     "sdkRootPublicExports": 22,
@@ -21716,11 +21721,11 @@
     },
     "fourStateParity": {
       "file": "four-state-parity.json",
-      "sha256": "8fa8e4d5de1ef3034265563a2ffcae5d29bf09369f9d6b9b14f1c66ec3a61237"
+      "sha256": "a882a73dc1a84460e509326394eec105b5162f481a5f653c5a3a9caddac3535b"
     },
     "productionServerTrace": {
       "file": "production-server-trace.json",
-      "sha256": "0da838f081a9baa568c6fd0f66e71c141b406d540f22bd4275e993db03e8a377"
+      "sha256": "4d439379e4e1bd4c6b8675e772a150cbd7dbd582c000c806d933ace7e12df745"
     }
   }
 }

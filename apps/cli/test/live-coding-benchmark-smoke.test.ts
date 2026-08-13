@@ -47,7 +47,7 @@ describeLive("live DeepSeek coding outcome benchmark", () => {
       caseRoot: CASE_ROOT,
       outputDir,
       model: { provider: "deepseek", id: modelId },
-      env: { DEEPSEEK_API_KEY: apiKey },
+      env: liveEnvironment(apiKey),
       credentialEnv: "DEEPSEEK_API_KEY",
       timeoutMs: 120_000,
     });
@@ -91,7 +91,7 @@ describeLive("live DeepSeek coding outcome benchmark", () => {
       caseRoot: MULTI_FILE_CASE_ROOT,
       outputDir,
       model: { provider: "deepseek", id: modelId },
-      env: { DEEPSEEK_API_KEY: apiKey },
+      env: liveEnvironment(apiKey),
       credentialEnv: "DEEPSEEK_API_KEY",
       timeoutMs: 120_000,
     });
@@ -119,3 +119,13 @@ describeLive("live DeepSeek coding outcome benchmark", () => {
     expect(serialized.join("\n")).not.toContain(apiKey);
   }, 180_000);
 });
+
+function liveEnvironment(apiKey: string): Record<string, string> {
+  const containerImage = process.env["NAPIER_CONTAINER_SANDBOX_IMAGE"]?.trim();
+  return {
+    DEEPSEEK_API_KEY: apiKey,
+    ...(containerImage
+      ? { NAPIER_CONTAINER_SANDBOX_IMAGE: containerImage }
+      : {}),
+  };
+}
