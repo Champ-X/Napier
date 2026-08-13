@@ -69,9 +69,7 @@
       "stderrSha256": "d34a4e4359a4dc36526cf5b363da32f7b7594a3a09eea17cbdfd6425b052d93e",
       "passed": false
     },
-    "diagnostics": [
-      "outcome_test_unavailable"
-    ],
+    "diagnostics": ["outcome_test_unavailable"],
     "contentSha256": "694f5a33b4cded27bf2a9c6dc18d0a16b75f44ace043a1ca5a5abddcd7689eb0"
   },
   "ledger": {

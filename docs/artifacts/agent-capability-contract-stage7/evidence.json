@@ -124,7 +124,9 @@
     },
     "managementOpenApiResponses": {
       "GET /api/agents/{agentId}/capabilities": [200, 400, 404, 409, 413, 500],
-      "POST /api/agents/{agentId}/capabilities/restore": [200, 400, 404, 409, 413, 422, 500, 503]
+      "POST /api/agents/{agentId}/capabilities/restore": [
+        200, 400, 404, 409, 413, 422, 500, 503
+      ]
     }
   },
   "stage8Closure": {
@@ -277,10 +279,7 @@
       "contentSha256": "fc0106083ff0ed935b4eb2396ded127fb91f577dce43ffa7acc1d4ca34444a15",
       "eventStreamSha256": "c1a7aabafff462d5e62912bcc285729b9b7acc38419e2f42074afe69ca20f2dc",
       "modelContextEnvelopeCount": 7,
-      "runIds": [
-        "run_10fcae8026f849729e0a",
-        "run_6c12736d1e504d208175"
-      ]
+      "runIds": ["run_10fcae8026f849729e0a", "run_6c12736d1e504d208175"]
     },
     "capabilityProjection": {
       "schemaVersion": 1,
@@ -378,25 +377,74 @@
       "reportScreenshotCount": 193,
       "totalFileCount": 225,
       "reports": [
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_02-02-44-mqqxmkp3.html", "sha256": "dd83b8b34b6a23a6dc041289becdb5ee607573516736fc0c4570c10238122904" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_02-54-56-z016h0qr.html", "sha256": "27894f4c05e13792dc224b599c0556cf40d70dde5d40362d7844cf83d1c4c84a" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-06-26-em5a06l4.html", "sha256": "31081b05f813b91a5be9ef78b8c3394ff48a64f9989a739c797ab522cc4566c8" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-10-44-ek21w8rb.html", "sha256": "7a92957e2a84faa0750274fde00705fd76f43cb001ea62a974f204dee2d78672" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-29-07-adpebree.html", "sha256": "999d41f5c75f75881014f1a064e28c1b5ead16b1983a464e9de3c14aa2fbd4c8" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-34-44-bo4myh57.html", "sha256": "818b05e0f9ad8c67bf1df5bd43ec199c6abfc53c040378747dc973a2099b83a1" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-41-42-qqxy3tz9.html", "sha256": "1f0305856163a12a2abe17b4816d210a819558ba6fefff7ec7525a345a6220dd" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-51-28-m9k8q0gj.html", "sha256": "013490a9f9b6b4463f8413f764acc27c204367b4e7357856d92786685a322993" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-52-55-8e8dpcam.html", "sha256": "d0ca59cb6cb3a6fafbf5ee3bc90ad7542b2687d23fd2c0db689bcc95c6126e38" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-56-12-4t8m6mox.html", "sha256": "8cfe53c56c5495a3ff0df9468fbe6381e97c6d30714914bc248d2a9e1a7fcbe7" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-57-28-qiz1tnex.html", "sha256": "2fd72ce7550244412a5cd02e19df22a55feeea361d166f219b5e27f8ed9d24bd" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-58-36-axs6mcsk.html", "sha256": "f7f02c4f523d75cd0721db8d5ba1f4fb03191bbb35453e0639af4f43e382eb2c" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_05-00-04-14eoacwl.html", "sha256": "76663c45c018d9c5f7fc621d7140800929538cd37e3bb81c46b55e698826770a" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_05-08-21-9cfmrvo4.html", "sha256": "f8a338402383993d0d3cf04b27b4d6c1658a19ae5e8930d50a044b17a3a53484" },
-        { "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_05-54-34-vj29diei.html", "sha256": "4a8422f1d80997eda3a7dbbe315e65019d01fd6f5d64c637c3041df9dcd13437" }
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_02-02-44-mqqxmkp3.html",
+          "sha256": "dd83b8b34b6a23a6dc041289becdb5ee607573516736fc0c4570c10238122904"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_02-54-56-z016h0qr.html",
+          "sha256": "27894f4c05e13792dc224b599c0556cf40d70dde5d40362d7844cf83d1c4c84a"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-06-26-em5a06l4.html",
+          "sha256": "31081b05f813b91a5be9ef78b8c3394ff48a64f9989a739c797ab522cc4566c8"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-10-44-ek21w8rb.html",
+          "sha256": "7a92957e2a84faa0750274fde00705fd76f43cb001ea62a974f204dee2d78672"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-29-07-adpebree.html",
+          "sha256": "999d41f5c75f75881014f1a064e28c1b5ead16b1983a464e9de3c14aa2fbd4c8"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_03-34-44-bo4myh57.html",
+          "sha256": "818b05e0f9ad8c67bf1df5bd43ec199c6abfc53c040378747dc973a2099b83a1"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-41-42-qqxy3tz9.html",
+          "sha256": "1f0305856163a12a2abe17b4816d210a819558ba6fefff7ec7525a345a6220dd"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-51-28-m9k8q0gj.html",
+          "sha256": "013490a9f9b6b4463f8413f764acc27c204367b4e7357856d92786685a322993"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-52-55-8e8dpcam.html",
+          "sha256": "d0ca59cb6cb3a6fafbf5ee3bc90ad7542b2687d23fd2c0db689bcc95c6126e38"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-56-12-4t8m6mox.html",
+          "sha256": "8cfe53c56c5495a3ff0df9468fbe6381e97c6d30714914bc248d2a9e1a7fcbe7"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-57-28-qiz1tnex.html",
+          "sha256": "2fd72ce7550244412a5cd02e19df22a55feeea361d166f219b5e27f8ed9d24bd"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_04-58-36-axs6mcsk.html",
+          "sha256": "f7f02c4f523d75cd0721db8d5ba1f4fb03191bbb35453e0639af4f43e382eb2c"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_05-00-04-14eoacwl.html",
+          "sha256": "76663c45c018d9c5f7fc621d7140800929538cd37e3bb81c46b55e698826770a"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_05-08-21-9cfmrvo4.html",
+          "sha256": "f8a338402383993d0d3cf04b27b4d6c1658a19ae5e8930d50a044b17a3a53484"
+        },
+        {
+          "path": "midscene-web-http___127.0.0.1_5173-2026-08-07_05-54-34-vj29diei.html",
+          "sha256": "4a8422f1d80997eda3a7dbbe315e65019d01fd6f5d64c637c3041df9dcd13437"
+        }
       ]
     },
     "postDeletionState": "Raw midscene_run reports/assets were removed after this inventory and screenshot sanitization; only the nine retained sanitized JPEGs and this index remain in the evidence bundle.",
-    "listenersAfterCapture": { "port5173": "clear", "port8787": "clear", "midsceneBrowser": "closed" }
+    "listenersAfterCapture": {
+      "port5173": "clear",
+      "port8787": "clear",
+      "midsceneBrowser": "closed"
+    }
   },
   "automationDisclosures": [
     "Earlier round: the first disabled-button visual assertion failed because the disabled control retained an active green fill. CSS was corrected and the repeated assertion passed.",

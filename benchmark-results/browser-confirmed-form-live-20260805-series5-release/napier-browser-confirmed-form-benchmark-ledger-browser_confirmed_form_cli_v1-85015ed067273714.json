@@ -14,14 +14,8 @@
   "actualAssistantSha256": "199146858056aff112397f0e5eb6b55eabb3a8d7a85f85e2bfa39b962405a04f",
   "expectedOutcomeUrlSha256": "5cc8c129bc0d94b569adaef9411f689257b609d3088642d90b6b8018d7fd4c5c",
   "expectedOutcomeTitleSha256": "00c28b8183e3c500e70b1580271840bcf5eb6e720028ba3ff2099b7daf17dfe5",
-  "expectedConfirmationActions": [
-    "type",
-    "click"
-  ],
-  "expectedConfirmationEffects": [
-    "data_entry",
-    "form_submit"
-  ],
+  "expectedConfirmationActions": ["type", "click"],
+  "expectedConfirmationEffects": ["data_entry", "form_submit"],
   "maxDurationMs": 180000,
   "credentialVariableSha256": "8ebbeceb577efdbfc1900e7c626ba19cc1889a69a598d80a7143a3ff1cb507b5",
   "run": {
@@ -449,24 +443,10 @@
         "approvalInputCount": 2,
         "confirmationEventCount": 4,
         "confirmationOrderValid": true,
-        "confirmationActions": [
-          "type",
-          "click"
-        ],
-        "confirmationEffects": [
-          "data_entry",
-          "form_submit"
-        ],
-        "browserActions": [
-          "start",
-          "type",
-          "click",
-          "close"
-        ],
-        "browserWriteActions": [
-          "type",
-          "click"
-        ],
+        "confirmationActions": ["type", "click"],
+        "confirmationEffects": ["data_entry", "form_submit"],
+        "browserActions": ["start", "type", "click", "close"],
+        "browserWriteActions": ["type", "click"],
         "browserOperationOrderValid": true,
         "browserOutcomeUrlMatch": true,
         "browserOutcomeTitleMatch": true,
@@ -665,24 +645,10 @@
       "approvalInputCount": 2,
       "confirmationEventCount": 4,
       "confirmationOrderValid": true,
-      "confirmationActions": [
-        "type",
-        "click"
-      ],
-      "confirmationEffects": [
-        "data_entry",
-        "form_submit"
-      ],
-      "browserActions": [
-        "start",
-        "type",
-        "click",
-        "close"
-      ],
-      "browserWriteActions": [
-        "type",
-        "click"
-      ],
+      "confirmationActions": ["type", "click"],
+      "confirmationEffects": ["data_entry", "form_submit"],
+      "browserActions": ["start", "type", "click", "close"],
+      "browserWriteActions": ["type", "click"],
       "browserOperationOrderValid": true,
       "browserOutcomeUrlMatch": true,
       "browserOutcomeTitleMatch": true,

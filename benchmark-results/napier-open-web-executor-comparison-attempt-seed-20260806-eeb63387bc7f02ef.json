@@ -26,13 +26,8 @@
   },
   "status": "report_invalid",
   "diagnosticScope": "retrospective_after_cleanup",
-  "diagnostics": [
-    "report_cases_invalid",
-    "report_summary_invalid"
-  ],
-  "caseDiagnostics": [
-    "cases.unavailable_after_cleanup"
-  ],
+  "diagnostics": ["report_cases_invalid", "report_summary_invalid"],
+  "caseDiagnostics": ["cases.unavailable_after_cleanup"],
   "notes": [
     "This receipt records a comparison attempt that did not produce a valid report.",
     "It retains only configuration, environment bindings, verifier diagnostics, and invalid field paths; no prompts, URLs, answers, quotes, model output, reasoning, transcripts, tool arguments, or credentials are retained.",

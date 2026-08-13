@@ -55,9 +55,7 @@
   "adjacentCitationCount": 3,
   "replayValid": true,
   "credentialLeakDetected": false,
-  "diagnostics": [
-    "citation_evidence_mismatch"
-  ],
+  "diagnostics": ["citation_evidence_mismatch"],
   "evidence": {
     "toolSequence": [
       "web_search:run",

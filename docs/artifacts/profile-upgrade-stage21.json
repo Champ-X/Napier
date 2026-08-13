@@ -1,22 +1,22 @@
 {
   "kind": "napier.profile-upgrade-stage21",
   "schemaVersion": 1,
-  "generatedAt": "2026-08-13T10:07:04.012Z",
+  "generatedAt": "2026-08-13T09:25:53.411Z",
   "implementation": {
-    "contractSha256": "d8f9fb117404534d0d076ae0931fe928e4dfe26de759c587abf35cf2bb1b5231",
-    "upgradeModelSha256": "21014380e73bf74f98913d84c9b38aff6dee58ed7bdbb545482c8558e4e9c34b",
-    "bindingsSha256": "1b9b74d87f3f6917605e2138af51d2558eb83651d8ed0817724e2df273652003",
+    "contractSha256": "95363e197ead8f44323d2cce05f92f2d6ea27993f8b9687a82a9c5e03554ec8a",
+    "upgradeModelSha256": "c66af0ea1f3001844d59693f3d61bbe3faecb7b3defa22484c648ef06991bbb9",
+    "bindingsSha256": "400efa38aa732cbc5c7a24f31e12901f0aac2588048aaf5d4c6e87f10fe3d80d",
     "serviceSha256": "fd93df031de52946ff5ed247816151a9fa177551e5ff5c7d4ab44fe131596d05",
-    "storeMutationSha256": "fc105127426cd79f11bd6d8eb2e08103f5e76ec89d2b313fb70a17db482b816d",
-    "storeSha256": "005ca1edce5ca204c0bd205d6d35b2af7029fe957644a83df5dd4276895f5412",
-    "cliSha256": "c6a8766c2348c81db76d572988154e67d7545b8d378745789aa5f159a2b634d5",
-    "cliOptionsSha256": "c75d9fe9ffd7941ddf4bc706a08d573119d3aaec90e67bb175c87670cf741ea0",
-    "httpSha256": "1379303b70c516baeb0cc8f25d4683d9862a396e1bcb2489ecc25d0cc08941ce",
-    "webApiSha256": "1c9850d9b06d2a70060b1b2f8e3adccb72ecdd3d10cd99652d1c638451c30e0b",
-    "webCardSha256": "f04313a4ef786e3ac59f815e09f66f405ca5ec4b9bed697a66400e8a2447e6ea",
-    "harnessSha256": "3d352415839f3f29cbb5a71fa706e32b9a99b9a29aaf581b18e59861894c4c83",
-    "verifierSha256": "7d0dc1d46bb16d39a4c7342a55aa0ccb573a935bd6c06421da20a0ee95f7f2e9",
-    "checkSha256": "c42d4ff9fe6f48e5b58633229816dfbc12cc305ff8c94a5a417daa2efd10d240"
+    "storeMutationSha256": "32983eacd1ddb3ff7a7e087c9084e3b7c75ec55043c795f56cae27904b38a532",
+    "storeSha256": "b578ac86b2992497495894fb63c54769325cb5810907d7f220d00f1a53309c89",
+    "cliSha256": "309bef43174945edbeeb2230c1b1f470cb0ef445d0169c506bd07264efe5c961",
+    "cliOptionsSha256": "32c879015e350b6eb95f471c68defe0346d280ffa8cd904c3ce0a4a643f61d9b",
+    "httpSha256": "774414d1257736f2b40d2dfad479f1eb60f51edf2dbbffa389f988c60f40ff5a",
+    "webApiSha256": "6ac293dc8e514d25d03503145379a34641e867a343e4640ad0a53214d53927f3",
+    "webCardSha256": "6beafcfb62e96c94b383faa54091b3f9cae8bf349c0a49b1d7ec5dda8a00b61f",
+    "harnessSha256": "3a8ac1d62ad795b5d809c46d652a15991a1f2a08c0065ca3154f83e4f2a93e68",
+    "verifierSha256": "249e6254f6555fd8195e7eebd1f3df27ecce7d0e62d7e6ac5b8d1e3728b9aba5",
+    "checkSha256": "fa2ee85bfb674ee0bc27af7ec1f98395af42bd266d39a2cd4d4de25b0802d9bb"
   },
   "cli": {
     "entry": "built_cli",
@@ -95,5 +95,5 @@
       "Windows host product acceptance"
     ]
   },
-  "contentSha256": "280d59522c676f75c4ebbda7a448f183dbb0456137706c1fdf9a233bf032beb4"
+  "contentSha256": "3e9a6a767720adfeebb2f45be1177a5e0bfd7948eaa91e3bd332eda4de875c7c"
 }

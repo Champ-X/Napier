@@ -71,9 +71,7 @@
         "stderrSha256": "d34a4e4359a4dc36526cf5b363da32f7b7594a3a09eea17cbdfd6425b052d93e",
         "passed": false
       },
-      "diagnostics": [
-        "outcome_test_unavailable"
-      ],
+      "diagnostics": ["outcome_test_unavailable"],
       "contentSha256": "2a1a0b96f16768deedc7fd86359ebc328ef49d0f3d702e7fb3fef14b297c0e5f"
     }
   },

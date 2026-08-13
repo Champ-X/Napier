@@ -73,10 +73,7 @@
           "trials": [
             {
               "trial": 1,
-              "order": [
-                "napier",
-                "omp"
-              ],
+              "order": ["napier", "omp"],
               "napier": {
                 "executor": "napier",
                 "status": "failed",
@@ -98,9 +95,7 @@
                 },
                 "toolFailed": 0,
                 "manualInterventionCount": 0,
-                "diagnostics": [
-                  "answer_mismatch"
-                ],
+                "diagnostics": ["answer_mismatch"],
                 "evidence": {
                   "finalOutputSha256": "3b65f2bef37049bc491478f837ac3464be5e64667ce97cadea6db6241e717f3c",
                   "finalOutputBytes": 212,
@@ -233,10 +228,7 @@
           "trials": [
             {
               "trial": 1,
-              "order": [
-                "omp",
-                "napier"
-              ],
+              "order": ["omp", "napier"],
               "napier": {
                 "executor": "napier",
                 "status": "passed",
@@ -401,10 +393,7 @@
           "trials": [
             {
               "trial": 1,
-              "order": [
-                "omp",
-                "napier"
-              ],
+              "order": ["omp", "napier"],
               "napier": {
                 "executor": "napier",
                 "status": "passed",
@@ -559,10 +548,7 @@
           "trials": [
             {
               "trial": 1,
-              "order": [
-                "napier",
-                "omp"
-              ],
+              "order": ["napier", "omp"],
               "napier": {
                 "executor": "napier",
                 "status": "failed",
@@ -735,10 +721,7 @@
           "trials": [
             {
               "trial": 1,
-              "order": [
-                "napier",
-                "omp"
-              ],
+              "order": ["napier", "omp"],
               "napier": {
                 "executor": "napier",
                 "status": "passed",
@@ -889,10 +872,7 @@
           "trials": [
             {
               "trial": 1,
-              "order": [
-                "omp",
-                "napier"
-              ],
+              "order": ["omp", "napier"],
               "napier": {
                 "executor": "napier",
                 "status": "passed",

@@ -3,10 +3,7 @@
   "schemaVersion": 1,
   "generatedAt": "2026-08-06T02:44:09.688Z",
   "reportCount": 2,
-  "seeds": [
-    20260805,
-    20260808
-  ],
+  "seeds": [20260805, 20260808],
   "trialCount": 1,
   "timeoutMs": 180000,
   "model": {
@@ -28,10 +25,7 @@
     "browserRuntimeBytes": 201473747,
     "outerSandbox": "macos-sandbox-exec-guarded"
   },
-  "tracks": [
-    "default",
-    "controlled"
-  ],
+  "tracks": ["default", "controlled"],
   "reports": [
     {
       "index": 1,

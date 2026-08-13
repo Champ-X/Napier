@@ -22,10 +22,7 @@
     "driver": "docker",
     "buildxVersion": "v0.35.0-desktop.2",
     "buildkitVersion": "v0.30.0",
-    "supportedPlatforms": [
-      "linux/amd64",
-      "linux/arm64"
-    ],
+    "supportedPlatforms": ["linux/amd64", "linux/arm64"],
     "outputType": "oci-layout",
     "externalRegistryPublished": false,
     "identitySha256": "ce882b1d4e66e190c0e4a8400d0327a0657324ab249b56443055642578d608a5"

@@ -40,10 +40,7 @@
     "availabilitySetSha256": "8cfc23e0937e470c2f6ad1883ad964c0ad0c06b3427675432f235ea3325e8fcd",
     "snapshotManifestSha256": "70bbf151f4fc77b37f0552966a20bec6fa24079a54f3129fdebfe3de8154a0db",
     "contentSha256": "a2d9ba8c3a35cc771ac89f45d3ad9c2fafe7459f28d7e67894a9cb23aa1c2536",
-    "loadableSkillNames": [
-      "data-analysis",
-      "research-brief"
-    ],
+    "loadableSkillNames": ["data-analysis", "research-brief"],
     "baseSnapshotResourceMarkerMatches": 0
   },
   "skillLoad": {

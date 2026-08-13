@@ -56,12 +56,12 @@
       "dimension": "long_task",
       "testFile": "apps/cli/test/workflow-benchmark-long-horizon.test.ts",
       "testNameSha256": "928d8d6e118308315e5e1a9ad533079f8861b7d75586e85746110f781644f624",
-      "testFileSha256": "757fde540c62cacce4b3e4f0838f7e73363504231ce9ea70f0059015a006b015",
+      "testFileSha256": "de852e11a6239a9460c2e3270be1a701e3bcc1e0d08641116dd817cc7c22d7b7",
       "argvSha256": "c713bf7078fe4b3a0eb5de4292fafb1f48d6f6811792379584dd56e328a0522d",
       "status": "passed",
       "testFileCount": 1,
       "testCount": 1,
-      "contentSha256": "27beefb98b5e0375ab6c1148ee1563bd61a96f76e505eb9871172402be510720"
+      "contentSha256": "b9da87ecd95db4b3795b4069e96aa70ecabe1f077a72d39f68ce33781e45a856"
     },
     {
       "id": "prompt_user_interrupt_v1",
@@ -112,5 +112,5 @@
       "contentSha256": "7bc01e2ca4ff9ebd503224107ae7bb38e409bf6a06e05a0b4e530ba06df9ff4e"
     }
   ],
-  "contentSha256": "217f81d7f9e6169709c60baba6b5fda203dabb7b4b7d736b3b4aa369014035cc"
+  "contentSha256": "36b5e338015a9847c8df4a0426f7dd2a58bd71ea79152453f12cfe17eaede2c6"
 }

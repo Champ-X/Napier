@@ -52,24 +52,10 @@
     "approvalInputCount": 2,
     "confirmationEventCount": 4,
     "confirmationOrderValid": true,
-    "confirmationActions": [
-      "type",
-      "click"
-    ],
-    "confirmationEffects": [
-      "data_entry",
-      "form_submit"
-    ],
-    "browserActions": [
-      "start",
-      "type",
-      "click",
-      "close"
-    ],
-    "browserWriteActions": [
-      "type",
-      "click"
-    ],
+    "confirmationActions": ["type", "click"],
+    "confirmationEffects": ["data_entry", "form_submit"],
+    "browserActions": ["start", "type", "click", "close"],
+    "browserWriteActions": ["type", "click"],
     "browserOperationOrderValid": true,
     "browserOutcomeUrlMatch": true,
     "browserOutcomeTitleMatch": true,

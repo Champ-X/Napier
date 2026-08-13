@@ -80,13 +80,13 @@
           "x": 252,
           "y": 137,
           "width": 610,
-          "height": 125
+          "height": 185
         },
         "composer": {
           "x": 321,
-          "y": 482,
+          "y": 542,
           "width": 517,
-          "height": 299
+          "height": 239
         },
         "inspector": {
           "x": 862,
@@ -129,13 +129,13 @@
           "x": 232,
           "y": 137,
           "width": 668,
-          "height": 135
+          "height": 194
         },
         "composer": {
           "x": 301,
-          "y": 492,
+          "y": 551,
           "width": 575,
-          "height": 289
+          "height": 230
         },
         "inspector": {
           "x": 470,
