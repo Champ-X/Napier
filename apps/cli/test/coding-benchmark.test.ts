@@ -1,7 +1,9 @@
 import {
   cp,
   mkdtemp,
+  readdir,
   readFile,
+  realpath,
   rm,
   symlink,
   writeFile,
@@ -79,6 +81,7 @@ describe("CLI coding outcome benchmark", () => {
 
   it("scores a real Agent edit and emits self-verifying CAS artifacts", async () => {
     const outputDir = await temporaryOutput();
+    const containerScratch = path.join(outputDir, "container-scratch");
     const provider = fauxProvider({ provider: "faux-coding-benchmark" });
     provider.setResponses([
       fauxAssistantMessage(
@@ -97,15 +100,20 @@ describe("CLI coding outcome benchmark", () => {
       fauxAssistantMessage("Fixed the free-shipping boundary."),
       fauxAssistantMessage('{"facts":[]}'),
     ]);
+    const runtimeWorkspaceRoots: string[] = [];
 
     const artifacts = await runCodingBenchmark(
       {
         caseRoot: CASE_ROOT,
         outputDir,
         model: { provider: "faux-coding-benchmark", id: "faux-1" },
-        env: {},
+        env: {
+          NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR: containerScratch,
+        },
       },
-      providerDependencies(provider),
+      providerDependencies(provider, async (options) => {
+        runtimeWorkspaceRoots.push(await realpath(options.workspaceRoot));
+      }),
     );
 
     expect(artifacts.result).toEqual(
@@ -160,6 +168,14 @@ describe("CLI coding outcome benchmark", () => {
     expect(bundleText).not.toContain("Fixed the free-shipping boundary");
     expect(bundleText).not.toContain("shippingCostCents");
     expect(bundleText).not.toContain("src/shipping.js");
+    const canonicalScratch = await realpath(containerScratch);
+    expect(runtimeWorkspaceRoots.length).toBeGreaterThan(0);
+    expect(
+      runtimeWorkspaceRoots.every((root) =>
+        root.startsWith(`${canonicalScratch}${path.sep}`),
+      ),
+    ).toBe(true);
+    expect(await readdir(containerScratch)).toEqual([]);
   });
 
   it("marks a correct edit inconclusive when the outcome Sandbox is unavailable", async () => {
@@ -424,7 +440,7 @@ describe("CLI coding outcome benchmark", () => {
 
 function providerDependencies(
   provider: ReturnType<typeof fauxProvider>,
-  beforeCreate?: () => Promise<void>,
+  beforeCreate?: (options: LocalAgentRuntimeOptions) => Promise<void>,
 ): CodingBenchmarkDependencies {
   return {
     now: () => new Date("2026-07-30T00:00:00.000Z"),
@@ -456,7 +472,7 @@ function providerDependencies(
       };
     },
     async createRuntime(options: LocalAgentRuntimeOptions) {
-      await beforeCreate?.();
+      await beforeCreate?.(options);
       const services = await createLocalAgentRuntime({
         ...options,
         sandbox: new UnsupportedSandboxAdapter("coding-benchmark-test"),

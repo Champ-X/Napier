@@ -122,10 +122,15 @@ describeLive("live DeepSeek coding outcome benchmark", () => {
 
 function liveEnvironment(apiKey: string): Record<string, string> {
   const containerImage = process.env["NAPIER_CONTAINER_SANDBOX_IMAGE"]?.trim();
+  const containerScratch =
+    process.env["NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR"]?.trim();
   return {
     DEEPSEEK_API_KEY: apiKey,
     ...(containerImage
       ? { NAPIER_CONTAINER_SANDBOX_IMAGE: containerImage }
+      : {}),
+    ...(containerScratch
+      ? { NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR: containerScratch }
       : {}),
   };
 }

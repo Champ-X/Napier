@@ -75,6 +75,7 @@ const DEFAULT_DEPENDENCIES: CodingBenchmarkDependencies = {
   now: () => new Date(),
   runOutcomeTest: runCodingBenchmarkOutcomeTest,
 };
+const CONTAINER_SCRATCH_DIR_ENV = "NAPIER_CONTAINER_SANDBOX_SCRATCH_DIR";
 
 export async function runCodingBenchmark(
   options: RunCodingBenchmarkOptions,
@@ -92,8 +93,14 @@ export async function runCodingBenchmark(
     );
   }
   validateCodingBenchmarkCredential(options);
+  const configuredScratchRoot = options.env[CONTAINER_SCRATCH_DIR_ENV]?.trim();
+  const temporaryBase =
+    configuredScratchRoot && path.isAbsolute(configuredScratchRoot)
+      ? configuredScratchRoot
+      : tmpdir();
+  await mkdir(temporaryBase, { recursive: true });
   const temporaryRoot = await mkdtemp(
-    path.join(tmpdir(), "napier-coding-benchmark-"),
+    path.join(temporaryBase, "napier-coding-benchmark-"),
   );
   const workspaceRoot = path.join(temporaryRoot, "workspace");
   const dataRoot = path.join(temporaryRoot, "state");
