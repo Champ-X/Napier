@@ -34,8 +34,7 @@ export function ConversationArtifactCard({
     item.artifact.kind === "file" &&
     (item.artifact.status === "produced" ||
       item.artifact.status === "verified");
-  const Icon =
-    item.artifact.status === "verified" ? FileCheck2 : FileWarning;
+  const Icon = item.artifact.status === "verified" ? FileCheck2 : FileWarning;
 
   const openPreview = async () => {
     if (!available || busy) return;
@@ -43,11 +42,7 @@ export function ConversationArtifactCard({
     setError(undefined);
     try {
       setPreview(
-        await previewArtifact(
-          threadId,
-          item.planId,
-          item.artifact.id,
-        ),
+        await previewArtifact(threadId, item.planId, item.artifact.id),
       );
       await onLedgerChanged();
     } catch (reason) {
@@ -80,6 +75,7 @@ export function ConversationArtifactCard({
     <article
       id={conversationArtifactTargetId(item)}
       className={`conversation-artifact status-${item.artifact.status}`}
+      data-artifact-path={item.artifact.path}
       tabIndex={-1}
     >
       <header>
@@ -134,7 +130,8 @@ export function ConversationArtifactCard({
         >
           <header>
             <span>
-              {preview.lineCount} lines · {formatArtifactSizeBytes(preview.sizeBytes)}
+              {preview.lineCount} lines ·{" "}
+              {formatArtifactSizeBytes(preview.sizeBytes)}
             </span>
             <button
               type="button"

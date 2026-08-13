@@ -1,4 +1,5 @@
-import type { RunEvent, ThreadDetail } from "@napier/contracts";
+import type { ThreadDetail } from "@napier/contracts";
+import { taskRunProgress } from "./task-run-progress";
 
 export type TaskNarrativePhase =
   | "ready"
@@ -19,33 +20,44 @@ export interface TaskNarrative {
 }
 
 export function taskNarrative(
-  detail: Pick<
-    ThreadDetail,
-    | "thread"
-    | "runs"
-    | "plans"
-    | "events"
-    | "operatorDecisions"
-    | "automaticRecoveryAssessments"
-    | "automaticRecoveryAttempts"
-  > | undefined,
+  detail:
+    | Pick<
+        ThreadDetail,
+        | "thread"
+        | "runs"
+        | "plans"
+        | "events"
+        | "operatorDecisions"
+        | "automaticRecoveryAssessments"
+        | "automaticRecoveryAttempts"
+      >
+    | undefined,
   now = Date.now(),
 ): TaskNarrative {
-  if (!detail) return baseNarrative("ready", "Ready", "Choose or create a ledger");
+  if (!detail)
+    return baseNarrative("ready", "Ready", "Choose or create a ledger");
   const openDecision = detail.operatorDecisions.findLast(
-    (decision) => decision.status === "pending" || decision.status === "answered",
+    (decision) =>
+      decision.status === "pending" || decision.status === "answered",
   );
   const plan = detail.plans.findLast(
-    (candidate) => candidate.status === "active" || candidate.status === "blocked",
+    (candidate) =>
+      candidate.status === "active" || candidate.status === "blocked",
   );
   const runningStep = plan?.steps.find((step) => step.status === "running");
   const blockedStep = plan?.steps.find((step) => step.status === "blocked");
   const nextStep = plan?.steps.find((step) => step.status === "ready");
-  const completedItems =
+  const planCompletedItems =
     plan?.steps
       .filter((step) => step.status === "completed")
       .slice(-3)
       .map((step) => step.title) ?? [];
+  const narrativeRunId = detail.thread.currentRunId ?? detail.runs.at(-1)?.id;
+  const runProgress = taskRunProgress(detail.events, narrativeRunId);
+  const completedItems = completedNarrativeItems(
+    planCompletedItems,
+    runProgress.completedItems,
+  );
   if (openDecision)
     return operatorDecisionNarrative(
       detail.runs,
@@ -54,7 +66,12 @@ export function taskNarrative(
       nextStep?.title,
       now,
     );
-  const recovery = recoveryNarrative(detail, completedItems, now);
+  const recovery = recoveryNarrative(
+    detail,
+    completedItems,
+    planCompletedItems.length > 0,
+    now,
+  );
   if (recovery) return recovery;
   if (blockedStep || detail.thread.status === "failed") {
     const failedRun = detail.runs.findLast((run) => run.status === "failed");
@@ -64,7 +81,8 @@ export function taskNarrative(
       "The latest run needs review.";
     return {
       phase: detail.thread.status === "failed" ? "failed" : "blocked",
-      phaseLabel: detail.thread.status === "failed" ? "Needs review" : "Blocked",
+      phaseLabel:
+        detail.thread.status === "failed" ? "Needs review" : "Blocked",
       currentAction: blockedStep?.title ?? "Review the failed run",
       completedItems,
       ...(failedRun ? { metrics: runMetrics(failedRun, now) } : {}),
@@ -74,8 +92,7 @@ export function taskNarrative(
   }
 
   const running = detail.runs.find(
-    (run) =>
-      run.id === detail.thread.currentRunId && run.status === "running",
+    (run) => run.id === detail.thread.currentRunId && run.status === "running",
   );
   if (running) {
     return {
@@ -83,7 +100,7 @@ export function taskNarrative(
       phaseLabel: "Working",
       currentAction:
         runningStep?.title ??
-        latestToolAction(detail.events, running.id) ??
+        runProgress.currentAction ??
         "Model is preparing the next action",
       completedItems,
       metrics: runMetrics(running, now),
@@ -116,7 +133,9 @@ export function taskNarrative(
   return baseNarrative(
     "ready",
     "Ready",
-    nextStep ? `Ready to start: ${nextStep.title}` : "Describe the task to begin",
+    nextStep
+      ? `Ready to start: ${nextStep.title}`
+      : "Describe the task to begin",
   );
 }
 
@@ -146,8 +165,10 @@ function recoveryNarrative(
     | "runs"
     | "automaticRecoveryAssessments"
     | "automaticRecoveryAttempts"
+    | "events"
   >,
   completedItems: string[],
+  planItemsAreAuthoritative: boolean,
   now: number,
 ): TaskNarrative | undefined {
   const interrupted = detail.runs.findLast(
@@ -159,10 +180,15 @@ function recoveryNarrative(
   );
   const attempt = assessment
     ? detail.automaticRecoveryAttempts.findLast(
-        (candidate) =>
-          candidate.assessmentSha256 === assessment.contentSha256,
+        (candidate) => candidate.assessmentSha256 === assessment.contentSha256,
       )
     : undefined;
+  const recoveredItems = planItemsAreAuthoritative
+    ? completedItems
+    : mergeCompletedItems(
+        taskRunProgress(detail.events, interrupted.id).completedItems,
+        completedItems,
+      );
   const latestRunId = detail.runs.at(-1)?.id;
   if (
     attempt?.recoveryRunId
@@ -176,7 +202,7 @@ function recoveryNarrative(
       phase: "waiting",
       phaseLabel: "Recovering",
       currentAction: "Assessing the interrupted run",
-      completedItems,
+      completedItems: recoveredItems,
       metrics: runMetrics(interrupted, now),
       blocker: "Recovery safety evidence is being evaluated.",
     };
@@ -186,7 +212,7 @@ function recoveryNarrative(
       phase: "blocked",
       phaseLabel: "Recovery blocked",
       currentAction: "Automatic recovery stopped safely",
-      completedItems,
+      completedItems: recoveredItems,
       metrics: runMetrics(interrupted, now),
       blocker: `${assessment.blockReasons.length} safety condition${
         assessment.blockReasons.length === 1 ? "" : "s"
@@ -199,7 +225,7 @@ function recoveryNarrative(
       phase: "waiting",
       phaseLabel: "Recovering",
       currentAction: "Waiting for a recovery claim",
-      completedItems,
+      completedItems: recoveredItems,
       metrics: runMetrics(interrupted, now),
       blocker: "The verified retry is waiting for its recovery worker.",
     };
@@ -215,7 +241,7 @@ function recoveryNarrative(
         attempt.status === "claimed"
           ? "Claiming the interrupted run"
           : "Restoring from verified read-only evidence",
-      completedItems,
+      completedItems: recoveredItems,
       metrics: runMetrics(recoveryRun ?? interrupted, now),
       nextStep: `Attempt ${attempt.attempt}/${attempt.maxAttempts} is in progress.`,
     };
@@ -228,7 +254,7 @@ function recoveryNarrative(
       phase: "completed",
       phaseLabel: "Recovered",
       currentAction: "Interrupted work recovered",
-      completedItems,
+      completedItems: recoveredItems,
       metrics: runMetrics(recoveryRun ?? interrupted, now),
       nextStep: "Inspect the recovered output or start a follow-up task.",
     };
@@ -241,42 +267,13 @@ function recoveryNarrative(
       phase: "failed",
       phaseLabel: "Recovery failed",
       currentAction: "Review the recovery attempt",
-      completedItems,
+      completedItems: recoveredItems,
       metrics: runMetrics(interrupted, now),
       blocker: `Attempt ${attempt.attempt}/${attempt.maxAttempts} ${attempt.status}.`,
       nextStep: "Review the Retry card or resume manually.",
     };
   }
   return undefined;
-}
-
-function latestToolAction(
-  events: RunEvent[],
-  runId: string,
-): string | undefined {
-  const event = events.findLast(
-    (candidate) =>
-      candidate.runId === runId &&
-      candidate.type === "tool.started" &&
-      candidate.visibility !== "hidden" &&
-      !hasToolTerminal(events, candidate),
-  );
-  const toolName = event ? payloadString(event.payload, "toolName") : undefined;
-  return toolName ? `Running ${humanize(toolName)}` : undefined;
-}
-
-function hasToolTerminal(events: RunEvent[], start: RunEvent): boolean {
-  const callId = payloadString(start.payload, "callId");
-  if (!callId) return true;
-  return events.some(
-    (event) =>
-      event.runId === start.runId &&
-      event.seq > start.seq &&
-      (event.type === "tool.completed" ||
-        event.type === "tool.failed" ||
-        event.type === "tool.blocked") &&
-      payloadString(event.payload, "callId") === callId,
-  );
 }
 
 function baseNarrative(
@@ -287,20 +284,18 @@ function baseNarrative(
   return { phase, phaseLabel, currentAction, completedItems: [] };
 }
 
-function payloadString(value: unknown, key: string): string | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") return undefined;
-  const entry = (value as Record<string, unknown>)[key];
-  return typeof entry === "string" ? entry : undefined;
+function mergeCompletedItems(...sets: string[][]): string[] {
+  return [...new Set(sets.flat())].slice(-3);
 }
 
-function humanize(value: string): string {
-  return value.replaceAll("_", " ");
+function completedNarrativeItems(
+  planItems: string[],
+  runItems: string[],
+): string[] {
+  return planItems.length > 0 ? planItems : runItems;
 }
 
-function runMetrics(
-  run: ThreadDetail["runs"][number],
-  now: number,
-): string {
+function runMetrics(run: ThreadDetail["runs"][number], now: number): string {
   const finishedAt = run.finishedAt ? Date.parse(run.finishedAt) : now;
   const elapsedMs = Math.max(0, finishedAt - Date.parse(run.startedAt));
   const tokens = run.usage.inputTokens + run.usage.outputTokens;

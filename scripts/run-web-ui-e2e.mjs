@@ -22,6 +22,8 @@ import {
   openWebUiPage,
   readWebUiNarrative,
   refreshPreservesWebUiNarrative,
+  verifyWebUiArtifactNavigation,
+  verifyWebUiLongRunNarrative,
   verifyWebUiRecoveryNarrative,
   verifyWebUiServerRestart,
 } from "./web-ui-e2e-narrative.mjs";
@@ -30,6 +32,7 @@ import {
   verifyWebUiLayoutBaseline,
   writeWebUiLayoutBaseline,
 } from "./web-ui-layout-baseline.mjs";
+import { verifyBrowserInspector } from "./web-ui-e2e-browser-task.mjs";
 
 const options = parseArguments(process.argv.slice(2));
 const temporaryRoot = await createWebUiE2eRoot();
@@ -66,6 +69,18 @@ try {
     browserRuntime.browser,
     serverRuntime.origin,
     receipt.fixture.recovery,
+  );
+  debug("long-run");
+  receipt.longRun = await verifyWebUiLongRunNarrative(
+    browserRuntime.browser,
+    serverRuntime.origin,
+    receipt.fixture.longRun,
+  );
+  debug("artifact-navigation");
+  receipt.artifactNavigation = await verifyWebUiArtifactNavigation(
+    browserRuntime.browser,
+    serverRuntime.origin,
+    receipt.fixture.artifactNavigation,
   );
   debug("reconnect");
   receipt.reconnect = await verifyWebUiServerRestart(
@@ -139,15 +154,13 @@ async function inspectViewport(browser, origin, viewport, expectedNarrative) {
     });
     await page.waitForFunction(
       () => {
-        const composer = document.querySelector(
-          ".agent-capability-composer",
-        );
+        const composer = document.querySelector(".agent-capability-composer");
         return (
           composer &&
           !composer.classList.contains("state-loading") &&
-          document.querySelector(".composer")?.getAttribute(
-            "data-run-readiness",
-          ) !== "checking" &&
+          document
+            .querySelector(".composer")
+            ?.getAttribute("data-run-readiness") !== "checking" &&
           ![...document.querySelectorAll(".composer-readiness-item")].some(
             (item) => item.textContent?.includes("Checking"),
           )
@@ -266,45 +279,6 @@ async function verifyKeyboardNavigation(page) {
     groupNavigationPassed: true,
     toolNavigationPassed: true,
   };
-}
-
-async function verifyBrowserInspector(page) {
-  await page.locator("#inspector-group-inspect").click();
-  await page.locator("#inspector-tab-browser").click();
-  await page
-    .locator("#browser-inspector-title")
-    .waitFor({ state: "visible", timeout: 10_000 });
-  const receipt = await page.evaluate(() => ({
-    tabSelected:
-      document
-        .getElementById("inspector-tab-browser")
-        ?.getAttribute("aria-selected") === "true",
-    panelLabelledBy:
-      document
-        .getElementById("inspector-active-panel")
-        ?.getAttribute("aria-labelledby") ?? "",
-    title:
-      document.getElementById("browser-inspector-title")?.textContent?.trim() ??
-      "",
-    actionDisabled:
-      document.querySelector(".browser-inspector-card button") instanceof
-      HTMLButtonElement
-        ? document.querySelector(".browser-inspector-card button").disabled
-        : false,
-    layoutRect: (() => {
-      const element = document.querySelector(".browser-inspector-card");
-      if (!(element instanceof HTMLElement)) return null;
-      const value = element.getBoundingClientRect();
-      return {
-        x: Math.round(value.x),
-        y: Math.round(value.y),
-        width: Math.round(value.width),
-        height: Math.round(value.height),
-      };
-    })(),
-  }));
-  await page.locator("#inspector-group-activity").click();
-  return receipt;
 }
 
 async function selected(page, id) {
@@ -458,6 +432,8 @@ function createReceipt() {
     browser: {},
     viewports: [],
     recovery: {},
+    longRun: {},
+    artifactNavigation: {},
     reconnect: {},
     cleanup: {
       browserClosed: false,

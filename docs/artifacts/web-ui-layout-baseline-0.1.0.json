@@ -67,26 +67,26 @@
         "header": {
           "x": 252,
           "y": 0,
-          "width": 616,
+          "width": 610,
           "height": 76
         },
         "narrative": {
           "x": 252,
           "y": 76,
-          "width": 616,
+          "width": 610,
           "height": 62
         },
         "conversation": {
           "x": 252,
           "y": 138,
-          "width": 616,
-          "height": 115
+          "width": 610,
+          "height": 175
         },
         "composer": {
           "x": 321,
-          "y": 473,
-          "width": 523,
-          "height": 308
+          "y": 533,
+          "width": 517,
+          "height": 248
         },
         "inspector": {
           "x": 862,
@@ -129,13 +129,13 @@
           "x": 232,
           "y": 138,
           "width": 668,
-          "height": 125
+          "height": 184
         },
         "composer": {
           "x": 301,
-          "y": 483,
+          "y": 542,
           "width": 575,
-          "height": 298
+          "height": 239
         },
         "inspector": {
           "x": 470,

@@ -5,10 +5,7 @@ import type { AgentProfile } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 
 import { agentCapabilityBadgeText } from "./agent-capability-view-model";
-import {
-  agentCapabilityComposerSummary,
-  focusCapabilityContract,
-} from "./agent-capability-composer-summary";
+import { focusCapabilityContract } from "./agent-capability-composer-summary";
 import {
   composerModeDependency,
   composerModeNeedsSandboxSetup,
@@ -44,7 +41,6 @@ export function ComposerCapabilityControl({
     agent?.revision,
     selectedPreset,
   );
-  const summary = agentCapabilityComposerSummary(projection, loading, error);
   const modes = composerModes(agent, selectedPreset);
   const activeMode = modes.find((mode) => mode.active);
   const activeDependency = activeMode
@@ -168,18 +164,10 @@ export function ComposerCapabilityControl({
               ? agentCapabilityBadgeText(agent)
               : "Read only"}
         </span>
-        <span className="agent-capability-composer-contract">
-          {summary.contract}
-        </span>
-        {projection ? (
-          <span className="agent-capability-composer-readiness">
-            {summary.readiness}
-          </span>
-        ) : null}
         <button
           type="button"
           aria-label={
-            selectedPreset ? "Use Agent default" : "Edit Agent default"
+            selectedPreset ? "Use Agent default" : "Review Agent settings"
           }
           onClick={() => {
             if (selectedPreset) {
@@ -190,7 +178,7 @@ export function ComposerCapabilityControl({
             }
           }}
         >
-          {selectedPreset ? "Use default" : "Edit default"}
+          {selectedPreset ? "Use default" : "Agent settings"}
           <ArrowRight size={11} aria-hidden="true" />
         </button>
       </div>

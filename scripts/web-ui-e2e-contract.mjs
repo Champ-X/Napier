@@ -21,6 +21,16 @@ export const WEB_UI_NARRATIVE_EXPECTATION = Object.freeze({
   nextStep: "Approve final delivery",
   artifactPath: "artifacts/research-brief.md",
 });
+export const WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION = Object.freeze({
+  title: "Synthesize long-running evidence",
+  phase: "Settled",
+  currentAction: "Latest run completed",
+  completedItem:
+    "Read 12 files · Searched the web 5 times · Completed 3 browser steps",
+  blocker: "",
+  nextStep: "Start a follow-up task or inspect the evidence.",
+  artifactPath: "",
+});
 
 export function assertWebUiE2eReceipt(receipt) {
   assert.equal(receipt?.schemaVersion, 1);
@@ -82,9 +92,61 @@ export function assertWebUiE2eReceipt(receipt) {
   );
   assert.equal(receipt?.recovery?.selectedThreadPreserved, true);
   assert.equal(receipt?.recovery?.refreshPreserved, true);
+  assert.deepEqual(
+    {
+      title: receipt.longRun.title,
+      phase: receipt.longRun.phase,
+      currentAction: receipt.longRun.currentAction,
+      completedItem: receipt.longRun.completedItem,
+      blocker: receipt.longRun.blocker,
+      nextStep: receipt.longRun.nextStep,
+      artifactPath: receipt.longRun.artifactPath,
+    },
+    WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
+  );
+  assert.equal(
+    receipt?.longRun?.metrics.includes("21,200 / 250,000 tokens"),
+    true,
+  );
+  assert.equal(receipt?.longRun?.metrics.includes("$0.3100"), true);
+  assert.equal(receipt?.longRun?.artifactControlVisible, false);
+  assert.equal(receipt?.longRun?.refreshPreserved, true);
+  assert.deepEqual(receipt?.longRun?.activityAggregation?.summaries, [
+    "Read file · 12 calls",
+    "Web search · 5 searches",
+    "Action · 3 steps",
+  ]);
+  assert.equal(
+    receipt?.longRun?.activityAggregation?.collapsedMountedChildren,
+    0,
+  );
+  assert.equal(
+    receipt?.longRun?.activityAggregation?.expandedMountedChildren,
+    12,
+  );
+  assert.equal(receipt?.artifactNavigation?.outputCount, 2);
+  assert.deepEqual(
+    receipt?.artifactNavigation?.previews?.map(({ path, focused }) => ({
+      path,
+      focused,
+    })),
+    [
+      { path: "artifacts/output-report.md", focused: true },
+      { path: "artifacts/source-notes.md", focused: true },
+    ],
+  );
+  assert.match(
+    receipt?.artifactNavigation?.previews?.[0]?.preview ?? "",
+    /Output report.*Verified delivery/su,
+  );
+  assert.match(
+    receipt?.artifactNavigation?.previews?.[1]?.preview ?? "",
+    /Source notes.*Evidence index/su,
+  );
   assert.equal(receipt?.reconnect?.disconnected, true);
   assert.equal(receipt?.reconnect?.samePort, true);
   assert.equal(receipt?.reconnect?.narrativePreserved, true);
+  assert.equal(receipt?.reconnect?.browserTaskHistoryPreserved, true);
   assert.equal(receipt?.reconnect?.restartStartupDurationMs >= 0, true);
   assert.equal(receipt?.reconnect?.runtime, undefined);
   assert.equal(receipt?.cleanup?.browserClosed, true);
@@ -145,6 +207,77 @@ export function assertViewportReceipt(viewport) {
     true,
     JSON.stringify(viewport.browserInspector),
   );
+  assert.equal(viewport.browserInspector.selectedBackend, "browser_use_cloud");
+  assert.match(
+    viewport.browserInspector.localDisclosure,
+    /separate visible browser with a fresh local profile.*Downloads, uploads, typing, secrets, purchases, publishing, deletion.*disabled/su,
+  );
+  assert.match(
+    viewport.browserInspector.localDisclosure,
+    /Pause freezes only the agent process.*Take over leaves the browser interactive.*CAPTCHA enters takeover automatically.*Stop closes the task browser and its process group/su,
+  );
+  assert.match(
+    viewport.browserInspector.cloudDisclosure,
+    /Browser Use receives the task, start URL, allowed domains, page data/u,
+  );
+  assert.match(
+    viewport.browserInspector.cloudDisclosure,
+    /Provider-plan retention applies; zero retention is not assumed/u,
+  );
+  assert.match(
+    viewport.browserInspector.cloudDisclosure,
+    /usage can cross the ceiling between polls/u,
+  );
+  assert.match(
+    viewport.browserInspector.cloudDisclosure,
+    /Stop tears down the one-off task and session.*Pause and Take over are unavailable/su,
+  );
+  assert.equal(viewport.browserInspector.consentRequired, true);
+  assert.equal(viewport.browserInspector.consentChecked, false);
+  assert.equal(viewport.browserInspector.provider, "browser-use");
+  assert.equal(viewport.browserInspector.modelId, "browser-use-2.0");
+  assert.equal(viewport.browserInspector.credentialEnv, "BROWSER_USE_API_KEY");
+  assert.equal(viewport.browserInspector.maxCostUsd, "1");
+  assert.equal(
+    viewport.browserInspector.localProductDefault.provider,
+    "openai",
+  );
+  assert.equal(
+    viewport.browserInspector.localProductDefault.modelId.length > 0,
+    true,
+  );
+  assert.equal(viewport.browserInspector.localProductDefault.credentialEnv, "");
+  assert.match(
+    viewport.browserInspector.localProductDefault.credentialBinding,
+    /Active credential.*E2E OpenAI reference.*secret stays server-side/iu,
+  );
+  assert.equal(viewport.browserInspector.retryRecovery.actionVisible, true);
+  assert.equal(viewport.browserInspector.retryRecovery.settingsPreserved, true);
+  assert.match(
+    viewport.browserInspector.retryRecovery.recovery,
+    /browser process exited.*Retry the task with the same settings/iu,
+  );
+  assert.match(
+    viewport.browserInspector.restoredHistory.status,
+    /restored history · terminal/iu,
+  );
+  assert.equal(viewport.browserInspector.restoredHistory.retryVisible, true);
+  assert.match(
+    viewport.browserInspector.restoredHistory.steps,
+    /Step 1.*extract_content.*example\.com/su,
+  );
+  assert.match(
+    viewport.browserInspector.restoredHistory.recovery,
+    /stopped when the Napier server restarted.*Retry the same task/iu,
+  );
+  assert.match(
+    viewport.browserInspector.credentialRecovery,
+    /selected browser task credential is missing.*Set BROWSER_USE_API_KEY in the server environment/iu,
+  );
+  assert.equal(
+    viewport.browserInspector.credentialRecoveryCode,
+    "credential_missing",
+  );
   assert.deepEqual(
     {
       title: viewport.narrative.title,
@@ -159,6 +292,7 @@ export function assertViewportReceipt(viewport) {
   );
   assert.equal(viewport.narrative.metrics.includes("tokens"), true);
   assert.equal(viewport.narrative.metrics.includes("$0.0420"), true);
+  assert.equal(viewport.narrative.artifactControlVisible, true);
   assert.equal(viewport.console.errorCount, 0);
   assert.match(viewport.screenshot.sha256, SHA256);
   assert.equal(viewport.screenshot.bytes > 0, true);

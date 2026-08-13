@@ -8,6 +8,7 @@ import {
   assertWebUiE2eReceipt,
   INSPECTOR_GROUP_LABELS,
   WEB_UI_E2E_KIND,
+  WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
   WEB_UI_NARRATIVE_EXPECTATION,
   WEB_UI_E2E_VIEWPORTS,
 } from "./web-ui-e2e-contract.mjs";
@@ -131,10 +132,45 @@ function validReceipt() {
         title: "Browser",
         actionDisabled: true,
         layoutRect: { x: 0, y: 0, width: 100, height: 50 },
+        selectedBackend: "browser_use_cloud",
+        localDisclosure:
+          "A separate visible browser with a fresh local profile. Downloads, uploads, typing, secrets, purchases, publishing, deletion are disabled. Pause freezes only the agent process. Take over leaves the browser interactive. CAPTCHA enters takeover automatically. Stop closes the task browser and its process group.",
+        cloudDisclosure:
+          "Browser Use receives the task, start URL, allowed domains, page data. Provider-plan retention applies; zero retention is not assumed; usage can cross the ceiling between polls. Stop tears down the one-off task and session. Pause and Take over are unavailable.",
+        consentRequired: true,
+        consentChecked: false,
+        provider: "browser-use",
+        modelId: "browser-use-2.0",
+        credentialEnv: "BROWSER_USE_API_KEY",
+        maxCostUsd: "1",
+        localProductDefault: {
+          provider: "openai",
+          modelId: "gpt-4.1",
+          credentialEnv: "",
+          credentialBinding:
+            "Active credential · E2E OpenAI reference · available. The secret stays server-side.",
+        },
+        retryRecovery: {
+          actionVisible: true,
+          settingsPreserved: true,
+          recovery:
+            "The browser process exited. Retry the task with the same settings.",
+        },
+        restoredHistory: {
+          status: "browser_use_local · restored history · terminal",
+          retryVisible: true,
+          steps: "Step 1 extract_content https://example.com/",
+          recovery:
+            "Browser task stopped when the Napier server restarted. Retry the same task to start a fresh browser session.",
+        },
+        credentialRecovery:
+          "The selected browser task credential is missing. Set BROWSER_USE_API_KEY in the server environment.",
+        credentialRecoveryCode: "credential_missing",
       },
       narrative: {
         ...WEB_UI_NARRATIVE_EXPECTATION,
         metrics: "1s / 15m 0s · 1,680 / 250,000 tokens · $0.0420 / $10.00",
+        artifactControlVisible: true,
         refreshPreserved: viewport.width === 1_600,
       },
       console: { errorCount: 0 },
@@ -153,10 +189,41 @@ function validReceipt() {
       selectedThreadPreserved: true,
       refreshPreserved: true,
     },
+    longRun: {
+      ...WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
+      metrics: "30m 0s / 45m 0s · 21,200 / 250,000 tokens · $0.3100 / $10.00",
+      artifactControlVisible: false,
+      refreshPreserved: true,
+      activityAggregation: {
+        summaries: [
+          "Read file · 12 calls",
+          "Web search · 5 searches",
+          "Action · 3 steps",
+        ],
+        collapsedMountedChildren: 0,
+        expandedMountedChildren: 12,
+      },
+    },
+    artifactNavigation: {
+      outputCount: 2,
+      previews: [
+        {
+          path: "artifacts/output-report.md",
+          focused: true,
+          preview: "# Output report\nVerified delivery.\n",
+        },
+        {
+          path: "artifacts/source-notes.md",
+          focused: true,
+          preview: "# Source notes\nEvidence index.\n",
+        },
+      ],
+    },
     reconnect: {
       disconnected: true,
       samePort: true,
       narrativePreserved: true,
+      browserTaskHistoryPreserved: true,
       restartStartupDurationMs: 3,
     },
     cleanup: {

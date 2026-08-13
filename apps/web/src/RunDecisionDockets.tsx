@@ -78,3 +78,5 @@ export function RunDecisionDockets({
     </div>
   );
 }
+
+export default RunDecisionDockets;

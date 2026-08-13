@@ -33,5 +33,33 @@ describe("Workbench layout", () => {
     expect(source).toContain("{narrative.blocker ? (");
     expect(source).toContain("{narrative.nextStep ? (");
     expect(source).not.toContain(") : narrative.nextStep ? (");
+    expect(source).toContain('aria-label="Task controls"');
+    expect(source).toContain("Browser controls");
+    expect(source).toContain("onClick={onStop}");
+  });
+
+  it("opens produced outputs through the responsive Files inspector", async () => {
+    const [app, navigation, summary, inspector] = await Promise.all([
+      readFile(new URL("../src/App.tsx", import.meta.url), "utf8"),
+      readFile(
+        new URL("../src/use-task-control-navigation.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../src/TaskCompletionSummary.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../src/ResponsiveInspector.tsx", import.meta.url),
+        "utf8",
+      ),
+    ]);
+
+    expect(summary).toContain("onClick={() => onOpenArtifact(path)}");
+    expect(navigation).toContain('candidate.dataset["artifactPath"] === path');
+    expect(navigation).toContain('openInspector("plan")');
+    expect(app).toContain("onOpenArtifact={taskControls.openArtifact}");
+    expect(app).toContain("openRequest={taskControls.inspectorOpenRequest}");
+    expect(inspector).toContain("if (openRequest > 0) setOpen(true)");
   });
 });

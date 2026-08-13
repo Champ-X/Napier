@@ -757,7 +757,9 @@ button:disabled {
 .task-narrative {
   grid-area: narrative;
   display: grid;
-  grid-template-columns: minmax(180px, 1.3fr) repeat(3, minmax(110px, 1fr));
+  grid-template-columns:
+    minmax(180px, 1.3fr) repeat(3, minmax(110px, 1fr))
+    auto;
   gap: 1px;
   padding: 0 24px 0 72px;
   background: var(--rule);
@@ -806,15 +808,69 @@ button:disabled {
   white-space: nowrap;
 }
 
-.task-narrative-completed small {
-  display: block;
+.task-narrative-completed nav {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.task-narrative-completed button {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px;
   margin-top: 3px;
+  padding: 0;
   overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--ledger);
+  cursor: pointer;
   font-family: var(--mono);
   font-size: 8px;
-  color: var(--ledger);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.task-narrative-completed button:hover,
+.task-narrative-completed button:focus-visible {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.task-narrative-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.task-narrative-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: transparent;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.task-narrative-actions button:hover,
+.task-narrative-actions button:focus-visible {
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+
+.task-narrative-actions .is-stop {
+  border-color: rgb(169 69 48 / 35%);
+  color: var(--vermilion);
 }
 
 .task-narrative.phase-working .task-narrative-current > span {
@@ -872,6 +928,7 @@ button:disabled {
 .browser-inspector-card button {
   max-width: 100%;
   min-height: 44px;
+  min-width: 44px;
   grid-column: 2;
   justify-self: start;
 }

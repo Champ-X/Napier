@@ -1,11 +1,15 @@
+import { FolderOpen } from "lucide-react";
+
 import type { ExecutionPlan } from "@napier/contracts";
 
 export default function TaskCompletionSummary({
   completedItems,
   plans,
+  onOpenArtifact,
 }: {
   completedItems: string[];
   plans: ExecutionPlan[];
+  onOpenArtifact(path: string): void;
 }) {
   const paths = taskArtifactPaths(plans);
   if (completedItems.length === 0 && paths.length === 0) return null;
@@ -13,7 +17,21 @@ export default function TaskCompletionSummary({
     <div className="task-narrative-completed">
       <span>Completed</span>
       {completedItems.length > 0 ? <p>{completedItems.join(" · ")}</p> : null}
-      {paths.length > 0 ? <small>Outputs · {paths.join(" · ")}</small> : null}
+      {paths.length > 0 ? (
+        <nav aria-label="Task outputs">
+          {paths.map((path) => (
+            <button
+              key={path}
+              type="button"
+              title={`Open ${path}`}
+              onClick={() => onOpenArtifact(path)}
+            >
+              <FolderOpen size={9} aria-hidden="true" />
+              Outputs · {path}
+            </button>
+          ))}
+        </nav>
+      ) : null}
     </div>
   );
 }

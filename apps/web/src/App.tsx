@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
 
-import type { ThreadStatus } from "@napier/contracts";
 import { FatalState, LoadingShell } from "./AppInitialStates";
 import { Composer } from "./Composer";
 import { ConversationWorkspace } from "./ConversationWorkspace";
@@ -8,10 +7,11 @@ import { copy } from "./copy";
 import { InspectorNavigation, InspectorPanel } from "./InspectorNavigation";
 import { LedgerNavigation } from "./LedgerNavigation";
 import { ResponsiveInspector } from "./ResponsiveInspector";
-import { RunDecisionDockets } from "./RunDecisionDockets";
 import { TaskNarrativeBoundary } from "./TaskNarrativeBoundary";
+import { useTaskControlNavigation } from "./use-task-control-navigation";
 import { useWorkspaceViewModel } from "./use-workspace-view-model";
-import { WorkbenchNotices } from "./WorkbenchNotices";
+import { WorkbenchDeferredDecisions, WorkbenchDeferredNotices } from "./WorkbenchDeferredPanels";
+import { WorkbenchHeader } from "./WorkbenchHeader";
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
 const LazyBrowserInspectorPanel = lazy(() => import("./BrowserInspectorPanel"));
 const LazyGoalPanel = lazy(() => import("./GoalPanel"));
@@ -34,19 +34,18 @@ export function App() {
     });
   }, [vm.messages.length, vm.streamingText, vm.isRunning]);
 
+  const taskControls = useTaskControlNavigation({
+    activeRunId: vm.activeRunId,
+    events: vm.detail?.events ?? [],
+    onSelectInspector: vm.setInspectorTab,
+  });
+
   if (vm.isLoading) return <LoadingShell />;
-  if (!vm.bootstrap)
-    return <FatalState message={vm.error ?? copy.notices.disconnected} />;
+  if (!vm.bootstrap) return <FatalState message={vm.error ?? copy.notices.disconnected} />;
 
   const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0];
   const activeModel = vm.selectedModel;
-  const canStartRun = Boolean(
-    vm.composer.trim() &&
-    vm.detail &&
-    !vm.openOperatorDecision &&
-    activeModel.configured,
-  );
-
+  const canStartRun = Boolean(vm.composer.trim() && vm.detail && !vm.openOperatorDecision && activeModel.configured);
   return (
     <div className="app-shell">
       <LedgerNavigation
@@ -59,82 +58,29 @@ export function App() {
         onTrash={(threadId) => void vm.trashThread(threadId)}
         onRestore={() => void vm.restoreTrashedThread()}
       />
-
       <main className="workbench">
-        <header className="workbench-header">
-          <div className="thread-heading">
-            <span className="folio-number">
-              Folio {String(vm.detail?.thread.eventCount ?? 0).padStart(3, "0")}
-            </span>
-            <h1>{vm.detail?.thread.title ?? copy.welcome.title}</h1>
-          </div>
-          <div className="run-meta">
-            <div
-              className={`model-chip ${
-                activeModel.configured ? "" : "is-unavailable"
-              }`}
-              title={
-                activeModel.configured
-                  ? activeModel.key
-                  : `${activeModel.key} · ${copy.modelUnavailable}`
-              }
-            >
-              <span className="model-glyph" aria-hidden="true">
-                {activeModel.provider === "napier" ? "D" : "L"}
-              </span>
-              <span>
-                <small>
-                  {!activeModel.configured
-                    ? copy.modelUnavailable
-                    : activeModel.provider === "napier"
-                      ? copy.context.demoProvider
-                      : copy.context.liveProvider}
-                </small>
-                <strong>{activeModel.id}</strong>
-              </span>
-            </div>
-            <div
-              className={`run-status ${vm.isRunning ? "is-running" : ""}`}
-              role="status"
-              aria-live="polite"
-            >
-              <span />
-              {vm.isRunning
-                ? copy.running
-                : statusLabel(vm.detail?.thread.status)}
-            </div>
-          </div>
-        </header>
-
-        <TaskNarrativeBoundary detail={vm.detail} />
-        <WorkbenchNotices
-          error={vm.error}
-          resumableRun={vm.resumableRun}
-          running={vm.isRunning}
-          modelConfigured={activeModel.configured}
-          onResume={() => void vm.resume()}
+        <WorkbenchHeader
+          eventCount={vm.detail?.thread.eventCount ?? 0}
+          isRunning={vm.isRunning}
+          model={activeModel}
+          status={vm.detail?.thread.status}
+          title={vm.detail?.thread.title ?? copy.welcome.title}
         />
-
-        <ConversationWorkspace
-          vm={vm}
-          canStart={activeModel.configured}
-          endRef={conversationEnd}
+        <TaskNarrativeBoundary
+          detail={vm.detail}
+          browserControlsAvailable={taskControls.browserControlsAvailable}
+          onOpenArtifact={taskControls.openArtifact}
+          onOpenBrowserControls={taskControls.openBrowserControls}
+          onStop={() => void vm.stop()}
         />
-        <RunDecisionDockets vm={vm} />
-
-        <Composer
-          vm={vm}
-          activeAgent={activeAgent}
-          activeModel={activeModel}
-          canStartRun={canStartRun}
-        />
+        <WorkbenchDeferredNotices vm={vm} />
+        <ConversationWorkspace vm={vm} canStart={activeModel.configured} endRef={conversationEnd} />
+        <WorkbenchDeferredDecisions vm={vm} browserControlsAvailable={taskControls.browserControlsAvailable} />
+        <Composer vm={vm} activeAgent={activeAgent} activeModel={activeModel} canStartRun={canStartRun} />
       </main>
 
-      <ResponsiveInspector label={copy.inspect}>
-        <InspectorNavigation
-          activeTab={vm.inspectorTab}
-          onChange={vm.setInspectorTab}
-        />
+      <ResponsiveInspector label={copy.inspect} openRequest={taskControls.inspectorOpenRequest}>
+        <InspectorNavigation activeTab={vm.inspectorTab} onChange={vm.setInspectorTab} />
 
         <InspectorPanel activeTab={vm.inspectorTab}>
           {vm.inspectorTab === "trace" ? (
@@ -160,9 +106,7 @@ export function App() {
                 }}
                 reviewerModelConfigured={activeModel.configured}
                 onExport={(runId) => void vm.exportOpenTelemetryTrace(runId)}
-                onVerify={(file) =>
-                  void vm.verifyOpenTelemetryTraceArtifactFile(file)
-                }
+                onVerify={(file) => void vm.verifyOpenTelemetryTraceArtifactFile(file)}
               />
             </Suspense>
           ) : null}
@@ -174,10 +118,7 @@ export function App() {
                 </div>
               }
             >
-              <LazyProcessPanel
-                threadId={vm.detail.thread.id}
-                onThreadChanged={vm.refreshActiveThread}
-              />
+              <LazyProcessPanel threadId={vm.detail.thread.id} onThreadChanged={vm.refreshActiveThread} />
             </Suspense>
           ) : null}
           <Suspense fallback={null}>
@@ -224,9 +165,7 @@ export function App() {
                 onCompare={() => void vm.compareSelectedRuns()}
                 onEvaluate={() => void vm.evaluateSelectedRuns()}
                 onExport={(runId) => void vm.exportRunReplay(runId)}
-                onVerifyReplay={(file) =>
-                  void vm.verifyRunReplaySnapshotFile(file)
-                }
+                onVerifyReplay={(file) => void vm.verifyRunReplaySnapshotFile(file)}
                 onExportFixture={() => void vm.exportThreadFixture()}
                 onVerifyFixture={(file) => void vm.verifyThreadFixture(file)}
                 onImportFixture={(file) => void vm.importThreadFixture(file)}
@@ -282,11 +221,7 @@ export function App() {
               }
             >
               <LazyMemoryPanel
-                memories={vm.bootstrap.memories.filter(
-                  (memory) =>
-                    memory.scope === "workspace" ||
-                    memory.agentId === activeAgent?.id,
-                )}
+                memories={vm.bootstrap.memories.filter((memory) => memory.scope === "workspace" || memory.agentId === activeAgent?.id)}
                 draft={vm.memoryDraft}
                 category={vm.memoryCategory}
                 scope={vm.memoryScope}
@@ -302,9 +237,7 @@ export function App() {
                 onCancelCorrection={vm.cancelMemoryCorrection}
                 onToggleConsolidation={vm.toggleMemoryConsolidation}
                 onCancelConsolidation={vm.cancelMemoryConsolidation}
-                onReview={(memoryId, action) =>
-                  void vm.reviewMemoryFact(memoryId, action)
-                }
+                onReview={(memoryId, action) => void vm.reviewMemoryFact(memoryId, action)}
               />
             </Suspense>
           ) : null}
@@ -324,59 +257,29 @@ export function App() {
                 packageReceipt={vm.extensionPackageReceipt}
                 packageDeploymentPreview={vm.extensionPackageDeploymentPreview}
                 packageRolloutPreview={vm.extensionPackageRolloutPreview}
-                packageRolloutChannels={
-                  vm.bootstrap.extensionPackageRolloutChannels
-                }
+                packageRolloutChannels={vm.bootstrap.extensionPackageRolloutChannels}
                 packageUpdatePreview={vm.extensionPackageUpdatePreview}
                 onPropose={vm.proposeMcpExtension}
-                onReview={(extensionId, action) =>
-                  void vm.reviewExtensionTrust(extensionId, action)
+                onReview={(extensionId, action) => void vm.reviewExtensionTrust(extensionId, action)}
+                onConnect={(extensionId) => void vm.connectMcpExtension(extensionId)}
+                onDisconnect={(extensionId) => void vm.disconnectMcpExtension(extensionId)}
+                onToolReview={(extensionId, toolName, action, effect, routingHint) =>
+                  void vm.reviewExtensionTool(extensionId, toolName, action, effect, routingHint)
                 }
-                onConnect={(extensionId) =>
-                  void vm.connectMcpExtension(extensionId)
-                }
-                onDisconnect={(extensionId) =>
-                  void vm.disconnectMcpExtension(extensionId)
-                }
-                onToolReview={(
-                  extensionId,
-                  toolName,
-                  action,
-                  effect,
-                  routingHint,
-                ) =>
-                  void vm.reviewExtensionTool(
-                    extensionId,
-                    toolName,
-                    action,
-                    effect,
-                    routingHint,
-                  )
-                }
-                onToggle={(extensionId, enabled) =>
-                  void vm.toggleExtension(extensionId, enabled)
-                }
+                onToggle={(extensionId, enabled) => void vm.toggleExtension(extensionId, enabled)}
                 onCreatePublisher={vm.createExtensionPublisher}
                 onRevokePublisher={vm.revokeExtensionPublisher}
                 onSignPackage={vm.downloadSignedExtensionPackage}
                 onVerifyPackage={vm.verifySignedExtensionPackageFile}
                 onImportPackage={vm.importSignedExtensionPackageFile}
                 onExportPackageLockfile={vm.exportExtensionPackageLockfile}
-                onDownloadPackageChannelIndex={
-                  vm.downloadExtensionPackageChannelIndex
-                }
-                onPublishPackageRollout={
-                  vm.publishExtensionPackageRolloutChannel
-                }
-                onPreviewPackageRollout={
-                  vm.previewExtensionPackageRolloutChannel
-                }
+                onDownloadPackageChannelIndex={vm.downloadExtensionPackageChannelIndex}
+                onPublishPackageRollout={vm.publishExtensionPackageRolloutChannel}
+                onPreviewPackageRollout={vm.previewExtensionPackageRolloutChannel}
                 onPreviewPackageUpdate={vm.previewExtensionPackageUpdateFile}
                 onApplyPackageUpdate={vm.applyExtensionPackageUpdate}
                 onCancelPackageUpdate={vm.cancelExtensionPackageUpdate}
-                onPreviewPackageDeployment={
-                  vm.previewExtensionPackageDeploymentFiles
-                }
+                onPreviewPackageDeployment={vm.previewExtensionPackageDeploymentFiles}
                 onApplyPackageDeployment={vm.applyExtensionPackageDeployment}
                 onCancelPackageDeployment={vm.cancelExtensionPackageDeployment}
               />
@@ -400,11 +303,7 @@ export function App() {
                 recoveryPending={
                   vm.detail.thread.status === "waiting" &&
                   vm.detail.runs.some(
-                    (run) =>
-                      run.status === "interrupted" &&
-                      !vm.detail?.automaticRecoveryAssessments.some(
-                        (assessment) => assessment.runId === run.id,
-                      ),
+                    (run) => run.status === "interrupted" && !vm.detail?.automaticRecoveryAssessments.some((assessment) => assessment.runId === run.id),
                   )
                 }
                 onBootstrapUpdated={vm.commitConfigurationBootstrap}
@@ -426,9 +325,7 @@ export function App() {
                 models={vm.bootstrap.models}
                 credentials={vm.bootstrap.credentials}
                 publisherAnchors={vm.bootstrap.extensionPublisherTrustAnchors}
-                skillPackageInstallations={
-                  vm.bootstrap.skillPackageInstallations
-                }
+                skillPackageInstallations={vm.bootstrap.skillPackageInstallations}
                 usagePriceTableCatalog={vm.bootstrap.usagePriceTableCatalog}
                 threadId={vm.detail.thread.id}
                 selectedModelKey={vm.selectedModelKey}
@@ -440,9 +337,7 @@ export function App() {
                       checkpointCalibration: vm.contextCheckpointCalibration,
                     }
                   : {})}
-                {...(vm.contextCheckpoint
-                  ? { checkpoint: vm.contextCheckpoint }
-                  : {})}
+                {...(vm.contextCheckpoint ? { checkpoint: vm.contextCheckpoint } : {})}
               />
             </Suspense>
           ) : null}
@@ -450,10 +345,4 @@ export function App() {
       </ResponsiveInspector>
     </div>
   );
-}
-
-function statusLabel(status?: ThreadStatus): string {
-  if (status === "failed") return copy.failed;
-  if (status === "waiting") return copy.waiting;
-  return copy.idle;
 }

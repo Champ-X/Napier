@@ -1,5 +1,12 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, CircleDot, Clock3 } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CircleDot,
+  Clock3,
+  Globe2,
+  Square,
+} from "lucide-react";
 
 import type { ThreadDetail } from "@napier/contracts";
 import { taskNarrative } from "./task-narrative-view-model";
@@ -8,6 +15,10 @@ const LazyTaskCompletionSummary = lazy(() => import("./TaskCompletionSummary"));
 
 export function TaskNarrativeBar({
   detail,
+  browserControlsAvailable,
+  onOpenArtifact,
+  onOpenBrowserControls,
+  onStop,
 }: {
   detail:
     | Pick<
@@ -21,6 +32,10 @@ export function TaskNarrativeBar({
         | "automaticRecoveryAttempts"
       >
     | undefined;
+  browserControlsAvailable: boolean;
+  onOpenArtifact(path: string): void;
+  onOpenBrowserControls(): void;
+  onStop(): void;
 }) {
   const [now, setNow] = useState(() => Date.now());
   const running = detail?.runs.some(
@@ -59,6 +74,7 @@ export function TaskNarrativeBar({
         <LazyTaskCompletionSummary
           completedItems={narrative.completedItems}
           plans={detail?.plans ?? []}
+          onOpenArtifact={onOpenArtifact}
         />
       </Suspense>
       {narrative.blocker ? (
@@ -71,6 +87,22 @@ export function TaskNarrativeBar({
         <div className="task-narrative-next">
           <span>Next</span>
           <p>{narrative.nextStep}</p>
+        </div>
+      ) : null}
+      {running || browserControlsAvailable ? (
+        <div className="task-narrative-actions" aria-label="Task controls">
+          {browserControlsAvailable ? (
+            <button type="button" onClick={onOpenBrowserControls}>
+              <Globe2 size={12} aria-hidden="true" />
+              Browser controls
+            </button>
+          ) : null}
+          {running ? (
+            <button className="is-stop" type="button" onClick={onStop}>
+              <Square size={10} fill="currentColor" aria-hidden="true" />
+              Stop
+            </button>
+          ) : null}
         </div>
       ) : null}
     </section>

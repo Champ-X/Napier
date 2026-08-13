@@ -4,15 +4,21 @@ import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 
 export function ResponsiveInspector({
   label,
+  openRequest = 0,
   children,
 }: {
   label: string;
+  openRequest?: number;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const inspectorId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const inspectorRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (openRequest > 0) setOpen(true);
+  }, [openRequest]);
 
   useEffect(() => {
     if (!open) return;

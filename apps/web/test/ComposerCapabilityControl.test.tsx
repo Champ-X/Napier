@@ -52,10 +52,13 @@ describe("ComposerCapabilityControl", () => {
 
     findButton(container, "Browser").click();
     expect(onSelectedPresetChange).toHaveBeenCalledWith("browser");
+    expect(findButton(container, "Agent settings")).toBeDefined();
+    expect(container.textContent).not.toContain("contract v3");
+    expect(container.textContent).not.toContain("catalog-only");
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls.every((call) => call[1]?.method !== "PUT")).toBe(
-      true,
-    );
+    expect(
+      fetchMock.mock.calls.every((call) => call[1]?.method !== "PUT"),
+    ).toBe(true);
   });
 
   it("renders the selected preset as one-shot and can restore the Agent default", async () => {
@@ -191,9 +194,7 @@ function projectionResponse(
   const text = JSON.stringify(value);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-Napier-Content-SHA256": createHash("sha256")
-      .update(text)
-      .digest("hex"),
+    "X-Napier-Content-SHA256": createHash("sha256").update(text).digest("hex"),
     "X-Napier-Content-SHA256-Mode": "body",
   };
   if (preset) headers["X-Napier-Capability-Preset"] = preset;
@@ -201,9 +202,11 @@ function projectionResponse(
 }
 
 function findButton(container: HTMLElement, text: string): HTMLButtonElement {
-  const button = findElement<HTMLButtonElement>(container, (candidate) =>
-    candidate.localName === "button" &&
-    candidate.textContent?.trim() === text
+  const button = findElement<HTMLButtonElement>(
+    container,
+    (candidate) =>
+      candidate.localName === "button" &&
+      candidate.textContent?.trim() === text,
   );
   if (!button) throw new Error(`Button not found: ${text}`);
   return button;

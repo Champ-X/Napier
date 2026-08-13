@@ -48,6 +48,7 @@ export async function startProductionWebServer(root, port = 0) {
     env: {
       LANG: "C",
       NAPIER_HOME: path.join(root, "state"),
+      NAPIER_E2E_MODEL_KEY: "e2e-placeholder-key",
       NAPIER_PORT: String(port),
       NAPIER_WORKSPACE: path.join(root, "workspace"),
       NODE_ENV: "test",

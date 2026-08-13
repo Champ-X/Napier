@@ -165,7 +165,7 @@
 
 .agent-capability-composer-status {
   display: grid;
-  grid-template-columns: auto auto auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 5px 10px;
   align-items: center;
 }
@@ -177,12 +177,6 @@
 
 .agent-capability-composer-profile {
   color: var(--ink) !important;
-}
-
-.agent-capability-composer-contract,
-.agent-capability-composer-readiness {
-  padding-left: 9px;
-  border-left: 1px solid var(--rule);
 }
 
 .agent-capability-composer-status button {
@@ -213,12 +207,6 @@
 
   .agent-capability-composer-status {
     grid-template-columns: 1fr auto;
-  }
-
-  .agent-capability-composer-contract,
-  .agent-capability-composer-readiness {
-    padding-left: 0;
-    border-left: 0;
   }
 }
 
@@ -251,10 +239,5 @@
 
   .agent-capability-composer-status {
     grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .agent-capability-composer-contract,
-  .agent-capability-composer-readiness {
-    display: none !important;
   }
 }

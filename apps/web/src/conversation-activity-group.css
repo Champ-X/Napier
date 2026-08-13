@@ -1,0 +1,78 @@
+.conversation-activity-group {
+  margin: -4px 0 14px 37px;
+  color: var(--ink-soft);
+  background: rgb(241 237 227 / 82%);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--ledger);
+  border-radius: 2px;
+}
+
+.conversation-activity-group > summary {
+  display: grid;
+  min-height: 45px;
+  grid-template-columns: 18px minmax(0, 1fr) auto auto;
+  gap: 9px;
+  align-items: center;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.conversation-activity-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.conversation-activity-group > summary div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.conversation-activity-group > summary span,
+.conversation-activity-group > summary small,
+.conversation-activity-group > summary time {
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-faint);
+}
+
+.conversation-activity-group > summary span {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.conversation-activity-group > summary strong {
+  overflow: hidden;
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-activity-group-items {
+  padding: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+.conversation-activity-group-items > details {
+  margin: 0 0 7px;
+}
+
+.conversation-activity-group-items > details:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 620px) {
+  .conversation-activity-group {
+    margin-left: 0;
+  }
+
+  .conversation-activity-group > summary {
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+  }
+
+  .conversation-activity-group > summary time {
+    display: none;
+  }
+}

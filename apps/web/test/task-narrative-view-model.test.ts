@@ -194,6 +194,48 @@ describe("Task narrative", () => {
     );
   });
 
+  it("shows grouped completed work for an ad-hoc run without a plan", () => {
+    const detail = fixture();
+    detail.thread.status = "running";
+    detail.thread.currentRunId = "run_1";
+    detail.runs.push(run("running"));
+    detail.events.push(
+      toolStarted("run_1", "read_file", "call_read_1", 3),
+      toolTerminal("run_1", "read_file", "call_read_1", "tool.completed", 4),
+      toolStarted("run_1", "read_file", "call_read_2", 5),
+      toolTerminal("run_1", "read_file", "call_read_2", "tool.completed", 6),
+      toolStarted("run_1", "web_search", "call_search", 7),
+    );
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        currentAction: "Running web search",
+        completedItems: ["Read 2 files"],
+      }),
+    );
+  });
+
+  it("preserves completed ad-hoc milestones while recovery is assessed", () => {
+    const detail = recoveryFixture();
+    detail.events.push(
+      toolStarted("run_interrupted", "web_fetch", "call_fetch", 3),
+      toolTerminal(
+        "run_interrupted",
+        "web_fetch",
+        "call_fetch",
+        "tool.completed",
+        4,
+      ),
+    );
+
+    expect(taskNarrative(detail)).toEqual(
+      expect.objectContaining({
+        phaseLabel: "Recovering",
+        completedItems: ["Fetched 1 source"],
+      }),
+    );
+  });
+
   it("shows the latest unsettled tool when calls overlap", () => {
     const detail = fixture();
     detail.thread.status = "running";

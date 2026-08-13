@@ -11,51 +11,35 @@ import type { WebThreadDetail } from "./api";
 import {
   conversationApprovalEventId,
   conversationApprovals,
-  type ConversationApproval,
 } from "./conversation-approval-view-model";
 import {
   conversationArtifactEventKey,
   conversationArtifactWorkspaceLinks,
   conversationArtifacts,
-  type ConversationArtifact,
 } from "./conversation-artifact-view-model";
 import {
   conversationCitationLinks,
   conversationCitations,
-  type ConversationCitation,
 } from "./conversation-citation-view-model";
-import {
-  conversationBrowserActivities,
-  type ConversationBrowserActivity,
-} from "./conversation-browser-activity-view-model";
-import {
-  conversationNetworkActivities,
-  type ConversationNetworkActivity,
-} from "./conversation-network-activity-view-model";
+import { conversationBrowserActivities } from "./conversation-browser-activity-view-model";
+import { conversationNetworkActivities } from "./conversation-network-activity-view-model";
 import {
   conversationPlanEventId,
   conversationPlans,
-  type ConversationPlan,
 } from "./conversation-plan-view-model";
-import {
-  conversationRecoveries,
-  type ConversationRecovery,
-} from "./conversation-recovery-view-model";
+import { conversationRecoveries } from "./conversation-recovery-view-model";
 import {
   conversationSubagentEventId,
   conversationSubagents,
-  type ConversationSubagent,
 } from "./conversation-subagent-view-model";
-import {
-  conversationToolActivities,
-  type ConversationToolActivity,
-} from "./conversation-tool-activity-view-model";
+import { conversationToolActivities } from "./conversation-tool-activity-view-model";
 import { copy } from "./copy";
 import {
   conversationActivities,
   type ConversationActivity,
 } from "./conversation-activity-view-model";
 import { ConversationArtifactCard } from "./ConversationArtifactCard";
+import { ConversationActivityGroupCard } from "./ConversationActivityGroupCard";
 import { ConversationApprovalCard } from "./ConversationApprovalCard";
 import { ConversationCitationCard } from "./ConversationCitationCard";
 import { ConversationBrowserActivityCard } from "./ConversationBrowserActivityCard";
@@ -70,47 +54,10 @@ import {
   type MessageWorkspaceLink,
 } from "./message-markdown";
 import type { MessageView } from "./use-workspace-view-model";
-
-type FeedItem =
-  | { kind: "message"; seq: number; message: MessageView }
-  | { kind: "activity"; seq: number; activity: ConversationActivity }
-  | { kind: "artifact"; seq: number; artifact: ConversationArtifact }
-  | { kind: "citation"; seq: number; citation: ConversationCitation }
-  | {
-      kind: "network";
-      seq: number;
-      activity: ConversationNetworkActivity;
-    }
-  | {
-      kind: "browser";
-      seq: number;
-      activity: ConversationBrowserActivity;
-    }
-  | {
-      kind: "plan";
-      seq: number;
-      plan: ConversationPlan;
-    }
-  | {
-      kind: "approval";
-      seq: number;
-      approval: ConversationApproval;
-    }
-  | {
-      kind: "subagent";
-      seq: number;
-      subagent: ConversationSubagent;
-    }
-  | {
-      kind: "recovery";
-      seq: number;
-      recovery: ConversationRecovery;
-    }
-  | {
-      kind: "tool";
-      seq: number;
-      activity: ConversationToolActivity;
-    };
+import {
+  groupConversationFeed,
+  type ConversationFeedItem,
+} from "./conversation-feed-grouping";
 
 export function ConversationLedger({
   messages,
@@ -144,17 +91,24 @@ export function ConversationLedger({
       .filter((event) => citationEventIds.has(event.id))
       .flatMap((event) => eventCallId(event) ?? []),
   );
-  const networkActivities = conversationNetworkActivities(events);
+  const networkActivities = conversationNetworkActivities(
+    events,
+    events.length,
+  );
   const networkCallIds = new Set(
     networkActivities.map((activity) => activity.callId),
   );
-  const browserActivities = conversationBrowserActivities(events);
+  const browserActivities = conversationBrowserActivities(
+    events,
+    events.length,
+  );
   const browserCallIds = new Set(
     browserActivities.map((activity) => activity.callId),
   );
   const toolItems = conversationToolActivities(
     events,
     new Set([...citationCallIds, ...networkCallIds, ...browserCallIds]),
+    events.length,
   );
   const toolEventIds = new Set(
     toolItems.flatMap((activity) => activity.eventIds),
@@ -195,68 +149,72 @@ export function ConversationLedger({
       (!key || !artifactKeys.has(`${key[0]}:${key[1]}`))
     );
   });
-  const feed: FeedItem[] = [
-    ...messages.map((message) => ({
-      kind: "message" as const,
-      seq: message.seq,
-      message,
-    })),
-    ...conversationActivities(activityEvents).map((activity) => ({
-      kind: "activity" as const,
-      seq: activity.seq,
-      activity,
-    })),
-    ...artifacts.map((artifact) => ({
-      kind: "artifact" as const,
-      seq: artifact.seq,
-      artifact,
-    })),
-    ...citations.map((citation) => ({
-      kind: "citation" as const,
-      seq: citation.seq,
-      citation,
-    })),
-    ...networkActivities.map((activity) => ({
-      kind: "network" as const,
-      seq: activity.seq,
-      activity,
-    })),
-    ...browserActivities.map((activity) => ({
-      kind: "browser" as const,
-      seq: activity.seq,
-      activity,
-    })),
-    ...planItems.map((plan) => ({
-      kind: "plan" as const,
-      seq: plan.seq,
-      plan,
-    })),
-    ...approvals.map((approval) => ({
-      kind: "approval" as const,
-      seq: approval.seq,
-      approval,
-    })),
-    ...subagentItems.map((subagent) => ({
-      kind: "subagent" as const,
-      seq: subagent.seq,
-      subagent,
-    })),
-    ...recoveryItems.map((recovery) => ({
-      kind: "recovery" as const,
-      seq: recovery.seq,
-      recovery,
-    })),
-    ...toolItems.map((activity) => ({
-      kind: "tool" as const,
-      seq: activity.seq,
-      activity,
-    })),
-  ].sort((left, right) => left.seq - right.seq);
+  const feed = groupConversationFeed(
+    [
+      ...messages.map((message) => ({
+        kind: "message" as const,
+        seq: message.seq,
+        message,
+      })),
+      ...conversationActivities(activityEvents).map((activity) => ({
+        kind: "activity" as const,
+        seq: activity.seq,
+        activity,
+      })),
+      ...artifacts.map((artifact) => ({
+        kind: "artifact" as const,
+        seq: artifact.seq,
+        artifact,
+      })),
+      ...citations.map((citation) => ({
+        kind: "citation" as const,
+        seq: citation.seq,
+        citation,
+      })),
+      ...networkActivities.map((activity) => ({
+        kind: "network" as const,
+        seq: activity.seq,
+        activity,
+      })),
+      ...browserActivities.map((activity) => ({
+        kind: "browser" as const,
+        seq: activity.seq,
+        activity,
+      })),
+      ...planItems.map((plan) => ({
+        kind: "plan" as const,
+        seq: plan.seq,
+        plan,
+      })),
+      ...approvals.map((approval) => ({
+        kind: "approval" as const,
+        seq: approval.seq,
+        approval,
+      })),
+      ...subagentItems.map((subagent) => ({
+        kind: "subagent" as const,
+        seq: subagent.seq,
+        subagent,
+      })),
+      ...recoveryItems.map((recovery) => ({
+        kind: "recovery" as const,
+        seq: recovery.seq,
+        recovery,
+      })),
+      ...toolItems.map((activity) => ({
+        kind: "tool" as const,
+        seq: activity.seq,
+        activity,
+      })),
+    ].sort((left, right) => left.seq - right.seq) as ConversationFeedItem[],
+  );
 
   return (
     <div className="message-ledger">
       {feed.map((item) =>
-        item.kind === "message" ? (
+        item.kind === "activity-group" ? (
+          <ConversationActivityGroupCard key={item.id} group={item} />
+        ) : item.kind === "message" ? (
           <MessageCard
             key={`message-${item.message.id}`}
             message={item.message}
